@@ -10,9 +10,10 @@ import type {
     TraderRequirement,
 } from "@/app/types";
 import { redis } from "@/app/server/redis";
+import { requiresFoundInRaid } from "@/app/lib/cfg/foundInRaid";
 
 const CACHE_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
-const REDIS_KEY = "hideout:stations:v3";
+const REDIS_KEY = "hideout:stations:v4";
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
 
 interface TarkovHideoutItemRequirement {
@@ -184,20 +185,35 @@ export async function GET() {
                         id: lvl.id,
                         level: lvl.level,
                         itemRequirements: (lvl.itemRequirements ?? []).map(
-                            (req): ItemRequirement => ({
-                                id: req.id,
-                                item: {
-                                    id: req.item.id,
-                                    name: req.item.name,
-                                    normalizedName: req.item.normalizedName,
-                                    shortName: req.item.shortName,
-                                    iconLink: req.item.iconLink,
-                                    gridImageLink: req.item.gridImageLink,
-                                },
-                                count: req.count,
-                                quantity: req.quantity,
-                                attributes: req.attributes ?? [],
-                            })
+                            (req): ItemRequirement => {
+                                const attributes = [...(req.attributes ?? [])];
+                                const isFir = (
+                                    requiresFoundInRaid as Record<string, Record<number, string[]>>
+                                )[s.normalizedName]?.[lvl.level]?.includes(req.item.normalizedName);
+
+                                if (isFir) {
+                                    attributes.push({
+                                        type: "functional",
+                                        name: "found_in_raid",
+                                        value: "true",
+                                    });
+                                }
+
+                                return {
+                                    id: req.id,
+                                    item: {
+                                        id: req.item.id,
+                                        name: req.item.name,
+                                        normalizedName: req.item.normalizedName,
+                                        shortName: req.item.shortName,
+                                        iconLink: req.item.iconLink,
+                                        gridImageLink: req.item.gridImageLink,
+                                    },
+                                    count: req.count,
+                                    quantity: req.quantity,
+                                    attributes: attributes,
+                                };
+                            }
                         ),
                         stationLevelRequirements: (lvl.stationLevelRequirements ?? []).map(
                             (req): StationLevelRequirement => ({

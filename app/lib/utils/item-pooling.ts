@@ -62,6 +62,11 @@ export function poolItems({
                 // Check for tool attribute
                 const isTool = req.attributes.some((attr) => attr.type === "tool");
 
+                // Check for Found in Raid attribute
+                const isFir = req.attributes.some(
+                    (attr) => attr.name === "found_in_raid" && attr.value === "true"
+                );
+
                 // For now we sum everything. If it is a tool, it's still "required".
                 // If it's a tool, it might not be consumed, but you still need it.
                 // The aggregation logic for tools is tricky: if you need a wrench for level 1 and level 2,
@@ -69,14 +74,10 @@ export function poolItems({
                 // BUT, implementing "max needed at once" logic for tools is complex across stations.
                 // For now, we will sum them as requested, but mark them.
 
-                // Logic for FiR:
-                // We will look for an attribute value.
-                // If strict FiR logic is needed, we'd need to know the attribute key.
-                // For now, we'll just assume normal item pooling.
-
                 itemMap.set(req.item.id, {
                     ...existing,
                     count: existing.count + quantity,
+                    firCount: existing.firCount + (isFir ? quantity : 0),
                     isTool: existing.isTool || isTool,
                 });
             });
