@@ -13,6 +13,9 @@ interface UserState {
     hideCheap: boolean; // filter out cheap items
     cheapPriceThreshold: number; // e.g. in roubles
 
+    // Hideout View options
+    compactMode: boolean;
+
     // Actions
     setStationLevel: (stationId: string, level: number) => void;
     incrementStationLevel: (stationId: string) => void;
@@ -22,6 +25,7 @@ interface UserState {
     setShowHidden: (value: boolean) => void;
     setHideCheap: (value: boolean) => void;
     setCheapPriceThreshold: (value: number) => void;
+    setCompactMode: (value: boolean) => void;
 
     // Initialization helpers
     initializeDefaults: (stations: Station[]) => void;
@@ -36,6 +40,7 @@ export const useUserStore = create<UserState>()(
             showHidden: false,
             hideCheap: false,
             cheapPriceThreshold: 5000,
+            compactMode: false,
 
             setStationLevel: (stationId, level) =>
                 set((state) => ({ stationLevels: { ...state.stationLevels, [stationId]: level } })),
@@ -58,6 +63,7 @@ export const useUserStore = create<UserState>()(
             setShowHidden: (value) => set({ showHidden: value }),
             setHideCheap: (value) => set({ hideCheap: value }),
             setCheapPriceThreshold: (value) => set({ cheapPriceThreshold: value }),
+            setCompactMode: (value) => set({ compactMode: value }),
 
             initializeDefaults: (stations) => {
                 const { stationLevels } = get();

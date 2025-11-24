@@ -1,4 +1,5 @@
 import { HideoutList } from "../features/hideout/components/HideoutList";
+import { HideoutControls } from "../features/hideout/components/HideoutControls";
 
 export default function HideoutPage() {
     return (
@@ -12,11 +13,8 @@ export default function HideoutPage() {
                         Manage your current station levels to calculate required items
                     </p>
                 </div>
-                {/* Optional controls like 'Compact' view could go here */}
                 <div>
-                    {/* <button className="text-xs font-bold border border-border-color px-3 py-2 rounded hover:bg-white/5 uppercase tracking-widest">
-                        Compact
-                    </button> */}
+                    <HideoutControls />
                 </div>
             </div>
 
