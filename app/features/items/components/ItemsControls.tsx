@@ -1,9 +1,13 @@
 "use client";
 
 import { useUserStore } from "@/app/lib/stores/useUserStore";
-import { Eye, EyeOff, Filter, LayoutList, List, Tags } from "lucide-react";
+import { Eye, EyeOff, Filter, LayoutList, List, Search, Tags } from "lucide-react";
 
-export function ItemsControls() {
+interface ItemsControlsProps {
+    onOpenSearch: () => void;
+}
+
+export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
     const {
         checklistViewMode,
         setChecklistViewMode,
@@ -25,6 +29,15 @@ export function ItemsControls() {
         <div className="flex flex-col gap-4 bg-[#1a1a1a] p-4 rounded-lg border border-[#2a2a2a]">
             <div className="flex flex-wrap gap-6 items-center justify-between">
                 <div className="flex items-center gap-4 flex-wrap">
+                    {/* Search Button */}
+                    <button
+                        onClick={onOpenSearch}
+                        className="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded border border-white/10 text-gray-400 hover:text-white hover:border-white/30 transition-colors"
+                    >
+                        <Search size={14} />
+                        Search
+                    </button>
+
                     {/* View Mode: All vs Next Level */}
                     <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-500 uppercase font-bold tracking-wider">

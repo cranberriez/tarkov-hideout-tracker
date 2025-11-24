@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useDataStore } from "@/app/lib/stores/useDataStore";
 import { useUserStore } from "@/app/lib/stores/useUserStore";
 import { ItemRow } from "./ItemRow";
 import { poolItems } from "@/app/lib/utils/item-pooling";
 import { ItemDetails } from "@/app/types";
-import { ItemDetailModal } from "./ItemDetailModal";
 
-export function ItemsList() {
+interface ItemsListProps {
+    onClickItem: (item: ItemDetails) => void;
+}
+
+export function ItemsList({ onClickItem }: ItemsListProps) {
     const {
         stations,
         fetchStations,
@@ -19,8 +22,6 @@ export function ItemsList() {
         errorStations,
         errorItems,
     } = useDataStore();
-
-    const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
 
     const {
         stationLevels,
@@ -157,73 +158,53 @@ export function ItemsList() {
 
     if (useCategorization && categorizedItems) {
         return (
-            <>
-                <div className="space-y-8">
-                    {categorizedItems.map(({ category, items }) => (
-                        <div key={category}>
-                            <h2 className="text-xl font-bold text-tarkov-green mb-4 border-b border-white/10 pb-2">
-                                {category}{" "}
-                                <span className="text-sm font-normal text-gray-500 ml-2">
-                                    ({items.length})
-                                </span>
-                            </h2>
-                            <div className={`grid gap-4 ${gridClasses}`}>
-                                {items.map(
-                                    ({ id, count, firCount, details }) =>
-                                        details && (
-                                            <ItemRow
-                                                key={id}
-                                                item={details}
-                                                count={count}
-                                                firCount={firCount}
-                                                compact={compactMode}
-                                                sellToPreference={sellToPreference}
-                                                onClick={() => setSelectedItem(details)}
-                                            />
-                                        )
-                                )}
-                            </div>
+            <div className="space-y-8">
+                {categorizedItems.map(({ category, items }) => (
+                    <div key={category}>
+                        <h2 className="text-xl font-bold text-tarkov-green mb-4 border-b border-white/10 pb-2">
+                            {category}{" "}
+                            <span className="text-sm font-normal text-gray-500 ml-2">
+                                ({items.length})
+                            </span>
+                        </h2>
+                        <div className={`grid gap-4 ${gridClasses}`}>
+                            {items.map(
+                                ({ id, count, firCount, details }) =>
+                                    details && (
+                                        <ItemRow
+                                            key={id}
+                                            item={details}
+                                            count={count}
+                                            firCount={firCount}
+                                            compact={compactMode}
+                                            sellToPreference={sellToPreference}
+                                            onClick={() => onClickItem(details)}
+                                        />
+                                    )
+                            )}
                         </div>
-                    ))}
-                </div>
-                <ItemDetailModal
-                    item={selectedItem}
-                    isOpen={!!selectedItem}
-                    onClose={() => setSelectedItem(null)}
-                    stations={stations}
-                    stationLevels={stationLevels}
-                    hiddenStations={hiddenStations}
-                />
-            </>
+                    </div>
+                ))}
+            </div>
         );
     }
 
     return (
-        <>
-            <div className={`grid gap-4 ${gridClasses}`}>
-                {filteredAndSortedItems.map(
-                    ({ id, count, firCount, details }) =>
-                        details && (
-                            <ItemRow
-                                key={id}
-                                item={details}
-                                count={count}
-                                firCount={firCount}
-                                compact={compactMode}
-                                sellToPreference={sellToPreference}
-                                onClick={() => setSelectedItem(details)}
-                            />
-                        )
-                )}
-            </div>
-            <ItemDetailModal
-                item={selectedItem}
-                isOpen={!!selectedItem}
-                onClose={() => setSelectedItem(null)}
-                stations={stations}
-                stationLevels={stationLevels}
-                hiddenStations={hiddenStations}
-            />
-        </>
+        <div className={`grid gap-4 ${gridClasses}`}>
+            {filteredAndSortedItems.map(
+                ({ id, count, firCount, details }) =>
+                    details && (
+                        <ItemRow
+                            key={id}
+                            item={details}
+                            count={count}
+                            firCount={firCount}
+                            compact={compactMode}
+                            sellToPreference={sellToPreference}
+                            onClick={() => onClickItem(details)}
+                        />
+                    )
+            )}
+        </div>
     );
 }

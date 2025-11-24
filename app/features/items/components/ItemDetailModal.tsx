@@ -131,6 +131,25 @@ export function ItemDetailModal({
         );
     };
 
+    // Compute totals
+    const { totalCount, totalFir } = useMemo(() => {
+        let totalCount = 0;
+        let totalFir = 0;
+
+        stationRequirements.forEach(([, reqs]) => {
+            reqs.forEach((req) => {
+                if (!req.isCompleted) {
+                    totalCount += req.count;
+                    if (req.isFir) {
+                        totalFir += req.count;
+                    }
+                }
+            });
+        });
+
+        return { totalCount, totalFir };
+    }, [stationRequirements]);
+
     if (!isOpen || !item) return null;
 
     return (
@@ -159,30 +178,53 @@ export function ItemDetailModal({
                         </div>
                         <div>
                             <h2 className="text-2xl font-bold text-gray-100 mb-2">{item.name}</h2>
-                            <div className="flex items-center gap-4 text-sm">
-                                <span className="text-gray-400 bg-white/5 px-2 py-1 rounded-sm">
-                                    {item.category?.name || "Item"}
-                                </span>
-                                <div className="flex items-center gap-3">
-                                    {item.wikiLink && (
-                                        <a
-                                            href={item.wikiLink}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-tarkov-green hover:underline flex items-center gap-1"
-                                        >
-                                            Wiki <ExternalLink size={12} />
-                                        </a>
-                                    )}
-                                    {item.link && (
-                                        <a
-                                            href={item.link}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-tarkov-green hover:underline flex items-center gap-1"
-                                        >
-                                            Tarkov.dev <ExternalLink size={12} />
-                                        </a>
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-4 text-sm">
+                                    <span className="text-gray-400 bg-white/5 px-2 py-1 rounded-sm">
+                                        {item.category?.name || "Item"}
+                                    </span>
+                                    <div className="flex items-center gap-3">
+                                        {item.wikiLink && (
+                                            <a
+                                                href={item.wikiLink}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-tarkov-green hover:underline flex items-center gap-1"
+                                            >
+                                                Wiki <ExternalLink size={12} />
+                                            </a>
+                                        )}
+                                        {item.link && (
+                                            <a
+                                                href={item.link}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-tarkov-green hover:underline flex items-center gap-1"
+                                            >
+                                                Tarkov.dev <ExternalLink size={12} />
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                                {/* Total Counts */}
+                                <div className="flex items-center gap-4 text-sm font-medium mt-1">
+                                    <div className="flex items-center gap-2 bg-tarkov-green/10 px-2 py-1 rounded-sm border border-tarkov-green/20">
+                                        <span className="text-gray-400 uppercase text-xs font-bold tracking-wider">
+                                            Needed
+                                        </span>
+                                        <span className="text-tarkov-green font-mono font-bold">
+                                            x{totalCount}
+                                        </span>
+                                    </div>
+                                    {totalFir > 0 && (
+                                        <div className="flex items-center gap-2 bg-orange-500/10 px-2 py-1 rounded-sm border border-orange-500/20">
+                                            <span className="text-orange-400 uppercase text-xs font-bold tracking-wider">
+                                                FIR
+                                            </span>
+                                            <span className="text-orange-400 font-mono font-bold">
+                                                x{totalFir}
+                                            </span>
+                                        </div>
                                     )}
                                 </div>
                             </div>
