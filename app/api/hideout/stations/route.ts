@@ -1,25 +1,165 @@
 import { NextResponse } from "next/server";
-import type { HideoutStationsPayload, TimedResponse } from "@/app/types";
-
-// TODO: inject Redis client and Tarkov.dev GraphQL client
-// const redis = ...
-// const tarkovClient = ...
+import type {
+    HideoutStationsPayload,
+    TimedResponse,
+    Station,
+    StationLevel,
+    ItemRequirement,
+} from "@/app/types";
+import { redis } from "@/app/server/redis";
 
 const CACHE_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
 const REDIS_KEY = "hideout:stations:v1";
+const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
+
+interface TarkovHideoutItemRequirement {
+    id: string;
+    count?: number;
+    quantity?: number;
+    item: {
+        id: string;
+        name: string;
+        shortName?: string;
+        iconLink?: string;
+        gridImageLink?: string;
+    };
+    attributes: {
+        type: string;
+        name: string;
+        value: string;
+    }[];
+}
+
+interface TarkovHideoutLevel {
+    id: string;
+    level: number;
+    itemRequirements: TarkovHideoutItemRequirement[];
+}
+
+interface TarkovHideoutStation {
+    id: string;
+    name: string;
+    levels: TarkovHideoutLevel[];
+}
+
+interface TarkovHideoutStationsResponse {
+    data: {
+        hideoutStations: TarkovHideoutStation[];
+    };
+}
+
+const HIDEOUT_STATIONS_QUERY = `
+  query HideoutStations {
+    hideoutStations(lang: en) {
+      id
+      name
+      levels {
+        id
+        level
+        itemRequirements {
+          id
+          count
+          quantity
+          item {
+            id
+            name
+            shortName
+            iconLink
+            gridImageLink
+          }
+          attributes {
+            type
+            name
+            value
+          }
+        }
+      }
+    }
+  }
+`;
 
 export async function GET() {
-    // Placeholder implementation returning an empty payload with current timestamp.
-    // Replace this with: check Redis -> maybe fetch Tarkov.dev -> normalize -> cache.
+    try {
+        // 1. Try Redis cache first
+        const cached = await redis.get<TimedResponse<HideoutStationsPayload>>(REDIS_KEY);
 
-    const payload: HideoutStationsPayload = {
-        stations: [],
-    };
+        if (cached && typeof cached === "object" && "updatedAt" in cached) {
+            const age = Date.now() - cached.updatedAt;
+            if (age < CACHE_WINDOW_MS) {
+                return NextResponse.json(cached as TimedResponse<HideoutStationsPayload>, {
+                    status: 200,
+                });
+            }
+        }
 
-    const body: TimedResponse<HideoutStationsPayload> = {
-        data: payload,
-        updatedAt: Date.now(),
-    };
+        // 2. Fetch from Tarkov.dev
+        const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ query: HIDEOUT_STATIONS_QUERY }),
+            // Do not cache at the fetch layer; Redis is our cache.
+            cache: "no-store",
+        });
 
-    return NextResponse.json(body, { status: 200 });
+        if (!res.ok) {
+            const text = await res.text();
+            console.error("Tarkov.dev hideoutStations error", res.status, text);
+            if (cached) {
+                return NextResponse.json(cached as TimedResponse<HideoutStationsPayload>, {
+                    status: 200,
+                });
+            }
+            return NextResponse.json(
+                { error: "Failed to fetch hideout stations" },
+                { status: 502 }
+            );
+        }
+
+        const json = (await res.json()) as TarkovHideoutStationsResponse;
+
+        const stations: Station[] = (json.data?.hideoutStations ?? []).map(
+            (s): Station => ({
+                id: s.id,
+                name: s.name,
+                levels: (s.levels ?? []).map(
+                    (lvl): StationLevel => ({
+                        id: lvl.id,
+                        level: lvl.level,
+                        itemRequirements: (lvl.itemRequirements ?? []).map(
+                            (req): ItemRequirement => ({
+                                id: req.id,
+                                item: {
+                                    id: req.item.id,
+                                    name: req.item.name,
+                                    shortName: req.item.shortName,
+                                    iconLink: req.item.iconLink,
+                                    gridImageLink: req.item.gridImageLink,
+                                },
+                                count: req.count,
+                                quantity: req.quantity,
+                                attributes: req.attributes ?? [],
+                            })
+                        ),
+                    })
+                ),
+            })
+        );
+
+        const payload: HideoutStationsPayload = { stations };
+
+        const body: TimedResponse<HideoutStationsPayload> = {
+            data: payload,
+            updatedAt: Date.now(),
+        };
+
+        // 3. Store in Redis
+        await redis.set(REDIS_KEY, body);
+
+        return NextResponse.json(body, { status: 200 });
+    } catch (error) {
+        console.error("/api/hideout/stations unexpected error", error);
+        return NextResponse.json({ error: "Unexpected error" }, { status: 500 });
+    }
 }
