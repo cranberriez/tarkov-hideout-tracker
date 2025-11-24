@@ -191,6 +191,8 @@ export function ItemsList() {
                     isOpen={!!selectedItem}
                     onClose={() => setSelectedItem(null)}
                     stations={stations}
+                    stationLevels={stationLevels}
+                    hiddenStations={hiddenStations}
                 />
             </>
         );
@@ -219,6 +221,8 @@ export function ItemsList() {
                 isOpen={!!selectedItem}
                 onClose={() => setSelectedItem(null)}
                 stations={stations}
+                stationLevels={stationLevels}
+                hiddenStations={hiddenStations}
             />
         </>
     );
