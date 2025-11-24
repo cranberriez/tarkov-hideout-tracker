@@ -1,0 +1,3102 @@
+[
+  {
+    "name": "Air Filtering Unit",
+    "normalizedName": "air-filtering-unit",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "dollars",
+            "quantity": 25000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "gas-mask-air-filter",
+            "quantity": 5,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "military-power-filter",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "military-corrugated-tube",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "trader",
+            "name": "skier",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "vents",
+            "level": 3
+          }
+        ],
+        "constructionTime": "48 hours"
+      }
+    ]
+  },
+  {
+    "name": "Bitcoin Farm",
+    "normalizedName": "bitcoin-farm",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "t-shaped-plug",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "vpx-flash-storage-module",
+            "quantity": 2,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "power-cord",
+            "quantity": 15,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "power-supply-unit",
+            "quantity": 10,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "cpu-fan",
+            "quantity": 15,
+            "foundInRaid": true
+          },
+          {
+            "type": "station",
+            "name": "intelligence-center",
+            "level": 2
+          }
+        ],
+        "constructionTime": "34 hours"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "cpu-fan",
+            "quantity": 15,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "power-supply-unit",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "printed-circuit-board",
+            "quantity": 15,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "phase-control-relay",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "military-power-filter",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 3
+          }
+        ],
+        "constructionTime": "50 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "cpu-fan",
+            "quantity": 25,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "silicone-tube",
+            "quantity": 15,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "electric-motor",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "pressure-gauge",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "6-sten-140-m-military-battery",
+            "quantity": 2,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "solar-power",
+            "level": 1
+          },
+          {
+            "type": "station",
+            "name": "water-collector",
+            "level": 3
+          }
+        ],
+        "constructionTime": "106 hours"
+      }
+    ]
+  },
+  {
+    "name": "Booze Generator",
+    "normalizedName": "booze-generator",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "metal-spare-parts",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "pressure-gauge",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "radiator-helix",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "silicone-tube",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "pipe-grip-wrench",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "analog-thermometer",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "corrugated-hose",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "water-collector",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "nutrition-unit",
+            "level": 3
+          }
+        ],
+        "constructionTime": "48 hours"
+      }
+    ]
+  },
+  {
+    "name": "Cultist Circle",
+    "normalizedName": "cultist-circle",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "special",
+            "description": "Own The Unheard edition"
+          },
+          {
+            "type": "item",
+            "name": "paid-antiroach-spray",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "light-bulb",
+            "quantity": 5,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "can-of-white-salt",
+            "quantity": 3,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "survl-survivor-lighter",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "construction-measuring-tape",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "wi-fi-camera",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "security",
+            "level": 1
+          }
+        ],
+        "constructionTime": "6 hours"
+      }
+    ]
+  },
+  {
+    "name": "Defective Wall",
+    "normalizedName": "defective-wall",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "station",
+            "name": "medstation",
+            "level": 1
+          },
+          {
+            "type": "station",
+            "name": "water-collector",
+            "level": 1
+          }
+        ],
+        "constructionTime": "Instant"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "fleece-fabric",
+            "quantity": 1,
+            "foundInRaid": false
+          }
+        ],
+        "constructionTime": "12 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "fleece-fabric",
+            "quantity": 1,
+            "foundInRaid": false
+          }
+        ],
+        "constructionTime": "24 hours"
+      },
+      {
+        "level": 4,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "fierce-blow-sledgehammer",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "fleece-fabric",
+            "quantity": 1,
+            "foundInRaid": false
+          }
+        ],
+        "constructionTime": "3 hours"
+      },
+      {
+        "level": 5,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "metal-cutting-scissors",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "toolset",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "fleece-fabric",
+            "quantity": 1,
+            "foundInRaid": false
+          }
+        ],
+        "constructionTime": "3 hours"
+      },
+      {
+        "level": 6,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "corrugated-hose",
+            "quantity": 2,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "duct-tape",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "toolset",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "pliers-elite",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "metal-spare-parts",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "xenomorph-sealing-foam",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "bundle-of-wires",
+            "quantity": 2,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "light-bulb",
+            "quantity": 2,
+            "foundInRaid": false
+          }
+        ],
+        "constructionTime": "12 hours"
+      }
+    ]
+  },
+  {
+    "name": "Gear Rack",
+    "normalizedName": "gear-rack",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 300000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "electric-drill",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "sewing-kit",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "awl",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "leatherman-multitool",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "bolts",
+            "quantity": 15,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "fleece-fabric",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "energy-saving-lamp",
+            "quantity": 8,
+            "foundInRaid": false
+          },
+          {
+            "type": "trader",
+            "name": "ragman",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "defective-wall",
+            "level": 6
+          },
+          {
+            "type": "station",
+            "name": "illumination",
+            "level": 2
+          }
+        ],
+        "constructionTime": "6 hours"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 800000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "electric-drill",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "duct-tape",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "shustrilo-sealing-foam",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "pack-of-nails",
+            "quantity": 8,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "energy-saving-lamp",
+            "quantity": 12,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "aramid-fiber-fabric",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "wrench",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "trader",
+            "name": "ragman",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "hall-of-fame",
+            "level": 1
+          }
+        ],
+        "constructionTime": "12 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 1200000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "body-armor-repair-kit",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "cordura-polyamide-fabric",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "metal-spare-parts",
+            "quantity": 15,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "kektape-duct-tape",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "energy-saving-lamp",
+            "quantity": 15,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "set-of-files-master",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "ratchet-wrench",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "trader",
+            "name": "ragman",
+            "level": 4
+          },
+          {
+            "type": "station",
+            "name": "hall-of-fame",
+            "level": 2
+          }
+        ],
+        "constructionTime": "24 hours"
+      }
+    ]
+  },
+  {
+    "name": "Generator",
+    "normalizedName": "generator",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 100000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "spark-plug",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "security",
+            "level": 1
+          }
+        ],
+        "constructionTime": "Instant"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "bulbex-cable-cutter",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "phase-control-relay",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "electric-motor",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "bundle-of-wires",
+            "quantity": 15,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "security",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "vents",
+            "level": 2
+          }
+        ],
+        "constructionTime": "5 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "power-supply-unit",
+            "quantity": 5,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "phase-control-relay",
+            "quantity": 12,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "electric-motor",
+            "quantity": 3,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "spark-plug",
+            "quantity": 16,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "metal-spare-parts",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "trader",
+            "name": "mechanic",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "security",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "vents",
+            "level": 3
+          }
+        ],
+        "constructionTime": "16 hours"
+      }
+    ]
+  },
+  {
+    "name": "Hall of Fame",
+    "normalizedName": "hall-of-fame",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "insulating-tape",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "pack-of-nails",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "light-bulb",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "cat-figurine",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "fleece-fabric",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "round-pliers",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "trader",
+            "name": "mechanic",
+            "level": 2
+          }
+        ],
+        "constructionTime": "12 hours"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "tech-manual",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "pliers-elite",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "toolset",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "golden-rooster-figurine",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "energy-saving-lamp",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "pack-of-screws",
+            "quantity": 6,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "duct-tape",
+            "quantity": 3,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "xenomorph-sealing-foam",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "tube-of-poxeram-cold-welding",
+            "quantity": 2,
+            "foundInRaid": false
+          }
+        ],
+        "constructionTime": "18 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "set-of-files-master",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "electric-drill",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "bronze-lion-figurine",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "energy-saving-lamp",
+            "quantity": 15,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "kektape-duct-tape",
+            "quantity": 3,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "t-shaped-plug",
+            "quantity": 6,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "metal-spare-parts",
+            "quantity": 15,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "power-cord",
+            "quantity": 5,
+            "foundInRaid": false
+          }
+        ],
+        "constructionTime": "24 hours"
+      }
+    ]
+  },
+  {
+    "name": "Heating",
+    "normalizedName": "heating",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 25000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "classic-matches",
+            "quantity": 2,
+            "foundInRaid": false
+          }
+        ],
+        "constructionTime": "Instant"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 50000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "dry-fuel",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "hunting-matches",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "crickent-lighter",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "skill",
+            "name": "endurance",
+            "level": 1
+          },
+          {
+            "type": "station",
+            "name": "vents",
+            "level": 1
+          }
+        ],
+        "constructionTime": "2 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "military-corrugated-tube",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "radiator-helix",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "bundle-of-wires",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "phase-control-relay",
+            "quantity": 4,
+            "foundInRaid": true
+          },
+          {
+            "type": "trader",
+            "name": "ragman",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "workbench",
+            "level": 2
+          }
+        ],
+        "constructionTime": "8 hours"
+      }
+    ]
+  },
+  {
+    "name": "Gym",
+    "normalizedName": "gym",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "insulating-tape",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "metal-cutting-scissors",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "wd-40-100ml",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "toolset",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "screw-nuts",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "electric-drill",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "bolts",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "defective-wall",
+            "level": 6
+          },
+          {
+            "type": "station",
+            "name": "illumination",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "vents",
+            "level": 2
+          }
+        ],
+        "constructionTime": "4 hours"
+      }
+    ]
+  },
+  {
+    "name": "Illumination",
+    "normalizedName": "illumination",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 10000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "crickent-lighter",
+            "quantity": 1,
+            "foundInRaid": false
+          }
+        ],
+        "constructionTime": "Instant"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "light-bulb",
+            "quantity": 14,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "bundle-of-wires",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 1
+          }
+        ],
+        "constructionTime": "Instant"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 50000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "energy-saving-lamp",
+            "quantity": 12,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "capacitors",
+            "quantity": 7,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "bundle-of-wires",
+            "quantity": 12,
+            "foundInRaid": false
+          },
+          {
+            "type": "trader",
+            "name": "mechanic",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "workbench",
+            "level": 1
+          }
+        ],
+        "constructionTime": "6 hours"
+      }
+    ]
+  },
+  {
+    "name": "Intelligence Center",
+    "normalizedName": "intelligence-center",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "power-cord",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "intelligence-folder",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "topographic-survey-maps",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "factory-plan-map",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "working-lcd",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "security",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "vents",
+            "level": 1
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 1
+          },
+          {
+            "type": "station",
+            "name": "workbench",
+            "level": 1
+          }
+        ],
+        "constructionTime": "Instant"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "intelligence-folder",
+            "quantity": 3,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "secure-flash-drive",
+            "quantity": 3,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "power-cord",
+            "quantity": 7,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "damaged-hard-drive",
+            "quantity": 8,
+            "foundInRaid": false
+          },
+          {
+            "type": "trader",
+            "name": "mechanic",
+            "level": 2
+          },
+          {
+            "type": "skill",
+            "name": "attention",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "security",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "medstation",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "nutrition-unit",
+            "level": 3
+          }
+        ],
+        "constructionTime": "6 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "military-cable",
+            "quantity": 8,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "military-cofdm-wireless-signal-transmitter",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "far-forward-gps-signal-amplifier-unit",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "vpx-flash-storage-module",
+            "quantity": 2,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "military-flash-drive",
+            "quantity": 8,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "secure-magnetic-tape-cassette",
+            "quantity": 2,
+            "foundInRaid": false
+          },
+          {
+            "type": "trader",
+            "name": "prapor",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "workbench",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 3
+          }
+        ],
+        "constructionTime": "24 hours"
+      }
+    ]
+  },
+  {
+    "name": "Lavatory",
+    "normalizedName": "lavatory",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 2000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "toilet-paper",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "toothpaste",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "soap",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "awl",
+            "quantity": 1,
+            "foundInRaid": false
+          }
+        ],
+        "constructionTime": "Instant"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "kektape-duct-tape",
+            "quantity": 3,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "corrugated-hose",
+            "quantity": 6,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "pack-of-screws",
+            "quantity": 6,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "electric-drill",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "sewing-kit",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "station",
+            "name": "water-collector",
+            "level": 1
+          },
+          {
+            "type": "station",
+            "name": "vents",
+            "level": 1
+          }
+        ],
+        "constructionTime": "3 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "xenomorph-sealing-foam",
+            "quantity": 6,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "corrugated-hose",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "pressure-gauge",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "toolset",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "station",
+            "name": "vents",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "water-collector",
+            "level": 2
+          }
+        ],
+        "constructionTime": "7 hours"
+      }
+    ]
+  },
+  {
+    "name": "Library",
+    "normalizedName": "library",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 400000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "bakeezy-cook-book",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "slim-diary",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "diary",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "tech-manual",
+            "quantity": 8,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "chainlet",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "horse-figurine",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "skill",
+            "name": "hideout-management",
+            "level": 5
+          },
+          {
+            "type": "station",
+            "name": "rest-space",
+            "level": 3
+          }
+        ],
+        "constructionTime": "54 hours"
+      }
+    ]
+  },
+  {
+    "name": "Medstation",
+    "normalizedName": "medstation",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 50000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "disposable-syringe",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "pile-of-meds",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "aseptic-bandage",
+            "quantity": 2,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "bottle-of-ololo-multivitamins",
+            "quantity": 1,
+            "foundInRaid": false
+          }
+        ],
+        "constructionTime": "Instant"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 150000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "bottle-of-saline-solution",
+            "quantity": 6,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "medical-tools",
+            "quantity": 3,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "medical-bloodset",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "esmarch-tourniquet",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "trader",
+            "name": "therapist",
+            "level": 2
+          },
+          {
+            "type": "skill",
+            "name": "health",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 1
+          }
+        ],
+        "constructionTime": "3 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 500000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "ophthalmoscope",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "bottle-of-saline-solution",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "ledx-skin-transilluminator",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "trader",
+            "name": "therapist",
+            "level": 3
+          },
+          {
+            "type": "trader",
+            "name": "skier",
+            "level": 2
+          },
+          {
+            "type": "skill",
+            "name": "vitality",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "lavatory",
+            "level": 2
+          }
+        ],
+        "constructionTime": "12 hours"
+      }
+    ]
+  },
+  {
+    "name": "Nutrition Unit",
+    "normalizedName": "nutrition-unit",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 25000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "can-of-white-salt",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "power-cord",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "phase-control-relay",
+            "quantity": 2,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 1
+          }
+        ],
+        "constructionTime": "Instant"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "alkaline-cleaner-for-heat-exchangers",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "wrench",
+            "quantity": 4,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "corrugated-hose",
+            "quantity": 4,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "phase-control-relay",
+            "quantity": 3,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "lavatory",
+            "level": 2
+          }
+        ],
+        "constructionTime": "4 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 125000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "can-of-majaica-coffee-beans",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "pack-of-sodium-bicarbonate",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "smoked-chimney-drain-cleaner",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "skill",
+            "name": "metabolism",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "lavatory",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "stash",
+            "level": 2
+          }
+        ],
+        "constructionTime": "14 hours"
+      }
+    ]
+  },
+  {
+    "name": "Rest Space",
+    "normalizedName": "rest-space",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 10000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "classic-matches",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "duct-tape",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "vents",
+            "level": 1
+          }
+        ],
+        "constructionTime": "Instant"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 75000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "magnet",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "dvd-drive",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "energy-saving-lamp",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 1
+          }
+        ],
+        "constructionTime": "2 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "greenbat-lithium-battery",
+            "quantity": 4,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "bundle-of-wires",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "capacitors",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "power-cord",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "trader",
+            "name": "skier",
+            "level": 3
+          }
+        ],
+        "constructionTime": "10 hours"
+      }
+    ]
+  },
+  {
+    "name": "Scav Case",
+    "normalizedName": "scav-case",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "golden-rooster-figurine",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "lucky-scav-junk-box",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "bottle-of-fierce-hatchling-moonshine",
+            "quantity": 3,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "roler-submariner-gold-wrist-watch",
+            "quantity": 4,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "golden-neck-chain",
+            "quantity": 8,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "gold-skull-ring",
+            "quantity": 6,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "bronze-lion-figurine",
+            "quantity": 3,
+            "foundInRaid": true
+          },
+          {
+            "type": "station",
+            "name": "intelligence-center",
+            "level": 2
+          }
+        ],
+        "constructionTime": "80 hours"
+      }
+    ]
+  },
+  {
+    "name": "Security",
+    "normalizedName": "security",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 20000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "construction-measuring-tape",
+            "quantity": 1,
+            "foundInRaid": false
+          }
+        ],
+        "constructionTime": "Instant"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 45000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "wd-40-100ml",
+            "quantity": 2,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "pliers-elite",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "tp-200-tnt-brick",
+            "quantity": 2,
+            "foundInRaid": false
+          },
+          {
+            "type": "skill",
+            "name": "endurance",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "illumination",
+            "level": 1
+          }
+        ],
+        "constructionTime": "3 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "nixxor-lens",
+            "quantity": 8,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "working-lcd",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "bundle-of-wires",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "ssd-drive",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "trader",
+            "name": "mechanic",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "illumination",
+            "level": 3
+          }
+        ],
+        "constructionTime": "17 hours"
+      }
+    ]
+  },
+  {
+    "name": "Shooting Range",
+    "normalizedName": "shooting-range",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 20000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "metal-spare-parts",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "bolts",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "screw-nuts",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "illumination",
+            "level": 1
+          }
+        ],
+        "constructionTime": "1 Hour"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "electric-motor",
+            "quantity": 3,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "construction-measuring-tape",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "tube-of-poxeram-cold-welding",
+            "quantity": 3,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "toolset",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "pack-of-screws",
+            "quantity": 3,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "electric-drill",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "metal-spare-parts",
+            "quantity": 8,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "wi-fi-camera",
+            "quantity": 3,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "bundle-of-wires",
+            "quantity": 6,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "energy-saving-lamp",
+            "quantity": 6,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "illumination",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "workbench",
+            "level": 2
+          }
+        ],
+        "constructionTime": "24 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "set-of-files-master",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "printed-circuit-board",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "bundle-of-wires",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "metal-spare-parts",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "capacitors",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "phase-control-relay",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "power-cord",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "leatherman-multitool",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "tech-manual",
+            "quantity": 1,
+            "foundInRaid": true
+          }
+        ],
+        "constructionTime": "24 hours"
+      }
+    ]
+  },
+  {
+    "name": "Solar Power",
+    "normalizedName": "solar-power",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "euros",
+            "quantity": 25000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "phased-array-element",
+            "quantity": 6,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "advanced-current-converter",
+            "quantity": 1,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "working-lcd",
+            "quantity": 3,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "military-cable",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "military-power-filter",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "trader",
+            "name": "peacekeeper",
+            "level": 4
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "workbench",
+            "level": 3
+          }
+        ],
+        "constructionTime": "72 hours"
+      }
+    ]
+  },
+  {
+    "name": "Stash",
+    "normalizedName": "stash",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [],
+        "constructionTime": "Instant"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "special",
+            "description": "Own Left Behind edition"
+          },
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 2500000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "wd-40-100ml",
+            "quantity": 4,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "hand-drill",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "pack-of-nails",
+            "quantity": 5,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "pack-of-screws",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "vents",
+            "level": 1
+          }
+        ],
+        "constructionTime": "24 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "special",
+            "description": "Own Prepare for Escape edition"
+          },
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 8500000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "electric-drill",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "pack-of-screws",
+            "quantity": 15,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "pack-of-nails",
+            "quantity": 7,
+            "foundInRaid": true
+          },
+          {
+            "type": "trader",
+            "name": "prapor",
+            "level": 3
+          },
+          {
+            "type": "trader",
+            "name": "ragman",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "vents",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "heating",
+            "level": 2
+          }
+        ],
+        "constructionTime": "48 hours"
+      },
+      {
+        "level": 4,
+        "requirements": [
+          {
+            "type": "special",
+            "description": "Own Edge of Darkness\" or \"The Unheard edition"
+          },
+          {
+            "type": "item",
+            "name": "euros",
+            "quantity": 200000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "screw-nuts",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "bolts",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "shustrilo-sealing-foam",
+            "quantity": 8,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "ratchet-wrench",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "trader",
+            "name": "peacekeeper",
+            "level": 4
+          },
+          {
+            "type": "trader",
+            "name": "ragman",
+            "level": 4
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "workbench",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "heating",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "intelligence-center",
+            "level": 2
+          }
+        ],
+        "constructionTime": "96 hours"
+      }
+    ]
+  },
+  {
+    "name": "Vents",
+    "normalizedName": "vents",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 25000,
+            "foundInRaid": false
+          }
+        ],
+        "constructionTime": "Instant"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "metal-spare-parts",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "cpu-fan",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "car-battery",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "electric-motor",
+            "quantity": 1,
+            "foundInRaid": true
+          }
+        ],
+        "constructionTime": "3 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "printed-circuit-board",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "electric-motor",
+            "quantity": 4,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "metal-spare-parts",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "bundle-of-wires",
+            "quantity": 14,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "car-battery",
+            "quantity": 4,
+            "foundInRaid": true
+          },
+          {
+            "type": "skill",
+            "name": "strength",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 2
+          }
+        ],
+        "constructionTime": "10 hours"
+      }
+    ]
+  },
+  {
+    "name": "Water Collector",
+    "normalizedName": "water-collector",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "duct-tape",
+            "quantity": 3,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "screw-nuts",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "bolts",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "corrugated-hose",
+            "quantity": 4,
+            "foundInRaid": false
+          },
+          {
+            "type": "station",
+            "name": "security",
+            "level": 1
+          }
+        ],
+        "constructionTime": "2 hours"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "toolset",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "corrugated-hose",
+            "quantity": 6,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "electric-motor",
+            "quantity": 2,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "kektape-duct-tape",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "trader",
+            "name": "jaeger",
+            "level": 2
+          },
+          {
+            "type": "skill",
+            "name": "attention",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "workbench",
+            "level": 2
+          }
+        ],
+        "constructionTime": "8 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 20000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "ratchet-wrench",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "pliers-elite",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "shustrilo-sealing-foam",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "trader",
+            "name": "jaeger",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "heating",
+            "level": 3
+          }
+        ],
+        "constructionTime": "16 hours"
+      }
+    ]
+  },
+  {
+    "name": "Weapon Rack",
+    "normalizedName": "weapon-rack",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "pack-of-nails",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "energy-saving-lamp",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "insulating-tape",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "hand-drill",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "bolts",
+            "quantity": 15,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "metal-cutting-scissors",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "xenomorph-sealing-foam",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "trader",
+            "name": "mechanic",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "illumination",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "stash",
+            "level": 2
+          }
+        ],
+        "constructionTime": "12 hours"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "metal-spare-parts",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "pack-of-screws",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "electric-drill",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "bundle-of-wires",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "set-of-files-master",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "tube-of-poxeram-cold-welding",
+            "quantity": 3,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "energy-saving-lamp",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "duct-tape",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "weapon-parts",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "trader",
+            "name": "mechanic",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "shooting-range",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "workbench",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "stash",
+            "level": 3
+          }
+        ],
+        "constructionTime": "18 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "electric-drill",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "energy-saving-lamp",
+            "quantity": 15,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "metal-spare-parts",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "kektape-duct-tape",
+            "quantity": 5,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "bundle-of-wires",
+            "quantity": 15,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "shustrilo-sealing-foam",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "tech-manual",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "fireklean-gun-lube",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "trader",
+            "name": "mechanic",
+            "level": 4
+          },
+          {
+            "type": "station",
+            "name": "shooting-range",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "workbench",
+            "level": 3
+          }
+        ],
+        "constructionTime": "24 hours"
+      }
+    ]
+  },
+  {
+    "name": "Workbench",
+    "normalizedName": "workbench",
+    "levels": [
+      {
+        "level": 1,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "screw-nuts",
+            "quantity": 2,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "bolts",
+            "quantity": 2,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "leatherman-multitool",
+            "quantity": 1,
+            "foundInRaid": false
+          }
+        ],
+        "constructionTime": "Instant"
+      },
+      {
+        "level": 2,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "bolts",
+            "quantity": 10,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "toolset",
+            "quantity": 3,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "set-of-files-master",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "electric-drill",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "weapon-parts",
+            "quantity": 3,
+            "foundInRaid": false
+          },
+          {
+            "type": "trader",
+            "name": "mechanic",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "illumination",
+            "level": 2
+          }
+        ],
+        "constructionTime": "3 hours"
+      },
+      {
+        "level": 3,
+        "requirements": [
+          {
+            "type": "item",
+            "name": "roubles",
+            "quantity": 395000,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "can-of-thermite",
+            "quantity": 5,
+            "foundInRaid": false
+          },
+          {
+            "type": "item",
+            "name": "pliers-elite",
+            "quantity": 2,
+            "foundInRaid": true
+          },
+          {
+            "type": "item",
+            "name": "fireklean-gun-lube",
+            "quantity": 1,
+            "foundInRaid": true
+          },
+          {
+            "type": "trader",
+            "name": "mechanic",
+            "level": 3
+          },
+          {
+            "type": "station",
+            "name": "generator",
+            "level": 2
+          },
+          {
+            "type": "station",
+            "name": "stash",
+            "level": 2
+          }
+        ],
+        "constructionTime": "Instant"
+      }
+    ]
+  }
+]

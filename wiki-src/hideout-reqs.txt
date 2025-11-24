@@ -1,0 +1,1404 @@
+<div class="wds-tab__content wds-is-current">
+{| class="wikitable"
+! colspan=4 | Air Filtering Unit<br/><font color="red">Note:</font> This module needs an [[FP-100 filter absorber]] in order to run.
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 25,000 [[Dollars]]
+* 5 [[Gas mask air filter]] found [[Found in raid|<font color="red">in raid</font>]]
+* 5 [[Military power filter]]
+* 10 [[Military corrugated tube]]
+* [[Skier]] LL3
+* Level 3 [[Hideout#Modules|Generator]]
+* Level 3 [[Hideout#Modules|Vents]]
+|
+* Additional [[FP-100 filter absorber]] slots <font color="green">+3</font>
+* Group of skills leveling boost: [[Character skills#Physical|Physical]] <font color="green">+40%</font>
+| 48 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Bitcoin Farm<br/><font color="red">Note:</font> This module needs a [[Graphics card]] in order to run.
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 10 [[T-Shaped plug]]
+* 2 [[VPX Flash Storage Module]]
+* 15 [[Power cord]]
+* 10 [[Power supply unit]] found [[Found in raid|<font color="red">in raid</font>]]
+* 15 [[CPU fan]] found [[Found in raid|<font color="red">in raid</font>]]
+* Level 2 [[Hideout#Modules|Intelligence Center]]
+|
+* Farm [[Physical Bitcoin]]
+* Additional [[Graphics card]] slots <font color="green">+10</font>
+| 34 hours
+|-
+!2
+|
+* 15 [[CPU fan]]
+* 10 [[Power supply unit]]
+* 15 [[Printed circuit board]] found [[Found in raid|<font color="red">in raid</font>]]
+* 10 [[Phase control relay]]
+* 5 [[Military power filter]]
+* Level 3 [[Hideout#Modules|Generator]]
+|
+* Farm [[Physical Bitcoin]]
+* Additional [[Graphics card]] slots <font color="green">+15</font> (25 in total)
+| 50 hours
+|-
+!3
+|
+* 25 [[CPU fan]] found [[Found in raid|<font color="red">in raid</font>]]
+* 15 [[Silicone tube]]
+* 10 [[Electric motor]]
+* 10 [[Pressure gauge]]
+* 2 [[6-STEN-140-M military battery]]
+* Level 1 [[Hideout#Modules|Solar Power]]
+* Level 3 [[Hideout#Modules|Water Collector]]
+|
+* Farm [[Physical Bitcoin]]
+* Additional [[Graphics card]] slots <font color="green">+25</font> (50 in total)
+| 106 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Booze Generator
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 5 [[Metal spare parts]]
+* 2 [[Pressure gauge]] found [[Found in raid|<font color="red">in raid</font>]]
+* 5 [[Radiator helix]]
+* 10 [[Silicone tube]]
+* 1 [[Pipe grip wrench]] found [[Found in raid|<font color="red">in raid</font>]]
+* 2 [[Analog thermometer]] found [[Found in raid|<font color="red">in raid</font>]]
+* 10 [[Corrugated hose]]
+* Level 3 [[Hideout#Modules|Water Collector]]
+* Level 3 [[Hideout#Modules|Nutrition Unit]]
+|
+* Craft [[Bottle of Fierce Hatchling moonshine]]
+| 48 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Cultist Circle
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* Owning "The Unheard" game edition
+Or
+* 1 [[PAID AntiRoach spray]] found [[Found in raid|<font color="red">in raid</font>]]
+* 5 [[Light bulb]] found [[Found in raid|<font color="red">in raid</font>]]
+* 3 [[Can of white salt]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[SurvL Survivor Lighter]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Construction measuring tape]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[WI-FI Camera]]
+* Level 1 [[Hideout#Modules|Security]]
+|
+* Ability to sacrifice up to 5 items in a 9x6 grid to receive gifts
+* Additional [[Sacred Amulet]] sacrifice slots <font color="green">+1</font>
+| 6 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Defective Wall
+|-
+!Level
+!Requirements: Current
+!Function: Additive
+!Construction Time
+|-
+!1
+|
+* Level 1 [[Hideout#Modules|Medstation]]
+* Level 1 [[Hideout#Modules|Water Collector]]
+* Wait ~30 minutes after construction
+| None
+| Instant
+|-
+!2
+|
+* Optional Task:
+* 1 [[Fleece fabric]]
+* Mop the floor for 2 mins to reduce penalties. Effects:
+** Fuel consumption <font color="green">-2%</font>
+** Energy regeneration rate <font color="green">+1.2 EP/hr</font>
+** Health regeneration rate <font color="green">+9.1 HP/hr</font>
+** Additional Raid EXP <font color="green">+2%</font>
+** Group of skills leveling boost: [[Character skills#Physical|Physical]] <font color="green">+2%</font>
+|
+* Fuel consumption <font color="red">+5%</font>
+* Energy regeneration rate <font color="red">-3 EP/hr</font>
+* Health regeneration rate <font color="red">-22.8 HP/hr</font>
+* Additional Raid EXP <font color="red">-3%</font>
+* Group of skills leveling boost: [[Character skills#Physical|Physical]] <font color="red">-3%</font>
+| 12 hours
+|-
+!3
+|
+* Optional Task:
+* 1 [[Fleece fabric]]
+* Mop the floor for 5 mins to reduce penalties. Effects:
+** Fuel consumption <font color="green">-5%</font>
+** Energy regeneration rate <font color="green">+3 EP/hr</font>
+** Health regeneration rate <font color="green">+22.8 HP/hr</font>
+** Additional Raid EXP <font color="green">+3%</font>
+** Group of skills leveling boost: [[Character skills#Physical|Physical]] <font color="green">+3%</font>
+|
+* Fuel consumption <font color="red">+5%</font>
+* Energy regeneration rate <font color="red">-3 EP/hr</font>
+* Health regeneration rate <font color="red">-22.8 HP/hr</font>
+* Additional Raid EXP <font color="red">-3%</font>
+* Group of skills leveling boost: [[Character skills#Physical|Physical]] <font color="red">-3%</font> 
+| 24 hours
+|-
+!4
+|
+* 1 [[Fierce Blow sledgehammer]] found [[Found in raid|<font color="red">in raid</font>]]
+* Optional Task:
+* 1 [[Fleece fabric]]
+* Mop the floor for 5 mins to reduce penalties. Effects:
+** Fuel consumption <font color="green">-8%</font>
+** Energy regeneration rate <font color="green">+4.8 EP/hr</font>
+** Health regeneration rate <font color="green">+35.6 HP/hr</font>
+** Additional Raid EXP <font color="green">+5%</font>
+** Group of skills leveling boost: [[Character skills#Physical|Physical]] <font color="green">+5%</font>
+|
+* Fuel consumption <font color="red">+5%</font>
+* Energy regeneration rate <font color="red">-3 EP/hr</font>
+* Health regeneration rate <font color="red">-22.8 HP/hr</font>
+* Additional Raid EXP <font color="red">-3%</font>
+* Group of skills leveling boost: [[Character skills#Physical|Physical]] <font color="red">-3%</font>
+| 3 hours
+|-
+!5
+|
+* 1 [[Metal cutting scissors]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Toolset]] found [[Found in raid|<font color="red">in raid</font>]]
+* Optional Task:
+* 1 [[Fleece fabric]]
+* Mop the floor for 5 mins to reduce penalties. Effects:
+** Fuel consumption <font color="green">-10%</font>
+** Energy regeneration rate <font color="green">+6 EP/hr</font>
+** Health regeneration rate <font color="green">+45.7 HP/hr</font>
+** Additional Raid EXP <font color="green">+6%</font>
+** Group of skills leveling boost: [[Character skills#Physical|Physical]] <font color="green">+6%</font>
+|
+* Fuel consumption <font color="red">+5%</font>
+* Energy regeneration rate <font color="red">-3 EP/hr</font>
+* Health regeneration rate <font color="red">-22.8 HP/hr</font>
+* Additional Raid EXP <font color="red">-3%</font>
+* Group of skills leveling boost: [[Character skills#Physical|Physical]] <font color="red">-3%</font>
+| 3 hours
+|-
+!6
+|
+* 2 [[Corrugated hose]]
+* 1 [[Duct tape]]
+* 1 [[Toolset]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Pliers Elite]] found [[Found in raid|<font color="red">in raid</font>]]
+* 5 [[Metal spare parts]]
+* 1 [[Xenomorph sealing foam]]
+* 2 [[Bundle of wires]]
+* 2 [[Light bulb]]
+|
+* Fuel consumption <font color="green">-20%</font>
+* Energy regeneration rate <font color="green">+12 EP/hr</font>
+* Health regeneration rate <font color="green">+91.4 HP/hr</font>
+* Additional Raid EXP <font color="green">+12%</font>
+* Group of skills leveling boost: [[Character skills#Physical|Physical]] <font color="green">+12%</font>
+| 12 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Gear Rack
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 300,000 [[Roubles]]
+* 1 [[Electric drill]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Sewing kit]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Awl]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Leatherman Multitool]]
+* 15 [[Bolts]]
+* 10 [[Fleece fabric]]
+* 8 [[Energy-saving lamp]]
+* [[Ragman]] LL2
+* Level 6 [[Hideout#Modules|Defective Wall]]
+* Level 2 [[Hideout#Modules|Illumination]]
+|
+* Ability to display equipment on a mannequin
+| 6 hours
+|-
+!2
+|
+* 800,000 [[Roubles]]
+* 1 [[Electric drill]] found [[Found in raid|<font color="red">in raid</font>]]
+* 5 [[Duct tape]]
+* 5 [[Shustrilo sealing foam]]
+* 8 [[Pack of nails]]
+* 12 [[Energy-saving lamp]]
+* 10 [[Aramid fiber fabric]]
+* 1 [[Wrench]] found [[Found in raid|<font color="red">in raid</font>]]
+* [[Ragman]] LL3
+* Level 1 [[Hideout#Modules|Hall of Fame]]
+|
+* Additional mannequin <font color="green">+1</font>
+| 12 hours
+|-
+!3
+|
+* 1,200,000 [[Roubles]]
+* 1 [[Body armor repair kit]] found [[Found in raid|<font color="red">in raid</font>]]
+* 10 [[Cordura polyamide fabric]]
+* 15 [[Metal spare parts]]
+* 10 [[KEKTAPE duct tape]]
+* 15 [[Energy-saving lamp]]
+* 1 [[Set of files "Master"]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Ratchet wrench]] found [[Found in raid|<font color="red">in raid</font>]]
+* [[Ragman]] LL4
+* Level 2 [[Hideout#Modules|Hall of Fame]]
+|
+* Additional mannequin <font color="green">+1</font>
+| 24 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Generator
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 100,000 [[Roubles]]
+* 1 [[Spark plug]]
+* Level 1 [[Hideout#Modules|Security]]
+|
+* Additional fuel slots <font color="green">+2</font>
+| Instant
+|-
+!2
+|
+* 1 [[Bulbex cable cutter]] found [[Found in raid|<font color="red">in raid</font>]]
+* 10 [[Phase control relay]]
+* 1 [[Electric motor]] found [[Found in raid|<font color="red">in raid</font>]]
+* 15 [[Bundle of wires]]
+* Level 2 [[Hideout#Modules|Security]]
+* Level 2 [[Hideout#Modules|Vents]]
+|
+* Additional fuel slots <font color="green">+2</font> (4 in total)
+| 5 hours
+|-
+!3
+|
+* 5 [[Power supply unit]] found [[Found in raid|<font color="red">in raid</font>]]
+* 12 [[Phase control relay]]
+* 3 [[Electric motor]] found [[Found in raid|<font color="red">in raid</font>]]
+* 16 [[Spark plug]]
+* 10 [[Metal spare parts]]
+* [[Mechanic]] LL3
+* Level 3 [[Hideout#Modules|Security]]
+* Level 3 [[Hideout#Modules|Vents]]
+|
+* Additional fuel slots <font color="green">+2</font> (6 in total)
+| 16 hours 
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Hall of Fame<br/><font color="red">Note:</font> This module needs [[Dogtags]] of the opposing faction from your own kills to run.
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 5 [[Insulating tape]]
+* 5 [[Pack of nails]]
+* 5 [[Light bulb]]
+* 1 [[Cat figurine]] found [[Found in raid|<font color="red">in raid</font>]]
+* 5 [[Fleece fabric]]
+* 1 [[Round pliers]] found [[Found in raid|<font color="red">in raid</font>]]
+* [[Mechanic]] LL2
+|
+* Ability to store 3 [[Dogtags]] and 6 small + 6 large trophies of the following items:
+:*[[Loot#Valuables|Valuables]]
+:*Most items required for [[Collector]]
+:*Colored [[Keys_%26_Intel#The_Lab|keycards]]
+:*[[Tetriz portable game console]]
+:*[[Gas analyzer]]
+* Group of skills leveling boost: [[Character_skills#Combat|Combat]]
+* Ability to display up to 7 favorite items on player profile
+| 12 hours
+|-
+!2
+|
+* 1 [[Tech manual]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Pliers Elite]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Toolset]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Golden rooster figurine]] found [[Found in raid|<font color="red">in raid</font>]]
+* 10 [[Energy-saving lamp]]
+* 6 [[Pack of screws]]
+* 3 [[Duct tape]]
+* 5 [[Xenomorph sealing foam]]
+* 2 [[Tube of Poxeram cold welding]]
+|
+* Ability to store 6 [[Dogtags]] and 12 small + 12 large trophies of the following items:
+:*[[Loot#Valuables|Valuables]]
+:*Most items required for [[Collector]]
+:*Colored [[Keys_%26_Intel#The_Lab|keycards]]
+:*[[Tetriz portable game console]]
+:*[[Gas analyzer]]
+* Group of skills leveling boost: [[Character_skills#Combat|Combat]]
+* Ability to display up to 7 favorite items on player profile
+| 18 hours
+|-
+!3
+|
+* 1 [[Set of files "Master"]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Electric drill]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Bronze lion figurine]] found [[Found in raid|<font color="red">in raid</font>]]
+* 15 [[Energy-saving lamp]]
+* 3 [[KEKTAPE duct tape]] found [[Found in raid|<font color="red">in raid</font>]]
+* 6 [[T-Shaped plug]]
+* 15 [[Metal spare parts]]
+* 5 [[Power cord]]
+|
+* Ability to store 10 [[Dogtags]] and 24 small + 24 large trophies of the following items:
+:*[[Loot#Valuables|Valuables]]
+:*Most items required for [[Collector]]
+:*Colored [[Keys_%26_Intel#The_Lab|keycards]]
+:*[[Tetriz portable game console]]
+:*[[Gas analyzer]]
+* Group of skills leveling boost: [[Character_skills#Combat|Combat]]
+* Ability to display up to 7 favorite items on player profile
+| 24 hours 
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Heating
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 25,000 [[Roubles]]
+* 2 [[Classic matches]]
+|
+* Energy regeneration rate <font color="green">+2.4 EP/hr</font>
+| Instant
+|-
+!2
+|
+* 50,000 [[Roubles]]
+* 5 [[Dry fuel]]
+* 2 [[Hunting matches]] found [[Found in raid|<font color="red">in raid</font>]]
+* 5 [[Crickent lighter]]
+* [[Endurance]] Level 1
+* Level 1 [[Hideout#Modules|Vents]]
+|
+* Energy regeneration rate <font color="green">+4.8 EP/hr</font> (7.2 in total)
+| 2 hours
+|-
+!3
+|
+* 2 [[Military corrugated tube]] found [[Found in raid|<font color="red">in raid</font>]]
+* 10 [[Radiator helix]]
+* 10 [[Bundle of wires]]
+* 4 [[Phase control relay]] found [[Found in raid|<font color="red">in raid</font>]]
+* [[Ragman]] LL2
+* Level 2 [[Hideout#Modules|Generator]]
+* Level 2 [[Hideout#Modules|Workbench]]
+|
+* Energy regeneration rate <font color="green">+7.2 EP/hr</font> (14.4 in total)
+* Negative effects removal rate <font color="green">-50%</font>
+| 8 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Gym
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 5 [[Insulating tape]]
+* 1 [[Metal cutting scissors]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[WD-40 (100ml)]]
+* 1 [[Toolset]] found [[Found in raid|<font color="red">in raid</font>]]
+* 5 [[Screw nuts]]
+* 1 [[Electric drill]] found [[Found in raid|<font color="red">in raid</font>]]
+* 5 [[Bolts]]
+* Level 6 [[Hideout#Modules|Defective Wall]]
+* Level 2 [[Hideout#Modules|Illumination]]
+* Level 2 [[Hideout#Modules|Vents]]
+|
+* Unlocks training area to level up [[Strength]] and [[Endurance]] skills
+| 4 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Illumination
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 10,000 [[Roubles]]
+* 1 [[Crickent lighter]]
+|
+* Lights up your hideout with candles.
+| Instant
+|-
+!2
+|
+* 14 [[Light bulb]]
+* 10 [[Bundle of wires]]
+* Level 1 [[Hideout#Modules|Generator]]
+|
+* Lights up your hideout with basic lights.
+| Instant
+|-
+!3
+|
+* 50,000 [[Roubles]]
+* 12 [[Energy-saving lamp]]
+* 7 [[Capacitors]] found [[Found in raid|<font color="red">in raid</font>]]
+* 12 [[Bundle of wires]]
+* [[Mechanic]] LL2
+* Level 2 [[Hideout#Modules|Generator]]
+* Level 1 [[Hideout#Modules|Workbench]]
+|
+* Lights up your hideout with fluorescent lights.
+| 6 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Intelligence Center
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 1 [[Power cord]]
+* 1 [[Intelligence folder]]
+* 1 [[Topographic survey maps]]
+* 1 [[Factory plan map]]
+* 1 [[Working LCD]]
+* Level 2 [[Hideout#Modules|Security]]
+* Level 1 [[Hideout#Modules|Vents]]
+* Level 1 [[Hideout#Modules|Generator]]
+* Level 1 [[Hideout#Modules|Workbench]]
+|
+* Craft [[Topographic survey maps]]
+* Craft [[SAS drive]]
+* Craft [[Secure magnetic tape cassette]]
+* Craft [[Secure Flash drive]]
+* Scav cooldown timer <font color="green">-15%</font>
+* Quest money reward boost <font color="green">+5%</font>
+* Unlocks [[Scavs#Scav_tasks|Scav Tasks]] from [[Fence]]
+| Instant
+|-
+!2
+|
+* 3 [[Intelligence folder]] found [[Found in raid|<font color="red">in raid</font>]]
+* 3 [[Secure Flash drive]]
+* 7 [[Power cord]]
+* 8 [[Damaged hard drive]]
+* [[Mechanic]] LL2
+* [[Attention]] Level 3
+* Level 3 [[Hideout#Modules|Security]]
+* Level 3 [[Hideout#Modules|Medstation]]
+* Level 3 [[Hideout#Modules|Nutrition Unit]]
+|
+* Craft [[TerraGroup Labs access keycard]]
+* Craft [[Digital secure DSP radio transmitter]]
+* Craft [[TerraGroup "Blue Folders" materials]]
+* Craft [[UHF RFID Reader]]
+* Craft [[Virtex programmable processor]]
+* Craft [[Military COFDM Wireless Signal Transmitter]]
+* Craft [[VPX Flash Storage Module]]
+* Craft [[Object 11SR keycard]]
+* Quest money reward boost <font color="green">+10%</font> (+15% in total)
+* [[Insurance]] return time <font color="green">-20%</font>
+| 6 hours
+|-
+!3
+|
+* 8 [[Military cable]]
+* 2 [[Military COFDM Wireless Signal Transmitter]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Far-forward GPS Signal Amplifier Unit]]
+* 2 [[VPX Flash Storage Module]]
+* 8 [[Military flash drive]]
+* 2 [[Secure magnetic tape cassette]]
+* [[Prapor]] LL3
+* Level 3 [[Hideout#Modules|Workbench]]
+* Level 3 [[Hideout#Modules|Generator]]
+|
+* Craft [[Military flash drive]]
+* Craft [[Graphics card]]
+* Craft [[TerraGroup Labs keycard (Green)]]
+* Craft [[TerraGroup Labs keycard (Red)]]
+* Craft [[Intelligence folder]]
+* Craft [[TerraGroup Labs keycard (Violet)]]
+* Scav cooldown timer <font color="green">-20%</font> (-35% in total)
+* Flea market commission <font color="green">-30%</font>
+|24 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Lavatory
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 2,000 [[Roubles]]
+* 1 [[Toilet paper]]
+* 1 [[Toothpaste]]
+* 1 [[Soap]]
+* 1 [[Awl]]
+|
+* Craft [[Gas mask air filter]]
+* Craft [[Army bandage]]
+* Craft [[6B47 Ratnik-BSh helmet (EMR cover)]]
+* Craft [[Scav backpack]]
+* Craft [[Toilet paper]]
+* Craft [[Aseptic bandage]]
+* Craft [[Aramid fiber fabric]]
+* Craft [[Schaman shampoo]]
+* Craft [[Ripstop fabric]]
+* Craft [[Cordura polyamide fabric]]
+* Craft [[Soap]]
+* Craft [[BNTI Module-3M body armor]]
+* Craft [[6B23-2 body armor (Mountain Flora)]]
+* Craft [[BNTI Zhuk body armor (Press)]]
+* Craft [[Corrugated hose]]
+* Unlocks armor repair via [[Body armor repair kit|repair kits]]
+| Instant
+|-
+!2
+|
+* 3 [[KEKTAPE duct tape]]
+* 6 [[Corrugated hose]]
+* 6 [[Pack of screws]]
+* 1 [[Electric drill]] found [[Found in raid|<font color="red">in raid</font>]]
+* 2 [[Sewing kit]] found [[Found in raid|<font color="red">in raid</font>]]
+* Level 1 [[Hideout#Modules|Water Collector]]
+* Level 1 [[Hideout#Modules|Vents]]
+|
+* Craft [[6B13 custom ballistic plates (Back)]]
+* Craft [[First Spear Strandhogg plate carrier (Ranger Green)]]
+* Craft [[Ox bleach]]
+* Craft [[Clin window cleaner]]
+* Craft [[Eberlestock F5 Switchblade backpack (Dry Earth)]]
+* Craft [[Fleece fabric]]
+* Craft [[BlackHawk! Commando chest harness (Black)]]
+* Craft [[BlackRock chest rig (Gray)]]
+* Craft [[Expeditionary fuel tank]]
+* Craft [[MSA ACH TC-2002 MICH Series helmet (Olive Drab)]]
+* Craft [[KEKTAPE duct tape]]
+* Craft [[AK-74 5.45x39 6L31 60-round magazine]]
+* Craft [[Water filter]]
+* Craft [[WD-40 (100ml)]]
+* Craft [[Ars Arma A18 Skanda plate carrier (MultiCam)]]
+* Craft [[Magazine case]]
+* Craft [[Paracord]]
+* Craft [[Lucky Scav Junk box]]
+* Craft [[Grenade case]]
+* Reduces armor repair cost using repair kits <font color="green">-3%</font>
+| 3 hours
+|-
+!3
+|
+* 6 [[Xenomorph sealing foam]]
+* 10 [[Corrugated hose]]
+* 2 [[Pressure gauge]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Toolset]] found [[Found in raid|<font color="red">in raid</font>]]
+* Level 2 [[Hideout#Modules|Vents]]
+* Level 2 [[Hideout#Modules|Water Collector]]
+|
+* Craft [[Pilgrim tourist backpack]]
+* Craft [[Rys-T bulletproof helmet (Black)]]
+* Craft [[ANA Tactical M2 plate carrier (EMR)]]
+* Craft [[NPP KlASS Bagariy plate carrier (EMR)]]
+* Craft [[FP-100 filter absorber]]
+* Craft [[5.11 Tactical TacTec plate carrier (Ranger Green)]]
+* Reduces armor repair cost using repair kits <font color="green">-6%</font> (-9% in total)
+| 7 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Library
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 400,000 [[Roubles]]
+* 1 [[BakeEzy cook book]] found [[Found in raid|<font color="red">in raid</font>]]
+* 5 [[Slim diary]]
+* 5 [[Diary]]
+* 8 [[Tech manual]]
+* 2 [[Chainlet]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Horse figurine]] found [[Found in raid|<font color="red">in raid</font>]]
+* [[Hideout Management]] Level 5
+* Level 3 [[Hideout#Modules|Rest Space]]
+|
+* Additional raid experience <font color="green">+15%</font>
+* Group of skills leveling boost: [[Character skills#Practical|Practical]] <font color="green">+30%</font>
+| 54 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Medstation
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 50,000 [[Roubles]]
+* 1 [[Disposable syringe]]
+* 1 [[Pile of meds]]
+* 2 [[Aseptic bandage]]
+* 1 [[Bottle of OLOLO Multivitamins]]
+|
+* Craft [[AI-2 medkit]]
+* Craft [[CALOK-B hemostatic applicator]]
+* Craft [[Salewa first aid kit]]
+* Craft [[CMS surgical kit]]
+* Craft [[Disposable syringe]]
+* Health regeneration rate <font color="green">+27.4 HP/hr</font>
+| Instant
+|-
+!2
+|
+* 150,000 [[Roubles]]
+* 6 [[Bottle of saline solution]]
+* 3 [[Medical tools]] found [[Found in raid|<font color="red">in raid</font>]]
+* 2 [[Medical bloodset]] found [[Found in raid|<font color="red">in raid</font>]]
+* 10 [[Esmarch tourniquet]]
+* [[Therapist]] LL2
+* [[Health]] Level 2
+* Level 1 [[Hideout#Modules|Generator]]
+|
+* Craft [[Medical bloodset]]
+* Craft [[AHF1-M stimulant injector]]
+* Craft [[Pile of meds]]
+* Craft [[IFAK individual first aid kit]]
+* Craft [[Aluminum splint]]
+* Craft [[Vaseline balm]]
+* Craft [[PNB (Product 16) stimulant injector]]
+* Craft [[xTG-12 antidote injector]]
+* Craft [[Morphine]]
+* Craft [[2A2-(b-TG) stimulant injector]]
+* Craft [[ETG-change regenerative stimulant injector]]
+* Craft [[SJ1 TGLabs combat stimulant injector]]
+* Craft [[M.U.L.E. stimulant injector]]
+* Craft [[Portable defibrillator]]
+* Health regeneration rate <font color="green">+54.8 HP/hr</font> (82.2 HP/hr in total)
+| 3 hours
+|-
+!3
+|
+* 500,000 [[Roubles]]
+* 1 [[Ophthalmoscope]] found [[Found in raid|<font color="red">in raid</font>]]
+* 10 [[Bottle of saline solution]]
+* 1 [[LEDX Skin Transilluminator]]
+* [[Therapist]] LL3
+* [[Skier]] LL2
+* [[Vitality]] Level 3
+* Level 2 [[Hideout#Modules|Generator]]
+* Level 2 [[Hideout#Modules|Lavatory]]
+|
+* Craft [[AFAK tactical individual first aid kit]]
+* Craft [[Perfotoran (Blue Blood) stimulant injector]]
+* Craft [[Grizzly medical kit]]
+* Craft [[Surv12 field surgical kit]]
+* Craft [[SJ6 TGLabs combat stimulant injector]]
+* Craft [[Zagustin hemostatic drug injector]]
+* Craft [[Propital regenerative stimulant injector]]
+* Craft [[LEDX Skin Transilluminator]]
+* Health regeneration rate <font color="green">+91.3 HP/hr</font> (173.5 HP/hr in total)
+| 12 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Nutrition Unit
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 25,000 [[Roubles]]
+* 1 [[Can of white salt]]
+* 1 [[Power cord]]
+* 2 [[Phase control relay]]
+* Level 1 [[Hideout#Modules|Generator]]
+|
+* Craft [[Salty Dog beef sausage]]
+* Craft [[MRE ration pack]]
+* Craft [[Iskra ration pack]]
+* Craft [[Bottle of Norvinsky Yadreniy premium kvass (0.6L)]]
+* Craft [[Emergency Water Ration]]
+* Craft [[Can of beef stew (Small)]]
+* Craft [[Can of Max Energy energy drink]]
+* Energy regeneration rate <font color="green">+6 EP/hr</font>
+| Instant
+|-
+!2
+|
+* 2 [[Alkaline cleaner for heat exchangers]] found [[Found in raid|<font color="red">in raid</font>]]
+* 4 [[Wrench]]
+* 4 [[Corrugated hose]]
+* 3 [[Phase control relay]]
+* Level 2 [[Hideout#Modules|Lavatory]]
+|
+* Craft [[Slickers chocolate bar]]
+* Craft [[Can of Majaica coffee beans]]
+* Craft [[Pack of Russian Army pineapple juice]]
+* Craft [[Can of condensed milk]]
+* Craft [[Pack of sugar]]
+* Craft [[Wilston cigarettes]]
+* Craft [[Aquamari water bottle with filter]]
+* Energy regeneration rate <font color="green">+12 EP/hr</font> (18 EP/hr in total)
+* Health regeneration rate <font color="green">+32 HP/hr</font>
+| 4 hours
+|-
+!3
+|
+* 125,000 [[Roubles]]
+* 5 [[Can of Majaica coffee beans]]
+* 5 [[Pack of sodium bicarbonate]]
+* 2 [[Smoked Chimney drain cleaner]] found [[Found in raid|<font color="red">in raid</font>]]
+* [[Metabolism]] Level 3
+* Level 2 [[Hideout#Modules|Generator]]
+* Level 3 [[Hideout#Modules|Lavatory]]
+* Level 2 [[Hideout#Modules|Stash]]
+|
+* Craft [[Bottle of Tarkovskaya vodka]]
+* Craft [[Bottle of Dan Jackiel whiskey]]
+* Craft [[Bottle of water (0.6L)]]
+* Craft [[Bottle of Pevko Light beer]]
+* Craft [[Can of Hot Rod energy drink]]
+* Energy regeneration rate <font color="green">+18 EP/hr</font> (36 EP/hr in total)
+* Hydration regeneration rate <font color="green">+12 WP/hr</font>
+| 14 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Rest Space
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 10,000 [[Roubles]]
+* 1 [[Classic matches]]
+* 1 [[Duct tape]]
+* Level 1 [[Hideout#Modules|Vents]]
+|
+* Negative effects removal rate <font color="green">-10%</font>
+| Instant
+|-
+!2
+|
+* 75,000 [[Roubles]]
+* 1 [[Magnet]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[DVD drive]] found [[Found in raid|<font color="red">in raid</font>]]
+* 5 [[Energy-saving lamp]]
+* Level 1 [[Hideout#Modules|Generator]]
+|
+* Energy regeneration rate <font color="green">+3 EP/hr</font>
+* Health regeneration rate <font color="green">+22.8 HP/hr</font>
+| 2 hours
+|-
+!3
+|
+* 4 [[GreenBat lithium battery]] found [[Found in raid|<font color="red">in raid</font>]]
+* 10 [[Bundle of wires]]
+* 5 [[Capacitors]]
+* 5 [[Power cord]]
+* [[Skier]] LL3
+|
+* Health regeneration rate <font color="green">+45.7 HP/hr</font> (68.5 HP/hr in total)
+* Maximum energy reserve <font color="green">+10 points</font>
+| 10 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Scav Case
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 1 [[Golden rooster figurine]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Lucky Scav Junk box]]
+* 3 [[Bottle of Fierce Hatchling moonshine]] found [[Found in raid|<font color="red">in raid</font>]]
+* 4 [[Roler Submariner gold wrist watch]] found [[Found in raid|<font color="red">in raid</font>]]
+* 8 [[Golden neck chain]] found [[Found in raid|<font color="red">in raid</font>]]
+* 6 [[Gold skull ring]] found [[Found in raid|<font color="red">in raid</font>]]
+* 3 [[Bronze lion figurine]] found [[Found in raid|<font color="red">in raid</font>]]
+* Level 2 [[Hideout#Modules|Intelligence Center]]
+|
+* Scavs will try to find various items for you if you pay properly, of course.<br/>There are multiple Tier costs, each returning roughly the amount invested (results can vary drastically).<br/>Each case brings you items with [[found in raid]] status, with different rarities depending on the case selected.<br/>Your turnaround time is affected by your [[Fence]] reputation.
+* 2,500 Roubles - 41min 40sec turnaround - 1-3 Items
+* 15,000 Roubles - 2h 8min 20sec turnaround - 2-4 Items
+* 95,000 Roubles - 2h 15min turnaround - 2-5 Items
+* 1x [[Bottle of Fierce Hatchling moonshine]] - 4h 40min turnaround - 4-6 Items
+* 1x [[Intelligence folder]] - 5h 20min turnaround - 4-7 Items
+| 80 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Security
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 20,000 [[Roubles]]
+* 1 [[Construction measuring tape]]
+| None
+| Instant
+|-
+!2
+|
+* 45,000 [[Roubles]]
+* 2 [[WD-40 (100ml)]]
+* 1 [[Pliers Elite]] found [[Found in raid|<font color="red">in raid</font>]]
+* 2 [[TP-200 TNT brick]]
+* [[Endurance]] Level 2
+* Level 1 [[Hideout#Modules|Illumination]]
+| None
+| 3 hours
+|-
+!3
+|
+* 8 [[NIXXOR lens]]
+* 2 [[Working LCD]] found [[Found in raid|<font color="red">in raid</font>]]
+* 10 [[Bundle of wires]]
+* 1 [[SSD drive]] found [[Found in raid|<font color="red">in raid</font>]]
+* [[Mechanic]] LL2
+* Level 3 [[Hideout#Modules|Illumination]]
+| None
+| 17 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Shooting Range
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 20,000 [[Roubles]]
+* 1 [[Metal spare parts]]
+* 1 [[Bolts]]
+* 1 [[Screw nuts]]
+* Level 1 [[Hideout#Modules|Illumination]]
+|
+* The ability to test out your firearms
+* Metal targets and paper targets
+| 1 Hour
+|-
+!2
+|
+* 3 [[Electric motor]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Construction measuring tape]] found [[Found in raid|<font color="red">in raid</font>]]
+* 3 [[Tube of Poxeram cold welding]]
+* 1 [[Toolset]] found [[Found in raid|<font color="red">in raid</font>]]
+* 3 [[Pack of screws]]
+* 1 [[Electric drill]] found [[Found in raid|<font color="red">in raid</font>]]
+* 8 [[Metal spare parts]]
+* 3 [[WI-FI Camera]]
+* 6 [[Bundle of wires]]
+* 6 [[Energy-saving lamp]]
+* Level 3 [[Hideout#Modules|Illumination]]
+* Level 2 [[Hideout#Modules|Workbench]]
+|
+* Ceiling targets with 3 speed levels
+| 24 hours
+|-
+!3
+|
+* 1 [[Set of files "Master"]] found [[Found in raid|<font color="red">in raid</font>]]
+* 5 [[Printed circuit board]]
+* 10 [[Bundle of wires]]
+* 5 [[Metal spare parts]]
+* 5 [[Capacitors]]
+* 5 [[Phase control relay]]
+* 5 [[Power cord]]
+* 1 [[Leatherman Multitool]]
+* 1 [[Tech manual]] found [[Found in raid|<font color="red">in raid</font>]]
+|
+* Group of skills leveling boost: [[Character_skills#Combat|Combat]] <font color="green">+10%</font>
+* Popper targets and training program activated from laptop
+| 24 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Solar Power
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 25,000 [[Euros]]
+* 6 [[Phased array element]]
+* 1 [[Advanced current converter]]
+* 3 [[Working LCD]] found [[Found in raid|<font color="red">in raid</font>]]
+* 10 [[Military cable]]
+* 10 [[Military power filter]]
+* [[Peacekeeper]] LL4
+* Level 3 [[Hideout#Modules|Generator]]
+* Level 3 [[Hideout#Modules|Workbench]]
+|
+* Fuel consumption <font color="green">-50%</font>
+| 72 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Stash
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* Owning standard game edition
+|
+* Stash size <font color="green">10x30</font>
+| N/A
+|-
+!2
+|
+* Owning "Left Behind" game edition
+Or
+* 2,500,000 [[Roubles]]
+* 4 [[WD-40 (100ml)]]
+* 1 [[Hand drill]] found [[Found in raid|<font color="red">in raid</font>]]
+* 5 [[Pack of nails]] found [[Found in raid|<font color="red">in raid</font>]]
+* 10 [[Pack of screws]]
+* Level 1 [[Hideout#Modules|Vents]]
+|
+* Stash size <font color="green">10x40</font>
+| 24 hours
+|-
+!3
+|
+* Owning "Prepare for Escape" game edition
+Or
+* 8,500,000 [[Roubles]]
+* 2 [[Electric drill]] found [[Found in raid|<font color="red">in raid</font>]]
+* 15 [[Pack of screws]]
+* 7 [[Pack of nails]] found [[Found in raid|<font color="red">in raid</font>]]
+* [[Prapor]] LL3
+* [[Ragman]] LL3
+* Level 2 [[Hideout#Modules|Vents]]
+* Level 2 [[Hideout#Modules|Heating]]
+|
+* Stash size <font color="green">10x50</font>
+| 48 hours
+|-
+!4
+|
+* Owning "Edge of Darkness" or "The Unheard" game edition
+Or
+* 200,000 [[Euros]]
+* 10 [[Screw nuts]]
+* 10 [[Bolts]]
+* 8 [[Shustrilo sealing foam]]
+* 2 [[Ratchet wrench]] found [[Found in raid|<font color="red">in raid</font>]]
+* [[Peacekeeper]] LL4
+* [[Ragman]] LL4
+* Level 3 [[Hideout#Modules|Generator]]
+* Level 3 [[Hideout#Modules|Workbench]]
+* Level 3 [[Hideout#Modules|Heating]]
+* Level 2 [[Hideout#Modules|Intelligence Center]]
+|
+* Stash size <font color="green">10x68</font>
+:(Unheard <font color="green">10x72</font>)
+| 96 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Vents
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 25,000 [[Roubles]]
+| None
+| Instant
+|-
+!2
+|
+* 5 [[Metal spare parts]]
+* 5 [[CPU fan]]
+* 1 [[Car battery]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Electric motor]] found [[Found in raid|<font color="red">in raid</font>]]
+| None
+| 3 hours
+|-
+!3
+|
+* 5 [[Printed circuit board]]
+* 4 [[Electric motor]] found [[Found in raid|<font color="red">in raid</font>]]
+* 10 [[Metal spare parts]]
+* 14 [[Bundle of wires]]
+* 4 [[Car battery]] found [[Found in raid|<font color="red">in raid</font>]]
+* [[Strength]] Level 2
+* Level 2 [[Hideout#Modules|Generator]]
+| None
+| 10 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Water Collector<br/><font color="red">Note:</font> This module needs a [[Water filter]] at Level 3 in order to run.
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 3 [[Duct tape]]
+* 5 [[Screw nuts]]
+* 5 [[Bolts]]
+* 4 [[Corrugated hose]]
+* Level 1 [[Hideout#Modules|Security]]
+|
+* Craft [[Bottle of water (0.6L)]]
+* Hydration regeneration rate <font color="green">+6 WP/hr</font>
+| 2 hours
+|-
+!2
+|
+* 2 [[Toolset]] found [[Found in raid|<font color="red">in raid</font>]]
+* 6 [[Corrugated hose]]
+* 2 [[Electric motor]]
+* 5 [[KEKTAPE duct tape]]
+* [[Jaeger]] LL2
+* [[Attention]] Level 3 
+* Level 2 [[Hideout#Modules|Workbench]]
+|
+* Craft [[Emergency Water Ration]]
+* Craft [[Aquamari water bottle with filter]]
+* Hydration regeneration rate <font color="green">+12 WP/hr</font> (18 WP/hr in total)
+| 8 hours
+|-
+!3
+|
+* 20,000 [[Roubles]]
+* 1 [[Ratchet wrench]] found [[Found in raid|<font color="red">in raid</font>]]
+* 2 [[Pliers Elite]] found [[Found in raid|<font color="red">in raid</font>]]
+* 10 [[Shustrilo sealing foam]]
+* [[Jaeger]] LL3
+* Level 3 [[Hideout#Modules|Generator]]
+* Level 3 [[Hideout#Modules|Heating]]
+|
+* Craft [[Canister with purified water]]
+* Additional [[Water filter]] slots <font color="green">+1</font>
+* Hydration regeneration rate <font color="green">+18 WP/hr</font> (36 WP/hr in total)
+| 16 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Weapon Rack
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 5 [[Pack of nails]]
+* 5 [[Energy-saving lamp]]
+* 5 [[Insulating tape]]
+* 1 [[Hand drill]] found [[Found in raid|<font color="red">in raid</font>]]
+* 15 [[Bolts]]
+* 1 [[Metal cutting scissors]] found [[Found in raid|<font color="red">in raid</font>]]
+* 5 [[Xenomorph sealing foam]]
+* [[Mechanic]] LL2
+* Level 3 [[Hideout#Modules|Illumination]]
+* Level 2 [[Hideout#Modules|Stash]]
+| 
+* Ability to stash functional weapons on a new inventory space
+* Stash size <font color="green">9x6</font> x2
+* Ability to display up to 3 favorite weapons on player profile
+| 12 hours
+|-
+!2
+|
+* 10 [[Metal spare parts]]
+* 10 [[Pack of screws]]
+* 1 [[Electric drill]] found [[Found in raid|<font color="red">in raid</font>]]
+* 10 [[Bundle of wires]]
+* 1 [[Set of files "Master"]] found [[Found in raid|<font color="red">in raid</font>]]
+* 3 [[Tube of Poxeram cold welding]]
+* 10 [[Energy-saving lamp]]
+* 10 [[Duct tape]]
+* 5 [[Weapon parts]]
+* [[Mechanic]] LL3
+* Level 2 [[Hideout#Modules|Shooting Range]]
+* Level 2 [[Hideout#Modules|Workbench]]
+* Level 3 [[Hideout#Modules|Stash]]
+|
+* Ability to stash functional weapons on a new inventory space
+* Stash size <font color="green">11x6</font> x2
+* Ability to display up to 3 favorite weapons on player profile
+| 18 hours
+|-
+!3
+|
+* 1 [[Electric drill]] found [[Found in raid|<font color="red">in raid</font>]]
+* 15 [[Energy-saving lamp]]
+* 10 [[Metal spare parts]]
+* 5 [[KEKTAPE duct tape]] found [[Found in raid|<font color="red">in raid</font>]]
+* 15 [[Bundle of wires]]
+* 5 [[Shustrilo sealing foam]]
+* 1 [[Tech manual]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[FireKlean gun lube|#FireKlean gun lube]] found [[Found in raid|<font color="red">in raid</font>]]
+* [[Mechanic]] LL4
+* Level 3 [[Hideout#Modules|Shooting Range]]
+* Level 3 [[Hideout#Modules|Workbench]]
+|
+* Ability to stash functional weapons on a new inventory space
+* Stash size <font color="green">13x7</font> x2
+* Ability to display up to 3 favorite weapons on player profile
+| 24 hours
+|-
+|}
+</div><div class="wds-tab__content">
+{| class="wikitable"
+! colspan=4 | Workbench
+|-
+!Level
+!Requirements
+!Function
+!Construction Time
+|-
+!1
+|
+* 2 [[Screw nuts]]
+* 2 [[Bolts]]
+* 1 [[Leatherman Multitool]]
+|
+* Craft [[Secure container Gamma|Secure container Gamma (Battle-worn)]]
+* Craft [[Secure container Gamma]]
+* Craft [[Unlocked weapon crate (Rare)]]
+* Craft [[Unlocked valuables crate (Rare)]]
+* Craft [[Unlocked supply crate (Rare)]]
+* Craft [[Unlocked equipment crate (Rare)]]
+* Craft [[Unlocked equipment crate (BattlePass 0)]]
+* Craft [[Kalashnikov AKM 7.62x39 assault rifle]]
+* Craft [[Toolset]]
+* Craft [[Round pliers]]
+* Craft [[Gunpowder "Kite"]]
+* Craft [[PM 9x18PM 84-round makeshift drum magazine]]
+* Craft [[Broken LCD]]
+* Craft [[Broken GPhone smartphone]]
+* Craft [[Piece of plexiglass]]
+* Craft [[PP-9 Klin 9x18PMM submachine gun]]
+* Craft [[Printed circuit board]]
+* Craft [[Power cord]]
+* Craft [[Gunpowder "Hawk"]]
+* Craft [[Magnet]]
+* Craft [[Printed circuit board]]
+* Craft [[12/70 flechette]]
+* Craft [[Weapon parts]]
+* Craft [[9x18mm PM SP8 gzh]]
+* Craft [[T-Shaped plug]]
+* Craft [[Light bulb]]
+* Craft [[7.62x39mm FMJ]]
+* Craft [[Zarya stun grenade]]
+* Craft [[Weapon parts]]
+* Craft [[Kalashnikov AK-74N 5.45x39 assault rifle]]
+* Craft [[12/70 Piranha]]
+* Craft [[9x21mm P gzh]]
+* Craft [[Radio repeater]]
+* Craft [[9x18mm PMM PstM gzh]]
+* Craft [[Gas analyzer]]
+* Craft [[Bundle of wires]]
+* Craft [[Capacitors]]
+* Craft [[.366 TKM AP-M]]
+* Craft [[Hand drill]]
+* Craft [[RGD-5 hand grenade]]
+* Unlocks off-raid full equipment customization via presets and the modding screen 
+* Unlocks weapon repair via [[Weapon repair kit|repair kits]]
+| Instant
+|-
+!2
+|
+* 10 [[Bolts]]
+* 3 [[Toolset]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[Set of files "Master"]] found [[Found in raid|<font color="red">in raid</font>]]
+* 2 [[Electric drill]] found [[Found in raid|<font color="red">in raid</font>]]
+* 3 [[Weapon parts]]
+* [[Mechanic]] LL2
+* Level 2 [[Hideout#Modules|Illumination]]
+|
+* Craft [[Working LCD]]
+* Craft [[5.7x28mm L191]]
+* Craft [[12/70 makeshift .50 BMG slug]]
+* Craft [[Rechargeable battery]]
+* Craft [[Electric motor]]
+* Craft [[VOG-17 Khattabka improvised hand grenade]]
+* Craft [[Kalashnikov AK-74M 5.45x39 assault rifle]]
+* Craft [[Geiger-Muller counter]]
+* Craft [[9x19mm Luger CCI]]
+* Craft [[Gunpowder "Eagle"]]
+* Craft [[7.62x51mm BCP FMJ]]
+* Craft [[VOG-25 Khattabka improvised hand grenade]]
+* Craft [[5.56x45mm MK 318 Mod 0 (SOST)]]
+* Craft [[Gunpowder "Hawk"]]
+* Craft [[Spark plug]]
+* Craft [[9x39mm PAB-9 gs]]
+* Craft [[Military circuit board]]
+* Craft [[5.45x39mm PP gs]]
+* Craft [[GreenBat lithium battery]]
+* Craft [[NIXXOR lens]]
+* Craft [[Car battery]]
+* Craft [[Can of thermite]]
+* Craft [[7.62x54mm R LPS gzh]]
+* Craft [[Bulbex cable cutter]]
+* Reduces weapon repair cost using repair kits <font color="green">-3%</font>
+| 3 hours
+|-
+!3
+|
+* 395,000 [[Roubles]]
+* 5 [[Can of thermite]]
+* 2 [[Pliers Elite]] found [[Found in raid|<font color="red">in raid</font>]]
+* 1 [[FireKlean gun lube|#FireKlean gun lube]] found [[Found in raid|<font color="red">in raid</font>]]
+* [[Mechanic]] LL3
+* Level 2 [[Hideout#Modules|Generator]]
+* Level 2 [[Hideout#Modules|Stash]]
+|
+* Craft [[Body armor repair kit]]
+* Craft [[Weapon repair kit]]
+* Craft [[9x19mm AP 6.3]]
+* Craft [[7.62x51mm M61]]
+* Craft [[12/70 AP-20 armor-piercing slug]]
+* Craft [[5.56x45mm M855A1]]
+* Craft [[5.7x28mm SS190]]
+* Craft [[7.62x39mm BP gzh]]
+* Craft [[7.62x54mm R BT gzh]]
+* Craft [[4.6x30mm AP SX]]
+* Craft [[.45 ACP AP]]
+* Craft [[.300 Blackout AP]]
+* Craft [[.338 Lapua Magnum FMJ]]
+* Craft [[23x75mm Zvezda flashbang round]]
+* Craft [[Trijicon REAP-IR thermal scope]]
+* Craft [[.300 Blackout M62 Tracer]]
+* Craft [[FLIR RS-32 2.25-9x 35mm 60Hz thermal riflescope]]
+* Craft [[5.45x39mm BP gs]]
+* Craft [[OFZ 30x165mm shell]]
+* Craft [[Microcontroller board]]
+* Craft [[TheAKGuy AK-50 .50 BMG anti-materiel rifle]]
+* Reduces weapon repair cost using repair kits <font color="green">-6%</font> (-9% in total)
+| 11 hours
+|}
+</div>
