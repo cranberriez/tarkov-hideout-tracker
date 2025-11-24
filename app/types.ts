@@ -113,6 +113,7 @@ export interface ItemDetails {
     low24hPrice?: number;
     link?: string;
     wikiLink?: string;
+    types?: string[];
 }
 
 export interface ItemsPayload {

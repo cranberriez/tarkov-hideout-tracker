@@ -16,6 +16,9 @@ interface UserState {
     hideRequirements: boolean; // hide the requirements section entirely
     cheapPriceThreshold: number; // e.g. in roubles
 
+    sellToPreference: "best" | "flea" | "trader";
+    useCategorization: boolean;
+
     // Hideout View options
     compactMode: boolean;
 
@@ -32,6 +35,9 @@ interface UserState {
     setHideRequirements: (value: boolean) => void;
     setCheapPriceThreshold: (value: number) => void;
     setCompactMode: (value: boolean) => void;
+
+    setSellToPreference: (value: "best" | "flea" | "trader") => void;
+    setUseCategorization: (value: boolean) => void;
 
     // Initialization helpers
     initializeDefaults: (stations: Station[]) => void;
@@ -50,6 +56,8 @@ export const useUserStore = create<UserState>()(
             hideRequirements: false,
             cheapPriceThreshold: 5000,
             compactMode: false,
+            sellToPreference: "best",
+            useCategorization: false,
 
             setStationLevel: (stationId, level) =>
                 set((state) => ({ stationLevels: { ...state.stationLevels, [stationId]: level } })),
@@ -83,6 +91,8 @@ export const useUserStore = create<UserState>()(
             setHideRequirements: (value) => set({ hideRequirements: value }),
             setCheapPriceThreshold: (value) => set({ cheapPriceThreshold: value }),
             setCompactMode: (value) => set({ compactMode: value }),
+            setSellToPreference: (value) => set({ sellToPreference: value }),
+            setUseCategorization: (value) => set({ useCategorization: value }),
 
             initializeDefaults: (stations) => {
                 const { stationLevels } = get();

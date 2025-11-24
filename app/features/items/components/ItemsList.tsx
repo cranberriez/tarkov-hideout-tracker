@@ -27,6 +27,8 @@ export function ItemsList() {
         cheapPriceThreshold,
         compactMode,
         initializeDefaults,
+        sellToPreference,
+        useCategorization,
     } = useUserStore();
 
     useEffect(() => {
@@ -74,7 +76,7 @@ export function ItemsList() {
             });
         }
 
-        // Sort alphabetically by name
+        // Sort alphabetically by name (default sort)
         finalItems.sort((a, b) => {
             const nameA = a.details?.name ?? "";
             const nameB = b.details?.name ?? "";
@@ -83,6 +85,36 @@ export function ItemsList() {
 
         return finalItems;
     }, [pooledItems, items, hideCheap, cheapPriceThreshold]);
+
+    const categorizedItems = useMemo(() => {
+        if (!useCategorization) return null;
+
+        const groups: Record<string, typeof filteredAndSortedItems> = {};
+
+        filteredAndSortedItems.forEach((item) => {
+            // Use first type as category, or "Other"
+            const type = item.details?.types?.[0] ?? "Other";
+            // Capitalize first letter
+            const category = type.charAt(0).toUpperCase() + type.slice(1);
+
+            if (!groups[category]) {
+                groups[category] = [];
+            }
+            groups[category].push(item);
+        });
+
+        // Sort categories alphabetically, but put "Other" last
+        const sortedCategories = Object.keys(groups).sort((a, b) => {
+            if (a === "Other") return 1;
+            if (b === "Other") return -1;
+            return a.localeCompare(b);
+        });
+
+        return sortedCategories.map((category) => ({
+            category,
+            items: groups[category],
+        }));
+    }, [filteredAndSortedItems, useCategorization]);
 
     if (loadingStations || loadingItems) {
         return (
@@ -115,17 +147,57 @@ export function ItemsList() {
         );
     }
 
-    // Grid layout is now always a grid, just different densities for compact vs large
+    // Updated grid classes: 1 column on mobile/narrow, then expanding
+    // Previously: grid-cols-2 on base
     const gridClasses = compactMode
         ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-        : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
+        : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5";
+
+    if (useCategorization && categorizedItems) {
+        return (
+            <div className="space-y-8">
+                {categorizedItems.map(({ category, items }) => (
+                    <div key={category}>
+                        <h2 className="text-xl font-bold text-tarkov-green mb-4 border-b border-white/10 pb-2">
+                            {category}{" "}
+                            <span className="text-sm font-normal text-gray-500 ml-2">
+                                ({items.length})
+                            </span>
+                        </h2>
+                        <div className={`grid gap-4 ${gridClasses}`}>
+                            {items.map(
+                                ({ id, count, firCount, details }) =>
+                                    details && (
+                                        <ItemRow
+                                            key={id}
+                                            item={details}
+                                            count={count}
+                                            firCount={firCount}
+                                            compact={compactMode}
+                                            sellToPreference={sellToPreference}
+                                        />
+                                    )
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    }
 
     return (
         <div className={`grid gap-4 ${gridClasses}`}>
             {filteredAndSortedItems.map(
-                ({ id, count, details }) =>
+                ({ id, count, firCount, details }) =>
                     details && (
-                        <ItemRow key={id} item={details} count={count} compact={compactMode} />
+                        <ItemRow
+                            key={id}
+                            item={details}
+                            count={count}
+                            firCount={firCount}
+                            compact={compactMode}
+                            sellToPreference={sellToPreference}
+                        />
                     )
             )}
         </div>

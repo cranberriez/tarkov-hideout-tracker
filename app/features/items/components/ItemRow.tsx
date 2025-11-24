@@ -8,9 +8,16 @@ interface ItemRowProps {
     count: number;
     firCount?: number; // Optional FiR count
     compact: boolean;
+    sellToPreference?: "best" | "flea" | "trader";
 }
 
-export function ItemRow({ item, count, firCount = 0, compact }: ItemRowProps) {
+export function ItemRow({
+    item,
+    count,
+    firCount = 0,
+    compact,
+    sellToPreference = "best",
+}: ItemRowProps) {
     const formatPrice = (price?: number) => {
         if (price === undefined) return "???";
         return new Intl.NumberFormat("en-US").format(price);
@@ -25,10 +32,33 @@ export function ItemRow({ item, count, firCount = 0, compact }: ItemRowProps) {
     // Calculate total estimated cost if we have price data
     const estimatedTotal = item.avg24hPrice ? item.avg24hPrice * count : 0;
 
-    // Find best sell-to trader
-    const bestSell = item.sellFor?.reduce((prev, current) => {
-        return prev.priceRUB > current.priceRUB ? prev : current;
-    }, item.sellFor[0]);
+    // Find best sell-to trader based on preference
+    const getBestSell = () => {
+        if (!item.sellFor || item.sellFor.length === 0) return undefined;
+
+        let candidates = item.sellFor;
+
+        // Filter based on preference
+        if (sellToPreference === "flea") {
+            candidates = item.sellFor.filter((s) => s.vendor.normalizedName === "flea-market");
+        } else if (sellToPreference === "trader") {
+            candidates = item.sellFor.filter((s) => s.vendor.normalizedName !== "flea-market");
+        }
+        // If "best", we consider all candidates (default behavior)
+
+        // Fallback: if specific preference yields no results (e.g. no flea listing),
+        // we might want to show nothing or fallback to best?
+        // Requirement says "switch between flea, trader, and Best price".
+        // If I select Flea and there is no Flea price, it should probably show nothing or N/A.
+        if (candidates.length === 0) return undefined;
+
+        // Find max priceRUB among candidates
+        return candidates.reduce((prev, current) => {
+            return prev.priceRUB > current.priceRUB ? prev : current;
+        }, candidates[0]);
+    };
+
+    const bestSell = getBestSell();
 
     if (compact) {
         return (
