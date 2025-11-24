@@ -14,12 +14,11 @@ Assumptions:
 
 ### Redis Keys
 
--   `hideout:stations:v1`
+-   `hideout:stations:v2`
     -   JSON structure for all hideout stations, levels, and item requirements.
+    -   Includes `normalizedName`, `imageLink`, and new requirements (Skill, Station, Trader).
 -   `items:prices:v1`
     -   JSON map of item id → price info for items relevant to hideout requirements.
-
-You can bump the `:v1` suffix if you change the stored JSON shape.
 
 ### Cache Policy
 
@@ -27,19 +26,6 @@ You can bump the `:v1` suffix if you change the stored JSON shape.
 -   Two main approaches:
     -   Use Redis **TTL** and treat missing keys as needing a refetch.
     -   Store `updatedAt` inside the JSON and check `Date.now() - updatedAt`.
-
-The examples below assume the second approach.
-
-Stored value example:
-
-```jsonc
-{
-    "data": {
-        /* API-normalized data */
-    },
-    "updatedAt": 1732400000000
-}
-```
 
 ---
 
@@ -60,7 +46,8 @@ interface HideoutStationsResponse {
 interface Station {
     id: string;
     name: string;
-    // Optional: category, order index, etc.
+    normalizedName: string; // e.g. "rest-space"
+    imageLink?: string;
     levels: StationLevel[];
 }
 
@@ -68,6 +55,9 @@ interface StationLevel {
     id: string;
     level: number;
     itemRequirements: ItemRequirement[];
+    stationLevelRequirements: StationLevelRequirement[];
+    skillRequirements: SkillRequirement[];
+    traderRequirements: TraderRequirement[];
 }
 
 interface ItemRequirement {
@@ -84,6 +74,31 @@ interface ItemRequirement {
     attributes: RequirementAttribute[];
 }
 
+interface StationLevelRequirement {
+    station: {
+        normalizedName: string;
+    };
+    level: number;
+}
+
+interface SkillRequirement {
+    name: string;
+    skill: {
+        name: string;
+        imageLink?: string;
+    };
+    level: number;
+}
+
+interface TraderRequirement {
+    trader: {
+        name: string;
+        normalizedName: string;
+        imageLink?: string;
+    };
+    value: number;
+}
+
 interface RequirementAttribute {
     type: string;
     name: string;
@@ -93,20 +108,14 @@ interface RequirementAttribute {
 
 ### Behavior
 
--   **Check Redis** for `hideout:stations:v1`.
+-   **Check Redis** for `hideout:stations:v2`.
 -   If present and `Date.now() - updatedAt < CACHE_WINDOW_MS`:
     -   Return cached value as-is.
 -   Else:
-    -   Call Tarkov.dev GraphQL `hideoutStations(lang: en)`.
-    -   Map raw response into the `Station` / `StationLevel` / `ItemRequirement` structure.
-    -   Store `{ data, updatedAt: Date.now() }` under `hideout:stations:v1`.
+    -   Call Tarkov.dev GraphQL `hideoutStations(lang: en)` with V2 query.
+    -   Map raw response into the `Station` / `StationLevel` structure.
+    -   Store `{ data, updatedAt: Date.now() }` under `hideout:stations:v2`.
     -   Return new value.
-
-### Error Handling
-
--   On failure to reach Tarkov.dev:
-    -   If a **non-stale cached value** exists, return it with a warning field (optional).
-    -   Otherwise return `500` with an error JSON.
 
 ---
 

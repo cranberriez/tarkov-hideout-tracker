@@ -5,11 +5,14 @@ import type {
     Station,
     StationLevel,
     ItemRequirement,
+    StationLevelRequirement,
+    SkillRequirement,
+    TraderRequirement,
 } from "@/app/types";
 import { redis } from "@/app/server/redis";
 
 const CACHE_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
-const REDIS_KEY = "hideout:stations:v1";
+const REDIS_KEY = "hideout:stations:v2";
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
 
 interface TarkovHideoutItemRequirement {
@@ -34,11 +37,35 @@ interface TarkovHideoutLevel {
     id: string;
     level: number;
     itemRequirements: TarkovHideoutItemRequirement[];
+    stationLevelRequirements: {
+        station: {
+            normalizedName: string;
+        };
+        level: number;
+    }[];
+    skillRequirements: {
+        name: string;
+        skill: {
+            name: string;
+            imageLink?: string;
+        };
+        level: number;
+    }[];
+    traderRequirements: {
+        trader: {
+            name: string;
+            normalizedName: string;
+            imageLink?: string;
+        };
+        value: number;
+    }[];
 }
 
 interface TarkovHideoutStation {
     id: string;
     name: string;
+    normalizedName: string;
+    imageLink?: string;
     levels: TarkovHideoutLevel[];
 }
 
@@ -53,6 +80,8 @@ const HIDEOUT_STATIONS_QUERY = `
     hideoutStations(lang: en) {
       id
       name
+      normalizedName
+      imageLink
       levels {
         id
         level
@@ -73,6 +102,28 @@ const HIDEOUT_STATIONS_QUERY = `
             value
           }
         }
+        stationLevelRequirements {
+            station {
+                normalizedName
+            }
+            level
+        }
+        skillRequirements {
+            name
+            skill {
+                name
+                imageLink
+            }
+            level
+        }
+        traderRequirements {
+            trader {
+                name
+                normalizedName
+                imageLink
+            }
+            value
+        }
       }
     }
   }
@@ -86,6 +137,7 @@ export async function GET() {
         if (cached && typeof cached === "object" && "updatedAt" in cached) {
             const age = Date.now() - cached.updatedAt;
             if (age < CACHE_WINDOW_MS) {
+                console.log("Using cached hideout stations");
                 return NextResponse.json(cached as TimedResponse<HideoutStationsPayload>, {
                     status: 200,
                 });
@@ -123,6 +175,8 @@ export async function GET() {
             (s): Station => ({
                 id: s.id,
                 name: s.name,
+                normalizedName: s.normalizedName,
+                imageLink: s.imageLink,
                 levels: (s.levels ?? []).map(
                     (lvl): StationLevel => ({
                         id: lvl.id,
@@ -140,6 +194,34 @@ export async function GET() {
                                 count: req.count,
                                 quantity: req.quantity,
                                 attributes: req.attributes ?? [],
+                            })
+                        ),
+                        stationLevelRequirements: (lvl.stationLevelRequirements ?? []).map(
+                            (req): StationLevelRequirement => ({
+                                station: {
+                                    normalizedName: req.station.normalizedName,
+                                },
+                                level: req.level,
+                            })
+                        ),
+                        skillRequirements: (lvl.skillRequirements ?? []).map(
+                            (req): SkillRequirement => ({
+                                name: req.name,
+                                skill: {
+                                    name: req.skill.name,
+                                    imageLink: req.skill.imageLink,
+                                },
+                                level: req.level,
+                            })
+                        ),
+                        traderRequirements: (lvl.traderRequirements ?? []).map(
+                            (req): TraderRequirement => ({
+                                trader: {
+                                    name: req.trader.name,
+                                    normalizedName: req.trader.normalizedName,
+                                    imageLink: req.trader.imageLink,
+                                },
+                                value: req.value,
                             })
                         ),
                     })
