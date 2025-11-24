@@ -1,40 +1,40 @@
 import { create } from "zustand";
 import type {
     Station,
-    ItemPrice,
     TimedResponse,
     HideoutStationsPayload,
-    ItemsPricesPayload,
+    ItemDetails,
+    ItemsPayload,
 } from "@/app/types";
 
 interface DataState {
     stations: Station[] | null;
     stationsUpdatedAt: number | null;
 
-    prices: Record<string, ItemPrice> | null;
-    pricesUpdatedAt: number | null;
+    items: Record<string, ItemDetails> | null;
+    itemsUpdatedAt: number | null;
 
     loadingStations: boolean;
-    loadingPrices: boolean;
+    loadingItems: boolean;
     errorStations: string | null;
-    errorPrices: string | null;
+    errorItems: string | null;
 
     // Actions
     fetchStations: () => Promise<void>;
-    fetchPrices: (ids?: string[]) => Promise<void>;
+    fetchItems: () => Promise<void>;
     setStations: (stations: Station[], updatedAt?: number) => void;
-    setPrices: (prices: Record<string, ItemPrice>, updatedAt?: number) => void;
+    setItems: (items: Record<string, ItemDetails>, updatedAt?: number) => void;
 }
 
 export const useDataStore = create<DataState>((set) => ({
     stations: null,
     stationsUpdatedAt: null,
-    prices: null,
-    pricesUpdatedAt: null,
+    items: null,
+    itemsUpdatedAt: null,
     loadingStations: false,
-    loadingPrices: false,
+    loadingItems: false,
     errorStations: null,
-    errorPrices: null,
+    errorItems: null,
 
     fetchStations: async () => {
         set({ loadingStations: true, errorStations: null });
@@ -54,29 +54,32 @@ export const useDataStore = create<DataState>((set) => ({
         }
     },
 
-    fetchPrices: async (ids?: string[]) => {
-        set({ loadingPrices: true, errorPrices: null });
+    fetchItems: async () => {
+        set({ loadingItems: true, errorItems: null });
         try {
-            const params = ids && ids.length > 0 ? `?ids=${ids.join(",")}` : "";
-            const res = await fetch(`/api/items/prices${params}`);
-            if (!res.ok) throw new Error("Failed to fetch prices");
+            const res = await fetch("/api/items");
+            if (!res.ok) throw new Error("Failed to fetch items");
 
-            const json = (await res.json()) as TimedResponse<ItemsPricesPayload>;
-            set((state) => ({
-                // Merge prices if we already have some and fetched a subset?
-                // Or just replace if it's a full fetch?
-                // For simplicity, if we fetch specific IDs, merge. If full fetch, replace.
-                prices: ids ? { ...(state.prices || {}), ...json.data } : json.data,
-                pricesUpdatedAt: json.updatedAt,
-                loadingPrices: false,
-            }));
+            const json = (await res.json()) as TimedResponse<ItemsPayload>;
+
+            // Convert array to Record<id, ItemDetails>
+            const itemsMap: Record<string, ItemDetails> = {};
+            json.data.items.forEach((item) => {
+                itemsMap[item.id] = item;
+            });
+
+            set({
+                items: itemsMap,
+                itemsUpdatedAt: json.updatedAt,
+                loadingItems: false,
+            });
         } catch (error) {
             console.error(error);
-            set({ loadingPrices: false, errorPrices: "Failed to load prices" });
+            set({ loadingItems: false, errorItems: "Failed to load items" });
         }
     },
 
     setStations: (stations, updatedAt) =>
         set({ stations, stationsUpdatedAt: updatedAt ?? Date.now() }),
-    setPrices: (prices, updatedAt) => set({ prices, pricesUpdatedAt: updatedAt ?? Date.now() }),
+    setItems: (items, updatedAt) => set({ items, itemsUpdatedAt: updatedAt ?? Date.now() }),
 }));

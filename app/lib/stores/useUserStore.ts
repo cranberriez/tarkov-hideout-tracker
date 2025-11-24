@@ -91,7 +91,10 @@ export const useUserStore = create<UserState>()(
 
                 stations.forEach((s) => {
                     if (newLevels[s.id] === undefined) {
-                        newLevels[s.id] = 0;
+                        newLevels[s.id] = s.normalizedName === "stash" ? 1 : 0;
+                        changed = true;
+                    } else if (s.normalizedName === "stash" && newLevels[s.id] < 1) {
+                        newLevels[s.id] = 1;
                         changed = true;
                     }
                 });

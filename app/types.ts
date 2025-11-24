@@ -89,3 +89,32 @@ export interface TimedResponse<TPayload> {
     data: TPayload;
     updatedAt: number; // ms since epoch
 }
+
+export interface VendorPrice {
+    vendor: {
+        name: string;
+        normalizedName: string;
+    };
+    currency: string;
+    price: number;
+    priceRUB: number;
+}
+
+export interface ItemDetails {
+    id: string;
+    name: string;
+    normalizedName: string;
+    iconLink?: string;
+    gridImageLink?: string;
+    avg24hPrice?: number;
+    lastLowPrice?: number;
+    changeLast48h?: number;
+    sellFor?: VendorPrice[];
+    low24hPrice?: number;
+    link?: string;
+    wikiLink?: string;
+}
+
+export interface ItemsPayload {
+    items: ItemDetails[];
+}
