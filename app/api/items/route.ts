@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import type { ItemsPayload, TimedResponse, ItemDetails } from "@/app/types";
 import { redis } from "@/app/server/redis";
 
-const CACHE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const REDIS_KEY = "hideout:items:v4";
+const CACHE_WINDOW_MS = 12 * 60 * 60 * 1000; // 12 hours
+const REDIS_KEY = "hideout:items:v5";
+const REDIS_KEY_META = `${REDIS_KEY}:meta`;
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
 
 interface TarkovItemsResponse {
@@ -46,19 +47,35 @@ const ITEMS_QUERY = `
 export async function GET() {
     try {
         // 1. Try Redis cache first
-        const cached = await redis.get<TimedResponse<ItemsPayload>>(REDIS_KEY);
+        // We use mget to fetch both the data string and the metadata
+        // Storing data as a string prevents the expensive JSON.parse() in redis.get()
+        const [cachedBody, cachedMeta] = await redis.mget<[string, { updatedAt: number }]>(
+            REDIS_KEY,
+            REDIS_KEY_META
+        );
 
-        if (cached && typeof cached === "object" && "updatedAt" in cached) {
-            const age = Date.now() - cached.updatedAt;
+        let isFresh = false;
+
+        if (cachedBody && cachedMeta && typeof cachedMeta === "object") {
+            const age = Date.now() - cachedMeta.updatedAt;
             if (age < CACHE_WINDOW_MS) {
-                console.log("Using cached items");
-                return NextResponse.json(cached as TimedResponse<ItemsPayload>, {
-                    status: 200,
-                });
+                isFresh = true;
             }
         }
 
+        if (isFresh && cachedBody) {
+            console.log("Using cached items");
+            // Return the string directly, avoiding JSON.stringify overhead
+            return new NextResponse(cachedBody, {
+                status: 200,
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+        }
+
         // 2. Fetch from Tarkov.dev
+        console.log("Fetching fresh items from Tarkov.dev");
         const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
             method: "POST",
             headers: {
@@ -71,9 +88,14 @@ export async function GET() {
         if (!res.ok) {
             const text = await res.text();
             console.error("Tarkov.dev items error", res.status, text);
-            if (cached) {
-                return NextResponse.json(cached as TimedResponse<ItemsPayload>, {
+            // Fallback to stale cache if available
+            if (cachedBody) {
+                console.log("Using stale cached items due to upstream error");
+                return new NextResponse(cachedBody, {
                     status: 200,
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
                 });
             }
             return NextResponse.json({ error: "Failed to fetch items" }, { status: 502 });
@@ -90,9 +112,21 @@ export async function GET() {
         };
 
         // 3. Store in Redis
-        await redis.set(REDIS_KEY, body);
+        // Store body as a string to avoid parsing overhead on read
+        // Store metadata separately for quick access
+        const jsonBody = JSON.stringify(body);
 
-        return NextResponse.json(body, { status: 200 });
+        await redis.mset({
+            [REDIS_KEY]: jsonBody,
+            [REDIS_KEY_META]: { updatedAt: Date.now() },
+        });
+
+        return new NextResponse(jsonBody, {
+            status: 200,
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
     } catch (error) {
         console.error("/api/items unexpected error", error);
         return NextResponse.json({ error: "Unexpected error" }, { status: 500 });

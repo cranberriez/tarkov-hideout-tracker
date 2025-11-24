@@ -13,8 +13,9 @@ import { redis } from "@/app/server/redis";
 import { requiresFoundInRaid } from "@/app/lib/cfg/foundInRaid";
 import { wikiData } from "@/app/lib/data/wiki-data";
 
-const CACHE_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
-const REDIS_KEY = "hideout:stations:v4";
+const CACHE_WINDOW_MS = 12 * 60 * 60 * 1000; // 12 hours
+const REDIS_KEY = "hideout:stations:v5";
+const REDIS_KEY_META = `${REDIS_KEY}:meta`;
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
 
 interface TarkovHideoutItemRequirement {
@@ -136,19 +137,32 @@ const HIDEOUT_STATIONS_QUERY = `
 export async function GET() {
     try {
         // 1. Try Redis cache first
-        const cached = await redis.get<TimedResponse<HideoutStationsPayload>>(REDIS_KEY);
+        const [cachedBody, cachedMeta] = await redis.mget<[string, { updatedAt: number }]>(
+            REDIS_KEY,
+            REDIS_KEY_META
+        );
 
-        if (cached && typeof cached === "object" && "updatedAt" in cached) {
-            const age = Date.now() - cached.updatedAt;
+        let isFresh = false;
+
+        if (cachedBody && cachedMeta && typeof cachedMeta === "object") {
+            const age = Date.now() - cachedMeta.updatedAt;
             if (age < CACHE_WINDOW_MS) {
-                console.log("Using cached hideout stations");
-                return NextResponse.json(cached as TimedResponse<HideoutStationsPayload>, {
-                    status: 200,
-                });
+                isFresh = true;
             }
         }
 
+        if (isFresh && cachedBody) {
+            console.log("Using cached hideout stations");
+            return new NextResponse(cachedBody, {
+                status: 200,
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+        }
+
         // 2. Fetch from Tarkov.dev
+        console.log("Fetching fresh hideout stations from Tarkov.dev");
         const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
             method: "POST",
             headers: {
@@ -162,9 +176,13 @@ export async function GET() {
         if (!res.ok) {
             const text = await res.text();
             console.error("Tarkov.dev hideoutStations error", res.status, text);
-            if (cached) {
-                return NextResponse.json(cached as TimedResponse<HideoutStationsPayload>, {
+            if (cachedBody) {
+                console.log("Using stale cached stations due to upstream error");
+                return new NextResponse(cachedBody, {
                     status: 200,
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
                 });
             }
             return NextResponse.json(
@@ -307,9 +325,19 @@ export async function GET() {
         };
 
         // 3. Store in Redis
-        await redis.set(REDIS_KEY, body);
+        const jsonBody = JSON.stringify(body);
 
-        return NextResponse.json(body, { status: 200 });
+        await redis.mset({
+            [REDIS_KEY]: jsonBody,
+            [REDIS_KEY_META]: { updatedAt: Date.now() },
+        });
+
+        return new NextResponse(jsonBody, {
+            status: 200,
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
     } catch (error) {
         console.error("/api/hideout/stations unexpected error", error);
         return NextResponse.json({ error: "Unexpected error" }, { status: 500 });
