@@ -62,6 +62,8 @@ export function ItemRow({
 
     const bestSell = getBestSell();
 
+    const isAllFir = firCount > 0 && firCount === count;
+
     if (compact) {
         return (
             <div
@@ -88,12 +90,18 @@ export function ItemRow({
                         >
                             {item.name}
                         </span>
-                        <div className="flex flex-col items-end">
-                            <span className="text-sm font-bold text-tarkov-green shrink-0">
+                        <div className="flex items-baseline gap-1.5">
+                            <span
+                                className={`text-sm font-bold shrink-0 ${
+                                    isAllFir ? "text-orange-400" : "text-tarkov-green"
+                                }`}
+                            >
                                 x{new Intl.NumberFormat("en-US").format(count)}
                             </span>
                             {firCount > 0 && (
-                                <span className="text-[10px] text-orange-400">{firCount} FiR</span>
+                                <span className="text-[10px] text-orange-400 font-medium">
+                                    {isAllFir ? "FiR" : `${firCount} FiR`}
+                                </span>
                             )}
                         </div>
                     </div>
@@ -159,12 +167,20 @@ export function ItemRow({
                     <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">
                         Required
                     </div>
-                    <div className="text-lg font-bold text-tarkov-green leading-none">
-                        x{new Intl.NumberFormat("en-US").format(count)}
+                    <div className="flex items-baseline gap-1.5">
+                        <div
+                            className={`text-lg font-bold leading-none ${
+                                isAllFir ? "text-orange-400" : "text-tarkov-green"
+                            }`}
+                        >
+                            x{new Intl.NumberFormat("en-US").format(count)}
+                        </div>
+                        {firCount > 0 && (
+                            <div className="text-[10px] text-orange-400 font-medium">
+                                {isAllFir ? "FiR" : `${firCount} FiR`}
+                            </div>
+                        )}
                     </div>
-                    {firCount > 0 && (
-                        <div className="text-[10px] text-orange-400 mt-0.5">{firCount} FiR</div>
-                    )}
                 </div>
 
                 {/* Est Cost */}

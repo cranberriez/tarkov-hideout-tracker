@@ -13,6 +13,7 @@ interface UserState {
     showHidden: boolean; // include hidden stations in pooled items
     hideCheap: boolean; // filter out cheap items
     hideMoney: boolean; // filter out currency items
+    showFirOnly: boolean; // filter to show only Found In Raid items
     hideRequirements: boolean; // hide the requirements section entirely
     cheapPriceThreshold: number; // e.g. in roubles
 
@@ -32,6 +33,7 @@ interface UserState {
     setShowHidden: (value: boolean) => void;
     setHideCheap: (value: boolean) => void;
     setHideMoney: (value: boolean) => void;
+    setShowFirOnly: (value: boolean) => void;
     setHideRequirements: (value: boolean) => void;
     setCheapPriceThreshold: (value: number) => void;
     setCompactMode: (value: boolean) => void;
@@ -53,6 +55,7 @@ export const useUserStore = create<UserState>()(
             showHidden: false,
             hideCheap: false,
             hideMoney: false,
+            showFirOnly: false,
             hideRequirements: false,
             cheapPriceThreshold: 5000,
             compactMode: false,
@@ -88,6 +91,7 @@ export const useUserStore = create<UserState>()(
             setShowHidden: (value) => set({ showHidden: value }),
             setHideCheap: (value) => set({ hideCheap: value }),
             setHideMoney: (value) => set({ hideMoney: value }),
+            setShowFirOnly: (value) => set({ showFirOnly: value }),
             setHideRequirements: (value) => set({ hideRequirements: value }),
             setCheapPriceThreshold: (value) => set({ cheapPriceThreshold: value }),
             setCompactMode: (value) => set({ compactMode: value }),

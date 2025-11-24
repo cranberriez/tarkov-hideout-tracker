@@ -1,7 +1,7 @@
 "use client";
 
 import { useUserStore } from "@/app/lib/stores/useUserStore";
-import { Eye, EyeOff, Filter, LayoutList, List, Search, Tags } from "lucide-react";
+import { Eye, EyeOff, Filter, LayoutList, List, Search, Shield, Tags } from "lucide-react";
 
 interface ItemsControlsProps {
     onOpenSearch: () => void;
@@ -23,6 +23,8 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
         setSellToPreference,
         useCategorization,
         setUseCategorization,
+        showFirOnly,
+        setShowFirOnly,
     } = useUserStore();
 
     return (
@@ -153,6 +155,20 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
 
                     {/* Filters */}
                     <div className="flex items-center gap-2">
+                        {/* FiR Only Toggle */}
+                        <button
+                            onClick={() => setShowFirOnly(!showFirOnly)}
+                            className={`flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded border transition-colors ${
+                                showFirOnly
+                                    ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10"
+                                    : "border-white/10 text-gray-400 hover:border-white/30"
+                            }`}
+                            title={showFirOnly ? "Showing FiR Items Only" : "Show FiR Items Only"}
+                        >
+                            <Shield size={14} />
+                            FiR Only
+                        </button>
+
                         {/* Show/Hide Hidden Stations */}
                         <button
                             onClick={() => setShowHidden(!showHidden)}

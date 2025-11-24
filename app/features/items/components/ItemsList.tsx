@@ -34,6 +34,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         initializeDefaults,
         sellToPreference,
         useCategorization,
+        showFirOnly,
     } = useUserStore();
 
     useEffect(() => {
@@ -73,6 +74,11 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         // Filter out items where we don't have details (shouldn't happen often)
         finalItems = finalItems.filter((i) => i.details);
 
+        // Filter FiR Only
+        if (showFirOnly) {
+            finalItems = finalItems.filter((i) => (i.firCount || 0) > 0);
+        }
+
         // Filter cheap items
         if (hideCheap) {
             finalItems = finalItems.filter((i) => {
@@ -89,7 +95,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         });
 
         return finalItems;
-    }, [pooledItems, items, hideCheap, cheapPriceThreshold]);
+    }, [pooledItems, items, hideCheap, cheapPriceThreshold, showFirOnly]);
 
     const categorizedItems = useMemo(() => {
         if (!useCategorization) return null;
