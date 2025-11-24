@@ -9,6 +9,7 @@ interface ItemRowProps {
     firCount?: number; // Optional FiR count
     compact: boolean;
     sellToPreference?: "best" | "flea" | "trader";
+    onClick?: () => void;
 }
 
 export function ItemRow({
@@ -17,6 +18,7 @@ export function ItemRow({
     firCount = 0,
     compact,
     sellToPreference = "best",
+    onClick,
 }: ItemRowProps) {
     const formatPrice = (price?: number) => {
         if (price === undefined) return "???";
@@ -62,7 +64,10 @@ export function ItemRow({
 
     if (compact) {
         return (
-            <div className="flex items-center gap-3 bg-black/20 border border-white/5 p-2 rounded hover:bg-black/40 transition-colors">
+            <div
+                className="flex items-center gap-3 bg-black/20 border border-white/5 p-2 rounded hover:bg-black/40 transition-colors cursor-pointer"
+                onClick={onClick}
+            >
                 <div className="w-10 h-10 bg-black/40  flex items-center justify-center shrink-0 overflow-hidden relative">
                     {item.iconLink ? (
                         <img
@@ -99,7 +104,10 @@ export function ItemRow({
 
     // Large (Grid) View
     return (
-        <div className="bg-black/20 border border-white/5 rounded-lg p-3 hover:bg-black/40 transition-colors flex flex-col gap-3 h-full">
+        <div
+            className="bg-black/20 border border-white/5 rounded-lg p-3 hover:bg-black/40 transition-colors flex flex-col gap-3 h-full cursor-pointer"
+            onClick={onClick}
+        >
             {/* Header: Icon & Name */}
             <div className="flex items-start gap-3 min-w-0">
                 <div className="w-12 h-12 bg-black/40 flex items-center justify-center shrink-0 overflow-hidden relative">
