@@ -9,6 +9,7 @@ export interface RequirementAttribute {
 export interface HideoutItem {
     id: string;
     name: string;
+    normalizedName: string;
     shortName?: string;
     iconLink?: string;
     gridImageLink?: string;

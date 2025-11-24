@@ -1,4 +1,5 @@
 export const stationOrder: string[] = [
+    "security",
     "generator",
     "nutrition-unit",
     "lavatory",

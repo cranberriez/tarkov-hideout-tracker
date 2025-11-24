@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useUserStore } from "@/app/lib/stores/useUserStore";
+import { useDataStore } from "@/app/lib/stores/useDataStore";
 import type { Station } from "@/app/types";
 
 interface StationCardProps {
@@ -17,7 +18,13 @@ export function StationCard({ station, isLocked = false }: StationCardProps) {
         toggleHiddenStation,
         compactMode,
         showHidden,
+        completedRequirements,
+        toggleRequirement,
+        hideMoney,
+        hideRequirements,
     } = useUserStore();
+
+    const { stations } = useDataStore();
 
     const currentLevel = stationLevels[station.id] ?? 0;
     const isHidden = hiddenStations[station.id];
@@ -36,7 +43,11 @@ export function StationCard({ station, isLocked = false }: StationCardProps) {
             }`}
         >
             {/* Header */}
-            <div className="px-3 py-3 border-b border-border-color flex justify-between items-center bg-linear-to-r from-card to-transparent">
+            <div
+                className={`px-3 py-3 flex justify-between items-center bg-linear-to-r from-card to-transparent ${
+                    hideRequirements ? "" : "border-b border-border-color"
+                }`}
+            >
                 <div className="flex items-center gap-3">
                     <div className="relative w-10 h-10 rounded overflow-hidden border border-white/10 shrink-0">
                         {station.imageLink ? (
@@ -166,226 +177,354 @@ export function StationCard({ station, isLocked = false }: StationCardProps) {
             </div>
 
             {/* Content */}
-            <div className="p-3 flex-1 flex flex-col gap-2 bg-card/50 relative">
-                {/* Locked Overlay - Optional if we want to dim content
-                {isLocked && <div className="absolute inset-0 bg-black/20 pointer-events-none z-10" />} */}
+            {!hideRequirements && (
+                <div className="p-3 flex-1 flex flex-col gap-2 bg-card/50 relative">
+                    {!isMaxed && nextLevelData ? (
+                        <>
+                            <div className="text-[10px] text-gray-600 uppercase tracking-wider font-bold mb-0.5">
+                                Next Level Requires:
+                            </div>
 
-                {!isMaxed && nextLevelData ? (
-                    <>
-                        <div className="text-[10px] text-gray-600 uppercase tracking-wider font-bold mb-0.5">
-                            Next Level Requires:
-                        </div>
+                            {/* Non-Item Requirements (Stations, Skills, Traders) */}
+                            <div className="flex flex-wrap gap-2 mb-1">
+                                {nextLevelData.stationLevelRequirements
+                                    ?.filter(
+                                        (req) =>
+                                            req.station.normalizedName !== station.normalizedName
+                                    )
+                                    .map((req, idx) => {
+                                        const reqStation = stations?.find(
+                                            (s) => s.normalizedName === req.station.normalizedName
+                                        );
+                                        const reqStationLevel = reqStation
+                                            ? stationLevels[reqStation.id] ?? 0
+                                            : 0;
+                                        const isMet = reqStationLevel >= req.level;
 
-                        {/* Non-Item Requirements (Stations, Skills, Traders) */}
-                        <div className="flex flex-wrap gap-2 mb-1">
-                            {nextLevelData.stationLevelRequirements?.map((req, idx) => (
-                                <div
-                                    key={`st-${idx}`}
-                                    className="flex items-center gap-2 bg-red-900/20 border border-red-500/20 px-2 py-1 rounded"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="12"
-                                        height="12"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="text-red-400"
+                                        return (
+                                            <div
+                                                key={`st-${idx}`}
+                                                className={`flex items-center gap-2 px-2 py-1 rounded border ${
+                                                    isMet
+                                                        ? "bg-green-900/20 border-green-500/20"
+                                                        : "bg-red-900/20 border-red-500/20"
+                                                }`}
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="12"
+                                                    height="12"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    className={
+                                                        isMet ? "text-green-400" : "text-red-400"
+                                                    }
+                                                >
+                                                    {isMet ? (
+                                                        <>
+                                                            <rect
+                                                                x="3"
+                                                                y="11"
+                                                                width="18"
+                                                                height="11"
+                                                                rx="2"
+                                                                ry="2"
+                                                            ></rect>
+                                                            <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <rect
+                                                                x="3"
+                                                                y="11"
+                                                                width="18"
+                                                                height="11"
+                                                                rx="2"
+                                                                ry="2"
+                                                            ></rect>
+                                                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                                        </>
+                                                    )}
+                                                </svg>
+                                                <span
+                                                    className={`text-[10px] font-medium uppercase ${
+                                                        isMet ? "text-green-200" : "text-red-200"
+                                                    }`}
+                                                >
+                                                    {req.station.normalizedName.replace(/-/g, " ")}{" "}
+                                                    <span className="text-white ml-1">
+                                                        LVL {req.level}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                {nextLevelData.skillRequirements?.map((req, idx) => (
+                                    <div
+                                        key={`sk-${idx}`}
+                                        className="flex items-center gap-2 bg-blue-900/20 border border-blue-500/20 px-2 py-1 rounded"
                                     >
-                                        <rect
-                                            x="3"
-                                            y="11"
-                                            width="18"
-                                            height="11"
-                                            rx="2"
-                                            ry="2"
-                                        ></rect>
-                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                    </svg>
-                                    <span className="text-[10px] text-red-200 font-medium uppercase">
-                                        {req.station.normalizedName.replace(/-/g, " ")}{" "}
-                                        <span className="text-white ml-1">LVL {req.level}</span>
-                                    </span>
-                                </div>
-                            ))}
-                            {nextLevelData.skillRequirements?.map((req, idx) => (
-                                <div
-                                    key={`sk-${idx}`}
-                                    className="flex items-center gap-2 bg-blue-900/20 border border-blue-500/20 px-2 py-1 rounded"
-                                >
-                                    <div className="w-3 h-3 relative shrink-0">
-                                        {req.skill.imageLink && (
-                                            <Image
-                                                src={req.skill.imageLink}
-                                                alt={req.skill.name}
-                                                fill
-                                                className="object-contain"
-                                                unoptimized
-                                            />
-                                        )}
-                                    </div>
-                                    <span className="text-[10px] text-blue-200 font-medium uppercase">
-                                        {req.skill.name}{" "}
-                                        <span className="text-white ml-1">LVL {req.level}</span>
-                                    </span>
-                                </div>
-                            ))}
-                            {nextLevelData.traderRequirements?.map((req, idx) => (
-                                <div
-                                    key={`tr-${idx}`}
-                                    className="flex items-center gap-2 bg-yellow-900/20 border border-yellow-500/20 px-2 py-1 rounded"
-                                >
-                                    <div className="w-3 h-3 relative shrink-0 rounded-full overflow-hidden">
-                                        {req.trader.imageLink && (
-                                            <Image
-                                                src={req.trader.imageLink}
-                                                alt={req.trader.name}
-                                                fill
-                                                className="object-cover"
-                                                unoptimized
-                                            />
-                                        )}
-                                    </div>
-                                    <span className="text-[10px] text-yellow-200 font-medium uppercase">
-                                        {req.trader.name}{" "}
-                                        <span className="text-white ml-1">LL{req.value}</span>
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-
-                        {compactMode ? (
-                            // Compact Grid View
-                            <div className="flex flex-wrap gap-2">
-                                {nextLevelData.itemRequirements.map((req) => {
-                                    const quantity = req.count ?? req.quantity ?? 1;
-                                    const isFir = req.attributes.some(
-                                        (a) => a.type === "foundInRaid" && a.value === "true"
-                                    );
-
-                                    return (
-                                        <div
-                                            key={req.id}
-                                            className={`relative w-12 h-12 bg-black/40 border group ${
-                                                isFir ? "border-orange-500/50" : "border-white/10"
-                                            }`}
-                                            title={`${quantity}x ${req.item.name}${
-                                                isFir ? " (Found In Raid)" : ""
-                                            }`}
-                                        >
-                                            {req.item.iconLink && (
+                                        <div className="w-3 h-3 relative shrink-0">
+                                            {req.skill.imageLink && (
                                                 <Image
-                                                    src={req.item.iconLink}
-                                                    alt={req.item.name}
+                                                    src={req.skill.imageLink}
+                                                    alt={req.skill.name}
                                                     fill
-                                                    className="object-contain p-1"
+                                                    className="object-contain"
                                                     unoptimized
                                                 />
                                             )}
-                                            {isFir && (
-                                                <div
-                                                    className="absolute -top-1.5 -right-1.5 bg-black rounded-full z-10 text-orange-500"
-                                                    title="Found In Raid"
-                                                >
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        width="14"
-                                                        height="14"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        className="fill-black"
-                                                    >
-                                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                                        <path d="m9 11 3 3L22 4" />
-                                                    </svg>
-                                                </div>
+                                        </div>
+                                        <span className="text-[10px] text-blue-200 font-medium uppercase">
+                                            {req.skill.name}{" "}
+                                            <span className="text-white ml-1">LVL {req.level}</span>
+                                        </span>
+                                    </div>
+                                ))}
+                                {nextLevelData.traderRequirements?.map((req, idx) => (
+                                    <div
+                                        key={`tr-${idx}`}
+                                        className="flex items-center gap-2 bg-yellow-900/20 border border-yellow-500/20 px-2 py-1 rounded"
+                                    >
+                                        <div className="w-3 h-3 relative shrink-0 rounded-full overflow-hidden">
+                                            {req.trader.imageLink && (
+                                                <Image
+                                                    src={req.trader.imageLink}
+                                                    alt={req.trader.name}
+                                                    fill
+                                                    className="object-cover"
+                                                    unoptimized
+                                                />
                                             )}
-                                            <div className="absolute bottom-0 right-0 bg-black/80 px-1 text-[10px] font-mono text-tarkov-green border-t border-l border-white/10">
-                                                {quantity}
-                                            </div>
                                         </div>
-                                    );
-                                })}
+                                        <span className="text-[10px] text-yellow-200 font-medium uppercase">
+                                            {req.trader.name}{" "}
+                                            <span className="text-white ml-1">LL{req.value}</span>
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
-                        ) : (
-                            // Expanded List View
-                            <div className="flex flex-col gap-1.5">
-                                {nextLevelData.itemRequirements.map((req) => {
-                                    const quantity = req.count ?? req.quantity ?? 1;
-                                    const isFir = req.attributes.some(
-                                        (a) => a.type === "foundInRaid" && a.value === "true"
-                                    );
 
-                                    return (
-                                        <div
-                                            key={req.id}
-                                            className="flex items-center gap-3 bg-black/20 p-1.5 rounded border border-white/5 hover:border-white/10 transition-colors"
-                                        >
-                                            <div
-                                                className={`relative w-6 h-6 shrink-0 ${
-                                                    isFir
-                                                        ? "ring-1 ring-orange-500/50 rounded-sm"
-                                                        : ""
-                                                }`}
-                                            >
-                                                {req.item.iconLink && (
-                                                    <Image
-                                                        src={req.item.iconLink}
-                                                        alt={req.item.name}
-                                                        fill
-                                                        className="object-contain"
-                                                        unoptimized
-                                                    />
-                                                )}
-                                            </div>
-                                            <div className="flex-1 min-w-0 flex items-center justify-between">
-                                                <div className="text-xs text-gray-300 truncate">
-                                                    <span className="font-bold text-tarkov-green mr-2 font-mono">
-                                                        {quantity}x
-                                                    </span>
-                                                    {req.item.shortName || req.item.name}
-                                                </div>
-                                                {isFir && (
-                                                    <div
-                                                        className="text-orange-500"
-                                                        title="Found In Raid"
-                                                    >
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            width="14"
-                                                            height="14"
-                                                            viewBox="0 0 24 24"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            strokeWidth="2"
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
+                            {compactMode ? (
+                                // Compact Grid View
+                                <div className="flex flex-wrap gap-2">
+                                    {nextLevelData.itemRequirements
+                                        .filter((req) => {
+                                            if (!hideMoney) return true;
+                                            const norm = req.item.normalizedName;
+                                            return (
+                                                norm !== "roubles" &&
+                                                norm !== "dollars" &&
+                                                norm !== "euros"
+                                            );
+                                        })
+                                        .map((req) => {
+                                            const quantity = req.count ?? req.quantity ?? 1;
+                                            const isFir = req.attributes.some(
+                                                (a) =>
+                                                    a.type === "foundInRaid" && a.value === "true"
+                                            );
+                                            const isCompleted = completedRequirements[req.id];
+
+                                            return (
+                                                <div
+                                                    key={req.id}
+                                                    onClick={() => toggleRequirement(req.id)}
+                                                    className={`relative w-12 h-12 bg-black/40 border group cursor-pointer transition-all ${
+                                                        isFir
+                                                            ? "border-orange-500/50"
+                                                            : "border-white/10"
+                                                    } ${
+                                                        isCompleted
+                                                            ? "opacity-50 grayscale"
+                                                            : "hover:border-white/30"
+                                                    }`}
+                                                    title={`${quantity}x ${req.item.name}${
+                                                        isFir ? " (Found In Raid)" : ""
+                                                    }${isCompleted ? " (Completed)" : ""}`}
+                                                >
+                                                    {req.item.iconLink && (
+                                                        <Image
+                                                            src={req.item.iconLink}
+                                                            alt={req.item.name}
+                                                            fill
+                                                            className="object-contain p-1"
+                                                            unoptimized
+                                                        />
+                                                    )}
+                                                    {isFir && (
+                                                        <div
+                                                            className="absolute -top-1.5 -right-1.5 bg-black rounded-full z-10 text-orange-500"
+                                                            title="Found In Raid"
                                                         >
-                                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                                            <path d="m9 11 3 3L22 4" />
-                                                        </svg>
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                width="14"
+                                                                height="14"
+                                                                viewBox="0 0 24 24"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth="2"
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                className="fill-black"
+                                                            >
+                                                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                                                <path d="m9 11 3 3L22 4" />
+                                                            </svg>
+                                                        </div>
+                                                    )}
+                                                    {isCompleted && (
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                width="24"
+                                                                height="24"
+                                                                viewBox="0 0 24 24"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth="3"
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                className="text-tarkov-green"
+                                                            >
+                                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                                            </svg>
+                                                        </div>
+                                                    )}
+                                                    <div className="absolute bottom-0 right-0 bg-black/80 px-1 text-[10px] font-mono text-tarkov-green border-t border-l border-white/10">
+                                                        {quantity}
                                                     </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </>
-                ) : (
-                    <div className="flex items-center justify-center h-full text-gray-600 text-xs italic py-4">
-                        Max level reached
-                    </div>
-                )}
-            </div>
+                                                </div>
+                                            );
+                                        })}
+                                </div>
+                            ) : (
+                                // Expanded List View
+                                <div className="flex flex-col gap-1.5">
+                                    {nextLevelData.itemRequirements
+                                        .filter((req) => {
+                                            if (!hideMoney) return true;
+                                            const norm = req.item.normalizedName;
+                                            return (
+                                                norm !== "roubles" &&
+                                                norm !== "dollars" &&
+                                                norm !== "euros"
+                                            );
+                                        })
+                                        .map((req) => {
+                                            const quantity = req.count ?? req.quantity ?? 1;
+                                            const isFir = req.attributes.some(
+                                                (a) =>
+                                                    a.type === "foundInRaid" && a.value === "true"
+                                            );
+                                            const isCompleted = completedRequirements[req.id];
+
+                                            return (
+                                                <div
+                                                    key={req.id}
+                                                    onClick={() => toggleRequirement(req.id)}
+                                                    className={`flex items-center gap-3 bg-black/20 p-1.5 rounded border transition-colors cursor-pointer ${
+                                                        isCompleted
+                                                            ? "border-green-500/30 opacity-60 bg-green-900/5"
+                                                            : "border-white/5 hover:border-white/10"
+                                                    }`}
+                                                >
+                                                    <div
+                                                        className={`relative w-6 h-6 shrink-0 ${
+                                                            isFir
+                                                                ? "ring-1 ring-orange-500/50 rounded-sm"
+                                                                : ""
+                                                        }`}
+                                                    >
+                                                        {req.item.iconLink && (
+                                                            <Image
+                                                                src={req.item.iconLink}
+                                                                alt={req.item.name}
+                                                                fill
+                                                                className={`object-contain ${
+                                                                    isCompleted ? "grayscale" : ""
+                                                                }`}
+                                                                unoptimized
+                                                            />
+                                                        )}
+                                                        {isCompleted && (
+                                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                                <svg
+                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                    width="16"
+                                                                    height="16"
+                                                                    viewBox="0 0 24 24"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    strokeWidth="3"
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    className="text-tarkov-green drop-shadow-md"
+                                                                >
+                                                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                                                </svg>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0 flex items-center justify-between">
+                                                        <div
+                                                            className={`text-xs truncate ${
+                                                                isCompleted
+                                                                    ? "text-gray-500 line-through decoration-tarkov-green/50"
+                                                                    : "text-gray-300"
+                                                            }`}
+                                                        >
+                                                            <span
+                                                                className={`font-bold mr-2 font-mono ${
+                                                                    isCompleted
+                                                                        ? "text-gray-600"
+                                                                        : "text-tarkov-green"
+                                                                }`}
+                                                            >
+                                                                {quantity}x
+                                                            </span>
+                                                            {req.item.shortName || req.item.name}
+                                                        </div>
+                                                        {isFir && !isCompleted && (
+                                                            <div
+                                                                className="text-orange-500"
+                                                                title="Found In Raid"
+                                                            >
+                                                                <svg
+                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                    width="14"
+                                                                    height="14"
+                                                                    viewBox="0 0 24 24"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    strokeWidth="2"
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                >
+                                                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                                                    <path d="m9 11 3 3L22 4" />
+                                                                </svg>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className="flex items-center justify-center h-full text-gray-600 text-xs italic py-4">
+                            Max level reached
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

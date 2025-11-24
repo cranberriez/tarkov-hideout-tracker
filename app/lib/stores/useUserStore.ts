@@ -6,11 +6,14 @@ interface UserState {
     // Per-station progress and visibility
     stationLevels: Record<string, number>; // stationId -> current level
     hiddenStations: Record<string, boolean>; // stationId -> hidden?
+    completedRequirements: Record<string, boolean>; // requirementId -> completed?
 
     // Checklist view options
     checklistViewMode: "all" | "nextLevel";
     showHidden: boolean; // include hidden stations in pooled items
     hideCheap: boolean; // filter out cheap items
+    hideMoney: boolean; // filter out currency items
+    hideRequirements: boolean; // hide the requirements section entirely
     cheapPriceThreshold: number; // e.g. in roubles
 
     // Hideout View options
@@ -20,10 +23,13 @@ interface UserState {
     setStationLevel: (stationId: string, level: number) => void;
     incrementStationLevel: (stationId: string) => void;
     toggleHiddenStation: (stationId: string) => void;
+    toggleRequirement: (requirementId: string) => void;
 
     setChecklistViewMode: (mode: "all" | "nextLevel") => void;
     setShowHidden: (value: boolean) => void;
     setHideCheap: (value: boolean) => void;
+    setHideMoney: (value: boolean) => void;
+    setHideRequirements: (value: boolean) => void;
     setCheapPriceThreshold: (value: number) => void;
     setCompactMode: (value: boolean) => void;
 
@@ -36,9 +42,12 @@ export const useUserStore = create<UserState>()(
         (set, get) => ({
             stationLevels: {},
             hiddenStations: {},
+            completedRequirements: {},
             checklistViewMode: "nextLevel",
             showHidden: false,
             hideCheap: false,
+            hideMoney: false,
+            hideRequirements: false,
             cheapPriceThreshold: 5000,
             compactMode: false,
 
@@ -59,9 +68,19 @@ export const useUserStore = create<UserState>()(
                     },
                 })),
 
+            toggleRequirement: (requirementId) =>
+                set((state) => ({
+                    completedRequirements: {
+                        ...state.completedRequirements,
+                        [requirementId]: !state.completedRequirements[requirementId],
+                    },
+                })),
+
             setChecklistViewMode: (mode) => set({ checklistViewMode: mode }),
             setShowHidden: (value) => set({ showHidden: value }),
             setHideCheap: (value) => set({ hideCheap: value }),
+            setHideMoney: (value) => set({ hideMoney: value }),
+            setHideRequirements: (value) => set({ hideRequirements: value }),
             setCheapPriceThreshold: (value) => set({ cheapPriceThreshold: value }),
             setCompactMode: (value) => set({ compactMode: value }),
 

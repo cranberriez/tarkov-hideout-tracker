@@ -12,7 +12,7 @@ import type {
 import { redis } from "@/app/server/redis";
 
 const CACHE_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
-const REDIS_KEY = "hideout:stations:v2";
+const REDIS_KEY = "hideout:stations:v3";
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
 
 interface TarkovHideoutItemRequirement {
@@ -22,6 +22,7 @@ interface TarkovHideoutItemRequirement {
     item: {
         id: string;
         name: string;
+        normalizedName: string;
         shortName?: string;
         iconLink?: string;
         gridImageLink?: string;
@@ -92,6 +93,7 @@ const HIDEOUT_STATIONS_QUERY = `
           item {
             id
             name
+            normalizedName
             shortName
             iconLink
             gridImageLink
@@ -187,6 +189,7 @@ export async function GET() {
                                 item: {
                                     id: req.item.id,
                                     name: req.item.name,
+                                    normalizedName: req.item.normalizedName,
                                     shortName: req.item.shortName,
                                     iconLink: req.item.iconLink,
                                     gridImageLink: req.item.gridImageLink,
