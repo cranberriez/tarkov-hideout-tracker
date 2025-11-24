@@ -65,6 +65,10 @@ export async function GET() {
 
         if (isFresh && cachedBody) {
             console.log("Using cached items");
+            // Upstash Redis might parse the JSON string automatically
+            if (typeof cachedBody === "object") {
+                return NextResponse.json(cachedBody);
+            }
             // Return the string directly, avoiding JSON.stringify overhead
             return new NextResponse(cachedBody, {
                 status: 200,
@@ -91,6 +95,9 @@ export async function GET() {
             // Fallback to stale cache if available
             if (cachedBody) {
                 console.log("Using stale cached items due to upstream error");
+                if (typeof cachedBody === "object") {
+                    return NextResponse.json(cachedBody);
+                }
                 return new NextResponse(cachedBody, {
                     status: 200,
                     headers: {

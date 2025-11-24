@@ -153,6 +153,10 @@ export async function GET() {
 
         if (isFresh && cachedBody) {
             console.log("Using cached hideout stations");
+            // Upstash Redis might parse the JSON string automatically
+            if (typeof cachedBody === "object") {
+                return NextResponse.json(cachedBody);
+            }
             return new NextResponse(cachedBody, {
                 status: 200,
                 headers: {
@@ -178,6 +182,9 @@ export async function GET() {
             console.error("Tarkov.dev hideoutStations error", res.status, text);
             if (cachedBody) {
                 console.log("Using stale cached stations due to upstream error");
+                if (typeof cachedBody === "object") {
+                    return NextResponse.json(cachedBody);
+                }
                 return new NextResponse(cachedBody, {
                     status: 200,
                     headers: {
