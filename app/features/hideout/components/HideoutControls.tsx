@@ -17,8 +17,8 @@ export function HideoutControls() {
     } = useUserStore();
 
     return (
-        <div className="flex flex-col gap-4 bg-[#1a1a1a] p-4 rounded-lg border border-[#2a2a2a]">
-            <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-2 bg-[#1a1a1a] p-2 rounded-lg border border-[#2a2a2a]">
+            <div className="flex flex-wrap items-center gap-2">
                 <button
                     onClick={() => setHideRequirements(!hideRequirements)}
                     className={`text-xs font-bold border border-border-color px-3 py-2 rounded uppercase tracking-widest transition-colors ${

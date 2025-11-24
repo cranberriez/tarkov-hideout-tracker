@@ -1,7 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useUserStore } from "@/app/lib/stores/useUserStore";
 import { Eye, EyeOff, Filter, LayoutList, List, Search, Shield, Tags } from "lucide-react";
+import { ReactNode } from "react";
 
 interface ItemsControlsProps {
     onOpenSearch: () => void;
@@ -28,193 +29,202 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
     } = useUserStore();
 
     return (
-        <div className="flex flex-col gap-4 bg-[#1a1a1a] p-4 rounded-lg border border-[#2a2a2a]">
-            <div className="flex flex-wrap gap-6 items-center justify-between">
-                <div className="flex items-center gap-4 flex-wrap">
-                    {/* Search Button */}
-                    <button
-                        onClick={onOpenSearch}
-                        className="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded border border-white/10 text-gray-400 hover:text-white hover:border-white/30 transition-colors"
-                    >
-                        <Search size={14} />
-                        Search
-                    </button>
+        <div className="flex flex-col gap-2 bg-[#1a1a1a] p-2 rounded-md border border-[#2a2a2a]">
+            {/* Search Bar */}
+            <button
+                onClick={onOpenSearch}
+                className="group flex items-center gap-3 text-sm font-medium px-2 py-3 rounded-sm bg-black/40 border border-white/10 text-gray-400 hover:text-white hover:border-tarkov-green/50 hover:bg-black/60 transition-all w-full"
+            >
+                <Search
+                    size={18}
+                    className="text-gray-500 group-hover:text-tarkov-green transition-colors"
+                />
+                Search items...
+            </button>
 
-                    {/* View Mode: All vs Next Level */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500 uppercase font-bold tracking-wider">
-                            View
-                        </span>
-                        <div className="flex bg-black/40 rounded p-1 border border-white/10">
-                            <button
-                                onClick={() => setChecklistViewMode("nextLevel")}
-                                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                                    checklistViewMode === "nextLevel"
-                                        ? "bg-tarkov-green text-black"
-                                        : "text-gray-400 hover:text-white"
-                                }`}
-                            >
-                                Next Level
-                            </button>
-                            <button
-                                onClick={() => setChecklistViewMode("all")}
-                                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                                    checklistViewMode === "all"
-                                        ? "bg-tarkov-green text-black"
-                                        : "text-gray-400 hover:text-white"
-                                }`}
-                            >
-                                All Future
-                            </button>
-                        </div>
-                    </div>
+            <div className="flex flex-col xl:flex-row gap-6 justify-between items-start xl:items-center">
+                {/* Left Group: View Settings */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 w-full xl:w-auto">
+                    {/* View Mode */}
+                    <ControlGroup label="View">
+                        <ControlButton
+                            active={checklistViewMode === "nextLevel"}
+                            onClick={() => setChecklistViewMode("nextLevel")}
+                        >
+                            Next Level
+                        </ControlButton>
+                        <ControlButton
+                            active={checklistViewMode === "all"}
+                            onClick={() => setChecklistViewMode("all")}
+                        >
+                            All Future
+                        </ControlButton>
+                    </ControlGroup>
 
-                    {/* Sell To Preference */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500 uppercase font-bold tracking-wider">
-                            Price
-                        </span>
-                        <div className="flex bg-black/40 rounded p-1 border border-white/10">
-                            <button
-                                onClick={() => setSellToPreference("best")}
-                                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                                    sellToPreference === "best"
-                                        ? "bg-tarkov-green text-black"
-                                        : "text-gray-400 hover:text-white"
-                                }`}
-                            >
-                                Best
-                            </button>
-                            <button
-                                onClick={() => setSellToPreference("flea")}
-                                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                                    sellToPreference === "flea"
-                                        ? "bg-tarkov-green text-black"
-                                        : "text-gray-400 hover:text-white"
-                                }`}
-                            >
-                                Flea
-                            </button>
-                            <button
-                                onClick={() => setSellToPreference("trader")}
-                                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                                    sellToPreference === "trader"
-                                        ? "bg-tarkov-green text-black"
-                                        : "text-gray-400 hover:text-white"
-                                }`}
-                            >
-                                Trader
-                            </button>
-                        </div>
-                    </div>
+                    {/* Price Mode */}
+                    <ControlGroup label="Price">
+                        <ControlButton
+                            active={sellToPreference === "best"}
+                            onClick={() => setSellToPreference("best")}
+                        >
+                            Best
+                        </ControlButton>
+                        <ControlButton
+                            active={sellToPreference === "flea"}
+                            onClick={() => setSellToPreference("flea")}
+                        >
+                            Flea
+                        </ControlButton>
+                        <ControlButton
+                            active={sellToPreference === "trader"}
+                            onClick={() => setSellToPreference("trader")}
+                        >
+                            Trader
+                        </ControlButton>
+                    </ControlGroup>
+
+                    {/* Size/Compact Mode */}
+                    <ControlGroup label="Size">
+                        <ControlButton
+                            active={compactMode}
+                            onClick={() => setCompactMode(true)}
+                            icon={<List size={14} />}
+                        >
+                            Small
+                        </ControlButton>
+                        <ControlButton
+                            active={!compactMode}
+                            onClick={() => setCompactMode(false)}
+                            icon={<LayoutList size={14} />}
+                        >
+                            Large
+                        </ControlButton>
+                    </ControlGroup>
                 </div>
 
-                <div className="flex items-center gap-4 flex-wrap">
-                    {/* Categorize Toggle */}
-                    <button
+                {/* Right Group: Filters & Toggles */}
+                <div className="flex flex-wrap self-end items-center gap-2 w-full xl:w-auto xl:justify-end">
+                    <FilterButton
+                        active={useCategorization}
                         onClick={() => setUseCategorization(!useCategorization)}
-                        className={`flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded border transition-colors ${
-                            useCategorization
-                                ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10"
-                                : "border-white/10 text-gray-400 hover:border-white/30"
+                        icon={<Tags size={14} />}
+                        label="Categorize"
+                    />
+
+                    <FilterButton
+                        active={showFirOnly}
+                        onClick={() => setShowFirOnly(!showFirOnly)}
+                        icon={<Shield size={14} />}
+                        label="FiR Only"
+                    />
+
+                    <div
+                        className={`flex items-center rounded-md border transition-colors overflow-hidden ${
+                            hideCheap ? "border-tarkov-green/50" : "border-white/10"
                         }`}
                     >
-                        <Tags size={14} />
-                        Categorize
+                        <button
+                            onClick={() => setHideCheap(!hideCheap)}
+                            className={`flex items-center gap-2 text-xs font-medium px-3 py-2 transition-colors ${
+                                hideCheap
+                                    ? "bg-tarkov-green/10 text-tarkov-green"
+                                    : "bg-black/20 text-gray-400 hover:bg-black/40 hover:text-gray-200"
+                            }`}
+                        >
+                            <Filter size={14} />
+                            Hide Cheap
+                        </button>
+                        {hideCheap && (
+                            <div className="flex items-center gap-1 text-xs text-gray-400 bg-black/40 px-2 py-2 border-l border-tarkov-green/20">
+                                <span>&lt;</span>
+                                <input
+                                    type="number"
+                                    value={cheapPriceThreshold}
+                                    onChange={(e) => setCheapPriceThreshold(Number(e.target.value))}
+                                    className="w-16 bg-transparent text-right text-white focus:outline-none border-b border-gray-600 focus:border-tarkov-green appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none font-mono"
+                                />
+                                <span>₽</span>
+                            </div>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={() => setShowHidden(!showHidden)}
+                        className={`flex items-center justify-center w-[38px] h-[38px] rounded-md border transition-colors ${
+                            showHidden
+                                ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10 shadow-[0_0_10px_rgba(157,255,0,0.1)]"
+                                : "border-white/10 text-gray-400 hover:border-white/30 bg-black/20"
+                        }`}
+                        title={showHidden ? "Showing Hidden Stations" : "Hiding Hidden Stations"}
+                    >
+                        {showHidden ? <Eye size={16} /> : <EyeOff size={16} />}
                     </button>
-
-                    {/* Display Size: Small vs Large */}
-                    <div className="flex items-center gap-2">
-                        <div className="flex bg-black/40 rounded p-1 border border-white/10">
-                            <button
-                                onClick={() => setCompactMode(true)}
-                                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors flex items-center gap-1 ${
-                                    compactMode
-                                        ? "bg-tarkov-green text-black"
-                                        : "text-gray-400 hover:text-white"
-                                }`}
-                                title="Small View"
-                            >
-                                <List size={14} />
-                                Small
-                            </button>
-                            <button
-                                onClick={() => setCompactMode(false)}
-                                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors flex items-center gap-1 ${
-                                    !compactMode
-                                        ? "bg-tarkov-green text-black"
-                                        : "text-gray-400 hover:text-white"
-                                }`}
-                                title="Large View"
-                            >
-                                <LayoutList size={14} />
-                                Large
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Filters */}
-                    <div className="flex items-center gap-2">
-                        {/* FiR Only Toggle */}
-                        <button
-                            onClick={() => setShowFirOnly(!showFirOnly)}
-                            className={`flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded border transition-colors ${
-                                showFirOnly
-                                    ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10"
-                                    : "border-white/10 text-gray-400 hover:border-white/30"
-                            }`}
-                            title={showFirOnly ? "Showing FiR Items Only" : "Show FiR Items Only"}
-                        >
-                            <Shield size={14} />
-                            FiR Only
-                        </button>
-
-                        {/* Show/Hide Hidden Stations */}
-                        <button
-                            onClick={() => setShowHidden(!showHidden)}
-                            className={`flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded border transition-colors ${
-                                showHidden
-                                    ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10"
-                                    : "border-white/10 text-gray-400 hover:border-white/30"
-                            }`}
-                            title={
-                                showHidden ? "Showing Hidden Stations" : "Hiding Hidden Stations"
-                            }
-                        >
-                            {showHidden ? <Eye size={14} /> : <EyeOff size={14} />}
-                        </button>
-
-                        {/* Hide Cheap */}
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setHideCheap(!hideCheap)}
-                                className={`flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded border transition-colors ${
-                                    hideCheap
-                                        ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10"
-                                        : "border-white/10 text-gray-400 hover:border-white/30"
-                                }`}
-                            >
-                                <Filter size={14} />
-                                Hide Cheap
-                            </button>
-                            {hideCheap && (
-                                <div className="flex items-center gap-1 text-xs text-gray-400 bg-black/40 px-2 py-1.5 rounded border border-white/10">
-                                    <span>&lt;</span>
-                                    <input
-                                        type="number"
-                                        value={cheapPriceThreshold}
-                                        onChange={(e) =>
-                                            setCheapPriceThreshold(Number(e.target.value))
-                                        }
-                                        className="w-16 bg-transparent text-right text-white focus:outline-none border-b border-gray-600 focus:border-tarkov-green appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                    />
-                                    <span>₽</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
+    );
+}
+
+// Subcomponents
+function ControlGroup({ label, children }: { label: string; children: ReactNode }) {
+    return (
+        <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold pl-1">
+                {label}
+            </span>
+            <div className="flex bg-black/40 rounded-sm p-1 border border-white/10">{children}</div>
+        </div>
+    );
+}
+
+function ControlButton({
+    active,
+    onClick,
+    children,
+    icon,
+}: {
+    active: boolean;
+    onClick: () => void;
+    children: ReactNode;
+    icon?: ReactNode;
+}) {
+    return (
+        <button
+            onClick={onClick}
+            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-xs transition-all ${
+                active
+                    ? "bg-tarkov-green text-black shadow-sm"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+            }`}
+        >
+            {icon}
+            {children}
+        </button>
+    );
+}
+
+function FilterButton({
+    active,
+    onClick,
+    icon,
+    label,
+}: {
+    active: boolean;
+    onClick: () => void;
+    icon: ReactNode;
+    label: string;
+}) {
+    return (
+        <button
+            onClick={onClick}
+            className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-sm border transition-all ${
+                active
+                    ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10 shadow-[0_0_10px_rgba(157,255,0,0.1)]"
+                    : "border-white/10 text-gray-400 hover:border-white/30 bg-black/20 hover:bg-black/40"
+            }`}
+        >
+            {icon}
+            {label}
+        </button>
     );
 }
