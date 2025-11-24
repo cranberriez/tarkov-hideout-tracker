@@ -4,7 +4,7 @@ import { redis } from "@/app/server/redis";
 import { getHideoutStations } from "@/app/server/services/hideout";
 
 const CACHE_WINDOW_MS = 12 * 60 * 60 * 1000; // 12 hours
-const REDIS_KEY = "hideout:items:v5";
+const REDIS_KEY = "hideout:items:filtered:v1";
 const REDIS_KEY_META = `${REDIS_KEY}:meta`;
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
 
@@ -15,8 +15,8 @@ interface TarkovItemsResponse {
 }
 
 const ITEMS_QUERY = `
-{
-  items(lang: en) {
+query Items($ids: [ID!]) {
+  items(ids: $ids, lang: en) {
     id
     name
     normalizedName
@@ -47,10 +47,7 @@ const ITEMS_QUERY = `
 
 export async function GET() {
     try {
-        // 1. Get all items (Cached or Fresh)
-        let allItems: ItemDetails[] = [];
-
-        // Try Redis cache first for ALL items
+        // 1. Try Redis cache first for ALREADY FILTERED items
         const [cachedBody, cachedMeta] = await redis.mget<[string, { updatedAt: number }]>(
             REDIS_KEY,
             REDIS_KEY_META
@@ -65,57 +62,20 @@ export async function GET() {
         }
 
         if (isFresh && cachedBody) {
-            console.log("Using cached items");
-            const body =
-                typeof cachedBody === "object"
-                    ? cachedBody
-                    : (JSON.parse(cachedBody) as TimedResponse<ItemsPayload>);
-            allItems = body.data.items;
-        } else {
-            // Fetch from Tarkov.dev
-            console.log("Fetching fresh items from Tarkov.dev");
-            const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ query: ITEMS_QUERY }),
-                cache: "no-store",
-            });
-
-            if (!res.ok) {
-                const text = await res.text();
-                console.error("Tarkov.dev items error", res.status, text);
-                // Fallback to stale cache
-                if (cachedBody) {
-                    console.log("Using stale cached items due to upstream error");
-                    const body =
-                        typeof cachedBody === "object"
-                            ? cachedBody
-                            : (JSON.parse(cachedBody) as TimedResponse<ItemsPayload>);
-                    allItems = body.data.items;
-                } else {
-                    return NextResponse.json({ error: "Failed to fetch items" }, { status: 502 });
-                }
-            } else {
-                const json = (await res.json()) as TarkovItemsResponse;
-                allItems = json.data?.items ?? [];
-
-                // Store ALL items in Redis
-                const payload: ItemsPayload = { items: allItems };
-                const body: TimedResponse<ItemsPayload> = {
-                    data: payload,
-                    updatedAt: Date.now(),
-                };
-
-                await redis.mset({
-                    [REDIS_KEY]: JSON.stringify(body),
-                    [REDIS_KEY_META]: { updatedAt: Date.now() },
-                });
+            console.log("Using cached filtered items");
+            // If already object (Upstash), return as is
+            if (typeof cachedBody === "object") {
+                return NextResponse.json(cachedBody);
             }
+            // Return string directly
+            return new NextResponse(cachedBody, {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+            });
         }
 
-        // 2. Filter items based on Hideout Requirements
+        // 2. Fetch Stations to determine required Item IDs
+        console.log("Cache stale or missing. Fetching stations to identify required items...");
         const stations = await getHideoutStations();
         const requiredItemIds = new Set<string>();
 
@@ -127,15 +87,67 @@ export async function GET() {
             });
         });
 
-        console.log(
-            `Filtering items: ${allItems.length} total -> ${requiredItemIds.size} required`
-        );
+        const queryIds = Array.from(requiredItemIds);
+        console.log(`Identified ${queryIds.length} unique items required for hideout.`);
 
-        const filteredItems = allItems.filter((item) => requiredItemIds.has(item.id));
+        if (queryIds.length === 0) {
+            return NextResponse.json({ data: { items: [] }, updatedAt: Date.now() });
+        }
 
-        return NextResponse.json({
-            data: { items: filteredItems },
+        // 3. Fetch ONLY required items from Tarkov.dev
+        console.log(`Fetching ${queryIds.length} specific items from Tarkov.dev...`);
+        const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                query: ITEMS_QUERY,
+                variables: { ids: queryIds },
+            }),
+            cache: "no-store",
+        });
+
+        let items: ItemDetails[] = [];
+
+        if (!res.ok) {
+            const text = await res.text();
+            console.error("Tarkov.dev items error", res.status, text);
+            // Fallback to stale cache
+            if (cachedBody) {
+                console.log("Using stale cached items due to upstream error");
+                if (typeof cachedBody === "object") {
+                    return NextResponse.json(cachedBody);
+                }
+                return new NextResponse(cachedBody, {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
+            return NextResponse.json({ error: "Failed to fetch items" }, { status: 502 });
+        } else {
+            const json = (await res.json()) as TarkovItemsResponse;
+            items = json.data?.items ?? [];
+        }
+
+        // 4. Cache the filtered result
+        const payload: ItemsPayload = { items };
+        const body: TimedResponse<ItemsPayload> = {
+            data: payload,
             updatedAt: Date.now(),
+        };
+
+        const jsonBody = JSON.stringify(body);
+        await redis.mset({
+            [REDIS_KEY]: jsonBody,
+            [REDIS_KEY_META]: { updatedAt: Date.now() },
+        });
+
+        console.log(`Cached ${items.length} filtered items.`);
+
+        return new NextResponse(jsonBody, {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
         });
     } catch (error) {
         console.error("/api/items unexpected error", error);
