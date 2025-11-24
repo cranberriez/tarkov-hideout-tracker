@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import { CircleCheckBig } from "lucide-react";
 import { useUserStore } from "@/app/lib/stores/useUserStore";
 import { useDataStore } from "@/app/lib/stores/useDataStore";
+import { formatNumber } from "@/app/lib/utils/format-number";
 import type { Station } from "@/app/types";
 
 interface StationCardProps {
@@ -326,7 +328,7 @@ export function StationCard({ station, isLocked = false }: StationCardProps) {
                                             const quantity = req.count ?? req.quantity ?? 1;
                                             const isFir = req.attributes.some(
                                                 (a) =>
-                                                    a.type === "foundInRaid" && a.value === "true"
+                                                    a.name === "found_in_raid" && a.value === "true"
                                             );
                                             const isCompleted = completedRequirements[req.id];
 
@@ -336,16 +338,18 @@ export function StationCard({ station, isLocked = false }: StationCardProps) {
                                                     onClick={() => toggleRequirement(req.id)}
                                                     className={`relative w-12 h-12 bg-black/40 border group cursor-pointer transition-all ${
                                                         isFir
-                                                            ? "border-orange-500/50"
+                                                            ? "border-orange-500"
                                                             : "border-white/10"
                                                     } ${
                                                         isCompleted
                                                             ? "opacity-50 grayscale"
                                                             : "hover:border-white/30"
                                                     }`}
-                                                    title={`${quantity}x ${req.item.name}${
-                                                        isFir ? " (Found In Raid)" : ""
-                                                    }${isCompleted ? " (Completed)" : ""}`}
+                                                    title={`${formatNumber(quantity)}x ${
+                                                        req.item.name
+                                                    }${isFir ? " (Found In Raid)" : ""}${
+                                                        isCompleted ? " (Completed)" : ""
+                                                    }`}
                                                 >
                                                     {req.item.iconLink && (
                                                         <Image
@@ -361,21 +365,7 @@ export function StationCard({ station, isLocked = false }: StationCardProps) {
                                                             className="absolute -top-1.5 -right-1.5 bg-black rounded-full z-10 text-orange-500"
                                                             title="Found In Raid"
                                                         >
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                width="14"
-                                                                height="14"
-                                                                viewBox="0 0 24 24"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                strokeWidth="2"
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                className="fill-black"
-                                                            >
-                                                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                                                <path d="m9 11 3 3L22 4" />
-                                                            </svg>
+                                                            <CircleCheckBig className="w-3.5 h-3.5 text-orange-500" />
                                                         </div>
                                                     )}
                                                     {isCompleted && (
@@ -397,7 +387,7 @@ export function StationCard({ station, isLocked = false }: StationCardProps) {
                                                         </div>
                                                     )}
                                                     <div className="absolute bottom-0 right-0 bg-black/80 px-1 text-[10px] font-mono text-tarkov-green border-t border-l border-white/10">
-                                                        {quantity}
+                                                        {formatNumber(quantity)}
                                                     </div>
                                                 </div>
                                             );
@@ -420,7 +410,7 @@ export function StationCard({ station, isLocked = false }: StationCardProps) {
                                             const quantity = req.count ?? req.quantity ?? 1;
                                             const isFir = req.attributes.some(
                                                 (a) =>
-                                                    a.type === "foundInRaid" && a.value === "true"
+                                                    a.name === "found_in_raid" && a.value === "true"
                                             );
                                             const isCompleted = completedRequirements[req.id];
 
@@ -486,7 +476,7 @@ export function StationCard({ station, isLocked = false }: StationCardProps) {
                                                                         : "text-tarkov-green"
                                                                 }`}
                                                             >
-                                                                {quantity}x
+                                                                {formatNumber(quantity)}x
                                                             </span>
                                                             {req.item.shortName || req.item.name}
                                                         </div>
@@ -495,20 +485,7 @@ export function StationCard({ station, isLocked = false }: StationCardProps) {
                                                                 className="text-orange-500"
                                                                 title="Found In Raid"
                                                             >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    width="14"
-                                                                    height="14"
-                                                                    viewBox="0 0 24 24"
-                                                                    fill="none"
-                                                                    stroke="currentColor"
-                                                                    strokeWidth="2"
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                >
-                                                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                                                    <path d="m9 11 3 3L22 4" />
-                                                                </svg>
+                                                                <CircleCheckBig className="w-4 h-4" />
                                                             </div>
                                                         )}
                                                     </div>
