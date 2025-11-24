@@ -13,6 +13,7 @@ export function Navbar() {
                             alt="Tarkov Hideout Icon"
                             fill
                             className="object-contain"
+                            loading="eager"
                         />
                     </div>
                     <div className="flex flex-col leading-none">
