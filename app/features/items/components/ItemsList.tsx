@@ -92,10 +92,8 @@ export function ItemsList() {
         const groups: Record<string, typeof filteredAndSortedItems> = {};
 
         filteredAndSortedItems.forEach((item) => {
-            // Use first type as category, or "Other"
-            const type = item.details?.types?.[0] ?? "Other";
-            // Capitalize first letter
-            const category = type.charAt(0).toUpperCase() + type.slice(1);
+            // Use category name, or "Other"
+            const category = item.details?.category?.name ?? "Other";
 
             if (!groups[category]) {
                 groups[category] = [];

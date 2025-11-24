@@ -3,7 +3,7 @@ import type { ItemsPayload, TimedResponse, ItemDetails } from "@/app/types";
 import { redis } from "@/app/server/redis";
 
 const CACHE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const REDIS_KEY = "hideout:items:v3";
+const REDIS_KEY = "hideout:items:v4";
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
 
 interface TarkovItemsResponse {
@@ -23,7 +23,10 @@ const ITEMS_QUERY = `
     avg24hPrice
     lastLowPrice
     changeLast48h
-    types
+    category {
+      name
+      normalizedName
+    }
     sellFor {
       vendor {
         name
