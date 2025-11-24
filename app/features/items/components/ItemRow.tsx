@@ -88,7 +88,7 @@ export function ItemRow({
                                 x{new Intl.NumberFormat("en-US").format(count)}
                             </span>
                             {firCount > 0 && (
-                                <span className="text-[10px] text-blue-400">({firCount} FiR)</span>
+                                <span className="text-[10px] text-orange-400">{firCount} FiR</span>
                             )}
                         </div>
                     </div>
@@ -155,7 +155,7 @@ export function ItemRow({
                         x{new Intl.NumberFormat("en-US").format(count)}
                     </div>
                     {firCount > 0 && (
-                        <div className="text-[10px] text-blue-400 mt-0.5">({firCount} FiR)</div>
+                        <div className="text-[10px] text-orange-400 mt-0.5">{firCount} FiR</div>
                     )}
                 </div>
 
@@ -182,6 +182,7 @@ export function ItemRow({
                             </span>
                         </div>
                         <div className="text-xs text-gray-300 font-medium">
+                            {bestSell.vendor.name == "Flea Market" && "~"}
                             {formatPrice(bestSell.price)} {bestSell.currency}
                         </div>
                     </div>
