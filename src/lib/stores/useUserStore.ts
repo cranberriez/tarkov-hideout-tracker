@@ -63,6 +63,9 @@ interface UserState {
     setSetupOpen: (isOpen: boolean) => void;
     applyEditionBonuses: (stations: Station[]) => void;
 
+    importStationLevels: (levels: Record<string, number>) => void;
+    resetAll: () => void;
+
     // Initialization helpers
     initializeDefaults: (stations: Station[]) => void;
 }
@@ -225,6 +228,33 @@ export const useUserStore = create<UserState>()(
                 if (changed) {
                     set({ stationLevels: newLevels });
                 }
+            },
+
+            importStationLevels: (levels) => {
+                set({ stationLevels: levels });
+            },
+
+            resetAll: () => {
+                set(() => ({
+                    stationLevels: {},
+                    hiddenStations: {},
+                    completedRequirements: {},
+                    checklistViewMode: "all",
+                    showHidden: false,
+                    hideCheap: false,
+                    hideMoney: false,
+                    showFirOnly: false,
+                    hideRequirements: false,
+                    cheapPriceThreshold: 5000,
+                    hideoutCompactMode: false,
+                    itemsCompactMode: false,
+                    sellToPreference: "best",
+                    useCategorization: false,
+                    gameEdition: null,
+                    gameMode: "PVP",
+                    hasCompletedSetup: false,
+                    isSetupOpen: false,
+                }));
             },
         }),
         {
