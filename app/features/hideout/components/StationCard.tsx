@@ -46,7 +46,7 @@ export function StationCard({ station, isLocked = false }: StationCardProps) {
         >
             {/* Header */}
             <div
-                className={`px-3 py-3 flex justify-between items-center bg-linear-to-r from-card to-transparent ${
+                className={`px-3 py-3 flex justify-between items-center bg-linear-to-r from-card to-muted/75 ${
                     hideRequirements ? "" : "border-b border-border-color"
                 }`}
             >
