@@ -18,9 +18,14 @@ const EDITIONS: GameEdition[] = [
 export function EditionSelection({ selected, onSelect }: EditionSelectionProps) {
     return (
         <div className="flex flex-col gap-4">
-            <h3 className="text-lg font-medium text-white">
-                What edition of the game do you have?
-            </h3>
+            <div className="flex flex-col">
+                <h3 className="text-lg font-medium text-white">
+                    What edition of the game do you have?
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                    This will modify some base hideout station levels.
+                </p>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
                 {EDITIONS.map((edition, index) => {
                     const isSelected = selected === edition;
