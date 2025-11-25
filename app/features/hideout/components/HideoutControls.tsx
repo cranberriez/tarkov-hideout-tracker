@@ -49,7 +49,7 @@ export function HideoutControls() {
                             : "text-gray-400 hover:bg-white/5"
                     }`}
                 >
-                    {showHidden ? "Show Hidden" : "Hide Hidden"}
+                    {showHidden ? "Hide Hidden" : "Show Hidden"}
                 </button>
 
                 <div className="flex items-center border border-border-color rounded overflow-hidden">
