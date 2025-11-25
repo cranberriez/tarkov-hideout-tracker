@@ -8,16 +8,10 @@ const SIX_HOURS_CACHE_HEADERS = {
 
 export async function GET() {
     try {
-        const stations = await getHideoutStations();
-        return NextResponse.json(
-            {
-                data: { stations },
-                updatedAt: Date.now(),
-            },
-            {
-                headers: SIX_HOURS_CACHE_HEADERS,
-            }
-        );
+        const body = await getHideoutStations();
+        return NextResponse.json(body, {
+            headers: SIX_HOURS_CACHE_HEADERS,
+        });
     } catch (error) {
         console.error("/api/hideout/stations unexpected error", error);
         return NextResponse.json({ error: "Unexpected error" }, { status: 500 });

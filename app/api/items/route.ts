@@ -86,10 +86,10 @@ export async function GET() {
 
         // 2. Fetch Stations to determine required Item IDs
         console.log("Cache stale or missing. Fetching stations to identify required items...");
-        const stations = await getHideoutStations();
+        const stationsResponse = await getHideoutStations();
         const requiredItemIds = new Set<string>();
 
-        stations.forEach((station) => {
+        stationsResponse.data.stations.forEach((station) => {
             station.levels.forEach((level) => {
                 level.itemRequirements.forEach((req) => {
                     requiredItemIds.add(req.item.id);
@@ -152,15 +152,18 @@ export async function GET() {
 
         // 4. Cache the filtered result
         const payload: ItemsPayload = { items };
+
+        const updatedAt = Date.now();
+
         const body: TimedResponse<ItemsPayload> = {
             data: payload,
-            updatedAt: Date.now(),
+            updatedAt,
         };
 
         const jsonBody = JSON.stringify(body);
         await redis.mset({
             [REDIS_KEY]: jsonBody,
-            [REDIS_KEY_META]: { updatedAt: Date.now() },
+            [REDIS_KEY_META]: { updatedAt },
         });
 
         console.log(`Cached ${items.length} filtered items.`);

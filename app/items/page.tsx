@@ -8,6 +8,7 @@ import { ItemDetailModal } from "../features/items/components/ItemDetailModal";
 import { ItemDetails } from "../types";
 import { useDataStore } from "../lib/stores/useDataStore";
 import { useUserStore } from "../lib/stores/useUserStore";
+import { DataLastUpdated } from "../components/DataLastUpdated";
 
 export default function ItemsPage() {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -30,6 +31,8 @@ export default function ItemsPage() {
             </div>
 
             <ItemsList onClickItem={setSelectedItem} />
+
+            <DataLastUpdated />
 
             <ItemSearchModal
                 isOpen={isSearchOpen}

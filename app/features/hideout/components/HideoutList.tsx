@@ -6,6 +6,7 @@ import { useUserStore } from "@/app/lib/stores/useUserStore";
 import { StationCard } from "./StationCard";
 import { stationOrder } from "@/app/lib/cfg/stationOrder";
 import type { Station } from "@/app/types";
+import { DataLastUpdated } from "@/app/components/DataLastUpdated";
 
 export function HideoutList() {
     const { stations, fetchStations, loadingStations, errorStations } = useDataStore();
@@ -71,14 +72,18 @@ export function HideoutList() {
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedStations.map((station) => (
-                <StationCard
-                    key={station.id}
-                    station={station}
-                    isLocked={isStationLocked(station)}
-                />
-            ))}
-        </div>
+        <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {sortedStations.map((station) => (
+                    <StationCard
+                        key={station.id}
+                        station={station}
+                        isLocked={isStationLocked(station)}
+                    />
+                ))}
+            </div>
+
+            <DataLastUpdated />
+        </>
     );
 }

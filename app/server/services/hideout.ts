@@ -79,61 +79,61 @@ interface TarkovHideoutStationsResponse {
 }
 
 const HIDEOUT_STATIONS_QUERY = `
-  query HideoutStations {
-    hideoutStations(lang: en) {
-      id
-      name
-      normalizedName
-      imageLink
-      levels {
-        id
-        level
-        itemRequirements {
-          id
-          count
-          quantity
-          item {
-            id
-            name
-            normalizedName
-            shortName
-            iconLink
-            gridImageLink
-          }
-          attributes {
-            type
-            name
-            value
-          }
-        }
-        stationLevelRequirements {
-            station {
-                normalizedName
-            }
-            level
-        }
-        skillRequirements {
-            name
-            skill {
-                name
-                imageLink
-            }
-            level
-        }
-        traderRequirements {
-            trader {
-                name
-                normalizedName
-                imageLink
-            }
-            value
-        }
-      }
-    }
-  }
-`;
+   query HideoutStations {
+     hideoutStations(lang: en) {
+       id
+       name
+       normalizedName
+       imageLink
+       levels {
+         id
+         level
+         itemRequirements {
+           id
+           count
+           quantity
+           item {
+             id
+             name
+             normalizedName
+             shortName
+             iconLink
+             gridImageLink
+           }
+           attributes {
+             type
+             name
+             value
+           }
+         }
+         stationLevelRequirements {
+             station {
+                 normalizedName
+             }
+             level
+         }
+         skillRequirements {
+             name
+             skill {
+                 name
+                 imageLink
+             }
+             level
+         }
+         traderRequirements {
+             trader {
+                 name
+                 normalizedName
+                 imageLink
+             }
+             value
+         }
+       }
+     }
+   }
+ `;
 
-export async function getHideoutStations(): Promise<Station[]> {
+export async function getHideoutStations(): Promise<TimedResponse<HideoutStationsPayload>> {
     // 1. Try Redis cache first
     const [cachedBody, cachedMeta] = await redis.mget<[string, { updatedAt: number }]>(
         REDIS_KEY,
@@ -151,12 +151,10 @@ export async function getHideoutStations(): Promise<Station[]> {
 
     if (isFresh && cachedBody) {
         console.log("Using cached hideout stations");
-        // If it's already an object (Upstash sometimes parses it), use it
         if (typeof cachedBody === "object") {
-            return (cachedBody as TimedResponse<HideoutStationsPayload>).data.stations;
+            return cachedBody as TimedResponse<HideoutStationsPayload>;
         }
-        // Otherwise parse string
-        return (JSON.parse(cachedBody) as TimedResponse<HideoutStationsPayload>).data.stations;
+        return JSON.parse(cachedBody) as TimedResponse<HideoutStationsPayload>;
     }
 
     // 2. Fetch from Tarkov.dev
@@ -176,7 +174,7 @@ export async function getHideoutStations(): Promise<Station[]> {
         if (cachedBody) {
             console.log("Using stale cached stations due to upstream error");
             const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
-            return (body as TimedResponse<HideoutStationsPayload>).data.stations;
+            return body as TimedResponse<HideoutStationsPayload>;
         }
         throw new Error("Failed to fetch hideout stations");
     }
@@ -299,9 +297,11 @@ export async function getHideoutStations(): Promise<Station[]> {
 
     const payload: HideoutStationsPayload = { stations };
 
+    const updatedAt = Date.now();
+
     const body: TimedResponse<HideoutStationsPayload> = {
         data: payload,
-        updatedAt: Date.now(),
+        updatedAt,
     };
 
     // 3. Store in Redis
@@ -309,8 +309,8 @@ export async function getHideoutStations(): Promise<Station[]> {
 
     await redis.mset({
         [REDIS_KEY]: jsonBody,
-        [REDIS_KEY_META]: { updatedAt: Date.now() },
+        [REDIS_KEY_META]: { updatedAt },
     });
 
-    return stations;
+    return body;
 }
