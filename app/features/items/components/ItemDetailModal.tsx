@@ -345,7 +345,7 @@ export function ItemDetailModal({
                                                             key={idx}
                                                             className={`px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between transition-colors ${
                                                                 req.isCompleted
-                                                                    ? "bg-white/[0.02] text-gray-500"
+                                                                    ? "bg-white/2 text-gray-500"
                                                                     : "hover:bg-white/5"
                                                             }`}
                                                         >

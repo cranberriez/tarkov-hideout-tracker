@@ -117,7 +117,7 @@ export function StationCard({ station, isLocked = false }: StationCardProps) {
                         >
                             -
                         </button>
-                        <div className="w-[1px] h-3 bg-white/10"></div>
+                        <div className="w-px h-3 bg-white/10"></div>
                         <button
                             onClick={() =>
                                 setStationLevel(station.id, Math.min(maxLevel, currentLevel + 1))
