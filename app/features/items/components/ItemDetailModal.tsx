@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ItemDetails, Station } from "@/app/types";
 import { X, ExternalLink, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { stationOrder } from "@/app/lib/cfg/stationOrder";
@@ -23,26 +24,8 @@ export function ItemDetailModal({
     hiddenStations,
 }: ItemDetailModalProps) {
     // Prevent scrolling when modal is open and handle Escape key
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = "hidden";
-
-            const handleKeyDown = (e: KeyboardEvent) => {
-                if (e.key === "Escape") {
-                    onClose();
-                }
-            };
-
-            window.addEventListener("keydown", handleKeyDown);
-
-            return () => {
-                document.body.style.overflow = "unset";
-                window.removeEventListener("keydown", handleKeyDown);
-            };
-        } else {
-            document.body.style.overflow = "unset";
-        }
-    }, [isOpen, onClose]);
+    // Dialog handles this automatically
+    // useEffect(() => { ... }, [isOpen, onClose]);
 
     // Compute station requirements for this item
     const stationRequirements = useMemo(() => {
@@ -150,18 +133,15 @@ export function ItemDetailModal({
         return { totalCount, totalFir };
     }, [stationRequirements]);
 
-    if (!isOpen || !item) return null;
+    if (!item) return null;
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
-            onClick={onClose}
-        >
-            {/* Modal Container */}
-            <div
-                className="relative w-full max-w-5xl h-[90vh] bg-[#0a0a0a] border border-white/10 shadow-2xl flex flex-col overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent
+                showCloseButton={false}
+                className="max-w-5xl h-[90vh] p-0 gap-0 bg-[#0a0a0a] border-white/10 overflow-hidden flex flex-col"
             >
+                <DialogTitle className="sr-only">{item.name}</DialogTitle>
                 {/* Header */}
                 <div className="flex items-start justify-between p-6 border-b border-white/10 bg-[#111]">
                     <div className="flex items-start gap-6">
@@ -409,8 +389,8 @@ export function ItemDetailModal({
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 }
 

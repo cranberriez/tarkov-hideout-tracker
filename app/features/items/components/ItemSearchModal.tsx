@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useDataStore } from "@/app/lib/stores/useDataStore";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ItemDetails } from "@/app/types";
 import { Search, X } from "lucide-react";
 
@@ -32,18 +33,8 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
         }
     }, [isOpen]);
 
-    // Handle Escape to close
-    useEffect(() => {
-        if (isOpen) {
-            const handleKeyDown = (e: KeyboardEvent) => {
-                if (e.key === "Escape") {
-                    onClose();
-                }
-            };
-            window.addEventListener("keydown", handleKeyDown);
-            return () => window.removeEventListener("keydown", handleKeyDown);
-        }
-    }, [isOpen, onClose]);
+    // Handle Escape to close - Handled by Dialog
+    // useEffect(() => { ... }, [isOpen, onClose]);
 
     const filteredItems = useMemo(() => {
         if (!items || !query) return [];
@@ -72,14 +63,12 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
     if (!isOpen) return null;
 
     return (
-        <div
-            className="fixed inset-0 z-[60] flex items-start justify-center pt-20 p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-100"
-            onClick={onClose}
-        >
-            <div
-                className="w-full max-w-2xl bg-[#1a1a1a] border border-white/10 rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[70vh]"
-                onClick={(e) => e.stopPropagation()}
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent
+                showCloseButton={false}
+                className="top-[15%] translate-y-0 w-full max-w-2xl max-h-[70vh] p-0 gap-0 bg-[#1a1a1a] border-white/10 overflow-hidden flex flex-col shadow-2xl"
             >
+                <DialogTitle className="sr-only">Item Search</DialogTitle>
                 <div className="p-4 border-b border-white/10 flex items-center gap-3 bg-[#111]">
                     <Search className="text-gray-400" size={20} />
                     <input
@@ -133,7 +122,7 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
                         <div className="p-8 text-center text-gray-500">Type to search items...</div>
                     )}
                 </div>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 }

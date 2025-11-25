@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useUserStore } from "@/app/lib/stores/useUserStore";
 import { useDataStore } from "@/app/lib/stores/useDataStore";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { EditionSelection } from "./EditionSelection";
 import { GameModeSelection } from "./GameModeSelection";
 import { X } from "lucide-react";
@@ -71,10 +72,15 @@ export function SetupModal() {
     const canFinish = gameEdition !== null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-            <div className="bg-card border border-border-color rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200">
+        <Dialog open={isSetupOpen} onOpenChange={setSetupOpen}>
+            <DialogContent
+                showCloseButton={false}
+                className="max-w-2xl p-0 gap-0 overflow-hidden bg-card border-border-color shadow-2xl"
+            >
                 <div className="p-6 flex items-center justify-between border-b border-border-color">
-                    <h2 className="text-2xl font-bold text-white tracking-wider">INITIAL SETUP</h2>
+                    <DialogTitle className="text-2xl font-bold text-white tracking-wider">
+                        INITIAL SETUP
+                    </DialogTitle>
                     <button
                         onClick={() => completeSetup()}
                         className="text-gray-400 hover:text-white transition-colors"
@@ -83,7 +89,7 @@ export function SetupModal() {
                     </button>
                 </div>
 
-                <div className="p-6 space-y-8 flex-1">
+                <div className="p-6 space-y-8 max-h-[60vh] overflow-y-auto">
                     <EditionSelection selected={gameEdition} onSelect={setGameEdition} />
                     <GameModeSelection selected={gameMode} onSelect={setGameMode} />
                 </div>
@@ -104,7 +110,7 @@ export function SetupModal() {
                         {hasCompletedSetup ? "Save Changes" : "Complete Setup"}
                     </button>
                 </div>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 }
