@@ -1,8 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
-import { List, House } from "lucide-react";
+import { List, House, Settings } from "lucide-react";
+import { useUserStore } from "@/app/lib/stores/useUserStore";
 
 export function Navbar() {
+    const setSetupOpen = useUserStore((state) => state.setSetupOpen);
+
     return (
         <nav className="border-b border-border-color bg-card">
             <div className="container mx-auto px-6 py-4 flex items-center justify-between">
@@ -27,6 +32,13 @@ export function Navbar() {
                 </div>
 
                 <div className="flex items-center gap-6 text-sm font-medium text-gray-400">
+                    <button
+                        onClick={() => setSetupOpen(true)}
+                        className="hover:text-white transition-colors flex items-center gap-2"
+                    >
+                        <Settings size={16} />
+                        Setup
+                    </button>
                     <Link
                         href="/items"
                         className="hover:text-white transition-colors flex items-center gap-2"
