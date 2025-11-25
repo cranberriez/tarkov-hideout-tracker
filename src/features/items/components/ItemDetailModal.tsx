@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ItemDetails, Station } from "@/types";
 import { X, ExternalLink } from "lucide-react";
 import { stationOrder } from "@/lib/cfg/stationOrder";
 import { usePriceStore } from "@/lib/stores/usePriceStore";
+import { cn } from "@/lib/utils";
 import { formatRelativeUpdatedAt } from "@/lib/utils/format-time";
 
 interface ItemDetailModalProps {
@@ -289,10 +290,11 @@ export function ItemDetailModal({
                                             {marketPrice?.traderName &&
                                                 marketPrice.traderPrice !== undefined && (
                                                     <MarketStatBox
-                                                        label={`Trader (${marketPrice.traderName})`}
+                                                        label={`${marketPrice.traderName}`}
                                                         value={renderMarketValue(
                                                             marketPrice.traderPrice
                                                         )}
+                                                        labelClassName="text-blue-400"
                                                     />
                                                 )}
                                         </div>
@@ -400,10 +402,20 @@ export function ItemDetailModal({
     );
 }
 
-function MarketStatBox({ label, value }: { label: string; value: string }) {
+function MarketStatBox({
+    label,
+    value,
+    labelClassName,
+}: {
+    label: string;
+    value: string;
+    labelClassName?: string;
+}) {
     return (
         <div className="bg-[#151515] p-2 sm:p-3 border-l-2 border-white/10 flex flex-col min-w-0">
-            <span className="text-xs text-gray-500 uppercase tracking-wider">{label}</span>
+            <span className={cn("text-xs text-gray-500 uppercase tracking-wider", labelClassName)}>
+                {label}
+            </span>
             <span className="mt-1 text-sm sm:text-lg font-mono font-medium text-gray-200 truncate">
                 {value}
             </span>
