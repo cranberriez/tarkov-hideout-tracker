@@ -9,7 +9,7 @@ export function Navbar() {
     const setSetupOpen = useUserStore((state) => state.setSetupOpen);
 
     return (
-        <nav className="border-b border-border-color bg-card">
+        <nav className="border-b bg-card">
             <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-6">
                 <div className="flex items-center gap-3 min-w-0">
                     <div className="relative w-8 h-8">

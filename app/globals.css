@@ -3,15 +3,15 @@
 
 :root {
     /* Tarkov-esque Dark Theme */ /* Very dark gray/black */
-    --card-bg: #0e0e10; /* Slightly lighter for cards */
-    --accent-green: #90ee90; /* Light green for text */
-    --accent-green-dim: #4ade80;
-    --border-color: #27272a;
+    --card-bg: oklch(0.1647 0.0042 285.94); /* Slightly lighter for cards */
+    --accent-green: oklch(0.868 0.1558 144.09); /* Light green for text */
+    --accent-green-dim: oklch(0.8003 0.1821 151.71);
+    --border-color: oklch(0.2739 0.0055 286.03);
     --radius: 0.625rem;
 
     /* Single dark theme (no light mode) */
-    --background: #09090b;
-    --foreground: #e5e5e5;
+    --background: oklch(0.1408 0.0044 285.82);
+    --foreground: oklch(0.9219 0 0);
 
     --card: oklch(0.26 0 0); /* slightly lighter than background, close to #0e0e10 */
     --card-foreground: oklch(0.9 0 0); /* near #e5e5e5 */

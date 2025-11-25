@@ -29,7 +29,7 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
     } = useUserStore();
 
     return (
-        <div className="flex flex-col gap-2 bg-[#1a1a1a] p-2 rounded-md border border-[#2a2a2a]">
+        <div className="flex flex-col gap-2 bg-muted p-2 rounded-md border">
             {/* Search Bar */}
             <button
                 onClick={onOpenSearch}

@@ -67,7 +67,7 @@ export function ItemRow({
     if (compact) {
         return (
             <div
-                className="flex items-center gap-3 bg-black/20 border border-white/5 p-2 rounded hover:bg-black/40 transition-colors cursor-pointer"
+                className="flex items-center gap-3 bg-card border p-2 rounded hover:bg-black/40 transition-colors cursor-pointer"
                 onClick={onClick}
             >
                 <div className="w-10 h-10 bg-black/40  flex items-center justify-center shrink-0 overflow-hidden relative">
@@ -113,11 +113,11 @@ export function ItemRow({
     // Large (Grid) View
     return (
         <div
-            className="bg-black/20 border border-white/5 rounded-lg p-3 hover:bg-black/40 transition-colors flex flex-col gap-3 h-full cursor-pointer"
+            className="bg-card border rounded-lg p-3 group/item transition-colors flex flex-col gap-3 h-full cursor-pointer relative"
             onClick={onClick}
         >
             {/* Header: Icon & Name */}
-            <div className="flex items-start gap-3 min-w-0">
+            <div className="flex items-start gap-3 min-w-0 z-1">
                 <div className="w-12 h-12 bg-black/40 flex items-center justify-center shrink-0 overflow-hidden relative">
                     {item.iconLink ? (
                         <img
@@ -161,7 +161,7 @@ export function ItemRow({
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-2 mt-auto pt-2 border-t border-white/5">
+            <div className="grid grid-cols-2 gap-2 mt-auto pt-2 border-t border-white/5 z-1">
                 {/* Required */}
                 <div className="bg-black/30 p-1.5 rounded">
                     <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">
@@ -212,6 +212,7 @@ export function ItemRow({
                     </div>
                 )}
             </div>
+            <div className="opacity-0 h-full w-full group-hover/item:opacity-100 bg-linear-to-br from-bg-card to-white/5 transition-opacity absolute top-0 left-0 z-0 rounded-lg" />
         </div>
     );
 }
