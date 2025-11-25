@@ -6,6 +6,12 @@ import { List, House, Settings } from "lucide-react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Links = [
     {
@@ -63,13 +69,32 @@ export function Navbar() {
                             {link.name}
                         </Link>
                     ))}
-                    <button
-                        onClick={() => setSetupOpen(true)}
-                        className="hover:text-white transition-colors flex items-center gap-2 cursor-pointer"
-                    >
-                        <Settings size={16} />
-                        Setup
-                    </button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger
+                            className={cn(
+                                "transition-colors flex items-center gap-2 cursor-pointer rounded p-2",
+                                currentPage === "/settings"
+                                    ? "text-card bg-foreground/80"
+                                    : "hover:text-white"
+                            )}
+                            aria-label="Setup and settings menu"
+                        >
+                            <Settings size={18} />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center" sideOffset={8}>
+                            <DropdownMenuItem onSelect={() => setSetupOpen(true)}>
+                                Setup
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                asChild
+                                className={cn(
+                                    currentPage === "/settings" && "text-card bg-foreground/80"
+                                )}
+                            >
+                                <Link href="/settings">Settings</Link>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </div>
         </nav>
