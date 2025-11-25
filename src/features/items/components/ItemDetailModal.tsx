@@ -16,6 +16,8 @@ interface ItemDetailModalProps {
     stations: Station[] | null;
     stationLevels: Record<string, number>;
     hiddenStations: Record<string, boolean>;
+    completedRequirements: Record<string, boolean>;
+    toggleRequirement: (requirementId: string) => void;
 }
 
 export function ItemDetailModal({
@@ -25,6 +27,8 @@ export function ItemDetailModal({
     stations,
     stationLevels,
     hiddenStations,
+    completedRequirements,
+    toggleRequirement,
 }: ItemDetailModalProps) {
     // Prevent scrolling when modal is open and handle Escape key
     // Dialog handles this automatically
@@ -43,6 +47,7 @@ export function ItemDetailModal({
             isFir: boolean;
             isCompleted: boolean;
             isStationMaxed: boolean;
+            requirementId: string;
         }[] = [];
 
         stations.forEach((station) => {
@@ -68,6 +73,7 @@ export function ItemDetailModal({
                             isFir,
                             isCompleted: currentLevel >= level.level,
                             isStationMaxed,
+                            requirementId: req.id,
                         });
                     }
                 });
@@ -129,17 +135,22 @@ export function ItemDetailModal({
 
         stationRequirements.forEach(([, reqs]) => {
             reqs.forEach((req) => {
-                if (!req.isCompleted) {
-                    totalCount += req.count;
-                    if (req.isFir) {
-                        totalFir += req.count;
-                    }
+                const isManuallyCompleted = completedRequirements[req.requirementId];
+
+                // Skip if the station level already fulfills it OR the user has marked it complete
+                if (req.isCompleted || isManuallyCompleted) {
+                    return;
+                }
+
+                totalCount += req.count;
+                if (req.isFir) {
+                    totalFir += req.count;
                 }
             });
         });
 
         return { totalCount, totalFir };
-    }, [stationRequirements]);
+    }, [stationRequirements, completedRequirements]);
 
     if (!item) return null;
 
@@ -219,7 +230,7 @@ export function ItemDetailModal({
                             <div className="flex items-center gap-1 bg-tarkov-green/10 px-2 py-1 rounded-sm border border-tarkov-green/20">
                                 <span className="text-gray-400 text-xs font-medium">Need</span>
                                 <span className="text-tarkov-green font-mono font-bold text-xs">
-                                    x{totalCount - totalFir}
+                                    x{totalCount}
                                 </span>
                             </div>
                             {totalFir > 0 && (

@@ -15,7 +15,14 @@ export default function ItemsPage() {
     const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
 
     const { stations } = useDataStore();
-    const { stationLevels, hiddenStations, gameMode, setGameMode } = useUserStore();
+    const {
+        stationLevels,
+        hiddenStations,
+        completedRequirements,
+        toggleRequirement,
+        gameMode,
+        setGameMode,
+    } = useUserStore();
 
     return (
         <main className="container mx-auto px-6 py-8">
@@ -68,6 +75,8 @@ export default function ItemsPage() {
                 stations={stations}
                 stationLevels={stationLevels}
                 hiddenStations={hiddenStations}
+                completedRequirements={completedRequirements}
+                toggleRequirement={toggleRequirement}
             />
         </main>
     );

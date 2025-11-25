@@ -38,6 +38,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         useCategorization,
         showFirOnly,
         gameMode,
+        completedRequirements,
     } = useUserStore();
 
     useEffect(() => {
@@ -74,8 +75,16 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
             hiddenStations,
             showHidden,
             viewMode: checklistViewMode,
+            completedRequirements,
         });
-    }, [stations, stationLevels, hiddenStations, checklistViewMode, showHidden]);
+    }, [
+        stations,
+        stationLevels,
+        hiddenStations,
+        checklistViewMode,
+        showHidden,
+        completedRequirements,
+    ]);
 
     const filteredAndSortedItems = useMemo(() => {
         if (!items) return [];

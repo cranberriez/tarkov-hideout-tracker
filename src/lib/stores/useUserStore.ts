@@ -110,13 +110,16 @@ export const useUserStore = create<UserState>()(
                     },
                 })),
 
-            toggleRequirement: (requirementId) =>
-                set((state) => ({
-                    completedRequirements: {
-                        ...state.completedRequirements,
-                        [requirementId]: !state.completedRequirements[requirementId],
-                    },
-                })),
+            toggleRequirement: (requirementId) => {
+                set((state) => {
+                    return {
+                        completedRequirements: {
+                            ...state.completedRequirements,
+                            [requirementId]: !state.completedRequirements[requirementId],
+                        },
+                    };
+                });
+            },
 
             setChecklistViewMode: (mode) => set({ checklistViewMode: mode }),
             setShowHidden: (value) => set({ showHidden: value }),
