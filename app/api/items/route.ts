@@ -8,6 +8,11 @@ const REDIS_KEY = "hideout:items:filtered:v1";
 const REDIS_KEY_META = `${REDIS_KEY}:meta`;
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
 
+const SIX_HOURS_CACHE_HEADERS = {
+    "Cache-Control": "public, max-age=21600",
+    "CDN-Cache-Control": "public, s-maxage=21600",
+};
+
 interface TarkovItemsResponse {
     data: {
         items: ItemDetails[];
@@ -65,12 +70,17 @@ export async function GET() {
             console.log("Using cached filtered items");
             // If already object (Upstash), return as is
             if (typeof cachedBody === "object") {
-                return NextResponse.json(cachedBody);
+                return NextResponse.json(cachedBody, {
+                    headers: SIX_HOURS_CACHE_HEADERS,
+                });
             }
             // Return string directly
             return new NextResponse(cachedBody, {
                 status: 200,
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...SIX_HOURS_CACHE_HEADERS,
+                },
             });
         }
 
@@ -91,7 +101,12 @@ export async function GET() {
         console.log(`Identified ${queryIds.length} unique items required for hideout.`);
 
         if (queryIds.length === 0) {
-            return NextResponse.json({ data: { items: [] }, updatedAt: Date.now() });
+            return NextResponse.json(
+                { data: { items: [] }, updatedAt: Date.now() },
+                {
+                    headers: SIX_HOURS_CACHE_HEADERS,
+                }
+            );
         }
 
         // 3. Fetch ONLY required items from Tarkov.dev
@@ -117,11 +132,16 @@ export async function GET() {
             if (cachedBody) {
                 console.log("Using stale cached items due to upstream error");
                 if (typeof cachedBody === "object") {
-                    return NextResponse.json(cachedBody);
+                    return NextResponse.json(cachedBody, {
+                        headers: SIX_HOURS_CACHE_HEADERS,
+                    });
                 }
                 return new NextResponse(cachedBody, {
                     status: 200,
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...SIX_HOURS_CACHE_HEADERS,
+                    },
                 });
             }
             return NextResponse.json({ error: "Failed to fetch items" }, { status: 502 });
@@ -147,7 +167,10 @@ export async function GET() {
 
         return new NextResponse(jsonBody, {
             status: 200,
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                ...SIX_HOURS_CACHE_HEADERS,
+            },
         });
     } catch (error) {
         console.error("/api/items unexpected error", error);
