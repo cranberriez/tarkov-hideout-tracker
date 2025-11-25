@@ -32,13 +32,6 @@ export function Navbar() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm font-medium text-gray-400">
-                    <button
-                        onClick={() => setSetupOpen(true)}
-                        className="hover:text-white transition-colors flex items-center gap-2"
-                    >
-                        <Settings size={16} />
-                        Setup
-                    </button>
                     <Link
                         href="/items"
                         className="hover:text-white transition-colors flex items-center gap-2"
@@ -53,6 +46,13 @@ export function Navbar() {
                         <House size={16} />
                         Hideout
                     </Link>
+                    <button
+                        onClick={() => setSetupOpen(true)}
+                        className="hover:text-white transition-colors flex items-center gap-2"
+                    >
+                        <Settings size={16} />
+                        Setup
+                    </button>
                 </div>
             </div>
         </nav>
