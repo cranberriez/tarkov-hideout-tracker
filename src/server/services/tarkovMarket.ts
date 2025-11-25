@@ -117,7 +117,6 @@ export async function getTarkovMarketItemByNormalizedName(
     }
 
     if (isFresh && cachedBody) {
-        console.log("Using cached Tarkov Market item", trimmed);
         if (typeof cachedBody === "object") {
             return cachedBody as TimedResponse<TarkovMarketItem | null>;
         }
@@ -128,7 +127,6 @@ export async function getTarkovMarketItemByNormalizedName(
     if (!apiKey) {
         console.error("TARKOV_MARKET_KEY is not set in the environment");
         if (cachedBody) {
-            console.log("Using stale cached Tarkov Market item due to missing API key", trimmed);
             const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
             return body as TimedResponse<TarkovMarketItem | null>;
         }
@@ -136,8 +134,6 @@ export async function getTarkovMarketItemByNormalizedName(
     }
 
     const url = `${TARKOV_MARKET_ITEM_ENDPOINT}?q=${encodeURIComponent(trimmed)}`;
-
-    console.log("Fetching Tarkov Market item", { normalizedName: trimmed, url });
 
     const res = await fetch(url, {
         method: "GET",
@@ -172,7 +168,6 @@ export async function getTarkovMarketItemByNormalizedName(
         }
 
         if (cachedBody) {
-            console.log("Using stale cached Tarkov Market item due to upstream error", trimmed);
             const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
             return body as TimedResponse<TarkovMarketItem | null>;
         }
@@ -191,7 +186,6 @@ export async function getTarkovMarketItemByNormalizedName(
             error,
         });
         if (cachedBody) {
-            console.log("Using stale cached Tarkov Market item due to JSON parse error", trimmed);
             const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
             return body as TimedResponse<TarkovMarketItem | null>;
         }
@@ -217,7 +211,6 @@ export async function getTarkovMarketItemByNormalizedName(
 
     // Optionally skip caching when we have no successful match
     if (!data && !CACHE_EMPTY_RESULTS) {
-        console.log("Skipping cache for empty Tarkov Market result", { name: trimmed });
         return {
             data: null,
             updatedAt,
