@@ -3,8 +3,9 @@ import type { TimedResponse } from "@/types";
 
 const CACHE_WINDOW_MS = 45 * 60 * 1000; // 45 minutes
 // Toggle: whether to cache empty/failed acquisitions (null results).
-// When false, we only cache successful matches.
-const CACHE_EMPTY_RESULTS = false;
+// When true, we also cache "no match" responses so we don't keep hammering
+// Tarkov Market for items that don't return data, further reducing 429 risk.
+const CACHE_EMPTY_RESULTS = true;
 // v4 adds game-mode separation (PVP vs PVE) to Redis keys.
 const REDIS_KEY_PREFIX = "tarkov-market:item:v4";
 

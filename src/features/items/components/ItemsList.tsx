@@ -109,8 +109,23 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         if (hideCheap) {
             finalItems = finalItems.filter((i) => {
                 if (!i.details) return false;
+
+                const norm = i.details.normalizedName;
+                if (norm === "roubles" || norm === "dollars" || norm === "euros") {
+                    return true;
+                }
+
                 const marketPrice = getPrice(i.details.normalizedName);
-                const unitPrice = marketPrice?.avg24hPrice ?? marketPrice?.price ?? 0;
+
+                // If we don't have any price data yet, treat the item as "unknown" rather than cheap,
+                // so we keep it visible until real market data is available.
+                if (!marketPrice) return true;
+
+                const unitPrice = marketPrice.avg24hPrice ?? marketPrice.price ?? undefined;
+
+                // Again, if we still can't derive a concrete unitPrice, don't hide the item.
+                if (unitPrice == null) return true;
+
                 return unitPrice >= cheapPriceThreshold;
             });
         }
