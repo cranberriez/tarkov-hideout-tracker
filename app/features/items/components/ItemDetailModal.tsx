@@ -139,96 +139,94 @@ export function ItemDetailModal({
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent
                 showCloseButton={false}
-                className="max-w-5xl h-[90vh] p-0 gap-0 bg-[#0a0a0a] border-white/10 overflow-hidden flex flex-col"
+                className="w-full sm:max-w-3xl md:max-w-5xl max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col"
             >
                 <DialogTitle className="sr-only">{item.name}</DialogTitle>
                 {/* Header */}
-                <div className="flex items-start justify-between p-6 border-b border-white/10 bg-[#111]">
-                    <div className="flex items-start gap-6">
-                        <div className="w-24 h-24 bg-black/40 border border-white/5 flex items-center justify-center shrink-0 overflow-hidden relative">
-                            {item.iconLink || item.gridImageLink ? (
-                                <img
-                                    src={item.iconLink || item.gridImageLink}
-                                    alt={item.name}
-                                    className="w-full h-full object-contain p-2"
-                                />
-                            ) : (
-                                <div className="text-2xl text-gray-600">?</div>
-                            )}
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-bold text-gray-100 mb-2">{item.name}</h2>
-                            <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-4 text-sm">
-                                    <span className="text-gray-400 bg-white/5 px-2 py-1 rounded-sm">
-                                        {item.category?.name || "Item"}
-                                    </span>
-                                    <div className="flex items-center gap-3">
-                                        {item.wikiLink && (
-                                            <a
-                                                href={item.wikiLink}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-tarkov-green hover:underline flex items-center gap-1"
-                                            >
-                                                Wiki <ExternalLink size={12} />
-                                            </a>
-                                        )}
-                                        {item.link && (
-                                            <a
-                                                href={item.link}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-tarkov-green hover:underline flex items-center gap-1"
-                                            >
-                                                Tarkov.dev <ExternalLink size={12} />
-                                            </a>
-                                        )}
-                                    </div>
-                                </div>
-                                {/* Total Counts */}
-                                <div className="flex items-center gap-4 text-sm font-medium mt-1">
-                                    <div className="flex items-center gap-2 bg-tarkov-green/10 px-2 py-1 rounded-sm border border-tarkov-green/20">
-                                        <span className="text-gray-400 uppercase text-xs font-bold tracking-wider">
-                                            Needed
-                                        </span>
-                                        <span className="text-tarkov-green font-mono font-bold">
-                                            x{totalCount}
-                                        </span>
-                                    </div>
-                                    {totalFir > 0 && (
-                                        <div className="flex items-center gap-2 bg-orange-500/10 px-2 py-1 rounded-sm border border-orange-500/20">
-                                            <span className="text-orange-400 uppercase text-xs font-bold tracking-wider">
-                                                FIR
-                                            </span>
-                                            <span className="text-orange-400 font-mono font-bold">
-                                                x{totalFir}
-                                            </span>
-                                        </div>
+                <div className="flex items-start justify-between p-3 sm:p-6 border-b border-border-color bg-black/20">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-6 flex-1 min-w-0">
+                        {/* Icon + Title Row */}
+                        <div className="flex items-start gap-3">
+                            <div className="w-12 h-12 sm:w-24 sm:h-24 bg-black/40 border border-white/5 flex items-center justify-center shrink-0 overflow-hidden relative">
+                                {item.iconLink || item.gridImageLink ? (
+                                    <img
+                                        src={item.iconLink || item.gridImageLink}
+                                        alt={item.name}
+                                        className="w-full h-full object-contain p-2"
+                                    />
+                                ) : (
+                                    <div className="text-2xl text-gray-600">?</div>
+                                )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <h2 className="text-lg sm:text-2xl font-bold text-gray-100 mb-2 wrap-break-word">
+                                    {item.name}
+                                </h2>
+                                {/* Links - always visible next to title on mobile */}
+                                <div className="flex items-center gap-3 text-sm">
+                                    {item.wikiLink && (
+                                        <a
+                                            href={item.wikiLink}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-tarkov-green hover:underline flex items-center gap-1"
+                                        >
+                                            Wiki <ExternalLink size={12} />
+                                        </a>
+                                    )}
+                                    {item.link && (
+                                        <a
+                                            href={item.link}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-tarkov-green hover:underline flex items-center gap-1"
+                                        >
+                                            Tarkov.dev <ExternalLink size={12} />
+                                        </a>
                                     )}
                                 </div>
                             </div>
                         </div>
+                        {/* Category + Counts - stacked on mobile */}
+                        <div className="flex flex-wrap items-center gap-2 text-sm">
+                            <span className="text-gray-400 bg-white/5 px-2 py-1 rounded-sm text-xs">
+                                {item.category?.name || "Item"}
+                            </span>
+                            <div className="flex items-center gap-1 bg-tarkov-green/10 px-2 py-1 rounded-sm border border-tarkov-green/20">
+                                <span className="text-gray-400 text-xs font-medium">Need</span>
+                                <span className="text-tarkov-green font-mono font-bold text-xs">
+                                    x{totalCount}
+                                </span>
+                            </div>
+                            {totalFir > 0 && (
+                                <div className="flex items-center gap-1 bg-orange-500/10 px-2 py-1 rounded-sm border border-orange-500/20">
+                                    <span className="text-orange-400 text-xs font-medium">FIR</span>
+                                    <span className="text-orange-400 font-mono font-bold text-xs">
+                                        x{totalFir}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-white p-2 hover:bg-white/10 rounded-full transition-colors"
+                        className="text-gray-400 hover:text-white p-2 hover:bg-white/10 rounded-full transition-colors shrink-0"
                     >
                         <X size={24} />
                     </button>
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto p-6 bg-[#0d0d0d]">
+                <div className="flex-1 overflow-y-auto p-3 sm:p-6">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Left Column: Market Data */}
                         <div className="space-y-8">
                             {/* Market Stats */}
                             <div>
-                                <h3 className="text-lg font-bold text-tarkov-green mb-4 uppercase tracking-wider">
+                                <h3 className="text-base sm:text-lg font-bold text-tarkov-green mb-3 sm:mb-4">
                                     Market Data
                                 </h3>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-2 sm:gap-3">
                                     <MarketStatBox
                                         label="Low 24h"
                                         value={formatPrice(item.low24hPrice)}
@@ -241,13 +239,13 @@ export function ItemDetailModal({
                                         label="Last Low"
                                         value={formatPrice(item.lastLowPrice)}
                                     />
-                                    <div className="bg-[#151515] p-3 border-l-2 border-white/10 flex flex-col">
+                                    <div className="bg-[#151515] p-2 sm:p-3 border-l-2 border-white/10 flex flex-col min-w-0">
                                         <span className="text-xs text-gray-500 uppercase tracking-wider">
                                             Change 48h
                                         </span>
-                                        <div className="mt-1 flex items-center gap-2">
+                                        <div className="mt-1 flex items-center gap-1 sm:gap-2">
                                             <span
-                                                className={`text-lg font-mono font-bold ${
+                                                className={`text-sm sm:text-lg font-mono font-bold ${
                                                     (item.changeLast48h || 0) > 0
                                                         ? "text-green-500"
                                                         : (item.changeLast48h || 0) < 0
@@ -258,11 +256,20 @@ export function ItemDetailModal({
                                                 {item.changeLast48h}%
                                             </span>
                                             {(item.changeLast48h || 0) > 0 ? (
-                                                <TrendingUp size={16} className="text-green-500" />
+                                                <TrendingUp
+                                                    size={14}
+                                                    className="text-green-500 shrink-0"
+                                                />
                                             ) : (item.changeLast48h || 0) < 0 ? (
-                                                <TrendingDown size={16} className="text-red-500" />
+                                                <TrendingDown
+                                                    size={14}
+                                                    className="text-red-500 shrink-0"
+                                                />
                                             ) : (
-                                                <Minus size={16} className="text-gray-400" />
+                                                <Minus
+                                                    size={14}
+                                                    className="text-gray-400 shrink-0"
+                                                />
                                             )}
                                         </div>
                                     </div>
@@ -271,8 +278,8 @@ export function ItemDetailModal({
 
                             {/* Trader Prices */}
                             <div>
-                                <h3 className="text-lg font-bold text-tarkov-green mb-4 uppercase tracking-wider">
-                                    Trader Buy Prices
+                                <h3 className="text-base sm:text-lg font-bold text-tarkov-green mb-3 sm:mb-4">
+                                    Trader Prices
                                 </h3>
                                 <div className="bg-[#151515] border border-white/5">
                                     {sellPrices.length > 0 ? (
@@ -280,12 +287,12 @@ export function ItemDetailModal({
                                             {sellPrices.map((price, idx) => (
                                                 <div
                                                     key={idx}
-                                                    className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
+                                                    className="flex items-center justify-between p-3 sm:p-4 hover:bg-white/5 transition-colors"
                                                 >
                                                     <span className="font-medium text-gray-300">
                                                         {price.vendor.name}
                                                     </span>
-                                                    <span className="font-mono text-tarkov-green font-bold text-lg">
+                                                    <span className="font-mono text-tarkov-green font-bold text-sm sm:text-lg truncate">
                                                         {formatPrice(price.price, price.currency)}
                                                     </span>
                                                 </div>
@@ -302,7 +309,7 @@ export function ItemDetailModal({
 
                         {/* Right Column: Hideout Requirements */}
                         <div className="lg:col-span-2">
-                            <h3 className="text-lg font-bold text-tarkov-green mb-4 uppercase tracking-wider">
+                            <h3 className="text-base sm:text-lg font-bold text-tarkov-green mb-3 sm:mb-4">
                                 Hideout Requirements
                             </h3>
                             <div className="space-y-6">
@@ -317,18 +324,18 @@ export function ItemDetailModal({
                                                 key={stationName}
                                                 className="bg-[#151515] border border-white/5"
                                             >
-                                                <div className="bg-[#1a1a1a] px-4 py-3 border-b border-white/5 flex justify-between items-center">
-                                                    <div className="font-bold text-gray-100">
+                                                <div className="bg-[#1a1a1a] px-3 sm:px-4 py-2 sm:py-3 border-b border-white/5 flex justify-between items-center gap-2">
+                                                    <div className="font-bold text-gray-100 text-sm sm:text-base truncate">
                                                         {stationName}
                                                     </div>
-                                                    <div className="flex items-center gap-3 text-xs">
+                                                    <div className="flex items-center gap-2 text-xs shrink-0">
                                                         {isHidden && (
-                                                            <span className="text-red-400 bg-red-500/10 px-2 py-0.5 rounded-sm uppercase tracking-wider font-medium">
+                                                            <span className="text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded-sm font-medium">
                                                                 Hidden
                                                             </span>
                                                         )}
-                                                        <span className="text-gray-500 uppercase tracking-wider font-medium">
-                                                            Current Level: {currentLevel}
+                                                        <span className="text-gray-500 font-medium">
+                                                            Lvl {currentLevel}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -336,36 +343,36 @@ export function ItemDetailModal({
                                                     {reqs.map((req, idx) => (
                                                         <div
                                                             key={idx}
-                                                            className={`px-4 py-4 flex items-center justify-between transition-colors ${
+                                                            className={`px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between transition-colors ${
                                                                 req.isCompleted
                                                                     ? "bg-white/[0.02] text-gray-500"
                                                                     : "hover:bg-white/5"
                                                             }`}
                                                         >
-                                                            <div className="flex items-center gap-3">
+                                                            <div className="flex items-center gap-2">
                                                                 <span
-                                                                    className={`text-sm ${
+                                                                    className={`text-xs sm:text-sm ${
                                                                         req.isCompleted
                                                                             ? "text-gray-500 line-through decoration-white/20"
                                                                             : "text-gray-400"
                                                                     }`}
                                                                 >
-                                                                    Level {req.level}
+                                                                    Lvl {req.level}
                                                                 </span>
                                                                 {req.isCompleted && (
-                                                                    <span className="text-[10px] text-tarkov-green uppercase tracking-wider font-bold bg-tarkov-green/10 px-2 py-0.5 rounded-sm">
-                                                                        Completed
+                                                                    <span className="text-[10px] text-tarkov-green font-bold bg-tarkov-green/10 px-1.5 py-0.5 rounded-sm">
+                                                                        Done
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <div className="flex items-center gap-4">
+                                                            <div className="flex items-center gap-2">
                                                                 {req.isFir && (
-                                                                    <span className="px-2 py-0.5 text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-sm uppercase font-bold tracking-wide">
+                                                                    <span className="px-1.5 py-0.5 text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-sm font-bold">
                                                                         FIR
                                                                     </span>
                                                                 )}
                                                                 <span
-                                                                    className={`font-mono font-bold text-lg ${
+                                                                    className={`font-mono font-bold text-sm sm:text-lg ${
                                                                         req.isCompleted
                                                                             ? "text-gray-600"
                                                                             : "text-tarkov-green"
@@ -396,9 +403,11 @@ export function ItemDetailModal({
 
 function MarketStatBox({ label, value }: { label: string; value: string }) {
     return (
-        <div className="bg-[#151515] p-3 border-l-2 border-white/10 flex flex-col">
+        <div className="bg-[#151515] p-2 sm:p-3 border-l-2 border-white/10 flex flex-col min-w-0">
             <span className="text-xs text-gray-500 uppercase tracking-wider">{label}</span>
-            <span className="mt-1 text-lg font-mono font-medium text-gray-200">{value}</span>
+            <span className="mt-1 text-sm sm:text-lg font-mono font-medium text-gray-200 truncate">
+                {value}
+            </span>
         </div>
     );
 }

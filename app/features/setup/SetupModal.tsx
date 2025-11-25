@@ -75,7 +75,7 @@ export function SetupModal() {
         <Dialog open={isSetupOpen} onOpenChange={setSetupOpen}>
             <DialogContent
                 showCloseButton={false}
-                className="max-w-2xl p-0 gap-0 overflow-hidden bg-card border-border-color shadow-2xl"
+                className="w-full md:max-w-2xl p-0 gap-0 overflow-hidden"
             >
                 <div className="p-6 flex items-center justify-between border-b border-border-color">
                     <DialogTitle className="text-2xl font-bold text-white tracking-wider">

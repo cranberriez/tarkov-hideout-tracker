@@ -66,10 +66,10 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent
                 showCloseButton={false}
-                className="top-[15%] translate-y-0 w-full max-w-2xl max-h-[70vh] p-0 gap-0 bg-[#1a1a1a] border-white/10 overflow-hidden flex flex-col shadow-2xl"
+                className="top-[15%] translate-y-0 w-full md:max-w-2xl max-h-[70vh] p-0 gap-0 overflow-hidden flex flex-col"
             >
                 <DialogTitle className="sr-only">Item Search</DialogTitle>
-                <div className="p-4 border-b border-white/10 flex items-center gap-3 bg-[#111]">
+                <div className="p-4 border-b border-border-color flex items-center gap-3 bg-black/20">
                     <Search className="text-gray-400" size={20} />
                     <input
                         id="item-search-input"
