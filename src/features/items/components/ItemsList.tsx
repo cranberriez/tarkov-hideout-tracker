@@ -32,7 +32,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         showHidden,
         hideCheap,
         cheapPriceThreshold,
-        compactMode,
+        itemsCompactMode,
         initializeDefaults,
         sellToPreference,
         useCategorization,
@@ -177,7 +177,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
 
     // Updated grid classes: 1 column on mobile/narrow, then expanding
     // Previously: grid-cols-2 on base
-    const gridClasses = compactMode
+    const gridClasses = itemsCompactMode
         ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5";
 
@@ -201,7 +201,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
                                             item={details}
                                             count={count}
                                             firCount={firCount}
-                                            compact={compactMode}
+                                            compact={itemsCompactMode}
                                             sellToPreference={sellToPreference}
                                             onClick={() => onClickItem(details)}
                                         />
@@ -224,7 +224,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
                             item={details}
                             count={count}
                             firCount={firCount}
-                            compact={compactMode}
+                            compact={itemsCompactMode}
                             sellToPreference={sellToPreference}
                             onClick={() => onClickItem(details)}
                         />
