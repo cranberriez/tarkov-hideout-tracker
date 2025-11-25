@@ -71,7 +71,7 @@ export const useUserStore = create<UserState>()(
             stationLevels: {},
             hiddenStations: {},
             completedRequirements: {},
-            checklistViewMode: "nextLevel",
+            checklistViewMode: "all",
             showHidden: false,
             hideCheap: false,
             hideMoney: false,

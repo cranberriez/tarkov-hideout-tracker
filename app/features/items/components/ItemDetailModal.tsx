@@ -144,7 +144,7 @@ export function ItemDetailModal({
                 <DialogTitle className="sr-only">{item.name}</DialogTitle>
                 {/* Header */}
                 <div className="flex items-start justify-between p-3 sm:p-6 border-b border-border-color bg-black/20">
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-6 flex-1 min-w-0">
+                    <div className="flex flex-col sm:items-start gap-3 flex-1 min-w-0">
                         {/* Icon + Title Row */}
                         <div className="flex items-start gap-3">
                             <div className="w-12 h-12 sm:w-24 sm:h-24 bg-black/40 border border-white/5 flex items-center justify-center shrink-0 overflow-hidden relative">
