@@ -5,9 +5,13 @@ const CACHE_WINDOW_MS = 45 * 60 * 1000; // 45 minutes
 // Toggle: whether to cache empty/failed acquisitions (null results).
 // When false, we only cache successful matches.
 const CACHE_EMPTY_RESULTS = false;
-const REDIS_KEY_PREFIX = "tarkov-market:item:v3";
+// v4 adds game-mode separation (PVP vs PVE) to Redis keys.
+const REDIS_KEY_PREFIX = "tarkov-market:item:v4";
 
-const TARKOV_MARKET_ITEM_ENDPOINT = "https://api.tarkov-market.app/api/v1/item";
+type GameMode = "PVP" | "PVE";
+
+const TARKOV_MARKET_ITEM_ENDPOINT_PVP = "https://api.tarkov-market.app/api/v1/item";
+const TARKOV_MARKET_ITEM_ENDPOINT_PVE = "https://api.tarkov-market.app/api/v1/pve/item";
 
 export interface TarkovMarketItem {
     uid: string;
@@ -39,8 +43,9 @@ interface RedisMeta {
     updatedAt: number;
 }
 
-function buildRedisKeys(normalizedName: string) {
-    const baseKey = `${REDIS_KEY_PREFIX}:${normalizedName}`;
+function buildRedisKeys(normalizedName: string, mode: GameMode) {
+    const modeKey = mode.toLowerCase();
+    const baseKey = `${REDIS_KEY_PREFIX}:${modeKey}:${normalizedName}`;
     return {
         bodyKey: baseKey,
         metaKey: `${baseKey}:meta`,
@@ -93,7 +98,8 @@ function pickBestMatch(
 }
 
 export async function getTarkovMarketItemByNormalizedName(
-    normalizedName: string
+    normalizedName: string,
+    mode: GameMode = "PVP"
 ): Promise<TimedResponse<TarkovMarketItem | null>> {
     const trimmed = normalizedName.trim();
     if (!trimmed) {
@@ -103,7 +109,7 @@ export async function getTarkovMarketItemByNormalizedName(
         };
     }
 
-    const { bodyKey, metaKey } = buildRedisKeys(trimmed);
+    const { bodyKey, metaKey } = buildRedisKeys(trimmed, mode);
 
     const [cachedBody, cachedMeta] = await redis.mget<[string, RedisMeta]>(bodyKey, metaKey);
 
@@ -133,7 +139,9 @@ export async function getTarkovMarketItemByNormalizedName(
         throw new Error("Tarkov Market API key is missing");
     }
 
-    const url = `${TARKOV_MARKET_ITEM_ENDPOINT}?q=${encodeURIComponent(trimmed)}`;
+    const endpoint =
+        mode === "PVE" ? TARKOV_MARKET_ITEM_ENDPOINT_PVE : TARKOV_MARKET_ITEM_ENDPOINT_PVP;
+    const url = `${endpoint}?q=${encodeURIComponent(trimmed)}`;
 
     const res = await fetch(url, {
         method: "GET",

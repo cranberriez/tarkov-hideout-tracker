@@ -37,6 +37,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         sellToPreference,
         useCategorization,
         showFirOnly,
+        gameMode,
     } = useUserStore();
 
     useEffect(() => {
@@ -54,8 +55,9 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
 
         if (normalizedNames.length === 0) return;
 
+        // When gameMode changes, we refetch prices to pull the correct PVP/PVE values.
         fetchPrices(normalizedNames);
-    }, [items, fetchPrices]);
+    }, [items, fetchPrices, gameMode]);
 
     useEffect(() => {
         if (stations) {

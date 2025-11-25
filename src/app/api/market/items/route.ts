@@ -10,14 +10,19 @@ const FIFTEEN_MIN_CACHE_HEADERS = {
     "CDN-Cache-Control": "public, s-maxage=900",
 };
 
+type GameMode = "PVP" | "PVE";
+
 interface MarketItemsRequestBody {
     items?: string[];
+    gameMode?: GameMode;
 }
 
 export async function POST(req: Request) {
     try {
         const body = (await req.json()) as MarketItemsRequestBody;
         const items = Array.isArray(body.items) ? body.items : [];
+        const requestedMode = body.gameMode;
+        const gameMode: GameMode = requestedMode === "PVE" ? "PVE" : "PVP";
 
         if (items.length === 0) {
             return NextResponse.json<
@@ -50,7 +55,10 @@ export async function POST(req: Request) {
         const results = await Promise.all(
             uniqueNames.map(async (normalizedName) => {
                 try {
-                    const response = await getTarkovMarketItemByNormalizedName(normalizedName);
+                    const response = await getTarkovMarketItemByNormalizedName(
+                        normalizedName,
+                        gameMode
+                    );
                     return { normalizedName, response };
                 } catch (error) {
                     console.error("Failed to fetch Tarkov Market item in route", {

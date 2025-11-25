@@ -101,7 +101,7 @@ export function ItemDetailModal({
         });
     }, [item, stations, stationLevels]);
 
-    const { getPrice, loading, updatedAt } = usePriceStore();
+    const { getPrice, getUpdatedAt, loading } = usePriceStore();
     const marketPrice = item ? getPrice(item.normalizedName) : undefined;
 
     const formatPrice = (price?: number) => {
@@ -147,7 +147,7 @@ export function ItemDetailModal({
     const isDollar = item.normalizedName === "dollars";
     const isEuro = item.normalizedName === "euros";
     const isFiat = isDollar || isEuro;
-    const relativeUpdatedAt = formatRelativeUpdatedAt(updatedAt);
+    const relativeUpdatedAt = formatRelativeUpdatedAt(getUpdatedAt() ?? 0);
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
