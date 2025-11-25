@@ -33,7 +33,7 @@ export function EditionSelection({ selected, onSelect }: EditionSelectionProps) 
                     // Layout logic: First 3 items span 2 cols (3x2=6), last 2 items span 3 cols (2x3=6)
                     const colSpan = index < 3 ? "sm:col-span-2" : "sm:col-span-3";
 
-                    let baseClassName = `${colSpan} p-3 rounded-md border-2 text-center transition-all duration-300 relative overflow-hidden group `;
+                    let baseClassName = `${colSpan} px-3 py-2 rounded-md border text-center transition-all duration-300 relative overflow-hidden group `;
 
                     if (edition === "Edge of Darkness") {
                         const activeClass = isSelected

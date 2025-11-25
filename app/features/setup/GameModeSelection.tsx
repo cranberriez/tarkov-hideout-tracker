@@ -18,7 +18,7 @@ export function GameModeSelection({ selected, onSelect }: GameModeSelectionProps
                     This will effect shown flea market prices.
                 </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
                 {(["PVP", "PVE"] as GameMode[]).map((mode) => {
                     const isSelected = selected === mode;
                     return (
@@ -26,7 +26,7 @@ export function GameModeSelection({ selected, onSelect }: GameModeSelectionProps
                             key={mode}
                             onClick={() => onSelect(mode)}
                             className={`
-                                flex-1 p-3 rounded-md border-2 transition-all duration-200 font-bold text-center
+                                flex-1 px-3 py-2.5 rounded-md border transition-all duration-200 font-semibold text-center text-sm
                                 ${
                                     isSelected
                                         ? "bg-white/10 border-white text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]"
