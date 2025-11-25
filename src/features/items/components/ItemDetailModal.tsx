@@ -219,7 +219,7 @@ export function ItemDetailModal({
                             <div className="flex items-center gap-1 bg-tarkov-green/10 px-2 py-1 rounded-sm border border-tarkov-green/20">
                                 <span className="text-gray-400 text-xs font-medium">Need</span>
                                 <span className="text-tarkov-green font-mono font-bold text-xs">
-                                    x{totalCount}
+                                    x{totalCount - totalFir}
                                 </span>
                             </div>
                             {totalFir > 0 && (
@@ -336,7 +336,7 @@ export function ItemDetailModal({
                                                             </span>
                                                         )}
                                                         <span className="text-gray-500 font-medium">
-                                                            Lvl {currentLevel}
+                                                            Current Lvl {currentLevel}
                                                         </span>
                                                     </div>
                                                 </div>
