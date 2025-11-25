@@ -9,14 +9,14 @@ const REDIS_KEY_META = `${REDIS_KEY}:meta`;
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
 
 const SIX_HOURS_CACHE_HEADERS = {
-	"Cache-Control": "public, max-age=21600",
-	"CDN-Cache-Control": "public, s-maxage=21600",
+    "Cache-Control": "public, max-age=21600",
+    "CDN-Cache-Control": "public, s-maxage=21600",
 };
 
 interface TarkovItemsResponse {
-	data: {
-		items: ItemDetails[];
-	};
+    data: {
+        items: ItemDetails[];
+    };
 }
 
 const ITEMS_QUERY = `
@@ -27,23 +27,10 @@ query Items($ids: [ID!]) {
     normalizedName
     iconLink
     gridImageLink
-    avg24hPrice
-    lastLowPrice
-    changeLast48h
     category {
       name
       normalizedName
     }
-    sellFor {
-      vendor {
-        name
-        normalizedName
-      }
-      currency
-      price
-      priceRUB
-    }
-    low24hPrice
     link
     wikiLink
   }
@@ -51,129 +38,132 @@ query Items($ids: [ID!]) {
 `;
 
 export async function GET() {
-	try {
-		// 1. Try Redis cache first for ALREADY FILTERED items
-		const [cachedBody, cachedMeta] = await redis.mget<[string, { updatedAt: number }]>(REDIS_KEY, REDIS_KEY_META);
+    try {
+        // 1. Try Redis cache first for ALREADY FILTERED items
+        const [cachedBody, cachedMeta] = await redis.mget<[string, { updatedAt: number }]>(
+            REDIS_KEY,
+            REDIS_KEY_META
+        );
 
-		let isFresh = false;
-		if (cachedBody && cachedMeta && typeof cachedMeta === "object") {
-			const age = Date.now() - cachedMeta.updatedAt;
-			if (age < CACHE_WINDOW_MS) {
-				isFresh = true;
-			}
-		}
+        let isFresh = false;
+        if (cachedBody && cachedMeta && typeof cachedMeta === "object") {
+            const age = Date.now() - cachedMeta.updatedAt;
+            if (age < CACHE_WINDOW_MS) {
+                isFresh = true;
+            }
+        }
 
-		if (isFresh && cachedBody) {
-			console.log("Using cached filtered items");
-			// If already object (Upstash), return as is
-			if (typeof cachedBody === "object") {
-				return NextResponse.json(cachedBody, {
-					headers: SIX_HOURS_CACHE_HEADERS,
-				});
-			}
-			// Return string directly
-			return new NextResponse(cachedBody, {
-				status: 200,
-				headers: {
-					"Content-Type": "application/json",
-					...SIX_HOURS_CACHE_HEADERS,
-				},
-			});
-		}
+        if (isFresh && cachedBody) {
+            console.log("Using cached filtered items");
+            // If already object (Upstash), return as is
+            if (typeof cachedBody === "object") {
+                return NextResponse.json(cachedBody, {
+                    headers: SIX_HOURS_CACHE_HEADERS,
+                });
+            }
+            // Return string directly
+            return new NextResponse(cachedBody, {
+                status: 200,
+                headers: {
+                    "Content-Type": "application/json",
+                    ...SIX_HOURS_CACHE_HEADERS,
+                },
+            });
+        }
 
-		// 2. Fetch Stations to determine required Item IDs
-		console.log("Cache stale or missing. Fetching stations to identify required items...");
-		const stationsResponse = await getHideoutStations();
-		const requiredItemIds = new Set<string>();
+        // 2. Fetch Stations to determine required Item IDs
+        console.log("Cache stale or missing. Fetching stations to identify required items...");
+        const stationsResponse = await getHideoutStations();
+        const requiredItemIds = new Set<string>();
 
-		stationsResponse.data.stations.forEach((station) => {
-			station.levels.forEach((level) => {
-				level.itemRequirements.forEach((req) => {
-					requiredItemIds.add(req.item.id);
-				});
-			});
-		});
+        stationsResponse.data.stations.forEach((station) => {
+            station.levels.forEach((level) => {
+                level.itemRequirements.forEach((req) => {
+                    requiredItemIds.add(req.item.id);
+                });
+            });
+        });
 
-		const queryIds = Array.from(requiredItemIds);
-		console.log(`Identified ${queryIds.length} unique items required for hideout.`);
+        const queryIds = Array.from(requiredItemIds);
+        console.log(`Identified ${queryIds.length} unique items required for hideout.`);
 
-		if (queryIds.length === 0) {
-			return NextResponse.json(
-				{ data: { items: [] }, updatedAt: Date.now() },
-				{
-					headers: SIX_HOURS_CACHE_HEADERS,
-				}
-			);
-		}
+        if (queryIds.length === 0) {
+            return NextResponse.json(
+                { data: { items: [] }, updatedAt: Date.now() },
+                {
+                    headers: SIX_HOURS_CACHE_HEADERS,
+                }
+            );
+        }
 
-		// 3. Fetch ONLY required items from Tarkov.dev
-		console.log(`Fetching ${queryIds.length} specific items from Tarkov.dev...`);
-		const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				query: ITEMS_QUERY,
-				variables: { ids: queryIds },
-			}),
-			cache: "no-store",
-		});
+        // 3. Fetch ONLY required items from Tarkov.dev
+        console.log(`Fetching ${queryIds.length} specific items from Tarkov.dev...`);
+        const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                query: ITEMS_QUERY,
+                variables: { ids: queryIds },
+            }),
+            cache: "no-store",
+        });
 
-		let items: ItemDetails[] = [];
+        let items: ItemDetails[] = [];
 
-		if (!res.ok) {
-			const text = await res.text();
-			console.error("Tarkov.dev items error", res.status, text);
-			// Fallback to stale cache
-			if (cachedBody) {
-				console.log("Using stale cached items due to upstream error");
-				if (typeof cachedBody === "object") {
-					return NextResponse.json(cachedBody, {
-						headers: SIX_HOURS_CACHE_HEADERS,
-					});
-				}
-				return new NextResponse(cachedBody, {
-					status: 200,
-					headers: {
-						"Content-Type": "application/json",
-						...SIX_HOURS_CACHE_HEADERS,
-					},
-				});
-			}
-			return NextResponse.json({ error: "Failed to fetch items" }, { status: 502 });
-		} else {
-			const json = (await res.json()) as TarkovItemsResponse;
-			items = json.data?.items ?? [];
-		}
+        if (!res.ok) {
+            const text = await res.text();
+            console.error("Tarkov.dev items error", res.status, text);
+            // Fallback to stale cache
+            if (cachedBody) {
+                console.log("Using stale cached items due to upstream error");
+                if (typeof cachedBody === "object") {
+                    return NextResponse.json(cachedBody, {
+                        headers: SIX_HOURS_CACHE_HEADERS,
+                    });
+                }
+                return new NextResponse(cachedBody, {
+                    status: 200,
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...SIX_HOURS_CACHE_HEADERS,
+                    },
+                });
+            }
+            return NextResponse.json({ error: "Failed to fetch items" }, { status: 502 });
+        } else {
+            const json = (await res.json()) as TarkovItemsResponse;
+            items = json.data?.items ?? [];
+        }
 
-		// 4. Cache the filtered result
-		const payload: ItemsPayload = { items };
+        // 4. Cache the filtered result
+        const payload: ItemsPayload = { items };
 
-		const updatedAt = Date.now();
+        const updatedAt = Date.now();
 
-		const body: TimedResponse<ItemsPayload> = {
-			data: payload,
-			updatedAt,
-		};
+        const body: TimedResponse<ItemsPayload> = {
+            data: payload,
+            updatedAt,
+        };
 
-		const jsonBody = JSON.stringify(body);
-		await redis.mset({
-			[REDIS_KEY]: jsonBody,
-			[REDIS_KEY_META]: { updatedAt },
-		});
+        const jsonBody = JSON.stringify(body);
+        await redis.mset({
+            [REDIS_KEY]: jsonBody,
+            [REDIS_KEY_META]: { updatedAt },
+        });
 
-		console.log(`Cached ${items.length} filtered items.`);
+        console.log(`Cached ${items.length} filtered items.`);
 
-		return new NextResponse(jsonBody, {
-			status: 200,
-			headers: {
-				"Content-Type": "application/json",
-				...SIX_HOURS_CACHE_HEADERS,
-			},
-		});
-	} catch (error) {
-		console.error("/api/items unexpected error", error);
-		return NextResponse.json({ error: "Unexpected error" }, { status: 500 });
-	}
+        return new NextResponse(jsonBody, {
+            status: 200,
+            headers: {
+                "Content-Type": "application/json",
+                ...SIX_HOURS_CACHE_HEADERS,
+            },
+        });
+    } catch (error) {
+        console.error("/api/items unexpected error", error);
+        return NextResponse.json({ error: "Unexpected error" }, { status: 500 });
+    }
 }

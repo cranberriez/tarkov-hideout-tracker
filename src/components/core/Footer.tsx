@@ -13,7 +13,15 @@ export function Footer() {
                         >
                             tarkov.dev
                         </a>{" "}
-                        API
+                        API and price data powered by{" "}
+                        <a
+                            href="https://tarkov-market.com/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-tarkov-green hover:underline"
+                        >
+                            tarkov-market.com
+                        </a>
                     </span>
                     <a
                         href="https://escapefromtarkov.fandom.com/wiki/Escape_from_Tarkov_Wiki"

@@ -106,17 +106,24 @@ export interface ItemDetails {
     normalizedName: string;
     iconLink?: string;
     gridImageLink?: string;
-    avg24hPrice?: number;
-    lastLowPrice?: number;
-    changeLast48h?: number;
-    sellFor?: VendorPrice[];
-    low24hPrice?: number;
     link?: string;
     wikiLink?: string;
     category?: {
         name: string;
         normalizedName: string;
     };
+}
+
+export interface MarketPrice {
+    price?: number;
+    avg24hPrice?: number;
+    avg7daysPrice?: number;
+    updated?: string;
+    link?: string;
+    diff24h?: number;
+    traderName?: string;
+    traderPrice?: number;
+    traderPriceCur?: string;
 }
 
 export interface ItemsPayload {

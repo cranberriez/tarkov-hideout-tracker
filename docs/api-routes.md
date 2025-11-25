@@ -29,6 +29,44 @@ Assumptions:
 
 ---
 
+## `POST /api/market/items`
+
+Fetches up-to-date market prices for one or more items from **Tarkov Market**, with a Redis-backed cache.
+
+### Request Body
+
+```ts
+interface MarketItemsRequestBody {
+    items?: string[]; // array of item normalizedNames
+}
+```
+
+### Response Shape
+
+```ts
+interface MarketPrice {
+    price?: number;
+    avg24hPrice?: number;
+    avg7daysPrice?: number;
+    updated?: string; // ISO timestamp from Tarkov Market
+}
+
+type MarketItemsResponse = TimedResponse<{
+    // key is the normalizedName that was requested
+    [normalizedName: string]: MarketPrice | null;
+}>;
+```
+
+### Behavior
+
+-   Reads the `TARKOV_MARKET_KEY` env var and calls `https://api.tarkov-market.app/api/v1/item?q=...`.
+-   Uses Redis keys of the form `tarkov-market:item:v3:<normalizedName>` plus a `:meta` key containing `{ updatedAt }`.
+-   Treats any cached entry with `Date.now() - updatedAt < 45 minutes` as **fresh**.
+-   Aggregates results for all requested items and returns them keyed by the requested `normalizedName`.
+-   On upstream failure, falls back to any stale cached entry when available.
+
+---
+
 ## `GET /api/hideout/stations`
 
 Returns the canonical hideout structure for the client. This is a **normalized** version of the Tarkov.dev `hideoutStations` GraphQL query.

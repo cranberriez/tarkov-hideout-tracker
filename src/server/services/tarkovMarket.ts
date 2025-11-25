@@ -1,0 +1,240 @@
+import { redis } from "@/server/redis";
+import type { TimedResponse } from "@/types";
+
+const CACHE_WINDOW_MS = 45 * 60 * 1000; // 45 minutes
+// Toggle: whether to cache empty/failed acquisitions (null results).
+// When false, we only cache successful matches.
+const CACHE_EMPTY_RESULTS = false;
+const REDIS_KEY_PREFIX = "tarkov-market:item:v3";
+
+const TARKOV_MARKET_ITEM_ENDPOINT = "https://api.tarkov-market.app/api/v1/item";
+
+export interface TarkovMarketItem {
+    uid: string;
+    name: string;
+    tags?: string[];
+    shortName?: string;
+    price?: number;
+    basePrice?: number;
+    avg24hPrice?: number;
+    avg7daysPrice?: number;
+    traderName?: string;
+    traderPrice?: number;
+    traderPriceCur?: string;
+    updated?: string;
+    slots?: number;
+    diff24h?: number;
+    diff7days?: number;
+    icon?: string;
+    link?: string;
+    wikiLink?: string;
+    img?: string;
+    imgBig?: string;
+    bsgId?: string;
+    isFunctional?: boolean;
+    reference?: string;
+}
+
+interface RedisMeta {
+    updatedAt: number;
+}
+
+function buildRedisKeys(normalizedName: string) {
+    const baseKey = `${REDIS_KEY_PREFIX}:${normalizedName}`;
+    return {
+        bodyKey: baseKey,
+        metaKey: `${baseKey}:meta`,
+    };
+}
+
+function normalizeNameForMatch(name: string): string {
+    return (
+        name
+            .toLowerCase()
+            // Replace any sequence of non-alphanumeric characters (spaces, punctuation, etc)
+            // with a single dash, then trim leading/trailing dashes. This mirrors our
+            // internal normalizedName style like "military-flash-drive".
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+    );
+}
+
+function pickBestMatch(
+    queryNormalizedName: string,
+    items: TarkovMarketItem[]
+): TarkovMarketItem | null {
+    if (!items.length) return null;
+
+    const target = queryNormalizedName.toLowerCase();
+
+    let best: { item: TarkovMarketItem; score: number } | null = null;
+
+    for (const item of items) {
+        const normalizedFromName = item.name ? normalizeNameForMatch(item.name) : "";
+        const normalizedFromShort = item.shortName ? normalizeNameForMatch(item.shortName) : "";
+
+        let score = 0;
+
+        if (normalizedFromName === target) {
+            score = 3;
+        } else if (normalizedFromName.includes(target) || target.includes(normalizedFromName)) {
+            score = 2;
+        } else if (normalizedFromShort && normalizedFromShort === target) {
+            score = 1;
+        }
+
+        if (!best || score > best.score) {
+            best = { item, score };
+        }
+    }
+
+    if (!best || best.score === 0) return null;
+    return best.item;
+}
+
+export async function getTarkovMarketItemByNormalizedName(
+    normalizedName: string
+): Promise<TimedResponse<TarkovMarketItem | null>> {
+    const trimmed = normalizedName.trim();
+    if (!trimmed) {
+        return {
+            data: null,
+            updatedAt: Date.now(),
+        };
+    }
+
+    const { bodyKey, metaKey } = buildRedisKeys(trimmed);
+
+    const [cachedBody, cachedMeta] = await redis.mget<[string, RedisMeta]>(bodyKey, metaKey);
+
+    let isFresh = false;
+
+    if (cachedBody && cachedMeta && typeof cachedMeta === "object") {
+        const age = Date.now() - cachedMeta.updatedAt;
+        if (age < CACHE_WINDOW_MS) {
+            isFresh = true;
+        }
+    }
+
+    if (isFresh && cachedBody) {
+        console.log("Using cached Tarkov Market item", trimmed);
+        if (typeof cachedBody === "object") {
+            return cachedBody as TimedResponse<TarkovMarketItem | null>;
+        }
+        return JSON.parse(cachedBody) as TimedResponse<TarkovMarketItem | null>;
+    }
+
+    const apiKey = process.env.TARKOV_MARKET_KEY;
+    if (!apiKey) {
+        console.error("TARKOV_MARKET_KEY is not set in the environment");
+        if (cachedBody) {
+            console.log("Using stale cached Tarkov Market item due to missing API key", trimmed);
+            const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
+            return body as TimedResponse<TarkovMarketItem | null>;
+        }
+        throw new Error("Tarkov Market API key is missing");
+    }
+
+    const url = `${TARKOV_MARKET_ITEM_ENDPOINT}?q=${encodeURIComponent(trimmed)}`;
+
+    console.log("Fetching Tarkov Market item", { normalizedName: trimmed, url });
+
+    const res = await fetch(url, {
+        method: "GET",
+        headers: {
+            "x-api-key": apiKey,
+            Accept: "application/json",
+        },
+        cache: "no-store",
+    });
+
+    const contentType = res.headers.get("content-type") || "";
+
+    if (!res.ok) {
+        const text = await res.text();
+        const snippet = text.slice(0, 500);
+        const isHtml = /text\/html/i.test(contentType) || snippet.trim().startsWith("<");
+
+        if (isHtml) {
+            console.error("Tarkov Market HTML/Rate-limit response", {
+                status: res.status,
+                contentType,
+                bodySnippet: snippet,
+                name: trimmed,
+            });
+        } else {
+            console.error("Tarkov Market item error", {
+                status: res.status,
+                contentType,
+                bodySnippet: snippet,
+                name: trimmed,
+            });
+        }
+
+        if (cachedBody) {
+            console.log("Using stale cached Tarkov Market item due to upstream error", trimmed);
+            const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
+            return body as TimedResponse<TarkovMarketItem | null>;
+        }
+        throw new Error("Failed to fetch Tarkov Market item");
+    }
+
+    let json: TarkovMarketItem[];
+    try {
+        json = (await res.json()) as TarkovMarketItem[];
+    } catch (error) {
+        const text = await res.text().catch(() => "");
+        console.error("Failed to parse Tarkov Market JSON", {
+            name: trimmed,
+            contentType,
+            bodySnippet: text.slice(0, 500),
+            error,
+        });
+        if (cachedBody) {
+            console.log("Using stale cached Tarkov Market item due to JSON parse error", trimmed);
+            const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
+            return body as TimedResponse<TarkovMarketItem | null>;
+        }
+        throw new Error("Failed to parse Tarkov Market response as JSON");
+    }
+
+    if (!Array.isArray(json) || json.length === 0) {
+        console.warn("Tarkov Market returned no results for", trimmed);
+    }
+
+    const bestMatch = pickBestMatch(trimmed, json);
+
+    if (!bestMatch && json.length > 0) {
+        console.warn("Tarkov Market returned items but none matched by name", {
+            query: trimmed,
+            returnedNames: json.map((i) => i.name),
+        });
+    }
+
+    const updatedAt = Date.now();
+
+    const data: TarkovMarketItem | null = bestMatch ?? null;
+
+    // Optionally skip caching when we have no successful match
+    if (!data && !CACHE_EMPTY_RESULTS) {
+        console.log("Skipping cache for empty Tarkov Market result", { name: trimmed });
+        return {
+            data: null,
+            updatedAt,
+        };
+    }
+
+    const body: TimedResponse<TarkovMarketItem | null> = {
+        data,
+        updatedAt,
+    };
+
+    const jsonBody = JSON.stringify(body);
+
+    await redis.mset({
+        [bodyKey]: jsonBody,
+        [metaKey]: { updatedAt },
+    });
+
+    return body;
+}
