@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { Eye, EyeOff, Filter, LayoutList, List, Search, Shield, Tags } from "lucide-react";
+import { Eye, EyeOff, Filter, Grid3X3, LayoutList, List, Search, Shield, Tags } from "lucide-react";
 import { ReactNode } from "react";
 
 interface ItemsControlsProps {
@@ -16,8 +16,8 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
         setShowHidden,
         hideCheap,
         setHideCheap,
-        itemsCompactMode,
-        setItemsCompactMode,
+        itemsSize,
+        setItemsSize,
         cheapPriceThreshold,
         setCheapPriceThreshold,
         sellToPreference,
@@ -83,21 +83,28 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
                         </ControlButton>
                     </ControlGroup>
 
-                    {/* Size/Compact Mode */}
+                    {/* Size */}
                     <ControlGroup label="Size">
                         <ControlButton
-                            active={itemsCompactMode}
-                            onClick={() => setItemsCompactMode(true)}
-                            icon={<List size={14} />}
+                            active={itemsSize === "Icon"}
+                            onClick={() => setItemsSize("Icon")}
+                            icon={<Grid3X3 size={14} />}
                         >
-                            Small
+                            Icon
                         </ControlButton>
                         <ControlButton
-                            active={!itemsCompactMode}
-                            onClick={() => setItemsCompactMode(false)}
+                            active={itemsSize === "Compact"}
+                            onClick={() => setItemsSize("Compact")}
+                            icon={<List size={14} />}
+                        >
+                            Compact
+                        </ControlButton>
+                        <ControlButton
+                            active={itemsSize === "Expanded"}
+                            onClick={() => setItemsSize("Expanded")}
                             icon={<LayoutList size={14} />}
                         >
-                            Large
+                            Expanded
                         </ControlButton>
                     </ControlGroup>
                 </div>

@@ -3,12 +3,14 @@
 import { ItemDetails } from "@/types";
 import { ExternalLink, ShoppingCart } from "lucide-react";
 import { usePriceStore } from "@/lib/stores/usePriceStore";
+import { formatNumber } from "@/lib/utils/format-number";
+import type { ItemSize } from "@/lib/stores/useUserStore";
 
 interface ItemRowProps {
     item: ItemDetails;
     count: number;
     firCount?: number; // Optional FiR count
-    compact: boolean;
+    size: ItemSize;
     sellToPreference?: "best" | "flea" | "trader";
     onClick?: () => void;
 }
@@ -17,7 +19,7 @@ export function ItemRow({
     item,
     count,
     firCount = 0,
-    compact,
+    size,
     sellToPreference = "best",
     onClick,
 }: ItemRowProps) {
@@ -41,7 +43,13 @@ export function ItemRow({
 
     const isAllFir = firCount > 0 && firCount === count;
 
-    if (compact) {
+    const isCompactLike = size === "Icon" || size === "Compact";
+    const isIconOnly = size === "Icon";
+    const formattedCompactCount = isIconOnly
+        ? formatNumber(count)
+        : new Intl.NumberFormat("en-US").format(count);
+
+    if (isCompactLike) {
         return (
             <div
                 className="flex items-center gap-3 bg-card border p-2 rounded hover:bg-black/40 transition-colors cursor-pointer"
@@ -61,23 +69,25 @@ export function ItemRow({
 
                 <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between">
-                        <span
-                            className="text-sm font-medium text-gray-200 truncate mr-2"
-                            title={item.name}
-                        >
-                            {item.name}
-                        </span>
+                        {!isIconOnly && (
+                            <span
+                                className="text-sm font-medium text-gray-200 truncate mr-2"
+                                title={item.name}
+                            >
+                                {item.name}
+                            </span>
+                        )}
                         <div className="flex items-baseline gap-1.5">
                             <span
                                 className={`text-sm font-bold shrink-0 ${
                                     isAllFir ? "text-orange-400" : "text-tarkov-green"
                                 }`}
                             >
-                                x{new Intl.NumberFormat("en-US").format(count)}
+                                x{formattedCompactCount}
                             </span>
                             {firCount > 0 && (
                                 <span className="text-[10px] text-orange-400 font-medium">
-                                    {isAllFir ? "FiR" : `${firCount} FiR`}
+                                    {isAllFir ? "FiR" : `(${firCount} FiR)`}
                                 </span>
                             )}
                         </div>

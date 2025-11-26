@@ -9,6 +9,7 @@ export type GameEdition =
     | "Edge of Darkness"
     | "Unheard";
 export type GameMode = "PVP" | "PVE";
+export type ItemSize = "Icon" | "Compact" | "Expanded";
 
 interface UserState {
     // Per-station progress and visibility
@@ -30,7 +31,7 @@ interface UserState {
 
     // View options
     hideoutCompactMode: boolean;
-    itemsCompactMode: boolean;
+    itemsSize: ItemSize;
 
     // Setup / Game Settings
     gameEdition: GameEdition | null;
@@ -52,7 +53,7 @@ interface UserState {
     setHideRequirements: (value: boolean) => void;
     setCheapPriceThreshold: (value: number) => void;
     setHideoutCompactMode: (value: boolean) => void;
-    setItemsCompactMode: (value: boolean) => void;
+    setItemsSize: (value: ItemSize) => void;
 
     setSellToPreference: (value: "best" | "flea" | "trader") => void;
     setUseCategorization: (value: boolean) => void;
@@ -84,7 +85,7 @@ export const useUserStore = create<UserState>()(
             hideRequirements: false,
             cheapPriceThreshold: 5000,
             hideoutCompactMode: false,
-            itemsCompactMode: false,
+            itemsSize: "Expanded",
             sellToPreference: "best",
             useCategorization: false,
 
@@ -129,7 +130,7 @@ export const useUserStore = create<UserState>()(
             setHideRequirements: (value) => set({ hideRequirements: value }),
             setCheapPriceThreshold: (value) => set({ cheapPriceThreshold: value }),
             setHideoutCompactMode: (value) => set({ hideoutCompactMode: value }),
-            setItemsCompactMode: (value) => set({ itemsCompactMode: value }),
+            setItemsSize: (value) => set({ itemsSize: value }),
             setSellToPreference: (value) => set({ sellToPreference: value }),
             setUseCategorization: (value) => set({ useCategorization: value }),
 
@@ -250,7 +251,7 @@ export const useUserStore = create<UserState>()(
                     hideRequirements: false,
                     cheapPriceThreshold: 5000,
                     hideoutCompactMode: false,
-                    itemsCompactMode: false,
+                    itemsSize: "Expanded",
                     sellToPreference: "best",
                     useCategorization: false,
                     gameEdition: null,
@@ -262,7 +263,20 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: "tarkov-hideout-user-state",
-            version: 1,
+            version: 2,
+            migrate: (persistedState, version) => {
+                if (version < 2) {
+                    const state = persistedState as any;
+                    const itemsCompactMode: boolean | undefined = state.itemsCompactMode;
+
+                    return {
+                        ...state,
+                        itemsSize: itemsCompactMode ? "Compact" : "Expanded",
+                    };
+                }
+
+                return persistedState as any;
+            },
         }
     )
 );

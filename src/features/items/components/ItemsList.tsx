@@ -32,7 +32,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         showHidden,
         hideCheap,
         cheapPriceThreshold,
-        itemsCompactMode,
+        itemsSize,
         initializeDefaults,
         sellToPreference,
         useCategorization,
@@ -201,9 +201,12 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
 
     // Updated grid classes: 1 column on mobile/narrow, then expanding
     // Previously: grid-cols-2 on base
-    const gridClasses = itemsCompactMode
-        ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-        : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5";
+    const gridClassesBySize: Record<string, string> = {
+        Icon: "grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8",
+        Compact: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+        Expanded: "grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6",
+    };
+    const gridClasses = gridClassesBySize[itemsSize] ?? gridClassesBySize.Expanded;
 
     if (useCategorization && categorizedItems) {
         return (
@@ -225,7 +228,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
                                             item={details}
                                             count={count}
                                             firCount={firCount}
-                                            compact={itemsCompactMode}
+                                            size={itemsSize}
                                             sellToPreference={sellToPreference}
                                             onClick={() => onClickItem(details)}
                                         />
@@ -239,7 +242,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
     }
 
     return (
-        <div className={`grid gap-4 ${gridClasses}`}>
+        <div className={`grid gap-2 ${gridClasses}`}>
             {filteredAndSortedItems.map(
                 ({ id, count, firCount, details }) =>
                     details && (
@@ -248,7 +251,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
                             item={details}
                             count={count}
                             firCount={firCount}
-                            compact={itemsCompactMode}
+                            size={itemsSize}
                             sellToPreference={sellToPreference}
                             onClick={() => onClickItem(details)}
                         />
