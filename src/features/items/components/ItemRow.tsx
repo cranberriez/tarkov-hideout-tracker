@@ -6,6 +6,7 @@ import { usePriceStore } from "@/lib/stores/usePriceStore";
 import { formatNumber } from "@/lib/utils/format-number";
 import type { ItemSize } from "@/lib/stores/useUserStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { computeNeeds } from "@/lib/utils/item-needs";
 
 interface ItemRowProps {
     item: ItemDetails;
@@ -41,10 +42,19 @@ export function ItemRow({
         item.normalizedName === "dollars" ||
         item.normalizedName === "euros";
 
-    // Calculate total estimated cost if we have price data
-    const estimatedTotal = unitPrice ? unitPrice * count : 0;
+    const needs = computeNeeds({
+        totalRequired: count,
+        requiredFir: firCount,
+        haveNonFir: isCurrency ? 0 : owned.have,
+        haveFir: isCurrency ? 0 : owned.haveFir,
+    });
 
-    const isAllFir = firCount > 0 && firCount === count;
+    // Calculate total estimated cost if we have price data
+    const estimatedTotal = unitPrice ? unitPrice * needs.neededTotal : 0;
+
+    const firRequired = firCount ?? 0;
+    const nonFirRequired = Math.max(0, count - firRequired);
+    const isAllFir = firRequired > 0 && nonFirRequired === 0;
 
     const isCompactLike = size === "Icon" || size === "Compact";
     const isIconOnly = size === "Icon";
@@ -58,7 +68,7 @@ export function ItemRow({
                 className="flex items-center gap-3 bg-card border p-2 rounded hover:bg-black/40 transition-colors cursor-pointer"
                 onClick={onClick}
             >
-                <div className="w-10 h-10 bg-black/40  flex items-center justify-center shrink-0 overflow-hidden relative">
+                <div className="w-10 h-10 bg-black/40 flex items-center justify-center shrink-0 overflow-hidden relative">
                     {item.iconLink ? (
                         <img
                             src={item.iconLink}
@@ -74,23 +84,39 @@ export function ItemRow({
                     <div className="flex items-baseline justify-between">
                         {!isIconOnly && (
                             <span
-                                className="text-sm font-medium text-gray-200 truncate mr-2"
+                                className="flex-1 text-sm font-medium text-gray-200 text-wrap mr-2"
                                 title={item.name}
                             >
                                 {item.name}
                             </span>
                         )}
-                        <div className="flex items-baseline gap-1.5">
-                            <span
-                                className={`text-sm font-bold shrink-0 ${
-                                    isAllFir ? "text-orange-400" : "text-tarkov-green"
-                                }`}
-                            >
-                                x{formattedCompactCount}
-                            </span>
-                            {firCount > 0 && (
-                                <span className="text-[10px] text-orange-400 font-medium">
-                                    {isAllFir ? "FiR" : `(${firCount} FiR)`}
+                        <div className="flex whitespace-nowrap items-end line-clamp-1 gap-0.5 text-[12px] font-mono">
+                            {isCurrency ? (
+                                <span className="text-tarkov-green">x{formattedCompactCount}</span>
+                            ) : isAllFir ? (
+                                <span className="text-orange-400">
+                                    FiR {formatNumber(owned.haveFir)}
+                                    <span className="text-gray-400 mx-[2px]">/</span>
+                                    {formatNumber(firRequired)}
+                                </span>
+                            ) : firRequired > 0 && nonFirRequired > 0 ? (
+                                <div className="flex flex-col items-end leading-tight">
+                                    <span className="text-tarkov-green">
+                                        {formatNumber(owned.have)}
+                                        <span className="text-gray-400 mx-[2px]">/</span>
+                                        {formatNumber(nonFirRequired)}
+                                    </span>
+                                    <span className="text-orange-400">
+                                        FiR {formatNumber(owned.haveFir)}
+                                        <span className="text-gray-400 mx-[2px]">/</span>
+                                        {formatNumber(firRequired)}
+                                    </span>
+                                </div>
+                            ) : (
+                                <span className="text-tarkov-green">
+                                    {formatNumber(owned.have)}
+                                    <span className="text-gray-400 mx-[2px]">/</span>
+                                    {formatNumber(nonFirRequired || firRequired || count)}
                                 </span>
                             )}
                         </div>
@@ -127,13 +153,34 @@ export function ItemRow({
                     >
                         {item.name}
                     </h3>
-                    <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400">
-                        <span className="uppercase tracking-wide">You Have</span>
-                        <span className="font-mono text-tarkov-green">x{owned.have}</span>
-                        {owned.haveFir > 0 && (
-                            <span className="font-mono text-orange-400">FiR x{owned.haveFir}</span>
+                    {/* <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400 font-mono">
+                        {isCurrency ? (
+                            <>
+                                <span className="uppercase tracking-wide">Required</span>
+                                <span className="text-tarkov-green">x{formatNumber(count)}</span>
+                            </>
+                        ) : isAllFir ? (
+                            <>
+                                <span className="uppercase tracking-wide">FiR</span>
+                                <span className="text-orange-400">
+                                    {formatNumber(needs.haveFirReserved)} / {formatNumber(needs.requiredFir)}
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <span className="uppercase tracking-wide">Have</span>
+                                <span className="text-tarkov-green">
+                                    {formatNumber(needs.effectiveHave)}
+                                    {needs.haveFirReserved > 0 && (
+                                        <span className="text-orange-400">
+                                            {` (${formatNumber(needs.haveFirReserved)})`}
+                                        </span>
+                                    )}
+                                    {` / ${formatNumber(needs.totalRequired)}`}
+                                </span>
+                            </>
                         )}
-                    </div>
+                    </div> */}
                 </div>
             </div>
 
@@ -144,17 +191,43 @@ export function ItemRow({
                     <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">
                         Required
                     </div>
-                    <div className="flex items-baseline gap-1.5">
-                        <div
-                            className={`text-lg font-bold leading-none ${
-                                isAllFir ? "text-orange-400" : "text-tarkov-green"
-                            }`}
-                        >
-                            x{new Intl.NumberFormat("en-US").format(count)}
-                        </div>
-                        {firCount > 0 && (
-                            <div className="text-[10px] text-orange-400 font-medium">
-                                {isAllFir ? "FiR" : `${firCount} FiR`}
+                    <div className="flex flex-col gap-0.5 text-[11px] font-mono">
+                        {isCurrency ? (
+                            <div className="flex items-baseline justify-between">
+                                <span className="text-tarkov-green">{count.toLocaleString()}</span>
+                            </div>
+                        ) : isAllFir ? (
+                            <div className="flex items-baseline justify-between">
+                                <span className="text-orange-400">
+                                    {formatNumber(owned.haveFir)}
+                                    <span className="text-gray-400 mx-[2px]">/</span>
+                                    {formatNumber(firRequired)}
+                                </span>
+                            </div>
+                        ) : firRequired > 0 && nonFirRequired > 0 ? (
+                            <>
+                                <div className="flex items-baseline justify-between">
+                                    <span className="text-tarkov-green">
+                                        {formatNumber(owned.have)}
+                                        <span className="text-gray-400 mx-[2px]">/</span>
+                                        {formatNumber(nonFirRequired)}
+                                    </span>
+                                </div>
+                                <div className="flex items-baseline justify-between">
+                                    <span className="text-orange-400">
+                                        FiR {formatNumber(owned.haveFir)}
+                                        <span className="text-gray-400 mx-[2px]">/</span>
+                                        {formatNumber(firRequired)}
+                                    </span>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex items-baseline justify-between">
+                                <span className="text-tarkov-green">
+                                    {formatNumber(owned.have)}
+                                    <span className="text-gray-400 mx-[2px]">/</span>
+                                    {formatNumber(nonFirRequired || count)}
+                                </span>
                             </div>
                         )}
                     </div>
@@ -174,7 +247,7 @@ export function ItemRow({
                             {!loading && marketPrice && unitPrice !== undefined && (
                                 <>
                                     {formatPrice(estimatedTotal)}
-                                    <span className="text-[10px] text-gray-500 ml-0.5">₽</span>
+                                    <span className="text-[12px] text-gray-500 ml-0.5">₽</span>
                                 </>
                             )}
                         </div>
