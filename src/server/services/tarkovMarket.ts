@@ -8,6 +8,8 @@ const CACHE_WINDOW_MS = 45 * 60 * 1000; // 45 minutes
 const CACHE_EMPTY_RESULTS = true;
 // v4 adds game-mode separation (PVP vs PVE) to Redis keys.
 const REDIS_KEY_PREFIX = "tarkov-market:item:v4";
+const RATE_LIMIT_KEY = "tarkov-market:rate-limit-until";
+const DEFAULT_RATE_LIMIT_BACKOFF_MS = 60 * 1000;
 
 type GameMode = "PVP" | "PVE";
 
@@ -144,6 +146,25 @@ export async function getTarkovMarketItemByNormalizedName(
         mode === "PVE" ? TARKOV_MARKET_ITEM_ENDPOINT_PVE : TARKOV_MARKET_ITEM_ENDPOINT_PVP;
     const url = `${endpoint}?q=${encodeURIComponent(trimmed)}`;
 
+    const rateLimitUntilRaw = await redis.get(RATE_LIMIT_KEY);
+    const rateLimitUntil =
+        typeof rateLimitUntilRaw === "string"
+            ? parseInt(rateLimitUntilRaw, 10)
+            : typeof rateLimitUntilRaw === "number"
+            ? rateLimitUntilRaw
+            : null;
+
+    if (rateLimitUntil && Date.now() < rateLimitUntil) {
+        if (cachedBody) {
+            const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
+            return body as TimedResponse<TarkovMarketItem | null>;
+        }
+        return {
+            data: null,
+            updatedAt: Date.now(),
+        };
+    }
+
     const res = await fetch(url, {
         method: "GET",
         headers: {
@@ -159,6 +180,19 @@ export async function getTarkovMarketItemByNormalizedName(
         const text = await res.text();
         const snippet = text.slice(0, 500);
         const isHtml = /text\/html/i.test(contentType) || snippet.trim().startsWith("<");
+
+        if (isHtml || res.status === 429) {
+            let retryMs = DEFAULT_RATE_LIMIT_BACKOFF_MS;
+            const retryAfterHeader = res.headers.get("retry-after");
+            if (retryAfterHeader) {
+                const asSeconds = Number(retryAfterHeader);
+                if (!Number.isNaN(asSeconds) && asSeconds > 0) {
+                    retryMs = asSeconds * 1000;
+                }
+            }
+            const limitUntil = Date.now() + retryMs;
+            await redis.set(RATE_LIMIT_KEY, String(limitUntil), { px: retryMs });
+        }
 
         if (isHtml) {
             console.error("Tarkov Market HTML/Rate-limit response", {

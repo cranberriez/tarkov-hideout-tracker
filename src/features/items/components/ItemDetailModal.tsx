@@ -158,7 +158,15 @@ export function ItemDetailModal({
     const isDollar = item.normalizedName === "dollars";
     const isEuro = item.normalizedName === "euros";
     const isFiat = isDollar || isEuro;
-    const relativeUpdatedAt = formatRelativeUpdatedAt(getUpdatedAt() ?? 0);
+
+    const itemUpdatedTimestamp = (() => {
+        if (!marketPrice?.updated) return null;
+        const parsed = Date.parse(marketPrice.updated);
+        if (Number.isNaN(parsed)) return null;
+        return parsed;
+    })();
+
+    const relativeUpdatedAt = formatRelativeUpdatedAt(itemUpdatedTimestamp);
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
