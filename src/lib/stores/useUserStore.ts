@@ -17,6 +17,9 @@ interface UserState {
     hiddenStations: Record<string, boolean>; // stationId -> hidden?
     completedRequirements: Record<string, boolean>; // requirementId -> completed?
 
+    // Per-item ownership counts
+    itemCounts: Record<string, { have: number; haveFir: number }>; // itemId -> counts
+
     // Checklist view options
     checklistViewMode: "all" | "nextLevel";
     showHidden: boolean; // include hidden stations in pooled items
@@ -33,6 +36,9 @@ interface UserState {
     hideoutCompactMode: boolean;
     itemsSize: ItemSize;
 
+    // Onboarding / feature flags
+    hasSeenItemConversionModal: boolean;
+
     // Setup / Game Settings
     gameEdition: GameEdition | null;
     gameMode: GameMode;
@@ -44,6 +50,8 @@ interface UserState {
     incrementStationLevel: (stationId: string) => void;
     toggleHiddenStation: (stationId: string) => void;
     toggleRequirement: (requirementId: string) => void;
+
+    addItemCounts: (itemId: string, haveDelta: number, haveFirDelta: number) => void;
 
     setChecklistViewMode: (mode: "all" | "nextLevel") => void;
     setShowHidden: (value: boolean) => void;
@@ -57,6 +65,8 @@ interface UserState {
 
     setSellToPreference: (value: "best" | "flea" | "trader") => void;
     setUseCategorization: (value: boolean) => void;
+
+    setHasSeenItemConversionModal: (value: boolean) => void;
 
     setGameEdition: (edition: GameEdition) => void;
     setGameMode: (mode: GameMode) => void;
@@ -77,6 +87,7 @@ export const useUserStore = create<UserState>()(
             stationLevels: {},
             hiddenStations: {},
             completedRequirements: {},
+            itemCounts: {},
             checklistViewMode: "all",
             showHidden: false,
             hideCheap: false,
@@ -86,6 +97,7 @@ export const useUserStore = create<UserState>()(
             cheapPriceThreshold: 5000,
             hideoutCompactMode: false,
             itemsSize: "Expanded",
+            hasSeenItemConversionModal: false,
             sellToPreference: "best",
             useCategorization: false,
 
@@ -122,6 +134,21 @@ export const useUserStore = create<UserState>()(
                 });
             },
 
+            addItemCounts: (itemId, haveDelta, haveFirDelta) => {
+                set((state) => {
+                    const current = state.itemCounts[itemId] ?? { have: 0, haveFir: 0 };
+                    return {
+                        itemCounts: {
+                            ...state.itemCounts,
+                            [itemId]: {
+                                have: current.have + haveDelta,
+                                haveFir: current.haveFir + haveFirDelta,
+                            },
+                        },
+                    };
+                });
+            },
+
             setChecklistViewMode: (mode) => set({ checklistViewMode: mode }),
             setShowHidden: (value) => set({ showHidden: value }),
             setHideCheap: (value) => set({ hideCheap: value }),
@@ -133,6 +160,8 @@ export const useUserStore = create<UserState>()(
             setItemsSize: (value) => set({ itemsSize: value }),
             setSellToPreference: (value) => set({ sellToPreference: value }),
             setUseCategorization: (value) => set({ useCategorization: value }),
+
+            setHasSeenItemConversionModal: (value) => set({ hasSeenItemConversionModal: value }),
 
             setGameEdition: (edition) => set({ gameEdition: edition }),
             setGameMode: (mode) => set({ gameMode: mode }),
@@ -243,6 +272,7 @@ export const useUserStore = create<UserState>()(
                     stationLevels: {},
                     hiddenStations: {},
                     completedRequirements: {},
+                    itemCounts: {},
                     checklistViewMode: "all",
                     showHidden: false,
                     hideCheap: false,
@@ -252,6 +282,7 @@ export const useUserStore = create<UserState>()(
                     cheapPriceThreshold: 5000,
                     hideoutCompactMode: false,
                     itemsSize: "Expanded",
+                    hasSeenItemConversionModal: false,
                     sellToPreference: "best",
                     useCategorization: false,
                     gameEdition: null,

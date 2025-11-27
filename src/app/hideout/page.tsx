@@ -1,5 +1,6 @@
 import { HideoutList } from "@/features/hideout/components/HideoutList";
 import { HideoutControls } from "@/features/hideout/components/HideoutControls";
+import { HideoutConversionGate } from "@/features/hideout/components/HideoutConversionGate";
 
 export default function HideoutPage() {
 	return (
@@ -11,8 +12,9 @@ export default function HideoutPage() {
 						Manage your current station levels to calculate required items
 					</p>
 				</div>
-				<div className="w-full md:w-auto">
+				<div className="flex flex-col w-full md:w-auto">
 					<HideoutControls />
+					<HideoutConversionGate />
 				</div>
 			</div>
 

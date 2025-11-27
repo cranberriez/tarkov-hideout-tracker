@@ -1,10 +1,11 @@
 "use client";
 
 import { ItemDetails } from "@/types";
-import { ExternalLink, ShoppingCart } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { usePriceStore } from "@/lib/stores/usePriceStore";
 import { formatNumber } from "@/lib/utils/format-number";
 import type { ItemSize } from "@/lib/stores/useUserStore";
+import { useUserStore } from "@/lib/stores/useUserStore";
 
 interface ItemRowProps {
     item: ItemDetails;
@@ -29,6 +30,8 @@ export function ItemRow({
     };
 
     const { getPrice, loading } = usePriceStore();
+    const { itemCounts } = useUserStore();
+    const owned = itemCounts[item.id] ?? { have: 0, haveFir: 0 };
     const marketPrice = getPrice(item.normalizedName);
     const unitPrice = marketPrice?.avg24hPrice ?? marketPrice?.price;
 
@@ -124,24 +127,11 @@ export function ItemRow({
                     >
                         {item.name}
                     </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                        <a
-                            href={item.wikiLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[10px] text-gray-500 hover:text-tarkov-green flex items-center gap-0.5"
-                        >
-                            Wiki <ExternalLink size={8} />
-                        </a>
-                        {item.link && (
-                            <a
-                                href={item.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[10px] text-gray-500 hover:text-tarkov-green flex items-center gap-0.5"
-                            >
-                                Tarkov.dev <ExternalLink size={8} />
-                            </a>
+                    <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400">
+                        <span className="uppercase tracking-wide">You Have</span>
+                        <span className="font-mono text-tarkov-green">x{owned.have}</span>
+                        {owned.haveFir > 0 && (
+                            <span className="font-mono text-orange-400">FiR x{owned.haveFir}</span>
                         )}
                     </div>
                 </div>
