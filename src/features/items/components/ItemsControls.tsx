@@ -126,16 +126,16 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
                     />
 
                     <div
-                        className={`flex items-center rounded-md border transition-colors overflow-hidden ${
+                        className={`flex items-center rounded-sm border transition-colors overflow-hidden ${
                             hideCheap ? "border-tarkov-green/50" : "border-white/10"
                         }`}
                     >
                         <button
                             onClick={() => setHideCheap(!hideCheap)}
-                            className={`flex items-center gap-2 text-xs font-medium px-3 py-2 transition-colors ${
+                            className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-sm border cursor-pointer transition-all ${
                                 hideCheap
-                                    ? "bg-tarkov-green/10 text-tarkov-green"
-                                    : "bg-black/20 text-gray-400 hover:bg-black/40 hover:text-gray-200"
+                                    ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10 shadow-[0_0_10px_rgba(157,255,0,0.1)]"
+                                    : "border-white/10 text-gray-400 hover:border-white/30 bg-black/20 hover:bg-black/40"
                             }`}
                         >
                             <Filter size={14} />
@@ -155,17 +155,12 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
                         )}
                     </div>
 
-                    <button
+                    <FilterButton
+                        active={showHidden}
                         onClick={() => setShowHidden(!showHidden)}
-                        className={`flex items-center justify-center w-[38px] h-[38px] rounded-md border transition-colors ${
-                            showHidden
-                                ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10 shadow-[0_0_10px_rgba(157,255,0,0.1)]"
-                                : "border-white/10 text-gray-400 hover:border-white/30 bg-black/20"
-                        }`}
-                        title={showHidden ? "Showing Hidden Stations" : "Hiding Hidden Stations"}
-                    >
-                        {showHidden ? <Eye size={16} /> : <EyeOff size={16} />}
-                    </button>
+                        icon={showHidden ? <Eye size={16} /> : <EyeOff size={16} />}
+                        label={showHidden ? "Show Hidden" : "Hide Hidden"}
+                    />
                 </div>
             </div>
         </div>
@@ -224,7 +219,7 @@ function FilterButton({
     return (
         <button
             onClick={onClick}
-            className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-sm border transition-all ${
+            className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-sm border transition-all cursor-pointer ${
                 active
                     ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10 shadow-[0_0_10px_rgba(157,255,0,0.1)]"
                     : "border-white/10 text-gray-400 hover:border-white/30 bg-black/20 hover:bg-black/40"
