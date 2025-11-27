@@ -6,7 +6,7 @@ import { useDataStore } from "@/lib/stores/useDataStore";
 import type { Station, ItemDetails } from "@/types";
 import { StationCardHeader } from "./StationCardHeader";
 import { StationRequirementsSection } from "./StationRequirementsSection";
-import { ItemDetailModal } from "@/features/items/components/ItemDetailModal";
+import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 
 interface StationCardProps {
     station: Station;

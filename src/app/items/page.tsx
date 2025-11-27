@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ItemsList } from "@/features/items/components/ItemsList";
 import { ItemsControls } from "@/features/items/components/ItemsControls";
 import { ItemSearchModal } from "@/features/items/components/ItemSearchModal";
-import { ItemDetailModal } from "@/features/items/components/ItemDetailModal";
+import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { ItemDetails } from "@/types";
 import { useDataStore } from "@/lib/stores/useDataStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
