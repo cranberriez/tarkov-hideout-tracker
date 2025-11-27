@@ -1,76 +1,38 @@
-"use client";
+import { getHideoutStations } from "@/server/services/hideout";
+import { getHideoutRequiredItems } from "@/server/services/items";
+import { ItemsClientPage } from "@/features/items/ItemsClientPage";
 
-import { useState } from "react";
-import { ItemsList } from "@/features/items/components/ItemsList";
-import { ItemsControls } from "@/features/items/components/ItemsControls";
-import { ItemSearchModal } from "@/features/items/components/ItemSearchModal";
-import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
-import { ItemDetails } from "@/types";
-import { useDataStore } from "@/lib/stores/useDataStore";
-import { useUserStore } from "@/lib/stores/useUserStore";
-import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
+export const revalidate = 60 * 60 * 12; // 12 hours
 
-export default function ItemsPage() {
-    const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
+export default async function ItemsPage() {
+    let stations: import("@/types").Station[] | null = null;
+    let stationsUpdatedAt: number | null = null;
+    let items: import("@/types").ItemDetails[] | null = null;
+    let itemsUpdatedAt: number | null = null;
 
-    const { stations } = useDataStore();
-    const { stationLevels, hiddenStations, completedRequirements, toggleRequirement, gameMode, setGameMode } =
-        useUserStore();
+    try {
+        const response = await getHideoutStations();
+        stations = response.data.stations;
+        stationsUpdatedAt = response.updatedAt;
+    } catch (error) {
+        console.error("Failed to fetch hideout stations in ItemsPage", error);
+    }
+
+    try {
+        const itemsResponse = await getHideoutRequiredItems({ revalidateSeconds: revalidate });
+        items = itemsResponse.data.items;
+        itemsUpdatedAt = itemsResponse.updatedAt;
+    } catch (error) {
+        console.error("Failed to fetch hideout items in ItemsPage", error);
+    }
 
     return (
         <main className="container mx-auto px-6 py-8">
-            <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-                        ITEM CHECKLIST
-                    </h1>
-                    <p className="text-gray-400 mt-2 text-sm">
-                        Aggregated list of items required for your hideout upgrades
-                    </p>
-                </div>
-                <button
-                    type="button"
-                    onClick={() => setGameMode(gameMode === "PVP" ? "PVE" : "PVP")}
-                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border text-xs font-semibold font-mono cursor-pointer tracking-wide transition-all shadow-md
-                        ${
-                            gameMode === "PVP"
-                                ? "border-red-500/70 bg-red-900/60 text-red-200 shadow-[0_0_18px_rgba(248,113,113,0.45)]"
-                                : "border-sky-400/80 bg-sky-900/70 text-sky-100 shadow-[0_0_20px_rgba(56,189,248,0.7)]"
-                        }
-                    `}
-                    title="Click to switch between PVP and PVE prices"
-                >
-                    <span>{gameMode}</span>
-                </button>
-            </div>
-
-            <div className="mb-8">
-                <ItemsControls onOpenSearch={() => setIsSearchOpen(true)} />
-            </div>
-
-            <ItemsList onClickItem={setSelectedItem} />
-
-            <DataLastUpdated />
-
-            <ItemSearchModal
-                isOpen={isSearchOpen}
-                onClose={() => setIsSearchOpen(false)}
-                onSelect={(item) => {
-                    setSelectedItem(item);
-                    setIsSearchOpen(false);
-                }}
-            />
-
-            <ItemDetailModal
-                item={selectedItem}
-                isOpen={!!selectedItem}
-                onClose={() => setSelectedItem(null)}
+            <ItemsClientPage
                 stations={stations}
-                stationLevels={stationLevels}
-                hiddenStations={hiddenStations}
-                completedRequirements={completedRequirements}
-                toggleRequirement={toggleRequirement}
+                stationsUpdatedAt={stationsUpdatedAt}
+                items={items}
+                itemsUpdatedAt={itemsUpdatedAt}
             />
         </main>
     );

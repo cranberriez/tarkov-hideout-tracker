@@ -1,24 +1,19 @@
-import { HideoutList } from "@/features/hideout/components/HideoutList";
-import { HideoutControls } from "@/features/hideout/components/HideoutControls";
-import { HideoutConversionGate } from "@/features/hideout/components/HideoutConversionGate";
+import { getHideoutStations } from "@/server/services/hideout";
+import { HideoutClientPage } from "@/features/hideout/HideoutClientPage";
 
-export default function HideoutPage() {
-	return (
-		<main className="container mx-auto px-6 py-8">
-			<div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-border-color pb-6 gap-4">
-				<div>
-					<h1 className="text-3xl font-bold text-white tracking-tight">HIDEOUT STATIONS</h1>
-					<p className="text-gray-400 mt-2 text-sm">
-						Manage your current station levels to calculate required items
-					</p>
-				</div>
-				<div className="flex flex-col w-full md:w-auto">
-					<HideoutControls />
-					<HideoutConversionGate />
-				</div>
-			</div>
+export const revalidate = 60 * 60 * 12; // 12 hours
 
-			<HideoutList />
-		</main>
-	);
+export default async function HideoutPage() {
+	let stations: import("@/types").Station[] | null = null;
+	let stationsUpdatedAt: number | null = null;
+
+	try {
+		const response = await getHideoutStations();
+		stations = response.data.stations;
+		stationsUpdatedAt = response.updatedAt;
+	} catch (error) {
+		console.error("Failed to fetch hideout stations in HideoutPage", error);
+	}
+
+	return <HideoutClientPage stations={stations} stationsUpdatedAt={stationsUpdatedAt} />;
 }

@@ -162,7 +162,6 @@ export async function getHideoutStations(): Promise<TimedResponse<HideoutStation
 			"Content-Type": "application/json",
 		},
 		body: JSON.stringify({ query: HIDEOUT_STATIONS_QUERY }),
-		cache: "no-store",
 	});
 
 	if (!res.ok) {

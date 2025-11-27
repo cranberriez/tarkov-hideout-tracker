@@ -1,26 +1,17 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useDataStore } from "@/lib/stores/useDataStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { StationCard } from "./StationCard";
 import { stationOrder } from "@/lib/cfg/stationOrder";
 import type { Station } from "@/types";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
+import { RouteLoader } from "@/components/core/RouteLoader";
 
 export function HideoutList() {
-	const { stations, fetchStations, loadingStations, errorStations } = useDataStore();
-	const { initializeDefaults, stationLevels } = useUserStore();
-
-	useEffect(() => {
-		fetchStations();
-	}, [fetchStations]);
-
-	useEffect(() => {
-		if (stations) {
-			initializeDefaults(stations);
-		}
-	}, [stations, initializeDefaults]);
+	const { stations, errorStations } = useDataStore();
+	const { stationLevels } = useUserStore();
 
 	// 2. Helper to check if station is locked
 	const isStationLocked = (station: Station) => {
@@ -51,12 +42,8 @@ export function HideoutList() {
 		return [...stations].sort((a, b) => getOrder(a.normalizedName) - getOrder(b.normalizedName));
 	}, [stations]);
 
-	if (loadingStations) {
-		return (
-			<div className="flex items-center justify-center py-20">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-tarkov-green"></div>
-			</div>
-		);
+	if (!stations && !errorStations) {
+		return <RouteLoader />;
 	}
 
 	if (errorStations) {

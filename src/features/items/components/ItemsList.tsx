@@ -7,6 +7,7 @@ import { usePriceStore } from "@/lib/stores/usePriceStore";
 import { ItemRow } from "./ItemRow";
 import { poolItems } from "@/lib/utils/item-pooling";
 import { ItemDetails } from "@/types";
+import { RouteLoader } from "@/components/core/RouteLoader";
 
 interface ItemsListProps {
     onClickItem: (item: ItemDetails) => void;
@@ -15,11 +16,7 @@ interface ItemsListProps {
 export function ItemsList({ onClickItem }: ItemsListProps) {
     const {
         stations,
-        fetchStations,
         items,
-        fetchItems,
-        loadingStations,
-        loadingItems,
         errorStations,
         errorItems,
     } = useDataStore();
@@ -33,18 +30,12 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         hideCheap,
         cheapPriceThreshold,
         itemsSize,
-        initializeDefaults,
         sellToPreference,
         useCategorization,
         showFirOnly,
         gameMode,
         completedRequirements,
     } = useUserStore();
-
-    useEffect(() => {
-        fetchStations();
-        fetchItems();
-    }, [fetchStations, fetchItems]);
 
     // Once we have item details, fetch market prices for all unique normalizedNames
     useEffect(() => {
@@ -59,12 +50,6 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         // When gameMode changes, we refetch prices to pull the correct PVP/PVE values.
         fetchPrices(normalizedNames);
     }, [items, fetchPrices, gameMode]);
-
-    useEffect(() => {
-        if (stations) {
-            initializeDefaults(stations);
-        }
-    }, [stations, initializeDefaults]);
 
     const pooledItems = useMemo(() => {
         if (!stations) return [];
@@ -168,12 +153,8 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         }));
     }, [filteredAndSortedItems, useCategorization]);
 
-    if (loadingStations || loadingItems) {
-        return (
-            <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-tarkov-green"></div>
-            </div>
-        );
+    if ((!stations || !items) && !(errorStations || errorItems)) {
+        return <RouteLoader />;
     }
 
     if (errorStations || errorItems) {
