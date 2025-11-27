@@ -10,8 +10,7 @@ import { computeNeeds } from "@/lib/utils/item-needs";
 export function ExpandedItemRequirements({
     nextLevelData,
     hideMoney,
-    completedRequirements,
-    toggleRequirement,
+    onClickItem,
 }: BaseItemRequirementsProps) {
     const itemCounts = useUserStore((state) => state.itemCounts);
     return (
@@ -41,15 +40,21 @@ export function ExpandedItemRequirements({
                         : computeNeeds({
                               totalRequired: quantity,
                               requiredFir: isFir ? quantity : 0,
+                              // For non-FIR requirements, allow both non-FIR and FIR to contribute
                               haveNonFir: isFir ? 0 : owned.have,
-                              haveFir: isFir ? owned.haveFir : 0,
+                              haveFir: owned.haveFir,
                           });
-                    const isCompleted = needs.totalRequired === needs.effectiveHave;
+
+                    const isCompleted = !isCurrency
+                        ? isFir
+                            ? needs.isSatisfied
+                            : needs.isSatisfied && !needs.usesFirForNonFir
+                        : false;
                           
                     return (
                         <div
                             key={req.id}
-                            // onClick={() => toggleRequirement(req.id)}
+                            onClick={() => onClickItem(req.item)}
                             className={`flex items-center gap-3 bg-black/20 p-1 border transition-colors cursor-pointer ${
                                 isCompleted
                                     ? "border-green-500/30 opacity-60 bg-green-900/5"

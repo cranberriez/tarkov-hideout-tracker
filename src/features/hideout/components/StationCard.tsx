@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useDataStore } from "@/lib/stores/useDataStore";
-import type { Station } from "@/types";
+import type { Station, ItemDetails } from "@/types";
 import { StationCardHeader } from "./StationCardHeader";
 import { StationRequirementsSection } from "./StationRequirementsSection";
+import { ItemDetailModal } from "@/features/items/components/ItemDetailModal";
 
 interface StationCardProps {
     station: Station;
@@ -26,6 +28,8 @@ export function StationCard({ station, isLocked = false }: StationCardProps) {
     } = useUserStore();
 
     const { stations } = useDataStore();
+
+    const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
 
     const currentLevel = stationLevels[station.id] ?? 0;
     const isHidden = hiddenStations[station.id];
@@ -67,8 +71,20 @@ export function StationCard({ station, isLocked = false }: StationCardProps) {
                     toggleRequirement={toggleRequirement}
                     hideMoney={hideMoney}
                     hideoutCompactMode={hideoutCompactMode}
+                    onClickItem={setSelectedItem}
                 />
             )}
+
+            <ItemDetailModal
+                item={selectedItem}
+                isOpen={!!selectedItem}
+                onClose={() => setSelectedItem(null)}
+                stations={stations}
+                stationLevels={stationLevels}
+                hiddenStations={hiddenStations}
+                completedRequirements={completedRequirements}
+                toggleRequirement={toggleRequirement}
+            />
         </div>
     );
 }

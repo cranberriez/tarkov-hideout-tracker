@@ -12,6 +12,7 @@ export function CompactItemRequirements({
     hideMoney,
     completedRequirements,
     toggleRequirement,
+    onClickItem,
 }: BaseItemRequirementsProps) {
     const itemCounts = useUserStore((state) => state.itemCounts);
     return (
@@ -29,7 +30,6 @@ export function CompactItemRequirements({
                     const isFir = req.attributes.some(
                         (a) => a.name === "found_in_raid" && a.value === "true"
                     );
-                    const isCompleted = completedRequirements[req.id];
 
                     const owned = itemCounts[req.item.id] ?? { have: 0, haveFir: 0 };
                     const needs = isCurrency
@@ -42,14 +42,21 @@ export function CompactItemRequirements({
                         : computeNeeds({
                               totalRequired: quantity,
                               requiredFir: isFir ? quantity : 0,
+                              // For non-FIR requirements, allow both non-FIR and FIR to contribute
                               haveNonFir: isFir ? 0 : owned.have,
-                              haveFir: isFir ? owned.haveFir : 0,
+                              haveFir: owned.haveFir,
                           });
+
+                    const isCompleted = !isCurrency
+                        ? isFir
+                            ? needs.isSatisfied
+                            : needs.isSatisfied && !needs.usesFirForNonFir
+                        : false;
 
                     return (
                         <div
                             key={req.id}
-                            onClick={() => toggleRequirement(req.id)}
+                            onClick={() => onClickItem(req.item)}
                             className={`relative w-14 h-14 bg-black/40 border group cursor-pointer transition-all ${
                                 isFir ? "border-orange-500" : "border-white/10"
                             } ${isCompleted ? "opacity-50 grayscale" : "hover:border-white/30"}`}

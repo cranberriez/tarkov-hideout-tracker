@@ -1,5 +1,3 @@
-import { ItemDetails } from "@/types";
-
 export interface NeedBreakdown {
     totalRequired: number;
     effectiveHave: number;
@@ -8,6 +6,8 @@ export interface NeedBreakdown {
     haveFirReserved: number;
     neededFir: number;
     neededNonFir: number;
+    isSatisfied: boolean;
+    usesFirForNonFir: boolean;
 }
 
 export interface NeedInputs {
@@ -38,6 +38,14 @@ export function computeNeeds({
     const neededTotal = neededFir + neededNonFir;
     const effectiveHave = Math.max(0, totalRequired - neededTotal);
 
+    const isSatisfied = neededTotal === 0;
+
+    // If we had to dip into leftover FiR to cover non-FiR demand, then
+    // some FiR that could be used elsewhere is effectively "borrowed" here.
+    const maxNonFirFulfilledWithoutFir = Math.min(reqNonFir, haveNonFir);
+    const usedFirForNonFir = reqNonFir - maxNonFirFulfilledWithoutFir;
+    const usesFirForNonFir = usedFirForNonFir > 0;
+
     return {
         totalRequired,
         effectiveHave,
@@ -46,5 +54,7 @@ export function computeNeeds({
         haveFirReserved: usedFirForFir,
         neededFir,
         neededNonFir,
+        isSatisfied,
+        usesFirForNonFir,
     };
 }

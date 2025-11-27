@@ -1,4 +1,4 @@
-import type { Station } from "@/types";
+import type { Station, ItemDetails } from "@/types";
 import { NonItemRequirements } from "./NonItemRequirements";
 import { CompactItemRequirements } from "./ItemRequirementsCompact";
 import { ExpandedItemRequirements } from "./ItemRequirementsExpanded";
@@ -13,6 +13,7 @@ export interface StationRequirementsSectionProps {
     toggleRequirement: (requirementId: string) => void;
     hideMoney: boolean;
     hideoutCompactMode: boolean;
+    onClickItem: (item: ItemDetails) => void;
 }
 
 export function StationRequirementsSection({
@@ -25,6 +26,7 @@ export function StationRequirementsSection({
     toggleRequirement,
     hideMoney,
     hideoutCompactMode,
+    onClickItem,
 }: StationRequirementsSectionProps) {
     return (
         <div className="p-3 flex-1 flex flex-col gap-2 bg-card/50 relative">
@@ -49,6 +51,7 @@ export function StationRequirementsSection({
                             hideMoney={hideMoney}
                             completedRequirements={completedRequirements}
                             toggleRequirement={toggleRequirement}
+                            onClickItem={onClickItem}
                         />
                     ) : (
                         // Expanded List View
@@ -57,6 +60,7 @@ export function StationRequirementsSection({
                             hideMoney={hideMoney}
                             completedRequirements={completedRequirements}
                             toggleRequirement={toggleRequirement}
+                            onClickItem={onClickItem}
                         />
                     )}
                 </>
