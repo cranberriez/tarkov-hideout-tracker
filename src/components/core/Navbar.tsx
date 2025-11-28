@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { List, House, Settings } from "lucide-react";
+import { List, House, Settings, Plus } from "lucide-react";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { useUIStore } from "@/lib/stores/useUIStore";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -28,6 +29,7 @@ const Links = [
 
 export function Navbar() {
     const setSetupOpen = useUserStore((state) => state.setSetupOpen);
+    const { isQuickAddOpen, setQuickAddOpen } = useUIStore();
     const currentPage = usePathname();
 
     return (
@@ -56,6 +58,16 @@ export function Navbar() {
                 </Link>
 
                 <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm font-medium text-gray-400">
+                    <button
+                        onClick={() => setQuickAddOpen(true)}
+                        className={cn("transition-colors flex items-center gap-2 p-2 rounded",
+                             isQuickAddOpen ? "text-card bg-foreground/80" : "bg-tarkov-green text-black hover:bg-tarkov-green-dim"
+                        )}
+                    >
+                        <Plus size={16}/>
+                        Add Items
+                    </button>
+                    
                     {Links.map((link) => (
                         <Link
                             key={link.name}

@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/core/Navbar";
 import { Footer } from "@/components/core/Footer";
 import { SetupModal } from "../features/setup/SetupModal";
+import { QuickAddModal } from "@/features/quick-add/QuickAddModal";
 import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
@@ -40,6 +41,7 @@ export default function RootLayout({
                 <div className="flex-1">{children}</div>
                 <Footer />
                 <SetupModal />
+                <QuickAddModal />
                 <Analytics />
             </body>
         </html>
