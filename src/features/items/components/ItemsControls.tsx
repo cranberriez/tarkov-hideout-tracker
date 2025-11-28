@@ -33,7 +33,7 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
             {/* Search Bar */}
             <button
                 onClick={onOpenSearch}
-                className="group flex items-center gap-3 text-sm font-medium px-2 py-3 rounded-sm bg-black/40 border border-white/10 text-gray-400 hover:text-white hover:border-tarkov-green/50 hover:bg-black/60 transition-all w-full"
+                className="group flex items-center gap-3 text-sm font-medium px-2 py-2 rounded-sm bg-black/40 border border-white/10 text-gray-400 hover:text-white hover:border-tarkov-green/50 hover:bg-black/60 transition-all w-full"
             >
                 <Search
                     size={18}
@@ -44,7 +44,7 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
 
             <div className="flex flex-col xl:flex-row gap-6 justify-between items-start xl:items-center">
                 {/* Left Group: View Settings */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 w-full xl:w-auto">
+                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-6 w-full xl:w-auto">
                     {/* View Mode */}
                     <ControlGroup label="View">
                         <ControlButton
@@ -174,7 +174,7 @@ function ControlGroup({ label, children }: { label: string; children: ReactNode 
             <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold pl-1">
                 {label}
             </span>
-            <div className="flex bg-black/40 rounded-sm p-1 border border-white/10">{children}</div>
+            <div className="flex flex-wrap bg-black/40 rounded-sm p-1 border border-white/10">{children}</div>
         </div>
     );
 }
@@ -200,7 +200,7 @@ function ControlButton({
             }`}
         >
             {icon}
-            {children}
+            <span className={icon ? "hidden sm:inline" : ""}>{children}</span>
         </button>
     );
 }
