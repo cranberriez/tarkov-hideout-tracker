@@ -2,7 +2,7 @@ import { getHideoutStations } from "@/server/services/hideout";
 import { getHideoutRequiredItems } from "@/server/services/items";
 import { ItemsClientPage } from "@/features/items/ItemsClientPage";
 
-export const revalidate = 60 * 60 * 12; // 12 hours
+export const revalidate = 43200; // 12 hours
 
 export default async function ItemsPage() {
     let stations: import("@/types").Station[] | null = null;
