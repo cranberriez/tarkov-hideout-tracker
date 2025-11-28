@@ -75,6 +75,8 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
             addItemCounts(itemId, nonFir, totalFir);
         });
 
+        useUserStore.setState({ completedRequirements: {} });
+
         onClose();
     };
 
