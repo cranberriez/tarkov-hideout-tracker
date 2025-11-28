@@ -1,7 +1,7 @@
 "use client";
 
 import { ItemDetails } from "@/types";
-import { ShoppingCart } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { usePriceStore } from "@/lib/stores/usePriceStore";
 import { formatNumber } from "@/lib/utils/format-number";
 import type { ItemSize } from "@/lib/stores/useUserStore";
@@ -65,7 +65,7 @@ export function ItemRow({
     if (isCompactLike) {
         return (
             <div
-                className="flex items-center gap-3 bg-card border p-2 rounded hover:bg-black/40 transition-colors cursor-pointer"
+                className="flex items-center gap-3 bg-card border p-2 rounded hover:bg-black/40 hover:border-blue-400 transition-colors cursor-pointer relative group"
                 onClick={onClick}
             >
                 <div className="w-10 h-10 bg-black/40 flex items-center justify-center shrink-0 overflow-hidden relative">
@@ -122,6 +122,12 @@ export function ItemRow({
                         </div>
                     </div>
                 </div>
+
+                <div className="absolute top-0 right-0 rounded-xs h-full w-full p-1 opacity-0 group-hover:opacity-100 transition-all bg-gradient-to-bl from-blue-400/15 to-transparent z-0">
+                    <div className="flex items-start justify-end rounded-full h-full w-full">
+                        <ChevronRight size={16} className="text-blue-100"/>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -129,7 +135,7 @@ export function ItemRow({
     // Large (Grid) View
     return (
         <div
-            className="bg-card border rounded-lg p-3 group/item transition-colors flex flex-col gap-3 h-full cursor-pointer relative"
+            className="bg-card border rounded-lg p-3 group/item transition-colors flex flex-col gap-3 h-full cursor-pointer relative hover:border-blue-400"
             onClick={onClick}
         >
             {/* Header: Icon & Name */}
@@ -254,7 +260,12 @@ export function ItemRow({
                     </div>
                 )}
             </div>
-            <div className="opacity-0 h-full w-full group-hover/item:opacity-100 bg-linear-to-br from-bg-card to-white/5 transition-opacity absolute top-0 left-0 z-0 rounded-lg" />
+            {/* <div className="opacity-0 h-full w-full group-hover/item:opacity-100 bg-linear-to-br from-bg-card to-white/5 transition-opacity absolute top-0 left-0 z-0 rounded-lg" /> */}
+            <div className="absolute top-0 right-0 rounded-md h-full w-full p-1 opacity-0 group-hover/item:opacity-100 transition-all bg-gradient-to-bl from-blue-400/15 to-transparent z-0">
+                <div className="flex items-start justify-end rounded-full h-full w-full">
+                    <ChevronRight size={16} className="text-blue-100"/>
+                </div>
+            </div>
         </div>
     );
 }

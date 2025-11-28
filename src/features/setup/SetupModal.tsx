@@ -149,7 +149,7 @@ export function SetupModal() {
 							</button>
 							<button
 								onClick={handleFinish}
-								className="px-5 py-2 rounded-sm font-semibold text-sm tracking-wide bg-tarkov-green text-black hover:bg-lime-300 shadow-[0_0_18px_rgba(157,255,0,0.25)] transition-all"
+								className="px-5 py-2 rounded-sm font-semibold text-sm tracking-wide bg-tarkov-green text-black hover:bg-tarkov-green-dim shadow-[0_0_18px_rgba(157,255,0,0.25)] transition-all"
 							>
 								{hasCompletedSetup ? "Save Changes" : "Complete Setup"}
 							</button>
