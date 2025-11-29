@@ -27,6 +27,19 @@ export function Post_v2_11_28() {
                     Something to note here is that for something like Wires, we ONLY display and count the non found in raid items, because that's whats required. In the case where you have found in raid version of an Item we only need non-found in raid, we will not show you have the required # of items to avoid using FiR items where non-FiR can be used instead.
                 </p>
 
+                <h3 className="text-xl font-semibold mt-4">Hideout Station Statuses and Item Consumption</h3>
+                <p>
+                    Hideout stations will display whether or not they can be currently upgraded based on the items you have, and your other station levels. We don't track skills and trader levels but they are displayed as requirements.
+                </p>
+                <p>Stations can display 3 different messages to indicate their status.</p>
+                <ul>
+                    <li><span className="font-mono uppercase text-tarkov-green">Ready to Upgrade </span> This station is ready to be upgraded and will consume the items shown when upgrading.</li>
+                    <li><span className="font-mono">(nothing shown) </span> This station is missing either specific Items or other station levels. Missing station levels are shown as a Red badge with a lock icon.</li>
+                    <li><span className="font-mono uppercase text-red-400">Illegal State </span> This station's current level requires other stations at levels they are currently not at.</li>
+                </ul>
+                <PostImage label="Screenshot of Hideout stations at varying levels of Upgradeability" src="/images/news/v2/hideout-statuses.png" contain />
+
+
                 <h3 className="text-xl font-semibold mt-4">New "Add Items" Feature</h3>
                 <p>
                     Finished a raid? Use the new "Add Items" feature to quickly tally up the loot you just acquired. 
@@ -36,7 +49,7 @@ export function Post_v2_11_28() {
 
                 <h3 className="text-xl font-semibold mt-4">Found in Raid (FiR) vs. Non-FiR</h3>
                 <p>
-                    There is now a strict separation between <strong className="text-orange-500">Found in Raid</strong> and <strong>Non-Found in Raid</strong> items.
+                    There is now a strict separation between <strong>Found in Raid</strong> and <strong>Non-Found in Raid</strong> items.
                     On the Items page, you will clearly see if ANY items for a specific requirement need to be Found in Raid.
                 </p>
                 <p>

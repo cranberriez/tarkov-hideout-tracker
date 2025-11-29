@@ -55,7 +55,7 @@ export function NonItemRequirements({
             {nextLevelData.skillRequirements?.map((req, idx) => (
                 <div
                     key={`sk-${idx}`}
-                    className="flex items-center gap-2 bg-blue-900/20 border border-blue-500/20 px-2 py-1 rounded"
+                    className="flex items-center gap-2 bg-gray-900/10 border border-gray-500/10 px-2 py-1 rounded"
                 >
                     <div className="w-3 h-3 relative shrink-0">
                         {req.skill.imageLink && (
@@ -68,7 +68,7 @@ export function NonItemRequirements({
                             />
                         )}
                     </div>
-                    <span className="text-[10px] text-blue-200 font-medium uppercase">
+                    <span className="text-[10px] text-gray-200 font-medium uppercase">
                         {req.skill.name} <span className="text-white ml-1">LVL {req.level}</span>
                     </span>
                 </div>
@@ -76,7 +76,7 @@ export function NonItemRequirements({
             {nextLevelData.traderRequirements?.map((req, idx) => (
                 <div
                     key={`tr-${idx}`}
-                    className="flex items-center gap-2 bg-yellow-900/20 border border-yellow-500/20 px-2 py-1 rounded"
+                    className="flex items-center gap-2 bg-gray-900/10 border border-gray-500/10 px-2 py-1 rounded"
                 >
                     <div className="w-3 h-3 relative shrink-0 rounded-full overflow-hidden">
                         {req.trader.imageLink && (
@@ -89,7 +89,7 @@ export function NonItemRequirements({
                             />
                         )}
                     </div>
-                    <span className="text-[10px] text-yellow-200 font-medium uppercase">
+                    <span className="text-[10px] text-gray-200 font-medium uppercase">
                         {req.trader.name} <span className="text-white ml-1">LL{req.value}</span>
                     </span>
                 </div>

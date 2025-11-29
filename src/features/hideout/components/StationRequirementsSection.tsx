@@ -44,9 +44,9 @@ export function StationRequirementsSection({
                             {upgradeStatus === "ready" && (
                                 <span className="text-tarkov-green">Ready to Upgrade</span>
                             )}
-                            {upgradeStatus === "missing" && (
-                                <span className="text-yellow-400/75">Requirements Missing</span>
-                            )}
+                            {/* {upgradeStatus === "missing" && (
+                                <span className="text-muted-foreground/50">Requirements Missing</span>
+                            )} */}
                             {upgradeStatus === "illegal" && (
                                 <span className="text-red-400">Illegal State</span>
                             )}

@@ -34,8 +34,6 @@ export function StationCardHeader({
             ? "border-green-500/60"
             : upgradeStatus === "illegal"
             ? "border-red-500/60"
-            : upgradeStatus === "missing"
-            ? "border-yellow-500/60"
             : "border-white/10";
 
     const plusButtonColor =
@@ -43,7 +41,7 @@ export function StationCardHeader({
             ? "text-tarkov-green hover:text-green-400"
             : upgradeStatus === "illegal"
             ? "text-red-400 hover:text-red-300"
-            : "text-yellow-500 hover:text-yellow-400";
+            : "text-gray-400 hover:text-white";
 
     return (
         <div
