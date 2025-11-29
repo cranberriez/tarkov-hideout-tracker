@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { List, House, Settings, Plus } from "lucide-react";
+import { List, House, Plus, Menu } from "lucide-react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { usePathname } from "next/navigation";
@@ -11,6 +11,7 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -87,25 +88,34 @@ export function Navbar() {
                         <DropdownMenuTrigger
                             className={cn(
                                 "transition-colors flex items-center gap-2 cursor-pointer rounded p-2",
-                                currentPage === "/settings"
+                                (currentPage === "/settings" || currentPage === "/news")
                                     ? "text-card bg-foreground/80"
                                     : "hover:text-white"
                             )}
-                            aria-label="Setup and settings menu"
+                            aria-label="Menu"
                         >
-                            <Settings size={18} />
+                            <Menu size={18} />
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="center" sideOffset={8}>
-                            <DropdownMenuItem onSelect={() => setSetupOpen(true)}>
-                                Setup
+                        <DropdownMenuContent align="end" sideOffset={8}>
+                            <DropdownMenuItem
+                                asChild
+                                className={cn(
+                                    currentPage === "/news" && "bg-accent text-accent-foreground"
+                                )}
+                            >
+                                <Link href="/news" className="w-full">News</Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 asChild
                                 className={cn(
-                                    currentPage === "/settings" && "text-card bg-foreground/80"
+                                    currentPage === "/settings" && "bg-accent text-accent-foreground"
                                 )}
                             >
-                                <Link href="/settings">Settings</Link>
+                                <Link href="/settings" className="w-full">Settings</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onSelect={() => setSetupOpen(true)}>
+                                Setup
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
