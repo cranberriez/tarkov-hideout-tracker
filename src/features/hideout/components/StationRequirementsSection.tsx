@@ -14,6 +14,7 @@ export interface StationRequirementsSectionProps {
     hideMoney: boolean;
     hideoutCompactMode: boolean;
     onClickItem: (item: ItemDetails) => void;
+    pooledFirByItem: Record<string, number>;
 }
 
 export function StationRequirementsSection({
@@ -27,6 +28,7 @@ export function StationRequirementsSection({
     hideMoney,
     hideoutCompactMode,
     onClickItem,
+    pooledFirByItem,
 }: StationRequirementsSectionProps) {
     return (
         <div className="p-3 flex-1 flex flex-col gap-2 bg-card/50 relative">
@@ -52,6 +54,7 @@ export function StationRequirementsSection({
                             completedRequirements={completedRequirements}
                             toggleRequirement={toggleRequirement}
                             onClickItem={onClickItem}
+                            pooledFirByItem={pooledFirByItem}
                         />
                     ) : (
                         // Expanded List View
@@ -61,6 +64,7 @@ export function StationRequirementsSection({
                             completedRequirements={completedRequirements}
                             toggleRequirement={toggleRequirement}
                             onClickItem={onClickItem}
+                            pooledFirByItem={pooledFirByItem}
                         />
                     )}
                 </>

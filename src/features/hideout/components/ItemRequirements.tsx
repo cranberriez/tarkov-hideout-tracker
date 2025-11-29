@@ -6,4 +6,5 @@ export interface BaseItemRequirementsProps {
     completedRequirements: Record<string, boolean>;
     toggleRequirement: (requirementId: string) => void;
     onClickItem: (item: ItemDetails) => void;
+    pooledFirByItem: Record<string, number>;
 }

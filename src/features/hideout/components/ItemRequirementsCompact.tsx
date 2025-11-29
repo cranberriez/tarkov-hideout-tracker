@@ -13,6 +13,7 @@ export function CompactItemRequirements({
     completedRequirements,
     toggleRequirement,
     onClickItem,
+    pooledFirByItem,
 }: BaseItemRequirementsProps) {
     const itemCounts = useUserStore((state) => state.itemCounts);
     return (
@@ -32,6 +33,8 @@ export function CompactItemRequirements({
                     );
 
                     const owned = itemCounts[req.item.id] ?? { have: 0, haveFir: 0 };
+                    const globalFirRemaining = pooledFirByItem[req.item.id] ?? 0;
+                    const firSurplus = Math.max(0, owned.haveFir - globalFirRemaining);
                     const needs = isCurrency
                         ? computeNeeds({
                               totalRequired: quantity,
@@ -39,12 +42,18 @@ export function CompactItemRequirements({
                               haveNonFir: 0,
                               haveFir: 0,
                           })
+                        : isFir
+                        ? computeNeeds({
+                              totalRequired: quantity,
+                              requiredFir: quantity,
+                              haveNonFir: 0,
+                              haveFir: owned.haveFir,
+                          })
                         : computeNeeds({
                               totalRequired: quantity,
-                              requiredFir: isFir ? quantity : 0,
-                              // For non-FIR requirements, allow both non-FIR and FIR to contribute
-                              haveNonFir: isFir ? 0 : owned.have,
-                              haveFir: owned.haveFir,
+                              requiredFir: 0,
+                              haveNonFir: owned.have + firSurplus,
+                              haveFir: 0,
                           });
 
                     const isCompleted = !isCurrency

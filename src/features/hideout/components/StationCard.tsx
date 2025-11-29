@@ -11,9 +11,10 @@ import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 interface StationCardProps {
     station: Station;
     isLocked?: boolean;
+    pooledFirByItem: Record<string, number>;
 }
 
-export function StationCard({ station, isLocked = false }: StationCardProps) {
+export function StationCard({ station, isLocked = false, pooledFirByItem }: StationCardProps) {
     const {
         stationLevels,
         setStationLevel,
@@ -72,6 +73,7 @@ export function StationCard({ station, isLocked = false }: StationCardProps) {
                     hideMoney={hideMoney}
                     hideoutCompactMode={hideoutCompactMode}
                     onClickItem={setSelectedItem}
+                    pooledFirByItem={pooledFirByItem}
                 />
             )}
 

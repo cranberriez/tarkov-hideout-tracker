@@ -8,10 +8,17 @@ import { stationOrder } from "@/lib/cfg/stationOrder";
 import type { Station } from "@/types";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { RouteLoader } from "@/components/core/RouteLoader";
+import { poolItems } from "@/lib/utils/item-pooling";
 
 export function HideoutList() {
 	const { stations, errorStations } = useDataStore();
-	const { stationLevels } = useUserStore();
+	const {
+		stationLevels,
+		hiddenStations,
+		checklistViewMode,
+		showHidden,
+		completedRequirements,
+	} = useUserStore();
 
 	// 2. Helper to check if station is locked
 	const isStationLocked = (station: Station) => {
@@ -42,6 +49,34 @@ export function HideoutList() {
 		return [...stations].sort((a, b) => getOrder(a.normalizedName) - getOrder(b.normalizedName));
 	}, [stations]);
 
+	const pooledItems = useMemo(() => {
+		if (!stations) return [];
+
+		return poolItems({
+			stations,
+			stationLevels,
+			hiddenStations,
+			showHidden,
+			viewMode: checklistViewMode,
+			completedRequirements,
+		});
+	}, [
+		stations,
+		stationLevels,
+		hiddenStations,
+		checklistViewMode,
+		showHidden,
+		completedRequirements,
+	]);
+
+	const pooledFirByItem = useMemo(() => {
+		const map: Record<string, number> = {};
+		for (const item of pooledItems) {
+			map[item.id] = item.firCount;
+		}
+		return map;
+	}, [pooledItems]);
+
 	if (!stations && !errorStations) {
 		return <RouteLoader />;
 	}
@@ -58,7 +93,12 @@ export function HideoutList() {
 		<>
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 				{sortedStations.map((station) => (
-					<StationCard key={station.id} station={station} isLocked={isStationLocked(station)} />
+					<StationCard
+						key={station.id}
+						station={station}
+						isLocked={isStationLocked(station)}
+						pooledFirByItem={pooledFirByItem}
+					/>
 				))}
 			</div>
 
