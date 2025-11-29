@@ -38,6 +38,7 @@ interface UserState {
 
     // Onboarding / feature flags
     hasSeenItemConversionModal: boolean;
+    hasSeenHideoutLevelWarning: boolean;
 
     // Setup / Game Settings
     gameEdition: GameEdition | null;
@@ -67,6 +68,7 @@ interface UserState {
     setUseCategorization: (value: boolean) => void;
 
     setHasSeenItemConversionModal: (value: boolean) => void;
+    setHasSeenHideoutLevelWarning: (value: boolean) => void;
 
     setGameEdition: (edition: GameEdition) => void;
     setGameMode: (mode: GameMode) => void;
@@ -98,6 +100,7 @@ export const useUserStore = create<UserState>()(
             hideoutCompactMode: false,
             itemsSize: "Expanded",
             hasSeenItemConversionModal: false,
+            hasSeenHideoutLevelWarning: false,
             sellToPreference: "best",
             useCategorization: false,
 
@@ -162,6 +165,7 @@ export const useUserStore = create<UserState>()(
             setUseCategorization: (value) => set({ useCategorization: value }),
 
             setHasSeenItemConversionModal: (value) => set({ hasSeenItemConversionModal: value }),
+            setHasSeenHideoutLevelWarning: (value) => set({ hasSeenHideoutLevelWarning: value }),
 
             setGameEdition: (edition) => set({ gameEdition: edition }),
             setGameMode: (mode) => set({ gameMode: mode }),
@@ -283,6 +287,7 @@ export const useUserStore = create<UserState>()(
                     hideoutCompactMode: false,
                     itemsSize: "Expanded",
                     hasSeenItemConversionModal: false,
+                    hasSeenHideoutLevelWarning: false,
                     sellToPreference: "best",
                     useCategorization: false,
                     gameEdition: null,

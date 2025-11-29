@@ -15,6 +15,7 @@ export interface StationRequirementsSectionProps {
     hideoutCompactMode: boolean;
     onClickItem: (item: ItemDetails) => void;
     pooledFirByItem: Record<string, number>;
+    upgradeStatus: "ready" | "missing" | "illegal";
 }
 
 export function StationRequirementsSection({
@@ -29,13 +30,27 @@ export function StationRequirementsSection({
     hideoutCompactMode,
     onClickItem,
     pooledFirByItem,
+    upgradeStatus,
 }: StationRequirementsSectionProps) {
     return (
         <div className="p-3 flex-1 flex flex-col gap-2 bg-card/50 relative">
             {!isMaxed && nextLevelData ? (
                 <>
-                    <div className="text-[10px] text-gray-600 uppercase tracking-wider font-bold mb-0.5">
-                        Next Level Requires:
+                    <div className="flex items-center justify-between gap-2 mb-0.5">
+                        <div className="text-[10px] text-gray-600 uppercase tracking-wider font-bold">
+                            Next Level Requires:
+                        </div>
+                        <div className="flex-1 text-right text-[10px] font-bold uppercase tracking-wider">
+                            {upgradeStatus === "ready" && (
+                                <span className="text-tarkov-green">Ready to Upgrade</span>
+                            )}
+                            {upgradeStatus === "missing" && (
+                                <span className="text-yellow-400/75">Requirements Missing</span>
+                            )}
+                            {upgradeStatus === "illegal" && (
+                                <span className="text-red-400">Illegal State</span>
+                            )}
+                        </div>
                     </div>
 
                     {/* Non-Item Requirements (Stations, Skills, Traders) */}

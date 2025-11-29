@@ -80,7 +80,7 @@ export function ItemDetailInventoryAndMarket({
                         </div>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                        <span className="text-muted-foreground text-sm">FiR count</span>
+                        <span className="text-orange-400 text-sm">FiR count</span>
                         <div className="flex items-center gap-1">
                             <button
                                 onClick={() => handleDecrement(setDraftFir, draftFir)}
@@ -98,7 +98,7 @@ export function ItemDetailInventoryAndMarket({
                                         Math.max(0, Number.parseInt(e.target.value || "0", 10))
                                     )
                                 }
-                                className="w-16 bg-black/40 border border-border-color px-1.5 py-1 rounded text-center font-mono text-sm text-foreground focus:ring-1 focus:ring-primary"
+                                className="w-16 bg-black/40 border border-orange-500 px-1.5 py-1 rounded text-center font-mono text-sm text-foreground focus:ring-1 focus:ring-primary"
                             />
                             <button
                                 onClick={() => handleIncrement(setDraftFir, draftFir)}
@@ -109,24 +109,25 @@ export function ItemDetailInventoryAndMarket({
                             </button>
                         </div>
                     </div>
-                    {hasInventoryChanges && (
-                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-color mt-2">
-                            <button
-                                type="button"
-                                onClick={onCancelChanges}
-                                className="px-3 py-1 text-xs rounded border border-border-color text-muted-foreground hover:bg-white/5 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                onClick={onConfirmChanges}
-                                className="px-3 py-1 text-xs rounded border border-sky-500/60 bg-sky-600/70 text-white hover:bg-sky-500/80 transition-colors"
-                            >
-                                Confirm Changes
-                            </button>
-                        </div>
-                    )}
+                    
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-color mt-2">
+                        <button
+                            type="button"
+                            onClick={onCancelChanges}
+                            className="px-3 py-1 text-xs rounded border border-border-color text-muted-foreground hover:bg-white/5 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onConfirmChanges}
+                            disabled={!hasInventoryChanges}
+                            className="px-3 py-1 text-xs rounded border border-sky-500/60 bg-sky-600/70 text-white hover:bg-sky-500/80 transition-colors disabled:opacity-50"
+                        >
+                            Confirm Changes
+                        </button>
+                    </div>
+                    
                 </div>
             </div>
 

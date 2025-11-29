@@ -15,7 +15,8 @@ interface HideoutClientPageProps {
 
 export function HideoutClientPage({ stations, stationsUpdatedAt }: HideoutClientPageProps) {
     const { setStations } = useDataStore();
-    const { initializeDefaults } = useUserStore();
+    const { initializeDefaults, hasSeenHideoutLevelWarning, setHasSeenHideoutLevelWarning } =
+        useUserStore();
 
     useEffect(() => {
         if (stations && stations.length > 0) {
@@ -38,6 +39,23 @@ export function HideoutClientPage({ stations, stationsUpdatedAt }: HideoutClient
                     <HideoutConversionGate />
                 </div>
             </div>
+
+            {!hasSeenHideoutLevelWarning && (
+                <div className="mb-4 flex items-center gap-3 rounded border border-yellow-500/40 bg-yellow-900/20 px-3 py-2 text-xs text-yellow-100 w-full">
+                    <div className="flex-1">
+                        Increasing or decreasing station levels will affect your item counts. Use
+                        the Setup in the extra menu at the top to modify base station levels
+                        without adjusting item requirements.
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setHasSeenHideoutLevelWarning(true)}
+                        className="ml-2 text-[10px] uppercase tracking-wide font-mono text-yellow-200 hover:text-yellow-50 hover:bg-yellow-500/20 rounded px-2 py-1"
+                    >
+                        Close
+                    </button>
+                </div>
+            )}
 
             <HideoutList />
         </main>
