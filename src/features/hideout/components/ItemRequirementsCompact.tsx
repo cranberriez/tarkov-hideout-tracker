@@ -69,7 +69,7 @@ export function CompactItemRequirements({
                             className={`relative w-14 h-14 bg-black/40 border group cursor-pointer transition-all ${
                                 isFir ? "border-orange-500" : "border-white/10"
                             } ${isCompleted ? "opacity-50 grayscale" : "hover:border-white/30"}`}
-                            title={`${formatNumber(quantity)}x ${req.item.name}${
+                            title={`${formatNumber(quantity)} ${req.item.name}${
                                 isFir ? " (Found In Raid)" : ""
                             }${isCompleted ? " (Completed)" : ""}`}
                         >
@@ -97,18 +97,24 @@ export function CompactItemRequirements({
                             )}
                             <div className="absolute bottom-0 right-0 bg-black/80 px-1 text-[9px] font-mono text-gray-300 border-t border-l border-white/10 text-right leading-tight">
                                 {isCurrency ? (
-                                    <div className={isFir ? "text-orange-300" : "text-tarkov-green"}>
+                                    <div
+                                        className={isFir ? "text-orange-300" : "text-tarkov-green"}
+                                    >
                                         {`x${formatNumber(quantity)}`}
                                     </div>
                                 ) : isFir ? (
                                     <div className="text-orange-300">
-                                        {formatNumber(needs.haveFirReserved)} / {formatNumber(needs.requiredFir)}
+                                        {formatNumber(needs.haveFirReserved)} /{" "}
+                                        {formatNumber(needs.requiredFir)}
                                     </div>
                                 ) : (
                                     <div className="text-tarkov-green">
                                         {formatNumber(needs.effectiveHave)}
                                         {owned.haveFir > 0 && (
-                                            <span className="text-orange-300"> ({formatNumber(owned.haveFir)})</span>
+                                            <span className="text-orange-300">
+                                                {" "}
+                                                ({formatNumber(owned.haveFir)})
+                                            </span>
                                         )}
                                         {` / ${formatNumber(needs.totalRequired)}`}
                                     </div>

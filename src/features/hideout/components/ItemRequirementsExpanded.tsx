@@ -29,7 +29,7 @@ export function ExpandedItemRequirements({
                     const isFir = req.attributes.some(
                         (a) => a.name === "found_in_raid" && a.value === "true"
                     );
-                    
+
                     const owned = itemCounts[req.item.id] ?? { have: 0, haveFir: 0 };
                     const globalFirRemaining = pooledFirByItem[req.item.id] ?? 0;
                     const firSurplus = Math.max(0, owned.haveFir - globalFirRemaining);
@@ -59,7 +59,7 @@ export function ExpandedItemRequirements({
                             ? needs.isSatisfied
                             : needs.isSatisfied && !needs.usesFirForNonFir
                         : false;
-                          
+
                     return (
                         <div
                             key={req.id}
@@ -96,9 +96,7 @@ export function ExpandedItemRequirements({
                                 <div className="flex flex-col items-start gap-0.5 min-w-0">
                                     <div
                                         className={`text-xs truncate ${
-                                            isCompleted
-                                                ? "text-gray-500"
-                                                : "text-gray-300"
+                                            isCompleted ? "text-gray-500" : "text-gray-300"
                                         }`}
                                     >
                                         <span
@@ -112,11 +110,12 @@ export function ExpandedItemRequirements({
                                     <div className="text-[10px] font-mono text-gray-400">
                                         {isCurrency ? (
                                             <span className="text-tarkov-green">
-                                                x{formatNumber(quantity)}
+                                                {formatNumber(quantity)}
                                             </span>
                                         ) : isFir ? (
                                             <span className="text-orange-400">
-                                                FiR {formatNumber(needs.haveFirReserved)} / {formatNumber(needs.requiredFir)}
+                                                FiR {formatNumber(needs.haveFirReserved)} /{" "}
+                                                {formatNumber(needs.requiredFir)}
                                             </span>
                                         ) : (
                                             <span className="text-tarkov-green">
