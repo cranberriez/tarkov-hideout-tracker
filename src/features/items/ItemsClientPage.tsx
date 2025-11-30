@@ -15,8 +15,15 @@ export function ItemsClientPage() {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
 
-    const { stationLevels, hiddenStations, completedRequirements, toggleRequirement, gameMode, setGameMode, initializeDefaults } =
-        useUserStore();
+    const {
+        stationLevels,
+        hiddenStations,
+        completedRequirements,
+        toggleRequirement,
+        gameMode,
+        setGameMode,
+        initializeDefaults,
+    } = useUserStore();
 
     useEffect(() => {
         if (stations && stations.length > 0) {
@@ -77,16 +84,18 @@ export function ItemsClientPage() {
                 }}
             />
 
-            <ItemDetailModal
-                item={selectedItem}
-                isOpen={!!selectedItem}
-                onClose={() => setSelectedItem(null)}
-                stations={stations ?? []}
-                stationLevels={stationLevels}
-                hiddenStations={hiddenStations}
-                completedRequirements={completedRequirements}
-                toggleRequirement={toggleRequirement}
-            />
+            {selectedItem && (
+                <ItemDetailModal
+                    item={selectedItem}
+                    isOpen={!!selectedItem}
+                    onClose={() => setSelectedItem(null)}
+                    stations={stations ?? []}
+                    stationLevels={stationLevels}
+                    hiddenStations={hiddenStations}
+                    completedRequirements={completedRequirements}
+                    toggleRequirement={toggleRequirement}
+                />
+            )}
         </main>
     );
 }

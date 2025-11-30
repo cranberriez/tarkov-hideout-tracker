@@ -235,16 +235,18 @@ export function StationCard({ station, isLocked = false, pooledFirByItem }: Stat
                 />
             )}
 
-            <ItemDetailModal
-                item={selectedItem}
-                isOpen={!!selectedItem}
-                onClose={() => setSelectedItem(null)}
-                stations={stations}
-                stationLevels={stationLevels}
-                hiddenStations={hiddenStations}
-                completedRequirements={completedRequirements}
-                toggleRequirement={toggleRequirement}
-            />
+            {selectedItem && (
+                <ItemDetailModal
+                    item={selectedItem}
+                    isOpen={!!selectedItem}
+                    onClose={() => setSelectedItem(null)}
+                    stations={stations}
+                    stationLevels={stationLevels}
+                    hiddenStations={hiddenStations}
+                    completedRequirements={completedRequirements}
+                    toggleRequirement={toggleRequirement}
+                />
+            )}
         </div>
     );
 }
