@@ -6,13 +6,15 @@ import { ItemRow } from "./ItemRow";
 import { poolItems } from "@/lib/utils/item-pooling";
 import { ItemDetails } from "@/types";
 import { useDataContext } from "@/app/(data)/_dataContext";
+import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 
 interface ItemsListProps {
     onClickItem: (item: ItemDetails) => void;
 }
 
 export function ItemsList({ onClickItem }: ItemsListProps) {
-    const { stations, items, marketPricesByMode } = useDataContext();
+    const { stations, items } = useDataContext();
+    const { marketPricesByMode } = usePriceDataContext();
 
     const {
         stationLevels,

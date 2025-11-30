@@ -11,7 +11,7 @@ import { computeNeeds } from "@/lib/utils/item-needs";
 import { ItemDetailHeader } from "./ItemDetailHeader";
 import { ItemDetailInventoryAndMarket } from "./ItemDetailInventoryAndMarket";
 import { ItemDetailHideoutRequirements } from "./ItemDetailHideoutRequirements";
-import { useDataContext } from "@/app/(data)/_dataContext";
+import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 
 export interface ItemDetailModalProps {
     item: ItemDetails | null;
@@ -101,11 +101,11 @@ export function ItemDetailModal({
         });
     }, [item, stations, stationLevels]);
 
-    const { marketPricesByMode } = useDataContext();
+    const { marketPricesByMode, loading: pricesLoading } = usePriceDataContext();
     const { gameMode } = useUserStore();
     const mode = gameMode === "PVE" ? "PVE" : "PVP";
     const priceBucket = marketPricesByMode[mode];
-    const loading = !priceBucket || priceBucket.updatedAt === null;
+    const loading = pricesLoading || !priceBucket || priceBucket.updatedAt === null;
     const marketPrice = priceBucket?.prices[item.normalizedName];
 
     const formatPrice = (price?: number) => {

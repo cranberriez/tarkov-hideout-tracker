@@ -1,8 +1,9 @@
+import { Suspense } from "react";
 import type { ReactNode } from "react";
 import { getCachedHideoutStations } from "@/server/services/hideout";
 import { getCachedHideoutRequiredItems } from "@/server/services/items";
-import { getCachedMarketPrices } from "@/server/services/marketPrices";
 import { DataProvider, type DataContextValue } from "@/app/(data)/_dataContext";
+import PriceDataLayout from "@/app/(data)/PriceDataLayout";
 import { QuickAddModal } from "@/features/quick-add/QuickAddModal";
 
 interface DataLayoutProps {
@@ -15,44 +16,21 @@ export default async function DataLayout({ children }: DataLayoutProps) {
         getCachedHideoutRequiredItems(),
     ]);
 
-    const items = itemsResponse.data.items;
-    const normalizedNames = items
-        .map((item) => item.normalizedName)
-        .filter((name) => typeof name === "string" && name.trim().length > 0);
-
-    const [pvpPricesResponse, pvePricesResponse] = normalizedNames.length
-        ? await Promise.all([
-              getCachedMarketPrices(normalizedNames, "PVP"),
-              getCachedMarketPrices(normalizedNames, "PVE"),
-          ])
-        : [
-              { data: {}, updatedAt: Date.now() },
-              { data: {}, updatedAt: Date.now() },
-          ];
-
-    const marketPricesByMode: DataContextValue["marketPricesByMode"] = {
-        PVP: {
-            prices: pvpPricesResponse.data,
-            updatedAt: pvpPricesResponse.updatedAt,
-        },
-        PVE: {
-            prices: pvePricesResponse.data,
-            updatedAt: pvePricesResponse.updatedAt,
-        },
-    };
-
     const value: DataContextValue = {
         stations: stationsResponse.data.stations,
         stationsUpdatedAt: stationsResponse.updatedAt,
-        items,
+        items: itemsResponse.data.items,
         itemsUpdatedAt: itemsResponse.updatedAt,
-        marketPricesByMode,
     };
 
     return (
         <DataProvider value={value}>
-            {children}
-            <QuickAddModal />
+            <Suspense fallback={null}>
+                <PriceDataLayout>
+                    {children}
+                    <QuickAddModal />
+                </PriceDataLayout>
+            </Suspense>
         </DataProvider>
     );
 }

@@ -5,7 +5,7 @@ import { ChevronRight } from "lucide-react";
 import { formatNumber } from "@/lib/utils/format-number";
 import type { ItemSize } from "@/lib/stores/useUserStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { useDataContext } from "@/app/(data)/_dataContext";
+import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 import { computeNeeds } from "@/lib/utils/item-needs";
 
 interface ItemRowProps {
@@ -30,11 +30,12 @@ export function ItemRow({
         return new Intl.NumberFormat("en-US").format(price);
     };
 
-    const { marketPricesByMode } = useDataContext();
+    const { marketPricesByMode, loading: pricesLoading } = usePriceDataContext();
     const { itemCounts, gameMode } = useUserStore();
     const mode = gameMode === "PVE" ? "PVE" : "PVP";
     const priceBucket = marketPricesByMode[mode];
-    const loading = !priceBucket || priceBucket.updatedAt === null;
+    // Use local loading state if bucket is missing/empty, but also respect the global loading flag
+    const loading = pricesLoading || !priceBucket || priceBucket.updatedAt === null;
     const getPrice = (normalizedName: string) => priceBucket?.prices[normalizedName];
     const owned = itemCounts[item.id] ?? { have: 0, haveFir: 0 };
     const marketPrice = getPrice(item.normalizedName);
@@ -129,7 +130,7 @@ export function ItemRow({
 
                 <div className="absolute top-0 right-0 rounded-xs h-full w-full p-1 opacity-0 group-hover:opacity-100 transition-all bg-gradient-to-bl from-blue-400/15 to-transparent z-0">
                     <div className="flex items-start justify-end rounded-full h-full w-full">
-                        <ChevronRight size={16} className="text-blue-100"/>
+                        <ChevronRight size={16} className="text-blue-100" />
                     </div>
                 </div>
             </div>
@@ -265,9 +266,9 @@ export function ItemRow({
                 )}
             </div>
             {/* <div className="opacity-0 h-full w-full group-hover/item:opacity-100 bg-linear-to-br from-bg-card to-white/5 transition-opacity absolute top-0 left-0 z-0 rounded-lg" /> */}
-            <div className="absolute top-0 right-0 rounded-md h-full w-full p-1 opacity-0 group-hover/item:opacity-100 transition-all bg-gradient-to-bl from-blue-400/15 to-transparent z-0">
+            <div className="absolute top-0 right-0 rounded-md h-full w-full p-1 opacity-0 group-hover/item:opacity-100 transition-all bg-linear-to-bl from-blue-400/15 to-transparent z-0">
                 <div className="flex items-start justify-end rounded-full h-full w-full">
-                    <ChevronRight size={16} className="text-blue-100"/>
+                    <ChevronRight size={16} className="text-blue-100" />
                 </div>
             </div>
         </div>
