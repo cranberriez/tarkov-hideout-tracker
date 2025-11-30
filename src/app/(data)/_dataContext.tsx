@@ -1,7 +1,40 @@
+"use client";
 // A basic context provider for data allowing data to be initially passed as a prop to initialize
 
-import { createContext } from "react";
+import { createContext, useContext } from "react";
+import type { ReactNode } from "react";
+import type { Station, ItemDetails, MarketPrice } from "@/types";
+import type { GameMode } from "@/lib/stores/useUserStore";
 
-const DataContext = createContext({});
+export interface DataContextValue {
+	stations: Station[] | null;
+	stationsUpdatedAt: number | null;
+	items: ItemDetails[] | null;
+	itemsUpdatedAt: number | null;
+	marketPricesByMode: Record<
+		GameMode,
+		{
+			prices: Record<string, MarketPrice | null>;
+			updatedAt: number | null;
+		}
+	>;
+}
 
-export default DataContext;
+const DataContext = createContext<DataContextValue | null>(null);
+
+interface DataProviderProps {
+	value: DataContextValue;
+	children: ReactNode;
+}
+
+export function DataProvider({ value, children }: DataProviderProps) {
+	return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
+}
+
+export function useDataContext(): DataContextValue {
+	const ctx = useContext(DataContext);
+	if (!ctx) {
+		throw new Error("useDataContext must be used within DataLayout DataContext.Provider");
+	}
+	return ctx;
+}

@@ -1,41 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Station, ItemDetails } from "@/types";
-import { useDataStore } from "@/lib/stores/useDataStore";
+import type { ItemDetails } from "@/types";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsList } from "@/features/items/components/ItemsList";
 import { ItemsControls } from "@/features/items/components/ItemsControls";
 import { ItemSearchModal } from "@/features/items/components/ItemSearchModal";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
+import { useDataContext } from "@/app/(data)/_dataContext";
 
-interface ItemsClientPageProps {
-    stations: Station[] | null;
-    stationsUpdatedAt: number | null;
-    items: ItemDetails[] | null;
-    itemsUpdatedAt: number | null;
-}
-
-export function ItemsClientPage({
-    stations,
-    stationsUpdatedAt,
-    items,
-    itemsUpdatedAt,
-}: ItemsClientPageProps) {
+export function ItemsClientPage() {
+    const { stations, stationsUpdatedAt, items, itemsUpdatedAt } = useDataContext();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
 
-    const { setStations, setItems } = useDataStore();
     const { stationLevels, hiddenStations, completedRequirements, toggleRequirement, gameMode, setGameMode, initializeDefaults } =
         useUserStore();
 
     useEffect(() => {
         if (stations && stations.length > 0) {
-            setStations(stations, stationsUpdatedAt ?? undefined);
             initializeDefaults(stations);
         }
-    }, [stations, stationsUpdatedAt, setStations, initializeDefaults]);
+    }, [stations, stationsUpdatedAt, initializeDefaults]);
 
     useEffect(() => {
         if (items && items.length > 0) {
@@ -43,9 +30,8 @@ export function ItemsClientPage({
             items.forEach((item) => {
                 itemsMap[item.id] = item;
             });
-            setItems(itemsMap, itemsUpdatedAt ?? undefined);
         }
-    }, [items, itemsUpdatedAt, setItems]);
+    }, [items, itemsUpdatedAt]);
 
     return (
         <main className="container mx-auto px-6 py-8">

@@ -3,7 +3,8 @@
 import { useMemo } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { useDataStore } from "@/lib/stores/useDataStore";
+import { useDataContext } from "@/app/(data)/_dataContext";
+import type { ItemDetails } from "@/types";
 
 interface CompletedItemsConversionModalProps {
     isOpen: boolean;
@@ -11,7 +12,7 @@ interface CompletedItemsConversionModalProps {
 }
 
 export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItemsConversionModalProps) {
-    const { stations, items } = useDataStore();
+    const { stations, items } = useDataContext();
     const { stationLevels, completedRequirements, addItemCounts } = useUserStore();
 
     const conversions = useMemo(() => {
@@ -21,6 +22,15 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
             total: number;
             totalFir: number;
         }[];
+
+        const itemsById: Record<string, ItemDetails> | null = (() => {
+            if (!items) return null;
+            const m: Record<string, ItemDetails> = {};
+            items.forEach((item) => {
+                m[item.id] = item;
+            });
+            return m;
+        })();
 
         const map = new Map<
             string,
@@ -51,7 +61,7 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
 
                     const existing = map.get(req.item.id) ?? {
                         itemId: req.item.id,
-                        itemName: items?.[req.item.id]?.name ?? req.item.name ?? req.item.id,
+                        itemName: itemsById?.[req.item.id]?.name ?? req.item.name ?? req.item.id,
                         total: 0,
                         totalFir: 0,
                     };

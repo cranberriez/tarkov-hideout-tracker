@@ -1,10 +1,9 @@
 import { formatUpdatedAt } from "@/lib/utils/format-time";
-import { useDataStore } from "@/lib/stores/useDataStore";
 import { useMemo } from "react";
+import { useDataContext } from "@/app/(data)/_dataContext";
 
 export function DataLastUpdated() {
-	const stationsUpdatedAt = useDataStore((state) => state.stationsUpdatedAt);
-	const itemsUpdatedAt = useDataStore((state) => state.itemsUpdatedAt);
+	const { stationsUpdatedAt, itemsUpdatedAt } = useDataContext();
 
 	const formatted = useMemo(
 		() => ({

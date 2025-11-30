@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { useDataStore } from "@/lib/stores/useDataStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { CompletedItemsConversionModal } from "@/features/items/components/CompletedItemsConversionModal";
+import { useDataContext } from "@/app/(data)/_dataContext";
 
 export function HideoutConversionGate() {
-    const { stations } = useDataStore();
+    const { stations } = useDataContext();
     const {
         stationLevels,
         completedRequirements,

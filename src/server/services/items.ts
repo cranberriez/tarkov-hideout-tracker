@@ -1,6 +1,7 @@
 import { redis } from "@/server/redis";
 import { getHideoutStations } from "@/server/services/hideout";
 import type { ItemsPayload, TimedResponse, ItemDetails } from "@/types";
+import { unstable_cache } from "next/cache";
 
 const CACHE_WINDOW_MS = 12 * 60 * 60 * 1000; // 12 hours
 const REDIS_KEY = "hideout:items:filtered:v1";
@@ -146,3 +147,9 @@ export async function getHideoutRequiredItems(
 
     return body;
 }
+
+export const getCachedHideoutRequiredItems = unstable_cache(
+    async () => getHideoutRequiredItems(),
+    ["hideout-required-items"],
+    { revalidate: 12 * 60 * 60 },
+);

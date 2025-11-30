@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useUIStore } from "@/lib/stores/useUIStore";
-import { useDataStore } from "@/lib/stores/useDataStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { useDataContext } from "@/app/(data)/_dataContext";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Plus, X, Search } from "lucide-react";
 import Image from "next/image";
@@ -31,7 +31,7 @@ export function QuickAddModal() {
         setPendingQuickAddItems, 
         clearPendingQuickAddItems 
     } = useUIStore();
-    const { items, fetchItems, loadingItems } = useDataStore();
+    const { items } = useDataContext();
     const { addItemCounts } = useUserStore();
 
     // State for the new item row
@@ -39,14 +39,12 @@ export function QuickAddModal() {
     const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
-        if (isQuickAddOpen) {
-            fetchItems();
-        } else {
+        if (!isQuickAddOpen) {
             // Reset search state when closed, but NOT the pending items
             setIsSearching(false);
             setSearchQuery("");
         }
-    }, [isQuickAddOpen, fetchItems]);
+    }, [isQuickAddOpen]);
 
     const searchResults = useMemo(() => {
         if (!searchQuery || !items) return [];
@@ -55,7 +53,7 @@ export function QuickAddModal() {
         const strippedQuery = searchQuery.toLowerCase().replace(/[-\s]/g, "");
         const results: ItemDetails[] = [];
         
-        const allItems = Object.values(items);
+        const allItems = items;
         
         for (const item of allItems) {
             if (results.length >= 10) break;
@@ -225,13 +223,10 @@ export function QuickAddModal() {
                                 {/* Search Results */}
                                 {searchQuery && (
                                     <div className="bg-card border border-border-color rounded-md shadow-xl max-h-48 overflow-y-auto absolute w-full z-50 left-0 top-full mt-1">
-                                        {loadingItems && (
-                                            <div className="p-3 text-center text-xs text-muted-foreground">Loading items...</div>
-                                        )}
-                                        {!loadingItems && (!items || Object.keys(items).length === 0) && (
+                                        {!items && (
                                             <div className="p-3 text-center text-xs text-red-400">Error: Item data not loaded.</div>
                                         )}
-                                        {!loadingItems && items && searchResults.length === 0 && (
+                                        {items && searchResults.length === 0 && (
                                             <div className="p-3 text-center text-xs text-muted-foreground">No items found.</div>
                                         )}
                                         {searchResults.map((item) => (

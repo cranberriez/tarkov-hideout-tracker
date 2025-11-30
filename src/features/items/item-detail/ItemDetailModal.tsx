@@ -5,13 +5,13 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { ItemDetails, Station } from "@/types";
 import { X } from "lucide-react";
 import { stationOrder } from "@/lib/cfg/stationOrder";
-import { usePriceStore } from "@/lib/stores/usePriceStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { formatRelativeUpdatedAt } from "@/lib/utils/format-time";
 import { computeNeeds } from "@/lib/utils/item-needs";
 import { ItemDetailHeader } from "./ItemDetailHeader";
 import { ItemDetailInventoryAndMarket } from "./ItemDetailInventoryAndMarket";
 import { ItemDetailHideoutRequirements } from "./ItemDetailHideoutRequirements";
+import { useDataContext } from "@/app/(data)/_dataContext";
 
 export interface ItemDetailModalProps {
     item: ItemDetails | null;
@@ -101,8 +101,12 @@ export function ItemDetailModal({
         });
     }, [item, stations, stationLevels]);
 
-    const { getPrice, loading } = usePriceStore();
-    const marketPrice = getPrice(item.normalizedName);
+    const { marketPricesByMode } = useDataContext();
+    const { gameMode } = useUserStore();
+    const mode = gameMode === "PVE" ? "PVE" : "PVP";
+    const priceBucket = marketPricesByMode[mode];
+    const loading = !priceBucket || priceBucket.updatedAt === null;
+    const marketPrice = priceBucket?.prices[item.normalizedName];
 
     const formatPrice = (price?: number) => {
         if (price === undefined) return "-";

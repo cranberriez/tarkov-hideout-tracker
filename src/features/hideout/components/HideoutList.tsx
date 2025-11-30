@@ -1,17 +1,16 @@
 "use client";
 
 import { useMemo } from "react";
-import { useDataStore } from "@/lib/stores/useDataStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { StationCard } from "./StationCard";
 import { stationOrder } from "@/lib/cfg/stationOrder";
 import type { Station } from "@/types";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
-import { RouteLoader } from "@/components/core/RouteLoader";
 import { poolItems } from "@/lib/utils/item-pooling";
+import { useDataContext } from "@/app/(data)/_dataContext";
 
 export function HideoutList() {
-	const { stations, errorStations } = useDataStore();
+	const { stations } = useDataContext();
 	const {
 		stationLevels,
 		hiddenStations,
@@ -76,14 +75,6 @@ export function HideoutList() {
 		}
 		return map;
 	}, [pooledItems]);
-
-	if (!stations && !errorStations) {
-		return <RouteLoader />;
-	}
-
-	if (errorStations) {
-		return <div className="text-center text-red-500 py-10">Error: {errorStations}</div>;
-	}
 
 	if (!stations) {
 		return null;

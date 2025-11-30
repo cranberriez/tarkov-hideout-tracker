@@ -1,29 +1,22 @@
 "use client";
 
 import { useEffect } from "react";
-import type { Station } from "@/types";
-import { useDataStore } from "@/lib/stores/useDataStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { HideoutControls } from "@/features/hideout/components/HideoutControls";
 import { HideoutConversionGate } from "@/features/hideout/components/HideoutConversionGate";
 import { HideoutList } from "@/features/hideout/components/HideoutList";
+import { useDataContext } from "@/app/(data)/_dataContext";
 
-interface HideoutClientPageProps {
-    stations: Station[] | null;
-    stationsUpdatedAt: number | null;
-}
-
-export function HideoutClientPage({ stations, stationsUpdatedAt }: HideoutClientPageProps) {
-    const { setStations } = useDataStore();
+export function HideoutClientPage() {
+    const { stations, stationsUpdatedAt } = useDataContext();
     const { initializeDefaults, hasSeenHideoutLevelWarning, setHasSeenHideoutLevelWarning } =
         useUserStore();
 
     useEffect(() => {
         if (stations && stations.length > 0) {
-            setStations(stations, stationsUpdatedAt ?? undefined);
             initializeDefaults(stations);
         }
-    }, [stations, stationsUpdatedAt, setStations, initializeDefaults]);
+    }, [stations, stationsUpdatedAt, initializeDefaults]);
 
     return (
         <main className="container mx-auto px-6 py-8">

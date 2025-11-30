@@ -1,6 +1,7 @@
 import { redis } from "@/server/redis";
 import { requiresFoundInRaid } from "@/lib/cfg/foundInRaid";
 import { wikiData } from "@/lib/data/wiki-data";
+import { unstable_cache } from "next/cache";
 import {
 	HideoutStationsPayload,
 	TimedResponse,
@@ -308,3 +309,11 @@ export async function getHideoutStations(): Promise<TimedResponse<HideoutStation
 
 	return body;
 }
+
+export const getCachedHideoutStations = unstable_cache(
+	async () => {
+		return getHideoutStations();
+	},
+	["hideout-stations"],
+	{ revalidate: 12 * 60 * 60 },
+);

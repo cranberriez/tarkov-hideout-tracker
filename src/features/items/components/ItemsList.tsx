@@ -1,26 +1,18 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { useDataStore } from "@/lib/stores/useDataStore";
+import { useMemo } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { usePriceStore } from "@/lib/stores/usePriceStore";
 import { ItemRow } from "./ItemRow";
 import { poolItems } from "@/lib/utils/item-pooling";
 import { ItemDetails } from "@/types";
-import { RouteLoader } from "@/components/core/RouteLoader";
+import { useDataContext } from "@/app/(data)/_dataContext";
 
 interface ItemsListProps {
     onClickItem: (item: ItemDetails) => void;
 }
 
 export function ItemsList({ onClickItem }: ItemsListProps) {
-    const {
-        stations,
-        items,
-        errorStations,
-        errorItems,
-    } = useDataStore();
-    const { fetchPrices, getPrice } = usePriceStore();
+    const { stations, items, marketPricesByMode } = useDataContext();
 
     const {
         stationLevels,
@@ -37,19 +29,19 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         completedRequirements,
     } = useUserStore();
 
-    // Once we have item details, fetch market prices for all unique normalizedNames
-    useEffect(() => {
-        if (!items) return;
+    const itemsById = useMemo(() => {
+        if (!items) return null;
+        const map: Record<string, ItemDetails> = {};
+        items.forEach((item) => {
+            map[item.id] = item;
+        });
+        return map;
+    }, [items]);
 
-        const normalizedNames = Object.values(items)
-            .map((item) => item.normalizedName)
-            .filter(Boolean);
+    const mode = gameMode === "PVE" ? "PVE" : "PVP";
+    const priceBucket = marketPricesByMode[mode];
 
-        if (normalizedNames.length === 0) return;
-
-        // When gameMode changes, we refetch prices to pull the correct PVP/PVE values.
-        fetchPrices(normalizedNames);
-    }, [items, fetchPrices, gameMode]);
+    const getPrice = (normalizedName: string) => priceBucket?.prices[normalizedName];
 
     const pooledItems = useMemo(() => {
         if (!stations) return [];
@@ -72,10 +64,10 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
     ]);
 
     const filteredAndSortedItems = useMemo(() => {
-        if (!items) return [];
+        if (!itemsById) return [];
 
         let finalItems = pooledItems.map((pooled) => {
-            const details = items[pooled.id];
+            const details = itemsById[pooled.id];
             return {
                 ...pooled,
                 details,
@@ -123,7 +115,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         });
 
         return finalItems;
-    }, [pooledItems, items, hideCheap, cheapPriceThreshold, showFirOnly, getPrice]);
+    }, [pooledItems, itemsById, hideCheap, cheapPriceThreshold, showFirOnly, getPrice]);
 
     const categorizedItems = useMemo(() => {
         if (!useCategorization) return null;
@@ -153,19 +145,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         }));
     }, [filteredAndSortedItems, useCategorization]);
 
-    if ((!stations || !items) && !(errorStations || errorItems)) {
-        return <RouteLoader />;
-    }
-
-    if (errorStations || errorItems) {
-        return (
-            <div className="text-center text-red-500 py-10">
-                Error: {errorStations || errorItems}
-            </div>
-        );
-    }
-
-    if (!stations || !items) {
+    if (!stations || !itemsById) {
         return null;
     }
 

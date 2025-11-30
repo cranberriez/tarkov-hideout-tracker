@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { useDataStore } from "@/lib/stores/useDataStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
 import type { Station, ItemDetails } from "@/types";
 import { StationCardHeader } from "./StationCardHeader";
 import { StationRequirementsSection } from "./StationRequirementsSection";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
+import { useDataContext } from "@/app/(data)/_dataContext";
 
 interface StationCardProps {
     station: Station;
@@ -31,7 +31,7 @@ export function StationCard({ station, isLocked = false, pooledFirByItem }: Stat
         addItemCounts,
     } = useUserStore();
 
-    const { stations } = useDataStore();
+    const { stations } = useDataContext();
 
     const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
 

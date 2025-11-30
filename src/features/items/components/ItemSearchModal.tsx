@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useDataStore } from "@/lib/stores/useDataStore";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ItemDetails } from "@/types";
 import { Search, X } from "lucide-react";
+import { useDataContext } from "@/app/(data)/_dataContext";
 
 interface ItemSearchModalProps {
 	isOpen: boolean;
@@ -13,7 +13,7 @@ interface ItemSearchModalProps {
 }
 
 export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalProps) {
-	const { items } = useDataStore();
+	const { items } = useDataContext();
 	const [query, setQuery] = useState("");
 
 	// Reset query when opening
@@ -40,7 +40,7 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
 		if (!items || !query) return [];
 
 		const lowerQuery = query.toLowerCase();
-		const allItems = Object.values(items);
+		const allItems = items;
 
 		return allItems
 			.filter((item) => item.name.toLowerCase().includes(lowerQuery))

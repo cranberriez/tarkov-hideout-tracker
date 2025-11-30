@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { useDataStore } from "@/lib/stores/useDataStore";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { EditionSelection } from "./EditionSelection";
 import { GameModeSelection } from "./GameModeSelection";
 import { X } from "lucide-react";
 import { QuickHideoutLevels } from "./QuickHideoutLevels";
+import type { Station, TimedResponse, HideoutStationsPayload } from "@/types";
 
 export function SetupModal() {
 	const {
@@ -24,7 +24,8 @@ export function SetupModal() {
 		setStationLevel,
 	} = useUserStore();
 
-	const { stations, fetchStations, loadingStations } = useDataStore();
+	const [stations, setStations] = useState<Station[] | null>(null);
+	const [loadingStations, setLoadingStations] = useState(false);
 
 	const [activeView, setActiveView] = useState<"settings" | "quick-levels">("settings");
 
@@ -56,10 +57,33 @@ export function SetupModal() {
 
 	// Fetch stations if missing
 	useEffect(() => {
-		if (isSetupOpen && !stations) {
-			fetchStations();
-		}
-	}, [isSetupOpen, stations, fetchStations]);
+		if (!isSetupOpen || stations || loadingStations) return;
+
+		let cancelled = false;
+		(async () => {
+			setLoadingStations(true);
+			try {
+				const res = await fetch("/api/hideout/stations");
+				if (!res.ok) throw new Error("Failed to fetch stations");
+				const json = (await res.json()) as TimedResponse<HideoutStationsPayload>;
+				if (!cancelled) {
+					setStations(json.data.stations);
+				}
+			} catch {
+				if (!cancelled) {
+					setStations(null);
+				}
+			} finally {
+				if (!cancelled) {
+					setLoadingStations(false);
+				}
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [isSetupOpen, stations, loadingStations]);
 
 	// Apply bonuses whenever edition changes
 	useEffect(() => {

@@ -2,10 +2,10 @@
 
 import { ItemDetails } from "@/types";
 import { ChevronRight } from "lucide-react";
-import { usePriceStore } from "@/lib/stores/usePriceStore";
 import { formatNumber } from "@/lib/utils/format-number";
 import type { ItemSize } from "@/lib/stores/useUserStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { useDataContext } from "@/app/(data)/_dataContext";
 import { computeNeeds } from "@/lib/utils/item-needs";
 
 interface ItemRowProps {
@@ -30,8 +30,12 @@ export function ItemRow({
         return new Intl.NumberFormat("en-US").format(price);
     };
 
-    const { getPrice, loading } = usePriceStore();
-    const { itemCounts } = useUserStore();
+    const { marketPricesByMode } = useDataContext();
+    const { itemCounts, gameMode } = useUserStore();
+    const mode = gameMode === "PVE" ? "PVE" : "PVP";
+    const priceBucket = marketPricesByMode[mode];
+    const loading = !priceBucket || priceBucket.updatedAt === null;
+    const getPrice = (normalizedName: string) => priceBucket?.prices[normalizedName];
     const owned = itemCounts[item.id] ?? { have: 0, haveFir: 0 };
     const marketPrice = getPrice(item.normalizedName);
     const unitPrice = marketPrice?.avg24hPrice ?? marketPrice?.price;
