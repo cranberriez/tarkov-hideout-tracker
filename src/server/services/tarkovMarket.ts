@@ -180,8 +180,11 @@ export async function getTarkovMarketItemByNormalizedName(
         const text = await res.text();
         const snippet = text.slice(0, 500);
         const isHtml = /text\/html/i.test(contentType) || snippet.trim().startsWith("<");
+        const isRateLimit = res.status === 429;
 
-        if (isHtml || res.status === 429) {
+        let shouldLog = true;
+
+        if (isHtml || isRateLimit) {
             let retryMs = DEFAULT_RATE_LIMIT_BACKOFF_MS;
             const retryAfterHeader = res.headers.get("retry-after");
             if (retryAfterHeader) {
@@ -191,23 +194,34 @@ export async function getTarkovMarketItemByNormalizedName(
                 }
             }
             const limitUntil = Date.now() + retryMs;
-            await redis.set(RATE_LIMIT_KEY, String(limitUntil), { px: retryMs });
+
+            // Set the rate limit key. nx: true ensures we only set it if it doesn't exist.
+            // If it already exists, it means another concurrent request handled it.
+            const setResult = await redis.set(RATE_LIMIT_KEY, String(limitUntil), {
+                px: retryMs,
+                nx: true,
+            });
+
+            // If we didn't set the key (because it was already set), we skip logging to avoid spamming.
+            if (!setResult) {
+                shouldLog = false;
+            }
         }
 
-        if (isHtml) {
-            console.error("Tarkov Market HTML/Rate-limit response", {
+        if (shouldLog) {
+            const logData = {
                 status: res.status,
                 contentType,
-                bodySnippet: snippet,
+                mode,
                 name: trimmed,
-            });
-        } else {
-            console.error("Tarkov Market item error", {
-                status: res.status,
-                contentType,
                 bodySnippet: snippet,
-                name: trimmed,
-            });
+            };
+
+            if (isHtml) {
+                console.error("Tarkov Market HTML/Rate-limit response", logData);
+            } else {
+                console.error("Tarkov Market item error", logData);
+            }
         }
 
         if (cachedBody) {
