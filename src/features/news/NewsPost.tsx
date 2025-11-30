@@ -9,8 +9,8 @@ interface NewsPostProps {
 
 export function NewsPost({ title, date, version, children }: NewsPostProps) {
     return (
-        <section 
-            id={`v${version}`} 
+        <section
+            id={`v${version}`}
             className="flex flex-col gap-6 p-6 bg-card border rounded-lg scroll-mt-20"
         >
             <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-border/50 pb-4 gap-2">
@@ -20,9 +20,7 @@ export function NewsPost({ title, date, version, children }: NewsPostProps) {
                 </div>
                 <time className="text-sm text-muted-foreground font-medium">{date}</time>
             </div>
-            <div className="flex flex-col gap-4 text-foreground/90 leading-relaxed">
-                {children}
-            </div>
+            <div className="flex flex-col gap-4 text-foreground/90 leading-relaxed">{children}</div>
         </section>
     );
 }
