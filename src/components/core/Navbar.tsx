@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { List, House, Plus, Menu } from "lucide-react";
@@ -33,16 +34,22 @@ export function Navbar() {
     const { isQuickAddOpen, setQuickAddOpen } = useUIStore();
     const currentPage = usePathname();
 
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     return (
         <nav className="border-b bg-card">
             <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-6">
                 <Link href="/">
                     <div className="flex items-center gap-3 min-w-0 group">
-                            <div className="relative w-8 h-8 group-hover:animate-spin">
-                                <Image
-                                    src="/images/hideout/Hideout_icon.webp"
-                                    alt="Tarkov Hideout Icon"
-                                    fill
+                        <div className="relative w-8 h-8 group-hover:animate-spin">
+                            <Image
+                                src="/images/hideout/Hideout_icon.webp"
+                                alt="Tarkov Hideout Icon"
+                                fill
                                 className="object-contain"
                                 loading="eager"
                             />
@@ -61,14 +68,17 @@ export function Navbar() {
                 <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm font-medium text-gray-400">
                     <button
                         onClick={() => setQuickAddOpen(true)}
-                        className={cn("transition-colors flex items-center gap-2 p-2 rounded",
-                             isQuickAddOpen ? "text-card bg-foreground/80" : "bg-tarkov-green text-black hover:bg-tarkov-green-dim"
+                        className={cn(
+                            "transition-colors flex items-center gap-2 p-2 rounded",
+                            isQuickAddOpen
+                                ? "text-card bg-foreground/80"
+                                : "bg-tarkov-green text-black hover:bg-tarkov-green-dim"
                         )}
                     >
-                        <Plus size={16}/>
+                        <Plus size={16} />
                         Add Items
                     </button>
-                    
+
                     {Links.map((link) => (
                         <Link
                             key={link.name}
@@ -84,41 +94,49 @@ export function Navbar() {
                             {link.name}
                         </Link>
                     ))}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger
-                            className={cn(
-                                "transition-colors flex items-center gap-2 cursor-pointer rounded p-2",
-                                (currentPage === "/settings" || currentPage === "/news")
-                                    ? "text-card bg-foreground/80"
-                                    : "hover:text-white"
-                            )}
-                            aria-label="Menu"
-                        >
-                            <Menu size={18} />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" sideOffset={8}>
-                            <DropdownMenuItem
-                                asChild
+                    {mounted && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger
                                 className={cn(
-                                    currentPage === "/news" && "bg-accent text-accent-foreground"
+                                    "transition-colors flex items-center gap-2 cursor-pointer rounded p-2",
+                                    currentPage === "/settings" || currentPage === "/news"
+                                        ? "text-card bg-foreground/80"
+                                        : "hover:text-white"
                                 )}
+                                aria-label="Menu"
                             >
-                                <Link href="/news" className="w-full">News</Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                asChild
-                                className={cn(
-                                    currentPage === "/settings" && "bg-accent text-accent-foreground"
-                                )}
-                            >
-                                <Link href="/settings" className="w-full">Settings</Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onSelect={() => setSetupOpen(true)}>
-                                Setup
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                                <Menu size={18} />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" sideOffset={8}>
+                                <DropdownMenuItem
+                                    asChild
+                                    className={cn(
+                                        currentPage === "/news" &&
+                                            "bg-accent text-accent-foreground"
+                                    )}
+                                >
+                                    <Link href="/news" className="w-full">
+                                        News
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    asChild
+                                    className={cn(
+                                        currentPage === "/settings" &&
+                                            "bg-accent text-accent-foreground"
+                                    )}
+                                >
+                                    <Link href="/settings" className="w-full">
+                                        Settings
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onSelect={() => setSetupOpen(true)}>
+                                    Setup
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
                 </div>
             </div>
         </nav>
