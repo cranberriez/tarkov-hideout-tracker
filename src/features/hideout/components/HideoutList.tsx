@@ -1,26 +1,23 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { useDataStore } from "@/lib/stores/useDataStore";
+import { useMemo } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { StationCard } from "./StationCard";
 import { stationOrder } from "@/lib/cfg/stationOrder";
 import type { Station } from "@/types";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
+import { poolItems } from "@/lib/utils/item-pooling";
+import { useDataContext } from "@/app/(data)/_dataContext";
 
 export function HideoutList() {
-	const { stations, fetchStations, loadingStations, errorStations } = useDataStore();
-	const { initializeDefaults, stationLevels } = useUserStore();
-
-	useEffect(() => {
-		fetchStations();
-	}, [fetchStations]);
-
-	useEffect(() => {
-		if (stations) {
-			initializeDefaults(stations);
-		}
-	}, [stations, initializeDefaults]);
+	const { stations } = useDataContext();
+	const {
+		stationLevels,
+		hiddenStations,
+		checklistViewMode,
+		showHidden,
+		completedRequirements,
+	} = useUserStore();
 
 	// 2. Helper to check if station is locked
 	const isStationLocked = (station: Station) => {
@@ -51,17 +48,33 @@ export function HideoutList() {
 		return [...stations].sort((a, b) => getOrder(a.normalizedName) - getOrder(b.normalizedName));
 	}, [stations]);
 
-	if (loadingStations) {
-		return (
-			<div className="flex items-center justify-center py-20">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-tarkov-green"></div>
-			</div>
-		);
-	}
+	const pooledItems = useMemo(() => {
+		if (!stations) return [];
 
-	if (errorStations) {
-		return <div className="text-center text-red-500 py-10">Error: {errorStations}</div>;
-	}
+		return poolItems({
+			stations,
+			stationLevels,
+			hiddenStations,
+			showHidden,
+			viewMode: checklistViewMode,
+			completedRequirements,
+		});
+	}, [
+		stations,
+		stationLevels,
+		hiddenStations,
+		checklistViewMode,
+		showHidden,
+		completedRequirements,
+	]);
+
+	const pooledFirByItem = useMemo(() => {
+		const map: Record<string, number> = {};
+		for (const item of pooledItems) {
+			map[item.id] = item.firCount;
+		}
+		return map;
+	}, [pooledItems]);
 
 	if (!stations) {
 		return null;
@@ -71,7 +84,12 @@ export function HideoutList() {
 		<>
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 				{sortedStations.map((station) => (
-					<StationCard key={station.id} station={station} isLocked={isStationLocked(station)} />
+					<StationCard
+						key={station.id}
+						station={station}
+						isLocked={isStationLocked(station)}
+						pooledFirByItem={pooledFirByItem}
+					/>
 				))}
 			</div>
 

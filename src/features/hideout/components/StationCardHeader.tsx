@@ -10,8 +10,10 @@ export interface StationCardHeaderProps {
     maxLevel: number;
     isMaxed: boolean;
     hideRequirements: boolean;
-    setStationLevel: (stationId: string, level: number) => void;
     toggleHiddenStation: (stationId: string) => void;
+    onLevelDown: () => void;
+    onLevelUp: () => void;
+    upgradeStatus: "ready" | "missing" | "illegal";
 }
 
 export function StationCardHeader({
@@ -22,9 +24,25 @@ export function StationCardHeader({
     maxLevel,
     isMaxed,
     hideRequirements,
-    setStationLevel,
     toggleHiddenStation,
+    onLevelDown,
+    onLevelUp,
+    upgradeStatus,
 }: StationCardHeaderProps) {
+    const iconBorderClass =
+        upgradeStatus === "ready"
+            ? "border-green-500/60"
+            : upgradeStatus === "illegal"
+            ? "border-red-500/60"
+            : "border-white/10";
+
+    const plusButtonColor =
+        upgradeStatus === "ready"
+            ? "text-tarkov-green hover:text-green-400"
+            : upgradeStatus === "illegal"
+            ? "text-red-400 hover:text-red-300"
+            : "text-gray-400 hover:text-white";
+
     return (
         <div
             className={`px-3 py-3 flex justify-between items-center bg-linear-to-r from-card to-muted/75 ${
@@ -32,7 +50,9 @@ export function StationCardHeader({
             }`}
         >
             <div className="flex items-center gap-3">
-                <div className="relative w-10 h-10 rounded overflow-hidden border border-white/10 shrink-0">
+                <div
+                    className={`relative w-10 h-10 rounded overflow-hidden border ${iconBorderClass} shrink-0`}
+                >
                     {station.imageLink ? (
                         <Image
                             src={station.imageLink}
@@ -87,7 +107,7 @@ export function StationCardHeader({
                 {/* Level Controls */}
                 <div className="flex items-center bg-black/20 rounded border border-white/5">
                     <button
-                        onClick={() => setStationLevel(station.id, Math.max(0, currentLevel - 1))}
+                        onClick={onLevelDown}
                         disabled={currentLevel === 0}
                         className="px-2 py-1 text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 transition-colors font-mono text-xs"
                         title="Level Down"
@@ -96,11 +116,9 @@ export function StationCardHeader({
                     </button>
                     <div className="w-px h-3 bg-white/10"></div>
                     <button
-                        onClick={() =>
-                            setStationLevel(station.id, Math.min(maxLevel, currentLevel + 1))
-                        }
+                        onClick={onLevelUp}
                         disabled={isMaxed}
-                        className="px-2 py-1 text-tarkov-green hover:text-green-400 hover:bg-white/5 disabled:opacity-30 transition-colors font-mono text-xs"
+                        className={`px-2 py-1 ${plusButtonColor} hover:bg-white/5 disabled:opacity-30 transition-colors font-mono text-xs`}
                         title="Level Up"
                     >
                         +

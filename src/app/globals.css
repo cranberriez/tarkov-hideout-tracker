@@ -4,8 +4,8 @@
 :root {
     /* Tarkov-esque Dark Theme */ /* Very dark gray/black */
     --card-bg: oklch(0.1647 0.0042 285.94); /* Slightly lighter for cards */
-    --accent-green: oklch(0.868 0.1558 144.09); /* Light green for text */
-    --accent-green-dim: oklch(0.8003 0.1821 151.71);
+    --accent-green-dim: oklch(0.868 0.1558 144.09); /* Light green for text */
+    --accent-green: oklch(0.8003 0.1821 151.71);
     --border-color: oklch(0.2739 0.0055 286.03);
     --radius: 0.625rem;
 
@@ -57,6 +57,7 @@
     --color-card: var(--card-bg);
     --color-foreground: var(--foreground);
     --color-tarkov-green: var(--accent-green);
+    --color-tarkov-green-dim: var(--accent-green-dim);
     --color-border-color: var(--border-color);
     --font-sans: var(--font-geist-sans);
     --font-mono: var(--font-geist-mono);
@@ -105,4 +106,17 @@ body {
     body {
         @apply bg-background text-foreground;
     }
+}
+
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+    appearance: textfield;
+    -moz-appearance: textfield;
 }

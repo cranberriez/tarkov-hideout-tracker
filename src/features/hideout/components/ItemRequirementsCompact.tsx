@@ -1,14 +1,21 @@
+"use client";
+
 import type { BaseItemRequirementsProps } from "./ItemRequirements";
 import Image from "next/image";
 import { CircleCheckBig, Check } from "lucide-react";
 import { formatNumber } from "@/lib/utils/format-number";
+import { useUserStore } from "@/lib/stores/useUserStore";
+import { computeNeeds } from "@/lib/utils/item-needs";
 
 export function CompactItemRequirements({
     nextLevelData,
     hideMoney,
     completedRequirements,
     toggleRequirement,
+    onClickItem,
+    pooledFirByItem,
 }: BaseItemRequirementsProps) {
+    const itemCounts = useUserStore((state) => state.itemCounts);
     return (
         <div className="flex flex-wrap gap-2">
             {nextLevelData.itemRequirements
@@ -19,19 +26,50 @@ export function CompactItemRequirements({
                 })
                 .map((req) => {
                     const quantity = req.count ?? req.quantity ?? 1;
+                    const norm = req.item.normalizedName;
+                    const isCurrency = norm === "roubles" || norm === "dollars" || norm === "euros";
                     const isFir = req.attributes.some(
                         (a) => a.name === "found_in_raid" && a.value === "true"
                     );
-                    const isCompleted = completedRequirements[req.id];
+
+                    const owned = itemCounts[req.item.id] ?? { have: 0, haveFir: 0 };
+                    const globalFirRemaining = pooledFirByItem[req.item.id] ?? 0;
+                    const firSurplus = Math.max(0, owned.haveFir - globalFirRemaining);
+                    const needs = isCurrency
+                        ? computeNeeds({
+                              totalRequired: quantity,
+                              requiredFir: 0,
+                              haveNonFir: 0,
+                              haveFir: 0,
+                          })
+                        : isFir
+                        ? computeNeeds({
+                              totalRequired: quantity,
+                              requiredFir: quantity,
+                              haveNonFir: 0,
+                              haveFir: owned.haveFir,
+                          })
+                        : computeNeeds({
+                              totalRequired: quantity,
+                              requiredFir: 0,
+                              haveNonFir: owned.have + firSurplus,
+                              haveFir: 0,
+                          });
+
+                    const isCompleted = !isCurrency
+                        ? isFir
+                            ? needs.isSatisfied
+                            : needs.isSatisfied && !needs.usesFirForNonFir
+                        : false;
 
                     return (
                         <div
                             key={req.id}
-                            onClick={() => toggleRequirement(req.id)}
-                            className={`relative w-12 h-12 bg-black/40 border group cursor-pointer transition-all ${
+                            onClick={() => onClickItem(req.item)}
+                            className={`relative w-14 h-14 bg-black/40 border group cursor-pointer transition-all ${
                                 isFir ? "border-orange-500" : "border-white/10"
                             } ${isCompleted ? "opacity-50 grayscale" : "hover:border-white/30"}`}
-                            title={`${formatNumber(quantity)}x ${req.item.name}${
+                            title={`${formatNumber(quantity)} ${req.item.name}${
                                 isFir ? " (Found In Raid)" : ""
                             }${isCompleted ? " (Completed)" : ""}`}
                         >
@@ -57,12 +95,30 @@ export function CompactItemRequirements({
                                     <Check size={16} />
                                 </div>
                             )}
-                            <div
-                                className={`absolute bottom-0 right-0 bg-black/80 px-1 text-[11px] font-mono ${
-                                    isFir ? "text-orange-300" : "text-tarkov-green"
-                                } border-t border-l border-white/10`}
-                            >
-                                {formatNumber(quantity)}
+                            <div className="absolute bottom-0 right-0 bg-black/80 px-1 text-[9px] font-mono text-gray-300 border-t border-l border-white/10 text-right leading-tight">
+                                {isCurrency ? (
+                                    <div
+                                        className={isFir ? "text-orange-300" : "text-tarkov-green"}
+                                    >
+                                        {`x${formatNumber(quantity)}`}
+                                    </div>
+                                ) : isFir ? (
+                                    <div className="text-orange-300">
+                                        {formatNumber(needs.haveFirReserved)} /{" "}
+                                        {formatNumber(needs.requiredFir)}
+                                    </div>
+                                ) : (
+                                    <div className="text-tarkov-green">
+                                        {formatNumber(needs.effectiveHave)}
+                                        {owned.haveFir > 0 && (
+                                            <span className="text-orange-300">
+                                                {" "}
+                                                ({formatNumber(owned.haveFir)})
+                                            </span>
+                                        )}
+                                        {` / ${formatNumber(needs.totalRequired)}`}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     );

@@ -9,12 +9,16 @@ export type GameEdition =
     | "Edge of Darkness"
     | "Unheard";
 export type GameMode = "PVP" | "PVE";
+export type ItemSize = "Icon" | "Compact" | "Expanded";
 
 interface UserState {
     // Per-station progress and visibility
     stationLevels: Record<string, number>; // stationId -> current level
     hiddenStations: Record<string, boolean>; // stationId -> hidden?
     completedRequirements: Record<string, boolean>; // requirementId -> completed?
+
+    // Per-item ownership counts
+    itemCounts: Record<string, { have: number; haveFir: number }>; // itemId -> counts
 
     // Checklist view options
     checklistViewMode: "all" | "nextLevel";
@@ -30,7 +34,11 @@ interface UserState {
 
     // View options
     hideoutCompactMode: boolean;
-    itemsCompactMode: boolean;
+    itemsSize: ItemSize;
+
+    // Onboarding / feature flags
+    hasSeenItemConversionModal: boolean;
+    hasSeenHideoutLevelWarning: boolean;
 
     // Setup / Game Settings
     gameEdition: GameEdition | null;
@@ -44,6 +52,8 @@ interface UserState {
     toggleHiddenStation: (stationId: string) => void;
     toggleRequirement: (requirementId: string) => void;
 
+    addItemCounts: (itemId: string, haveDelta: number, haveFirDelta: number) => void;
+
     setChecklistViewMode: (mode: "all" | "nextLevel") => void;
     setShowHidden: (value: boolean) => void;
     setHideCheap: (value: boolean) => void;
@@ -52,10 +62,13 @@ interface UserState {
     setHideRequirements: (value: boolean) => void;
     setCheapPriceThreshold: (value: number) => void;
     setHideoutCompactMode: (value: boolean) => void;
-    setItemsCompactMode: (value: boolean) => void;
+    setItemsSize: (value: ItemSize) => void;
 
     setSellToPreference: (value: "best" | "flea" | "trader") => void;
     setUseCategorization: (value: boolean) => void;
+
+    setHasSeenItemConversionModal: (value: boolean) => void;
+    setHasSeenHideoutLevelWarning: (value: boolean) => void;
 
     setGameEdition: (edition: GameEdition) => void;
     setGameMode: (mode: GameMode) => void;
@@ -76,6 +89,7 @@ export const useUserStore = create<UserState>()(
             stationLevels: {},
             hiddenStations: {},
             completedRequirements: {},
+            itemCounts: {},
             checklistViewMode: "all",
             showHidden: false,
             hideCheap: false,
@@ -84,7 +98,9 @@ export const useUserStore = create<UserState>()(
             hideRequirements: false,
             cheapPriceThreshold: 5000,
             hideoutCompactMode: false,
-            itemsCompactMode: false,
+            itemsSize: "Expanded",
+            hasSeenItemConversionModal: false,
+            hasSeenHideoutLevelWarning: false,
             sellToPreference: "best",
             useCategorization: false,
 
@@ -121,6 +137,21 @@ export const useUserStore = create<UserState>()(
                 });
             },
 
+            addItemCounts: (itemId, haveDelta, haveFirDelta) => {
+                set((state) => {
+                    const current = state.itemCounts[itemId] ?? { have: 0, haveFir: 0 };
+                    return {
+                        itemCounts: {
+                            ...state.itemCounts,
+                            [itemId]: {
+                                have: current.have + haveDelta,
+                                haveFir: current.haveFir + haveFirDelta,
+                            },
+                        },
+                    };
+                });
+            },
+
             setChecklistViewMode: (mode) => set({ checklistViewMode: mode }),
             setShowHidden: (value) => set({ showHidden: value }),
             setHideCheap: (value) => set({ hideCheap: value }),
@@ -129,9 +160,12 @@ export const useUserStore = create<UserState>()(
             setHideRequirements: (value) => set({ hideRequirements: value }),
             setCheapPriceThreshold: (value) => set({ cheapPriceThreshold: value }),
             setHideoutCompactMode: (value) => set({ hideoutCompactMode: value }),
-            setItemsCompactMode: (value) => set({ itemsCompactMode: value }),
+            setItemsSize: (value) => set({ itemsSize: value }),
             setSellToPreference: (value) => set({ sellToPreference: value }),
             setUseCategorization: (value) => set({ useCategorization: value }),
+
+            setHasSeenItemConversionModal: (value) => set({ hasSeenItemConversionModal: value }),
+            setHasSeenHideoutLevelWarning: (value) => set({ hasSeenHideoutLevelWarning: value }),
 
             setGameEdition: (edition) => set({ gameEdition: edition }),
             setGameMode: (mode) => set({ gameMode: mode }),
@@ -242,6 +276,7 @@ export const useUserStore = create<UserState>()(
                     stationLevels: {},
                     hiddenStations: {},
                     completedRequirements: {},
+                    itemCounts: {},
                     checklistViewMode: "all",
                     showHidden: false,
                     hideCheap: false,
@@ -250,7 +285,9 @@ export const useUserStore = create<UserState>()(
                     hideRequirements: false,
                     cheapPriceThreshold: 5000,
                     hideoutCompactMode: false,
-                    itemsCompactMode: false,
+                    itemsSize: "Expanded",
+                    hasSeenItemConversionModal: false,
+                    hasSeenHideoutLevelWarning: false,
                     sellToPreference: "best",
                     useCategorization: false,
                     gameEdition: null,
@@ -262,7 +299,20 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: "tarkov-hideout-user-state",
-            version: 1,
+            version: 2,
+            migrate: (persistedState, version) => {
+                if (version < 2) {
+                    const state = persistedState as any;
+                    const itemsCompactMode: boolean | undefined = state.itemsCompactMode;
+
+                    return {
+                        ...state,
+                        itemsSize: itemsCompactMode ? "Compact" : "Expanded",
+                    };
+                }
+
+                return persistedState as any;
+            },
         }
     )
 );

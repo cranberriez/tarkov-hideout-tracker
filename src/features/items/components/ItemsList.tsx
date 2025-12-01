@@ -1,29 +1,20 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { useDataStore } from "@/lib/stores/useDataStore";
+import { useMemo } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { usePriceStore } from "@/lib/stores/usePriceStore";
 import { ItemRow } from "./ItemRow";
 import { poolItems } from "@/lib/utils/item-pooling";
 import { ItemDetails } from "@/types";
+import { useDataContext } from "@/app/(data)/_dataContext";
+import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 
 interface ItemsListProps {
     onClickItem: (item: ItemDetails) => void;
 }
 
 export function ItemsList({ onClickItem }: ItemsListProps) {
-    const {
-        stations,
-        fetchStations,
-        items,
-        fetchItems,
-        loadingStations,
-        loadingItems,
-        errorStations,
-        errorItems,
-    } = useDataStore();
-    const { fetchPrices, getPrice } = usePriceStore();
+    const { stations, items } = useDataContext();
+    const { marketPricesByMode } = usePriceDataContext();
 
     const {
         stationLevels,
@@ -32,8 +23,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         showHidden,
         hideCheap,
         cheapPriceThreshold,
-        itemsCompactMode,
-        initializeDefaults,
+        itemsSize,
         sellToPreference,
         useCategorization,
         showFirOnly,
@@ -41,30 +31,19 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         completedRequirements,
     } = useUserStore();
 
-    useEffect(() => {
-        fetchStations();
-        fetchItems();
-    }, [fetchStations, fetchItems]);
+    const itemsById = useMemo(() => {
+        if (!items) return null;
+        const map: Record<string, ItemDetails> = {};
+        items.forEach((item) => {
+            map[item.id] = item;
+        });
+        return map;
+    }, [items]);
 
-    // Once we have item details, fetch market prices for all unique normalizedNames
-    useEffect(() => {
-        if (!items) return;
+    const mode = gameMode === "PVE" ? "PVE" : "PVP";
+    const priceBucket = marketPricesByMode[mode];
 
-        const normalizedNames = Object.values(items)
-            .map((item) => item.normalizedName)
-            .filter(Boolean);
-
-        if (normalizedNames.length === 0) return;
-
-        // When gameMode changes, we refetch prices to pull the correct PVP/PVE values.
-        fetchPrices(normalizedNames);
-    }, [items, fetchPrices, gameMode]);
-
-    useEffect(() => {
-        if (stations) {
-            initializeDefaults(stations);
-        }
-    }, [stations, initializeDefaults]);
+    const getPrice = (normalizedName: string) => priceBucket?.prices[normalizedName];
 
     const pooledItems = useMemo(() => {
         if (!stations) return [];
@@ -87,10 +66,10 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
     ]);
 
     const filteredAndSortedItems = useMemo(() => {
-        if (!items) return [];
+        if (!itemsById) return [];
 
         let finalItems = pooledItems.map((pooled) => {
-            const details = items[pooled.id];
+            const details = itemsById[pooled.id];
             return {
                 ...pooled,
                 details,
@@ -138,7 +117,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         });
 
         return finalItems;
-    }, [pooledItems, items, hideCheap, cheapPriceThreshold, showFirOnly, getPrice]);
+    }, [pooledItems, itemsById, hideCheap, cheapPriceThreshold, showFirOnly, getPrice]);
 
     const categorizedItems = useMemo(() => {
         if (!useCategorization) return null;
@@ -168,23 +147,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         }));
     }, [filteredAndSortedItems, useCategorization]);
 
-    if (loadingStations || loadingItems) {
-        return (
-            <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-tarkov-green"></div>
-            </div>
-        );
-    }
-
-    if (errorStations || errorItems) {
-        return (
-            <div className="text-center text-red-500 py-10">
-                Error: {errorStations || errorItems}
-            </div>
-        );
-    }
-
-    if (!stations || !items) {
+    if (!stations || !itemsById) {
         return null;
     }
 
@@ -201,9 +164,12 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
 
     // Updated grid classes: 1 column on mobile/narrow, then expanding
     // Previously: grid-cols-2 on base
-    const gridClasses = itemsCompactMode
-        ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-        : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5";
+    const gridClassesBySize: Record<string, string> = {
+        Icon: "grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8",
+        Compact: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+        Expanded: "grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6",
+    };
+    const gridClasses = gridClassesBySize[itemsSize] ?? gridClassesBySize.Expanded;
 
     if (useCategorization && categorizedItems) {
         return (
@@ -225,7 +191,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
                                             item={details}
                                             count={count}
                                             firCount={firCount}
-                                            compact={itemsCompactMode}
+                                            size={itemsSize}
                                             sellToPreference={sellToPreference}
                                             onClick={() => onClickItem(details)}
                                         />
@@ -239,7 +205,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
     }
 
     return (
-        <div className={`grid gap-4 ${gridClasses}`}>
+        <div className={`grid gap-2 ${gridClasses}`}>
             {filteredAndSortedItems.map(
                 ({ id, count, firCount, details }) =>
                     details && (
@@ -248,7 +214,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
                             item={details}
                             count={count}
                             firCount={firCount}
-                            compact={itemsCompactMode}
+                            size={itemsSize}
                             sellToPreference={sellToPreference}
                             onClick={() => onClickItem(details)}
                         />

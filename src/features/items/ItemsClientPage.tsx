@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { ItemDetails } from "@/types";
+import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsList } from "@/features/items/components/ItemsList";
 import { ItemsControls } from "@/features/items/components/ItemsControls";
 import { ItemSearchModal } from "@/features/items/components/ItemSearchModal";
-import { ItemDetailModal } from "@/features/items/components/ItemDetailModal";
-import { ItemDetails } from "@/types";
-import { useDataStore } from "@/lib/stores/useDataStore";
-import { useUserStore } from "@/lib/stores/useUserStore";
+import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
+import { useDataContext } from "@/app/(data)/_dataContext";
 
-export default function ItemsPage() {
+export function ItemsClientPage() {
+    const { stations, stationsUpdatedAt, items, itemsUpdatedAt } = useDataContext();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
 
-    const { stations } = useDataStore();
     const {
         stationLevels,
         hiddenStations,
@@ -22,7 +22,23 @@ export default function ItemsPage() {
         toggleRequirement,
         gameMode,
         setGameMode,
+        initializeDefaults,
     } = useUserStore();
+
+    useEffect(() => {
+        if (stations && stations.length > 0) {
+            initializeDefaults(stations);
+        }
+    }, [stations, stationsUpdatedAt, initializeDefaults]);
+
+    useEffect(() => {
+        if (items && items.length > 0) {
+            const itemsMap: Record<string, ItemDetails> = {};
+            items.forEach((item) => {
+                itemsMap[item.id] = item;
+            });
+        }
+    }, [items, itemsUpdatedAt]);
 
     return (
         <main className="container mx-auto px-6 py-8">
@@ -68,16 +84,18 @@ export default function ItemsPage() {
                 }}
             />
 
-            <ItemDetailModal
-                item={selectedItem}
-                isOpen={!!selectedItem}
-                onClose={() => setSelectedItem(null)}
-                stations={stations}
-                stationLevels={stationLevels}
-                hiddenStations={hiddenStations}
-                completedRequirements={completedRequirements}
-                toggleRequirement={toggleRequirement}
-            />
+            {selectedItem && (
+                <ItemDetailModal
+                    item={selectedItem}
+                    isOpen={!!selectedItem}
+                    onClose={() => setSelectedItem(null)}
+                    stations={stations ?? []}
+                    stationLevels={stationLevels}
+                    hiddenStations={hiddenStations}
+                    completedRequirements={completedRequirements}
+                    toggleRequirement={toggleRequirement}
+                />
+            )}
         </main>
     );
 }
