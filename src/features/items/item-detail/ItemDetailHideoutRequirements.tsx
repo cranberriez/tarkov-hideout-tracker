@@ -94,7 +94,7 @@ export function ItemDetailHideoutRequirements({
                                                             : "text-foreground"
                                                     }`}
                                                 >
-                                                    x{req.count}
+                                                    {req.count}
                                                 </span>
                                             </div>
                                         </div>

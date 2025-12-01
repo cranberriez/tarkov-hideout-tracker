@@ -61,6 +61,9 @@ export function ItemRow({
     const nonFirRequired = Math.max(0, count - firRequired);
     const isAllFir = firRequired > 0 && nonFirRequired === 0;
 
+    const firSurplus = Math.max(0, owned.haveFir - firRequired);
+    const effectiveNonFirHave = owned.have + firSurplus;
+
     const isCompactLike = size === "Icon" || size === "Compact";
     const isIconOnly = size === "Icon";
     const formattedCompactCount = isIconOnly
@@ -97,7 +100,7 @@ export function ItemRow({
                         )}
                         <div className="flex whitespace-nowrap items-end line-clamp-1 gap-0.5 text-[12px] font-mono">
                             {isCurrency ? (
-                                <span className="text-tarkov-green">x{formattedCompactCount}</span>
+                                <span className="text-tarkov-green">{formattedCompactCount}</span>
                             ) : isAllFir ? (
                                 <span className="text-orange-400">
                                     FiR {formatNumber(owned.haveFir)}
@@ -107,7 +110,7 @@ export function ItemRow({
                             ) : firRequired > 0 && nonFirRequired > 0 ? (
                                 <div className="flex flex-col items-end leading-tight">
                                     <span className="text-tarkov-green">
-                                        {formatNumber(owned.have)}
+                                        {formatNumber(effectiveNonFirHave)}
                                         <span className="text-gray-400 mx-[2px]">/</span>
                                         {formatNumber(nonFirRequired)}
                                     </span>
@@ -119,7 +122,7 @@ export function ItemRow({
                                 </div>
                             ) : (
                                 <span className="text-tarkov-green">
-                                    {formatNumber(owned.have)}
+                                    {formatNumber(effectiveNonFirHave)}
                                     <span className="text-gray-400 mx-[2px]">/</span>
                                     {formatNumber(nonFirRequired || firRequired || count)}
                                 </span>
@@ -219,7 +222,7 @@ export function ItemRow({
                             <>
                                 <div className="flex items-baseline justify-between">
                                     <span className="text-tarkov-green">
-                                        {formatNumber(owned.have)}
+                                        {formatNumber(effectiveNonFirHave)}
                                         <span className="text-gray-400 mx-[2px]">/</span>
                                         {formatNumber(nonFirRequired)}
                                     </span>
@@ -235,7 +238,7 @@ export function ItemRow({
                         ) : (
                             <div className="flex items-baseline justify-between">
                                 <span className="text-tarkov-green">
-                                    {formatNumber(owned.have)}
+                                    {formatNumber(effectiveNonFirHave)}
                                     <span className="text-gray-400 mx-[2px]">/</span>
                                     {formatNumber(nonFirRequired || count)}
                                 </span>

@@ -100,7 +100,7 @@ export function CompactItemRequirements({
                                     <div
                                         className={isFir ? "text-orange-300" : "text-tarkov-green"}
                                     >
-                                        {`x${formatNumber(quantity)}`}
+                                        {formatNumber(quantity)}
                                     </div>
                                 ) : isFir ? (
                                     <div className="text-orange-300">

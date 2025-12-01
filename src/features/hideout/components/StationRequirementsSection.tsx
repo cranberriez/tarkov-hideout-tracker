@@ -2,6 +2,7 @@ import type { Station, ItemDetails } from "@/types";
 import { NonItemRequirements } from "./NonItemRequirements";
 import { CompactItemRequirements } from "./ItemRequirementsCompact";
 import { ExpandedItemRequirements } from "./ItemRequirementsExpanded";
+import { Clock } from "lucide-react";
 
 export interface StationRequirementsSectionProps {
     station: Station;
@@ -32,6 +33,16 @@ export function StationRequirementsSection({
     pooledFirByItem,
     upgradeStatus,
 }: StationRequirementsSectionProps) {
+    const formatTimeLength = (time: number) => {
+        const hours = Math.floor(time / 60 / 60);
+        const minutes = Math.floor((time % 3600) / 60);
+        const seconds = time % 60;
+        if (hours > 0 && minutes <= 0) return `${hours}h`;
+        if (hours > 0) return `${hours}h ${minutes}m`;
+        if (minutes > 0) return `${minutes}m ${seconds}s`;
+        return `${seconds}s`;
+    };
+
     return (
         <div className="p-3 flex-1 flex flex-col gap-2 bg-card/50 relative">
             {!isMaxed && nextLevelData ? (
@@ -40,7 +51,7 @@ export function StationRequirementsSection({
                         <div className="text-[10px] text-gray-600 uppercase tracking-wider font-bold">
                             Next Level Requires:
                         </div>
-                        <div className="flex-1 text-right text-[10px] font-bold uppercase tracking-wider">
+                        <div className="ml-auto flex items-center text-right text-[10px] font-bold uppercase tracking-wider">
                             {upgradeStatus === "ready" && (
                                 <span className="text-tarkov-green">Ready to Upgrade</span>
                             )}
@@ -49,6 +60,12 @@ export function StationRequirementsSection({
                             )} */}
                             {upgradeStatus === "illegal" && (
                                 <span className="text-red-400">Illegal State</span>
+                            )}
+                            {nextLevelData.constructionTime > 0 && (
+                                <span className="px-1 py-px rounded text-gray-300 text-[12px] flex items-center gap-1">
+                                    <Clock size={10} />
+                                    {formatTimeLength(nextLevelData.constructionTime)}
+                                </span>
                             )}
                         </div>
                     </div>

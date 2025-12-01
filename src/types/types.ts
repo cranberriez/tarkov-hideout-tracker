@@ -51,6 +51,7 @@ export interface TraderRequirement {
 export interface StationLevel {
     id: string;
     level: number;
+    constructionTime: number;
     itemRequirements: ItemRequirement[];
     stationLevelRequirements: StationLevelRequirement[];
     skillRequirements: SkillRequirement[];
