@@ -55,7 +55,7 @@ function buildRedisKeys(normalizedName: string, mode: GameMode) {
     };
 }
 
-function normalizeNameForMatch(name: string): string {
+export function normalizeNameForMatch(name: string): string {
     return (
         name
             .toLowerCase()
