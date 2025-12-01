@@ -1,16 +1,47 @@
 import type { TimedResponse, MarketPrice } from "@/types";
-import {
-    getTarkovMarketItemByNormalizedName,
-    type TarkovMarketItem,
-} from "@/server/services/tarkovMarket";
+import { redis } from "@/server/redis";
 import { unstable_cache } from "next/cache";
 
 export type GameMode = "PVP" | "PVE";
 
-// Keep concurrency modest to avoid hammering the Tarkov Market API.
-// This is in addition to the lower-level rate limiting and backoff logic
-// inside getTarkovMarketItemByNormalizedName.
-const MARKET_PRICE_BATCH_SIZE = 5;
+const FILTERED_PRICES_KEY_PREFIX = "tarkov-market:all-prices:filtered:v1";
+
+interface RedisMeta {
+    updatedAt: number;
+}
+
+function buildFilteredKeys(mode: GameMode) {
+    const modeKey = mode.toLowerCase();
+    const baseKey = `${FILTERED_PRICES_KEY_PREFIX}:${modeKey}`;
+    return {
+        bodyKey: baseKey,
+        metaKey: `${baseKey}:meta`,
+    };
+}
+
+async function loadFilteredPrices(
+    mode: GameMode
+): Promise<TimedResponse<{ [normalizedName: string]: MarketPrice | null }>> {
+    const { bodyKey, metaKey } = buildFilteredKeys(mode);
+    const [cachedBody, cachedMeta] = await redis.mget<[string, RedisMeta]>(bodyKey, metaKey);
+
+    if (!cachedBody || !cachedMeta || typeof cachedMeta !== "object") {
+        return {
+            data: {},
+            updatedAt: 0,
+        };
+    }
+
+    const data =
+        typeof cachedBody === "object"
+            ? (cachedBody as unknown as { [normalizedName: string]: MarketPrice | null })
+            : (JSON.parse(cachedBody) as { [normalizedName: string]: MarketPrice | null });
+
+    return {
+        data,
+        updatedAt: cachedMeta.updatedAt ?? 0,
+    };
+}
 
 export async function getMarketPrices(
     normalizedNames: string[],
@@ -31,77 +62,19 @@ export async function getMarketPrices(
         };
     }
 
-    const results: {
-        normalizedName: string;
-        response: TimedResponse<TarkovMarketItem | null> | null;
-    }[] = [];
-
-    for (let i = 0; i < uniqueNames.length; i += MARKET_PRICE_BATCH_SIZE) {
-        const batch = uniqueNames.slice(i, i + MARKET_PRICE_BATCH_SIZE);
-        // Process each batch with limited parallelism, then move to the next.
-        // Combined with the underlying rate-limit handling, this should greatly
-        // reduce the likelihood of hitting 429s while still being reasonably fast.
-        const batchResults = await Promise.all(
-            batch.map(async (normalizedName) => {
-                try {
-                    const response = await getTarkovMarketItemByNormalizedName(
-                        normalizedName,
-                        gameMode
-                    );
-                    return { normalizedName, response };
-                } catch (error) {
-                    // Avoid double logging if the service already logged the specific error
-                    const isHandledError =
-                        error instanceof Error &&
-                        (error.message === "Failed to fetch Tarkov Market item" ||
-                            error.message === "Failed to parse Tarkov Market response as JSON");
-
-                    if (!isHandledError) {
-                        console.error("Failed to fetch Tarkov Market item in service", {
-                            normalizedName,
-                            error,
-                        });
-                    }
-
-                    return {
-                        normalizedName,
-                        response: null as TimedResponse<TarkovMarketItem | null> | null,
-                    };
-                }
-            })
-        );
-
-        results.push(...batchResults);
-    }
+    const { data: allPrices, updatedAt } = await loadFilteredPrices(gameMode);
 
     const aggregated: { [normalizedName: string]: MarketPrice | null } = {};
-    let latestUpdatedAt = 0;
 
-    for (const { normalizedName, response } of results) {
-        if (response && response.data) {
-            const src = response.data as TarkovMarketItem;
-            aggregated[normalizedName] = {
-                price: src.price,
-                avg24hPrice: src.avg24hPrice,
-                avg7daysPrice: src.avg7daysPrice,
-                updated: src.updated,
-                link: src.link,
-                diff24h: src.diff24h,
-                traderName: src.traderName,
-                traderPrice: src.traderPrice,
-                traderPriceCur: src.traderPriceCur,
-            };
-            if (response.updatedAt > latestUpdatedAt) {
-                latestUpdatedAt = response.updatedAt;
-            }
-        } else {
-            aggregated[normalizedName] = null;
-        }
+    for (const name of uniqueNames) {
+        aggregated[name] = Object.prototype.hasOwnProperty.call(allPrices, name)
+            ? allPrices[name]
+            : null;
     }
 
     return {
         data: aggregated,
-        updatedAt: latestUpdatedAt || Date.now(),
+        updatedAt: updatedAt || Date.now(),
     };
 }
 
