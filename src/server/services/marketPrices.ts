@@ -1,3 +1,11 @@
+// Read-only price service that maps requested item normalizedNames to
+// pre-filtered, bulk-fetched price blobs in Redis.
+//
+// The bulk data is populated by the cron-driven job in `tarkovMarketBulk.ts`,
+// which fetches `/items/all` (PVP/PVE), filters down to hideout-required
+// items, and writes compact maps keyed by normalizedName. There are no direct
+// Tarkov Market HTTP calls in this module.
+
 import type { TimedResponse, MarketPrice } from "@/types";
 import { redis } from "@/server/redis";
 import { unstable_cache } from "next/cache";

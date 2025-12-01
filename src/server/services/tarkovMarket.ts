@@ -1,6 +1,15 @@
 import { redis } from "@/server/redis";
 import type { TimedResponse } from "@/types";
 
+// NOTE: The per-item HTTP integration in this file (getTarkovMarketItemByNormalizedName
+// and its related caching/rate-limit logic) is now considered legacy. The main app
+// path uses bulk price fetching via `tarkovMarketBulk.ts` and the pre-filtered Redis
+// blobs read by `marketPrices.ts`.
+//
+// We keep this code only as a fallback / debugging tool; it is safe to remove if you
+// no longer need direct per-item calls. `TarkovMarketItem` and `normalizeNameForMatch`
+// remain in use by the bulk job.
+
 const CACHE_WINDOW_MS = 45 * 60 * 1000; // 45 minutes
 // Toggle: whether to cache empty/failed acquisitions (null results).
 // When true, we also cache "no match" responses so we don't keep hammering
@@ -100,6 +109,9 @@ function pickBestMatch(
     return best.item;
 }
 
+// @deprecated Prefer the bulk price flow (`tarkovMarketBulk` + `marketPrices`)
+// which reads from pre-filtered Redis blobs. This per-item HTTP helper is kept
+// only for fallback/manual debugging and is not used in the main app path.
 export async function getTarkovMarketItemByNormalizedName(
     normalizedName: string,
     mode: GameMode = "PVP"
