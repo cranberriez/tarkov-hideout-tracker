@@ -66,7 +66,7 @@ export function CompactItemRequirements({
                         <div
                             key={req.id}
                             onClick={() => onClickItem(req.item)}
-                            className={`relative w-14 h-14 bg-black/40 border group cursor-pointer transition-all ${
+                            className={`relative w-16 h-16 bg-black/40 border group cursor-pointer transition-all ${
                                 isFir ? "border-orange-500" : "border-white/10"
                             } ${isCompleted ? "opacity-50 grayscale" : "hover:border-white/30"}`}
                             title={`${formatNumber(quantity)} ${req.item.name}${
@@ -95,7 +95,7 @@ export function CompactItemRequirements({
                                     <Check size={16} />
                                 </div>
                             )}
-                            <div className="absolute bottom-0 right-0 bg-black/80 px-1 text-[9px] font-mono text-gray-300 border-t border-l border-white/10 text-right leading-tight">
+                            <div className="absolute bottom-0 right-0 bg-black/40 px-1 text-[10px] font-mono text-gray-300 border-t border-l border-white/10 text-right leading-tight">
                                 {isCurrency ? (
                                     <div
                                         className={isFir ? "text-orange-300" : "text-tarkov-green"}
@@ -109,11 +109,10 @@ export function CompactItemRequirements({
                                     </div>
                                 ) : (
                                     <div className="text-tarkov-green">
-                                        {formatNumber(needs.effectiveHave)}
+                                        {formatNumber(needs.effectiveHave)}{" "}
                                         {owned.haveFir > 0 && (
                                             <span className="text-orange-300">
-                                                {" "}
-                                                ({formatNumber(owned.haveFir)})
+                                                {formatNumber(owned.haveFir)}
                                             </span>
                                         )}
                                         {` / ${formatNumber(needs.totalRequired)}`}
