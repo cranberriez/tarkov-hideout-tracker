@@ -27,8 +27,10 @@ export function poolItems({
     const itemMap = new Map<string, PooledItem>();
 
     stations.forEach((station) => {
+        const isHidden = !!hiddenStations[station.id] || !!hiddenStations[station.normalizedName];
+
         // Skip hidden stations if filter is active
-        if (!showHidden && hiddenStations[station.id]) {
+        if (!showHidden && isHidden) {
             return;
         }
 

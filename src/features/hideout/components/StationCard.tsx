@@ -36,12 +36,12 @@ export function StationCard({ station, isLocked = false, pooledFirByItem }: Stat
     const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
 
     const currentLevel = stationLevels[station.id] ?? 0;
-    const isHidden = hiddenStations[station.id];
     const maxLevel = station.levels.length;
 
     const nextLevelData = station.levels.find((l) => l.level === currentLevel + 1);
     const currentLevelData = station.levels.find((l) => l.level === currentLevel);
     const isMaxed = currentLevel >= maxLevel;
+    const isHidden = hiddenStations[station.id] || isMaxed;
 
     const computeUpgradeStatus = (): "ready" | "missing" | "illegal" => {
         let isIllegal = false;

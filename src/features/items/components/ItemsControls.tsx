@@ -62,7 +62,8 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
                     </ControlGroup>
 
                     {/* Price Mode */}
-                    <ControlGroup label="Price">
+                    {/* Deprecated as it's ineffective */}
+                    {/* <ControlGroup label="Price">
                         <ControlButton
                             active={sellToPreference === "best"}
                             onClick={() => setSellToPreference("best")}
@@ -81,7 +82,7 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
                         >
                             Trader
                         </ControlButton>
-                    </ControlGroup>
+                    </ControlGroup> */}
 
                     {/* Size */}
                     <ControlGroup label="Size">
@@ -174,7 +175,9 @@ function ControlGroup({ label, children }: { label: string; children: ReactNode 
             <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold pl-1">
                 {label}
             </span>
-            <div className="flex flex-wrap bg-black/40 rounded-sm p-1 border border-white/10">{children}</div>
+            <div className="flex flex-wrap bg-black/40 rounded-sm p-1 border border-white/10">
+                {children}
+            </div>
         </div>
     );
 }
