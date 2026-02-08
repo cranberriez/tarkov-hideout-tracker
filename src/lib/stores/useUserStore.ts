@@ -46,6 +46,8 @@ interface UserState {
     hasCompletedSetup: boolean;
     isSetupOpen: boolean;
 
+    editionBonusesAppliedFor: GameEdition | null;
+
     // Actions
     setStationLevel: (stationId: string, level: number) => void;
     incrementStationLevel: (stationId: string) => void;
@@ -108,6 +110,8 @@ export const useUserStore = create<UserState>()(
             gameMode: "PVP",
             hasCompletedSetup: false,
             isSetupOpen: false,
+
+            editionBonusesAppliedFor: null,
 
             setStationLevel: (stationId, level) =>
                 set((state) => ({ stationLevels: { ...state.stationLevels, [stationId]: level } })),
@@ -173,8 +177,10 @@ export const useUserStore = create<UserState>()(
             setSetupOpen: (isOpen) => set({ isSetupOpen: isOpen }),
 
             applyEditionBonuses: (stations) => {
-                const { gameEdition, stationLevels } = get();
+                const { gameEdition, stationLevels, editionBonusesAppliedFor } = get();
                 if (!gameEdition) return;
+
+                if (editionBonusesAppliedFor === gameEdition) return;
 
                 const newLevels = { ...stationLevels };
                 let stashLevel = 1;
@@ -210,7 +216,7 @@ export const useUserStore = create<UserState>()(
                     }
                 });
 
-                set({ stationLevels: newLevels });
+                set({ stationLevels: newLevels, editionBonusesAppliedFor: gameEdition });
             },
 
             initializeDefaults: (stations) => {
@@ -294,6 +300,7 @@ export const useUserStore = create<UserState>()(
                     gameMode: "PVP",
                     hasCompletedSetup: false,
                     isSetupOpen: false,
+                    editionBonusesAppliedFor: null,
                 }));
             },
         }),
@@ -313,6 +320,6 @@ export const useUserStore = create<UserState>()(
 
                 return persistedState as any;
             },
-        }
-    )
+        },
+    ),
 );
