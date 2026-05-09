@@ -1,20 +1,64 @@
-# Tarkov Hideout Tracker Docs
+# Tarkov Hideout Tracker — Docs
 
-This folder documents the design of the Tarkov Hideout Tracker and how it uses the Tarkov.dev GraphQL API.
+Design and architecture reference for the Tarkov Hideout Tracker.
 
-## Documents
+---
 
--   **overview.md**
-    High-level goals, core concepts, and state model.
+## Architecture
 
--   **hideout-page.md**
-    Behavior and data requirements for the Hideout page (station list + upgrades).
+- **[overview.md](overview.md)**
+  High-level goals, core concepts (FiR, game editions, game mode, filters), pages, and data sources.
 
--   **item-checklist-page.md**
-    Behavior and data requirements for the Item Checklist page (pooled items view).
+- **[state-management.md](state-management.md)**
+  Zustand stores (`useUserStore`, `useUIStore`) — full state shapes, actions, and separation from server-fetched data.
 
--   **graphql-queries.md**
-    Tarkov.dev GraphQL queries and fields needed to power the tracker.
+- **[data-and-price-context-architecture.md](data-and-price-context-architecture.md)**
+  How server services, React contexts (`DataContext`, `PriceDataContext`), and `<Suspense>` work together to deliver station/item/price data.
 
--   **hideoutQL.md**
-    Raw example GraphQL query used as a reference for hideout stations and their item requirements.
+- **[api-routes.md](api-routes.md)**
+  The only public route (cron endpoint) and the internal server services that replace old public API routes.
+
+- **[caching-architecture.md](caching-architecture.md)**
+  Redis keys, Next.js `unstable_cache` wrappers, cache invalidation strategy, and how to add a new cached data source.
+
+---
+
+## Features
+
+- **[hideout-page.md](hideout-page.md)**
+  Behavior and data requirements for the Hideout station list page.
+
+- **[item-checklist-page.md](item-checklist-page.md)**
+  Behavior and data requirements for the pooled item checklist page.
+
+- **[quick-add-feature.md](quick-add-feature.md)**
+  Quick Add modal — post-raid item input, fuzzy search, FiR/non-FiR counts.
+
+- **[setup-feature.md](setup-feature.md)**
+  Onboarding flow — game mode (PVP/PVE) and game edition selection; edition bonus logic.
+
+---
+
+## External APIs & Integrations
+
+- **[graphql-queries.md](graphql-queries.md)**
+  Tarkov.dev GraphQL queries used for hideout station structure and item metadata.
+
+- **[hideoutQL.md](hideoutQL.md)**
+  Minimal reference GraphQL query for hideout stations.
+
+- **[cron-jobs.md](cron-jobs.md)**
+  Vercel cron setup, bulk Tarkov Market price refresh, manual trigger instructions, and troubleshooting.
+
+- **[tarkov-market-protection.md](tarkov-market-protection.md)**
+  How the Tarkov Market API key is protected (server-only architecture) and historical context on the previous public-route design.
+
+---
+
+## Maintenance
+
+- **[deprecatedFiles.md](deprecatedFiles.md)**
+  Files that have been superseded and are candidates for removal.
+
+- **[notes.txt](notes.txt)**
+  Informal feature ideas and development notes.

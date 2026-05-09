@@ -1,205 +1,168 @@
-# State Management (zustand)
+# State Management
 
-This document specifies the client-side state stores (using zustand) and key derived selectors/queries used by the Hideout Tracker.
-
-Two main concerns:
-
--   **Data store**: server-provided, cached data (stations, prices).
--   **User store**: user progress and view preferences (levels, hidden flags, filters).
+Client-side state lives in two Zustand stores. Server-fetched data (stations, items, market prices) is **not** stored in Zustand — it is passed down via React context from server components in the `(data)` route group. See `data-and-price-context-architecture.md`.
 
 ---
 
-## Data Store (`useDataStore`)
+## `useUserStore` — User Progress & Preferences
 
-Holds data fetched from the Next.js API routes.
+**File:** `src/lib/stores/useUserStore.ts`
+**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 2 (with migration from v1).
 
-### Shape
+### State Shape
 
 ```ts
-interface DataState {
-    stations: Station[] | null;
-    stationsUpdatedAt: number | null;
+// Progress
+stationLevels: Record<string, number>;          // stationId → current level (0 = unbuilt)
+hiddenStations: Record<string, boolean>;         // stationId → excluded from pooled counts
+completedRequirements: Record<string, boolean>;  // requirementId → manually ticked off
 
-    prices: Record<string, ItemPrice> | null;
-    pricesUpdatedAt: number | null;
+// Inventory
+itemCounts: Record<string, { have: number; haveFir: number }>; // itemId → owned counts
 
-    loadingStations: boolean;
-    loadingPrices: boolean;
-    errorStations: string | null;
-    errorPrices: string | null;
+// Checklist view options
+checklistViewMode: "all" | "nextLevel";  // all future levels vs only next level per station
+showHidden: boolean;                     // include hidden stations in pooled items
+hideCheap: boolean;                      // filter items below cheapPriceThreshold
+hideMoney: boolean;                      // filter currency items
+showFirOnly: boolean;                    // show only FiR-required items
+hideRequirements: boolean;               // collapse requirements section
+cheapPriceThreshold: number;             // roubles (default 5000)
+sellToPreference: "best" | "flea" | "trader";
+useCategorization: boolean;
 
-    // Actions
-    fetchStations: () => Promise<void>;
-    fetchPrices: (ids?: string[]) => Promise<void>;
-    setStations: (stations: Station[], updatedAt?: number) => void;
-    setPrices: (prices: Record<string, ItemPrice>, updatedAt?: number) => void;
-}
+// View options
+hideoutCompactMode: boolean;
+itemsSize: "Icon" | "Compact" | "Expanded";
+
+// Onboarding / feature flags
+hasSeenItemConversionModal: boolean;
+hasSeenHideoutLevelWarning: boolean;
+
+// Game settings
+gameEdition: GameEdition | null;   // null until setup is completed
+gameMode: "PVP" | "PVE";           // controls which market price bucket is used
+hasCompletedSetup: boolean;
+isSetupOpen: boolean;
+editionBonusesAppliedFor: GameEdition | null; // tracks which edition bonuses have been applied
 ```
 
-`Station`, `ItemPrice` etc. match the types in `api-routes.md`.
+### Key Types
 
-### Responsibilities
+```ts
+type GameEdition =
+    | "Standard"
+    | "Left Behind"
+    | "Prepare for Escape"
+    | "Edge of Darkness"
+    | "Unheard";
 
--   Call `/api/hideout/stations` and `/api/items/prices`.
--   Cache results in memory for the session.
--   Expose `stations` and `prices` to components and other hooks.
+type GameMode = "PVP" | "PVE";
+type ItemSize = "Icon" | "Compact" | "Expanded";
+```
+
+### Key Actions
+
+| Action | Effect |
+|---|---|
+| `setStationLevel(id, level)` | Set a station to a specific level |
+| `incrementStationLevel(id)` | Advance a station by one level |
+| `toggleHiddenStation(id)` | Toggle hidden flag for a station |
+| `toggleRequirement(reqId)` | Manually tick/untick a single requirement |
+| `addItemCounts(itemId, haveDelta, haveFirDelta)` | Add to owned inventory counts |
+| `applyEditionBonuses(stations)` | Set starting Stash/Cultist levels based on `gameEdition`; no-ops if already applied for this edition |
+| `initializeDefaults(stations)` | Seed `stationLevels` to 0 for new stations; enforce minimum stash/cultist levels for the edition |
+| `importStationLevels(levels)` | Bulk-overwrite station levels (used by import feature) |
+| `resetAll()` | Reset all state to defaults (clears progress, settings, setup) |
+
+### Edition Bonus Logic (`applyEditionBonuses`)
+
+| Edition | Stash level | Cultist Circle level |
+|---|---|---|
+| Standard | 1 | 0 |
+| Left Behind | 2 | 0 |
+| Prepare for Escape | 3 | 0 |
+| Edge of Darkness | 4 | 0 |
+| Unheard | 4 | 1 (min) |
 
 ---
 
-## User Store (`useUserStore`)
+## `useUIStore` — Ephemeral UI State
 
-Tracks user-specific progress and view preferences. This store should use zustand's `persist` middleware to store data in `localStorage`.
+**File:** `src/lib/stores/useUIStore.ts`
+**Persisted:** No — resets on every page load.
 
-### Shape
+### State Shape
 
 ```ts
-interface UserState {
-    // Per-station progress and visibility
-    stationLevels: Record<string, number>; // stationId -> current level
-    hiddenStations: Record<string, boolean>; // stationId -> hidden?
+isQuickAddOpen: boolean;
+pendingQuickAddItems: PendingItem[];
 
-    // Checklist view options
-    checklistViewMode: "all" | "nextLevel";
-    showHidden: boolean; // include hidden stations in pooled items
-    hideCheap: boolean; // filter out cheap items
-    cheapPriceThreshold: number; // e.g. in roubles
-
-    // Actions
-    setStationLevel: (stationId: string, level: number) => void;
-    incrementStationLevel: (stationId: string) => void;
-    toggleHiddenStation: (stationId: string) => void;
-
-    setChecklistViewMode: (mode: "all" | "nextLevel") => void;
-    setShowHidden: (value: boolean) => void;
-    setHideCheap: (value: boolean) => void;
-    setCheapPriceThreshold: (value: number) => void;
-
-    // Initialization helpers
-    initializeDefaults: (stations: Station[]) => void;
+interface PendingItem {
+    tempId: string;
+    item: ItemDetails;
+    nonFir: number;
+    fir: number;
 }
 ```
 
-### Responsibilities
+### Actions
 
--   Persist user progress between sessions.
--   Control which stations are currently relevant (hidden vs visible).
--   Control checklist filters.
-
-`initializeDefaults` can:
-
--   Set all station levels to `0` (unbuilt) on first visit.
--   Set stash station to a chosen starting level (1–4) if desired.
+| Action | Effect |
+|---|---|
+| `setQuickAddOpen(bool)` | Open/close the Quick Add modal |
+| `setPendingQuickAddItems(items)` | Set the list of items staged in the modal |
+| `clearPendingQuickAddItems()` | Empty the staged list (called on commit or cancel) |
 
 ---
 
-## Derived Selectors / Queries
+## React Contexts — Server-Fetched Data
 
-Rather than pushing all logic into components, define a few reusable helpers/hooks on top of the stores.
+Data from external APIs is **not** in Zustand. It is fetched server-side and distributed via two contexts:
 
-### `useStationProgress(stationId)`
+### `DataContext` (`src/app/(data)/_dataContext.tsx`)
 
--   Returns:
-
-```ts
-{
-    currentLevel: number;
-    nextLevel: StationLevel | null;
-    isHidden: boolean;
-}
-```
-
--   Uses `stations` from `useDataStore` and `stationLevels` / `hiddenStations` from `useUserStore`.
-
-### `usePooledItems()`
-
-Core selector for the Item Checklist page. Computes the pooled list of required items according to the current filters.
-
-#### Input State
-
--   From `useDataStore`:
-    -   `stations`
-    -   `prices`
--   From `useUserStore`:
-    -   `stationLevels`
-    -   `hiddenStations`
-    -   `checklistViewMode`
-    -   `showHidden`
-    -   `hideCheap`
-    -   `cheapPriceThreshold`
-
-#### Algorithm (Conceptual)
-
-1. If `stations` is null, return empty list.
-2. For each station in `stations`:
-    - Let `currentLevel = stationLevels[station.id] ?? 0`.
-    - If `hiddenStations[station.id] === true` and `showHidden === false`, **skip** this station.
-3. Depending on `checklistViewMode`:
-    - **`'all'`**:
-        - Consider all levels with `level > currentLevel`.
-    - **`'nextLevel'`**:
-        - Consider only the level with `level === currentLevel + 1` (if it exists).
-4. Collect all `itemRequirements` from the chosen levels:
-    - Compute quantity per requirement from `count`/`quantity`.
-    - Accumulate into a map: `itemId -> { item, totalQuantity, usedIn: [...] }`.
-5. If `hideCheap` is true and prices are available:
-    - For each item, look up `prices[itemId]`.
-    - If `price < cheapPriceThreshold`, exclude it from the final list.
-6. Return an array of pooled items sorted as desired (e.g. by name, category, or price).
-
-#### Output Type
+Provided by `(data)/layout.tsx`. Contains:
 
 ```ts
-interface PooledItem {
-    item: StationLevel["itemRequirements"][number]["item"];
-    totalQuantity: number;
-    price?: ItemPrice;
-    usedIn: Array<{
-        stationId: string;
-        stationName: string;
-        level: number;
-        requirementId: string;
-    }>;
-}
+stations: Station[] | null;
+stationsUpdatedAt: number | null;
+items: ItemDetails[] | null;
+itemsUpdatedAt: number | null;
 ```
 
-### `useHideoutOverview()` (Optional)
+Usage: `const { stations, items } = useDataContext();`
 
--   Returns data ready for the Hideout page:
+### `PriceDataContext` (`src/app/(data)/_priceDataContext.tsx`)
+
+Provided by `PriceDataLayout.tsx` (wrapped in `<Suspense>`). Contains:
 
 ```ts
-{
-    stations: Array<{
-        station: Station;
-        currentLevel: number;
-        nextLevel: StationLevel | null;
-        isHidden: boolean;
-    }>;
-}
+marketPricesByMode: Record<GameMode, {
+    prices: Record<string, MarketPrice | null>;
+    updatedAt: number | null;
+}>;
+loading: boolean;
 ```
 
--   Allows the Hideout page to be a thin presentational layer.
+Usage:
+```ts
+const { marketPricesByMode, loading } = usePriceDataContext();
+const { gameMode } = useUserStore();
+const prices = marketPricesByMode[gameMode].prices;
+const itemPrice = prices[item.normalizedName];
+```
 
 ---
 
-## Persistence Details
+## Separation of Concerns
 
--   Use `zustand/persist` with `localStorage` for `useUserStore`.
--   Keep `useDataStore` **non-persisted**; it’s safe to refetch on reload from `/api`.
-
-Example persist config (conceptually):
-
-```ts
-const useUserStore = create<UserState>()(
-    persist(
-        (set, get) => ({
-            /* initial state & actions */
-        }),
-        {
-            name: "tarkov-hideout-user-state",
-            version: 1,
-        }
-    )
-);
-```
-
-This gives you a clear separation between server-sourced data and local user decisions.
+| Concern | Where it lives |
+|---|---|
+| Station/level/requirement progress | `useUserStore` (localStorage) |
+| Inventory item counts | `useUserStore` (localStorage) |
+| View filters and preferences | `useUserStore` (localStorage) |
+| Game edition / mode setup | `useUserStore` (localStorage) |
+| Quick Add modal + staged items | `useUIStore` (in-memory) |
+| Hideout stations + required items | `DataContext` (server → context) |
+| Market prices (PVP + PVE) | `PriceDataContext` (server → context) |

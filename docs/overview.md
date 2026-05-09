@@ -1,51 +1,115 @@
-# Hideout Tracker Overview
+# Tarkov Hideout Tracker — Overview
 
-The Hideout Tracker helps track all items required to build and upgrade every Hideout station in Escape From Tarkov using data from the Tarkov.dev GraphQL API.
+A Next.js web app for tracking hideout upgrades and item requirements in Escape From Tarkov.
+
+---
 
 ## Goals
 
--   **Track all requirements** for every Hideout station level.
--   **Simulate in-game progression** starting from an empty hideout (except stash level 1–4).
--   **Pool required items** across all current and future upgrades into a single checklist.
--   **Let users lock/hide stations** whose requirements they do not care about.
--   **Provide simple views**: a Hideout-focused view and an Item-focused checklist view.
+- **Track all requirements** for every hideout station level.
+- **Simulate in-game progression** starting from a configurable state based on game edition.
+- **Pool required items** across all stations into a single checklist, respecting the user's current progress.
+- **Separate FiR from non-FiR** requirements — some items must be Found in Raid; the app tracks both counts independently.
+- **Show live market prices** for both PVP and PVE game modes (flea + best trader).
+- **Let users manage inventory** — track how many of each item they already have.
+- **Support game edition bonuses** — automatically set starting Stash and Cultist Circle levels.
+- **Provide simple views**: a hideout-focused station view and an item checklist view.
+
+---
 
 ## Core Concepts
 
--   **Station**
-    A Hideout module (e.g., Lavatory, Generator, Gun Range) with multiple levels.
+**Station**
+A hideout module (e.g., Lavatory, Generator, Workbench) with multiple upgrade levels. There are 25 stations tracked.
 
--   **Level**
-    A specific level of a station (e.g., Lavatory level 2). Each level has item requirements.
+**Level**
+A specific upgrade level of a station. Each level has item requirements and may have station, skill, or trader prerequisites.
 
--   **Item Requirement**
-    An item, its quantity, and possible condition/attribute requirements that must be met to build/upgrade.
+**Item Requirement**
+An item + quantity needed to build/upgrade. May require the item to be "Found in Raid" (FiR) based on per-station configuration in `src/lib/cfg/foundInRaid.ts`.
 
--   **Hidden Station**
-    A station that the user has chosen to ignore in this tracker. Its item requirements are not included in pooled item counts unless explicitly shown.
+**FiR vs Non-FiR**
+- Some station levels require items with the FiR attribute; others do not.
+- The app tracks both `have` and `haveFir` counts separately in `useUserStore.itemCounts`.
+- `showFirOnly` filter lets users focus on FiR items they still need.
 
--   **Cheap Items**
-    Items that are inexpensive and easy to obtain on the flea market/traders. These can be hidden from the pooled checklist.
+**Hidden Station**
+A station the user has chosen to exclude. Hidden stations are omitted from pooled item counts when `showHidden` is false (the default).
 
-## Application State (Conceptual)
+**Game Mode (PVP / PVE)**
+Controls which market price set is shown. Prices are fetched for both modes on every request; the user switches mode without a reload.
 
-At a high level the app needs to maintain:
+**Game Edition**
+Determines the starting Stash level and whether Cultist Circle starts at level 1:
 
--   **Known Stations/Levels**
+| Edition | Stash | Cultist Circle |
+|---|---|---|
+| Standard | 1 | 0 |
+| Left Behind | 2 | 0 |
+| Prepare for Escape | 3 | 0 |
+| Edge of Darkness | 4 | 0 |
+| Unheard | 4 | 1 |
 
-    -   Station id, name, and levels from Tarkov.dev.
-    -   For each level: list of item requirements.
+**Cheap Items**
+Items below the `cheapPriceThreshold` (default 5,000 ₽). Can be hidden from the checklist with the `hideCheap` filter.
 
--   **User Progress**
+---
 
-    -   Current level per station (starting at 0 / unbuilt, except stash which starts at its chosen level).
-    -   Whether each station is **hidden** or **visible**.
+## Pages
 
--   **User Filters / Toggles**
-    -   View mode on the checklist page:
-        -   **All items needed** (current + all future levels).
-        -   **Next level only** (items for the next upgrade level of each station).
-    -   **Show Hidden** vs **Hide Hidden** (whether to include hidden stations in pooled items).
-    -   **Hide Cheap** toggle.
+| Route | Purpose |
+|---|---|
+| `/` | Redirects to `/hideout` |
+| `/hideout` | Station list with upgrade levels and next-level requirements |
+| `/items` | Pooled item checklist across all stations |
+| `/news` | In-app news and update posts |
+| `/settings` | User preferences (not currently a dedicated settings page) |
 
-The rest of the documents describe how each page uses this state and which Tarkov.dev queries are needed.
+---
+
+## Application State (High Level)
+
+**Persisted in localStorage (via Zustand):**
+- Current level per station
+- Hidden/visible flag per station
+- Manually completed individual requirements
+- Item counts owned (`have` / `haveFir`)
+- All view filters and preferences
+- Game edition and game mode
+
+**Server-fetched (via React context):**
+- Hideout station structure (from Tarkov.dev GraphQL, cached 12h)
+- Required item metadata (from Tarkov.dev, cached 12h)
+- Market prices for PVP and PVE (from Tarkov Market, refreshed daily via cron)
+
+See `state-management.md` for store shapes and `data-and-price-context-architecture.md` for the server data flow.
+
+---
+
+## Key Filters (Items Checklist)
+
+| Filter | Effect |
+|---|---|
+| `checklistViewMode: "all"` | All levels above current for each station |
+| `checklistViewMode: "nextLevel"` | Only the next level per station |
+| `showHidden: false` | Exclude hidden stations from pooled items |
+| `hideCheap` | Hide items below `cheapPriceThreshold` |
+| `hideMoney` | Hide currency items (roubles, dollars, euros) |
+| `showFirOnly` | Show only items where FiR count is still needed |
+
+---
+
+## Data Sources
+
+| Source | What it provides |
+|---|---|
+| Tarkov.dev GraphQL | Station structure, item metadata, trader/skill info |
+| Tarkov Market REST | Flea + trader prices for PVP and PVE modes |
+| `wiki-data.json` + `foundInRaid.ts` | Manual overrides for requirements and FiR flags |
+| localStorage | All user progress and preferences |
+
+---
+
+## Deployment
+
+Hosted on Vercel. A daily cron job at 00:00 UTC refreshes market prices via `/api/cron/bulk-update`. See `cron-jobs.md`.

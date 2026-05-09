@@ -1,269 +1,37 @@
-# Protecting Tarkov Market Usage in `tarkov-hideout-tracker`
+# Tarkov Market — API Key Protection
 
-## Problem Overview
+## Current Architecture (Server-Side Only)
 
-The app relies on a third‑party API (Tarkov Market) for real‑time item prices. This API is:
+The Tarkov Market API key is **never exposed to the client**. All price fetching happens server-side:
 
--   Rate limited.
--   Protected by a private API key stored on the server.
+1. The daily Vercel cron job (`/api/cron/bulk-update`) fetches the full item price catalogue from Tarkov Market using the `TARKOV_MARKET_KEY` env var.
+2. The result is filtered to hideout-required items and written to Redis.
+3. Client components read prices from Redis via `getCachedMarketPrices()`, which is called in server components (`PriceDataLayout`) — never from the browser.
 
-Our app exposes a public route `/api/market/items` that:
-
--   Accepts a list of item `normalizedName`s.
--   For each item, calls `getTarkovMarketItemByNormalizedName`.
--   That function uses Redis to cache responses and only hits Tarkov Market when needed.
-
-### Core risk
-
-Because `/api/market/items` is a **public HTTP endpoint**, anyone can:
-
--   Discover it (DevTools, network tab, repo).
--   Call it directly (`curl`, scripts, Postman, etc.).
--   Indirectly consume our Tarkov Market API quota/key through our server.
-
-Even with caching, a malicious or careless user can:
-
--   Rapidly spam `/api/market/items` with large or repeated payloads.
--   Force our server to:
-    -   Blow through Redis cache windows.
-    -   Hit Tarkov Market enough to trigger rate limits or key bans.
-
-We want to:
-
--   Keep the feature “no‑auth” and frictionless for normal users.
--   Discourage or block **external / automated abuse**.
--   Protect the Tarkov Market key and our cache from being burned.
+There is **no public API route** that proxies or exposes Tarkov Market data. The previous concern about `/api/market/items` being publicly callable no longer applies.
 
 ---
 
-## Existing Mitigations
+## Cron Endpoint Protection
 
-### 1. Server‑side caching
+The only public route that touches Tarkov Market is `GET /api/cron/bulk-update`. It is protected by a bearer token:
 
-In `getTarkovMarketItemByNormalizedName`:
+```
+Authorization: Bearer <CRON_SECRET>
+```
 
--   Redis cache with `CACHE_WINDOW_MS` (currently 45 minutes).
--   If cached entry is fresh:
-    -   Return it; do not hit Tarkov Market.
--   On error / rate limit / HTML response:
-    -   Log the error.
-    -   Fall back to cached entry when available.
-
-This reduces **upstream** load but does **not** stop someone from hammering **our** `/api/market/items` route.
-
-### 2. Aggregated API route
-
-`/api/market/items`:
-
--   Accepts an array of normalized item names.
--   Deduplicates them.
--   Fetches all in a **single batch** via `Promise.all`.
--   Aggregates responses into a single `TimedResponse`.
-
-This is efficient, but still public and callable by anyone.
-
-### 3. Client‑side caching
-
-`usePriceStore`:
-
--   Keeps `prices`, `updatedAt`, and an in‑memory cache window (15 minutes).
--   `fetchPrices(names)`:
-    -   Normalizes + deduplicates names.
-    -   If cache is fresh and all names are already cached:
-        -   Returns early; no API call.
-    -   If cache is fresh but some names are missing:
-        -   Requests **only the missing** names.
-    -   Avoids stacking multiple concurrent requests when cache is fresh.
-
-This prevents the UI from spamming the endpoint on normal usage and page navigations.
+Requests without a valid token are rejected with HTTP 401. Vercel injects this header automatically when invoking cron jobs.
 
 ---
 
-## What Cannot Be Fully Solved
+## Historical Context (Pre-Refactor)
 
-Because `/api/market/items` is a public HTTP route:
+The original design used a public `/api/market/items` route that accepted item `normalizedName` arrays and proxied requests to Tarkov Market with server-side Redis caching. The risks that design carried (key exposure through network tab, rate-limit abuse by external callers) were the motivation for moving to the current server-only bulk fetch approach.
 
--   **We cannot fully guarantee that only our frontend calls it.**
--   A determined user can:
-    -   Capture any non‑secret tokens/headers/cookies via DevTools.
-    -   Replay them from scripts or other clients.
-
-Any browser‑visible credential (even if HttpOnly) is **not** a perfect barrier, only a speed bump.
-
-This means:
-
--   We should focus on **rate limiting** and **abuse detection**, not on achieving perfect isolation from external callers.
+The old route no longer exists. The analysis of mitigation options (anonymous JWTs, IP rate limiting, Origin checks) in the original version of this document is no longer actionable, but is preserved in git history for reference.
 
 ---
 
-## Solution Options
+## If You Need Per-Item Price Lookup
 
-### 1. Anonymous JWT + Redis “User” (No-Auth Identification)
-
-**Goal:** Identify and rate‑limit “users” without formal login.
-
-**High‑level idea:**
-
--   On first request from a browser that lacks a specific cookie:
-
-    -   Generate an anonymous ID (e.g., derived from IP + User-Agent + random salt, but **do not** store raw IP in the JWT).
-    -   Create a JWT with payload like `{ sub: anonId, iat, exp? }`.
-    -   Sign with a server secret.
-    -   Set as an `HttpOnly`, `Secure`, `SameSite=Lax` cookie (e.g. `tk_anonymous`).
-    -   Optionally store metadata in Redis: `user:<anonId>` → { createdAt, lastSeen, counters }.
-
--   On subsequent requests to `/api/market/items`:
-    -   Verify the JWT from the cookie.
-    -   Extract `anonId` from `sub`.
-    -   Use `anonId` as the **key for rate limiting** and tracking.
-
-**What this gives:**
-
--   A stable, per‑browser “user:ID” with no UI friction.
--   Ability to:
-    -   Limit requests per anonId (e.g. N requests per 15 minutes).
-    -   Detect obvious abuse patterns (single anonId making excessive calls).
--   Weak but useful gating: bots/scripts that never visit the site won’t have the cookie.
-
-**What it doesn’t give:**
-
--   Hard security: an attacker can still:
-    -   Use a real browser, grab the cookie, and replay it elsewhere.
-    -   Script a headless browser to automatically obtain cookies.
-
-**Use it for:**
-
--   Implementing **per-user or per-session rate limits** on `/api/market/items`.
--   Optionally tying other preferences/state to an anonymous ID.
-
----
-
-### 2. IP and User-Agent–Based Rate Limiting
-
-In combination with or instead of anonymous JWTs:
-
--   Use IP and/or User-Agent as keys for rate limiting.
-
-**Pros:**
-
--   Does not require cookies or JWT.
--   Simple to implement with Redis:
-    -   e.g. `rate:market:<ip>` counters with expiration.
-
-**Cons:**
-
--   IPs are not stable:
-    -   Shared NATs / CGNAT / VPNs mean many users share an IP.
-    -   A single real user can change IP often (mobile).
--   User-Agent is easily spoofed.
-
-**Use it for:**
-
--   Coarse, **backstop** limits to avoid absolute abuse.
--   Example:
-    -   Cap total requests per IP per 15 minutes.
-    -   If exceeded, temporarily block or degrade responses.
-
----
-
-### 3. Origin / Referer Checks
-
-Add extra checks in `/api/market/items`:
-
--   Inspect `Origin` or `Referer` headers.
--   Only accept requests where:
-    -   `Origin` matches your production domain.
-    -   or `Referer` starts with your site URL.
-
-**Pros:**
-
--   Blocks simple cross-site abuse from other websites.
--   Stops some misconfigured scripts that don’t spoof headers.
-
-**Cons:**
-
--   Headers can be forged easily by non-browser clients.
--   Browsers may omit these headers in some cases (e.g. some privacy settings).
-
-**Use it for:**
-
--   Basic hygiene and to block the laziest forms of abuse.
-
----
-
-### 4. Stricter Server-Side Validation and Limits
-
-Inside `/api/market/items`:
-
--   Enforce **payload limits**:
-    -   Maximum length of `items` array.
-    -   Maximum size of normalized names.
--   Reject:
-    -   Requests with invalid or malformed JSON.
-    -   Requests with empty or obviously malicious arrays.
--   Add **global caps**:
-    -   Total allowed requests per minute globally (to protect the upstream API and your infra).
-
-**Pros:**
-
--   Predictable load.
--   Ensures single requests can’t be absurdly large.
-
-**Cons:**
-
--   Doesn’t differentiate between individual users; just controls overall behavior.
-
----
-
-### 5. Fully Authenticated Users (Not Currently Desired)
-
-The “hardest” option would be:
-
--   Require login (OAuth, email, etc.).
--   Associate each user with:
-    -   A verified identity.
-    -   Tight per-user, per-day quotas for `/api/market/items`.
-
-This would give:
-
--   Stronger protections and clearer abuse control.
--   But contradicts the current no-auth UX goal.
-
----
-
-## Recommended Combined Approach
-
-Given the project goals (no explicit login, but protect the Tarkov Market key):
-
-1. **Keep the existing caching**:
-
-    - Redis caching per item (`getTarkovMarketItemByNormalizedName`).
-    - 15-min client cache in `usePriceStore`.
-    - These minimize legitimate traffic.
-
-2. **Add anonymous identification + rate limiting**:
-
-    - Implement an anonymous JWT cookie as a soft “user ID”.
-    - In `/api/market/items`, require a valid token.
-    - Use `anonId` + IP for Redis-based rate limiting:
-        - e.g. X requests per 15 minutes per anonId.
-        - global/day caps for safety.
-
-3. **Add safety checks on the route**:
-
-    - Limit `items.length`.
-    - Limit string length for names.
-    - Short-circuit obviously bad payloads.
-
-4. **Optionally add Origin/Referer checks**:
-    - Reject requests not coming from your domain (best-effort).
-
-This won’t make `/api/market/items` truly private, but it:
-
--   **Heavily discourages casual abuse**.
--   **Protects the Tarkov Market key and quota** via:
-    -   aggressive caching,
-    -   per-“user” and per-IP limits,
-    -   global caps and validation.
-
-And it preserves the **no-auth user experience**: regular users don’t see any extra prompts or workflows.
+`src/server/services/tarkovMarket.ts` contains a legacy per-item Tarkov Market integration with its own Redis cache. It is not used in the main data flow but can be used server-side (e.g., in a new API route or server action) if per-item on-demand pricing is ever needed. The API key is still read from `TARKOV_MARKET_KEY`.
