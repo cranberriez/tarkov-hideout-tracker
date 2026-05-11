@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { FullQuest } from "@/types";
 
@@ -30,6 +30,9 @@ interface QuestsContextValue {
     clearTraders: () => void;
     toggleMap: (normalizedName: string) => void;
     clearMaps: () => void;
+    viewMode: "list" | "byTrader";
+    setViewMode: (mode: "list" | "byTrader") => void;
+
     toggleFaction: (f: FactionFilter) => void;
     toggleKappa: () => void;
     toggleLightkeeper: () => void;
@@ -63,15 +66,29 @@ function getTransitivePrereqs(rootIds: Set<string>, questsById: Map<string, Full
 }
 
 export function QuestsProvider({ quests, children }: { quests: FullQuest[]; children: ReactNode }) {
-    const { completedQuests, playerLevel } = useUserStore();
+    const {
+        completedQuests,
+        playerLevel,
+        questViewMode: viewMode,
+        questSelectedTraders,
+        questFaction: faction,
+        questShowKappa: showKappa,
+        questShowLightkeeper: showLightkeeper,
+        questSelectedMaps,
+        questHideCompleted: hideCompleted,
+        questShowAvailableOnly: showAvailableOnly,
+        setQuestViewMode: setViewMode,
+        setQuestSelectedTraders,
+        setQuestFaction,
+        setQuestShowKappa,
+        setQuestShowLightkeeper,
+        setQuestSelectedMaps,
+        setQuestHideCompleted: setHideCompleted,
+        setQuestShowAvailableOnly: setShowAvailableOnly,
+    } = useUserStore();
 
-    const [selectedTraders, setSelectedTraders] = useState<Set<string>>(new Set());
-    const [faction, setFaction] = useState<FactionFilter | null>(null);
-    const [showKappa, setShowKappa] = useState(false);
-    const [showLightkeeper, setShowLightkeeper] = useState(false);
-    const [selectedMaps, setSelectedMaps] = useState<Set<string>>(new Set());
-    const [hideCompleted, setHideCompleted] = useState(false);
-    const [showAvailableOnly, setShowAvailableOnly] = useState(false);
+    const selectedTraders = useMemo(() => new Set(questSelectedTraders), [questSelectedTraders]);
+    const selectedMaps = useMemo(() => new Set(questSelectedMaps), [questSelectedMaps]);
 
     const questsById = useMemo(() => new Map(quests.map((q) => [q.id, q])), [quests]);
 
@@ -155,29 +172,27 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
         [quests, completedQuests],
     );
 
-    const toggleTrader = (id: string) =>
-        setSelectedTraders((prev) => {
-            const next = new Set(prev);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
-            return next;
-        });
+    const toggleTrader = (id: string) => {
+        const next = new Set(questSelectedTraders);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setQuestSelectedTraders([...next]);
+    };
 
-    const clearTraders = () => setSelectedTraders(new Set());
+    const clearTraders = () => setQuestSelectedTraders([]);
 
-    const toggleMap = (normalizedName: string) =>
-        setSelectedMaps((prev) => {
-            const next = new Set(prev);
-            if (next.has(normalizedName)) next.delete(normalizedName);
-            else next.add(normalizedName);
-            return next;
-        });
+    const toggleMap = (normalizedName: string) => {
+        const next = new Set(questSelectedMaps);
+        if (next.has(normalizedName)) next.delete(normalizedName);
+        else next.add(normalizedName);
+        setQuestSelectedMaps([...next]);
+    };
 
-    const clearMaps = () => setSelectedMaps(new Set());
+    const clearMaps = () => setQuestSelectedMaps([]);
 
-    const toggleFaction = (f: FactionFilter) => setFaction((prev) => (prev === f ? null : f));
-    const toggleKappa = () => setShowKappa((v) => !v);
-    const toggleLightkeeper = () => setShowLightkeeper((v) => !v);
+    const toggleFaction = (f: FactionFilter) => setQuestFaction(faction === f ? null : f);
+    const toggleKappa = () => setQuestShowKappa(!showKappa);
+    const toggleLightkeeper = () => setQuestShowLightkeeper(!showLightkeeper);
 
     return (
         <QuestsContext.Provider
@@ -202,6 +217,8 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
                 clearTraders,
                 toggleMap,
                 clearMaps,
+                viewMode,
+                setViewMode,
                 toggleFaction,
                 toggleKappa,
                 toggleLightkeeper,

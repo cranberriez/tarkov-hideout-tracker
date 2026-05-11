@@ -18,6 +18,7 @@ interface UserState {
     hiddenStations: Record<string, boolean>; // stationId -> hidden?
     completedRequirements: Record<string, boolean>; // requirementId -> completed?
     completedQuests: Record<string, boolean>; // questId -> completed?
+    questsWithItems: Record<string, boolean>; // questId -> items collected but not handed in
 
     // Per-item ownership counts
     itemCounts: Record<string, { have: number; haveFir: number }>; // itemId -> counts
@@ -44,6 +45,16 @@ interface UserState {
     playerLevel: number;
     prestigeLevel: number;
 
+    // Quest page filter preferences (persisted)
+    questViewMode: "list" | "byTrader";
+    questSelectedTraders: string[];
+    questFaction: "USEC" | "BEAR" | null;
+    questShowKappa: boolean;
+    questShowLightkeeper: boolean;
+    questSelectedMaps: string[];
+    questHideCompleted: boolean;
+    questShowAvailableOnly: boolean;
+
     // Onboarding / feature flags
     hasSeenItemConversionModal: boolean;
     hasSeenHideoutLevelWarning: boolean;
@@ -62,6 +73,7 @@ interface UserState {
     toggleHiddenStation: (stationId: string) => void;
     toggleRequirement: (requirementId: string) => void;
     toggleQuestCompletion: (questId: string) => void;
+    toggleQuestHaveItems: (questId: string) => void;
 
     addItemCounts: (itemId: string, haveDelta: number, haveFirDelta: number) => void;
 
@@ -89,6 +101,15 @@ interface UserState {
     setPlayerLevel: (level: number) => void;
     setPrestigeLevel: (level: number) => void;
 
+    setQuestViewMode: (mode: "list" | "byTrader") => void;
+    setQuestSelectedTraders: (ids: string[]) => void;
+    setQuestFaction: (f: "USEC" | "BEAR" | null) => void;
+    setQuestShowKappa: (v: boolean) => void;
+    setQuestShowLightkeeper: (v: boolean) => void;
+    setQuestSelectedMaps: (maps: string[]) => void;
+    setQuestHideCompleted: (v: boolean) => void;
+    setQuestShowAvailableOnly: (v: boolean) => void;
+
     applyEditionBonuses: (stations: Station[]) => void;
 
     importStationLevels: (levels: Record<string, number>) => void;
@@ -105,6 +126,7 @@ export const useUserStore = create<UserState>()(
             hiddenStations: {},
             completedRequirements: {},
             completedQuests: {},
+            questsWithItems: {},
             itemCounts: {},
             checklistViewMode: "all",
             itemSourceFilter: "all",
@@ -123,6 +145,15 @@ export const useUserStore = create<UserState>()(
 
             playerLevel: 1,
             prestigeLevel: 0,
+
+            questViewMode: "list",
+            questSelectedTraders: [],
+            questFaction: null,
+            questShowKappa: false,
+            questShowLightkeeper: false,
+            questSelectedMaps: [],
+            questHideCompleted: false,
+            questShowAvailableOnly: false,
 
             gameEdition: null,
             gameMode: "PVP",
@@ -160,10 +191,22 @@ export const useUserStore = create<UserState>()(
             },
 
             toggleQuestCompletion: (questId) =>
+                set((state) => {
+                    const willComplete = !state.completedQuests[questId];
+                    return {
+                        completedQuests: { ...state.completedQuests, [questId]: willComplete },
+                        // clear "have items" when marking a quest complete
+                        ...(willComplete
+                            ? { questsWithItems: { ...state.questsWithItems, [questId]: false } }
+                            : {}),
+                    };
+                }),
+
+            toggleQuestHaveItems: (questId) =>
                 set((state) => ({
-                    completedQuests: {
-                        ...state.completedQuests,
-                        [questId]: !state.completedQuests[questId],
+                    questsWithItems: {
+                        ...state.questsWithItems,
+                        [questId]: !state.questsWithItems[questId],
                     },
                 })),
 
@@ -197,6 +240,15 @@ export const useUserStore = create<UserState>()(
 
             setPlayerLevel: (level) => set({ playerLevel: level }),
             setPrestigeLevel: (level) => set({ prestigeLevel: level }),
+
+            setQuestViewMode: (mode) => set({ questViewMode: mode }),
+            setQuestSelectedTraders: (ids) => set({ questSelectedTraders: ids }),
+            setQuestFaction: (f) => set({ questFaction: f }),
+            setQuestShowKappa: (v) => set({ questShowKappa: v }),
+            setQuestShowLightkeeper: (v) => set({ questShowLightkeeper: v }),
+            setQuestSelectedMaps: (maps) => set({ questSelectedMaps: maps }),
+            setQuestHideCompleted: (v) => set({ questHideCompleted: v }),
+            setQuestShowAvailableOnly: (v) => set({ questShowAvailableOnly: v }),
 
             setHasSeenItemConversionModal: (value) => set({ hasSeenItemConversionModal: value }),
             setHasSeenHideoutLevelWarning: (value) => set({ hasSeenHideoutLevelWarning: value }),
@@ -313,6 +365,7 @@ export const useUserStore = create<UserState>()(
                     hiddenStations: {},
                     completedRequirements: {},
                     completedQuests: {},
+                    questsWithItems: {},
                     itemCounts: {},
                     checklistViewMode: "all",
                     itemSourceFilter: "all",
@@ -330,6 +383,14 @@ export const useUserStore = create<UserState>()(
                     useCategorization: false,
                     playerLevel: 1,
                     prestigeLevel: 0,
+                    questViewMode: "list",
+                    questSelectedTraders: [],
+                    questFaction: null,
+                    questShowKappa: false,
+                    questShowLightkeeper: false,
+                    questSelectedMaps: [],
+                    questHideCompleted: false,
+                    questShowAvailableOnly: false,
                     gameEdition: null,
                     gameMode: "PVP",
                     hasCompletedSetup: false,

@@ -1,14 +1,31 @@
 "use client";
 
 import { useQuestsContext } from "../QuestsContext";
-import { FilterButton } from "./quest-ui";
+import { Divider, FilterButton, SegButton, SegGroup } from "./quest-ui";
 
 export function QuestsFilterBar() {
-    const { hideCompleted, showAvailableOnly, setHideCompleted, setShowAvailableOnly } =
-        useQuestsContext();
+    const {
+        hideCompleted,
+        showAvailableOnly,
+        setHideCompleted,
+        setShowAvailableOnly,
+        viewMode,
+        setViewMode,
+    } = useQuestsContext();
 
     return (
         <div className="flex items-center gap-2 flex-wrap">
+            <SegGroup>
+                <SegButton active={viewMode === "list"} onClick={() => setViewMode("list")}>
+                    List
+                </SegButton>
+                <SegButton active={viewMode === "byTrader"} onClick={() => setViewMode("byTrader")}>
+                    By Trader
+                </SegButton>
+            </SegGroup>
+
+            <Divider />
+
             <FilterButton
                 active={hideCompleted}
                 onClick={() => setHideCompleted(!hideCompleted)}

@@ -131,8 +131,12 @@ function ObjectiveRow({ objective }: { objective: FullQuestObjective }) {
 export function QuestCard({ quest, prerequisiteNames, leadsToNames }: QuestCardProps) {
     const [expanded, setExpanded] = useState(false);
     const [debugOpen, setDebugOpen] = useState(false);
-    const { completedQuests, toggleQuestCompletion } = useUserStore();
+    const { completedQuests, toggleQuestCompletion, playerLevel } = useUserStore();
     const completed = !!completedQuests[quest.id];
+    const available =
+        !completed &&
+        (quest.minPlayerLevel ?? 0) <= playerLevel &&
+        quest.taskRequirements.every((req) => completedQuests[req.task.id]);
 
     const giveItemObjectives = quest.objectives.filter(isItemObjective);
     const allHandInItems = [
@@ -148,7 +152,9 @@ export function QuestCard({ quest, prerequisiteNames, leadsToNames }: QuestCardP
             className={`border rounded-md overflow-hidden transition-colors ${
                 completed
                     ? "border-white/5 bg-black/10"
-                    : "border-white/10 bg-[#111111] hover:border-white/15"
+                    : available
+                    ? "border-white/10 border-l-2 border-l-tarkov-green/50 bg-[#111111] hover:border-white/15"
+                    : "border-white/10 border-l-2 border-l-amber-500/30 bg-[#111111] hover:border-white/15"
             }`}
         >
             {/* Header row */}
@@ -156,21 +162,27 @@ export function QuestCard({ quest, prerequisiteNames, leadsToNames }: QuestCardP
                 className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer"
                 onClick={() => setExpanded((v) => !v)}
             >
-                {/* Completion toggle — 44×44 hit area absorbs the row's px-3 py-2.5 padding */}
+                {/* Completion toggle */}
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
                         toggleQuestCompletion(quest.id);
                     }}
-                    className="group relative -ml-3 -my-2.5 w-11 h-11 flex items-center justify-center shrink-0 cursor-pointer"
+                    className="group relative shrink-0 -ml-3 -my-2.5 w-11 h-11 flex items-center justify-center cursor-pointer"
                 >
                     <Circle
                         size={16}
-                        className={`absolute transition-opacity duration-200 text-gray-600 ${completed ? "opacity-0" : "opacity-100 group-hover:opacity-0"}`}
+                        className={`absolute transition-opacity duration-200 text-gray-600 ${
+                            completed ? "opacity-0" : "opacity-100 group-hover:opacity-0"
+                        }`}
                     />
                     <CheckCircle
                         size={16}
-                        className={`absolute transition-all duration-200 ${completed ? "opacity-100 text-tarkov-green" : "opacity-0 group-hover:opacity-100 text-gray-500"}`}
+                        className={`absolute transition-all duration-200 ${
+                            completed
+                                ? "opacity-100 text-tarkov-green"
+                                : "opacity-0 group-hover:opacity-100 text-gray-500"
+                        }`}
                     />
                 </button>
 

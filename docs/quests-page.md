@@ -92,3 +92,40 @@ Client-side derived maps:
 On a Redis cache miss, `getQuestData()` / `getTraders()` call Tarkov.dev GraphQL and write the result back to Redis. On a Redis hit within 12h, the GraphQL call is skipped entirely.
 
 To invalidate: bump the Redis key version (`v3` → `v4`) or delete the key directly in Upstash.
+
+---
+
+## Planned Features
+
+### Items Needed Panel
+
+A floating sidebar docked to the right of the quest list showing aggregated item requirements across all visible, incomplete quests. Two sections:
+
+| Section | Definition |
+|---|---|
+| **Items Needed (Now)** | Items from quests that are currently *available* (prereqs met, player level met) and are neither completed nor marked "Have Items" |
+| **Items Needed (Future)** | Items from quests that are *locked*, within a configurable look-ahead depth |
+
+**Look-ahead depth** controls how far into the locked quest chain future items are pulled. Depth 1 = only quests one prerequisite step away from an available quest. Depth 2 = two steps. A small button in the Future section header cycles through depths 1–5.
+
+**"Have Items" state** — `questsWithItems: Record<string, boolean>` in `useUserStore` (persisted). Marking a quest as "Have Items" signals the player has the items but hasn't handed them in. Such quests are excluded from both panel sections (items not shown as needed). The quest itself is not considered completed in the quest display — not dimmed, not hidden by "Hide Completed" — and shows a blue left-border status indicator.
+
+**Item aggregation rules:**
+- Same item across multiple quests → sum counts
+- FiR flag shown if any matching objective requires Found In Raid
+- Panel is independent of sidebar filters and collapses separately
+
+---
+
+### Text Search
+
+A search input in the filter bar row that filters quest names after all other active filters.
+
+**Controls:**
+- Search input: case-insensitive substring match on quest name, applied in real time
+- **ALL toggle** adjacent to the input: bypasses all other active filters and searches the full quest list; automatically deactivates when the input is cleared
+
+**Behavior:**
+- Search is the last filter applied — after trader, map, faction, Kappa/LK, hide-completed, and available-only
+- Debounce ~150ms to avoid layout thrashing while typing
+- ALL mode is ephemeral: overrides filters only while the input has a value; clearing the input restores the previous filter state without toggling anything
