@@ -156,19 +156,22 @@ export function QuestCard({ quest, prerequisiteNames, leadsToNames }: QuestCardP
                 className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer"
                 onClick={() => setExpanded((v) => !v)}
             >
-                {/* Completion toggle */}
+                {/* Completion toggle — 44×44 hit area absorbs the row's px-3 py-2.5 padding */}
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
                         toggleQuestCompletion(quest.id);
                     }}
-                    className="shrink-0"
+                    className="group relative -ml-3 -my-2.5 w-11 h-11 flex items-center justify-center shrink-0 cursor-pointer"
                 >
-                    {completed ? (
-                        <CheckCircle size={16} className="text-tarkov-green" />
-                    ) : (
-                        <Circle size={16} className="text-gray-600 hover:text-gray-400 transition-colors" />
-                    )}
+                    <Circle
+                        size={16}
+                        className={`absolute transition-opacity duration-200 text-gray-600 ${completed ? "opacity-0" : "opacity-100 group-hover:opacity-0"}`}
+                    />
+                    <CheckCircle
+                        size={16}
+                        className={`absolute transition-all duration-200 ${completed ? "opacity-100 text-tarkov-green" : "opacity-0 group-hover:opacity-100 text-gray-500"}`}
+                    />
                 </button>
 
                 {/* Trader avatar */}
