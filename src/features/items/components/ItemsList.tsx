@@ -96,8 +96,20 @@ export function ItemsList({ onClickItem, perQuestPools }: ItemsListProps) {
     // Merge hideout pool with quest pool.
     // Items in both get combined counts and both source flags set.
     // Quest-only items get isHideout: false, isQuest: true.
+    // Source-specific counts are tracked separately for filter display.
     const mergedPool = useMemo(() => {
-        const merged = new Map(pooledHideoutItems.map((item) => [item.id, { ...item }]));
+        const merged = new Map(
+            pooledHideoutItems.map((item) => [
+                item.id,
+                {
+                    ...item,
+                    hideoutCount: item.count,
+                    hideoutFirCount: item.firCount,
+                    questCount: 0,
+                    questFirCount: 0,
+                },
+            ]),
+        );
 
         for (const qi of activeQuestItems) {
             const existing = merged.get(qi.id);
@@ -106,6 +118,8 @@ export function ItemsList({ onClickItem, perQuestPools }: ItemsListProps) {
                     ...existing,
                     count: existing.count + qi.count,
                     firCount: existing.firCount + qi.firCount,
+                    questCount: qi.count,
+                    questFirCount: qi.firCount,
                     isQuest: true,
                 });
             } else {
@@ -116,6 +130,10 @@ export function ItemsList({ onClickItem, perQuestPools }: ItemsListProps) {
                     isTool: false,
                     isHideout: false,
                     isQuest: true,
+                    hideoutCount: 0,
+                    hideoutFirCount: 0,
+                    questCount: qi.count,
+                    questFirCount: qi.firCount,
                 });
             }
         }
@@ -132,9 +150,13 @@ export function ItemsList({ onClickItem, perQuestPools }: ItemsListProps) {
             .filter((i) => i.details);
 
         if (itemSourceFilter === "hideout") {
-            finalItems = finalItems.filter((i) => i.isHideout);
+            finalItems = finalItems
+                .filter((i) => i.isHideout)
+                .map((i) => ({ ...i, count: i.hideoutCount, firCount: i.hideoutFirCount }));
         } else if (itemSourceFilter === "quest") {
-            finalItems = finalItems.filter((i) => i.isQuest);
+            finalItems = finalItems
+                .filter((i) => i.isQuest)
+                .map((i) => ({ ...i, count: i.questCount, firCount: i.questFirCount }));
         }
 
         if (showFirOnly) {
