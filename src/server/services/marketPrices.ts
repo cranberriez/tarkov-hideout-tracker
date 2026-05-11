@@ -8,11 +8,12 @@
 
 import type { TimedResponse, MarketPrice } from "@/types";
 import { redis } from "@/server/redis";
+import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { unstable_cache } from "next/cache";
 
 export type GameMode = "PVP" | "PVE";
 
-const FILTERED_PRICES_KEY_PREFIX = "tarkov-market:all-prices:filtered:v1";
+const FILTERED_PRICES_KEY_PREFIX = `tarkov-market:all-prices:filtered:v${CACHE_VERSIONS.marketPrices}`;
 
 interface RedisMeta {
     updatedAt: number;

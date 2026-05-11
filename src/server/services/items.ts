@@ -1,10 +1,11 @@
 import { redis } from "@/server/redis";
 import { getHideoutStations } from "@/server/services/hideout";
+import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import type { ItemsPayload, TimedResponse, ItemDetails } from "@/types";
 import { unstable_cache } from "next/cache";
 
 const CACHE_WINDOW_MS = 12 * 60 * 60 * 1000; // 12 hours
-const REDIS_KEY = "hideout:items:filtered:v1";
+const REDIS_KEY = `hideout:items:filtered:v${CACHE_VERSIONS.hideoutItems}`;
 const REDIS_KEY_META = `${REDIS_KEY}:meta`;
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
 
@@ -88,7 +89,7 @@ export async function getHideoutRequiredItems(
 
     // 3. Fetch ONLY required items from Tarkov.dev
     console.log(`Fetching ${queryIds.length} specific items from Tarkov.dev...`);
-    const fetchOptions: any = {
+    const fetchOptions: RequestInit = {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

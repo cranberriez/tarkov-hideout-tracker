@@ -1,6 +1,7 @@
 import { redis } from "@/server/redis";
 import { requiresFoundInRaid } from "@/lib/cfg/foundInRaid";
 import { wikiData } from "@/lib/data/wiki-data";
+import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { unstable_cache } from "next/cache";
 import {
     HideoutStationsPayload,
@@ -14,7 +15,7 @@ import {
 } from "@/types";
 
 const CACHE_WINDOW_MS = 12 * 60 * 60 * 1000; // 12 hours
-const REDIS_KEY = "hideout:stations:v6";
+const REDIS_KEY = `hideout:stations:v${CACHE_VERSIONS.hideoutStations}`;
 const REDIS_KEY_META = `${REDIS_KEY}:meta`;
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
 

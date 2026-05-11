@@ -12,6 +12,10 @@ The app uses two caching layers in combination: **Upstash Redis** for persistent
 | `hideout:items:filtered:v1` | Filtered item list (JSON) | `getHideoutRequiredItems()` on cache miss | None |
 | `tarkov-market:all-prices:filtered:v1:pvp` | PVP price map `normalizedName → MarketPrice` | Cron job (`refreshTarkovMarketPrices("PVP")`) | None (overwritten daily) |
 | `tarkov-market:all-prices:filtered:v1:pve` | PVE price map `normalizedName → MarketPrice` | Cron job (`refreshTarkovMarketPrices("PVE")`) | None |
+| `quests:all:v3` | Full quest list + required items (JSON) | `getQuestData()` on cache miss | None (overwritten on refresh) |
+| `quests:all:v3:meta` | `{ updatedAt: number }` | `getQuestData()` on cache miss | None |
+| `traders:all:v1` | Full trader list (JSON) | `getTraders()` on cache miss | None |
+| `traders:all:v1:meta` | `{ updatedAt: number }` | `getTraders()` on cache miss | None |
 
 Legacy per-item keys (`tarkov-market:item:v3:<normalizedName>`) may exist from the old per-item fetch path. They are no longer written by the main flow.
 
@@ -26,6 +30,8 @@ Each server service wraps its Redis read/fetch logic in `unstable_cache`, giving
 | `getCachedHideoutStations()` | 12 hours | Station data is stale-while-revalidate at 12h |
 | `getCachedHideoutRequiredItems()` | 12 hours | Same for item list |
 | `getCachedMarketPrices(names, mode)` | 5 minutes | Prices re-read from Redis at most every 5 minutes |
+| `getCachedQuestData()` | 12 hours | Quest list + required items, stale-while-revalidate at 12h |
+| `getCachedTraders()` | 12 hours | Trader list, stale-while-revalidate at 12h |
 
 The `unstable_cache` layer sits **above** Redis. On a cache hit within the revalidate window, the function doesn't even reach Redis.
 

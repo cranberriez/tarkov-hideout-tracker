@@ -31,6 +31,9 @@ Design and architecture reference for the Tarkov Hideout Tracker.
 - **[item-checklist-page.md](item-checklist-page.md)**
   Behavior and data requirements for the pooled item checklist page.
 
+- **[quests-page.md](quests-page.md)**
+  Quests page — quest item requirements (giveItem objectives), trader/level filters, prerequisite ordering, and caching.
+
 - **[quick-add-feature.md](quick-add-feature.md)**
   Quick Add modal — post-raid item input, fuzzy search, FiR/non-FiR counts.
 
@@ -46,6 +49,9 @@ Design and architecture reference for the Tarkov Hideout Tracker.
 
 - **[hideoutQL.md](hideoutQL.md)**
   Minimal reference GraphQL query for hideout stations.
+
+- **[tasks-graphql.md](tasks-graphql.md)**
+  Live schema findings for the `tasks` and `traders` queries — full field reference, objective type breakdown, and service implementation notes.
 
 - **[cron-jobs.md](cron-jobs.md)**
   Vercel cron setup, bulk Tarkov Market price refresh, manual trigger instructions, and troubleshooting.

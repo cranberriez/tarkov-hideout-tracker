@@ -166,3 +166,4 @@ const itemPrice = prices[item.normalizedName];
 | Quick Add modal + staged items | `useUIStore` (in-memory) |
 | Hideout stations + required items | `DataContext` (server → context) |
 | Market prices (PVP + PVE) | `PriceDataContext` (server → context) |
+| Quest data + trader list | Server props to `QuestsClientPage` — no context or Zustand |

@@ -1,10 +1,11 @@
 import { redis } from "@/server/redis";
 import { getHideoutRequiredItems } from "@/server/services/items";
 import { normalizeNameForMatch, type TarkovMarketItem } from "@/server/services/tarkovMarket";
+import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import type { MarketPrice } from "@/types";
 import type { GameMode } from "@/server/services/marketPrices";
 
-const FILTERED_PRICES_KEY_PREFIX = "tarkov-market:all-prices:filtered:v1";
+const FILTERED_PRICES_KEY_PREFIX = `tarkov-market:all-prices:filtered:v${CACHE_VERSIONS.marketPrices}`;
 
 interface RedisMeta {
     updatedAt: number;

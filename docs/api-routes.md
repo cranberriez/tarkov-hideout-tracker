@@ -82,6 +82,74 @@ Fetches the full item list from Tarkov Market, filters to hideout-required items
 - PVP: `tarkov-market:all-prices:filtered:v1:pvp`
 - PVE: `tarkov-market:all-prices:filtered:v1:pve`
 
+### `getCachedQuestData()`
+
+**File:** `src/server/services/quests.ts`
+**Cache:** Redis keys `quests:all:v3` + `quests:all:v3:meta`, Next.js revalidate 12h.
+
+Fetches all quests from Tarkov.dev GraphQL via the `QUESTS_QUERY`. Filters objectives down to `giveItem` type only. Returns a `QuestsPayload` with the full quest list and a de-duped list of required items.
+
+**Return shape:**
+```ts
+{
+  data: {
+    quests: QuestSummary[];      // all quests with giveItem objectives
+    requiredItems: ItemDetails[]; // unique items referenced across all quest objectives
+  };
+  updatedAt: number;
+}
+```
+
+**Key types:**
+```ts
+interface QuestSummary {
+    id: string;
+    name: string;
+    normalizedName?: string;
+    wikiLink?: string;
+    taskImageLink?: string;
+    minPlayerLevel?: number;
+    prerequisiteTaskIds: string[];
+    trader?: { normalizedName: string };
+    map?: { normalizedName: string };
+    itemRequirements: QuestItemRequirement[];
+}
+
+interface QuestItemRequirement {
+    id: string;
+    type: string; // always "giveItem" in practice
+    count: number;
+    foundInRaid: boolean;
+    item: Pick<ItemDetails, "id" | "name" | "normalizedName" | "iconLink" | "gridImageLink" | "wikiLink" | "link">;
+}
+```
+
+**Also exports** `orderQuestsByPrerequisites(quests)` — sorts quests by prerequisite chain depth (topological sort), then `minPlayerLevel`, then name. Returns `OrderedQuest[]` (extends `QuestSummary` with `prerequisiteDepth: number`).
+
+### `getCachedTraders()`
+
+**File:** `src/server/services/traders.ts`
+**Cache:** Redis keys `traders:all:v1` + `traders:all:v1:meta`, Next.js revalidate 12h.
+
+Fetches the trader list from Tarkov.dev GraphQL (`TRADERS_QUERY`). Used by the `/quests` page to display trader avatars in the filter dropdown.
+
+**Return shape:**
+```ts
+{
+  data: {
+    traders: TraderSummary[];
+  };
+  updatedAt: number;
+}
+
+interface TraderSummary {
+    name: string;
+    normalizedName: string;
+    imageLink?: string;
+    image4xLink?: string;
+}
+```
+
 ### `getTarkovMarketItemByNormalizedName(name, mode)` (Legacy)
 
 **File:** `src/server/services/tarkovMarket.ts`

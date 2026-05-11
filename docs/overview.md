@@ -13,7 +13,7 @@ A Next.js web app for tracking hideout upgrades and item requirements in Escape 
 - **Show live market prices** for both PVP and PVE game modes (flea + best trader).
 - **Let users manage inventory** — track how many of each item they already have.
 - **Support game edition bonuses** — automatically set starting Stash and Cultist Circle levels.
-- **Provide simple views**: a hideout-focused station view and an item checklist view.
+- **Provide simple views**: a hideout-focused station view, an item checklist view, and a quest item requirements view.
 
 ---
 
@@ -62,6 +62,7 @@ Items below the `cheapPriceThreshold` (default 5,000 ₽). Can be hidden from th
 | `/` | Redirects to `/hideout` |
 | `/hideout` | Station list with upgrade levels and next-level requirements |
 | `/items` | Pooled item checklist across all stations |
+| `/quests` | Quest item requirements (giveItem objectives), filterable by trader and player level |
 | `/news` | In-app news and update posts |
 | `/settings` | User preferences (not currently a dedicated settings page) |
 
@@ -77,10 +78,11 @@ Items below the `cheapPriceThreshold` (default 5,000 ₽). Can be hidden from th
 - All view filters and preferences
 - Game edition and game mode
 
-**Server-fetched (via React context):**
+**Server-fetched (via React context or server props):**
 - Hideout station structure (from Tarkov.dev GraphQL, cached 12h)
 - Required item metadata (from Tarkov.dev, cached 12h)
 - Market prices for PVP and PVE (from Tarkov Market, refreshed daily via cron)
+- Quest data and trader list (from Tarkov.dev GraphQL, cached 12h — passed as props to `/quests`)
 
 See `state-management.md` for store shapes and `data-and-price-context-architecture.md` for the server data flow.
 
@@ -103,7 +105,7 @@ See `state-management.md` for store shapes and `data-and-price-context-architect
 
 | Source | What it provides |
 |---|---|
-| Tarkov.dev GraphQL | Station structure, item metadata, trader/skill info |
+| Tarkov.dev GraphQL | Station structure, item metadata, trader/skill info, quest data, trader list |
 | Tarkov Market REST | Flea + trader prices for PVP and PVE modes |
 | `wiki-data.json` + `foundInRaid.ts` | Manual overrides for requirements and FiR flags |
 | localStorage | All user progress and preferences |
