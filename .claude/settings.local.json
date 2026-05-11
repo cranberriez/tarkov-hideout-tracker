@@ -22,7 +22,8 @@
       "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ __schema { queryType { fields { name description args { name type { name kind ofType { name kind } } } } } } }\"}')",
       "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ playerLevels { level exp levelBadgeImageLink } }\"}')",
       "Bash(npx tsc *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(npm run *)"
     ]
   },
   "outputStyle": "default",
