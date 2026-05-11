@@ -5,6 +5,7 @@ import type { ItemDetails } from "@/types";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsList } from "@/features/items/components/ItemsList";
 import { ItemsControls } from "@/features/items/components/ItemsControls";
+import { ItemsStatsRow } from "@/features/items/components/ItemsStatsRow";
 import { ItemSearchModal } from "@/features/items/components/ItemSearchModal";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
@@ -74,6 +75,7 @@ export function ItemsClientPage({ questPoolItems }: ItemsClientPageProps) {
 
             <div className="mb-8">
                 <ItemsControls onOpenSearch={() => setIsSearchOpen(true)} />
+                <ItemsStatsRow questPoolItems={questPoolItems} />
             </div>
 
             <ItemsList onClickItem={setSelectedItem} questPoolItems={questPoolItems} />

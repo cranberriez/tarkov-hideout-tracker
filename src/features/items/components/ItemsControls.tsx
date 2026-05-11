@@ -1,14 +1,28 @@
-﻿"use client";
+"use client";
 
+import { useEffect, useRef, useState, ReactNode } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { Eye, EyeOff, Filter, Grid3X3, LayoutList, List, Search, Shield, Tags } from "lucide-react";
-import { ReactNode } from "react";
+import {
+    Eye,
+    EyeOff,
+    Filter,
+    Grid3X3,
+    LayoutList,
+    List,
+    Search,
+    Settings,
+    Shield,
+    Tags,
+} from "lucide-react";
 
 interface ItemsControlsProps {
     onOpenSearch: () => void;
 }
 
 export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
+    const [popoverOpen, setPopoverOpen] = useState(false);
+    const popoverRef = useRef<HTMLDivElement>(null);
+
     const {
         checklistViewMode,
         setChecklistViewMode,
@@ -20,169 +34,174 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
         setItemsSize,
         cheapPriceThreshold,
         setCheapPriceThreshold,
-        sellToPreference,
-        setSellToPreference,
         useCategorization,
         setUseCategorization,
         showFirOnly,
         setShowFirOnly,
+        itemSourceFilter,
+        setItemSourceFilter,
     } = useUserStore();
 
+    useEffect(() => {
+        if (!popoverOpen) return;
+        function handleClickOutside(e: MouseEvent) {
+            if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+                setPopoverOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [popoverOpen]);
+
+    const hasActiveAdvanced = checklistViewMode !== "all" || showHidden;
+
     return (
-        <div className="flex flex-col gap-2 bg-muted p-2 rounded-md border">
-            {/* Search Bar */}
+        <div className="flex items-center gap-2 bg-muted px-3 py-2 rounded-md border">
+            {/* Search — shorter fixed width */}
             <button
                 onClick={onOpenSearch}
-                className="group flex items-center gap-3 text-sm font-medium px-2 py-2 rounded-sm bg-black/40 border border-white/10 text-gray-400 hover:text-white hover:border-tarkov-green/50 hover:bg-black/60 transition-all w-full"
+                className="group flex items-center gap-2 px-3 py-1.5 rounded-sm bg-black/40 border border-white/10 text-gray-400 hover:text-white hover:border-tarkov-green/50 hover:bg-black/60 transition-all shrink-0 w-44"
             >
                 <Search
-                    size={18}
-                    className="text-gray-500 group-hover:text-tarkov-green transition-colors"
+                    size={14}
+                    className="text-gray-500 group-hover:text-tarkov-green transition-colors shrink-0"
                 />
-                Search items...
+                <span className="text-xs">Search items...</span>
             </button>
 
-            <div className="flex flex-col xl:flex-row gap-6 justify-between items-start xl:items-center">
-                {/* Left Group: View Settings */}
-                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-6 w-full xl:w-auto">
-                    {/* View Mode */}
-                    <ControlGroup label="View">
-                        <ControlButton
-                            active={checklistViewMode === "nextLevel"}
-                            onClick={() => setChecklistViewMode("nextLevel")}
-                        >
-                            Next Level
-                        </ControlButton>
-                        <ControlButton
-                            active={checklistViewMode === "all"}
-                            onClick={() => setChecklistViewMode("all")}
-                        >
-                            All Future
-                        </ControlButton>
-                    </ControlGroup>
+            <Divider />
 
-                    {/* Price Mode */}
-                    {/* Deprecated as it's ineffective */}
-                    {/* <ControlGroup label="Price">
-                        <ControlButton
-                            active={sellToPreference === "best"}
-                            onClick={() => setSellToPreference("best")}
-                        >
-                            Best
-                        </ControlButton>
-                        <ControlButton
-                            active={sellToPreference === "flea"}
-                            onClick={() => setSellToPreference("flea")}
-                        >
-                            Flea
-                        </ControlButton>
-                        <ControlButton
-                            active={sellToPreference === "trader"}
-                            onClick={() => setSellToPreference("trader")}
-                        >
-                            Trader
-                        </ControlButton>
-                    </ControlGroup> */}
+            {/* Source filter */}
+            <SegGroup>
+                <SegButton
+                    active={itemSourceFilter === "all"}
+                    onClick={() => setItemSourceFilter("all")}
+                >
+                    All
+                </SegButton>
+                <SegButton
+                    active={itemSourceFilter === "hideout"}
+                    onClick={() => setItemSourceFilter("hideout")}
+                >
+                    Hideout
+                </SegButton>
+                <SegButton
+                    active={itemSourceFilter === "quest"}
+                    onClick={() => setItemSourceFilter("quest")}
+                >
+                    Quests
+                </SegButton>
+            </SegGroup>
 
-                    {/* Size */}
-                    <ControlGroup label="Size">
-                        <ControlButton
-                            active={itemsSize === "Icon"}
-                            onClick={() => setItemsSize("Icon")}
-                            icon={<Grid3X3 size={14} />}
-                        >
-                            Icon
-                        </ControlButton>
-                        <ControlButton
-                            active={itemsSize === "Compact"}
-                            onClick={() => setItemsSize("Compact")}
-                            icon={<List size={14} />}
-                        >
-                            Compact
-                        </ControlButton>
-                        <ControlButton
-                            active={itemsSize === "Expanded"}
-                            onClick={() => setItemsSize("Expanded")}
-                            icon={<LayoutList size={14} />}
-                        >
-                            Expanded
-                        </ControlButton>
-                    </ControlGroup>
-                </div>
+            <Divider />
 
-                {/* Right Group: Filters & Toggles */}
-                <div className="flex flex-wrap self-end items-center gap-2 w-full xl:w-auto xl:justify-end">
-                    <FilterButton
-                        active={useCategorization}
-                        onClick={() => setUseCategorization(!useCategorization)}
-                        icon={<Tags size={14} />}
-                        label="Categorize"
-                    />
+            {/* Card size */}
+            <SegGroup>
+                <SegButton
+                    active={itemsSize === "Icon"}
+                    onClick={() => setItemsSize("Icon")}
+                    icon={<Grid3X3 size={13} />}
+                />
+                <SegButton
+                    active={itemsSize === "Compact"}
+                    onClick={() => setItemsSize("Compact")}
+                    icon={<List size={13} />}
+                />
+                <SegButton
+                    active={itemsSize === "Expanded"}
+                    onClick={() => setItemsSize("Expanded")}
+                    icon={<LayoutList size={13} />}
+                />
+            </SegGroup>
 
-                    <FilterButton
-                        active={showFirOnly}
-                        onClick={() => setShowFirOnly(!showFirOnly)}
-                        icon={<Shield size={14} />}
-                        label="FiR Only"
-                    />
+            <div className="flex-1" />
 
-                    <div
-                        className={`flex items-center rounded-sm border transition-colors overflow-hidden ${
-                            hideCheap ? "border-tarkov-green/50" : "border-white/10"
-                        }`}
-                    >
-                        <button
-                            onClick={() => setHideCheap(!hideCheap)}
-                            className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-sm border cursor-pointer transition-all ${
-                                hideCheap
-                                    ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10 shadow-[0_0_10px_rgba(157,255,0,0.1)]"
-                                    : "border-white/10 text-gray-400 hover:border-white/30 bg-black/20 hover:bg-black/40"
-                            }`}
-                        >
-                            <Filter size={14} />
-                            Hide Cheap
-                        </button>
-                        {hideCheap && (
-                            <div className="flex items-center gap-1 text-xs text-gray-400 bg-black/40 px-2 py-2 border-l border-tarkov-green/20">
-                                <span>&lt;</span>
-                                <input
-                                    type="number"
-                                    value={cheapPriceThreshold}
-                                    onChange={(e) => setCheapPriceThreshold(Number(e.target.value))}
-                                    className="w-16 bg-transparent text-right text-white focus:outline-none border-b border-gray-600 focus:border-tarkov-green appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none font-mono"
-                                />
-                                <span>₽</span>
-                            </div>
-                        )}
+            <Divider />
+
+            {/* Quick filters */}
+            <FilterButton
+                active={useCategorization}
+                onClick={() => setUseCategorization(!useCategorization)}
+                icon={<Tags size={14} />}
+                label="Categorize"
+            />
+            <FilterButton
+                active={showFirOnly}
+                onClick={() => setShowFirOnly(!showFirOnly)}
+                icon={<Shield size={14} />}
+                label="FiR Only"
+            />
+            <HideCheapControl
+                hideCheap={hideCheap}
+                setHideCheap={setHideCheap}
+                cheapPriceThreshold={cheapPriceThreshold}
+                setCheapPriceThreshold={setCheapPriceThreshold}
+            />
+
+            {/* Settings popover */}
+            <div className="relative shrink-0" ref={popoverRef}>
+                <button
+                    onClick={() => setPopoverOpen((v) => !v)}
+                    className={`flex items-center px-3 py-2 rounded-sm border text-xs font-medium transition-all cursor-pointer ${
+                        popoverOpen || hasActiveAdvanced
+                            ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10 shadow-[0_0_10px_rgba(157,255,0,0.1)]"
+                            : "border-white/10 text-gray-400 hover:border-white/30 bg-black/20 hover:bg-black/40"
+                    }`}
+                    title="Advanced filters"
+                >
+                    <Settings size={14} />
+                </button>
+
+                {popoverOpen && (
+                    <div className="absolute right-0 top-full mt-2 z-50 bg-[#161616] border border-white/15 rounded-md shadow-xl flex flex-col gap-0 min-w-56 overflow-hidden">
+                        <PopoverSection label="Hideout">
+                            <SegGroup>
+                                <SegButton
+                                    active={checklistViewMode === "nextLevel"}
+                                    onClick={() => setChecklistViewMode("nextLevel")}
+                                >
+                                    Next Level
+                                </SegButton>
+                                <SegButton
+                                    active={checklistViewMode === "all"}
+                                    onClick={() => setChecklistViewMode("all")}
+                                >
+                                    All Future
+                                </SegButton>
+                            </SegGroup>
+                            <FilterButton
+                                active={showHidden}
+                                onClick={() => setShowHidden(!showHidden)}
+                                icon={showHidden ? <Eye size={14} /> : <EyeOff size={14} />}
+                                label="Show Hidden Stations"
+                            />
+                        </PopoverSection>
+
+                        <div className="h-px bg-white/5" />
+
+                        <PopoverSection label="Quests">
+                            <span className="text-xs text-gray-700 italic">Coming soon</span>
+                        </PopoverSection>
                     </div>
-
-                    <FilterButton
-                        active={showHidden}
-                        onClick={() => setShowHidden(!showHidden)}
-                        icon={showHidden ? <Eye size={16} /> : <EyeOff size={16} />}
-                        label={showHidden ? "Show Hidden" : "Hide Hidden"}
-                    />
-                </div>
+                )}
             </div>
         </div>
     );
 }
 
-// Subcomponents
-function ControlGroup({ label, children }: { label: string; children: ReactNode }) {
+function Divider() {
+    return <div className="h-5 w-px bg-white/10 shrink-0" />;
+}
+
+function SegGroup({ children }: { children: ReactNode }) {
     return (
-        <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold pl-1">
-                {label}
-            </span>
-            <div className="flex flex-wrap bg-black/40 rounded-sm p-1 border border-white/10">
-                {children}
-            </div>
+        <div className="flex shrink-0 bg-black/40 rounded-sm p-1 border border-white/10">
+            {children}
         </div>
     );
 }
 
-function ControlButton({
+function SegButton({
     active,
     onClick,
     children,
@@ -190,20 +209,20 @@ function ControlButton({
 }: {
     active: boolean;
     onClick: () => void;
-    children: ReactNode;
+    children?: ReactNode;
     icon?: ReactNode;
 }) {
     return (
         <button
             onClick={onClick}
-            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-xs transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-xs transition-all ${
                 active
                     ? "bg-tarkov-green text-black shadow-sm"
                     : "text-gray-400 hover:text-white hover:bg-white/5"
             }`}
         >
             {icon}
-            <span className={icon ? "hidden sm:inline" : ""}>{children}</span>
+            {children}
         </button>
     );
 }
@@ -222,7 +241,7 @@ function FilterButton({
     return (
         <button
             onClick={onClick}
-            className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-sm border transition-all cursor-pointer ${
+            className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-sm border transition-all cursor-pointer shrink-0 ${
                 active
                     ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10 shadow-[0_0_10px_rgba(157,255,0,0.1)]"
                     : "border-white/10 text-gray-400 hover:border-white/30 bg-black/20 hover:bg-black/40"
@@ -231,5 +250,60 @@ function FilterButton({
             {icon}
             {label}
         </button>
+    );
+}
+
+function HideCheapControl({
+    hideCheap,
+    setHideCheap,
+    cheapPriceThreshold,
+    setCheapPriceThreshold,
+}: {
+    hideCheap: boolean;
+    setHideCheap: (v: boolean) => void;
+    cheapPriceThreshold: number;
+    setCheapPriceThreshold: (v: number) => void;
+}) {
+    return (
+        <div
+            className={`flex items-center rounded-sm border transition-colors overflow-hidden shrink-0 ${
+                hideCheap ? "border-tarkov-green/50" : "border-white/10"
+            }`}
+        >
+            <button
+                onClick={() => setHideCheap(!hideCheap)}
+                className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-sm border cursor-pointer transition-all ${
+                    hideCheap
+                        ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10 shadow-[0_0_10px_rgba(157,255,0,0.1)]"
+                        : "border-white/10 text-gray-400 hover:border-white/30 bg-black/20 hover:bg-black/40"
+                }`}
+            >
+                <Filter size={14} />
+                Hide Cheap
+            </button>
+            {hideCheap && (
+                <div className="flex items-center gap-1 text-xs text-gray-400 bg-black/40 px-2 py-2 border-l border-tarkov-green/20">
+                    <span>&lt;</span>
+                    <input
+                        type="number"
+                        value={cheapPriceThreshold}
+                        onChange={(e) => setCheapPriceThreshold(Number(e.target.value))}
+                        className="w-16 bg-transparent text-right text-white focus:outline-none border-b border-gray-600 focus:border-tarkov-green appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none font-mono"
+                    />
+                    <span>₽</span>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function PopoverSection({ label, children }: { label: string; children: ReactNode }) {
+    return (
+        <div className="flex flex-col gap-2.5 p-3">
+            <span className="text-[10px] uppercase tracking-wider text-gray-600 font-bold">
+                {label}
+            </span>
+            <div className="flex flex-wrap gap-2 items-center">{children}</div>
+        </div>
     );
 }

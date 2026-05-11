@@ -29,6 +29,7 @@ export function ItemsList({ onClickItem, questPoolItems }: ItemsListProps) {
         sellToPreference,
         useCategorization,
         showFirOnly,
+        itemSourceFilter,
         gameMode,
         completedRequirements,
     } = useUserStore();
@@ -123,6 +124,12 @@ export function ItemsList({ onClickItem, questPoolItems }: ItemsListProps) {
             }))
             .filter((i) => i.details);
 
+        if (itemSourceFilter === "hideout") {
+            finalItems = finalItems.filter((i) => i.isHideout);
+        } else if (itemSourceFilter === "quest") {
+            finalItems = finalItems.filter((i) => i.isQuest);
+        }
+
         if (showFirOnly) {
             finalItems = finalItems.filter((i) => (i.firCount || 0) > 0);
         }
@@ -153,7 +160,7 @@ export function ItemsList({ onClickItem, questPoolItems }: ItemsListProps) {
         });
 
         return finalItems;
-    }, [mergedPool, allItemDetails, hideCheap, cheapPriceThreshold, showFirOnly, getPrice]);
+    }, [mergedPool, allItemDetails, hideCheap, cheapPriceThreshold, showFirOnly, itemSourceFilter, getPrice]);
 
     const categorizedItems = useMemo(() => {
         if (!useCategorization) return null;
