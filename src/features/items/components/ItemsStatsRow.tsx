@@ -4,13 +4,14 @@ import { useMemo } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { poolItems } from "@/lib/utils/item-pooling";
-import type { QuestPoolItem } from "@/lib/utils/quest-pooling";
+import type { PerQuestPool } from "@/lib/utils/quest-pooling";
+import { mergePerQuestPools } from "@/lib/utils/quest-pooling";
 
 interface ItemsStatsRowProps {
-    questPoolItems: QuestPoolItem[];
+    perQuestPools: PerQuestPool[];
 }
 
-export function ItemsStatsRow({ questPoolItems }: ItemsStatsRowProps) {
+export function ItemsStatsRow({ perQuestPools }: ItemsStatsRowProps) {
     const { stations } = useDataContext();
     const {
         stationLevels,
@@ -18,8 +19,14 @@ export function ItemsStatsRow({ questPoolItems }: ItemsStatsRowProps) {
         checklistViewMode,
         showHidden,
         completedRequirements,
+        completedQuests,
         itemCounts,
     } = useUserStore();
+
+    const activeQuestItems = useMemo(
+        () => mergePerQuestPools(perQuestPools, completedQuests),
+        [perQuestPools, completedQuests],
+    );
 
     const mergedPool = useMemo(() => {
         if (!stations) return [];
@@ -35,7 +42,7 @@ export function ItemsStatsRow({ questPoolItems }: ItemsStatsRowProps) {
 
         const merged = new Map(hideoutItems.map((item) => [item.id, { ...item }]));
 
-        for (const qi of questPoolItems) {
+        for (const qi of activeQuestItems) {
             const existing = merged.get(qi.id);
             if (existing) {
                 merged.set(qi.id, {
@@ -64,7 +71,7 @@ export function ItemsStatsRow({ questPoolItems }: ItemsStatsRowProps) {
         checklistViewMode,
         showHidden,
         completedRequirements,
-        questPoolItems,
+        activeQuestItems,
     ]);
 
     const stats = useMemo(() => {

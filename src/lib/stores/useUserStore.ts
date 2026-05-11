@@ -17,6 +17,7 @@ interface UserState {
     stationLevels: Record<string, number>; // stationId -> current level
     hiddenStations: Record<string, boolean>; // stationId -> hidden?
     completedRequirements: Record<string, boolean>; // requirementId -> completed?
+    completedQuests: Record<string, boolean>; // questId -> completed?
 
     // Per-item ownership counts
     itemCounts: Record<string, { have: number; haveFir: number }>; // itemId -> counts
@@ -56,6 +57,7 @@ interface UserState {
     incrementStationLevel: (stationId: string) => void;
     toggleHiddenStation: (stationId: string) => void;
     toggleRequirement: (requirementId: string) => void;
+    toggleQuestCompletion: (questId: string) => void;
 
     addItemCounts: (itemId: string, haveDelta: number, haveFirDelta: number) => void;
 
@@ -95,6 +97,7 @@ export const useUserStore = create<UserState>()(
             stationLevels: {},
             hiddenStations: {},
             completedRequirements: {},
+            completedQuests: {},
             itemCounts: {},
             checklistViewMode: "all",
             itemSourceFilter: "all",
@@ -145,6 +148,14 @@ export const useUserStore = create<UserState>()(
                     };
                 });
             },
+
+            toggleQuestCompletion: (questId) =>
+                set((state) => ({
+                    completedQuests: {
+                        ...state.completedQuests,
+                        [questId]: !state.completedQuests[questId],
+                    },
+                })),
 
             addItemCounts: (itemId, haveDelta, haveFirDelta) => {
                 set((state) => {
@@ -288,6 +299,7 @@ export const useUserStore = create<UserState>()(
                     stationLevels: {},
                     hiddenStations: {},
                     completedRequirements: {},
+                    completedQuests: {},
                     itemCounts: {},
                     checklistViewMode: "all",
                     itemSourceFilter: "all",

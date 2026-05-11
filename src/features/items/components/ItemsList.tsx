@@ -5,16 +5,17 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemRow } from "./ItemRow";
 import { poolItems } from "@/lib/utils/item-pooling";
 import type { ItemDetails } from "@/types";
-import type { QuestPoolItem } from "@/lib/utils/quest-pooling";
+import type { PerQuestPool } from "@/lib/utils/quest-pooling";
+import { mergePerQuestPools } from "@/lib/utils/quest-pooling";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 
 interface ItemsListProps {
     onClickItem: (item: ItemDetails) => void;
-    questPoolItems: QuestPoolItem[];
+    perQuestPools: PerQuestPool[];
 }
 
-export function ItemsList({ onClickItem, questPoolItems }: ItemsListProps) {
+export function ItemsList({ onClickItem, perQuestPools }: ItemsListProps) {
     const { stations, items } = useDataContext();
     const { marketPricesByMode } = usePriceDataContext();
 
@@ -32,6 +33,7 @@ export function ItemsList({ onClickItem, questPoolItems }: ItemsListProps) {
         itemSourceFilter,
         gameMode,
         completedRequirements,
+        completedQuests,
     } = useUserStore();
 
     const itemsById = useMemo(() => {
@@ -43,11 +45,16 @@ export function ItemsList({ onClickItem, questPoolItems }: ItemsListProps) {
         return map;
     }, [items]);
 
+    const activeQuestItems = useMemo(
+        () => mergePerQuestPools(perQuestPools, completedQuests),
+        [perQuestPools, completedQuests],
+    );
+
     // Build a lookup of ItemDetails that covers both hideout items and quest-only items.
     // Quest-only items use the basic metadata from the quest pool (no category/wiki).
     const allItemDetails = useMemo(() => {
         const details: Record<string, ItemDetails> = { ...(itemsById ?? {}) };
-        for (const qi of questPoolItems) {
+        for (const qi of activeQuestItems) {
             if (!details[qi.id]) {
                 details[qi.id] = {
                     id: qi.id,
@@ -59,7 +66,7 @@ export function ItemsList({ onClickItem, questPoolItems }: ItemsListProps) {
             }
         }
         return details;
-    }, [itemsById, questPoolItems]);
+    }, [itemsById, activeQuestItems]);
 
     const mode = gameMode === "PVE" ? "PVE" : "PVP";
     const priceBucket = marketPricesByMode[mode];
@@ -92,7 +99,7 @@ export function ItemsList({ onClickItem, questPoolItems }: ItemsListProps) {
     const mergedPool = useMemo(() => {
         const merged = new Map(pooledHideoutItems.map((item) => [item.id, { ...item }]));
 
-        for (const qi of questPoolItems) {
+        for (const qi of activeQuestItems) {
             const existing = merged.get(qi.id);
             if (existing) {
                 merged.set(qi.id, {
@@ -114,7 +121,7 @@ export function ItemsList({ onClickItem, questPoolItems }: ItemsListProps) {
         }
 
         return Array.from(merged.values());
-    }, [pooledHideoutItems, questPoolItems]);
+    }, [pooledHideoutItems, activeQuestItems]);
 
     const filteredAndSortedItems = useMemo(() => {
         let finalItems = mergedPool

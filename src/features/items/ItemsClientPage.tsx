@@ -10,13 +10,13 @@ import { ItemSearchModal } from "@/features/items/components/ItemSearchModal";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { useDataContext } from "@/app/(data)/_dataContext";
-import type { QuestPoolItem } from "@/lib/utils/quest-pooling";
+import type { PerQuestPool } from "@/lib/utils/quest-pooling";
 
 interface ItemsClientPageProps {
-    questPoolItems: QuestPoolItem[];
+    perQuestPools: PerQuestPool[];
 }
 
-export function ItemsClientPage({ questPoolItems }: ItemsClientPageProps) {
+export function ItemsClientPage({ perQuestPools }: ItemsClientPageProps) {
     const { stations, stationsUpdatedAt, items, itemsUpdatedAt } = useDataContext();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
@@ -75,10 +75,10 @@ export function ItemsClientPage({ questPoolItems }: ItemsClientPageProps) {
 
             <div className="mb-8">
                 <ItemsControls onOpenSearch={() => setIsSearchOpen(true)} />
-                <ItemsStatsRow questPoolItems={questPoolItems} />
+                <ItemsStatsRow perQuestPools={perQuestPools} />
             </div>
 
-            <ItemsList onClickItem={setSelectedItem} questPoolItems={questPoolItems} />
+            <ItemsList onClickItem={setSelectedItem} perQuestPools={perQuestPools} />
 
             <DataLastUpdated />
 
