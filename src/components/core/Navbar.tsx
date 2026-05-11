@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { List, House, Plus, Menu } from "lucide-react";
+import { List, House, Plus, Menu, ScrollText } from "lucide-react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { usePathname } from "next/navigation";
@@ -26,6 +26,11 @@ const Links = [
         name: "Hideout",
         href: "/hideout",
         icon: House,
+    },
+    {
+        name: "Quests",
+        href: "/quests",
+        icon: ScrollText,
     },
 ];
 

@@ -130,3 +130,65 @@ export interface MarketPrice {
 export interface ItemsPayload {
     items: ItemDetails[];
 }
+
+// ---- Quests ----
+
+export interface QuestItem {
+    id: string;
+    name: string;
+    normalizedName: string;
+    iconLink?: string;
+    gridImageLink?: string;
+}
+
+export interface QuestObjectiveItem {
+    id: string;
+    type: "giveItem";
+    description: string;
+    optional: boolean;
+    count: number;
+    foundInRaid: boolean;
+    items: QuestItem[];
+}
+
+export interface QuestPrerequisite {
+    task: { id: string; name: string };
+    status: string[];
+}
+
+export interface Quest {
+    id: string;
+    name: string;
+    normalizedName: string;
+    wikiLink?: string | null;
+    minPlayerLevel?: number | null;
+    kappaRequired?: boolean | null;
+    lightkeeperRequired?: boolean | null;
+    factionName?: string | null;
+    experience: number;
+    trader: {
+        id: string;
+        name: string;
+        normalizedName: string;
+    };
+    taskRequirements: QuestPrerequisite[];
+    objectives: QuestObjectiveItem[];
+}
+
+export interface QuestsPayload {
+    quests: Quest[];
+}
+
+// ---- Traders ----
+
+export interface Trader {
+    id: string;
+    name: string;
+    normalizedName: string;
+    imageLink?: string;
+    image4xLink?: string;
+}
+
+export interface TradersPayload {
+    traders: Trader[];
+}
