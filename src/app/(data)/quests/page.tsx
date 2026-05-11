@@ -1,22 +1,11 @@
-import { getCachedQuestData, orderQuestsByPrerequisites } from "@/server/services/quests";
-import { getCachedTraders } from "@/server/services/traders";
+import { getCachedFullQuestData, orderQuestsByPrerequisites } from "@/server/services/quests";
 import { QuestsClientPage } from "@/features/quests/QuestsClientPage";
 
 export const revalidate = 43200;
 
 export default async function QuestsPage() {
-    const [questsResponse, tradersResponse] = await Promise.all([
-        getCachedQuestData(),
-        getCachedTraders(),
-    ]);
-
+    const questsResponse = await getCachedFullQuestData();
     const quests = orderQuestsByPrerequisites(questsResponse.data.quests);
 
-    return (
-        <QuestsClientPage
-            quests={quests}
-            traders={tradersResponse.data.traders}
-            updatedAt={questsResponse.updatedAt}
-        />
-    );
+    return <QuestsClientPage quests={quests} updatedAt={questsResponse.updatedAt} />;
 }

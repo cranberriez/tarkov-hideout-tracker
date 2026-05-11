@@ -40,6 +40,10 @@ interface UserState {
     hideoutCompactMode: boolean;
     itemsSize: ItemSize;
 
+    // Quest tracking
+    playerLevel: number;
+    prestigeLevel: number;
+
     // Onboarding / feature flags
     hasSeenItemConversionModal: boolean;
     hasSeenHideoutLevelWarning: boolean;
@@ -82,6 +86,9 @@ interface UserState {
     setGameMode: (mode: GameMode) => void;
     completeSetup: () => void;
     setSetupOpen: (isOpen: boolean) => void;
+    setPlayerLevel: (level: number) => void;
+    setPrestigeLevel: (level: number) => void;
+
     applyEditionBonuses: (stations: Station[]) => void;
 
     importStationLevels: (levels: Record<string, number>) => void;
@@ -113,6 +120,9 @@ export const useUserStore = create<UserState>()(
             hasSeenHideoutLevelWarning: false,
             sellToPreference: "best",
             useCategorization: false,
+
+            playerLevel: 1,
+            prestigeLevel: 0,
 
             gameEdition: null,
             gameMode: "PVP",
@@ -184,6 +194,9 @@ export const useUserStore = create<UserState>()(
             setItemsSize: (value) => set({ itemsSize: value }),
             setSellToPreference: (value) => set({ sellToPreference: value }),
             setUseCategorization: (value) => set({ useCategorization: value }),
+
+            setPlayerLevel: (level) => set({ playerLevel: level }),
+            setPrestigeLevel: (level) => set({ prestigeLevel: level }),
 
             setHasSeenItemConversionModal: (value) => set({ hasSeenItemConversionModal: value }),
             setHasSeenHideoutLevelWarning: (value) => set({ hasSeenHideoutLevelWarning: value }),
@@ -315,6 +328,8 @@ export const useUserStore = create<UserState>()(
                     hasSeenHideoutLevelWarning: false,
                     sellToPreference: "best",
                     useCategorization: false,
+                    playerLevel: 1,
+                    prestigeLevel: 0,
                     gameEdition: null,
                     gameMode: "PVP",
                     hasCompletedSetup: false,
