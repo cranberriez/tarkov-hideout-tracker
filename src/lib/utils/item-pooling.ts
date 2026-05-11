@@ -3,8 +3,10 @@ import { Station, ItemDetails } from "@/types";
 export interface PooledItem {
     id: string;
     count: number;
-    firCount: number; // Found In Raid count
-    isTool: boolean; // If it's a tool (not consumed)
+    firCount: number;
+    isTool: boolean;
+    isHideout: boolean;
+    isQuest: boolean;
 }
 
 interface PoolingOptions {
@@ -58,6 +60,8 @@ export function poolItems({
                     count: 0,
                     firCount: 0,
                     isTool: false,
+                    isHideout: true,
+                    isQuest: false,
                 };
 
                 // Check attributes for special properties

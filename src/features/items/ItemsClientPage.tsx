@@ -9,8 +9,13 @@ import { ItemSearchModal } from "@/features/items/components/ItemSearchModal";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { useDataContext } from "@/app/(data)/_dataContext";
+import type { QuestPoolItem } from "@/lib/utils/quest-pooling";
 
-export function ItemsClientPage() {
+interface ItemsClientPageProps {
+    questPoolItems: QuestPoolItem[];
+}
+
+export function ItemsClientPage({ questPoolItems }: ItemsClientPageProps) {
     const { stations, stationsUpdatedAt, items, itemsUpdatedAt } = useDataContext();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
@@ -71,7 +76,7 @@ export function ItemsClientPage() {
                 <ItemsControls onOpenSearch={() => setIsSearchOpen(true)} />
             </div>
 
-            <ItemsList onClickItem={setSelectedItem} />
+            <ItemsList onClickItem={setSelectedItem} questPoolItems={questPoolItems} />
 
             <DataLastUpdated />
 

@@ -4,15 +4,17 @@ import { useMemo } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemRow } from "./ItemRow";
 import { poolItems } from "@/lib/utils/item-pooling";
-import { ItemDetails } from "@/types";
+import type { ItemDetails } from "@/types";
+import type { QuestPoolItem } from "@/lib/utils/quest-pooling";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 
 interface ItemsListProps {
     onClickItem: (item: ItemDetails) => void;
+    questPoolItems: QuestPoolItem[];
 }
 
-export function ItemsList({ onClickItem }: ItemsListProps) {
+export function ItemsList({ onClickItem, questPoolItems }: ItemsListProps) {
     const { stations, items } = useDataContext();
     const { marketPricesByMode } = usePriceDataContext();
 
@@ -40,12 +42,30 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         return map;
     }, [items]);
 
+    // Build a lookup of ItemDetails that covers both hideout items and quest-only items.
+    // Quest-only items use the basic metadata from the quest pool (no category/wiki).
+    const allItemDetails = useMemo(() => {
+        const details: Record<string, ItemDetails> = { ...(itemsById ?? {}) };
+        for (const qi of questPoolItems) {
+            if (!details[qi.id]) {
+                details[qi.id] = {
+                    id: qi.id,
+                    name: qi.name,
+                    normalizedName: qi.normalizedName,
+                    iconLink: qi.iconLink,
+                    gridImageLink: qi.gridImageLink,
+                };
+            }
+        }
+        return details;
+    }, [itemsById, questPoolItems]);
+
     const mode = gameMode === "PVE" ? "PVE" : "PVP";
     const priceBucket = marketPricesByMode[mode];
 
     const getPrice = (normalizedName: string) => priceBucket?.prices[normalizedName];
 
-    const pooledItems = useMemo(() => {
+    const pooledHideoutItems = useMemo(() => {
         if (!stations) return [];
 
         return poolItems({
@@ -65,26 +85,48 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         completedRequirements,
     ]);
 
+    // Merge hideout pool with quest pool.
+    // Items in both get combined counts and both source flags set.
+    // Quest-only items get isHideout: false, isQuest: true.
+    const mergedPool = useMemo(() => {
+        const merged = new Map(pooledHideoutItems.map((item) => [item.id, { ...item }]));
+
+        for (const qi of questPoolItems) {
+            const existing = merged.get(qi.id);
+            if (existing) {
+                merged.set(qi.id, {
+                    ...existing,
+                    count: existing.count + qi.count,
+                    firCount: existing.firCount + qi.firCount,
+                    isQuest: true,
+                });
+            } else {
+                merged.set(qi.id, {
+                    id: qi.id,
+                    count: qi.count,
+                    firCount: qi.firCount,
+                    isTool: false,
+                    isHideout: false,
+                    isQuest: true,
+                });
+            }
+        }
+
+        return Array.from(merged.values());
+    }, [pooledHideoutItems, questPoolItems]);
+
     const filteredAndSortedItems = useMemo(() => {
-        if (!itemsById) return [];
-
-        let finalItems = pooledItems.map((pooled) => {
-            const details = itemsById[pooled.id];
-            return {
+        let finalItems = mergedPool
+            .map((pooled) => ({
                 ...pooled,
-                details,
-            };
-        });
+                details: allItemDetails[pooled.id],
+            }))
+            .filter((i) => i.details);
 
-        // Filter out items where we don't have details (shouldn't happen often)
-        finalItems = finalItems.filter((i) => i.details);
-
-        // Filter FiR Only
         if (showFirOnly) {
             finalItems = finalItems.filter((i) => (i.firCount || 0) > 0);
         }
 
-        // Filter cheap items
         if (hideCheap) {
             finalItems = finalItems.filter((i) => {
                 if (!i.details) return false;
@@ -95,21 +137,15 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
                 }
 
                 const marketPrice = getPrice(i.details.normalizedName);
-
-                // If we don't have any price data yet, treat the item as "unknown" rather than cheap,
-                // so we keep it visible until real market data is available.
                 if (!marketPrice) return true;
 
                 const unitPrice = marketPrice.avg24hPrice ?? marketPrice.price ?? undefined;
-
-                // Again, if we still can't derive a concrete unitPrice, don't hide the item.
                 if (unitPrice == null) return true;
 
                 return unitPrice >= cheapPriceThreshold;
             });
         }
 
-        // Sort alphabetically by name (default sort)
         finalItems.sort((a, b) => {
             const nameA = a.details?.name ?? "";
             const nameB = b.details?.name ?? "";
@@ -117,7 +153,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         });
 
         return finalItems;
-    }, [pooledItems, itemsById, hideCheap, cheapPriceThreshold, showFirOnly, getPrice]);
+    }, [mergedPool, allItemDetails, hideCheap, cheapPriceThreshold, showFirOnly, getPrice]);
 
     const categorizedItems = useMemo(() => {
         if (!useCategorization) return null;
@@ -125,16 +161,11 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         const groups: Record<string, typeof filteredAndSortedItems> = {};
 
         filteredAndSortedItems.forEach((item) => {
-            // Use category name, or "Other"
             const category = item.details?.category?.name ?? "Other";
-
-            if (!groups[category]) {
-                groups[category] = [];
-            }
+            if (!groups[category]) groups[category] = [];
             groups[category].push(item);
         });
 
-        // Sort categories alphabetically, but put "Other" last
         const sortedCategories = Object.keys(groups).sort((a, b) => {
             if (a === "Other") return 1;
             if (b === "Other") return -1;
@@ -162,8 +193,6 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
         );
     }
 
-    // Updated grid classes: 1 column on mobile/narrow, then expanding
-    // Previously: grid-cols-2 on base
     const gridClassesBySize: Record<string, string> = {
         Icon: "grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8",
         Compact: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
@@ -184,7 +213,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
                         </h2>
                         <div className={`grid gap-4 ${gridClasses}`}>
                             {items.map(
-                                ({ id, count, firCount, details }) =>
+                                ({ id, count, firCount, isHideout, isQuest, details }) =>
                                     details && (
                                         <ItemRow
                                             key={id}
@@ -193,6 +222,8 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
                                             firCount={firCount}
                                             size={itemsSize}
                                             sellToPreference={sellToPreference}
+                                            isHideout={isHideout}
+                                            isQuest={isQuest}
                                             onClick={() => onClickItem(details)}
                                         />
                                     )
@@ -207,7 +238,7 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
     return (
         <div className={`grid gap-2 ${gridClasses}`}>
             {filteredAndSortedItems.map(
-                ({ id, count, firCount, details }) =>
+                ({ id, count, firCount, isHideout, isQuest, details }) =>
                     details && (
                         <ItemRow
                             key={id}
@@ -216,6 +247,8 @@ export function ItemsList({ onClickItem }: ItemsListProps) {
                             firCount={firCount}
                             size={itemsSize}
                             sellToPreference={sellToPreference}
+                            isHideout={isHideout}
+                            isQuest={isQuest}
                             onClick={() => onClickItem(details)}
                         />
                     )
