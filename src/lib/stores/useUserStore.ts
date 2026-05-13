@@ -46,7 +46,7 @@ interface UserState {
     prestigeLevel: number;
 
     // Quest page filter preferences (persisted)
-    questViewMode: "list" | "byTrader";
+    questViewMode: "list" | "byTrader" | "tree";
     questSelectedTraders: string[];
     questFaction: "USEC" | "BEAR" | null;
     questShowKappa: boolean;
@@ -101,7 +101,7 @@ interface UserState {
     setPlayerLevel: (level: number) => void;
     setPrestigeLevel: (level: number) => void;
 
-    setQuestViewMode: (mode: "list" | "byTrader") => void;
+    setQuestViewMode: (mode: "list" | "byTrader" | "tree") => void;
     setQuestSelectedTraders: (ids: string[]) => void;
     setQuestFaction: (f: "USEC" | "BEAR" | null) => void;
     setQuestShowKappa: (v: boolean) => void;

@@ -22,6 +22,9 @@ export function QuestsFilterBar() {
                 <SegButton active={viewMode === "byTrader"} onClick={() => setViewMode("byTrader")}>
                     By Trader
                 </SegButton>
+                <SegButton active={viewMode === "tree"} onClick={() => setViewMode("tree")}>
+                    Tree
+                </SegButton>
             </SegGroup>
 
             <Divider />

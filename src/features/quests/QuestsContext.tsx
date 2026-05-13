@@ -30,8 +30,8 @@ interface QuestsContextValue {
     clearTraders: () => void;
     toggleMap: (normalizedName: string) => void;
     clearMaps: () => void;
-    viewMode: "list" | "byTrader";
-    setViewMode: (mode: "list" | "byTrader") => void;
+    viewMode: "list" | "byTrader" | "tree";
+    setViewMode: (mode: "list" | "byTrader" | "tree") => void;
 
     toggleFaction: (f: FactionFilter) => void;
     toggleKappa: () => void;

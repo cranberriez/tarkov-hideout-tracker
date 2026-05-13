@@ -25,10 +25,16 @@ import type {
 } from "@/types";
 import { useUserStore } from "@/lib/stores/useUserStore";
 
+export interface QuestRef {
+    id: string;
+    name: string;
+    trader: { imageLink: string | null; image4xLink: string | null; name: string };
+}
+
 interface QuestCardProps {
     quest: FullQuest;
-    prerequisiteNames: string[];
-    leadsToNames: string[];
+    prerequisiteQuests: QuestRef[];
+    leadsToQuests: QuestRef[];
 }
 
 function isItemObjective(o: FullQuestObjective): o is QuestObjectiveItemType {
@@ -128,7 +134,30 @@ function ObjectiveRow({ objective }: { objective: FullQuestObjective }) {
     );
 }
 
-export function QuestCard({ quest, prerequisiteNames, leadsToNames }: QuestCardProps) {
+function QuestChip({ questRef }: { questRef: QuestRef }) {
+    return (
+        <a
+            href={`#quest-${questRef.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1.5 text-xs text-gray-400 bg-black/40 border border-white/10 px-2 py-0.5 rounded hover:border-white/25 hover:text-gray-300 transition-colors"
+        >
+            {questRef.trader.image4xLink ?? questRef.trader.imageLink ? (
+                <img
+                    src={questRef.trader.image4xLink ?? questRef.trader.imageLink ?? ""}
+                    alt={questRef.trader.name}
+                    className="w-3.5 h-3.5 rounded-full shrink-0 object-cover"
+                />
+            ) : (
+                <span className="w-3.5 h-3.5 rounded-full bg-white/10 flex items-center justify-center text-[9px] shrink-0">
+                    {questRef.trader.name[0]}
+                </span>
+            )}
+            {questRef.name}
+        </a>
+    );
+}
+
+export function QuestCard({ quest, prerequisiteQuests, leadsToQuests }: QuestCardProps) {
     const [expanded, setExpanded] = useState(false);
     const [debugOpen, setDebugOpen] = useState(false);
     const { completedQuests, toggleQuestCompletion, playerLevel } = useUserStore();
@@ -149,6 +178,7 @@ export function QuestCard({ quest, prerequisiteNames, leadsToNames }: QuestCardP
 
     return (
         <div
+            id={`quest-${quest.id}`}
             className={`border rounded-md overflow-hidden transition-colors ${
                 completed
                     ? "border-white/5 bg-black/10"
@@ -236,7 +266,7 @@ export function QuestCard({ quest, prerequisiteNames, leadsToNames }: QuestCardP
                             LK
                         </span>
                     )}
-                    {quest.factionName && (
+                    {(quest.factionName === "USEC" || quest.factionName === "BEAR") && (
                         <span
                             className={`text-[10px] px-1.5 py-0.5 rounded border ${
                                 quest.factionName === "USEC"
@@ -331,38 +361,28 @@ export function QuestCard({ quest, prerequisiteNames, leadsToNames }: QuestCardP
                     </div>
 
                     {/* Prerequisites */}
-                    {prerequisiteNames.length > 0 && (
+                    {prerequisiteQuests.length > 0 && (
                         <div className="space-y-1.5">
                             <span className="text-[10px] uppercase tracking-wider text-gray-600 font-bold">
                                 Requires
                             </span>
                             <div className="flex flex-wrap gap-1">
-                                {prerequisiteNames.map((name) => (
-                                    <span
-                                        key={name}
-                                        className="text-xs text-gray-400 bg-black/40 border border-white/10 px-2 py-0.5 rounded"
-                                    >
-                                        {name}
-                                    </span>
+                                {prerequisiteQuests.map((ref) => (
+                                    <QuestChip key={ref.id} questRef={ref} />
                                 ))}
                             </div>
                         </div>
                     )}
 
                     {/* Leads to */}
-                    {leadsToNames.length > 0 && (
+                    {leadsToQuests.length > 0 && (
                         <div className="space-y-1.5">
                             <span className="text-[10px] uppercase tracking-wider text-gray-600 font-bold">
                                 Unlocks
                             </span>
                             <div className="flex flex-wrap gap-1">
-                                {leadsToNames.map((name) => (
-                                    <span
-                                        key={name}
-                                        className="text-xs text-gray-400 bg-black/40 border border-white/10 px-2 py-0.5 rounded"
-                                    >
-                                        {name}
-                                    </span>
+                                {leadsToQuests.map((ref) => (
+                                    <QuestChip key={ref.id} questRef={ref} />
                                 ))}
                             </div>
                         </div>

@@ -2,12 +2,19 @@
 
 import { useState } from "react";
 import type { FullQuest } from "@/types";
-import { QuestsProvider } from "./QuestsContext";
+import { QuestsProvider, useQuestsContext } from "./QuestsContext";
 import { QuestsSidebar } from "./components/QuestsSidebar";
 import { QuestsCharacterBar } from "./components/QuestsCharacterBar";
 import { QuestsFilterBar } from "./components/QuestsFilterBar";
 import { QuestsList } from "./components/QuestsList";
+import { QuestsTree } from "./components/QuestsTree";
 import { SlidersIcon } from "./components/quest-ui";
+
+function QuestsContent() {
+    const { viewMode } = useQuestsContext();
+    if (viewMode === "tree") return <QuestsTree />;
+    return <QuestsList />;
+}
 
 interface QuestsClientPageProps {
     quests: FullQuest[];
@@ -45,7 +52,7 @@ export function QuestsClientPage({ quests, updatedAt }: QuestsClientPageProps) {
                 <SlidersIcon />
             </button>
 
-            <div className="max-w-6xl mx-auto flex gap-0 py-8">
+            <div className="container mx-auto flex gap-0 py-8">
                 {/* Left sidebar */}
                 <aside className="hidden lg:flex flex-col gap-6 w-56 shrink-0 sticky top-4 self-start max-h-[calc(100vh-3rem)] overflow-y-auto pb-8 pl-6 pr-5">
                     <QuestsSidebar />
@@ -64,7 +71,7 @@ export function QuestsClientPage({ quests, updatedAt }: QuestsClientPageProps) {
                     <div className="flex flex-col gap-3 pb-8">
                         <QuestsCharacterBar />
                         <QuestsFilterBar />
-                        <QuestsList />
+                        <QuestsContent />
                     </div>
                 </div>
             </div>

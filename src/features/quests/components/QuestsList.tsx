@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useQuestsContext } from "../QuestsContext";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { QuestCard } from "../QuestCard";
+import { QuestCard, type QuestRef } from "../QuestCard";
 import type { FullQuest } from "@/types";
 
 function TraderGroupHeader({
@@ -78,17 +78,24 @@ export function QuestsList() {
         return map;
     }, [quests]);
 
+    function toRef(id: string, fallbackName: string): QuestRef {
+        const q = questsById.get(id);
+        return {
+            id,
+            name: q?.name ?? fallbackName,
+            trader: q
+                ? { imageLink: q.trader.imageLink ?? null, image4xLink: q.trader.image4xLink ?? null, name: q.trader.name }
+                : { imageLink: null, image4xLink: null, name: "?" },
+        };
+    }
+
     function renderCard(quest: FullQuest) {
         return (
             <QuestCard
                 key={quest.id}
                 quest={quest}
-                prerequisiteNames={quest.taskRequirements.map(
-                    (req) => questsById.get(req.task.id)?.name ?? req.task.name,
-                )}
-                leadsToNames={(leadsToByQuestId.get(quest.id) ?? []).map(
-                    (id) => questsById.get(id)?.name ?? id,
-                )}
+                prerequisiteQuests={quest.taskRequirements.map((req) => toRef(req.task.id, req.task.name))}
+                leadsToQuests={(leadsToByQuestId.get(quest.id) ?? []).map((id) => toRef(id, id))}
             />
         );
     }
