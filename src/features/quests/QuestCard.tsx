@@ -26,6 +26,7 @@ import type {
     QuestObjectiveShootType,
 } from "@/types";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { cn } from "@/lib/utils";
 import { useQuestsContext } from "./QuestsContext";
 import { isQuestAvailableForProfile } from "./quest-sync";
 
@@ -40,6 +41,7 @@ interface QuestCardProps {
     prerequisiteQuests: QuestRef[];
     leadsToQuests: QuestRef[];
     attachedTop?: boolean;
+    className?: string;
     showDebugButton?: boolean;
     highlighted?: boolean;
     onQuestLinkClick?: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
@@ -214,6 +216,7 @@ export function QuestCard({
     prerequisiteQuests,
     leadsToQuests,
     attachedTop = false,
+    className,
     showDebugButton = false,
     highlighted = false,
     onQuestLinkClick,
@@ -245,35 +248,128 @@ export function QuestCard({
             ),
         ).values(),
     ];
+    const statusLabel = completed
+        ? "Completed"
+        : ignored
+          ? "Ignored"
+          : available
+            ? "Available"
+            : "Locked";
+    const mobileSummaryChips = [
+        ...(quest.kappaRequired
+            ? [
+                  {
+                      key: "kappa",
+                      className: "text-yellow-500/80 bg-yellow-500/10 border-yellow-500/20",
+                      label: "Kappa",
+                  },
+              ]
+            : []),
+        ...(quest.lightkeeperRequired
+            ? [
+                  {
+                      key: "lightkeeper",
+                      className: "text-teal-400/80 bg-teal-400/10 border-teal-400/20",
+                      label: "LK",
+                  },
+              ]
+            : []),
+        {
+            key: "status",
+            className: completed
+                ? "text-tarkov-green/80 bg-tarkov-green/10 border-tarkov-green/20"
+                : ignored
+                  ? "text-gray-400 bg-black/50 border-white/10"
+                  : available
+                    ? "text-blue-400/80 bg-blue-400/10 border-blue-400/20"
+                    : "text-red-300 bg-red-300/10 border-red-300/20",
+            label: statusLabel,
+        },
+    ];
+    const mobileMetadataChips = [
+        ...(quest.taskRequirements.length > 0
+            ? [
+                  {
+                      key: "requirements",
+                      className: "text-gray-400 bg-black/40 border-white/10",
+                      label: `${completedRequirementCount}/${quest.taskRequirements.length} prereqs`,
+                  },
+              ]
+            : []),
+        ...(quest.minPlayerLevel != null
+            ? [
+                  {
+                      key: "level",
+                      className: "text-gray-400 bg-black/40 border-white/10",
+                      label: `Level ${quest.minPlayerLevel}`,
+                  },
+              ]
+            : []),
+        ...(quest.map
+            ? [
+                  {
+                      key: "map",
+                      className: "text-gray-400 bg-black/40 border-white/10",
+                      label: quest.map.name,
+                  },
+              ]
+            : []),
+        ...(quest.factionName === "USEC" || quest.factionName === "BEAR"
+            ? [
+                  {
+                      key: "faction",
+                      className:
+                          quest.factionName === "USEC"
+                              ? "text-blue-400/80 bg-blue-400/10 border-blue-400/20"
+                              : "text-red-400/80 bg-red-400/10 border-red-400/20",
+                      label: quest.factionName,
+                  },
+              ]
+            : []),
+        ...quest.traderRequirements.map((req) => ({
+            key: `trader-${req.id}`,
+            className: "text-cyan-400/80 bg-cyan-400/10 border-cyan-400/20",
+            label: `${req.trader.name} LL${req.value}`,
+        })),
+        ...(quest.requiredPrestige
+            ? [
+                  {
+                      key: "prestige",
+                      className: "text-purple-400/80 bg-purple-400/10 border-purple-400/20",
+                      label: `P${quest.requiredPrestige.prestigeLevel}`,
+                  },
+              ]
+            : []),
+    ];
 
     return (
         <div
             id={`quest-${quest.id}`}
-            className={`border overflow-hidden transition-colors ${
-                attachedTop ? "rounded-b-md rounded-t-none" : "rounded-md"
-            } ${
+            className={cn(
+                "overflow-hidden border transition-colors",
+                attachedTop ? "rounded-b-md rounded-t-none" : "rounded-md",
                 highlighted
                     ? "border-tarkov-green shadow-[0_0_0_1px_rgba(157,255,0,0.18)]"
                     : completed
-                    ? "border-white/5 bg-black/10"
-                    : ignored
-                    ? "border-white/8 bg-black/20"
-                    : pinned
-                    ? "border-sky-500/20 bg-[linear-gradient(90deg,rgba(56,189,248,0.16)_0%,rgba(56,189,248,0.08)_30%,rgba(17,17,17,0.95)_72%)] hover:border-sky-400/30"
-                    : "border-white/10 hover:border-white/15"
-            } ${
+                      ? "border-white/5 bg-black/10"
+                      : ignored
+                        ? "border-white/8 bg-black/20"
+                        : pinned
+                          ? "border-sky-500/20 bg-[linear-gradient(90deg,rgba(56,189,248,0.16)_0%,rgba(56,189,248,0.08)_30%,rgba(17,17,17,0.95)_72%)] hover:border-sky-400/30"
+                          : "border-white/10 hover:border-white/15",
                 completed
                     ? "bg-black/10"
                     : ignored
-                    ? "bg-black/20"
-                    : pinned
-                    ? "bg-[linear-gradient(90deg,rgba(56,189,248,0.16)_0%,rgba(56,189,248,0.08)_30%,rgba(17,17,17,0.95)_72%)]"
-                    : "bg-[#111111]"
-            }`}
+                      ? "bg-black/20"
+                      : pinned
+                        ? "bg-[linear-gradient(90deg,rgba(56,189,248,0.16)_0%,rgba(56,189,248,0.08)_30%,rgba(17,17,17,0.95)_72%)]"
+                        : "bg-[#111111]",
+                className,
+            )}
         >
             {/* Header row */}
             <div
-                className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer"
+                className="flex cursor-pointer items-center gap-2 px-2.5 py-2.5 sm:gap-2.5 sm:px-3"
                 onClick={() => setExpanded((v) => !v)}
             >
                 {/* Completion toggle */}
@@ -282,7 +378,8 @@ export function QuestCard({
                         e.stopPropagation();
                         toggleQuestCompletion(quest.id);
                     }}
-                    className="group relative shrink-0 -ml-3 -my-2.5 w-11 h-11 flex items-center justify-center cursor-pointer"
+                    aria-label={completed ? "Mark quest incomplete" : "Mark quest complete"}
+                    className="group relative -my-2.5 -ml-2.5 flex h-11 w-11 shrink-0 items-center justify-center cursor-pointer sm:-ml-3"
                 >
                     <Circle
                         size={16}
@@ -314,16 +411,16 @@ export function QuestCard({
                 )}
 
                 {/* Quest name */}
-                <div className="flex flex-1 items-center gap-1.5 min-w-0">
+                <div className="flex min-w-0 flex-1 items-center gap-1.5">
                     <span
-                        className={`min-w-0 truncate text-sm font-medium leading-tight ${
+                        className={`min-w-0 flex-1 text-sm font-medium leading-tight line-clamp-2 sm:truncate ${
                             completed ? "text-gray-600 line-through" : "text-white"
                         }`}
                     >
                         {quest.name}
                     </span>
                     <span
-                        className={`${questMetaChipBaseClass} shrink-0 ${
+                        className={`${questMetaChipBaseClass} hidden shrink-0 sm:inline-flex ${
                             completed
                                 ? "text-tarkov-green/80 bg-tarkov-green/10 border-tarkov-green/20"
                                 : ignored
@@ -344,7 +441,7 @@ export function QuestCard({
                 </div>
 
                 {/* Badges */}
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="hidden shrink-0 items-center gap-1 sm:flex">
                     {quest.taskRequirements.length > 0 && (
                         <span
                             className={`${questMetaChipBaseClass} hidden text-gray-400 bg-black/40 border-white/10 md:inline-flex`}
@@ -419,7 +516,8 @@ export function QuestCard({
                             e.stopPropagation();
                             setDebugOpen((v) => !v);
                         }}
-                        className={`shrink-0 transition-colors ${
+                        aria-label={debugOpen ? "Hide raw quest data" : "Show raw quest data"}
+                        className={`hidden shrink-0 transition-colors sm:inline-flex ${
                             debugOpen ? "text-yellow-500" : "text-gray-700 hover:text-gray-500"
                         }`}
                         title="Toggle raw JSON"
@@ -433,7 +531,8 @@ export function QuestCard({
                         e.stopPropagation();
                         togglePinnedQuest(quest.id);
                     }}
-                    className={`shrink-0 rounded-md p-1.5 transition-all ${
+                    aria-label={pinned ? "Unpin quest" : "Pin quest"}
+                    className={`hidden shrink-0 rounded-md p-1.5 transition-all sm:inline-flex ${
                         pinned
                             ? "text-sky-300 bg-sky-500/12 shadow-[0_0_18px_rgba(56,189,248,0.24)]"
                             : "text-gray-500 hover:text-sky-300 hover:bg-sky-500/8"
@@ -448,7 +547,8 @@ export function QuestCard({
                         e.stopPropagation();
                         toggleIgnoredQuest(quest.id);
                     }}
-                    className={`shrink-0 rounded-md p-1.5 transition-all ${
+                    aria-label={ignored ? "Stop ignoring quest" : "Ignore quest"}
+                    className={`hidden shrink-0 rounded-md p-1.5 transition-all sm:inline-flex ${
                         ignored
                             ? "text-red-300 bg-red-500/12 shadow-[0_0_18px_rgba(239,68,68,0.18)]"
                             : "text-gray-500 hover:text-red-300 hover:bg-red-500/8"
@@ -459,15 +559,23 @@ export function QuestCard({
                 </button>
 
                 {expanded ? (
-                    <ChevronDown size={14} className="text-gray-500 shrink-0" />
+                    <ChevronDown
+                        size={14}
+                        aria-label="Collapse quest details"
+                        className="shrink-0 text-gray-500"
+                    />
                 ) : (
-                    <ChevronRight size={14} className="text-gray-500 shrink-0" />
+                    <ChevronRight
+                        size={14}
+                        aria-label="Expand quest details"
+                        className="shrink-0 text-gray-500"
+                    />
                 )}
             </div>
 
             {/* Compact item strip */}
-            {!expanded && allHandInItems.length > 0 && (
-                <div className="flex items-center gap-1 px-3 pb-2.5 pl-[52px]">
+            {!expanded && !completed && allHandInItems.length > 0 && (
+                <div className="flex items-center gap-1 px-2.5 pb-2.5 pl-[3rem] sm:px-3 sm:pl-[52px]">
                     {allHandInItems.slice(0, 10).map((item) => (
                         <div
                             key={item.id}
@@ -500,6 +608,69 @@ export function QuestCard({
             {/* Expanded content */}
             {expanded && (
                 <div className="border-t border-white/5 px-3 py-3 space-y-3">
+                    <div className="flex items-start justify-between gap-3 sm:hidden">
+                        <div className="flex flex-wrap gap-1">
+                            {mobileSummaryChips.map((chip) => (
+                                <span
+                                    key={chip.key}
+                                    className={`${questMetaChipBaseClass} ${chip.className}`}
+                                >
+                                    {chip.label}
+                                </span>
+                            ))}
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    togglePinnedQuest(quest.id);
+                                }}
+                                aria-label={pinned ? "Unpin quest" : "Pin quest"}
+                                className={`rounded-md p-1.5 transition-all ${
+                                    pinned
+                                        ? "text-sky-300 bg-sky-500/12 shadow-[0_0_18px_rgba(56,189,248,0.24)]"
+                                        : "text-gray-500 hover:text-sky-300 hover:bg-sky-500/8"
+                                }`}
+                                title={pinned ? "Unpin quest" : "Pin quest"}
+                            >
+                                <Pin size={16} className={pinned ? "fill-current" : ""} />
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleIgnoredQuest(quest.id);
+                                }}
+                                aria-label={ignored ? "Stop ignoring quest" : "Ignore quest"}
+                                className={`rounded-md p-1.5 transition-all ${
+                                    ignored
+                                        ? "text-red-300 bg-red-500/12 shadow-[0_0_18px_rgba(239,68,68,0.18)]"
+                                        : "text-gray-500 hover:text-red-300 hover:bg-red-500/8"
+                                }`}
+                                title={ignored ? "Stop ignoring quest" : "Ignore quest"}
+                            >
+                                <CircleSlash size={16} className={ignored ? "stroke-[2.25]" : ""} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {mobileMetadataChips.length > 0 && (
+                        <div className="space-y-1.5 sm:hidden">
+                            <span className="text-[10px] uppercase text-gray-600 font-bold">
+                                Details
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                                {mobileMetadataChips.map((chip) => (
+                                    <span
+                                        key={`details-${chip.key}`}
+                                        className={`${questMetaChipBaseClass} ${chip.className}`}
+                                    >
+                                        {chip.label}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Objectives */}
                     <div className="space-y-2">
                         <span className="text-[10px] uppercase tracking-wider text-gray-600 font-bold">

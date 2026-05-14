@@ -94,14 +94,14 @@ export function QuestsClientPage({
                 <SlidersIcon />
             </button>
 
-            <div className="container mx-auto flex gap-0 py-8">
+            <div className="container mx-auto flex gap-0 py-6 sm:py-8">
                 {/* Left sidebar */}
                 <aside className="hidden lg:flex flex-col gap-6 w-56 shrink-0 sticky top-4 self-start max-h-[calc(100vh-3rem)] overflow-y-auto pb-8 pl-6 pr-5">
                     <QuestsSidebar />
                 </aside>
 
                 {/* Main content */}
-                <div className="flex-1 min-w-0 px-6">
+                <div className="flex-1 min-w-0 px-4 sm:px-6">
                     <div className="mb-8 flex flex-col gap-1 border-b border-border-color pb-6">
                         <h1 className="text-3xl font-bold text-white tracking-tight">QUESTS</h1>
                         <p className="text-gray-400 mt-1 text-sm">

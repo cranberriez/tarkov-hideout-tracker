@@ -347,6 +347,7 @@ function CollapseHint({ count, onShow }: { count: number; onShow: () => void }) 
 const CONNECTOR_Y = 22;
 const BAR_OVERLAP = 4;
 const LINEAR_CHAIN_OFFSET = 14;
+const MOBILE_TREE_CARD_CLASS = "w-[17rem] max-w-[calc(100vw-2.75rem)] sm:w-auto sm:max-w-none";
 
 function QuestNodeCard({
     questId,
@@ -433,6 +434,7 @@ function QuestNodeCard({
                     toRef(id, id, questsById),
                 )}
                 attachedTop={showPrereqs && linkedPrerequisites.length > 0}
+                className={MOBILE_TREE_CARD_CLASS}
                 showDebugButton={showDebugButton}
                 highlighted={highlightedQuestId === quest.id}
                 onQuestLinkClick={onQuestLinkClick}
@@ -752,22 +754,24 @@ function TraderTreeSection({
                 </div>
             </button>
             {!isCollapsed && (
-                <div className="mt-1 mb-4">
-                    {rootIds.map((rootId) => (
-                        <div key={rootId} className="mt-1">
-                            <QuestTreeNode
-                                questId={rootId}
-                                depth={0}
-                                childrenOf={childrenOf}
-                                parentOf={parentOf}
-                                questsById={questsById}
-                                leadsToByQuestId={leadsToByQuestId}
-                                showDebugButton={showDebugButton}
-                                highlightedQuestId={highlightedQuestId}
-                                onQuestLinkClick={onQuestLinkClick}
-                            />
-                        </div>
-                    ))}
+                <div className="mt-1 mb-4 overflow-x-auto pb-2 sm:overflow-visible sm:pb-0">
+                    <div className="min-w-max pr-2 sm:min-w-0 sm:pr-0">
+                        {rootIds.map((rootId) => (
+                            <div key={rootId} className="mt-1">
+                                <QuestTreeNode
+                                    questId={rootId}
+                                    depth={0}
+                                    childrenOf={childrenOf}
+                                    parentOf={parentOf}
+                                    questsById={questsById}
+                                    leadsToByQuestId={leadsToByQuestId}
+                                    showDebugButton={showDebugButton}
+                                    highlightedQuestId={highlightedQuestId}
+                                    onQuestLinkClick={onQuestLinkClick}
+                                />
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
