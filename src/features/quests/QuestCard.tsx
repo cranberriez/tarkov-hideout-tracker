@@ -21,7 +21,6 @@ import type {
     FullQuestObjective,
     QuestObjectiveItemType,
     QuestObjectiveShootType,
-    QuestObjectiveExtractType,
 } from "@/types";
 import { useUserStore } from "@/lib/stores/useUserStore";
 
@@ -43,10 +42,6 @@ function isItemObjective(o: FullQuestObjective): o is QuestObjectiveItemType {
 
 function isShootObjective(o: FullQuestObjective): o is QuestObjectiveShootType {
     return o.type === "shoot" && "target" in o;
-}
-
-function isExtractObjective(o: FullQuestObjective): o is QuestObjectiveExtractType {
-    return o.type === "extract" && "exitName" in o;
 }
 
 function ObjectiveIcon({ type }: { type: string }) {
@@ -77,6 +72,7 @@ function ObjectiveIcon({ type }: { type: string }) {
 function ObjectiveRow({ objective }: { objective: FullQuestObjective }) {
     const item = isItemObjective(objective) ? objective : null;
     const shoot = isShootObjective(objective) ? objective : null;
+    const hasItemChoices = !!item && item.items.length > 1;
 
     return (
         <div className={`flex items-start gap-2 ${objective.optional ? "opacity-50" : ""}`}>
@@ -96,32 +92,54 @@ function ObjectiveRow({ objective }: { objective: FullQuestObjective }) {
                     </div>
                 )}
                 {item && item.items.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                        {item.items.map((itm) => (
-                            <div
-                                key={itm.id}
-                                className={`flex items-center gap-1 bg-black/40 rounded px-1.5 py-0.5 ${
-                                    item.foundInRaid
-                                        ? "ring-1 ring-orange-500"
-                                        : "border border-white/10"
-                                }`}
-                            >
-                                {(itm.iconLink ?? itm.gridImageLink) && (
-                                    <img
-                                        src={itm.iconLink ?? itm.gridImageLink ?? ""}
-                                        alt={itm.name}
-                                        className="w-4 h-4 object-contain"
-                                    />
-                                )}
-                                <span className="text-[10px] text-gray-300">{itm.name}</span>
-                                <span className="text-[10px] text-gray-500">×{item.count}</span>
+                    <div
+                        className={
+                            hasItemChoices
+                                ? "space-y-2 rounded-md border border-white/12 bg-white/4 px-2 py-2"
+                                : "flex flex-wrap gap-1"
+                        }
+                    >
+                        {hasItemChoices && (
+                            <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+                                <span>{item.count} of any of these</span>
                                 {item.foundInRaid && (
-                                    <span className="text-[9px] text-orange-400 font-medium">
+                                    <span className="rounded border border-orange-500/30 bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-400">
                                         FiR
                                     </span>
                                 )}
                             </div>
-                        ))}
+                        )}
+                        <div className="flex flex-wrap gap-1">
+                            {item.items.map((itm) => (
+                                <div
+                                    key={itm.id}
+                                    className={`flex items-center gap-1 bg-black/40 rounded px-1.5 py-0.5 ${
+                                        item.foundInRaid
+                                            ? "ring-1 ring-orange-500"
+                                            : "border border-white/10"
+                                    }`}
+                                >
+                                    {(itm.iconLink ?? itm.gridImageLink) && (
+                                        <img
+                                            src={itm.iconLink ?? itm.gridImageLink ?? ""}
+                                            alt={itm.name}
+                                            className="w-4 h-4 object-contain"
+                                        />
+                                    )}
+                                    <span className="text-[10px] text-gray-300">{itm.name}</span>
+                                    {!hasItemChoices && (
+                                        <span className="text-[10px] text-gray-500">
+                                            x{item.count}
+                                        </span>
+                                    )}
+                                    {!hasItemChoices && item.foundInRaid && (
+                                        <span className="text-[9px] text-orange-400 font-medium">
+                                            FiR
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
@@ -323,7 +341,7 @@ export function QuestCard({ quest, prerequisiteQuests, leadsToQuests }: QuestCar
                         <div
                             key={item.id}
                             className="relative"
-                            title={`${item.name} ×${item.count}${item.fir ? " (FiR)" : ""}`}
+                            title={`${item.name} x${item.count}${item.fir ? " (FiR)" : ""}`}
                         >
                             <img
                                 src={item.iconLink ?? item.gridImageLink ?? ""}
