@@ -14,6 +14,7 @@ import { ItemDetailHideoutRequirements } from "./ItemDetailHideoutRequirements";
 import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 import type { QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
 import { deriveQuestItemState } from "@/lib/utils/quest-item-index";
+import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 
 export interface ItemDetailModalProps {
     item: ItemDetails | null;
@@ -24,6 +25,7 @@ export interface ItemDetailModalProps {
     hiddenStations: Record<string, boolean>;
     completedRequirements: Record<string, boolean>;
     questItemIndex?: QuestItemIndexEntry[];
+    questAvailabilityQuests?: QuestAvailabilityQuest[];
 }
 
 export function ItemDetailModal({
@@ -35,6 +37,7 @@ export function ItemDetailModal({
     hiddenStations,
     completedRequirements,
     questItemIndex = [],
+    questAvailabilityQuests = [],
 }: ItemDetailModalProps) {
     const selectedItem = item;
     const selectedItemId = selectedItem?.id ?? "";
@@ -112,6 +115,9 @@ export function ItemDetailModal({
         pinnedQuests,
         gameMode,
         playerLevel,
+        prestigeLevel,
+        questTraderLoyaltyLevels,
+        questFaction,
         itemCounts,
         addItemCounts,
     } = useUserStore();
@@ -198,6 +204,10 @@ export function ItemDetailModal({
             ignoredQuests,
             pinnedQuests,
             playerLevel,
+            prestigeLevel,
+            faction: questFaction,
+            traderLoyaltyLevels: questTraderLoyaltyLevels,
+            quests: questAvailabilityQuests,
         });
     }, [
         selectedItem,
@@ -206,6 +216,10 @@ export function ItemDetailModal({
         ignoredQuests,
         pinnedQuests,
         playerLevel,
+        prestigeLevel,
+        questFaction,
+        questTraderLoyaltyLevels,
+        questAvailabilityQuests,
     ]);
 
     const [draftNonFir, setDraftNonFir] = useState(owned.have);

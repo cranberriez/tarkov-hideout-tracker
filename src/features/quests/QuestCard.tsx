@@ -18,7 +18,6 @@ import {
     Pin,
     CircleSlash,
     Lock,
-    SkipForward,
 } from "lucide-react";
 import type {
     FullQuest,
@@ -28,6 +27,7 @@ import type {
 } from "@/types";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useQuestsContext } from "./QuestsContext";
+import { isQuestAvailableForProfile } from "./quest-sync";
 
 export interface QuestRef {
     id: string;
@@ -213,7 +213,7 @@ export function QuestCard({
 }: QuestCardProps) {
     const [expanded, setExpanded] = useState(false);
     const [debugOpen, setDebugOpen] = useState(false);
-    const { completePrerequisitesForQuest } = useQuestsContext();
+    const { syncProfile, questsById } = useQuestsContext();
     const {
         completedQuests,
         ignoredQuests,
@@ -221,7 +221,6 @@ export function QuestCard({
         toggleQuestCompletion,
         toggleIgnoredQuest,
         togglePinnedQuest,
-        playerLevel,
     } = useUserStore();
     const completed = !!completedQuests[quest.id];
     const ignored = !!ignoredQuests[quest.id];
@@ -229,12 +228,7 @@ export function QuestCard({
     const completedRequirementCount = quest.taskRequirements.filter(
         (req) => completedQuests[req.task.id],
     ).length;
-    const available =
-        !completed &&
-        (quest.minPlayerLevel ?? 0) <= playerLevel &&
-        completedRequirementCount === quest.taskRequirements.length;
-    const hasIncompletePrerequisites =
-        completed && completedRequirementCount < quest.taskRequirements.length;
+    const available = isQuestAvailableForProfile(quest, syncProfile, questsById);
 
     const giveItemObjectives = quest.objectives.filter(isGiveItemObjective);
     const allHandInItems = [
@@ -298,18 +292,6 @@ export function QuestCard({
                         }`}
                     />
                 </button>
-                {hasIncompletePrerequisites && (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            completePrerequisitesForQuest(quest.id);
-                        }}
-                        className="shrink-0 rounded-md p-1.5 text-amber-300/85 transition-all hover:bg-amber-500/8 hover:text-amber-200"
-                        title="Complete any missing prerequisite quests for this completed quest"
-                    >
-                        <SkipForward size={15} strokeWidth={2.2} />
-                    </button>
-                )}
 
                 {/* Trader avatar */}
                 {quest.trader.image4xLink ?? quest.trader.imageLink ? (

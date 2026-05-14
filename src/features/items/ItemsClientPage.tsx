@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ItemDetails } from "@/types";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsList } from "@/features/items/components/ItemsList";
@@ -11,12 +11,14 @@ import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import type { QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
+import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 
 interface ItemsClientPageProps {
     questItemIndex: QuestItemIndexEntry[];
+    questAvailabilityQuests: QuestAvailabilityQuest[];
 }
 
-export function ItemsClientPage({ questItemIndex }: ItemsClientPageProps) {
+export function ItemsClientPage({ questItemIndex, questAvailabilityQuests }: ItemsClientPageProps) {
     const { stations, stationsUpdatedAt, items, itemsUpdatedAt } = useDataContext();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
@@ -44,6 +46,8 @@ export function ItemsClientPage({ questItemIndex }: ItemsClientPageProps) {
             });
         }
     }, [items, itemsUpdatedAt]);
+
+    const questAvailabilityQuestList = useMemo(() => questAvailabilityQuests, [questAvailabilityQuests]);
 
     return (
         <main className="container mx-auto px-6 py-8">
@@ -74,10 +78,17 @@ export function ItemsClientPage({ questItemIndex }: ItemsClientPageProps) {
 
             <div className="mb-8">
                 <ItemsControls onOpenSearch={() => setIsSearchOpen(true)} />
-                <ItemsStatsRow questItemIndex={questItemIndex} />
+                <ItemsStatsRow
+                    questItemIndex={questItemIndex}
+                    questAvailabilityQuests={questAvailabilityQuestList}
+                />
             </div>
 
-            <ItemsList onClickItem={setSelectedItem} questItemIndex={questItemIndex} />
+            <ItemsList
+                onClickItem={setSelectedItem}
+                questItemIndex={questItemIndex}
+                questAvailabilityQuests={questAvailabilityQuestList}
+            />
 
             <DataLastUpdated />
 
@@ -100,6 +111,7 @@ export function ItemsClientPage({ questItemIndex }: ItemsClientPageProps) {
                     hiddenStations={hiddenStations}
                     completedRequirements={completedRequirements}
                     questItemIndex={questItemIndex}
+                    questAvailabilityQuests={questAvailabilityQuestList}
                 />
             )}
         </main>

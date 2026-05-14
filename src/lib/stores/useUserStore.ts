@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Station } from "@/types";
-import type { SetupStation } from "@/lib/data/static-stations";
 
 export type GameEdition =
     | "Standard"
@@ -47,6 +46,7 @@ interface UserState {
     // Quest tracking
     playerLevel: number;
     prestigeLevel: number;
+    questTraderLoyaltyLevels: Record<string, number>;
 
     // Quest page filter preferences (persisted)
     questViewMode: "list" | "byTrader" | "tree";
@@ -113,6 +113,7 @@ interface UserState {
     setSetupOpen: (isOpen: boolean) => void;
     setPlayerLevel: (level: number) => void;
     setPrestigeLevel: (level: number) => void;
+    setQuestTraderLoyaltyLevel: (traderId: string, level: number) => void;
 
     setQuestViewMode: (mode: "list" | "byTrader" | "tree") => void;
     setQuestSelectedTraders: (ids: string[]) => void;
@@ -131,13 +132,13 @@ interface UserState {
     setItemShowPinnedQuestSection: (v: boolean) => void;
     setItemShowPinnedQuestOnly: (v: boolean) => void;
 
-    applyEditionBonuses: (stations: SetupStation[] | Station[]) => void;
+    applyEditionBonuses: (stations: Station[]) => void;
 
     importStationLevels: (levels: Record<string, number>) => void;
     resetAll: () => void;
 
     // Initialization helpers
-    initializeDefaults: (stations: SetupStation[] | Station[]) => void;
+    initializeDefaults: (stations: Station[]) => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -168,6 +169,7 @@ export const useUserStore = create<UserState>()(
 
             playerLevel: 1,
             prestigeLevel: 0,
+            questTraderLoyaltyLevels: {},
 
             questViewMode: "tree",
             questSelectedTraders: [],
@@ -287,6 +289,13 @@ export const useUserStore = create<UserState>()(
 
             setPlayerLevel: (level) => set({ playerLevel: level }),
             setPrestigeLevel: (level) => set({ prestigeLevel: level }),
+            setQuestTraderLoyaltyLevel: (traderId, level) =>
+                set((state) => ({
+                    questTraderLoyaltyLevels: {
+                        ...state.questTraderLoyaltyLevels,
+                        [traderId]: level,
+                    },
+                })),
 
             setQuestViewMode: (mode) => set({ questViewMode: mode }),
             setQuestSelectedTraders: (ids) => set({ questSelectedTraders: ids }),
@@ -453,6 +462,7 @@ export const useUserStore = create<UserState>()(
                     useCategorization: false,
                     playerLevel: 1,
                     prestigeLevel: 0,
+                    questTraderLoyaltyLevels: {},
                     questViewMode: "tree",
                     questSelectedTraders: [],
                     questFaction: null,
@@ -478,7 +488,7 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: "tarkov-hideout-user-state",
-            version: 4,
+            version: 5,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -516,6 +526,13 @@ export const useUserStore = create<UserState>()(
                         questShowIgnored: false,
                         itemShowPinnedQuestSection: true,
                         itemShowPinnedQuestOnly: false,
+                    };
+                }
+
+                if (version < 5) {
+                    nextState = {
+                        ...nextState,
+                        questTraderLoyaltyLevels: {},
                     };
                 }
 

@@ -7,6 +7,7 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { QuestCard, type QuestRef } from "../QuestCard";
 import { cn } from "@/lib/utils";
 import type { FullQuest } from "@/types";
+import { isQuestAvailableForProfile } from "../quest-sync";
 
 const QUEST_HIGHLIGHT_DURATION_MS = 30_000;
 const QUEST_SCROLL_TOP_OFFSET_VH = 0.3;
@@ -122,7 +123,8 @@ function LinkedQuestGroup({
     questsById: Map<string, FullQuest>;
     onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
-    const { completedQuests, playerLevel } = useUserStore();
+    const { completedQuests } = useUserStore();
+    const { syncProfile } = useQuestsContext();
 
     return (
         <div className="-mb-2 rounded-t-md border border-white/10 border-b-0 bg-black/30 px-2.5 pt-1.5 pb-3.5">
@@ -130,14 +132,8 @@ function LinkedQuestGroup({
                 {questRefs.map((questRef) => {
                     const linkedQuest = questsById.get(questRef.id);
                     const completed = !!completedQuests[questRef.id];
-                    const completedRequirementCount =
-                        linkedQuest?.taskRequirements.filter((req) => completedQuests[req.task.id])
-                            .length ?? 0;
                     const available =
-                        !!linkedQuest &&
-                        !completed &&
-                        (linkedQuest.minPlayerLevel ?? 0) <= playerLevel &&
-                        completedRequirementCount === linkedQuest.taskRequirements.length;
+                        !!linkedQuest && isQuestAvailableForProfile(linkedQuest, syncProfile, questsById);
                     const statusLabel = completed
                         ? "Active"
                         : available

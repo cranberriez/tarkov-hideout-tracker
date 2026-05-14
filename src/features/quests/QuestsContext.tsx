@@ -4,16 +4,19 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from "re
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { FullQuest } from "@/types";
 import { hasFirGiveItemObjectives, hasGiveItemObjectives } from "@/lib/utils/quest-item-index";
+import { compareQuestTradersByOrder } from "@/lib/cfg/questTraderOrder";
+import {
+    getVisibleSyncCandidatesForTrader as getVisibleSyncCandidatesForTraderFromProfile,
+    isQuestAvailableForProfile,
+    matchesFactionVisibility,
+    syncTraderProgress,
+    type FactionFilter,
+    type QuestSyncProfile,
+    type QuestSyncResult,
+} from "./quest-sync";
 
-export type FactionFilter = "USEC" | "BEAR";
-
-export function matchesFactionVisibility(
-    questFaction: string | null | undefined,
-    selectedFaction: FactionFilter | null,
-) {
-    if (selectedFaction === null) return true;
-    if (selectedFaction === "USEC") return questFaction !== "BEAR";
-    return questFaction !== "USEC";
+interface LastQuestSyncAction extends QuestSyncResult {
+    traderName: string;
 }
 
 interface QuestsContextValue {
@@ -32,6 +35,8 @@ interface QuestsContextValue {
     showIgnored: boolean;
     showDebug: boolean;
     searchQuery: string;
+    syncProfile: QuestSyncProfile;
+    lastQuestSyncAction: LastQuestSyncAction | null;
 
     filteredQuests: FullQuest[];
     questsById: Map<string, FullQuest>;
@@ -41,7 +46,6 @@ interface QuestsContextValue {
     traders: FullQuest["trader"][];
     allMaps: [string, string][];
     completedCount: number;
-    lastPrereqSyncSummary: { questName: string; completedCount: number } | null;
 
     toggleTrader: (id: string) => void;
     clearTraders: () => void;
@@ -61,8 +65,10 @@ interface QuestsContextValue {
     setShowIgnored: (value: boolean) => void;
     setShowDebug: (value: boolean) => void;
     setSearchQuery: (value: string) => void;
-    completePrerequisitesForQuest: (questId: string) => { completedIds: string[]; completedCount: number };
-    undoLastPrerequisiteSync: () => boolean;
+    getVisibleSyncCandidatesForTrader: (traderId: string) => FullQuest[];
+    syncTraderSelection: (traderId: string, selectedVisibleQuestIds: string[]) => LastQuestSyncAction;
+    undoLastQuestSync: () => boolean;
+    applyTraderSyncReviewFilters: (traderId: string) => void;
 }
 
 const QuestsContext = createContext<QuestsContextValue | null>(null);
@@ -90,19 +96,37 @@ function getTransitivePrereqs(rootIds: Set<string>, questsById: Map<string, Full
     return result;
 }
 
+function buildSyncProfile(state: ReturnType<typeof useUserStore.getState>): QuestSyncProfile {
+    return {
+        playerLevel: state.playerLevel,
+        prestigeLevel: state.prestigeLevel,
+        faction: state.questFaction,
+        traderLoyaltyLevels: state.questTraderLoyaltyLevels,
+        completedQuests: state.completedQuests,
+    };
+}
+
+function restoreRecordValues(
+    target: Record<string, boolean>,
+    previousValues: Record<string, boolean | undefined>,
+    ids: string[],
+) {
+    for (const id of ids) {
+        const previousValue = previousValues[id];
+        if (previousValue === undefined) delete target[id];
+        else target[id] = previousValue;
+    }
+}
+
 export function QuestsProvider({ quests, children }: { quests: FullQuest[]; children: ReactNode }) {
     const [searchQuery, setSearchQuery] = useState("");
-    const [lastPrereqSync, setLastPrereqSync] = useState<{
-        questId: string;
-        questName: string;
-        completedIds: string[];
-        previousCompleted: Record<string, boolean | undefined>;
-        previousHaveItems: Record<string, boolean | undefined>;
-    } | null>(null);
+    const [lastQuestSyncAction, setLastQuestSyncAction] = useState<LastQuestSyncAction | null>(null);
     const {
         completedQuests,
         ignoredQuests,
         playerLevel,
+        prestigeLevel,
+        questTraderLoyaltyLevels,
         questViewMode: viewMode,
         questSelectedTraders,
         questFaction: faction,
@@ -135,6 +159,17 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
     const selectedTraders = useMemo(() => new Set(questSelectedTraders), [questSelectedTraders]);
     const selectedMaps = useMemo(() => new Set(questSelectedMaps), [questSelectedMaps]);
 
+    const syncProfile = useMemo(
+        () => ({
+            playerLevel,
+            prestigeLevel,
+            faction,
+            traderLoyaltyLevels: questTraderLoyaltyLevels,
+            completedQuests,
+        }),
+        [completedQuests, faction, playerLevel, prestigeLevel, questTraderLoyaltyLevels],
+    );
+
     const questsById = useMemo(() => new Map(quests.map((q) => [q.id, q])), [quests]);
 
     const kappaQuestIds = useMemo(
@@ -164,7 +199,7 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
         for (const q of quests) {
             if (!map.has(q.trader.id)) map.set(q.trader.id, q.trader);
         }
-        return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+        return [...map.values()].sort((a, b) => compareQuestTradersByOrder(a.name, b.name));
     }, [quests]);
 
     const allMaps = useMemo(() => {
@@ -189,16 +224,10 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
 
             if (hideCompleted && completedQuests[quest.id]) return false;
             if (!showIgnored && ignoredQuests[quest.id]) return false;
-
-            if (showAvailableOnly) {
-                if ((quest.minPlayerLevel ?? 0) > playerLevel) return false;
-                if (!quest.taskRequirements.every((req) => completedQuests[req.task.id])) return false;
-            }
-
+            if (showAvailableOnly && !isQuestAvailableForProfile(quest, syncProfile, questsById)) return false;
             if (showPinnedOnly && !pinnedQuests[quest.id]) return false;
             if (showHandInOnly && !hasGiveItemObjectives(quest)) return false;
             if (showFirHandInOnly && !hasFirGiveItemObjectives(quest)) return false;
-
             if (selectedTraders.size > 0 && !selectedTraders.has(quest.trader.id)) return false;
             if (!matchesFactionVisibility(quest.factionName, faction)) return false;
 
@@ -207,31 +236,33 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
                     return false;
             }
 
-            if (selectedMaps.size > 0 && (!quest.map || !selectedMaps.has(quest.map.normalizedName)))
+            if (selectedMaps.size > 0 && (!quest.map || !selectedMaps.has(quest.map.normalizedName))) {
                 return false;
+            }
 
             return true;
         });
     }, [
         quests,
+        searchQuery,
         hideCompleted,
+        completedQuests,
+        showIgnored,
+        ignoredQuests,
         showAvailableOnly,
+        syncProfile,
+        questsById,
+        showPinnedOnly,
+        pinnedQuests,
+        showHandInOnly,
+        showFirHandInOnly,
         selectedTraders,
         faction,
         showKappa,
         showLightkeeper,
-        selectedMaps,
-        completedQuests,
-        ignoredQuests,
-        playerLevel,
-        pinnedQuests,
         kappaQuestIds,
         lightkeeperQuestIds,
-        showHandInOnly,
-        showFirHandInOnly,
-        showPinnedOnly,
-        showIgnored,
-        searchQuery,
+        selectedMaps,
     ]);
 
     const completedCount = useMemo(
@@ -257,79 +288,76 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
 
     const clearMaps = () => setQuestSelectedMaps([]);
 
-    const toggleFaction = (f: FactionFilter) => setQuestFaction(faction === f ? null : f);
+    const toggleFaction = (nextFaction: FactionFilter) => setQuestFaction(faction === nextFaction ? null : nextFaction);
     const toggleKappa = () => setQuestShowKappa(!showKappa);
     const toggleLightkeeper = () => setQuestShowLightkeeper(!showLightkeeper);
-    const completePrerequisitesForQuest = (questId: string) => {
-        const ids = getTransitivePrereqs(new Set([questId]), questsById);
-        ids.delete(questId);
-        const state = useUserStore.getState();
-        const completedIds = [...ids].filter((id) => !state.completedQuests[id]);
-        const questName = questsById.get(questId)?.name ?? "Selected quest";
 
-        if (completedIds.length === 0) {
-            setLastPrereqSync({
-                questId,
-                questName,
-                completedIds: [],
-                previousCompleted: {},
-                previousHaveItems: {},
+    const getVisibleSyncCandidatesForTrader = (traderId: string) =>
+        getVisibleSyncCandidatesForTraderFromProfile(quests, traderId, syncProfile);
+
+    const syncTraderSelection = (traderId: string, selectedVisibleQuestIds: string[]) => {
+        const state = useUserStore.getState();
+        const result = syncTraderProgress({
+            quests,
+            traderId,
+            selectedVisibleQuestIds,
+            profile: buildSyncProfile(state),
+            questsWithItems: state.questsWithItems,
+        });
+
+        if (result.completedIds.length > 0) {
+            useUserStore.setState({
+                completedQuests: result.nextCompletedQuests,
+                questsWithItems: result.nextQuestsWithItems,
             });
-            return { completedIds, completedCount: 0 };
         }
 
-        const previousCompleted = Object.fromEntries(
-            completedIds.map((id) => [id, state.completedQuests[id]]),
-        );
-        const previousHaveItems = Object.fromEntries(
-            completedIds.map((id) => [id, state.questsWithItems[id]]),
-        );
-
-        useUserStore.setState((current) => ({
-            completedQuests: {
-                ...current.completedQuests,
-                ...Object.fromEntries(completedIds.map((id) => [id, true])),
-            },
-            questsWithItems: {
-                ...current.questsWithItems,
-                ...Object.fromEntries(completedIds.map((id) => [id, false])),
-            },
-        }));
-
-        setLastPrereqSync({
-            questId,
-            questName,
-            completedIds,
-            previousCompleted,
-            previousHaveItems,
-        });
-
-        return { completedIds, completedCount: completedIds.length };
+        const action = {
+            ...result,
+            traderName: quests.find((quest) => quest.trader.id === traderId)?.trader.name ?? "Trader",
+        };
+        setLastQuestSyncAction(action);
+        return action;
     };
 
-    const undoLastPrerequisiteSync = () => {
-        if (!lastPrereqSync || lastPrereqSync.completedIds.length === 0) return false;
+    const undoLastQuestSync = () => {
+        if (!lastQuestSyncAction || lastQuestSyncAction.completedIds.length === 0) return false;
 
         useUserStore.setState((state) => {
-            const completedQuests = { ...state.completedQuests };
-            const questsWithItems = { ...state.questsWithItems };
+            const completedQuestsDraft = { ...state.completedQuests };
+            const questsWithItemsDraft = { ...state.questsWithItems };
 
-            for (const id of lastPrereqSync.completedIds) {
-                const prevCompleted = lastPrereqSync.previousCompleted[id];
-                const prevHaveItems = lastPrereqSync.previousHaveItems[id];
+            restoreRecordValues(
+                completedQuestsDraft,
+                lastQuestSyncAction.previousCompletedQuests,
+                lastQuestSyncAction.completedIds,
+            );
+            restoreRecordValues(
+                questsWithItemsDraft,
+                lastQuestSyncAction.previousQuestsWithItems,
+                lastQuestSyncAction.completedIds,
+            );
 
-                if (prevCompleted === undefined) delete completedQuests[id];
-                else completedQuests[id] = prevCompleted;
-
-                if (prevHaveItems === undefined) delete questsWithItems[id];
-                else questsWithItems[id] = prevHaveItems;
-            }
-
-            return { completedQuests, questsWithItems };
+            return {
+                completedQuests: completedQuestsDraft,
+                questsWithItems: questsWithItemsDraft,
+            };
         });
 
-        setLastPrereqSync(null);
+        setLastQuestSyncAction(null);
         return true;
+    };
+
+    const applyTraderSyncReviewFilters = (traderId: string) => {
+        setQuestSelectedTraders([traderId]);
+        setQuestSelectedMaps([]);
+        setHideCompleted(false);
+        setShowAvailableOnly(true);
+        setShowHandInOnly(false);
+        setShowFirHandInOnly(false);
+        setShowPinnedOnly(false);
+        setShowIgnored(true);
+        setSearchQuery("");
     };
 
     return (
@@ -349,6 +377,8 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
                 showIgnored,
                 showDebug,
                 searchQuery,
+                syncProfile,
+                lastQuestSyncAction,
                 filteredQuests,
                 questsById,
                 kappaQuestIds,
@@ -357,12 +387,6 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
                 traders,
                 allMaps,
                 completedCount,
-                lastPrereqSyncSummary: lastPrereqSync
-                    ? {
-                          questName: lastPrereqSync.questName,
-                          completedCount: lastPrereqSync.completedIds.length,
-                      }
-                    : null,
                 toggleTrader,
                 clearTraders,
                 toggleMap,
@@ -380,11 +404,15 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
                 setShowIgnored,
                 setShowDebug,
                 setSearchQuery,
-                completePrerequisitesForQuest,
-                undoLastPrerequisiteSync,
+                getVisibleSyncCandidatesForTrader,
+                syncTraderSelection,
+                undoLastQuestSync,
+                applyTraderSyncReviewFilters,
             }}
         >
             {children}
         </QuestsContext.Provider>
     );
 }
+
+export { matchesFactionVisibility };

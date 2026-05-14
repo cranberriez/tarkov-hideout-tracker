@@ -1,4 +1,10 @@
 import type { FullQuest, FullQuestObjective, Quest, QuestObjectiveItemType, QuestPrerequisite } from "@/types";
+import {
+    buildQuestAvailabilityMap,
+    isQuestAvailableForProfile,
+    type QuestAvailabilityProfile,
+    type QuestAvailabilityQuest,
+} from "./quest-availability.ts";
 
 type QuestWithGiveItemData = Pick<
     Quest,
@@ -72,6 +78,10 @@ export interface QuestItemDeriveOptions {
     ignoredQuests: Record<string, boolean>;
     pinnedQuests: Record<string, boolean>;
     playerLevel: number;
+    prestigeLevel: number;
+    faction: QuestAvailabilityProfile["faction"];
+    traderLoyaltyLevels: Record<string, number>;
+    quests: QuestAvailabilityQuest[];
 }
 
 function isGiveItemObjective(
@@ -239,21 +249,31 @@ export function deriveQuestItemState(
     options: QuestItemDeriveOptions,
 ): DerivedQuestItemState {
     const { completedQuests, ignoredQuests, pinnedQuests, playerLevel } = options;
+    const questAvailabilityById = buildQuestAvailabilityMap(options.quests);
+    const availabilityProfile: QuestAvailabilityProfile = {
+        completedQuests,
+        playerLevel,
+        prestigeLevel: options.prestigeLevel,
+        faction: options.faction,
+        traderLoyaltyLevels: options.traderLoyaltyLevels,
+    };
 
     const relatedQuests = entry.quests
         .map<DerivedQuestItemQuest>((quest) => {
             const isCompleted = !!completedQuests[quest.questId];
             const isIgnored = !!ignoredQuests[quest.questId];
             const isPinned = !!pinnedQuests[quest.questId];
-            const meetsLevel = (quest.minPlayerLevel ?? 0) <= playerLevel;
-            const prereqsMet = quest.prerequisiteQuestIds.every((id) => completedQuests[id]);
+            const availabilityQuest = questAvailabilityById.get(quest.questId);
+            const isAvailable =
+                !!availabilityQuest &&
+                isQuestAvailableForProfile(availabilityQuest, availabilityProfile, questAvailabilityById);
 
             let status: DerivedQuestItemStatus = "future";
             if (isCompleted) {
                 status = "completed";
             } else if (isIgnored) {
                 status = "ignored";
-            } else if (meetsLevel && prereqsMet) {
+            } else if (isAvailable) {
                 status = "available";
             }
 

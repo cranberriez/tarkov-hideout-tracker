@@ -6,12 +6,14 @@ import { useDataContext } from "@/app/(data)/_dataContext";
 import { poolItems } from "@/lib/utils/item-pooling";
 import type { QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
 import { deriveQuestItemStates } from "@/lib/utils/quest-item-index";
+import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 
 interface ItemsStatsRowProps {
     questItemIndex: QuestItemIndexEntry[];
+    questAvailabilityQuests: QuestAvailabilityQuest[];
 }
 
-export function ItemsStatsRow({ questItemIndex }: ItemsStatsRowProps) {
+export function ItemsStatsRow({ questItemIndex, questAvailabilityQuests }: ItemsStatsRowProps) {
     const { stations } = useDataContext();
     const {
         stationLevels,
@@ -23,6 +25,9 @@ export function ItemsStatsRow({ questItemIndex }: ItemsStatsRowProps) {
         ignoredQuests,
         pinnedQuests,
         playerLevel,
+        prestigeLevel,
+        questTraderLoyaltyLevels,
+        questFaction,
         itemCounts,
     } = useUserStore();
 
@@ -33,8 +38,22 @@ export function ItemsStatsRow({ questItemIndex }: ItemsStatsRowProps) {
                 ignoredQuests,
                 pinnedQuests,
                 playerLevel,
+                prestigeLevel,
+                faction: questFaction,
+                traderLoyaltyLevels: questTraderLoyaltyLevels,
+                quests: questAvailabilityQuests,
             }),
-        [questItemIndex, completedQuests, ignoredQuests, pinnedQuests, playerLevel],
+        [
+            questItemIndex,
+            completedQuests,
+            ignoredQuests,
+            pinnedQuests,
+            playerLevel,
+            prestigeLevel,
+            questFaction,
+            questTraderLoyaltyLevels,
+            questAvailabilityQuests,
+        ],
     );
 
     const mergedPool = useMemo(() => {

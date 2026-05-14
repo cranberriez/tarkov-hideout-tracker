@@ -9,10 +9,12 @@ import type { DerivedQuestItemState, QuestItemIndexEntry } from "@/lib/utils/que
 import { compareQuestItemState, deriveQuestItemStates } from "@/lib/utils/quest-item-index";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
+import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 
 interface ItemsListProps {
     onClickItem: (item: ItemDetails) => void;
     questItemIndex: QuestItemIndexEntry[];
+    questAvailabilityQuests: QuestAvailabilityQuest[];
 }
 
 type MergedItem = {
@@ -32,7 +34,7 @@ type MergedItem = {
 
 type DisplayItem = MergedItem & { details: ItemDetails };
 
-export function ItemsList({ onClickItem, questItemIndex }: ItemsListProps) {
+export function ItemsList({ onClickItem, questItemIndex, questAvailabilityQuests }: ItemsListProps) {
     const { stations, items } = useDataContext();
     const { marketPricesByMode } = usePriceDataContext();
 
@@ -54,6 +56,9 @@ export function ItemsList({ onClickItem, questItemIndex }: ItemsListProps) {
         ignoredQuests,
         pinnedQuests,
         playerLevel,
+        prestigeLevel,
+        questTraderLoyaltyLevels,
+        questFaction,
         itemShowPinnedQuestSection,
         itemShowPinnedQuestOnly,
     } = useUserStore();
@@ -75,8 +80,22 @@ export function ItemsList({ onClickItem, questItemIndex }: ItemsListProps) {
                 ignoredQuests,
                 pinnedQuests,
                 playerLevel,
+                prestigeLevel,
+                faction: questFaction,
+                traderLoyaltyLevels: questTraderLoyaltyLevels,
+                quests: questAvailabilityQuests,
             }),
-        [questItemIndex, completedQuests, ignoredQuests, pinnedQuests, playerLevel],
+        [
+            questItemIndex,
+            completedQuests,
+            ignoredQuests,
+            pinnedQuests,
+            playerLevel,
+            prestigeLevel,
+            questFaction,
+            questTraderLoyaltyLevels,
+            questAvailabilityQuests,
+        ],
     );
 
     const questStateByItemId = useMemo(
