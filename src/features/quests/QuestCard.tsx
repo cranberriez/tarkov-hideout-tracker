@@ -85,7 +85,13 @@ function ObjectiveIcon({ type }: { type: string }) {
     }
 }
 
-function ObjectiveRow({ objective }: { objective: FullQuestObjective }) {
+function ObjectiveRow({
+    objective,
+    onItemClick,
+}: {
+    objective: FullQuestObjective;
+    onItemClick?: (itemId: string) => void;
+}) {
     const item = isItemObjective(objective) ? objective : null;
     const shoot = isShootObjective(objective) ? objective : null;
     const hasItemChoices = !!item && item.items.length > 1;
@@ -129,7 +135,8 @@ function ObjectiveRow({ objective }: { objective: FullQuestObjective }) {
                             {item.items.map((itm) => (
                                 <div
                                     key={itm.id}
-                                    className="flex items-center gap-1.5 rounded border border-white/10 bg-black/40 px-2 py-1"
+                                    className={`flex items-center gap-1.5 rounded border border-white/10 bg-black/40 px-2 py-1 ${onItemClick ? "cursor-pointer hover:border-white/25 transition-colors" : ""}`}
+                                    onClick={onItemClick ? (e) => { e.stopPropagation(); onItemClick(itm.id); } : undefined}
                                 >
                                     {(itm.iconLink ?? itm.gridImageLink) && (
                                         <span
@@ -213,7 +220,7 @@ export function QuestCard({
 }: QuestCardProps) {
     const [expanded, setExpanded] = useState(false);
     const [debugOpen, setDebugOpen] = useState(false);
-    const { syncProfile, questsById } = useQuestsContext();
+    const { syncProfile, questsById, onItemClick } = useQuestsContext();
     const {
         completedQuests,
         ignoredQuests,
@@ -464,13 +471,16 @@ export function QuestCard({
                     {allHandInItems.slice(0, 10).map((item) => (
                         <div
                             key={item.id}
-                            className="relative"
-                            title={`${item.name} x${item.count}${item.fir ? " (FiR)" : ""}`}
+                            className={`relative ${onItemClick ? "cursor-pointer" : ""}`}
+                            title={`${item.name} x${item.count}${item.fir ? " (FiR)" : ""}${onItemClick ? " — click to view" : ""}`}
+                            onClick={onItemClick ? (e) => { e.stopPropagation(); onItemClick(item.id); } : undefined}
                         >
                             <img
                                 src={item.iconLink ?? item.gridImageLink ?? ""}
                                 alt={item.name}
-                                className={`w-8 h-8 object-contain rounded bg-black/40 ${
+                                className={`w-8 h-8 object-contain rounded bg-black/40 transition-opacity ${
+                                    onItemClick ? "hover:opacity-75" : ""
+                                } ${
                                     item.fir
                                         ? "ring-1 ring-orange-500"
                                         : "border border-white/10"
@@ -497,7 +507,7 @@ export function QuestCard({
                         </span>
                         <div className="space-y-1.5">
                             {quest.objectives.map((obj) => (
-                                <ObjectiveRow key={obj.id} objective={obj} />
+                                <ObjectiveRow key={obj.id} objective={obj} onItemClick={onItemClick ?? undefined} />
                             ))}
                         </div>
                     </div>

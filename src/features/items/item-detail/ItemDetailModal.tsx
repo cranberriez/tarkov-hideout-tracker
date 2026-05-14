@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { ItemDetails, Station } from "@/types";
-import { X } from "lucide-react";
+import { X, Pin, CircleSlash, CheckCircle, Circle, ExternalLink } from "lucide-react";
+import Link from "next/link";
 import { stationOrder } from "@/lib/cfg/stationOrder";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { formatRelativeUpdatedAt } from "@/lib/utils/format-time";
@@ -120,6 +121,9 @@ export function ItemDetailModal({
         questFaction,
         itemCounts,
         addItemCounts,
+        toggleQuestCompletion,
+        toggleIgnoredQuest,
+        togglePinnedQuest,
     } = useUserStore();
     const mode = gameMode === "PVE" ? "PVE" : "PVP";
     const priceBucket = marketPricesByMode[mode];
@@ -318,23 +322,33 @@ export function ItemDetailModal({
                             </div>
 
                             <div className="space-y-2">
-                                {questItemState.relatedQuests.map((quest) => (
-                                    <div
-                                        key={quest.questId}
-                                        className="flex flex-col gap-2 rounded-md border border-white/8 bg-black/20 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
-                                    >
-                                        <div className="min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <span className="truncate text-sm font-medium text-white">
+                                {questItemState.relatedQuests.map((quest) => {
+                                    const isCompleted = !!completedQuests[quest.questId];
+                                    const isIgnored = !!ignoredQuests[quest.questId];
+                                    const isPinned = !!pinnedQuests[quest.questId];
+                                    return (
+                                        <div
+                                            key={quest.questId}
+                                            className="rounded-md border border-white/8 bg-black/20 px-3 py-2"
+                                        >
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                {/* Complete toggle */}
+                                                <button
+                                                    onClick={() => toggleQuestCompletion(quest.questId)}
+                                                    className="shrink-0 text-gray-600 hover:text-tarkov-green transition-colors"
+                                                    title={isCompleted ? "Mark incomplete" : "Mark complete"}
+                                                >
+                                                    {isCompleted
+                                                        ? <CheckCircle size={14} className="text-tarkov-green" />
+                                                        : <Circle size={14} />}
+                                                </button>
+
+                                                <span className={`truncate text-sm font-medium ${isCompleted ? "line-through text-gray-600" : "text-white"}`}>
                                                     {quest.questName}
                                                 </span>
-                                                {quest.isPinned && (
-                                                    <span className="rounded border border-sky-500/20 bg-sky-500/10 px-1.5 py-0.5 text-[10px] text-sky-300">
-                                                        Pinned
-                                                    </span>
-                                                )}
+
                                                 <span
-                                                    className={`rounded border px-1.5 py-0.5 text-[10px] ${
+                                                    className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] ${
                                                         quest.status === "available"
                                                             ? "border-blue-400/20 bg-blue-400/10 text-blue-300"
                                                             : quest.status === "future"
@@ -346,7 +360,47 @@ export function ItemDetailModal({
                                                 >
                                                     {quest.status}
                                                 </span>
+
+                                                <div className="ml-auto flex shrink-0 items-center gap-1">
+                                                    {/* Count badges */}
+                                                    <span className="rounded border border-white/10 bg-black/30 px-1.5 py-0.5 text-[10px] text-gray-400">
+                                                        x{quest.requiredCount}
+                                                    </span>
+                                                    {quest.requiredFirCount > 0 && (
+                                                        <span className="rounded border border-orange-500/20 bg-orange-500/10 px-1.5 py-0.5 text-[10px] text-orange-300">
+                                                            FiR x{quest.requiredFirCount}
+                                                        </span>
+                                                    )}
+
+                                                    {/* Pin */}
+                                                    <button
+                                                        onClick={() => togglePinnedQuest(quest.questId)}
+                                                        className={`rounded p-1 transition-colors ${isPinned ? "text-sky-300" : "text-gray-600 hover:text-sky-300"}`}
+                                                        title={isPinned ? "Unpin quest" : "Pin quest"}
+                                                    >
+                                                        <Pin size={12} className={isPinned ? "fill-current" : ""} />
+                                                    </button>
+
+                                                    {/* Ignore */}
+                                                    <button
+                                                        onClick={() => toggleIgnoredQuest(quest.questId)}
+                                                        className={`rounded p-1 transition-colors ${isIgnored ? "text-red-300" : "text-gray-600 hover:text-red-300"}`}
+                                                        title={isIgnored ? "Stop ignoring" : "Ignore quest"}
+                                                    >
+                                                        <CircleSlash size={12} />
+                                                    </button>
+
+                                                    {/* View on quests page */}
+                                                    <Link
+                                                        href={`/quests#quest-${quest.questId}`}
+                                                        className="rounded p-1 text-gray-600 hover:text-gray-300 transition-colors"
+                                                        title="View on quests page"
+                                                    >
+                                                        <ExternalLink size={12} />
+                                                    </Link>
+                                                </div>
                                             </div>
+
                                             <div className="mt-1 text-xs text-gray-500">
                                                 {quest.traderName} · depth {quest.prerequisiteDepth}
                                                 {quest.minPlayerLevel != null
@@ -354,19 +408,8 @@ export function ItemDetailModal({
                                                     : ""}
                                             </div>
                                         </div>
-
-                                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                                            <span className="rounded border border-white/10 bg-black/30 px-2 py-1">
-                                                x{quest.requiredCount}
-                                            </span>
-                                            {quest.requiredFirCount > 0 && (
-                                                <span className="rounded border border-orange-500/20 bg-orange-500/10 px-2 py-1 text-orange-300">
-                                                    FiR x{quest.requiredFirCount}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </section>
                     )}

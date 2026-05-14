@@ -10,10 +10,12 @@ interface ItemSearchModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSelect: (item: ItemDetails) => void;
+	itemPool?: ItemDetails[];
 }
 
-export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalProps) {
+export function ItemSearchModal({ isOpen, onClose, onSelect, itemPool }: ItemSearchModalProps) {
 	const { items } = useDataContext();
+	const searchItems = itemPool ?? items;
 	const [query, setQuery] = useState("");
 
 	// Focus input on open
@@ -40,12 +42,11 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
 	};
 
 	const filteredItems = useMemo(() => {
-		if (!items || !query) return [];
+		if (!searchItems || !query) return [];
 
 		const lowerQuery = query.toLowerCase();
-		const allItems = items;
 
-		return allItems
+		return searchItems
 			.filter((item) => item.name.toLowerCase().includes(lowerQuery))
 			.sort((a, b) => {
 				// Prioritize exact matches or starts with
@@ -61,7 +62,7 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
 				return aName.localeCompare(bName);
 			})
 			.slice(0, 50); // Limit results for performance
-	}, [items, query]);
+	}, [searchItems, query]);
 
 	if (!isOpen) return null;
 

@@ -71,6 +71,7 @@ interface QuestsContextValue {
     syncTraderSelection: (traderId: string, selectedVisibleQuestIds: string[]) => LastQuestSyncAction;
     undoLastQuestSync: () => boolean;
     applyTraderSyncReviewFilters: (traderId: string) => void;
+    onItemClick: ((itemId: string) => void) | null;
 }
 
 const QuestsContext = createContext<QuestsContextValue | null>(null);
@@ -120,7 +121,15 @@ function restoreRecordValues(
     }
 }
 
-export function QuestsProvider({ quests, children }: { quests: FullQuest[]; children: ReactNode }) {
+export function QuestsProvider({
+    quests,
+    children,
+    onItemClick,
+}: {
+    quests: FullQuest[];
+    children: ReactNode;
+    onItemClick?: (itemId: string) => void;
+}) {
     const [searchQuery, setSearchQuery] = useState("");
     const [lastQuestSyncAction, setLastQuestSyncAction] = useState<LastQuestSyncAction | null>(null);
     const {
@@ -414,6 +423,7 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
                 syncTraderSelection,
                 undoLastQuestSync,
                 applyTraderSyncReviewFilters,
+                onItemClick: onItemClick ?? null,
             }}
         >
             {children}

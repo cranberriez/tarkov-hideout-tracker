@@ -49,6 +49,26 @@ export function ItemsClientPage({ questItemIndex, questAvailabilityQuests }: Ite
 
     const questAvailabilityQuestList = useMemo(() => questAvailabilityQuests, [questAvailabilityQuests]);
 
+    // Merged pool: hideout items + any quest-only items not already present
+    const allSearchableItems = useMemo(() => {
+        const pool: Record<string, ItemDetails> = {};
+        for (const item of (items ?? [])) {
+            pool[item.id] = item;
+        }
+        for (const entry of questItemIndex) {
+            if (!pool[entry.itemId]) {
+                pool[entry.itemId] = {
+                    id: entry.itemId,
+                    name: entry.name,
+                    normalizedName: entry.normalizedName,
+                    iconLink: entry.iconLink,
+                    gridImageLink: entry.gridImageLink,
+                };
+            }
+        }
+        return Object.values(pool);
+    }, [items, questItemIndex]);
+
     return (
         <main className="container mx-auto px-6 py-8">
             <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -99,6 +119,7 @@ export function ItemsClientPage({ questItemIndex, questAvailabilityQuests }: Ite
                     setSelectedItem(item);
                     setIsSearchOpen(false);
                 }}
+                itemPool={allSearchableItems}
             />
 
             {selectedItem && (

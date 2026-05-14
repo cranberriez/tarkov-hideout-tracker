@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import type { FullQuest } from "@/types";
+import { useMemo, useState } from "react";
+import type { FullQuest, ItemDetails } from "@/types";
 import { QuestsProvider, useQuestsContext } from "./QuestsContext";
 import { QuestsSidebar } from "./components/QuestsSidebar";
 import { QuestsCharacterBar } from "./components/QuestsCharacterBar";
@@ -10,6 +10,11 @@ import { QuestsList } from "./components/QuestsList";
 import { QuestsSyncBar } from "./components/QuestsSyncBar";
 import { QuestsTree } from "./components/QuestsTree";
 import { SlidersIcon } from "./components/quest-ui";
+import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
+import { useDataContext } from "@/app/(data)/_dataContext";
+import { useUserStore } from "@/lib/stores/useUserStore";
+import type { QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
+import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 
 function QuestsContent() {
     const { viewMode } = useQuestsContext();
@@ -20,14 +25,50 @@ function QuestsContent() {
 interface QuestsClientPageProps {
     quests: FullQuest[];
     updatedAt: number;
+    questItemIndex: QuestItemIndexEntry[];
+    questAvailabilityQuests: QuestAvailabilityQuest[];
 }
 
-export function QuestsClientPage({ quests, updatedAt }: QuestsClientPageProps) {
+export function QuestsClientPage({
+    quests,
+    updatedAt,
+    questItemIndex,
+    questAvailabilityQuests,
+}: QuestsClientPageProps) {
     void updatedAt;
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+
+    const { stations } = useDataContext();
+    const { stationLevels, hiddenStations, completedRequirements } = useUserStore();
+
+    // Build a lookup of ItemDetails from quest objectives so item modal can open any quest item
+    const questItemDetails = useMemo(() => {
+        const details: Record<string, ItemDetails> = {};
+        for (const quest of quests) {
+            for (const objective of quest.objectives) {
+                if ("items" in objective && Array.isArray(objective.items)) {
+                    for (const item of objective.items) {
+                        if (!details[item.id]) {
+                            details[item.id] = {
+                                id: item.id,
+                                name: item.name,
+                                normalizedName: item.normalizedName,
+                                iconLink: item.iconLink ?? undefined,
+                                gridImageLink: item.gridImageLink ?? undefined,
+                            };
+                        }
+                    }
+                }
+            }
+        }
+        return details;
+    }, [quests]);
+
+    const selectedItem = selectedItemId ? (questItemDetails[selectedItemId] ?? null) : null;
 
     return (
-        <QuestsProvider quests={quests}>
+        <QuestsProvider quests={quests} onItemClick={setSelectedItemId}>
             {/* Mobile sidebar overlay */}
             {sidebarOpen && (
                 <div
@@ -77,6 +118,18 @@ export function QuestsClientPage({ quests, updatedAt }: QuestsClientPageProps) {
                     </div>
                 </div>
             </div>
+
+            <ItemDetailModal
+                item={selectedItem}
+                isOpen={!!selectedItem}
+                onClose={() => setSelectedItemId(null)}
+                stations={stations ?? []}
+                stationLevels={stationLevels}
+                hiddenStations={hiddenStations}
+                completedRequirements={completedRequirements}
+                questItemIndex={questItemIndex}
+                questAvailabilityQuests={questAvailabilityQuests}
+            />
         </QuestsProvider>
     );
 }
