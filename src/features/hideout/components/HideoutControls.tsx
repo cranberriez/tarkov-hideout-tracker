@@ -1,7 +1,7 @@
 "use client";
 
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { Rows3, Grid2x2, Rows2 } from "lucide-react";
+import { Grid2x2, Rows2 } from "lucide-react";
 
 export function HideoutControls() {
     const {

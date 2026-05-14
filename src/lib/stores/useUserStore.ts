@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Station } from "@/types";
+import type { SetupStation } from "@/lib/data/static-stations";
 
 export type GameEdition =
     | "Standard"
@@ -130,13 +131,13 @@ interface UserState {
     setItemShowPinnedQuestSection: (v: boolean) => void;
     setItemShowPinnedQuestOnly: (v: boolean) => void;
 
-    applyEditionBonuses: (stations: Station[]) => void;
+    applyEditionBonuses: (stations: SetupStation[] | Station[]) => void;
 
     importStationLevels: (levels: Record<string, number>) => void;
     resetAll: () => void;
 
     // Initialization helpers
-    initializeDefaults: (stations: Station[]) => void;
+    initializeDefaults: (stations: SetupStation[] | Station[]) => void;
 }
 
 export const useUserStore = create<UserState>()(

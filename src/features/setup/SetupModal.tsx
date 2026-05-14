@@ -7,8 +7,7 @@ import { EditionSelection } from "./EditionSelection";
 import { GameModeSelection } from "./GameModeSelection";
 import { X } from "lucide-react";
 import { QuickHideoutLevels } from "./QuickHideoutLevels";
-import type { Station } from "@/types";
-import { STATIC_STATIONS } from "@/lib/data/static-stations";
+import { STATIC_STATIONS, type SetupStation } from "@/lib/data/static-stations";
 
 export function SetupModal() {
     const {
@@ -25,7 +24,7 @@ export function SetupModal() {
         setStationLevel,
     } = useUserStore();
 
-    const [stations] = useState<Station[]>(STATIC_STATIONS);
+    const [stations] = useState<SetupStation[]>(STATIC_STATIONS);
     const [activeView, setActiveView] = useState<"settings" | "quick-levels">("settings");
 
     // Automatically open only on true first visit, based on persisted state

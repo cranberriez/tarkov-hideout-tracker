@@ -1,4 +1,4 @@
-import { Station, ItemDetails } from "@/types";
+import type { Station } from "@/types";
 
 export interface PooledItem {
     id: string;

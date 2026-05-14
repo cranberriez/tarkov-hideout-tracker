@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { List, House, Plus, Menu, ScrollText } from "lucide-react";
@@ -38,12 +37,6 @@ export function Navbar() {
     const setSetupOpen = useUserStore((state) => state.setSetupOpen);
     const { isQuickAddOpen, setQuickAddOpen } = useUIStore();
     const currentPage = usePathname();
-
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
 
     return (
         <nav className="border-b bg-card">
@@ -99,49 +92,47 @@ export function Navbar() {
                             {link.name}
                         </Link>
                     ))}
-                    {mounted && (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger
+                    <DropdownMenu>
+                        <DropdownMenuTrigger
+                            className={cn(
+                                "transition-colors flex items-center gap-2 cursor-pointer rounded p-2",
+                                currentPage === "/settings" || currentPage === "/news"
+                                    ? "text-card bg-foreground/80"
+                                    : "hover:text-white"
+                            )}
+                            aria-label="Menu"
+                        >
+                            <Menu size={18} />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" sideOffset={8}>
+                            <DropdownMenuItem
+                                asChild
                                 className={cn(
-                                    "transition-colors flex items-center gap-2 cursor-pointer rounded p-2",
-                                    currentPage === "/settings" || currentPage === "/news"
-                                        ? "text-card bg-foreground/80"
-                                        : "hover:text-white"
+                                    currentPage === "/news" &&
+                                        "bg-accent text-accent-foreground"
                                 )}
-                                aria-label="Menu"
                             >
-                                <Menu size={18} />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" sideOffset={8}>
-                                <DropdownMenuItem
-                                    asChild
-                                    className={cn(
-                                        currentPage === "/news" &&
-                                            "bg-accent text-accent-foreground"
-                                    )}
-                                >
-                                    <Link href="/news" className="w-full">
-                                        News
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    asChild
-                                    className={cn(
-                                        currentPage === "/settings" &&
-                                            "bg-accent text-accent-foreground"
-                                    )}
-                                >
-                                    <Link href="/settings" className="w-full">
-                                        Settings
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onSelect={() => setSetupOpen(true)}>
-                                    Setup
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    )}
+                                <Link href="/news" className="w-full">
+                                    News
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                asChild
+                                className={cn(
+                                    currentPage === "/settings" &&
+                                        "bg-accent text-accent-foreground"
+                                )}
+                            >
+                                <Link href="/settings" className="w-full">
+                                    Settings
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onSelect={() => setSetupOpen(true)}>
+                                Setup
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </div>
         </nav>

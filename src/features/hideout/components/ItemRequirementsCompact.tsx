@@ -10,8 +10,6 @@ import { computeNeeds } from "@/lib/utils/item-needs";
 export function CompactItemRequirements({
     nextLevelData,
     hideMoney,
-    completedRequirements,
-    toggleRequirement,
     onClickItem,
     pooledFirByItem,
 }: BaseItemRequirementsProps) {

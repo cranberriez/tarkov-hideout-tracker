@@ -13,7 +13,6 @@ interface ItemRowProps {
     count: number;
     firCount?: number;
     size: ItemSize;
-    sellToPreference?: "best" | "flea" | "trader";
     isHideout?: boolean;
     isQuest?: boolean;
     onClick?: () => void;
@@ -50,7 +49,6 @@ export function ItemRow({
     count,
     firCount = 0,
     size,
-    sellToPreference = "best",
     isHideout = false,
     isQuest = false,
     onClick,

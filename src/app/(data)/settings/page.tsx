@@ -36,7 +36,6 @@ export default function SettingsPage() {
     const importStationLevels = useUserStore((state) => state.importStationLevels);
     const resetAll = useUserStore((state) => state.resetAll);
 
-    const [exportCode, setExportCode] = useState("");
     const [importCode, setImportCode] = useState("");
     const [status, setStatus] = useState("");
     const [isConversionOpen, setIsConversionOpen] = useState(false);
@@ -52,7 +51,6 @@ export default function SettingsPage() {
         const json = JSON.stringify(payload);
         const b64 = encodeBase64FromString(json);
         const code = `v1-${b64}`;
-        setExportCode(code);
         setImportCode(code);
         setStatus("Exported");
         if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -89,7 +87,7 @@ export default function SettingsPage() {
             }
             importStationLevels(levels);
             setStatus("Import successful");
-        } catch (e) {
+        } catch {
             setStatus("Failed to import code");
         }
     }
@@ -100,7 +98,6 @@ export default function SettingsPage() {
         );
         if (!confirmed) return;
         resetAll();
-        setExportCode("");
         setImportCode("");
         setStatus("All data reset");
     }

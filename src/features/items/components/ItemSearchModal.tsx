@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { ItemDetails } from "@/types";
+import type { ItemDetails } from "@/types";
 import { Search, X } from "lucide-react";
 import { useDataContext } from "@/app/(data)/_dataContext";
 
@@ -16,13 +16,6 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
 	const { items } = useDataContext();
 	const [query, setQuery] = useState("");
 
-	// Reset query when opening
-	useEffect(() => {
-		if (isOpen) {
-			setQuery("");
-		}
-	}, [isOpen]);
-
 	// Focus input on open
 	useEffect(() => {
 		if (isOpen) {
@@ -35,6 +28,16 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
 
 	// Handle Escape to close - Handled by Dialog
 	// useEffect(() => { ... }, [isOpen, onClose]);
+
+	const handleClose = () => {
+		setQuery("");
+		onClose();
+	};
+
+	const handleSelect = (item: ItemDetails) => {
+		setQuery("");
+		onSelect(item);
+	};
 
 	const filteredItems = useMemo(() => {
 		if (!items || !query) return [];
@@ -63,7 +66,7 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
 	if (!isOpen) return null;
 
 	return (
-		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+		<Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
 			<DialogContent
 				showCloseButton={false}
 				className="top-[15%] translate-y-0 w-full md:max-w-2xl max-h-[70vh] p-0 gap-0 overflow-hidden flex flex-col"
@@ -80,7 +83,7 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
 						className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-500 text-lg"
 						autoComplete="off"
 					/>
-					<button onClick={onClose} className="text-gray-400 hover:text-white">
+					<button onClick={handleClose} className="text-gray-400 hover:text-white">
 						<X size={20} />
 					</button>
 				</div>
@@ -91,7 +94,7 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
 							{filteredItems.map((item) => (
 								<button
 									key={item.id}
-									onClick={() => onSelect(item)}
+									onClick={() => handleSelect(item)}
 									className="w-full px-4 py-3 flex items-center gap-4 hover:bg-white/5 transition-colors text-left"
 								>
 									<div className="w-10 h-10 bg-black/40 border border-white/5 rounded flex items-center justify-center shrink-0 overflow-hidden">
@@ -113,7 +116,9 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
 							))}
 						</div>
 					) : query ? (
-						<div className="p-8 text-center text-gray-500">No items found matching "{query}"</div>
+						<div className="p-8 text-center text-gray-500">
+							No items found matching {query}
+						</div>
 					) : (
 						<div className="p-8 text-center text-gray-500">Type to search items...</div>
 					)}
