@@ -63,6 +63,7 @@ interface UserState {
     questShowIgnored: boolean;
     questShowDebug: boolean;
     questShowPrereqs: boolean;
+    questSidebarCollapsed: boolean;
 
     itemShowPinnedQuestSection: boolean;
     itemShowPinnedQuestOnly: boolean;
@@ -130,6 +131,7 @@ interface UserState {
     setQuestShowIgnored: (v: boolean) => void;
     setQuestShowDebug: (v: boolean) => void;
     setQuestShowPrereqs: (v: boolean) => void;
+    setQuestSidebarCollapsed: (v: boolean) => void;
 
     setItemShowPinnedQuestSection: (v: boolean) => void;
     setItemShowPinnedQuestOnly: (v: boolean) => void;
@@ -187,6 +189,7 @@ export const useUserStore = create<UserState>()(
             questShowIgnored: false,
             questShowDebug: false,
             questShowPrereqs: true,
+            questSidebarCollapsed: false,
 
             itemShowPinnedQuestSection: true,
             itemShowPinnedQuestOnly: false,
@@ -321,6 +324,7 @@ export const useUserStore = create<UserState>()(
             setQuestShowIgnored: (v) => set({ questShowIgnored: v }),
             setQuestShowDebug: (v) => set({ questShowDebug: v }),
             setQuestShowPrereqs: (v) => set({ questShowPrereqs: v }),
+            setQuestSidebarCollapsed: (v) => set({ questSidebarCollapsed: v }),
 
             setItemShowPinnedQuestSection: (v) =>
                 set((state) => ({
@@ -481,6 +485,7 @@ export const useUserStore = create<UserState>()(
                     questShowIgnored: false,
                     questShowDebug: false,
                     questShowPrereqs: true,
+                    questSidebarCollapsed: false,
                     itemShowPinnedQuestSection: true,
                     itemShowPinnedQuestOnly: false,
                     gameEdition: null,
@@ -493,7 +498,7 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: "tarkov-hideout-user-state",
-            version: 5,
+            version: 6,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -538,6 +543,13 @@ export const useUserStore = create<UserState>()(
                     nextState = {
                         ...nextState,
                         questTraderLoyaltyLevels: {},
+                    };
+                }
+
+                if (version < 6) {
+                    nextState = {
+                        ...nextState,
+                        questSidebarCollapsed: false,
                     };
                 }
 

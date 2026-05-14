@@ -19,10 +19,12 @@ export function SidebarToggle({
     active,
     onClick,
     children,
+    className = "",
 }: {
     active: boolean;
     onClick: () => void;
     children: ReactNode;
+    className?: string;
 }) {
     return (
         <button
@@ -31,7 +33,7 @@ export function SidebarToggle({
                 active
                     ? "border-tarkov-green text-tarkov-green bg-tarkov-green/5"
                     : "border-transparent text-gray-400 hover:text-white hover:bg-white/5"
-            }`}
+            } ${className}`}
         >
             {children}
         </button>
