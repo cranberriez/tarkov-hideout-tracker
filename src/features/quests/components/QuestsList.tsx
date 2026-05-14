@@ -55,7 +55,16 @@ function TraderGroupHeader({
 }
 
 export function QuestsList() {
-    const { quests, filteredQuests, questsById, leadsToByQuestId, completedCount, viewMode, traders } =
+    const {
+        quests,
+        filteredQuests,
+        questsById,
+        leadsToByQuestId,
+        completedCount,
+        viewMode,
+        traders,
+        showDebug,
+    } =
         useQuestsContext();
 
     const questsByTraderId = useMemo(() => {
@@ -96,6 +105,7 @@ export function QuestsList() {
                 quest={quest}
                 prerequisiteQuests={quest.taskRequirements.map((req) => toRef(req.task.id, req.task.name))}
                 leadsToQuests={(leadsToByQuestId.get(quest.id) ?? []).map((id) => toRef(id, id))}
+                showDebugButton={showDebug}
             />
         );
     }

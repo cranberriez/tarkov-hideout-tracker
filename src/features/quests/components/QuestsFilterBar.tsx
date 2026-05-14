@@ -7,8 +7,10 @@ export function QuestsFilterBar() {
     const {
         hideCompleted,
         showAvailableOnly,
+        showDebug,
         setHideCompleted,
         setShowAvailableOnly,
+        setShowDebug,
         viewMode,
         setViewMode,
     } = useQuestsContext();
@@ -38,6 +40,11 @@ export function QuestsFilterBar() {
                 active={showAvailableOnly}
                 onClick={() => setShowAvailableOnly(!showAvailableOnly)}
                 label="Available Only"
+            />
+            <FilterButton
+                active={showDebug}
+                onClick={() => setShowDebug(!showDebug)}
+                label="Debug"
             />
         </div>
     );

@@ -16,6 +16,7 @@ interface QuestsContextValue {
     selectedMaps: Set<string>;
     hideCompleted: boolean;
     showAvailableOnly: boolean;
+    showDebug: boolean;
 
     filteredQuests: FullQuest[];
     questsById: Map<string, FullQuest>;
@@ -38,6 +39,7 @@ interface QuestsContextValue {
     toggleLightkeeper: () => void;
     setHideCompleted: (value: boolean) => void;
     setShowAvailableOnly: (value: boolean) => void;
+    setShowDebug: (value: boolean) => void;
 }
 
 const QuestsContext = createContext<QuestsContextValue | null>(null);
@@ -77,6 +79,7 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
         questSelectedMaps,
         questHideCompleted: hideCompleted,
         questShowAvailableOnly: showAvailableOnly,
+        questShowDebug: showDebug,
         setQuestViewMode: setViewMode,
         setQuestSelectedTraders,
         setQuestFaction,
@@ -85,6 +88,7 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
         setQuestSelectedMaps,
         setQuestHideCompleted: setHideCompleted,
         setQuestShowAvailableOnly: setShowAvailableOnly,
+        setQuestShowDebug: setShowDebug,
     } = useUserStore();
 
     const selectedTraders = useMemo(() => new Set(questSelectedTraders), [questSelectedTraders]);
@@ -205,6 +209,7 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
                 selectedMaps,
                 hideCompleted,
                 showAvailableOnly,
+                showDebug,
                 filteredQuests,
                 questsById,
                 kappaQuestIds,
@@ -224,6 +229,7 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
                 toggleLightkeeper,
                 setHideCompleted,
                 setShowAvailableOnly,
+                setShowDebug,
             }}
         >
             {children}

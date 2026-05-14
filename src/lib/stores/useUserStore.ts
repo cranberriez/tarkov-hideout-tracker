@@ -54,6 +54,7 @@ interface UserState {
     questSelectedMaps: string[];
     questHideCompleted: boolean;
     questShowAvailableOnly: boolean;
+    questShowDebug: boolean;
 
     // Onboarding / feature flags
     hasSeenItemConversionModal: boolean;
@@ -109,6 +110,7 @@ interface UserState {
     setQuestSelectedMaps: (maps: string[]) => void;
     setQuestHideCompleted: (v: boolean) => void;
     setQuestShowAvailableOnly: (v: boolean) => void;
+    setQuestShowDebug: (v: boolean) => void;
 
     applyEditionBonuses: (stations: Station[]) => void;
 
@@ -154,6 +156,7 @@ export const useUserStore = create<UserState>()(
             questSelectedMaps: [],
             questHideCompleted: false,
             questShowAvailableOnly: false,
+            questShowDebug: false,
 
             gameEdition: null,
             gameMode: "PVP",
@@ -249,6 +252,7 @@ export const useUserStore = create<UserState>()(
             setQuestSelectedMaps: (maps) => set({ questSelectedMaps: maps }),
             setQuestHideCompleted: (v) => set({ questHideCompleted: v }),
             setQuestShowAvailableOnly: (v) => set({ questShowAvailableOnly: v }),
+            setQuestShowDebug: (v) => set({ questShowDebug: v }),
 
             setHasSeenItemConversionModal: (value) => set({ hasSeenItemConversionModal: value }),
             setHasSeenHideoutLevelWarning: (value) => set({ hasSeenHideoutLevelWarning: value }),
@@ -282,7 +286,6 @@ export const useUserStore = create<UserState>()(
                         break;
                     case "Unheard":
                         stashLevel = 4;
-                        cultistLevel = 1;
                         break;
                 }
 
@@ -390,6 +393,7 @@ export const useUserStore = create<UserState>()(
                     questSelectedMaps: [],
                     questHideCompleted: false,
                     questShowAvailableOnly: false,
+                    questShowDebug: false,
                     gameEdition: null,
                     gameMode: "PVP",
                     hasCompletedSetup: false,
@@ -400,25 +404,34 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: "tarkov-hideout-user-state",
-            version: 2,
+            version: 3,
             migrate: (persistedState, version) => {
+                let nextState =
+                    persistedState && typeof persistedState === "object"
+                        ? ({ ...persistedState } as Record<string, unknown>)
+                        : {};
+
                 if (version < 2) {
-                    const state =
-                        persistedState && typeof persistedState === "object"
-                            ? (persistedState as Record<string, unknown>)
-                            : {};
                     const itemsCompactMode =
-                        typeof state.itemsCompactMode === "boolean"
-                            ? state.itemsCompactMode
+                        typeof nextState.itemsCompactMode === "boolean"
+                            ? nextState.itemsCompactMode
                             : undefined;
 
-                    return {
-                        ...state,
+                    nextState = {
+                        ...nextState,
                         itemsSize: itemsCompactMode ? "Compact" : "Expanded",
                     };
                 }
 
-                return persistedState as UserState;
+                if (version < 3) {
+                    nextState = {
+                        ...nextState,
+                        questViewMode: "tree",
+                        questShowDebug: false,
+                    };
+                }
+
+                return nextState as UserState;
             },
         },
     ),

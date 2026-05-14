@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
+import { Link2 } from "lucide-react";
 import { useQuestsContext } from "../QuestsContext";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { QuestCard, type QuestRef } from "../QuestCard";
 import { cn } from "@/lib/utils";
 import type { FullQuest } from "@/types";
-import { Link2 } from "lucide-react";
 
 function buildTraderTree(traderQuests: FullQuest[]): {
     rootIds: string[];
@@ -24,7 +24,6 @@ function buildTraderTree(traderQuests: FullQuest[]): {
         if (sameTraderPrereqs.length === 0) {
             parentOf.set(quest.id, null);
         } else {
-            // Primary parent = same-trader prereq appearing latest in sorted order (deepest chain)
             const primary = sameTraderPrereqs.reduce((best, r) =>
                 (indexById.get(r.task.id) ?? 0) > (indexById.get(best.task.id) ?? 0) ? r : best,
             );
@@ -72,15 +71,31 @@ function countAllDescendants(ids: string[], childrenOf: Map<string, string[]>): 
     return total;
 }
 
+function collectLinearChainIds(startId: string, childrenOf: Map<string, string[]>): string[] {
+    const ids: string[] = [];
+    let currentId = startId;
+
+    while (true) {
+        const children = childrenOf.get(currentId) ?? [];
+        if (children.length !== 1) break;
+
+        const nextId = children[0];
+        ids.push(nextId);
+        currentId = nextId;
+    }
+
+    return ids;
+}
+
 function getIndentPx(depth: number) {
-    if (depth < 8) return 24;
-    if (depth < 14) return 16;
+    if (depth < 4) return 20;
+    if (depth < 8) return 16;
     return 12;
 }
 
 function getConnectorOffsetPx(depth: number) {
     const indent = getIndentPx(depth);
-    return Math.max(12, indent - 4);
+    return Math.max(10, indent - 4);
 }
 
 function LinkedQuestGroup({ questRefs }: { questRefs: QuestRef[] }) {
@@ -91,13 +106,13 @@ function LinkedQuestGroup({ questRefs }: { questRefs: QuestRef[] }) {
                     <a
                         key={questRef.id}
                         href={`#quest-${questRef.id}`}
-                        className="flex items-center gap-2 rounded-sm px-1.5 py-1 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                        className="flex items-center gap-2 rounded-sm px-1.5 py-1 text-xs text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
                     >
                         <span className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-gray-500 shrink-0">
                             <Link2 size={11} />
                             Link
                         </span>
-                        {(questRef.trader.image4xLink ?? questRef.trader.imageLink) ? (
+                        {questRef.trader.image4xLink ?? questRef.trader.imageLink ? (
                             <img
                                 src={questRef.trader.image4xLink ?? questRef.trader.imageLink ?? ""}
                                 alt={questRef.trader.name}
@@ -108,9 +123,7 @@ function LinkedQuestGroup({ questRefs }: { questRefs: QuestRef[] }) {
                                 {questRef.trader.name[0]}
                             </span>
                         )}
-                        <span className="text-[10px] text-gray-500 shrink-0">
-                            {questRef.trader.name}
-                        </span>
+                        <span className="text-[10px] text-gray-500 shrink-0">{questRef.trader.name}</span>
                         <span className="min-w-0 truncate">{questRef.name}</span>
                     </a>
                 ))}
@@ -125,51 +138,78 @@ function CollapseHint({ count, onShow }: { count: number; onShow: () => void }) 
             onClick={onShow}
             className="w-full flex items-center gap-2 mt-1 py-1 group text-left"
         >
-            <div className="h-px flex-1 bg-white/5 group-hover:bg-white/10 transition-colors" />
-            <span className="text-[11px] text-gray-600 group-hover:text-gray-400 transition-colors whitespace-nowrap tracking-wide">
-                {count} quest{count !== 1 ? "s" : ""} hidden &middot; SHOW
+            <div className="h-px flex-1 bg-white/5 transition-colors group-hover:bg-white/10" />
+            <span className="text-[11px] text-gray-600 transition-colors whitespace-nowrap tracking-wide group-hover:text-gray-400">
+                {count} quest{count !== 1 ? "s" : ""} hidden · SHOW
             </span>
-            <div className="h-px flex-1 bg-white/5 group-hover:bg-white/10 transition-colors" />
+            <div className="h-px flex-1 bg-white/5 transition-colors group-hover:bg-white/10" />
         </button>
     );
 }
 
-// How far from the child-wrapper top the horizontal connector sits (≈ card header mid-point).
-// Cards have py-2.5 (10px) + ~22px of content ≈ 42px total header. The wrapper also has mt-1
-// (4px) of card-spacing built in, so the connector lands at 4 + 18 = 22px from the wrapper top.
 const CONNECTOR_Y = 22;
-// The bar for non-last children extends -4px above the wrapper (-top-1) to bridge the mt-1 gap
-// between sibling cards so the segments look like one continuous line.
-const BAR_OVERLAP = 4; // matches mt-1 (4px)
+const BAR_OVERLAP = 4;
+const LINEAR_CHAIN_OFFSET = 14;
 
-function QuestTreeNode({
+function QuestNodeCard({
     questId,
+    parentOf,
+    questsById,
+    leadsToByQuestId,
+    showDebugButton,
+}: {
+    questId: string;
+    parentOf: Map<string, string | null>;
+    questsById: Map<string, FullQuest>;
+    leadsToByQuestId: Map<string, string[]>;
+    showDebugButton: boolean;
+}) {
+    const quest = questsById.get(questId);
+    if (!quest) return null;
+
+    const primaryParentId = parentOf.get(questId) ?? null;
+    const linkedPrerequisites = quest.taskRequirements
+        .filter((req) => req.task.id !== primaryParentId)
+        .map((req) => toRef(req.task.id, req.task.name, questsById));
+
+    return (
+        <>
+            {linkedPrerequisites.length > 0 && <LinkedQuestGroup questRefs={linkedPrerequisites} />}
+            <QuestCard
+                quest={quest}
+                prerequisiteQuests={quest.taskRequirements.map((req) =>
+                    toRef(req.task.id, req.task.name, questsById),
+                )}
+                leadsToQuests={(leadsToByQuestId.get(quest.id) ?? []).map((id) =>
+                    toRef(id, id, questsById),
+                )}
+                attachedTop={linkedPrerequisites.length > 0}
+                showDebugButton={showDebugButton}
+            />
+        </>
+    );
+}
+
+function BranchChildren({
+    childIds,
     depth,
     childrenOf,
     parentOf,
     questsById,
     leadsToByQuestId,
+    showDebugButton,
 }: {
-    questId: string;
+    childIds: string[];
     depth: number;
     childrenOf: Map<string, string[]>;
     parentOf: Map<string, string | null>;
     questsById: Map<string, FullQuest>;
     leadsToByQuestId: Map<string, string[]>;
+    showDebugButton: boolean;
 }) {
     const [childrenCollapsed, setChildrenCollapsed] = useState(false);
     const [barHovered, setBarHovered] = useState(false);
-    // Timer ref prevents a brief un-hover flicker when the pointer moves between segments.
     const hoverTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-    const quest = questsById.get(questId);
-    if (!quest) return null;
-
-    const children = childrenOf.get(questId) ?? [];
-    const primaryParentId = parentOf.get(questId) ?? null;
-    const linkedPrerequisites = quest.taskRequirements
-        .filter((req) => req.task.id !== primaryParentId)
-        .map((req) => toRef(req.task.id, req.task.name, questsById));
     const childIndent = getIndentPx(depth);
     const connectorOffset = getConnectorOffsetPx(depth);
 
@@ -182,102 +222,185 @@ function QuestTreeNode({
     };
 
     return (
+        <div
+            className="relative mt-1"
+            style={{
+                marginLeft: `${childIndent}px`,
+                paddingLeft: `${connectorOffset}px`,
+            }}
+        >
+            {childrenCollapsed ? (
+                <CollapseHint
+                    count={countAllDescendants(childIds, childrenOf)}
+                    onShow={() => setChildrenCollapsed(false)}
+                />
+            ) : (
+                <>
+                    <button
+                        onClick={() => setChildrenCollapsed(true)}
+                        onMouseEnter={onBarEnter}
+                        onMouseLeave={onBarLeave}
+                        title="Collapse"
+                        className="absolute left-0 cursor-pointer"
+                        style={{
+                            top: 0,
+                            bottom: 0,
+                            width: `${connectorOffset}px`,
+                        }}
+                    >
+                        <div
+                            className={cn(
+                                "absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px transition-colors",
+                                barHovered ? "bg-white/25" : "bg-white/10",
+                            )}
+                        />
+                    </button>
+                    {childIds.map((childId, i) => {
+                        const isLast = i === childIds.length - 1;
+
+                        return (
+                            <div
+                                key={childId}
+                                className="relative mt-1"
+                            >
+                                <div
+                                    className={cn(
+                                        "absolute h-px transition-colors",
+                                        barHovered ? "bg-white/25" : "bg-white/10",
+                                    )}
+                                    style={{
+                                        left: `-${Math.ceil(connectorOffset / 2)}px`,
+                                        top: `${CONNECTOR_Y}px`,
+                                        width: `${Math.max(8, Math.ceil(connectorOffset / 2))}px`,
+                                    }}
+                                />
+                                {isLast && (
+                                    <div
+                                        className="absolute w-px bg-[#111111]"
+                                        style={{
+                                            left: `-${Math.ceil(connectorOffset / 2)}px`,
+                                            top: `${CONNECTOR_Y + 1}px`,
+                                            bottom: 0,
+                                        }}
+                                    />
+                                )}
+
+                                <QuestTreeNode
+                                    questId={childId}
+                                    depth={depth + 1}
+                                    childrenOf={childrenOf}
+                                    parentOf={parentOf}
+                                    questsById={questsById}
+                                    leadsToByQuestId={leadsToByQuestId}
+                                    showDebugButton={showDebugButton}
+                                />
+                            </div>
+                        );
+                    })}
+                </>
+            )}
+        </div>
+    );
+}
+
+function QuestTreeNode({
+    questId,
+    depth,
+    childrenOf,
+    parentOf,
+    questsById,
+    leadsToByQuestId,
+    showDebugButton,
+}: {
+    questId: string;
+    depth: number;
+    childrenOf: Map<string, string[]>;
+    parentOf: Map<string, string | null>;
+    questsById: Map<string, FullQuest>;
+    leadsToByQuestId: Map<string, string[]>;
+    showDebugButton: boolean;
+}) {
+    const children = childrenOf.get(questId) ?? [];
+    const linearChainIds = children.length === 1 ? collectLinearChainIds(questId, childrenOf) : [];
+    const branchChildIds = children.length > 1 ? children : [];
+
+    return (
         <div>
-            {linkedPrerequisites.length > 0 && <LinkedQuestGroup questRefs={linkedPrerequisites} />}
-            <QuestCard
-                quest={quest}
-                prerequisiteQuests={quest.taskRequirements.map((req) =>
-                    toRef(req.task.id, req.task.name, questsById),
-                )}
-                leadsToQuests={(leadsToByQuestId.get(quest.id) ?? []).map((id) =>
-                    toRef(id, id, questsById),
-                )}
-                attachedTop={linkedPrerequisites.length > 0}
+            <QuestNodeCard
+                questId={questId}
+                parentOf={parentOf}
+                questsById={questsById}
+                leadsToByQuestId={leadsToByQuestId}
+                showDebugButton={showDebugButton}
             />
 
-            {children.length > 0 && (
-                <div className="mt-1" style={{ marginLeft: `${childIndent}px` }}>
-                    {childrenCollapsed ? (
-                        <CollapseHint
-                            count={countAllDescendants(children, childrenOf)}
-                            onShow={() => setChildrenCollapsed(false)}
-                        />
-                    ) : (
-                        <>
-                            {children.map((childId, i) => {
-                                const isLast = i === children.length - 1;
-                                return (
-                                    <div
-                                        key={childId}
-                                        className="relative mt-1"
-                                        style={{ paddingLeft: `${connectorOffset}px` }}
-                                    >
-                                        {/*
-                                         * Vertical bar per child:
-                                         *   Non-last — extends from -BAR_OVERLAP px (above the mt-1
-                                         *   gap) all the way to bottom-0, so consecutive segments
-                                         *   appear as one unbroken line.
-                                         *   Last — only reaches CONNECTOR_Y so the bar terminates
-                                         *   cleanly at the card connector rather than hanging through
-                                         *   the child's own sub-tree.
-                                         * All segments share barHovered state so they highlight
-                                         * together regardless of which segment the pointer is on.
-                                         */}
-                                        <button
-                                            onClick={() => setChildrenCollapsed(true)}
-                                            onMouseEnter={onBarEnter}
-                                            onMouseLeave={onBarLeave}
-                                            title="Collapse"
-                                            className="absolute left-0 cursor-pointer"
-                                            style={
-                                                isLast
-                                                    ? {
-                                                          top: 0,
-                                                          height: `${CONNECTOR_Y}px`,
-                                                          width: `${connectorOffset}px`,
-                                                      }
-                                                    : {
-                                                          top: `-${BAR_OVERLAP}px`,
-                                                          bottom: 0,
-                                                          width: `${connectorOffset}px`,
-                                                      }
-                                            }
-                                        >
-                                            <div
-                                                className={cn(
-                                                    "absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px transition-colors",
-                                                    barHovered ? "bg-white/25" : "bg-white/5",
-                                                )}
-                                            />
-                                        </button>
+            {linearChainIds.length > 0 && (
+                <div className="mt-1 ml-2">
+                    {linearChainIds.map((linearQuestId, index) => {
+                        const linearChildren = childrenOf.get(linearQuestId) ?? [];
+                        const branchAfterLinear = linearChildren.length > 1 ? linearChildren : [];
+                        const hasNextLinearQuest = index < linearChainIds.length - 1;
 
-                                        {/* Horizontal connector — L-bend from bar centre to card edge */}
-                                        <div
-                                            className={cn(
-                                                "absolute h-px transition-colors",
-                                                barHovered ? "bg-white/25" : "bg-white/5",
-                                            )}
-                                            style={{
-                                                left: `${Math.floor(connectorOffset / 2)}px`,
-                                                top: `${CONNECTOR_Y}px`,
-                                                width: `${Math.max(8, Math.ceil(connectorOffset / 2))}px`,
-                                            }}
-                                        />
+                        return (
+                            <div
+                                key={linearQuestId}
+                                className="relative mt-1"
+                                style={{ paddingLeft: `${LINEAR_CHAIN_OFFSET}px` }}
+                            >
+                                <div
+                                    className="absolute left-1.5 w-px bg-white/10"
+                                    style={
+                                        hasNextLinearQuest
+                                            ? { top: `-${BAR_OVERLAP}px`, bottom: `-${BAR_OVERLAP}px` }
+                                            : {
+                                                  top: `-${BAR_OVERLAP}px`,
+                                                  height: `${CONNECTOR_Y}px`,
+                                              }
+                                    }
+                                />
+                                <div
+                                    className="absolute left-1.5 h-px bg-white/10"
+                                    style={{
+                                        top: `${CONNECTOR_Y - 4}px`,
+                                        width: `${LINEAR_CHAIN_OFFSET - 6}px`,
+                                    }}
+                                />
 
-                                        <QuestTreeNode
-                                            questId={childId}
-                                            depth={depth + 1}
-                                            childrenOf={childrenOf}
-                                            parentOf={parentOf}
-                                            questsById={questsById}
-                                            leadsToByQuestId={leadsToByQuestId}
-                                        />
-                                    </div>
-                                );
-                            })}
-                        </>
-                    )}
+                                <QuestNodeCard
+                                    questId={linearQuestId}
+                                    parentOf={parentOf}
+                                    questsById={questsById}
+                                    leadsToByQuestId={leadsToByQuestId}
+                                    showDebugButton={showDebugButton}
+                                />
+
+                                {branchAfterLinear.length > 0 && (
+                                    <BranchChildren
+                                        childIds={branchAfterLinear}
+                                        depth={depth}
+                                        childrenOf={childrenOf}
+                                        parentOf={parentOf}
+                                        questsById={questsById}
+                                        leadsToByQuestId={leadsToByQuestId}
+                                        showDebugButton={showDebugButton}
+                                    />
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
+            )}
+
+            {branchChildIds.length > 0 && (
+                <BranchChildren
+                    childIds={branchChildIds}
+                    depth={depth}
+                    childrenOf={childrenOf}
+                    parentOf={parentOf}
+                    questsById={questsById}
+                    leadsToByQuestId={leadsToByQuestId}
+                    showDebugButton={showDebugButton}
+                />
             )}
         </div>
     );
@@ -289,12 +412,14 @@ function TraderTreeSection({
     allTraderQuests,
     questsById,
     leadsToByQuestId,
+    showDebugButton,
 }: {
     trader: FullQuest["trader"];
     traderQuests: FullQuest[];
     allTraderQuests: FullQuest[];
     questsById: Map<string, FullQuest>;
     leadsToByQuestId: Map<string, string[]>;
+    showDebugButton: boolean;
 }) {
     const { completedQuests } = useUserStore();
 
@@ -310,7 +435,7 @@ function TraderTreeSection({
     return (
         <div>
             <div className="flex items-center gap-3 pt-5 pb-2.5 border-b border-white/5">
-                {(trader.image4xLink ?? trader.imageLink) ? (
+                {trader.image4xLink ?? trader.imageLink ? (
                     <img
                         src={trader.image4xLink ?? trader.imageLink ?? ""}
                         alt={trader.name}
@@ -348,6 +473,7 @@ function TraderTreeSection({
                             parentOf={parentOf}
                             questsById={questsById}
                             leadsToByQuestId={leadsToByQuestId}
+                            showDebugButton={showDebugButton}
                         />
                     </div>
                 ))}
@@ -357,8 +483,15 @@ function TraderTreeSection({
 }
 
 export function QuestsTree() {
-    const { filteredQuests, quests, questsById, leadsToByQuestId, traders, completedCount } =
-        useQuestsContext();
+    const {
+        filteredQuests,
+        quests,
+        questsById,
+        leadsToByQuestId,
+        traders,
+        completedCount,
+        showDebug,
+    } = useQuestsContext();
 
     const questsByTraderId = useMemo(() => {
         const map = new Map<string, FullQuest[]>();
@@ -401,6 +534,7 @@ export function QuestsTree() {
                         allTraderQuests={allQuestsByTraderId.get(trader.id) ?? []}
                         questsById={questsById}
                         leadsToByQuestId={leadsToByQuestId}
+                        showDebugButton={showDebug}
                     />
                 );
             })}

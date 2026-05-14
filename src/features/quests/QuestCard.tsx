@@ -35,7 +35,11 @@ interface QuestCardProps {
     prerequisiteQuests: QuestRef[];
     leadsToQuests: QuestRef[];
     attachedTop?: boolean;
+    showDebugButton?: boolean;
 }
+
+const questMetaChipBaseClass =
+    "inline-flex h-5 items-center rounded border px-1.5 text-[10px] leading-none";
 
 function isItemObjective(o: FullQuestObjective): o is QuestObjectiveItemType {
     return (o.type === "giveItem" || o.type === "findItem") && "items" in o;
@@ -181,6 +185,7 @@ export function QuestCard({
     prerequisiteQuests,
     leadsToQuests,
     attachedTop = false,
+    showDebugButton = false,
 }: QuestCardProps) {
     const [expanded, setExpanded] = useState(false);
     const [debugOpen, setDebugOpen] = useState(false);
@@ -257,18 +262,16 @@ export function QuestCard({
                 )}
 
                 {/* Quest name */}
-                <span
-                    className={`flex-1 text-sm font-medium leading-tight min-w-0 truncate ${
-                        completed ? "text-gray-600 line-through" : "text-white"
-                    }`}
-                >
-                    {quest.name}
-                </span>
-
-                {/* Badges */}
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex flex-1 items-center gap-1.5 min-w-0">
                     <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                        className={`min-w-0 truncate text-sm font-medium leading-tight ${
+                            completed ? "text-gray-600 line-through" : "text-white"
+                        }`}
+                    >
+                        {quest.name}
+                    </span>
+                    <span
+                        className={`${questMetaChipBaseClass} shrink-0 ${
                             completed
                                 ? "text-tarkov-green/80 bg-tarkov-green/10 border-tarkov-green/20"
                                 : available
@@ -278,35 +281,43 @@ export function QuestCard({
                     >
                         {completed ? "Completed" : available ? "Available" : "Locked"}
                     </span>
+                </div>
+
+                {/* Badges */}
+                <div className="flex items-center gap-1 shrink-0">
                     {quest.taskRequirements.length > 0 && (
                         <span
-                            className="text-[10px] text-gray-400 bg-black/40 border border-white/10 px-1.5 py-0.5 rounded"
+                            className={`${questMetaChipBaseClass} hidden text-gray-400 bg-black/40 border-white/10 md:inline-flex`}
                             title={`${completedRequirementCount}/${quest.taskRequirements.length} prerequisite quests completed`}
                         >
                             {completedRequirementCount}/{quest.taskRequirements.length} reqs
                         </span>
                     )}
                     {quest.minPlayerLevel != null && (
-                        <span className="text-[10px] text-gray-400 bg-black/40 border border-white/10 px-1.5 py-0.5 rounded">
+                        <span
+                            className={`${questMetaChipBaseClass} hidden text-gray-400 bg-black/40 border-white/10 sm:inline-flex`}
+                        >
                             Lv.{quest.minPlayerLevel}
                         </span>
                     )}
                     {quest.map && (
-                        <span className="text-[10px] text-gray-400 bg-black/40 border border-white/10 px-1.5 py-0.5 rounded hidden sm:inline">
+                        <span
+                            className={`${questMetaChipBaseClass} hidden text-gray-400 bg-black/40 border-white/10 sm:inline-flex`}
+                        >
                             {quest.map.name}
                         </span>
                     )}
                     {quest.kappaRequired && (
                         <span
-                            className="text-[10px] text-yellow-500/80 bg-yellow-500/10 border border-yellow-500/20 px-1.5 py-0.5 rounded"
+                            className={`${questMetaChipBaseClass} text-yellow-500/80 bg-yellow-500/10 border-yellow-500/20`}
                             title="Required for Kappa"
                         >
-                            κ
+                            Kappa
                         </span>
                     )}
                     {quest.lightkeeperRequired && (
                         <span
-                            className="text-[10px] text-teal-400/80 bg-teal-400/10 border border-teal-400/20 px-1.5 py-0.5 rounded"
+                            className={`${questMetaChipBaseClass} text-teal-400/80 bg-teal-400/10 border-teal-400/20`}
                             title="Required for Lightkeeper"
                         >
                             LK
@@ -314,7 +325,7 @@ export function QuestCard({
                     )}
                     {(quest.factionName === "USEC" || quest.factionName === "BEAR") && (
                         <span
-                            className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                            className={`${questMetaChipBaseClass} ${
                                 quest.factionName === "USEC"
                                     ? "text-blue-400/80 bg-blue-400/10 border-blue-400/20"
                                     : "text-red-400/80 bg-red-400/10 border-red-400/20"
@@ -326,7 +337,7 @@ export function QuestCard({
                     {quest.traderRequirements.map((req) => (
                         <span
                             key={req.id}
-                            className="text-[10px] text-cyan-400/80 bg-cyan-400/10 border border-cyan-400/20 px-1.5 py-0.5 rounded"
+                            className={`${questMetaChipBaseClass} text-cyan-400/80 bg-cyan-400/10 border-cyan-400/20`}
                             title={`${req.trader.name} loyalty ${req.compareMethod} ${req.value}`}
                         >
                             {req.trader.name} LL{req.value}
@@ -334,7 +345,7 @@ export function QuestCard({
                     ))}
                     {quest.requiredPrestige && (
                         <span
-                            className="text-[10px] text-purple-400/80 bg-purple-400/10 border border-purple-400/20 px-1.5 py-0.5 rounded"
+                            className={`${questMetaChipBaseClass} text-purple-400/80 bg-purple-400/10 border-purple-400/20`}
                             title={`Requires prestige ${quest.requiredPrestige.prestigeLevel}`}
                         >
                             P{quest.requiredPrestige.prestigeLevel}
@@ -342,18 +353,20 @@ export function QuestCard({
                     )}
                 </div>
 
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setDebugOpen((v) => !v);
-                    }}
-                    className={`shrink-0 transition-colors ${
-                        debugOpen ? "text-yellow-500" : "text-gray-700 hover:text-gray-500"
-                    }`}
-                    title="Toggle raw JSON"
-                >
-                    <Braces size={13} />
-                </button>
+                {showDebugButton && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setDebugOpen((v) => !v);
+                        }}
+                        className={`shrink-0 transition-colors ${
+                            debugOpen ? "text-yellow-500" : "text-gray-700 hover:text-gray-500"
+                        }`}
+                        title="Toggle raw JSON"
+                    >
+                        <Braces size={13} />
+                    </button>
+                )}
 
                 {expanded ? (
                     <ChevronDown size={14} className="text-gray-500 shrink-0" />
@@ -405,6 +418,30 @@ export function QuestCard({
                             ))}
                         </div>
                     </div>
+
+                    {(quest.minPlayerLevel != null || quest.taskRequirements.length > 0) && (
+                        <div className="space-y-1.5">
+                            <span className="text-[10px] uppercase tracking-wider text-gray-600 font-bold">
+                                Requirements
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                                {quest.minPlayerLevel != null && (
+                                    <span
+                                        className={`${questMetaChipBaseClass} text-gray-400 bg-black/40 border-white/10`}
+                                    >
+                                        Requires Level {quest.minPlayerLevel}
+                                    </span>
+                                )}
+                                {quest.taskRequirements.length > 0 && (
+                                    <span
+                                        className={`${questMetaChipBaseClass} text-gray-400 bg-black/40 border-white/10`}
+                                    >
+                                        {completedRequirementCount}/{quest.taskRequirements.length} prerequisite quests completed
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Prerequisites */}
                     {prerequisiteQuests.length > 0 && (
