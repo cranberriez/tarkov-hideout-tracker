@@ -502,14 +502,7 @@ function BranchChildren({
                             bottom: 0,
                             width: `${connectorOffset}px`,
                         }}
-                    >
-                        <div
-                            className={cn(
-                                "absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px transition-colors",
-                                barHovered ? "bg-white/25" : "bg-white/10",
-                            )}
-                        />
-                    </button>
+                    />
                     {childIds.map((childId, i) => {
                         const isLast = i === childIds.length - 1;
 
@@ -518,7 +511,7 @@ function BranchChildren({
                                 <div
                                     className={cn(
                                         "absolute h-px transition-colors",
-                                        barHovered ? "bg-white/25" : "bg-white/10",
+                                        barHovered ? "bg-[#404040]" : "bg-[#252525]",
                                     )}
                                     style={{
                                         left: `-${Math.ceil(connectorOffset / 2)}px`,
@@ -526,16 +519,25 @@ function BranchChildren({
                                         width: `${Math.max(8, Math.ceil(connectorOffset / 2))}px`,
                                     }}
                                 />
-                                {isLast && (
-                                    <div
-                                        className="absolute w-px bg-[#111111]"
-                                        style={{
-                                            left: `-${Math.ceil(connectorOffset / 2)}px`,
-                                            top: `${CONNECTOR_Y + 1}px`,
-                                            bottom: 0,
-                                        }}
-                                    />
-                                )}
+                                <div
+                                    className={cn(
+                                        "absolute w-px pointer-events-none transition-colors",
+                                        barHovered ? "bg-[#404040]" : "bg-[#252525]",
+                                    )}
+                                    style={
+                                        isLast
+                                            ? {
+                                                  left: `-${Math.ceil(connectorOffset / 2)}px`,
+                                                  top: `-${BAR_OVERLAP}px`,
+                                                  height: `${CONNECTOR_Y + BAR_OVERLAP}px`,
+                                              }
+                                            : {
+                                                  left: `-${Math.ceil(connectorOffset / 2)}px`,
+                                                  top: `-${BAR_OVERLAP}px`,
+                                                  bottom: `-${BAR_OVERLAP}px`,
+                                              }
+                                    }
+                                />
 
                                 <QuestTreeNode
                                     questId={childId}
@@ -608,7 +610,7 @@ function QuestTreeNode({
                                 style={{ paddingLeft: `${LINEAR_CHAIN_OFFSET}px` }}
                             >
                                 <div
-                                    className="absolute left-1.5 w-px bg-white/10"
+                                    className="absolute left-1.5 w-px bg-[#252525]"
                                     style={
                                         hasNextLinearQuest
                                             ? {
@@ -622,7 +624,7 @@ function QuestTreeNode({
                                     }
                                 />
                                 <div
-                                    className="absolute left-1.5 h-px bg-white/10"
+                                    className="absolute left-1.5 h-px bg-[#252525]"
                                     style={{
                                         top: `${CONNECTOR_Y - 4}px`,
                                         width: `${LINEAR_CHAIN_OFFSET - 6}px`,

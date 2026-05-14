@@ -60,11 +60,11 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
     const hasActiveAdvanced = checklistViewMode !== "all" || showHidden;
 
     return (
-        <div className="flex items-center gap-2 bg-muted px-3 py-2 rounded-md border">
-            {/* Search — shorter fixed width */}
+        <div className="flex flex-wrap gap-1.5 bg-muted px-3 py-2 rounded-md border">
+            {/* Search — grows to fill available width */}
             <button
                 onClick={onOpenSearch}
-                className="group flex items-center gap-2 px-3 py-1.5 rounded-sm bg-black/40 border border-white/10 text-gray-400 hover:text-white hover:border-tarkov-green/50 hover:bg-black/60 transition-all shrink-0 w-44"
+                className="group flex flex-1 min-w-[130px] items-center gap-2 px-3 py-1.5 rounded-sm bg-black/40 border border-white/10 text-gray-400 hover:text-white hover:border-tarkov-green/50 hover:bg-black/60 transition-all"
             >
                 <Search
                     size={14}
@@ -73,34 +73,33 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
                 <span className="text-xs">Search items...</span>
             </button>
 
-            <Divider />
-
-            {/* Source filter */}
-            <SegGroup>
+            {/* Source filter — grows, internal buttons fill evenly */}
+            <div className="flex flex-1 min-w-[160px] bg-black/40 rounded-sm p-1 border border-white/10">
                 <SegButton
+                    grow
                     active={itemSourceFilter === "all"}
                     onClick={() => setItemSourceFilter("all")}
                 >
                     All
                 </SegButton>
                 <SegButton
+                    grow
                     active={itemSourceFilter === "hideout"}
                     onClick={() => setItemSourceFilter("hideout")}
                 >
                     Hideout
                 </SegButton>
                 <SegButton
+                    grow
                     active={itemSourceFilter === "quest"}
                     onClick={() => setItemSourceFilter("quest")}
                 >
                     Quests
                 </SegButton>
-            </SegGroup>
+            </div>
 
-            <Divider />
-
-            {/* Card size */}
-            <SegGroup>
+            {/* Card size — fixed width (icon-only buttons) */}
+            <div className="flex shrink-0 bg-black/40 rounded-sm p-1 border border-white/10">
                 <SegButton
                     active={itemsSize === "Icon"}
                     onClick={() => setItemsSize("Icon")}
@@ -116,30 +115,29 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
                     onClick={() => setItemsSize("Expanded")}
                     icon={<LayoutList size={13} />}
                 />
-            </SegGroup>
+            </div>
 
-            <div className="flex-1" />
-
-            <Divider />
-
-            {/* Quick filters */}
+            {/* Quick filters — each grows */}
             <FilterButton
                 active={useCategorization}
                 onClick={() => setUseCategorization(!useCategorization)}
                 icon={<Tags size={14} />}
                 label="Categorize"
+                className="flex-1 min-w-[100px] justify-center"
             />
             <FilterButton
                 active={showFirOnly}
                 onClick={() => setShowFirOnly(!showFirOnly)}
                 icon={<Shield size={14} />}
                 label="FiR Only"
+                className="flex-1 min-w-[80px] justify-center"
             />
             <HideCheapControl
                 hideCheap={hideCheap}
                 setHideCheap={setHideCheap}
                 cheapPriceThreshold={cheapPriceThreshold}
                 setCheapPriceThreshold={setCheapPriceThreshold}
+                className="flex-1 min-w-[100px]"
             />
 
             {/* Settings popover */}
@@ -223,16 +221,20 @@ function SegButton({
     onClick,
     children,
     icon,
+    grow,
 }: {
     active: boolean;
     onClick: () => void;
     children?: ReactNode;
     icon?: ReactNode;
+    grow?: boolean;
 }) {
     return (
         <button
             onClick={onClick}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-xs transition-all ${
+            className={`flex items-center justify-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-xs transition-all ${
+                grow ? "flex-1" : ""
+            } ${
                 active
                     ? "bg-tarkov-green text-black shadow-sm"
                     : "text-gray-400 hover:text-white hover:bg-white/5"
@@ -249,20 +251,22 @@ function FilterButton({
     onClick,
     icon,
     label,
+    className,
 }: {
     active: boolean;
     onClick: () => void;
     icon: ReactNode;
     label: string;
+    className?: string;
 }) {
     return (
         <button
             onClick={onClick}
-            className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-sm border transition-all cursor-pointer shrink-0 ${
+            className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-sm border transition-all cursor-pointer ${
                 active
                     ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10 shadow-[0_0_10px_rgba(157,255,0,0.1)]"
                     : "border-white/10 text-gray-400 hover:border-white/30 bg-black/20 hover:bg-black/40"
-            }`}
+            } ${className ?? ""}`}
         >
             {icon}
             {label}
@@ -275,21 +279,23 @@ function HideCheapControl({
     setHideCheap,
     cheapPriceThreshold,
     setCheapPriceThreshold,
+    className,
 }: {
     hideCheap: boolean;
     setHideCheap: (v: boolean) => void;
     cheapPriceThreshold: number;
     setCheapPriceThreshold: (v: number) => void;
+    className?: string;
 }) {
     return (
         <div
-            className={`flex items-center rounded-sm border transition-colors overflow-hidden shrink-0 ${
+            className={`flex items-center rounded-sm border transition-colors overflow-hidden ${
                 hideCheap ? "border-tarkov-green/50" : "border-white/10"
-            }`}
+            } ${className ?? ""}`}
         >
             <button
                 onClick={() => setHideCheap(!hideCheap)}
-                className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-sm border cursor-pointer transition-all ${
+                className={`flex flex-1 items-center justify-center gap-2 text-xs font-medium px-3 py-2 rounded-sm border cursor-pointer transition-all ${
                     hideCheap
                         ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10 shadow-[0_0_10px_rgba(157,255,0,0.1)]"
                         : "border-white/10 text-gray-400 hover:border-white/30 bg-black/20 hover:bg-black/40"
