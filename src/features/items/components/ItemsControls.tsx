@@ -40,6 +40,10 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
         setShowFirOnly,
         itemSourceFilter,
         setItemSourceFilter,
+        itemShowPinnedQuestSection,
+        itemShowPinnedQuestOnly,
+        setItemShowPinnedQuestSection,
+        setItemShowPinnedQuestOnly,
     } = useUserStore();
 
     useEffect(() => {
@@ -180,7 +184,20 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
                         <div className="h-px bg-white/5" />
 
                         <PopoverSection label="Quests">
-                            <span className="text-xs text-gray-700 italic">Coming soon</span>
+                            <FilterButton
+                                active={itemShowPinnedQuestSection}
+                                onClick={() =>
+                                    setItemShowPinnedQuestSection(!itemShowPinnedQuestSection)
+                                }
+                                icon={<Tags size={14} />}
+                                label="Pinned Section"
+                            />
+                            <FilterButton
+                                active={itemShowPinnedQuestOnly}
+                                onClick={() => setItemShowPinnedQuestOnly(!itemShowPinnedQuestOnly)}
+                                icon={<Filter size={14} />}
+                                label="Pinned Only"
+                            />
                         </PopoverSection>
                     </div>
                 )}

@@ -1,10 +1,20 @@
 "use client";
 
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { FullQuest } from "@/types";
+import { hasFirGiveItemObjectives, hasGiveItemObjectives } from "@/lib/utils/quest-item-index";
 
 export type FactionFilter = "USEC" | "BEAR";
+
+export function matchesFactionVisibility(
+    questFaction: string | null | undefined,
+    selectedFaction: FactionFilter | null,
+) {
+    if (selectedFaction === null) return true;
+    if (selectedFaction === "USEC") return questFaction !== "BEAR";
+    return questFaction !== "USEC";
+}
 
 interface QuestsContextValue {
     quests: FullQuest[];
@@ -16,7 +26,12 @@ interface QuestsContextValue {
     selectedMaps: Set<string>;
     hideCompleted: boolean;
     showAvailableOnly: boolean;
+    showHandInOnly: boolean;
+    showFirHandInOnly: boolean;
+    showPinnedOnly: boolean;
+    showIgnored: boolean;
     showDebug: boolean;
+    searchQuery: string;
 
     filteredQuests: FullQuest[];
     questsById: Map<string, FullQuest>;
@@ -26,6 +41,7 @@ interface QuestsContextValue {
     traders: FullQuest["trader"][];
     allMaps: [string, string][];
     completedCount: number;
+    lastPrereqSyncSummary: { questName: string; completedCount: number } | null;
 
     toggleTrader: (id: string) => void;
     clearTraders: () => void;
@@ -39,7 +55,14 @@ interface QuestsContextValue {
     toggleLightkeeper: () => void;
     setHideCompleted: (value: boolean) => void;
     setShowAvailableOnly: (value: boolean) => void;
+    setShowHandInOnly: (value: boolean) => void;
+    setShowFirHandInOnly: (value: boolean) => void;
+    setShowPinnedOnly: (value: boolean) => void;
+    setShowIgnored: (value: boolean) => void;
     setShowDebug: (value: boolean) => void;
+    setSearchQuery: (value: string) => void;
+    completePrerequisitesForQuest: (questId: string) => { completedIds: string[]; completedCount: number };
+    undoLastPrerequisiteSync: () => boolean;
 }
 
 const QuestsContext = createContext<QuestsContextValue | null>(null);
@@ -68,8 +91,17 @@ function getTransitivePrereqs(rootIds: Set<string>, questsById: Map<string, Full
 }
 
 export function QuestsProvider({ quests, children }: { quests: FullQuest[]; children: ReactNode }) {
+    const [searchQuery, setSearchQuery] = useState("");
+    const [lastPrereqSync, setLastPrereqSync] = useState<{
+        questId: string;
+        questName: string;
+        completedIds: string[];
+        previousCompleted: Record<string, boolean | undefined>;
+        previousHaveItems: Record<string, boolean | undefined>;
+    } | null>(null);
     const {
         completedQuests,
+        ignoredQuests,
         playerLevel,
         questViewMode: viewMode,
         questSelectedTraders,
@@ -79,7 +111,12 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
         questSelectedMaps,
         questHideCompleted: hideCompleted,
         questShowAvailableOnly: showAvailableOnly,
+        questShowHandInOnly: showHandInOnly,
+        questShowFirHandInOnly: showFirHandInOnly,
+        questShowPinnedOnly: showPinnedOnly,
+        questShowIgnored: showIgnored,
         questShowDebug: showDebug,
+        pinnedQuests,
         setQuestViewMode: setViewMode,
         setQuestSelectedTraders,
         setQuestFaction,
@@ -88,6 +125,10 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
         setQuestSelectedMaps,
         setQuestHideCompleted: setHideCompleted,
         setQuestShowAvailableOnly: setShowAvailableOnly,
+        setQuestShowHandInOnly: setShowHandInOnly,
+        setQuestShowFirHandInOnly: setShowFirHandInOnly,
+        setQuestShowPinnedOnly: setShowPinnedOnly,
+        setQuestShowIgnored: setShowIgnored,
         setQuestShowDebug: setShowDebug,
     } = useUserStore();
 
@@ -136,15 +177,30 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
 
     const filteredQuests = useMemo(() => {
         return quests.filter((quest) => {
+            const normalizedSearch = searchQuery.trim().toLowerCase();
+            if (
+                normalizedSearch &&
+                !quest.name.toLowerCase().includes(normalizedSearch) &&
+                !quest.trader.name.toLowerCase().includes(normalizedSearch) &&
+                !(quest.map?.name.toLowerCase().includes(normalizedSearch) ?? false)
+            ) {
+                return false;
+            }
+
             if (hideCompleted && completedQuests[quest.id]) return false;
+            if (!showIgnored && ignoredQuests[quest.id]) return false;
 
             if (showAvailableOnly) {
                 if ((quest.minPlayerLevel ?? 0) > playerLevel) return false;
                 if (!quest.taskRequirements.every((req) => completedQuests[req.task.id])) return false;
             }
 
+            if (showPinnedOnly && !pinnedQuests[quest.id]) return false;
+            if (showHandInOnly && !hasGiveItemObjectives(quest)) return false;
+            if (showFirHandInOnly && !hasFirGiveItemObjectives(quest)) return false;
+
             if (selectedTraders.size > 0 && !selectedTraders.has(quest.trader.id)) return false;
-            if (faction !== null && quest.factionName && quest.factionName !== faction) return false;
+            if (!matchesFactionVisibility(quest.factionName, faction)) return false;
 
             if (showKappa || showLightkeeper) {
                 if (!((showKappa && kappaQuestIds.has(quest.id)) || (showLightkeeper && lightkeeperQuestIds.has(quest.id))))
@@ -166,9 +222,16 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
         showLightkeeper,
         selectedMaps,
         completedQuests,
+        ignoredQuests,
         playerLevel,
+        pinnedQuests,
         kappaQuestIds,
         lightkeeperQuestIds,
+        showHandInOnly,
+        showFirHandInOnly,
+        showPinnedOnly,
+        showIgnored,
+        searchQuery,
     ]);
 
     const completedCount = useMemo(
@@ -197,6 +260,77 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
     const toggleFaction = (f: FactionFilter) => setQuestFaction(faction === f ? null : f);
     const toggleKappa = () => setQuestShowKappa(!showKappa);
     const toggleLightkeeper = () => setQuestShowLightkeeper(!showLightkeeper);
+    const completePrerequisitesForQuest = (questId: string) => {
+        const ids = getTransitivePrereqs(new Set([questId]), questsById);
+        ids.delete(questId);
+        const state = useUserStore.getState();
+        const completedIds = [...ids].filter((id) => !state.completedQuests[id]);
+        const questName = questsById.get(questId)?.name ?? "Selected quest";
+
+        if (completedIds.length === 0) {
+            setLastPrereqSync({
+                questId,
+                questName,
+                completedIds: [],
+                previousCompleted: {},
+                previousHaveItems: {},
+            });
+            return { completedIds, completedCount: 0 };
+        }
+
+        const previousCompleted = Object.fromEntries(
+            completedIds.map((id) => [id, state.completedQuests[id]]),
+        );
+        const previousHaveItems = Object.fromEntries(
+            completedIds.map((id) => [id, state.questsWithItems[id]]),
+        );
+
+        useUserStore.setState((current) => ({
+            completedQuests: {
+                ...current.completedQuests,
+                ...Object.fromEntries(completedIds.map((id) => [id, true])),
+            },
+            questsWithItems: {
+                ...current.questsWithItems,
+                ...Object.fromEntries(completedIds.map((id) => [id, false])),
+            },
+        }));
+
+        setLastPrereqSync({
+            questId,
+            questName,
+            completedIds,
+            previousCompleted,
+            previousHaveItems,
+        });
+
+        return { completedIds, completedCount: completedIds.length };
+    };
+
+    const undoLastPrerequisiteSync = () => {
+        if (!lastPrereqSync || lastPrereqSync.completedIds.length === 0) return false;
+
+        useUserStore.setState((state) => {
+            const completedQuests = { ...state.completedQuests };
+            const questsWithItems = { ...state.questsWithItems };
+
+            for (const id of lastPrereqSync.completedIds) {
+                const prevCompleted = lastPrereqSync.previousCompleted[id];
+                const prevHaveItems = lastPrereqSync.previousHaveItems[id];
+
+                if (prevCompleted === undefined) delete completedQuests[id];
+                else completedQuests[id] = prevCompleted;
+
+                if (prevHaveItems === undefined) delete questsWithItems[id];
+                else questsWithItems[id] = prevHaveItems;
+            }
+
+            return { completedQuests, questsWithItems };
+        });
+
+        setLastPrereqSync(null);
+        return true;
+    };
 
     return (
         <QuestsContext.Provider
@@ -209,7 +343,12 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
                 selectedMaps,
                 hideCompleted,
                 showAvailableOnly,
+                showHandInOnly,
+                showFirHandInOnly,
+                showPinnedOnly,
+                showIgnored,
                 showDebug,
+                searchQuery,
                 filteredQuests,
                 questsById,
                 kappaQuestIds,
@@ -218,6 +357,12 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
                 traders,
                 allMaps,
                 completedCount,
+                lastPrereqSyncSummary: lastPrereqSync
+                    ? {
+                          questName: lastPrereqSync.questName,
+                          completedCount: lastPrereqSync.completedIds.length,
+                      }
+                    : null,
                 toggleTrader,
                 clearTraders,
                 toggleMap,
@@ -229,7 +374,14 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
                 toggleLightkeeper,
                 setHideCompleted,
                 setShowAvailableOnly,
+                setShowHandInOnly,
+                setShowFirHandInOnly,
+                setShowPinnedOnly,
+                setShowIgnored,
                 setShowDebug,
+                setSearchQuery,
+                completePrerequisitesForQuest,
+                undoLastPrerequisiteSync,
             }}
         >
             {children}

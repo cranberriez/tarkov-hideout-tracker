@@ -75,18 +75,23 @@ export function SegButton({
 
 export function FilterButton({
     active,
+    disabled = false,
     onClick,
     label,
 }: {
     active: boolean;
+    disabled?: boolean;
     onClick: () => void;
     label: string;
 }) {
     return (
         <button
             onClick={onClick}
+            disabled={disabled}
             className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-sm border transition-all cursor-pointer shrink-0 ${
-                active
+                disabled
+                    ? "border-white/5 text-gray-700 bg-black/10 cursor-not-allowed"
+                    : active
                     ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10 shadow-[0_0_10px_rgba(157,255,0,0.1)]"
                     : "border-white/10 text-gray-400 hover:border-white/30 bg-black/20 hover:bg-black/40"
             }`}

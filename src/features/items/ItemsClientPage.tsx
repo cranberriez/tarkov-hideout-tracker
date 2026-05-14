@@ -10,13 +10,13 @@ import { ItemSearchModal } from "@/features/items/components/ItemSearchModal";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { useDataContext } from "@/app/(data)/_dataContext";
-import type { PerQuestPool } from "@/lib/utils/quest-pooling";
+import type { QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
 
 interface ItemsClientPageProps {
-    perQuestPools: PerQuestPool[];
+    questItemIndex: QuestItemIndexEntry[];
 }
 
-export function ItemsClientPage({ perQuestPools }: ItemsClientPageProps) {
+export function ItemsClientPage({ questItemIndex }: ItemsClientPageProps) {
     const { stations, stationsUpdatedAt, items, itemsUpdatedAt } = useDataContext();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
@@ -25,7 +25,6 @@ export function ItemsClientPage({ perQuestPools }: ItemsClientPageProps) {
         stationLevels,
         hiddenStations,
         completedRequirements,
-        toggleRequirement,
         gameMode,
         setGameMode,
         initializeDefaults,
@@ -54,7 +53,7 @@ export function ItemsClientPage({ perQuestPools }: ItemsClientPageProps) {
                         ITEM CHECKLIST
                     </h1>
                     <p className="text-gray-400 mt-2 text-sm">
-                        Aggregated list of items required for your hideout upgrades
+                        Aggregated hideout and quest hand-in items, ordered around live progression
                     </p>
                 </div>
                 <button
@@ -75,10 +74,10 @@ export function ItemsClientPage({ perQuestPools }: ItemsClientPageProps) {
 
             <div className="mb-8">
                 <ItemsControls onOpenSearch={() => setIsSearchOpen(true)} />
-                <ItemsStatsRow perQuestPools={perQuestPools} />
+                <ItemsStatsRow questItemIndex={questItemIndex} />
             </div>
 
-            <ItemsList onClickItem={setSelectedItem} perQuestPools={perQuestPools} />
+            <ItemsList onClickItem={setSelectedItem} questItemIndex={questItemIndex} />
 
             <DataLastUpdated />
 
@@ -100,7 +99,7 @@ export function ItemsClientPage({ perQuestPools }: ItemsClientPageProps) {
                     stationLevels={stationLevels}
                     hiddenStations={hiddenStations}
                     completedRequirements={completedRequirements}
-                    toggleRequirement={toggleRequirement}
+                    questItemIndex={questItemIndex}
                 />
             )}
         </main>

@@ -1,12 +1,27 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { Link2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CheckCircle, Circle, Lock } from "lucide-react";
 import { useQuestsContext } from "../QuestsContext";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { QuestCard, type QuestRef } from "../QuestCard";
 import { cn } from "@/lib/utils";
 import type { FullQuest } from "@/types";
+
+const QUEST_HIGHLIGHT_DURATION_MS = 30_000;
+const QUEST_SCROLL_TOP_OFFSET_VH = 0.3;
+
+function scrollToQuest(questId: string) {
+    const target = document.getElementById(`quest-${questId}`);
+    if (!target) return;
+
+    const targetTop = target.getBoundingClientRect().top + window.scrollY;
+    const offset = window.innerHeight * QUEST_SCROLL_TOP_OFFSET_VH;
+    const top = Math.max(0, targetTop - offset);
+
+    window.history.replaceState(null, "", `#quest-${questId}`);
+    window.scrollTo({ top, behavior: "smooth" });
+}
 
 function buildTraderTree(traderQuests: FullQuest[]): {
     rootIds: string[];
@@ -98,35 +113,75 @@ function getConnectorOffsetPx(depth: number) {
     return Math.max(10, indent - 4);
 }
 
-function LinkedQuestGroup({ questRefs }: { questRefs: QuestRef[] }) {
+function LinkedQuestGroup({
+    questRefs,
+    questsById,
+    onQuestLinkClick,
+}: {
+    questRefs: QuestRef[];
+    questsById: Map<string, FullQuest>;
+    onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
+}) {
+    const { completedQuests, playerLevel } = useUserStore();
+
     return (
         <div className="-mb-2 rounded-t-md border border-white/10 border-b-0 bg-black/30 px-2.5 pt-1.5 pb-3.5">
             <div className="space-y-1">
-                {questRefs.map((questRef) => (
-                    <a
-                        key={questRef.id}
-                        href={`#quest-${questRef.id}`}
-                        className="flex items-center gap-2 rounded-sm px-1.5 py-1 text-xs text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
-                    >
-                        <span className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-gray-500 shrink-0">
-                            <Link2 size={11} />
-                            Link
-                        </span>
-                        {questRef.trader.image4xLink ?? questRef.trader.imageLink ? (
-                            <img
-                                src={questRef.trader.image4xLink ?? questRef.trader.imageLink ?? ""}
-                                alt={questRef.trader.name}
-                                className="w-4 h-4 rounded-full shrink-0 object-cover"
-                            />
-                        ) : (
-                            <span className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center text-[9px] shrink-0">
-                                {questRef.trader.name[0]}
+                {questRefs.map((questRef) => {
+                    const linkedQuest = questsById.get(questRef.id);
+                    const completed = !!completedQuests[questRef.id];
+                    const completedRequirementCount =
+                        linkedQuest?.taskRequirements.filter((req) => completedQuests[req.task.id])
+                            .length ?? 0;
+                    const available =
+                        !!linkedQuest &&
+                        !completed &&
+                        (linkedQuest.minPlayerLevel ?? 0) <= playerLevel &&
+                        completedRequirementCount === linkedQuest.taskRequirements.length;
+                    const statusLabel = completed
+                        ? "Active"
+                        : available
+                        ? "Ready"
+                        : "Locked";
+
+                    return (
+                        <a
+                            key={questRef.id}
+                            href={`#quest-${questRef.id}`}
+                            onClick={(e) => onQuestLinkClick(questRef.id, e)}
+                            className="flex items-center gap-2 rounded-sm px-1.5 py-1 text-xs text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
+                        >
+                            <span
+                                title={statusLabel}
+                                className="inline-flex h-5 shrink-0 items-center gap-1 text-[10px] uppercase tracking-wide text-gray-400"
+                            >
+                                {completed ? (
+                                    <CheckCircle size={11} className="text-tarkov-green/90" />
+                                ) : available ? (
+                                    <Circle size={11} className="text-blue-300" />
+                                ) : (
+                                    <Lock size={10} className="text-red-300" />
+                                )}
+                                PRE-REQ
                             </span>
-                        )}
-                        <span className="text-[10px] text-gray-500 shrink-0">{questRef.trader.name}</span>
-                        <span className="min-w-0 truncate">{questRef.name}</span>
-                    </a>
-                ))}
+                            {questRef.trader.image4xLink ?? questRef.trader.imageLink ? (
+                                <img
+                                    src={questRef.trader.image4xLink ?? questRef.trader.imageLink ?? ""}
+                                    alt={questRef.trader.name}
+                                    className="h-4 w-4 shrink-0 rounded-full object-cover"
+                                />
+                            ) : (
+                                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px]">
+                                    {questRef.trader.name[0]}
+                                </span>
+                            )}
+                            <span className="shrink-0 text-[10px] text-gray-500">
+                                {questRef.trader.name}
+                            </span>
+                            <span className="min-w-0 truncate">{questRef.name}</span>
+                        </a>
+                    );
+                })}
             </div>
         </div>
     );
@@ -157,12 +212,16 @@ function QuestNodeCard({
     questsById,
     leadsToByQuestId,
     showDebugButton,
+    highlightedQuestId,
+    onQuestLinkClick,
 }: {
     questId: string;
     parentOf: Map<string, string | null>;
     questsById: Map<string, FullQuest>;
     leadsToByQuestId: Map<string, string[]>;
     showDebugButton: boolean;
+    highlightedQuestId: string | null;
+    onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
     const quest = questsById.get(questId);
     if (!quest) return null;
@@ -174,7 +233,13 @@ function QuestNodeCard({
 
     return (
         <>
-            {linkedPrerequisites.length > 0 && <LinkedQuestGroup questRefs={linkedPrerequisites} />}
+            {linkedPrerequisites.length > 0 && (
+                <LinkedQuestGroup
+                    questRefs={linkedPrerequisites}
+                    questsById={questsById}
+                    onQuestLinkClick={onQuestLinkClick}
+                />
+            )}
             <QuestCard
                 quest={quest}
                 prerequisiteQuests={quest.taskRequirements.map((req) =>
@@ -185,6 +250,8 @@ function QuestNodeCard({
                 )}
                 attachedTop={linkedPrerequisites.length > 0}
                 showDebugButton={showDebugButton}
+                highlighted={highlightedQuestId === quest.id}
+                onQuestLinkClick={onQuestLinkClick}
             />
         </>
     );
@@ -198,6 +265,8 @@ function BranchChildren({
     questsById,
     leadsToByQuestId,
     showDebugButton,
+    highlightedQuestId,
+    onQuestLinkClick,
 }: {
     childIds: string[];
     depth: number;
@@ -206,6 +275,8 @@ function BranchChildren({
     questsById: Map<string, FullQuest>;
     leadsToByQuestId: Map<string, string[]>;
     showDebugButton: boolean;
+    highlightedQuestId: string | null;
+    onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
     const [childrenCollapsed, setChildrenCollapsed] = useState(false);
     const [barHovered, setBarHovered] = useState(false);
@@ -293,6 +364,8 @@ function BranchChildren({
                                     questsById={questsById}
                                     leadsToByQuestId={leadsToByQuestId}
                                     showDebugButton={showDebugButton}
+                                    highlightedQuestId={highlightedQuestId}
+                                    onQuestLinkClick={onQuestLinkClick}
                                 />
                             </div>
                         );
@@ -311,6 +384,8 @@ function QuestTreeNode({
     questsById,
     leadsToByQuestId,
     showDebugButton,
+    highlightedQuestId,
+    onQuestLinkClick,
 }: {
     questId: string;
     depth: number;
@@ -319,6 +394,8 @@ function QuestTreeNode({
     questsById: Map<string, FullQuest>;
     leadsToByQuestId: Map<string, string[]>;
     showDebugButton: boolean;
+    highlightedQuestId: string | null;
+    onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
     const children = childrenOf.get(questId) ?? [];
     const linearChainIds = children.length === 1 ? collectLinearChainIds(questId, childrenOf) : [];
@@ -332,6 +409,8 @@ function QuestTreeNode({
                 questsById={questsById}
                 leadsToByQuestId={leadsToByQuestId}
                 showDebugButton={showDebugButton}
+                highlightedQuestId={highlightedQuestId}
+                onQuestLinkClick={onQuestLinkClick}
             />
 
             {linearChainIds.length > 0 && (
@@ -372,6 +451,8 @@ function QuestTreeNode({
                                     questsById={questsById}
                                     leadsToByQuestId={leadsToByQuestId}
                                     showDebugButton={showDebugButton}
+                                    highlightedQuestId={highlightedQuestId}
+                                    onQuestLinkClick={onQuestLinkClick}
                                 />
 
                                 {branchAfterLinear.length > 0 && (
@@ -383,6 +464,8 @@ function QuestTreeNode({
                                         questsById={questsById}
                                         leadsToByQuestId={leadsToByQuestId}
                                         showDebugButton={showDebugButton}
+                                        highlightedQuestId={highlightedQuestId}
+                                        onQuestLinkClick={onQuestLinkClick}
                                     />
                                 )}
                             </div>
@@ -400,6 +483,8 @@ function QuestTreeNode({
                     questsById={questsById}
                     leadsToByQuestId={leadsToByQuestId}
                     showDebugButton={showDebugButton}
+                    highlightedQuestId={highlightedQuestId}
+                    onQuestLinkClick={onQuestLinkClick}
                 />
             )}
         </div>
@@ -413,6 +498,8 @@ function TraderTreeSection({
     questsById,
     leadsToByQuestId,
     showDebugButton,
+    highlightedQuestId,
+    onQuestLinkClick,
 }: {
     trader: FullQuest["trader"];
     traderQuests: FullQuest[];
@@ -420,6 +507,8 @@ function TraderTreeSection({
     questsById: Map<string, FullQuest>;
     leadsToByQuestId: Map<string, string[]>;
     showDebugButton: boolean;
+    highlightedQuestId: string | null;
+    onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
     const { completedQuests } = useUserStore();
 
@@ -474,6 +563,8 @@ function TraderTreeSection({
                             questsById={questsById}
                             leadsToByQuestId={leadsToByQuestId}
                             showDebugButton={showDebugButton}
+                            highlightedQuestId={highlightedQuestId}
+                            onQuestLinkClick={onQuestLinkClick}
                         />
                     </div>
                 ))}
@@ -492,6 +583,29 @@ export function QuestsTree() {
         completedCount,
         showDebug,
     } = useQuestsContext();
+    const [highlightedQuestId, setHighlightedQuestId] = useState<string | null>(null);
+    const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const highlightQuest = (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => {
+        event?.preventDefault();
+        setHighlightedQuestId(questId);
+        scrollToQuest(questId);
+        if (highlightTimeoutRef.current) {
+            clearTimeout(highlightTimeoutRef.current);
+        }
+        highlightTimeoutRef.current = setTimeout(() => {
+            setHighlightedQuestId((current) => (current === questId ? null : current));
+            highlightTimeoutRef.current = null;
+        }, QUEST_HIGHLIGHT_DURATION_MS);
+    };
+
+    useEffect(() => {
+        return () => {
+            if (highlightTimeoutRef.current) {
+                clearTimeout(highlightTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const questsByTraderId = useMemo(() => {
         const map = new Map<string, FullQuest[]>();
@@ -535,6 +649,8 @@ export function QuestsTree() {
                         questsById={questsById}
                         leadsToByQuestId={leadsToByQuestId}
                         showDebugButton={showDebug}
+                        highlightedQuestId={highlightedQuestId}
+                        onQuestLinkClick={highlightQuest}
                     />
                 );
             })}

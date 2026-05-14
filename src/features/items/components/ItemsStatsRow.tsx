@@ -4,14 +4,14 @@ import { useMemo } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { poolItems } from "@/lib/utils/item-pooling";
-import type { PerQuestPool } from "@/lib/utils/quest-pooling";
-import { mergePerQuestPools } from "@/lib/utils/quest-pooling";
+import type { QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
+import { deriveQuestItemStates } from "@/lib/utils/quest-item-index";
 
 interface ItemsStatsRowProps {
-    perQuestPools: PerQuestPool[];
+    questItemIndex: QuestItemIndexEntry[];
 }
 
-export function ItemsStatsRow({ perQuestPools }: ItemsStatsRowProps) {
+export function ItemsStatsRow({ questItemIndex }: ItemsStatsRowProps) {
     const { stations } = useDataContext();
     const {
         stationLevels,
@@ -20,12 +20,21 @@ export function ItemsStatsRow({ perQuestPools }: ItemsStatsRowProps) {
         showHidden,
         completedRequirements,
         completedQuests,
+        ignoredQuests,
+        pinnedQuests,
+        playerLevel,
         itemCounts,
     } = useUserStore();
 
     const activeQuestItems = useMemo(
-        () => mergePerQuestPools(perQuestPools, completedQuests),
-        [perQuestPools, completedQuests],
+        () =>
+            deriveQuestItemStates(questItemIndex, {
+                completedQuests,
+                ignoredQuests,
+                pinnedQuests,
+                playerLevel,
+            }),
+        [questItemIndex, completedQuests, ignoredQuests, pinnedQuests, playerLevel],
     );
 
     const mergedPool = useMemo(() => {
@@ -43,19 +52,19 @@ export function ItemsStatsRow({ perQuestPools }: ItemsStatsRowProps) {
         const merged = new Map(hideoutItems.map((item) => [item.id, { ...item }]));
 
         for (const qi of activeQuestItems) {
-            const existing = merged.get(qi.id);
+            const existing = merged.get(qi.itemId);
             if (existing) {
-                merged.set(qi.id, {
+                merged.set(qi.itemId, {
                     ...existing,
-                    count: existing.count + qi.count,
-                    firCount: existing.firCount + qi.firCount,
+                    count: existing.count + qi.requiredCount,
+                    firCount: existing.firCount + qi.requiredFirCount,
                     isQuest: true,
                 });
             } else {
-                merged.set(qi.id, {
-                    id: qi.id,
-                    count: qi.count,
-                    firCount: qi.firCount,
+                merged.set(qi.itemId, {
+                    id: qi.itemId,
+                    count: qi.requiredCount,
+                    firCount: qi.requiredFirCount,
                     isTool: false,
                     isHideout: false,
                     isQuest: true,
@@ -76,18 +85,19 @@ export function ItemsStatsRow({ perQuestPools }: ItemsStatsRowProps) {
 
     const stats = useMemo(() => {
         const total = mergedPool.length;
-        const hideout = mergedPool.filter((i) => i.isHideout).length;
-        const quest = mergedPool.filter((i) => i.isQuest).length;
-        const complete = mergedPool.filter((i) => {
-            const counts = itemCounts[i.id];
+        const hideout = mergedPool.filter((item) => item.isHideout).length;
+        const quest = mergedPool.filter((item) => item.isQuest).length;
+        const complete = mergedPool.filter((item) => {
+            const counts = itemCounts[item.id];
             if (!counts) return false;
-            return counts.have + counts.haveFir >= i.count;
+            return counts.have + counts.haveFir >= item.count;
         }).length;
+
         return { total, hideout, quest, complete };
     }, [mergedPool, itemCounts]);
 
     return (
-        <div className="flex items-center gap-2 px-1 mt-2 text-xs text-gray-600 select-none">
+        <div className="mt-2 flex items-center gap-2 px-1 text-xs text-gray-600 select-none">
             <Stat value={stats.total} label="items" />
             <Sep />
             <Stat value={stats.hideout} label="hideout" />
@@ -102,7 +112,7 @@ export function ItemsStatsRow({ perQuestPools }: ItemsStatsRowProps) {
 function Stat({ value, label }: { value: number; label: string }) {
     return (
         <span>
-            <span className="text-gray-400 font-medium tabular-nums">{value}</span>
+            <span className="font-medium text-gray-400 tabular-nums">{value}</span>
             <span className="ml-1">{label}</span>
         </span>
     );

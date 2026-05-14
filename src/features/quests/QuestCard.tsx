@@ -15,6 +15,10 @@ import {
     Zap,
     ExternalLink,
     Braces,
+    Pin,
+    CircleSlash,
+    Lock,
+    SkipForward,
 } from "lucide-react";
 import type {
     FullQuest,
@@ -23,6 +27,7 @@ import type {
     QuestObjectiveShootType,
 } from "@/types";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { useQuestsContext } from "./QuestsContext";
 
 export interface QuestRef {
     id: string;
@@ -36,6 +41,8 @@ interface QuestCardProps {
     leadsToQuests: QuestRef[];
     attachedTop?: boolean;
     showDebugButton?: boolean;
+    highlighted?: boolean;
+    onQuestLinkClick?: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
 const questMetaChipBaseClass =
@@ -43,6 +50,10 @@ const questMetaChipBaseClass =
 
 function isItemObjective(o: FullQuestObjective): o is QuestObjectiveItemType {
     return (o.type === "giveItem" || o.type === "findItem") && "items" in o;
+}
+
+function isGiveItemObjective(o: FullQuestObjective): o is QuestObjectiveItemType {
+    return o.type === "giveItem" && "items" in o;
 }
 
 function isShootObjective(o: FullQuestObjective): o is QuestObjectiveShootType {
@@ -100,12 +111,12 @@ function ObjectiveRow({ objective }: { objective: FullQuestObjective }) {
                     <div
                         className={
                             hasItemChoices
-                                ? "space-y-2 rounded-md border border-white/12 bg-white/4 px-2 py-2"
-                                : "flex flex-wrap gap-1"
+                                ? "space-y-2 rounded-md border border-white/12 bg-white/4 px-2.5 py-2.5"
+                                : "flex flex-wrap gap-1.5"
                         }
                     >
                         {hasItemChoices && (
-                            <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+                            <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
                                 <span>{item.count} of any of these</span>
                                 {item.foundInRaid && (
                                     <span className="rounded border border-orange-500/30 bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-400">
@@ -114,26 +125,28 @@ function ObjectiveRow({ objective }: { objective: FullQuestObjective }) {
                                 )}
                             </div>
                         )}
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-1.5">
                             {item.items.map((itm) => (
                                 <div
                                     key={itm.id}
-                                    className={`flex items-center gap-1 bg-black/40 rounded px-1.5 py-0.5 ${
-                                        item.foundInRaid
-                                            ? "ring-1 ring-orange-500"
-                                            : "border border-white/10"
-                                    }`}
+                                    className="flex items-center gap-1.5 rounded border border-white/10 bg-black/40 px-2 py-1"
                                 >
                                     {(itm.iconLink ?? itm.gridImageLink) && (
-                                        <img
-                                            src={itm.iconLink ?? itm.gridImageLink ?? ""}
-                                            alt={itm.name}
-                                            className="w-4 h-4 object-contain"
-                                        />
+                                        <span
+                                            className={`flex h-6 w-6 items-center justify-center rounded-sm bg-black/35 ${
+                                                item.foundInRaid ? "ring-1 ring-orange-500" : ""
+                                            }`}
+                                        >
+                                            <img
+                                                src={itm.iconLink ?? itm.gridImageLink ?? ""}
+                                                alt={itm.name}
+                                                className="h-5 w-5 object-contain"
+                                            />
+                                        </span>
                                     )}
-                                    <span className="text-[10px] text-gray-300">{itm.name}</span>
+                                    <span className="text-[11px] text-gray-200">{itm.name}</span>
                                     {!hasItemChoices && (
-                                        <span className="text-[10px] text-gray-500">
+                                        <span className="text-[11px] text-gray-500">
                                             x{item.count}
                                         </span>
                                     )}
@@ -157,11 +170,20 @@ function ObjectiveRow({ objective }: { objective: FullQuestObjective }) {
     );
 }
 
-function QuestChip({ questRef }: { questRef: QuestRef }) {
+function QuestChip({
+    questRef,
+    onQuestLinkClick,
+}: {
+    questRef: QuestRef;
+    onQuestLinkClick?: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
+}) {
     return (
         <a
             href={`#quest-${questRef.id}`}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+                e.stopPropagation();
+                onQuestLinkClick?.(questRef.id, e);
+            }}
             className="flex items-center gap-1.5 text-xs text-gray-400 bg-black/40 border border-white/10 px-2 py-0.5 rounded hover:border-white/25 hover:text-gray-300 transition-colors"
         >
             {questRef.trader.image4xLink ?? questRef.trader.imageLink ? (
@@ -186,11 +208,24 @@ export function QuestCard({
     leadsToQuests,
     attachedTop = false,
     showDebugButton = false,
+    highlighted = false,
+    onQuestLinkClick,
 }: QuestCardProps) {
     const [expanded, setExpanded] = useState(false);
     const [debugOpen, setDebugOpen] = useState(false);
-    const { completedQuests, toggleQuestCompletion, playerLevel } = useUserStore();
+    const { completePrerequisitesForQuest } = useQuestsContext();
+    const {
+        completedQuests,
+        ignoredQuests,
+        pinnedQuests,
+        toggleQuestCompletion,
+        toggleIgnoredQuest,
+        togglePinnedQuest,
+        playerLevel,
+    } = useUserStore();
     const completed = !!completedQuests[quest.id];
+    const ignored = !!ignoredQuests[quest.id];
+    const pinned = !!pinnedQuests[quest.id];
     const completedRequirementCount = quest.taskRequirements.filter(
         (req) => completedQuests[req.task.id],
     ).length;
@@ -198,8 +233,10 @@ export function QuestCard({
         !completed &&
         (quest.minPlayerLevel ?? 0) <= playerLevel &&
         completedRequirementCount === quest.taskRequirements.length;
+    const hasIncompletePrerequisites =
+        completed && completedRequirementCount < quest.taskRequirements.length;
 
-    const giveItemObjectives = quest.objectives.filter(isItemObjective);
+    const giveItemObjectives = quest.objectives.filter(isGiveItemObjective);
     const allHandInItems = [
         ...new Map(
             giveItemObjectives.flatMap((o) =>
@@ -214,9 +251,23 @@ export function QuestCard({
             className={`border overflow-hidden transition-colors ${
                 attachedTop ? "rounded-b-md rounded-t-none" : "rounded-md"
             } ${
-                completed
+                highlighted
+                    ? "border-tarkov-green shadow-[0_0_0_1px_rgba(157,255,0,0.18)]"
+                    : completed
                     ? "border-white/5 bg-black/10"
-                    : "border-white/10 bg-[#111111] hover:border-white/15"
+                    : ignored
+                    ? "border-white/8 bg-black/20 opacity-70"
+                    : pinned
+                    ? "border-sky-500/20 bg-[linear-gradient(90deg,rgba(56,189,248,0.16)_0%,rgba(56,189,248,0.08)_30%,rgba(17,17,17,0.95)_72%)] hover:border-sky-400/30"
+                    : "border-white/10 hover:border-white/15"
+            } ${
+                completed
+                    ? "bg-black/10"
+                    : ignored
+                    ? "bg-black/20 opacity-70"
+                    : pinned
+                    ? "bg-[linear-gradient(90deg,rgba(56,189,248,0.16)_0%,rgba(56,189,248,0.08)_30%,rgba(17,17,17,0.95)_72%)]"
+                    : "bg-[#111111]"
             }`}
         >
             {/* Header row */}
@@ -247,6 +298,18 @@ export function QuestCard({
                         }`}
                     />
                 </button>
+                {hasIncompletePrerequisites && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            completePrerequisitesForQuest(quest.id);
+                        }}
+                        className="shrink-0 rounded-md p-1.5 text-amber-300/85 transition-all hover:bg-amber-500/8 hover:text-amber-200"
+                        title="Complete any missing prerequisite quests for this completed quest"
+                    >
+                        <SkipForward size={15} strokeWidth={2.2} />
+                    </button>
+                )}
 
                 {/* Trader avatar */}
                 {quest.trader.image4xLink ?? quest.trader.imageLink ? (
@@ -274,12 +337,20 @@ export function QuestCard({
                         className={`${questMetaChipBaseClass} shrink-0 ${
                             completed
                                 ? "text-tarkov-green/80 bg-tarkov-green/10 border-tarkov-green/20"
+                                : ignored
+                                ? "text-gray-400 bg-black/50 border-white/10"
                                 : available
                                 ? "text-blue-400/80 bg-blue-400/10 border-blue-400/20"
-                                : "text-amber-400/80 bg-amber-500/10 border-amber-500/20"
+                                : "border-transparent bg-transparent px-0 text-red-300"
                         }`}
                     >
-                        {completed ? "Completed" : available ? "Available" : "Locked"}
+                        {completed
+                            ? "Completed"
+                            : ignored
+                            ? "Ignored"
+                            : available
+                            ? "Available"
+                            : <Lock size={12} strokeWidth={2.25} aria-label="Locked" />}
                     </span>
                 </div>
 
@@ -368,6 +439,36 @@ export function QuestCard({
                     </button>
                 )}
 
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        togglePinnedQuest(quest.id);
+                    }}
+                    className={`shrink-0 rounded-md p-1.5 transition-all ${
+                        pinned
+                            ? "text-sky-300 bg-sky-500/12 shadow-[0_0_18px_rgba(56,189,248,0.24)]"
+                            : "text-gray-500 hover:text-sky-300 hover:bg-sky-500/8"
+                    }`}
+                    title={pinned ? "Unpin quest" : "Pin quest"}
+                >
+                    <Pin size={16} className={pinned ? "fill-current" : ""} />
+                </button>
+
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        toggleIgnoredQuest(quest.id);
+                    }}
+                    className={`shrink-0 rounded-md p-1.5 transition-all ${
+                        ignored
+                            ? "text-red-300 bg-red-500/12 shadow-[0_0_18px_rgba(239,68,68,0.18)]"
+                            : "text-gray-500 hover:text-red-300 hover:bg-red-500/8"
+                    }`}
+                    title={ignored ? "Stop ignoring quest" : "Ignore quest"}
+                >
+                    <CircleSlash size={16} className={ignored ? "stroke-[2.25]" : ""} />
+                </button>
+
                 {expanded ? (
                     <ChevronDown size={14} className="text-gray-500 shrink-0" />
                 ) : (
@@ -451,7 +552,11 @@ export function QuestCard({
                             </span>
                             <div className="flex flex-wrap gap-1">
                                 {prerequisiteQuests.map((ref) => (
-                                    <QuestChip key={ref.id} questRef={ref} />
+                                    <QuestChip
+                                        key={ref.id}
+                                        questRef={ref}
+                                        onQuestLinkClick={onQuestLinkClick}
+                                    />
                                 ))}
                             </div>
                         </div>
@@ -465,7 +570,11 @@ export function QuestCard({
                             </span>
                             <div className="flex flex-wrap gap-1">
                                 {leadsToQuests.map((ref) => (
-                                    <QuestChip key={ref.id} questRef={ref} />
+                                    <QuestChip
+                                        key={ref.id}
+                                        questRef={ref}
+                                        onQuestLinkClick={onQuestLinkClick}
+                                    />
                                 ))}
                             </div>
                         </div>

@@ -19,6 +19,8 @@ interface UserState {
     completedRequirements: Record<string, boolean>; // requirementId -> completed?
     completedQuests: Record<string, boolean>; // questId -> completed?
     questsWithItems: Record<string, boolean>; // questId -> items collected but not handed in
+    ignoredQuests: Record<string, boolean>; // questId -> hidden from quest demand
+    pinnedQuests: Record<string, boolean>; // questId -> manually prioritized
 
     // Per-item ownership counts
     itemCounts: Record<string, { have: number; haveFir: number }>; // itemId -> counts
@@ -54,7 +56,14 @@ interface UserState {
     questSelectedMaps: string[];
     questHideCompleted: boolean;
     questShowAvailableOnly: boolean;
+    questShowHandInOnly: boolean;
+    questShowFirHandInOnly: boolean;
+    questShowPinnedOnly: boolean;
+    questShowIgnored: boolean;
     questShowDebug: boolean;
+
+    itemShowPinnedQuestSection: boolean;
+    itemShowPinnedQuestOnly: boolean;
 
     // Onboarding / feature flags
     hasSeenItemConversionModal: boolean;
@@ -75,6 +84,8 @@ interface UserState {
     toggleRequirement: (requirementId: string) => void;
     toggleQuestCompletion: (questId: string) => void;
     toggleQuestHaveItems: (questId: string) => void;
+    toggleIgnoredQuest: (questId: string) => void;
+    togglePinnedQuest: (questId: string) => void;
 
     addItemCounts: (itemId: string, haveDelta: number, haveFirDelta: number) => void;
 
@@ -110,7 +121,14 @@ interface UserState {
     setQuestSelectedMaps: (maps: string[]) => void;
     setQuestHideCompleted: (v: boolean) => void;
     setQuestShowAvailableOnly: (v: boolean) => void;
+    setQuestShowHandInOnly: (v: boolean) => void;
+    setQuestShowFirHandInOnly: (v: boolean) => void;
+    setQuestShowPinnedOnly: (v: boolean) => void;
+    setQuestShowIgnored: (v: boolean) => void;
     setQuestShowDebug: (v: boolean) => void;
+
+    setItemShowPinnedQuestSection: (v: boolean) => void;
+    setItemShowPinnedQuestOnly: (v: boolean) => void;
 
     applyEditionBonuses: (stations: Station[]) => void;
 
@@ -129,6 +147,8 @@ export const useUserStore = create<UserState>()(
             completedRequirements: {},
             completedQuests: {},
             questsWithItems: {},
+            ignoredQuests: {},
+            pinnedQuests: {},
             itemCounts: {},
             checklistViewMode: "all",
             itemSourceFilter: "all",
@@ -156,7 +176,14 @@ export const useUserStore = create<UserState>()(
             questSelectedMaps: [],
             questHideCompleted: false,
             questShowAvailableOnly: false,
+            questShowHandInOnly: false,
+            questShowFirHandInOnly: false,
+            questShowPinnedOnly: false,
+            questShowIgnored: false,
             questShowDebug: false,
+
+            itemShowPinnedQuestSection: true,
+            itemShowPinnedQuestOnly: false,
 
             gameEdition: null,
             gameMode: "PVP",
@@ -213,6 +240,22 @@ export const useUserStore = create<UserState>()(
                     },
                 })),
 
+            toggleIgnoredQuest: (questId) =>
+                set((state) => ({
+                    ignoredQuests: {
+                        ...state.ignoredQuests,
+                        [questId]: !state.ignoredQuests[questId],
+                    },
+                })),
+
+            togglePinnedQuest: (questId) =>
+                set((state) => ({
+                    pinnedQuests: {
+                        ...state.pinnedQuests,
+                        [questId]: !state.pinnedQuests[questId],
+                    },
+                })),
+
             addItemCounts: (itemId, haveDelta, haveFirDelta) => {
                 set((state) => {
                     const current = state.itemCounts[itemId] ?? { have: 0, haveFir: 0 };
@@ -252,7 +295,29 @@ export const useUserStore = create<UserState>()(
             setQuestSelectedMaps: (maps) => set({ questSelectedMaps: maps }),
             setQuestHideCompleted: (v) => set({ questHideCompleted: v }),
             setQuestShowAvailableOnly: (v) => set({ questShowAvailableOnly: v }),
+            setQuestShowHandInOnly: (v) =>
+                set((state) => ({
+                    questShowHandInOnly: v,
+                    questShowFirHandInOnly: v ? state.questShowFirHandInOnly : false,
+                })),
+            setQuestShowFirHandInOnly: (v) =>
+                set((state) => ({
+                    questShowFirHandInOnly: state.questShowHandInOnly ? v : false,
+                })),
+            setQuestShowPinnedOnly: (v) => set({ questShowPinnedOnly: v }),
+            setQuestShowIgnored: (v) => set({ questShowIgnored: v }),
             setQuestShowDebug: (v) => set({ questShowDebug: v }),
+
+            setItemShowPinnedQuestSection: (v) =>
+                set((state) => ({
+                    itemShowPinnedQuestSection: v,
+                    itemShowPinnedQuestOnly: v ? state.itemShowPinnedQuestOnly : false,
+                })),
+            setItemShowPinnedQuestOnly: (v) =>
+                set((state) => ({
+                    itemShowPinnedQuestOnly: v,
+                    itemShowPinnedQuestSection: v ? true : state.itemShowPinnedQuestSection,
+                })),
 
             setHasSeenItemConversionModal: (value) => set({ hasSeenItemConversionModal: value }),
             setHasSeenHideoutLevelWarning: (value) => set({ hasSeenHideoutLevelWarning: value }),
@@ -368,6 +433,8 @@ export const useUserStore = create<UserState>()(
                     completedRequirements: {},
                     completedQuests: {},
                     questsWithItems: {},
+                    ignoredQuests: {},
+                    pinnedQuests: {},
                     itemCounts: {},
                     checklistViewMode: "all",
                     itemSourceFilter: "all",
@@ -393,7 +460,13 @@ export const useUserStore = create<UserState>()(
                     questSelectedMaps: [],
                     questHideCompleted: false,
                     questShowAvailableOnly: false,
+                    questShowHandInOnly: false,
+                    questShowFirHandInOnly: false,
+                    questShowPinnedOnly: false,
+                    questShowIgnored: false,
                     questShowDebug: false,
+                    itemShowPinnedQuestSection: true,
+                    itemShowPinnedQuestOnly: false,
                     gameEdition: null,
                     gameMode: "PVP",
                     hasCompletedSetup: false,
@@ -404,7 +477,7 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: "tarkov-hideout-user-state",
-            version: 3,
+            version: 4,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -431,7 +504,21 @@ export const useUserStore = create<UserState>()(
                     };
                 }
 
-                return nextState as UserState;
+                if (version < 4) {
+                    nextState = {
+                        ...nextState,
+                        ignoredQuests: {},
+                        pinnedQuests: {},
+                        questShowHandInOnly: false,
+                        questShowFirHandInOnly: false,
+                        questShowPinnedOnly: false,
+                        questShowIgnored: false,
+                        itemShowPinnedQuestSection: true,
+                        itemShowPinnedQuestOnly: false,
+                    };
+                }
+
+                return nextState as unknown as UserState;
             },
         },
     ),

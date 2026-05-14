@@ -12,6 +12,8 @@ import { ItemDetailHeader } from "./ItemDetailHeader";
 import { ItemDetailInventoryAndMarket } from "./ItemDetailInventoryAndMarket";
 import { ItemDetailHideoutRequirements } from "./ItemDetailHideoutRequirements";
 import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
+import type { QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
+import { deriveQuestItemState } from "@/lib/utils/quest-item-index";
 
 export interface ItemDetailModalProps {
     item: ItemDetails | null;
@@ -21,7 +23,7 @@ export interface ItemDetailModalProps {
     stationLevels: Record<string, number>;
     hiddenStations: Record<string, boolean>;
     completedRequirements: Record<string, boolean>;
-    toggleRequirement: (requirementId: string) => void;
+    questItemIndex?: QuestItemIndexEntry[];
 }
 
 export function ItemDetailModal({
@@ -32,12 +34,14 @@ export function ItemDetailModal({
     stationLevels,
     hiddenStations,
     completedRequirements,
-    toggleRequirement,
+    questItemIndex = [],
 }: ItemDetailModalProps) {
-    if (!item) return null;
+    const selectedItem = item;
+    const selectedItemId = selectedItem?.id ?? "";
+    const selectedNormalizedName = selectedItem?.normalizedName ?? "";
 
     const stationRequirements = useMemo(() => {
-        if (!stations) return [];
+        if (!selectedItem || !stations) return [];
 
         const reqs: {
             stationName: string;
@@ -59,9 +63,9 @@ export function ItemDetailModal({
 
             station.levels.forEach((level) => {
                 level.itemRequirements.forEach((req) => {
-                    if (req.item.id === item.id) {
+                    if (req.item.id === selectedItem.id) {
                         const isFir = req.attributes.some(
-                            (attr) => attr.name === "found_in_raid" && attr.value === "true"
+                            (attr) => attr.name === "found_in_raid" && attr.value === "true",
                         );
                         reqs.push({
                             stationName: station.name,
@@ -99,18 +103,26 @@ export function ItemDetailModal({
 
             return getOrder(reqA.stationNormalizedName) - getOrder(reqB.stationNormalizedName);
         });
-    }, [item, stations, stationLevels]);
+    }, [selectedItem, stations, stationLevels]);
 
     const { marketPricesByMode, loading: pricesLoading } = usePriceDataContext();
-    const { gameMode } = useUserStore();
+    const {
+        completedQuests,
+        ignoredQuests,
+        pinnedQuests,
+        gameMode,
+        playerLevel,
+        itemCounts,
+        addItemCounts,
+    } = useUserStore();
     const mode = gameMode === "PVE" ? "PVE" : "PVP";
     const priceBucket = marketPricesByMode[mode];
     const loading = pricesLoading || !priceBucket || priceBucket.updatedAt === null;
-    const marketPrice = priceBucket?.prices[item.normalizedName];
+    const marketPrice = selectedItem ? priceBucket?.prices[selectedNormalizedName] : undefined;
 
     const formatPrice = (price?: number) => {
         if (price === undefined) return "-";
-        return new Intl.NumberFormat("en-US").format(price) + " ₽";
+        return `${new Intl.NumberFormat("en-US").format(price)} ₽`;
     };
 
     const renderMarketValue = (value?: number) => {
@@ -127,30 +139,29 @@ export function ItemDetailModal({
     };
 
     const { totalCount, totalFir } = useMemo(() => {
-        let totalCount = 0;
-        let totalFir = 0;
+        let nextTotalCount = 0;
+        let nextTotalFir = 0;
 
         stationRequirements.forEach(([, reqs]) => {
             reqs.forEach((req) => {
                 const isManuallyCompleted = completedRequirements[req.requirementId];
-
                 if (req.isCompleted || isManuallyCompleted) {
                     return;
                 }
 
-                totalCount += req.count;
+                nextTotalCount += req.count;
                 if (req.isFir) {
-                    totalFir += req.count;
+                    nextTotalFir += req.count;
                 }
             });
         });
 
-        return { totalCount, totalFir };
+        return { totalCount: nextTotalCount, totalFir: nextTotalFir };
     }, [stationRequirements, completedRequirements]);
 
-    const isRouble = item.normalizedName === "roubles";
-    const isDollar = item.normalizedName === "dollars";
-    const isEuro = item.normalizedName === "euros";
+    const isRouble = selectedNormalizedName === "roubles";
+    const isDollar = selectedNormalizedName === "dollars";
+    const isEuro = selectedNormalizedName === "euros";
     const isFiat = isDollar || isEuro;
 
     const itemUpdatedTimestamp = (() => {
@@ -161,14 +172,13 @@ export function ItemDetailModal({
     })();
 
     const relativeUpdatedAt = formatRelativeUpdatedAt(itemUpdatedTimestamp);
-
-    const { itemCounts, addItemCounts } = useUserStore();
-    const owned = itemCounts[item.id] ?? { have: 0, haveFir: 0 };
+    const owned = itemCounts[selectedItemId] ?? { have: 0, haveFir: 0 };
 
     const needsBreakdown = useMemo(() => {
         if (totalCount === 0) {
             return null;
         }
+
         return computeNeeds({
             totalRequired: totalCount,
             requiredFir: totalFir,
@@ -176,6 +186,27 @@ export function ItemDetailModal({
             haveFir: owned.haveFir,
         });
     }, [totalCount, totalFir, owned.have, owned.haveFir]);
+
+    const questItemState = useMemo(() => {
+        if (!selectedItem) return null;
+
+        const entry = questItemIndex.find((questEntry) => questEntry.itemId === selectedItem.id);
+        if (!entry) return null;
+
+        return deriveQuestItemState(entry, {
+            completedQuests,
+            ignoredQuests,
+            pinnedQuests,
+            playerLevel,
+        });
+    }, [
+        selectedItem,
+        questItemIndex,
+        completedQuests,
+        ignoredQuests,
+        pinnedQuests,
+        playerLevel,
+    ]);
 
     const [draftNonFir, setDraftNonFir] = useState(owned.have);
     const [draftFir, setDraftFir] = useState(owned.haveFir);
@@ -188,26 +219,30 @@ export function ItemDetailModal({
     };
 
     const handleConfirmInventoryChanges = () => {
-        if (!hasInventoryChanges) return;
+        if (!selectedItem || !hasInventoryChanges) return;
 
         const haveDelta = draftNonFir - owned.have;
         const haveFirDelta = draftFir - owned.haveFir;
 
         if (haveDelta !== 0 || haveFirDelta !== 0) {
-            addItemCounts(item.id, haveDelta, haveFirDelta);
+            addItemCounts(selectedItem.id, haveDelta, haveFirDelta);
         }
     };
+
+    if (!selectedItem) {
+        return null;
+    }
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent
                 showCloseButton={false}
-                className="w-full sm:max-w-3xl md:max-w-5xl max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col"
+                className="flex max-h-[90vh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl md:max-w-5xl"
             >
-                <DialogTitle className="sr-only">{item.name}</DialogTitle>
-                <div className="flex items-start justify-between p-3 sm:p-5 border-b border-border-color bg-card">
+                <DialogTitle className="sr-only">{selectedItem.name}</DialogTitle>
+                <div className="flex items-start justify-between border-b border-border-color bg-card p-3 sm:p-5">
                     <ItemDetailHeader
-                        item={item}
+                        item={selectedItem}
                         marketPrice={marketPrice}
                         totalCount={totalCount}
                         owned={owned}
@@ -215,17 +250,17 @@ export function ItemDetailModal({
                     />
                     <button
                         onClick={onClose}
-                        className="text-muted-foreground hover:text-foreground p-2 hover:bg-white/10 rounded-full transition-colors shrink-0"
+                        className="shrink-0 rounded-full p-2 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
                     >
                         <X size={24} />
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-3 sm:p-5 bg-background">
+                <div className="flex-1 overflow-y-auto bg-background p-3 sm:p-5">
                     <div
-                        className={`grid grid-cols-1 ${
+                        className={`grid grid-cols-1 gap-5 ${
                             isRouble ? "lg:grid-cols-2" : "lg:grid-cols-3"
-                        } gap-5`}
+                        }`}
                     >
                         {!isRouble && (
                             <ItemDetailInventoryAndMarket
@@ -251,6 +286,76 @@ export function ItemDetailModal({
                             hiddenStations={hiddenStations}
                         />
                     </div>
+
+                    {questItemState && questItemState.relatedQuests.length > 0 && (
+                        <section className="mt-5 rounded-md border border-white/10 bg-card p-4">
+                            <div className="mb-3 flex items-center justify-between gap-3">
+                                <div>
+                                    <h3 className="text-sm font-semibold text-white">Quest Hand-Ins</h3>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Ordered by the same active progression logic used on the items
+                                        page.
+                                    </p>
+                                </div>
+                                <div className="text-right text-xs text-gray-500">
+                                    <div>{questItemState.relatedQuestCount} active quests</div>
+                                    <div>{questItemState.pinnedQuestCount} pinned</div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                {questItemState.relatedQuests.map((quest) => (
+                                    <div
+                                        key={quest.questId}
+                                        className="flex flex-col gap-2 rounded-md border border-white/8 bg-black/20 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                                    >
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="truncate text-sm font-medium text-white">
+                                                    {quest.questName}
+                                                </span>
+                                                {quest.isPinned && (
+                                                    <span className="rounded border border-sky-500/20 bg-sky-500/10 px-1.5 py-0.5 text-[10px] text-sky-300">
+                                                        Pinned
+                                                    </span>
+                                                )}
+                                                <span
+                                                    className={`rounded border px-1.5 py-0.5 text-[10px] ${
+                                                        quest.status === "available"
+                                                            ? "border-blue-400/20 bg-blue-400/10 text-blue-300"
+                                                            : quest.status === "future"
+                                                            ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
+                                                            : quest.status === "completed"
+                                                            ? "border-tarkov-green/20 bg-tarkov-green/10 text-tarkov-green"
+                                                            : "border-white/10 bg-black/30 text-gray-400"
+                                                    }`}
+                                                >
+                                                    {quest.status}
+                                                </span>
+                                            </div>
+                                            <div className="mt-1 text-xs text-gray-500">
+                                                {quest.traderName} · depth {quest.prerequisiteDepth}
+                                                {quest.minPlayerLevel != null
+                                                    ? ` · Lv. ${quest.minPlayerLevel}`
+                                                    : ""}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                                            <span className="rounded border border-white/10 bg-black/30 px-2 py-1">
+                                                x{quest.requiredCount}
+                                            </span>
+                                            {quest.requiredFirCount > 0 && (
+                                                <span className="rounded border border-orange-500/20 bg-orange-500/10 px-2 py-1 text-orange-300">
+                                                    FiR x{quest.requiredFirCount}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>

@@ -7,9 +7,17 @@ export function QuestsFilterBar() {
     const {
         hideCompleted,
         showAvailableOnly,
+        showHandInOnly,
+        showFirHandInOnly,
+        showPinnedOnly,
+        showIgnored,
         showDebug,
         setHideCompleted,
         setShowAvailableOnly,
+        setShowHandInOnly,
+        setShowFirHandInOnly,
+        setShowPinnedOnly,
+        setShowIgnored,
         setShowDebug,
         viewMode,
         setViewMode,
@@ -40,6 +48,27 @@ export function QuestsFilterBar() {
                 active={showAvailableOnly}
                 onClick={() => setShowAvailableOnly(!showAvailableOnly)}
                 label="Available Only"
+            />
+            <FilterButton
+                active={showHandInOnly}
+                onClick={() => setShowHandInOnly(!showHandInOnly)}
+                label="Hand-In Only"
+            />
+            <FilterButton
+                active={showFirHandInOnly}
+                disabled={!showHandInOnly}
+                onClick={() => setShowFirHandInOnly(!showFirHandInOnly)}
+                label="FiR Hand-Ins"
+            />
+            <FilterButton
+                active={showPinnedOnly}
+                onClick={() => setShowPinnedOnly(!showPinnedOnly)}
+                label="Pinned Only"
+            />
+            <FilterButton
+                active={showIgnored}
+                onClick={() => setShowIgnored(!showIgnored)}
+                label="Show Ignored"
             />
             <FilterButton
                 active={showDebug}

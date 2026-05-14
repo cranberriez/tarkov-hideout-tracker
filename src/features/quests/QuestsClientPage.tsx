@@ -7,6 +7,7 @@ import { QuestsSidebar } from "./components/QuestsSidebar";
 import { QuestsCharacterBar } from "./components/QuestsCharacterBar";
 import { QuestsFilterBar } from "./components/QuestsFilterBar";
 import { QuestsList } from "./components/QuestsList";
+import { QuestsSyncBar } from "./components/QuestsSyncBar";
 import { QuestsTree } from "./components/QuestsTree";
 import { SlidersIcon } from "./components/quest-ui";
 
@@ -70,6 +71,7 @@ export function QuestsClientPage({ quests, updatedAt }: QuestsClientPageProps) {
 
                     <div className="flex flex-col gap-3 pb-8">
                         <QuestsCharacterBar />
+                        <QuestsSyncBar />
                         <QuestsFilterBar />
                         <QuestsContent />
                     </div>
