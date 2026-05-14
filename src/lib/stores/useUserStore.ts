@@ -146,7 +146,7 @@ export const useUserStore = create<UserState>()(
             playerLevel: 1,
             prestigeLevel: 0,
 
-            questViewMode: "list",
+            questViewMode: "tree",
             questSelectedTraders: [],
             questFaction: null,
             questShowKappa: false,
@@ -266,7 +266,6 @@ export const useUserStore = create<UserState>()(
 
                 const newLevels = { ...stationLevels };
                 let stashLevel = 1;
-                let cultistLevel = 0;
 
                 switch (gameEdition) {
                     case "Standard":
@@ -383,7 +382,7 @@ export const useUserStore = create<UserState>()(
                     useCategorization: false,
                     playerLevel: 1,
                     prestigeLevel: 0,
-                    questViewMode: "list",
+                    questViewMode: "tree",
                     questSelectedTraders: [],
                     questFaction: null,
                     questShowKappa: false,
@@ -404,8 +403,14 @@ export const useUserStore = create<UserState>()(
             version: 2,
             migrate: (persistedState, version) => {
                 if (version < 2) {
-                    const state = persistedState as any;
-                    const itemsCompactMode: boolean | undefined = state.itemsCompactMode;
+                    const state =
+                        persistedState && typeof persistedState === "object"
+                            ? (persistedState as Record<string, unknown>)
+                            : {};
+                    const itemsCompactMode =
+                        typeof state.itemsCompactMode === "boolean"
+                            ? state.itemsCompactMode
+                            : undefined;
 
                     return {
                         ...state,
@@ -413,7 +418,7 @@ export const useUserStore = create<UserState>()(
                     };
                 }
 
-                return persistedState as any;
+                return persistedState as UserState;
             },
         },
     ),

@@ -6,10 +6,12 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { QuestCard, type QuestRef } from "../QuestCard";
 import { cn } from "@/lib/utils";
 import type { FullQuest } from "@/types";
+import { Link2 } from "lucide-react";
 
 function buildTraderTree(traderQuests: FullQuest[]): {
     rootIds: string[];
     childrenOf: Map<string, string[]>;
+    parentOf: Map<string, string | null>;
 } {
     const indexById = new Map(traderQuests.map((q, i) => [q.id, i]));
     const traderQuestIds = new Set(traderQuests.map((q) => q.id));
@@ -43,7 +45,7 @@ function buildTraderTree(traderQuests: FullQuest[]): {
         }
     }
 
-    return { rootIds, childrenOf };
+    return { rootIds, childrenOf, parentOf };
 }
 
 function toRef(id: string, fallbackName: string, questsById: Map<string, FullQuest>): QuestRef {
@@ -52,7 +54,11 @@ function toRef(id: string, fallbackName: string, questsById: Map<string, FullQue
         id,
         name: q?.name ?? fallbackName,
         trader: q
-            ? { imageLink: q.trader.imageLink ?? null, image4xLink: q.trader.image4xLink ?? null, name: q.trader.name }
+            ? {
+                  imageLink: q.trader.imageLink ?? null,
+                  image4xLink: q.trader.image4xLink ?? null,
+                  name: q.trader.name,
+              }
             : { imageLink: null, image4xLink: null, name: "?" },
     };
 }
@@ -64,6 +70,53 @@ function countAllDescendants(ids: string[], childrenOf: Map<string, string[]>): 
         if (children.length > 0) total += countAllDescendants(children, childrenOf);
     }
     return total;
+}
+
+function getIndentPx(depth: number) {
+    if (depth < 8) return 24;
+    if (depth < 14) return 16;
+    return 12;
+}
+
+function getConnectorOffsetPx(depth: number) {
+    const indent = getIndentPx(depth);
+    return Math.max(12, indent - 4);
+}
+
+function LinkedQuestGroup({ questRefs }: { questRefs: QuestRef[] }) {
+    return (
+        <div className="-mb-2 rounded-t-md border border-white/10 border-b-0 bg-black/30 px-2.5 pt-1.5 pb-3.5">
+            <div className="space-y-1">
+                {questRefs.map((questRef) => (
+                    <a
+                        key={questRef.id}
+                        href={`#quest-${questRef.id}`}
+                        className="flex items-center gap-2 rounded-sm px-1.5 py-1 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                    >
+                        <span className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-gray-500 shrink-0">
+                            <Link2 size={11} />
+                            Link
+                        </span>
+                        {(questRef.trader.image4xLink ?? questRef.trader.imageLink) ? (
+                            <img
+                                src={questRef.trader.image4xLink ?? questRef.trader.imageLink ?? ""}
+                                alt={questRef.trader.name}
+                                className="w-4 h-4 rounded-full shrink-0 object-cover"
+                            />
+                        ) : (
+                            <span className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center text-[9px] shrink-0">
+                                {questRef.trader.name[0]}
+                            </span>
+                        )}
+                        <span className="text-[10px] text-gray-500 shrink-0">
+                            {questRef.trader.name}
+                        </span>
+                        <span className="min-w-0 truncate">{questRef.name}</span>
+                    </a>
+                ))}
+            </div>
+        </div>
+    );
 }
 
 function CollapseHint({ count, onShow }: { count: number; onShow: () => void }) {
@@ -91,12 +144,16 @@ const BAR_OVERLAP = 4; // matches mt-1 (4px)
 
 function QuestTreeNode({
     questId,
+    depth,
     childrenOf,
+    parentOf,
     questsById,
     leadsToByQuestId,
 }: {
     questId: string;
+    depth: number;
     childrenOf: Map<string, string[]>;
+    parentOf: Map<string, string | null>;
     questsById: Map<string, FullQuest>;
     leadsToByQuestId: Map<string, string[]>;
 }) {
@@ -109,6 +166,12 @@ function QuestTreeNode({
     if (!quest) return null;
 
     const children = childrenOf.get(questId) ?? [];
+    const primaryParentId = parentOf.get(questId) ?? null;
+    const linkedPrerequisites = quest.taskRequirements
+        .filter((req) => req.task.id !== primaryParentId)
+        .map((req) => toRef(req.task.id, req.task.name, questsById));
+    const childIndent = getIndentPx(depth);
+    const connectorOffset = getConnectorOffsetPx(depth);
 
     const onBarEnter = () => {
         clearTimeout(hoverTimer.current);
@@ -120,6 +183,7 @@ function QuestTreeNode({
 
     return (
         <div>
+            {linkedPrerequisites.length > 0 && <LinkedQuestGroup questRefs={linkedPrerequisites} />}
             <QuestCard
                 quest={quest}
                 prerequisiteQuests={quest.taskRequirements.map((req) =>
@@ -128,10 +192,11 @@ function QuestTreeNode({
                 leadsToQuests={(leadsToByQuestId.get(quest.id) ?? []).map((id) =>
                     toRef(id, id, questsById),
                 )}
+                attachedTop={linkedPrerequisites.length > 0}
             />
 
             {children.length > 0 && (
-                <div className="ml-6 mt-1">
+                <div className="mt-1" style={{ marginLeft: `${childIndent}px` }}>
                     {childrenCollapsed ? (
                         <CollapseHint
                             count={countAllDescendants(children, childrenOf)}
@@ -142,7 +207,11 @@ function QuestTreeNode({
                             {children.map((childId, i) => {
                                 const isLast = i === children.length - 1;
                                 return (
-                                    <div key={childId} className="relative mt-1 pl-5">
+                                    <div
+                                        key={childId}
+                                        className="relative mt-1"
+                                        style={{ paddingLeft: `${connectorOffset}px` }}
+                                    >
                                         {/*
                                          * Vertical bar per child:
                                          *   Non-last — extends from -BAR_OVERLAP px (above the mt-1
@@ -159,11 +228,19 @@ function QuestTreeNode({
                                             onMouseEnter={onBarEnter}
                                             onMouseLeave={onBarLeave}
                                             title="Collapse"
-                                            className="absolute left-0 w-4 cursor-pointer"
+                                            className="absolute left-0 cursor-pointer"
                                             style={
                                                 isLast
-                                                    ? { top: 0, height: `${CONNECTOR_Y}px` }
-                                                    : { top: `-${BAR_OVERLAP}px`, bottom: 0 }
+                                                    ? {
+                                                          top: 0,
+                                                          height: `${CONNECTOR_Y}px`,
+                                                          width: `${connectorOffset}px`,
+                                                      }
+                                                    : {
+                                                          top: `-${BAR_OVERLAP}px`,
+                                                          bottom: 0,
+                                                          width: `${connectorOffset}px`,
+                                                      }
                                             }
                                         >
                                             <div
@@ -177,15 +254,21 @@ function QuestTreeNode({
                                         {/* Horizontal connector — L-bend from bar centre to card edge */}
                                         <div
                                             className={cn(
-                                                "absolute left-2 w-3 h-px transition-colors",
+                                                "absolute h-px transition-colors",
                                                 barHovered ? "bg-white/25" : "bg-white/5",
                                             )}
-                                            style={{ top: `${CONNECTOR_Y}px` }}
+                                            style={{
+                                                left: `${Math.floor(connectorOffset / 2)}px`,
+                                                top: `${CONNECTOR_Y}px`,
+                                                width: `${Math.max(8, Math.ceil(connectorOffset / 2))}px`,
+                                            }}
                                         />
 
                                         <QuestTreeNode
                                             questId={childId}
+                                            depth={depth + 1}
                                             childrenOf={childrenOf}
+                                            parentOf={parentOf}
                                             questsById={questsById}
                                             leadsToByQuestId={leadsToByQuestId}
                                         />
@@ -215,7 +298,7 @@ function TraderTreeSection({
 }) {
     const { completedQuests } = useUserStore();
 
-    const { rootIds, childrenOf } = useMemo(
+    const { rootIds, childrenOf, parentOf } = useMemo(
         () => buildTraderTree(traderQuests),
         [traderQuests],
     );
@@ -227,7 +310,7 @@ function TraderTreeSection({
     return (
         <div>
             <div className="flex items-center gap-3 pt-5 pb-2.5 border-b border-white/5">
-                {trader.image4xLink ?? trader.imageLink ? (
+                {(trader.image4xLink ?? trader.imageLink) ? (
                     <img
                         src={trader.image4xLink ?? trader.imageLink ?? ""}
                         alt={trader.name}
@@ -260,7 +343,9 @@ function TraderTreeSection({
                     <div key={rootId} className="mt-1">
                         <QuestTreeNode
                             questId={rootId}
+                            depth={0}
                             childrenOf={childrenOf}
+                            parentOf={parentOf}
                             questsById={questsById}
                             leadsToByQuestId={leadsToByQuestId}
                         />

@@ -34,6 +34,7 @@ interface QuestCardProps {
     quest: FullQuest;
     prerequisiteQuests: QuestRef[];
     leadsToQuests: QuestRef[];
+    attachedTop?: boolean;
 }
 
 function isItemObjective(o: FullQuestObjective): o is QuestObjectiveItemType {
@@ -175,15 +176,23 @@ function QuestChip({ questRef }: { questRef: QuestRef }) {
     );
 }
 
-export function QuestCard({ quest, prerequisiteQuests, leadsToQuests }: QuestCardProps) {
+export function QuestCard({
+    quest,
+    prerequisiteQuests,
+    leadsToQuests,
+    attachedTop = false,
+}: QuestCardProps) {
     const [expanded, setExpanded] = useState(false);
     const [debugOpen, setDebugOpen] = useState(false);
     const { completedQuests, toggleQuestCompletion, playerLevel } = useUserStore();
     const completed = !!completedQuests[quest.id];
+    const completedRequirementCount = quest.taskRequirements.filter(
+        (req) => completedQuests[req.task.id],
+    ).length;
     const available =
         !completed &&
         (quest.minPlayerLevel ?? 0) <= playerLevel &&
-        quest.taskRequirements.every((req) => completedQuests[req.task.id]);
+        completedRequirementCount === quest.taskRequirements.length;
 
     const giveItemObjectives = quest.objectives.filter(isItemObjective);
     const allHandInItems = [
@@ -197,12 +206,12 @@ export function QuestCard({ quest, prerequisiteQuests, leadsToQuests }: QuestCar
     return (
         <div
             id={`quest-${quest.id}`}
-            className={`border rounded-md overflow-hidden transition-colors ${
+            className={`border overflow-hidden transition-colors ${
+                attachedTop ? "rounded-b-md rounded-t-none" : "rounded-md"
+            } ${
                 completed
                     ? "border-white/5 bg-black/10"
-                    : available
-                    ? "border-white/10 border-l-2 border-l-tarkov-green/50 bg-[#111111] hover:border-white/15"
-                    : "border-white/10 border-l-2 border-l-amber-500/30 bg-[#111111] hover:border-white/15"
+                    : "border-white/10 bg-[#111111] hover:border-white/15"
             }`}
         >
             {/* Header row */}
@@ -258,6 +267,25 @@ export function QuestCard({ quest, prerequisiteQuests, leadsToQuests }: QuestCar
 
                 {/* Badges */}
                 <div className="flex items-center gap-1 shrink-0">
+                    <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                            completed
+                                ? "text-tarkov-green/80 bg-tarkov-green/10 border-tarkov-green/20"
+                                : available
+                                ? "text-blue-400/80 bg-blue-400/10 border-blue-400/20"
+                                : "text-amber-400/80 bg-amber-500/10 border-amber-500/20"
+                        }`}
+                    >
+                        {completed ? "Completed" : available ? "Available" : "Locked"}
+                    </span>
+                    {quest.taskRequirements.length > 0 && (
+                        <span
+                            className="text-[10px] text-gray-400 bg-black/40 border border-white/10 px-1.5 py-0.5 rounded"
+                            title={`${completedRequirementCount}/${quest.taskRequirements.length} prerequisite quests completed`}
+                        >
+                            {completedRequirementCount}/{quest.taskRequirements.length} reqs
+                        </span>
+                    )}
                     {quest.minPlayerLevel != null && (
                         <span className="text-[10px] text-gray-400 bg-black/40 border border-white/10 px-1.5 py-0.5 rounded">
                             Lv.{quest.minPlayerLevel}
