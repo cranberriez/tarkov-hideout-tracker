@@ -250,7 +250,7 @@ export function QuestCard({
                     : completed
                     ? "border-white/5 bg-black/10"
                     : ignored
-                    ? "border-white/8 bg-black/20 opacity-70"
+                    ? "border-white/8 bg-black/20"
                     : pinned
                     ? "border-sky-500/20 bg-[linear-gradient(90deg,rgba(56,189,248,0.16)_0%,rgba(56,189,248,0.08)_30%,rgba(17,17,17,0.95)_72%)] hover:border-sky-400/30"
                     : "border-white/10 hover:border-white/15"
@@ -258,7 +258,7 @@ export function QuestCard({
                 completed
                     ? "bg-black/10"
                     : ignored
-                    ? "bg-black/20 opacity-70"
+                    ? "bg-black/20"
                     : pinned
                     ? "bg-[linear-gradient(90deg,rgba(56,189,248,0.16)_0%,rgba(56,189,248,0.08)_30%,rgba(17,17,17,0.95)_72%)]"
                     : "bg-[#111111]"

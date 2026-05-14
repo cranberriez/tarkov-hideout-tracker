@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quests Filter Bar — Mockup</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0d0d0d;
+    color: #e5e7eb;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  /* ── Layout ─────────────────────────────── */
+  .page { display: flex; gap: 0; }
+
+  .sidebar {
+    width: 200px;
+    flex-shrink: 0;
+    border-right: 1px solid rgba(255,255,255,0.07);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 100vh;
+  }
+
+  .main { flex: 1; min-width: 0; padding: 32px 24px; }
+
+  /* ── Variation switcher ─────────────────── */
+  .switcher {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .switcher span { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #4b5563; margin-right: 4px; }
+  .var-btn {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #6b7280;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    transition: all .15s;
+  }
+  .var-btn:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+  .var-btn.active {
+    background: rgba(157,255,0,.1);
+    border-color: #9dff00;
+    color: #9dff00;
+    box-shadow: 0 0 10px rgba(157,255,0,.12);
+  }
+
+  /* ── Shared tokens ──────────────────────── */
+  :root {
+    --green: #9dff00;
+    --green-dim: rgba(157,255,0,.08);
+    --green-glow: 0 0 10px rgba(157,255,0,.14);
+    --border: rgba(255,255,255,.1);
+    --bg-input: rgba(0,0,0,.4);
+  }
+
+  /* ── Character bar ──────────────────────── */
+  .char-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .label { font-size: 11px; color: #6b7280; white-space: nowrap; }
+
+  .lv-input {
+    width: 52px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #fff;
+    font-family: inherit;
+    text-align: center;
+  }
+  .lv-input:focus { outline: none; border-color: rgba(157,255,0,.5); }
+
+  .prestige-dots { display: flex; gap: 2px; }
+  .dot {
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all .12s;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: #6b7280;
+    font-weight: 700;
+  }
+  .dot.on {
+    background: rgba(168,85,247,.7);
+    border-color: rgba(168,85,247,.6);
+    color: #fff;
+    box-shadow: 0 0 8px rgba(168,85,247,.35);
+  }
+
+  .vdiv { width: 1px; height: 18px; background: rgba(255,255,255,.1); flex-shrink: 0; }
+
+  /* Segmented group */
+  .seg { display: flex; background: var(--bg-input); border: 1px solid var(--border); border-radius: 3px; padding: 3px; gap: 0; }
+  .seg-btn {
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all .12s;
+    white-space: nowrap;
+  }
+  .seg-btn:hover { color: #fff; background: rgba(255,255,255,.05); }
+  .seg-btn.on { background: var(--green); color: #000; }
+
+  /* Filter buttons */
+  .filter-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(0,0,0,.2);
+    border: 1px solid var(--border);
+    color: #6b7280;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .filter-btn:hover { color: #fff; border-color: rgba(255,255,255,.28); background: rgba(0,0,0,.38); }
+  .filter-btn.on {
+    background: var(--green-dim);
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: var(--green-glow);
+  }
+  .filter-btn.disabled { opacity: .3; pointer-events: none; }
+
+  /* Kappa / LK – variant styles applied per variant */
+  .kappa-btn, .lk-btn { position: relative; }
+
+  /* ── Filter bar ─────────────────────────── */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  /* ── Settings gear ──────────────────────── */
+  .gear-wrap { position: relative; }
+  .gear-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    background: rgba(0,0,0,.2);
+    border: 1px solid var(--border);
+    color: #6b7280;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all .15s;
+    flex-shrink: 0;
+  }
+  .gear-btn:hover, .gear-btn.open { color: #fff; border-color: rgba(255,255,255,.28); }
+  .gear-btn.active-settings { color: var(--green); border-color: var(--green); background: var(--green-dim); box-shadow: var(--green-glow); }
+  .gear-btn svg { width: 14px; height: 14px; }
+
+  .popover {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 50;
+    background: #161616;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 5px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.7);
+    min-width: 220px;
+    overflow: hidden;
+  }
+  .popover.open { display: block; }
+
+  .pop-section { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .pop-section + .pop-section { border-top: 1px solid rgba(255,255,255,.06); }
+  .pop-label { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: #374151; font-weight: 700; }
+  .pop-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .pop-filter-btn {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(0,0,0,.3);
+    border: 1px solid var(--border);
+    color: #6b7280;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .pop-filter-btn:hover { color: #fff; border-color: rgba(255,255,255,.25); }
+  .pop-filter-btn.on { color: var(--green); border-color: var(--green); background: var(--green-dim); box-shadow: var(--green-glow); }
+
+  /* ── Stat row ───────────────────────────── */
+  .stat-row { font-size: 11px; color: #4b5563; display: flex; gap: 8px; align-items: center; }
+  .stat-row span + span::before { content: '·'; margin-right: 8px; color: #374151; }
+
+  /* ── Section header ─────────────────────── */
+  .section-label {
+    display: flex; align-items: center; gap: 8px;
+    padding-top: 16px; padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+    margin-bottom: 2px;
+  }
+  .trader-img { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.08); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #6b7280; }
+  .section-label strong { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #e5e7eb; }
+  .progress-bar { height: 2px; width: 80px; background: rgba(255,255,255,.05); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: rgba(157,255,0,.45); border-radius: 99px; }
+
+  /* ── Quest stubs ────────────────────────── */
+  .quest-stub {
+    height: 40px; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05);
+    border-radius: 3px; margin-top: 4px;
+    display: flex; align-items: center; gap: 10px; padding: 0 12px;
+    font-size: 11px; color: #4b5563;
+  }
+  .q-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(157,255,0,.35); }
+
+  /* ── Sidebar styles ─────────────────────── */
+  .sb-label { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: #374151; font-weight: 700; padding: 0 6px; }
+  .sb-toggle {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; padding: 5px 8px; border-radius: 3px;
+    cursor: pointer; transition: all .12s;
+    color: #6b7280;
+    border-left: 2px solid transparent;
+    background: transparent;
+    border-top: none; border-right: none; border-bottom: none;
+    font-family: inherit; text-align: left; width: 100%;
+  }
+  .sb-toggle:hover { color: #fff; background: rgba(255,255,255,.04); }
+  .sb-toggle.on { border-color: var(--green); color: var(--green); background: rgba(157,255,0,.04); }
+  .sb-avatar { width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,.1); flex-shrink: 0; }
+
+  /* ── Variant containers ─────────────────── */
+  .variant { display: none; flex-direction: column; gap: 10px; }
+  .variant.active { display: flex; }
+
+  /* ── Kappa/LK variant A: prominent standalone buttons ── */
+  .kappa-standalone {
+    display: flex; align-items: center; gap: 4px;
+  }
+  .goal-btn {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(0,0,0,.3);
+    border: 1px solid rgba(255,255,255,.1);
+    color: #6b7280;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .goal-btn:hover { color: #fff; border-color: rgba(255,255,255,.3); }
+  .goal-btn.kappa-on {
+    border-color: #f59e0b;
+    color: #f59e0b;
+    background: rgba(245,158,11,.08);
+    box-shadow: 0 0 10px rgba(245,158,11,.12);
+  }
+  .goal-btn.lk-on {
+    border-color: #22d3ee;
+    color: #22d3ee;
+    background: rgba(34,211,238,.07);
+    box-shadow: 0 0 10px rgba(34,211,238,.1);
+  }
+  .goal-icon { font-size: 13px; line-height: 1; }
+
+  /* ── Note banners ───────────────────────── */
+  .note {
+    font-size: 11px; color: #4b5563; padding: 8px 12px;
+    background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05);
+    border-radius: 3px; line-height: 1.5;
+  }
+  .note strong { color: #6b7280; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Sidebar (static, same for all variants) -->
+  <aside class="sidebar">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="sb-label">Trader</div>
+      <button class="sb-toggle on"><span class="sb-avatar"></span> Prapor</button>
+      <button class="sb-toggle"><span class="sb-avatar"></span> Therapist</button>
+      <button class="sb-toggle"><span class="sb-avatar"></span> Fence</button>
+      <button class="sb-toggle"><span class="sb-avatar"></span> Skier</button>
+      <button class="sb-toggle"><span class="sb-avatar"></span> Peacekeeper</button>
+      <button class="sb-toggle"><span class="sb-avatar"></span> Mechanic</button>
+      <button class="sb-toggle"><span class="sb-avatar"></span> Ragman</button>
+      <button class="sb-toggle"><span class="sb-avatar"></span> Jaeger</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+      <div class="sb-label">Map</div>
+      <button class="sb-toggle">Customs</button>
+      <button class="sb-toggle">Factory</button>
+      <button class="sb-toggle">Ground Zero</button>
+      <button class="sb-toggle">Interchange</button>
+      <button class="sb-toggle">Lighthouse</button>
+      <button class="sb-toggle">Reserve</button>
+      <button class="sb-toggle">Shoreline</button>
+      <button class="sb-toggle">Streets</button>
+      <button class="sb-toggle">Woods</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <div style="margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,.05)">
+      <h1 style="font-size:28px;font-weight:800;letter-spacing:.02em;color:#fff">QUESTS</h1>
+      <p style="font-size:12px;color:#4b5563;margin-top:4px">Track quest completion and filter by trader, map, faction, and progression goal</p>
+    </div>
+
+    <!-- Variant switcher -->
+    <div class="switcher">
+      <span>Variation</span>
+      <button class="var-btn active" data-var="A" onclick="switchVar('A', this)">A — Condensed + Gear</button>
+      <button class="var-btn" data-var="B" onclick="switchVar('B', this)">B — Two rows</button>
+      <button class="var-btn" data-var="C" onclick="switchVar('C', this)">C — Current (reference)</button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         VARIANT A  –  condensed single filter row + gear popover
+         ══════════════════════════════════════════════ -->
+    <div class="variant active" id="var-A">
+
+      <div class="note">
+        <strong>A:</strong> 6 key filters inline + ⚙ popover for view mode, pre-req toggle, debug.
+        Kappa / LK as goal-coloured standalone buttons in the character bar.
+      </div>
+
+      <!-- Character bar -->
+      <div class="char-bar">
+        <span class="label">Lv.</span>
+        <input class="lv-input" type="number" value="33" min="1" max="100" />
+
+        <span class="label">Prestige</span>
+        <div class="prestige-dots" id="A-prestige">
+          <div class="dot" onclick="toggleDot(this,'A-prestige')">1</div>
+          <div class="dot" onclick="toggleDot(this,'A-prestige')">2</div>
+          <div class="dot" onclick="toggleDot(this,'A-prestige')">3</div>
+          <div class="dot" onclick="toggleDot(this,'A-prestige')">4</div>
+          <div class="dot" onclick="toggleDot(this,'A-prestige')">5</div>
+          <div class="dot" onclick="toggleDot(this,'A-prestige')">6</div>
+        </div>
+
+        <div class="vdiv"></div>
+
+        <div class="seg">
+          <button class="seg-btn" onclick="toggleSeg(this)">USEC</button>
+          <button class="seg-btn on" onclick="toggleSeg(this)">BEAR</button>
+        </div>
+
+        <div class="vdiv"></div>
+
+        <!-- Kappa / LK as prominent goal buttons -->
+        <div class="kappa-standalone">
+          <button class="goal-btn" onclick="this.classList.toggle('kappa-on')">
+            <span class="goal-icon">🏆</span> Kappa
+          </button>
+          <button class="goal-btn" onclick="this.classList.toggle('lk-on')">
+            <span class="goal-icon">🔑</span> LK
+          </button>
+        </div>
+      </div>
+
+      <!-- Search row -->
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);border-radius:3px;padding:7px 12px">
+          <svg width="13" height="13" fill="none" stroke="#4b5563" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <span style="font-size:11px;color:#374151">Filter quests by quest, trader, or map</span>
+        </div>
+        <button class="filter-btn on" style="padding:7px 16px;font-size:11px;background:rgba(157,255,0,.08);border-color:var(--green);color:var(--green)">SYNC</button>
+      </div>
+
+      <!-- Quick guide -->
+      <div style="font-size:10px;color:#374151;display:flex;gap:12px;flex-wrap:wrap">
+        <span>ⓘ Quick guide</span>
+        <span>📌 Pin keeps a quest surfaced</span>
+        <span>⊘ Ignore hides side branches</span>
+        <span>🔗 Links jump between prerequisites</span>
+      </div>
+
+      <!-- Filter bar: 6 key filters + gear -->
+      <div class="filter-bar">
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Hide Completed</button>
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Available Only</button>
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Hand-In Only</button>
+        <button class="filter-btn disabled" onclick="this.classList.toggle('on')">FiR Hand-Ins</button>
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Pinned Only</button>
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Show Ignored</button>
+
+        <div style="flex:1"></div>
+
+        <!-- Gear -->
+        <div class="gear-wrap">
+          <button class="gear-btn" id="A-gear-btn" onclick="togglePopover('A-pop', this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+          <div class="popover" id="A-pop">
+            <div class="pop-section">
+              <div class="pop-label">View</div>
+              <div class="pop-row">
+                <div class="seg" style="gap:0">
+                  <button class="seg-btn" onclick="toggleSeg(this)">List</button>
+                  <button class="seg-btn" onclick="toggleSeg(this)">By Trader</button>
+                  <button class="seg-btn on" onclick="toggleSeg(this)">Tree</button>
+                </div>
+              </div>
+            </div>
+            <div class="pop-section">
+              <div class="pop-label">Display</div>
+              <div class="pop-row">
+                <button class="pop-filter-btn" onclick="this.classList.toggle('on')">Hide Pre-Req Links</button>
+                <button class="pop-filter-btn" onclick="this.classList.toggle('on')">Debug</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stat row -->
+      <div class="stat-row"><span>482 quests</span><span>112/488 completed</span></div>
+
+      <!-- Mock quest tree -->
+      <div style="margin-top:8px">
+        <div class="section-label">
+          <div class="trader-img">P</div>
+          <div>
+            <strong>Prapor</strong>
+            <div style="font-size:10px;color:#4b5563;margin-top:2px">22/66</div>
+          </div>
+          <div style="margin-left:auto">
+            <div class="progress-bar"><div class="progress-fill" style="width:33%"></div></div>
+          </div>
+        </div>
+        <div class="quest-stub"><div class="q-dot"></div>Shooting Cans <span style="margin-left:auto;font-size:10px;color:#9dff00;opacity:.6">Completed</span></div>
+        <div class="quest-stub" style="margin-left:24px"><div class="q-dot"></div>Debut</div>
+        <div class="quest-stub" style="margin-left:48px"><div class="q-dot" style="background:rgba(96,165,250,.4)"></div>Checking</div>
+        <div class="quest-stub" style="margin-left:48px"><div class="q-dot" style="background:rgba(248,113,113,.3)"></div>Delivery</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         VARIANT B  –  two rows: char + goals row, then filter row
+         ══════════════════════════════════════════════ -->
+    <div class="variant" id="var-B">
+
+      <div class="note">
+        <strong>B:</strong> Character info and goal toggles on one row.
+        Filters on a second row with the gear. Kappa / LK coloured but stay in the same row.
+      </div>
+
+      <!-- Row 1: char + goals -->
+      <div class="char-bar">
+        <span class="label">Lv.</span>
+        <input class="lv-input" type="number" value="33" min="1" max="100" />
+
+        <span class="label">Prestige</span>
+        <div class="prestige-dots" id="B-prestige">
+          <div class="dot" onclick="toggleDot(this,'B-prestige')">1</div>
+          <div class="dot" onclick="toggleDot(this,'B-prestige')">2</div>
+          <div class="dot" onclick="toggleDot(this,'B-prestige')">3</div>
+          <div class="dot" onclick="toggleDot(this,'B-prestige')">4</div>
+          <div class="dot" onclick="toggleDot(this,'B-prestige')">5</div>
+          <div class="dot" onclick="toggleDot(this,'B-prestige')">6</div>
+        </div>
+
+        <div class="vdiv"></div>
+
+        <div class="seg">
+          <button class="seg-btn" onclick="toggleSeg(this)">USEC</button>
+          <button class="seg-btn on" onclick="toggleSeg(this)">BEAR</button>
+        </div>
+
+        <div class="vdiv"></div>
+
+        <!-- Kappa / LK as distinct filter buttons matching main bar height -->
+        <button class="filter-btn kappa-btn" onclick="this.classList.toggle('on')" style="--active-color:#f59e0b;--active-bg:rgba(245,158,11,.08);--active-shadow:0 0 10px rgba(245,158,11,.14)">🏆 Kappa</button>
+        <button class="filter-btn lk-btn" onclick="this.classList.toggle('on')" style="--active-color:#22d3ee;--active-bg:rgba(34,211,238,.07);--active-shadow:0 0 10px rgba(34,211,238,.1)">🔑 LK</button>
+      </div>
+
+      <!-- Search row -->
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);border-radius:3px;padding:7px 12px">
+          <svg width="13" height="13" fill="none" stroke="#4b5563" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <span style="font-size:11px;color:#374151">Filter quests by quest, trader, or map</span>
+        </div>
+        <button class="filter-btn on" style="padding:7px 16px;font-size:11px;background:rgba(157,255,0,.08);border-color:var(--green);color:var(--green)">SYNC</button>
+      </div>
+
+      <!-- Quick guide -->
+      <div style="font-size:10px;color:#374151;display:flex;gap:12px;flex-wrap:wrap">
+        <span>ⓘ Quick guide</span>
+        <span>📌 Pin keeps a quest surfaced</span>
+        <span>⊘ Ignore hides side branches</span>
+        <span>🔗 Links jump between prerequisites</span>
+      </div>
+
+      <!-- Row 2: 6 filters + gear -->
+      <div class="filter-bar">
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Hide Completed</button>
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Available Only</button>
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Hand-In Only</button>
+        <button class="filter-btn disabled">FiR Hand-Ins</button>
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Pinned Only</button>
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Show Ignored</button>
+
+        <div style="flex:1"></div>
+
+        <div class="gear-wrap">
+          <button class="gear-btn" id="B-gear-btn" onclick="togglePopover('B-pop', this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+          <div class="popover" id="B-pop">
+            <div class="pop-section">
+              <div class="pop-label">View</div>
+              <div class="pop-row">
+                <div class="seg">
+                  <button class="seg-btn" onclick="toggleSeg(this)">List</button>
+                  <button class="seg-btn" onclick="toggleSeg(this)">By Trader</button>
+                  <button class="seg-btn on" onclick="toggleSeg(this)">Tree</button>
+                </div>
+              </div>
+            </div>
+            <div class="pop-section">
+              <div class="pop-label">Display</div>
+              <div class="pop-row">
+                <button class="pop-filter-btn" onclick="this.classList.toggle('on')">Hide Pre-Req Links</button>
+                <button class="pop-filter-btn" onclick="this.classList.toggle('on')">Debug</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stat row -->
+      <div class="stat-row"><span>482 quests</span><span>112/488 completed</span></div>
+
+      <!-- Mock quest tree -->
+      <div style="margin-top:8px">
+        <div class="section-label">
+          <div class="trader-img">P</div>
+          <div>
+            <strong>Prapor</strong>
+            <div style="font-size:10px;color:#4b5563;margin-top:2px">22/66</div>
+          </div>
+          <div style="margin-left:auto">
+            <div class="progress-bar"><div class="progress-fill" style="width:33%"></div></div>
+          </div>
+        </div>
+        <div class="quest-stub"><div class="q-dot"></div>Shooting Cans <span style="margin-left:auto;font-size:10px;color:#9dff00;opacity:.6">Completed</span></div>
+        <div class="quest-stub" style="margin-left:24px"><div class="q-dot"></div>Debut</div>
+        <div class="quest-stub" style="margin-left:48px"><div class="q-dot" style="background:rgba(96,165,250,.4)"></div>Checking</div>
+        <div class="quest-stub" style="margin-left:48px"><div class="q-dot" style="background:rgba(248,113,113,.3)"></div>Delivery</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         VARIANT C  –  current layout (reference)
+         ══════════════════════════════════════════════ -->
+    <div class="variant" id="var-C">
+      <div class="note">
+        <strong>C (current):</strong> Reference — character bar + all filters flat in one row.
+      </div>
+
+      <!-- Character bar (current) -->
+      <div class="char-bar">
+        <span class="label">Lv.</span>
+        <input class="lv-input" type="number" value="33" min="1" max="100" />
+        <span class="label">Prestige</span>
+        <div class="prestige-dots" id="C-prestige">
+          <div class="dot" onclick="toggleDot(this,'C-prestige')">1</div>
+          <div class="dot" onclick="toggleDot(this,'C-prestige')">2</div>
+          <div class="dot" onclick="toggleDot(this,'C-prestige')">3</div>
+          <div class="dot" onclick="toggleDot(this,'C-prestige')">4</div>
+          <div class="dot" onclick="toggleDot(this,'C-prestige')">5</div>
+          <div class="dot" onclick="toggleDot(this,'C-prestige')">6</div>
+        </div>
+        <div class="vdiv"></div>
+        <div class="seg">
+          <button class="seg-btn" onclick="toggleSeg(this)">USEC</button>
+          <button class="seg-btn on" onclick="toggleSeg(this)">BEAR</button>
+        </div>
+        <div class="vdiv"></div>
+        <div class="seg">
+          <button class="seg-btn" onclick="toggleSeg(this)">Kappa</button>
+          <button class="seg-btn" onclick="toggleSeg(this)">LK</button>
+        </div>
+      </div>
+
+      <!-- Search row (current) -->
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);border-radius:3px;padding:7px 12px">
+          <svg width="13" height="13" fill="none" stroke="#4b5563" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <span style="font-size:11px;color:#374151">Filter quests by quest, trader, or map</span>
+        </div>
+        <button class="filter-btn on" style="padding:7px 16px;font-size:11px;background:rgba(157,255,0,.08);border-color:var(--green);color:var(--green)">SYNC</button>
+      </div>
+
+      <!-- Quick guide (current) -->
+      <div style="font-size:10px;color:#374151;display:flex;gap:12px;flex-wrap:wrap">
+        <span>ⓘ Quick guide</span>
+        <span>📌 Pin keeps a quest surfaced</span>
+        <span>⊘ Ignore hides side branches</span>
+        <span>🔗 Links jump between prerequisites</span>
+      </div>
+
+      <!-- Filter bar (current) — all flat -->
+      <div class="filter-bar" style="flex-wrap:wrap">
+        <div class="seg">
+          <button class="seg-btn" onclick="toggleSeg(this)">List</button>
+          <button class="seg-btn" onclick="toggleSeg(this)">By Trader</button>
+          <button class="seg-btn on" onclick="toggleSeg(this)">Tree</button>
+        </div>
+        <div class="vdiv"></div>
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Hide Completed</button>
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Available Only</button>
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Hand-In Only</button>
+        <button class="filter-btn disabled">FiR Hand-Ins</button>
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Pinned Only</button>
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Show Ignored</button>
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Hide Pre-Req Links</button>
+        <button class="filter-btn" onclick="this.classList.toggle('on')">Debug</button>
+      </div>
+
+      <!-- Stat row -->
+      <div class="stat-row"><span>482 quests</span><span>112/488 completed</span></div>
+
+      <div style="margin-top:8px">
+        <div class="section-label">
+          <div class="trader-img">P</div>
+          <div><strong>Prapor</strong><div style="font-size:10px;color:#4b5563;margin-top:2px">22/66</div></div>
+          <div style="margin-left:auto"><div class="progress-bar"><div class="progress-fill" style="width:33%"></div></div></div>
+        </div>
+        <div class="quest-stub"><div class="q-dot"></div>Shooting Cans <span style="margin-left:auto;font-size:10px;color:#9dff00;opacity:.6">Completed</span></div>
+        <div class="quest-stub" style="margin-left:24px"><div class="q-dot"></div>Debut</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // Kappa/LK coloured filter-btn override (Variant B uses CSS vars — polyfill inline)
+  document.querySelectorAll('.kappa-btn, .lk-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      this.classList.toggle('on');
+      const isOn = this.classList.contains('on');
+      if (this.classList.contains('kappa-btn')) {
+        this.style.borderColor   = isOn ? '#f59e0b' : '';
+        this.style.color         = isOn ? '#f59e0b' : '';
+        this.style.background    = isOn ? 'rgba(245,158,11,.08)' : '';
+        this.style.boxShadow     = isOn ? '0 0 10px rgba(245,158,11,.14)' : '';
+      } else {
+        this.style.borderColor   = isOn ? '#22d3ee' : '';
+        this.style.color         = isOn ? '#22d3ee' : '';
+        this.style.background    = isOn ? 'rgba(34,211,238,.07)' : '';
+        this.style.boxShadow     = isOn ? '0 0 10px rgba(34,211,238,.1)' : '';
+      }
+    });
+  });
+
+  function toggleDot(el, groupId) {
+    const dots = document.querySelectorAll(`#${groupId} .dot`);
+    const idx = [...dots].indexOf(el);
+    dots.forEach((d, i) => d.classList.toggle('on', i <= idx));
+    // toggle off if clicking already-last active
+    const active = [...dots].filter(d => d.classList.contains('on'));
+    if (active.length === idx + 1 && el.classList.contains('on') && active[active.length - 1] === el) {
+      // second click same dot = deselect up to that
+    }
+  }
+
+  function toggleSeg(el) {
+    const siblings = el.closest('.seg').querySelectorAll('.seg-btn');
+    siblings.forEach(s => s.classList.remove('on'));
+    el.classList.add('on');
+  }
+
+  function togglePopover(popId, btn) {
+    const pop = document.getElementById(popId);
+    const isOpen = pop.classList.toggle('open');
+    btn.classList.toggle('open', isOpen);
+  }
+
+  function switchVar(v, btn) {
+    document.querySelectorAll('.variant').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.var-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('var-' + v).classList.add('active');
+    btn.classList.add('active');
+    // close any open popovers
+    document.querySelectorAll('.popover.open').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.gear-btn.open').forEach(b => b.classList.remove('open'));
+  }
+
+  // Close popovers on outside click
+  document.addEventListener('click', function(e) {
+    document.querySelectorAll('.gear-wrap').forEach(wrap => {
+      if (!wrap.contains(e.target)) {
+        wrap.querySelector('.popover')?.classList.remove('open');
+        wrap.querySelector('.gear-btn')?.classList.remove('open');
+      }
+    });
+  });
+</script>
+</body>
+</html>

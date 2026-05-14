@@ -52,7 +52,7 @@ export function matchesFactionVisibility(
 }
 
 function getRequiredLoyaltyForQuest(quest: QuestAvailabilityQuest, traderId: string) {
-    return quest.traderRequirements.reduce((highest, requirement) => {
+    return (quest.traderRequirements ?? []).reduce((highest, requirement) => {
         if (requirement.trader.id !== traderId) return highest;
         return Math.max(highest, requirement.value);
     }, 1);

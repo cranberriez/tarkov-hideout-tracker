@@ -8,6 +8,11 @@ import { QuestCard, type QuestRef } from "../QuestCard";
 import { cn } from "@/lib/utils";
 import type { FullQuest } from "@/types";
 import { isQuestAvailableForProfile } from "../quest-sync";
+import {
+    partitionLinkedPrerequisites,
+    shouldFoldLinkedPrerequisites,
+    type LinkedPrerequisiteStatus,
+} from "./quest-tree-prerequisites";
 
 const QUEST_HIGHLIGHT_DURATION_MS = 30_000;
 const QUEST_SCROLL_TOP_OFFSET_VH = 0.3;
@@ -115,45 +120,60 @@ function getConnectorOffsetPx(depth: number) {
 }
 
 function LinkedQuestGroup({
-    questRefs,
-    questsById,
+    entries,
     onQuestLinkClick,
 }: {
-    questRefs: QuestRef[];
-    questsById: Map<string, FullQuest>;
+    entries: Array<{ questRef: QuestRef; status: LinkedPrerequisiteStatus; folded: boolean }>;
     onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
-    const { completedQuests } = useUserStore();
-    const { syncProfile } = useQuestsContext();
+    const [activeLinkId, setActiveLinkId] = useState<string | null>(null);
+    const containerClass =
+        "-mb-2 rounded-t-md border border-white/10 border-b-0 bg-black px-2.5 pt-1.5 pb-3.5";
+    const expandedEntries = entries.filter((entry) => !entry.folded);
+    const foldedEntries = entries.filter((entry) => entry.folded);
+    const highestCollapsedZIndex = foldedEntries.length;
 
     return (
-        <div className="-mb-2 rounded-t-md border border-white/10 border-b-0 bg-black/30 px-2.5 pt-1.5 pb-3.5">
+        <div className={containerClass}>
             <div className="space-y-1">
-                {questRefs.map((questRef) => {
-                    const linkedQuest = questsById.get(questRef.id);
-                    const completed = !!completedQuests[questRef.id];
-                    const available =
-                        !!linkedQuest && isQuestAvailableForProfile(linkedQuest, syncProfile, questsById);
-                    const statusLabel = completed
-                        ? "Active"
-                        : available
-                        ? "Ready"
-                        : "Locked";
+                {expandedEntries.map(({ questRef, status, folded }) => {
+                    const foldedContentClass = folded ? "opacity-60" : "";
+                    const statusLabel =
+                        status === "completed"
+                            ? "Completed"
+                            : status === "available"
+                            ? "Available"
+                            : "Locked";
 
                     return (
                         <a
                             key={questRef.id}
                             href={`#quest-${questRef.id}`}
                             onClick={(e) => onQuestLinkClick(questRef.id, e)}
-                            className="flex items-center gap-2 rounded-sm px-1.5 py-1 text-xs text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
+                            onMouseEnter={() => setActiveLinkId(questRef.id)}
+                            onMouseLeave={() => setActiveLinkId((current) => (current === questRef.id ? null : current))}
+                            onFocus={() => setActiveLinkId(questRef.id)}
+                            onBlur={() => setActiveLinkId((current) => (current === questRef.id ? null : current))}
+                            className={cn(
+                                "relative z-0 flex items-center gap-2 rounded-sm bg-black px-1.5 py-1 text-xs text-gray-300 transition-colors hover:bg-[#1a1a1a] hover:text-white focus-visible:bg-[#1a1a1a] focus-visible:text-white",
+                                folded && "-mt-3 first:mt-0",
+                            )}
+                            style={
+                                activeLinkId === questRef.id
+                                    ? { zIndex: highestCollapsedZIndex + 1 }
+                                    : undefined
+                            }
                         >
                             <span
                                 title={statusLabel}
-                                className="inline-flex h-5 shrink-0 items-center gap-1 text-[10px] uppercase tracking-wide text-gray-400"
+                                className={cn(
+                                    "inline-flex h-5 shrink-0 items-center gap-1 text-[10px] uppercase tracking-wide text-gray-400",
+                                    foldedContentClass,
+                                )}
                             >
-                                {completed ? (
+                                {status === "completed" ? (
                                     <CheckCircle size={11} className="text-tarkov-green/90" />
-                                ) : available ? (
+                                ) : status === "available" ? (
                                     <Circle size={11} className="text-blue-300" />
                                 ) : (
                                     <Lock size={10} className="text-red-300" />
@@ -164,20 +184,127 @@ function LinkedQuestGroup({
                                 <img
                                     src={questRef.trader.image4xLink ?? questRef.trader.imageLink ?? ""}
                                     alt={questRef.trader.name}
-                                    className="h-4 w-4 shrink-0 rounded-full object-cover"
+                                    className={cn(
+                                        "h-4 w-4 shrink-0 rounded-full object-cover",
+                                        foldedContentClass,
+                                    )}
                                 />
                             ) : (
-                                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px]">
+                                <span
+                                    className={cn(
+                                        "flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px]",
+                                        foldedContentClass,
+                                    )}
+                                >
                                     {questRef.trader.name[0]}
                                 </span>
                             )}
-                            <span className="shrink-0 text-[10px] text-gray-500">
+                            <span
+                                className={cn(
+                                    "shrink-0 text-[10px] text-gray-500",
+                                    foldedContentClass,
+                                )}
+                            >
                                 {questRef.trader.name}
                             </span>
-                            <span className="min-w-0 truncate">{questRef.name}</span>
+                            <span className={cn("min-w-0 truncate", foldedContentClass)}>
+                                {questRef.name}
+                            </span>
                         </a>
                     );
                 })}
+                {foldedEntries.length > 0 && (
+                    <div className={expandedEntries.length > 0 ? "pt-2" : ""}>
+                        {foldedEntries.map(({ questRef, status, folded }, index) => {
+                            const foldedContentClass = folded ? "opacity-60" : "";
+                            const statusLabel =
+                                status === "completed"
+                                    ? "Completed"
+                                    : status === "available"
+                                    ? "Available"
+                                    : "Locked";
+
+                            return (
+                                <a
+                                    key={questRef.id}
+                                    href={`#quest-${questRef.id}`}
+                                    onClick={(e) => onQuestLinkClick(questRef.id, e)}
+                                    onMouseEnter={() => setActiveLinkId(questRef.id)}
+                                    onMouseLeave={() =>
+                                        setActiveLinkId((current) =>
+                                            current === questRef.id ? null : current,
+                                        )
+                                    }
+                                    onFocus={() => setActiveLinkId(questRef.id)}
+                                    onBlur={() =>
+                                        setActiveLinkId((current) =>
+                                            current === questRef.id ? null : current,
+                                        )
+                                    }
+                                    className={cn(
+                                        "relative flex items-center gap-2 rounded-sm bg-black px-1.5 py-1 text-xs text-gray-300 transition-colors hover:bg-[#1a1a1a] hover:text-white focus-visible:bg-[#1a1a1a] focus-visible:text-white",
+                                        folded && "-mt-3 first:mt-0",
+                                    )}
+                                    style={{
+                                        zIndex:
+                                            activeLinkId === questRef.id
+                                                ? highestCollapsedZIndex + 1
+                                                : folded
+                                                ? index + 1
+                                                : 0,
+                                    }}
+                                >
+                                    <span
+                                        title={statusLabel}
+                                        className={cn(
+                                            "inline-flex h-5 shrink-0 items-center gap-1 text-[10px] uppercase tracking-wide text-gray-400",
+                                            foldedContentClass,
+                                        )}
+                                    >
+                                        {status === "completed" ? (
+                                            <CheckCircle size={11} className="text-tarkov-green/90" />
+                                        ) : status === "available" ? (
+                                            <Circle size={11} className="text-blue-300" />
+                                        ) : (
+                                            <Lock size={10} className="text-red-300" />
+                                        )}
+                                        PRE-REQ
+                                    </span>
+                                    {questRef.trader.image4xLink ?? questRef.trader.imageLink ? (
+                                        <img
+                                            src={questRef.trader.image4xLink ?? questRef.trader.imageLink ?? ""}
+                                            alt={questRef.trader.name}
+                                            className={cn(
+                                                "h-4 w-4 shrink-0 rounded-full object-cover",
+                                                foldedContentClass,
+                                            )}
+                                        />
+                                    ) : (
+                                        <span
+                                            className={cn(
+                                                "flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px]",
+                                                foldedContentClass,
+                                            )}
+                                        >
+                                            {questRef.trader.name[0]}
+                                        </span>
+                                    )}
+                                    <span
+                                        className={cn(
+                                            "shrink-0 text-[10px] text-gray-500",
+                                            foldedContentClass,
+                                        )}
+                                    >
+                                        {questRef.trader.name}
+                                    </span>
+                                    <span className={cn("min-w-0 truncate", foldedContentClass)}>
+                                        {questRef.name}
+                                    </span>
+                                </a>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -219,20 +346,60 @@ function QuestNodeCard({
     highlightedQuestId: string | null;
     onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
+    const { completedQuests, ignoredQuests } = useUserStore();
+    const { syncProfile, showPrereqs } = useQuestsContext();
     const quest = questsById.get(questId);
     if (!quest) return null;
 
     const primaryParentId = parentOf.get(questId) ?? null;
     const linkedPrerequisites = quest.taskRequirements
         .filter((req) => req.task.id !== primaryParentId)
-        .map((req) => toRef(req.task.id, req.task.name, questsById));
+        .map((req) => {
+            const questRef = toRef(req.task.id, req.task.name, questsById);
+            const linkedQuest = questsById.get(req.task.id);
+            const status: LinkedPrerequisiteStatus = completedQuests[req.task.id]
+                ? "completed"
+                : linkedQuest && isQuestAvailableForProfile(linkedQuest, syncProfile, questsById)
+                ? "available"
+                : "locked";
+
+            return { questRef, status };
+        });
+    const foldPrerequisites = shouldFoldLinkedPrerequisites({
+        completed: !!completedQuests[quest.id],
+        ignored: !!ignoredQuests[quest.id],
+        prerequisiteIds: quest.taskRequirements.map((req) => req.task.id),
+    });
+    const partitionedPrerequisites = partitionLinkedPrerequisites({
+        completed: !!completedQuests[quest.id],
+        ignored: !!ignoredQuests[quest.id],
+        linkedPrerequisites: linkedPrerequisites.map((item) => ({
+            id: item.questRef.id,
+            status: item.status,
+        })),
+    });
+    const prerequisiteEntries = [
+        ...partitionedPrerequisites.expanded.map((item) => ({
+            questRef:
+                linkedPrerequisites.find((linkedPrerequisite) => linkedPrerequisite.questRef.id === item.id)
+                    ?.questRef ?? toRef(item.id, item.id, questsById),
+            status: item.status,
+            folded: false,
+        })),
+        ...partitionedPrerequisites.folded.map((item) => ({
+            questRef:
+                linkedPrerequisites.find((linkedPrerequisite) => linkedPrerequisite.questRef.id === item.id)
+                    ?.questRef ?? toRef(item.id, item.id, questsById),
+            status: item.status,
+            folded: foldPrerequisites,
+        })),
+    ];
 
     return (
         <>
-            {linkedPrerequisites.length > 0 && (
+            {showPrereqs && prerequisiteEntries.length > 0 && (
                 <LinkedQuestGroup
-                    questRefs={linkedPrerequisites}
-                    questsById={questsById}
+                    entries={prerequisiteEntries}
                     onQuestLinkClick={onQuestLinkClick}
                 />
             )}
@@ -244,7 +411,7 @@ function QuestNodeCard({
                 leadsToQuests={(leadsToByQuestId.get(quest.id) ?? []).map((id) =>
                     toRef(id, id, questsById),
                 )}
-                attachedTop={linkedPrerequisites.length > 0}
+                attachedTop={showPrereqs && linkedPrerequisites.length > 0}
                 showDebugButton={showDebugButton}
                 highlighted={highlightedQuestId === quest.id}
                 onQuestLinkClick={onQuestLinkClick}

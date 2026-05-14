@@ -34,6 +34,7 @@ interface QuestsContextValue {
     showPinnedOnly: boolean;
     showIgnored: boolean;
     showDebug: boolean;
+    showPrereqs: boolean;
     searchQuery: string;
     syncProfile: QuestSyncProfile;
     lastQuestSyncAction: LastQuestSyncAction | null;
@@ -64,6 +65,7 @@ interface QuestsContextValue {
     setShowPinnedOnly: (value: boolean) => void;
     setShowIgnored: (value: boolean) => void;
     setShowDebug: (value: boolean) => void;
+    setShowPrereqs: (value: boolean) => void;
     setSearchQuery: (value: string) => void;
     getVisibleSyncCandidatesForTrader: (traderId: string) => FullQuest[];
     syncTraderSelection: (traderId: string, selectedVisibleQuestIds: string[]) => LastQuestSyncAction;
@@ -140,6 +142,7 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
         questShowPinnedOnly: showPinnedOnly,
         questShowIgnored: showIgnored,
         questShowDebug: showDebug,
+        questShowPrereqs: showPrereqs,
         pinnedQuests,
         setQuestViewMode: setViewMode,
         setQuestSelectedTraders,
@@ -154,6 +157,7 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
         setQuestShowPinnedOnly: setShowPinnedOnly,
         setQuestShowIgnored: setShowIgnored,
         setQuestShowDebug: setShowDebug,
+        setQuestShowPrereqs: setShowPrereqs,
     } = useUserStore();
 
     const selectedTraders = useMemo(() => new Set(questSelectedTraders), [questSelectedTraders]);
@@ -376,6 +380,7 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
                 showPinnedOnly,
                 showIgnored,
                 showDebug,
+                showPrereqs,
                 searchQuery,
                 syncProfile,
                 lastQuestSyncAction,
@@ -403,6 +408,7 @@ export function QuestsProvider({ quests, children }: { quests: FullQuest[]; chil
                 setShowPinnedOnly,
                 setShowIgnored,
                 setShowDebug,
+                setShowPrereqs,
                 setSearchQuery,
                 getVisibleSyncCandidatesForTrader,
                 syncTraderSelection,

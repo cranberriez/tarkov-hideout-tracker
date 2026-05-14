@@ -12,6 +12,7 @@ export function QuestsFilterBar() {
         showPinnedOnly,
         showIgnored,
         showDebug,
+        showPrereqs,
         setHideCompleted,
         setShowAvailableOnly,
         setShowHandInOnly,
@@ -19,6 +20,7 @@ export function QuestsFilterBar() {
         setShowPinnedOnly,
         setShowIgnored,
         setShowDebug,
+        setShowPrereqs,
         viewMode,
         setViewMode,
     } = useQuestsContext();
@@ -69,6 +71,11 @@ export function QuestsFilterBar() {
                 active={showIgnored}
                 onClick={() => setShowIgnored(!showIgnored)}
                 label="Show Ignored"
+            />
+            <FilterButton
+                active={!showPrereqs}
+                onClick={() => setShowPrereqs(!showPrereqs)}
+                label="Hide Pre-Req Links"
             />
             <FilterButton
                 active={showDebug}

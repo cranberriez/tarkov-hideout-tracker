@@ -62,6 +62,7 @@ interface UserState {
     questShowPinnedOnly: boolean;
     questShowIgnored: boolean;
     questShowDebug: boolean;
+    questShowPrereqs: boolean;
 
     itemShowPinnedQuestSection: boolean;
     itemShowPinnedQuestOnly: boolean;
@@ -128,6 +129,7 @@ interface UserState {
     setQuestShowPinnedOnly: (v: boolean) => void;
     setQuestShowIgnored: (v: boolean) => void;
     setQuestShowDebug: (v: boolean) => void;
+    setQuestShowPrereqs: (v: boolean) => void;
 
     setItemShowPinnedQuestSection: (v: boolean) => void;
     setItemShowPinnedQuestOnly: (v: boolean) => void;
@@ -184,6 +186,7 @@ export const useUserStore = create<UserState>()(
             questShowPinnedOnly: false,
             questShowIgnored: false,
             questShowDebug: false,
+            questShowPrereqs: true,
 
             itemShowPinnedQuestSection: true,
             itemShowPinnedQuestOnly: false,
@@ -317,6 +320,7 @@ export const useUserStore = create<UserState>()(
             setQuestShowPinnedOnly: (v) => set({ questShowPinnedOnly: v }),
             setQuestShowIgnored: (v) => set({ questShowIgnored: v }),
             setQuestShowDebug: (v) => set({ questShowDebug: v }),
+            setQuestShowPrereqs: (v) => set({ questShowPrereqs: v }),
 
             setItemShowPinnedQuestSection: (v) =>
                 set((state) => ({
@@ -476,6 +480,7 @@ export const useUserStore = create<UserState>()(
                     questShowPinnedOnly: false,
                     questShowIgnored: false,
                     questShowDebug: false,
+                    questShowPrereqs: true,
                     itemShowPinnedQuestSection: true,
                     itemShowPinnedQuestOnly: false,
                     gameEdition: null,
