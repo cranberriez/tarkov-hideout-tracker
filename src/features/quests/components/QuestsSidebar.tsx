@@ -3,30 +3,26 @@
 import { useQuestsContext } from "../QuestsContext";
 import { SidebarLabel, SidebarToggle } from "./quest-ui";
 
+function scrollToTrader(traderId: string) {
+    const el = document.getElementById(`trader-${traderId}`);
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+}
+
 export function QuestsSidebar() {
-    const { traders, allMaps, selectedTraders, selectedMaps, toggleTrader, clearTraders, toggleMap, clearMaps } =
-        useQuestsContext();
+    const { traders, allMaps, selectedMaps, toggleMap, clearMaps } = useQuestsContext();
 
     return (
         <>
             {/* Traders */}
             <div className="flex flex-col gap-1">
-                <SidebarLabel>
-                    Trader
-                    {selectedTraders.size > 0 && (
-                        <button
-                            onClick={clearTraders}
-                            className="ml-auto text-[10px] text-gray-600 hover:text-gray-400 transition-colors"
-                        >
-                            clear
-                        </button>
-                    )}
-                </SidebarLabel>
+                <SidebarLabel>Trader</SidebarLabel>
                 {traders.map((trader) => (
                     <SidebarToggle
                         key={trader.id}
-                        active={selectedTraders.has(trader.id)}
-                        onClick={() => toggleTrader(trader.id)}
+                        active={false}
+                        onClick={() => scrollToTrader(trader.id)}
                     >
                         {(trader.image4xLink ?? trader.imageLink) ? (
                             <img

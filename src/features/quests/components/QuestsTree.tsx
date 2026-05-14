@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle, Circle, Lock } from "lucide-react";
+import { CheckCircle, ChevronDown, Circle, Lock } from "lucide-react";
 import { useQuestsContext } from "../QuestsContext";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { QuestCard, type QuestRef } from "../QuestCard";
@@ -142,8 +142,8 @@ function LinkedQuestGroup({
                         status === "completed"
                             ? "Completed"
                             : status === "available"
-                            ? "Available"
-                            : "Locked";
+                              ? "Available"
+                              : "Locked";
 
                     return (
                         <a
@@ -151,11 +151,19 @@ function LinkedQuestGroup({
                             href={`#quest-${questRef.id}`}
                             onClick={(e) => onQuestLinkClick(questRef.id, e)}
                             onMouseEnter={() => setActiveLinkId(questRef.id)}
-                            onMouseLeave={() => setActiveLinkId((current) => (current === questRef.id ? null : current))}
+                            onMouseLeave={() =>
+                                setActiveLinkId((current) =>
+                                    current === questRef.id ? null : current,
+                                )
+                            }
                             onFocus={() => setActiveLinkId(questRef.id)}
-                            onBlur={() => setActiveLinkId((current) => (current === questRef.id ? null : current))}
+                            onBlur={() =>
+                                setActiveLinkId((current) =>
+                                    current === questRef.id ? null : current,
+                                )
+                            }
                             className={cn(
-                                "relative z-0 flex items-center gap-2 rounded-sm bg-black px-1.5 py-1 text-xs text-gray-300 transition-colors hover:bg-[#1a1a1a] hover:text-white focus-visible:bg-[#1a1a1a] focus-visible:text-white",
+                                "relative z-0 flex items-center gap-2 rounded-sm bg-black px-1.5 py-1 text-xs text-gray-300 transition-colors hover:bg-[#111111] hover:text-white focus-visible:bg-[#111111] focus-visible:text-white",
                                 folded && "-mt-3 first:mt-0",
                             )}
                             style={
@@ -180,9 +188,13 @@ function LinkedQuestGroup({
                                 )}
                                 PRE-REQ
                             </span>
-                            {questRef.trader.image4xLink ?? questRef.trader.imageLink ? (
+                            {(questRef.trader.image4xLink ?? questRef.trader.imageLink) ? (
                                 <img
-                                    src={questRef.trader.image4xLink ?? questRef.trader.imageLink ?? ""}
+                                    src={
+                                        questRef.trader.image4xLink ??
+                                        questRef.trader.imageLink ??
+                                        ""
+                                    }
                                     alt={questRef.trader.name}
                                     className={cn(
                                         "h-4 w-4 shrink-0 rounded-full object-cover",
@@ -221,8 +233,8 @@ function LinkedQuestGroup({
                                 status === "completed"
                                     ? "Completed"
                                     : status === "available"
-                                    ? "Available"
-                                    : "Locked";
+                                      ? "Available"
+                                      : "Locked";
 
                             return (
                                 <a
@@ -250,8 +262,8 @@ function LinkedQuestGroup({
                                             activeLinkId === questRef.id
                                                 ? highestCollapsedZIndex + 1
                                                 : folded
-                                                ? index + 1
-                                                : 0,
+                                                  ? index + 1
+                                                  : 0,
                                     }}
                                 >
                                     <span
@@ -262,7 +274,10 @@ function LinkedQuestGroup({
                                         )}
                                     >
                                         {status === "completed" ? (
-                                            <CheckCircle size={11} className="text-tarkov-green/90" />
+                                            <CheckCircle
+                                                size={11}
+                                                className="text-tarkov-green/90"
+                                            />
                                         ) : status === "available" ? (
                                             <Circle size={11} className="text-blue-300" />
                                         ) : (
@@ -270,9 +285,13 @@ function LinkedQuestGroup({
                                         )}
                                         PRE-REQ
                                     </span>
-                                    {questRef.trader.image4xLink ?? questRef.trader.imageLink ? (
+                                    {(questRef.trader.image4xLink ?? questRef.trader.imageLink) ? (
                                         <img
-                                            src={questRef.trader.image4xLink ?? questRef.trader.imageLink ?? ""}
+                                            src={
+                                                questRef.trader.image4xLink ??
+                                                questRef.trader.imageLink ??
+                                                ""
+                                            }
                                             alt={questRef.trader.name}
                                             className={cn(
                                                 "h-4 w-4 shrink-0 rounded-full object-cover",
@@ -360,8 +379,8 @@ function QuestNodeCard({
             const status: LinkedPrerequisiteStatus = completedQuests[req.task.id]
                 ? "completed"
                 : linkedQuest && isQuestAvailableForProfile(linkedQuest, syncProfile, questsById)
-                ? "available"
-                : "locked";
+                  ? "available"
+                  : "locked";
 
             return { questRef, status };
         });
@@ -381,15 +400,17 @@ function QuestNodeCard({
     const prerequisiteEntries = [
         ...partitionedPrerequisites.expanded.map((item) => ({
             questRef:
-                linkedPrerequisites.find((linkedPrerequisite) => linkedPrerequisite.questRef.id === item.id)
-                    ?.questRef ?? toRef(item.id, item.id, questsById),
+                linkedPrerequisites.find(
+                    (linkedPrerequisite) => linkedPrerequisite.questRef.id === item.id,
+                )?.questRef ?? toRef(item.id, item.id, questsById),
             status: item.status,
             folded: false,
         })),
         ...partitionedPrerequisites.folded.map((item) => ({
             questRef:
-                linkedPrerequisites.find((linkedPrerequisite) => linkedPrerequisite.questRef.id === item.id)
-                    ?.questRef ?? toRef(item.id, item.id, questsById),
+                linkedPrerequisites.find(
+                    (linkedPrerequisite) => linkedPrerequisite.questRef.id === item.id,
+                )?.questRef ?? toRef(item.id, item.id, questsById),
             status: item.status,
             folded: foldPrerequisites,
         })),
@@ -493,10 +514,7 @@ function BranchChildren({
                         const isLast = i === childIds.length - 1;
 
                         return (
-                            <div
-                                key={childId}
-                                className="relative mt-1"
-                            >
+                            <div key={childId} className="relative mt-1">
                                 <div
                                     className={cn(
                                         "absolute h-px transition-colors",
@@ -593,7 +611,10 @@ function QuestTreeNode({
                                     className="absolute left-1.5 w-px bg-white/10"
                                     style={
                                         hasNextLinearQuest
-                                            ? { top: `-${BAR_OVERLAP}px`, bottom: `-${BAR_OVERLAP}px` }
+                                            ? {
+                                                  top: `-${BAR_OVERLAP}px`,
+                                                  bottom: `-${BAR_OVERLAP}px`,
+                                              }
                                             : {
                                                   top: `-${BAR_OVERLAP}px`,
                                                   height: `${CONNECTOR_Y}px`,
@@ -674,6 +695,7 @@ function TraderTreeSection({
     onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
     const { completedQuests } = useUserStore();
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     const { rootIds, childrenOf, parentOf } = useMemo(
         () => buildTraderTree(traderQuests),
@@ -685,9 +707,12 @@ function TraderTreeSection({
     const pct = total > 0 ? (completed / total) * 100 : 0;
 
     return (
-        <div>
-            <div className="flex items-center gap-3 pt-5 pb-2.5 border-b border-white/5">
-                {trader.image4xLink ?? trader.imageLink ? (
+        <div id={`trader-${trader.id}`} className="mt-2">
+            <button
+                onClick={() => setIsCollapsed((v) => !v)}
+                className="group flex items-center gap-3 p-2 w-full text-left rounded-lg border border-transparent hover:bg-white/1 transition-colors"
+            >
+                {(trader.image4xLink ?? trader.imageLink) ? (
                     <img
                         src={trader.image4xLink ?? trader.imageLink ?? ""}
                         alt={trader.name}
@@ -714,24 +739,35 @@ function TraderTreeSection({
                         />
                     </div>
                 </div>
-            </div>
-            <div className="mt-1 mb-4">
-                {rootIds.map((rootId) => (
-                    <div key={rootId} className="mt-1">
-                        <QuestTreeNode
-                            questId={rootId}
-                            depth={0}
-                            childrenOf={childrenOf}
-                            parentOf={parentOf}
-                            questsById={questsById}
-                            leadsToByQuestId={leadsToByQuestId}
-                            showDebugButton={showDebugButton}
-                            highlightedQuestId={highlightedQuestId}
-                            onQuestLinkClick={onQuestLinkClick}
-                        />
-                    </div>
-                ))}
-            </div>
+                <div className="flex items-center justify-center w-[32px] h-[32px] rounded-lg bg-transparent group-hover:bg-white/6 transition-colors shrink-0">
+                    <ChevronDown
+                        size={13}
+                        className={cn(
+                            "text-gray-600 group-hover:text-gray-400 shrink-0 transition-[transform,color]",
+                            isCollapsed && "-rotate-90",
+                        )}
+                    />
+                </div>
+            </button>
+            {!isCollapsed && (
+                <div className="mt-1 mb-4">
+                    {rootIds.map((rootId) => (
+                        <div key={rootId} className="mt-1">
+                            <QuestTreeNode
+                                questId={rootId}
+                                depth={0}
+                                childrenOf={childrenOf}
+                                parentOf={parentOf}
+                                questsById={questsById}
+                                leadsToByQuestId={leadsToByQuestId}
+                                showDebugButton={showDebugButton}
+                                highlightedQuestId={highlightedQuestId}
+                                onQuestLinkClick={onQuestLinkClick}
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
