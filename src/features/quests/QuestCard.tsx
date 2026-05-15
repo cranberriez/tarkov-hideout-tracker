@@ -18,7 +18,6 @@ import {
     Pin,
     CircleSlash,
     Lock,
-    Eye,
 } from "lucide-react";
 import type {
     FullQuest,
@@ -208,15 +207,19 @@ function QuestChip({
             {questRef.prerequisiteType && (
                 <span
                     title={prerequisiteHint ?? undefined}
-                    className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-white/10 bg-black/30 text-gray-400"
+                    className={cn(
+                        "shrink-0 text-[11px] font-medium",
+                        questRef.prerequisiteType === "complete"
+                            ? prerequisiteCompleted
+                                ? "text-tarkov-green"
+                                : "text-gray-500"
+                            : "text-blue-300",
+                    )}
                 >
                     {questRef.prerequisiteType === "complete" ? (
-                        <CheckCircle
-                            size={11}
-                            className={prerequisiteCompleted ? "text-tarkov-green/90" : "text-gray-500"}
-                        />
+                        "Complete"
                     ) : (
-                        <Eye size={11} className="text-blue-300" />
+                        "Accept"
                     )}
                 </span>
             )}

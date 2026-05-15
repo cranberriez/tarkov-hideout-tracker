@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { DEFAULT_IGNORED_QUESTS } from "@/lib/cfg/defaultIgnoredQuests";
 import type { Station } from "@/types";
 
 export const USER_STORE_STORAGE_KEY = "tarkov-hideout-user-state";
@@ -162,7 +163,7 @@ export const useUserStore = create<UserState>()(
             completedRequirements: {},
             completedQuests: {},
             questsWithItems: {},
-            ignoredQuests: {},
+            ignoredQuests: DEFAULT_IGNORED_QUESTS,
             pinnedQuests: {},
             itemCounts: {},
             checklistViewMode: "all",
@@ -195,7 +196,7 @@ export const useUserStore = create<UserState>()(
             questShowHandInOnly: false,
             questShowFirHandInOnly: false,
             questShowPinnedOnly: false,
-            questShowIgnored: false,
+            questShowIgnored: true,
             questShowDebug: false,
             questShowPrereqs: true,
             questSidebarCollapsed: false,
@@ -519,7 +520,7 @@ export const useUserStore = create<UserState>()(
                     questShowHandInOnly: false,
                     questShowFirHandInOnly: false,
                     questShowPinnedOnly: false,
-                    questShowIgnored: false,
+                    questShowIgnored: true,
                     questShowDebug: false,
                     questShowPrereqs: true,
                     questSidebarCollapsed: false,
