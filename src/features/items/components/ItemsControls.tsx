@@ -131,28 +131,28 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
                 onClick={() => setUseCategorization(!useCategorization)}
                 icon={<Tags size={14} />}
                 label="Categorize"
-                className="flex-1 min-w-[100px] justify-center"
+                className="flex-1 min-w-[100px] justify-center text-nowrap"
             />
             <FilterButton
                 active={showFirOnly}
                 onClick={() => setShowFirOnly(!showFirOnly)}
                 icon={<Shield size={14} />}
                 label="FiR Only"
-                className="flex-1 min-w-[80px] justify-center"
+                className="flex-1 min-w-[80px] justify-center text-nowrap"
             />
             <HideCheapControl
                 hideCheap={hideCheap}
                 setHideCheap={setHideCheap}
                 cheapPriceThreshold={cheapPriceThreshold}
                 setCheapPriceThreshold={setCheapPriceThreshold}
-                className="flex-1 min-w-[100px]"
+                className="flex-1 min-w-[100px] text-nowrap"
             />
 
             {/* Settings popover */}
             <div className="relative shrink-0" ref={popoverRef}>
                 <button
                     onClick={() => setPopoverOpen((v) => !v)}
-                    className={`flex items-center px-3 py-2 rounded-sm border text-xs font-medium transition-all cursor-pointer ${
+                    className={`flex items-center px-3 py-2 rounded-sm border text-xs font-medium transition-all h-full cursor-pointer ${
                         popoverOpen || hasActiveAdvanced
                             ? "border-tarkov-green text-tarkov-green bg-tarkov-green/10 shadow-[0_0_10px_rgba(157,255,0,0.1)]"
                             : "border-white/10 text-gray-400 hover:border-white/30 bg-black/20 hover:bg-black/40"
