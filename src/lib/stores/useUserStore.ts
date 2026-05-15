@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Station } from "@/types";
 
+export const USER_STORE_STORAGE_KEY = "tarkov-hideout-user-state";
+
 export type GameEdition =
     | "Standard"
     | "Left Behind"
@@ -143,6 +145,9 @@ interface UserState {
     applyEditionBonuses: (stations: StationEditionTarget[]) => void;
 
     importStationLevels: (levels: Record<string, number>) => void;
+    resetHideoutData: () => void;
+    resetItemData: () => void;
+    resetQuestData: () => void;
     resetAll: () => void;
 
     // Initialization helpers
@@ -453,6 +458,29 @@ export const useUserStore = create<UserState>()(
                 set({ stationLevels: levels });
             },
 
+            resetHideoutData: () => {
+                set(() => ({
+                    stationLevels: {},
+                    hiddenStations: {},
+                    completedRequirements: {},
+                }));
+            },
+
+            resetItemData: () => {
+                set(() => ({
+                    itemCounts: {},
+                }));
+            },
+
+            resetQuestData: () => {
+                set(() => ({
+                    completedQuests: {},
+                    questsWithItems: {},
+                    ignoredQuests: {},
+                    pinnedQuests: {},
+                }));
+            },
+
             resetAll: () => {
                 set(() => ({
                     stationLevels: {},
@@ -507,7 +535,7 @@ export const useUserStore = create<UserState>()(
             },
         }),
         {
-            name: "tarkov-hideout-user-state",
+            name: USER_STORE_STORAGE_KEY,
             version: 7,
             migrate: (persistedState, version) => {
                 let nextState =
