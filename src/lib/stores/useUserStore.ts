@@ -41,6 +41,7 @@ interface UserState {
     cheapPriceThreshold: number; // e.g. in roubles
 
     itemSourceFilter: ItemSourceFilter;
+    itemFiltersOpen: boolean;
 
     sellToPreference: "best" | "flea" | "trader";
     useCategorization: boolean;
@@ -106,6 +107,7 @@ interface UserState {
 
     setChecklistViewMode: (mode: "all" | "nextLevel") => void;
     setItemSourceFilter: (value: ItemSourceFilter) => void;
+    setItemFiltersOpen: (value: boolean) => void;
     setShowHidden: (value: boolean) => void;
     setHideCheap: (value: boolean) => void;
     setHideMoney: (value: boolean) => void;
@@ -179,6 +181,7 @@ export const useUserStore = create<UserState>()(
             itemCounts: {},
             checklistViewMode: "all",
             itemSourceFilter: "all",
+            itemFiltersOpen: false,
             showHidden: false,
             hideCheap: false,
             hideMoney: false,
@@ -309,6 +312,7 @@ export const useUserStore = create<UserState>()(
 
             setChecklistViewMode: (mode) => set({ checklistViewMode: mode }),
             setItemSourceFilter: (value) => set({ itemSourceFilter: value }),
+            setItemFiltersOpen: (value) => set({ itemFiltersOpen: value }),
             setShowHidden: (value) => set({ showHidden: value }),
             setHideCheap: (value) => set({ hideCheap: value }),
             setHideMoney: (value) => set({ hideMoney: value }),
@@ -525,6 +529,7 @@ export const useUserStore = create<UserState>()(
                     itemCounts: {},
                     checklistViewMode: "all",
                     itemSourceFilter: "all",
+                    itemFiltersOpen: false,
                     showHidden: false,
                     hideCheap: false,
                     hideMoney: false,
@@ -573,7 +578,7 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: USER_STORE_STORAGE_KEY,
-            version: 9,
+            version: 10,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -649,6 +654,13 @@ export const useUserStore = create<UserState>()(
                     nextState = {
                         ...nextState,
                         itemShowIgnored: false,
+                    };
+                }
+
+                if (version < 10) {
+                    nextState = {
+                        ...nextState,
+                        itemFiltersOpen: false,
                     };
                 }
 

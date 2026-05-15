@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsFiltersPanel } from "./controls/ItemsFiltersPanel";
@@ -12,8 +11,9 @@ interface ItemsControlsProps {
 }
 
 export function ItemsControls({ onOpenSearch, children }: ItemsControlsProps) {
-    const [filtersOpen, setFiltersOpen] = useState(true);
     const {
+        itemFiltersOpen,
+        setItemFiltersOpen,
         checklistViewMode,
         setChecklistViewMode,
         showHidden,
@@ -51,8 +51,8 @@ export function ItemsControls({ onOpenSearch, children }: ItemsControlsProps) {
     return (
         <div className="space-y-3">
             <ItemsToolbar
-                filtersOpen={filtersOpen}
-                onToggleFilters={() => setFiltersOpen((open) => !open)}
+                filtersOpen={itemFiltersOpen}
+                onToggleFilters={() => setItemFiltersOpen(!itemFiltersOpen)}
                 onOpenSearch={onOpenSearch}
                 itemSourceFilter={itemSourceFilter}
                 onItemSourceFilterChange={setItemSourceFilter}
@@ -68,7 +68,7 @@ export function ItemsControls({ onOpenSearch, children }: ItemsControlsProps) {
                 <div
                     className={cn(
                         "overflow-hidden xl:shrink-0 xl:transition-[width] xl:duration-200 xl:ease-out",
-                        filtersOpen ? "xl:w-[340px]" : "xl:w-0",
+                        itemFiltersOpen ? "xl:w-[340px]" : "xl:w-0",
                     )}
                 >
                     <ItemsFiltersPanel
@@ -98,7 +98,7 @@ export function ItemsControls({ onOpenSearch, children }: ItemsControlsProps) {
                         onCheapPriceThresholdChange={setCheapPriceThreshold}
                         className={cn(
                             "transition-all duration-200 ease-out xl:w-[340px]",
-                            filtersOpen
+                            itemFiltersOpen
                                 ? "translate-x-0 opacity-100"
                                 : "hidden xl:pointer-events-none xl:block xl:-translate-x-full xl:opacity-0",
                         )}

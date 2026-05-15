@@ -1,12 +1,22 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemRow } from "./ItemRow";
+import { ItemAnyOfGroupCard } from "./ItemAnyOfGroupCard";
 import { poolItems } from "@/lib/utils/item-pooling";
 import type { ItemDetails } from "@/types";
-import type { DerivedQuestItemState, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
-import { compareQuestItemState, deriveQuestItemStates } from "@/lib/utils/quest-item-index";
+import type {
+    DerivedQuestAnyOfGroup,
+    DerivedQuestItemState,
+    QuestAnyOfGroupEntry,
+    QuestItemIndexEntry,
+} from "@/lib/utils/quest-item-index";
+import {
+    compareQuestItemState,
+    deriveQuestAnyOfGroups,
+    deriveQuestItemStates,
+} from "@/lib/utils/quest-item-index";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
@@ -14,6 +24,7 @@ import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 interface ItemsListProps {
     onClickItem: (item: ItemDetails) => void;
     questItemIndex: QuestItemIndexEntry[];
+    questAnyOfGroups: QuestAnyOfGroupEntry[];
     questAvailabilityQuests: QuestAvailabilityQuest[];
 }
 
@@ -34,14 +45,19 @@ type MergedItem = {
 
 type DisplayItem = MergedItem & { details: ItemDetails };
 type QuestSlice = "all" | "pinned" | "unpinned" | "none";
+type DisplayEntry =
+    | { type: "item"; key: string; item: DisplayItem }
+    | { type: "group"; key: string; group: DerivedQuestAnyOfGroup };
 
 export function ItemsList({
     onClickItem,
     questItemIndex,
+    questAnyOfGroups,
     questAvailabilityQuests,
 }: ItemsListProps) {
     const { stations, items } = useDataContext();
     const { marketPricesByMode } = usePriceDataContext();
+    const [expandedGroupIds, setExpandedGroupIds] = useState<Record<string, boolean>>({});
 
     const {
         stationLevels,
@@ -73,37 +89,25 @@ export function ItemsList({
         questShowLightkeeper,
     } = useUserStore();
 
-    const itemsById = useMemo(() => {
-        if (!items) return null;
-
-        const map: Record<string, ItemDetails> = {};
-        for (const item of items) {
-            map[item.id] = item;
-        }
-        return map;
-    }, [items]);
-
-    const activeQuestStates = useMemo(
-        () =>
-            deriveQuestItemStates(questItemIndex, {
-                completedQuests,
-                ignoredQuests,
-                pinnedQuests,
-                playerLevel,
-                prestigeLevel,
-                faction: questFaction,
-                traderLoyaltyLevels: questTraderLoyaltyLevels,
-                quests: questAvailabilityQuests,
-                visibilityMode: itemQuestVisibilityMode,
-                customLookahead: itemQuestCustomLookahead,
-                customLevelLookahead: itemQuestCustomLevelLookahead,
-                showFutureFir: itemShowFutureFir,
-                showIgnored: itemShowIgnored,
-                showKappa: questShowKappa,
-                showLightkeeper: questShowLightkeeper,
-            }),
+    const deriveOptions = useMemo(
+        () => ({
+            completedQuests,
+            ignoredQuests,
+            pinnedQuests,
+            playerLevel,
+            prestigeLevel,
+            faction: questFaction,
+            traderLoyaltyLevels: questTraderLoyaltyLevels,
+            quests: questAvailabilityQuests,
+            visibilityMode: itemQuestVisibilityMode,
+            customLookahead: itemQuestCustomLookahead,
+            customLevelLookahead: itemQuestCustomLevelLookahead,
+            showFutureFir: itemShowFutureFir,
+            showIgnored: itemShowIgnored,
+            showKappa: questShowKappa,
+            showLightkeeper: questShowLightkeeper,
+        }),
         [
-            questItemIndex,
             completedQuests,
             ignoredQuests,
             pinnedQuests,
@@ -122,14 +126,74 @@ export function ItemsList({
         ],
     );
 
+    const itemsById = useMemo(() => {
+        if (!items) return null;
+        const map: Record<string, ItemDetails> = {};
+        for (const item of items) {
+            map[item.id] = item;
+        }
+        return map;
+    }, [items]);
+
+    const activeQuestStates = useMemo(
+        () => deriveQuestItemStates(questItemIndex, deriveOptions),
+        [deriveOptions, questItemIndex],
+    );
+
+    const activeQuestGroups = useMemo(
+        () => deriveQuestAnyOfGroups(questAnyOfGroups, deriveOptions),
+        [deriveOptions, questAnyOfGroups],
+    );
+
+    const groupedQuestDeductionsByItemId = useMemo(() => {
+        const deductions = new Map<string, { count: number; firCount: number }>();
+        for (const group of activeQuestGroups) {
+            for (const item of group.items) {
+                const existing = deductions.get(item.id) ?? { count: 0, firCount: 0 };
+                deductions.set(item.id, {
+                    count: existing.count + group.requiredCount,
+                    firCount: existing.firCount + group.requiredFirCount,
+                });
+            }
+        }
+        return deductions;
+    }, [activeQuestGroups]);
+
     const questStateByItemId = useMemo(
-        () => new Map(activeQuestStates.map((state) => [state.itemId, state])),
-        [activeQuestStates],
+        () =>
+            new Map(
+                activeQuestStates.map((state) => {
+                    const deduction = groupedQuestDeductionsByItemId.get(state.itemId);
+                    const requiredCount = Math.max(0, state.requiredCount - (deduction?.count ?? 0));
+                    const requiredFirCount = Math.max(
+                        0,
+                        state.requiredFirCount - (deduction?.firCount ?? 0),
+                    );
+                    const pinnedRequiredCount = Math.max(
+                        0,
+                        state.pinnedRequiredCount - (deduction?.count ?? 0),
+                    );
+                    const pinnedRequiredFirCount = Math.max(
+                        0,
+                        state.pinnedRequiredFirCount - (deduction?.firCount ?? 0),
+                    );
+                    return [
+                        state.itemId,
+                        {
+                            ...state,
+                            requiredCount,
+                            requiredFirCount,
+                            pinnedRequiredCount,
+                            pinnedRequiredFirCount,
+                        },
+                    ] as const;
+                }),
+            ),
+        [activeQuestStates, groupedQuestDeductionsByItemId],
     );
 
     const allItemDetails = useMemo(() => {
         const details: Record<string, ItemDetails> = { ...(itemsById ?? {}) };
-
         for (const entry of questItemIndex) {
             if (!details[entry.itemId]) {
                 details[entry.itemId] = {
@@ -141,16 +205,28 @@ export function ItemsList({
                 };
             }
         }
-
+        for (const group of questAnyOfGroups) {
+            for (const item of group.items) {
+                if (!details[item.id]) {
+                    details[item.id] = {
+                        id: item.id,
+                        name: item.name,
+                        normalizedName: item.normalizedName,
+                        iconLink: item.iconLink,
+                        gridImageLink: item.gridImageLink,
+                    };
+                }
+            }
+        }
         return details;
-    }, [itemsById, questItemIndex]);
+    }, [itemsById, questAnyOfGroups, questItemIndex]);
 
     const mode = gameMode === "PVE" ? "PVE" : "PVP";
     const priceBucket = marketPricesByMode[mode];
+    const getPrice = (normalizedName: string) => priceBucket?.prices[normalizedName];
 
     const pooledHideoutItems = useMemo(() => {
         if (!stations) return [];
-
         return poolItems({
             stations,
             stationLevels,
@@ -160,12 +236,12 @@ export function ItemsList({
             completedRequirements,
         });
     }, [
-        stations,
-        stationLevels,
-        hiddenStations,
         checklistViewMode,
-        showHidden,
         completedRequirements,
+        hiddenStations,
+        showHidden,
+        stationLevels,
+        stations,
     ]);
 
     const mergedPool = useMemo(() => {
@@ -183,7 +259,8 @@ export function ItemsList({
             ]),
         );
 
-        for (const questState of activeQuestStates) {
+        for (const questState of questStateByItemId.values()) {
+            if (questState.requiredCount <= 0 && questState.requiredFirCount <= 0) continue;
             const existing = merged.get(questState.itemId);
             if (existing) {
                 merged.set(questState.itemId, {
@@ -192,7 +269,7 @@ export function ItemsList({
                     firCount: existing.firCount + questState.requiredFirCount,
                     questCount: questState.requiredCount,
                     questFirCount: questState.requiredFirCount,
-                    isQuest: true,
+                    isQuest: questState.requiredCount > 0,
                     questState,
                 });
             } else {
@@ -202,7 +279,7 @@ export function ItemsList({
                     firCount: questState.requiredFirCount,
                     isTool: false,
                     isHideout: false,
-                    isQuest: true,
+                    isQuest: questState.requiredCount > 0,
                     hideoutCount: 0,
                     hideoutFirCount: 0,
                     questCount: questState.requiredCount,
@@ -218,9 +295,7 @@ export function ItemsList({
             details: allItemDetails[item.id],
             questState: item.questState ?? questStateByItemId.get(item.id),
         }));
-    }, [pooledHideoutItems, activeQuestStates, allItemDetails, questStateByItemId]);
-
-    const getPrice = (normalizedName: string) => priceBucket?.prices[normalizedName];
+    }, [allItemDetails, pooledHideoutItems, questStateByItemId]);
 
     const compareDisplayItems = (a: DisplayItem, b: DisplayItem) => {
         if (a.questState && b.questState) {
@@ -229,14 +304,11 @@ export function ItemsList({
         } else if (a.questState || b.questState) {
             return a.questState ? -1 : 1;
         }
-
         return a.details.name.localeCompare(b.details.name);
     };
 
     const finalizeDisplayItems = (
-        itemsToDisplay: Array<
-            MergedItem & { details?: ItemDetails; questState?: DerivedQuestItemState }
-        >,
+        itemsToDisplay: Array<MergedItem & { details?: ItemDetails; questState?: DerivedQuestItemState }>,
     ): DisplayItem[] => {
         let finalItems = itemsToDisplay.filter((item): item is DisplayItem => !!item.details);
 
@@ -246,21 +318,13 @@ export function ItemsList({
 
         if (hideCheap) {
             finalItems = finalItems.filter((item) => {
-                if ((item.firCount || 0) > 0) {
-                    return true;
-                }
-
+                if ((item.firCount || 0) > 0) return true;
                 const norm = item.details.normalizedName;
-                if (norm === "roubles" || norm === "dollars" || norm === "euros") {
-                    return true;
-                }
-
+                if (norm === "roubles" || norm === "dollars" || norm === "euros") return true;
                 const marketPrice = getPrice(norm);
                 if (!marketPrice) return true;
-
                 const unitPrice = marketPrice.avg24hPrice ?? marketPrice.price ?? undefined;
                 if (unitPrice == null) return true;
-
                 return unitPrice >= cheapPriceThreshold;
             });
         }
@@ -308,20 +372,35 @@ export function ItemsList({
                         isQuest: visibleQuestCount > 0,
                     };
                 })
-                .filter((item) => !requirePinnedQuest || (item.questState?.pinnedRequiredCount ?? 0) > 0)
+                .filter(
+                    (item) =>
+                        !requirePinnedQuest || (item.questState?.pinnedRequiredCount ?? 0) > 0,
+                )
                 .filter((item) => item.count > 0),
         );
 
+    const visibleQuestGroups = useMemo(() => {
+        let groups = activeQuestGroups;
+        if (itemSourceFilter === "hideout") groups = [];
+        if (itemShowPinnedQuestOnly) groups = groups.filter((group) => group.isPinnedOverride);
+        if (showFirOnly) groups = groups.filter((group) => group.requiredFirCount > 0);
+        return groups;
+    }, [activeQuestGroups, itemShowPinnedQuestOnly, itemSourceFilter, showFirOnly]);
+
     const sourceItems =
         itemSourceFilter === "hideout"
-            ? buildVisibleItems(
-                  true,
-                  "pinned",
-                  itemShowPinnedQuestOnly,
-              )
+            ? buildVisibleItems(true, "pinned", itemShowPinnedQuestOnly)
             : itemSourceFilter === "quest"
-              ? buildVisibleItems(false, itemShowPinnedQuestOnly ? "pinned" : "all", itemShowPinnedQuestOnly)
-              : buildVisibleItems(true, itemShowPinnedQuestOnly ? "pinned" : "all", itemShowPinnedQuestOnly);
+              ? buildVisibleItems(
+                    false,
+                    itemShowPinnedQuestOnly ? "pinned" : "all",
+                    itemShowPinnedQuestOnly,
+                )
+              : buildVisibleItems(
+                    true,
+                    itemShowPinnedQuestOnly ? "pinned" : "all",
+                    itemShowPinnedQuestOnly,
+                );
 
     const gridClassesBySize: Record<string, string> = {
         Icon: "grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8",
@@ -330,11 +409,35 @@ export function ItemsList({
     };
     const gridClasses = gridClassesBySize[itemsSize] ?? gridClassesBySize.Expanded;
 
-    const renderItems = (itemsToRender: DisplayItem[]) => {
-        if (!useCategorization) {
-            return (
-                <div className={`grid gap-2 ${gridClasses}`}>
-                    {itemsToRender.map(({ id, count, firCount, isHideout, isQuest, details }) => (
+    const renderMixedGrid = (itemsToRender: DisplayItem[], groupsToRender: DerivedQuestAnyOfGroup[]) => {
+        const entries: DisplayEntry[] = [
+            ...groupsToRender.map((group) => ({ type: "group", key: group.groupId, group }) as const),
+            ...itemsToRender.map((item) => ({ type: "item", key: item.id, item }) as const),
+        ];
+
+        return (
+            <div className={`grid gap-2 ${gridClasses}`}>
+                {entries.map((entry) => {
+                    if (entry.type === "group") {
+                        return (
+                            <ItemAnyOfGroupCard
+                                key={entry.key}
+                                group={entry.group}
+                                expanded={!!expandedGroupIds[entry.group.groupId]}
+                                size={itemsSize}
+                                onToggleExpanded={() =>
+                                    setExpandedGroupIds((current) => ({
+                                        ...current,
+                                        [entry.group.groupId]: !current[entry.group.groupId],
+                                    }))
+                                }
+                                onClickItem={onClickItem}
+                            />
+                        );
+                    }
+
+                    const { id, count, firCount, isHideout, isQuest, details } = entry.item;
+                    return (
                         <ItemRow
                             key={id}
                             item={details}
@@ -345,19 +448,25 @@ export function ItemsList({
                             isQuest={isQuest}
                             onClick={() => onClickItem(details)}
                         />
-                    ))}
-                </div>
-            );
+                    );
+                })}
+            </div>
+        );
+    };
+
+    const renderItems = (itemsToRender: DisplayItem[], groupsToRender: DerivedQuestAnyOfGroup[]) => {
+        if (!useCategorization) {
+            return renderMixedGrid(itemsToRender, groupsToRender);
         }
 
-        const groups: Record<string, DisplayItem[]> = {};
+        const categoryGroups: Record<string, DisplayItem[]> = {};
         for (const item of itemsToRender) {
             const category = item.details.category?.name ?? "Other";
-            if (!groups[category]) groups[category] = [];
-            groups[category].push(item);
+            if (!categoryGroups[category]) categoryGroups[category] = [];
+            categoryGroups[category].push(item);
         }
 
-        const sortedCategories = Object.keys(groups).sort((a, b) => {
+        const sortedCategories = Object.keys(categoryGroups).sort((a, b) => {
             if (a === "Other") return 1;
             if (b === "Other") return -1;
             return a.localeCompare(b);
@@ -365,16 +474,27 @@ export function ItemsList({
 
         return (
             <div className="space-y-8">
+                {groupsToRender.length > 0 && (
+                    <div>
+                        <h2 className="mb-4 border-b border-white/10 pb-2 text-xl font-bold text-tarkov-green">
+                            Quest Groups{" "}
+                            <span className="ml-2 text-sm font-normal text-gray-500">
+                                ({groupsToRender.length})
+                            </span>
+                        </h2>
+                        {renderMixedGrid([], groupsToRender)}
+                    </div>
+                )}
                 {sortedCategories.map((category) => (
                     <div key={category}>
                         <h2 className="mb-4 border-b border-white/10 pb-2 text-xl font-bold text-tarkov-green">
                             {category}{" "}
                             <span className="ml-2 text-sm font-normal text-gray-500">
-                                ({groups[category].length})
+                                ({categoryGroups[category].length})
                             </span>
                         </h2>
                         <div className={`grid gap-4 ${gridClasses}`}>
-                            {groups[category].map(
+                            {categoryGroups[category].map(
                                 ({ id, count, firCount, isHideout, isQuest, details }) => (
                                     <ItemRow
                                         key={id}
@@ -399,7 +519,7 @@ export function ItemsList({
         return null;
     }
 
-    if (sourceItems.length === 0) {
+    if (sourceItems.length === 0 && visibleQuestGroups.length === 0) {
         return (
             <div className="py-20 text-center text-gray-500">
                 <div className="mb-2 text-xl">No items needed!</div>
@@ -411,5 +531,5 @@ export function ItemsList({
         );
     }
 
-    return <div className="space-y-8">{renderItems(sourceItems)}</div>;
+    return <div className="space-y-8">{renderItems(sourceItems, visibleQuestGroups)}</div>;
 }

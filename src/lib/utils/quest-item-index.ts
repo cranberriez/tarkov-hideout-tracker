@@ -48,6 +48,32 @@ export interface QuestItemIndexEntry {
     quests: QuestItemLink[];
 }
 
+export interface QuestAnyOfGroupEntry {
+    groupId: string;
+    questId: string;
+    questName: string;
+    objectiveLabel: string;
+    questNormalizedName: string;
+    questWikiLink?: string | null;
+    traderId: string;
+    traderName: string;
+    traderImageLink?: string | null;
+    traderImage4xLink?: string | null;
+    prerequisiteQuestIds: string[];
+    prerequisiteDepth: number;
+    minPlayerLevel?: number | null;
+    requiredCount: number;
+    requiredFirCount: number;
+    isFirRequired: boolean;
+    items: Array<{
+        id: string;
+        name: string;
+        normalizedName: string;
+        iconLink?: string;
+        gridImageLink?: string;
+    }>;
+}
+
 export type DerivedQuestItemStatus = "available" | "future" | "completed" | "ignored";
 export type DerivedQuestVisibilityBucket = "pinned" | "available" | "nextLayer" | "future" | "fir";
 
@@ -80,6 +106,32 @@ export interface DerivedQuestItemState {
     pinnedRequiredCount: number;
     pinnedRequiredFirCount: number;
     relatedQuests: DerivedQuestItemQuest[];
+}
+
+export interface DerivedQuestAnyOfGroup {
+    groupId: string;
+    questId: string;
+    questName: string;
+    objectiveLabel: string;
+    questNormalizedName: string;
+    questWikiLink?: string | null;
+    traderId: string;
+    traderName: string;
+    traderImageLink?: string | null;
+    traderImage4xLink?: string | null;
+    prerequisiteDepth: number;
+    minPlayerLevel?: number | null;
+    requiredCount: number;
+    requiredFirCount: number;
+    isFirRequired: boolean;
+    items: QuestAnyOfGroupEntry["items"];
+    status: DerivedQuestItemStatus;
+    isPinned: boolean;
+    isPinnedOverride: boolean;
+    isFutureFirOverride: boolean;
+    isVisibleByMode: boolean;
+    visibilityBucket: DerivedQuestVisibilityBucket;
+    distanceFromAvailable: number | null;
 }
 
 export interface QuestItemDeriveOptions {
@@ -123,6 +175,34 @@ function isGiveItemObjective(
     objective: QuestObjectiveItemType | FullQuestObjective,
 ): objective is QuestObjectiveItemType {
     return objective.type === "giveItem" && "items" in objective;
+}
+
+function isFindItemObjective(
+    objective: FullQuestObjective,
+): objective is Extract<FullQuestObjective, { type: "findItem" }> {
+    return objective.type === "findItem";
+}
+
+function stripGiveItemDescriptionPrefix(description: string): string {
+    return description
+        .replace(/^Hand over the found in raid item:\s*/i, "")
+        .replace(/^Hand over the found in raid\s*/i, "")
+        .trim();
+}
+
+function formatAnyOfObjectiveLabel(
+    objective: QuestObjectiveItemType,
+    previousObjective: FullQuestObjective | null,
+): string {
+    const strippedDescription = stripGiveItemDescriptionPrefix(objective.description);
+    const fallbackDescription =
+        previousObjective && isFindItemObjective(previousObjective)
+            ? previousObjective.description.trim()
+            : "";
+
+    const labelDescription = strippedDescription || fallbackDescription || "Any of these items";
+
+    return `${objective.count}x ${labelDescription}`;
 }
 
 export function hasGiveItemObjectives(quest: FullQuest | Quest): boolean {
@@ -250,6 +330,57 @@ export function buildQuestItemIndex(quests: QuestItemSource[]): QuestItemIndexEn
     }
 
     return Array.from(itemsById.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function buildQuestAnyOfGroups(quests: QuestItemSource[]): QuestAnyOfGroupEntry[] {
+    const depthMap = getQuestDepthMap(quests);
+    const groups: QuestAnyOfGroupEntry[] = [];
+
+    for (const quest of quests) {
+        for (const [objectiveIndex, objective] of quest.objectives.entries()) {
+            if (!isGiveItemObjective(objective) || objective.items.length <= 1) continue;
+
+            groups.push({
+                groupId: `${quest.id}:${objective.id}`,
+                questId: quest.id,
+                questName: quest.name,
+                objectiveLabel: formatAnyOfObjectiveLabel(
+                    objective,
+                    objectiveIndex > 0 ? quest.objectives[objectiveIndex - 1] : null,
+                ),
+                questNormalizedName: quest.normalizedName,
+                questWikiLink: quest.wikiLink,
+                traderId: quest.trader.id,
+                traderName: quest.trader.name,
+                traderImageLink: "imageLink" in quest.trader ? quest.trader.imageLink ?? null : null,
+                traderImage4xLink:
+                    "image4xLink" in quest.trader ? quest.trader.image4xLink ?? null : null,
+                prerequisiteQuestIds: quest.taskRequirements.map((req) => req.task.id),
+                prerequisiteDepth: depthMap.get(quest.id) ?? 0,
+                minPlayerLevel: quest.minPlayerLevel ?? null,
+                requiredCount: objective.count,
+                requiredFirCount: objective.foundInRaid ? objective.count : 0,
+                isFirRequired: objective.foundInRaid,
+                items: objective.items.map((item) => ({
+                    id: item.id,
+                    name: item.name,
+                    normalizedName: item.normalizedName,
+                    iconLink: item.iconLink,
+                    gridImageLink: item.gridImageLink,
+                })),
+            });
+        }
+    }
+
+    return groups.sort((a, b) => {
+        if (a.prerequisiteDepth !== b.prerequisiteDepth) {
+            return a.prerequisiteDepth - b.prerequisiteDepth;
+        }
+        if ((a.minPlayerLevel ?? 0) !== (b.minPlayerLevel ?? 0)) {
+            return (a.minPlayerLevel ?? 0) - (b.minPlayerLevel ?? 0);
+        }
+        return a.questName.localeCompare(b.questName);
+    });
 }
 
 function compareDerivedQuest(a: DerivedQuestItemQuest, b: DerivedQuestItemQuest): number {
@@ -481,7 +612,11 @@ function isQuestVisibleByMode(
 
     switch (context.visibilityMode) {
         case "nextLayer":
-            return nextLayerQuestIds.has(quest.questId);
+            return (
+                nextLayerQuestIds.has(quest.questId) ||
+                ((quest.minPlayerLevel ?? Number.MAX_SAFE_INTEGER) <= context.playerLevel + 20 &&
+                    futureQuestIds.has(quest.questId))
+            );
         case "allFuture":
             return futureQuestIds.has(quest.questId);
         case "custom": {
@@ -628,6 +763,111 @@ export function deriveQuestItemStates(
     return questItemIndex
         .map((entry) => deriveQuestItemStateFromContext(entry, context))
         .filter((entry) => entry.requiredCount > 0 || entry.pinnedRequiredCount > 0);
+}
+
+export function deriveQuestAnyOfGroups(
+    groups: QuestAnyOfGroupEntry[],
+    options: QuestItemDeriveOptions,
+): DerivedQuestAnyOfGroup[] {
+    const context = createQuestItemDeriveContext(options);
+
+    return groups
+        .map<DerivedQuestAnyOfGroup | null>((group) => {
+            const isCompleted = !!context.completedQuests[group.questId];
+            const isIgnored = !!context.ignoredQuests[group.questId];
+            const isPinned = !!context.pinnedQuests[group.questId];
+            const availabilityQuest = context.questsById.get(group.questId);
+            const isInFilteredBranch =
+                !!availabilityQuest &&
+                questMatchesBranchFilters(availabilityQuest, context.showKappa, context.showLightkeeper);
+
+            if (!availabilityQuest || !isInFilteredBranch) return null;
+
+            const questLike: QuestItemLink = {
+                itemId: group.items[0]?.id ?? group.groupId,
+                questId: group.questId,
+                questName: group.questName,
+                questNormalizedName: group.questNormalizedName,
+                questWikiLink: group.questWikiLink,
+                traderId: group.traderId,
+                traderName: group.traderName,
+                traderImageLink: group.traderImageLink,
+                traderImage4xLink: group.traderImage4xLink,
+                prerequisiteQuestIds: group.prerequisiteQuestIds,
+                prerequisiteDepth: group.prerequisiteDepth,
+                minPlayerLevel: group.minPlayerLevel,
+                requiredCount: group.requiredCount,
+                requiredFirCount: group.requiredFirCount,
+                totalObjectiveCount: group.requiredCount,
+                isFirRequired: group.isFirRequired,
+            };
+
+            const isVisibleByMode = isQuestVisibleByMode(questLike, context);
+            const isPinnedOverride = isPinned && !isCompleted;
+            const isFutureFirOverride =
+                context.showFutureFir &&
+                group.requiredFirCount > 0 &&
+                !isCompleted &&
+                !isIgnored &&
+                !isVisibleByMode;
+            const isActive = isVisibleByMode || isPinnedOverride || isFutureFirOverride;
+
+            if (!isActive) return null;
+
+            let status: DerivedQuestItemStatus = "future";
+            if (isCompleted) status = "completed";
+            else if (isIgnored) status = "ignored";
+            else if (context.availableQuestIds.has(group.questId)) status = "available";
+
+            return {
+                groupId: group.groupId,
+                questId: group.questId,
+                questName: group.questName,
+                objectiveLabel: group.objectiveLabel,
+                questNormalizedName: group.questNormalizedName,
+                questWikiLink: group.questWikiLink,
+                traderId: group.traderId,
+                traderName: group.traderName,
+                traderImageLink: group.traderImageLink,
+                traderImage4xLink: group.traderImage4xLink,
+                prerequisiteDepth: group.prerequisiteDepth,
+                minPlayerLevel: group.minPlayerLevel,
+                requiredCount: group.requiredCount,
+                requiredFirCount: group.requiredFirCount,
+                isFirRequired: group.isFirRequired,
+                items: group.items,
+                status,
+                isPinned,
+                isPinnedOverride,
+                isFutureFirOverride,
+                isVisibleByMode,
+                visibilityBucket: getQuestVisibilityBucket(
+                    questLike,
+                    isVisibleByMode,
+                    isPinnedOverride,
+                    isFutureFirOverride,
+                    context,
+                ),
+                distanceFromAvailable: context.itemDistanceFromAvailable.get(group.questId) ?? null,
+            };
+        })
+        .filter((group): group is DerivedQuestAnyOfGroup => group !== null)
+        .sort((a, b) => {
+            const bucketOrder: Record<DerivedQuestVisibilityBucket, number> = {
+                pinned: 0,
+                available: 1,
+                nextLayer: 2,
+                fir: 3,
+                future: 4,
+            };
+            if (bucketOrder[a.visibilityBucket] !== bucketOrder[b.visibilityBucket]) {
+                return bucketOrder[a.visibilityBucket] - bucketOrder[b.visibilityBucket];
+            }
+            if ((a.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER) !== (b.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER)) {
+                return (a.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER) - (b.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER);
+            }
+            return a.questName.localeCompare(b.questName);
+        });
 }
 
 export function compareQuestItemState(a: DerivedQuestItemState, b: DerivedQuestItemState): number {

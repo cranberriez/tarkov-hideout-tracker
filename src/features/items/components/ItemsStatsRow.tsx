@@ -5,26 +5,30 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 import { poolItems } from "@/lib/utils/item-pooling";
-import type { QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
-import { deriveQuestItemStates } from "@/lib/utils/quest-item-index";
+import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
+import { deriveQuestAnyOfGroups, deriveQuestItemStates } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 
 interface ItemsStatsRowProps {
     questItemIndex: QuestItemIndexEntry[];
+    questAnyOfGroups: QuestAnyOfGroupEntry[];
     questAvailabilityQuests: QuestAvailabilityQuest[];
 }
 
 type MergedStatItem = {
     id: string;
     normalizedName?: string;
-    isHideout: boolean;
     hideoutCount: number;
     hideoutFirCount: number;
     questCount: number;
     questFirCount: number;
 };
 
-export function ItemsStatsRow({ questItemIndex, questAvailabilityQuests }: ItemsStatsRowProps) {
+export function ItemsStatsRow({
+    questItemIndex,
+    questAnyOfGroups,
+    questAvailabilityQuests,
+}: ItemsStatsRowProps) {
     const { stations, items } = useDataContext();
     const { marketPricesByMode } = usePriceDataContext();
     const {
@@ -56,27 +60,25 @@ export function ItemsStatsRow({ questItemIndex, questAvailabilityQuests }: Items
         itemCounts,
     } = useUserStore();
 
-    const activeQuestItems = useMemo(
-        () =>
-            deriveQuestItemStates(questItemIndex, {
-                completedQuests,
-                ignoredQuests,
-                pinnedQuests,
-                playerLevel,
-                prestigeLevel,
-                faction: questFaction,
-                traderLoyaltyLevels: questTraderLoyaltyLevels,
-                quests: questAvailabilityQuests,
-                visibilityMode: itemQuestVisibilityMode,
-                customLookahead: itemQuestCustomLookahead,
-                customLevelLookahead: itemQuestCustomLevelLookahead,
-                showFutureFir: itemShowFutureFir,
-                showIgnored: itemShowIgnored,
-                showKappa: questShowKappa,
-                showLightkeeper: questShowLightkeeper,
-            }),
+    const deriveOptions = useMemo(
+        () => ({
+            completedQuests,
+            ignoredQuests,
+            pinnedQuests,
+            playerLevel,
+            prestigeLevel,
+            faction: questFaction,
+            traderLoyaltyLevels: questTraderLoyaltyLevels,
+            quests: questAvailabilityQuests,
+            visibilityMode: itemQuestVisibilityMode,
+            customLookahead: itemQuestCustomLookahead,
+            customLevelLookahead: itemQuestCustomLevelLookahead,
+            showFutureFir: itemShowFutureFir,
+            showIgnored: itemShowIgnored,
+            showKappa: questShowKappa,
+            showLightkeeper: questShowLightkeeper,
+        }),
         [
-            questItemIndex,
             completedQuests,
             ignoredQuests,
             pinnedQuests,
@@ -95,13 +97,34 @@ export function ItemsStatsRow({ questItemIndex, questAvailabilityQuests }: Items
         ],
     );
 
+    const activeQuestItems = useMemo(
+        () => deriveQuestItemStates(questItemIndex, deriveOptions),
+        [deriveOptions, questItemIndex],
+    );
+    const activeQuestGroups = useMemo(
+        () => deriveQuestAnyOfGroups(questAnyOfGroups, deriveOptions),
+        [deriveOptions, questAnyOfGroups],
+    );
+
+    const groupedQuestDeductionsByItemId = useMemo(() => {
+        const deductions = new Map<string, { count: number; firCount: number }>();
+        for (const group of activeQuestGroups) {
+            for (const item of group.items) {
+                const existing = deductions.get(item.id) ?? { count: 0, firCount: 0 };
+                deductions.set(item.id, {
+                    count: existing.count + group.requiredCount,
+                    firCount: existing.firCount + group.requiredFirCount,
+                });
+            }
+        }
+        return deductions;
+    }, [activeQuestGroups]);
+
     const mergedPool = useMemo(() => {
         if (!stations) return [];
 
         const normalizedNameByItemId = new Map<string, string>();
-        for (const item of items ?? []) {
-            normalizedNameByItemId.set(item.id, item.normalizedName);
-        }
+        for (const item of items ?? []) normalizedNameByItemId.set(item.id, item.normalizedName);
         for (const questItem of activeQuestItems) {
             normalizedNameByItemId.set(questItem.itemId, questItem.normalizedName);
         }
@@ -116,12 +139,10 @@ export function ItemsStatsRow({ questItemIndex, questAvailabilityQuests }: Items
         });
 
         const merged = new Map<string, MergedStatItem>();
-
         for (const item of hideoutItems) {
             merged.set(item.id, {
                 id: item.id,
                 normalizedName: normalizedNameByItemId.get(item.id),
-                isHideout: item.isHideout,
                 hideoutCount: item.count,
                 hideoutFirCount: item.firCount,
                 questCount: 0,
@@ -130,25 +151,25 @@ export function ItemsStatsRow({ questItemIndex, questAvailabilityQuests }: Items
         }
 
         for (const questItem of activeQuestItems) {
+            const deduction = groupedQuestDeductionsByItemId.get(questItem.itemId);
+            const questCount = Math.max(0, questItem.requiredCount - (deduction?.count ?? 0));
+            const questFirCount = Math.max(
+                0,
+                questItem.requiredFirCount - (deduction?.firCount ?? 0),
+            );
             const existing = merged.get(questItem.itemId);
             if (existing) {
+                merged.set(questItem.itemId, { ...existing, questCount, questFirCount });
+            } else if (questCount > 0 || questFirCount > 0) {
                 merged.set(questItem.itemId, {
-                    ...existing,
-                    questCount: questItem.requiredCount,
-                    questFirCount: questItem.requiredFirCount,
+                    id: questItem.itemId,
+                    normalizedName: questItem.normalizedName,
+                    hideoutCount: 0,
+                    hideoutFirCount: 0,
+                    questCount,
+                    questFirCount,
                 });
-                continue;
             }
-
-            merged.set(questItem.itemId, {
-                id: questItem.itemId,
-                normalizedName: questItem.normalizedName,
-                isHideout: false,
-                hideoutCount: 0,
-                hideoutFirCount: 0,
-                questCount: questItem.requiredCount,
-                questFirCount: questItem.requiredFirCount,
-            });
         }
 
         return Array.from(merged.values());
@@ -156,6 +177,7 @@ export function ItemsStatsRow({ questItemIndex, questAvailabilityQuests }: Items
         activeQuestItems,
         checklistViewMode,
         completedRequirements,
+        groupedQuestDeductionsByItemId,
         hiddenStations,
         items,
         showHidden,
@@ -163,36 +185,44 @@ export function ItemsStatsRow({ questItemIndex, questAvailabilityQuests }: Items
         stations,
     ]);
 
+    const visibleQuestGroups = useMemo(() => {
+        let groups = activeQuestGroups;
+        if (itemSourceFilter === "hideout") groups = [];
+        if (itemShowPinnedQuestOnly) groups = groups.filter((group) => group.isPinnedOverride);
+        if (showFirOnly) groups = groups.filter((group) => group.requiredFirCount > 0);
+        return groups;
+    }, [activeQuestGroups, itemShowPinnedQuestOnly, itemSourceFilter, showFirOnly]);
+
     const mode = gameMode === "PVE" ? "PVE" : "PVP";
     const priceBucket = marketPricesByMode[mode];
 
     const stats = useMemo(() => {
-        const questStateByItemId = new Map(activeQuestItems.map((item) => [item.itemId, item]));
-
         const visibleItems = mergedPool
             .map((item) => {
-                const questState = questStateByItemId.get(item.id);
-                const visibleQuestCount = itemShowPinnedQuestOnly
-                    ? (questState?.pinnedRequiredCount ?? 0)
-                    : item.questCount;
-                const visibleQuestFirCount = itemShowPinnedQuestOnly
-                    ? (questState?.pinnedRequiredFirCount ?? 0)
-                    : item.questFirCount;
+                const visibleQuestCount =
+                    itemSourceFilter !== "hideout"
+                        ? itemShowPinnedQuestOnly
+                            ? 0
+                            : item.questCount
+                        : 0;
+                const visibleQuestFirCount =
+                    itemSourceFilter !== "hideout"
+                        ? itemShowPinnedQuestOnly
+                            ? 0
+                            : item.questFirCount
+                        : 0;
                 const visibleHideoutCount = itemSourceFilter !== "quest" ? item.hideoutCount : 0;
                 const visibleHideoutFirCount =
                     itemSourceFilter !== "quest" ? item.hideoutFirCount : 0;
-                const visibleCount =
-                    visibleHideoutCount + (itemSourceFilter !== "hideout" ? visibleQuestCount : 0);
-                const visibleFirCount =
-                    visibleHideoutFirCount +
-                    (itemSourceFilter !== "hideout" ? visibleQuestFirCount : 0);
+                const visibleCount = visibleHideoutCount + visibleQuestCount;
+                const visibleFirCount = visibleHideoutFirCount + visibleQuestFirCount;
 
                 return {
                     ...item,
                     visibleCount,
                     visibleFirCount,
                     visibleHideout: visibleHideoutCount > 0,
-                    visibleQuest: itemSourceFilter !== "hideout" && visibleQuestCount > 0,
+                    visibleQuest: visibleQuestCount > 0,
                 };
             })
             .filter((item) => item.visibleCount > 0)
@@ -200,7 +230,6 @@ export function ItemsStatsRow({ questItemIndex, questAvailabilityQuests }: Items
             .filter((item) => {
                 if (!hideCheap) return true;
                 if (item.visibleFirCount > 0) return true;
-
                 const normalizedName = item.normalizedName;
                 if (
                     normalizedName === "roubles" ||
@@ -209,26 +238,25 @@ export function ItemsStatsRow({ questItemIndex, questAvailabilityQuests }: Items
                 ) {
                     return true;
                 }
-
-                const marketPrice = normalizedName
-                    ? priceBucket?.prices[normalizedName]
-                    : undefined;
+                const marketPrice = normalizedName ? priceBucket?.prices[normalizedName] : undefined;
                 const unitPrice = marketPrice?.avg24hPrice ?? marketPrice?.price;
                 return unitPrice == null || unitPrice >= cheapPriceThreshold;
             });
 
+        const completeItems = visibleItems.filter((item) => {
+            const counts = itemCounts[item.id];
+            if (!counts) return false;
+            return counts.have + counts.haveFir >= item.visibleCount;
+        }).length;
+
         return {
-            total: visibleItems.length,
+            total: visibleItems.length + visibleQuestGroups.length,
             hideout: visibleItems.filter((item) => item.visibleHideout).length,
-            quest: visibleItems.filter((item) => item.visibleQuest).length,
-            complete: visibleItems.filter((item) => {
-                const counts = itemCounts[item.id];
-                if (!counts) return false;
-                return counts.have + counts.haveFir >= item.visibleCount;
-            }).length,
+            quest:
+                visibleItems.filter((item) => item.visibleQuest).length + visibleQuestGroups.length,
+            complete: completeItems,
         };
     }, [
-        activeQuestItems,
         cheapPriceThreshold,
         hideCheap,
         itemCounts,
@@ -237,6 +265,7 @@ export function ItemsStatsRow({ questItemIndex, questAvailabilityQuests }: Items
         mergedPool,
         priceBucket,
         showFirOnly,
+        visibleQuestGroups.length,
     ]);
 
     return (

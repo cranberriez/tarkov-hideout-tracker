@@ -10,15 +10,20 @@ import { ItemSearchModal } from "@/features/items/components/ItemSearchModal";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { useDataContext } from "@/app/(data)/_dataContext";
-import type { QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
+import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 
 interface ItemsClientPageProps {
     questItemIndex: QuestItemIndexEntry[];
+    questAnyOfGroups: QuestAnyOfGroupEntry[];
     questAvailabilityQuests: QuestAvailabilityQuest[];
 }
 
-export function ItemsClientPage({ questItemIndex, questAvailabilityQuests }: ItemsClientPageProps) {
+export function ItemsClientPage({
+    questItemIndex,
+    questAnyOfGroups,
+    questAvailabilityQuests,
+}: ItemsClientPageProps) {
     const { stations, stationsUpdatedAt, items, itemsUpdatedAt } = useDataContext();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
@@ -101,11 +106,13 @@ export function ItemsClientPage({ questItemIndex, questAvailabilityQuests }: Ite
                 <ItemsControls onOpenSearch={() => setIsSearchOpen(true)}>
                     <ItemsStatsRow
                         questItemIndex={questItemIndex}
+                        questAnyOfGroups={questAnyOfGroups}
                         questAvailabilityQuests={questAvailabilityQuestList}
                     />
                     <ItemsList
                         onClickItem={setSelectedItem}
                         questItemIndex={questItemIndex}
+                        questAnyOfGroups={questAnyOfGroups}
                         questAvailabilityQuests={questAvailabilityQuestList}
                     />
                 </ItemsControls>
