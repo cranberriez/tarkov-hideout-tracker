@@ -83,6 +83,11 @@ function toRef(id: string, fallbackName: string, questsById: Map<string, FullQue
     };
 }
 
+function getPrerequisiteType(statuses: string[]): QuestRef["prerequisiteType"] {
+    if (statuses.some((status) => status.toLowerCase() === "active")) return "active";
+    return "complete";
+}
+
 function countAllDescendants(ids: string[], childrenOf: Map<string, string[]>): number {
     let total = ids.length;
     for (const id of ids) {
@@ -428,7 +433,10 @@ function QuestNodeCard({
             <QuestCard
                 quest={quest}
                 prerequisiteQuests={quest.taskRequirements.map((req) =>
-                    toRef(req.task.id, req.task.name, questsById),
+                    ({
+                        ...toRef(req.task.id, req.task.name, questsById),
+                        prerequisiteType: getPrerequisiteType(req.status),
+                    }),
                 )}
                 leadsToQuests={(leadsToByQuestId.get(quest.id) ?? []).map((id) =>
                     toRef(id, id, questsById),

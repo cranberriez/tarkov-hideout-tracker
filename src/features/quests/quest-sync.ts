@@ -13,16 +13,18 @@ export { matchesFactionVisibility };
 export interface SyncTraderProgressInput {
     quests: FullQuest[];
     traderId: string;
-    selectedVisibleQuestIds: string[];
+    selectedQuestIds: string[];
+    inferOtherTraderChains?: boolean;
     profile: QuestSyncProfile;
     questsWithItems: Record<string, boolean>;
 }
 
 export interface QuestSyncResult {
     traderId: string;
-    selectedVisibleQuestIds: string[];
+    selectedQuestIds: string[];
+    selectedCompletedIds: string[];
     prerequisiteCompletedIds: string[];
-    autoCompletedIds: string[];
+    inferredCompletedIds: string[];
     completedIds: string[];
     previousCompletedQuests: Record<string, boolean | undefined>;
     previousQuestsWithItems: Record<string, boolean | undefined>;
@@ -38,15 +40,8 @@ export function isQuestAvailableForProfile(
     return isQuestAvailableForProfileFromHelper(quest, profile, questsById);
 }
 
-export function getVisibleSyncCandidatesForTrader(
-    quests: FullQuest[],
-    traderId: string,
-    profile: QuestSyncProfile,
-) {
-    const questsById = buildQuestAvailabilityMap(quests);
-    return quests.filter(
-        (quest) => quest.trader.id === traderId && isQuestAvailableForProfile(quest, profile, questsById),
-    );
+export function getSyncCandidatesForTrader(quests: FullQuest[], traderId: string) {
+    return quests.filter((quest) => quest.trader.id === traderId);
 }
 
 function getTransitivePrerequisiteIds(rootIds: string[], questsById: Map<string, FullQuest>) {
@@ -72,21 +67,24 @@ function getTransitivePrerequisiteIds(rootIds: string[], questsById: Map<string,
 export function syncTraderProgress({
     quests,
     traderId,
-    selectedVisibleQuestIds,
+    selectedQuestIds,
+    inferOtherTraderChains = true,
     profile,
     questsWithItems,
 }: SyncTraderProgressInput): QuestSyncResult {
-    const questsById = new Map(quests.map((quest) => [quest.id, quest]));
     const questAvailabilityById = buildQuestAvailabilityMap(quests);
     const nextCompletedQuests = { ...profile.completedQuests };
     const nextQuestsWithItems = { ...questsWithItems };
-    const selectedVisibleSet = new Set(selectedVisibleQuestIds);
-    const prerequisiteIds = getTransitivePrerequisiteIds(selectedVisibleQuestIds, questsById);
+    const selectedQuestIdSet = new Set(selectedQuestIds);
+    const activeTraderQuests = quests.filter((quest) => quest.trader.id === traderId);
+    const completedAnchorIds = new Set<string>();
+    const prerequisiteIds = getTransitivePrerequisiteIds(selectedQuestIds, new Map(quests.map((quest) => [quest.id, quest])));
 
-    for (const questId of selectedVisibleSet) {
+    for (const questId of selectedQuestIdSet) {
         prerequisiteIds.delete(questId);
     }
 
+    const selectedCompletedIds: string[] = [];
     const prerequisiteCompletedIds: string[] = [];
     const previousCompletedQuests: Record<string, boolean | undefined> = {};
     const previousQuestsWithItems: Record<string, boolean | undefined> = {};
@@ -106,34 +104,40 @@ export function syncTraderProgress({
     };
 
     for (const prerequisiteId of prerequisiteIds) {
+        completedAnchorIds.add(prerequisiteId);
         recordCompletion(prerequisiteId, prerequisiteCompletedIds);
     }
 
-    const autoCompletedIds: string[] = [];
+    const inferredCompletedIds: string[] = [];
     const syncProfile: QuestSyncProfile = {
         ...profile,
         completedQuests: nextCompletedQuests,
     };
 
-    let madeProgress = true;
-    while (madeProgress) {
-        madeProgress = false;
+    if (inferOtherTraderChains) {
+        let madeProgress = true;
+        while (madeProgress) {
+            madeProgress = false;
 
-        for (const quest of quests) {
-            if (quest.trader.id !== traderId) continue;
-            if (selectedVisibleSet.has(quest.id)) continue;
-            if (!isQuestAvailableForProfile(quest, syncProfile, questAvailabilityById)) continue;
+            for (const quest of activeTraderQuests) {
+                if (selectedQuestIdSet.has(quest.id)) continue;
+                if (nextCompletedQuests[quest.id]) continue;
+                if (!isQuestAvailableForProfile(quest, syncProfile, questAvailabilityById)) continue;
+                if (!quest.taskRequirements.some((requirement) => completedAnchorIds.has(requirement.task.id))) continue;
 
-            madeProgress = recordCompletion(quest.id, autoCompletedIds) || madeProgress;
+                completedAnchorIds.add(quest.id);
+                madeProgress = recordCompletion(quest.id, inferredCompletedIds) || madeProgress;
+            }
         }
     }
 
     return {
         traderId,
-        selectedVisibleQuestIds: [...selectedVisibleQuestIds],
+        selectedQuestIds: [...selectedQuestIds],
+        selectedCompletedIds,
         prerequisiteCompletedIds,
-        autoCompletedIds,
-        completedIds: [...prerequisiteCompletedIds, ...autoCompletedIds],
+        inferredCompletedIds,
+        completedIds: [...selectedCompletedIds, ...prerequisiteCompletedIds, ...inferredCompletedIds],
         previousCompletedQuests,
         previousQuestsWithItems,
         nextCompletedQuests,

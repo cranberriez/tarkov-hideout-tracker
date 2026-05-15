@@ -18,6 +18,7 @@ import {
     Pin,
     CircleSlash,
     Lock,
+    Eye,
 } from "lucide-react";
 import type {
     FullQuest,
@@ -34,6 +35,7 @@ export interface QuestRef {
     id: string;
     name: string;
     trader: { imageLink: string | null; image4xLink: string | null; name: string };
+    prerequisiteType?: "complete" | "active";
 }
 
 interface QuestCardProps {
@@ -186,6 +188,14 @@ function QuestChip({
     questRef: QuestRef;
     onQuestLinkClick?: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
+    const prerequisiteCompleted = useUserStore((state) => !!state.completedQuests[questRef.id]);
+    const prerequisiteHint =
+        questRef.prerequisiteType === "complete"
+            ? "This quest needs to be completed"
+            : questRef.prerequisiteType === "active"
+              ? "This quest needs to be available"
+              : null;
+
     return (
         <a
             href={`#quest-${questRef.id}`}
@@ -195,6 +205,21 @@ function QuestChip({
             }}
             className="flex items-center gap-1.5 text-xs text-gray-400 bg-black/40 border border-white/10 px-2 py-0.5 rounded hover:border-white/25 hover:text-gray-300 transition-colors"
         >
+            {questRef.prerequisiteType && (
+                <span
+                    title={prerequisiteHint ?? undefined}
+                    className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-white/10 bg-black/30 text-gray-400"
+                >
+                    {questRef.prerequisiteType === "complete" ? (
+                        <CheckCircle
+                            size={11}
+                            className={prerequisiteCompleted ? "text-tarkov-green/90" : "text-gray-500"}
+                        />
+                    ) : (
+                        <Eye size={11} className="text-blue-300" />
+                    )}
+                </span>
+            )}
             {questRef.trader.image4xLink ?? questRef.trader.imageLink ? (
                 <img
                     src={questRef.trader.image4xLink ?? questRef.trader.imageLink ?? ""}

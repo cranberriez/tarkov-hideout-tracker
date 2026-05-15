@@ -6,7 +6,7 @@ import type { FullQuest } from "@/types";
 import { hasFirGiveItemObjectives, hasGiveItemObjectives } from "@/lib/utils/quest-item-index";
 import { compareQuestTradersByOrder } from "@/lib/cfg/questTraderOrder";
 import {
-    getVisibleSyncCandidatesForTrader as getVisibleSyncCandidatesForTraderFromProfile,
+    getSyncCandidatesForTrader as getSyncCandidatesForTraderFromProfile,
     isQuestAvailableForProfile,
     matchesFactionVisibility,
     syncTraderProgress,
@@ -67,10 +67,18 @@ interface QuestsContextValue {
     setShowDebug: (value: boolean) => void;
     setShowPrereqs: (value: boolean) => void;
     setSearchQuery: (value: string) => void;
-    getVisibleSyncCandidatesForTrader: (traderId: string) => FullQuest[];
-    syncTraderSelection: (traderId: string, selectedVisibleQuestIds: string[]) => LastQuestSyncAction;
+    getSyncCandidatesForTrader: (traderId: string) => FullQuest[];
+    previewTraderSelection: (
+        traderId: string,
+        selectedQuestIds: string[],
+        inferOtherTraderChains: boolean,
+    ) => QuestSyncResult;
+    syncTraderSelection: (
+        traderId: string,
+        selectedQuestIds: string[],
+        inferOtherTraderChains: boolean,
+    ) => LastQuestSyncAction;
     undoLastQuestSync: () => boolean;
-    applyTraderSyncReviewFilters: (traderId: string) => void;
     onItemClick: ((itemId: string) => void) | null;
 }
 
@@ -305,18 +313,30 @@ export function QuestsProvider({
     const toggleKappa = () => setQuestShowKappa(!showKappa);
     const toggleLightkeeper = () => setQuestShowLightkeeper(!showLightkeeper);
 
-    const getVisibleSyncCandidatesForTrader = (traderId: string) =>
-        getVisibleSyncCandidatesForTraderFromProfile(quests, traderId, syncProfile);
+    const getSyncCandidatesForTrader = (traderId: string) => getSyncCandidatesForTraderFromProfile(quests, traderId);
 
-    const syncTraderSelection = (traderId: string, selectedVisibleQuestIds: string[]) => {
+    const previewTraderSelection = (
+        traderId: string,
+        selectedQuestIds: string[],
+        inferOtherTraderChains: boolean,
+    ) => {
         const state = useUserStore.getState();
-        const result = syncTraderProgress({
+        return syncTraderProgress({
             quests,
             traderId,
-            selectedVisibleQuestIds,
+            selectedQuestIds,
+            inferOtherTraderChains,
             profile: buildSyncProfile(state),
             questsWithItems: state.questsWithItems,
         });
+    };
+
+    const syncTraderSelection = (
+        traderId: string,
+        selectedQuestIds: string[],
+        inferOtherTraderChains: boolean,
+    ) => {
+        const result = previewTraderSelection(traderId, selectedQuestIds, inferOtherTraderChains);
 
         if (result.completedIds.length > 0) {
             useUserStore.setState({
@@ -329,7 +349,9 @@ export function QuestsProvider({
             ...result,
             traderName: quests.find((quest) => quest.trader.id === traderId)?.trader.name ?? "Trader",
         };
-        setLastQuestSyncAction(action);
+        if (result.completedIds.length > 0) {
+            setLastQuestSyncAction(action);
+        }
         return action;
     };
 
@@ -359,18 +381,6 @@ export function QuestsProvider({
 
         setLastQuestSyncAction(null);
         return true;
-    };
-
-    const applyTraderSyncReviewFilters = (traderId: string) => {
-        setQuestSelectedTraders([traderId]);
-        setQuestSelectedMaps([]);
-        setHideCompleted(false);
-        setShowAvailableOnly(true);
-        setShowHandInOnly(false);
-        setShowFirHandInOnly(false);
-        setShowPinnedOnly(false);
-        setShowIgnored(true);
-        setSearchQuery("");
     };
 
     return (
@@ -419,10 +429,10 @@ export function QuestsProvider({
                 setShowDebug,
                 setShowPrereqs,
                 setSearchQuery,
-                getVisibleSyncCandidatesForTrader,
+                getSyncCandidatesForTrader,
+                previewTraderSelection,
                 syncTraderSelection,
                 undoLastQuestSync,
-                applyTraderSyncReviewFilters,
                 onItemClick: onItemClick ?? null,
             }}
         >

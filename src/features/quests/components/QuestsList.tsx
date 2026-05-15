@@ -98,12 +98,20 @@ export function QuestsList() {
         };
     }
 
+    function getPrerequisiteType(statuses: string[]): QuestRef["prerequisiteType"] {
+        if (statuses.some((status) => status.toLowerCase() === "active")) return "active";
+        return "complete";
+    }
+
     function renderCard(quest: FullQuest) {
         return (
             <QuestCard
                 key={quest.id}
                 quest={quest}
-                prerequisiteQuests={quest.taskRequirements.map((req) => toRef(req.task.id, req.task.name))}
+                prerequisiteQuests={quest.taskRequirements.map((req) => ({
+                    ...toRef(req.task.id, req.task.name),
+                    prerequisiteType: getPrerequisiteType(req.status),
+                }))}
                 leadsToQuests={(leadsToByQuestId.get(quest.id) ?? []).map((id) => toRef(id, id))}
                 showDebugButton={showDebug}
             />
@@ -132,7 +140,7 @@ export function QuestsList() {
                         const traderQuests = questsByTraderId.get(trader.id) ?? [];
                         if (traderQuests.length === 0) return null;
                         return (
-                            <div key={trader.id}>
+                            <div key={trader.id} id={`trader-${trader.id}`}>
                                 <TraderGroupHeader
                                     trader={trader}
                                     allQuests={allQuestsByTraderId.get(trader.id) ?? []}

@@ -19,6 +19,7 @@ export function QuestSyncDialog({
     const [step, setStep] = useState<SyncStep>("profile");
     const [selectedQuestIdsByTrader, setSelectedQuestIdsByTrader] = useState<Record<string, string[]>>({});
     const [latestResultByTrader, setLatestResultByTrader] = useState<Record<string, string[]>>({});
+    const [latestNoOpByTrader, setLatestNoOpByTrader] = useState<Record<string, boolean>>({});
     const [selectedTraderId, setSelectedTraderId] = useState<string | null>(null);
 
     const handleOpenChange = (nextOpen: boolean) => {
@@ -26,6 +27,7 @@ export function QuestSyncDialog({
             setStep("profile");
             setSelectedQuestIdsByTrader({});
             setLatestResultByTrader({});
+            setLatestNoOpByTrader({});
             setSelectedTraderId(null);
         }
         onOpenChange(nextOpen);
@@ -33,7 +35,7 @@ export function QuestSyncDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogContent className="max-h-[90vh] overflow-hidden border-border-color bg-card p-0 md:max-w-5xl">
+            <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden border-border-color bg-card p-0 md:max-w-5xl">
                 <DialogHeader className="border-b border-border-color bg-black/60 px-6 py-4">
                     <DialogTitle className="text-sm font-semibold tracking-[0.2em] text-gray-400">
                         QUEST SYNC
@@ -56,6 +58,11 @@ export function QuestSyncDialog({
                                         delete next[lastQuestSyncAction.traderId];
                                         return next;
                                     });
+                                    setLatestNoOpByTrader((current) => {
+                                        const next = { ...current };
+                                        delete next[lastQuestSyncAction.traderId];
+                                        return next;
+                                    });
                                 }}
                                 disabled={lastQuestSyncAction.completedIds.length === 0}
                                 className={`rounded-sm px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
@@ -70,7 +77,7 @@ export function QuestSyncDialog({
                     </div>
                 )}
 
-                <div className="overflow-y-auto px-6 py-5">
+                <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
                     {step === "profile" ? (
                         <QuestSyncProfileStep
                             onContinue={() => setStep("traders")}
@@ -91,12 +98,25 @@ export function QuestSyncDialog({
                                 })
                             }
                             latestResultByTrader={latestResultByTrader}
-                            onSyncResult={(traderId, completedIds) =>
-                                setLatestResultByTrader((current) => ({
+                            latestNoOpByTrader={latestNoOpByTrader}
+                            onSyncResult={(traderId, completedIds) => {
+                                if (completedIds.length > 0) {
+                                    setLatestResultByTrader((current) => ({
+                                        ...current,
+                                        [traderId]: completedIds,
+                                    }));
+                                    setLatestNoOpByTrader((current) => ({
+                                        ...current,
+                                        [traderId]: false,
+                                    }));
+                                    return;
+                                }
+
+                                setLatestNoOpByTrader((current) => ({
                                     ...current,
-                                    [traderId]: completedIds,
-                                }))
-                            }
+                                    [traderId]: true,
+                                }));
+                            }}
                             onClose={() => handleOpenChange(false)}
                         />
                     )}

@@ -15,6 +15,7 @@ export function QuestSyncTraderStep({
     selectedQuestIdsByTrader,
     onToggleQuest,
     latestResultByTrader,
+    latestNoOpByTrader,
     onSyncResult,
     onClose,
 }: {
@@ -24,29 +25,47 @@ export function QuestSyncTraderStep({
     selectedQuestIdsByTrader: Record<string, string[]>;
     onToggleQuest: (traderId: string, questId: string) => void;
     latestResultByTrader: Record<string, string[]>;
+    latestNoOpByTrader: Record<string, boolean>;
     onSyncResult: (traderId: string, completedIds: string[]) => void;
     onClose: () => void;
 }) {
     const [searchQuery, setSearchQuery] = useState("");
+    const [inferOtherTraderChains, setInferOtherTraderChains] = useState(true);
     const {
         traders,
         questsById,
+        faction,
+        viewMode,
+        setViewMode,
         lastQuestSyncAction,
-        getVisibleSyncCandidatesForTrader,
+        getSyncCandidatesForTrader,
+        previewTraderSelection,
         syncTraderSelection,
-        applyTraderSyncReviewFilters,
     } = useQuestsContext();
-    const { questTraderLoyaltyLevels, setQuestTraderLoyaltyLevel } = useUserStore();
+    const { completedQuests, questTraderLoyaltyLevels, setQuestTraderLoyaltyLevel } = useUserStore();
 
     const activeTrader = traders.find((trader) => trader.id === activeTraderId) ?? null;
     const loyaltyLevel = activeTrader ? (questTraderLoyaltyLevels[activeTrader.id] ?? 1) : 1;
     const selectedQuestIds = activeTrader ? (selectedQuestIdsByTrader[activeTrader.id] ?? []) : [];
-    const visibleCandidates = activeTrader ? getVisibleSyncCandidatesForTrader(activeTrader.id) : [];
+    const syncCandidates = activeTrader
+        ? getSyncCandidatesForTrader(activeTrader.id).filter(
+              (quest) =>
+                  !completedQuests[quest.id] &&
+                  (faction === null ||
+                      (faction === "USEC" ? quest.factionName !== "BEAR" : quest.factionName !== "USEC")),
+          )
+        : [];
     const normalizedSearch = searchQuery.trim().toLowerCase();
 
-    const filteredCandidates = visibleCandidates.filter((quest) =>
-        normalizedSearch ? quest.name.toLowerCase().includes(normalizedSearch) : true,
-    );
+    const filteredCandidates = syncCandidates
+        .filter((quest) => (normalizedSearch ? quest.name.toLowerCase().includes(normalizedSearch) : true))
+        .sort((leftQuest, rightQuest) => {
+            const leftSelected = selectedQuestIds.includes(leftQuest.id);
+            const rightSelected = selectedQuestIds.includes(rightQuest.id);
+
+            if (leftSelected === rightSelected) return 0;
+            return leftSelected ? -1 : 1;
+        });
 
     const showNetworkProviderWarning = selectedQuestIds.includes(NETWORK_PROVIDER_PART_1_ID);
     const syncedQuestNames = activeTrader
@@ -54,6 +73,29 @@ export function QuestSyncTraderStep({
               .map((questId) => questsById.get(questId)?.name)
               .filter((questName): questName is string => Boolean(questName))
         : [];
+    const hasNoOpSyncResult = activeTrader ? (latestNoOpByTrader[activeTrader.id] ?? false) : false;
+    const previewResult = (() => {
+        if (!activeTrader || selectedQuestIds.length === 0) return null;
+        return previewTraderSelection(activeTrader.id, selectedQuestIds, inferOtherTraderChains);
+    })();
+
+    const handleCloseAndJumpToTrader = () => {
+        if (!activeTrader) return;
+        if (viewMode !== "byTrader") setViewMode("byTrader");
+        onClose();
+
+        const targetId = `trader-${activeTrader.id}`;
+        window.setTimeout(() => {
+            const target = document.getElementById(targetId);
+            if (target) {
+                target.scrollIntoView({ behavior: "smooth", block: "start" });
+                window.history.replaceState(null, "", `#${targetId}`);
+                return;
+            }
+
+            window.location.hash = targetId;
+        }, 50);
+    };
 
     return (
         <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
@@ -66,9 +108,9 @@ export function QuestSyncTraderStep({
                 </button>
                 <div className="space-y-1">
                     <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-300">
-                        Step 2 · Pick Trader
+                        Step 2 - Pick Trader
                     </h3>
-                    <p className="text-xs text-gray-500">Select visible quests, then sync.</p>
+                    <p className="text-xs text-gray-500">Select the quests you can currently see in-game.</p>
                 </div>
                 <div className="space-y-1">
                     {traders.map((trader) => (
@@ -103,7 +145,7 @@ export function QuestSyncTraderStep({
                             <div className="space-y-1">
                                 <h4 className="text-lg font-semibold text-white">{activeTrader.name}</h4>
                                 <p className="text-xs text-gray-500">
-                                    Set trader level, select visible quests, then sync.
+                                    Search all quests for this trader, select the ones you can see, then sync.
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
@@ -132,16 +174,17 @@ export function QuestSyncTraderStep({
                             <input
                                 value={searchQuery}
                                 onChange={(event) => setSearchQuery(event.target.value)}
-                                placeholder="Search visible quests"
+                                placeholder="Search all quests"
                                 className="w-full rounded-sm border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none transition-colors placeholder:text-gray-600 focus:border-tarkov-green/50"
                             />
                             <div className="text-xs text-gray-500">
-                                {visibleCandidates.length} visible quest{visibleCandidates.length === 1 ? "" : "s"}
+                                {syncCandidates.length} total quest{syncCandidates.length === 1 ? "" : "s"}
                             </div>
                             {showNetworkProviderWarning && (
-                                <div className="rounded-sm border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs text-amber-200">
-                                    If acquired via story quests, do not sync progress, story skips
-                                    a lot of pre-requisite quests.
+                                <div className="rounded-sm border border-red-500/35 bg-red-500/12 px-3 py-2 text-xs font-semibold text-red-100">
+                                    WARNING: If you got Network Provider - Part 1 from the story
+                                    missions, do not select it. This can auto-complete a large
+                                    number of quests you may not intend to do.
                                 </div>
                             )}
                             <div className="max-h-[28rem] space-y-2 overflow-y-auto pr-1">
@@ -155,48 +198,77 @@ export function QuestSyncTraderStep({
                                 ))}
                                 {filteredCandidates.length === 0 && (
                                     <div className="rounded-sm border border-dashed border-white/10 px-3 py-6 text-center text-sm text-gray-500">
-                                        No visible quests match the current search.
+                                        No quests match the current search.
                                     </div>
                                 )}
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3 border-t border-white/10 pt-4">
-                            <button
-                                onClick={() => {
-                                    const result = syncTraderSelection(activeTrader.id, selectedQuestIds);
-                                    onSyncResult(activeTrader.id, result.completedIds);
-                                }}
-                                disabled={selectedQuestIds.length === 0}
-                                className={`rounded-sm px-4 py-2 text-sm font-semibold transition-colors ${
-                                    selectedQuestIds.length > 0
-                                        ? "bg-tarkov-green text-black hover:bg-tarkov-green-dim"
-                                        : "cursor-not-allowed border border-white/10 bg-black/30 text-gray-600"
-                                }`}
-                            >
-                                Sync {activeTrader.name}
-                            </button>
-                            <span className="text-xs text-gray-500">{selectedQuestIds.length} selected</span>
+                        <div className="space-y-3 border-t border-white/10 pt-4">
+                            <label className="flex items-start gap-2 text-left">
+                                <input
+                                    type="checkbox"
+                                    checked={inferOtherTraderChains}
+                                    onChange={(event) => setInferOtherTraderChains(event.target.checked)}
+                                    className="mt-0.5 h-4 w-4 rounded border-white/20 bg-black/40 text-tarkov-green focus:ring-tarkov-green/40"
+                                />
+                                <span className="min-w-0">
+                                    <span className="block text-xs font-semibold uppercase tracking-wide text-gray-300">
+                                        Infer Other Completed Chains
+                                    </span>
+                                    <span className="mt-0.5 block text-xs text-gray-500">
+                                        Same-trader only. Enable this only if you marked every visible quest for this trader.
+                                    </span>
+                                </span>
+                            </label>
+
+                            <div className="flex flex-wrap items-center gap-3">
+                                <button
+                                    onClick={() => {
+                                        const result = syncTraderSelection(
+                                            activeTrader.id,
+                                            selectedQuestIds,
+                                            inferOtherTraderChains,
+                                        );
+                                        onSyncResult(activeTrader.id, result.completedIds);
+                                    }}
+                                    disabled={selectedQuestIds.length === 0}
+                                    className={`rounded-sm px-4 py-2 text-sm font-semibold transition-colors ${
+                                        selectedQuestIds.length > 0
+                                            ? "bg-tarkov-green text-black hover:bg-tarkov-green-dim"
+                                            : "cursor-not-allowed border border-white/10 bg-black/30 text-gray-600"
+                                    }`}
+                                >
+                                    Sync {activeTrader.name}
+                                </button>
+                                <span className="text-xs text-gray-500">{selectedQuestIds.length} selected</span>
+                            </div>
                         </div>
 
-                        {lastQuestSyncAction?.traderId === activeTrader.id && (
+                        {hasNoOpSyncResult && (
+                            <div className="rounded-sm border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs text-amber-200">
+                                This sync did not auto-complete any additional quests. The previous sync result was kept so you can still undo it.
+                            </div>
+                        )}
+
+                        {previewResult && (
                             <div className="space-y-3 rounded-sm border border-white/10 bg-black/30 p-4">
                                 <div className="space-y-1">
-                                    <h5 className="text-sm font-semibold text-white">Sync Result</h5>
+                                    <h5 className="text-sm font-semibold text-white">Sync Preview</h5>
                                     <p className="text-xs text-gray-500">
-                                        {lastQuestSyncAction.completedIds.length > 0
-                                            ? `Completed ${lastQuestSyncAction.completedIds.length} quest${lastQuestSyncAction.completedIds.length === 1 ? "" : "s"}.`
-                                            : "No additional quests were completed."}
+                                        {previewResult.completedIds.length > 0
+                                            ? `Will complete ${previewResult.completedIds.length} quest${previewResult.completedIds.length === 1 ? "" : "s"} if you sync now.`
+                                            : "No quests would be completed with the current selection."}
                                     </p>
                                 </div>
 
-                                {lastQuestSyncAction.prerequisiteCompletedIds.length > 0 && (
+                                {previewResult.prerequisiteCompletedIds.length > 0 && (
                                     <div className="space-y-1">
                                         <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
                                             Prerequisites
                                         </div>
                                         <div className="flex flex-wrap gap-1.5">
-                                            {lastQuestSyncAction.prerequisiteCompletedIds.map((questId) => (
+                                            {previewResult.prerequisiteCompletedIds.map((questId) => (
                                                 <span
                                                     key={questId}
                                                     className="rounded-sm border border-white/10 bg-black/40 px-2 py-1 text-xs text-gray-300"
@@ -208,13 +280,13 @@ export function QuestSyncTraderStep({
                                     </div>
                                 )}
 
-                                {lastQuestSyncAction.autoCompletedIds.length > 0 && (
+                                {previewResult.inferredCompletedIds.length > 0 && (
                                     <div className="space-y-1">
                                         <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
-                                            Follow-Ups
+                                            Inferred
                                         </div>
                                         <div className="flex flex-wrap gap-1.5">
-                                            {lastQuestSyncAction.autoCompletedIds.map((questId) => (
+                                            {previewResult.inferredCompletedIds.map((questId) => (
                                                 <span
                                                     key={questId}
                                                     className="rounded-sm border border-white/10 bg-black/40 px-2 py-1 text-xs text-gray-300"
@@ -225,21 +297,21 @@ export function QuestSyncTraderStep({
                                         </div>
                                     </div>
                                 )}
+                            </div>
+                        )}
 
-                                <div className="rounded-sm border border-sky-500/20 bg-sky-500/8 p-3 text-sm text-sky-100">
-                                    Review the quest list, then come back if needed.
-                                    <div className="mt-3">
-                                        <button
-                                            onClick={() => {
-                                                applyTraderSyncReviewFilters(activeTrader.id);
-                                                onClose();
-                                            }}
-                                            className="rounded-sm border border-sky-400/30 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-sky-200 transition-colors hover:border-sky-300/50 hover:text-white"
-                                        >
-                                            Close And Show {activeTrader.name}
-                                        </button>
-                                    </div>
-                                </div>
+                        {lastQuestSyncAction?.traderId === activeTrader.id && lastQuestSyncAction.completedIds.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-3 rounded-sm border border-sky-500/20 bg-sky-500/8 px-3 py-3 text-sm text-sky-100">
+                                <span>
+                                    Last sync completed {lastQuestSyncAction.completedIds.length} quest
+                                    {lastQuestSyncAction.completedIds.length === 1 ? "" : "s"}.
+                                </span>
+                                <button
+                                    onClick={handleCloseAndJumpToTrader}
+                                    className="rounded-sm border border-sky-400/30 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-sky-200 transition-colors hover:border-sky-300/50 hover:text-white"
+                                >
+                                    Close And Jump To {activeTrader.name}
+                                </button>
                             </div>
                         )}
 

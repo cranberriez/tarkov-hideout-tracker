@@ -5,6 +5,7 @@ import { Divider, FilterButton, SegButton, SegGroup } from "./quest-ui";
 
 export function QuestsFilterBar() {
     const {
+        selectedTraders,
         hideCompleted,
         showAvailableOnly,
         showHandInOnly,
@@ -23,6 +24,7 @@ export function QuestsFilterBar() {
         setShowPrereqs,
         viewMode,
         setViewMode,
+        clearTraders,
     } = useQuestsContext();
 
     return (
@@ -82,6 +84,14 @@ export function QuestsFilterBar() {
                 onClick={() => setShowDebug(!showDebug)}
                 label="Debug"
             />
+            {showDebug && (
+                <FilterButton
+                    active={selectedTraders.size > 0}
+                    disabled={selectedTraders.size === 0}
+                    onClick={clearTraders}
+                    label="Clear Trader Filter"
+                />
+            )}
         </div>
     );
 }
