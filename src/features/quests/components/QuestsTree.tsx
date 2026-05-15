@@ -126,20 +126,25 @@ function getConnectorOffsetPx(depth: number) {
 
 function LinkedQuestGroup({
     entries,
+    className,
     onQuestLinkClick,
 }: {
     entries: Array<{ questRef: QuestRef; status: LinkedPrerequisiteStatus; folded: boolean }>;
+    className?: string;
     onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
     const [activeLinkId, setActiveLinkId] = useState<string | null>(null);
-    const containerClass =
-        "-mb-2 rounded-t-md border border-white/10 border-b-0 bg-black px-2.5 pt-1.5 pb-3.5";
     const expandedEntries = entries.filter((entry) => !entry.folded);
     const foldedEntries = entries.filter((entry) => entry.folded);
     const highestCollapsedZIndex = foldedEntries.length;
 
     return (
-        <div className={containerClass}>
+        <div
+            className={cn(
+                "-mb-2 rounded-t-md border border-white/10 border-b-0 bg-black px-2.5 pt-1.5 pb-3.5",
+                className,
+            )}
+        >
             <div className="space-y-1">
                 {expandedEntries.map(({ questRef, status, folded }) => {
                     const foldedContentClass = folded ? "opacity-60" : "";
@@ -435,6 +440,7 @@ function QuestNodeCard({
             {showPrereqs && prerequisiteEntries.length > 0 && (
                 <LinkedQuestGroup
                     entries={prerequisiteEntries}
+                    className={MOBILE_TREE_CARD_CLASS}
                     onQuestLinkClick={onQuestLinkClick}
                 />
             )}

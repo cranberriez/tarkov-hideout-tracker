@@ -50,6 +50,7 @@ interface QuestCardProps {
 
 const questMetaChipBaseClass =
     "inline-flex h-5 items-center rounded border px-1.5 text-[10px] leading-none";
+const COMPACT_PREVIEW_ITEM_LIMIT = 5;
 
 function isItemObjective(o: FullQuestObjective): o is QuestObjectiveItemType {
     return (o.type === "giveItem" || o.type === "findItem") && "items" in o;
@@ -604,7 +605,7 @@ export function QuestCard({
             {/* Compact item strip */}
             {!expanded && !completed && allHandInItems.length > 0 && (
                 <div className="flex items-center gap-1 px-2.5 pb-2.5 pl-[3rem] sm:px-3 sm:pl-[52px]">
-                    {allHandInItems.slice(0, 10).map((item) => (
+                    {allHandInItems.slice(0, COMPACT_PREVIEW_ITEM_LIMIT).map((item) => (
                         <div
                             key={item.id}
                             className={`relative ${onItemClick ? "cursor-pointer" : ""}`}
@@ -627,8 +628,10 @@ export function QuestCard({
                             )}
                         </div>
                     ))}
-                    {allHandInItems.length > 10 && (
-                        <span className="text-xs text-gray-600">+{allHandInItems.length - 10}</span>
+                    {allHandInItems.length > COMPACT_PREVIEW_ITEM_LIMIT && (
+                        <span className="text-xs text-gray-600">
+                            +{allHandInItems.length - COMPACT_PREVIEW_ITEM_LIMIT}
+                        </span>
                     )}
                 </div>
             )}
