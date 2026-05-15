@@ -1,5 +1,11 @@
 import type { ItemQuestVisibilityMode } from "@/lib/stores/useUserStore";
-import type { FullQuest, FullQuestObjective, Quest, QuestObjectiveItemType, QuestPrerequisite } from "@/types";
+import type {
+    FullQuest,
+    FullQuestObjective,
+    Quest,
+    QuestObjectiveItemType,
+    QuestPrerequisite,
+} from "@/types";
 import {
     buildQuestAvailabilityMap,
     isQuestAvailableForProfile,
@@ -10,12 +16,26 @@ import {
 
 type QuestWithGiveItemData = Pick<
     Quest,
-    "id" | "name" | "normalizedName" | "wikiLink" | "minPlayerLevel" | "trader" | "taskRequirements" | "objectives"
+    | "id"
+    | "name"
+    | "normalizedName"
+    | "wikiLink"
+    | "minPlayerLevel"
+    | "trader"
+    | "taskRequirements"
+    | "objectives"
 >;
 
 type FullQuestWithGiveItemData = Pick<
     FullQuest,
-    "id" | "name" | "normalizedName" | "wikiLink" | "minPlayerLevel" | "trader" | "taskRequirements" | "objectives"
+    | "id"
+    | "name"
+    | "normalizedName"
+    | "wikiLink"
+    | "minPlayerLevel"
+    | "trader"
+    | "taskRequirements"
+    | "objectives"
 >;
 
 type QuestItemSource = QuestWithGiveItemData | FullQuestWithGiveItemData;
@@ -202,7 +222,7 @@ function formatAnyOfObjectiveLabel(
 
     const labelDescription = strippedDescription || fallbackDescription || "Any of these items";
 
-    return `${objective.count}x ${labelDescription}`;
+    return labelDescription;
 }
 
 export function hasGiveItemObjectives(quest: FullQuest | Quest): boolean {
@@ -285,9 +305,10 @@ export function buildQuestItemIndex(quests: QuestItemSource[]): QuestItemIndexEn
                     questWikiLink: quest.wikiLink,
                     traderId: quest.trader.id,
                     traderName: quest.trader.name,
-                    traderImageLink: "imageLink" in quest.trader ? quest.trader.imageLink ?? null : null,
+                    traderImageLink:
+                        "imageLink" in quest.trader ? (quest.trader.imageLink ?? null) : null,
                     traderImage4xLink:
-                        "image4xLink" in quest.trader ? quest.trader.image4xLink ?? null : null,
+                        "image4xLink" in quest.trader ? (quest.trader.image4xLink ?? null) : null,
                     prerequisiteQuestIds: quest.taskRequirements.map((req) => req.task.id),
                     prerequisiteDepth: depthMap.get(quest.id) ?? 0,
                     minPlayerLevel: quest.minPlayerLevel ?? null,
@@ -307,15 +328,14 @@ export function buildQuestItemIndex(quests: QuestItemSource[]): QuestItemIndexEn
                 continue;
             }
 
-            const giveItemChoices = quest.objectives.reduce<Array<QuestObjectiveItemType["items"][number]>>(
-                (acc, objective) => {
-                    if (isGiveItemObjective(objective)) {
-                        acc.push(...objective.items);
-                    }
-                    return acc;
-                },
-                [],
-            );
+            const giveItemChoices = quest.objectives.reduce<
+                Array<QuestObjectiveItemType["items"][number]>
+            >((acc, objective) => {
+                if (isGiveItemObjective(objective)) {
+                    acc.push(...objective.items);
+                }
+                return acc;
+            }, []);
             const item = giveItemChoices.find((candidate) => candidate.id === questLink.itemId);
 
             itemsById.set(questLink.itemId, {
@@ -352,9 +372,10 @@ export function buildQuestAnyOfGroups(quests: QuestItemSource[]): QuestAnyOfGrou
                 questWikiLink: quest.wikiLink,
                 traderId: quest.trader.id,
                 traderName: quest.trader.name,
-                traderImageLink: "imageLink" in quest.trader ? quest.trader.imageLink ?? null : null,
+                traderImageLink:
+                    "imageLink" in quest.trader ? (quest.trader.imageLink ?? null) : null,
                 traderImage4xLink:
-                    "image4xLink" in quest.trader ? quest.trader.image4xLink ?? null : null,
+                    "image4xLink" in quest.trader ? (quest.trader.image4xLink ?? null) : null,
                 prerequisiteQuestIds: quest.taskRequirements.map((req) => req.task.id),
                 prerequisiteDepth: depthMap.get(quest.id) ?? 0,
                 minPlayerLevel: quest.minPlayerLevel ?? null,
@@ -407,8 +428,14 @@ function compareDerivedQuest(a: DerivedQuestItemQuest, b: DerivedQuestItemQuest)
         return statusOrder[a.status] - statusOrder[b.status];
     }
 
-    if ((a.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER) !== (b.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER)) {
-        return (a.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER) - (b.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER);
+    if (
+        (a.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER) !==
+        (b.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER)
+    ) {
+        return (
+            (a.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER) -
+            (b.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER)
+        );
     }
 
     if (a.prerequisiteDepth !== b.prerequisiteDepth) {
@@ -458,10 +485,7 @@ function questMatchesBranchFilters(
     showLightkeeper: boolean,
 ) {
     if (!showKappa && !showLightkeeper) return true;
-    return (
-        (showKappa && !!quest.kappaRequired) ||
-        (showLightkeeper && !!quest.lightkeeperRequired)
-    );
+    return (showKappa && !!quest.kappaRequired) || (showLightkeeper && !!quest.lightkeeperRequired);
 }
 
 function getItemDistanceFromAvailable(
@@ -486,8 +510,7 @@ function getItemDistanceFromAvailable(
             if (!nextQuest) continue;
             if (!questMatchesBranchFilters(nextQuest, showKappa, showLightkeeper)) continue;
 
-            const nextDistance =
-                current.distance + (nextQuest.hasItemHandIn ? 1 : 0);
+            const nextDistance = current.distance + (nextQuest.hasItemHandIn ? 1 : 0);
             const previousDistance = distanceMap.get(nextQuestId);
             if (previousDistance != null && previousDistance <= nextDistance) continue;
 
@@ -593,10 +616,7 @@ function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestIte
     };
 }
 
-function isQuestVisibleByMode(
-    quest: QuestItemLink,
-    context: QuestItemDeriveContext,
-): boolean {
+function isQuestVisibleByMode(quest: QuestItemLink, context: QuestItemDeriveContext): boolean {
     const { completedQuests, ignoredQuests, availableQuestIds, nextLayerQuestIds, futureQuestIds } =
         context;
     const availabilityQuest = context.questsById.get(quest.questId);
@@ -665,7 +685,11 @@ function deriveQuestItemStateFromContext(
             const availabilityQuest = context.questsById.get(quest.questId);
             const isInFilteredBranch =
                 !!availabilityQuest &&
-                questMatchesBranchFilters(availabilityQuest, context.showKappa, context.showLightkeeper);
+                questMatchesBranchFilters(
+                    availabilityQuest,
+                    context.showKappa,
+                    context.showLightkeeper,
+                );
             const isVisibleByMode = isQuestVisibleByMode(quest, context);
             const isPinnedOverride = isInFilteredBranch && isPinned && !isCompleted;
             const isFutureFirOverride =
@@ -738,7 +762,10 @@ function deriveQuestItemStateFromContext(
         relatedQuestCount: activeQuests.length,
         requiredCount: activeQuests.reduce((sum, quest) => sum + quest.requiredCount, 0),
         requiredFirCount: activeQuests.reduce((sum, quest) => sum + quest.requiredFirCount, 0),
-        pinnedRequiredCount: pinnedActiveQuests.reduce((sum, quest) => sum + quest.requiredCount, 0),
+        pinnedRequiredCount: pinnedActiveQuests.reduce(
+            (sum, quest) => sum + quest.requiredCount,
+            0,
+        ),
         pinnedRequiredFirCount: pinnedActiveQuests.reduce(
             (sum, quest) => sum + quest.requiredFirCount,
             0,
@@ -779,7 +806,11 @@ export function deriveQuestAnyOfGroups(
             const availabilityQuest = context.questsById.get(group.questId);
             const isInFilteredBranch =
                 !!availabilityQuest &&
-                questMatchesBranchFilters(availabilityQuest, context.showKappa, context.showLightkeeper);
+                questMatchesBranchFilters(
+                    availabilityQuest,
+                    context.showKappa,
+                    context.showLightkeeper,
+                );
 
             if (!availabilityQuest || !isInFilteredBranch) return null;
 
@@ -863,8 +894,14 @@ export function deriveQuestAnyOfGroups(
             if (bucketOrder[a.visibilityBucket] !== bucketOrder[b.visibilityBucket]) {
                 return bucketOrder[a.visibilityBucket] - bucketOrder[b.visibilityBucket];
             }
-            if ((a.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER) !== (b.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER)) {
-                return (a.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER) - (b.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER);
+            if (
+                (a.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER) !==
+                (b.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER)
+            ) {
+                return (
+                    (a.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER) -
+                    (b.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER)
+                );
             }
             return a.questName.localeCompare(b.questName);
         });
@@ -879,8 +916,14 @@ export function compareQuestItemState(a: DerivedQuestItemState, b: DerivedQuestI
         return a.hasAvailableQuest ? -1 : 1;
     }
 
-    if ((a.activeQuestDepth ?? Number.MAX_SAFE_INTEGER) !== (b.activeQuestDepth ?? Number.MAX_SAFE_INTEGER)) {
-        return (a.activeQuestDepth ?? Number.MAX_SAFE_INTEGER) - (b.activeQuestDepth ?? Number.MAX_SAFE_INTEGER);
+    if (
+        (a.activeQuestDepth ?? Number.MAX_SAFE_INTEGER) !==
+        (b.activeQuestDepth ?? Number.MAX_SAFE_INTEGER)
+    ) {
+        return (
+            (a.activeQuestDepth ?? Number.MAX_SAFE_INTEGER) -
+            (b.activeQuestDepth ?? Number.MAX_SAFE_INTEGER)
+        );
     }
 
     if (a.relatedQuestCount !== b.relatedQuestCount) {
