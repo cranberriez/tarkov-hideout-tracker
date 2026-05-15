@@ -49,6 +49,7 @@ interface QuestsContextValue {
     completedCount: number;
 
     toggleTrader: (id: string) => void;
+    showOnlyTrader: (id: string) => void;
     clearTraders: () => void;
     toggleMap: (normalizedName: string) => void;
     clearMaps: () => void;
@@ -299,6 +300,7 @@ export function QuestsProvider({
     };
 
     const clearTraders = () => setQuestSelectedTraders([]);
+    const showOnlyTrader = (id: string) => setQuestSelectedTraders([id]);
 
     const toggleMap = (normalizedName: string) => {
         const next = new Set(questSelectedMaps);
@@ -412,6 +414,7 @@ export function QuestsProvider({
                 allMaps,
                 completedCount,
                 toggleTrader,
+                showOnlyTrader,
                 clearTraders,
                 toggleMap,
                 clearMaps,

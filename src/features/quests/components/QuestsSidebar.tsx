@@ -1,6 +1,7 @@
 "use client";
 
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Eye, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useQuestsContext } from "../QuestsContext";
 import { SidebarLabel, SidebarToggle } from "./quest-ui";
 
@@ -31,7 +32,16 @@ interface QuestsSidebarProps {
 }
 
 export function QuestsSidebar({ collapsed = false, onToggleCollapsed }: QuestsSidebarProps) {
-    const { traders, allMaps, selectedMaps, toggleMap, clearMaps } = useQuestsContext();
+    const {
+        traders,
+        allMaps,
+        selectedTraders,
+        selectedMaps,
+        toggleTrader,
+        showOnlyTrader,
+        toggleMap,
+        clearMaps,
+    } = useQuestsContext();
 
     return (
         <>
@@ -52,27 +62,71 @@ export function QuestsSidebar({ collapsed = false, onToggleCollapsed }: QuestsSi
             {/* Traders */}
             <div className="flex flex-col gap-1">
                 {!collapsed && <SidebarLabel>Trader</SidebarLabel>}
-                {traders.map((trader) => (
-                    <SidebarToggle
-                        key={trader.id}
-                        active={false}
-                        onClick={() => scrollToTrader(trader.id)}
-                        className={collapsed ? "justify-center px-0" : ""}
-                    >
-                        {(trader.image4xLink ?? trader.imageLink) ? (
-                            <img
-                                src={trader.image4xLink ?? trader.imageLink ?? ""}
-                                alt={trader.name}
-                                className="w-5 h-5 rounded-full object-cover shrink-0"
-                            />
-                        ) : (
-                            <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[9px] text-gray-500 shrink-0">
-                                {trader.name[0]}
-                            </div>
-                        )}
-                        {!collapsed && trader.name}
-                    </SidebarToggle>
-                ))}
+                {traders.map((trader) => {
+                    const isSelected = selectedTraders.has(trader.id);
+
+                    return (
+                        <div
+                            key={trader.id}
+                            className={cn(
+                                "group flex items-center gap-1 rounded-sm border-l-2 transition-all",
+                                isSelected
+                                    ? "border-tarkov-green bg-tarkov-green/5"
+                                    : "border-transparent hover:bg-white/5",
+                            )}
+                        >
+                            <button
+                                type="button"
+                                onClick={() => scrollToTrader(trader.id)}
+                                className={cn(
+                                    "flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left text-xs transition-colors",
+                                    isSelected
+                                        ? "text-tarkov-green"
+                                        : "text-gray-400 group-hover:text-white",
+                                    collapsed && "justify-center px-0",
+                                )}
+                            >
+                                {(trader.image4xLink ?? trader.imageLink) ? (
+                                    <img
+                                        src={trader.image4xLink ?? trader.imageLink ?? ""}
+                                        alt={trader.name}
+                                        className="size-5 shrink-0 rounded-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px] text-gray-500">
+                                        {trader.name[0]}
+                                    </div>
+                                )}
+                                {!collapsed && <span className="truncate">{trader.name}</span>}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    if (isSelected) toggleTrader(trader.id);
+                                    else showOnlyTrader(trader.id);
+                                }}
+                                aria-label={
+                                    isSelected
+                                        ? `Remove ${trader.name} from trader filters`
+                                        : `Show only ${trader.name}`
+                                }
+                                title={isSelected ? "Remove trader filter" : "Show only this trader"}
+                                className={cn(
+                                    "mr-1 inline-flex size-7 shrink-0 items-center justify-center rounded-sm text-gray-500 transition-colors hover:text-white",
+                                    isSelected
+                                        ? "opacity-100"
+                                        : collapsed
+                                          ? "opacity-100"
+                                          : "opacity-100 lg:opacity-0 lg:group-hover:opacity-100",
+                                )}
+                            >
+                                {isSelected ? <X size={14} /> : <Eye size={14} />}
+                            </button>
+                        </div>
+                    );
+                })}
             </div>
 
             {/* Maps */}
