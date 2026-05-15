@@ -30,15 +30,14 @@ interface QuestsSidebarProps {
     onToggleCollapsed?: () => void;
 }
 
-export function QuestsSidebar({
-    collapsed = false,
-    onToggleCollapsed,
-}: QuestsSidebarProps) {
+export function QuestsSidebar({ collapsed = false, onToggleCollapsed }: QuestsSidebarProps) {
     const { traders, allMaps, selectedMaps, toggleMap, clearMaps } = useQuestsContext();
 
     return (
         <>
-            <div className="hidden lg:flex items-center justify-end">
+            <div
+                className={`hidden lg:flex items-center ${collapsed ? "justify-center" : "justify-end"}`}
+            >
                 <button
                     type="button"
                     onClick={onToggleCollapsed}

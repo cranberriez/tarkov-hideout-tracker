@@ -1,16 +1,23 @@
 "use client";
 
-import { CircleSlash, Info, Link2, Pin, Search } from "lucide-react";
+import type { FullQuest } from "@/types";
+import { CircleSlash, Info, Link2, Pin, Search, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuestsContext } from "../QuestsContext";
 import { QuestSyncDialog } from "./QuestSyncDialog";
+import { QuestLogImportDialog } from "./QuestLogImportDialog";
 
 const QUEST_SEARCH_DEBOUNCE_MS = 30;
 
-export function QuestsSyncBar() {
+interface QuestsSyncBarProps {
+    quests: FullQuest[];
+}
+
+export function QuestsSyncBar({ quests }: QuestsSyncBarProps) {
     const { searchQuery, setSearchQuery } = useQuestsContext();
     const [searchInput, setSearchInput] = useState(searchQuery);
     const [syncOpen, setSyncOpen] = useState(false);
+    const [importOpen, setImportOpen] = useState(false);
 
     useEffect(() => {
         const timeout = setTimeout(() => {
@@ -42,7 +49,14 @@ export function QuestsSyncBar() {
                         </div>
                     </div>
 
-                    <div className="flex shrink-0 items-center">
+                    <div className="flex shrink-0 items-center gap-2">
+                        <button
+                            onClick={() => setImportOpen(true)}
+                            aria-label="Import quest logs"
+                            className="inline-flex size-10 items-center justify-center rounded-sm border border-white/10 bg-white/5 text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+                        >
+                            <Upload size={16} />
+                        </button>
                         <button
                             onClick={() => setSyncOpen(true)}
                             className="rounded-sm border border-tarkov-green/30 bg-tarkov-green/10 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-tarkov-green transition-colors hover:border-tarkov-green/60"
@@ -73,6 +87,7 @@ export function QuestsSyncBar() {
             </div>
 
             <QuestSyncDialog open={syncOpen} onOpenChange={setSyncOpen} />
+            <QuestLogImportDialog open={importOpen} onOpenChange={setImportOpen} quests={quests} />
         </>
     );
 }

@@ -125,7 +125,7 @@ export function QuestsClientPage({
 
                     <div className="flex flex-col gap-3 pb-8">
                         <QuestsCharacterBar />
-                        <QuestsSyncBar />
+                        <QuestsSyncBar quests={quests} />
                         <QuestsFilterBar />
                         <QuestsContent />
                     </div>
