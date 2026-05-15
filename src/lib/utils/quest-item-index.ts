@@ -204,10 +204,16 @@ function isFindItemObjective(
 }
 
 function stripGiveItemDescriptionPrefix(description: string): string {
-    return description
-        .replace(/^Hand over the found in raid item:\s*/i, "")
-        .replace(/^Hand over the found in raid\s*/i, "")
-        .trim();
+    let final = description;
+    final = final.replace(/^Hand over the found in raid items:\s*/i, "");
+    final = final.replace(/^Hand over the found in raid item:\s*/i, "");
+    final = final.replace(/^Hand over the found in raid\s*/i, "");
+    final = final.trim();
+
+    // Capitalize first letter
+    final = final.charAt(0).toUpperCase() + final.slice(1);
+
+    return final;
 }
 
 function formatAnyOfObjectiveLabel(
