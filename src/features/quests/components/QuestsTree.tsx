@@ -669,18 +669,6 @@ function QuestTreeNode({
                         </>
                     ) : (
                         <>
-                            <button
-                                onClick={() => setGroupCollapsed(linearCollapseKey, true)}
-                                title="Collapse"
-                                className="absolute left-0 z-10 cursor-pointer"
-                                onMouseEnter={onLinearRailEnter}
-                                onMouseLeave={onLinearRailLeave}
-                                style={{
-                                    top: 0,
-                                    bottom: 0,
-                                    width: `${Math.max(20, LINEAR_CHAIN_OFFSET + 6)}px`,
-                                }}
-                            />
                             {linearChainIds.map((linearQuestId, index) => {
                                 const linearChildren = childrenOf.get(linearQuestId) ?? [];
                                 const branchAfterLinear = linearChildren.length > 1 ? linearChildren : [];
@@ -692,6 +680,21 @@ function QuestTreeNode({
                                         className="relative mt-1"
                                         style={{ paddingLeft: `${LINEAR_CHAIN_OFFSET}px` }}
                                     >
+                                        <button
+                                            onClick={() => setGroupCollapsed(linearCollapseKey, true)}
+                                            title="Collapse"
+                                            className="absolute left-0 z-10 cursor-pointer"
+                                            onMouseEnter={onLinearRailEnter}
+                                            onMouseLeave={onLinearRailLeave}
+                                            style={{
+                                                top: `-${BAR_OVERLAP}px`,
+                                                left: 0,
+                                                width: `${Math.max(20, LINEAR_CHAIN_OFFSET + 6)}px`,
+                                                ...(hasNextLinearQuest
+                                                    ? { bottom: `-${BAR_OVERLAP}px` }
+                                                    : { height: `${CONNECTOR_Y}px` }),
+                                            }}
+                                        />
                                         <div
                                             className={cn(
                                                 "pointer-events-none absolute left-1.5 w-px transition-colors",
