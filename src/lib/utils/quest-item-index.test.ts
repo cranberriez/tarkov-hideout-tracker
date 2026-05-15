@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import type { FullQuest } from "../../types/types.ts";
-import { buildQuestItemIndex, deriveQuestItemState, deriveQuestItemStates } from "./quest-item-index.ts";
+import type { FullQuest } from "../../types/types";
+import { buildQuestItemIndex, deriveQuestItemState, deriveQuestItemStates } from "./quest-item-index";
 
 function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name">): FullQuest {
     return {

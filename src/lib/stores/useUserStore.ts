@@ -12,6 +12,8 @@ export type GameMode = "PVP" | "PVE";
 export type ItemSize = "Icon" | "Compact" | "Expanded";
 export type ItemSourceFilter = "all" | "hideout" | "quest";
 
+type StationEditionTarget = Pick<Station, "id" | "normalizedName">;
+
 interface UserState {
     // Per-station progress and visibility
     stationLevels: Record<string, number>; // stationId -> current level
@@ -138,7 +140,7 @@ interface UserState {
     setItemShowPinnedQuestOnly: (v: boolean) => void;
     setItemQuestMaxDepth: (v: number) => void;
 
-    applyEditionBonuses: (stations: Station[]) => void;
+    applyEditionBonuses: (stations: StationEditionTarget[]) => void;
 
     importStationLevels: (levels: Record<string, number>) => void;
     resetAll: () => void;

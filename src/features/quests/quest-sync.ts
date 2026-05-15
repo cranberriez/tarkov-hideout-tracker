@@ -4,7 +4,7 @@ import {
     isQuestAvailableForProfile as isQuestAvailableForProfileFromHelper,
     matchesFactionVisibility,
     type QuestAvailabilityProfile,
-} from "../../lib/utils/quest-availability.ts";
+} from "../../lib/utils/quest-availability";
 
 export type FactionFilter = NonNullable<QuestAvailabilityProfile["faction"]>;
 export type QuestSyncProfile = QuestAvailabilityProfile;

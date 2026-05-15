@@ -106,7 +106,20 @@ export async function getHideoutRequiredItems(
         fetchOptions.cache = "no-store";
     }
 
-    const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, fetchOptions);
+    let res: Response;
+    try {
+        res = await fetch(TARKOV_GRAPHQL_ENDPOINT, fetchOptions);
+    } catch (error) {
+        console.error("Tarkov.dev items fetch threw", error);
+        if (cachedBody) {
+            console.log("Using stale cached items due to fetch error");
+            if (typeof cachedBody === "object") {
+                return cachedBody as TimedResponse<ItemsPayload>;
+            }
+            return JSON.parse(cachedBody) as TimedResponse<ItemsPayload>;
+        }
+        throw error;
+    }
 
     let items: ItemDetails[] = [];
 

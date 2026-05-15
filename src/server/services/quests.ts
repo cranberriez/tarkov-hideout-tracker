@@ -160,11 +160,22 @@ async function getQuestData(): Promise<TimedResponse<QuestsPayload>> {
     }
 
     console.log("Fetching fresh quest data from Tarkov.dev");
-    const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: TASKS_QUERY }),
-    });
+    let res: Response;
+    try {
+        res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: TASKS_QUERY }),
+        });
+    } catch (error) {
+        console.error("Tarkov.dev tasks fetch threw", error);
+        if (cachedBody) {
+            console.log("Using stale quest cache due to fetch error");
+            const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
+            return body as TimedResponse<QuestsPayload>;
+        }
+        throw error;
+    }
 
     if (!res.ok) {
         const text = await res.text();
@@ -432,11 +443,22 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
     }
 
     console.log("Fetching fresh full quest data from Tarkov.dev");
-    const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: FULL_TASKS_QUERY }),
-    });
+    let res: Response;
+    try {
+        res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: FULL_TASKS_QUERY }),
+        });
+    } catch (error) {
+        console.error("Tarkov.dev full tasks fetch threw", error);
+        if (cachedBody) {
+            console.log("Using stale full quest cache due to fetch error");
+            const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
+            return body as TimedResponse<FullQuestsPayload>;
+        }
+        throw error;
+    }
 
     if (!res.ok) {
         const text = await res.text();

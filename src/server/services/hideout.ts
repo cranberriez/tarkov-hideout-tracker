@@ -163,13 +163,24 @@ export async function getHideoutStations(): Promise<TimedResponse<HideoutStation
 
     // 2. Fetch from Tarkov.dev
     console.log("Fetching fresh hideout stations from Tarkov.dev");
-    const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query: HIDEOUT_STATIONS_QUERY }),
-    });
+    let res: Response;
+    try {
+        res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ query: HIDEOUT_STATIONS_QUERY }),
+        });
+    } catch (error) {
+        console.error("Tarkov.dev hideoutStations fetch threw", error);
+        if (cachedBody) {
+            console.log("Using stale cached stations due to fetch error");
+            const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
+            return body as TimedResponse<HideoutStationsPayload>;
+        }
+        throw error;
+    }
 
     if (!res.ok) {
         const text = await res.text();

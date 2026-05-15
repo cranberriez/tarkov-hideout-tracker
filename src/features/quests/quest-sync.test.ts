@@ -6,7 +6,7 @@ import {
     getVisibleSyncCandidatesForTrader,
     syncTraderProgress,
     type QuestSyncProfile,
-} from "./quest-sync.ts";
+} from "./quest-sync";
 
 function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name">): FullQuest {
     return {

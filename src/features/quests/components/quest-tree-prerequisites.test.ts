@@ -5,7 +5,7 @@ import {
     partitionLinkedPrerequisites,
     shouldFoldLinkedPrerequisites,
     type LinkedPrerequisiteStatus,
-} from "./quest-tree-prerequisites.ts";
+} from "./quest-tree-prerequisites";
 
 test("shouldFoldLinkedPrerequisites folds ignored quests even with one prerequisite", () => {
     assert.equal(

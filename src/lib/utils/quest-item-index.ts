@@ -3,7 +3,7 @@ import {
     matchesFactionVisibility,
     type QuestAvailabilityProfile,
     type QuestAvailabilityQuest,
-} from "./quest-availability.ts";
+} from "./quest-availability";
 
 type QuestWithGiveItemData = Pick<
     Quest,

@@ -1,4 +1,10 @@
-import type { FullQuest, QuestPrerequisite, QuestTraderRequirement, QuestPrestige } from "@/types";
+import type {
+    FullQuest,
+    Quest,
+    QuestPrerequisite,
+    QuestTraderRequirement,
+    QuestPrestige,
+} from "@/types";
 
 export type QuestFactionFilter = "USEC" | "BEAR";
 
@@ -30,15 +36,21 @@ export function buildQuestAvailabilityMap<T extends QuestAvailabilityQuest>(ques
     return new Map(quests.map((quest) => [quest.id, quest]));
 }
 
-export function toQuestAvailabilityQuest(quest: FullQuest): QuestAvailabilityQuest {
+type QuestAvailabilitySource = Pick<
+    Quest,
+    "id" | "factionName" | "minPlayerLevel" | "taskRequirements" | "trader"
+> &
+    Partial<Pick<FullQuest, "traderRequirements" | "requiredPrestige">>;
+
+export function toQuestAvailabilityQuest(quest: QuestAvailabilitySource): QuestAvailabilityQuest {
     return {
         id: quest.id,
         factionName: quest.factionName,
         minPlayerLevel: quest.minPlayerLevel,
         taskRequirements: quest.taskRequirements,
         trader: quest.trader,
-        traderRequirements: quest.traderRequirements,
-        requiredPrestige: quest.requiredPrestige,
+        traderRequirements: quest.traderRequirements ?? [],
+        requiredPrestige: quest.requiredPrestige ?? null,
     };
 }
 
@@ -67,7 +79,7 @@ function isQuestRequirementSatisfied(
     profile: QuestAvailabilityProfile,
     questsById: ReadonlyMap<string, QuestAvailabilityQuest>,
     visiting: Set<string>,
-) {
+): boolean {
     if (profile.completedQuests[requirement.task.id]) return true;
     if (!requirementAllowsActiveStatus(requirement)) return false;
 
@@ -82,7 +94,7 @@ export function isQuestAvailableForProfile(
     profile: QuestAvailabilityProfile,
     questsById: ReadonlyMap<string, QuestAvailabilityQuest>,
     visiting = new Set<string>(),
-) {
+): boolean {
     if (profile.completedQuests[quest.id]) return false;
     if (!matchesFactionVisibility(quest.factionName, profile.faction)) return false;
     if ((quest.minPlayerLevel ?? 0) > profile.playerLevel) return false;
