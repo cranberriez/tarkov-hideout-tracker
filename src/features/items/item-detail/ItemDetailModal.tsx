@@ -119,6 +119,7 @@ export function ItemDetailModal({
         prestigeLevel,
         questTraderLoyaltyLevels,
         questFaction,
+        itemQuestMaxDepth,
         itemCounts,
         addItemCounts,
         toggleQuestCompletion,
@@ -212,6 +213,7 @@ export function ItemDetailModal({
             faction: questFaction,
             traderLoyaltyLevels: questTraderLoyaltyLevels,
             quests: questAvailabilityQuests,
+            maxDepth: itemQuestMaxDepth,
         });
     }, [
         selectedItem,
@@ -224,6 +226,7 @@ export function ItemDetailModal({
         questFaction,
         questTraderLoyaltyLevels,
         questAvailabilityQuests,
+        itemQuestMaxDepth,
     ]);
 
     const [draftNonFir, setDraftNonFir] = useState(owned.have);

@@ -33,8 +33,13 @@ type MergedItem = {
 };
 
 type DisplayItem = MergedItem & { details: ItemDetails };
+type QuestSlice = "all" | "pinned" | "unpinned" | "none";
 
-export function ItemsList({ onClickItem, questItemIndex, questAvailabilityQuests }: ItemsListProps) {
+export function ItemsList({
+    onClickItem,
+    questItemIndex,
+    questAvailabilityQuests,
+}: ItemsListProps) {
     const { stations, items } = useDataContext();
     const { marketPricesByMode } = usePriceDataContext();
 
@@ -46,7 +51,6 @@ export function ItemsList({ onClickItem, questItemIndex, questAvailabilityQuests
         hideCheap,
         cheapPriceThreshold,
         itemsSize,
-        sellToPreference,
         useCategorization,
         showFirOnly,
         itemSourceFilter,
@@ -61,6 +65,7 @@ export function ItemsList({ onClickItem, questItemIndex, questAvailabilityQuests
         questFaction,
         itemShowPinnedQuestSection,
         itemShowPinnedQuestOnly,
+        itemQuestMaxDepth,
     } = useUserStore();
 
     const itemsById = useMemo(() => {
@@ -84,6 +89,7 @@ export function ItemsList({ onClickItem, questItemIndex, questAvailabilityQuests
                 faction: questFaction,
                 traderLoyaltyLevels: questTraderLoyaltyLevels,
                 quests: questAvailabilityQuests,
+                maxDepth: itemQuestMaxDepth,
             }),
         [
             questItemIndex,
@@ -95,6 +101,7 @@ export function ItemsList({ onClickItem, questItemIndex, questAvailabilityQuests
             questFaction,
             questTraderLoyaltyLevels,
             questAvailabilityQuests,
+            itemQuestMaxDepth,
         ],
     );
 
@@ -210,7 +217,9 @@ export function ItemsList({ onClickItem, questItemIndex, questAvailabilityQuests
     };
 
     const finalizeDisplayItems = (
-        itemsToDisplay: Array<MergedItem & { details?: ItemDetails; questState?: DerivedQuestItemState }>,
+        itemsToDisplay: Array<
+            MergedItem & { details?: ItemDetails; questState?: DerivedQuestItemState }
+        >,
     ): DisplayItem[] => {
         let finalItems = itemsToDisplay.filter((item): item is DisplayItem => !!item.details);
 
@@ -239,61 +248,62 @@ export function ItemsList({ onClickItem, questItemIndex, questAvailabilityQuests
         return finalItems;
     };
 
+    const buildVisibleItems = (includeHideout: boolean, questSlice: QuestSlice) =>
+        finalizeDisplayItems(
+            mergedPool
+                .map((item) => {
+                    const pinnedQuestCount = item.questState?.pinnedRequiredCount ?? 0;
+                    const pinnedQuestFirCount = item.questState?.pinnedRequiredFirCount ?? 0;
+                    const visibleQuestCount =
+                        questSlice === "none"
+                            ? 0
+                            : questSlice === "pinned"
+                              ? pinnedQuestCount
+                              : questSlice === "unpinned"
+                                ? Math.max(item.questCount - pinnedQuestCount, 0)
+                                : item.questCount;
+                    const visibleQuestFirCount =
+                        questSlice === "none"
+                            ? 0
+                            : questSlice === "pinned"
+                              ? pinnedQuestFirCount
+                              : questSlice === "unpinned"
+                                ? Math.max(item.questFirCount - pinnedQuestFirCount, 0)
+                                : item.questFirCount;
+                    const hideoutCount = includeHideout ? item.hideoutCount : 0;
+                    const hideoutFirCount = includeHideout ? item.hideoutFirCount : 0;
+                    const count = hideoutCount + visibleQuestCount;
+                    const firCount = hideoutFirCount + visibleQuestFirCount;
+
+                    return {
+                        ...item,
+                        count,
+                        firCount,
+                        isHideout: includeHideout && item.isHideout,
+                        isQuest: visibleQuestCount > 0,
+                    };
+                })
+                .filter((item) => item.count > 0),
+        );
+
     const sourceItems =
-        itemShowPinnedQuestOnly && itemSourceFilter !== "hideout"
-            ? finalizeDisplayItems(
-                  mergedPool
-                      .filter((item) => (item.questState?.pinnedRequiredCount ?? 0) > 0)
-                      .map((item) => ({
-                          ...item,
-                          count: item.questState?.pinnedRequiredCount ?? 0,
-                          firCount: item.questState?.pinnedRequiredFirCount ?? 0,
-                          isHideout: false,
-                          isQuest: true,
-                      })),
-              )
-            : itemSourceFilter === "hideout"
-            ? finalizeDisplayItems(
-                  mergedPool
-                      .filter((item) => item.isHideout)
-                      .map((item) => ({
-                          ...item,
-                          count: item.hideoutCount,
-                          firCount: item.hideoutFirCount,
-                      })),
-              )
+        itemSourceFilter === "hideout"
+            ? buildVisibleItems(true, "none")
             : itemSourceFilter === "quest"
-            ? finalizeDisplayItems(
-                  mergedPool
-                      .filter((item) => item.isQuest)
-                      .map((item) => ({
-                          ...item,
-                          count: item.questCount,
-                          firCount: item.questFirCount,
-                      })),
-              )
-            : finalizeDisplayItems(mergedPool);
+              ? buildVisibleItems(false, itemShowPinnedQuestOnly ? "pinned" : "all")
+              : buildVisibleItems(true, itemShowPinnedQuestOnly ? "pinned" : "all");
 
     const pinnedSectionItems =
         !itemShowPinnedQuestSection || itemShowPinnedQuestOnly || itemSourceFilter === "hideout"
             ? []
-            : finalizeDisplayItems(
-                  mergedPool
-                      .filter((item) => (item.questState?.pinnedRequiredCount ?? 0) > 0)
-                      .map((item) => ({
-                          ...item,
-                          count: item.questState?.pinnedRequiredCount ?? 0,
-                          firCount: item.questState?.pinnedRequiredFirCount ?? 0,
-                          isHideout: false,
-                          isQuest: true,
-                      })),
-              );
+            : buildVisibleItems(false, "pinned");
 
-    const pinnedSectionIds = new Set(pinnedSectionItems.map((item) => item.id));
     const regularItems =
         itemShowPinnedQuestOnly || pinnedSectionItems.length === 0
             ? sourceItems
-            : sourceItems.filter((item) => !pinnedSectionIds.has(item.id));
+            : itemSourceFilter === "quest"
+              ? buildVisibleItems(false, "unpinned")
+              : buildVisibleItems(true, "unpinned");
 
     const gridClassesBySize: Record<string, string> = {
         Icon: "grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8",
@@ -313,7 +323,6 @@ export function ItemsList({ onClickItem, questItemIndex, questAvailabilityQuests
                             count={count}
                             firCount={firCount}
                             size={itemsSize}
-                            sellToPreference={sellToPreference}
                             isHideout={isHideout}
                             isQuest={isQuest}
                             onClick={() => onClickItem(details)}
@@ -355,7 +364,6 @@ export function ItemsList({ onClickItem, questItemIndex, questAvailabilityQuests
                                         count={count}
                                         firCount={firCount}
                                         size={itemsSize}
-                                        sellToPreference={sellToPreference}
                                         isHideout={isHideout}
                                         isQuest={isQuest}
                                         onClick={() => onClickItem(details)}
@@ -378,8 +386,8 @@ export function ItemsList({ onClickItem, questItemIndex, questAvailabilityQuests
             <div className="py-20 text-center text-gray-500">
                 <div className="mb-2 text-xl">No items needed!</div>
                 <div className="text-sm">
-                    You might have maxed out your hideout, completed your visible quests, or filtered
-                    everything out.
+                    You might have maxed out your hideout, completed your visible quests, or
+                    filtered everything out.
                 </div>
             </div>
         );

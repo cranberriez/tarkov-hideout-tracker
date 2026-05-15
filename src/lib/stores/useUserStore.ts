@@ -67,6 +67,7 @@ interface UserState {
 
     itemShowPinnedQuestSection: boolean;
     itemShowPinnedQuestOnly: boolean;
+    itemQuestMaxDepth: number;
 
     // Onboarding / feature flags
     hasSeenItemConversionModal: boolean;
@@ -135,6 +136,7 @@ interface UserState {
 
     setItemShowPinnedQuestSection: (v: boolean) => void;
     setItemShowPinnedQuestOnly: (v: boolean) => void;
+    setItemQuestMaxDepth: (v: number) => void;
 
     applyEditionBonuses: (stations: Station[]) => void;
 
@@ -193,6 +195,7 @@ export const useUserStore = create<UserState>()(
 
             itemShowPinnedQuestSection: true,
             itemShowPinnedQuestOnly: false,
+            itemQuestMaxDepth: 1,
 
             gameEdition: null,
             gameMode: "PVP",
@@ -336,6 +339,10 @@ export const useUserStore = create<UserState>()(
                     itemShowPinnedQuestOnly: v,
                     itemShowPinnedQuestSection: v ? true : state.itemShowPinnedQuestSection,
                 })),
+            setItemQuestMaxDepth: (v) =>
+                set({
+                    itemQuestMaxDepth: Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1,
+                }),
 
             setHasSeenItemConversionModal: (value) => set({ hasSeenItemConversionModal: value }),
             setHasSeenHideoutLevelWarning: (value) => set({ hasSeenHideoutLevelWarning: value }),
@@ -488,6 +495,7 @@ export const useUserStore = create<UserState>()(
                     questSidebarCollapsed: false,
                     itemShowPinnedQuestSection: true,
                     itemShowPinnedQuestOnly: false,
+                    itemQuestMaxDepth: 1,
                     gameEdition: null,
                     gameMode: "PVP",
                     hasCompletedSetup: false,
@@ -498,7 +506,7 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: "tarkov-hideout-user-state",
-            version: 6,
+            version: 7,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -550,6 +558,13 @@ export const useUserStore = create<UserState>()(
                     nextState = {
                         ...nextState,
                         questSidebarCollapsed: false,
+                    };
+                }
+
+                if (version < 7) {
+                    nextState = {
+                        ...nextState,
+                        itemQuestMaxDepth: 1,
                     };
                 }
 

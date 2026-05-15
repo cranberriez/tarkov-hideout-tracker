@@ -28,6 +28,7 @@ export function ItemsStatsRow({ questItemIndex, questAvailabilityQuests }: Items
         prestigeLevel,
         questTraderLoyaltyLevels,
         questFaction,
+        itemQuestMaxDepth,
         itemCounts,
     } = useUserStore();
 
@@ -42,6 +43,7 @@ export function ItemsStatsRow({ questItemIndex, questAvailabilityQuests }: Items
                 faction: questFaction,
                 traderLoyaltyLevels: questTraderLoyaltyLevels,
                 quests: questAvailabilityQuests,
+                maxDepth: itemQuestMaxDepth,
             }),
         [
             questItemIndex,
@@ -53,6 +55,7 @@ export function ItemsStatsRow({ questItemIndex, questAvailabilityQuests }: Items
             questFaction,
             questTraderLoyaltyLevels,
             questAvailabilityQuests,
+            itemQuestMaxDepth,
         ],
     );
 

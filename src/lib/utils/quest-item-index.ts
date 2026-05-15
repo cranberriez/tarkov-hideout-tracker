@@ -1,7 +1,6 @@
 import type { FullQuest, FullQuestObjective, Quest, QuestObjectiveItemType, QuestPrerequisite } from "@/types";
 import {
-    buildQuestAvailabilityMap,
-    isQuestAvailableForProfile,
+    matchesFactionVisibility,
     type QuestAvailabilityProfile,
     type QuestAvailabilityQuest,
 } from "./quest-availability.ts";
@@ -82,6 +81,15 @@ export interface QuestItemDeriveOptions {
     faction: QuestAvailabilityProfile["faction"];
     traderLoyaltyLevels: Record<string, number>;
     quests: QuestAvailabilityQuest[];
+    maxDepth?: number;
+}
+
+interface QuestItemDeriveContext {
+    completedQuests: Record<string, boolean>;
+    ignoredQuests: Record<string, boolean>;
+    pinnedQuests: Record<string, boolean>;
+    availableQuestIds: Set<string>;
+    visibleQuestIds: Set<string>;
 }
 
 function isGiveItemObjective(
@@ -244,12 +252,82 @@ function compareDerivedQuest(a: DerivedQuestItemQuest, b: DerivedQuestItemQuest)
     return a.questName.localeCompare(b.questName);
 }
 
-export function deriveQuestItemState(
-    entry: QuestItemIndexEntry,
-    options: QuestItemDeriveOptions,
-): DerivedQuestItemState {
+function getRequiredLoyaltyForQuest(quest: QuestAvailabilityQuest, traderId: string) {
+    return (quest.traderRequirements ?? []).reduce((highest, requirement) => {
+        if (requirement.trader.id !== traderId) return highest;
+        return Math.max(highest, requirement.value);
+    }, 1);
+}
+
+function isQuestAvailableAtDepthOne(
+    quest: QuestAvailabilityQuest,
+    profile: QuestAvailabilityProfile,
+): boolean {
+    if (profile.completedQuests[quest.id]) return false;
+    if (!matchesFactionVisibility(quest.factionName, profile.faction)) return false;
+    if ((quest.minPlayerLevel ?? 0) > profile.playerLevel) return false;
+    if ((quest.requiredPrestige?.prestigeLevel ?? 0) > profile.prestigeLevel) return false;
+
+    const traderLoyalty = profile.traderLoyaltyLevels[quest.trader.id] ?? 1;
+    if (getRequiredLoyaltyForQuest(quest, quest.trader.id) > traderLoyalty) return false;
+
+    return quest.taskRequirements.every((requirement) => profile.completedQuests[requirement.task.id]);
+}
+
+function buildLeadsToMap(quests: QuestAvailabilityQuest[]) {
+    const leadsTo = new Map<string, string[]>();
+
+    for (const quest of quests) {
+        for (const requirement of quest.taskRequirements) {
+            const ids = leadsTo.get(requirement.task.id) ?? [];
+            ids.push(quest.id);
+            leadsTo.set(requirement.task.id, ids);
+        }
+    }
+
+    return leadsTo;
+}
+
+function getVisibleQuestIds(
+    quests: QuestAvailabilityQuest[],
+    availabilityProfile: QuestAvailabilityProfile,
+    maxDepth: number,
+) {
+    const visibleQuestIds = new Set<string>();
+    const remainingDepth = Math.max(1, Math.floor(maxDepth));
+    const leadsToMap = buildLeadsToMap(quests);
+    const queue: Array<{ questId: string; depth: number }> = [];
+    const availableQuestIds = new Set<string>();
+
+    for (const quest of quests) {
+        if (!isQuestAvailableAtDepthOne(quest, availabilityProfile)) {
+            continue;
+        }
+
+        availableQuestIds.add(quest.id);
+        visibleQuestIds.add(quest.id);
+        queue.push({ questId: quest.id, depth: 1 });
+    }
+
+    while (queue.length > 0) {
+        const current = queue.shift()!;
+        if (current.depth >= remainingDepth) continue;
+
+        for (const nextQuestId of leadsToMap.get(current.questId) ?? []) {
+            if (visibleQuestIds.has(nextQuestId)) continue;
+            visibleQuestIds.add(nextQuestId);
+            queue.push({ questId: nextQuestId, depth: current.depth + 1 });
+        }
+    }
+
+    return {
+        availableQuestIds,
+        visibleQuestIds,
+    };
+}
+
+function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestItemDeriveContext {
     const { completedQuests, ignoredQuests, pinnedQuests, playerLevel } = options;
-    const questAvailabilityById = buildQuestAvailabilityMap(options.quests);
     const availabilityProfile: QuestAvailabilityProfile = {
         completedQuests,
         playerLevel,
@@ -257,16 +335,35 @@ export function deriveQuestItemState(
         faction: options.faction,
         traderLoyaltyLevels: options.traderLoyaltyLevels,
     };
+    const { availableQuestIds, visibleQuestIds } = getVisibleQuestIds(
+        options.quests,
+        availabilityProfile,
+        options.maxDepth ?? 1,
+    );
+
+    return {
+        completedQuests,
+        ignoredQuests,
+        pinnedQuests,
+        availableQuestIds,
+        visibleQuestIds,
+    };
+}
+
+function deriveQuestItemStateFromContext(
+    entry: QuestItemIndexEntry,
+    context: QuestItemDeriveContext,
+): DerivedQuestItemState {
+    const { completedQuests, ignoredQuests, pinnedQuests, availableQuestIds, visibleQuestIds } =
+        context;
 
     const relatedQuests = entry.quests
+        .filter((quest) => visibleQuestIds.has(quest.questId))
         .map<DerivedQuestItemQuest>((quest) => {
             const isCompleted = !!completedQuests[quest.questId];
             const isIgnored = !!ignoredQuests[quest.questId];
             const isPinned = !!pinnedQuests[quest.questId];
-            const availabilityQuest = questAvailabilityById.get(quest.questId);
-            const isAvailable =
-                !!availabilityQuest &&
-                isQuestAvailableForProfile(availabilityQuest, availabilityProfile, questAvailabilityById);
+            const isAvailable = availableQuestIds.has(quest.questId);
 
             let status: DerivedQuestItemStatus = "future";
             if (isCompleted) {
@@ -321,12 +418,21 @@ export function deriveQuestItemState(
     };
 }
 
+export function deriveQuestItemState(
+    entry: QuestItemIndexEntry,
+    options: QuestItemDeriveOptions,
+): DerivedQuestItemState {
+    return deriveQuestItemStateFromContext(entry, createQuestItemDeriveContext(options));
+}
+
 export function deriveQuestItemStates(
     questItemIndex: QuestItemIndexEntry[],
     options: QuestItemDeriveOptions,
 ): DerivedQuestItemState[] {
+    const context = createQuestItemDeriveContext(options);
+
     return questItemIndex
-        .map((entry) => deriveQuestItemState(entry, options))
+        .map((entry) => deriveQuestItemStateFromContext(entry, context))
         .filter((entry) => entry.requiredCount > 0 || entry.pinnedRequiredCount > 0);
 }
 

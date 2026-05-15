@@ -42,8 +42,10 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
         setItemSourceFilter,
         itemShowPinnedQuestSection,
         itemShowPinnedQuestOnly,
+        itemQuestMaxDepth,
         setItemShowPinnedQuestSection,
         setItemShowPinnedQuestOnly,
+        setItemQuestMaxDepth,
     } = useUserStore();
 
     useEffect(() => {
@@ -57,7 +59,13 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [popoverOpen]);
 
-    const hasActiveAdvanced = checklistViewMode !== "all" || showHidden;
+    const hasActiveAdvanced =
+        checklistViewMode !== "all" ||
+        showHidden ||
+        !itemShowPinnedQuestSection ||
+        itemShowPinnedQuestOnly ||
+        itemQuestMaxDepth !== 1;
+    const questControlsEnabled = itemSourceFilter !== "hideout";
 
     return (
         <div className="flex flex-wrap gap-1.5 bg-muted px-3 py-2 rounded-md border">
@@ -196,16 +204,18 @@ export function ItemsControls({ onOpenSearch }: ItemsControlsProps) {
                                 icon={<Filter size={14} />}
                                 label="Pinned Only"
                             />
+                            <NumberControl
+                                label="Max Depth"
+                                value={itemQuestMaxDepth}
+                                disabled={!questControlsEnabled}
+                                onChange={(value) => setItemQuestMaxDepth(value)}
+                            />
                         </PopoverSection>
                     </div>
                 )}
             </div>
         </div>
     );
-}
-
-function Divider() {
-    return <div className="h-5 w-px bg-white/10 shrink-0" />;
 }
 
 function SegGroup({ children }: { children: ReactNode }) {
@@ -271,6 +281,39 @@ function FilterButton({
             {icon}
             {label}
         </button>
+    );
+}
+
+function NumberControl({
+    label,
+    value,
+    onChange,
+    disabled = false,
+}: {
+    label: string;
+    value: number;
+    onChange: (value: number) => void;
+    disabled?: boolean;
+}) {
+    return (
+        <label
+            className={`flex items-center gap-2 rounded-sm border px-3 py-2 text-xs ${
+                disabled
+                    ? "cursor-not-allowed border-white/5 bg-black/10 text-gray-600"
+                    : "border-white/10 bg-black/20 text-gray-400"
+            }`}
+        >
+            <span className="font-medium">{label}</span>
+            <input
+                type="number"
+                min={1}
+                step={1}
+                value={value}
+                disabled={disabled}
+                onChange={(e) => onChange(Number(e.target.value))}
+                className="w-14 border-b border-gray-600 bg-transparent text-right font-mono text-white focus:border-tarkov-green focus:outline-none disabled:text-gray-600 appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+        </label>
     );
 }
 
