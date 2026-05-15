@@ -20,6 +20,9 @@ export interface QuestAvailabilityQuest {
     id: string;
     factionName?: string | null;
     minPlayerLevel?: number | null;
+    kappaRequired?: boolean | null;
+    lightkeeperRequired?: boolean | null;
+    hasItemHandIn?: boolean;
     taskRequirements: QuestPrerequisite[];
     trader: {
         id: string;
@@ -38,15 +41,26 @@ export function buildQuestAvailabilityMap<T extends QuestAvailabilityQuest>(ques
 
 type QuestAvailabilitySource = Pick<
     Quest,
-    "id" | "factionName" | "minPlayerLevel" | "taskRequirements" | "trader"
+    | "id"
+    | "factionName"
+    | "minPlayerLevel"
+    | "kappaRequired"
+    | "lightkeeperRequired"
+    | "taskRequirements"
+    | "trader"
 > &
-    Partial<Pick<FullQuest, "traderRequirements" | "requiredPrestige">>;
+    Partial<Pick<FullQuest, "traderRequirements" | "requiredPrestige">> & {
+        objectives?: FullQuest["objectives"] | Quest["objectives"];
+    };
 
 export function toQuestAvailabilityQuest(quest: QuestAvailabilitySource): QuestAvailabilityQuest {
     return {
         id: quest.id,
         factionName: quest.factionName,
         minPlayerLevel: quest.minPlayerLevel,
+        kappaRequired: quest.kappaRequired ?? false,
+        lightkeeperRequired: quest.lightkeeperRequired ?? false,
+        hasItemHandIn: quest.objectives?.some((objective) => objective.type === "giveItem") ?? false,
         taskRequirements: quest.taskRequirements,
         trader: quest.trader,
         traderRequirements: quest.traderRequirements ?? [],

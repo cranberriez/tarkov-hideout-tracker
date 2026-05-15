@@ -14,6 +14,7 @@ export type GameEdition =
 export type GameMode = "PVP" | "PVE";
 export type ItemSize = "Icon" | "Compact" | "Expanded";
 export type ItemSourceFilter = "all" | "hideout" | "quest";
+export type ItemQuestVisibilityMode = "available" | "nextLayer" | "allFuture" | "custom";
 
 type StationEditionTarget = Pick<Station, "id" | "normalizedName">;
 
@@ -73,6 +74,11 @@ interface UserState {
     itemShowPinnedQuestSection: boolean;
     itemShowPinnedQuestOnly: boolean;
     itemQuestMaxDepth: number;
+    itemQuestVisibilityMode: ItemQuestVisibilityMode;
+    itemQuestCustomLookahead: number;
+    itemQuestCustomLevelLookahead: number;
+    itemShowFutureFir: boolean;
+    itemShowIgnored: boolean;
 
     // Onboarding / feature flags
     hasSeenItemConversionModal: boolean;
@@ -142,6 +148,11 @@ interface UserState {
     setItemShowPinnedQuestSection: (v: boolean) => void;
     setItemShowPinnedQuestOnly: (v: boolean) => void;
     setItemQuestMaxDepth: (v: number) => void;
+    setItemQuestVisibilityMode: (value: ItemQuestVisibilityMode) => void;
+    setItemQuestCustomLookahead: (value: number) => void;
+    setItemQuestCustomLevelLookahead: (value: number) => void;
+    setItemShowFutureFir: (value: boolean) => void;
+    setItemShowIgnored: (value: boolean) => void;
 
     applyEditionBonuses: (stations: StationEditionTarget[]) => void;
 
@@ -204,6 +215,11 @@ export const useUserStore = create<UserState>()(
             itemShowPinnedQuestSection: true,
             itemShowPinnedQuestOnly: false,
             itemQuestMaxDepth: 1,
+            itemQuestVisibilityMode: "available",
+            itemQuestCustomLookahead: 5,
+            itemQuestCustomLevelLookahead: 5,
+            itemShowFutureFir: false,
+            itemShowIgnored: false,
 
             gameEdition: null,
             gameMode: "PVP",
@@ -351,6 +367,21 @@ export const useUserStore = create<UserState>()(
                 set({
                     itemQuestMaxDepth: Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1,
                 }),
+            setItemQuestVisibilityMode: (value) => set({ itemQuestVisibilityMode: value }),
+            setItemQuestCustomLookahead: (value) =>
+                set({
+                    itemQuestCustomLookahead: Number.isFinite(value)
+                        ? Math.max(0, Math.floor(value))
+                        : 0,
+                }),
+            setItemQuestCustomLevelLookahead: (value) =>
+                set({
+                    itemQuestCustomLevelLookahead: Number.isFinite(value)
+                        ? Math.max(0, Math.floor(value))
+                        : 0,
+                }),
+            setItemShowFutureFir: (value) => set({ itemShowFutureFir: value }),
+            setItemShowIgnored: (value) => set({ itemShowIgnored: value }),
 
             setHasSeenItemConversionModal: (value) => set({ hasSeenItemConversionModal: value }),
             setHasSeenHideoutLevelWarning: (value) => set({ hasSeenHideoutLevelWarning: value }),
@@ -527,6 +558,11 @@ export const useUserStore = create<UserState>()(
                     itemShowPinnedQuestSection: true,
                     itemShowPinnedQuestOnly: false,
                     itemQuestMaxDepth: 1,
+                    itemQuestVisibilityMode: "available",
+                    itemQuestCustomLookahead: 5,
+                    itemQuestCustomLevelLookahead: 5,
+                    itemShowFutureFir: false,
+                    itemShowIgnored: false,
                     gameEdition: null,
                     gameMode: "PVP",
                     hasCompletedSetup: false,
@@ -537,7 +573,7 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: USER_STORE_STORAGE_KEY,
-            version: 7,
+            version: 9,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -596,6 +632,23 @@ export const useUserStore = create<UserState>()(
                     nextState = {
                         ...nextState,
                         itemQuestMaxDepth: 1,
+                    };
+                }
+
+                if (version < 8) {
+                    nextState = {
+                        ...nextState,
+                        itemQuestVisibilityMode: "available",
+                        itemQuestCustomLookahead: 5,
+                        itemQuestCustomLevelLookahead: 5,
+                        itemShowFutureFir: false,
+                    };
+                }
+
+                if (version < 9) {
+                    nextState = {
+                        ...nextState,
+                        itemShowIgnored: false,
                     };
                 }
 

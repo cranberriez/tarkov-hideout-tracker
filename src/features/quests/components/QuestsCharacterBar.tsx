@@ -1,5 +1,6 @@
 "use client";
 
+import { QuestFlagFilters } from "@/components/core/QuestFlagFilters";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useQuestsContext } from "../QuestsContext";
 import { Divider, SegButton, SegGroup } from "./quest-ui";
@@ -57,14 +58,12 @@ export function QuestsCharacterBar() {
 
             <Divider />
 
-            <SegGroup>
-                <SegButton active={showKappa} onClick={toggleKappa}>
-                    Kappa
-                </SegButton>
-                <SegButton active={showLightkeeper} onClick={toggleLightkeeper}>
-                    LK
-                </SegButton>
-            </SegGroup>
+            <QuestFlagFilters
+                showKappa={showKappa}
+                showLightkeeper={showLightkeeper}
+                onToggleKappa={toggleKappa}
+                onToggleLightkeeper={toggleLightkeeper}
+            />
         </div>
     );
 }

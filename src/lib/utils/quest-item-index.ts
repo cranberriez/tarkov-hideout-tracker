@@ -1,5 +1,8 @@
+import type { ItemQuestVisibilityMode } from "@/lib/stores/useUserStore";
 import type { FullQuest, FullQuestObjective, Quest, QuestObjectiveItemType, QuestPrerequisite } from "@/types";
 import {
+    buildQuestAvailabilityMap,
+    isQuestAvailableForProfile,
     matchesFactionVisibility,
     type QuestAvailabilityProfile,
     type QuestAvailabilityQuest,
@@ -46,11 +49,17 @@ export interface QuestItemIndexEntry {
 }
 
 export type DerivedQuestItemStatus = "available" | "future" | "completed" | "ignored";
+export type DerivedQuestVisibilityBucket = "pinned" | "available" | "nextLayer" | "future" | "fir";
 
 export interface DerivedQuestItemQuest extends QuestItemLink {
     status: DerivedQuestItemStatus;
     isPinned: boolean;
     isActive: boolean;
+    isPinnedOverride: boolean;
+    isFutureFirOverride: boolean;
+    isVisibleByMode: boolean;
+    visibilityBucket: DerivedQuestVisibilityBucket;
+    distanceFromAvailable: number | null;
 }
 
 export interface DerivedQuestItemState {
@@ -61,6 +70,7 @@ export interface DerivedQuestItemState {
     gridImageLink?: string;
     activeQuestDepth: number | null;
     hasAvailableQuest: boolean;
+    hasPinnedQuest: boolean;
     availableQuestCount: number;
     futureQuestCount: number;
     pinnedQuestCount: number;
@@ -81,7 +91,13 @@ export interface QuestItemDeriveOptions {
     faction: QuestAvailabilityProfile["faction"];
     traderLoyaltyLevels: Record<string, number>;
     quests: QuestAvailabilityQuest[];
-    maxDepth?: number;
+    visibilityMode?: ItemQuestVisibilityMode;
+    customLookahead?: number;
+    customLevelLookahead?: number;
+    showFutureFir?: boolean;
+    showIgnored?: boolean;
+    showKappa?: boolean;
+    showLightkeeper?: boolean;
 }
 
 interface QuestItemDeriveContext {
@@ -89,7 +105,18 @@ interface QuestItemDeriveContext {
     ignoredQuests: Record<string, boolean>;
     pinnedQuests: Record<string, boolean>;
     availableQuestIds: Set<string>;
-    visibleQuestIds: Set<string>;
+    nextLayerQuestIds: Set<string>;
+    futureQuestIds: Set<string>;
+    itemDistanceFromAvailable: ReadonlyMap<string, number>;
+    visibilityMode: ItemQuestVisibilityMode;
+    playerLevel: number;
+    customLookahead: number;
+    customLevelLookahead: number;
+    showFutureFir: boolean;
+    showIgnored: boolean;
+    showKappa: boolean;
+    showLightkeeper: boolean;
+    questsById: ReadonlyMap<string, QuestAvailabilityQuest>;
 }
 
 function isGiveItemObjective(
@@ -226,6 +253,18 @@ export function buildQuestItemIndex(quests: QuestItemSource[]): QuestItemIndexEn
 }
 
 function compareDerivedQuest(a: DerivedQuestItemQuest, b: DerivedQuestItemQuest): number {
+    const bucketOrder: Record<DerivedQuestVisibilityBucket, number> = {
+        pinned: 0,
+        available: 1,
+        nextLayer: 2,
+        fir: 3,
+        future: 4,
+    };
+
+    if (bucketOrder[a.visibilityBucket] !== bucketOrder[b.visibilityBucket]) {
+        return bucketOrder[a.visibilityBucket] - bucketOrder[b.visibilityBucket];
+    }
+
     const statusOrder: Record<DerivedQuestItemStatus, number> = {
         available: 0,
         future: 1,
@@ -237,12 +276,12 @@ function compareDerivedQuest(a: DerivedQuestItemQuest, b: DerivedQuestItemQuest)
         return statusOrder[a.status] - statusOrder[b.status];
     }
 
-    if (a.prerequisiteDepth !== b.prerequisiteDepth) {
-        return a.prerequisiteDepth - b.prerequisiteDepth;
+    if ((a.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER) !== (b.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER)) {
+        return (a.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER) - (b.distanceFromAvailable ?? Number.MAX_SAFE_INTEGER);
     }
 
-    if (a.isPinned !== b.isPinned) {
-        return a.isPinned ? -1 : 1;
+    if (a.prerequisiteDepth !== b.prerequisiteDepth) {
+        return a.prerequisiteDepth - b.prerequisiteDepth;
     }
 
     if ((a.minPlayerLevel ?? 0) !== (b.minPlayerLevel ?? 0)) {
@@ -250,28 +289,6 @@ function compareDerivedQuest(a: DerivedQuestItemQuest, b: DerivedQuestItemQuest)
     }
 
     return a.questName.localeCompare(b.questName);
-}
-
-function getRequiredLoyaltyForQuest(quest: QuestAvailabilityQuest, traderId: string) {
-    return (quest.traderRequirements ?? []).reduce((highest, requirement) => {
-        if (requirement.trader.id !== traderId) return highest;
-        return Math.max(highest, requirement.value);
-    }, 1);
-}
-
-function isQuestAvailableAtDepthOne(
-    quest: QuestAvailabilityQuest,
-    profile: QuestAvailabilityProfile,
-): boolean {
-    if (profile.completedQuests[quest.id]) return false;
-    if (!matchesFactionVisibility(quest.factionName, profile.faction)) return false;
-    if ((quest.minPlayerLevel ?? 0) > profile.playerLevel) return false;
-    if ((quest.requiredPrestige?.prestigeLevel ?? 0) > profile.prestigeLevel) return false;
-
-    const traderLoyalty = profile.traderLoyaltyLevels[quest.trader.id] ?? 1;
-    if (getRequiredLoyaltyForQuest(quest, quest.trader.id) > traderLoyalty) return false;
-
-    return quest.taskRequirements.every((requirement) => profile.completedQuests[requirement.task.id]);
 }
 
 function buildLeadsToMap(quests: QuestAvailabilityQuest[]) {
@@ -288,46 +305,106 @@ function buildLeadsToMap(quests: QuestAvailabilityQuest[]) {
     return leadsTo;
 }
 
-function getVisibleQuestIds(
+function getAvailableQuestIds(
     quests: QuestAvailabilityQuest[],
     availabilityProfile: QuestAvailabilityProfile,
-    maxDepth: number,
-) {
-    const visibleQuestIds = new Set<string>();
-    const remainingDepth = Math.max(1, Math.floor(maxDepth));
-    const leadsToMap = buildLeadsToMap(quests);
-    const queue: Array<{ questId: string; depth: number }> = [];
+): Set<string> {
+    const questsById = buildQuestAvailabilityMap(quests);
     const availableQuestIds = new Set<string>();
 
     for (const quest of quests) {
-        if (!isQuestAvailableAtDepthOne(quest, availabilityProfile)) {
-            continue;
+        if (isQuestAvailableForProfile(quest, availabilityProfile, questsById)) {
+            availableQuestIds.add(quest.id);
         }
+    }
 
-        availableQuestIds.add(quest.id);
-        visibleQuestIds.add(quest.id);
-        queue.push({ questId: quest.id, depth: 1 });
+    return availableQuestIds;
+}
+
+function questMatchesBranchFilters(
+    quest: QuestAvailabilityQuest,
+    showKappa: boolean,
+    showLightkeeper: boolean,
+) {
+    if (!showKappa && !showLightkeeper) return true;
+    return (
+        (showKappa && !!quest.kappaRequired) ||
+        (showLightkeeper && !!quest.lightkeeperRequired)
+    );
+}
+
+function getItemDistanceFromAvailable(
+    quests: QuestAvailabilityQuest[],
+    availableQuestIds: ReadonlySet<string>,
+    showKappa: boolean,
+    showLightkeeper: boolean,
+): Map<string, number> {
+    const questsById = buildQuestAvailabilityMap(quests);
+    const leadsToMap = buildLeadsToMap(quests);
+    const distanceMap = new Map<string, number>();
+    const queue = Array.from(availableQuestIds, (questId) => ({ questId, distance: 0 }));
+
+    for (const questId of availableQuestIds) {
+        distanceMap.set(questId, 0);
     }
 
     while (queue.length > 0) {
         const current = queue.shift()!;
-        if (current.depth >= remainingDepth) continue;
-
         for (const nextQuestId of leadsToMap.get(current.questId) ?? []) {
-            if (visibleQuestIds.has(nextQuestId)) continue;
-            visibleQuestIds.add(nextQuestId);
-            queue.push({ questId: nextQuestId, depth: current.depth + 1 });
+            const nextQuest = questsById.get(nextQuestId);
+            if (!nextQuest) continue;
+            if (!questMatchesBranchFilters(nextQuest, showKappa, showLightkeeper)) continue;
+
+            const nextDistance =
+                current.distance + (nextQuest.hasItemHandIn ? 1 : 0);
+            const previousDistance = distanceMap.get(nextQuestId);
+            if (previousDistance != null && previousDistance <= nextDistance) continue;
+
+            distanceMap.set(nextQuestId, nextDistance);
+            if (nextQuest.hasItemHandIn) {
+                queue.push({ questId: nextQuestId, distance: nextDistance });
+            } else {
+                queue.unshift({ questId: nextQuestId, distance: nextDistance });
+            }
         }
     }
 
-    return {
-        availableQuestIds,
-        visibleQuestIds,
-    };
+    return distanceMap;
+}
+
+function getFutureQuestIds(
+    quests: QuestAvailabilityQuest[],
+    completedQuests: Record<string, boolean>,
+    ignoredQuests: Record<string, boolean>,
+    faction: QuestAvailabilityProfile["faction"],
+    showIgnored: boolean,
+    showKappa: boolean,
+    showLightkeeper: boolean,
+): Set<string> {
+    const futureQuestIds = new Set<string>();
+
+    for (const quest of quests) {
+        if (completedQuests[quest.id]) continue;
+        if (ignoredQuests[quest.id] && !showIgnored) continue;
+        if (!matchesFactionVisibility(quest.factionName, faction)) continue;
+        if (!questMatchesBranchFilters(quest, showKappa, showLightkeeper)) continue;
+        futureQuestIds.add(quest.id);
+    }
+
+    return futureQuestIds;
 }
 
 function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestItemDeriveContext {
     const { completedQuests, ignoredQuests, pinnedQuests, playerLevel } = options;
+    const visibilityMode = options.visibilityMode ?? "available";
+    const customLookahead = Math.max(0, Math.floor(options.customLookahead ?? 5));
+    const customLevelLookahead = Math.max(0, Math.floor(options.customLevelLookahead ?? 5));
+    const showFutureFir = options.showFutureFir ?? false;
+    const showIgnored = options.showIgnored ?? false;
+    const showKappa = options.showKappa ?? false;
+    const showLightkeeper = options.showLightkeeper ?? false;
+    const questsById = buildQuestAvailabilityMap(options.quests);
+
     const availabilityProfile: QuestAvailabilityProfile = {
         completedQuests,
         playerLevel,
@@ -335,42 +412,146 @@ function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestIte
         faction: options.faction,
         traderLoyaltyLevels: options.traderLoyaltyLevels,
     };
-    const { availableQuestIds, visibleQuestIds } = getVisibleQuestIds(
-        options.quests,
-        availabilityProfile,
-        options.maxDepth ?? 1,
+
+    const availableQuestIds = new Set(
+        Array.from(getAvailableQuestIds(options.quests, availabilityProfile)).filter((questId) => {
+            const quest = questsById.get(questId);
+            return quest ? questMatchesBranchFilters(quest, showKappa, showLightkeeper) : false;
+        }),
     );
+    const itemDistanceFromAvailable = getItemDistanceFromAvailable(
+        options.quests,
+        availableQuestIds,
+        showKappa,
+        showLightkeeper,
+    );
+    const nextLayerQuestIds = new Set<string>();
+
+    for (const [questId, distance] of itemDistanceFromAvailable.entries()) {
+        const quest = questsById.get(questId);
+        if (quest?.hasItemHandIn && distance === 1) {
+            nextLayerQuestIds.add(questId);
+        }
+    }
 
     return {
         completedQuests,
         ignoredQuests,
         pinnedQuests,
         availableQuestIds,
-        visibleQuestIds,
+        nextLayerQuestIds,
+        futureQuestIds: getFutureQuestIds(
+            options.quests,
+            completedQuests,
+            ignoredQuests,
+            options.faction,
+            showIgnored,
+            showKappa,
+            showLightkeeper,
+        ),
+        itemDistanceFromAvailable,
+        visibilityMode,
+        playerLevel: options.playerLevel,
+        customLookahead,
+        customLevelLookahead,
+        showFutureFir,
+        showIgnored,
+        showKappa,
+        showLightkeeper,
+        questsById,
     };
+}
+
+function isQuestVisibleByMode(
+    quest: QuestItemLink,
+    context: QuestItemDeriveContext,
+): boolean {
+    const { completedQuests, ignoredQuests, availableQuestIds, nextLayerQuestIds, futureQuestIds } =
+        context;
+    const availabilityQuest = context.questsById.get(quest.questId);
+
+    if (completedQuests[quest.questId]) return false;
+    if (ignoredQuests[quest.questId] && !context.showIgnored) return false;
+    if (!availabilityQuest) return false;
+    if (!questMatchesBranchFilters(availabilityQuest, context.showKappa, context.showLightkeeper)) {
+        return false;
+    }
+
+    if (availableQuestIds.has(quest.questId)) return true;
+
+    switch (context.visibilityMode) {
+        case "nextLayer":
+            return nextLayerQuestIds.has(quest.questId);
+        case "allFuture":
+            return futureQuestIds.has(quest.questId);
+        case "custom": {
+            if (!futureQuestIds.has(quest.questId)) return false;
+
+            const distance = context.itemDistanceFromAvailable.get(quest.questId);
+            const inQuestLookahead = distance != null && distance <= context.customLookahead;
+            const minPlayerLevel = quest.minPlayerLevel ?? null;
+            const inLevelLookahead =
+                minPlayerLevel != null &&
+                minPlayerLevel <= context.playerLevel + context.customLevelLookahead;
+
+            return inQuestLookahead || inLevelLookahead;
+        }
+        case "available":
+        default:
+            return false;
+    }
+}
+
+function getQuestVisibilityBucket(
+    quest: QuestItemLink,
+    isVisibleByMode: boolean,
+    isPinnedOverride: boolean,
+    isFutureFirOverride: boolean,
+    context: QuestItemDeriveContext,
+): DerivedQuestVisibilityBucket {
+    if (isPinnedOverride) return "pinned";
+    if (context.availableQuestIds.has(quest.questId)) return "available";
+    if (context.nextLayerQuestIds.has(quest.questId) && isVisibleByMode) return "nextLayer";
+    if (isFutureFirOverride) return "fir";
+    return "future";
 }
 
 function deriveQuestItemStateFromContext(
     entry: QuestItemIndexEntry,
     context: QuestItemDeriveContext,
 ): DerivedQuestItemState {
-    const { completedQuests, ignoredQuests, pinnedQuests, availableQuestIds, visibleQuestIds } =
-        context;
+    const { completedQuests, ignoredQuests, pinnedQuests, showFutureFir } = context;
 
     const relatedQuests = entry.quests
-        .filter((quest) => visibleQuestIds.has(quest.questId))
-        .map<DerivedQuestItemQuest>((quest) => {
+        .map<DerivedQuestItemQuest | null>((quest) => {
             const isCompleted = !!completedQuests[quest.questId];
             const isIgnored = !!ignoredQuests[quest.questId];
             const isPinned = !!pinnedQuests[quest.questId];
-            const isAvailable = availableQuestIds.has(quest.questId);
+            const availabilityQuest = context.questsById.get(quest.questId);
+            const isInFilteredBranch =
+                !!availabilityQuest &&
+                questMatchesBranchFilters(availabilityQuest, context.showKappa, context.showLightkeeper);
+            const isVisibleByMode = isQuestVisibleByMode(quest, context);
+            const isPinnedOverride = isInFilteredBranch && isPinned && !isCompleted;
+            const isFutureFirOverride =
+                isInFilteredBranch &&
+                showFutureFir &&
+                quest.requiredFirCount > 0 &&
+                !isCompleted &&
+                !isIgnored &&
+                !isVisibleByMode;
+            const isActive = isVisibleByMode || isPinnedOverride || isFutureFirOverride;
+
+            if (!isActive) {
+                return null;
+            }
 
             let status: DerivedQuestItemStatus = "future";
             if (isCompleted) {
                 status = "completed";
             } else if (isIgnored) {
                 status = "ignored";
-            } else if (isAvailable) {
+            } else if (context.availableQuestIds.has(quest.questId)) {
                 status = "available";
             }
 
@@ -378,22 +559,34 @@ function deriveQuestItemStateFromContext(
                 ...quest,
                 status,
                 isPinned,
-                isActive: status === "available" || status === "future",
+                isActive,
+                isPinnedOverride,
+                isFutureFirOverride,
+                isVisibleByMode,
+                visibilityBucket: getQuestVisibilityBucket(
+                    quest,
+                    isVisibleByMode,
+                    isPinnedOverride,
+                    isFutureFirOverride,
+                    context,
+                ),
+                distanceFromAvailable: context.itemDistanceFromAvailable.get(quest.questId) ?? null,
             };
         })
+        .filter((quest): quest is DerivedQuestItemQuest => quest !== null)
         .sort(compareDerivedQuest);
 
     const activeQuests = relatedQuests.filter((quest) => quest.isActive);
     const availableQuests = activeQuests.filter((quest) => quest.status === "available");
     const futureQuests = activeQuests.filter((quest) => quest.status === "future");
-    const pinnedQuestsActive = activeQuests.filter((quest) => quest.isPinned);
+    const pinnedActiveQuests = activeQuests.filter((quest) => quest.isPinnedOverride);
 
     const activeQuestDepth =
         availableQuests.length > 0
             ? Math.min(...availableQuests.map((quest) => quest.prerequisiteDepth))
             : futureQuests.length > 0
-            ? Math.min(...futureQuests.map((quest) => quest.prerequisiteDepth))
-            : null;
+              ? Math.min(...futureQuests.map((quest) => quest.prerequisiteDepth))
+              : null;
 
     return {
         itemId: entry.itemId,
@@ -403,14 +596,15 @@ function deriveQuestItemStateFromContext(
         gridImageLink: entry.gridImageLink,
         activeQuestDepth,
         hasAvailableQuest: availableQuests.length > 0,
+        hasPinnedQuest: pinnedActiveQuests.length > 0,
         availableQuestCount: availableQuests.length,
         futureQuestCount: futureQuests.length,
-        pinnedQuestCount: pinnedQuestsActive.length,
+        pinnedQuestCount: pinnedActiveQuests.length,
         relatedQuestCount: activeQuests.length,
         requiredCount: activeQuests.reduce((sum, quest) => sum + quest.requiredCount, 0),
         requiredFirCount: activeQuests.reduce((sum, quest) => sum + quest.requiredFirCount, 0),
-        pinnedRequiredCount: pinnedQuestsActive.reduce((sum, quest) => sum + quest.requiredCount, 0),
-        pinnedRequiredFirCount: pinnedQuestsActive.reduce(
+        pinnedRequiredCount: pinnedActiveQuests.reduce((sum, quest) => sum + quest.requiredCount, 0),
+        pinnedRequiredFirCount: pinnedActiveQuests.reduce(
             (sum, quest) => sum + quest.requiredFirCount,
             0,
         ),
@@ -437,6 +631,10 @@ export function deriveQuestItemStates(
 }
 
 export function compareQuestItemState(a: DerivedQuestItemState, b: DerivedQuestItemState): number {
+    if (a.hasPinnedQuest !== b.hasPinnedQuest) {
+        return a.hasPinnedQuest ? -1 : 1;
+    }
+
     if (a.hasAvailableQuest !== b.hasAvailableQuest) {
         return a.hasAvailableQuest ? -1 : 1;
     }

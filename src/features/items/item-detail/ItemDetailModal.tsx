@@ -119,7 +119,13 @@ export function ItemDetailModal({
         prestigeLevel,
         questTraderLoyaltyLevels,
         questFaction,
-        itemQuestMaxDepth,
+        itemQuestVisibilityMode,
+        itemQuestCustomLookahead,
+        itemQuestCustomLevelLookahead,
+        itemShowFutureFir,
+        itemShowIgnored,
+        questShowKappa,
+        questShowLightkeeper,
         itemCounts,
         addItemCounts,
         toggleQuestCompletion,
@@ -213,7 +219,13 @@ export function ItemDetailModal({
             faction: questFaction,
             traderLoyaltyLevels: questTraderLoyaltyLevels,
             quests: questAvailabilityQuests,
-            maxDepth: itemQuestMaxDepth,
+            visibilityMode: itemQuestVisibilityMode,
+            customLookahead: itemQuestCustomLookahead,
+            customLevelLookahead: itemQuestCustomLevelLookahead,
+            showFutureFir: itemShowFutureFir,
+            showIgnored: itemShowIgnored,
+            showKappa: questShowKappa,
+            showLightkeeper: questShowLightkeeper,
         });
     }, [
         selectedItem,
@@ -226,7 +238,13 @@ export function ItemDetailModal({
         questFaction,
         questTraderLoyaltyLevels,
         questAvailabilityQuests,
-        itemQuestMaxDepth,
+        itemQuestVisibilityMode,
+        itemQuestCustomLookahead,
+        itemQuestCustomLevelLookahead,
+        itemShowFutureFir,
+        itemShowIgnored,
+        questShowKappa,
+        questShowLightkeeper,
     ]);
 
     const [draftNonFir, setDraftNonFir] = useState(owned.have);
@@ -320,8 +338,8 @@ export function ItemDetailModal({
                                 <div>
                                     <h3 className="text-sm font-semibold text-white">Quest Hand-Ins</h3>
                                     <p className="mt-1 text-xs text-gray-500">
-                                        Ordered by the same active progression logic used on the items
-                                        page.
+                                        Uses the same quest visibility rules as the items page, including
+                                        pinned and FiR overrides.
                                     </p>
                                 </div>
                                 <div className="text-right text-xs text-gray-500">

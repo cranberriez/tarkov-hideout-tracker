@@ -290,7 +290,7 @@ export function QuestCard({
                   {
                       key: "kappa",
                       className: "text-yellow-500/80 bg-yellow-500/10 border-yellow-500/20",
-                      label: "Kappa",
+                      label: "κ",
                   },
               ]
             : []),
@@ -498,7 +498,7 @@ export function QuestCard({
                             className={`${questMetaChipBaseClass} text-yellow-500/80 bg-yellow-500/10 border-yellow-500/20`}
                             title="Required for Kappa"
                         >
-                            Kappa
+                            κ
                         </span>
                     )}
                     {quest.lightkeeperRequired && (

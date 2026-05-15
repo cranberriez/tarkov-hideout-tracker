@@ -63,9 +63,14 @@ export function ItemsList({
         prestigeLevel,
         questTraderLoyaltyLevels,
         questFaction,
-        itemShowPinnedQuestSection,
         itemShowPinnedQuestOnly,
-        itemQuestMaxDepth,
+        itemQuestVisibilityMode,
+        itemQuestCustomLookahead,
+        itemQuestCustomLevelLookahead,
+        itemShowFutureFir,
+        itemShowIgnored,
+        questShowKappa,
+        questShowLightkeeper,
     } = useUserStore();
 
     const itemsById = useMemo(() => {
@@ -89,7 +94,13 @@ export function ItemsList({
                 faction: questFaction,
                 traderLoyaltyLevels: questTraderLoyaltyLevels,
                 quests: questAvailabilityQuests,
-                maxDepth: itemQuestMaxDepth,
+                visibilityMode: itemQuestVisibilityMode,
+                customLookahead: itemQuestCustomLookahead,
+                customLevelLookahead: itemQuestCustomLevelLookahead,
+                showFutureFir: itemShowFutureFir,
+                showIgnored: itemShowIgnored,
+                showKappa: questShowKappa,
+                showLightkeeper: questShowLightkeeper,
             }),
         [
             questItemIndex,
@@ -101,7 +112,13 @@ export function ItemsList({
             questFaction,
             questTraderLoyaltyLevels,
             questAvailabilityQuests,
-            itemQuestMaxDepth,
+            itemQuestVisibilityMode,
+            itemQuestCustomLookahead,
+            itemQuestCustomLevelLookahead,
+            itemShowFutureFir,
+            itemShowIgnored,
+            questShowKappa,
+            questShowLightkeeper,
         ],
     );
 
@@ -229,6 +246,10 @@ export function ItemsList({
 
         if (hideCheap) {
             finalItems = finalItems.filter((item) => {
+                if ((item.firCount || 0) > 0) {
+                    return true;
+                }
+
                 const norm = item.details.normalizedName;
                 if (norm === "roubles" || norm === "dollars" || norm === "euros") {
                     return true;
@@ -248,7 +269,11 @@ export function ItemsList({
         return finalItems;
     };
 
-    const buildVisibleItems = (includeHideout: boolean, questSlice: QuestSlice) =>
+    const buildVisibleItems = (
+        includeHideout: boolean,
+        questSlice: QuestSlice,
+        requirePinnedQuest = false,
+    ) =>
         finalizeDisplayItems(
             mergedPool
                 .map((item) => {
@@ -283,27 +308,20 @@ export function ItemsList({
                         isQuest: visibleQuestCount > 0,
                     };
                 })
+                .filter((item) => !requirePinnedQuest || (item.questState?.pinnedRequiredCount ?? 0) > 0)
                 .filter((item) => item.count > 0),
         );
 
     const sourceItems =
         itemSourceFilter === "hideout"
-            ? buildVisibleItems(true, "none")
+            ? buildVisibleItems(
+                  true,
+                  "pinned",
+                  itemShowPinnedQuestOnly,
+              )
             : itemSourceFilter === "quest"
-              ? buildVisibleItems(false, itemShowPinnedQuestOnly ? "pinned" : "all")
-              : buildVisibleItems(true, itemShowPinnedQuestOnly ? "pinned" : "all");
-
-    const pinnedSectionItems =
-        !itemShowPinnedQuestSection || itemShowPinnedQuestOnly || itemSourceFilter === "hideout"
-            ? []
-            : buildVisibleItems(false, "pinned");
-
-    const regularItems =
-        itemShowPinnedQuestOnly || pinnedSectionItems.length === 0
-            ? sourceItems
-            : itemSourceFilter === "quest"
-              ? buildVisibleItems(false, "unpinned")
-              : buildVisibleItems(true, "unpinned");
+              ? buildVisibleItems(false, itemShowPinnedQuestOnly ? "pinned" : "all", itemShowPinnedQuestOnly)
+              : buildVisibleItems(true, itemShowPinnedQuestOnly ? "pinned" : "all", itemShowPinnedQuestOnly);
 
     const gridClassesBySize: Record<string, string> = {
         Icon: "grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8",
@@ -381,31 +399,17 @@ export function ItemsList({
         return null;
     }
 
-    if (sourceItems.length === 0 && pinnedSectionItems.length === 0) {
+    if (sourceItems.length === 0) {
         return (
             <div className="py-20 text-center text-gray-500">
                 <div className="mb-2 text-xl">No items needed!</div>
                 <div className="text-sm">
-                    You might have maxed out your hideout, completed your visible quests, or
-                    filtered everything out.
+                    You might have maxed out your hideout, completed your visible quests, or filtered
+                    everything out.
                 </div>
             </div>
         );
     }
 
-    return (
-        <div className="space-y-8">
-            {pinnedSectionItems.length > 0 && (
-                <section className="space-y-4">
-                    <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-bold text-sky-300">Pinned Quest Items</h2>
-                        <span className="text-sm text-gray-500">({pinnedSectionItems.length})</span>
-                    </div>
-                    {renderItems(pinnedSectionItems)}
-                </section>
-            )}
-
-            {regularItems.length > 0 && renderItems(regularItems)}
-        </div>
-    );
+    return <div className="space-y-8">{renderItems(sourceItems)}</div>;
 }

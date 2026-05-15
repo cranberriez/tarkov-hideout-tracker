@@ -47,12 +47,15 @@ export function ItemsClientPage({ questItemIndex, questAvailabilityQuests }: Ite
         }
     }, [items, itemsUpdatedAt]);
 
-    const questAvailabilityQuestList = useMemo(() => questAvailabilityQuests, [questAvailabilityQuests]);
+    const questAvailabilityQuestList = useMemo(
+        () => questAvailabilityQuests,
+        [questAvailabilityQuests],
+    );
 
     // Merged pool: hideout items + any quest-only items not already present
     const allSearchableItems = useMemo(() => {
         const pool: Record<string, ItemDetails> = {};
-        for (const item of (items ?? [])) {
+        for (const item of items ?? []) {
             pool[item.id] = item;
         }
         for (const entry of questItemIndex) {
@@ -71,44 +74,42 @@ export function ItemsClientPage({ questItemIndex, questAvailabilityQuests }: Ite
 
     return (
         <main className="container mx-auto px-6 py-8">
-            <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
                         ITEM CHECKLIST
                     </h1>
-                    <p className="text-gray-400 mt-2 text-sm">
-                        Aggregated hideout and quest hand-in items, ordered around live progression
-                    </p>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => setGameMode(gameMode === "PVP" ? "PVE" : "PVP")}
-                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border text-xs font-semibold font-mono cursor-pointer tracking-wide transition-all shadow-md
-                        ${
+                <div className="flex items-center gap-3 self-start rounded-sm border border-white/10 bg-black/20 px-3 py-2 text-xs text-gray-400 sm:self-auto">
+                    <span>Show prices for</span>
+                    <button
+                        type="button"
+                        onClick={() => setGameMode(gameMode === "PVP" ? "PVE" : "PVP")}
+                        className={`inline-flex items-center gap-2 rounded-sm border px-3 py-1.5 font-mono font-semibold tracking-wide transition-all shadow-md ${
                             gameMode === "PVP"
                                 ? "border-red-500/70 bg-red-900/60 text-red-200 shadow-[0_0_18px_rgba(248,113,113,0.45)]"
                                 : "border-sky-400/80 bg-sky-900/70 text-sky-100 shadow-[0_0_20px_rgba(56,189,248,0.7)]"
-                        }
-                    `}
-                    title="Click to switch between PVP and PVE prices"
-                >
-                    <span>{gameMode}</span>
-                </button>
+                        }`}
+                        title="Click to switch between PVP and PVE prices"
+                    >
+                        <span>{gameMode}</span>
+                    </button>
+                </div>
             </div>
 
             <div className="mb-8">
-                <ItemsControls onOpenSearch={() => setIsSearchOpen(true)} />
-                <ItemsStatsRow
-                    questItemIndex={questItemIndex}
-                    questAvailabilityQuests={questAvailabilityQuestList}
-                />
+                <ItemsControls onOpenSearch={() => setIsSearchOpen(true)}>
+                    <ItemsStatsRow
+                        questItemIndex={questItemIndex}
+                        questAvailabilityQuests={questAvailabilityQuestList}
+                    />
+                    <ItemsList
+                        onClickItem={setSelectedItem}
+                        questItemIndex={questItemIndex}
+                        questAvailabilityQuests={questAvailabilityQuestList}
+                    />
+                </ItemsControls>
             </div>
-
-            <ItemsList
-                onClickItem={setSelectedItem}
-                questItemIndex={questItemIndex}
-                questAvailabilityQuests={questAvailabilityQuestList}
-            />
 
             <DataLastUpdated />
 
