@@ -36,6 +36,11 @@ import {
     selectionLooksLikeEftLogsFolder,
 } from "@/lib/utils/quest-log-parser";
 import {
+    buildQuestAvailabilityMap,
+    isQuestAvailableForProfile,
+    type QuestAvailabilityProfile,
+} from "@/lib/utils/quest-availability";
+import {
     Dialog,
     DialogContent,
     DialogDescription,
@@ -82,6 +87,32 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     const questsById = useMemo(() => new Map(quests.map((quest) => [quest.id, quest])), [quests]);
     const completedQuests = useUserStore((state) => state.completedQuests);
     const questsWithItems = useUserStore((state) => state.questsWithItems);
+    const playerLevel = useUserStore((state) => state.playerLevel);
+    const prestigeLevel = useUserStore((state) => state.prestigeLevel);
+    const questFaction = useUserStore((state) => state.questFaction);
+    const questTraderLoyaltyLevels = useUserStore((state) => state.questTraderLoyaltyLevels);
+    const availabilityProfile = useMemo(
+        () => ({
+            playerLevel,
+            prestigeLevel,
+            faction: questFaction,
+            traderLoyaltyLevels: questTraderLoyaltyLevels,
+            completedQuests,
+        }),
+        [completedQuests, playerLevel, prestigeLevel, questFaction, questTraderLoyaltyLevels],
+    );
+    const availableQuestIds = useMemo(() => {
+        const availabilityMap = buildQuestAvailabilityMap(quests);
+        const availableIds = new Set<string>();
+
+        for (const quest of quests) {
+            if (isQuestAvailableForProfile(quest, availabilityProfile, availabilityMap)) {
+                availableIds.add(quest.id);
+            }
+        }
+
+        return availableIds;
+    }, [availabilityProfile, quests]);
 
     const directoryInputProps: DirectoryInputAttributes = {
         type: "file",
@@ -286,10 +317,18 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 
     const hasResults = !!parsedView;
     const filteredPvpRows = parsedView
-        ? filterIncompleteQuestImportRows(parsedView.buckets.pvp, completedQuests)
+        ? filterIncompleteQuestImportRows({
+              rows: parsedView.buckets.pvp,
+              completedQuests,
+              availableQuestIds,
+          })
         : [];
     const filteredPveRows = parsedView
-        ? filterIncompleteQuestImportRows(parsedView.buckets.pve, completedQuests)
+        ? filterIncompleteQuestImportRows({
+              rows: parsedView.buckets.pve,
+              completedQuests,
+              availableQuestIds,
+          })
         : [];
     const hasAnyImportableRows = filteredPvpRows.length > 0 || filteredPveRows.length > 0;
     const reviewRows =

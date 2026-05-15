@@ -112,9 +112,9 @@ test("applyQuestImportSelection imports rows and optional prerequisite chains", 
             questId: "leaf",
             quest: leaf,
             raidMode: "pvp" as const,
-            types: ["started"] as ("started" | "completed")[],
-            hasStarted: true,
-            hasCompleted: false,
+            types: ["completed"] as ("started" | "completed")[],
+            hasStarted: false,
+            hasCompleted: true,
             occurrenceCount: 1,
             eventCount: 1,
             latestTimestamp: null,
@@ -144,6 +144,36 @@ test("applyQuestImportSelection imports rows and optional prerequisite chains", 
     assert.equal(result.nextQuestsWithItems.child, false);
     assert.equal(result.nextQuestsWithItems.root, false);
     assert.equal(result.nextGameMode, "PVP");
+});
+
+test("applyQuestImportSelection does not complete quests that were only started", () => {
+    const startedQuest = makeQuest({ id: "started-only", name: "Started Only" });
+
+    const result = applyQuestImportSelection({
+        mode: "PVP",
+        rows: [
+            {
+                questId: "started-only",
+                quest: startedQuest,
+                raidMode: "pvp",
+                types: ["started"],
+                hasStarted: true,
+                hasCompleted: false,
+                occurrenceCount: 1,
+                eventCount: 1,
+                latestTimestamp: null,
+                sourceFiles: [],
+            },
+        ],
+        autoCompleteSelections: { "started-only": true },
+        completedQuests: {},
+        questsWithItems: {},
+        questsById: new Map([[startedQuest.id, startedQuest]]),
+    });
+
+    assert.deepEqual(result.importedQuestIds, []);
+    assert.deepEqual(result.prerequisiteQuestIds, []);
+    assert.deepEqual(result.nextCompletedQuests, {});
 });
 
 test("applyQuestImportSelection does not list already completed prerequisites for auto-complete", () => {
@@ -242,7 +272,61 @@ test("filterIncompleteQuestImportRows removes quests already completed in the st
         },
     ];
 
-    const filtered = filterIncompleteQuestImportRows(rows, { b: true });
+    const filtered = filterIncompleteQuestImportRows({
+        rows,
+        completedQuests: { b: true },
+        availableQuestIds: new Set(),
+    });
 
     assert.deepEqual(filtered.map((row) => row.questId), ["a"]);
+});
+
+test("filterIncompleteQuestImportRows removes started-only quests that are already available", () => {
+    const availableQuest = makeQuest({ id: "available", name: "Available Quest", minPlayerLevel: 1 });
+
+    const filtered = filterIncompleteQuestImportRows({
+        rows: [
+            {
+                questId: "available",
+                quest: availableQuest,
+                raidMode: "pvp",
+                types: ["started"],
+                hasStarted: true,
+                hasCompleted: false,
+                occurrenceCount: 1,
+                eventCount: 1,
+                latestTimestamp: null,
+                sourceFiles: [],
+            },
+        ],
+        completedQuests: {},
+        availableQuestIds: new Set(["available"]),
+    });
+
+    assert.deepEqual(filtered, []);
+});
+
+test("filterIncompleteQuestImportRows keeps started-only quests that are not yet available", () => {
+    const lockedQuest = makeQuest({ id: "locked", name: "Locked Quest", minPlayerLevel: 50 });
+
+    const filtered = filterIncompleteQuestImportRows({
+        rows: [
+            {
+                questId: "locked",
+                quest: lockedQuest,
+                raidMode: "pvp",
+                types: ["started"],
+                hasStarted: true,
+                hasCompleted: false,
+                occurrenceCount: 1,
+                eventCount: 1,
+                latestTimestamp: null,
+                sourceFiles: [],
+            },
+        ],
+        completedQuests: {},
+        availableQuestIds: new Set(),
+    });
+
+    assert.deepEqual(filtered.map((row) => row.questId), ["locked"]);
 });

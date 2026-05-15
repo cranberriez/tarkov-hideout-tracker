@@ -62,6 +62,10 @@ export function applyQuestImportSelection(input: {
     const prerequisiteQuestIds = new Set<string>();
 
     for (const row of input.rows) {
+        if (!row.hasCompleted) {
+            continue;
+        }
+
         if (!nextCompletedQuests[row.questId]) {
             nextCompletedQuests[row.questId] = true;
             importedQuestIds.push(row.questId);
@@ -103,10 +107,27 @@ export function setAllQuestImportSelections(rows: QuestImportRow[], nextValue: b
 }
 
 export function filterIncompleteQuestImportRows(
-    rows: QuestImportRow[],
-    completedQuests: Record<string, boolean>,
+    input: {
+        rows: QuestImportRow[];
+        completedQuests: Record<string, boolean>;
+        availableQuestIds: ReadonlySet<string>;
+    },
 ) {
-    return rows.filter((row) => !completedQuests[row.questId]);
+    return input.rows.filter((row) => {
+        if (input.completedQuests[row.questId]) {
+            return false;
+        }
+
+        if (row.hasCompleted) {
+            return true;
+        }
+
+        if (!row.hasStarted) {
+            return true;
+        }
+
+        return !input.availableQuestIds.has(row.questId);
+    });
 }
 
 export function createQuestLogFileFingerprint(file: {
