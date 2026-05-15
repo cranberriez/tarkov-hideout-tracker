@@ -68,7 +68,7 @@ export function ItemsControls({ onOpenSearch, children }: ItemsControlsProps) {
                 <div
                     className={cn(
                         "overflow-hidden xl:shrink-0 xl:transition-[width] xl:duration-200 xl:ease-out",
-                        itemFiltersOpen ? "xl:w-[340px]" : "xl:w-0",
+                        itemFiltersOpen ? "xl:w-[340px]" : "xl:w-0 hidden",
                     )}
                 >
                     <ItemsFiltersPanel
