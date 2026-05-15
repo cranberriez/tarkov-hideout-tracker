@@ -354,6 +354,14 @@ const BAR_OVERLAP = 4;
 const LINEAR_CHAIN_OFFSET = 14;
 const MOBILE_TREE_CARD_CLASS = "w-[17rem] max-w-[calc(100vw-2.75rem)] sm:w-auto sm:max-w-none";
 
+function getBranchCollapseKey(questId: string) {
+    return `branch:${questId}`;
+}
+
+function getLinearCollapseKey(questId: string) {
+    return `linear:${questId}`;
+}
+
 function QuestNodeCard({
     questId,
     parentOf,
@@ -461,6 +469,11 @@ function BranchChildren({
     showDebugButton,
     highlightedQuestId,
     onQuestLinkClick,
+    isCollapsed,
+    onCollapse,
+    onExpand,
+    collapsedGroups,
+    setGroupCollapsed,
 }: {
     childIds: string[];
     depth: number;
@@ -471,8 +484,12 @@ function BranchChildren({
     showDebugButton: boolean;
     highlightedQuestId: string | null;
     onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
+    isCollapsed: boolean;
+    onCollapse: () => void;
+    onExpand: () => void;
+    collapsedGroups: Set<string>;
+    setGroupCollapsed: (key: string, collapsed: boolean) => void;
 }) {
-    const [childrenCollapsed, setChildrenCollapsed] = useState(false);
     const [barHovered, setBarHovered] = useState(false);
     const hoverTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
     const childIndent = getIndentPx(depth);
@@ -494,15 +511,15 @@ function BranchChildren({
                 paddingLeft: `${connectorOffset}px`,
             }}
         >
-            {childrenCollapsed ? (
+            {isCollapsed ? (
                 <CollapseHint
                     count={countAllDescendants(childIds, childrenOf)}
-                    onShow={() => setChildrenCollapsed(false)}
+                    onShow={onExpand}
                 />
             ) : (
                 <>
                     <button
-                        onClick={() => setChildrenCollapsed(true)}
+                        onClick={onCollapse}
                         onMouseEnter={onBarEnter}
                         onMouseLeave={onBarLeave}
                         title="Collapse"
@@ -559,6 +576,8 @@ function BranchChildren({
                                     showDebugButton={showDebugButton}
                                     highlightedQuestId={highlightedQuestId}
                                     onQuestLinkClick={onQuestLinkClick}
+                                    collapsedGroups={collapsedGroups}
+                                    setGroupCollapsed={setGroupCollapsed}
                                 />
                             </div>
                         );
@@ -579,6 +598,8 @@ function QuestTreeNode({
     showDebugButton,
     highlightedQuestId,
     onQuestLinkClick,
+    collapsedGroups,
+    setGroupCollapsed,
 }: {
     questId: string;
     depth: number;
@@ -589,10 +610,27 @@ function QuestTreeNode({
     showDebugButton: boolean;
     highlightedQuestId: string | null;
     onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
+    collapsedGroups: Set<string>;
+    setGroupCollapsed: (key: string, collapsed: boolean) => void;
 }) {
     const children = childrenOf.get(questId) ?? [];
     const linearChainIds = children.length === 1 ? collectLinearChainIds(questId, childrenOf) : [];
     const branchChildIds = children.length > 1 ? children : [];
+    const linearCollapseKey = getLinearCollapseKey(questId);
+    const branchCollapseKey = getBranchCollapseKey(questId);
+    const linearChainCollapsed = collapsedGroups.has(linearCollapseKey);
+    const branchChildrenCollapsed = collapsedGroups.has(branchCollapseKey);
+    const [linearRailHovered, setLinearRailHovered] = useState(false);
+    const linearRailHoverTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+    const onLinearRailEnter = () => {
+        clearTimeout(linearRailHoverTimer.current);
+        setLinearRailHovered(true);
+    };
+
+    const onLinearRailLeave = () => {
+        linearRailHoverTimer.current = setTimeout(() => setLinearRailHovered(false), 30);
+    };
 
     return (
         <div>
@@ -607,66 +645,126 @@ function QuestTreeNode({
             />
 
             {linearChainIds.length > 0 && (
-                <div className="mt-1 ml-2">
-                    {linearChainIds.map((linearQuestId, index) => {
-                        const linearChildren = childrenOf.get(linearQuestId) ?? [];
-                        const branchAfterLinear = linearChildren.length > 1 ? linearChildren : [];
-                        const hasNextLinearQuest = index < linearChainIds.length - 1;
-
-                        return (
-                            <div
-                                key={linearQuestId}
-                                className="relative mt-1"
-                                style={{ paddingLeft: `${LINEAR_CHAIN_OFFSET}px` }}
-                            >
-                                <div
-                                    className="absolute left-1.5 w-px bg-[#252525]"
-                                    style={
-                                        hasNextLinearQuest
-                                            ? {
-                                                  top: `-${BAR_OVERLAP}px`,
-                                                  bottom: `-${BAR_OVERLAP}px`,
-                                              }
-                                            : {
-                                                  top: `-${BAR_OVERLAP}px`,
-                                                  height: `${CONNECTOR_Y}px`,
-                                              }
-                                    }
+                <div className="relative mt-1 ml-2">
+                    {linearChainCollapsed ? (
+                        <>
+                            <button
+                                onClick={() => setGroupCollapsed(linearCollapseKey, false)}
+                                title="Show collapsed chain"
+                                className="absolute left-0 z-10 cursor-pointer"
+                                onMouseEnter={onLinearRailEnter}
+                                onMouseLeave={onLinearRailLeave}
+                                style={{
+                                    top: 0,
+                                    bottom: 0,
+                                    width: `${Math.max(20, LINEAR_CHAIN_OFFSET + 6)}px`,
+                                }}
+                            />
+                            <div className="pl-[14px]">
+                                <CollapseHint
+                                    count={countAllDescendants(children, childrenOf)}
+                                    onShow={() => setGroupCollapsed(linearCollapseKey, false)}
                                 />
-                                <div
-                                    className="absolute left-1.5 h-px bg-[#252525]"
-                                    style={{
-                                        top: `${CONNECTOR_Y - 4}px`,
-                                        width: `${LINEAR_CHAIN_OFFSET - 6}px`,
-                                    }}
-                                />
-
-                                <QuestNodeCard
-                                    questId={linearQuestId}
-                                    parentOf={parentOf}
-                                    questsById={questsById}
-                                    leadsToByQuestId={leadsToByQuestId}
-                                    showDebugButton={showDebugButton}
-                                    highlightedQuestId={highlightedQuestId}
-                                    onQuestLinkClick={onQuestLinkClick}
-                                />
-
-                                {branchAfterLinear.length > 0 && (
-                                    <BranchChildren
-                                        childIds={branchAfterLinear}
-                                        depth={depth}
-                                        childrenOf={childrenOf}
-                                        parentOf={parentOf}
-                                        questsById={questsById}
-                                        leadsToByQuestId={leadsToByQuestId}
-                                        showDebugButton={showDebugButton}
-                                        highlightedQuestId={highlightedQuestId}
-                                        onQuestLinkClick={onQuestLinkClick}
-                                    />
-                                )}
                             </div>
-                        );
-                    })}
+                        </>
+                    ) : (
+                        <>
+                            <button
+                                onClick={() => setGroupCollapsed(linearCollapseKey, true)}
+                                title="Collapse"
+                                className="absolute left-0 z-10 cursor-pointer"
+                                onMouseEnter={onLinearRailEnter}
+                                onMouseLeave={onLinearRailLeave}
+                                style={{
+                                    top: 0,
+                                    bottom: 0,
+                                    width: `${Math.max(20, LINEAR_CHAIN_OFFSET + 6)}px`,
+                                }}
+                            />
+                            {linearChainIds.map((linearQuestId, index) => {
+                                const linearChildren = childrenOf.get(linearQuestId) ?? [];
+                                const branchAfterLinear = linearChildren.length > 1 ? linearChildren : [];
+                                const hasNextLinearQuest = index < linearChainIds.length - 1;
+
+                                return (
+                                    <div
+                                        key={linearQuestId}
+                                        className="relative mt-1"
+                                        style={{ paddingLeft: `${LINEAR_CHAIN_OFFSET}px` }}
+                                    >
+                                        <div
+                                            className={cn(
+                                                "pointer-events-none absolute left-1.5 w-px transition-colors",
+                                                linearRailHovered ? "bg-[#404040]" : "bg-[#252525]",
+                                            )}
+                                            style={
+                                                hasNextLinearQuest
+                                                    ? {
+                                                          top: `-${BAR_OVERLAP}px`,
+                                                          bottom: `-${BAR_OVERLAP}px`,
+                                                      }
+                                                    : {
+                                                          top: `-${BAR_OVERLAP}px`,
+                                                          height: `${CONNECTOR_Y}px`,
+                                                      }
+                                            }
+                                        />
+                                        <div
+                                            className={cn(
+                                                "pointer-events-none absolute left-1.5 h-px transition-colors",
+                                                linearRailHovered ? "bg-[#404040]" : "bg-[#252525]",
+                                            )}
+                                            style={{
+                                                top: `${CONNECTOR_Y - 4}px`,
+                                                width: `${LINEAR_CHAIN_OFFSET - 6}px`,
+                                            }}
+                                        />
+
+                                        <QuestNodeCard
+                                            questId={linearQuestId}
+                                            parentOf={parentOf}
+                                            questsById={questsById}
+                                            leadsToByQuestId={leadsToByQuestId}
+                                            showDebugButton={showDebugButton}
+                                            highlightedQuestId={highlightedQuestId}
+                                            onQuestLinkClick={onQuestLinkClick}
+                                        />
+
+                                        {branchAfterLinear.length > 0 && (
+                                            <BranchChildren
+                                                childIds={branchAfterLinear}
+                                                depth={depth}
+                                                childrenOf={childrenOf}
+                                                parentOf={parentOf}
+                                                questsById={questsById}
+                                                leadsToByQuestId={leadsToByQuestId}
+                                                showDebugButton={showDebugButton}
+                                                highlightedQuestId={highlightedQuestId}
+                                                onQuestLinkClick={onQuestLinkClick}
+                                                isCollapsed={collapsedGroups.has(
+                                                    getBranchCollapseKey(linearQuestId),
+                                                )}
+                                                onCollapse={() =>
+                                                    setGroupCollapsed(
+                                                        getBranchCollapseKey(linearQuestId),
+                                                        true,
+                                                    )
+                                                }
+                                                onExpand={() =>
+                                                    setGroupCollapsed(
+                                                        getBranchCollapseKey(linearQuestId),
+                                                        false,
+                                                    )
+                                                }
+                                                collapsedGroups={collapsedGroups}
+                                                setGroupCollapsed={setGroupCollapsed}
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </>
+                    )}
                 </div>
             )}
 
@@ -681,6 +779,11 @@ function QuestTreeNode({
                     showDebugButton={showDebugButton}
                     highlightedQuestId={highlightedQuestId}
                     onQuestLinkClick={onQuestLinkClick}
+                    isCollapsed={branchChildrenCollapsed}
+                    onCollapse={() => setGroupCollapsed(branchCollapseKey, true)}
+                    onExpand={() => setGroupCollapsed(branchCollapseKey, false)}
+                    collapsedGroups={collapsedGroups}
+                    setGroupCollapsed={setGroupCollapsed}
                 />
             )}
         </div>
@@ -696,6 +799,8 @@ function TraderTreeSection({
     showDebugButton,
     highlightedQuestId,
     onQuestLinkClick,
+    collapsedGroups,
+    setGroupCollapsed,
 }: {
     trader: FullQuest["trader"];
     traderQuests: FullQuest[];
@@ -705,9 +810,10 @@ function TraderTreeSection({
     showDebugButton: boolean;
     highlightedQuestId: string | null;
     onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
+    collapsedGroups: Set<string>;
+    setGroupCollapsed: (key: string, collapsed: boolean) => void;
 }) {
     const { completedQuests } = useUserStore();
-    const [isCollapsed, setIsCollapsed] = useState(false);
 
     const { rootIds, childrenOf, parentOf } = useMemo(
         () => buildTraderTree(traderQuests),
@@ -721,7 +827,9 @@ function TraderTreeSection({
     return (
         <div id={`trader-${trader.id}`} className="mt-2">
             <button
-                onClick={() => setIsCollapsed((v) => !v)}
+                onClick={() =>
+                    setGroupCollapsed(`trader:${trader.id}`, !collapsedGroups.has(`trader:${trader.id}`))
+                }
                 className="group flex items-center gap-3 p-2 w-full text-left rounded-lg border border-transparent hover:bg-white/1 transition-colors"
             >
                 {(trader.image4xLink ?? trader.imageLink) ? (
@@ -756,12 +864,12 @@ function TraderTreeSection({
                         size={13}
                         className={cn(
                             "text-gray-600 group-hover:text-gray-400 shrink-0 transition-[transform,color]",
-                            isCollapsed && "-rotate-90",
+                            collapsedGroups.has(`trader:${trader.id}`) && "-rotate-90",
                         )}
                     />
                 </div>
             </button>
-            {!isCollapsed && (
+            {!collapsedGroups.has(`trader:${trader.id}`) && (
                 <div className="mt-1 mb-4 overflow-x-auto pb-2 sm:overflow-visible sm:pb-0">
                     <div className="min-w-max pr-2 sm:min-w-0 sm:pr-0">
                         {rootIds.map((rootId) => (
@@ -776,6 +884,8 @@ function TraderTreeSection({
                                     showDebugButton={showDebugButton}
                                     highlightedQuestId={highlightedQuestId}
                                     onQuestLinkClick={onQuestLinkClick}
+                                    collapsedGroups={collapsedGroups}
+                                    setGroupCollapsed={setGroupCollapsed}
                                 />
                             </div>
                         ))}
@@ -797,7 +907,17 @@ export function QuestsTree() {
         showDebug,
     } = useQuestsContext();
     const [highlightedQuestId, setHighlightedQuestId] = useState<string | null>(null);
+    const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
     const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const setGroupCollapsed = (key: string, collapsed: boolean) => {
+        setCollapsedGroups((current) => {
+            const next = new Set(current);
+            if (collapsed) next.add(key);
+            else next.delete(key);
+            return next;
+        });
+    };
 
     const highlightQuest = (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => {
         event?.preventDefault();
@@ -840,6 +960,52 @@ export function QuestsTree() {
         return map;
     }, [quests]);
 
+    const treeMetaByTraderId = useMemo(() => {
+        const map = new Map<
+            string,
+            ReturnType<typeof buildTraderTree>
+        >();
+
+        for (const trader of traders) {
+            const traderQuests = questsByTraderId.get(trader.id) ?? [];
+            if (traderQuests.length > 0) {
+                map.set(trader.id, buildTraderTree(traderQuests));
+            }
+        }
+
+        return map;
+    }, [questsByTraderId, traders]);
+
+    const expandQuestPath = (questId: string) => {
+        const quest = questsById.get(questId);
+        if (!quest) return;
+
+        const treeMeta = treeMetaByTraderId.get(quest.trader.id);
+        if (!treeMeta) return;
+
+        setCollapsedGroups((current) => {
+            const next = new Set(current);
+            next.delete(`trader:${quest.trader.id}`);
+
+            let currentQuestId: string | null = questId;
+            while (currentQuestId) {
+                const parentQuestId: string | null = treeMeta.parentOf.get(currentQuestId) ?? null;
+                if (!parentQuestId) break;
+
+                const siblings = treeMeta.childrenOf.get(parentQuestId) ?? [];
+                if (siblings.length > 1) {
+                    next.delete(getBranchCollapseKey(parentQuestId));
+                } else if (siblings.length === 1) {
+                    next.delete(getLinearCollapseKey(parentQuestId));
+                }
+
+                currentQuestId = parentQuestId;
+            }
+
+            return next;
+        });
+    };
+
     return (
         <>
             <div className="flex items-center gap-3 px-1 text-xs text-gray-500">
@@ -863,7 +1029,12 @@ export function QuestsTree() {
                         leadsToByQuestId={leadsToByQuestId}
                         showDebugButton={showDebug}
                         highlightedQuestId={highlightedQuestId}
-                        onQuestLinkClick={highlightQuest}
+                        onQuestLinkClick={(questId, event) => {
+                            expandQuestPath(questId);
+                            highlightQuest(questId, event);
+                        }}
+                        collapsedGroups={collapsedGroups}
+                        setGroupCollapsed={setGroupCollapsed}
                     />
                 );
             })}
