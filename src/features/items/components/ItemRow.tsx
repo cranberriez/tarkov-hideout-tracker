@@ -29,7 +29,7 @@ function SourceBadges({
 }) {
     if (!isHideout && !isQuest) return null;
     return (
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div className="flex flex-col items-center gap-1 m-0.5 shrink-0">
             {isHideout && (
                 <span title="Required for hideout">
                     <Bolt size={size} className="text-gray-400" />
