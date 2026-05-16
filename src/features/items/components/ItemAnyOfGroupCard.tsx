@@ -113,7 +113,7 @@ function GroupHeader({ group, expanded, isIconMode }: GroupHeaderProps) {
                 <div className="min-w-0 flex-1">
                     <h3
                         className={cn(
-                            "leading-tight font-bold text-balance text-gray-100",
+                            "leading-tight font-bold text-balance line-clamp-2 text-gray-100",
                             isIconMode ? "line-clamp-2 text-xs" : "text-sm",
                         )}
                         title={group.questName}
@@ -175,7 +175,7 @@ function GroupItemsGrid({ items, isFirRequired, onClickItem }: GroupItemsGridPro
                     </div>
 
                     <div className="min-w-0">
-                        <div className="truncate text-sm text-gray-100">{item.name}</div>
+                        <div className="line-clamp-2 text-sm text-gray-100">{item.name}</div>
                     </div>
                 </button>
             ))}
