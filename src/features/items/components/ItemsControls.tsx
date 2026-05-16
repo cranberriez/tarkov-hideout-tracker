@@ -64,12 +64,16 @@ export function ItemsControls({ onOpenSearch, children }: ItemsControlsProps) {
                 onUseCategorizationChange={setUseCategorization}
             />
 
-            <div className="xl:flex xl:min-h-0 xl:items-start xl:gap-4">
+            <div className="relative min-h-0">
                 <div
                     className={cn(
-                        "overflow-hidden xl:shrink-0 xl:transition-[width] xl:duration-200 xl:ease-out",
-                        itemFiltersOpen ? "xl:w-[340px]" : "xl:w-0 hidden",
+                        "absolute left-0 top-0 z-45 w-full max-w-[340px] transition-all duration-200 ease-out",
+                        itemFiltersOpen
+                            ? "pointer-events-auto translate-x-0 opacity-100"
+                            : "pointer-events-none -translate-x-4 opacity-0",
                     )}
+                    aria-hidden={!itemFiltersOpen}
+                    inert={!itemFiltersOpen}
                 >
                     <ItemsFiltersPanel
                         checklistViewMode={checklistViewMode}
@@ -96,12 +100,7 @@ export function ItemsControls({ onOpenSearch, children }: ItemsControlsProps) {
                         onHideCheapChange={setHideCheap}
                         cheapPriceThreshold={cheapPriceThreshold}
                         onCheapPriceThresholdChange={setCheapPriceThreshold}
-                        className={cn(
-                            "transition-all duration-200 ease-out xl:w-[340px]",
-                            itemFiltersOpen
-                                ? "translate-x-0 opacity-100"
-                                : "hidden xl:pointer-events-none xl:block xl:-translate-x-full xl:opacity-0",
-                        )}
+                        className="w-full"
                     />
                 </div>
 
