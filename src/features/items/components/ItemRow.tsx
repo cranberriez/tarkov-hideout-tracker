@@ -83,7 +83,7 @@ export function ItemRow({
     });
 
     // Calculate total estimated cost if we have price data
-    const estimatedTotal = unitPrice ? unitPrice * needs.neededTotal : 0;
+    const estimatedTotal = unitPrice ? unitPrice * needs.neededNonFir : 0;
 
     const firRequired = firCount ?? 0;
     const nonFirRequired = Math.max(0, count - firRequired);
@@ -228,7 +228,7 @@ export function ItemRow({
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-2 mt-auto pt-2 border-t border-white/5 z-1">
+            <div className="grid grid-cols-2 gap-2 mt-auto z-1">
                 {/* Required */}
                 <div className="bg-black/30 p-1.5 rounded">
                     <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">
