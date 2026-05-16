@@ -201,7 +201,7 @@ export const useUserStore = create<UserState>()(
 
             questViewMode: "tree",
             questSelectedTraders: [],
-            questFaction: null,
+            questFaction: "USEC",
             questShowKappa: false,
             questShowLightkeeper: false,
             questSelectedMaps: [],
@@ -547,7 +547,7 @@ export const useUserStore = create<UserState>()(
                     questTraderLoyaltyLevels: {},
                     questViewMode: "tree",
                     questSelectedTraders: [],
-                    questFaction: null,
+                    questFaction: "USEC",
                     questShowKappa: false,
                     questShowLightkeeper: false,
                     questSelectedMaps: [],
@@ -578,7 +578,7 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: USER_STORE_STORAGE_KEY,
-            version: 10,
+            version: 11,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -661,6 +661,16 @@ export const useUserStore = create<UserState>()(
                     nextState = {
                         ...nextState,
                         itemFiltersOpen: false,
+                    };
+                }
+
+                if (version < 11) {
+                    nextState = {
+                        ...nextState,
+                        questFaction:
+                            nextState.questFaction === "BEAR" || nextState.questFaction === "USEC"
+                                ? nextState.questFaction
+                                : "USEC",
                     };
                 }
 

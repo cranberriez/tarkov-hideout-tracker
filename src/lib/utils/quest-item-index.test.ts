@@ -149,3 +149,70 @@ test("deriveQuestItemStates caps quest demand by max depth from strictly availab
     assert.deepEqual(depthThree.map((entry) => entry.itemId), ["bolts", "screws"]);
     assert.equal(depthTwo[0]?.relatedQuests[0]?.status, "future");
 });
+
+test("deriveQuestItemStates excludes opposing faction quests from override paths", () => {
+    const quests = [
+        makeQuest({
+            id: "bear-fir",
+            name: "BEAR FiR hand-in",
+            factionName: "BEAR",
+            objectives: [
+                {
+                    id: "obj-1",
+                    type: "giveItem",
+                    description: "Hand in FiR flash drive",
+                    optional: false,
+                    count: 1,
+                    foundInRaid: true,
+                    items: [
+                        {
+                            id: "flash-drive",
+                            name: "Secure Flash drive",
+                            normalizedName: "secure-flash-drive",
+                            iconLink: "/flash-drive.png",
+                            gridImageLink: "/flash-drive-grid.png",
+                        },
+                    ],
+                },
+            ],
+        }),
+        makeQuest({
+            id: "bear-pinned",
+            name: "BEAR pinned hand-in",
+            factionName: "BEAR",
+            objectives: [
+                {
+                    id: "obj-2",
+                    type: "giveItem",
+                    description: "Hand in bolts",
+                    optional: false,
+                    count: 2,
+                    foundInRaid: false,
+                    items: [
+                        {
+                            id: "bolts",
+                            name: "Bolts",
+                            normalizedName: "bolts",
+                            iconLink: "/bolts.png",
+                            gridImageLink: "/bolts-grid.png",
+                        },
+                    ],
+                },
+            ],
+        }),
+    ];
+
+    const states = deriveQuestItemStates(buildQuestItemIndex(quests), {
+        completedQuests: {},
+        ignoredQuests: {},
+        pinnedQuests: { "bear-pinned": true },
+        playerLevel: 30,
+        prestigeLevel: 0,
+        faction: "USEC",
+        traderLoyaltyLevels: { prapor: 3 },
+        quests,
+        showFutureFir: true,
+    });
+
+    assert.deepEqual(states.map((entry) => entry.itemId), []);
+});

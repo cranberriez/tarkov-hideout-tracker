@@ -176,6 +176,7 @@ interface QuestItemDeriveContext {
     completedQuests: Record<string, boolean>;
     ignoredQuests: Record<string, boolean>;
     pinnedQuests: Record<string, boolean>;
+    faction: QuestAvailabilityProfile["faction"];
     availableQuestIds: Set<string>;
     nextLayerQuestIds: Set<string>;
     futureQuestIds: Set<string>;
@@ -554,6 +555,16 @@ function getFutureQuestIds(
     return futureQuestIds;
 }
 
+function questMatchesItemVisibilityFilters(
+    quest: QuestAvailabilityQuest,
+    context: QuestItemDeriveContext,
+) {
+    return (
+        matchesFactionVisibility(quest.factionName, context.faction) &&
+        questMatchesBranchFilters(quest, context.showKappa, context.showLightkeeper)
+    );
+}
+
 function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestItemDeriveContext {
     const { completedQuests, ignoredQuests, pinnedQuests, playerLevel } = options;
     const visibilityMode = options.visibilityMode ?? "available";
@@ -598,6 +609,7 @@ function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestIte
         completedQuests,
         ignoredQuests,
         pinnedQuests,
+        faction: options.faction,
         availableQuestIds,
         nextLayerQuestIds,
         futureQuestIds: getFutureQuestIds(
@@ -630,9 +642,7 @@ function isQuestVisibleByMode(quest: QuestItemLink, context: QuestItemDeriveCont
     if (completedQuests[quest.questId]) return false;
     if (ignoredQuests[quest.questId] && !context.showIgnored) return false;
     if (!availabilityQuest) return false;
-    if (!questMatchesBranchFilters(availabilityQuest, context.showKappa, context.showLightkeeper)) {
-        return false;
-    }
+    if (!questMatchesItemVisibilityFilters(availabilityQuest, context)) return false;
 
     if (availableQuestIds.has(quest.questId)) return true;
 
@@ -689,17 +699,12 @@ function deriveQuestItemStateFromContext(
             const isIgnored = !!ignoredQuests[quest.questId];
             const isPinned = !!pinnedQuests[quest.questId];
             const availabilityQuest = context.questsById.get(quest.questId);
-            const isInFilteredBranch =
-                !!availabilityQuest &&
-                questMatchesBranchFilters(
-                    availabilityQuest,
-                    context.showKappa,
-                    context.showLightkeeper,
-                );
+            const matchesVisibilityFilters =
+                !!availabilityQuest && questMatchesItemVisibilityFilters(availabilityQuest, context);
             const isVisibleByMode = isQuestVisibleByMode(quest, context);
-            const isPinnedOverride = isInFilteredBranch && isPinned && !isCompleted;
+            const isPinnedOverride = matchesVisibilityFilters && isPinned && !isCompleted;
             const isFutureFirOverride =
-                isInFilteredBranch &&
+                matchesVisibilityFilters &&
                 showFutureFir &&
                 quest.requiredFirCount > 0 &&
                 !isCompleted &&
@@ -810,15 +815,10 @@ export function deriveQuestAnyOfGroups(
             const isIgnored = !!context.ignoredQuests[group.questId];
             const isPinned = !!context.pinnedQuests[group.questId];
             const availabilityQuest = context.questsById.get(group.questId);
-            const isInFilteredBranch =
-                !!availabilityQuest &&
-                questMatchesBranchFilters(
-                    availabilityQuest,
-                    context.showKappa,
-                    context.showLightkeeper,
-                );
+            const matchesVisibilityFilters =
+                !!availabilityQuest && questMatchesItemVisibilityFilters(availabilityQuest, context);
 
-            if (!availabilityQuest || !isInFilteredBranch) return null;
+            if (!availabilityQuest || !matchesVisibilityFilters) return null;
 
             const questLike: QuestItemLink = {
                 itemId: group.items[0]?.id ?? group.groupId,
