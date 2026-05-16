@@ -199,7 +199,7 @@ function isGiveItemObjective(
 
 function isFindItemObjective(
     objective: FullQuestObjective,
-): objective is Extract<FullQuestObjective, { type: "findItem" }> {
+): objective is FullQuestObjective & { type: "findItem" } {
     return objective.type === "findItem";
 }
 
