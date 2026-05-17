@@ -99,6 +99,7 @@ interface UserState {
     toggleHiddenStation: (stationId: string) => void;
     toggleRequirement: (requirementId: string) => void;
     toggleQuestCompletion: (questId: string) => void;
+    applyQuestCompletionChange: (changes: { complete?: string[]; uncomplete?: string[] }) => void;
     toggleQuestHaveItems: (questId: string) => void;
     toggleIgnoredQuest: (questId: string) => void;
     togglePinnedQuest: (questId: string) => void;
@@ -269,6 +270,23 @@ export const useUserStore = create<UserState>()(
                             ? { questsWithItems: { ...state.questsWithItems, [questId]: false } }
                             : {}),
                     };
+                }),
+
+            applyQuestCompletionChange: ({ complete = [], uncomplete = [] }) =>
+                set((state) => {
+                    if (complete.length === 0 && uncomplete.length === 0) return {};
+
+                    const nextCompletedQuests = { ...state.completedQuests };
+                    for (const questId of complete) nextCompletedQuests[questId] = true;
+                    for (const questId of uncomplete) nextCompletedQuests[questId] = false;
+
+                    if (complete.length === 0) {
+                        return { completedQuests: nextCompletedQuests };
+                    }
+
+                    const nextQuestsWithItems = { ...state.questsWithItems };
+                    for (const questId of complete) nextQuestsWithItems[questId] = false;
+                    return { completedQuests: nextCompletedQuests, questsWithItems: nextQuestsWithItems };
                 }),
 
             toggleQuestHaveItems: (questId) =>
