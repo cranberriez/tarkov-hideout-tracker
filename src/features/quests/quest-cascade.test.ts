@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { FullQuest } from "../../types/types";
-import { collectCompleteCascade } from "./quest-cascade";
+import { collectCompleteCascade, collectUncompleteCascade } from "./quest-cascade";
 import { NETWORK_PROVIDER_PART_1_ID } from "../../lib/utils/sensitive-quest-backfill";
 
 const prapor = { id: "prapor", name: "Prapor", normalizedName: "prapor", imageLink: null, image4xLink: null };
@@ -117,8 +117,6 @@ test("collectCompleteCascade survives cycles", () => {
     assert.deepEqual(result.toComplete.sort(), ["a", "b"]);
 });
 
-import { collectUncompleteCascade } from "./quest-cascade";
-
 function buildLeadsTo(quests: FullQuest[]) {
     const map = new Map<string, Set<string>>();
     for (const quest of quests) {
@@ -179,4 +177,32 @@ test("collectUncompleteCascade flags cross-trader dependents", () => {
 
     assert.deepEqual(result.toUncomplete.sort(), ["root", "ther-dep"]);
     assert.deepEqual(result.crossTraderQuestIds, ["ther-dep"]);
+});
+
+test("collectUncompleteCascade includes the root even when not in completedQuests", () => {
+    const quests = [
+        makeQuest({ id: "root", name: "Root" }),
+        makeQuest({ id: "dep", name: "Dep", taskRequirements: [{ task: { id: "root", name: "Root" }, status: ["Success"] }] }),
+    ];
+    const result = collectUncompleteCascade("root", {
+        questsById: buildQuestsById(quests),
+        completedQuests: { dep: true },
+        leadsToByQuestId: buildLeadsTo(quests),
+    });
+
+    assert.deepEqual(result.toUncomplete.sort(), ["dep", "root"]);
+});
+
+test("collectUncompleteCascade survives cycles in dependents", () => {
+    const quests = [
+        makeQuest({ id: "a", name: "A", taskRequirements: [{ task: { id: "b", name: "B" }, status: ["Success"] }] }),
+        makeQuest({ id: "b", name: "B", taskRequirements: [{ task: { id: "a", name: "A" }, status: ["Success"] }] }),
+    ];
+    const result = collectUncompleteCascade("a", {
+        questsById: buildQuestsById(quests),
+        completedQuests: { a: true, b: true },
+        leadsToByQuestId: buildLeadsTo(quests),
+    });
+
+    assert.deepEqual(result.toUncomplete.sort(), ["a", "b"]);
 });
