@@ -116,3 +116,67 @@ test("collectCompleteCascade survives cycles", () => {
 
     assert.deepEqual(result.toComplete.sort(), ["a", "b"]);
 });
+
+import { collectUncompleteCascade } from "./quest-cascade";
+
+function buildLeadsTo(quests: FullQuest[]) {
+    const map = new Map<string, Set<string>>();
+    for (const quest of quests) {
+        for (const req of quest.taskRequirements) {
+            const set = map.get(req.task.id) ?? new Set<string>();
+            set.add(quest.id);
+            map.set(req.task.id, set);
+        }
+    }
+    return map;
+}
+
+test("collectUncompleteCascade returns just the root when nothing downstream is complete", () => {
+    const quests = [
+        makeQuest({ id: "root", name: "Root" }),
+        makeQuest({ id: "leaf", name: "Leaf", taskRequirements: [{ task: { id: "root", name: "Root" }, status: ["Success"] }] }),
+    ];
+    const result = collectUncompleteCascade("root", {
+        questsById: buildQuestsById(quests),
+        completedQuests: { root: true },
+        leadsToByQuestId: buildLeadsTo(quests),
+    });
+
+    assert.deepEqual(result.toUncomplete, ["root"]);
+});
+
+test("collectUncompleteCascade walks transitive completed dependents", () => {
+    const quests = [
+        makeQuest({ id: "root", name: "Root" }),
+        makeQuest({ id: "mid", name: "Mid", taskRequirements: [{ task: { id: "root", name: "Root" }, status: ["Success"] }] }),
+        makeQuest({ id: "leaf", name: "Leaf", taskRequirements: [{ task: { id: "mid", name: "Mid" }, status: ["Success"] }] }),
+        makeQuest({ id: "leaf-incomplete", name: "Leaf 2", taskRequirements: [{ task: { id: "mid", name: "Mid" }, status: ["Success"] }] }),
+    ];
+    const result = collectUncompleteCascade("root", {
+        questsById: buildQuestsById(quests),
+        completedQuests: { root: true, mid: true, leaf: true },
+        leadsToByQuestId: buildLeadsTo(quests),
+    });
+
+    assert.deepEqual(result.toUncomplete.sort(), ["leaf", "mid", "root"]);
+});
+
+test("collectUncompleteCascade flags cross-trader dependents", () => {
+    const quests = [
+        makeQuest({ id: "root", name: "Root" }),
+        makeQuest({
+            id: "ther-dep",
+            name: "Therapist Dep",
+            trader: therapist,
+            taskRequirements: [{ task: { id: "root", name: "Root" }, status: ["Success"] }],
+        }),
+    ];
+    const result = collectUncompleteCascade("root", {
+        questsById: buildQuestsById(quests),
+        completedQuests: { root: true, "ther-dep": true },
+        leadsToByQuestId: buildLeadsTo(quests),
+    });
+
+    assert.deepEqual(result.toUncomplete.sort(), ["root", "ther-dep"]);
+    assert.deepEqual(result.crossTraderQuestIds, ["ther-dep"]);
+});
