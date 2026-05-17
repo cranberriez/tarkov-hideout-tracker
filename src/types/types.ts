@@ -130,3 +130,156 @@ export interface MarketPrice {
 export interface ItemsPayload {
     items: ItemDetails[];
 }
+
+// ---- Quests ----
+
+export interface QuestItem {
+    id: string;
+    name: string;
+    normalizedName: string;
+    iconLink?: string;
+    gridImageLink?: string;
+}
+
+export interface QuestObjectiveItem {
+    id: string;
+    type: "giveItem";
+    description: string;
+    optional: boolean;
+    count: number;
+    foundInRaid: boolean;
+    items: QuestItem[];
+}
+
+export interface QuestPrerequisite {
+    task: { id: string; name: string };
+    status: string[];
+}
+
+export interface Quest {
+    id: string;
+    name: string;
+    normalizedName: string;
+    wikiLink?: string | null;
+    minPlayerLevel?: number | null;
+    kappaRequired?: boolean | null;
+    lightkeeperRequired?: boolean | null;
+    factionName?: string | null;
+    experience: number;
+    trader: {
+        id: string;
+        name: string;
+        normalizedName: string;
+    };
+    taskRequirements: QuestPrerequisite[];
+    objectives: QuestObjectiveItem[];
+}
+
+export interface QuestsPayload {
+    quests: Quest[];
+}
+
+// ---- Traders ----
+
+export interface Trader {
+    id: string;
+    name: string;
+    normalizedName: string;
+    imageLink?: string;
+    image4xLink?: string;
+}
+
+export interface TradersPayload {
+    traders: Trader[];
+}
+
+// ---- Full Quest Types (all objective types, used by quests page) ----
+
+export interface QuestMap {
+    id: string;
+    name: string;
+    normalizedName: string;
+}
+
+export interface QuestObjectiveBase {
+    id: string;
+    type: string;
+    description: string;
+    optional: boolean;
+}
+
+export interface QuestObjectiveItemType extends QuestObjectiveBase {
+    type: "giveItem" | "findItem";
+    count: number;
+    foundInRaid: boolean;
+    items: QuestItem[];
+}
+
+export interface QuestObjectiveShootType extends QuestObjectiveBase {
+    type: "shoot";
+    count: number;
+    target: string;
+    bodyParts: string[];
+}
+
+export interface QuestObjectiveExtractType extends QuestObjectiveBase {
+    type: "extract";
+    exitName: string | null;
+    count: number | null;
+}
+
+export type FullQuestObjective =
+    | QuestObjectiveItemType
+    | QuestObjectiveShootType
+    | QuestObjectiveExtractType
+    | QuestObjectiveBase;
+
+export interface QuestTraderRequirement {
+    id: string;
+    trader: {
+        id: string;
+        name: string;
+        normalizedName: string;
+        imageLink?: string | null;
+        image4xLink?: string | null;
+    };
+    requirementType: string;
+    compareMethod: string;
+    value: number;
+}
+
+export interface QuestPrestige {
+    id: string;
+    name: string;
+    prestigeLevel: number;
+    imageLink?: string | null;
+    iconLink?: string | null;
+}
+
+export interface FullQuest {
+    id: string;
+    name: string;
+    normalizedName: string;
+    wikiLink?: string | null;
+    minPlayerLevel?: number | null;
+    kappaRequired?: boolean | null;
+    lightkeeperRequired?: boolean | null;
+    factionName?: string | null;
+    experience: number;
+    map?: QuestMap | null;
+    trader: {
+        id: string;
+        name: string;
+        normalizedName: string;
+        imageLink?: string | null;
+        image4xLink?: string | null;
+    };
+    taskRequirements: QuestPrerequisite[];
+    traderRequirements: QuestTraderRequirement[];
+    requiredPrestige?: QuestPrestige | null;
+    objectives: FullQuestObjective[];
+}
+
+export interface FullQuestsPayload {
+    quests: FullQuest[];
+}

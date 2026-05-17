@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { DEFAULT_IGNORED_QUESTS } from "@/lib/cfg/defaultIgnoredQuests";
 import type { Station } from "@/types";
+
+export const USER_STORE_STORAGE_KEY = "tarkov-hideout-user-state";
 
 export type GameEdition =
     | "Standard"
@@ -10,12 +13,20 @@ export type GameEdition =
     | "Unheard";
 export type GameMode = "PVP" | "PVE";
 export type ItemSize = "Icon" | "Compact" | "Expanded";
+export type ItemSourceFilter = "all" | "hideout" | "quest";
+export type ItemQuestVisibilityMode = "available" | "nextLayer" | "allFuture" | "custom";
+
+type StationEditionTarget = Pick<Station, "id" | "normalizedName">;
 
 interface UserState {
     // Per-station progress and visibility
     stationLevels: Record<string, number>; // stationId -> current level
     hiddenStations: Record<string, boolean>; // stationId -> hidden?
     completedRequirements: Record<string, boolean>; // requirementId -> completed?
+    completedQuests: Record<string, boolean>; // questId -> completed?
+    questsWithItems: Record<string, boolean>; // questId -> items collected but not handed in
+    ignoredQuests: Record<string, boolean>; // questId -> hidden from quest demand
+    pinnedQuests: Record<string, boolean>; // questId -> manually prioritized
 
     // Per-item ownership counts
     itemCounts: Record<string, { have: number; haveFir: number }>; // itemId -> counts
@@ -29,12 +40,46 @@ interface UserState {
     hideRequirements: boolean; // hide the requirements section entirely
     cheapPriceThreshold: number; // e.g. in roubles
 
+    itemSourceFilter: ItemSourceFilter;
+    itemFiltersOpen: boolean;
+
     sellToPreference: "best" | "flea" | "trader";
     useCategorization: boolean;
 
     // View options
     hideoutCompactMode: boolean;
     itemsSize: ItemSize;
+
+    // Quest tracking
+    playerLevel: number;
+    prestigeLevel: number;
+    questTraderLoyaltyLevels: Record<string, number>;
+
+    // Quest page filter preferences (persisted)
+    questViewMode: "list" | "byTrader" | "tree";
+    questSelectedTraders: string[];
+    questFaction: "USEC" | "BEAR" | null;
+    questShowKappa: boolean;
+    questShowLightkeeper: boolean;
+    questSelectedMaps: string[];
+    questHideCompleted: boolean;
+    questShowAvailableOnly: boolean;
+    questShowHandInOnly: boolean;
+    questShowFirHandInOnly: boolean;
+    questShowPinnedOnly: boolean;
+    questShowIgnored: boolean;
+    questShowDebug: boolean;
+    questShowPrereqs: boolean;
+    questSidebarCollapsed: boolean;
+
+    itemShowPinnedQuestSection: boolean;
+    itemShowPinnedQuestOnly: boolean;
+    itemQuestMaxDepth: number;
+    itemQuestVisibilityMode: ItemQuestVisibilityMode;
+    itemQuestCustomLookahead: number;
+    itemQuestCustomLevelLookahead: number;
+    itemShowFutureFir: boolean;
+    itemShowIgnored: boolean;
 
     // Onboarding / feature flags
     hasSeenItemConversionModal: boolean;
@@ -53,10 +98,16 @@ interface UserState {
     incrementStationLevel: (stationId: string) => void;
     toggleHiddenStation: (stationId: string) => void;
     toggleRequirement: (requirementId: string) => void;
+    toggleQuestCompletion: (questId: string) => void;
+    toggleQuestHaveItems: (questId: string) => void;
+    toggleIgnoredQuest: (questId: string) => void;
+    togglePinnedQuest: (questId: string) => void;
 
     addItemCounts: (itemId: string, haveDelta: number, haveFirDelta: number) => void;
 
     setChecklistViewMode: (mode: "all" | "nextLevel") => void;
+    setItemSourceFilter: (value: ItemSourceFilter) => void;
+    setItemFiltersOpen: (value: boolean) => void;
     setShowHidden: (value: boolean) => void;
     setHideCheap: (value: boolean) => void;
     setHideMoney: (value: boolean) => void;
@@ -76,9 +127,41 @@ interface UserState {
     setGameMode: (mode: GameMode) => void;
     completeSetup: () => void;
     setSetupOpen: (isOpen: boolean) => void;
-    applyEditionBonuses: (stations: Station[]) => void;
+    setPlayerLevel: (level: number) => void;
+    setPrestigeLevel: (level: number) => void;
+    setQuestTraderLoyaltyLevel: (traderId: string, level: number) => void;
+
+    setQuestViewMode: (mode: "list" | "byTrader" | "tree") => void;
+    setQuestSelectedTraders: (ids: string[]) => void;
+    setQuestFaction: (f: "USEC" | "BEAR" | null) => void;
+    setQuestShowKappa: (v: boolean) => void;
+    setQuestShowLightkeeper: (v: boolean) => void;
+    setQuestSelectedMaps: (maps: string[]) => void;
+    setQuestHideCompleted: (v: boolean) => void;
+    setQuestShowAvailableOnly: (v: boolean) => void;
+    setQuestShowHandInOnly: (v: boolean) => void;
+    setQuestShowFirHandInOnly: (v: boolean) => void;
+    setQuestShowPinnedOnly: (v: boolean) => void;
+    setQuestShowIgnored: (v: boolean) => void;
+    setQuestShowDebug: (v: boolean) => void;
+    setQuestShowPrereqs: (v: boolean) => void;
+    setQuestSidebarCollapsed: (v: boolean) => void;
+
+    setItemShowPinnedQuestSection: (v: boolean) => void;
+    setItemShowPinnedQuestOnly: (v: boolean) => void;
+    setItemQuestMaxDepth: (v: number) => void;
+    setItemQuestVisibilityMode: (value: ItemQuestVisibilityMode) => void;
+    setItemQuestCustomLookahead: (value: number) => void;
+    setItemQuestCustomLevelLookahead: (value: number) => void;
+    setItemShowFutureFir: (value: boolean) => void;
+    setItemShowIgnored: (value: boolean) => void;
+
+    applyEditionBonuses: (stations: StationEditionTarget[]) => void;
 
     importStationLevels: (levels: Record<string, number>) => void;
+    resetHideoutData: () => void;
+    resetItemData: () => void;
+    resetQuestData: () => void;
     resetAll: () => void;
 
     // Initialization helpers
@@ -91,8 +174,14 @@ export const useUserStore = create<UserState>()(
             stationLevels: {},
             hiddenStations: {},
             completedRequirements: {},
+            completedQuests: {},
+            questsWithItems: {},
+            ignoredQuests: DEFAULT_IGNORED_QUESTS,
+            pinnedQuests: {},
             itemCounts: {},
             checklistViewMode: "all",
+            itemSourceFilter: "all",
+            itemFiltersOpen: false,
             showHidden: false,
             hideCheap: false,
             hideMoney: false,
@@ -105,6 +194,35 @@ export const useUserStore = create<UserState>()(
             hasSeenHideoutLevelWarning: false,
             sellToPreference: "best",
             useCategorization: false,
+
+            playerLevel: 1,
+            prestigeLevel: 0,
+            questTraderLoyaltyLevels: {},
+
+            questViewMode: "tree",
+            questSelectedTraders: [],
+            questFaction: "USEC",
+            questShowKappa: false,
+            questShowLightkeeper: false,
+            questSelectedMaps: [],
+            questHideCompleted: false,
+            questShowAvailableOnly: false,
+            questShowHandInOnly: false,
+            questShowFirHandInOnly: false,
+            questShowPinnedOnly: false,
+            questShowIgnored: true,
+            questShowDebug: false,
+            questShowPrereqs: true,
+            questSidebarCollapsed: false,
+
+            itemShowPinnedQuestSection: true,
+            itemShowPinnedQuestOnly: false,
+            itemQuestMaxDepth: 1,
+            itemQuestVisibilityMode: "available",
+            itemQuestCustomLookahead: 5,
+            itemQuestCustomLevelLookahead: 5,
+            itemShowFutureFir: false,
+            itemShowIgnored: false,
 
             gameEdition: null,
             gameMode: "PVP",
@@ -141,6 +259,42 @@ export const useUserStore = create<UserState>()(
                 });
             },
 
+            toggleQuestCompletion: (questId) =>
+                set((state) => {
+                    const willComplete = !state.completedQuests[questId];
+                    return {
+                        completedQuests: { ...state.completedQuests, [questId]: willComplete },
+                        // clear "have items" when marking a quest complete
+                        ...(willComplete
+                            ? { questsWithItems: { ...state.questsWithItems, [questId]: false } }
+                            : {}),
+                    };
+                }),
+
+            toggleQuestHaveItems: (questId) =>
+                set((state) => ({
+                    questsWithItems: {
+                        ...state.questsWithItems,
+                        [questId]: !state.questsWithItems[questId],
+                    },
+                })),
+
+            toggleIgnoredQuest: (questId) =>
+                set((state) => ({
+                    ignoredQuests: {
+                        ...state.ignoredQuests,
+                        [questId]: !state.ignoredQuests[questId],
+                    },
+                })),
+
+            togglePinnedQuest: (questId) =>
+                set((state) => ({
+                    pinnedQuests: {
+                        ...state.pinnedQuests,
+                        [questId]: !state.pinnedQuests[questId],
+                    },
+                })),
+
             addItemCounts: (itemId, haveDelta, haveFirDelta) => {
                 set((state) => {
                     const current = state.itemCounts[itemId] ?? { have: 0, haveFir: 0 };
@@ -157,6 +311,8 @@ export const useUserStore = create<UserState>()(
             },
 
             setChecklistViewMode: (mode) => set({ checklistViewMode: mode }),
+            setItemSourceFilter: (value) => set({ itemSourceFilter: value }),
+            setItemFiltersOpen: (value) => set({ itemFiltersOpen: value }),
             setShowHidden: (value) => set({ showHidden: value }),
             setHideCheap: (value) => set({ hideCheap: value }),
             setHideMoney: (value) => set({ hideMoney: value }),
@@ -167,6 +323,69 @@ export const useUserStore = create<UserState>()(
             setItemsSize: (value) => set({ itemsSize: value }),
             setSellToPreference: (value) => set({ sellToPreference: value }),
             setUseCategorization: (value) => set({ useCategorization: value }),
+
+            setPlayerLevel: (level) => set({ playerLevel: level }),
+            setPrestigeLevel: (level) => set({ prestigeLevel: level }),
+            setQuestTraderLoyaltyLevel: (traderId, level) =>
+                set((state) => ({
+                    questTraderLoyaltyLevels: {
+                        ...state.questTraderLoyaltyLevels,
+                        [traderId]: level,
+                    },
+                })),
+
+            setQuestViewMode: (mode) => set({ questViewMode: mode }),
+            setQuestSelectedTraders: (ids) => set({ questSelectedTraders: ids }),
+            setQuestFaction: (f) => set({ questFaction: f }),
+            setQuestShowKappa: (v) => set({ questShowKappa: v }),
+            setQuestShowLightkeeper: (v) => set({ questShowLightkeeper: v }),
+            setQuestSelectedMaps: (maps) => set({ questSelectedMaps: maps }),
+            setQuestHideCompleted: (v) => set({ questHideCompleted: v }),
+            setQuestShowAvailableOnly: (v) => set({ questShowAvailableOnly: v }),
+            setQuestShowHandInOnly: (v) =>
+                set((state) => ({
+                    questShowHandInOnly: v,
+                    questShowFirHandInOnly: v ? state.questShowFirHandInOnly : false,
+                })),
+            setQuestShowFirHandInOnly: (v) =>
+                set((state) => ({
+                    questShowFirHandInOnly: state.questShowHandInOnly ? v : false,
+                })),
+            setQuestShowPinnedOnly: (v) => set({ questShowPinnedOnly: v }),
+            setQuestShowIgnored: (v) => set({ questShowIgnored: v }),
+            setQuestShowDebug: (v) => set({ questShowDebug: v }),
+            setQuestShowPrereqs: (v) => set({ questShowPrereqs: v }),
+            setQuestSidebarCollapsed: (v) => set({ questSidebarCollapsed: v }),
+
+            setItemShowPinnedQuestSection: (v) =>
+                set((state) => ({
+                    itemShowPinnedQuestSection: v,
+                    itemShowPinnedQuestOnly: v ? state.itemShowPinnedQuestOnly : false,
+                })),
+            setItemShowPinnedQuestOnly: (v) =>
+                set((state) => ({
+                    itemShowPinnedQuestOnly: v,
+                    itemShowPinnedQuestSection: v ? true : state.itemShowPinnedQuestSection,
+                })),
+            setItemQuestMaxDepth: (v) =>
+                set({
+                    itemQuestMaxDepth: Number.isFinite(v) ? Math.max(1, Math.floor(v)) : 1,
+                }),
+            setItemQuestVisibilityMode: (value) => set({ itemQuestVisibilityMode: value }),
+            setItemQuestCustomLookahead: (value) =>
+                set({
+                    itemQuestCustomLookahead: Number.isFinite(value)
+                        ? Math.max(0, Math.floor(value))
+                        : 0,
+                }),
+            setItemQuestCustomLevelLookahead: (value) =>
+                set({
+                    itemQuestCustomLevelLookahead: Number.isFinite(value)
+                        ? Math.max(0, Math.floor(value))
+                        : 0,
+                }),
+            setItemShowFutureFir: (value) => set({ itemShowFutureFir: value }),
+            setItemShowIgnored: (value) => set({ itemShowIgnored: value }),
 
             setHasSeenItemConversionModal: (value) => set({ hasSeenItemConversionModal: value }),
             setHasSeenHideoutLevelWarning: (value) => set({ hasSeenHideoutLevelWarning: value }),
@@ -184,7 +403,6 @@ export const useUserStore = create<UserState>()(
 
                 const newLevels = { ...stationLevels };
                 let stashLevel = 1;
-                let cultistLevel = 0;
 
                 switch (gameEdition) {
                     case "Standard":
@@ -201,7 +419,6 @@ export const useUserStore = create<UserState>()(
                         break;
                     case "Unheard":
                         stashLevel = 4;
-                        cultistLevel = 1;
                         break;
                 }
 
@@ -277,13 +494,42 @@ export const useUserStore = create<UserState>()(
                 set({ stationLevels: levels });
             },
 
+            resetHideoutData: () => {
+                set(() => ({
+                    stationLevels: {},
+                    hiddenStations: {},
+                    completedRequirements: {},
+                }));
+            },
+
+            resetItemData: () => {
+                set(() => ({
+                    itemCounts: {},
+                }));
+            },
+
+            resetQuestData: () => {
+                set(() => ({
+                    completedQuests: {},
+                    questsWithItems: {},
+                    ignoredQuests: {},
+                    pinnedQuests: {},
+                }));
+            },
+
             resetAll: () => {
                 set(() => ({
                     stationLevels: {},
                     hiddenStations: {},
                     completedRequirements: {},
+                    completedQuests: {},
+                    questsWithItems: {},
+                    ignoredQuests: {},
+                    pinnedQuests: {},
                     itemCounts: {},
                     checklistViewMode: "all",
+                    itemSourceFilter: "all",
+                    itemFiltersOpen: false,
                     showHidden: false,
                     hideCheap: false,
                     hideMoney: false,
@@ -296,6 +542,32 @@ export const useUserStore = create<UserState>()(
                     hasSeenHideoutLevelWarning: false,
                     sellToPreference: "best",
                     useCategorization: false,
+                    playerLevel: 1,
+                    prestigeLevel: 0,
+                    questTraderLoyaltyLevels: {},
+                    questViewMode: "tree",
+                    questSelectedTraders: [],
+                    questFaction: "USEC",
+                    questShowKappa: false,
+                    questShowLightkeeper: false,
+                    questSelectedMaps: [],
+                    questHideCompleted: false,
+                    questShowAvailableOnly: false,
+                    questShowHandInOnly: false,
+                    questShowFirHandInOnly: false,
+                    questShowPinnedOnly: false,
+                    questShowIgnored: true,
+                    questShowDebug: false,
+                    questShowPrereqs: true,
+                    questSidebarCollapsed: false,
+                    itemShowPinnedQuestSection: true,
+                    itemShowPinnedQuestOnly: false,
+                    itemQuestMaxDepth: 1,
+                    itemQuestVisibilityMode: "available",
+                    itemQuestCustomLookahead: 5,
+                    itemQuestCustomLevelLookahead: 5,
+                    itemShowFutureFir: false,
+                    itemShowIgnored: false,
                     gameEdition: null,
                     gameMode: "PVP",
                     hasCompletedSetup: false,
@@ -305,20 +577,104 @@ export const useUserStore = create<UserState>()(
             },
         }),
         {
-            name: "tarkov-hideout-user-state",
-            version: 2,
+            name: USER_STORE_STORAGE_KEY,
+            version: 11,
             migrate: (persistedState, version) => {
-                if (version < 2) {
-                    const state = persistedState as any;
-                    const itemsCompactMode: boolean | undefined = state.itemsCompactMode;
+                let nextState =
+                    persistedState && typeof persistedState === "object"
+                        ? ({ ...persistedState } as Record<string, unknown>)
+                        : {};
 
-                    return {
-                        ...state,
+                if (version < 2) {
+                    const itemsCompactMode =
+                        typeof nextState.itemsCompactMode === "boolean"
+                            ? nextState.itemsCompactMode
+                            : undefined;
+
+                    nextState = {
+                        ...nextState,
                         itemsSize: itemsCompactMode ? "Compact" : "Expanded",
                     };
                 }
 
-                return persistedState as any;
+                if (version < 3) {
+                    nextState = {
+                        ...nextState,
+                        questViewMode: "tree",
+                        questShowDebug: false,
+                    };
+                }
+
+                if (version < 4) {
+                    nextState = {
+                        ...nextState,
+                        ignoredQuests: {},
+                        pinnedQuests: {},
+                        questShowHandInOnly: false,
+                        questShowFirHandInOnly: false,
+                        questShowPinnedOnly: false,
+                        questShowIgnored: false,
+                        itemShowPinnedQuestSection: true,
+                        itemShowPinnedQuestOnly: false,
+                    };
+                }
+
+                if (version < 5) {
+                    nextState = {
+                        ...nextState,
+                        questTraderLoyaltyLevels: {},
+                    };
+                }
+
+                if (version < 6) {
+                    nextState = {
+                        ...nextState,
+                        questSidebarCollapsed: false,
+                    };
+                }
+
+                if (version < 7) {
+                    nextState = {
+                        ...nextState,
+                        itemQuestMaxDepth: 1,
+                    };
+                }
+
+                if (version < 8) {
+                    nextState = {
+                        ...nextState,
+                        itemQuestVisibilityMode: "available",
+                        itemQuestCustomLookahead: 5,
+                        itemQuestCustomLevelLookahead: 5,
+                        itemShowFutureFir: false,
+                    };
+                }
+
+                if (version < 9) {
+                    nextState = {
+                        ...nextState,
+                        itemShowIgnored: false,
+                    };
+                }
+
+                if (version < 10) {
+                    nextState = {
+                        ...nextState,
+                        itemFiltersOpen: false,
+                    };
+                }
+
+                if (version < 11) {
+                    nextState = {
+                        ...nextState,
+                        questFaction:
+                            nextState.questFaction === "BEAR" || nextState.questFaction === "USEC"
+                                ? nextState.questFaction
+                                : "USEC",
+                    };
+                }
+
+                return nextState as unknown as UserState;
             },
         },
     ),

@@ -244,7 +244,6 @@ export function StationCard({ station, isLocked = false, pooledFirByItem }: Stat
                     stationLevels={stationLevels}
                     hiddenStations={hiddenStations}
                     completedRequirements={completedRequirements}
-                    toggleRequirement={toggleRequirement}
                 />
             )}
         </div>

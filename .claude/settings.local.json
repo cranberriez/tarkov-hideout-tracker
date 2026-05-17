@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs wc -l)",
+      "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ __type\\(name: \\\\\"Task\\\\\"\\) { name fields { name type { name kind ofType { name kind } } } } }\"}')",
+      "Bash(python -m json.tool)",
+      "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H \"Content-Type: application/json\" -d '{\"query\":\"{ __type\\(name: \\\\\"Task\\\\\"\\) { name fields { name type { name kind ofType { name kind } } } } }\"}')",
+      "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ __type\\(name: \\\\\"Trader\\\\\"\\) { name fields { name type { name kind ofType { name kind ofType { name kind } } } } } }\"}')",
+      "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ item: __type\\(name: \\\\\"TaskObjectiveItem\\\\\"\\) { name fields { name type { name kind ofType { name kind ofType { name kind } } } } } questItem: __type\\(name: \\\\\"TaskObjectiveQuestItem\\\\\"\\) { name fields { name type { name kind ofType { name kind } } } } }\"}')",
+      "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ req: __type\\(name: \\\\\"TaskStatusRequirement\\\\\"\\) { name fields { name type { name kind ofType { name kind } } } } rewards: __type\\(name: \\\\\"TaskRewards\\\\\"\\) { name fields { name type { name kind ofType { name kind ofType { name kind } } } } } }\"}')",
+      "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ tasks\\(lang: en\\) { id name wikiLink minPlayerLevel kappaRequired trader { id name normalizedName imageLink image4xLink } taskRequirements { task { id name } status } objectives { id type description optional ... on TaskObjectiveItem { count foundInRaid items { id name normalizedName iconLink gridImageLink } } } } }\"}')",
+      "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ traders\\(lang: en\\) { id name normalizedName imageLink image4xLink } }\"}')",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); const j=JSON.parse\\(d\\); j.data.traders.forEach\\(t=>console.log\\(t.id, t.name, t.normalizedName\\)\\);\")",
+      "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ tasks\\(lang: en, limit: 5\\) { id name factionName kappaRequired lightkeeperRequired minPlayerLevel } }\"}')",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); console.log\\(JSON.stringify\\(JSON.parse\\(d\\).data.tasks, null, 2\\)\\);\")",
+      "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H \"Content-Type: application/json\" -d \"{\\\\\"query\\\\\":\\\\\"{ traders\\(lang: en\\) { id name normalizedName imageLink image4xLink } }\\\\\"}\" -o C:/temp/traders.json)",
+      "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H \"Content-Type: application/json\" -d \"{\\\\\"query\\\\\":\\\\\"{ tasks\\(lang: en, limit: 3\\) { id name factionName kappaRequired lightkeeperRequired minPlayerLevel taskRequirements { task { id name } status } } }\\\\\"}\" -o C:/temp/tasks_sample.json)",
+      "Bash(mkdir -p /tmp)",
+      "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H \"Content-Type: application/json\" -d '{\"query\":\"{ traders\\(lang: en\\) { id name normalizedName imageLink image4xLink } }\"}')",
+      "Read(//tmp/**)",
+      "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ __type\\(name: \\\\\"PlayerLevel\\\\\"\\) { name kind fields { name type { name kind ofType { name kind } } } } }\"}')",
+      "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ __schema { queryType { fields { name description args { name type { name kind ofType { name kind } } } } } } }\"}')",
+      "Bash(curl -s -X POST https://api.tarkov.dev/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ playerLevels { level exp levelBadgeImageLink } }\"}')",
+      "Bash(npx tsc *)",
+      "Bash(curl *)",
+      "Bash(npm run *)"
+    ]
+  },
+  "outputStyle": "default",
+  "spinnerTipsEnabled": true
+}

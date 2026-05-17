@@ -1,7 +1,7 @@
 "use client";
 
 import { ItemDetails } from "@/types";
-import { ChevronRight } from "lucide-react";
+import { Bolt, BookOpen } from "lucide-react";
 import { formatNumber } from "@/lib/utils/format-number";
 import type { ItemSize } from "@/lib/stores/useUserStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -11,10 +11,37 @@ import { computeNeeds } from "@/lib/utils/item-needs";
 interface ItemRowProps {
     item: ItemDetails;
     count: number;
-    firCount?: number; // Optional FiR count
+    firCount?: number;
     size: ItemSize;
-    sellToPreference?: "best" | "flea" | "trader";
+    isHideout?: boolean;
+    isQuest?: boolean;
     onClick?: () => void;
+}
+
+function SourceBadges({
+    isHideout,
+    isQuest,
+    size,
+}: {
+    isHideout: boolean;
+    isQuest: boolean;
+    size: number;
+}) {
+    if (!isHideout && !isQuest) return null;
+    return (
+        <div className="flex flex-col items-center gap-1 m-0.5 shrink-0">
+            {isHideout && (
+                <span title="Required for hideout">
+                    <Bolt size={size} className="text-gray-400" />
+                </span>
+            )}
+            {isQuest && (
+                <span title="Required for quests">
+                    <BookOpen size={size} className="text-amber-400" />
+                </span>
+            )}
+        </div>
+    );
 }
 
 export function ItemRow({
@@ -22,7 +49,8 @@ export function ItemRow({
     count,
     firCount = 0,
     size,
-    sellToPreference = "best",
+    isHideout = false,
+    isQuest = false,
     onClick,
 }: ItemRowProps) {
     const formatPrice = (price?: number) => {
@@ -55,7 +83,7 @@ export function ItemRow({
     });
 
     // Calculate total estimated cost if we have price data
-    const estimatedTotal = unitPrice ? unitPrice * needs.neededTotal : 0;
+    const estimatedTotal = unitPrice ? unitPrice * needs.neededNonFir : 0;
 
     const firRequired = firCount ?? 0;
     const nonFirRequired = Math.max(0, count - firRequired);
@@ -131,11 +159,9 @@ export function ItemRow({
                     </div>
                 </div>
 
-                <div className="absolute top-0 right-0 rounded-xs h-full w-full p-1 opacity-0 group-hover:opacity-100 transition-all bg-gradient-to-bl from-blue-400/15 to-transparent z-0">
-                    <div className="flex items-start justify-end rounded-full h-full w-full">
-                        <ChevronRight size={16} className="text-blue-100" />
-                    </div>
-                </div>
+                <SourceBadges isHideout={isHideout} isQuest={isQuest} size={11} />
+
+                <div className="absolute top-0 right-0 rounded-xs h-full w-full opacity-0 group-hover:opacity-100 transition-all bg-gradient-to-bl from-blue-400/15 to-transparent z-0" />
             </div>
         );
     }
@@ -161,12 +187,15 @@ export function ItemRow({
                 </div>
 
                 <div className="min-w-0 flex-1">
-                    <h3
-                        className="text-sm font-bold text-gray-100 leading-tight line-clamp-2"
-                        title={item.name}
-                    >
-                        {item.name}
-                    </h3>
+                    <div className="flex items-start justify-between gap-1">
+                        <h3
+                            className="text-sm font-bold text-gray-100 leading-tight line-clamp-2"
+                            title={item.name}
+                        >
+                            {item.name}
+                        </h3>
+                        <SourceBadges isHideout={isHideout} isQuest={isQuest} size={12} />
+                    </div>
                     {/* <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400 font-mono">
                         {isCurrency ? (
                             <>
@@ -199,7 +228,7 @@ export function ItemRow({
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-2 mt-auto pt-2 border-t border-white/5 z-1">
+            <div className="grid grid-cols-2 gap-2 mt-auto z-1">
                 {/* Required */}
                 <div className="bg-black/30 p-1.5 rounded">
                     <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">
@@ -269,11 +298,7 @@ export function ItemRow({
                 )}
             </div>
             {/* <div className="opacity-0 h-full w-full group-hover/item:opacity-100 bg-linear-to-br from-bg-card to-white/5 transition-opacity absolute top-0 left-0 z-0 rounded-lg" /> */}
-            <div className="absolute top-0 right-0 rounded-md h-full w-full p-1 opacity-0 group-hover/item:opacity-100 transition-all bg-linear-to-bl from-blue-400/15 to-transparent z-0">
-                <div className="flex items-start justify-end rounded-full h-full w-full">
-                    <ChevronRight size={16} className="text-blue-100" />
-                </div>
-            </div>
+            <div className="absolute top-0 right-0 rounded-md h-full w-full opacity-0 group-hover/item:opacity-100 transition-all bg-linear-to-bl from-blue-400/15 to-transparent z-0" />
         </div>
     );
 }

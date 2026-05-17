@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Station } from "@/types";
+import type { SetupStation } from "@/lib/data/static-stations";
 import { stationOrder } from "@/lib/cfg/stationOrder";
 
 interface QuickHideoutLevelsProps {
-    stations: Station[] | null;
+    stations: SetupStation[] | null;
     stationLevels: Record<string, number>;
     setStationLevel: (stationId: string, level: number) => void;
 }
