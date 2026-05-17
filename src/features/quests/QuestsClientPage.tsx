@@ -161,7 +161,7 @@ export function QuestsClientPage({
                 questItemIndex={questItemIndex}
                 questAvailabilityQuests={questAvailabilityQuests}
             />
-            <QuestCascadeConfirmDialog quests={quests} />
+            <QuestCascadeConfirmDialog />
         </QuestsProvider>
     );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, type InputHTMLAttributes } from "react";
+import { useQuestsContext } from "../QuestsContext";
 import {
     AlertCircle,
     CheckCircle2,
@@ -98,7 +99,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
         string[]
     >([]);
 
-    const questsById = useMemo(() => new Map(quests.map((quest) => [quest.id, quest])), [quests]);
+    const { questsById } = useQuestsContext();
     const completedQuests = useUserStore((state) => state.completedQuests);
     const questsWithItems = useUserStore((state) => state.questsWithItems);
     const playerLevel = useUserStore((state) => state.playerLevel);
@@ -189,8 +190,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                 const seenFingerprints = readSeenQuestLogFingerprints();
                 filesToParse = matched.filter((file) => {
                     const fingerprint = createQuestLogFileFingerprint(file);
-                    const isNewFile =
-                        options.ignoreSeenFiles || !seenFingerprints.has(fingerprint);
+                    const isNewFile = options.ignoreSeenFiles || !seenFingerprints.has(fingerprint);
                     if (isNewFile) {
                         newFingerprints.push(fingerprint);
                     }
@@ -444,7 +444,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                         {(isParsing ||
                             step === "review" ||
                             (hasResults && hasAnyImportableRows)) && (
-                            <section className="rounded-lg border border-white/10 bg-black/20 p-4">
+                            <section className="flex flex-col rounded-lg border border-white/10 bg-black/20 p-4">
                                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2 text-sm font-semibold text-white">
@@ -547,7 +547,9 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                 )}
 
                                 {hasPreWipeIgnoredFiles && (
-                                    <PreWipeCutoffNotice fileCount={preWipeIgnoredFileNames.length} />
+                                    <PreWipeCutoffNotice
+                                        fileCount={preWipeIgnoredFileNames.length}
+                                    />
                                 )}
                             </section>
                         )}
@@ -602,7 +604,9 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                     )}
 
                                     {hasPreWipeIgnoredFiles && (
-                                        <PreWipeCutoffNotice fileCount={preWipeIgnoredFileNames.length} />
+                                        <PreWipeCutoffNotice
+                                            fileCount={preWipeIgnoredFileNames.length}
+                                        />
                                     )}
 
                                     {!cacheNotice && hasResults && !hasAnyImportableRows && (
@@ -717,8 +721,7 @@ function PreWipeCutoffNotice({ fileCount }: { fileCount: number }) {
         <div className="mt-4 inline-flex items-center gap-2 rounded-sm border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
             <AlertCircle size={14} />
             <span>
-                Some log files are older than the latest 1.0 wipe in November 2025 and were
-                ignored.
+                Some log files are older than the latest 1.0 wipe in November 2025 and were ignored.
                 {fileCount > 1 ? ` ${fileCount} files were skipped.` : ""}
             </span>
         </div>
@@ -954,30 +957,24 @@ function ReviewStep({
                     />
                 )}
 
-                <section className="rounded-lg border border-white/10 bg-black/20">
-                    <div className="border-b border-white/10 px-4 py-3">
-                        <h3 className="text-sm font-semibold text-white">Quests from Logs</h3>
-                    </div>
-                    <div className="p-3">
-                        <QuestListByTrader
-                            questIds={importedRows.map((row) => row.questId)}
-                            questsById={questsById}
-                            emptyMessage={`No ${mode} quests are queued for import.`}
-                        />
-                    </div>
+                <section className="space-y-2">
+                    <h3 className="text-sm font-semibold text-white">Quests from Logs</h3>
+                    <QuestListByTrader
+                        questIds={importedRows.map((row) => row.questId)}
+                        questsById={questsById}
+                        emptyMessage={`No ${mode} quests are queued for import.`}
+                    />
                 </section>
 
                 {prerequisiteQuests.length > 0 && (
-                    <section className="rounded-lg border border-white/10 bg-black/20">
-                        <div className="border-b border-white/10 px-4 py-3">
-                            <h3 className="text-sm font-semibold text-white">Prerequisites to Auto-Complete</h3>
-                        </div>
-                        <div className="p-3">
-                            <QuestListByTrader
-                                questIds={prerequisiteQuests.map((quest) => quest.id)}
-                                questsById={questsById}
-                            />
-                        </div>
+                    <section className="space-y-2">
+                        <h3 className="text-sm font-semibold text-white">
+                            Prerequisites to Auto-Complete
+                        </h3>
+                        <QuestListByTrader
+                            questIds={prerequisiteQuests.map((quest) => quest.id)}
+                            questsById={questsById}
+                        />
                     </section>
                 )}
             </div>

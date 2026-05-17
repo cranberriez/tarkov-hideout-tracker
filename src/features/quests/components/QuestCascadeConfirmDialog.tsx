@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import {
@@ -10,22 +9,15 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog";
-import type { FullQuest } from "@/types";
 import { getSensitiveBackfillQuest } from "@/lib/utils/sensitive-quest-backfill";
 import { QuestListByTrader } from "./QuestListByTrader";
+import { useQuestsContext } from "../QuestsContext";
 
-interface QuestCascadeConfirmDialogProps {
-    quests: FullQuest[];
-}
-
-export function QuestCascadeConfirmDialog({ quests }: QuestCascadeConfirmDialogProps) {
+export function QuestCascadeConfirmDialog() {
     const request = useUIStore((state) => state.questCascadeRequest);
     const closeRequest = useUIStore((state) => state.closeQuestCascadeRequest);
     const applyQuestCompletionChange = useUserStore((state) => state.applyQuestCompletionChange);
-    const questsById = useMemo(
-        () => new Map(quests.map((quest) => [quest.id, quest])),
-        [quests],
-    );
+    const { questsById } = useQuestsContext();
 
     if (!request) return null;
 
