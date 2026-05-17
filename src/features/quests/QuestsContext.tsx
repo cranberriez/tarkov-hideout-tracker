@@ -74,14 +74,12 @@ interface QuestsContextValue {
     previewTraderSelection: (
         traderId: string,
         selectedQuestIds: string[],
-        inferOtherTraderChains: boolean,
         allowedSensitiveBackfillQuestIds?: string[],
         deniedSensitiveBackfillQuestIds?: string[],
     ) => QuestSyncResult;
     syncTraderSelection: (
         traderId: string,
         selectedQuestIds: string[],
-        inferOtherTraderChains: boolean,
         allowedSensitiveBackfillQuestIds?: string[],
         deniedSensitiveBackfillQuestIds?: string[],
     ) => LastQuestSyncAction;
@@ -366,7 +364,6 @@ export function QuestsProvider({
     const previewTraderSelection = (
         traderId: string,
         selectedQuestIds: string[],
-        inferOtherTraderChains: boolean,
         allowedSensitiveBackfillQuestIds: string[] = [],
         deniedSensitiveBackfillQuestIds: string[] = [],
     ) => {
@@ -375,7 +372,6 @@ export function QuestsProvider({
             quests,
             traderId,
             selectedQuestIds,
-            inferOtherTraderChains,
             allowedSensitiveBackfillQuestIds,
             deniedSensitiveBackfillQuestIds,
             profile: buildSyncProfile(state),
@@ -386,14 +382,12 @@ export function QuestsProvider({
     const syncTraderSelection = (
         traderId: string,
         selectedQuestIds: string[],
-        inferOtherTraderChains: boolean,
         allowedSensitiveBackfillQuestIds: string[] = [],
         deniedSensitiveBackfillQuestIds: string[] = [],
     ) => {
         const result = previewTraderSelection(
             traderId,
             selectedQuestIds,
-            inferOtherTraderChains,
             allowedSensitiveBackfillQuestIds,
             deniedSensitiveBackfillQuestIds,
         );

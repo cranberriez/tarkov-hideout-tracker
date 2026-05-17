@@ -38,7 +38,6 @@ export function QuestSyncTraderStep({
     onClose: () => void;
 }) {
     const [searchQuery, setSearchQuery] = useState("");
-    const [inferOtherTraderChains, setInferOtherTraderChains] = useState(false);
     const [sensitiveBackfillDecisions, setSensitiveBackfillDecisions] = useState(
         createEmptySensitiveBackfillDecisions,
     );
@@ -105,7 +104,6 @@ export function QuestSyncTraderStep({
         return previewTraderSelection(
             activeTrader.id,
             selectedQuestIds,
-            inferOtherTraderChains,
             allowedSensitiveBackfillQuestIds,
             deniedSensitiveBackfillQuestIds,
         );
@@ -240,36 +238,12 @@ export function QuestSyncTraderStep({
                         </div>
 
                         <div className="space-y-3 border-t border-white/10 pt-4">
-                            <label className="flex items-start gap-2 text-left">
-                                <input
-                                    type="checkbox"
-                                    checked={inferOtherTraderChains}
-                                    onChange={(event) =>
-                                        setInferOtherTraderChains(event.target.checked)
-                                    }
-                                    className="mt-0.5 h-4 w-4 rounded border-white/20 bg-black/40 text-tarkov-green focus:ring-tarkov-green/40"
-                                />
-                                <span className="min-w-0">
-                                    <span className="block text-xs font-semibold uppercase tracking-wide text-gray-300">
-                                        Infer Other Completed Chains
-                                    </span>
-                                    <span className="mt-0.5 block text-xs text-gray-400">
-                                        Optionally mark additional completed branches for this
-                                        trader based on your current selections. For accurate
-                                        results, select every active quest for this trader first.
-                                        Quests from other traders are only added when they are
-                                        required prerequisites.
-                                    </span>
-                                </span>
-                            </label>
-
                             <div className="flex flex-wrap items-center gap-3">
                                 <button
                                     onClick={() => {
                                         const result = syncTraderSelection(
                                             activeTrader.id,
                                             selectedQuestIds,
-                                            inferOtherTraderChains,
                                             allowedSensitiveBackfillQuestIds,
                                             deniedSensitiveBackfillQuestIds,
                                         );

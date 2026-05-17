@@ -219,7 +219,7 @@ test("syncTraderProgress does not infer unrelated cross-trader quests", () => {
     assert.equal(result.nextCompletedQuests.future ?? false, false);
 });
 
-test("syncTraderProgress backfills cross-trader prerequisites when they are the only inference blocker", () => {
+test("syncTraderProgress does NOT infer same-trader candidates blocked only by an incomplete cross-trader prereq (regression)", () => {
     const therapist = {
         id: "therapist",
         name: "Therapist",
@@ -240,18 +240,12 @@ test("syncTraderProgress backfills cross-trader prerequisites when they are the 
             name: "Selected",
             taskRequirements: [{ task: { id: "b", name: "B" }, status: ["Success"] }],
         }),
-        makeQuest({
-            id: "therapist-root",
-            name: "Therapist Root",
-            trader: therapist,
-        }),
+        makeQuest({ id: "therapist-root", name: "Therapist Root", trader: therapist }),
         makeQuest({
             id: "therapist-bridge",
             name: "Therapist Bridge",
             trader: therapist,
-            taskRequirements: [
-                { task: { id: "therapist-root", name: "Therapist Root" }, status: ["Success"] },
-            ],
+            taskRequirements: [{ task: { id: "therapist-root", name: "Therapist Root" }, status: ["Success"] }],
         }),
         makeQuest({
             id: "dangling",
@@ -272,65 +266,10 @@ test("syncTraderProgress backfills cross-trader prerequisites when they are the 
     });
 
     assert.deepEqual(result.prerequisiteCompletedIds.sort(), ["a", "b"]);
-    assert.deepEqual(result.inferredCompletedIds.sort(), [
-        "dangling",
-        "therapist-bridge",
-        "therapist-root",
-    ]);
-    assert.equal(result.nextCompletedQuests.dangling, true);
-    assert.equal(result.nextCompletedQuests["therapist-bridge"], true);
-    assert.equal(result.nextCompletedQuests["therapist-root"], true);
-});
-
-test("syncTraderProgress does not backfill cross-trader prerequisites when another blocker remains", () => {
-    const therapist = {
-        id: "therapist",
-        name: "Therapist",
-        normalizedName: "therapist",
-        imageLink: null,
-        image4xLink: null,
-    };
-
-    const quests = [
-        makeQuest({ id: "a", name: "A" }),
-        makeQuest({
-            id: "b",
-            name: "B",
-            taskRequirements: [{ task: { id: "a", name: "A" }, status: ["Success"] }],
-        }),
-        makeQuest({
-            id: "selected",
-            name: "Selected",
-            taskRequirements: [{ task: { id: "b", name: "B" }, status: ["Success"] }],
-        }),
-        makeQuest({
-            id: "therapist-bridge",
-            name: "Therapist Bridge",
-            trader: therapist,
-        }),
-        makeQuest({
-            id: "dangling",
-            name: "Dangling",
-            minPlayerLevel: 40,
-            taskRequirements: [
-                { task: { id: "b", name: "B" }, status: ["Success"] },
-                { task: { id: "therapist-bridge", name: "Therapist Bridge" }, status: ["Success"] },
-            ],
-        }),
-    ];
-
-    const result = syncTraderProgress({
-        quests,
-        traderId: "prapor",
-        selectedQuestIds: ["selected"],
-        profile: makeProfile({ playerLevel: 30 }),
-        questsWithItems: {},
-    });
-
-    assert.deepEqual(result.prerequisiteCompletedIds.sort(), ["a", "b"]);
     assert.deepEqual(result.inferredCompletedIds, []);
     assert.equal(result.nextCompletedQuests.dangling ?? false, false);
     assert.equal(result.nextCompletedQuests["therapist-bridge"] ?? false, false);
+    assert.equal(result.nextCompletedQuests["therapist-root"] ?? false, false);
 });
 
 test("syncTraderProgress with a no-prerequisite selected quest does not complete unrelated available quests", () => {
@@ -386,39 +325,6 @@ test("syncTraderProgress with a no-prerequisite selected quest does not complete
     assert.equal(result.nextCompletedQuests["lightkeeper-other"] ?? false, false);
 });
 
-test("syncTraderProgress can skip same-trader inferred chains when disabled", () => {
-    const quests = [
-        makeQuest({ id: "a", name: "A" }),
-        makeQuest({
-            id: "b",
-            name: "B",
-            taskRequirements: [{ task: { id: "a", name: "A" }, status: ["Success"] }],
-        }),
-        makeQuest({
-            id: "c",
-            name: "C",
-            taskRequirements: [{ task: { id: "b", name: "B" }, status: ["Success"] }],
-        }),
-        makeQuest({
-            id: "d",
-            name: "D",
-            taskRequirements: [{ task: { id: "b", name: "B" }, status: ["Success"] }],
-        }),
-    ];
-
-    const result = syncTraderProgress({
-        quests,
-        traderId: "prapor",
-        selectedQuestIds: ["c"],
-        inferOtherTraderChains: false,
-        profile: makeProfile(),
-        questsWithItems: {},
-    });
-
-    assert.deepEqual(result.prerequisiteCompletedIds.sort(), ["a", "b"]);
-    assert.deepEqual(result.inferredCompletedIds, []);
-    assert.equal(result.nextCompletedQuests["d"] ?? false, false);
-});
 
 test("syncTraderProgress blocks sensitive prerequisites unless explicitly allowed", () => {
     const networkProvider = makeQuest({
