@@ -16,6 +16,8 @@ import {
     type QuestSyncResult,
 } from "./quest-sync";
 import { buildQuestMapGroups, getQuestMapGroup, getQuestMapGroupKey } from "./quest-map-groups";
+import { useUIStore } from "@/lib/stores/useUIStore";
+import { collectCompleteCascade, collectUncompleteCascade } from "./quest-cascade";
 
 interface LastQuestSyncAction extends QuestSyncResult {
     traderName: string;
@@ -71,6 +73,7 @@ interface QuestsContextValue {
     setShowPrereqs: (value: boolean) => void;
     setSearchQuery: (value: string) => void;
     getSyncCandidatesForTrader: (traderId: string) => FullQuest[];
+    requestToggleQuestCompletion: (questId: string) => void;
     previewTraderSelection: (
         traderId: string,
         selectedQuestIds: string[],
@@ -361,6 +364,58 @@ export function QuestsProvider({
 
     const getSyncCandidatesForTrader = (traderId: string) => getSyncCandidatesForTraderFromProfile(quests, traderId);
 
+    const requestToggleQuestCompletion = (questId: string) => {
+        const userState = useUserStore.getState();
+        const isCurrentlyComplete = !!userState.completedQuests[questId];
+
+        if (isCurrentlyComplete) {
+            const cascade = collectUncompleteCascade(questId, {
+                questsById,
+                completedQuests: userState.completedQuests,
+                leadsToByQuestId,
+            });
+
+            if (cascade.toUncomplete.length <= 1) {
+                userState.applyQuestCompletionChange({ uncomplete: cascade.toUncomplete });
+                return;
+            }
+
+            useUIStore.getState().openQuestCascadeRequest({
+                mode: "uncomplete",
+                rootQuestId: questId,
+                questIds: cascade.toUncomplete,
+                crossTraderQuestIds: cascade.crossTraderQuestIds,
+                sensitiveQuestIds: [],
+            });
+            return;
+        }
+
+        const cascade = collectCompleteCascade(questId, {
+            questsById,
+            completedQuests: userState.completedQuests,
+        });
+
+        if (cascade.toComplete.length === 0) return;
+
+        const shouldConfirm =
+            cascade.crossTraderQuestIds.length > 0 ||
+            cascade.toComplete.length > 10 ||
+            cascade.sensitiveQuestIds.length > 0;
+
+        if (!shouldConfirm) {
+            userState.applyQuestCompletionChange({ complete: cascade.toComplete });
+            return;
+        }
+
+        useUIStore.getState().openQuestCascadeRequest({
+            mode: "complete",
+            rootQuestId: questId,
+            questIds: cascade.toComplete,
+            crossTraderQuestIds: cascade.crossTraderQuestIds,
+            sensitiveQuestIds: cascade.sensitiveQuestIds,
+        });
+    };
+
     const previewTraderSelection = (
         traderId: string,
         selectedQuestIds: string[],
@@ -485,6 +540,7 @@ export function QuestsProvider({
                 setShowPrereqs,
                 setSearchQuery,
                 getSyncCandidatesForTrader,
+                requestToggleQuestCompletion,
                 previewTraderSelection,
                 syncTraderSelection,
                 undoLastQuestSync,
