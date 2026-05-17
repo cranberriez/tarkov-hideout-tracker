@@ -1,5 +1,6 @@
 "use client";
 
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 
 const PRESTIGE_OPTIONS = [0, 1, 2, 3, 4, 5, 6] as const;
@@ -16,7 +17,16 @@ export function QuestSyncProfileStep({
         setPlayerLevel,
         setPrestigeLevel,
         setQuestFaction,
-    } = useUserStore();
+    } = useUserStore(
+        useShallow((state) => ({
+            playerLevel: state.playerLevel,
+            prestigeLevel: state.prestigeLevel,
+            questFaction: state.questFaction,
+            setPlayerLevel: state.setPlayerLevel,
+            setPrestigeLevel: state.setPrestigeLevel,
+            setQuestFaction: state.setQuestFaction,
+        })),
+    );
     const canContinue = questFaction !== null;
 
     return (

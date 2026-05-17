@@ -28,7 +28,7 @@ function QuestGroupHeader({
     collapsed,
     onToggle,
 }: QuestGroupHeaderProps) {
-    const { completedQuests } = useUserStore();
+    const completedQuests = useUserStore((state) => state.completedQuests);
     const total = allQuests.length;
     const completed = allQuests.filter((q) => completedQuests[q.id]).length;
     const pct = total > 0 ? (completed / total) * 100 : 0;

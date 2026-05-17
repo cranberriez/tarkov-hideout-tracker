@@ -13,15 +13,15 @@ function scrollToTrader(traderId: string) {
 }
 
 function getCollapsedMapLabel(name: string) {
-    if (name === "Ground Zero 21+") return "GZ+";
     if (name === "Ground Zero") return "GZ";
-    if (name === "Customs") return "C";
-    if (name === "The Lab") return "L";
+    if (name === "The Lab") return "Lab";
 
     const parts = name
         .split(/\s+/)
         .filter(Boolean)
         .map((part) => part.replace(/[^A-Za-z0-9+]/g, ""));
+
+    if (parts.length === 1) return parts[0].slice(0, 2) || name.slice(0, 2);
 
     return (parts.map((part) => part[0]?.toUpperCase()).join("") || name[0] || "?").slice(0, 3);
 }
@@ -112,7 +112,9 @@ export function QuestsSidebar({ collapsed = false, onToggleCollapsed }: QuestsSi
                                         ? `Remove ${trader.name} from trader filters`
                                         : `Show only ${trader.name}`
                                 }
-                                title={isSelected ? "Remove trader filter" : "Show only this trader"}
+                                title={
+                                    isSelected ? "Remove trader filter" : "Show only this trader"
+                                }
                                 className={cn(
                                     "mr-1 inline-flex size-7 shrink-0 items-center justify-center rounded-sm text-gray-500 transition-colors hover:text-white",
                                     isSelected

@@ -1,12 +1,20 @@
 "use client";
 
+import { useShallow } from "zustand/react/shallow";
 import { QuestFlagFilters } from "@/components/core/QuestFlagFilters";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useQuestsContext } from "../QuestsContext";
 import { Divider, SegButton, SegGroup } from "./quest-ui";
 
 export function QuestsCharacterBar() {
-    const { playerLevel, setPlayerLevel, prestigeLevel, setPrestigeLevel } = useUserStore();
+    const { playerLevel, setPlayerLevel, prestigeLevel, setPrestigeLevel } = useUserStore(
+        useShallow((state) => ({
+            playerLevel: state.playerLevel,
+            setPlayerLevel: state.setPlayerLevel,
+            prestigeLevel: state.prestigeLevel,
+            setPrestigeLevel: state.setPrestigeLevel,
+        })),
+    );
     const { faction, showKappa, showLightkeeper, toggleFaction, toggleKappa, toggleLightkeeper } =
         useQuestsContext();
 

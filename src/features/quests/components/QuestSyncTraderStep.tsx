@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useQuestsContext } from "../QuestsContext";
 import { QuestSyncSelectableQuestRow } from "./QuestSyncSelectableQuestRow";
@@ -53,7 +54,13 @@ export function QuestSyncTraderStep({
         syncTraderSelection,
     } = useQuestsContext();
     const { completedQuests, questTraderLoyaltyLevels, setQuestTraderLoyaltyLevel } =
-        useUserStore();
+        useUserStore(
+            useShallow((state) => ({
+                completedQuests: state.completedQuests,
+                questTraderLoyaltyLevels: state.questTraderLoyaltyLevels,
+                setQuestTraderLoyaltyLevel: state.setQuestTraderLoyaltyLevel,
+            })),
+        );
 
     const activeTrader = traders.find((trader) => trader.id === activeTraderId) ?? null;
     const loyaltyLevel = activeTrader ? (questTraderLoyaltyLevels[activeTrader.id] ?? 1) : 1;

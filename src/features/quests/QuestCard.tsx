@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import {
     ChevronDown,
     ChevronRight,
@@ -260,7 +261,16 @@ export function QuestCard({
         toggleQuestCompletion,
         toggleIgnoredQuest,
         togglePinnedQuest,
-    } = useUserStore();
+    } = useUserStore(
+        useShallow((state) => ({
+            completedQuests: state.completedQuests,
+            ignoredQuests: state.ignoredQuests,
+            pinnedQuests: state.pinnedQuests,
+            toggleQuestCompletion: state.toggleQuestCompletion,
+            toggleIgnoredQuest: state.toggleIgnoredQuest,
+            togglePinnedQuest: state.togglePinnedQuest,
+        })),
+    );
     const completed = !!completedQuests[quest.id];
     const ignored = !!ignoredQuests[quest.id];
     const pinned = !!pinnedQuests[quest.id];

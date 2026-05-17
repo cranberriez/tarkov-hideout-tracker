@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { CheckCircle, ChevronDown, Circle, Lock } from "lucide-react";
 import { useQuestsContext } from "../QuestsContext";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -384,7 +385,12 @@ function QuestNodeCard({
     highlightedQuestId: string | null;
     onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
-    const { completedQuests, ignoredQuests } = useUserStore();
+    const { completedQuests, ignoredQuests } = useUserStore(
+        useShallow((state) => ({
+            completedQuests: state.completedQuests,
+            ignoredQuests: state.ignoredQuests,
+        })),
+    );
     const { syncProfile, showPrereqs } = useQuestsContext();
     const quest = questsById.get(questId);
     if (!quest) return null;
@@ -822,7 +828,7 @@ function TraderTreeSection({
     collapsedGroups: Set<string>;
     setGroupCollapsed: (key: string, collapsed: boolean) => void;
 }) {
-    const { completedQuests } = useUserStore();
+    const completedQuests = useUserStore((state) => state.completedQuests);
 
     const { rootIds, childrenOf, parentOf } = useMemo(
         () => buildTraderTree(traderQuests),

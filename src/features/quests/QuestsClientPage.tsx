@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import type { FullQuest, ItemDetails } from "@/types";
 import { QuestsProvider, useQuestsContext } from "./QuestsContext";
 import { QuestsSidebar } from "./components/QuestsSidebar";
@@ -24,6 +25,28 @@ function QuestsContent() {
     return <QuestsList />;
 }
 
+function DesktopQuestsSidebar() {
+    const { questSidebarCollapsed, setQuestSidebarCollapsed } = useUserStore(
+        useShallow((state) => ({
+            questSidebarCollapsed: state.questSidebarCollapsed,
+            setQuestSidebarCollapsed: state.setQuestSidebarCollapsed,
+        })),
+    );
+
+    return (
+        <aside
+            className={`hidden lg:flex flex-col gap-6 shrink-0 sticky top-4 self-start max-h-[calc(100vh-3rem)] overflow-y-auto pb-8 pl-6 ${
+                questSidebarCollapsed ? "w-20 pr-3" : "w-56 pr-5"
+            }`}
+        >
+            <QuestsSidebar
+                collapsed={questSidebarCollapsed}
+                onToggleCollapsed={() => setQuestSidebarCollapsed(!questSidebarCollapsed)}
+            />
+        </aside>
+    );
+}
+
 interface QuestsClientPageProps {
     quests: FullQuest[];
     updatedAt: number;
@@ -42,13 +65,13 @@ export function QuestsClientPage({
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
     const { stations } = useDataContext();
-    const {
-        stationLevels,
-        hiddenStations,
-        completedRequirements,
-        questSidebarCollapsed,
-        setQuestSidebarCollapsed,
-    } = useUserStore();
+    const { stationLevels, hiddenStations, completedRequirements } = useUserStore(
+        useShallow((state) => ({
+            stationLevels: state.stationLevels,
+            hiddenStations: state.hiddenStations,
+            completedRequirements: state.completedRequirements,
+        })),
+    );
 
     // Build a lookup of ItemDetails from quest objectives so item modal can open any quest item
     const questItemDetails = useMemo(() => {
@@ -101,16 +124,7 @@ export function QuestsClientPage({
 
             <div className="container mx-auto flex gap-0 py-6 sm:py-8">
                 {/* Left sidebar */}
-                <aside
-                    className={`hidden lg:flex flex-col gap-6 shrink-0 sticky top-4 self-start max-h-[calc(100vh-3rem)] overflow-y-auto pb-8 pl-6 transition-[width,padding] duration-200 ${
-                        questSidebarCollapsed ? "w-20 pr-3" : "w-56 pr-5"
-                    }`}
-                >
-                    <QuestsSidebar
-                        collapsed={questSidebarCollapsed}
-                        onToggleCollapsed={() => setQuestSidebarCollapsed(!questSidebarCollapsed)}
-                    />
-                </aside>
+                <DesktopQuestsSidebar />
 
                 {/* Main content */}
                 <div className="flex-1 min-w-0 px-4 sm:px-6">
