@@ -38,7 +38,7 @@ export function QuestSyncTraderStep({
     onClose: () => void;
 }) {
     const [searchQuery, setSearchQuery] = useState("");
-    const [inferOtherTraderChains, setInferOtherTraderChains] = useState(true);
+    const [inferOtherTraderChains, setInferOtherTraderChains] = useState(false);
     const [sensitiveBackfillDecisions, setSensitiveBackfillDecisions] = useState(
         createEmptySensitiveBackfillDecisions,
     );
@@ -53,14 +53,13 @@ export function QuestSyncTraderStep({
         previewTraderSelection,
         syncTraderSelection,
     } = useQuestsContext();
-    const { completedQuests, questTraderLoyaltyLevels, setQuestTraderLoyaltyLevel } =
-        useUserStore(
-            useShallow((state) => ({
-                completedQuests: state.completedQuests,
-                questTraderLoyaltyLevels: state.questTraderLoyaltyLevels,
-                setQuestTraderLoyaltyLevel: state.setQuestTraderLoyaltyLevel,
-            })),
-        );
+    const { completedQuests, questTraderLoyaltyLevels, setQuestTraderLoyaltyLevel } = useUserStore(
+        useShallow((state) => ({
+            completedQuests: state.completedQuests,
+            questTraderLoyaltyLevels: state.questTraderLoyaltyLevels,
+            setQuestTraderLoyaltyLevel: state.setQuestTraderLoyaltyLevel,
+        })),
+    );
 
     const activeTrader = traders.find((trader) => trader.id === activeTraderId) ?? null;
     const loyaltyLevel = activeTrader ? (questTraderLoyaltyLevels[activeTrader.id] ?? 1) : 1;
@@ -180,14 +179,11 @@ export function QuestSyncTraderStep({
                                     {activeTrader.name}
                                 </h4>
                                 <p className="text-xs text-gray-500">
-                                    Search for and select ALL of the quests that are currently
-                                    active.
+                                    Search for and select quests that are currently active to
+                                    auto-complete prerequisites.
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
-                                    Loyalty Level
-                                </span>
                                 <div className="flex gap-1.5">
                                     {LOYALTY_LEVELS.map((level) => (
                                         <button
@@ -257,9 +253,12 @@ export function QuestSyncTraderStep({
                                     <span className="block text-xs font-semibold uppercase tracking-wide text-gray-300">
                                         Infer Other Completed Chains
                                     </span>
-                                    <span className="mt-0.5 block text-xs text-gray-500">
-                                        Enable this if you want any quest branch that can be
-                                        completed to be marked as completed. Same-trader only.
+                                    <span className="mt-0.5 block text-xs text-gray-400">
+                                        Optionally mark additional completed branches for this
+                                        trader based on your current selections. For accurate
+                                        results, select every active quest for this trader first.
+                                        Quests from other traders are only added when they are
+                                        required prerequisites.
                                     </span>
                                 </span>
                             </label>
