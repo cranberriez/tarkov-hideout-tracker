@@ -807,8 +807,8 @@ function QuestTreeNode({
 
 function TraderTreeSection({
     trader,
-    traderQuests,
     allTraderQuests,
+    treeMeta,
     questsById,
     leadsToByQuestId,
     showDebugButton,
@@ -818,8 +818,8 @@ function TraderTreeSection({
     setGroupCollapsed,
 }: {
     trader: FullQuest["trader"];
-    traderQuests: FullQuest[];
     allTraderQuests: FullQuest[];
+    treeMeta: ReturnType<typeof buildTraderTree>;
     questsById: Map<string, FullQuest>;
     leadsToByQuestId: Map<string, string[]>;
     showDebugButton: boolean;
@@ -830,10 +830,7 @@ function TraderTreeSection({
 }) {
     const completedQuests = useUserStore((state) => state.completedQuests);
 
-    const { rootIds, childrenOf, parentOf } = useMemo(
-        () => buildTraderTree(traderQuests),
-        [traderQuests],
-    );
+    const { rootIds, childrenOf, parentOf } = treeMeta;
 
     const total = allTraderQuests.length;
     const completed = allTraderQuests.filter((q) => completedQuests[q.id]).length;
@@ -1034,12 +1031,14 @@ export function QuestsTree() {
             {traders.map((trader) => {
                 const traderQuests = questsByTraderId.get(trader.id) ?? [];
                 if (traderQuests.length === 0) return null;
+                const treeMeta = treeMetaByTraderId.get(trader.id);
+                if (!treeMeta) return null;
                 return (
                     <TraderTreeSection
                         key={trader.id}
                         trader={trader}
-                        traderQuests={traderQuests}
                         allTraderQuests={allQuestsByTraderId.get(trader.id) ?? []}
+                        treeMeta={treeMeta}
                         questsById={questsById}
                         leadsToByQuestId={leadsToByQuestId}
                         showDebugButton={showDebug}

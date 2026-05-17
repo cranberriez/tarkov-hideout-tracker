@@ -194,6 +194,8 @@ export function QuestsList() {
     };
 
     const questsByTraderId = useMemo(() => {
+        if (viewMode !== "byTrader") return new Map<string, FullQuest[]>();
+
         const map = new Map<string, FullQuest[]>();
         for (const quest of filteredQuests) {
             const arr = map.get(quest.trader.id) ?? [];
@@ -204,9 +206,11 @@ export function QuestsList() {
             map.set(traderId, sortQuestsByChains(traderQuests, questOrderById));
         }
         return map;
-    }, [filteredQuests, questOrderById]);
+    }, [filteredQuests, questOrderById, viewMode]);
 
     const allQuestsByTraderId = useMemo(() => {
+        if (viewMode !== "byTrader") return new Map<string, FullQuest[]>();
+
         const map = new Map<string, FullQuest[]>();
         for (const quest of quests) {
             const arr = map.get(quest.trader.id) ?? [];
@@ -214,9 +218,11 @@ export function QuestsList() {
             map.set(quest.trader.id, arr);
         }
         return map;
-    }, [quests]);
+    }, [quests, viewMode]);
 
     const questsByMapKey = useMemo(() => {
+        if (viewMode === "byTrader") return new Map<string, FullQuest[]>();
+
         const map = new Map<string, FullQuest[]>();
         for (const quest of filteredQuests) {
             const groupKey = getQuestMapGroup(quest.map ?? null).key;
@@ -228,9 +234,11 @@ export function QuestsList() {
             map.set(mapKey, sortQuestsByChains(mapQuests, questOrderById));
         }
         return map;
-    }, [filteredQuests, questOrderById]);
+    }, [filteredQuests, questOrderById, viewMode]);
 
     const allQuestsByMapKey = useMemo(() => {
+        if (viewMode === "byTrader") return new Map<string, FullQuest[]>();
+
         const map = new Map<string, FullQuest[]>();
         for (const quest of quests) {
             const groupKey = getQuestMapGroup(quest.map ?? null).key;
@@ -239,9 +247,12 @@ export function QuestsList() {
             map.set(groupKey, arr);
         }
         return map;
-    }, [quests]);
+    }, [quests, viewMode]);
 
-    const mapGroups = useMemo(() => buildQuestMapGroups(quests, true), [quests]);
+    const mapGroups = useMemo(
+        () => (viewMode === "byTrader" ? [] : buildQuestMapGroups(quests, true)),
+        [quests, viewMode],
+    );
 
     function toRef(id: string, fallbackName: string): QuestRef {
         const q = questsById.get(id);
