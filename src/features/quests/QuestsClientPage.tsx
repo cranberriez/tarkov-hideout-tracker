@@ -7,6 +7,8 @@ import { QuestsSidebar } from "./components/QuestsSidebar";
 import { QuestsCharacterBar } from "./components/QuestsCharacterBar";
 import { QuestsFilterBar } from "./components/QuestsFilterBar";
 import { QuestsList } from "./components/QuestsList";
+import { QuestsQuickGuide } from "./components/QuestsQuickGuide";
+import { QuestsSearchBar } from "./components/QuestsSearchBar";
 import { QuestsSyncBar } from "./components/QuestsSyncBar";
 import { QuestsTree } from "./components/QuestsTree";
 import { SlidersIcon } from "./components/quest-ui";
@@ -77,10 +79,7 @@ export function QuestsClientPage({
         <QuestsProvider quests={quests} onItemClick={setSelectedItemId}>
             {/* Mobile sidebar overlay */}
             {sidebarOpen && (
-                <div
-                    className="fixed inset-0 z-40 lg:hidden"
-                    onClick={() => setSidebarOpen(false)}
-                >
+                <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setSidebarOpen(false)}>
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
                     <div
                         className="absolute left-0 top-0 bottom-0 w-64 bg-[#0d0d0d] border-r border-white/10 flex flex-col gap-6 overflow-y-auto py-6 px-4"
@@ -118,15 +117,19 @@ export function QuestsClientPage({
                     <div className="mb-8 flex flex-col gap-1 border-b border-border-color pb-6">
                         <h1 className="text-3xl font-bold text-white tracking-tight">QUESTS</h1>
                         <p className="text-gray-400 mt-1 text-sm">
-                            Track quest completion and filter by trader, map, faction, and progression
-                            goal
+                            Track quest completion and filter by trader, map, faction, and
+                            progression goal
                         </p>
                     </div>
 
                     <div className="flex flex-col gap-3 pb-8">
                         <QuestsCharacterBar />
-                        <QuestsSyncBar quests={quests} />
+                        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto]">
+                            <QuestsSearchBar />
+                            <QuestsSyncBar quests={quests} />
+                        </div>
                         <QuestsFilterBar />
+                        <QuestsQuickGuide />
                         <QuestsContent />
                     </div>
                 </div>

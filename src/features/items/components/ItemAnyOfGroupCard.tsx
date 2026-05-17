@@ -110,7 +110,7 @@ function GroupHeader({ group, expanded, isIconMode }: GroupHeaderProps) {
     return (
         <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
+                <div className="flex flex-col min-w-0 flex-1">
                     <h3
                         className={cn(
                             "leading-tight font-bold text-balance line-clamp-2 text-gray-100",
@@ -120,6 +120,15 @@ function GroupHeader({ group, expanded, isIconMode }: GroupHeaderProps) {
                     >
                         {group.questName}
                     </h3>
+
+                    <Link
+                        href={`/quests#quest-${group.questId}`}
+                        className="inline-flex items-center gap-1 text-xs text-gray-500 transition-colors hover:text-tarkov-green"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        Quest
+                        <ExternalLink size={12} />
+                    </Link>
                 </div>
 
                 <span className="shrink-0 text-gray-500">
@@ -214,7 +223,8 @@ export function ItemAnyOfGroupCard({
                 type="button"
                 onClick={onToggleExpanded}
                 className={cn(
-                    "flex h-full w-full flex-col justify-between gap-2 text-left",
+                    "flex w-full flex-col gap-2 text-left",
+                    expanded ? "" : "h-full justify-between",
                     isIconMode ? "" : "gap-2.5",
                 )}
             >
@@ -241,14 +251,8 @@ export function ItemAnyOfGroupCard({
                 <div className="mt-4 space-y-3 border-t border-white/8 pt-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="text-xs text-gray-400 text-pretty">
-                            Select one of these items to satisfy the quest objective.
+                            Any one of these items will satisfy the quest objective.
                         </div>
-                        <Link
-                            href={`/quests#quest-${group.questId}`}
-                            className="inline-flex items-center gap-1 text-xs text-gray-500 transition-colors hover:text-tarkov-green"
-                        >
-                            Quest Link <ExternalLink size={12} />
-                        </Link>
                     </div>
 
                     <GroupItemsGrid
