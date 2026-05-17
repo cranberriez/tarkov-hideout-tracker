@@ -75,11 +75,13 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [isParsing, setIsParsing] = useState(false);
     const [parsedView, setParsedView] = useState<ParsedImportView | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [selectedFileNames, setSelectedFileNames] = useState<string[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [showInfo, setShowInfo] = useState(false);
     const [importNotice, setImportNotice] = useState<string | null>(null);
     const [cacheNotice, setCacheNotice] = useState<string | null>(null);
+    const [pendingSeenFileFingerprints, setPendingSeenFileFingerprints] = useState<string[]>([]);
     const [autoCompleteSelections, setAutoCompleteSelections] = useState<AutoCompleteSelectionMap>(
         {},
     );
@@ -138,10 +140,12 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     };
 
     async function handleFilesSelected(files: File[]) {
+        setSelectedFiles(files);
         setSelectedFileNames(files.map((file) => file.name));
         setError(null);
         setImportNotice(null);
         setCacheNotice(null);
+        setPendingSeenFileFingerprints([]);
         setStep("select");
         setReviewMode(null);
         setDidConfirmImport(false);
@@ -157,13 +161,14 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
         void parseSelectedFiles(files);
     }
 
-    async function parseSelectedFiles(files: File[]) {
+    async function parseSelectedFiles(files: File[], options: { ignoreSeenFiles?: boolean } = {}) {
         setIsParsing(true);
         try {
             if (!selectionLooksLikeEftLogsFolder(files)) {
                 setParsedView(null);
                 setAutoCompleteSelections({});
                 setCacheNotice(null);
+                setPendingSeenFileFingerprints([]);
                 setError(
                     "That selection does not look like an EFT logs folder. Try ~\\Battlestate Games\\EFT\\Logs or one of its log_* subfolders.",
                 );
@@ -178,7 +183,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                 const seenFingerprints = readSeenQuestLogFingerprints();
                 filesToParse = matched.filter((file) => {
                     const fingerprint = createQuestLogFileFingerprint(file);
-                    const isNewFile = !seenFingerprints.has(fingerprint);
+                    const isNewFile =
+                        options.ignoreSeenFiles || !seenFingerprints.has(fingerprint);
                     if (isNewFile) {
                         newFingerprints.push(fingerprint);
                     }
@@ -191,6 +197,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
             if (matched.length > 0 && filesToParse.length === 0) {
                 setParsedView(null);
                 setAutoCompleteSelections({});
+                setPendingSeenFileFingerprints([]);
                 setCacheNotice("No new files seen.");
                 return;
             }
@@ -207,18 +214,15 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
             const buckets = buildQuestImportBuckets(result);
             setParsedView({ result, buckets });
             setCacheNotice(null);
+            setPendingSeenFileFingerprints(
+                Array.from(new Set(newFingerprints)).sort((left, right) =>
+                    left.localeCompare(right),
+                ),
+            );
             setAutoCompleteSelections({
                 ...setAllQuestImportSelections(buckets.pvp, false),
                 ...setAllQuestImportSelections(buckets.pve, false),
             });
-
-            if (ENABLE_QUEST_LOG_FILE_DEDUPE && newFingerprints.length > 0) {
-                const seenFingerprints = readSeenQuestLogFingerprints();
-                for (const fingerprint of newFingerprints) {
-                    seenFingerprints.add(fingerprint);
-                }
-                writeSeenQuestLogFingerprints(seenFingerprints);
-            }
 
             if (result.totals.filesParsed === 0) {
                 setError("No push-notifications log files were found in that selection.");
@@ -226,6 +230,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
         } catch {
             setParsedView(null);
             setAutoCompleteSelections({});
+            setPendingSeenFileFingerprints([]);
             setError(
                 "The selected logs could not be read. Try choosing the EFT logs folder again.",
             );
@@ -240,11 +245,13 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 
     function handleClear() {
         setParsedView(null);
+        setSelectedFiles([]);
         setSelectedFileNames([]);
         setAutoCompleteSelections({});
         setError(null);
         setImportNotice(null);
         setCacheNotice(null);
+        setPendingSeenFileFingerprints([]);
         setShowInfo(false);
         setStep("select");
         setReviewMode(null);
@@ -258,6 +265,15 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
             window.localStorage.removeItem(QUEST_LOG_IMPORT_SEEN_FILES_KEY);
         }
         setCacheNotice(null);
+    }
+
+    function handleIgnoreCacheForSelectedFiles() {
+        if (selectedFiles.length === 0) {
+            return;
+        }
+
+        setCacheNotice(null);
+        void parseSelectedFiles(selectedFiles, { ignoreSeenFiles: true });
     }
 
     function handleToggleAutoComplete(mode: ImportGameMode, questId: string) {
@@ -332,6 +348,15 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
             questsWithItems: result.nextQuestsWithItems,
             gameMode: result.nextGameMode,
         });
+
+        if (ENABLE_QUEST_LOG_FILE_DEDUPE && pendingSeenFileFingerprints.length > 0) {
+            const seenFingerprints = readSeenQuestLogFingerprints();
+            for (const fingerprint of pendingSeenFileFingerprints) {
+                seenFingerprints.add(fingerprint);
+            }
+            writeSeenQuestLogFingerprints(seenFingerprints);
+            setPendingSeenFileFingerprints([]);
+        }
 
         const prerequisiteCount = result.prerequisiteQuestIds.length;
         setDidConfirmImport(true);
@@ -542,14 +567,21 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                     </div>
 
                                     {cacheNotice && (
-                                        <div className="flex items-center justify-center gap-2 mt-5 w-full rounded-sm border border-amber-400/35 bg-amber-500/12 px-4 py-3 text-center text-sm text-amber-100">
+                                        <div className="mt-5 flex w-full flex-col items-center justify-center gap-3 rounded-sm border border-amber-400/35 bg-amber-500/12 px-4 py-3 text-center text-sm text-amber-100 sm:flex-row sm:flex-wrap">
                                             <div>No new files seen.</div>
                                             <button
                                                 type="button"
                                                 onClick={handleClearCache}
-                                                className="mt-1 text-xs text-amber-200 underline underline-offset-2 transition-colors hover:text-white"
+                                                className="text-xs text-amber-200 underline underline-offset-2 transition-colors hover:text-white"
                                             >
                                                 Clear cache
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleIgnoreCacheForSelectedFiles}
+                                                className="rounded-sm border border-amber-300/30 bg-amber-300/10 px-2 py-1 text-xs font-semibold text-amber-100 transition-colors hover:border-amber-200/60 hover:bg-amber-300/20 hover:text-white"
+                                            >
+                                                Ignore for these files
                                             </button>
                                         </div>
                                     )}
