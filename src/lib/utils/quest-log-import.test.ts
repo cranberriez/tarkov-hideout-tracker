@@ -9,6 +9,7 @@ import {
     setAllQuestImportSelections,
 } from "./quest-log-import.ts";
 import type { QuestLogParseResult } from "./quest-log-parser.ts";
+import { NETWORK_PROVIDER_PART_1_ID } from "./sensitive-quest-backfill.ts";
 
 function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name">): FullQuest {
     return {
@@ -211,6 +212,134 @@ test("applyQuestImportSelection does not list already completed prerequisites fo
 
     assert.deepEqual(result.prerequisiteQuestIds, []);
     assert.equal(result.nextCompletedQuests.root, true);
+});
+
+test("applyQuestImportSelection blocks sensitive prerequisites unless explicitly allowed", () => {
+    const root = makeQuest({ id: "root", name: "Root" });
+    const networkProvider = makeQuest({
+        id: NETWORK_PROVIDER_PART_1_ID,
+        name: "Network Provider - Part 1",
+        taskRequirements: [{ task: { id: "root", name: "Root" }, status: ["Success"] }],
+    });
+    const leaf = makeQuest({
+        id: "leaf",
+        name: "Leaf",
+        taskRequirements: [
+            {
+                task: { id: NETWORK_PROVIDER_PART_1_ID, name: "Network Provider - Part 1" },
+                status: ["Success"],
+            },
+        ],
+    });
+    const rows = [
+        {
+            questId: "leaf",
+            quest: leaf,
+            raidMode: "pvp" as const,
+            types: ["completed"] as ("started" | "completed")[],
+            hasStarted: false,
+            hasCompleted: true,
+            occurrenceCount: 1,
+            eventCount: 1,
+            latestTimestamp: null,
+            sourceFiles: [],
+        },
+    ];
+    const questsById = new Map([
+        [root.id, root],
+        [networkProvider.id, networkProvider],
+        [leaf.id, leaf],
+    ]);
+
+    const blockedResult = applyQuestImportSelection({
+        mode: "PVP",
+        rows,
+        autoCompleteSelections: { leaf: true },
+        completedQuests: {},
+        questsWithItems: {},
+        questsById,
+    });
+
+    assert.deepEqual(blockedResult.prerequisiteQuestIds, []);
+    assert.deepEqual(blockedResult.blockedSensitiveQuestIds, [NETWORK_PROVIDER_PART_1_ID]);
+    assert.equal(blockedResult.nextCompletedQuests.leaf, true);
+    assert.equal(blockedResult.nextCompletedQuests[NETWORK_PROVIDER_PART_1_ID] ?? false, false);
+    assert.equal(blockedResult.nextCompletedQuests.root ?? false, false);
+
+    const allowedResult = applyQuestImportSelection({
+        mode: "PVP",
+        rows,
+        autoCompleteSelections: { leaf: true },
+        completedQuests: {},
+        questsWithItems: {},
+        questsById,
+        allowedSensitiveBackfillQuestIds: [NETWORK_PROVIDER_PART_1_ID],
+    });
+
+    assert.deepEqual(allowedResult.blockedSensitiveQuestIds, []);
+    assert.deepEqual(allowedResult.prerequisiteQuestIds, [NETWORK_PROVIDER_PART_1_ID, "root"]);
+    assert.equal(allowedResult.nextCompletedQuests[NETWORK_PROVIDER_PART_1_ID], true);
+    assert.equal(allowedResult.nextCompletedQuests.root, true);
+});
+
+test("applyQuestImportSelection denial stops at sensitive prerequisites without blocking import", () => {
+    const root = makeQuest({ id: "root", name: "Root" });
+    const networkProvider = makeQuest({
+        id: NETWORK_PROVIDER_PART_1_ID,
+        name: "Network Provider - Part 1",
+        taskRequirements: [{ task: { id: "root", name: "Root" }, status: ["Success"] }],
+    });
+    const postGate = makeQuest({
+        id: "post-gate",
+        name: "Post Gate",
+        taskRequirements: [
+            {
+                task: { id: NETWORK_PROVIDER_PART_1_ID, name: "Network Provider - Part 1" },
+                status: ["Success"],
+            },
+        ],
+    });
+    const leaf = makeQuest({
+        id: "leaf",
+        name: "Leaf",
+        taskRequirements: [{ task: { id: "post-gate", name: "Post Gate" }, status: ["Success"] }],
+    });
+
+    const result = applyQuestImportSelection({
+        mode: "PVP",
+        rows: [
+            {
+                questId: "leaf",
+                quest: leaf,
+                raidMode: "pvp",
+                types: ["completed"],
+                hasStarted: false,
+                hasCompleted: true,
+                occurrenceCount: 1,
+                eventCount: 1,
+                latestTimestamp: null,
+                sourceFiles: [],
+            },
+        ],
+        autoCompleteSelections: { leaf: true },
+        completedQuests: {},
+        questsWithItems: {},
+        questsById: new Map([
+            [root.id, root],
+            [networkProvider.id, networkProvider],
+            [postGate.id, postGate],
+            [leaf.id, leaf],
+        ]),
+        deniedSensitiveBackfillQuestIds: [NETWORK_PROVIDER_PART_1_ID],
+    });
+
+    assert.deepEqual(result.blockedSensitiveQuestIds, []);
+    assert.deepEqual(result.importedQuestIds, ["leaf"]);
+    assert.deepEqual(result.prerequisiteQuestIds, [NETWORK_PROVIDER_PART_1_ID, "post-gate"]);
+    assert.equal(result.nextCompletedQuests.leaf, true);
+    assert.equal(result.nextCompletedQuests["post-gate"], true);
+    assert.equal(result.nextCompletedQuests[NETWORK_PROVIDER_PART_1_ID], true);
+    assert.equal(result.nextCompletedQuests.root ?? false, false);
 });
 
 test("setAllQuestImportSelections populates each quest id with the requested toggle state", () => {

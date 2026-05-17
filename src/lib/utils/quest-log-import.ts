@@ -1,5 +1,6 @@
 import type { FullQuest } from "../../types/types.ts";
 import type { ParsedQuestEventType, QuestLogParseResult, ResolvedAggregatedQuestEvent } from "./quest-log-parser.ts";
+import { collectTransitivePrerequisiteIds } from "./sensitive-quest-backfill";
 
 export type ImportGameMode = "PVP" | "PVE";
 
@@ -30,6 +31,7 @@ export interface QuestImportApplicationResult {
     mode: ImportGameMode;
     importedQuestIds: string[];
     prerequisiteQuestIds: string[];
+    blockedSensitiveQuestIds: string[];
     nextCompletedQuests: Record<string, boolean>;
     nextQuestsWithItems: Record<string, boolean>;
     nextGameMode: ImportGameMode;
@@ -55,11 +57,16 @@ export function applyQuestImportSelection(input: {
     completedQuests: Record<string, boolean>;
     questsWithItems: Record<string, boolean>;
     questsById: ReadonlyMap<string, FullQuest>;
+    allowedSensitiveBackfillQuestIds?: string[];
+    deniedSensitiveBackfillQuestIds?: string[];
 }) {
     const nextCompletedQuests = { ...input.completedQuests };
     const nextQuestsWithItems = { ...input.questsWithItems };
     const importedQuestIds: string[] = [];
     const prerequisiteQuestIds = new Set<string>();
+    const blockedSensitiveQuestIds = new Set<string>();
+    const allowedSensitiveQuestIds = new Set(input.allowedSensitiveBackfillQuestIds ?? []);
+    const deniedSensitiveQuestIds = new Set(input.deniedSensitiveBackfillQuestIds ?? []);
 
     for (const row of input.rows) {
         if (!row.hasCompleted) {
@@ -76,7 +83,15 @@ export function applyQuestImportSelection(input: {
             continue;
         }
 
-        const prerequisiteIds = getTransitivePrerequisiteIds(row.questId, input.questsById);
+        const traversalResult = collectTransitivePrerequisiteIds([row.questId], input.questsById, {
+            allowedSensitiveQuestIds,
+            deniedSensitiveQuestIds,
+        });
+        for (const questId of traversalResult.blockedSensitiveQuestIds) {
+            blockedSensitiveQuestIds.add(questId);
+        }
+
+        const prerequisiteIds = traversalResult.prerequisiteIds;
         for (const prerequisiteId of prerequisiteIds) {
             if (!nextCompletedQuests[prerequisiteId]) {
                 prerequisiteQuestIds.add(prerequisiteId);
@@ -90,6 +105,9 @@ export function applyQuestImportSelection(input: {
         mode: input.mode,
         importedQuestIds,
         prerequisiteQuestIds: Array.from(prerequisiteQuestIds).sort((left, right) =>
+            left.localeCompare(right),
+        ),
+        blockedSensitiveQuestIds: Array.from(blockedSensitiveQuestIds).sort((left, right) =>
             left.localeCompare(right),
         ),
         nextCompletedQuests,
@@ -224,31 +242,4 @@ function buildModeRows(
         const rightTime = right.latestTimestamp?.getTime() ?? 0;
         return rightTime - leftTime || left.quest.name.localeCompare(right.quest.name);
     });
-}
-
-function getTransitivePrerequisiteIds(
-    questId: string,
-    questsById: ReadonlyMap<string, FullQuest>,
-) {
-    const result = new Set<string>();
-    const queue = [questId];
-
-    while (queue.length > 0) {
-        const currentQuestId = queue.pop()!;
-        const quest = questsById.get(currentQuestId);
-        if (!quest) {
-            continue;
-        }
-
-        for (const requirement of quest.taskRequirements) {
-            const prerequisiteId = requirement.task.id;
-            if (result.has(prerequisiteId)) {
-                continue;
-            }
-            result.add(prerequisiteId);
-            queue.push(prerequisiteId);
-        }
-    }
-
-    return result;
 }

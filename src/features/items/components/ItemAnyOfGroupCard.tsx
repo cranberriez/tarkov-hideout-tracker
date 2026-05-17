@@ -213,7 +213,10 @@ export function ItemAnyOfGroupCard({
             <button
                 type="button"
                 onClick={onToggleExpanded}
-                className={cn("flex w-full flex-col gap-2 text-left", isIconMode ? "" : "gap-2.5")}
+                className={cn(
+                    "flex h-full w-full flex-col justify-between gap-2 text-left",
+                    isIconMode ? "" : "gap-2.5",
+                )}
             >
                 <div className="flex w-full items-start gap-3">
                     <ItemPreviewStack

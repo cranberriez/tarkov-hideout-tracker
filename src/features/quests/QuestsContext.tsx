@@ -73,11 +73,15 @@ interface QuestsContextValue {
         traderId: string,
         selectedQuestIds: string[],
         inferOtherTraderChains: boolean,
+        allowedSensitiveBackfillQuestIds?: string[],
+        deniedSensitiveBackfillQuestIds?: string[],
     ) => QuestSyncResult;
     syncTraderSelection: (
         traderId: string,
         selectedQuestIds: string[],
         inferOtherTraderChains: boolean,
+        allowedSensitiveBackfillQuestIds?: string[],
+        deniedSensitiveBackfillQuestIds?: string[],
     ) => LastQuestSyncAction;
     undoLastQuestSync: () => boolean;
     onItemClick: ((itemId: string) => void) | null;
@@ -321,6 +325,8 @@ export function QuestsProvider({
         traderId: string,
         selectedQuestIds: string[],
         inferOtherTraderChains: boolean,
+        allowedSensitiveBackfillQuestIds: string[] = [],
+        deniedSensitiveBackfillQuestIds: string[] = [],
     ) => {
         const state = useUserStore.getState();
         return syncTraderProgress({
@@ -328,6 +334,8 @@ export function QuestsProvider({
             traderId,
             selectedQuestIds,
             inferOtherTraderChains,
+            allowedSensitiveBackfillQuestIds,
+            deniedSensitiveBackfillQuestIds,
             profile: buildSyncProfile(state),
             questsWithItems: state.questsWithItems,
         });
@@ -337,8 +345,16 @@ export function QuestsProvider({
         traderId: string,
         selectedQuestIds: string[],
         inferOtherTraderChains: boolean,
+        allowedSensitiveBackfillQuestIds: string[] = [],
+        deniedSensitiveBackfillQuestIds: string[] = [],
     ) => {
-        const result = previewTraderSelection(traderId, selectedQuestIds, inferOtherTraderChains);
+        const result = previewTraderSelection(
+            traderId,
+            selectedQuestIds,
+            inferOtherTraderChains,
+            allowedSensitiveBackfillQuestIds,
+            deniedSensitiveBackfillQuestIds,
+        );
 
         if (result.completedIds.length > 0) {
             useUserStore.setState({

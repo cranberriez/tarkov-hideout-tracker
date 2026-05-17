@@ -7,6 +7,7 @@ import {
     syncTraderProgress,
     type QuestSyncProfile,
 } from "./quest-sync";
+import { NETWORK_PROVIDER_PART_1_ID } from "../../lib/utils/sensitive-quest-backfill";
 
 function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name">): FullQuest {
     return {
@@ -299,4 +300,140 @@ test("syncTraderProgress can skip same-trader inferred chains when disabled", ()
     assert.deepEqual(result.prerequisiteCompletedIds.sort(), ["a", "b"]);
     assert.deepEqual(result.inferredCompletedIds, []);
     assert.equal(result.nextCompletedQuests["d"] ?? false, false);
+});
+
+test("syncTraderProgress blocks sensitive prerequisites unless explicitly allowed", () => {
+    const networkProvider = makeQuest({
+        id: NETWORK_PROVIDER_PART_1_ID,
+        name: "Network Provider - Part 1",
+        taskRequirements: [{ task: { id: "root", name: "Root" }, status: ["Success"] }],
+    });
+    const selected = makeQuest({
+        id: "after-network-provider",
+        name: "After Network Provider",
+        taskRequirements: [
+            {
+                task: { id: NETWORK_PROVIDER_PART_1_ID, name: "Network Provider - Part 1" },
+                status: ["Success"],
+            },
+        ],
+    });
+    const quests = [makeQuest({ id: "root", name: "Root" }), networkProvider, selected];
+
+    const blockedResult = syncTraderProgress({
+        quests,
+        traderId: "prapor",
+        selectedQuestIds: [selected.id],
+        profile: makeProfile(),
+        questsWithItems: {},
+    });
+
+    assert.deepEqual(blockedResult.prerequisiteCompletedIds, []);
+    assert.deepEqual(blockedResult.blockedSensitiveQuestIds, [NETWORK_PROVIDER_PART_1_ID]);
+    assert.equal(blockedResult.nextCompletedQuests[NETWORK_PROVIDER_PART_1_ID] ?? false, false);
+    assert.equal(blockedResult.nextCompletedQuests.root ?? false, false);
+
+    const deniedResult = syncTraderProgress({
+        quests,
+        traderId: "prapor",
+        selectedQuestIds: [selected.id],
+        deniedSensitiveBackfillQuestIds: [NETWORK_PROVIDER_PART_1_ID],
+        profile: makeProfile(),
+        questsWithItems: {},
+    });
+
+    assert.deepEqual(deniedResult.blockedSensitiveQuestIds, []);
+    assert.deepEqual(deniedResult.prerequisiteCompletedIds, [NETWORK_PROVIDER_PART_1_ID]);
+    assert.equal(deniedResult.nextCompletedQuests[NETWORK_PROVIDER_PART_1_ID], true);
+    assert.equal(deniedResult.nextCompletedQuests.root ?? false, false);
+
+    const allowedResult = syncTraderProgress({
+        quests,
+        traderId: "prapor",
+        selectedQuestIds: [selected.id],
+        allowedSensitiveBackfillQuestIds: [NETWORK_PROVIDER_PART_1_ID],
+        profile: makeProfile(),
+        questsWithItems: {},
+    });
+
+    assert.deepEqual(allowedResult.blockedSensitiveQuestIds, []);
+    assert.deepEqual(allowedResult.prerequisiteCompletedIds.sort(), [
+        NETWORK_PROVIDER_PART_1_ID,
+        "root",
+    ]);
+    assert.equal(allowedResult.nextCompletedQuests[NETWORK_PROVIDER_PART_1_ID], true);
+    assert.equal(allowedResult.nextCompletedQuests.root, true);
+});
+
+test("syncTraderProgress blocks sensitive same-trader inferred quests unless explicitly allowed", () => {
+    const quests = [
+        makeQuest({ id: "root", name: "Root" }),
+        makeQuest({
+            id: "selected",
+            name: "Selected",
+            taskRequirements: [{ task: { id: "root", name: "Root" }, status: ["Success"] }],
+        }),
+        makeQuest({
+            id: NETWORK_PROVIDER_PART_1_ID,
+            name: "Network Provider - Part 1",
+            taskRequirements: [{ task: { id: "root", name: "Root" }, status: ["Success"] }],
+        }),
+    ];
+
+    const blockedResult = syncTraderProgress({
+        quests,
+        traderId: "prapor",
+        selectedQuestIds: ["selected"],
+        profile: makeProfile(),
+        questsWithItems: {},
+    });
+
+    assert.deepEqual(blockedResult.prerequisiteCompletedIds, ["root"]);
+    assert.deepEqual(blockedResult.inferredCompletedIds, []);
+    assert.deepEqual(blockedResult.blockedSensitiveQuestIds, [NETWORK_PROVIDER_PART_1_ID]);
+    assert.equal(blockedResult.nextCompletedQuests[NETWORK_PROVIDER_PART_1_ID] ?? false, false);
+
+    const allowedResult = syncTraderProgress({
+        quests,
+        traderId: "prapor",
+        selectedQuestIds: ["selected"],
+        allowedSensitiveBackfillQuestIds: [NETWORK_PROVIDER_PART_1_ID],
+        profile: makeProfile(),
+        questsWithItems: {},
+    });
+
+    assert.deepEqual(allowedResult.blockedSensitiveQuestIds, []);
+    assert.deepEqual(allowedResult.inferredCompletedIds, [NETWORK_PROVIDER_PART_1_ID]);
+    assert.equal(allowedResult.nextCompletedQuests[NETWORK_PROVIDER_PART_1_ID], true);
+});
+
+test("syncTraderProgress denial stops at sensitive inferred quests without blocking other completions", () => {
+    const quests = [
+        makeQuest({ id: "root", name: "Root" }),
+        makeQuest({
+            id: "selected",
+            name: "Selected",
+            taskRequirements: [{ task: { id: "root", name: "Root" }, status: ["Success"] }],
+        }),
+        makeQuest({
+            id: NETWORK_PROVIDER_PART_1_ID,
+            name: "Network Provider - Part 1",
+            taskRequirements: [{ task: { id: "root", name: "Root" }, status: ["Success"] }],
+        }),
+    ];
+
+    const result = syncTraderProgress({
+        quests,
+        traderId: "prapor",
+        selectedQuestIds: ["selected"],
+        deniedSensitiveBackfillQuestIds: [NETWORK_PROVIDER_PART_1_ID],
+        profile: makeProfile(),
+        questsWithItems: {},
+    });
+
+    assert.deepEqual(result.blockedSensitiveQuestIds, []);
+    assert.deepEqual(result.prerequisiteCompletedIds, ["root"]);
+    assert.deepEqual(result.inferredCompletedIds, [NETWORK_PROVIDER_PART_1_ID]);
+    assert.equal(result.nextCompletedQuests.root, true);
+    assert.equal(result.nextCompletedQuests[NETWORK_PROVIDER_PART_1_ID], true);
 });

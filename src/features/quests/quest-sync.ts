@@ -5,6 +5,10 @@ import {
     matchesFactionVisibility,
     type QuestAvailabilityProfile,
 } from "../../lib/utils/quest-availability";
+import {
+    collectTransitivePrerequisiteIds,
+    getSensitiveBackfillQuest,
+} from "../../lib/utils/sensitive-quest-backfill";
 
 export type FactionFilter = NonNullable<QuestAvailabilityProfile["faction"]>;
 export type QuestSyncProfile = QuestAvailabilityProfile;
@@ -15,6 +19,8 @@ export interface SyncTraderProgressInput {
     traderId: string;
     selectedQuestIds: string[];
     inferOtherTraderChains?: boolean;
+    allowedSensitiveBackfillQuestIds?: string[];
+    deniedSensitiveBackfillQuestIds?: string[];
     profile: QuestSyncProfile;
     questsWithItems: Record<string, boolean>;
 }
@@ -25,6 +31,7 @@ export interface QuestSyncResult {
     selectedCompletedIds: string[];
     prerequisiteCompletedIds: string[];
     inferredCompletedIds: string[];
+    blockedSensitiveQuestIds: string[];
     completedIds: string[];
     previousCompletedQuests: Record<string, boolean | undefined>;
     previousQuestsWithItems: Record<string, boolean | undefined>;
@@ -44,31 +51,13 @@ export function getSyncCandidatesForTrader(quests: FullQuest[], traderId: string
     return quests.filter((quest) => quest.trader.id === traderId);
 }
 
-function getTransitivePrerequisiteIds(rootIds: string[], questsById: Map<string, FullQuest>) {
-    const result = new Set<string>();
-    const queue = [...rootIds];
-
-    while (queue.length > 0) {
-        const id = queue.pop()!;
-        const quest = questsById.get(id);
-        if (!quest) continue;
-
-        for (const requirement of quest.taskRequirements) {
-            const prerequisiteId = requirement.task.id;
-            if (result.has(prerequisiteId)) continue;
-            result.add(prerequisiteId);
-            queue.push(prerequisiteId);
-        }
-    }
-
-    return result;
-}
-
 export function syncTraderProgress({
     quests,
     traderId,
     selectedQuestIds,
     inferOtherTraderChains = true,
+    allowedSensitiveBackfillQuestIds = [],
+    deniedSensitiveBackfillQuestIds = [],
     profile,
     questsWithItems,
 }: SyncTraderProgressInput): QuestSyncResult {
@@ -78,7 +67,18 @@ export function syncTraderProgress({
     const selectedQuestIdSet = new Set(selectedQuestIds);
     const activeTraderQuests = quests.filter((quest) => quest.trader.id === traderId);
     const completedAnchorIds = new Set<string>();
-    const prerequisiteIds = getTransitivePrerequisiteIds(selectedQuestIds, new Map(quests.map((quest) => [quest.id, quest])));
+    const traversalResult = collectTransitivePrerequisiteIds(
+        selectedQuestIds,
+        new Map(quests.map((quest) => [quest.id, quest])),
+        {
+            allowedSensitiveQuestIds: new Set(allowedSensitiveBackfillQuestIds),
+            deniedSensitiveQuestIds: new Set(deniedSensitiveBackfillQuestIds),
+        },
+    );
+    const prerequisiteIds = traversalResult.prerequisiteIds;
+    const allowedSensitiveQuestIds = new Set(allowedSensitiveBackfillQuestIds);
+    const deniedSensitiveQuestIds = new Set(deniedSensitiveBackfillQuestIds);
+    const blockedSensitiveQuestIds = new Set(traversalResult.blockedSensitiveQuestIds);
 
     for (const questId of selectedQuestIdSet) {
         prerequisiteIds.delete(questId);
@@ -124,6 +124,15 @@ export function syncTraderProgress({
                 if (nextCompletedQuests[quest.id]) continue;
                 if (!isQuestAvailableForProfile(quest, syncProfile, questAvailabilityById)) continue;
                 if (!quest.taskRequirements.some((requirement) => completedAnchorIds.has(requirement.task.id))) continue;
+                if (getSensitiveBackfillQuest(quest.id) && !allowedSensitiveQuestIds.has(quest.id)) {
+                    if (deniedSensitiveQuestIds.has(quest.id)) {
+                        recordCompletion(quest.id, inferredCompletedIds);
+                        continue;
+                    }
+
+                    blockedSensitiveQuestIds.add(quest.id);
+                    continue;
+                }
 
                 completedAnchorIds.add(quest.id);
                 madeProgress = recordCompletion(quest.id, inferredCompletedIds) || madeProgress;
@@ -137,6 +146,9 @@ export function syncTraderProgress({
         selectedCompletedIds,
         prerequisiteCompletedIds,
         inferredCompletedIds,
+        blockedSensitiveQuestIds: Array.from(blockedSensitiveQuestIds).sort(
+            (left, right) => left.localeCompare(right),
+        ),
         completedIds: [...selectedCompletedIds, ...prerequisiteCompletedIds, ...inferredCompletedIds],
         previousCompletedQuests,
         previousQuestsWithItems,

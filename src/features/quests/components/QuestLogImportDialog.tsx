@@ -38,8 +38,12 @@ import {
 import {
     buildQuestAvailabilityMap,
     isQuestAvailableForProfile,
-    type QuestAvailabilityProfile,
 } from "@/lib/utils/quest-availability";
+import {
+    NETWORK_PROVIDER_PART_1_ID,
+    getSensitiveBackfillQuest,
+    getSensitiveBackfillQuestName,
+} from "@/lib/utils/sensitive-quest-backfill";
 import {
     Dialog,
     DialogContent,
@@ -66,7 +70,6 @@ interface ParsedImportView {
 
 type AutoCompleteSelectionMap = Record<string, boolean>;
 type DialogStep = "select" | "review";
-const NETWORK_PROVIDER_PART_1_ID = "625d6ff5ddc94657c21a1625";
 
 export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImportDialogProps) {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -83,6 +86,12 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     const [step, setStep] = useState<DialogStep>("select");
     const [reviewMode, setReviewMode] = useState<ImportGameMode | null>(null);
     const [didConfirmImport, setDidConfirmImport] = useState(false);
+    const [allowedSensitiveBackfillQuestIds, setAllowedSensitiveBackfillQuestIds] = useState<
+        string[]
+    >([]);
+    const [deniedSensitiveBackfillQuestIds, setDeniedSensitiveBackfillQuestIds] = useState<
+        string[]
+    >([]);
 
     const questsById = useMemo(() => new Map(quests.map((quest) => [quest.id, quest])), [quests]);
     const completedQuests = useUserStore((state) => state.completedQuests);
@@ -115,6 +124,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     }, [availabilityProfile, quests]);
 
     const directoryInputProps: DirectoryInputAttributes = {
+        id: "quest-log-folder-upload",
+        name: "quest-log-folder-upload",
         type: "file",
         multiple: true,
         webkitdirectory: "",
@@ -134,6 +145,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
         setStep("select");
         setReviewMode(null);
         setDidConfirmImport(false);
+        setAllowedSensitiveBackfillQuestIds([]);
+        setDeniedSensitiveBackfillQuestIds([]);
 
         if (files.length === 0) {
             setParsedView(null);
@@ -235,6 +248,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
         setStep("select");
         setReviewMode(null);
         setDidConfirmImport(false);
+        setAllowedSensitiveBackfillQuestIds([]);
+        setDeniedSensitiveBackfillQuestIds([]);
     }
 
     function handleClearCache() {
@@ -245,6 +260,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     }
 
     function handleToggleAutoComplete(mode: ImportGameMode, questId: string) {
+        setAllowedSensitiveBackfillQuestIds([]);
+        setDeniedSensitiveBackfillQuestIds([]);
         const key = getSelectionKey(mode, questId);
         setAutoCompleteSelections((current) => ({
             ...current,
@@ -253,6 +270,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     }
 
     function handleSetAllForMode(mode: ImportGameMode, rows: QuestImportRow[], nextValue: boolean) {
+        setAllowedSensitiveBackfillQuestIds([]);
+        setDeniedSensitiveBackfillQuestIds([]);
         const nextSectionSelections = setAllQuestImportSelections(rows, nextValue);
         setAutoCompleteSelections((current) => {
             const next = { ...current };
@@ -298,7 +317,14 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
             completedQuests: state.completedQuests,
             questsWithItems: state.questsWithItems,
             questsById,
+            allowedSensitiveBackfillQuestIds,
+            deniedSensitiveBackfillQuestIds,
         });
+
+        if (result.blockedSensitiveQuestIds.length > 0) {
+            setImportNotice("Sensitive prerequisite backfill must be allowed before importing.");
+            return;
+        }
 
         useUserStore.setState({
             completedQuests: result.nextCompletedQuests,
@@ -347,6 +373,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                   completedQuests,
                   questsWithItems,
                   questsById,
+                  allowedSensitiveBackfillQuestIds,
+                  deniedSensitiveBackfillQuestIds,
               })
             : null;
     const reviewImportedRows = reviewRows.filter((row) =>
@@ -355,6 +383,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     const reviewPrerequisiteQuests = (reviewPreview?.prerequisiteQuestIds ?? [])
         .map((questId) => questsById.get(questId))
         .filter((quest): quest is FullQuest => !!quest);
+    const reviewBlockedSensitiveQuestIds = reviewPreview?.blockedSensitiveQuestIds ?? [];
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -402,6 +431,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         <button
                                             type="button"
                                             onClick={handleChooseFolder}
+                                            aria-controls="quest-log-folder-upload"
                                             className="inline-flex items-center gap-2 rounded-sm border border-tarkov-green/30 bg-tarkov-green/10 px-3 py-2 text-sm font-semibold text-tarkov-green transition-colors hover:border-tarkov-green/60"
                                         >
                                             <Upload size={14} />
@@ -587,10 +617,36 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                     mode={reviewMode}
                                     importedRows={reviewImportedRows}
                                     prerequisiteQuests={reviewPrerequisiteQuests}
+                                    blockedSensitiveQuestIds={reviewBlockedSensitiveQuestIds}
                                     didConfirmImport={didConfirmImport}
+                                    getQuestName={(questId) =>
+                                        getSensitiveBackfillQuestName(questId, questsById)
+                                    }
+                                    onAllowSensitiveBackfill={(questId) => {
+                                        setAllowedSensitiveBackfillQuestIds((current) =>
+                                            Array.from(new Set([...current, questId])),
+                                        );
+                                        setDeniedSensitiveBackfillQuestIds((current) =>
+                                            current.filter(
+                                                (deniedQuestId) => deniedQuestId !== questId,
+                                            ),
+                                        );
+                                    }}
+                                    onDenySensitiveBackfill={(questId) => {
+                                        setAllowedSensitiveBackfillQuestIds((current) =>
+                                            current.filter(
+                                                (allowedQuestId) => allowedQuestId !== questId,
+                                            ),
+                                        );
+                                        setDeniedSensitiveBackfillQuestIds((current) =>
+                                            Array.from(new Set([...current, questId])),
+                                        );
+                                    }}
                                     onBack={() => {
                                         setStep("select");
                                         setDidConfirmImport(false);
+                                        setAllowedSensitiveBackfillQuestIds([]);
+                                        setDeniedSensitiveBackfillQuestIds([]);
                                     }}
                                     onConfirm={() => handleImportMode(reviewMode)}
                                     onClose={() => onOpenChange(false)}
@@ -739,7 +795,11 @@ function ReviewStep({
     mode,
     importedRows,
     prerequisiteQuests,
+    blockedSensitiveQuestIds,
     didConfirmImport,
+    getQuestName,
+    onAllowSensitiveBackfill,
+    onDenySensitiveBackfill,
     onBack,
     onConfirm,
     onClose,
@@ -747,7 +807,11 @@ function ReviewStep({
     mode: ImportGameMode;
     importedRows: QuestImportRow[];
     prerequisiteQuests: FullQuest[];
+    blockedSensitiveQuestIds: string[];
     didConfirmImport: boolean;
+    getQuestName: (questId: string) => string;
+    onAllowSensitiveBackfill: (questId: string) => void;
+    onDenySensitiveBackfill: (questId: string) => void;
     onBack: () => void;
     onConfirm: () => void;
     onClose: () => void;
@@ -786,7 +850,13 @@ function ReviewStep({
                         <button
                             type="button"
                             onClick={onConfirm}
-                            className="rounded-sm border border-tarkov-green/30 bg-tarkov-green/10 px-3 py-2 text-sm font-semibold text-tarkov-green transition-colors hover:border-tarkov-green/60"
+                            disabled={blockedSensitiveQuestIds.length > 0}
+                            className={cn(
+                                "rounded-sm px-3 py-2 text-sm font-semibold transition-colors",
+                                blockedSensitiveQuestIds.length > 0
+                                    ? "cursor-not-allowed border border-white/10 bg-black/30 text-gray-600"
+                                    : "border border-tarkov-green/30 bg-tarkov-green/10 text-tarkov-green hover:border-tarkov-green/60",
+                            )}
                         >
                             Confirm Import
                         </button>
@@ -806,6 +876,15 @@ function ReviewStep({
                     <MiniStat label="Quests" value={importedRows.length} />
                     <MiniStat label="Prereqs" value={prerequisiteQuests.length} />
                 </div>
+
+                {blockedSensitiveQuestIds.length > 0 && (
+                    <SensitiveBackfillGate
+                        questIds={blockedSensitiveQuestIds}
+                        getQuestName={getQuestName}
+                        onAllow={onAllowSensitiveBackfill}
+                        onDeny={onDenySensitiveBackfill}
+                    />
+                )}
 
                 <ReviewList
                     title="Quests from Logs"
@@ -837,6 +916,52 @@ function ReviewStep({
                 )}
             </div>
         </section>
+    );
+}
+
+function SensitiveBackfillGate({
+    questIds,
+    getQuestName,
+    onAllow,
+    onDeny,
+}: {
+    questIds: string[];
+    getQuestName: (questId: string) => string;
+    onAllow: (questId: string) => void;
+    onDeny: (questId: string) => void;
+}) {
+    return (
+        <div className="rounded-sm border border-dashed border-red-500/60 px-3 py-3 text-sm text-gray-200">
+            <div className="font-semibold text-red-400">
+                Sensitive prerequisite backfill blocked.
+            </div>
+            <div className="mt-3 space-y-4">
+                {questIds.map((questId) => (
+                    <div key={questId}>
+                        <div className="font-semibold">{getQuestName(questId)}</div>
+                        <p className="mt-1 text-xs leading-5 text-gray-400">
+                            {getSensitiveBackfillQuest(questId)?.warning}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                onClick={() => onDeny(questId)}
+                                className="rounded-sm border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-300 transition-colors hover:border-white/25 hover:text-white"
+                            >
+                                Ignore Pre-requisites
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onAllow(questId)}
+                                className="rounded-sm border border-red-500/50 bg-red-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-red-100 transition-colors hover:border-red-400 hover:bg-red-500/25 hover:text-white"
+                            >
+                                Complete Pre-requisites
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
     );
 }
 
