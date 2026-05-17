@@ -52,6 +52,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { QuestListByTrader } from "./QuestListByTrader";
 
 interface QuestLogImportDialogProps {
     open: boolean;
@@ -670,6 +671,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                     prerequisiteQuests={reviewPrerequisiteQuests}
                                     blockedSensitiveQuestIds={reviewBlockedSensitiveQuestIds}
                                     didConfirmImport={didConfirmImport}
+                                    questsById={questsById}
                                     getQuestName={(questId) =>
                                         getSensitiveBackfillQuestName(questId, questsById)
                                     }
@@ -861,6 +863,7 @@ function ReviewStep({
     prerequisiteQuests,
     blockedSensitiveQuestIds,
     didConfirmImport,
+    questsById,
     getQuestName,
     onAllowSensitiveBackfill,
     onDenySensitiveBackfill,
@@ -873,6 +876,7 @@ function ReviewStep({
     prerequisiteQuests: FullQuest[];
     blockedSensitiveQuestIds: string[];
     didConfirmImport: boolean;
+    questsById: ReadonlyMap<string, FullQuest>;
     getQuestName: (questId: string) => string;
     onAllowSensitiveBackfill: (questId: string) => void;
     onDenySensitiveBackfill: (questId: string) => void;
@@ -950,33 +954,31 @@ function ReviewStep({
                     />
                 )}
 
-                <ReviewList
-                    title="Quests from Logs"
-                    emptyState={`No ${mode} quests are queued for import.`}
-                    items={importedRows.map((row) => ({
-                        key: row.questId,
-                        title: row.quest.name,
-                        subtitle: row.questId,
-                        meta:
-                            row.hasStarted && row.hasCompleted
-                                ? "Started + Completed"
-                                : row.hasCompleted
-                                  ? "Completed"
-                                  : "Started",
-                    }))}
-                />
+                <section className="rounded-lg border border-white/10 bg-black/20">
+                    <div className="border-b border-white/10 px-4 py-3">
+                        <h3 className="text-sm font-semibold text-white">Quests from Logs</h3>
+                    </div>
+                    <div className="p-3">
+                        <QuestListByTrader
+                            questIds={importedRows.map((row) => row.questId)}
+                            questsById={questsById}
+                            emptyMessage={`No ${mode} quests are queued for import.`}
+                        />
+                    </div>
+                </section>
 
                 {prerequisiteQuests.length > 0 && (
-                    <ReviewList
-                        title="Prerequisites to Auto-Complete"
-                        emptyState="No prerequisite quests will be auto-completed."
-                        items={prerequisiteQuests.map((quest) => ({
-                            key: quest.id,
-                            title: quest.name,
-                            subtitle: quest.id,
-                            meta: "Prerequisite",
-                        }))}
-                    />
+                    <section className="rounded-lg border border-white/10 bg-black/20">
+                        <div className="border-b border-white/10 px-4 py-3">
+                            <h3 className="text-sm font-semibold text-white">Prerequisites to Auto-Complete</h3>
+                        </div>
+                        <div className="p-3">
+                            <QuestListByTrader
+                                questIds={prerequisiteQuests.map((quest) => quest.id)}
+                                questsById={questsById}
+                            />
+                        </div>
+                    </section>
                 )}
             </div>
         </section>
@@ -1026,44 +1028,6 @@ function SensitiveBackfillGate({
                 ))}
             </div>
         </div>
-    );
-}
-
-function ReviewList({
-    title,
-    emptyState,
-    items,
-}: {
-    title: string;
-    emptyState: string;
-    items: { key: string; title: string; subtitle: string; meta: string }[];
-}) {
-    return (
-        <section className="rounded-lg border border-white/10 bg-black/20">
-            <div className="border-b border-white/10 px-4 py-3">
-                <h3 className="text-sm font-semibold text-white">{title}</h3>
-            </div>
-            {items.length === 0 ? (
-                <div className="px-4 py-5 text-sm text-gray-500">{emptyState}</div>
-            ) : (
-                <div className="divide-y divide-white/5">
-                    {items.map((item) => (
-                        <div
-                            key={item.key}
-                            className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-                        >
-                            <div className="min-w-0">
-                                <div className="truncate text-sm font-semibold text-white">
-                                    {item.title}
-                                </div>
-                                <div className="text-xs text-gray-500">{item.subtitle}</div>
-                            </div>
-                            <div className="text-xs text-gray-400">{item.meta}</div>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </section>
     );
 }
 
