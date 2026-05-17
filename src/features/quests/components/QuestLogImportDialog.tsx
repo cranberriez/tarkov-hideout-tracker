@@ -30,6 +30,7 @@ import {
 } from "@/lib/utils/quest-log-import";
 import {
     filterQuestLogFiles,
+    getPreWipeQuestLogFileNames,
     type ParsedQuestEvent,
     type QuestLogParseResult,
     parseQuestLogFiles,
@@ -81,6 +82,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     const [showInfo, setShowInfo] = useState(false);
     const [importNotice, setImportNotice] = useState<string | null>(null);
     const [cacheNotice, setCacheNotice] = useState<string | null>(null);
+    const [preWipeIgnoredFileNames, setPreWipeIgnoredFileNames] = useState<string[]>([]);
     const [pendingSeenFileFingerprints, setPendingSeenFileFingerprints] = useState<string[]>([]);
     const [autoCompleteSelections, setAutoCompleteSelections] = useState<AutoCompleteSelectionMap>(
         {},
@@ -145,6 +147,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
         setError(null);
         setImportNotice(null);
         setCacheNotice(null);
+        setPreWipeIgnoredFileNames([]);
         setPendingSeenFileFingerprints([]);
         setStep("select");
         setReviewMode(null);
@@ -168,6 +171,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                 setParsedView(null);
                 setAutoCompleteSelections({});
                 setCacheNotice(null);
+                setPreWipeIgnoredFileNames([]);
                 setPendingSeenFileFingerprints([]);
                 setError(
                     "That selection does not look like an EFT logs folder. Try ~\\Battlestate Games\\EFT\\Logs or one of its log_* subfolders.",
@@ -178,6 +182,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
             const { matched } = filterQuestLogFiles(files);
             let filesToParse = matched;
             const newFingerprints: string[] = [];
+            const preWipeFileNamesFromPath = getPreWipeQuestLogFileNames(matched);
 
             if (ENABLE_QUEST_LOG_FILE_DEDUPE) {
                 const seenFingerprints = readSeenQuestLogFingerprints();
@@ -198,6 +203,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                 setParsedView(null);
                 setAutoCompleteSelections({});
                 setPendingSeenFileFingerprints([]);
+                setPreWipeIgnoredFileNames(preWipeFileNamesFromPath);
                 setCacheNotice("No new files seen.");
                 return;
             }
@@ -214,6 +220,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
             const buckets = buildQuestImportBuckets(result);
             setParsedView({ result, buckets });
             setCacheNotice(null);
+            setPreWipeIgnoredFileNames(result.preWipeIgnoredFiles ?? []);
             setPendingSeenFileFingerprints(
                 Array.from(new Set(newFingerprints)).sort((left, right) =>
                     left.localeCompare(right),
@@ -230,6 +237,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
         } catch {
             setParsedView(null);
             setAutoCompleteSelections({});
+            setPreWipeIgnoredFileNames([]);
             setPendingSeenFileFingerprints([]);
             setError(
                 "The selected logs could not be read. Try choosing the EFT logs folder again.",
@@ -251,6 +259,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
         setError(null);
         setImportNotice(null);
         setCacheNotice(null);
+        setPreWipeIgnoredFileNames([]);
         setPendingSeenFileFingerprints([]);
         setShowInfo(false);
         setStep("select");
@@ -368,6 +377,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     }
 
     const hasResults = !!parsedView;
+    const hasPreWipeIgnoredFiles = preWipeIgnoredFileNames.length > 0;
     const filteredPvpRows = parsedView
         ? filterIncompleteQuestImportRows({
               rows: parsedView.buckets.pvp,
@@ -534,6 +544,10 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         {importNotice}
                                     </div>
                                 )}
+
+                                {hasPreWipeIgnoredFiles && (
+                                    <PreWipeCutoffNotice fileCount={preWipeIgnoredFileNames.length} />
+                                )}
                             </section>
                         )}
 
@@ -584,6 +598,10 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                                 Ignore for these files
                                             </button>
                                         </div>
+                                    )}
+
+                                    {hasPreWipeIgnoredFiles && (
+                                        <PreWipeCutoffNotice fileCount={preWipeIgnoredFileNames.length} />
                                     )}
 
                                     {!cacheNotice && hasResults && !hasAnyImportableRows && (
@@ -689,6 +707,19 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                 </div>
             </DialogContent>
         </Dialog>
+    );
+}
+
+function PreWipeCutoffNotice({ fileCount }: { fileCount: number }) {
+    return (
+        <div className="mt-4 inline-flex items-center gap-2 rounded-sm border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+            <AlertCircle size={14} />
+            <span>
+                Some log files are older than the latest 1.0 wipe in November 2025 and were
+                ignored.
+                {fileCount > 1 ? ` ${fileCount} files were skipped.` : ""}
+            </span>
+        </div>
     );
 }
 

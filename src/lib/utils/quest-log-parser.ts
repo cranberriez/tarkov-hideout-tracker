@@ -44,6 +44,8 @@ export interface QuestLogParseTotals {
     filesScanned: number;
     filesParsed: number;
     filesIgnored: number;
+    preWipeFilesIgnored?: number;
+    preWipeEventsIgnored?: number;
     rawEvents: number;
     dedupedEvents: number;
     startedEvents: number;
@@ -57,6 +59,7 @@ export interface QuestLogParseResult {
     totals: QuestLogParseTotals;
     filteredFiles: string[];
     ignoredFiles: string[];
+    preWipeIgnoredFiles?: string[];
     events: ParsedQuestEvent[];
     groups: AggregatedQuestEvent[];
     resolvedGroups: ResolvedAggregatedQuestEvent[];
@@ -75,6 +78,12 @@ export interface QuestLogFileInput extends QuestLogFileLike {
 interface JsonBlockResult {
     jsonText: string;
     endIndex: number;
+}
+
+interface ParsedQuestLogFileResult {
+    events: ParsedQuestEvent[];
+    preWipeEventsIgnored: number;
+    preWipeFileIgnored: boolean;
 }
 
 const PUSH_NOTIFICATION_FILE_PATTERN = /push-notifications.*\.log$/i;
@@ -102,16 +111,32 @@ export function selectionLooksLikeEftLogsFolder<T extends QuestLogFileLike>(file
     return files.some((file) => hasAllowedLogFolderPath(file));
 }
 
+export function getPreWipeQuestLogFileNames<T extends QuestLogFileLike>(files: T[]) {
+    return files
+        .filter((file) => isLogSessionBeforeWipeCutoff(file.webkitRelativePath || file.name))
+        .map((file) => file.name);
+}
+
 export function parseQuestLogFile(
     text: string,
     fileName: string,
     dateSourcePath = fileName,
 ): ParsedQuestEvent[] {
+    return parseQuestLogFileWithCutoffStats(text, fileName, dateSourcePath).events;
+}
+
+function parseQuestLogFileWithCutoffStats(
+    text: string,
+    fileName: string,
+    dateSourcePath = fileName,
+): ParsedQuestLogFileResult {
     const lines = text.split(/\r?\n/);
     const events: ParsedQuestEvent[] = [];
+    let preWipeEventsIgnored = 0;
     let currentRaidMode: ParsedRaidMode = "unknown";
     const fallbackTimestamp = parseLogSessionDateFromPath(dateSourcePath);
     const fallbackTimestampMs = fallbackTimestamp?.getTime() ?? null;
+    const fileLooksPreWipe = fallbackTimestampMs !== null && fallbackTimestampMs < QUEST_LOG_WIPE_CUTOFF_MS;
 
     for (let index = 0; index < lines.length; index += 1) {
         const line = lines[index] ?? "";
@@ -143,21 +168,38 @@ export function parseQuestLogFile(
             timestamp: parseTimestampFromLine(line),
         });
 
-        if (event && isEventOnOrAfterWipeCutoff(event, fallbackTimestampMs)) {
-            events.push(event);
+        if (event) {
+            if (isEventOnOrAfterWipeCutoff(event, fallbackTimestampMs)) {
+                events.push(event);
+            } else {
+                preWipeEventsIgnored += 1;
+            }
         }
 
         index = jsonBlock.endIndex;
     }
 
-    return events;
+    return {
+        events,
+        preWipeEventsIgnored,
+        preWipeFileIgnored: fileLooksPreWipe || preWipeEventsIgnored > 0,
+    };
 }
 
 export function parseQuestLogFiles(files: QuestLogFileInput[], quests: FullQuest[]): QuestLogParseResult {
     const { matched, ignored } = filterQuestLogFiles(files);
-    const rawEvents = matched.flatMap((file) =>
-        parseQuestLogFile(file.text, file.name, file.webkitRelativePath || file.name),
+    const parsedFiles = matched.map((file) => ({
+        file,
+        result: parseQuestLogFileWithCutoffStats(file.text, file.name, file.webkitRelativePath || file.name),
+    }));
+    const rawEvents = parsedFiles.flatMap((parsedFile) => parsedFile.result.events);
+    const preWipeEventsIgnored = parsedFiles.reduce(
+        (count, parsedFile) => count + parsedFile.result.preWipeEventsIgnored,
+        0,
     );
+    const preWipeIgnoredFiles = parsedFiles
+        .filter((parsedFile) => parsedFile.result.preWipeFileIgnored)
+        .map((parsedFile) => parsedFile.file.name);
     const dedupedEvents = dedupeQuestEvents(rawEvents);
     const groups = aggregateQuestEvents(dedupedEvents);
     const { resolved, unresolved } = resolveQuestEventGroups(groups, quests);
@@ -167,6 +209,8 @@ export function parseQuestLogFiles(files: QuestLogFileInput[], quests: FullQuest
             filesScanned: files.length,
             filesParsed: matched.length,
             filesIgnored: ignored.length,
+            preWipeFilesIgnored: preWipeIgnoredFiles.length,
+            preWipeEventsIgnored,
             rawEvents: rawEvents.length,
             dedupedEvents: dedupedEvents.length,
             startedEvents: dedupedEvents.filter((event) => event.type === "started").length,
@@ -177,6 +221,7 @@ export function parseQuestLogFiles(files: QuestLogFileInput[], quests: FullQuest
         },
         filteredFiles: matched.map((file) => file.name),
         ignoredFiles: ignored.map((file) => file.name),
+        preWipeIgnoredFiles,
         events: dedupedEvents,
         groups,
         resolvedGroups: resolved,
@@ -504,6 +549,11 @@ function parseLogSessionDateFromPath(path: string): Date | null {
     );
 
     return Number.isNaN(timestamp.getTime()) ? null : timestamp;
+}
+
+function isLogSessionBeforeWipeCutoff(path: string) {
+    const timestamp = parseLogSessionDateFromPath(path);
+    return timestamp !== null && timestamp.getTime() < QUEST_LOG_WIPE_CUTOFF_MS;
 }
 
 function isEventOnOrAfterWipeCutoff(event: ParsedQuestEvent, fallbackTimestampMs: number | null) {

@@ -243,6 +243,9 @@ Got notification | ChatMessageReceived
         result.events.map((event) => event.questId),
         ["post-wipe"],
     );
+    assert.deepEqual(result.preWipeIgnoredFiles, ["push-notifications_000.log"]);
+    assert.equal(result.totals.preWipeFilesIgnored, 1);
+    assert.equal(result.totals.preWipeEventsIgnored, 1);
     assert.equal(result.resolvedGroups.length, 1);
     assert.equal(result.unresolvedGroups.length, 0);
 });
