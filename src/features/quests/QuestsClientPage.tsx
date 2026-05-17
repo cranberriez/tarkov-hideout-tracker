@@ -14,6 +14,7 @@ import { QuestsSyncBar } from "./components/QuestsSyncBar";
 import { QuestsTree } from "./components/QuestsTree";
 import { SlidersIcon } from "./components/quest-ui";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
+import { QuestCascadeConfirmDialog } from "./components/QuestCascadeConfirmDialog";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
@@ -160,6 +161,7 @@ export function QuestsClientPage({
                 questItemIndex={questItemIndex}
                 questAvailabilityQuests={questAvailabilityQuests}
             />
+            <QuestCascadeConfirmDialog quests={quests} />
         </QuestsProvider>
     );
 }
