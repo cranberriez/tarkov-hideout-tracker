@@ -1,4 +1,6 @@
-# Quest Completion Filtering — Refactor Plan
+# Quest Completion Filtering - Refactor Plan
+
+> Status: Historical plan. Quest completion filtering and item demand now use `questItemIndex`, `questAnyOfGroups`, and client-side derived quest item states rather than the `PerQuestPool` design below. Treat `item-checklist-page.md`, `quests-page.md`, and source files as authoritative for current behavior.
 
 Refactor quest item pooling to support live filtering by player quest completion state, while keeping server-side pooling cached.
 
@@ -137,9 +139,13 @@ Update the prop type and thread `perQuestPools` through to `ItemsList` and `Item
 
 ```ts
 // Old
-interface ItemsClientPageProps { questPoolItems: QuestPoolItem[] }
+interface ItemsClientPageProps {
+    questPoolItems: QuestPoolItem[];
+}
 // New
-interface ItemsClientPageProps { perQuestPools: PerQuestPool[] }
+interface ItemsClientPageProps {
+    perQuestPools: PerQuestPool[];
+}
 ```
 
 ---

@@ -7,7 +7,9 @@ Client-side state lives in two Zustand stores. Server-fetched data (stations, it
 ## `useUserStore` — User Progress & Preferences
 
 **File:** `src/lib/stores/useUserStore.ts`
-**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 2 (with migration from v1).
+**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 11.
+
+Do not change the storage key. Bump the version and add a migration only when the persisted state shape requires it.
 
 ### State Shape
 
@@ -16,6 +18,10 @@ Client-side state lives in two Zustand stores. Server-fetched data (stations, it
 stationLevels: Record<string, number>;          // stationId → current level (0 = unbuilt)
 hiddenStations: Record<string, boolean>;         // stationId → excluded from pooled counts
 completedRequirements: Record<string, boolean>;  // requirementId → manually ticked off
+completedQuests: Record<string, boolean>;        // questId → completed
+questsWithItems: Record<string, boolean>;        // questId → hand-in items collected
+ignoredQuests: Record<string, boolean>;          // questId → hidden from demand
+pinnedQuests: Record<string, boolean>;           // questId → manually prioritized
 
 // Inventory
 itemCounts: Record<string, { have: number; haveFir: number }>; // itemId → owned counts
@@ -28,12 +34,44 @@ hideMoney: boolean;                      // filter currency items
 showFirOnly: boolean;                    // show only FiR-required items
 hideRequirements: boolean;               // collapse requirements section
 cheapPriceThreshold: number;             // roubles (default 5000)
+itemSourceFilter: "all" | "hideout" | "quest";
+itemFiltersOpen: boolean;
 sellToPreference: "best" | "flea" | "trader";
 useCategorization: boolean;
 
 // View options
 hideoutCompactMode: boolean;
 itemsSize: "Icon" | "Compact" | "Expanded";
+
+// Quest profile and filters
+playerLevel: number;
+prestigeLevel: number;
+questTraderLoyaltyLevels: Record<string, number>;
+questViewMode: "list" | "byTrader" | "tree";
+questSelectedTraders: string[];
+questFaction: "USEC" | "BEAR" | null;
+questShowKappa: boolean;
+questShowLightkeeper: boolean;
+questSelectedMaps: string[];
+questHideCompleted: boolean;
+questShowAvailableOnly: boolean;
+questShowHandInOnly: boolean;
+questShowFirHandInOnly: boolean;
+questShowPinnedOnly: boolean;
+questShowIgnored: boolean;
+questShowDebug: boolean;
+questShowPrereqs: boolean;
+questSidebarCollapsed: boolean;
+
+// Item page quest demand preferences
+itemShowPinnedQuestSection: boolean;
+itemShowPinnedQuestOnly: boolean;
+itemQuestMaxDepth: number;
+itemQuestVisibilityMode: "available" | "nextLayer" | "allFuture" | "custom";
+itemQuestCustomLookahead: number;
+itemQuestCustomLevelLookahead: number;
+itemShowFutureFir: boolean;
+itemShowIgnored: boolean;
 
 // Onboarding / feature flags
 hasSeenItemConversionModal: boolean;
@@ -59,31 +97,38 @@ type GameEdition =
 
 type GameMode = "PVP" | "PVE";
 type ItemSize = "Icon" | "Compact" | "Expanded";
+type ItemSourceFilter = "all" | "hideout" | "quest";
+type ItemQuestVisibilityMode = "available" | "nextLayer" | "allFuture" | "custom";
 ```
 
 ### Key Actions
 
-| Action | Effect |
-|---|---|
-| `setStationLevel(id, level)` | Set a station to a specific level |
-| `incrementStationLevel(id)` | Advance a station by one level |
-| `toggleHiddenStation(id)` | Toggle hidden flag for a station |
-| `toggleRequirement(reqId)` | Manually tick/untick a single requirement |
-| `addItemCounts(itemId, haveDelta, haveFirDelta)` | Add to owned inventory counts |
-| `applyEditionBonuses(stations)` | Set starting Stash/Cultist levels based on `gameEdition`; no-ops if already applied for this edition |
-| `initializeDefaults(stations)` | Seed `stationLevels` to 0 for new stations; enforce minimum stash/cultist levels for the edition |
-| `importStationLevels(levels)` | Bulk-overwrite station levels (used by import feature) |
-| `resetAll()` | Reset all state to defaults (clears progress, settings, setup) |
+| Action                                           | Effect                                                                                               |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `setStationLevel(id, level)`                     | Set a station to a specific level                                                                    |
+| `incrementStationLevel(id)`                      | Advance a station by one level                                                                       |
+| `toggleHiddenStation(id)`                        | Toggle hidden flag for a station                                                                     |
+| `toggleRequirement(reqId)`                       | Manually tick/untick a single requirement                                                            |
+| `toggleQuestCompletion(questId)`                 | Toggle quest completion                                                                              |
+| `toggleQuestHaveItems(questId)`                  | Toggle whether hand-in items have been collected for a quest                                         |
+| `toggleIgnoredQuest(questId)`                    | Toggle whether a quest is ignored in quest demand                                                    |
+| `togglePinnedQuest(questId)`                     | Toggle whether a quest is pinned                                                                     |
+| `addItemCounts(itemId, haveDelta, haveFirDelta)` | Add to owned inventory counts                                                                        |
+| `setItemSourceFilter(value)`                     | Set items page source filter (`all`, `hideout`, `quest`)                                             |
+| `applyEditionBonuses(stations)`                  | Set starting Stash/Cultist levels based on `gameEdition`; no-ops if already applied for this edition |
+| `initializeDefaults(stations)`                   | Seed `stationLevels` to 0 for new stations; enforce minimum stash/cultist levels for the edition     |
+| `importStationLevels(levels)`                    | Bulk-overwrite station levels (used by import feature)                                               |
+| `resetAll()`                                     | Reset all state to defaults (clears progress, settings, setup)                                       |
 
 ### Edition Bonus Logic (`applyEditionBonuses`)
 
-| Edition | Stash level | Cultist Circle level |
-|---|---|---|
-| Standard | 1 | 0 |
-| Left Behind | 2 | 0 |
-| Prepare for Escape | 3 | 0 |
-| Edge of Darkness | 4 | 0 |
-| Unheard | 4 | 1 (min) |
+| Edition            | Stash level | Cultist Circle level |
+| ------------------ | ----------- | -------------------- |
+| Standard           | 1           | 0                    |
+| Left Behind        | 2           | 0                    |
+| Prepare for Escape | 3           | 0                    |
+| Edge of Darkness   | 4           | 0                    |
+| Unheard            | 4           | 1 (min)              |
 
 ---
 
@@ -108,11 +153,11 @@ interface PendingItem {
 
 ### Actions
 
-| Action | Effect |
-|---|---|
-| `setQuickAddOpen(bool)` | Open/close the Quick Add modal |
-| `setPendingQuickAddItems(items)` | Set the list of items staged in the modal |
-| `clearPendingQuickAddItems()` | Empty the staged list (called on commit or cancel) |
+| Action                           | Effect                                             |
+| -------------------------------- | -------------------------------------------------- |
+| `setQuickAddOpen(bool)`          | Open/close the Quick Add modal                     |
+| `setPendingQuickAddItems(items)` | Set the list of items staged in the modal          |
+| `clearPendingQuickAddItems()`    | Empty the staged list (called on commit or cancel) |
 
 ---
 
@@ -138,14 +183,18 @@ Usage: `const { stations, items } = useDataContext();`
 Provided by `PriceDataLayout.tsx` (wrapped in `<Suspense>`). Contains:
 
 ```ts
-marketPricesByMode: Record<GameMode, {
-    prices: Record<string, MarketPrice | null>;
-    updatedAt: number | null;
-}>;
+marketPricesByMode: Record<
+    GameMode,
+    {
+        prices: Record<string, MarketPrice | null>;
+        updatedAt: number | null;
+    }
+>;
 loading: boolean;
 ```
 
 Usage:
+
 ```ts
 const { marketPricesByMode, loading } = usePriceDataContext();
 const { gameMode } = useUserStore();
@@ -157,13 +206,38 @@ const itemPrice = prices[item.normalizedName];
 
 ## Separation of Concerns
 
-| Concern | Where it lives |
-|---|---|
-| Station/level/requirement progress | `useUserStore` (localStorage) |
-| Inventory item counts | `useUserStore` (localStorage) |
-| View filters and preferences | `useUserStore` (localStorage) |
-| Game edition / mode setup | `useUserStore` (localStorage) |
-| Quick Add modal + staged items | `useUIStore` (in-memory) |
-| Hideout stations + required items | `DataContext` (server → context) |
-| Market prices (PVP + PVE) | `PriceDataContext` (server → context) |
-| Quest data + trader list | Server props to `QuestsClientPage` — no context or Zustand |
+| Concern                            | Where it lives                                                                                       |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Station/level/requirement progress | `useUserStore` (localStorage)                                                                        |
+| Inventory item counts              | `useUserStore` (localStorage)                                                                        |
+| View filters and preferences       | `useUserStore` (localStorage)                                                                        |
+| Game edition / mode setup          | `useUserStore` (localStorage)                                                                        |
+| Quick Add modal + staged items     | `useUIStore` (in-memory)                                                                             |
+| Hideout stations + required items  | `DataContext` (server → context)                                                                     |
+| Market prices (PVP + PVE)          | `PriceDataContext` (server → context)                                                                |
+| Quest data                         | Server props to pages that need it; `/quests` wraps it in `QuestsContext` for derived quest UI state |
+
+---
+
+## Zustand Subscription Pattern
+
+Avoid `useUserStore()` with no selector in render-heavy components. It subscribes the component to the whole persisted store, so unrelated preference writes can rerender expensive UI.
+
+Use a single-field selector when possible:
+
+```ts
+const gameMode = useUserStore((state) => state.gameMode);
+```
+
+Use `useShallow` when selecting multiple top-level fields into an object:
+
+```ts
+const { completedQuests, ignoredQuests } = useUserStore(
+    useShallow((state) => ({
+        completedQuests: state.completedQuests,
+        ignoredQuests: state.ignoredQuests,
+    })),
+);
+```
+
+This matters most on pages with large rendered lists or trees, such as `/quests`, `/items`, and `/hideout`.

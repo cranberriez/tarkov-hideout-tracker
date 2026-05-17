@@ -2,7 +2,11 @@
 
 This file provides guidance to AI agents working with code in this repository.
 
-Ensure any adjustments to local storage will not invalidate existing user data. Loss of user data stored here is not acceptable. Do not modify persistant zustand storage keys.
+Ensure any adjustments to local storage will not invalidate existing user data. Loss of user data stored here is not acceptable. Do not modify persistent Zustand storage keys, persisted field names, or persistence behavior without checking `docs/state-management.md` and the store implementation.
+
+## Documentation First
+
+Before recommending or making changes, read the relevant docs in `docs/` for the area being touched. Start with `docs/README.md` and `docs/overview.md`, then read the specific architecture or feature docs needed for the task. If docs and source code conflict, treat source code as authoritative and note the doc drift.
 
 ## Commands
 
@@ -12,7 +16,13 @@ npm run build    # Production build
 npm run lint     # ESLint
 ```
 
-There are no automated tests. Verify behavior by running the dev server if necessary.
+Some focused TypeScript tests exist but are not wired to an npm script. Run targeted tests with Node's test runner and `jiti/register`, for example:
+
+```bash
+node --test --import jiti/register src/features/quests/quest-sync.test.ts
+```
+
+Verify UI behavior by running the dev server when necessary.
 
 ## Environment Variables
 
@@ -48,39 +58,15 @@ Quest data is **not** in the shared layout — each page that needs it fetches i
 
 ### Server Services (`src/server/services/`)
 
-Each service wraps a two-layer cache: **Redis** (survives deploy) + **Next.js `unstable_cache`** (in-process, short TTL).
-
-| Service               | Redis Key Pattern                                   | TTL                     |
-| --------------------- | --------------------------------------------------- | ----------------------- |
-| `hideout.ts`          | `hideout:stations:v{N}`                             | 12h                     |
-| `items.ts`            | `hideout:items:filtered:v{N}`                       | 12h                     |
-| `marketPrices.ts`     | `tarkov-market:all-prices:filtered:v{N}:{pvp\|pve}` | reads daily-written key |
-| `tarkovMarketBulk.ts` | same as above                                       | written by cron         |
-| `quests.ts`           | `quests:full:v{N}`                                  | 12h                     |
-
-Cache version constants live in `src/lib/cfg/cacheVersions.ts`. **Bump the relevant version number to bust a Redis key** — do not manually delete keys.
+Each service wraps a two-layer cache: **Redis** (survives deploy) + **Next.js `unstable_cache`** (in-process, short TTL). See `docs/caching-architecture.md`, `docs/api-routes.md`, and `src/lib/cfg/cacheVersions.ts` before changing cache keys, cache invalidation, or server data flow. Bust Redis caches by changing the relevant cache version; do not manually delete keys as part of code changes.
 
 #### Quest Services (`src/server/services/quests.ts`)
 
-Two exported functions with different data shapes — use the right one:
-
-| Function                   | Returns                                                                  | Use when                                  |
-| -------------------------- | ------------------------------------------------------------------------ | ----------------------------------------- |
-| `getCachedQuestData()`     | `Quest[]` — only `giveItem` objectives                                   | building quest item index on items page   |
-| `getCachedFullQuestData()` | `FullQuest[]` — all objective types, maps, trader requirements, prestige | quests page, anywhere needing full detail |
-
-Both return `TimedResponse<{ quests: T[] }>`. Both call `orderQuestsByPrerequisites()` after fetching to sort by dependency depth. The items page (`src/app/(data)/items/page.tsx`) uses `getCachedQuestData`; the quests page (`src/app/(data)/quests/page.tsx`) uses `getCachedFullQuestData`.
+Quest services expose both lightweight and full quest data. Use `docs/api-routes.md`, `docs/quests-page.md`, `docs/item-checklist-page.md`, and the service implementation for exact current return shapes and page usage before changing quest data flow.
 
 ### State Management
 
-**`useUserStore`** (Zustand, persisted to `localStorage` key `tarkov-hideout-user-state` v2):
-
-- Station levels, hidden stations, completed requirements, item counts (`have` / `haveFir`).
-- Filter/view preferences: `checklistViewMode`, `hideCheap`, `hideMoney`, `showFirOnly`, `hideRequirements`, `hideoutCompactMode`, `itemsSize`, `sellToPreference`, `useCategorization`.
-- Onboarding state: `gameEdition`, `gameMode`, `hasCompletedSetup`, `isSetupOpen`, `editionBonusesAppliedFor`.
-- **Quest state:** `completedQuests`, `ignoredQuests`, `pinnedQuests`, `questsWithItems` (all `Record<string, boolean>` keyed by quest ID).
-- **Quest toggles:** `toggleQuestCompletion(id)`, `toggleIgnoredQuest(id)`, `togglePinnedQuest(id)`, `toggleQuestHaveItems(id)`.
-- **Quest profile/filters** (persisted, used for availability checks and quests page filters): `playerLevel`, `prestigeLevel`, `questFaction`, `questTraderLoyaltyLevels`, `questViewMode`, `questSelectedTraders`, `questSelectedMaps`, `questHideCompleted`, `questShowAvailableOnly`, `questShowHandInOnly`, `questShowFirHandInOnly`, `questShowPinnedOnly`, `questShowIgnored`, `questShowDebug`, `questShowPrereqs`, `questShowKappa`, `questShowLightkeeper`.
+**`useUserStore`** is the persisted Zustand store for user progress, inventory, setup state, item preferences, quest progress, and quest/item filters. See `docs/state-management.md` and `src/lib/stores/useUserStore.ts` for the authoritative storage key, version, fields, actions, and migration behavior.
 
 **`useUIStore`** (Zustand, in-memory only):
 
@@ -89,7 +75,7 @@ Both return `TimedResponse<{ quests: T[] }>`. Both call `orderQuestsByPrerequisi
 **React Contexts** (server data, read-only on client):
 
 - `DataContext` (`src/app/(data)/_dataContext.tsx`) → `stations`, `items`, timestamps. Shape: `{ stations: Station[] | null, stationsUpdatedAt, items: ItemDetails[] | null, itemsUpdatedAt }`. `items` here is **hideout-required items only** — not all tarkov items.
-- `PriceDataContext` (`src/app/(data)/_priceDataContext.tsx`) → `pvpPrices`, `pvePrices` (maps keyed by `normalizedName`).
+- `PriceDataContext` (`src/app/(data)/_priceDataContext.tsx`) → market prices by game mode (maps keyed by `normalizedName`).
 - `QuestsContext` (`src/features/quests/QuestsContext.tsx`) → all quest filter state, computed quest lists, sync helpers. Available only inside `<QuestsProvider>`. Includes `onItemClick: ((itemId: string) => void) | null` for triggering item modal from quest components.
 
 ### FiR (Found In Raid)
@@ -155,7 +141,7 @@ A quest is available when: not completed, faction matches, minPlayerLevel ≤ pl
 | `components/QuestsFilterBar.tsx`                       | Secondary filter bar — available only, hide completed, hand-in only, FiR, pinned only, search.                                                                                                                                                                                                              |
 | `components/QuestsTree.tsx`                            | Tree/graph view of quest prerequisite chains.                                                                                                                                                                                                                                                               |
 | `components/QuestsSyncBar.tsx` + `QuestSyncDialog.tsx` | Trader sync feature — bulk-complete quests by selecting visible ones.                                                                                                                                                                                                                                       |
-| `quest-sync.ts`                                        | `isQuestAvailableForProfile`, `syncTraderProgress`, `getVisibleSyncCandidatesForTrader`. Re-exports from quest-availability with sync-specific logic.                                                                                                                                                       |
+| `quest-sync.ts`                                        | Pure manual sync engine: `syncTraderProgress`, `getSyncCandidatesForTrader`, and availability wrapper. Inference only scans selected-trader candidates; cross-trader prerequisite chains may be backfilled only when they are the sole blocker.                                                             |
 
 ### Quest Page Server Component (`src/app/(data)/quests/page.tsx`)
 
@@ -185,7 +171,7 @@ Calls `getCachedFullQuestData()`, sorts with `orderQuestsByPrerequisites()`, the
 
 ### Items Page Server Component (`src/app/(data)/items/page.tsx`)
 
-Calls `getCachedQuestData()` (lightweight — giveItem objectives only), sorts, builds `questItemIndex` and `questAvailabilityQuests`, passes to `ItemsClientPage`.
+Fetches quest data server-side, sorts it, builds quest item metadata, and passes it to `ItemsClientPage`. Check the page component and `docs/item-checklist-page.md` for the current data shape before changing item demand behavior.
 
 ### Item Search Scope
 
@@ -215,13 +201,12 @@ Calls `getCachedQuestData()` (lightweight — giveItem objectives only), sorts, 
 
 ## Docs
 
-Detailed architecture docs are in `docs/`. Key references:
+Detailed architecture docs are in `docs/`. `docs/README.md` is the index and should be checked first. Key references:
 
 - `docs/state-management.md` — authoritative store shapes
 - `docs/caching-architecture.md` — Redis key naming, invalidation
 - `docs/data-and-price-context-architecture.md` — DataContext + PriceDataContext pattern
 - `docs/quests-page.md` — quests feature spec
 - `docs/cron-jobs.md` — cron setup and manual trigger instructions
-- `docs/item-checklist-page.md` — items page architecture
-- `docs/item-source-filtering.md` — hideout vs quest item source filter logic
-- `docs/quest-completion-filtering.md` — how completed/ignored quests affect item demand
+- `docs/item-checklist-page.md` — current items page architecture, item demand, and source filtering behavior
+- `docs/item-source-filtering.md` / `docs/quest-completion-filtering.md` — historical plans; verify against current source before using

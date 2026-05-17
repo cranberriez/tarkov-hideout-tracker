@@ -1,4 +1,6 @@
-# Item Checklist — Source Filtering & Quest View Mode
+# Item Checklist - Source Filtering & Quest View Mode
+
+> Status: Historical plan. The source filter exists, but quest demand is now derived from `questItemIndex`, `questAnyOfGroups`, and `itemQuestVisibilityMode`. Treat `item-checklist-page.md` and source files as authoritative for current behavior.
 
 Design notes for filtering the item list by source (hideout / quest / both) and adding a quest-specific view mode toggle.
 
@@ -10,11 +12,11 @@ Design notes for filtering the item list by source (hideout / quest / both) and 
 
 A three-way toggle that limits which items appear in the list:
 
-| Value | Shows |
-|---|---|
+| Value             | Shows                                        |
+| ----------------- | -------------------------------------------- |
 | `"all"` (default) | Every item needed — hideout + quest combined |
-| `"hideout"` | Only items with `isHideout: true` |
-| `"quest"` | Only items with `isQuest: true` |
+| `"hideout"`       | Only items with `isHideout: true`            |
+| `"quest"`         | Only items with `isQuest: true`              |
 
 Items needed for **both** sources always appear in `"all"` mode. In `"hideout"` or `"quest"` mode only the matching flag is checked — a combined item shows under both individual filters.
 
@@ -56,10 +58,10 @@ A segmented control in `ItemsControls` next to the existing view-mode toggle. Th
 
 Mirrors the hideout "all future / next level" toggle but operates on quest prerequisite depth instead of station levels. Controls how many quests contribute items to the pool.
 
-| Value | Meaning |
-|---|---|
-| `"all"` (default) | Pool items from every quest regardless of where it sits in the prerequisite chain |
-| `"available"` | Pool items only from quests the player can currently start (all prerequisites met — requires quest completion state, implement later) |
+| Value             | Meaning                                                                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `"all"` (default) | Pool items from every quest regardless of where it sits in the prerequisite chain                                                     |
+| `"available"`     | Pool items only from quests the player can currently start (all prerequisites met — requires quest completion state, implement later) |
 
 Because quest completion tracking doesn't exist yet, `"available"` is a future mode. For now, only `"all"` is functional. Document the toggle shape now so the state slot is ready.
 
@@ -80,14 +82,14 @@ When `questViewMode === "available"`, filter the quests array before pooling:
 
 ```ts
 // Future — requires completedQuests: Set<string> in useUserStore
-const visibleQuests = questViewMode === "available"
-    ? quests.filter((q) =>
-          q.taskRequirements.every((r) =>
-              r.status.every((s) => s === "complete") &&
-              completedQuests.has(r.task.id)
+const visibleQuests =
+    questViewMode === "available"
+        ? quests.filter((q) =>
+              q.taskRequirements.every(
+                  (r) => r.status.every((s) => s === "complete") && completedQuests.has(r.task.id),
+              ),
           )
-      )
-    : quests;
+        : quests;
 
 return poolQuestItems(visibleQuests);
 ```

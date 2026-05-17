@@ -29,6 +29,7 @@ A specific upgrade level of a station. Each level has item requirements and may 
 An item + quantity needed to build/upgrade. May require the item to be "Found in Raid" (FiR) based on per-station configuration in `src/lib/cfg/foundInRaid.ts`.
 
 **FiR vs Non-FiR**
+
 - Some station levels require items with the FiR attribute; others do not.
 - The app tracks both `have` and `haveFir` counts separately in `useUserStore.itemCounts`.
 - `showFirOnly` filter lets users focus on FiR items they still need.
@@ -42,13 +43,13 @@ Controls which market price set is shown. Prices are fetched for both modes on e
 **Game Edition**
 Determines the starting Stash level and whether Cultist Circle starts at level 1:
 
-| Edition | Stash | Cultist Circle |
-|---|---|---|
-| Standard | 1 | 0 |
-| Left Behind | 2 | 0 |
-| Prepare for Escape | 3 | 0 |
-| Edge of Darkness | 4 | 0 |
-| Unheard | 4 | 1 |
+| Edition            | Stash | Cultist Circle |
+| ------------------ | ----- | -------------- |
+| Standard           | 1     | 0              |
+| Left Behind        | 2     | 0              |
+| Prepare for Escape | 3     | 0              |
+| Edge of Darkness   | 4     | 0              |
+| Unheard            | 4     | 1              |
 
 **Cheap Items**
 Items below the `cheapPriceThreshold` (default 5,000 ₽). Can be hidden from the checklist with the `hideCheap` filter.
@@ -57,20 +58,21 @@ Items below the `cheapPriceThreshold` (default 5,000 ₽). Can be hidden from th
 
 ## Pages
 
-| Route | Purpose |
-|---|---|
-| `/` | Redirects to `/hideout` |
-| `/hideout` | Station list with upgrade levels and next-level requirements |
-| `/items` | Pooled item checklist across all stations |
-| `/quests` | Quest item requirements (giveItem objectives), filterable by trader and player level |
-| `/news` | In-app news and update posts |
-| `/settings` | User preferences (not currently a dedicated settings page) |
+| Route       | Purpose                                                                                                                 |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `/`         | Redirects to `/hideout`                                                                                                 |
+| `/hideout`  | Station list with upgrade levels and next-level requirements                                                            |
+| `/items`    | Pooled item checklist across all stations                                                                               |
+| `/quests`   | Quest objectives, prerequisites, manual sync, and hand-in tracking, filterable by trader, map, profile, and quest state |
+| `/news`     | In-app news and update posts                                                                                            |
+| `/settings` | User preferences (not currently a dedicated settings page)                                                              |
 
 ---
 
 ## Application State (High Level)
 
 **Persisted in localStorage (via Zustand):**
+
 - Current level per station
 - Hidden/visible flag per station
 - Manually completed individual requirements
@@ -79,10 +81,11 @@ Items below the `cheapPriceThreshold` (default 5,000 ₽). Can be hidden from th
 - Game edition and game mode
 
 **Server-fetched (via React context or server props):**
+
 - Hideout station structure (from Tarkov.dev GraphQL, cached 12h)
 - Required item metadata (from Tarkov.dev, cached 12h)
 - Market prices for PVP and PVE (from Tarkov Market, refreshed daily via cron)
-- Quest data and trader list (from Tarkov.dev GraphQL, cached 12h — passed as props to `/quests`)
+- Quest data (from Tarkov.dev GraphQL, cached 12h) is fetched by pages that need it. `/quests` receives full quest data as server props and derives trader/map lists from that data.
 
 See `state-management.md` for store shapes and `data-and-price-context-architecture.md` for the server data flow.
 
@@ -90,25 +93,25 @@ See `state-management.md` for store shapes and `data-and-price-context-architect
 
 ## Key Filters (Items Checklist)
 
-| Filter | Effect |
-|---|---|
-| `checklistViewMode: "all"` | All levels above current for each station |
-| `checklistViewMode: "nextLevel"` | Only the next level per station |
-| `showHidden: false` | Exclude hidden stations from pooled items |
-| `hideCheap` | Hide items below `cheapPriceThreshold` |
-| `hideMoney` | Hide currency items (roubles, dollars, euros) |
-| `showFirOnly` | Show only items where FiR count is still needed |
+| Filter                           | Effect                                          |
+| -------------------------------- | ----------------------------------------------- |
+| `checklistViewMode: "all"`       | All levels above current for each station       |
+| `checklistViewMode: "nextLevel"` | Only the next level per station                 |
+| `showHidden: false`              | Exclude hidden stations from pooled items       |
+| `hideCheap`                      | Hide items below `cheapPriceThreshold`          |
+| `hideMoney`                      | Hide currency items (roubles, dollars, euros)   |
+| `showFirOnly`                    | Show only items where FiR count is still needed |
 
 ---
 
 ## Data Sources
 
-| Source | What it provides |
-|---|---|
-| Tarkov.dev GraphQL | Station structure, item metadata, trader/skill info, quest data, trader list |
-| Tarkov Market REST | Flea + trader prices for PVP and PVE modes |
-| `wiki-data.json` + `foundInRaid.ts` | Manual overrides for requirements and FiR flags |
-| localStorage | All user progress and preferences |
+| Source                              | What it provides                                                             |
+| ----------------------------------- | ---------------------------------------------------------------------------- |
+| Tarkov.dev GraphQL                  | Station structure, item metadata, trader/skill info, quest data, trader list |
+| Tarkov Market REST                  | Flea + trader prices for PVP and PVE modes                                   |
+| `wiki-data.json` + `foundInRaid.ts` | Manual overrides for requirements and FiR flags                              |
+| localStorage                        | All user progress and preferences                                            |
 
 ---
 
