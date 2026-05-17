@@ -198,6 +198,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
             const fileInputs = await Promise.all(
                 filesToParse.map(async (file) => ({
                     name: file.name,
+                    webkitRelativePath: file.webkitRelativePath,
                     text: await file.text(),
                 })),
             );

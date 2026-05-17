@@ -80,6 +80,8 @@ interface JsonBlockResult {
 const PUSH_NOTIFICATION_FILE_PATTERN = /push-notifications.*\.log$/i;
 const CHAT_MESSAGE_TRIGGER = "Got notification | ChatMessageReceived";
 const PVE_SIGNAL_PATTERNS = ["wsn-pve-", "gw-pve.escapefromtarkov.com"];
+export const QUEST_LOG_WIPE_CUTOFF_DATE = new Date(2025, 10, 15);
+const QUEST_LOG_WIPE_CUTOFF_MS = QUEST_LOG_WIPE_CUTOFF_DATE.getTime();
 
 export function filterQuestLogFiles<T extends QuestLogFileLike>(files: T[]) {
     const matched: T[] = [];
@@ -100,10 +102,16 @@ export function selectionLooksLikeEftLogsFolder<T extends QuestLogFileLike>(file
     return files.some((file) => hasAllowedLogFolderPath(file));
 }
 
-export function parseQuestLogFile(text: string, fileName: string): ParsedQuestEvent[] {
+export function parseQuestLogFile(
+    text: string,
+    fileName: string,
+    dateSourcePath = fileName,
+): ParsedQuestEvent[] {
     const lines = text.split(/\r?\n/);
     const events: ParsedQuestEvent[] = [];
     let currentRaidMode: ParsedRaidMode = "unknown";
+    const fallbackTimestamp = parseLogSessionDateFromPath(dateSourcePath);
+    const fallbackTimestampMs = fallbackTimestamp?.getTime() ?? null;
 
     for (let index = 0; index < lines.length; index += 1) {
         const line = lines[index] ?? "";
@@ -135,7 +143,7 @@ export function parseQuestLogFile(text: string, fileName: string): ParsedQuestEv
             timestamp: parseTimestampFromLine(line),
         });
 
-        if (event) {
+        if (event && isEventOnOrAfterWipeCutoff(event, fallbackTimestampMs)) {
             events.push(event);
         }
 
@@ -147,7 +155,9 @@ export function parseQuestLogFile(text: string, fileName: string): ParsedQuestEv
 
 export function parseQuestLogFiles(files: QuestLogFileInput[], quests: FullQuest[]): QuestLogParseResult {
     const { matched, ignored } = filterQuestLogFiles(files);
-    const rawEvents = matched.flatMap((file) => parseQuestLogFile(file.text, file.name));
+    const rawEvents = matched.flatMap((file) =>
+        parseQuestLogFile(file.text, file.name, file.webkitRelativePath || file.name),
+    );
     const dedupedEvents = dedupeQuestEvents(rawEvents);
     const groups = aggregateQuestEvents(dedupedEvents);
     const { resolved, unresolved } = resolveQuestEventGroups(groups, quests);
@@ -475,6 +485,30 @@ function parseTimestampFromLine(line: string): Date | null {
     const normalized = match[1].replace(",", ".").replace(" ", "T");
     const timestamp = new Date(normalized);
     return Number.isNaN(timestamp.getTime()) ? null : timestamp;
+}
+
+function parseLogSessionDateFromPath(path: string): Date | null {
+    const match = path.match(/(?:^|[\\/])?(?:log_)?(\d{4})[.-](\d{2})[.-](\d{2})_(\d{2})-(\d{2})-(\d{2})/);
+    if (!match) {
+        return null;
+    }
+
+    const [, year, month, day, hour, minute, second] = match;
+    const timestamp = new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        Number(hour),
+        Number(minute),
+        Number(second),
+    );
+
+    return Number.isNaN(timestamp.getTime()) ? null : timestamp;
+}
+
+function isEventOnOrAfterWipeCutoff(event: ParsedQuestEvent, fallbackTimestampMs: number | null) {
+    const timestampMs = event.timestampMs ?? fallbackTimestampMs;
+    return timestampMs === null || timestampMs >= QUEST_LOG_WIPE_CUTOFF_MS;
 }
 
 function isDuplicateQuestEvent(left: ParsedQuestEvent, right: ParsedQuestEvent) {

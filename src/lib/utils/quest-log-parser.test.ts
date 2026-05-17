@@ -15,7 +15,8 @@ function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name"
     return {
         id: overrides.id,
         name: overrides.name,
-        normalizedName: overrides.normalizedName ?? overrides.name.toLowerCase().replace(/\s+/g, "-"),
+        normalizedName:
+            overrides.normalizedName ?? overrides.name.toLowerCase().replace(/\s+/g, "-"),
         experience: overrides.experience ?? 1000,
         trader: overrides.trader ?? {
             id: "prapor",
@@ -171,6 +172,81 @@ test("parseQuestLogFiles separates unresolved quest ids and unknown raid mode", 
     assert.equal(result.unresolvedGroups[0]?.questId, "quest-missing");
 });
 
+test("parseQuestLogFile ignores quest events before the current wipe cutoff", () => {
+    const events = parseQuestLogFile(
+        `
+2025-11-14 23:59:59.999 Got notification | ChatMessageReceived
+{
+  "message": {
+    "type": 12,
+    "templateId": "pre-wipe successMessageText [prapor] [0]",
+    "uid": "54cb50c76803fa8b248b4571",
+    "hasRewards": false
+  }
+}
+2025-11-15 00:00:00.000 Got notification | ChatMessageReceived
+{
+  "message": {
+    "type": 12,
+    "templateId": "post-wipe successMessageText [prapor] [0]",
+    "uid": "54cb50c76803fa8b248b4571",
+    "hasRewards": false
+  }
+}`,
+        "push-notifications_000.log",
+    );
+
+    assert.deepEqual(
+        events.map((event) => event.questId),
+        ["post-wipe"],
+    );
+});
+
+test("parseQuestLogFiles uses log folder date as cutoff fallback when event timestamp is missing", () => {
+    const result = parseQuestLogFiles(
+        [
+            {
+                name: "push-notifications_000.log",
+                webkitRelativePath:
+                    "Logs/log_2025.11.14_23-00-00_1.0.0.0/push-notifications_000.log",
+                text: `
+Got notification | ChatMessageReceived
+{
+  "message": {
+    "type": 12,
+    "templateId": "pre-wipe successMessageText [prapor] [0]",
+    "uid": "54cb50c76803fa8b248b4571",
+    "hasRewards": false
+  }
+}`,
+            },
+            {
+                name: "push-notifications_001.log",
+                webkitRelativePath:
+                    "Logs/log_2025.11.15_00-00-00_1.0.0.0/push-notifications_001.log",
+                text: `
+Got notification | ChatMessageReceived
+{
+  "message": {
+    "type": 12,
+    "templateId": "post-wipe successMessageText [prapor] [0]",
+    "uid": "54cb50c76803fa8b248b4571",
+    "hasRewards": false
+  }
+}`,
+            },
+        ],
+        [makeQuest({ id: "post-wipe", name: "Post Wipe" })],
+    );
+
+    assert.deepEqual(
+        result.events.map((event) => event.questId),
+        ["post-wipe"],
+    );
+    assert.equal(result.resolvedGroups.length, 1);
+    assert.equal(result.unresolvedGroups.length, 0);
+});
+
 test("filterQuestLogFiles only keeps push-notification logs inside Logs or log_* folders", () => {
     const files = [
         {
@@ -189,7 +265,10 @@ test("filterQuestLogFiles only keeps push-notification logs inside Logs or log_*
 
     const result = filterQuestLogFiles(files);
 
-    assert.deepEqual(result.matched.map((file) => file.name), ["push-notifications_001.log"]);
+    assert.deepEqual(
+        result.matched.map((file) => file.name),
+        ["push-notifications_001.log"],
+    );
     assert.equal(selectionLooksLikeEftLogsFolder(files), true);
 });
 
