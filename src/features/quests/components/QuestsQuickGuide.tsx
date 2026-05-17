@@ -1,14 +1,10 @@
 "use client";
 
-import { CircleSlash, Info, Link2, Pin } from "lucide-react";
+import { CircleSlash, Link2, Pin } from "lucide-react";
 
 export function QuestsQuickGuide() {
     return (
         <div className="flex flex-wrap items-center gap-2 rounded-md p-3 text-xs text-gray-500">
-            <span className="inline-flex items-center gap-1 text-gray-400">
-                <Info size={12} />
-                Quick guide
-            </span>
             <span className="inline-flex items-center gap-1">
                 <Pin size={12} className="text-sky-300" />
                 Pin keeps a quest surfaced and easy to revisit.
