@@ -5,6 +5,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useQuestsContext } from "../QuestsContext";
 import { QuestSyncSelectableQuestRow } from "./QuestSyncSelectableQuestRow";
+import { QuestListByTrader } from "./QuestListByTrader";
 import {
     NETWORK_PROVIDER_PART_1_ID,
     allowSensitiveBackfillQuest,
@@ -93,11 +94,7 @@ export function QuestSyncTraderStep({
         });
 
     const showNetworkProviderWarning = selectedQuestIds.includes(NETWORK_PROVIDER_PART_1_ID);
-    const syncedQuestNames = activeTrader
-        ? (latestResultByTrader[activeTrader.id] ?? [])
-              .map((questId) => questsById.get(questId)?.name)
-              .filter((questName): questName is string => Boolean(questName))
-        : [];
+    const syncedQuestIds = activeTrader ? (latestResultByTrader[activeTrader.id] ?? []) : [];
     const hasNoOpSyncResult = activeTrader ? (latestNoOpByTrader[activeTrader.id] ?? false) : false;
     const previewResult = (() => {
         if (!activeTrader || selectedQuestIds.length === 0) return null;
@@ -291,23 +288,29 @@ export function QuestSyncTraderStep({
                                     </p>
                                 </div>
 
+                                {previewResult.completedIds.length > 0 && (
+                                    <div className="space-y-1">
+                                        <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+                                            Will Complete
+                                        </div>
+                                        <QuestListByTrader
+                                            questIds={previewResult.completedIds}
+                                            questsById={questsById}
+                                            emptyMessage="No quests will change."
+                                        />
+                                    </div>
+                                )}
+
                                 {previewResult.prerequisiteCompletedIds.length > 0 && (
                                     <div className="space-y-1">
                                         <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
                                             Prerequisites
                                         </div>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {previewResult.prerequisiteCompletedIds.map(
-                                                (questId) => (
-                                                    <span
-                                                        key={questId}
-                                                        className="rounded-sm border border-white/10 bg-black/40 px-2 py-1 text-xs text-gray-300"
-                                                    >
-                                                        {questsById.get(questId)?.name ?? questId}
-                                                    </span>
-                                                ),
-                                            )}
-                                        </div>
+                                        <QuestListByTrader
+                                            questIds={previewResult.prerequisiteCompletedIds}
+                                            questsById={questsById}
+                                            emptyMessage="No prerequisite quests will be completed."
+                                        />
                                     </div>
                                 )}
 
@@ -335,16 +338,11 @@ export function QuestSyncTraderStep({
                                         <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
                                             Inferred
                                         </div>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {previewResult.inferredCompletedIds.map((questId) => (
-                                                <span
-                                                    key={questId}
-                                                    className="rounded-sm border border-white/10 bg-black/40 px-2 py-1 text-xs text-gray-300"
-                                                >
-                                                    {questsById.get(questId)?.name ?? questId}
-                                                </span>
-                                            ))}
-                                        </div>
+                                        <QuestListByTrader
+                                            questIds={previewResult.inferredCompletedIds}
+                                            questsById={questsById}
+                                            emptyMessage="No inferred quests will be completed."
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -367,11 +365,17 @@ export function QuestSyncTraderStep({
                                 </div>
                             )}
 
-                        {syncedQuestNames.length > 0 &&
+                        {syncedQuestIds.length > 0 &&
                             lastQuestSyncAction?.traderId !== activeTrader.id && (
-                                <div className="rounded-sm border border-white/10 bg-black/25 p-3 text-xs text-gray-500">
-                                    Last local result for {activeTrader.name}:{" "}
-                                    {syncedQuestNames.join(", ")}
+                                <div className="space-y-2 rounded-sm border border-white/10 bg-black/25 p-3">
+                                    <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+                                        Last local result for {activeTrader.name}
+                                    </div>
+                                    <QuestListByTrader
+                                        questIds={syncedQuestIds}
+                                        questsById={questsById}
+                                        emptyMessage="No quests will change."
+                                    />
                                 </div>
                             )}
                     </div>
