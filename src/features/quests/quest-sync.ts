@@ -67,12 +67,18 @@ export function syncTraderProgress({
     const selectedQuestIdSet = new Set(selectedQuestIds);
     const activeTraderQuests = quests.filter((quest) => quest.trader.id === traderId);
     const completedAnchorIds = new Set<string>();
+    const completedQuestIds = new Set(
+        Object.entries(profile.completedQuests)
+            .filter(([, isCompleted]) => isCompleted)
+            .map(([questId]) => questId),
+    );
     const traversalResult = collectTransitivePrerequisiteIds(
         selectedQuestIds,
         new Map(quests.map((quest) => [quest.id, quest])),
         {
             allowedSensitiveQuestIds: new Set(allowedSensitiveBackfillQuestIds),
             deniedSensitiveQuestIds: new Set(deniedSensitiveBackfillQuestIds),
+            completedQuestIds,
         },
     );
     const prerequisiteIds = traversalResult.prerequisiteIds;

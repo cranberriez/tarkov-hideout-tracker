@@ -6,6 +6,9 @@ import { useQuestsContext } from "../QuestsContext";
 import { QuestSyncSelectableQuestRow } from "./QuestSyncSelectableQuestRow";
 import {
     NETWORK_PROVIDER_PART_1_ID,
+    allowSensitiveBackfillQuest,
+    createEmptySensitiveBackfillDecisions,
+    denySensitiveBackfillQuest,
     getSensitiveBackfillQuest,
     getSensitiveBackfillQuestName,
 } from "@/lib/utils/sensitive-quest-backfill";
@@ -35,11 +38,9 @@ export function QuestSyncTraderStep({
 }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [inferOtherTraderChains, setInferOtherTraderChains] = useState(true);
-    const [sensitiveBackfillDecisions, setSensitiveBackfillDecisions] = useState<{
-        selectionKey: string;
-        allowedQuestIds: string[];
-        deniedQuestIds: string[];
-    }>({ selectionKey: "", allowedQuestIds: [], deniedQuestIds: [] });
+    const [sensitiveBackfillDecisions, setSensitiveBackfillDecisions] = useState(
+        createEmptySensitiveBackfillDecisions,
+    );
     const {
         traders,
         questsById,
@@ -60,18 +61,8 @@ export function QuestSyncTraderStep({
         () => (activeTraderId ? (selectedQuestIdsByTrader[activeTraderId] ?? []) : []),
         [activeTraderId, selectedQuestIdsByTrader],
     );
-    const selectedQuestIdsKey = useMemo(() => selectedQuestIds.join("|"), [selectedQuestIds]);
-    const sensitiveBackfillSelectionKey = activeTrader
-        ? `${activeTrader.id}:${selectedQuestIdsKey}`
-        : "";
-    const allowedSensitiveBackfillQuestIds =
-        sensitiveBackfillDecisions.selectionKey === sensitiveBackfillSelectionKey
-            ? sensitiveBackfillDecisions.allowedQuestIds
-            : [];
-    const deniedSensitiveBackfillQuestIds =
-        sensitiveBackfillDecisions.selectionKey === sensitiveBackfillSelectionKey
-            ? sensitiveBackfillDecisions.deniedQuestIds
-            : [];
+    const allowedSensitiveBackfillQuestIds = sensitiveBackfillDecisions.allowedQuestIds;
+    const deniedSensitiveBackfillQuestIds = sensitiveBackfillDecisions.deniedQuestIds;
     const syncCandidates = activeTrader
         ? getSyncCandidatesForTrader(activeTrader.id).filter(
               (quest) =>
@@ -276,6 +267,9 @@ export function QuestSyncTraderStep({
                                             allowedSensitiveBackfillQuestIds,
                                             deniedSensitiveBackfillQuestIds,
                                         );
+                                        setSensitiveBackfillDecisions(
+                                            createEmptySensitiveBackfillDecisions(),
+                                        );
                                         onSyncResult(activeTrader.id, result.completedIds);
                                     }}
                                     disabled={
@@ -344,36 +338,14 @@ export function QuestSyncTraderStep({
                                             getSensitiveBackfillQuestName(questId, questsById)
                                         }
                                         onAllow={(questId) =>
-                                            setSensitiveBackfillDecisions({
-                                                selectionKey: sensitiveBackfillSelectionKey,
-                                                allowedQuestIds: Array.from(
-                                                    new Set([
-                                                        ...allowedSensitiveBackfillQuestIds,
-                                                        questId,
-                                                    ]),
-                                                ),
-                                                deniedQuestIds:
-                                                    deniedSensitiveBackfillQuestIds.filter(
-                                                        (deniedQuestId) =>
-                                                            deniedQuestId !== questId,
-                                                    ),
-                                            })
+                                            setSensitiveBackfillDecisions((current) =>
+                                                allowSensitiveBackfillQuest(current, questId),
+                                            )
                                         }
                                         onDeny={(questId) =>
-                                            setSensitiveBackfillDecisions({
-                                                selectionKey: sensitiveBackfillSelectionKey,
-                                                allowedQuestIds:
-                                                    allowedSensitiveBackfillQuestIds.filter(
-                                                        (allowedQuestId) =>
-                                                            allowedQuestId !== questId,
-                                                    ),
-                                                deniedQuestIds: Array.from(
-                                                    new Set([
-                                                        ...deniedSensitiveBackfillQuestIds,
-                                                        questId,
-                                                    ]),
-                                                ),
-                                            })
+                                            setSensitiveBackfillDecisions((current) =>
+                                                denySensitiveBackfillQuest(current, questId),
+                                            )
                                         }
                                     />
                                 )}

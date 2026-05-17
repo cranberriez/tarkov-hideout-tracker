@@ -11,6 +11,11 @@ export interface PrerequisiteTraversalResult {
     blockedSensitiveQuestIds: Set<string>;
 }
 
+export interface SensitiveBackfillDecisions {
+    allowedQuestIds: string[];
+    deniedQuestIds: string[];
+}
+
 export const NETWORK_PROVIDER_PART_1_ID = "625d6ff5ddc94657c21a1625";
 
 export const SENSITIVE_BACKFILL_QUESTS: SensitiveBackfillQuest[] = [
@@ -37,12 +42,37 @@ export function getSensitiveBackfillQuestName(
     return questsById?.get(questId)?.name ?? getSensitiveBackfillQuest(questId)?.name ?? questId;
 }
 
+export function createEmptySensitiveBackfillDecisions(): SensitiveBackfillDecisions {
+    return { allowedQuestIds: [], deniedQuestIds: [] };
+}
+
+export function allowSensitiveBackfillQuest(
+    decisions: SensitiveBackfillDecisions,
+    questId: string,
+): SensitiveBackfillDecisions {
+    return {
+        allowedQuestIds: Array.from(new Set([...decisions.allowedQuestIds, questId])),
+        deniedQuestIds: decisions.deniedQuestIds.filter((deniedQuestId) => deniedQuestId !== questId),
+    };
+}
+
+export function denySensitiveBackfillQuest(
+    decisions: SensitiveBackfillDecisions,
+    questId: string,
+): SensitiveBackfillDecisions {
+    return {
+        allowedQuestIds: decisions.allowedQuestIds.filter((allowedQuestId) => allowedQuestId !== questId),
+        deniedQuestIds: Array.from(new Set([...decisions.deniedQuestIds, questId])),
+    };
+}
+
 export function collectTransitivePrerequisiteIds(
     rootQuestIds: Iterable<string>,
     questsById: ReadonlyMap<string, FullQuest>,
     options: {
         allowedSensitiveQuestIds?: ReadonlySet<string>;
         deniedSensitiveQuestIds?: ReadonlySet<string>;
+        completedQuestIds?: ReadonlySet<string>;
     } = {},
 ): PrerequisiteTraversalResult {
     const prerequisiteIds = new Set<string>();
@@ -58,6 +88,10 @@ export function collectTransitivePrerequisiteIds(
 
         for (const requirement of quest.taskRequirements) {
             const prerequisiteId = requirement.task.id;
+            if (options.completedQuestIds?.has(prerequisiteId)) {
+                continue;
+            }
+
             if (prerequisiteIds.has(prerequisiteId)) {
                 continue;
             }
