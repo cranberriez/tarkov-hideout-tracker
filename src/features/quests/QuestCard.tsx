@@ -253,12 +253,11 @@ export function QuestCard({
 }: QuestCardProps) {
     const [expanded, setExpanded] = useState(false);
     const [debugOpen, setDebugOpen] = useState(false);
-    const { syncProfile, questsById, onItemClick } = useQuestsContext();
+    const { syncProfile, questsById, onItemClick, requestToggleQuestCompletion } = useQuestsContext();
     const {
         completedQuests,
         ignoredQuests,
         pinnedQuests,
-        toggleQuestCompletion,
         toggleIgnoredQuest,
         togglePinnedQuest,
     } = useUserStore(
@@ -266,7 +265,6 @@ export function QuestCard({
             completedQuests: state.completedQuests,
             ignoredQuests: state.ignoredQuests,
             pinnedQuests: state.pinnedQuests,
-            toggleQuestCompletion: state.toggleQuestCompletion,
             toggleIgnoredQuest: state.toggleIgnoredQuest,
             togglePinnedQuest: state.togglePinnedQuest,
         })),
@@ -415,7 +413,7 @@ export function QuestCard({
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        toggleQuestCompletion(quest.id);
+                        requestToggleQuestCompletion(quest.id);
                     }}
                     aria-label={completed ? "Mark quest incomplete" : "Mark quest complete"}
                     className="group relative -my-2.5 -ml-2.5 flex h-11 w-11 shrink-0 items-center justify-center cursor-pointer sm:-ml-3"
