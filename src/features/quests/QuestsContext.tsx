@@ -14,6 +14,7 @@ import {
     type QuestSyncProfile,
     type QuestSyncResult,
 } from "./quest-sync";
+import { buildQuestMapGroups, getQuestMapGroup, getQuestMapGroupKey } from "./quest-map-groups";
 
 interface LastQuestSyncAction extends QuestSyncResult {
     traderName: string;
@@ -183,7 +184,10 @@ export function QuestsProvider({
     } = useUserStore();
 
     const selectedTraders = useMemo(() => new Set(questSelectedTraders), [questSelectedTraders]);
-    const selectedMaps = useMemo(() => new Set(questSelectedMaps), [questSelectedMaps]);
+    const selectedMaps = useMemo(
+        () => new Set(questSelectedMaps.map((map) => getQuestMapGroupKey(map))),
+        [questSelectedMaps],
+    );
 
     const syncProfile = useMemo(
         () => ({
@@ -228,13 +232,10 @@ export function QuestsProvider({
         return [...map.values()].sort((a, b) => compareQuestTradersByOrder(a.name, b.name));
     }, [quests]);
 
-    const allMaps = useMemo(() => {
-        const map = new Map<string, string>();
-        for (const q of quests) {
-            if (q.map) map.set(q.map.normalizedName, q.map.name);
-        }
-        return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]));
-    }, [quests]);
+    const allMaps = useMemo(
+        () => buildQuestMapGroups(quests).map((group) => [group.key, group.name] as [string, string]),
+        [quests],
+    );
 
     const filteredQuests = useMemo(() => {
         return quests.filter((quest) => {
@@ -262,7 +263,7 @@ export function QuestsProvider({
                     return false;
             }
 
-            if (selectedMaps.size > 0 && (!quest.map || !selectedMaps.has(quest.map.normalizedName))) {
+            if (selectedMaps.size > 0 && !selectedMaps.has(getQuestMapGroup(quest.map ?? null).key)) {
                 return false;
             }
 
@@ -307,10 +308,13 @@ export function QuestsProvider({
     const showOnlyTrader = (id: string) => setQuestSelectedTraders([id]);
 
     const toggleMap = (normalizedName: string) => {
-        const next = new Set(questSelectedMaps);
-        if (next.has(normalizedName)) next.delete(normalizedName);
-        else next.add(normalizedName);
-        setQuestSelectedMaps([...next]);
+        const groupKey = getQuestMapGroupKey(normalizedName);
+        const isSelected = selectedMaps.has(groupKey);
+        const next = questSelectedMaps.filter((map) => getQuestMapGroupKey(map) !== groupKey);
+
+        if (!isSelected) next.push(groupKey);
+
+        setQuestSelectedMaps(next);
     };
 
     const clearMaps = () => setQuestSelectedMaps([]);
