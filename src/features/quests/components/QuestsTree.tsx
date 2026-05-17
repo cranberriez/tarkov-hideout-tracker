@@ -371,17 +371,11 @@ function getLinearCollapseKey(questId: string) {
 function QuestNodeCard({
     questId,
     parentOf,
-    questsById,
-    leadsToByQuestId,
-    showDebugButton,
     highlightedQuestId,
     onQuestLinkClick,
 }: {
     questId: string;
     parentOf: Map<string, string | null>;
-    questsById: Map<string, FullQuest>;
-    leadsToByQuestId: Map<string, string[]>;
-    showDebugButton: boolean;
     highlightedQuestId: string | null;
     onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
@@ -391,7 +385,7 @@ function QuestNodeCard({
             ignoredQuests: state.ignoredQuests,
         })),
     );
-    const { syncProfile, showPrereqs } = useQuestsContext();
+    const { syncProfile, showPrereqs, showDebug, questsById, leadsToByQuestId } = useQuestsContext();
     const quest = questsById.get(questId);
     if (!quest) return null;
 
@@ -463,7 +457,7 @@ function QuestNodeCard({
                 )}
                 attachedTop={showPrereqs && linkedPrerequisites.length > 0}
                 className={MOBILE_TREE_CARD_CLASS}
-                showDebugButton={showDebugButton}
+                showDebugButton={showDebug}
                 highlighted={highlightedQuestId === quest.id}
                 onQuestLinkClick={onQuestLinkClick}
             />
@@ -476,9 +470,6 @@ function BranchChildren({
     depth,
     childrenOf,
     parentOf,
-    questsById,
-    leadsToByQuestId,
-    showDebugButton,
     highlightedQuestId,
     onQuestLinkClick,
     isCollapsed,
@@ -491,9 +482,6 @@ function BranchChildren({
     depth: number;
     childrenOf: Map<string, string[]>;
     parentOf: Map<string, string | null>;
-    questsById: Map<string, FullQuest>;
-    leadsToByQuestId: Map<string, string[]>;
-    showDebugButton: boolean;
     highlightedQuestId: string | null;
     onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
     isCollapsed: boolean;
@@ -583,9 +571,6 @@ function BranchChildren({
                                     depth={depth + 1}
                                     childrenOf={childrenOf}
                                     parentOf={parentOf}
-                                    questsById={questsById}
-                                    leadsToByQuestId={leadsToByQuestId}
-                                    showDebugButton={showDebugButton}
                                     highlightedQuestId={highlightedQuestId}
                                     onQuestLinkClick={onQuestLinkClick}
                                     collapsedGroups={collapsedGroups}
@@ -605,9 +590,6 @@ function QuestTreeNode({
     depth,
     childrenOf,
     parentOf,
-    questsById,
-    leadsToByQuestId,
-    showDebugButton,
     highlightedQuestId,
     onQuestLinkClick,
     collapsedGroups,
@@ -617,9 +599,6 @@ function QuestTreeNode({
     depth: number;
     childrenOf: Map<string, string[]>;
     parentOf: Map<string, string | null>;
-    questsById: Map<string, FullQuest>;
-    leadsToByQuestId: Map<string, string[]>;
-    showDebugButton: boolean;
     highlightedQuestId: string | null;
     onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
     collapsedGroups: Set<string>;
@@ -649,9 +628,6 @@ function QuestTreeNode({
             <QuestNodeCard
                 questId={questId}
                 parentOf={parentOf}
-                questsById={questsById}
-                leadsToByQuestId={leadsToByQuestId}
-                showDebugButton={showDebugButton}
                 highlightedQuestId={highlightedQuestId}
                 onQuestLinkClick={onQuestLinkClick}
             />
@@ -738,9 +714,6 @@ function QuestTreeNode({
                                         <QuestNodeCard
                                             questId={linearQuestId}
                                             parentOf={parentOf}
-                                            questsById={questsById}
-                                            leadsToByQuestId={leadsToByQuestId}
-                                            showDebugButton={showDebugButton}
                                             highlightedQuestId={highlightedQuestId}
                                             onQuestLinkClick={onQuestLinkClick}
                                         />
@@ -751,9 +724,6 @@ function QuestTreeNode({
                                                 depth={depth}
                                                 childrenOf={childrenOf}
                                                 parentOf={parentOf}
-                                                questsById={questsById}
-                                                leadsToByQuestId={leadsToByQuestId}
-                                                showDebugButton={showDebugButton}
                                                 highlightedQuestId={highlightedQuestId}
                                                 onQuestLinkClick={onQuestLinkClick}
                                                 isCollapsed={collapsedGroups.has(
@@ -789,9 +759,6 @@ function QuestTreeNode({
                     depth={depth}
                     childrenOf={childrenOf}
                     parentOf={parentOf}
-                    questsById={questsById}
-                    leadsToByQuestId={leadsToByQuestId}
-                    showDebugButton={showDebugButton}
                     highlightedQuestId={highlightedQuestId}
                     onQuestLinkClick={onQuestLinkClick}
                     isCollapsed={branchChildrenCollapsed}
@@ -809,9 +776,6 @@ function TraderTreeSection({
     trader,
     allTraderQuests,
     treeMeta,
-    questsById,
-    leadsToByQuestId,
-    showDebugButton,
     highlightedQuestId,
     onQuestLinkClick,
     collapsedGroups,
@@ -820,9 +784,6 @@ function TraderTreeSection({
     trader: FullQuest["trader"];
     allTraderQuests: FullQuest[];
     treeMeta: ReturnType<typeof buildTraderTree>;
-    questsById: Map<string, FullQuest>;
-    leadsToByQuestId: Map<string, string[]>;
-    showDebugButton: boolean;
     highlightedQuestId: string | null;
     onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
     collapsedGroups: Set<string>;
@@ -891,9 +852,6 @@ function TraderTreeSection({
                                     depth={0}
                                     childrenOf={childrenOf}
                                     parentOf={parentOf}
-                                    questsById={questsById}
-                                    leadsToByQuestId={leadsToByQuestId}
-                                    showDebugButton={showDebugButton}
                                     highlightedQuestId={highlightedQuestId}
                                     onQuestLinkClick={onQuestLinkClick}
                                     collapsedGroups={collapsedGroups}
@@ -913,10 +871,8 @@ export function QuestsTree() {
         filteredQuests,
         quests,
         questsById,
-        leadsToByQuestId,
         traders,
         completedCount,
-        showDebug,
     } = useQuestsContext();
     const [highlightedQuestId, setHighlightedQuestId] = useState<string | null>(null);
     const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
@@ -1039,9 +995,6 @@ export function QuestsTree() {
                         trader={trader}
                         allTraderQuests={allQuestsByTraderId.get(trader.id) ?? []}
                         treeMeta={treeMeta}
-                        questsById={questsById}
-                        leadsToByQuestId={leadsToByQuestId}
-                        showDebugButton={showDebug}
                         highlightedQuestId={highlightedQuestId}
                         onQuestLinkClick={(questId, event) => {
                             expandQuestPath(questId);
