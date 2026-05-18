@@ -9,6 +9,7 @@ import { QuestCard, type QuestRef } from "../QuestCard";
 import { buildQuestMapGroups, getQuestMapGroup } from "../quest-map-groups";
 import { cn } from "@/lib/utils";
 import type { FullQuest } from "@/types";
+import { QUEST_SCROLL_TO_TRADER_EVENT } from "./QuestsSidebar";
 
 interface QuestGroupHeaderProps {
     title: string;
@@ -353,6 +354,25 @@ export function QuestsList() {
         overscan: 8,
         scrollMargin,
     });
+
+    useEffect(() => {
+        const handleScrollToTrader = (event: Event) => {
+            if (viewMode !== "byTrader") return;
+
+            const traderId = (event as CustomEvent<{ traderId?: string }>).detail?.traderId;
+            if (!traderId) return;
+
+            const index = rows.findIndex(
+                (row) => row.kind === "header" && row.domId === `trader-${traderId}`,
+            );
+            if (index === -1) return;
+
+            virtualizer.scrollToIndex(index, { align: "start", behavior: "smooth" });
+        };
+
+        window.addEventListener(QUEST_SCROLL_TO_TRADER_EVENT, handleScrollToTrader);
+        return () => window.removeEventListener(QUEST_SCROLL_TO_TRADER_EVENT, handleScrollToTrader);
+    }, [rows, viewMode, virtualizer]);
 
     const [pendingScrollQuestId, setPendingScrollQuestId] = useState<string | null>(null);
 

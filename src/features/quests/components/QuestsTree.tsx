@@ -10,6 +10,7 @@ import { QuestCard, type QuestRef } from "../QuestCard";
 import { cn } from "@/lib/utils";
 import type { FullQuest } from "@/types";
 import { isQuestAvailableForProfile } from "../quest-sync";
+import { QUEST_SCROLL_TO_TRADER_EVENT } from "./QuestsSidebar";
 import {
     partitionLinkedPrerequisites,
     shouldFoldLinkedPrerequisites,
@@ -947,6 +948,21 @@ export function QuestsTree() {
         overscan: 3,
         scrollMargin,
     });
+
+    useEffect(() => {
+        const handleScrollToTrader = (event: Event) => {
+            const traderId = (event as CustomEvent<{ traderId?: string }>).detail?.traderId;
+            if (!traderId) return;
+
+            const index = visibleTraders.findIndex((trader) => trader.id === traderId);
+            if (index === -1) return;
+
+            virtualizer.scrollToIndex(index, { align: "start", behavior: "smooth" });
+        };
+
+        window.addEventListener(QUEST_SCROLL_TO_TRADER_EVENT, handleScrollToTrader);
+        return () => window.removeEventListener(QUEST_SCROLL_TO_TRADER_EVENT, handleScrollToTrader);
+    }, [visibleTraders, virtualizer]);
 
     // --- handlers ---
 

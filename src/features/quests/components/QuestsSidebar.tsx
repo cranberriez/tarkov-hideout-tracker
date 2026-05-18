@@ -5,7 +5,13 @@ import { cn } from "@/lib/utils";
 import { useQuestsContext } from "../QuestsContext";
 import { SidebarLabel, SidebarToggle } from "./quest-ui";
 
+export const QUEST_SCROLL_TO_TRADER_EVENT = "quest-scroll-to-trader";
+
 function scrollToTrader(traderId: string) {
+    window.dispatchEvent(
+        new CustomEvent(QUEST_SCROLL_TO_TRADER_EVENT, { detail: { traderId } }),
+    );
+
     const el = document.getElementById(`trader-${traderId}`);
     if (!el) return;
     const top = el.getBoundingClientRect().top + window.scrollY - 80;
