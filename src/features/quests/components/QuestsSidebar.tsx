@@ -69,7 +69,7 @@ export function QuestsSidebar({ collapsed = false, onToggleCollapsed }: QuestsSi
                         <div
                             key={trader.id}
                             className={cn(
-                                "group flex items-center gap-1 rounded-sm border-l-2 transition-all",
+                                "relative group flex items-center gap-1 rounded-sm border-l-2 transition-all",
                                 isSelected
                                     ? "border-tarkov-green bg-tarkov-green/5"
                                     : "border-transparent hover:bg-white/5",
@@ -117,6 +117,7 @@ export function QuestsSidebar({ collapsed = false, onToggleCollapsed }: QuestsSi
                                 }
                                 className={cn(
                                     "mr-1 inline-flex size-7 shrink-0 items-center justify-center rounded-sm text-gray-500 transition-colors hover:text-white",
+                                    collapsed && "absolute -left-7",
                                     isSelected
                                         ? "opacity-100"
                                         : collapsed
