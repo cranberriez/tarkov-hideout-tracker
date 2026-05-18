@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { useShallow } from "zustand/react/shallow";
 import { CheckCircle, ChevronDown, Circle, Lock } from "lucide-react";
 import { useQuestsContext } from "../QuestsContext";
@@ -869,6 +870,13 @@ function TraderTreeSection({
     );
 }
 
+// Estimated heights for the trader virtualizer.
+// Tree quests stack vertically at the same card sizes as the list views,
+// so N quests × QUEST_ROW_HEIGHT gives a tight pre-measurement estimate.
+const TRADER_HEADER_HEIGHT = 72;
+const TRADER_EXPANDED_OVERHEAD = 28; // mt-1 + mb-4 + pb-2 on the content wrapper
+const QUEST_ROW_HEIGHT = 60;
+
 export function QuestsTree() {
     const {
         filteredQuests,
@@ -881,35 +889,7 @@ export function QuestsTree() {
     const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
     const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const setGroupCollapsed = (key: string, collapsed: boolean) => {
-        setCollapsedGroups((current) => {
-            const next = new Set(current);
-            if (collapsed) next.add(key);
-            else next.delete(key);
-            return next;
-        });
-    };
-
-    const highlightQuest = (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => {
-        event?.preventDefault();
-        setHighlightedQuestId(questId);
-        scrollToQuest(questId);
-        if (highlightTimeoutRef.current) {
-            clearTimeout(highlightTimeoutRef.current);
-        }
-        highlightTimeoutRef.current = setTimeout(() => {
-            setHighlightedQuestId((current) => (current === questId ? null : current));
-            highlightTimeoutRef.current = null;
-        }, QUEST_HIGHLIGHT_DURATION_MS);
-    };
-
-    useEffect(() => {
-        return () => {
-            if (highlightTimeoutRef.current) {
-                clearTimeout(highlightTimeoutRef.current);
-            }
-        };
-    }, []);
+    // --- data memos (must come before virtualizer) ---
 
     const questsByTraderId = useMemo(() => {
         const map = new Map<string, FullQuest[]>();
@@ -932,20 +912,52 @@ export function QuestsTree() {
     }, [quests]);
 
     const treeMetaByTraderId = useMemo(() => {
-        const map = new Map<
-            string,
-            ReturnType<typeof buildTraderTree>
-        >();
-
+        const map = new Map<string, ReturnType<typeof buildTraderTree>>();
         for (const trader of traders) {
             const traderQuests = questsByTraderId.get(trader.id) ?? [];
             if (traderQuests.length > 0) {
                 map.set(trader.id, buildTraderTree(traderQuests));
             }
         }
-
         return map;
     }, [questsByTraderId, traders]);
+
+    const visibleTraders = useMemo(
+        () => traders.filter((t) => (questsByTraderId.get(t.id) ?? []).length > 0),
+        [traders, questsByTraderId],
+    );
+
+    // --- virtualizer ---
+
+    const listRef = useRef<HTMLDivElement>(null);
+    const [scrollMargin, setScrollMargin] = useState(0);
+
+    useLayoutEffect(() => {
+        if (listRef.current) setScrollMargin(listRef.current.offsetTop);
+    }, []);
+
+    const virtualizer = useWindowVirtualizer({
+        count: visibleTraders.length,
+        estimateSize: (index) => {
+            const trader = visibleTraders[index];
+            if (collapsedGroups.has(`trader:${trader.id}`)) return TRADER_HEADER_HEIGHT;
+            const questCount = questsByTraderId.get(trader.id)?.length ?? 0;
+            return TRADER_HEADER_HEIGHT + TRADER_EXPANDED_OVERHEAD + questCount * QUEST_ROW_HEIGHT;
+        },
+        overscan: 3,
+        scrollMargin,
+    });
+
+    // --- handlers ---
+
+    const setGroupCollapsed = (key: string, collapsed: boolean) => {
+        setCollapsedGroups((current) => {
+            const next = new Set(current);
+            if (collapsed) next.add(key);
+            else next.delete(key);
+            return next;
+        });
+    };
 
     const expandQuestPath = (questId: string) => {
         const quest = questsById.get(questId);
@@ -977,6 +989,51 @@ export function QuestsTree() {
         });
     };
 
+    const highlightQuest = (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => {
+        event?.preventDefault();
+        setHighlightedQuestId(questId);
+
+        const quest = questsById.get(questId);
+        if (quest && !document.getElementById(`trader-${quest.trader.id}`)) {
+            // Trader section is outside the virtual window — scroll it into view first,
+            // then scroll to the specific quest once it has rendered.
+            const traderIndex = visibleTraders.findIndex((t) => t.id === quest.trader.id);
+            if (traderIndex !== -1) {
+                virtualizer.scrollToIndex(traderIndex, { align: "start" });
+                requestAnimationFrame(() => requestAnimationFrame(() => scrollToQuest(questId)));
+            }
+        } else {
+            scrollToQuest(questId);
+        }
+
+        if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
+        highlightTimeoutRef.current = setTimeout(() => {
+            setHighlightedQuestId((current) => (current === questId ? null : current));
+            highlightTimeoutRef.current = null;
+        }, QUEST_HIGHLIGHT_DURATION_MS);
+    };
+
+    useEffect(() => {
+        return () => {
+            if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
+        };
+    }, []);
+
+    // Handle URL hash on mount — e.g. "view on quests page" links from the items page.
+    // expandQuestPath opens any collapsed groups in the path, then highlightQuest scrolls
+    // the virtualizer to the trader section (if off-screen) before scrolling to the quest.
+    useEffect(() => {
+        const hash = window.location.hash;
+        const match = hash.match(/^#quest-(.+)$/);
+        if (!match) return;
+        const questId = match[1];
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        expandQuestPath(questId);
+        requestAnimationFrame(() => highlightQuest(questId));
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // --- render ---
+
     return (
         <>
             <div className="flex items-center gap-3 px-1 text-xs text-gray-500">
@@ -987,31 +1044,51 @@ export function QuestsTree() {
                 </span>
             </div>
 
-            {traders.map((trader) => {
-                const traderQuests = questsByTraderId.get(trader.id) ?? [];
-                if (traderQuests.length === 0) return null;
-                const treeMeta = treeMetaByTraderId.get(trader.id);
-                if (!treeMeta) return null;
-                return (
-                    <TraderTreeSection
-                        key={trader.id}
-                        trader={trader}
-                        allTraderQuests={allQuestsByTraderId.get(trader.id) ?? []}
-                        treeMeta={treeMeta}
-                        highlightedQuestId={highlightedQuestId}
-                        onQuestLinkClick={(questId, event) => {
-                            expandQuestPath(questId);
-                            highlightQuest(questId, event);
-                        }}
-                        collapsedGroups={collapsedGroups}
-                        setGroupCollapsed={setGroupCollapsed}
-                    />
-                );
-            })}
-
-            {filteredQuests.length === 0 && (
+            {filteredQuests.length === 0 ? (
                 <div className="flex items-center justify-center py-16 text-gray-600 text-sm">
                     No quests match the current filters.
+                </div>
+            ) : (
+                <div ref={listRef}>
+                    <div
+                        style={{
+                            height: `${virtualizer.getTotalSize()}px`,
+                            width: "100%",
+                            position: "relative",
+                        }}
+                    >
+                        {virtualizer.getVirtualItems().map((virtualItem) => {
+                            const trader = visibleTraders[virtualItem.index];
+                            const treeMeta = treeMetaByTraderId.get(trader.id)!;
+                            return (
+                                <div
+                                    key={virtualItem.key}
+                                    data-index={virtualItem.index}
+                                    ref={virtualizer.measureElement}
+                                    style={{
+                                        position: "absolute",
+                                        top: 0,
+                                        left: 0,
+                                        width: "100%",
+                                        transform: `translateY(${virtualItem.start - virtualizer.options.scrollMargin}px)`,
+                                    }}
+                                >
+                                    <TraderTreeSection
+                                        trader={trader}
+                                        allTraderQuests={allQuestsByTraderId.get(trader.id) ?? []}
+                                        treeMeta={treeMeta}
+                                        highlightedQuestId={highlightedQuestId}
+                                        onQuestLinkClick={(questId, event) => {
+                                            expandQuestPath(questId);
+                                            highlightQuest(questId, event);
+                                        }}
+                                        collapsedGroups={collapsedGroups}
+                                        setGroupCollapsed={setGroupCollapsed}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             )}
         </>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown } from "lucide-react";
 import { useQuestsContext } from "../QuestsContext";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -166,6 +167,28 @@ function sortQuestsByChains(
     return sorted;
 }
 
+type HeaderRow = {
+    kind: "header";
+    groupKey: string;
+    domId: string;
+    title: string;
+    imageLink?: string | null;
+    fallbackInitial?: string;
+    allQuests: FullQuest[];
+    visibleCount: number;
+};
+
+type QuestRow = {
+    kind: "quest";
+    quest: FullQuest;
+};
+
+type VirtualRow = HeaderRow | QuestRow;
+
+// Estimated heights used for initial layout before measurement
+const ESTIMATED_HEADER_HEIGHT = 80;
+const ESTIMATED_QUEST_HEIGHT = 60;
+
 export function QuestsList() {
     const {
         quests,
@@ -255,6 +278,112 @@ export function QuestsList() {
         [quests, viewMode],
     );
 
+    const rows = useMemo<VirtualRow[]>(() => {
+        const result: VirtualRow[] = [];
+
+        if (viewMode === "byTrader") {
+            for (const trader of traders) {
+                const traderQuests = questsByTraderId.get(trader.id) ?? [];
+                if (traderQuests.length === 0) continue;
+
+                const groupKey = `trader:${trader.id}`;
+                result.push({
+                    kind: "header",
+                    groupKey,
+                    domId: `trader-${trader.id}`,
+                    title: trader.name,
+                    imageLink: trader.image4xLink ?? trader.imageLink ?? null,
+                    fallbackInitial: trader.name[0],
+                    allQuests: allQuestsByTraderId.get(trader.id) ?? [],
+                    visibleCount: traderQuests.length,
+                });
+
+                if (!collapsedGroups.has(groupKey)) {
+                    for (const quest of traderQuests) {
+                        result.push({ kind: "quest", quest });
+                    }
+                }
+            }
+        } else {
+            for (const mapGroup of mapGroups) {
+                const mapQuests = questsByMapKey.get(mapGroup.key) ?? [];
+                if (mapQuests.length === 0) continue;
+
+                const groupKey = `map:${mapGroup.key}`;
+                result.push({
+                    kind: "header",
+                    groupKey,
+                    domId: `map-${mapGroup.key}`,
+                    title: mapGroup.name,
+                    allQuests: allQuestsByMapKey.get(mapGroup.key) ?? [],
+                    visibleCount: mapQuests.length,
+                });
+
+                if (!collapsedGroups.has(groupKey)) {
+                    for (const quest of mapQuests) {
+                        result.push({ kind: "quest", quest });
+                    }
+                }
+            }
+        }
+
+        return result;
+    }, [
+        viewMode,
+        traders,
+        questsByTraderId,
+        allQuestsByTraderId,
+        mapGroups,
+        questsByMapKey,
+        allQuestsByMapKey,
+        collapsedGroups,
+    ]);
+
+    const listRef = useRef<HTMLDivElement>(null);
+    const [scrollMargin, setScrollMargin] = useState(0);
+
+    useLayoutEffect(() => {
+        if (listRef.current) setScrollMargin(listRef.current.offsetTop);
+    }, []);
+
+    const virtualizer = useWindowVirtualizer({
+        count: rows.length,
+        estimateSize: (index) =>
+            rows[index]?.kind === "header" ? ESTIMATED_HEADER_HEIGHT : ESTIMATED_QUEST_HEIGHT,
+        overscan: 8,
+        scrollMargin,
+    });
+
+    const [pendingScrollQuestId, setPendingScrollQuestId] = useState<string | null>(null);
+
+    // Fires after rows rebuild (e.g. after a collapsed group is expanded for the target quest)
+    useEffect(() => {
+        if (!pendingScrollQuestId) return;
+        const index = rows.findIndex(
+            (r) => r.kind === "quest" && r.quest.id === pendingScrollQuestId,
+        );
+        if (index === -1) return;
+        virtualizer.scrollToIndex(index, { align: "start", behavior: "smooth" });
+        setPendingScrollQuestId(null);
+    }, [pendingScrollQuestId, rows, virtualizer]);
+
+    // Handle URL hash on mount — e.g. "view on quests page" links from the items page
+    useEffect(() => {
+        const hash = window.location.hash;
+        const match = hash.match(/^#quest-(.+)$/);
+        if (!match) return;
+        const questId = match[1];
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        const quest = questsById.get(questId);
+        if (!quest) return;
+        if (viewMode === "byTrader") {
+            setGroupCollapsed(`trader:${quest.trader.id}`, false);
+        } else {
+            setGroupCollapsed(`map:${getQuestMapGroup(quest.map ?? null).key}`, false);
+        }
+        setPendingScrollQuestId(questId);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
     function toRef(id: string, fallbackName: string): QuestRef {
         const q = questsById.get(id);
         return {
@@ -289,15 +418,22 @@ export function QuestsList() {
                 }))}
                 leadsToQuests={(leadsToByQuestId.get(quest.id) ?? []).map((id) => toRef(id, id))}
                 showDebugButton={showDebug}
+                onQuestLinkClick={(targetQuestId) => {
+                    const target = questsById.get(targetQuestId);
+                    if (!target) return;
+                    if (viewMode === "byTrader") {
+                        setGroupCollapsed(`trader:${target.trader.id}`, false);
+                    } else {
+                        setGroupCollapsed(
+                            `map:${getQuestMapGroup(target.map ?? null).key}`,
+                            false,
+                        );
+                    }
+                    setPendingScrollQuestId(targetQuestId);
+                }}
             />
         );
     }
-
-    const empty = (
-        <div className="flex items-center justify-center py-16 text-sm text-gray-600">
-            No quests match the current filters.
-        </div>
-    );
 
     return (
         <>
@@ -315,71 +451,76 @@ export function QuestsList() {
                 )}
             </div>
 
-            {viewMode === "byTrader" ? (
-                <div>
-                    {traders.map((trader) => {
-                        const traderQuests = questsByTraderId.get(trader.id) ?? [];
-                        if (traderQuests.length === 0) return null;
-
-                        const groupKey = `trader:${trader.id}`;
-                        const collapsed = collapsedGroups.has(groupKey);
-
-                        return (
-                            <div
-                                key={trader.id}
-                                id={`trader-${trader.id}`}
-                                className="border-b border-white/5 pb-2 last:border-b-0"
-                            >
-                                <QuestGroupHeader
-                                    title={trader.name}
-                                    imageLink={trader.image4xLink ?? trader.imageLink ?? null}
-                                    fallbackInitial={trader.name[0]}
-                                    allQuests={allQuestsByTraderId.get(trader.id) ?? []}
-                                    visibleCount={traderQuests.length}
-                                    collapsed={collapsed}
-                                    onToggle={() => setGroupCollapsed(groupKey, !collapsed)}
-                                />
-                                {!collapsed && (
-                                    <div className="mt-1 mb-2 space-y-1">
-                                        {traderQuests.map(renderCard)}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                    {filteredQuests.length === 0 && empty}
+            {filteredQuests.length === 0 ? (
+                <div className="flex items-center justify-center py-16 text-sm text-gray-600">
+                    No quests match the current filters.
                 </div>
             ) : (
-                <div>
-                    {mapGroups.map((mapGroup) => {
-                        const mapQuests = questsByMapKey.get(mapGroup.key) ?? [];
-                        if (mapQuests.length === 0) return null;
+                <div ref={listRef}>
+                    <div
+                        style={{
+                            height: `${virtualizer.getTotalSize()}px`,
+                            width: "100%",
+                            position: "relative",
+                        }}
+                    >
+                        {virtualizer.getVirtualItems().map((virtualItem) => {
+                            const row = rows[virtualItem.index];
+                            const translateY =
+                                virtualItem.start - virtualizer.options.scrollMargin;
 
-                        const groupKey = `map:${mapGroup.key}`;
-                        const collapsed = collapsedGroups.has(groupKey);
-
-                        return (
-                            <div
-                                key={mapGroup.key}
-                                id={`map-${mapGroup.key}`}
-                                className="border-b border-white/5 pb-2 last:border-b-0"
-                            >
-                                <QuestGroupHeader
-                                    title={mapGroup.name}
-                                    allQuests={allQuestsByMapKey.get(mapGroup.key) ?? []}
-                                    visibleCount={mapQuests.length}
-                                    collapsed={collapsed}
-                                    onToggle={() => setGroupCollapsed(groupKey, !collapsed)}
-                                />
-                                {!collapsed && (
-                                    <div className="mt-1 mb-2 space-y-1">
-                                        {mapQuests.map(renderCard)}
+                            if (row.kind === "header") {
+                                const collapsed = collapsedGroups.has(row.groupKey);
+                                return (
+                                    <div
+                                        key={virtualItem.key}
+                                        data-index={virtualItem.index}
+                                        ref={virtualizer.measureElement}
+                                        id={row.domId}
+                                        style={{
+                                            position: "absolute",
+                                            top: 0,
+                                            left: 0,
+                                            width: "100%",
+                                            transform: `translateY(${translateY}px)`,
+                                            paddingBottom: "4px",
+                                        }}
+                                        className="border-b border-white/5"
+                                    >
+                                        <QuestGroupHeader
+                                            title={row.title}
+                                            imageLink={row.imageLink}
+                                            fallbackInitial={row.fallbackInitial}
+                                            allQuests={row.allQuests}
+                                            visibleCount={row.visibleCount}
+                                            collapsed={collapsed}
+                                            onToggle={() =>
+                                                setGroupCollapsed(row.groupKey, !collapsed)
+                                            }
+                                        />
                                     </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                    {filteredQuests.length === 0 && empty}
+                                );
+                            }
+
+                            return (
+                                <div
+                                    key={virtualItem.key}
+                                    data-index={virtualItem.index}
+                                    ref={virtualizer.measureElement}
+                                    style={{
+                                        position: "absolute",
+                                        top: 0,
+                                        left: 0,
+                                        width: "100%",
+                                        transform: `translateY(${translateY}px)`,
+                                        paddingBottom: "4px",
+                                    }}
+                                >
+                                    {renderCard(row.quest)}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             )}
         </>
