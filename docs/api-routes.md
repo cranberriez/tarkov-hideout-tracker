@@ -79,7 +79,7 @@ TimedResponse<{ quests: Quest[] }>;
 
 **File:** `src/server/services/quests.ts`
 
-Fetches full Tarkov.dev task data for normal PMC quest progression, including all objective types, maps, trader requirements, prestige requirements, and trader images. This is the current source for both `/items` quest item metadata and `/quests`.
+Fetches full Tarkov.dev task data for normal PMC quest progression, including all objective types, fail conditions, maps, trader requirements, prestige requirements, and trader images. This is the current source for both `/items` quest item metadata and `/quests`.
 
 ```ts
 TimedResponse<{ quests: FullQuest[] }>;

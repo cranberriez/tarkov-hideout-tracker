@@ -101,7 +101,7 @@ query Tasks {
 | `taskImageLink` | Task splash art — not used in current card design |
 | `map` | Top-level map hint; objective-level `maps` is more precise |
 | `startRewards` / `finishRewards` | Reward display not planned yet |
-| `failConditions` / `failureOutcome` | Failure display not planned |
+| `failureOutcome` | Failure outcome display not planned |
 | `restartable` | Not used |
 | `requiredPrestige` | Prestige system display not planned |
 | `traderRequirements` | Trader loyalty gating — could be added later |
@@ -129,6 +129,7 @@ Add these back to the query as features are added — they are valid fields.
 | `experience` | `Int!` | XP on completion |
 | `wikiLink` | `String` | Nullable — not every task has a wiki page |
 | `taskRequirements` | `[TaskStatusRequirement]!` | Prerequisite tasks |
+| `failConditions` | `[TaskObjective]!` | Conditions that fail the task, including task-status branch exclusions and generic conditions |
 | `objectives` | `[TaskObjective]!` | Interface — see below |
 
 ### `TaskStatusRequirement` (prerequisites)

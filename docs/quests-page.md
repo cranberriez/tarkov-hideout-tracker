@@ -71,6 +71,7 @@ Important persisted quest fields:
 
 ```ts
 completedQuests: Record<string, boolean>;
+failedQuests: Record<string, boolean>;
 questsWithItems: Record<string, boolean>;
 ignoredQuests: Record<string, boolean>;
 pinnedQuests: Record<string, boolean>;
@@ -100,6 +101,7 @@ questSidebarCollapsed: boolean;
 
 - `questsById`: O(1) quest lookup.
 - `leadsToByQuestId`: inverted prerequisite index.
+- `failureMap`: inverted task-status fail-condition index for mutually exclusive branches.
 - `kappaQuestIds` / `lightkeeperQuestIds`: transitive prerequisite closures.
 - `filteredQuests`: active filters and local search applied in order.
 - `traders` and `allMaps`: deduped filter lists derived from full quest data.
@@ -185,6 +187,7 @@ Run this when changing manual sync behavior before `npm run lint` and `npm run b
 `QuestCard.tsx` renders:
 
 - Completion, pin, ignore, and have-items controls backed by `useUserStore`.
+- Failed and disabled quest states for fail-capable mutually exclusive branches.
 - Trader avatar, quest name, level/map/kappa/LK/faction/trader-loyalty/prestige badges.
 - Compact item strip for `giveItem` objectives; item thumbnails call `onItemClick(itemId)`.
 - Expanded objective rows for all objective types.
@@ -205,7 +208,7 @@ API quirks to keep in mind:
 
 | Layer                    | Key                                      | Freshness                   |
 | ------------------------ | ---------------------------------------- | --------------------------- |
-| Redis                    | `quests:full:v3` + `quests:full:v3:meta` | 12h service freshness check |
+| Redis                    | `quests:full:v4` + `quests:full:v4:meta` | 12h service freshness check |
 | Next.js `unstable_cache` | `["quests-full"]`                        | `revalidate: 43200`         |
 
 To invalidate quest data for application code, bump the relevant version in `src/lib/cfg/cacheVersions.ts`. See `caching-architecture.md`.
