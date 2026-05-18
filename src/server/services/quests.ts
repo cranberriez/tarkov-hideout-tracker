@@ -420,7 +420,7 @@ function mapFullObjective(o: RawFullObjective): FullQuestObjective {
             ...base,
             type: "extract",
             exitName: o.exitName ?? null,
-            count: o.count ?? null,
+            count: o.count,
         };
     }
 
