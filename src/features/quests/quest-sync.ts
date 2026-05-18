@@ -85,13 +85,19 @@ export function syncTraderProgress({
             .filter(([, isCompleted]) => isCompleted)
             .map(([questId]) => questId),
     );
+    const resolvedQuestIds = new Set([
+        ...completedQuestIds,
+        ...Object.entries(profile.failedQuests ?? {})
+            .filter(([, isFailed]) => isFailed)
+            .map(([questId]) => questId),
+    ]);
     const traversalResult = collectTransitivePrerequisiteIds(
         selectedQuestIds,
         questsById,
         {
             allowedSensitiveQuestIds: new Set(allowedSensitiveBackfillQuestIds),
             deniedSensitiveQuestIds: new Set(deniedSensitiveBackfillQuestIds),
-            completedQuestIds,
+            resolvedQuestIds,
         },
     );
     const prerequisiteIds = traversalResult.prerequisiteIds;
@@ -129,6 +135,9 @@ export function syncTraderProgress({
         completedAnchorIds.add(prerequisiteId);
         recordCompletion(prerequisiteId, prerequisiteCompletedIds);
     }
+    for (const prerequisiteId of traversalResult.resolvedPrerequisiteIds) {
+        completedAnchorIds.add(prerequisiteId);
+    }
 
     const inferredCompletedIds: string[] = [];
     const skippedBranchingQuestIds = new Set<string>();
@@ -146,7 +155,11 @@ export function syncTraderProgress({
             if (nextCompletedQuests[quest.id]) continue;
             if (!quest.taskRequirements.some((requirement) => completedAnchorIds.has(requirement.task.id))) continue;
             if (!isQuestAvailableForProfile(quest, syncProfile, questAvailabilityById)) continue;
-            if (getMutuallyExclusiveQuestIds(quest).length > 0) {
+            const mutuallyExclusiveQuestIds = getMutuallyExclusiveQuestIds(quest);
+            if (
+                mutuallyExclusiveQuestIds.length > 0 &&
+                mutuallyExclusiveQuestIds.every((questId) => !resolvedQuestIds.has(questId))
+            ) {
                 skippedBranchingQuestIds.add(quest.id);
                 continue;
             }

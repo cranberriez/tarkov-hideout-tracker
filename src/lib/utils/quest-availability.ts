@@ -106,7 +106,8 @@ function isQuestRequirementSatisfied(
 ): boolean {
     if (
         statusIncludesComplete(requirement.status) &&
-        profile.completedQuests[requirement.task.id]
+        (profile.completedQuests[requirement.task.id] ||
+            profile.failedQuests?.[requirement.task.id])
     ) {
         return true;
     }

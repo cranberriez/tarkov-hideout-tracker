@@ -8,6 +8,7 @@ export interface SensitiveBackfillQuest {
 
 export interface PrerequisiteTraversalResult {
     prerequisiteIds: Set<string>;
+    resolvedPrerequisiteIds: Set<string>;
     blockedSensitiveQuestIds: Set<string>;
 }
 
@@ -73,9 +74,11 @@ export function collectTransitivePrerequisiteIds(
         allowedSensitiveQuestIds?: ReadonlySet<string>;
         deniedSensitiveQuestIds?: ReadonlySet<string>;
         completedQuestIds?: ReadonlySet<string>;
+        resolvedQuestIds?: ReadonlySet<string>;
     } = {},
 ): PrerequisiteTraversalResult {
     const prerequisiteIds = new Set<string>();
+    const resolvedPrerequisiteIds = new Set<string>();
     const blockedSensitiveQuestIds = new Set<string>();
     const queue = Array.from(rootQuestIds);
 
@@ -88,7 +91,11 @@ export function collectTransitivePrerequisiteIds(
 
         for (const requirement of quest.taskRequirements) {
             const prerequisiteId = requirement.task.id;
-            if (options.completedQuestIds?.has(prerequisiteId)) {
+            if (
+                options.resolvedQuestIds?.has(prerequisiteId) ||
+                options.completedQuestIds?.has(prerequisiteId)
+            ) {
+                resolvedPrerequisiteIds.add(prerequisiteId);
                 continue;
             }
 
@@ -114,5 +121,5 @@ export function collectTransitivePrerequisiteIds(
         }
     }
 
-    return { prerequisiteIds, blockedSensitiveQuestIds };
+    return { prerequisiteIds, resolvedPrerequisiteIds, blockedSensitiveQuestIds };
 }

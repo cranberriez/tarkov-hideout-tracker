@@ -208,6 +208,32 @@ test("syncTraderProgress can disable same-trader inference", () => {
     assert.equal(result.nextCompletedQuests.dangling ?? false, false);
 });
 
+test("syncTraderProgress treats failed prerequisites as already resolved", () => {
+    const quests = [
+        makeQuest({ id: "failed-branch", name: "Failed Branch" }),
+        makeQuest({
+            id: "selected",
+            name: "Selected",
+            taskRequirements: [
+                { task: { id: "failed-branch", name: "Failed Branch" }, status: ["Success"] },
+            ],
+        }),
+    ];
+
+    const result = syncTraderProgress({
+        quests,
+        traderId: "prapor",
+        selectedQuestIds: ["selected"],
+        profile: makeProfile({ failedQuests: { "failed-branch": true } }),
+        questsWithItems: {},
+    });
+
+    assert.deepEqual(result.prerequisiteCompletedIds, []);
+    assert.deepEqual(result.completedIds, []);
+    assert.equal(result.nextCompletedQuests["failed-branch"] ?? false, false);
+    assert.equal(result.nextFailedQuests["failed-branch"], true);
+});
+
 test("syncTraderProgress skips branching same-trader inferred quests", () => {
     const quests = [
         makeQuest({ id: "a", name: "A" }),
@@ -268,6 +294,56 @@ test("syncTraderProgress skips branching same-trader inferred quests", () => {
     assert.equal(result.nextCompletedQuests["branch-b"] ?? false, false);
     assert.equal(result.nextFailedQuests["branch-a"] ?? false, false);
     assert.equal(result.nextFailedQuests["branch-b"] ?? false, false);
+});
+
+test("syncTraderProgress infers a branching quest when its competing branch is already failed", () => {
+    const quests = [
+        makeQuest({ id: "a", name: "A" }),
+        makeQuest({
+            id: "b",
+            name: "B",
+            taskRequirements: [{ task: { id: "a", name: "A" }, status: ["Success"] }],
+        }),
+        makeQuest({
+            id: "selected",
+            name: "Selected",
+            taskRequirements: [{ task: { id: "b", name: "B" }, status: ["Success"] }],
+        }),
+        makeQuest({
+            id: "branch-a",
+            name: "Branch A",
+            taskRequirements: [{ task: { id: "b", name: "B" }, status: ["Success"] }],
+        }),
+        makeQuest({
+            id: "branch-b",
+            name: "Branch B",
+            taskRequirements: [{ task: { id: "b", name: "B" }, status: ["Success"] }],
+            failConditions: [
+                {
+                    id: "branch-b-fails-branch-a",
+                    type: "taskStatus",
+                    description: "",
+                    optional: false,
+                    status: ["Success"],
+                    task: { id: "branch-a", name: "Branch A" },
+                },
+            ],
+        }),
+    ];
+
+    const result = syncTraderProgress({
+        quests,
+        traderId: "prapor",
+        selectedQuestIds: ["selected"],
+        profile: makeProfile({ failedQuests: { "branch-a": true } }),
+        questsWithItems: {},
+    });
+
+    assert.deepEqual(result.prerequisiteCompletedIds.sort(), ["a", "b"]);
+    assert.deepEqual(result.inferredCompletedIds, ["branch-b"]);
+    assert.deepEqual(result.skippedBranchingQuestIds, []);
+    assert.equal(result.nextFailedQuests["branch-a"], true);
+    assert.equal(result.nextCompletedQuests["branch-b"], true);
 });
 
 test("syncTraderProgress does not infer unrelated cross-trader quests", () => {
@@ -464,7 +540,7 @@ test("syncTraderProgress auto-fails mutually exclusive quests when syncing compl
     assert.equal(result.nextFailedQuests.exclusive, true);
 });
 
-test("syncTraderProgress clears failed state when sync completes that quest", () => {
+test("syncTraderProgress preserves failed state when a failed quest satisfies a selected prerequisite", () => {
     const quests = [
         makeQuest({ id: "root", name: "Root" }),
         makeQuest({
@@ -482,12 +558,12 @@ test("syncTraderProgress clears failed state when sync completes that quest", ()
         questsWithItems: { root: true },
     });
 
-    assert.deepEqual(result.completedIds, ["root"]);
-    assert.equal(result.nextCompletedQuests.root, true);
-    assert.equal(result.nextFailedQuests.root, false);
-    assert.equal(result.nextQuestsWithItems.root, false);
-    assert.equal(result.previousFailedQuests.root, true);
-    assert.equal(result.previousQuestsWithItems.root, true);
+    assert.deepEqual(result.completedIds, []);
+    assert.equal(result.nextCompletedQuests.root ?? false, false);
+    assert.equal(result.nextFailedQuests.root, true);
+    assert.equal(result.nextQuestsWithItems.root, true);
+    assert.equal(result.previousFailedQuests.root, undefined);
+    assert.equal(result.previousQuestsWithItems.root, undefined);
 });
 
 
