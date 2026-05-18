@@ -102,8 +102,11 @@ function ObjectiveRow({
     const hasItemChoices = !!item && item.items.length > 1;
 
     return (
-        <div className={`flex items-start gap-2 ${objective.optional ? "opacity-50" : ""}`}>
-            <ObjectiveIcon type={objective.type} />
+        <div className={`flex items-center gap-2 ${objective.optional ? "opacity-50" : ""}`}>
+            <div className="flex items-center gap-1">
+                <ObjectiveIcon type={objective.type} />
+                {objective?.count && <span>{objective.count}</span>}
+            </div>
             <div className="flex-1 min-w-0 space-y-1">
                 <p className="text-xs text-gray-300 leading-snug">{objective.description}</p>
                 {shoot && shoot.bodyParts.length > 0 && (
@@ -141,7 +144,14 @@ function ObjectiveRow({
                                 <div
                                     key={itm.id}
                                     className={`flex items-center gap-1.5 rounded border border-white/10 bg-black/40 px-2 py-1 ${onItemClick ? "cursor-pointer hover:border-white/25 transition-colors" : ""}`}
-                                    onClick={onItemClick ? (e) => { e.stopPropagation(); onItemClick(itm.id); } : undefined}
+                                    onClick={
+                                        onItemClick
+                                            ? (e) => {
+                                                  e.stopPropagation();
+                                                  onItemClick(itm.id);
+                                              }
+                                            : undefined
+                                    }
                                 >
                                     {(itm.iconLink ?? itm.gridImageLink) && (
                                         <span
@@ -218,14 +228,10 @@ function QuestChip({
                             : "text-blue-300",
                     )}
                 >
-                    {questRef.prerequisiteType === "complete" ? (
-                        "Complete"
-                    ) : (
-                        "Accept"
-                    )}
+                    {questRef.prerequisiteType === "complete" ? "Complete" : "Accept"}
                 </span>
             )}
-            {questRef.trader.image4xLink ?? questRef.trader.imageLink ? (
+            {(questRef.trader.image4xLink ?? questRef.trader.imageLink) ? (
                 <img
                     src={questRef.trader.image4xLink ?? questRef.trader.imageLink ?? ""}
                     alt={questRef.trader.name}
@@ -253,22 +259,18 @@ export function QuestCard({
 }: QuestCardProps) {
     const [expanded, setExpanded] = useState(false);
     const [debugOpen, setDebugOpen] = useState(false);
-    const { syncProfile, questsById, onItemClick, requestToggleQuestCompletion } = useQuestsContext();
-    const {
-        completedQuests,
-        ignoredQuests,
-        pinnedQuests,
-        toggleIgnoredQuest,
-        togglePinnedQuest,
-    } = useUserStore(
-        useShallow((state) => ({
-            completedQuests: state.completedQuests,
-            ignoredQuests: state.ignoredQuests,
-            pinnedQuests: state.pinnedQuests,
-            toggleIgnoredQuest: state.toggleIgnoredQuest,
-            togglePinnedQuest: state.togglePinnedQuest,
-        })),
-    );
+    const { syncProfile, questsById, onItemClick, requestToggleQuestCompletion } =
+        useQuestsContext();
+    const { completedQuests, ignoredQuests, pinnedQuests, toggleIgnoredQuest, togglePinnedQuest } =
+        useUserStore(
+            useShallow((state) => ({
+                completedQuests: state.completedQuests,
+                ignoredQuests: state.ignoredQuests,
+                pinnedQuests: state.pinnedQuests,
+                toggleIgnoredQuest: state.toggleIgnoredQuest,
+                togglePinnedQuest: state.togglePinnedQuest,
+            })),
+        );
     const completed = !!completedQuests[quest.id];
     const ignored = !!ignoredQuests[quest.id];
     const pinned = !!pinnedQuests[quest.id];
@@ -435,7 +437,7 @@ export function QuestCard({
                 </button>
 
                 {/* Trader avatar */}
-                {quest.trader.image4xLink ?? quest.trader.imageLink ? (
+                {(quest.trader.image4xLink ?? quest.trader.imageLink) ? (
                     <img
                         src={quest.trader.image4xLink ?? quest.trader.imageLink ?? ""}
                         alt={quest.trader.name}
@@ -461,19 +463,21 @@ export function QuestCard({
                             completed
                                 ? "text-tarkov-green/80 bg-tarkov-green/10 border-tarkov-green/20"
                                 : ignored
-                                ? "text-gray-400 bg-black/50 border-white/10"
-                                : available
-                                ? "text-blue-400/80 bg-blue-400/10 border-blue-400/20"
-                                : "border-transparent bg-transparent px-0 text-red-300"
+                                  ? "text-gray-400 bg-black/50 border-white/10"
+                                  : available
+                                    ? "text-blue-400/80 bg-blue-400/10 border-blue-400/20"
+                                    : "border-transparent bg-transparent px-0 text-red-300"
                         }`}
                     >
-                        {completed
-                            ? "Completed"
-                            : ignored
-                            ? "Ignored"
-                            : available
-                            ? "Available"
-                            : <Lock size={12} strokeWidth={2.25} aria-label="Locked" />}
+                        {completed ? (
+                            "Completed"
+                        ) : ignored ? (
+                            "Ignored"
+                        ) : available ? (
+                            "Available"
+                        ) : (
+                            <Lock size={12} strokeWidth={2.25} aria-label="Locked" />
+                        )}
                     </span>
                 </div>
 
@@ -618,7 +622,14 @@ export function QuestCard({
                             key={item.id}
                             className={`relative ${onItemClick ? "cursor-pointer" : ""}`}
                             title={`${item.name} x${item.count}${item.fir ? " (FiR)" : ""}${onItemClick ? " — click to view" : ""}`}
-                            onClick={onItemClick ? (e) => { e.stopPropagation(); onItemClick(item.id); } : undefined}
+                            onClick={
+                                onItemClick
+                                    ? (e) => {
+                                          e.stopPropagation();
+                                          onItemClick(item.id);
+                                      }
+                                    : undefined
+                            }
                         >
                             <img
                                 src={item.iconLink ?? item.gridImageLink ?? ""}
@@ -626,9 +637,7 @@ export function QuestCard({
                                 className={`w-8 h-8 object-contain rounded bg-black/40 transition-opacity ${
                                     onItemClick ? "hover:opacity-75" : ""
                                 } ${
-                                    item.fir
-                                        ? "ring-1 ring-orange-500"
-                                        : "border border-white/10"
+                                    item.fir ? "ring-1 ring-orange-500" : "border border-white/10"
                                 }`}
                             />
                             {item.fir && (
@@ -717,7 +726,11 @@ export function QuestCard({
                         </span>
                         <div className="space-y-1.5">
                             {quest.objectives.map((obj) => (
-                                <ObjectiveRow key={obj.id} objective={obj} onItemClick={onItemClick ?? undefined} />
+                                <ObjectiveRow
+                                    key={obj.id}
+                                    objective={obj}
+                                    onItemClick={onItemClick ?? undefined}
+                                />
                             ))}
                         </div>
                     </div>
@@ -739,7 +752,8 @@ export function QuestCard({
                                     <span
                                         className={`${questMetaChipBaseClass} text-gray-400 bg-black/40 border-white/10`}
                                     >
-                                        {completedRequirementCount}/{quest.taskRequirements.length} prerequisite quests completed
+                                        {completedRequirementCount}/{quest.taskRequirements.length}{" "}
+                                        prerequisite quests completed
                                     </span>
                                 )}
                             </div>

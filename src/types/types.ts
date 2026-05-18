@@ -206,6 +206,7 @@ export interface QuestObjectiveBase {
     type: string;
     description: string;
     optional: boolean;
+    count?: number;
 }
 
 export interface QuestObjectiveItemType extends QuestObjectiveBase {
@@ -225,7 +226,6 @@ export interface QuestObjectiveShootType extends QuestObjectiveBase {
 export interface QuestObjectiveExtractType extends QuestObjectiveBase {
     type: "extract";
     exitName: string | null;
-    count: number | null;
 }
 
 export type FullQuestObjective =

@@ -123,7 +123,7 @@ function GroupHeader({ group, expanded, isIconMode }: GroupHeaderProps) {
 
                     <Link
                         href={`/quests#quest-${group.questId}`}
-                        className="inline-flex items-center gap-1 text-xs text-gray-500 transition-colors hover:text-tarkov-green"
+                        className="inline-flex w-fit items-center gap-1 text-xs text-gray-500 transition-colors hover:text-tarkov-green"
                         onClick={(e) => e.stopPropagation()}
                     >
                         Quest

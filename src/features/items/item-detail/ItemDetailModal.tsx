@@ -336,10 +336,12 @@ export function ItemDetailModal({
                         <section className="mt-5 rounded-md border border-white/10 bg-card p-4">
                             <div className="mb-3 flex items-center justify-between gap-3">
                                 <div>
-                                    <h3 className="text-sm font-semibold text-white">Quest Hand-Ins</h3>
+                                    <h3 className="text-sm font-semibold text-white">
+                                        Quest Hand-Ins
+                                    </h3>
                                     <p className="mt-1 text-xs text-gray-500">
-                                        Uses the same quest visibility rules as the items page, including
-                                        pinned and FiR overrides.
+                                        Uses the same quest visibility rules as the items page,
+                                        including pinned and FiR overrides.
                                     </p>
                                 </div>
                                 <div className="text-right text-xs text-gray-500">
@@ -361,15 +363,28 @@ export function ItemDetailModal({
                                             {/* Row 1: completion + name + status */}
                                             <div className="flex items-center gap-2 min-w-0">
                                                 <button
-                                                    onClick={() => toggleQuestCompletion(quest.questId)}
+                                                    onClick={() =>
+                                                        toggleQuestCompletion(quest.questId)
+                                                    }
                                                     className="shrink-0 text-gray-600 hover:text-tarkov-green transition-colors"
-                                                    title={isCompleted ? "Mark incomplete" : "Mark complete"}
+                                                    title={
+                                                        isCompleted
+                                                            ? "Mark incomplete"
+                                                            : "Mark complete"
+                                                    }
                                                 >
-                                                    {isCompleted
-                                                        ? <CheckCircle size={14} className="text-tarkov-green" />
-                                                        : <Circle size={14} />}
+                                                    {isCompleted ? (
+                                                        <CheckCircle
+                                                            size={14}
+                                                            className="text-tarkov-green"
+                                                        />
+                                                    ) : (
+                                                        <Circle size={14} />
+                                                    )}
                                                 </button>
-                                                <span className={`flex-1 min-w-0 truncate text-sm font-medium ${isCompleted ? "line-through text-gray-600" : "text-white"}`}>
+                                                <span
+                                                    className={`flex-1 min-w-0 truncate text-sm font-medium ${isCompleted ? "line-through text-gray-600" : "text-white"}`}
+                                                >
                                                     {quest.questName}
                                                 </span>
                                                 <span
@@ -377,10 +392,10 @@ export function ItemDetailModal({
                                                         quest.status === "available"
                                                             ? "border-blue-400/20 bg-blue-400/10 text-blue-300"
                                                             : quest.status === "future"
-                                                            ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
-                                                            : quest.status === "completed"
-                                                            ? "border-tarkov-green/20 bg-tarkov-green/10 text-tarkov-green"
-                                                            : "border-white/10 bg-black/30 text-gray-400"
+                                                              ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
+                                                              : quest.status === "completed"
+                                                                ? "border-tarkov-green/20 bg-tarkov-green/10 text-tarkov-green"
+                                                                : "border-white/10 bg-black/30 text-gray-400"
                                                     }`}
                                                 >
                                                     {quest.status}
@@ -390,31 +405,51 @@ export function ItemDetailModal({
                                             {/* Row 2: meta + badges + actions */}
                                             <div className="flex items-center justify-between gap-2 min-w-0">
                                                 <span className="truncate text-xs text-gray-500">
-                                                    {quest.traderName} · depth {quest.prerequisiteDepth}
+                                                    {quest.traderName}
                                                     {quest.minPlayerLevel != null
                                                         ? ` · Lv. ${quest.minPlayerLevel}`
                                                         : ""}
                                                 </span>
                                                 <div className="flex shrink-0 items-center gap-1">
-                                                    <span className="rounded border border-white/10 bg-black/30 px-1.5 py-0.5 text-[10px] text-gray-400">
-                                                        x{quest.requiredCount}
-                                                    </span>
+                                                    {quest.requiredCount - quest.requiredFirCount >
+                                                        0 && (
+                                                        <span className="rounded border border-white/10 bg-black/30 px-1.5 py-0.5 text-[10px] text-gray-400">
+                                                            x
+                                                            {quest.requiredCount -
+                                                                quest.requiredFirCount}
+                                                        </span>
+                                                    )}
                                                     {quest.requiredFirCount > 0 && (
-                                                        <span className="rounded border border-orange-500/20 bg-orange-500/10 px-1.5 py-0.5 text-[10px] text-orange-300">
+                                                        <span className="rounded border border-orange-500/20 bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-bold text-orange-200">
                                                             FiR x{quest.requiredFirCount}
                                                         </span>
                                                     )}
                                                     <button
-                                                        onClick={() => togglePinnedQuest(quest.questId)}
+                                                        onClick={() =>
+                                                            togglePinnedQuest(quest.questId)
+                                                        }
                                                         className={`rounded p-1 transition-colors ${isPinned ? "text-sky-300" : "text-gray-600 hover:text-sky-300"}`}
-                                                        title={isPinned ? "Unpin quest" : "Pin quest"}
+                                                        title={
+                                                            isPinned ? "Unpin quest" : "Pin quest"
+                                                        }
                                                     >
-                                                        <Pin size={12} className={isPinned ? "fill-current" : ""} />
+                                                        <Pin
+                                                            size={12}
+                                                            className={
+                                                                isPinned ? "fill-current" : ""
+                                                            }
+                                                        />
                                                     </button>
                                                     <button
-                                                        onClick={() => toggleIgnoredQuest(quest.questId)}
+                                                        onClick={() =>
+                                                            toggleIgnoredQuest(quest.questId)
+                                                        }
                                                         className={`rounded p-1 transition-colors ${isIgnored ? "text-red-300" : "text-gray-600 hover:text-red-300"}`}
-                                                        title={isIgnored ? "Stop ignoring" : "Ignore quest"}
+                                                        title={
+                                                            isIgnored
+                                                                ? "Stop ignoring"
+                                                                : "Ignore quest"
+                                                        }
                                                     >
                                                         <CircleSlash size={12} />
                                                     </button>
@@ -425,6 +460,18 @@ export function ItemDetailModal({
                                                     >
                                                         <ExternalLink size={12} />
                                                     </Link>
+
+                                                    {quest.questWikiLink && (
+                                                        <Link
+                                                            href={quest.questWikiLink}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="rounded p-1 text-gray-600 hover:text-gray-300 transition-colors text-xs hover:underline"
+                                                            title="View quest details"
+                                                        >
+                                                            Wiki
+                                                        </Link>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
