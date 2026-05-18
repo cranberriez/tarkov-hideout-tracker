@@ -6,7 +6,7 @@ import { ChevronDown } from "lucide-react";
 import { useQuestsContext } from "../QuestsContext";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { QuestCard, type QuestRef } from "../QuestCard";
-import { buildQuestMapGroups, getQuestMapGroup } from "../quest-map-groups";
+import { buildQuestMapGroups, getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { cn } from "@/lib/utils";
 import type { FullQuest } from "@/types";
 import { QUEST_SCROLL_TO_TRADER_EVENT } from "./QuestsSidebar";
@@ -250,10 +250,11 @@ export function QuestsList() {
 
         const map = new Map<string, FullQuest[]>();
         for (const quest of filteredQuests) {
-            const groupKey = getQuestMapGroup(quest.map ?? null).key;
-            const arr = map.get(groupKey) ?? [];
-            arr.push(quest);
-            map.set(groupKey, arr);
+            for (const group of getQuestMapGroupsForQuest(quest)) {
+                const arr = map.get(group.key) ?? [];
+                arr.push(quest);
+                map.set(group.key, arr);
+            }
         }
         for (const [mapKey, mapQuests] of map) {
             map.set(mapKey, sortQuestsByChains(mapQuests, questOrderById));
@@ -266,10 +267,11 @@ export function QuestsList() {
 
         const map = new Map<string, FullQuest[]>();
         for (const quest of quests) {
-            const groupKey = getQuestMapGroup(quest.map ?? null).key;
-            const arr = map.get(groupKey) ?? [];
-            arr.push(quest);
-            map.set(groupKey, arr);
+            for (const group of getQuestMapGroupsForQuest(quest)) {
+                const arr = map.get(group.key) ?? [];
+                arr.push(quest);
+                map.set(group.key, arr);
+            }
         }
         return map;
     }, [quests, viewMode]);
@@ -399,7 +401,7 @@ export function QuestsList() {
         if (viewMode === "byTrader") {
             setGroupCollapsed(`trader:${quest.trader.id}`, false);
         } else {
-            setGroupCollapsed(`map:${getQuestMapGroup(quest.map ?? null).key}`, false);
+            setGroupCollapsed(`map:${getQuestMapGroupsForQuest(quest)[0]?.key}`, false);
         }
         setPendingScrollQuestId(questId);
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -444,10 +446,7 @@ export function QuestsList() {
                     if (viewMode === "byTrader") {
                         setGroupCollapsed(`trader:${target.trader.id}`, false);
                     } else {
-                        setGroupCollapsed(
-                            `map:${getQuestMapGroup(target.map ?? null).key}`,
-                            false,
-                        );
+                        setGroupCollapsed(`map:${getQuestMapGroupsForQuest(target)[0]?.key}`, false);
                     }
                     setPendingScrollQuestId(targetQuestId);
                 }}

@@ -15,7 +15,11 @@ import {
     type QuestSyncProfile,
     type QuestSyncResult,
 } from "./quest-sync";
-import { buildQuestMapGroups, getQuestMapGroup, getQuestMapGroupKey } from "./quest-map-groups";
+import {
+    buildQuestMapGroups,
+    getQuestMapGroupKey,
+    questMatchesSelectedMapGroups,
+} from "./quest-map-groups";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { collectCompleteCascade, collectUncompleteCascade } from "./quest-cascade";
 import {
@@ -331,7 +335,7 @@ export function QuestsProvider({
                     return false;
             }
 
-            if (selectedMaps.size > 0 && !selectedMaps.has(getQuestMapGroup(quest.map ?? null).key)) {
+            if (!questMatchesSelectedMapGroups(quest, selectedMaps)) {
                 return false;
             }
 

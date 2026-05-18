@@ -46,22 +46,69 @@ export function getQuestMapGroup(map: FullQuest["map"]): QuestMapGroup {
     return { key: normalizedNameKey, name: map.name, aliases: [map.normalizedName] };
 }
 
-export function buildQuestMapGroups(quests: FullQuest[], includeNoMap = false) {
+export function getQuestMapGroupsForQuest(quest: FullQuest): QuestMapGroup[] {
     const groups = new Map<string, QuestMapGroup>();
 
-    for (const quest of quests) {
-        if (!quest.map && !includeNoMap) continue;
-
-        const group = getQuestMapGroup(quest.map ?? null);
+    const addGroup = (group: QuestMapGroup) => {
         const existing = groups.get(group.key);
-
         if (!existing) {
-            groups.set(group.key, group);
-            continue;
+            groups.set(group.key, { ...group, aliases: [...group.aliases] });
+            return;
         }
 
         for (const alias of group.aliases) {
             if (!existing.aliases.includes(alias)) existing.aliases.push(alias);
+        }
+    };
+
+    if (quest.map) addGroup(getQuestMapGroup(quest.map));
+
+    for (const objective of quest.objectives) {
+        for (const map of objective.maps ?? []) {
+            addGroup(getQuestMapGroup(map));
+        }
+    }
+
+    if (groups.size === 0) {
+        addGroup(getQuestMapGroup(null));
+    }
+
+    return [...groups.values()].sort((a, b) => {
+        if (a.key === NO_QUEST_MAP_GROUP_KEY) return 1;
+        if (b.key === NO_QUEST_MAP_GROUP_KEY) return -1;
+        return a.name.localeCompare(b.name);
+    });
+}
+
+export function questMatchesSelectedMapGroups(
+    quest: FullQuest,
+    selectedMaps: ReadonlySet<string>,
+) {
+    if (selectedMaps.size === 0) return true;
+
+    const groups = getQuestMapGroupsForQuest(quest);
+    if (groups.some((group) => group.key === NO_QUEST_MAP_GROUP_KEY)) return true;
+
+    return groups.some((group) => selectedMaps.has(group.key));
+}
+
+export function buildQuestMapGroups(quests: FullQuest[], includeNoMap = false) {
+    const groups = new Map<string, QuestMapGroup>();
+
+    for (const quest of quests) {
+        for (const group of getQuestMapGroupsForQuest(quest)) {
+            if (group.key === NO_QUEST_MAP_GROUP_KEY && !includeNoMap) continue;
+
+            const existing = groups.get(group.key);
+
+            if (!existing) {
+                groups.set(group.key, { ...group, aliases: [...group.aliases] });
+                continue;
+            }
+
+            for (const alias of group.aliases) {
+                if (!existing.aliases.includes(alias)) existing.aliases.push(alias);
+            }
         }
     }
 
