@@ -158,6 +158,11 @@ function ObjectiveLabelRow({
             <span className="flex shrink-0 items-center gap-2 font-medium">
                 <span className="text-gray-200 tabular-nums">{group.requiredCount}x</span>
                 {isFirRequired && <span className="text-orange-400">FiR</span>}
+                {group.isPartial && (
+                    <span className="rounded border border-blue-400/30 bg-blue-400/10 px-1.5 py-0.5 text-[9px] font-medium text-blue-300">
+                        Partial
+                    </span>
+                )}
             </span>
             <span className="min-w-0 flex-1">{group.objectiveLabel}</span>
         </div>
@@ -251,7 +256,9 @@ export function ItemAnyOfGroupCard({
                 <div className="mt-4 space-y-3 border-t border-white/8 pt-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="text-xs text-gray-400 text-pretty">
-                            Any one of these items will satisfy the quest objective.
+                            {group.isPartial
+                                ? `Showing ${group.items.length} of ${group.totalItemCount} qualifying items.`
+                                : "Any one of these items will satisfy the quest objective."}
                         </div>
                     </div>
 

@@ -357,28 +357,182 @@ query TasksFull {
       type
       description
       optional
-      ... on TaskObjectiveItem {
-        count
-        foundInRaid
-        items {
+      maps {
+        id
+        name
+        normalizedName
+      }
+      ... on TaskObjectiveBasic {
+        zones {
+          id
+          map {
+            id
+            name
+            normalizedName
+          }
+        }
+        requiredKeys {
+          ...CompactItem
+        }
+      }
+      ... on TaskObjectiveBuildItem {
+        item {
+          ...CompactItem
+        }
+        containsAll {
+          ...CompactItem
+        }
+        containsCategory {
           id
           name
           normalizedName
-          iconLink
-          gridImageLink
+        }
+        attributes {
+          name
+          requirement {
+            compareMethod
+            value
+          }
+        }
+      }
+      ... on TaskObjectiveExperience {
+        count
+      }
+      ... on TaskObjectiveItem {
+        count
+        foundInRaid
+        dogTagLevel
+        maxDurability
+        minDurability
+        items {
+          id
+        }
+        requiredKeys {
+          ...CompactItem
         }
       }
       ... on TaskObjectiveShoot {
         count
+        targetNames
+        shotType
+        zoneNames
         target
         bodyParts
-        zoneNames
+        usingWeapon {
+          ...CompactItem
+        }
+        usingWeaponMods {
+          ...CompactItem
+        }
+        wearing {
+          ...CompactItem
+        }
+        notWearing {
+          ...CompactItem
+        }
+        requiredKeys {
+          ...CompactItem
+        }
       }
       ... on TaskObjectiveExtract {
+        exitStatus
         exitName
+        zoneNames
+        count
+        requiredKeys {
+          ...CompactItem
+        }
+      }
+      ... on TaskObjectiveHideoutStation {
+        hideoutStation {
+          id
+          name
+          normalizedName
+        }
+        stationLevel
+      }
+      ... on TaskObjectiveMark {
+        markerItem {
+          ...CompactItem
+        }
+        requiredKeys {
+          ...CompactItem
+        }
+      }
+      ... on TaskObjectivePlayerLevel {
+        playerLevel
+      }
+      ... on TaskObjectiveQuestItem {
+        questItem {
+          id
+          name
+          normalizedName
+          iconLink
+        }
         count
       }
+      ... on TaskObjectiveSkill {
+        skillLevel {
+          name
+          level
+          skill {
+            id
+            name
+            imageLink
+          }
+        }
+      }
+      ... on TaskObjectiveTaskStatus {
+        task {
+          id
+          name
+        }
+        status
+      }
+      ... on TaskObjectiveTraderLevel {
+        trader {
+          id
+          name
+          normalizedName
+        }
+        level
+      }
+      ... on TaskObjectiveTraderStanding {
+        trader {
+          id
+          name
+          normalizedName
+        }
+        compareMethod
+        value
+      }
+      ... on TaskObjectiveUseItem {
+        useAny {
+          ...CompactItem
+        }
+        compareMethod
+        count
+        zoneNames
+      }
     }
+  }
+}
+
+fragment CompactItem on Item {
+  id
+  name
+  normalizedName
+  iconLink
+}
+`;
+
+const QUEST_ITEMS_QUERY = `
+query QuestObjectiveItems($ids: [ID]) {
+  items(ids: $ids, lang: en) {
+    id
+    name
+    normalizedName
+    iconLink
   }
 }
 `;
@@ -388,16 +542,48 @@ interface RawFullObjective {
     type: string;
     description: string;
     optional: boolean;
+    maps?: RawQuestMap[];
     // TaskObjectiveItem
     count?: number;
     foundInRaid?: boolean;
+    dogTagLevel?: number | null;
+    maxDurability?: number | null;
+    minDurability?: number | null;
+    totalItemCount?: number;
+    isPartial?: boolean;
     items?: RawObjectiveItem[];
+    requiredKeys?: RawObjectiveItem[][];
     // TaskObjectiveShoot
     target?: string;
+    targetNames?: string[];
+    shotType?: string;
     bodyParts?: string[];
     zoneNames?: string[];
+    usingWeapon?: RawObjectiveItem[];
+    usingWeaponMods?: RawObjectiveItem[][];
+    wearing?: RawObjectiveItem[][];
+    notWearing?: RawObjectiveItem[];
     // TaskObjectiveExtract
     exitName?: string | null;
+    exitStatus?: string[];
+    // Other objective variants
+    item?: RawObjectiveItem;
+    containsAll?: RawObjectiveItem[];
+    containsCategory?: RawItemCategory[];
+    attributes?: RawAttributeThreshold[];
+    hideoutStation?: { id: string; name: string; normalizedName: string };
+    stationLevel?: number | null;
+    markerItem?: RawObjectiveItem;
+    playerLevel?: number;
+    questItem?: RawObjectiveItem;
+    skillLevel?: RawSkillLevel;
+    task?: { id: string; name: string };
+    status?: string[];
+    trader?: { id: string; name: string; normalizedName: string };
+    level?: number;
+    compareMethod?: string;
+    value?: number;
+    useAny?: RawObjectiveItem[];
 }
 
 interface RawTraderRequirement {
@@ -422,6 +608,36 @@ interface RawPrestige {
     iconLink?: string | null;
 }
 
+interface RawQuestMap {
+    id: string;
+    name: string;
+    normalizedName: string;
+}
+
+interface RawItemCategory {
+    id: string;
+    name: string;
+    normalizedName: string;
+}
+
+interface RawSkillLevel {
+    name: string;
+    level: number;
+    skill: {
+        id: string;
+        name: string;
+        imageLink?: string | null;
+    };
+}
+
+interface RawAttributeThreshold {
+    name: string;
+    requirement: {
+        compareMethod: string;
+        value: number;
+    };
+}
+
 interface RawFullTask {
     id: string;
     name: string;
@@ -432,7 +648,7 @@ interface RawFullTask {
     lightkeeperRequired?: boolean;
     factionName?: string;
     experience: number;
-    map?: { id: string; name: string; normalizedName: string } | null;
+    map?: RawQuestMap | null;
     trader: {
         id: string;
         name: string;
@@ -452,7 +668,13 @@ interface FullTasksApiResponse {
 }
 
 function mapFullObjective(o: RawFullObjective): FullQuestObjective {
-    const base = { id: o.id, type: o.type, description: o.description, optional: o.optional };
+    const base = {
+        id: o.id,
+        type: o.type,
+        description: o.description,
+        optional: o.optional,
+        maps: o.maps ?? [],
+    };
 
     if ((o.type === "giveItem" || o.type === "findItem") && o.items) {
         return {
@@ -461,6 +683,8 @@ function mapFullObjective(o: RawFullObjective): FullQuestObjective {
             count: o.count ?? 0,
             foundInRaid: o.foundInRaid ?? false,
             items: o.items,
+            totalItemCount: o.totalItemCount ?? o.items.length,
+            isPartial: o.isPartial ?? false,
         };
     }
 
@@ -470,6 +694,9 @@ function mapFullObjective(o: RawFullObjective): FullQuestObjective {
             type: "shoot",
             count: o.count ?? 1,
             target: o.target,
+            targetNames: o.targetNames ?? [],
+            shotType: o.shotType,
+            zoneNames: o.zoneNames ?? [],
             bodyParts: o.bodyParts ?? [],
         };
     }
@@ -480,10 +707,143 @@ function mapFullObjective(o: RawFullObjective): FullQuestObjective {
             type: "extract",
             exitName: o.exitName ?? null,
             count: o.count,
+            exitStatus: o.exitStatus ?? [],
+            zoneNames: o.zoneNames ?? [],
+            requiredKeys: o.requiredKeys,
+        };
+    }
+
+    if (o.type === "buildItem" && o.item) {
+        return {
+            ...base,
+            type: "buildItem",
+            item: o.item,
+            containsAll: o.containsAll ?? [],
+            containsCategory: o.containsCategory ?? [],
+            attributes: o.attributes ?? [],
+        };
+    }
+
+    if (o.type === "hideoutStation" && o.hideoutStation) {
+        return {
+            ...base,
+            type: "hideoutStation",
+            hideoutStation: o.hideoutStation,
+            stationLevel: o.stationLevel ?? null,
+        };
+    }
+
+    if ((o.type === "pickupQuestItem" || o.type === "findQuestItem") && o.questItem) {
+        return {
+            ...base,
+            type: o.type,
+            questItem: o.questItem,
+            count: o.count ?? 1,
+        };
+    }
+
+    if (o.type === "taskStatus" && o.task) {
+        return {
+            ...base,
+            type: "taskStatus",
+            task: o.task,
+            status: o.status ?? [],
+        };
+    }
+
+    if (o.type === "traderLevel" && o.trader) {
+        return {
+            ...base,
+            type: "traderLevel",
+            trader: o.trader,
+            level: o.level ?? 1,
+        };
+    }
+
+    if (o.type === "traderStanding" && o.trader) {
+        return {
+            ...base,
+            type: "traderStanding",
+            trader: o.trader,
+            compareMethod: o.compareMethod ?? ">=",
+            value: o.value ?? 0,
+        };
+    }
+
+    if (o.type === "playerLevel" && o.playerLevel != null) {
+        return {
+            ...base,
+            type: "playerLevel",
+            playerLevel: o.playerLevel,
+        };
+    }
+
+    if (o.type === "useItem") {
+        return {
+            ...base,
+            type: "useItem",
+            useAny: o.useAny ?? [],
+            compareMethod: o.compareMethod ?? ">=",
+            count: o.count ?? 1,
+            zoneNames: o.zoneNames ?? [],
         };
     }
 
     return base;
+}
+
+function shouldHydrateFullObjectiveItems(objective: RawFullObjective, itemIndex: number) {
+    if (objective.type !== "giveItem" && objective.type !== "findItem") return false;
+    const total = objective.items?.length ?? 0;
+    if (total <= 1) return true;
+    return itemIndex < 15;
+}
+
+async function fetchQuestObjectiveItemsById(
+    itemIds: string[],
+): Promise<Map<string, RawObjectiveItem>> {
+    if (itemIds.length === 0) return new Map();
+
+    const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: QUEST_ITEMS_QUERY, variables: { ids: itemIds } }),
+    });
+
+    if (!res.ok) {
+        throw new Error("Failed to fetch quest objective item details");
+    }
+
+    const json = (await res.json()) as { data?: { items?: RawObjectiveItem[] } };
+    return new Map((json.data?.items ?? []).map((item) => [item.id, item]));
+}
+
+async function hydrateFullQuestObjectiveItems(rawTasks: RawFullTask[]) {
+    const itemIds = new Set<string>();
+
+    for (const task of rawTasks) {
+        for (const objective of task.objectives) {
+            objective.items?.forEach((item, index) => {
+                if (shouldHydrateFullObjectiveItems(objective, index)) itemIds.add(item.id);
+            });
+        }
+    }
+
+    const itemsById = await fetchQuestObjectiveItemsById([...itemIds]);
+
+    for (const task of rawTasks) {
+        for (const objective of task.objectives) {
+            if (!objective.items) continue;
+
+            const totalItemCount = objective.items.length;
+            const shouldLimit = totalItemCount > 15;
+            const itemsToKeep = shouldLimit ? objective.items.slice(0, 15) : objective.items;
+
+            objective.totalItemCount = totalItemCount;
+            objective.isPartial = shouldLimit;
+            objective.items = itemsToKeep.map((item) => itemsById.get(item.id) ?? item);
+        }
+    }
 }
 
 async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
@@ -533,6 +893,7 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
 
     const json = (await res.json()) as FullTasksApiResponse;
     const rawTasks = json.data?.tasks ?? [];
+    await hydrateFullQuestObjectiveItems(rawTasks);
 
     // Tasks with minPlayerLevel < 1 are Fence/scav-karma quests that don't apply to normal PMC progression
     const quests: FullQuest[] = rawTasks

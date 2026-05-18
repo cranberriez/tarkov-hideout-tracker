@@ -2,7 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import type { FullQuest } from "../../types/types";
-import { buildQuestItemIndex, deriveQuestItemState, deriveQuestItemStates } from "./quest-item-index";
+import {
+    buildQuestAnyOfGroups,
+    buildQuestItemIndex,
+    deriveQuestItemState,
+    deriveQuestItemStates,
+} from "./quest-item-index";
 
 function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name">): FullQuest {
     return {
@@ -29,6 +34,107 @@ function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name"
         map: overrides.map ?? null,
     };
 }
+
+function makeQuestItem(index: number) {
+    return {
+        id: `item-${index}`,
+        name: `Item ${index}`,
+        normalizedName: `item-${index}`,
+        iconLink: `/item-${index}.png`,
+        gridImageLink: `/item-${index}-grid.png`,
+    };
+}
+
+test("buildQuestItemIndex excludes broad any item objectives from exact item demand", () => {
+    const quests = [
+        makeQuest({
+            id: "broad-any",
+            name: "Bulk Sale",
+            objectives: [
+                {
+                    id: "obj-any",
+                    type: "giveItem",
+                    description: "Sell any item to the trader",
+                    optional: false,
+                    count: 20,
+                    foundInRaid: false,
+                    items: Array.from({ length: 24 }, (_, index) => makeQuestItem(index + 1)),
+                },
+            ],
+        }),
+    ];
+
+    assert.deepEqual(buildQuestItemIndex(quests), []);
+});
+
+test("buildQuestAnyOfGroups marks broad any item objectives as partial previews", () => {
+    const quests = [
+        makeQuest({
+            id: "broad-any",
+            name: "Bulk Sale",
+            objectives: [
+                {
+                    id: "obj-any",
+                    type: "giveItem",
+                    description: "Sell any item to the trader",
+                    optional: false,
+                    count: 20,
+                    foundInRaid: false,
+                    items: Array.from({ length: 24 }, (_, index) => makeQuestItem(index + 1)),
+                },
+            ],
+        }),
+    ];
+
+    const [group] = buildQuestAnyOfGroups(quests);
+
+    assert.equal(group?.isPartial, true);
+    assert.equal(group?.totalItemCount, 24);
+    assert.equal(group?.items.length, 15);
+    assert.deepEqual(group?.items.map((item) => item.id), [
+        "item-1",
+        "item-2",
+        "item-3",
+        "item-4",
+        "item-5",
+        "item-6",
+        "item-7",
+        "item-8",
+        "item-9",
+        "item-10",
+        "item-11",
+        "item-12",
+        "item-13",
+        "item-14",
+        "item-15",
+    ]);
+});
+
+test("buildQuestAnyOfGroups keeps small any-of objectives complete", () => {
+    const quests = [
+        makeQuest({
+            id: "small-any",
+            name: "Medical Choice",
+            objectives: [
+                {
+                    id: "obj-small",
+                    type: "giveItem",
+                    description: "Hand over any medicine item",
+                    optional: false,
+                    count: 3,
+                    foundInRaid: true,
+                    items: [makeQuestItem(1), makeQuestItem(2), makeQuestItem(3)],
+                },
+            ],
+        }),
+    ];
+
+    const [group] = buildQuestAnyOfGroups(quests);
+
+    assert.equal(group?.isPartial, false);
+    assert.equal(group?.totalItemCount, 3);
+    assert.equal(group?.items.length, 3);
+});
 
 test("deriveQuestItemState keeps quests future when their active-only prerequisite is not available", () => {
     const quests = [

@@ -217,12 +217,15 @@ export interface QuestMap {
     normalizedName: string;
 }
 
+export type QuestItemObjectiveScope = "specific" | "anyOf" | "broadAny";
+
 export interface QuestObjectiveBase {
     id: string;
     type: string;
     description: string;
     optional: boolean;
     count?: number;
+    maps?: QuestMap[];
 }
 
 export interface QuestObjectiveItemType extends QuestObjectiveBase {
@@ -230,24 +233,93 @@ export interface QuestObjectiveItemType extends QuestObjectiveBase {
     count: number;
     foundInRaid: boolean;
     items: QuestItem[];
+    itemScope?: QuestItemObjectiveScope;
+    isPartial?: boolean;
+    totalItemCount?: number;
 }
 
 export interface QuestObjectiveShootType extends QuestObjectiveBase {
     type: "shoot";
     count: number;
     target: string;
+    targetNames?: string[];
+    shotType?: string;
+    zoneNames?: string[];
     bodyParts: string[];
 }
 
 export interface QuestObjectiveExtractType extends QuestObjectiveBase {
     type: "extract";
     exitName: string | null;
+    exitStatus?: string[];
+    zoneNames?: string[];
+    requiredKeys?: QuestItem[][];
+}
+
+export interface QuestObjectiveBuildItemType extends QuestObjectiveBase {
+    type: "buildItem";
+    item: QuestItem;
+    containsAll: QuestItem[];
+    containsCategory: Array<{ id: string; name: string; normalizedName: string }>;
+    attributes: Array<{ name: string; requirement: { compareMethod: string; value: number } }>;
+}
+
+export interface QuestObjectiveHideoutStationType extends QuestObjectiveBase {
+    type: "hideoutStation";
+    hideoutStation: { id: string; name: string; normalizedName: string };
+    stationLevel?: number | null;
+}
+
+export interface QuestObjectiveQuestItemType extends QuestObjectiveBase {
+    type: "pickupQuestItem" | "findQuestItem";
+    questItem: QuestItem;
+    count: number;
+}
+
+export interface QuestObjectiveTaskStatusType extends QuestObjectiveBase {
+    type: "taskStatus";
+    task: { id: string; name: string };
+    status: string[];
+}
+
+export interface QuestObjectiveTraderLevelType extends QuestObjectiveBase {
+    type: "traderLevel";
+    trader: { id: string; name: string; normalizedName: string };
+    level: number;
+}
+
+export interface QuestObjectiveTraderStandingType extends QuestObjectiveBase {
+    type: "traderStanding";
+    trader: { id: string; name: string; normalizedName: string };
+    compareMethod: string;
+    value: number;
+}
+
+export interface QuestObjectivePlayerLevelType extends QuestObjectiveBase {
+    type: "playerLevel";
+    playerLevel: number;
+}
+
+export interface QuestObjectiveUseItemType extends QuestObjectiveBase {
+    type: "useItem";
+    useAny: QuestItem[];
+    compareMethod: string;
+    count: number;
+    zoneNames: string[];
 }
 
 export type FullQuestObjective =
     | QuestObjectiveItemType
     | QuestObjectiveShootType
     | QuestObjectiveExtractType
+    | QuestObjectiveBuildItemType
+    | QuestObjectiveHideoutStationType
+    | QuestObjectiveQuestItemType
+    | QuestObjectiveTaskStatusType
+    | QuestObjectiveTraderLevelType
+    | QuestObjectiveTraderStandingType
+    | QuestObjectivePlayerLevelType
+    | QuestObjectiveUseItemType
     | QuestObjectiveBase;
 
 export interface QuestTraderRequirement {

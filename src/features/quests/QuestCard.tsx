@@ -117,6 +117,7 @@ function ObjectiveRow({
     const item = isItemObjective(objective) ? objective : null;
     const shoot = isShootObjective(objective) ? objective : null;
     const hasItemChoices = !!item && item.items.length > 1;
+    const isPartialItemList = !!item?.isPartial;
 
     return (
         <div className={`flex items-center gap-2 ${objective.optional ? "opacity-50" : ""}`}>
@@ -151,10 +152,19 @@ function ObjectiveRow({
                     >
                         {hasItemChoices && (
                             <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
-                                <span>{item.count} of any of these</span>
+                                <span>
+                                    {isPartialItemList
+                                        ? `${item.count} of any qualifying item`
+                                        : `${item.count} of any of these`}
+                                </span>
                                 {item.foundInRaid && (
                                     <span className="rounded border border-orange-500/30 bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-400">
                                         FiR
+                                    </span>
+                                )}
+                                {isPartialItemList && (
+                                    <span className="rounded border border-blue-400/30 bg-blue-400/10 px-1.5 py-0.5 text-[9px] font-medium text-blue-300">
+                                        Showing {item.items.length} of {item.totalItemCount}
                                     </span>
                                 )}
                             </div>

@@ -2,6 +2,7 @@ import type { ItemQuestVisibilityMode } from "@/lib/stores/useUserStore";
 import type {
     FullQuest,
     FullQuestObjective,
+    QuestItemObjectiveScope,
     Quest,
     QuestObjectiveItemType,
     QuestPrerequisite,
@@ -14,6 +15,8 @@ import {
     type QuestAvailabilityQuest,
 } from "./quest-availability";
 import { isQuestDisabledByCompletedFailedRequirement } from "./quest-failures";
+
+export const BROAD_ANY_ITEM_PREVIEW_LIMIT = 15;
 
 type QuestWithGiveItemData = Pick<
     Quest,
@@ -86,6 +89,9 @@ export interface QuestAnyOfGroupEntry {
     requiredCount: number;
     requiredFirCount: number;
     isFirRequired: boolean;
+    itemScope: QuestItemObjectiveScope;
+    isPartial: boolean;
+    totalItemCount: number;
     items: Array<{
         id: string;
         name: string;
@@ -145,6 +151,9 @@ export interface DerivedQuestAnyOfGroup {
     requiredCount: number;
     requiredFirCount: number;
     isFirRequired: boolean;
+    itemScope: QuestItemObjectiveScope;
+    isPartial: boolean;
+    totalItemCount: number;
     items: QuestAnyOfGroupEntry["items"];
     status: DerivedQuestItemStatus;
     isPinned: boolean;
@@ -205,6 +214,17 @@ function isFindItemObjective(
     objective: FullQuestObjective,
 ): objective is FullQuestObjective & { type: "findItem" } {
     return objective.type === "findItem";
+}
+
+function classifyGiveItemObjective(objective: QuestObjectiveItemType): QuestItemObjectiveScope {
+    if (objective.items.length <= 1) return "specific";
+
+    const isLarge =
+        objective.isPartial ||
+        (objective.totalItemCount ?? objective.items.length) > BROAD_ANY_ITEM_PREVIEW_LIMIT;
+
+    if (isLarge) return "broadAny";
+    return "anyOf";
 }
 
 function stripGiveItemDescriptionPrefix(description: string): string {
@@ -294,6 +314,7 @@ export function buildQuestItemIndex(quests: QuestItemSource[]): QuestItemIndexEn
 
         for (const objective of quest.objectives) {
             if (!isGiveItemObjective(objective)) continue;
+            if (classifyGiveItemObjective(objective) !== "specific") continue;
 
             for (const item of objective.items) {
                 const existing = itemLinks.get(item.id);
@@ -369,6 +390,12 @@ export function buildQuestAnyOfGroups(quests: QuestItemSource[]): QuestAnyOfGrou
     for (const quest of quests) {
         for (const [objectiveIndex, objective] of quest.objectives.entries()) {
             if (!isGiveItemObjective(objective) || objective.items.length <= 1) continue;
+            const itemScope = classifyGiveItemObjective(objective);
+            const isPartial = itemScope === "broadAny";
+            const totalItemCount = objective.totalItemCount ?? objective.items.length;
+            const items = isPartial
+                ? objective.items.slice(0, BROAD_ANY_ITEM_PREVIEW_LIMIT)
+                : objective.items;
 
             groups.push({
                 groupId: `${quest.id}:${objective.id}`,
@@ -392,7 +419,10 @@ export function buildQuestAnyOfGroups(quests: QuestItemSource[]): QuestAnyOfGrou
                 requiredCount: objective.count,
                 requiredFirCount: objective.foundInRaid ? objective.count : 0,
                 isFirRequired: objective.foundInRaid,
-                items: objective.items.map((item) => ({
+                itemScope,
+                isPartial,
+                totalItemCount,
+                items: items.map((item) => ({
                     id: item.id,
                     name: item.name,
                     normalizedName: item.normalizedName,
@@ -903,6 +933,9 @@ export function deriveQuestAnyOfGroups(
                 requiredCount: group.requiredCount,
                 requiredFirCount: group.requiredFirCount,
                 isFirRequired: group.isFirRequired,
+                itemScope: group.itemScope,
+                isPartial: group.isPartial,
+                totalItemCount: group.totalItemCount,
                 items: group.items,
                 status,
                 isPinned,
