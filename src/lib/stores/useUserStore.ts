@@ -15,6 +15,8 @@ export type GameMode = "PVP" | "PVE";
 export type ItemSize = "Icon" | "Compact" | "Expanded";
 export type ItemSourceFilter = "all" | "hideout" | "quest";
 export type ItemQuestVisibilityMode = "available" | "nextLayer" | "allFuture" | "custom";
+export type QuestViewMode = "byMap" | "byTrader" | "tree" | "flatList";
+export type QuestSortMode = "default" | "level" | "xp" | "unlockImpact";
 
 type StationEditionTarget = Pick<Station, "id" | "normalizedName">;
 
@@ -57,7 +59,8 @@ interface UserState {
     questTraderLoyaltyLevels: Record<string, number>;
 
     // Quest page filter preferences (persisted)
-    questViewMode: "list" | "byTrader" | "tree";
+    questViewMode: QuestViewMode;
+    questSortMode: QuestSortMode;
     questSelectedTraders: string[];
     questFaction: "USEC" | "BEAR" | null;
     questShowKappa: boolean;
@@ -139,7 +142,8 @@ interface UserState {
     setPrestigeLevel: (level: number) => void;
     setQuestTraderLoyaltyLevel: (traderId: string, level: number) => void;
 
-    setQuestViewMode: (mode: "list" | "byTrader" | "tree") => void;
+    setQuestViewMode: (mode: QuestViewMode) => void;
+    setQuestSortMode: (mode: QuestSortMode) => void;
     setQuestSelectedTraders: (ids: string[]) => void;
     setQuestFaction: (f: "USEC" | "BEAR" | null) => void;
     setQuestShowKappa: (v: boolean) => void;
@@ -209,6 +213,7 @@ export const useUserStore = create<UserState>()(
             questTraderLoyaltyLevels: {},
 
             questViewMode: "tree",
+            questSortMode: "default",
             questSelectedTraders: [],
             questFaction: "USEC",
             questShowKappa: false,
@@ -402,6 +407,7 @@ export const useUserStore = create<UserState>()(
                 })),
 
             setQuestViewMode: (mode) => set({ questViewMode: mode }),
+            setQuestSortMode: (mode) => set({ questSortMode: mode }),
             setQuestSelectedTraders: (ids) => set({ questSelectedTraders: ids }),
             setQuestFaction: (f) => set({ questFaction: f }),
             setQuestShowKappa: (v) => set({ questShowKappa: v }),
@@ -615,6 +621,7 @@ export const useUserStore = create<UserState>()(
                     prestigeLevel: 0,
                     questTraderLoyaltyLevels: {},
                     questViewMode: "tree",
+                    questSortMode: "default",
                     questSelectedTraders: [],
                     questFaction: "USEC",
                     questShowKappa: false,
@@ -647,7 +654,7 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: USER_STORE_STORAGE_KEY,
-            version: 12,
+            version: 13,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -747,6 +754,32 @@ export const useUserStore = create<UserState>()(
                     nextState = {
                         ...nextState,
                         failedQuests: {},
+                    };
+                }
+
+                if (version < 13) {
+                    const questViewMode =
+                        nextState.questViewMode === "list"
+                            ? "byMap"
+                            : nextState.questViewMode === "byMap" ||
+                                nextState.questViewMode === "byTrader" ||
+                                nextState.questViewMode === "tree" ||
+                                nextState.questViewMode === "flatList"
+                              ? nextState.questViewMode
+                              : "tree";
+
+                    const questSortMode =
+                        nextState.questSortMode === "level" ||
+                        nextState.questSortMode === "xp" ||
+                        nextState.questSortMode === "unlockImpact" ||
+                        nextState.questSortMode === "default"
+                            ? nextState.questSortMode
+                            : "default";
+
+                    nextState = {
+                        ...nextState,
+                        questViewMode,
+                        questSortMode,
                     };
                 }
 

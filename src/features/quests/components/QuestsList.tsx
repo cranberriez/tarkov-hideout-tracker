@@ -7,6 +7,10 @@ import { useQuestsContext } from "../QuestsContext";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { QuestCard, type QuestRef } from "../QuestCard";
 import { buildQuestMapGroups, getQuestMapGroupsForQuest } from "../quest-map-groups";
+import {
+    buildQuestUnlockImpactMap,
+    sortQuestsForQuestView,
+} from "../quest-sorting";
 import { cn } from "@/lib/utils";
 import type { FullQuest } from "@/types";
 import { QUEST_SCROLL_TO_TRADER_EVENT } from "./QuestsSidebar";
@@ -86,88 +90,6 @@ function QuestGroupHeader({
     );
 }
 
-function compareQuestsByRootOrder(
-    a: FullQuest,
-    b: FullQuest,
-    questOrderById: Map<string, number>,
-) {
-    const levelDiff = (a.minPlayerLevel ?? 0) - (b.minPlayerLevel ?? 0);
-    if (levelDiff !== 0) return levelDiff;
-
-    return (
-        (questOrderById.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
-        (questOrderById.get(b.id) ?? Number.MAX_SAFE_INTEGER)
-    );
-}
-
-function sortQuestsByChains(
-    quests: FullQuest[],
-    questOrderById: Map<string, number>,
-) {
-    const questsById = new Map(quests.map((quest) => [quest.id, quest]));
-    const groupQuestIds = new Set(quests.map((quest) => quest.id));
-    const childrenByQuestId = new Map<string, FullQuest[]>();
-    const roots: FullQuest[] = [];
-
-    for (const quest of quests) {
-        const sameGroupPrereqs = quest.taskRequirements.filter((requirement) =>
-            groupQuestIds.has(requirement.task.id),
-        );
-
-        if (sameGroupPrereqs.length === 0) {
-            roots.push(quest);
-            continue;
-        }
-
-        const primaryPrereq = sameGroupPrereqs.reduce((best, requirement) =>
-            (questOrderById.get(requirement.task.id) ?? 0) >
-            (questOrderById.get(best.task.id) ?? 0)
-                ? requirement
-                : best,
-        );
-        const parentQuest = questsById.get(primaryPrereq.task.id);
-
-        if (!parentQuest) {
-            roots.push(quest);
-            continue;
-        }
-
-        const children = childrenByQuestId.get(parentQuest.id) ?? [];
-        children.push(quest);
-        childrenByQuestId.set(parentQuest.id, children);
-    }
-
-    for (const children of childrenByQuestId.values()) {
-        children.sort((a, b) => compareQuestsByRootOrder(a, b, questOrderById));
-    }
-
-    roots.sort((a, b) => compareQuestsByRootOrder(a, b, questOrderById));
-
-    const sorted: FullQuest[] = [];
-    const visitedQuestIds = new Set<string>();
-
-    const appendQuestAndChildren = (quest: FullQuest) => {
-        if (visitedQuestIds.has(quest.id)) return;
-
-        visitedQuestIds.add(quest.id);
-        sorted.push(quest);
-
-        for (const child of childrenByQuestId.get(quest.id) ?? []) {
-            appendQuestAndChildren(child);
-        }
-    };
-
-    for (const root of roots) {
-        appendQuestAndChildren(root);
-    }
-
-    for (const quest of [...quests].sort((a, b) => compareQuestsByRootOrder(a, b, questOrderById))) {
-        appendQuestAndChildren(quest);
-    }
-
-    return sorted;
-}
-
 type HeaderRow = {
     kind: "header";
     groupKey: string;
@@ -199,6 +121,7 @@ export function QuestsList() {
         completedCount,
         failedCount,
         viewMode,
+        sortMode,
         traders,
         showDebug,
     } = useQuestsContext();
@@ -208,6 +131,7 @@ export function QuestsList() {
         () => new Map(quests.map((quest, index) => [quest.id, index])),
         [quests],
     );
+    const unlockImpactById = useMemo(() => buildQuestUnlockImpactMap(quests), [quests]);
 
     const setGroupCollapsed = (key: string, collapsed: boolean) => {
         setCollapsedGroups((current) => {
@@ -228,10 +152,18 @@ export function QuestsList() {
             map.set(quest.trader.id, arr);
         }
         for (const [traderId, traderQuests] of map) {
-            map.set(traderId, sortQuestsByChains(traderQuests, questOrderById));
+            map.set(
+                traderId,
+                sortQuestsForQuestView(
+                    traderQuests,
+                    sortMode,
+                    questOrderById,
+                    unlockImpactById,
+                ),
+            );
         }
         return map;
-    }, [filteredQuests, questOrderById, viewMode]);
+    }, [filteredQuests, questOrderById, sortMode, unlockImpactById, viewMode]);
 
     const allQuestsByTraderId = useMemo(() => {
         if (viewMode !== "byTrader") return new Map<string, FullQuest[]>();
@@ -246,7 +178,7 @@ export function QuestsList() {
     }, [quests, viewMode]);
 
     const questsByMapKey = useMemo(() => {
-        if (viewMode === "byTrader") return new Map<string, FullQuest[]>();
+        if (viewMode !== "byMap") return new Map<string, FullQuest[]>();
 
         const map = new Map<string, FullQuest[]>();
         for (const quest of filteredQuests) {
@@ -257,13 +189,21 @@ export function QuestsList() {
             }
         }
         for (const [mapKey, mapQuests] of map) {
-            map.set(mapKey, sortQuestsByChains(mapQuests, questOrderById));
+            map.set(
+                mapKey,
+                sortQuestsForQuestView(
+                    mapQuests,
+                    sortMode,
+                    questOrderById,
+                    unlockImpactById,
+                ),
+            );
         }
         return map;
-    }, [filteredQuests, questOrderById, viewMode]);
+    }, [filteredQuests, questOrderById, sortMode, unlockImpactById, viewMode]);
 
     const allQuestsByMapKey = useMemo(() => {
-        if (viewMode === "byTrader") return new Map<string, FullQuest[]>();
+        if (viewMode !== "byMap") return new Map<string, FullQuest[]>();
 
         const map = new Map<string, FullQuest[]>();
         for (const quest of quests) {
@@ -277,14 +217,28 @@ export function QuestsList() {
     }, [quests, viewMode]);
 
     const mapGroups = useMemo(
-        () => (viewMode === "byTrader" ? [] : buildQuestMapGroups(quests, true)),
+        () => (viewMode === "byMap" ? buildQuestMapGroups(quests, true) : []),
         [quests, viewMode],
     );
+
+    const flatQuests = useMemo(() => {
+        if (viewMode !== "flatList") return [];
+        return sortQuestsForQuestView(
+            filteredQuests,
+            sortMode,
+            questOrderById,
+            unlockImpactById,
+        );
+    }, [filteredQuests, questOrderById, sortMode, unlockImpactById, viewMode]);
 
     const rows = useMemo<VirtualRow[]>(() => {
         const result: VirtualRow[] = [];
 
-        if (viewMode === "byTrader") {
+        if (viewMode === "flatList") {
+            for (const quest of flatQuests) {
+                result.push({ kind: "quest", quest });
+            }
+        } else if (viewMode === "byTrader") {
             for (const trader of traders) {
                 const traderQuests = questsByTraderId.get(trader.id) ?? [];
                 if (traderQuests.length === 0) continue;
@@ -307,7 +261,7 @@ export function QuestsList() {
                     }
                 }
             }
-        } else {
+        } else if (viewMode === "byMap") {
             for (const mapGroup of mapGroups) {
                 const mapQuests = questsByMapKey.get(mapGroup.key) ?? [];
                 if (mapQuests.length === 0) continue;
@@ -333,6 +287,7 @@ export function QuestsList() {
         return result;
     }, [
         viewMode,
+        flatQuests,
         traders,
         questsByTraderId,
         allQuestsByTraderId,
@@ -386,7 +341,8 @@ export function QuestsList() {
         );
         if (index === -1) return;
         virtualizer.scrollToIndex(index, { align: "start", behavior: "smooth" });
-        setPendingScrollQuestId(null);
+        const frame = requestAnimationFrame(() => setPendingScrollQuestId(null));
+        return () => cancelAnimationFrame(frame);
     }, [pendingScrollQuestId, rows, virtualizer]);
 
     // Handle URL hash on mount — e.g. "view on quests page" links from the items page
@@ -398,12 +354,15 @@ export function QuestsList() {
         window.history.replaceState(null, "", window.location.pathname + window.location.search);
         const quest = questsById.get(questId);
         if (!quest) return;
-        if (viewMode === "byTrader") {
-            setGroupCollapsed(`trader:${quest.trader.id}`, false);
-        } else {
-            setGroupCollapsed(`map:${getQuestMapGroupsForQuest(quest)[0]?.key}`, false);
-        }
-        setPendingScrollQuestId(questId);
+        const frame = requestAnimationFrame(() => {
+            if (viewMode === "byTrader") {
+                setGroupCollapsed(`trader:${quest.trader.id}`, false);
+            } else if (viewMode === "byMap") {
+                setGroupCollapsed(`map:${getQuestMapGroupsForQuest(quest)[0]?.key}`, false);
+            }
+            setPendingScrollQuestId(questId);
+        });
+        return () => cancelAnimationFrame(frame);
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     function toRef(id: string, fallbackName: string): QuestRef {
@@ -429,11 +388,33 @@ export function QuestsList() {
         return "complete";
     }
 
+    function getSortMetadata(quest: FullQuest) {
+        if (sortMode === "xp") {
+            return {
+                key: "xp",
+                label: `${quest.experience.toLocaleString()} XP`,
+                title: "Quest experience reward",
+            };
+        }
+
+        if (sortMode === "unlockImpact") {
+            const unlockCount = unlockImpactById.get(quest.id) ?? 0;
+            return {
+                key: "unlockImpact",
+                label: `Unlocks ${unlockCount}`,
+                title: "Total direct and indirect quests unlocked",
+            };
+        }
+
+        return null;
+    }
+
     function renderCard(quest: FullQuest) {
         return (
             <QuestCard
                 key={quest.id}
                 quest={quest}
+                sortMetadata={getSortMetadata(quest)}
                 prerequisiteQuests={quest.taskRequirements.map((req) => ({
                     ...toRef(req.task.id, req.task.name),
                     prerequisiteType: getPrerequisiteType(req.status),
@@ -445,7 +426,7 @@ export function QuestsList() {
                     if (!target) return;
                     if (viewMode === "byTrader") {
                         setGroupCollapsed(`trader:${target.trader.id}`, false);
-                    } else {
+                    } else if (viewMode === "byMap") {
                         setGroupCollapsed(`map:${getQuestMapGroupsForQuest(target)[0]?.key}`, false);
                     }
                     setPendingScrollQuestId(targetQuestId);

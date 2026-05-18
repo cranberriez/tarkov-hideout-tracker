@@ -55,6 +55,11 @@ export interface QuestRef {
 
 interface QuestCardProps {
     quest: FullQuest;
+    sortMetadata?: {
+        key: string;
+        label: string;
+        title?: string;
+    } | null;
     prerequisiteQuests: QuestRef[];
     leadsToQuests: QuestRef[];
     attachedTop?: boolean;
@@ -303,6 +308,7 @@ function QuestChip({
 
 export function QuestCard({
     quest,
+    sortMetadata,
     prerequisiteQuests,
     leadsToQuests,
     attachedTop = false,
@@ -431,6 +437,15 @@ export function QuestCard({
         },
     ];
     const mobileMetadataChips = [
+        ...(sortMetadata
+            ? [
+                  {
+                      key: `sort-${sortMetadata.key}`,
+                      className: "text-tarkov-green/80 bg-tarkov-green/10 border-tarkov-green/20",
+                      label: sortMetadata.label,
+                  },
+              ]
+            : []),
         ...(quest.taskRequirements.length > 0
             ? [
                   {
@@ -659,6 +674,15 @@ export function QuestCard({
                         )}
                     </span>
                 </div>
+
+                {sortMetadata && (
+                    <span
+                        className={`${questMetaChipBaseClass} hidden shrink-0 text-tarkov-green/80 bg-tarkov-green/10 border-tarkov-green/20 sm:inline-flex`}
+                        title={sortMetadata.title}
+                    >
+                        {sortMetadata.label}
+                    </span>
+                )}
 
                 {/* Badges */}
                 <div className="hidden shrink-0 items-center gap-1 sm:flex">

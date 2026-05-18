@@ -1044,8 +1044,11 @@ export function QuestsTree() {
         if (!match) return;
         const questId = match[1];
         window.history.replaceState(null, "", window.location.pathname + window.location.search);
-        expandQuestPath(questId);
-        requestAnimationFrame(() => highlightQuest(questId));
+        const frame = requestAnimationFrame(() => {
+            expandQuestPath(questId);
+            highlightQuest(questId);
+        });
+        return () => cancelAnimationFrame(frame);
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // --- render ---

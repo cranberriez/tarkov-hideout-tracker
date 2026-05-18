@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { useUserStore } from "@/lib/stores/useUserStore";
+import { useUserStore, type QuestSortMode, type QuestViewMode } from "@/lib/stores/useUserStore";
 import type { FullQuest } from "@/types";
 import { hasFirGiveItemObjectives, hasGiveItemObjectives } from "@/lib/utils/quest-item-index";
 import { compareQuestTradersByOrder } from "@/lib/cfg/questTraderOrder";
@@ -69,8 +69,10 @@ interface QuestsContextValue {
     clearTraders: () => void;
     toggleMap: (normalizedName: string) => void;
     clearMaps: () => void;
-    viewMode: "list" | "byTrader" | "tree";
-    setViewMode: (mode: "list" | "byTrader" | "tree") => void;
+    viewMode: QuestViewMode;
+    sortMode: QuestSortMode;
+    setViewMode: (mode: QuestViewMode) => void;
+    setSortMode: (mode: QuestSortMode) => void;
 
     toggleFaction: (f: FactionFilter) => void;
     toggleKappa: () => void;
@@ -174,6 +176,7 @@ export function QuestsProvider({
         prestigeLevel,
         questTraderLoyaltyLevels,
         viewMode,
+        sortMode,
         questSelectedTraders,
         faction,
         showKappa,
@@ -189,6 +192,7 @@ export function QuestsProvider({
         showPrereqs,
         pinnedQuests,
         setViewMode,
+        setSortMode,
         setQuestSelectedTraders,
         setQuestFaction,
         setQuestShowKappa,
@@ -211,6 +215,7 @@ export function QuestsProvider({
             prestigeLevel: state.prestigeLevel,
             questTraderLoyaltyLevels: state.questTraderLoyaltyLevels,
             viewMode: state.questViewMode,
+            sortMode: state.questSortMode,
             questSelectedTraders: state.questSelectedTraders,
             faction: state.questFaction,
             showKappa: state.questShowKappa,
@@ -226,6 +231,7 @@ export function QuestsProvider({
             showPrereqs: state.questShowPrereqs,
             pinnedQuests: state.pinnedQuests,
             setViewMode: state.setQuestViewMode,
+            setSortMode: state.setQuestSortMode,
             setQuestSelectedTraders: state.setQuestSelectedTraders,
             setQuestFaction: state.setQuestFaction,
             setQuestShowKappa: state.setQuestShowKappa,
@@ -634,7 +640,9 @@ export function QuestsProvider({
                 toggleMap,
                 clearMaps,
                 viewMode,
+                sortMode,
                 setViewMode,
+                setSortMode,
                 toggleFaction,
                 toggleKappa,
                 toggleLightkeeper,

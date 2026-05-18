@@ -53,6 +53,7 @@ export function StorageResetCard() {
             prestigeLevel: state.prestigeLevel,
             questTraderLoyaltyLevels: state.questTraderLoyaltyLevels,
             questViewMode: state.questViewMode,
+            questSortMode: state.questSortMode,
             questSelectedTraders: state.questSelectedTraders,
             questFaction: state.questFaction,
             questShowKappa: state.questShowKappa,
