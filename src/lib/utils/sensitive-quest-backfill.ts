@@ -23,7 +23,7 @@ export const SENSITIVE_BACKFILL_QUESTS: SensitiveBackfillQuest[] = [
         id: NETWORK_PROVIDER_PART_1_ID,
         name: "Network Provider - Part 1",
         warning:
-            "If you jumped to this quest from the story quests, ignore pre-requisites to avoid auto-completing a large number of quests you may not intend to mark complete.",
+            "If you jumped to this quest from the story, deny auto-completion to prevent quests from completing you haven't finished. If you acquired it normally, hit allow.",
     },
 ];
 

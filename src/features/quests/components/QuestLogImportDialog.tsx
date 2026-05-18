@@ -4,12 +4,16 @@ import { useMemo, useRef, useState, type InputHTMLAttributes } from "react";
 import { useQuestsContext } from "../QuestsContext";
 import {
     AlertCircle,
+    ArrowLeft,
+    Check,
     CheckCircle2,
     ChevronDown,
     ChevronUp,
     FileSearch,
     FolderOpen,
     Info,
+    TriangleAlert,
+    Trash2,
     Upload,
 } from "lucide-react";
 import type { FullQuest } from "@/types";
@@ -73,6 +77,11 @@ interface ParsedImportView {
 
 type AutoCompleteSelectionMap = Record<string, boolean>;
 type DialogStep = "select" | "review";
+interface ImportSummary {
+    mode: ImportGameMode;
+    importedCount: number;
+    prerequisiteCount: number;
+}
 
 export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImportDialogProps) {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -92,6 +101,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     const [step, setStep] = useState<DialogStep>("select");
     const [reviewMode, setReviewMode] = useState<ImportGameMode | null>(null);
     const [didConfirmImport, setDidConfirmImport] = useState(false);
+    const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
     const [allowedSensitiveBackfillQuestIds, setAllowedSensitiveBackfillQuestIds] = useState<
         string[]
     >([]);
@@ -154,6 +164,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
         setStep("select");
         setReviewMode(null);
         setDidConfirmImport(false);
+        setImportSummary(null);
         setAllowedSensitiveBackfillQuestIds([]);
         setDeniedSensitiveBackfillQuestIds([]);
 
@@ -266,6 +277,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
         setStep("select");
         setReviewMode(null);
         setDidConfirmImport(false);
+        setImportSummary(null);
         setAllowedSensitiveBackfillQuestIds([]);
         setDeniedSensitiveBackfillQuestIds([]);
     }
@@ -320,6 +332,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
         setImportNotice(null);
         setReviewMode(mode);
         setDidConfirmImport(false);
+        setImportSummary(null);
         setStep("review");
     }
 
@@ -370,6 +383,11 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 
         const prerequisiteCount = result.prerequisiteQuestIds.length;
         setDidConfirmImport(true);
+        setImportSummary({
+            mode,
+            importedCount: result.importedQuestIds.length,
+            prerequisiteCount,
+        });
         setImportNotice(
             prerequisiteCount > 0
                 ? `Imported ${result.importedQuestIds.length} ${mode} quests and auto-completed ${prerequisiteCount} prerequisite quests.`
@@ -421,6 +439,19 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
         .map((questId) => questsById.get(questId))
         .filter((quest): quest is FullQuest => !!quest);
     const reviewBlockedSensitiveQuestIds = reviewPreview?.blockedSensitiveQuestIds ?? [];
+    const reviewSensitiveDecisionQuestIds = Array.from(
+        new Set([
+            ...reviewBlockedSensitiveQuestIds,
+            ...allowedSensitiveBackfillQuestIds,
+            ...deniedSensitiveBackfillQuestIds,
+        ]),
+    ).sort((left, right) => left.localeCompare(right));
+    const showSourceSummary =
+        isParsing || step === "review" || hasResults || selectedFileNames.length > 0;
+    const showSelectFooter = step === "select" && hasResults && hasAnyImportableRows;
+    const showReviewFooter = step === "review" && !!reviewMode && !!reviewPreview;
+    const canClearSelection = isParsing || hasResults || selectedFileNames.length > 0;
+    const showSuccessBanner = step === "review" && didConfirmImport;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -438,14 +469,12 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="flex-1 overflow-y-auto px-6 py-5">
+                    <div className="flex-1 overflow-y-auto p-4">
                         <input ref={fileInputRef} className="hidden" {...directoryInputProps} />
 
-                        {(isParsing ||
-                            step === "review" ||
-                            (hasResults && hasAnyImportableRows)) && (
+                        {showSourceSummary && (
                             <section className="flex flex-col rounded-lg border border-white/10 bg-black/20 p-4">
-                                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2 text-sm font-semibold text-white">
                                             <FolderOpen size={16} className="text-tarkov-green" />
@@ -464,73 +493,43 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         </p>
                                     </div>
 
-                                    <div className="flex flex-wrap items-center gap-2">
+                                    <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                                         <button
                                             type="button"
                                             onClick={handleChooseFolder}
                                             aria-controls="quest-log-folder-upload"
-                                            className="inline-flex items-center gap-2 rounded-sm border border-tarkov-green/30 bg-tarkov-green/10 px-3 py-2 text-sm font-semibold text-tarkov-green transition-colors hover:border-tarkov-green/60"
+                                            className={cn(
+                                                "inline-flex items-center gap-2 rounded-sm border px-3 py-2 text-sm transition-colors",
+                                                selectedFileNames.length > 0
+                                                    ? "border-white/10 bg-white/5 text-gray-200 hover:border-white/20 hover:bg-white/10 hover:text-white"
+                                                    : "border-tarkov-green/30 bg-tarkov-green/10 font-semibold text-tarkov-green hover:border-tarkov-green/60",
+                                            )}
                                         >
                                             <Upload size={14} />
-                                            Choose Folder
+                                            {selectedFileNames.length > 0
+                                                ? "Change Folder"
+                                                : "Choose Folder"}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={handleClear}
-                                            disabled={!hasResults && selectedFileNames.length === 0}
-                                            className="rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                            disabled={!canClearSelection}
+                                            aria-label="Clear selected folder"
+                                            className="inline-flex size-10 items-center justify-center rounded-sm border border-white/10 bg-white/5 text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                                         >
-                                            Clear
+                                            <Trash2 size={15} />
                                         </button>
                                     </div>
                                 </div>
 
-                                <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-gray-400">
-                                    <span className="inline-flex items-center gap-2">
-                                        <FileSearch size={14} className="text-gray-500" />
-                                        <span className="tabular-nums">
-                                            {selectedFileNames.length} file
-                                            {selectedFileNames.length === 1 ? "" : "s"} selected
-                                        </span>
-                                    </span>
-                                    {parsedView && (
-                                        <>
-                                            <MiniStat
-                                                label="PVP"
-                                                value={parsedView.buckets.pvp.length}
-                                            />
-                                            <MiniStat
-                                                label="PVE"
-                                                value={parsedView.buckets.pve.length}
-                                            />
-                                            <MiniStat
-                                                label="Unknown"
-                                                value={parsedView.buckets.unknownMode.length}
-                                            />
-                                        </>
-                                    )}
-                                    {isParsing && (
+                                {isParsing && (
+                                    <div className="mt-4 rounded-lg border border-white/10 bg-black/30 px-3 py-3">
                                         <span className="inline-flex items-center gap-2 text-tarkov-green">
                                             <span className="size-2 rounded-full bg-tarkov-green" />
                                             Parsing logs...
                                         </span>
-                                    )}
-                                    {hasResults && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowInfo((current) => !current)}
-                                            className="ml-auto inline-flex items-center gap-1 rounded-sm border border-white/10 bg-white/5 px-2 py-1 text-xs text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
-                                        >
-                                            <Info size={13} />
-                                            Info
-                                            {showInfo ? (
-                                                <ChevronUp size={13} />
-                                            ) : (
-                                                <ChevronDown size={13} />
-                                            )}
-                                        </button>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
 
                                 {error && (
                                     <div className="mt-4 inline-flex items-center gap-2 rounded-sm border border-red-400/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">
@@ -539,7 +538,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                     </div>
                                 )}
 
-                                {importNotice && (
+                                {importNotice && !showSuccessBanner && (
                                     <div className="mt-4 inline-flex items-center gap-2 rounded-sm border border-tarkov-green/20 bg-tarkov-green/10 px-3 py-2 text-sm text-tarkov-green">
                                         <CheckCircle2 size={14} />
                                         {importNotice}
@@ -556,7 +555,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 
                         {step === "select" &&
                             !isParsing &&
-                            (!hasResults || !hasAnyImportableRows) && (
+                            !hasResults &&
+                            selectedFileNames.length === 0 && (
                                 <section className="mt-5 rounded-lg border border-dashed border-white/10 bg-black/10 p-8 text-center">
                                     <div className="mx-auto flex max-w-xl flex-col items-center gap-3">
                                         <CheckCircle2 size={24} className="text-tarkov-green/80" />
@@ -602,64 +602,75 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                             </button>
                                         </div>
                                     )}
-
-                                    {hasPreWipeIgnoredFiles && (
-                                        <PreWipeCutoffNotice
-                                            fileCount={preWipeIgnoredFileNames.length}
-                                        />
-                                    )}
-
-                                    {!cacheNotice && hasResults && !hasAnyImportableRows && (
-                                        <div className="mt-5 w-full rounded-sm border border-white/10 bg-white/5 px-4 py-3 text-center text-sm text-gray-300">
-                                            All quests in logs are already completed.
-                                        </div>
-                                    )}
                                 </section>
                             )}
 
-                        {hasResults && parsedView && step === "select" && (
+                        {cacheNotice && showSourceSummary && (
+                            <div className="mt-5 rounded-sm border border-amber-400/35 bg-amber-500/12 px-4 py-3 text-sm text-amber-100">
+                                <div className="flex flex-col items-center justify-center gap-3 text-center sm:flex-row sm:flex-wrap">
+                                    <div>No new files seen.</div>
+                                    <button
+                                        type="button"
+                                        onClick={handleClearCache}
+                                        className="text-xs text-amber-200 underline underline-offset-2 transition-colors hover:text-white"
+                                    >
+                                        Clear cache
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleIgnoreCacheForSelectedFiles}
+                                        className="rounded-sm border border-amber-300/30 bg-amber-300/10 px-2 py-1 text-xs font-semibold text-amber-100 transition-colors hover:border-amber-200/60 hover:bg-amber-300/20 hover:text-white"
+                                    >
+                                        Ignore for these files
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {step === "select" &&
+                            !isParsing &&
+                            hasResults &&
+                            !hasAnyImportableRows &&
+                            !cacheNotice && (
+                                <section className="mt-5 rounded-lg border border-white/10 bg-black/20 px-4 py-4 text-sm text-gray-300">
+                                    All quests in logs are already completed.
+                                </section>
+                            )}
+
+                        {hasResults && parsedView && step === "select" && hasAnyImportableRows && (
                             <div className="mt-5 space-y-5">
-                                {showInfo && (
-                                    <InfoPanel
-                                        result={parsedView.result}
-                                        unknownModeGroups={parsedView.buckets.unknownMode}
+                                {filteredPvpRows.length > 0 && (
+                                    <ModeSection
+                                        title="PVP Quests"
+                                        mode="PVP"
+                                        rows={filteredPvpRows}
+                                        completedQuests={completedQuests}
+                                        autoCompleteSelections={autoCompleteSelections}
+                                        onToggleAutoComplete={handleToggleAutoComplete}
+                                        onEnableAll={() =>
+                                            handleSetAllForMode("PVP", filteredPvpRows, true)
+                                        }
+                                        onDisableAll={() =>
+                                            handleSetAllForMode("PVP", filteredPvpRows, false)
+                                        }
                                     />
                                 )}
 
-                                {hasAnyImportableRows && (
-                                    <>
-                                        <ModeSection
-                                            title="PVP Quests"
-                                            mode="PVP"
-                                            rows={filteredPvpRows}
-                                            completedQuests={completedQuests}
-                                            autoCompleteSelections={autoCompleteSelections}
-                                            onToggleAutoComplete={handleToggleAutoComplete}
-                                            onEnableAll={() =>
-                                                handleSetAllForMode("PVP", filteredPvpRows, true)
-                                            }
-                                            onDisableAll={() =>
-                                                handleSetAllForMode("PVP", filteredPvpRows, false)
-                                            }
-                                            onContinue={() => handleReviewMode("PVP")}
-                                        />
-
-                                        <ModeSection
-                                            title="PVE Quests"
-                                            mode="PVE"
-                                            rows={filteredPveRows}
-                                            completedQuests={completedQuests}
-                                            autoCompleteSelections={autoCompleteSelections}
-                                            onToggleAutoComplete={handleToggleAutoComplete}
-                                            onEnableAll={() =>
-                                                handleSetAllForMode("PVE", filteredPveRows, true)
-                                            }
-                                            onDisableAll={() =>
-                                                handleSetAllForMode("PVE", filteredPveRows, false)
-                                            }
-                                            onContinue={() => handleReviewMode("PVE")}
-                                        />
-                                    </>
+                                {filteredPveRows.length > 0 && (
+                                    <ModeSection
+                                        title="PVE Quests"
+                                        mode="PVE"
+                                        rows={filteredPveRows}
+                                        completedQuests={completedQuests}
+                                        autoCompleteSelections={autoCompleteSelections}
+                                        onToggleAutoComplete={handleToggleAutoComplete}
+                                        onEnableAll={() =>
+                                            handleSetAllForMode("PVE", filteredPveRows, true)
+                                        }
+                                        onDisableAll={() =>
+                                            handleSetAllForMode("PVE", filteredPveRows, false)
+                                        }
+                                    />
                                 )}
                             </div>
                         )}
@@ -669,47 +680,158 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                             step === "review" &&
                             reviewMode &&
                             reviewPreview && (
-                                <ReviewStep
-                                    mode={reviewMode}
-                                    importedRows={reviewImportedRows}
-                                    prerequisiteQuests={reviewPrerequisiteQuests}
-                                    blockedSensitiveQuestIds={reviewBlockedSensitiveQuestIds}
-                                    didConfirmImport={didConfirmImport}
-                                    questsById={questsById}
-                                    getQuestName={(questId) =>
-                                        getSensitiveBackfillQuestName(questId, questsById)
-                                    }
-                                    onAllowSensitiveBackfill={(questId) => {
-                                        setAllowedSensitiveBackfillQuestIds((current) =>
-                                            Array.from(new Set([...current, questId])),
-                                        );
-                                        setDeniedSensitiveBackfillQuestIds((current) =>
-                                            current.filter(
-                                                (deniedQuestId) => deniedQuestId !== questId,
-                                            ),
-                                        );
-                                    }}
-                                    onDenySensitiveBackfill={(questId) => {
-                                        setAllowedSensitiveBackfillQuestIds((current) =>
-                                            current.filter(
-                                                (allowedQuestId) => allowedQuestId !== questId,
-                                            ),
-                                        );
-                                        setDeniedSensitiveBackfillQuestIds((current) =>
-                                            Array.from(new Set([...current, questId])),
-                                        );
-                                    }}
-                                    onBack={() => {
-                                        setStep("select");
-                                        setDidConfirmImport(false);
-                                        setAllowedSensitiveBackfillQuestIds([]);
-                                        setDeniedSensitiveBackfillQuestIds([]);
-                                    }}
-                                    onConfirm={() => handleImportMode(reviewMode)}
-                                    onClose={() => onOpenChange(false)}
-                                />
+                                <div className="mt-5 space-y-5">
+                                    <ReviewStep
+                                        mode={reviewMode}
+                                        importedRows={reviewImportedRows}
+                                        prerequisiteQuests={reviewPrerequisiteQuests}
+                                        sensitiveDecisionQuestIds={reviewSensitiveDecisionQuestIds}
+                                        allowedSensitiveQuestIds={allowedSensitiveBackfillQuestIds}
+                                        deniedSensitiveQuestIds={deniedSensitiveBackfillQuestIds}
+                                        didConfirmImport={didConfirmImport}
+                                        importSummary={importSummary}
+                                        questsById={questsById}
+                                        getQuestName={(questId) =>
+                                            getSensitiveBackfillQuestName(questId, questsById)
+                                        }
+                                        onAllowSensitiveBackfill={(questId) => {
+                                            setAllowedSensitiveBackfillQuestIds((current) =>
+                                                Array.from(new Set([...current, questId])),
+                                            );
+                                            setDeniedSensitiveBackfillQuestIds((current) =>
+                                                current.filter(
+                                                    (deniedQuestId) => deniedQuestId !== questId,
+                                                ),
+                                            );
+                                        }}
+                                        onDenySensitiveBackfill={(questId) => {
+                                            setAllowedSensitiveBackfillQuestIds((current) =>
+                                                current.filter(
+                                                    (allowedQuestId) => allowedQuestId !== questId,
+                                                ),
+                                            );
+                                            setDeniedSensitiveBackfillQuestIds((current) =>
+                                                Array.from(new Set([...current, questId])),
+                                            );
+                                        }}
+                                    />
+
+                                    {!didConfirmImport && showInfo && (
+                                        <InfoPanel
+                                            result={parsedView.result}
+                                            unknownModeGroups={parsedView.buckets.unknownMode}
+                                        />
+                                    )}
+                                </div>
                             )}
                     </div>
+
+                    {(showSelectFooter || showReviewFooter) && (
+                        <div className="border-t border-white/10 bg-[#0d0d0f]/95 px-6 py-3 backdrop-blur">
+                            {showSelectFooter && (
+                                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                    <button
+                                        type="button"
+                                        onClick={handleClear}
+                                        className="inline-flex items-center gap-2 rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+                                    >
+                                        <ArrowLeft size={14} />
+                                        Back
+                                    </button>
+
+                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                                        <span className="text-sm text-gray-400">
+                                            Import quests from:
+                                        </span>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            {filteredPvpRows.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleReviewMode("PVP")}
+                                                    className="rounded-sm border border-white/10 bg-gradient-to-b from-[#3b1c1f] to-[#241315] px-3 py-2 text-sm font-semibold text-gray-100 transition-colors hover:border-white/20 hover:from-[#472124] hover:to-[#2d1719] hover:text-white"
+                                                >
+                                                    Import PVP Quests
+                                                </button>
+                                            )}
+                                            {filteredPveRows.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleReviewMode("PVE")}
+                                                    className="rounded-sm border border-white/10 bg-gradient-to-b from-[#142737] to-[#0f1b28] px-3 py-2 text-sm font-semibold text-gray-100 transition-colors hover:border-white/20 hover:from-[#1a3145] hover:to-[#122231] hover:text-white"
+                                                >
+                                                    Import PVE Quests
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {showReviewFooter && reviewMode && reviewPreview && (
+                                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                    {didConfirmImport ? (
+                                        <div />
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setStep("select");
+                                                setDidConfirmImport(false);
+                                                setImportSummary(null);
+                                                setAllowedSensitiveBackfillQuestIds([]);
+                                                setDeniedSensitiveBackfillQuestIds([]);
+                                            }}
+                                            className="inline-flex items-center gap-2 rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+                                        >
+                                            <ArrowLeft size={14} />
+                                            Back
+                                        </button>
+                                    )}
+
+                                    <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                                        {!didConfirmImport && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowInfo((current) => !current)}
+                                                className="inline-flex items-center gap-1 rounded-sm border border-white/10 bg-white/5 px-2.5 py-2 text-xs text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+                                            >
+                                                <Info size={13} />
+                                                Info
+                                                {showInfo ? (
+                                                    <ChevronUp size={13} />
+                                                ) : (
+                                                    <ChevronDown size={13} />
+                                                )}
+                                            </button>
+                                        )}
+                                        {didConfirmImport ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => onOpenChange(false)}
+                                                className="rounded-sm border border-tarkov-green/30 bg-tarkov-green/10 px-3 py-2 text-sm font-semibold text-tarkov-green transition-colors hover:border-tarkov-green/60"
+                                            >
+                                                Close
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleImportMode(reviewMode)}
+                                                disabled={reviewBlockedSensitiveQuestIds.length > 0}
+                                                className={cn(
+                                                    "rounded-sm px-3 py-2 text-sm font-semibold transition-colors",
+                                                    reviewBlockedSensitiveQuestIds.length > 0
+                                                        ? "cursor-not-allowed border border-white/10 bg-black/30 text-gray-600"
+                                                        : "border border-tarkov-green/30 bg-tarkov-green/10 text-tarkov-green hover:border-tarkov-green/60",
+                                                )}
+                                            >
+                                                Confirm Import
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>
@@ -718,7 +840,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 
 function PreWipeCutoffNotice({ fileCount }: { fileCount: number }) {
     return (
-        <div className="mt-4 inline-flex items-center gap-2 rounded-sm border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+        <div className="mt-4 flex w-full items-center gap-2 rounded-sm border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
             <AlertCircle size={14} />
             <span>
                 Some log files are older than the latest 1.0 wipe in November 2025 and were ignored.
@@ -737,7 +859,6 @@ function ModeSection({
     onToggleAutoComplete,
     onEnableAll,
     onDisableAll,
-    onContinue,
 }: {
     title: string;
     mode: ImportGameMode;
@@ -747,115 +868,104 @@ function ModeSection({
     onToggleAutoComplete: (mode: ImportGameMode, questId: string) => void;
     onEnableAll: () => void;
     onDisableAll: () => void;
-    onContinue: () => void;
 }) {
+    const accentClasses =
+        mode === "PVP"
+            ? "from-red-500/25 via-red-500/8 to-transparent"
+            : "from-sky-400/25 via-sky-400/8 to-transparent";
+
     return (
         <section className="rounded-lg border border-white/10 bg-black/20">
-            <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-3 lg:flex-row lg:items-center">
-                <div>
+            <div className="relative flex flex-col gap-3 overflow-hidden border-b border-white/10 px-4 py-3 lg:flex-row lg:items-center">
+                <div
+                    aria-hidden="true"
+                    className={cn(
+                        "pointer-events-none absolute -left-6 -top-8 h-20 w-32 rounded-full bg-gradient-to-br blur-2xl",
+                        accentClasses,
+                    )}
+                />
+                <div className="relative">
                     <h2 className="text-balance text-lg font-semibold text-white">{title}</h2>
-                    <p className="mt-1 text-pretty text-sm text-gray-400">
-                        {rows.length === 0
-                            ? `No ${mode} quests were detected in the selected logs.`
-                            : `Review detected ${mode} quests and choose which ones should auto-complete prerequisite chains during import.`}
-                    </p>
                 </div>
 
-                {rows.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 lg:ml-auto lg:justify-end">
-                        <button
-                            type="button"
-                            onClick={onEnableAll}
-                            className="rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
-                        >
-                            Enable All
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onDisableAll}
-                            className="rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
-                        >
-                            Disable All
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onContinue}
-                            className="rounded-sm border border-tarkov-green/30 bg-tarkov-green/10 px-3 py-2 text-sm font-semibold text-tarkov-green transition-colors hover:border-tarkov-green/60"
-                        >
-                            Continue with {mode} Quests
-                        </button>
-                    </div>
-                )}
+                <div className="relative flex flex-wrap items-center gap-2 lg:ml-auto lg:justify-end">
+                    <button
+                        type="button"
+                        onClick={onEnableAll}
+                        className="rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+                    >
+                        Enable All
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onDisableAll}
+                        className="rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+                    >
+                        Disable All
+                    </button>
+                </div>
             </div>
 
-            {rows.length === 0 ? (
-                <div className="px-4 py-6 text-sm text-gray-500">Nothing to import here yet.</div>
-            ) : (
-                <div className="divide-y divide-white/5">
-                    {rows.map((row) => {
-                        const selectionKey = getSelectionKey(mode, row.questId);
-                        const autoCompleteEnabled = autoCompleteSelections[selectionKey] ?? false;
-                        const alreadyCompleted = !!completedQuests[row.questId];
-                        const showNetworkProviderWarning =
-                            row.questId === NETWORK_PROVIDER_PART_1_ID && autoCompleteEnabled;
+            <div className="divide-y divide-white/5">
+                {rows.map((row) => {
+                    const selectionKey = getSelectionKey(mode, row.questId);
+                    const autoCompleteEnabled = autoCompleteSelections[selectionKey] ?? false;
+                    const alreadyCompleted = !!completedQuests[row.questId];
+                    const showNetworkProviderWarning =
+                        row.questId === NETWORK_PROVIDER_PART_1_ID && autoCompleteEnabled;
 
-                        return (
-                            <div key={`${mode}-${row.questId}`} className="px-4 py-4">
-                                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                                    <div className="min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <div className="truncate text-base font-semibold text-white">
-                                                {row.quest.name}
-                                            </div>
-                                            <QuestStateBadge
-                                                hasStarted={row.hasStarted}
-                                                hasCompleted={row.hasCompleted}
-                                            />
-                                            {alreadyCompleted && (
-                                                <span className="inline-flex items-center rounded-full border border-tarkov-green/20 bg-tarkov-green/10 px-2 py-1 text-[11px] font-medium uppercase text-tarkov-green">
-                                                    Already Complete
-                                                </span>
-                                            )}
+                    return (
+                        <div key={`${mode}-${row.questId}`} className="px-4 py-4">
+                            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <div className="truncate text-base font-semibold text-white">
+                                            {row.quest.name}
                                         </div>
-                                        <div className="mt-1 text-xs text-gray-500">
-                                            {row.questId}
-                                        </div>
-                                        <div className="mt-2 text-xs text-gray-500 tabular-nums">
-                                            Seen {row.occurrenceCount} · Events {row.eventCount} ·
-                                            Files {row.sourceFiles.length}
-                                        </div>
+                                        <QuestStateBadge
+                                            hasStarted={row.hasStarted}
+                                            hasCompleted={row.hasCompleted}
+                                        />
+                                        {alreadyCompleted && (
+                                            <span className="inline-flex items-center rounded-full border border-tarkov-green/20 bg-tarkov-green/10 px-2 py-1 text-[11px] font-medium uppercase text-tarkov-green">
+                                                Already Complete
+                                            </span>
+                                        )}
                                     </div>
-
-                                    <div className="flex flex-col items-start gap-3 lg:items-end">
-                                        <div className="text-xs text-gray-400 tabular-nums">
-                                            Latest: {formatTimestamp(row.latestTimestamp)}
-                                        </div>
-                                        <label className="inline-flex items-center gap-3 rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-200">
-                                            <input
-                                                type="checkbox"
-                                                checked={autoCompleteEnabled}
-                                                onChange={() =>
-                                                    onToggleAutoComplete(mode, row.questId)
-                                                }
-                                                className="size-4 accent-[var(--accent-green)]"
-                                            />
-                                            Auto-complete prerequisites
-                                        </label>
+                                    <div className="mt-1 text-xs text-gray-500">{row.questId}</div>
+                                    <div className="mt-2 text-xs text-gray-500 tabular-nums">
+                                        Seen {row.occurrenceCount} · Events {row.eventCount} · Files{" "}
+                                        {row.sourceFiles.length}
                                     </div>
                                 </div>
 
-                                {showNetworkProviderWarning && (
-                                    <div className="mt-4 rounded-sm border border-red-500/35 bg-red-500/12 px-3 py-2 text-xs font-semibold text-red-100">
-                                        WARNING: If you got Network Provider - Part 1 from the story
-                                        missions, do not select it. This can auto-complete a large
-                                        number of quests you may not intend to do.
+                                <div className="flex flex-col items-start gap-3 lg:items-end">
+                                    <div className="text-xs text-gray-400 tabular-nums">
+                                        Latest: {formatTimestamp(row.latestTimestamp)}
                                     </div>
-                                )}
+                                    <label className="inline-flex items-center gap-3 rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-200">
+                                        <input
+                                            type="checkbox"
+                                            checked={autoCompleteEnabled}
+                                            onChange={() => onToggleAutoComplete(mode, row.questId)}
+                                            className="size-4 accent-[var(--accent-green)]"
+                                        />
+                                        Auto-complete prerequisites
+                                    </label>
+                                </div>
                             </div>
-                        );
-                    })}
-                </div>
-            )}
+
+                            {showNetworkProviderWarning && (
+                                <div className="mt-4 rounded-sm border border-red-500/35 bg-red-500/12 px-3 py-2 text-xs font-semibold text-red-100">
+                                    WARNING: If you got Network Provider - Part 1 from the story
+                                    missions, do not select it. This can auto-complete a large
+                                    number of quests you may not intend to do.
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
         </section>
     );
 }
@@ -864,32 +974,59 @@ function ReviewStep({
     mode,
     importedRows,
     prerequisiteQuests,
-    blockedSensitiveQuestIds,
+    sensitiveDecisionQuestIds,
+    allowedSensitiveQuestIds,
+    deniedSensitiveQuestIds,
     didConfirmImport,
+    importSummary,
     questsById,
     getQuestName,
     onAllowSensitiveBackfill,
     onDenySensitiveBackfill,
-    onBack,
-    onConfirm,
-    onClose,
 }: {
     mode: ImportGameMode;
     importedRows: QuestImportRow[];
     prerequisiteQuests: FullQuest[];
-    blockedSensitiveQuestIds: string[];
+    sensitiveDecisionQuestIds: string[];
+    allowedSensitiveQuestIds: string[];
+    deniedSensitiveQuestIds: string[];
     didConfirmImport: boolean;
+    importSummary: ImportSummary | null;
     questsById: ReadonlyMap<string, FullQuest>;
     getQuestName: (questId: string) => string;
     onAllowSensitiveBackfill: (questId: string) => void;
     onDenySensitiveBackfill: (questId: string) => void;
-    onBack: () => void;
-    onConfirm: () => void;
-    onClose: () => void;
 }) {
+    if (didConfirmImport) {
+        const successMode = importSummary?.mode ?? mode;
+        const importedCount = importSummary?.importedCount ?? 0;
+        const prerequisiteCount = importSummary?.prerequisiteCount ?? 0;
+
+        return (
+            <section className="mt-5">
+                <div className="rounded-lg border border-emerald-400/25 bg-emerald-500/12 px-5 py-5 text-emerald-100">
+                    <div className="flex items-center gap-3">
+                        <CheckCircle2 size={20} className="text-emerald-300" />
+                        <div>
+                            <div className="text-base font-semibold text-white">
+                                Successfully imported {importedCount} quest
+                                {importedCount === 1 ? "" : "s"} and auto-completed{" "}
+                                {prerequisiteCount} quest
+                                {prerequisiteCount === 1 ? "" : "s"}.
+                            </div>
+                            <div className="mt-1 text-sm text-emerald-100/80">
+                                Your current {successMode} quest progress has been updated.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
     return (
         <section className="mt-5 rounded-lg border border-white/10 bg-black/20">
-            <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-4 lg:flex-row lg:items-center">
+            <div className="border-b border-white/10 px-4 py-4">
                 <div>
                     <h2 className="text-balance text-lg font-semibold text-white">
                         Review {mode} Import
@@ -899,58 +1036,19 @@ function ReviewStep({
                         be auto-completed for this import pass.
                     </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 lg:ml-auto lg:justify-end">
-                    {!didConfirmImport && (
-                        <button
-                            type="button"
-                            onClick={onBack}
-                            className="rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
-                        >
-                            Back
-                        </button>
-                    )}
-                    {didConfirmImport ? (
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="rounded-sm border border-tarkov-green/30 bg-tarkov-green/10 px-3 py-2 text-sm font-semibold text-tarkov-green transition-colors hover:border-tarkov-green/60"
-                        >
-                            Close
-                        </button>
-                    ) : (
-                        <button
-                            type="button"
-                            onClick={onConfirm}
-                            disabled={blockedSensitiveQuestIds.length > 0}
-                            className={cn(
-                                "rounded-sm px-3 py-2 text-sm font-semibold transition-colors",
-                                blockedSensitiveQuestIds.length > 0
-                                    ? "cursor-not-allowed border border-white/10 bg-black/30 text-gray-600"
-                                    : "border border-tarkov-green/30 bg-tarkov-green/10 text-tarkov-green hover:border-tarkov-green/60",
-                            )}
-                        >
-                            Confirm Import
-                        </button>
-                    )}
-                </div>
             </div>
 
             <div className="space-y-5 px-4 py-4">
-                {didConfirmImport && (
-                    <div className="inline-flex items-center gap-2 rounded-sm border border-tarkov-green/20 bg-tarkov-green/10 px-3 py-2 text-sm text-tarkov-green">
-                        <CheckCircle2 size={14} />
-                        Import applied to your current {mode} quest progress.
-                    </div>
-                )}
-
                 <div className="flex flex-wrap items-center gap-2 text-sm text-gray-400">
                     <MiniStat label="Quests" value={importedRows.length} />
                     <MiniStat label="Prereqs" value={prerequisiteQuests.length} />
                 </div>
 
-                {blockedSensitiveQuestIds.length > 0 && (
+                {sensitiveDecisionQuestIds.length > 0 && (
                     <SensitiveBackfillGate
-                        questIds={blockedSensitiveQuestIds}
+                        questIds={sensitiveDecisionQuestIds}
+                        allowedQuestIds={allowedSensitiveQuestIds}
+                        deniedQuestIds={deniedSensitiveQuestIds}
                         getQuestName={getQuestName}
                         onAllow={onAllowSensitiveBackfill}
                         onDeny={onDenySensitiveBackfill}
@@ -962,6 +1060,7 @@ function ReviewStep({
                     <QuestListByTrader
                         questIds={importedRows.map((row) => row.questId)}
                         questsById={questsById}
+                        itemPrefix={() => <Check size={14} className="shrink-0 text-emerald-300" />}
                         emptyMessage={`No ${mode} quests are queued for import.`}
                     />
                 </section>
@@ -974,6 +1073,9 @@ function ReviewStep({
                         <QuestListByTrader
                             questIds={prerequisiteQuests.map((quest) => quest.id)}
                             questsById={questsById}
+                            itemPrefix={() => (
+                                <Check size={14} className="shrink-0 text-emerald-300" />
+                            )}
                         />
                     </section>
                 )}
@@ -984,41 +1086,83 @@ function ReviewStep({
 
 function SensitiveBackfillGate({
     questIds,
+    allowedQuestIds,
+    deniedQuestIds,
     getQuestName,
     onAllow,
     onDeny,
 }: {
     questIds: string[];
+    allowedQuestIds: string[];
+    deniedQuestIds: string[];
     getQuestName: (questId: string) => string;
     onAllow: (questId: string) => void;
     onDeny: (questId: string) => void;
 }) {
+    const allowedSet = new Set(allowedQuestIds);
+    const deniedSet = new Set(deniedQuestIds);
+    const hasUnresolvedChoices = questIds.some(
+        (questId) => !allowedSet.has(questId) && !deniedSet.has(questId),
+    );
+
     return (
-        <div className="rounded-sm border border-dashed border-red-500/60 px-3 py-3 text-sm text-gray-200">
-            <div className="font-semibold text-red-400">
-                Sensitive prerequisite backfill blocked.
+        <div
+            className={cn(
+                "rounded-sm px-3 py-3 text-sm text-gray-200 transition-colors",
+                hasUnresolvedChoices
+                    ? "border border-dashed border-red-500/60"
+                    : "border border-white/10 bg-white/5",
+            )}
+        >
+            <div
+                className={cn(
+                    "font-semibold",
+                    hasUnresolvedChoices ? "text-red-400" : "text-gray-200",
+                )}
+            >
+                {hasUnresolvedChoices
+                    ? "Choose how to handle prerequisite auto-completion."
+                    : "Prerequisite auto-completion decisions recorded."}
             </div>
             <div className="mt-3 space-y-4">
                 {questIds.map((questId) => (
-                    <div key={questId}>
-                        <div className="font-semibold">{getQuestName(questId)}</div>
-                        <p className="mt-1 text-xs leading-5 text-gray-400">
-                            {getSensitiveBackfillQuest(questId)?.warning}
-                        </p>
-                        <div className="mt-3 flex flex-wrap gap-2">
+                    <div
+                        key={questId}
+                        className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"
+                    >
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2 font-semibold">
+                                <span>{getQuestName(questId)}</span>
+                            </div>
+                            <p className="mt-1 text-xs leading-5 text-gray-400">
+                                {getSensitiveBackfillQuest(questId)?.warning}
+                            </p>
+                        </div>
+                        <div className="inline-flex shrink-0 overflow-hidden rounded-sm border border-white/10 lg:mt-0">
                             <button
                                 type="button"
                                 onClick={() => onDeny(questId)}
-                                className="rounded-sm border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-300 transition-colors hover:border-white/25 hover:text-white"
+                                className={cn(
+                                    "px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors",
+                                    deniedSet.has(questId)
+                                        ? "bg-white/10 text-white"
+                                        : "bg-transparent text-gray-300 hover:bg-white/5 hover:text-white",
+                                )}
                             >
-                                Ignore Pre-requisites
+                                Deny
                             </button>
                             <button
                                 type="button"
                                 onClick={() => onAllow(questId)}
-                                className="rounded-sm border border-red-500/50 bg-red-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-red-100 transition-colors hover:border-red-400 hover:bg-red-500/25 hover:text-white"
+                                className={cn(
+                                    "inline-flex items-center gap-1 border-l border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors",
+                                    allowedSet.has(questId)
+                                        ? "bg-red-500/15 text-red-100"
+                                        : "bg-transparent text-gray-300 hover:bg-red-500/10 hover:text-white",
+                                )}
                             >
-                                Complete Pre-requisites
+                                <TriangleAlert size={12} className="text-amber-300" />
+                                Allow
                             </button>
                         </div>
                     </div>

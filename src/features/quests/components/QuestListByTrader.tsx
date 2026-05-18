@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { compareQuestTradersByOrder } from "@/lib/cfg/questTraderOrder";
 import type { FullQuest } from "@/types";
 
@@ -8,6 +8,7 @@ interface QuestListByTraderProps {
     questIds: string[];
     questsById: ReadonlyMap<string, FullQuest>;
     highlightQuestIds?: ReadonlySet<string>;
+    itemPrefix?: (quest: FullQuest) => ReactNode;
     emptyMessage?: string;
 }
 
@@ -20,6 +21,7 @@ export function QuestListByTrader({
     questIds,
     questsById,
     highlightQuestIds,
+    itemPrefix,
     emptyMessage = "No quests.",
 }: QuestListByTraderProps) {
     const groups = useMemo<TraderGroup[]>(() => {
@@ -82,7 +84,10 @@ export function QuestListByTrader({
                                             : "px-2 py-1 text-sm text-gray-200"
                                     }
                                 >
-                                    {quest.name}
+                                    <span className="flex items-center gap-2">
+                                        {itemPrefix?.(quest)}
+                                        <span>{quest.name}</span>
+                                    </span>
                                 </li>
                             );
                         })}
