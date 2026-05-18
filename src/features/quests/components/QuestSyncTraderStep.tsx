@@ -39,6 +39,7 @@ export function QuestSyncTraderStep({
     onClose: () => void;
 }) {
     const [searchQuery, setSearchQuery] = useState("");
+    const [enableInference, setEnableInference] = useState(true);
     const [sensitiveBackfillDecisions, setSensitiveBackfillDecisions] = useState(
         createEmptySensitiveBackfillDecisions,
     );
@@ -101,6 +102,7 @@ export function QuestSyncTraderStep({
         return previewTraderSelection(
             activeTrader.id,
             selectedQuestIds,
+            enableInference,
             allowedSensitiveBackfillQuestIds,
             deniedSensitiveBackfillQuestIds,
         );
@@ -234,13 +236,26 @@ export function QuestSyncTraderStep({
                             </div>
                         </div>
 
-                        <div className="space-y-3 border-t border-white/10 pt-4">
+                        <div className="space-y-2 border-t border-white/10 pt-4">
+                            <label className="flex items-start gap-2 px-3 py-2 text-xs text-gray-300">
+                                <input
+                                    type="checkbox"
+                                    checked={enableInference}
+                                    onChange={(event) => setEnableInference(event.target.checked)}
+                                    className="h-4 w-4 accent-tarkov-green"
+                                />
+                                <span>
+                                    Infer same-trader completed quests. Branching quests are not
+                                    auto-completed and will be listed for manual review.
+                                </span>
+                            </label>
                             <div className="flex flex-wrap items-center gap-3">
                                 <button
                                     onClick={() => {
                                         const result = syncTraderSelection(
                                             activeTrader.id,
                                             selectedQuestIds,
+                                            enableInference,
                                             allowedSensitiveBackfillQuestIds,
                                             deniedSensitiveBackfillQuestIds,
                                         );
@@ -282,21 +297,40 @@ export function QuestSyncTraderStep({
                                         Sync Preview
                                     </h5>
                                     <p className="text-xs text-gray-500">
-                                        {previewResult.completedIds.length > 0
-                                            ? `Will complete ${previewResult.completedIds.length} quest${previewResult.completedIds.length === 1 ? "" : "s"} if you sync now.`
+                                        {previewResult.completedIds.length > 0 ||
+                                        previewResult.autoFailedQuestIds.length > 0 ||
+                                        previewResult.skippedBranchingQuestIds.length > 0
+                                            ? `Will complete ${previewResult.completedIds.length} quest${previewResult.completedIds.length === 1 ? "" : "s"}, fail ${previewResult.autoFailedQuestIds.length} quest${previewResult.autoFailedQuestIds.length === 1 ? "" : "s"}, and leave ${previewResult.skippedBranchingQuestIds.length} branching quest${previewResult.skippedBranchingQuestIds.length === 1 ? "" : "s"} unchanged.`
                                             : "No quests would be completed with the current selection."}
                                     </p>
                                 </div>
 
-                                {previewResult.completedIds.length > 0 && (
+                                {previewResult.autoFailedQuestIds.length > 0 && (
                                     <div className="space-y-1">
-                                        <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
-                                            Will Complete
+                                        <div className="text-[10px] font-semibold uppercase tracking-wide text-red-300">
+                                            Will Fail
                                         </div>
                                         <QuestListByTrader
-                                            questIds={previewResult.completedIds}
+                                            questIds={previewResult.autoFailedQuestIds}
                                             questsById={questsById}
-                                            emptyMessage="No quests will change."
+                                            emptyMessage="No quests will fail."
+                                        />
+                                    </div>
+                                )}
+
+                                {previewResult.skippedBranchingQuestIds.length > 0 && (
+                                    <div className="space-y-1">
+                                        <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+                                            Needs Branch Choice
+                                        </div>
+                                        <p className="text-xs text-gray-500">
+                                            These likely completed quests can fail another quest, so
+                                            sync leaves them unchanged until you choose the branch.
+                                        </p>
+                                        <QuestListByTrader
+                                            questIds={previewResult.skippedBranchingQuestIds}
+                                            questsById={questsById}
+                                            emptyMessage="No branching quests need review."
                                         />
                                     </div>
                                 )}
@@ -354,7 +388,11 @@ export function QuestSyncTraderStep({
                                     <span>
                                         Last sync completed{" "}
                                         {lastQuestSyncAction.completedIds.length} quest
-                                        {lastQuestSyncAction.completedIds.length === 1 ? "" : "s"}.
+                                        {lastQuestSyncAction.completedIds.length === 1 ? "" : "s"}
+                                        {lastQuestSyncAction.autoFailedQuestIds.length > 0
+                                            ? ` and failed ${lastQuestSyncAction.autoFailedQuestIds.length} quest${lastQuestSyncAction.autoFailedQuestIds.length === 1 ? "" : "s"}`
+                                            : ""}
+                                        .
                                     </span>
                                     <button
                                         onClick={handleCloseAndJumpToTrader}

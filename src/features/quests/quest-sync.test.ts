@@ -30,6 +30,7 @@ function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name"
         traderRequirements: overrides.traderRequirements ?? [],
         requiredPrestige: overrides.requiredPrestige ?? null,
         objectives: overrides.objectives ?? [],
+        failConditions: overrides.failConditions ?? [],
         wikiLink: overrides.wikiLink ?? null,
         minPlayerLevel: overrides.minPlayerLevel ?? 1,
         kappaRequired: overrides.kappaRequired ?? false,
@@ -46,6 +47,7 @@ function makeProfile(overrides: Partial<QuestSyncProfile> = {}): QuestSyncProfil
         faction: overrides.faction ?? "USEC",
         traderLoyaltyLevels: overrides.traderLoyaltyLevels ?? { prapor: 3, therapist: 1 },
         completedQuests: overrides.completedQuests ?? {},
+        failedQuests: overrides.failedQuests ?? {},
     };
 }
 
@@ -169,6 +171,103 @@ test("syncTraderProgress completes same-trader dangling branches but not selecte
     assert.equal(result.nextCompletedQuests["c"] ?? false, false);
     assert.equal(result.nextCompletedQuests["d"] ?? false, true);
     assert.equal(result.nextCompletedQuests.future ?? false, false);
+});
+
+test("syncTraderProgress can disable same-trader inference", () => {
+    const quests = [
+        makeQuest({ id: "a", name: "A" }),
+        makeQuest({
+            id: "b",
+            name: "B",
+            taskRequirements: [{ task: { id: "a", name: "A" }, status: ["Success"] }],
+        }),
+        makeQuest({
+            id: "selected",
+            name: "Selected",
+            taskRequirements: [{ task: { id: "b", name: "B" }, status: ["Success"] }],
+        }),
+        makeQuest({
+            id: "dangling",
+            name: "Dangling",
+            taskRequirements: [{ task: { id: "b", name: "B" }, status: ["Success"] }],
+        }),
+    ];
+
+    const result = syncTraderProgress({
+        quests,
+        traderId: "prapor",
+        selectedQuestIds: ["selected"],
+        enableInference: false,
+        profile: makeProfile(),
+        questsWithItems: {},
+    });
+
+    assert.deepEqual(result.completedIds.sort(), ["a", "b"]);
+    assert.deepEqual(result.prerequisiteCompletedIds.sort(), ["a", "b"]);
+    assert.deepEqual(result.inferredCompletedIds, []);
+    assert.equal(result.nextCompletedQuests.dangling ?? false, false);
+});
+
+test("syncTraderProgress skips branching same-trader inferred quests", () => {
+    const quests = [
+        makeQuest({ id: "a", name: "A" }),
+        makeQuest({
+            id: "b",
+            name: "B",
+            taskRequirements: [{ task: { id: "a", name: "A" }, status: ["Success"] }],
+        }),
+        makeQuest({
+            id: "selected",
+            name: "Selected",
+            taskRequirements: [{ task: { id: "b", name: "B" }, status: ["Success"] }],
+        }),
+        makeQuest({
+            id: "branch-a",
+            name: "Branch A",
+            taskRequirements: [{ task: { id: "b", name: "B" }, status: ["Success"] }],
+            failConditions: [
+                {
+                    id: "branch-a-fails-branch-b",
+                    type: "taskStatus",
+                    description: "",
+                    optional: false,
+                    status: ["Success"],
+                    task: { id: "branch-b", name: "Branch B" },
+                },
+            ],
+        }),
+        makeQuest({
+            id: "branch-b",
+            name: "Branch B",
+            taskRequirements: [{ task: { id: "b", name: "B" }, status: ["Success"] }],
+            failConditions: [
+                {
+                    id: "branch-b-fails-branch-a",
+                    type: "taskStatus",
+                    description: "",
+                    optional: false,
+                    status: ["Success"],
+                    task: { id: "branch-a", name: "Branch A" },
+                },
+            ],
+        }),
+    ];
+
+    const result = syncTraderProgress({
+        quests,
+        traderId: "prapor",
+        selectedQuestIds: ["selected"],
+        profile: makeProfile(),
+        questsWithItems: {},
+    });
+
+    assert.deepEqual(result.completedIds.sort(), ["a", "b"]);
+    assert.deepEqual(result.inferredCompletedIds, []);
+    assert.deepEqual(result.skippedBranchingQuestIds, ["branch-a", "branch-b"]);
+    assert.equal(result.nextCompletedQuests["branch-a"] ?? false, false);
+    assert.equal(result.nextCompletedQuests["branch-b"] ?? false, false);
+    assert.equal(result.nextFailedQuests["branch-a"] ?? false, false);
+    assert.equal(result.nextFailedQuests["branch-b"] ?? false, false);
 });
 
 test("syncTraderProgress does not infer unrelated cross-trader quests", () => {
@@ -323,6 +422,72 @@ test("syncTraderProgress with a no-prerequisite selected quest does not complete
     assert.equal(result.nextCompletedQuests.selected ?? false, false);
     assert.equal(result.nextCompletedQuests["available-other"] ?? false, false);
     assert.equal(result.nextCompletedQuests["lightkeeper-other"] ?? false, false);
+});
+
+test("syncTraderProgress auto-fails mutually exclusive quests when syncing completed prerequisites", () => {
+    const quests = [
+        makeQuest({ id: "root", name: "Root" }),
+        makeQuest({
+            id: "selected",
+            name: "Selected",
+            taskRequirements: [{ task: { id: "root", name: "Root" }, status: ["Success"] }],
+        }),
+        makeQuest({
+            id: "exclusive",
+            name: "Exclusive",
+            failConditions: [
+                {
+                    id: "exclusive-fails-on-root",
+                    type: "taskStatus",
+                    description: "",
+                    optional: false,
+                    status: ["Success"],
+                    task: { id: "root", name: "Root" },
+                },
+            ],
+        }),
+    ];
+
+    const result = syncTraderProgress({
+        quests,
+        traderId: "prapor",
+        selectedQuestIds: ["selected"],
+        profile: makeProfile(),
+        questsWithItems: {},
+    });
+
+    assert.deepEqual(result.completedIds, ["root"]);
+    assert.deepEqual(result.autoFailedQuestIds, ["exclusive"]);
+    assert.equal(result.nextCompletedQuests.root, true);
+    assert.equal(result.nextFailedQuests.root, false);
+    assert.equal(result.nextCompletedQuests.exclusive, false);
+    assert.equal(result.nextFailedQuests.exclusive, true);
+});
+
+test("syncTraderProgress clears failed state when sync completes that quest", () => {
+    const quests = [
+        makeQuest({ id: "root", name: "Root" }),
+        makeQuest({
+            id: "selected",
+            name: "Selected",
+            taskRequirements: [{ task: { id: "root", name: "Root" }, status: ["Success"] }],
+        }),
+    ];
+
+    const result = syncTraderProgress({
+        quests,
+        traderId: "prapor",
+        selectedQuestIds: ["selected"],
+        profile: makeProfile({ failedQuests: { root: true } }),
+        questsWithItems: { root: true },
+    });
+
+    assert.deepEqual(result.completedIds, ["root"]);
+    assert.equal(result.nextCompletedQuests.root, true);
+    assert.equal(result.nextFailedQuests.root, false);
+    assert.equal(result.nextQuestsWithItems.root, false);
+    assert.equal(result.previousFailedQuests.root, true);
+    assert.equal(result.previousQuestsWithItems.root, true);
 });
 
 

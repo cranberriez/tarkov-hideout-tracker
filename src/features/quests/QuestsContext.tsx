@@ -88,12 +88,14 @@ interface QuestsContextValue {
     previewTraderSelection: (
         traderId: string,
         selectedQuestIds: string[],
+        enableInference?: boolean,
         allowedSensitiveBackfillQuestIds?: string[],
         deniedSensitiveBackfillQuestIds?: string[],
     ) => QuestSyncResult;
     syncTraderSelection: (
         traderId: string,
         selectedQuestIds: string[],
+        enableInference?: boolean,
         allowedSensitiveBackfillQuestIds?: string[],
         deniedSensitiveBackfillQuestIds?: string[],
     ) => LastQuestSyncAction;
@@ -504,6 +506,7 @@ export function QuestsProvider({
     const previewTraderSelection = (
         traderId: string,
         selectedQuestIds: string[],
+        enableInference: boolean = true,
         allowedSensitiveBackfillQuestIds: string[] = [],
         deniedSensitiveBackfillQuestIds: string[] = [],
     ) => {
@@ -512,6 +515,7 @@ export function QuestsProvider({
             quests,
             traderId,
             selectedQuestIds,
+            enableInference,
             allowedSensitiveBackfillQuestIds,
             deniedSensitiveBackfillQuestIds,
             profile: buildSyncProfile(state),
@@ -522,20 +526,22 @@ export function QuestsProvider({
     const syncTraderSelection = (
         traderId: string,
         selectedQuestIds: string[],
+        enableInference: boolean = true,
         allowedSensitiveBackfillQuestIds: string[] = [],
         deniedSensitiveBackfillQuestIds: string[] = [],
     ) => {
         const result = previewTraderSelection(
             traderId,
             selectedQuestIds,
+            enableInference,
             allowedSensitiveBackfillQuestIds,
             deniedSensitiveBackfillQuestIds,
         );
 
         if (result.completedIds.length > 0) {
-            useUserStore.setState({
-                completedQuests: result.nextCompletedQuests,
-                questsWithItems: result.nextQuestsWithItems,
+            useUserStore.getState().applyQuestCompletionChange({
+                complete: result.completedIds,
+                fail: result.autoFailedQuestIds,
             });
         }
 
@@ -554,21 +560,32 @@ export function QuestsProvider({
 
         useUserStore.setState((state) => {
             const completedQuestsDraft = { ...state.completedQuests };
+            const failedQuestsDraft = { ...state.failedQuests };
             const questsWithItemsDraft = { ...state.questsWithItems };
+            const affectedQuestIds = [
+                ...lastQuestSyncAction.completedIds,
+                ...lastQuestSyncAction.autoFailedQuestIds,
+            ];
 
             restoreRecordValues(
                 completedQuestsDraft,
                 lastQuestSyncAction.previousCompletedQuests,
-                lastQuestSyncAction.completedIds,
+                affectedQuestIds,
+            );
+            restoreRecordValues(
+                failedQuestsDraft,
+                lastQuestSyncAction.previousFailedQuests,
+                affectedQuestIds,
             );
             restoreRecordValues(
                 questsWithItemsDraft,
                 lastQuestSyncAction.previousQuestsWithItems,
-                lastQuestSyncAction.completedIds,
+                affectedQuestIds,
             );
 
             return {
                 completedQuests: completedQuestsDraft,
+                failedQuests: failedQuestsDraft,
                 questsWithItems: questsWithItemsDraft,
             };
         });
