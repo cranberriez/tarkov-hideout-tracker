@@ -66,9 +66,9 @@ export function buildQuestFailureMap<T extends QuestFailureSource>(quests: reado
             if (condition.optional) continue;
             if (!statusIncludesComplete(condition.status)) continue;
 
-            const failedQuestIds = map.get(condition.task.id) ?? [];
-            failedQuestIds.push(quest.id);
-            map.set(condition.task.id, failedQuestIds);
+            const failedQuestIds = map.get(quest.id) ?? [];
+            failedQuestIds.push(condition.task.id);
+            map.set(quest.id, failedQuestIds);
         }
     }
 

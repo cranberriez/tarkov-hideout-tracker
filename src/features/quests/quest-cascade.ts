@@ -1,5 +1,6 @@
 import type { FullQuest } from "../../types/types";
 import { getSensitiveBackfillQuest } from "../../lib/utils/sensitive-quest-backfill";
+import { statusIncludesComplete } from "../../lib/utils/quest-failures";
 
 export interface QuestCascadeCompleteResult {
     toComplete: string[];
@@ -38,6 +39,7 @@ export function collectCompleteCascade(
 
         toComplete.add(questId);
         for (const requirement of quest.taskRequirements) {
+            if (!statusIncludesComplete(requirement.status)) continue;
             queue.push(requirement.task.id);
         }
     }

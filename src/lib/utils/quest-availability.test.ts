@@ -107,3 +107,43 @@ test("mixed complete-or-failed task requirements accept either terminal state", 
         true,
     );
 });
+
+test("active task requirements accept completed prerequisites", () => {
+    const quests = [
+        makeQuest({ id: "intro" }),
+        makeQuest({
+            id: "follow-up",
+            taskRequirements: [{ task: { id: "intro", name: "Introduction" }, status: ["active"] }],
+        }),
+    ];
+    const questsById = buildQuestAvailabilityMap(quests);
+
+    assert.equal(
+        isQuestAvailableForProfile(
+            quests[1],
+            makeProfile({ completedQuests: { intro: true } }),
+            questsById,
+        ),
+        true,
+    );
+});
+
+test("active task requirements accept failed prerequisites", () => {
+    const quests = [
+        makeQuest({ id: "intro" }),
+        makeQuest({
+            id: "follow-up",
+            taskRequirements: [{ task: { id: "intro", name: "Introduction" }, status: ["active"] }],
+        }),
+    ];
+    const questsById = buildQuestAvailabilityMap(quests);
+
+    assert.equal(
+        isQuestAvailableForProfile(
+            quests[1],
+            makeProfile({ failedQuests: { intro: true } }),
+            questsById,
+        ),
+        true,
+    );
+});

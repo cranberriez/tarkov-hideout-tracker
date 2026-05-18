@@ -426,26 +426,26 @@ test("syncTraderProgress with a no-prerequisite selected quest does not complete
 
 test("syncTraderProgress auto-fails mutually exclusive quests when syncing completed prerequisites", () => {
     const quests = [
-        makeQuest({ id: "root", name: "Root" }),
+        makeQuest({
+            id: "root",
+            name: "Root",
+            failConditions: [
+                {
+                    id: "root-fails-exclusive",
+                    type: "taskStatus",
+                    description: "",
+                    optional: false,
+                    status: ["Success"],
+                    task: { id: "exclusive", name: "Exclusive" },
+                },
+            ],
+        }),
         makeQuest({
             id: "selected",
             name: "Selected",
             taskRequirements: [{ task: { id: "root", name: "Root" }, status: ["Success"] }],
         }),
-        makeQuest({
-            id: "exclusive",
-            name: "Exclusive",
-            failConditions: [
-                {
-                    id: "exclusive-fails-on-root",
-                    type: "taskStatus",
-                    description: "",
-                    optional: false,
-                    status: ["Success"],
-                    task: { id: "root", name: "Root" },
-                },
-            ],
-        }),
+        makeQuest({ id: "exclusive", name: "Exclusive" }),
     ];
 
     const result = syncTraderProgress({

@@ -30,13 +30,13 @@ function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name"
     };
 }
 
-test("deriveQuestItemState keeps quests future when their prerequisite is only active", () => {
+test("deriveQuestItemState keeps quests future when their active-only prerequisite is not available", () => {
     const quests = [
-        makeQuest({ id: "root", name: "Debut" }),
+        makeQuest({ id: "root", name: "Debut", minPlayerLevel: 99 }),
         makeQuest({
             id: "follow-up",
             name: "Checking",
-            taskRequirements: [{ task: { id: "root", name: "Debut" }, status: ["complete", "active"] }],
+            taskRequirements: [{ task: { id: "root", name: "Debut" }, status: ["active"] }],
             objectives: [
                 {
                     id: "obj-1",
@@ -69,13 +69,59 @@ test("deriveQuestItemState keeps quests future when their prerequisite is only a
         faction: "USEC",
         traderLoyaltyLevels: { prapor: 3 },
         quests,
+        visibilityMode: "allFuture",
     });
 
     assert.equal(state.relatedQuests[0]?.status, "future");
     assert.equal(state.hasAvailableQuest, false);
 });
 
-test("deriveQuestItemStates caps quest demand by max depth from strictly available quests", () => {
+test("deriveQuestItemState treats completed active-only prerequisites as available", () => {
+    const quests = [
+        makeQuest({ id: "root", name: "Introduction" }),
+        makeQuest({
+            id: "follow-up",
+            name: "Supplier",
+            taskRequirements: [{ task: { id: "root", name: "Introduction" }, status: ["active"] }],
+            objectives: [
+                {
+                    id: "obj-1",
+                    type: "giveItem",
+                    description: "Hand in item",
+                    optional: false,
+                    count: 2,
+                    foundInRaid: false,
+                    items: [
+                        {
+                            id: "bolts",
+                            name: "Bolts",
+                            normalizedName: "bolts",
+                            iconLink: "/bolts.png",
+                            gridImageLink: "/bolts-grid.png",
+                        },
+                    ],
+                },
+            ],
+        }),
+    ];
+
+    const entry = buildQuestItemIndex(quests)[0];
+    const state = deriveQuestItemState(entry, {
+        completedQuests: { root: true },
+        ignoredQuests: {},
+        pinnedQuests: {},
+        playerLevel: 30,
+        prestigeLevel: 0,
+        faction: "USEC",
+        traderLoyaltyLevels: { prapor: 3 },
+        quests,
+    });
+
+    assert.equal(state.relatedQuests[0]?.status, "available");
+    assert.equal(state.hasAvailableQuest, true);
+});
+
+test("deriveQuestItemStates includes next layer quest demand from available roots", () => {
     const quests = [
         makeQuest({ id: "root", name: "Debut" }),
         makeQuest({
@@ -140,14 +186,15 @@ test("deriveQuestItemStates caps quest demand by max depth from strictly availab
         quests,
     };
 
-    const depthOne = deriveQuestItemStates(questItemIndex, { ...baseOptions, maxDepth: 1 });
-    const depthTwo = deriveQuestItemStates(questItemIndex, { ...baseOptions, maxDepth: 2 });
-    const depthThree = deriveQuestItemStates(questItemIndex, { ...baseOptions, maxDepth: 3 });
+    const availableOnly = deriveQuestItemStates(questItemIndex, baseOptions);
+    const nextLayer = deriveQuestItemStates(questItemIndex, {
+        ...baseOptions,
+        visibilityMode: "nextLayer",
+    });
 
-    assert.deepEqual(depthOne.map((entry) => entry.itemId), []);
-    assert.deepEqual(depthTwo.map((entry) => entry.itemId), ["bolts"]);
-    assert.deepEqual(depthThree.map((entry) => entry.itemId), ["bolts", "screws"]);
-    assert.equal(depthTwo[0]?.relatedQuests[0]?.status, "future");
+    assert.deepEqual(availableOnly.map((entry) => entry.itemId), []);
+    assert.deepEqual(nextLayer.map((entry) => entry.itemId), ["bolts", "screws"]);
+    assert.equal(nextLayer[0]?.relatedQuests[0]?.status, "future");
 });
 
 test("deriveQuestItemStates excludes opposing faction quests from override paths", () => {

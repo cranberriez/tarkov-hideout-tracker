@@ -95,7 +95,7 @@ function getRequiredLoyaltyForQuest(quest: QuestAvailabilityQuest, traderId: str
 }
 
 function requirementAllowsActiveStatus(requirement: QuestPrerequisite) {
-    return requirement.status.some((status) => status.toLowerCase() === "active");
+    return requirement.status.some((status) => status.trim().toLowerCase() === "active");
 }
 
 function isQuestRequirementSatisfied(
@@ -116,6 +116,13 @@ function isQuestRequirementSatisfied(
     }
 
     if (!requirementAllowsActiveStatus(requirement)) return false;
+
+    if (
+        profile.completedQuests[requirement.task.id] ||
+        profile.failedQuests?.[requirement.task.id]
+    ) {
+        return true;
+    }
 
     const prerequisiteQuest = questsById.get(requirement.task.id);
     if (!prerequisiteQuest) return false;

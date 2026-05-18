@@ -225,7 +225,7 @@ function QuestChip({
         questRef.prerequisiteType === "complete"
             ? "This quest needs to be completed"
             : questRef.prerequisiteType === "active"
-              ? "This quest needs to be available"
+              ? "This quest needs to be accepted, completed, or failed"
               : questRef.prerequisiteType === "failed"
                 ? "This quest needs to be failed"
                 : questRef.prerequisiteType === "resolved"
@@ -234,7 +234,8 @@ function QuestChip({
     const prerequisiteSatisfied =
         (questRef.prerequisiteType === "complete" && prerequisiteCompleted) ||
         (questRef.prerequisiteType === "failed" && prerequisiteFailed) ||
-        (questRef.prerequisiteType === "resolved" && (prerequisiteCompleted || prerequisiteFailed));
+        (questRef.prerequisiteType === "resolved" && (prerequisiteCompleted || prerequisiteFailed)) ||
+        (questRef.prerequisiteType === "active" && (prerequisiteCompleted || prerequisiteFailed));
 
     return (
         <a
@@ -335,11 +336,13 @@ export function QuestCard({
     const ignored = !!ignoredQuests[quest.id];
     const pinned = !!pinnedQuests[quest.id];
     const completedRequirementCount = quest.taskRequirements.filter((req) => {
-        const statuses = req.status.map((status) => status.toLowerCase());
+        const statuses = req.status.map((status) => status.trim().toLowerCase());
+        const prerequisiteCompleted = !!completedQuests[req.task.id];
+        const prerequisiteFailed = !!failedQuests[req.task.id];
         return (
-            (statuses.includes("complete") && completedQuests[req.task.id]) ||
-            (statuses.includes("failed") && failedQuests[req.task.id]) ||
-            (statuses.includes("active") && !completedQuests[req.task.id])
+            (statuses.includes("complete") && prerequisiteCompleted) ||
+            (statuses.includes("failed") && prerequisiteFailed) ||
+            (statuses.includes("active") && (prerequisiteCompleted || prerequisiteFailed))
         );
     }).length;
     const available = isQuestAvailableForProfile(quest, syncProfile, questsById);

@@ -27,7 +27,10 @@ export function QuestCascadeConfirmDialog() {
     const sensitiveCount = request.sensitiveQuestIds.length;
     const autoFailedCount = request.autoFailedQuestIds?.length ?? 0;
     const hasAutoFailures = isComplete && autoFailedCount > 0;
-    const hasCompletionCascade = isComplete && request.questIds.length > 1;
+    const autoFailedQuestIdSet = new Set(request.autoFailedQuestIds ?? []);
+    const questIdsToComplete = hasAutoFailures
+        ? request.questIds.filter((questId) => !autoFailedQuestIdSet.has(questId))
+        : request.questIds;
 
     const highlightQuestIds = new Set<string>([
         ...request.crossTraderQuestIds,
@@ -68,27 +71,18 @@ export function QuestCascadeConfirmDialog() {
                 </DialogHeader>
 
                 <div className="flex flex-col gap-3 px-6 py-4">
-                    {crossTraderCount > 0 && (
+                    {!hasAutoFailures && crossTraderCount > 0 && (
                         <div className="rounded-sm border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
                             Includes {crossTraderCount} quest{crossTraderCount === 1 ? "" : "s"} from other traders.
                         </div>
                     )}
-                    {sensitiveCount > 0 && (
+                    {!hasAutoFailures && sensitiveCount > 0 && (
                         <div className="rounded-sm border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-100">
                             Includes sensitive backfill:{" "}
                             {request.sensitiveQuestIds
                                 .map((id) => questsById.get(id)?.name ?? getSensitiveBackfillQuest(id)?.name ?? id)
                                 .join(", ")}
                             . Confirm only if you have actually done these.
-                        </div>
-                    )}
-                    {autoFailedCount > 0 && (
-                        <div className="rounded-sm border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-100">
-                            Completing this branch will fail{" "}
-                            {(request.autoFailedQuestIds ?? [])
-                                .map((id) => questsById.get(id)?.name ?? id)
-                                .join(", ")}
-                            .
                         </div>
                     )}
                 </div>
@@ -107,7 +101,7 @@ export function QuestCascadeConfirmDialog() {
                                 />
                             </section>
                         )}
-                        {(!hasAutoFailures || hasCompletionCascade) && (
+                        {(!hasAutoFailures || questIdsToComplete.length > 0) && (
                             <section className="space-y-2">
                                 {hasAutoFailures && (
                                     <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-tarkov-green">
@@ -115,7 +109,7 @@ export function QuestCascadeConfirmDialog() {
                                     </div>
                                 )}
                                 <QuestListByTrader
-                                    questIds={request.questIds}
+                                    questIds={questIdsToComplete}
                                     questsById={questsById}
                                     highlightQuestIds={highlightQuestIds}
                                 />

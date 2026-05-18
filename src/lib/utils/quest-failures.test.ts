@@ -38,7 +38,7 @@ function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name"
     };
 }
 
-test("buildQuestFailureMap maps completed task-status conditions to failed quests", () => {
+test("buildQuestFailureMap maps completed quests to their fail-condition targets", () => {
     const quests = [
         makeQuest({ id: "branch-a", name: "Branch A" }),
         makeQuest({
@@ -59,7 +59,47 @@ test("buildQuestFailureMap maps completed task-status conditions to failed quest
 
     const failureMap = buildQuestFailureMap(quests);
 
-    assert.deepEqual(failureMap.get("branch-a"), ["branch-b"]);
+    assert.deepEqual(failureMap.get("branch-b"), ["branch-a"]);
+});
+
+test("buildQuestFailureMap maps Out of Curiosity completion to its failed branches", () => {
+    const quests = [
+        makeQuest({ id: "597a0f5686f774273b74f676", name: "Chemical - Part 4" }),
+        makeQuest({ id: "597a171586f77405ba6887d3", name: "Big Customer" }),
+        makeQuest({
+            id: "597a160786f77477531d39d2",
+            name: "Out of Curiosity",
+            failConditions: [
+                {
+                    id: "597a16e386f77477531d39d5",
+                    type: "taskStatus",
+                    description: "",
+                    optional: false,
+                    status: ["complete"],
+                    task: { id: "597a0f5686f774273b74f676" },
+                },
+                {
+                    id: "597a1a3186f77475b4612032",
+                    type: "taskStatus",
+                    description: "",
+                    optional: false,
+                    status: ["complete"],
+                    task: { id: "597a171586f77405ba6887d3" },
+                },
+            ],
+        }),
+    ];
+
+    const failureMap = buildQuestFailureMap(quests);
+
+    assert.deepEqual(failureMap.get("597a160786f77477531d39d2"), [
+        "597a0f5686f774273b74f676",
+        "597a171586f77405ba6887d3",
+    ]);
+    assert.deepEqual(
+        getAutoFailedQuestIds(["597a160786f77477531d39d2"], failureMap, {}),
+        ["597a0f5686f774273b74f676", "597a171586f77405ba6887d3"],
+    );
 });
 
 test("generic fail conditions warn but do not create automatic failures", () => {

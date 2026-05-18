@@ -57,6 +57,25 @@ test("collectCompleteCascade walks transitive prereqs and skips already-complete
     assert.deepEqual(result.toComplete.sort(), ["b", "c"]);
 });
 
+test("collectCompleteCascade does not complete active-only task requirements", () => {
+    const quests = [
+        makeQuest({ id: "chemical-4", name: "Chemical - Part 4" }),
+        makeQuest({
+            id: "out-of-curiosity",
+            name: "Out of Curiosity",
+            taskRequirements: [
+                { task: { id: "chemical-4", name: "Chemical - Part 4" }, status: ["active"] },
+            ],
+        }),
+    ];
+    const result = collectCompleteCascade("out-of-curiosity", {
+        questsById: buildQuestsById(quests),
+        completedQuests: {},
+    });
+
+    assert.deepEqual(result.toComplete, ["out-of-curiosity"]);
+});
+
 test("collectCompleteCascade flags cross-trader prereqs relative to the root", () => {
     const quests = [
         makeQuest({ id: "ther-root", name: "T", trader: therapist }),
