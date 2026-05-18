@@ -13,6 +13,7 @@ import {
     type QuestAvailabilityProfile,
     type QuestAvailabilityQuest,
 } from "./quest-availability";
+import { isQuestDisabledByCompletedFailedRequirement } from "./quest-failures";
 
 type QuestWithGiveItemData = Pick<
     Quest,
@@ -156,6 +157,7 @@ export interface DerivedQuestAnyOfGroup {
 
 export interface QuestItemDeriveOptions {
     completedQuests: Record<string, boolean>;
+    failedQuests?: Record<string, boolean>;
     ignoredQuests: Record<string, boolean>;
     pinnedQuests: Record<string, boolean>;
     playerLevel: number;
@@ -174,6 +176,7 @@ export interface QuestItemDeriveOptions {
 
 interface QuestItemDeriveContext {
     completedQuests: Record<string, boolean>;
+    failedQuests: Record<string, boolean>;
     ignoredQuests: Record<string, boolean>;
     pinnedQuests: Record<string, boolean>;
     faction: QuestAvailabilityProfile["faction"];
@@ -536,6 +539,7 @@ function getItemDistanceFromAvailable(
 function getFutureQuestIds(
     quests: QuestAvailabilityQuest[],
     completedQuests: Record<string, boolean>,
+    failedQuests: Record<string, boolean>,
     ignoredQuests: Record<string, boolean>,
     faction: QuestAvailabilityProfile["faction"],
     showIgnored: boolean,
@@ -546,6 +550,8 @@ function getFutureQuestIds(
 
     for (const quest of quests) {
         if (completedQuests[quest.id]) continue;
+        if (failedQuests[quest.id]) continue;
+        if (isQuestDisabledByCompletedFailedRequirement(quest, completedQuests)) continue;
         if (ignoredQuests[quest.id] && !showIgnored) continue;
         if (!matchesFactionVisibility(quest.factionName, faction)) continue;
         if (!questMatchesBranchFilters(quest, showKappa, showLightkeeper)) continue;
@@ -567,6 +573,7 @@ function questMatchesItemVisibilityFilters(
 
 function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestItemDeriveContext {
     const { completedQuests, ignoredQuests, pinnedQuests, playerLevel } = options;
+    const failedQuests = options.failedQuests ?? {};
     const visibilityMode = options.visibilityMode ?? "available";
     const customLookahead = Math.max(0, Math.floor(options.customLookahead ?? 5));
     const customLevelLookahead = Math.max(0, Math.floor(options.customLevelLookahead ?? 5));
@@ -578,6 +585,7 @@ function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestIte
 
     const availabilityProfile: QuestAvailabilityProfile = {
         completedQuests,
+        failedQuests,
         playerLevel,
         prestigeLevel: options.prestigeLevel,
         faction: options.faction,
@@ -607,6 +615,7 @@ function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestIte
 
     return {
         completedQuests,
+        failedQuests,
         ignoredQuests,
         pinnedQuests,
         faction: options.faction,
@@ -615,6 +624,7 @@ function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestIte
         futureQuestIds: getFutureQuestIds(
             options.quests,
             completedQuests,
+            failedQuests,
             ignoredQuests,
             options.faction,
             showIgnored,
@@ -640,8 +650,12 @@ function isQuestVisibleByMode(quest: QuestItemLink, context: QuestItemDeriveCont
     const availabilityQuest = context.questsById.get(quest.questId);
 
     if (completedQuests[quest.questId]) return false;
+    if (context.failedQuests[quest.questId]) return false;
     if (ignoredQuests[quest.questId] && !context.showIgnored) return false;
     if (!availabilityQuest) return false;
+    if (isQuestDisabledByCompletedFailedRequirement(availabilityQuest, completedQuests)) {
+        return false;
+    }
     if (!questMatchesItemVisibilityFilters(availabilityQuest, context)) return false;
 
     if (availableQuestIds.has(quest.questId)) return true;
@@ -696,18 +710,25 @@ function deriveQuestItemStateFromContext(
     const relatedQuests = entry.quests
         .map<DerivedQuestItemQuest | null>((quest) => {
             const isCompleted = !!completedQuests[quest.questId];
+            const isFailed = !!context.failedQuests[quest.questId];
             const isIgnored = !!ignoredQuests[quest.questId];
             const isPinned = !!pinnedQuests[quest.questId];
             const availabilityQuest = context.questsById.get(quest.questId);
             const matchesVisibilityFilters =
                 !!availabilityQuest && questMatchesItemVisibilityFilters(availabilityQuest, context);
             const isVisibleByMode = isQuestVisibleByMode(quest, context);
-            const isPinnedOverride = matchesVisibilityFilters && isPinned && !isCompleted;
+            const isDisabled =
+                !!availabilityQuest &&
+                isQuestDisabledByCompletedFailedRequirement(availabilityQuest, completedQuests);
+            const isPinnedOverride =
+                matchesVisibilityFilters && isPinned && !isCompleted && !isFailed && !isDisabled;
             const isFutureFirOverride =
                 matchesVisibilityFilters &&
                 showFutureFir &&
                 quest.requiredFirCount > 0 &&
                 !isCompleted &&
+                !isFailed &&
+                !isDisabled &&
                 !isIgnored &&
                 !isVisibleByMode;
             const isActive = isVisibleByMode || isPinnedOverride || isFutureFirOverride;
@@ -812,6 +833,7 @@ export function deriveQuestAnyOfGroups(
     return groups
         .map<DerivedQuestAnyOfGroup | null>((group) => {
             const isCompleted = !!context.completedQuests[group.questId];
+            const isFailed = !!context.failedQuests[group.questId];
             const isIgnored = !!context.ignoredQuests[group.questId];
             const isPinned = !!context.pinnedQuests[group.questId];
             const availabilityQuest = context.questsById.get(group.questId);
@@ -819,6 +841,15 @@ export function deriveQuestAnyOfGroups(
                 !!availabilityQuest && questMatchesItemVisibilityFilters(availabilityQuest, context);
 
             if (!availabilityQuest || !matchesVisibilityFilters) return null;
+            if (isFailed) return null;
+            if (
+                isQuestDisabledByCompletedFailedRequirement(
+                    availabilityQuest,
+                    context.completedQuests,
+                )
+            ) {
+                return null;
+            }
 
             const questLike: QuestItemLink = {
                 itemId: group.items[0]?.id ?? group.groupId,

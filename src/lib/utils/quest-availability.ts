@@ -4,7 +4,13 @@ import type {
     QuestPrerequisite,
     QuestTraderRequirement,
     QuestPrestige,
+    QuestFailCondition,
 } from "@/types";
+import {
+    isQuestDisabledByCompletedFailedRequirement,
+    statusIncludesComplete,
+    statusIncludesFailed,
+} from "./quest-failures";
 
 export type QuestFactionFilter = "USEC" | "BEAR";
 
@@ -14,6 +20,7 @@ export interface QuestAvailabilityProfile {
     faction: QuestFactionFilter | null;
     traderLoyaltyLevels: Record<string, number>;
     completedQuests: Record<string, boolean>;
+    failedQuests?: Record<string, boolean>;
 }
 
 export interface QuestAvailabilityQuest {
@@ -24,6 +31,7 @@ export interface QuestAvailabilityQuest {
     lightkeeperRequired?: boolean | null;
     hasItemHandIn?: boolean;
     taskRequirements: QuestPrerequisite[];
+    failConditions?: QuestFailCondition[];
     trader: {
         id: string;
         name: string;
@@ -47,6 +55,7 @@ type QuestAvailabilitySource = Pick<
     | "kappaRequired"
     | "lightkeeperRequired"
     | "taskRequirements"
+    | "failConditions"
     | "trader"
 > &
     Partial<Pick<FullQuest, "traderRequirements" | "requiredPrestige">> & {
@@ -62,6 +71,7 @@ export function toQuestAvailabilityQuest(quest: QuestAvailabilitySource): QuestA
         lightkeeperRequired: quest.lightkeeperRequired ?? false,
         hasItemHandIn: quest.objectives?.some((objective) => objective.type === "giveItem") ?? false,
         taskRequirements: quest.taskRequirements,
+        failConditions: "failConditions" in quest ? (quest.failConditions ?? []) : [],
         trader: quest.trader,
         traderRequirements: quest.traderRequirements ?? [],
         requiredPrestige: quest.requiredPrestige ?? null,
@@ -94,7 +104,17 @@ function isQuestRequirementSatisfied(
     questsById: ReadonlyMap<string, QuestAvailabilityQuest>,
     visiting: Set<string>,
 ): boolean {
-    if (profile.completedQuests[requirement.task.id]) return true;
+    if (
+        statusIncludesComplete(requirement.status) &&
+        profile.completedQuests[requirement.task.id]
+    ) {
+        return true;
+    }
+
+    if (statusIncludesFailed(requirement.status) && profile.failedQuests?.[requirement.task.id]) {
+        return true;
+    }
+
     if (!requirementAllowsActiveStatus(requirement)) return false;
 
     const prerequisiteQuest = questsById.get(requirement.task.id);
@@ -110,6 +130,8 @@ export function isQuestAvailableForProfile(
     visiting = new Set<string>(),
 ): boolean {
     if (profile.completedQuests[quest.id]) return false;
+    if (profile.failedQuests?.[quest.id]) return false;
+    if (isQuestDisabledByCompletedFailedRequirement(quest, profile.completedQuests)) return false;
     if (!matchesFactionVisibility(quest.factionName, profile.faction)) return false;
     if ((quest.minPlayerLevel ?? 0) > profile.playerLevel) return false;
     if ((quest.requiredPrestige?.prestigeLevel ?? 0) > profile.prestigeLevel) return false;

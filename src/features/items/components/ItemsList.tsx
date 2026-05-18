@@ -73,6 +73,7 @@ export function ItemsList({
         gameMode,
         completedRequirements,
         completedQuests,
+        failedQuests,
         ignoredQuests,
         pinnedQuests,
         playerLevel,
@@ -92,6 +93,7 @@ export function ItemsList({
     const deriveOptions = useMemo(
         () => ({
             completedQuests,
+            failedQuests,
             ignoredQuests,
             pinnedQuests,
             playerLevel,
@@ -109,6 +111,7 @@ export function ItemsList({
         }),
         [
             completedQuests,
+            failedQuests,
             ignoredQuests,
             pinnedQuests,
             playerLevel,

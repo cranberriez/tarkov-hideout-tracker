@@ -18,6 +18,12 @@ import {
 import { buildQuestMapGroups, getQuestMapGroup, getQuestMapGroupKey } from "./quest-map-groups";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { collectCompleteCascade, collectUncompleteCascade } from "./quest-cascade";
+import {
+    buildQuestFailureMap,
+    getAutoFailedQuestIds,
+    isQuestDisabledByCompletedFailedRequirement,
+    questCanFail,
+} from "@/lib/utils/quest-failures";
 
 interface LastQuestSyncAction extends QuestSyncResult {
     traderName: string;
@@ -45,12 +51,14 @@ interface QuestsContextValue {
 
     filteredQuests: FullQuest[];
     questsById: Map<string, FullQuest>;
+    failureMap: Map<string, string[]>;
     kappaQuestIds: Set<string>;
     lightkeeperQuestIds: Set<string>;
     leadsToByQuestId: Map<string, string[]>;
     traders: FullQuest["trader"][];
     allMaps: [string, string][];
     completedCount: number;
+    failedCount: number;
 
     toggleTrader: (id: string) => void;
     showOnlyTrader: (id: string) => void;
@@ -74,6 +82,9 @@ interface QuestsContextValue {
     setSearchQuery: (value: string) => void;
     getSyncCandidatesForTrader: (traderId: string) => FullQuest[];
     requestToggleQuestCompletion: (questId: string) => void;
+    requestFailQuest: (questId: string) => void;
+    requestResetQuestStatus: (questId: string) => void;
+    isQuestDisabled: (questId: string) => boolean;
     previewTraderSelection: (
         traderId: string,
         selectedQuestIds: string[],
@@ -122,6 +133,7 @@ function buildSyncProfile(state: ReturnType<typeof useUserStore.getState>): Ques
         faction: state.questFaction,
         traderLoyaltyLevels: state.questTraderLoyaltyLevels,
         completedQuests: state.completedQuests,
+        failedQuests: state.failedQuests,
     };
 }
 
@@ -150,6 +162,7 @@ export function QuestsProvider({
     const [lastQuestSyncAction, setLastQuestSyncAction] = useState<LastQuestSyncAction | null>(null);
     const {
         completedQuests,
+        failedQuests,
         ignoredQuests,
         playerLevel,
         prestigeLevel,
@@ -186,6 +199,7 @@ export function QuestsProvider({
     } = useUserStore(
         useShallow((state) => ({
             completedQuests: state.completedQuests,
+            failedQuests: state.failedQuests,
             ignoredQuests: state.ignoredQuests,
             playerLevel: state.playerLevel,
             prestigeLevel: state.prestigeLevel,
@@ -235,8 +249,9 @@ export function QuestsProvider({
             faction,
             traderLoyaltyLevels: questTraderLoyaltyLevels,
             completedQuests,
+            failedQuests,
         }),
-        [completedQuests, faction, playerLevel, prestigeLevel, questTraderLoyaltyLevels],
+        [completedQuests, failedQuests, faction, playerLevel, prestigeLevel, questTraderLoyaltyLevels],
     );
 
     const questsById = useMemo(() => new Map(quests.map((q) => [q.id, q])), [quests]);
@@ -263,6 +278,13 @@ export function QuestsProvider({
         return map;
     }, [quests]);
 
+    const failureMap = useMemo(() => buildQuestFailureMap(quests), [quests]);
+
+    const isQuestDisabled = (questId: string) => {
+        const quest = questsById.get(questId);
+        return quest ? isQuestDisabledByCompletedFailedRequirement(quest, completedQuests) : false;
+    };
+
     const traders = useMemo(() => {
         const map = new Map<string, FullQuest["trader"]>();
         for (const q of quests) {
@@ -288,7 +310,12 @@ export function QuestsProvider({
                 return false;
             }
 
-            if (hideCompleted && completedQuests[quest.id]) return false;
+            const resolved =
+                completedQuests[quest.id] ||
+                failedQuests[quest.id] ||
+                isQuestDisabledByCompletedFailedRequirement(quest, completedQuests);
+
+            if (hideCompleted && resolved) return false;
             if (!showIgnored && ignoredQuests[quest.id]) return false;
             if (showAvailableOnly && !isQuestAvailableForProfile(quest, syncProfile, questsById)) return false;
             if (showPinnedOnly && !pinnedQuests[quest.id]) return false;
@@ -313,6 +340,7 @@ export function QuestsProvider({
         searchQuery,
         hideCompleted,
         completedQuests,
+        failedQuests,
         showIgnored,
         ignoredQuests,
         showAvailableOnly,
@@ -334,6 +362,11 @@ export function QuestsProvider({
     const completedCount = useMemo(
         () => quests.filter((q) => completedQuests[q.id]).length,
         [quests, completedQuests],
+    );
+
+    const failedCount = useMemo(
+        () => quests.filter((q) => failedQuests[q.id]).length,
+        [quests, failedQuests],
     );
 
     const toggleTrader = (id: string) => {
@@ -397,13 +430,23 @@ export function QuestsProvider({
 
         if (cascade.toComplete.length === 0) return;
 
+        const autoFailedQuestIds = getAutoFailedQuestIds(
+            cascade.toComplete,
+            failureMap,
+            userState.failedQuests,
+        );
+
         const shouldConfirm =
             cascade.crossTraderQuestIds.length > 0 ||
             cascade.toComplete.length > 10 ||
-            cascade.sensitiveQuestIds.length > 0;
+            cascade.sensitiveQuestIds.length > 0 ||
+            autoFailedQuestIds.length > 0;
 
         if (!shouldConfirm) {
-            userState.applyQuestCompletionChange({ complete: cascade.toComplete });
+            userState.applyQuestCompletionChange({
+                complete: cascade.toComplete,
+                fail: autoFailedQuestIds,
+            });
             return;
         }
 
@@ -411,8 +454,50 @@ export function QuestsProvider({
             mode: "complete",
             rootQuestId: questId,
             questIds: cascade.toComplete,
+            autoFailedQuestIds,
             crossTraderQuestIds: cascade.crossTraderQuestIds,
             sensitiveQuestIds: cascade.sensitiveQuestIds,
+        });
+    };
+
+    const requestFailQuest = (questId: string) => {
+        const quest = questsById.get(questId);
+        if (!quest || !questCanFail(quest)) return;
+        useUserStore.getState().applyQuestFailureChange({ fail: [questId] });
+    };
+
+    const requestResetQuestStatus = (questId: string) => {
+        const userState = useUserStore.getState();
+        const isCurrentlyComplete = !!userState.completedQuests[questId];
+        const isCurrentlyFailed = !!userState.failedQuests[questId];
+
+        if (!isCurrentlyComplete && !isCurrentlyFailed) return;
+
+        if (!isCurrentlyComplete) {
+            userState.applyQuestFailureChange({ unFail: [questId] });
+            return;
+        }
+
+        const cascade = collectUncompleteCascade(questId, {
+            questsById,
+            completedQuests: userState.completedQuests,
+            leadsToByQuestId,
+        });
+
+        if (cascade.toUncomplete.length <= 1) {
+            userState.applyQuestCompletionChange({
+                uncomplete: cascade.toUncomplete,
+                unFail: [questId],
+            });
+            return;
+        }
+
+        useUIStore.getState().openQuestCascadeRequest({
+            mode: "uncomplete",
+            rootQuestId: questId,
+            questIds: cascade.toUncomplete,
+            crossTraderQuestIds: cascade.crossTraderQuestIds,
+            sensitiveQuestIds: [],
         });
     };
 
@@ -514,12 +599,14 @@ export function QuestsProvider({
                 lastQuestSyncAction,
                 filteredQuests,
                 questsById,
+                failureMap,
                 kappaQuestIds,
                 lightkeeperQuestIds,
                 leadsToByQuestId,
                 traders,
                 allMaps,
                 completedCount,
+                failedCount,
                 toggleTrader,
                 showOnlyTrader,
                 clearTraders,
@@ -541,6 +628,9 @@ export function QuestsProvider({
                 setSearchQuery,
                 getSyncCandidatesForTrader,
                 requestToggleQuestCompletion,
+                requestFailQuest,
+                requestResetQuestStatus,
+                isQuestDisabled,
                 previewTraderSelection,
                 syncTraderSelection,
                 undoLastQuestSync,

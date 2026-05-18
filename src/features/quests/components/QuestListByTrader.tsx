@@ -56,7 +56,7 @@ export function QuestListByTrader({
     }
 
     return (
-        <div className="divide-y divide-white/5 rounded-sm border border-white/10 bg-black/20">
+        <div className="divide-y divide-white/5">
             {groups.map((group) => (
                 <div key={group.trader.id} className="px-3 py-3">
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
@@ -81,7 +81,7 @@ export function QuestListByTrader({
                                     className={
                                         highlighted
                                             ? "rounded-sm border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-sm text-amber-100"
-                                            : "px-2 py-1 text-sm text-gray-200"
+                                            : "rounded-sm border border-white/10 bg-black/20 px-2 py-1 text-sm text-gray-200"
                                     }
                                 >
                                     <span className="flex items-center gap-2">

@@ -85,7 +85,10 @@ function toRef(id: string, fallbackName: string, questsById: Map<string, FullQue
 }
 
 function getPrerequisiteType(statuses: string[]): QuestRef["prerequisiteType"] {
-    if (statuses.some((status) => status.toLowerCase() === "active")) return "active";
+    const normalized = statuses.map((status) => status.toLowerCase());
+    if (normalized.includes("complete") && normalized.includes("failed")) return "resolved";
+    if (normalized.includes("failed")) return "failed";
+    if (normalized.includes("active")) return "active";
     return "complete";
 }
 

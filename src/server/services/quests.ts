@@ -9,6 +9,7 @@ import type {
     FullQuestObjective,
     QuestTraderRequirement,
     QuestPrestige,
+    QuestFailCondition,
 } from "@/types";
 import { unstable_cache } from "next/cache";
 
@@ -41,6 +42,18 @@ query Tasks {
       }
       status
     }
+    failConditions {
+      id
+      type
+      description
+      ... on TaskObjectiveTaskStatus {
+        status
+        optional
+        task {
+          id
+        }
+      }
+    }
     objectives {
       id
       type
@@ -58,6 +71,7 @@ query Tasks {
         }
       }
     }
+    restartable
   }
 }
 `;
@@ -80,6 +94,15 @@ interface RawObjective {
     items?: RawObjectiveItem[];
 }
 
+interface RawFailCondition {
+    id: string;
+    type: string;
+    description: string;
+    status?: string[];
+    optional?: boolean | null;
+    task?: { id: string } | null;
+}
+
 interface RawTask {
     id: string;
     name: string;
@@ -92,7 +115,9 @@ interface RawTask {
     experience: number;
     trader: { id: string; name: string; normalizedName: string };
     taskRequirements: { task: { id: string; name: string }; status: string[] }[];
+    failConditions: RawFailCondition[];
     objectives: RawObjective[];
+    restartable: boolean;
 }
 
 interface TasksApiResponse {
@@ -105,6 +130,26 @@ type QuestLike = {
     minPlayerLevel?: number | null;
     taskRequirements: { task: { id: string } }[];
 };
+
+function mapFailCondition(condition: RawFailCondition): QuestFailCondition {
+    const base = {
+        id: condition.id,
+        type: condition.type,
+        description: condition.description,
+        optional: condition.optional ?? null,
+    };
+
+    if (condition.type === "taskStatus" && condition.task) {
+        return {
+            ...base,
+            type: "taskStatus",
+            status: condition.status ?? [],
+            task: { id: condition.task.id },
+        };
+    }
+
+    return base;
+}
 
 export function orderQuestsByPrerequisites<T extends QuestLike>(quests: T[]): T[] {
     const questMap = new Map(quests.map((q) => [q.id, q]));
@@ -206,6 +251,7 @@ async function getQuestData(): Promise<TimedResponse<QuestsPayload>> {
                 experience: t.experience,
                 trader: t.trader,
                 taskRequirements: t.taskRequirements,
+                failConditions: (t.failConditions ?? []).map(mapFailCondition),
                 objectives: t.objectives
                     .filter((o) => o.type === "giveItem")
                     .map((o) => ({
@@ -273,6 +319,18 @@ query TasksFull {
         name
       }
       status
+    }
+    failConditions {
+      id
+      type
+      description
+      ... on TaskObjectiveTaskStatus {
+        status
+        optional
+        task {
+          id
+        }
+      }
     }
     traderRequirements {
       id
@@ -383,6 +441,7 @@ interface RawFullTask {
         image4xLink?: string;
     };
     taskRequirements: { task: { id: string; name: string }; status: string[] }[];
+    failConditions: RawFailCondition[];
     traderRequirements: RawTraderRequirement[];
     requiredPrestige?: RawPrestige | null;
     objectives: RawFullObjective[];
@@ -437,7 +496,8 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
         const age = Date.now() - cachedMeta.updatedAt;
         if (age < CACHE_WINDOW_MS) {
             console.log("Using cached full quest data");
-            if (typeof cachedBody === "object") return cachedBody as TimedResponse<FullQuestsPayload>;
+            if (typeof cachedBody === "object")
+                return cachedBody as TimedResponse<FullQuestsPayload>;
             return JSON.parse(cachedBody) as TimedResponse<FullQuestsPayload>;
         }
     }
@@ -476,54 +536,60 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
 
     // Tasks with minPlayerLevel < 1 are Fence/scav-karma quests that don't apply to normal PMC progression
     const quests: FullQuest[] = rawTasks
-        .filter((t) => t.minPlayerLevel === undefined || t.minPlayerLevel === null || t.minPlayerLevel >= 1)
+        .filter(
+            (t) =>
+                t.minPlayerLevel === undefined ||
+                t.minPlayerLevel === null ||
+                t.minPlayerLevel >= 1,
+        )
         .map(
-        (t): FullQuest => ({
-            id: t.id,
-            name: t.name,
-            normalizedName: t.normalizedName,
-            wikiLink: t.wikiLink,
-            minPlayerLevel: t.minPlayerLevel,
-            kappaRequired: t.kappaRequired,
-            lightkeeperRequired: t.lightkeeperRequired,
-            factionName: t.factionName,
-            experience: t.experience,
-            map: t.map ?? null,
-            trader: {
-                id: t.trader.id,
-                name: t.trader.name,
-                normalizedName: t.trader.normalizedName,
-                imageLink: t.trader.imageLink,
-                image4xLink: t.trader.image4xLink,
-            },
-            taskRequirements: t.taskRequirements,
-            traderRequirements: (t.traderRequirements ?? []).map(
-                (r): QuestTraderRequirement => ({
-                    id: r.id,
-                    trader: {
-                        id: r.trader.id,
-                        name: r.trader.name,
-                        normalizedName: r.trader.normalizedName,
-                        imageLink: r.trader.imageLink,
-                        image4xLink: r.trader.image4xLink,
-                    },
-                    requirementType: r.requirementType,
-                    compareMethod: r.compareMethod,
-                    value: r.value,
-                }),
-            ),
-            requiredPrestige: t.requiredPrestige
-                ? ({
-                      id: t.requiredPrestige.id,
-                      name: t.requiredPrestige.name,
-                      prestigeLevel: t.requiredPrestige.prestigeLevel,
-                      imageLink: t.requiredPrestige.imageLink,
-                      iconLink: t.requiredPrestige.iconLink,
-                  } satisfies QuestPrestige)
-                : null,
-            objectives: t.objectives.map(mapFullObjective),
-        }),
-    );
+            (t): FullQuest => ({
+                id: t.id,
+                name: t.name,
+                normalizedName: t.normalizedName,
+                wikiLink: t.wikiLink,
+                minPlayerLevel: t.minPlayerLevel,
+                kappaRequired: t.kappaRequired,
+                lightkeeperRequired: t.lightkeeperRequired,
+                factionName: t.factionName,
+                experience: t.experience,
+                map: t.map ?? null,
+                trader: {
+                    id: t.trader.id,
+                    name: t.trader.name,
+                    normalizedName: t.trader.normalizedName,
+                    imageLink: t.trader.imageLink,
+                    image4xLink: t.trader.image4xLink,
+                },
+                taskRequirements: t.taskRequirements,
+                failConditions: (t.failConditions ?? []).map(mapFailCondition),
+                traderRequirements: (t.traderRequirements ?? []).map(
+                    (r): QuestTraderRequirement => ({
+                        id: r.id,
+                        trader: {
+                            id: r.trader.id,
+                            name: r.trader.name,
+                            normalizedName: r.trader.normalizedName,
+                            imageLink: r.trader.imageLink,
+                            image4xLink: r.trader.image4xLink,
+                        },
+                        requirementType: r.requirementType,
+                        compareMethod: r.compareMethod,
+                        value: r.value,
+                    }),
+                ),
+                requiredPrestige: t.requiredPrestige
+                    ? ({
+                          id: t.requiredPrestige.id,
+                          name: t.requiredPrestige.name,
+                          prestigeLevel: t.requiredPrestige.prestigeLevel,
+                          imageLink: t.requiredPrestige.imageLink,
+                          iconLink: t.requiredPrestige.iconLink,
+                      } satisfies QuestPrestige)
+                    : null,
+                objectives: t.objectives.map(mapFullObjective),
+            }),
+        );
 
     const payload: FullQuestsPayload = { quests };
     const updatedAt = Date.now();

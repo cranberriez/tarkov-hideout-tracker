@@ -112,6 +112,7 @@ export function ItemDetailModal({
     const { marketPricesByMode, loading: pricesLoading } = usePriceDataContext();
     const {
         completedQuests,
+        failedQuests,
         ignoredQuests,
         pinnedQuests,
         gameMode,
@@ -212,6 +213,7 @@ export function ItemDetailModal({
 
         return deriveQuestItemState(entry, {
             completedQuests,
+            failedQuests,
             ignoredQuests,
             pinnedQuests,
             playerLevel,
@@ -231,6 +233,7 @@ export function ItemDetailModal({
         selectedItem,
         questItemIndex,
         completedQuests,
+        failedQuests,
         ignoredQuests,
         pinnedQuests,
         playerLevel,

@@ -24,6 +24,7 @@ interface UserState {
     hiddenStations: Record<string, boolean>; // stationId -> hidden?
     completedRequirements: Record<string, boolean>; // requirementId -> completed?
     completedQuests: Record<string, boolean>; // questId -> completed?
+    failedQuests: Record<string, boolean>; // questId -> failed?
     questsWithItems: Record<string, boolean>; // questId -> items collected but not handed in
     ignoredQuests: Record<string, boolean>; // questId -> hidden from quest demand
     pinnedQuests: Record<string, boolean>; // questId -> manually prioritized
@@ -99,7 +100,13 @@ interface UserState {
     toggleHiddenStation: (stationId: string) => void;
     toggleRequirement: (requirementId: string) => void;
     toggleQuestCompletion: (questId: string) => void;
-    applyQuestCompletionChange: (changes: { complete?: string[]; uncomplete?: string[] }) => void;
+    applyQuestCompletionChange: (changes: {
+        complete?: string[];
+        uncomplete?: string[];
+        fail?: string[];
+        unFail?: string[];
+    }) => void;
+    applyQuestFailureChange: (changes: { fail?: string[]; unFail?: string[] }) => void;
     toggleQuestHaveItems: (questId: string) => void;
     toggleIgnoredQuest: (questId: string) => void;
     togglePinnedQuest: (questId: string) => void;
@@ -176,6 +183,7 @@ export const useUserStore = create<UserState>()(
             hiddenStations: {},
             completedRequirements: {},
             completedQuests: {},
+            failedQuests: {},
             questsWithItems: {},
             ignoredQuests: DEFAULT_IGNORED_QUESTS,
             pinnedQuests: {},
@@ -265,6 +273,9 @@ export const useUserStore = create<UserState>()(
                     const willComplete = !state.completedQuests[questId];
                     return {
                         completedQuests: { ...state.completedQuests, [questId]: willComplete },
+                        ...(willComplete
+                            ? { failedQuests: { ...state.failedQuests, [questId]: false } }
+                            : {}),
                         // clear "have items" when marking a quest complete
                         ...(willComplete
                             ? { questsWithItems: { ...state.questsWithItems, [questId]: false } }
@@ -272,21 +283,59 @@ export const useUserStore = create<UserState>()(
                     };
                 }),
 
-            applyQuestCompletionChange: ({ complete = [], uncomplete = [] }) =>
+            applyQuestCompletionChange: ({ complete = [], uncomplete = [], fail = [], unFail = [] }) =>
                 set((state) => {
-                    if (complete.length === 0 && uncomplete.length === 0) return {};
-
-                    const nextCompletedQuests = { ...state.completedQuests };
-                    for (const questId of complete) nextCompletedQuests[questId] = true;
-                    for (const questId of uncomplete) nextCompletedQuests[questId] = false;
-
-                    if (complete.length === 0) {
-                        return { completedQuests: nextCompletedQuests };
+                    if (
+                        complete.length === 0 &&
+                        uncomplete.length === 0 &&
+                        fail.length === 0 &&
+                        unFail.length === 0
+                    ) {
+                        return {};
                     }
 
+                    const nextCompletedQuests = { ...state.completedQuests };
+                    const nextFailedQuests = { ...state.failedQuests };
                     const nextQuestsWithItems = { ...state.questsWithItems };
+
+                    for (const questId of complete) nextCompletedQuests[questId] = true;
+                    for (const questId of uncomplete) nextCompletedQuests[questId] = false;
+                    for (const questId of complete) nextFailedQuests[questId] = false;
+                    for (const questId of fail) {
+                        nextFailedQuests[questId] = true;
+                        nextCompletedQuests[questId] = false;
+                        nextQuestsWithItems[questId] = false;
+                    }
+                    for (const questId of unFail) nextFailedQuests[questId] = false;
                     for (const questId of complete) nextQuestsWithItems[questId] = false;
-                    return { completedQuests: nextCompletedQuests, questsWithItems: nextQuestsWithItems };
+
+                    return {
+                        completedQuests: nextCompletedQuests,
+                        failedQuests: nextFailedQuests,
+                        questsWithItems: nextQuestsWithItems,
+                    };
+                }),
+
+            applyQuestFailureChange: ({ fail = [], unFail = [] }) =>
+                set((state) => {
+                    if (fail.length === 0 && unFail.length === 0) return {};
+
+                    const nextCompletedQuests = { ...state.completedQuests };
+                    const nextFailedQuests = { ...state.failedQuests };
+                    const nextQuestsWithItems = { ...state.questsWithItems };
+
+                    for (const questId of fail) {
+                        nextFailedQuests[questId] = true;
+                        nextCompletedQuests[questId] = false;
+                        nextQuestsWithItems[questId] = false;
+                    }
+                    for (const questId of unFail) nextFailedQuests[questId] = false;
+
+                    return {
+                        completedQuests: nextCompletedQuests,
+                        failedQuests: nextFailedQuests,
+                        questsWithItems: nextQuestsWithItems,
+                    };
                 }),
 
             toggleQuestHaveItems: (questId) =>
@@ -529,6 +578,7 @@ export const useUserStore = create<UserState>()(
             resetQuestData: () => {
                 set(() => ({
                     completedQuests: {},
+                    failedQuests: {},
                     questsWithItems: {},
                     ignoredQuests: {},
                     pinnedQuests: {},
@@ -541,6 +591,7 @@ export const useUserStore = create<UserState>()(
                     hiddenStations: {},
                     completedRequirements: {},
                     completedQuests: {},
+                    failedQuests: {},
                     questsWithItems: {},
                     ignoredQuests: {},
                     pinnedQuests: {},
@@ -596,7 +647,7 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: USER_STORE_STORAGE_KEY,
-            version: 11,
+            version: 12,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -689,6 +740,13 @@ export const useUserStore = create<UserState>()(
                             nextState.questFaction === "BEAR" || nextState.questFaction === "USEC"
                                 ? nextState.questFaction
                                 : "USEC",
+                    };
+                }
+
+                if (version < 12) {
+                    nextState = {
+                        ...nextState,
+                        failedQuests: {},
                     };
                 }
 

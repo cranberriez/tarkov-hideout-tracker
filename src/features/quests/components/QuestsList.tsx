@@ -173,6 +173,7 @@ export function QuestsList() {
         questsById,
         leadsToByQuestId,
         completedCount,
+        failedCount,
         viewMode,
         traders,
         showDebug,
@@ -270,7 +271,10 @@ export function QuestsList() {
     }
 
     function getPrerequisiteType(statuses: string[]): QuestRef["prerequisiteType"] {
-        if (statuses.some((status) => status.toLowerCase() === "active")) return "active";
+        const normalized = statuses.map((status) => status.toLowerCase());
+        if (normalized.includes("complete") && normalized.includes("failed")) return "resolved";
+        if (normalized.includes("failed")) return "failed";
+        if (normalized.includes("active")) return "active";
         return "complete";
     }
 
@@ -303,6 +307,12 @@ export function QuestsList() {
                 <span>
                     {completedCount}/{quests.length} completed
                 </span>
+                {failedCount > 0 && (
+                    <>
+                        <span className="text-gray-600">|</span>
+                        <span>{failedCount} failed</span>
+                    </>
+                )}
             </div>
 
             {viewMode === "byTrader" ? (

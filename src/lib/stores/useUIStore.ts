@@ -12,6 +12,7 @@ export interface QuestCascadeRequest {
     mode: "complete" | "uncomplete";
     rootQuestId: string;
     questIds: string[];
+    autoFailedQuestIds?: string[];
     crossTraderQuestIds: string[];
     sensitiveQuestIds: string[];
 }

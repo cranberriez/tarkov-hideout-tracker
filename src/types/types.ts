@@ -156,6 +156,21 @@ export interface QuestPrerequisite {
     status: string[];
 }
 
+export interface QuestFailConditionBase {
+    id: string;
+    type: string;
+    description: string;
+    optional?: boolean | null;
+}
+
+export interface QuestFailConditionTaskStatus extends QuestFailConditionBase {
+    type: "taskStatus";
+    status: string[];
+    task: { id: string };
+}
+
+export type QuestFailCondition = QuestFailConditionTaskStatus | QuestFailConditionBase;
+
 export interface Quest {
     id: string;
     name: string;
@@ -172,6 +187,7 @@ export interface Quest {
         normalizedName: string;
     };
     taskRequirements: QuestPrerequisite[];
+    failConditions?: QuestFailCondition[];
     objectives: QuestObjectiveItem[];
 }
 
@@ -275,6 +291,7 @@ export interface FullQuest {
         image4xLink?: string | null;
     };
     taskRequirements: QuestPrerequisite[];
+    failConditions?: QuestFailCondition[];
     traderRequirements: QuestTraderRequirement[];
     requiredPrestige?: QuestPrestige | null;
     objectives: FullQuestObjective[];

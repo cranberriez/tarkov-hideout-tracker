@@ -38,6 +38,7 @@ export function ItemsStatsRow({
         showHidden,
         completedRequirements,
         completedQuests,
+        failedQuests,
         ignoredQuests,
         pinnedQuests,
         playerLevel,
@@ -63,6 +64,7 @@ export function ItemsStatsRow({
     const deriveOptions = useMemo(
         () => ({
             completedQuests,
+            failedQuests,
             ignoredQuests,
             pinnedQuests,
             playerLevel,
@@ -80,6 +82,7 @@ export function ItemsStatsRow({
         }),
         [
             completedQuests,
+            failedQuests,
             ignoredQuests,
             pinnedQuests,
             playerLevel,

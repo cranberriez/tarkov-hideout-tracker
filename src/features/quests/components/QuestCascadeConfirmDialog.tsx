@@ -25,15 +25,22 @@ export function QuestCascadeConfirmDialog() {
     const totalCount = request.questIds.length;
     const crossTraderCount = request.crossTraderQuestIds.length;
     const sensitiveCount = request.sensitiveQuestIds.length;
+    const autoFailedCount = request.autoFailedQuestIds?.length ?? 0;
+    const hasAutoFailures = isComplete && autoFailedCount > 0;
+    const hasCompletionCascade = isComplete && request.questIds.length > 1;
 
     const highlightQuestIds = new Set<string>([
         ...request.crossTraderQuestIds,
         ...request.sensitiveQuestIds,
+        ...(request.autoFailedQuestIds ?? []),
     ]);
 
     const handleConfirm = () => {
         if (isComplete) {
-            applyQuestCompletionChange({ complete: request.questIds });
+            applyQuestCompletionChange({
+                complete: request.questIds,
+                fail: request.autoFailedQuestIds ?? [],
+            });
         } else {
             applyQuestCompletionChange({ uncomplete: request.questIds });
         }
@@ -45,14 +52,18 @@ export function QuestCascadeConfirmDialog() {
             <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden border-border-color bg-card p-0 md:max-w-2xl">
                 <DialogHeader className="border-b border-border-color bg-black/60 px-6 py-4">
                     <DialogTitle className="text-sm font-semibold tracking-[0.2em] text-gray-300">
-                        {isComplete
-                            ? `Mark ${totalCount} quest${totalCount === 1 ? "" : "s"} as complete`
-                            : `Uncomplete ${totalCount} quest${totalCount === 1 ? "" : "s"}`}
+                        {hasAutoFailures
+                            ? "Confirm branch change"
+                            : isComplete
+                              ? `Mark ${totalCount} quest${totalCount === 1 ? "" : "s"} as complete`
+                              : `Uncomplete ${totalCount} quest${totalCount === 1 ? "" : "s"}`}
                     </DialogTitle>
                     <DialogDescription className="text-sm text-gray-400">
-                        {isComplete
-                            ? "Completing this quest will also complete the prerequisite chain below."
-                            : "Uncompleting this quest will also uncomplete the quests that depend on it."}
+                        {hasAutoFailures
+                            ? `This will complete the selected quest and fail ${autoFailedCount} mutually exclusive quest${autoFailedCount === 1 ? "" : "s"}.`
+                            : isComplete
+                              ? "Completing this quest will also complete the prerequisite chain below."
+                              : "Uncompleting this quest will also uncomplete the quests that depend on it."}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -71,14 +82,46 @@ export function QuestCascadeConfirmDialog() {
                             . Confirm only if you have actually done these.
                         </div>
                     )}
+                    {autoFailedCount > 0 && (
+                        <div className="rounded-sm border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-100">
+                            Completing this branch will fail{" "}
+                            {(request.autoFailedQuestIds ?? [])
+                                .map((id) => questsById.get(id)?.name ?? id)
+                                .join(", ")}
+                            .
+                        </div>
+                    )}
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4">
-                    <QuestListByTrader
-                        questIds={request.questIds}
-                        questsById={questsById}
-                        highlightQuestIds={highlightQuestIds}
-                    />
+                    <div className="space-y-4">
+                        {hasAutoFailures && (
+                            <section className="space-y-2">
+                                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-red-300">
+                                    Will be failed
+                                </div>
+                                <QuestListByTrader
+                                    questIds={request.autoFailedQuestIds ?? []}
+                                    questsById={questsById}
+                                    highlightQuestIds={highlightQuestIds}
+                                />
+                            </section>
+                        )}
+                        {(!hasAutoFailures || hasCompletionCascade) && (
+                            <section className="space-y-2">
+                                {hasAutoFailures && (
+                                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-tarkov-green">
+                                        Will be completed
+                                    </div>
+                                )}
+                                <QuestListByTrader
+                                    questIds={request.questIds}
+                                    questsById={questsById}
+                                    highlightQuestIds={highlightQuestIds}
+                                />
+                            </section>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex justify-end gap-2 border-t border-border-color bg-black/40 px-6 py-3">
