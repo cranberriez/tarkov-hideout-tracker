@@ -6,6 +6,7 @@ import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui
 import type { FullQuest } from "@/types";
 import { QuestCard, type QuestRef } from "./QuestCard";
 import { useQuestsContext } from "./QuestsContext";
+import { dispatchQuestNavigation } from "./quest-deep-link";
 
 interface QuestDetailModalProps {
     quest: FullQuest | null;
@@ -38,12 +39,21 @@ function getPrerequisiteType(statuses: string[]): QuestRef["prerequisiteType"] {
 }
 
 export function QuestDetailModal({ quest, isOpen, onClose, onQuestChange }: QuestDetailModalProps) {
-    const { questsById, leadsToByQuestId, showDebug } = useQuestsContext();
+    const { questsById, leadsToByQuestId, filteredQuests, showDebug } = useQuestsContext();
 
     const handleQuestLinkClick = (questId: string, event?: MouseEvent<HTMLAnchorElement>) => {
         event?.preventDefault();
         event?.stopPropagation();
-        if (questsById.has(questId)) onQuestChange(questId);
+        if (!questsById.has(questId)) return;
+
+        const isVisible = filteredQuests.some((filteredQuest) => filteredQuest.id === questId);
+        if (!isVisible) {
+            onQuestChange(questId);
+            return;
+        }
+
+        onClose();
+        requestAnimationFrame(() => dispatchQuestNavigation(questId));
     };
 
     return (

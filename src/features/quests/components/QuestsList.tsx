@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown } from "lucide-react";
 import { useQuestsContext } from "../QuestsContext";
@@ -11,7 +11,11 @@ import {
     buildQuestUnlockImpactMap,
     sortQuestsForQuestView,
 } from "../quest-sorting";
-import { clearQuestDeepLink, getQuestDeepLinkId } from "../quest-deep-link";
+import {
+    clearQuestDeepLink,
+    getQuestDeepLinkId,
+    QUEST_NAVIGATE_TO_QUEST_EVENT,
+} from "../quest-deep-link";
 import { cn } from "@/lib/utils";
 import type { FullQuest } from "@/types";
 import { QUEST_SCROLL_TO_TRADER_EVENT } from "./QuestsSidebar";
@@ -135,14 +139,14 @@ export function QuestsList() {
     );
     const unlockImpactById = useMemo(() => buildQuestUnlockImpactMap(quests), [quests]);
 
-    const setGroupCollapsed = (key: string, collapsed: boolean) => {
+    const setGroupCollapsed = useCallback((key: string, collapsed: boolean) => {
         setCollapsedGroups((current) => {
             const next = new Set(current);
             if (collapsed) next.add(key);
             else next.delete(key);
             return next;
         });
-    };
+    }, []);
 
     const questsByTraderId = useMemo(() => {
         if (viewMode !== "byTrader") return new Map<string, FullQuest[]>();
@@ -336,6 +340,25 @@ export function QuestsList() {
     const [pendingScrollQuestId, setPendingScrollQuestId] = useState<string | null>(null);
     const handledDeepLinkRef = useRef(false);
 
+    const scrollToVisibleQuest = useCallback(
+        (questId: string) => {
+            const quest = questsById.get(questId);
+            if (!quest) return false;
+
+            const isVisible = filteredQuests.some((filteredQuest) => filteredQuest.id === questId);
+            if (!isVisible) return false;
+
+            if (viewMode === "byTrader") {
+                setGroupCollapsed(`trader:${quest.trader.id}`, false);
+            } else if (viewMode === "byMap") {
+                setGroupCollapsed(`map:${getQuestMapGroupsForQuest(quest)[0]?.key}`, false);
+            }
+            setPendingScrollQuestId(questId);
+            return true;
+        },
+        [filteredQuests, questsById, setGroupCollapsed, viewMode],
+    );
+
     // Fires after rows rebuild (e.g. after a collapsed group is expanded for the target quest)
     useEffect(() => {
         if (!pendingScrollQuestId) return;
@@ -348,6 +371,18 @@ export function QuestsList() {
         return () => cancelAnimationFrame(frame);
     }, [pendingScrollQuestId, rows, virtualizer]);
 
+    useEffect(() => {
+        const handleQuestNavigation = (event: Event) => {
+            const questId = (event as CustomEvent<{ questId?: string }>).detail?.questId;
+            if (!questId) return;
+            scrollToVisibleQuest(questId);
+        };
+
+        window.addEventListener(QUEST_NAVIGATE_TO_QUEST_EVENT, handleQuestNavigation);
+        return () =>
+            window.removeEventListener(QUEST_NAVIGATE_TO_QUEST_EVENT, handleQuestNavigation);
+    }, [scrollToVisibleQuest]);
+
     // Handle URL hash on mount — e.g. "view on quests page" links from the items page
     useEffect(() => {
         if (handledDeepLinkRef.current) return;
@@ -355,23 +390,14 @@ export function QuestsList() {
         if (!questId) return;
         handledDeepLinkRef.current = true;
         clearQuestDeepLink();
-        const quest = questsById.get(questId);
-        if (!quest) return;
-        const isVisible = filteredQuests.some((filteredQuest) => filteredQuest.id === questId);
-        if (!isVisible) {
-            onQuestClick?.(questId);
-            return;
-        }
+        if (!questsById.has(questId)) return;
         const frame = requestAnimationFrame(() => {
-            if (viewMode === "byTrader") {
-                setGroupCollapsed(`trader:${quest.trader.id}`, false);
-            } else if (viewMode === "byMap") {
-                setGroupCollapsed(`map:${getQuestMapGroupsForQuest(quest)[0]?.key}`, false);
+            if (!scrollToVisibleQuest(questId)) {
+                onQuestClick?.(questId);
             }
-            setPendingScrollQuestId(questId);
         });
         return () => cancelAnimationFrame(frame);
-    }, [filteredQuests, onQuestClick, questsById, viewMode]);
+    }, [onQuestClick, questsById, scrollToVisibleQuest]);
 
     function toRef(id: string, fallbackName: string): QuestRef {
         const q = questsById.get(id);
@@ -432,17 +458,10 @@ export function QuestsList() {
                 onQuestLinkClick={(targetQuestId, event) => {
                     const target = questsById.get(targetQuestId);
                     if (!target) return;
-                    if (onQuestClick) {
-                        event?.preventDefault();
-                        onQuestClick(targetQuestId);
-                        return;
+                    event?.preventDefault();
+                    if (!scrollToVisibleQuest(targetQuestId)) {
+                        onQuestClick?.(targetQuestId);
                     }
-                    if (viewMode === "byTrader") {
-                        setGroupCollapsed(`trader:${target.trader.id}`, false);
-                    } else if (viewMode === "byMap") {
-                        setGroupCollapsed(`map:${getQuestMapGroupsForQuest(target)[0]?.key}`, false);
-                    }
-                    setPendingScrollQuestId(targetQuestId);
                 }}
             />
         );

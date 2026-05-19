@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { useShallow } from "zustand/react/shallow";
 import { CheckCircle, ChevronDown, Circle, Lock } from "lucide-react";
@@ -10,7 +10,11 @@ import { QuestCard, type QuestRef } from "../QuestCard";
 import { cn } from "@/lib/utils";
 import type { FullQuest } from "@/types";
 import { isQuestAvailableForProfile } from "../quest-sync";
-import { clearQuestDeepLink, getQuestDeepLinkId } from "../quest-deep-link";
+import {
+    clearQuestDeepLink,
+    getQuestDeepLinkId,
+    QUEST_NAVIGATE_TO_QUEST_EVENT,
+} from "../quest-deep-link";
 import { QUEST_SCROLL_TO_TRADER_EVENT } from "./QuestsSidebar";
 import {
     partitionLinkedPrerequisites,
@@ -969,16 +973,16 @@ export function QuestsTree() {
 
     // --- handlers ---
 
-    const setGroupCollapsed = (key: string, collapsed: boolean) => {
+    const setGroupCollapsed = useCallback((key: string, collapsed: boolean) => {
         setCollapsedGroups((current) => {
             const next = new Set(current);
             if (collapsed) next.add(key);
             else next.delete(key);
             return next;
         });
-    };
+    }, []);
 
-    const expandQuestPath = (questId: string) => {
+    const expandQuestPath = useCallback((questId: string) => {
         const quest = questsById.get(questId);
         if (!quest) return;
 
@@ -1006,9 +1010,9 @@ export function QuestsTree() {
 
             return next;
         });
-    };
+    }, [questsById, treeMetaByTraderId]);
 
-    const highlightQuest = (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => {
+    const highlightQuest = useCallback((questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => {
         event?.preventDefault();
         setHighlightedQuestId(questId);
 
@@ -1030,13 +1034,37 @@ export function QuestsTree() {
             setHighlightedQuestId((current) => (current === questId ? null : current));
             highlightTimeoutRef.current = null;
         }, QUEST_HIGHLIGHT_DURATION_MS);
-    };
+    }, [questsById, visibleTraders, virtualizer]);
+
+    const scrollToVisibleQuest = useCallback(
+        (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => {
+            const isVisible = filteredQuests.some((filteredQuest) => filteredQuest.id === questId);
+            if (!isVisible) return false;
+
+            expandQuestPath(questId);
+            highlightQuest(questId, event);
+            return true;
+        },
+        [expandQuestPath, filteredQuests, highlightQuest],
+    );
 
     useEffect(() => {
         return () => {
             if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
         };
     }, []);
+
+    useEffect(() => {
+        const handleQuestNavigation = (event: Event) => {
+            const questId = (event as CustomEvent<{ questId?: string }>).detail?.questId;
+            if (!questId) return;
+            scrollToVisibleQuest(questId);
+        };
+
+        window.addEventListener(QUEST_NAVIGATE_TO_QUEST_EVENT, handleQuestNavigation);
+        return () =>
+            window.removeEventListener(QUEST_NAVIGATE_TO_QUEST_EVENT, handleQuestNavigation);
+    }, [scrollToVisibleQuest]);
 
     // Handle URL hash on mount — e.g. "view on quests page" links from the items page.
     // expandQuestPath opens any collapsed groups in the path, then highlightQuest scrolls
@@ -1047,17 +1075,13 @@ export function QuestsTree() {
         if (!questId) return;
         handledDeepLinkRef.current = true;
         clearQuestDeepLink();
-        const isVisible = filteredQuests.some((filteredQuest) => filteredQuest.id === questId);
-        if (!isVisible) {
-            onQuestClick?.(questId);
-            return;
-        }
         const frame = requestAnimationFrame(() => {
-            expandQuestPath(questId);
-            highlightQuest(questId);
+            if (!scrollToVisibleQuest(questId)) {
+                onQuestClick?.(questId);
+            }
         });
         return () => cancelAnimationFrame(frame);
-    }, [filteredQuests, onQuestClick]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [onQuestClick, scrollToVisibleQuest]);
 
     // --- render ---
 
@@ -1106,14 +1130,11 @@ export function QuestsTree() {
                                         treeMeta={treeMeta}
                                         highlightedQuestId={highlightedQuestId}
                                         onQuestLinkClick={(questId, event) => {
-                                            if (onQuestClick) {
-                                                event?.preventDefault();
-                                                event?.stopPropagation();
-                                                onQuestClick(questId);
-                                                return;
+                                            event?.preventDefault();
+                                            event?.stopPropagation();
+                                            if (!scrollToVisibleQuest(questId, event)) {
+                                                onQuestClick?.(questId);
                                             }
-                                            expandQuestPath(questId);
-                                            highlightQuest(questId, event);
                                         }}
                                         collapsedGroups={collapsedGroups}
                                         setGroupCollapsed={setGroupCollapsed}
