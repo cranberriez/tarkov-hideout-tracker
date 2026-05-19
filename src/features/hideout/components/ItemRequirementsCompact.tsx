@@ -6,6 +6,8 @@ import { CircleCheckBig, Check } from "lucide-react";
 import { formatNumber } from "@/lib/utils/format-number";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
+import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
+import { formatCompactRoubles, getFleaPrice, hasFleaMarketData } from "@/lib/utils/market-price";
 
 export function CompactItemRequirements({
     nextLevelData,
@@ -14,6 +16,11 @@ export function CompactItemRequirements({
     pooledFirByItem,
 }: BaseItemRequirementsProps) {
     const itemCounts = useUserStore((state) => state.itemCounts);
+    const gameMode = useUserStore((state) => state.gameMode);
+    const { marketPricesByMode, loading: pricesLoading } = usePriceDataContext();
+    const mode = gameMode === "PVE" ? "PVE" : "PVP";
+    const priceBucket = marketPricesByMode[mode];
+    const pricesLoadingForMode = pricesLoading || !priceBucket || priceBucket.updatedAt === null;
     return (
         <div className="flex flex-wrap gap-2">
             {nextLevelData.itemRequirements
@@ -29,6 +36,15 @@ export function CompactItemRequirements({
                     const isFir = req.attributes.some(
                         (a) => a.name === "found_in_raid" && a.value === "true"
                     );
+                    const marketPrice = priceBucket?.prices[norm];
+                    const fleaPrice = getFleaPrice(marketPrice);
+                    const priceLabel = pricesLoadingForMode
+                        ? "..."
+                        : marketPrice && !hasFleaMarketData(marketPrice)
+                          ? "No flea"
+                          : fleaPrice != null
+                            ? `${formatCompactRoubles(fleaPrice)} ₽`
+                            : null;
 
                     const owned = itemCounts[req.item.id] ?? { have: 0, haveFir: 0 };
                     const globalFirRemaining = pooledFirByItem[req.item.id] ?? 0;
@@ -69,7 +85,9 @@ export function CompactItemRequirements({
                             } ${isCompleted ? "opacity-50 grayscale" : "hover:border-white/30"}`}
                             title={`${formatNumber(quantity)} ${req.item.name}${
                                 isFir ? " (Found In Raid)" : ""
-                            }${isCompleted ? " (Completed)" : ""}`}
+                            }${priceLabel ? ` - ${priceLabel}` : ""}${
+                                isCompleted ? " (Completed)" : ""
+                            }`}
                         >
                             {req.item.iconLink && (
                                 <Image
@@ -117,6 +135,11 @@ export function CompactItemRequirements({
                                     </div>
                                 )}
                             </div>
+                            {priceLabel && !isCurrency && (
+                                <div className="absolute top-0 left-0 max-w-full bg-black/55 px-1 text-[9px] font-mono leading-4 text-gray-300">
+                                    {priceLabel}
+                                </div>
+                            )}
                         </div>
                     );
                 })}

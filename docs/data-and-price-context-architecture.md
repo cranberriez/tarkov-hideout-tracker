@@ -83,7 +83,7 @@ interface PriceDataContextValue {
 
 **Provided by:** `src/app/(data)/PriceDataLayout.tsx`
 
-`PriceDataLayout` fetches PVP and PVE prices in parallel via `getCachedMarketPrices`, then renders `PriceDataProvider`. Because it is wrapped in `<Suspense>` by `DataLayout`, it streams in after the station/items shell renders.
+`PriceDataLayout` fetches the full cached PVP and PVE price maps in parallel via `getCachedAllMarketPrices`, then renders `PriceDataProvider`. Because it is wrapped in `<Suspense>` by `DataLayout`, it streams in after the station/items shell renders.
 
 ---
 
@@ -93,9 +93,9 @@ interface PriceDataContextValue {
 |---|---|---|
 | `getCachedHideoutStations()` | `src/server/services/hideout.ts` | Redis + Next.js 12h |
 | `getCachedHideoutRequiredItems()` | `src/server/services/items.ts` | Redis + Next.js 12h |
-| `getCachedMarketPrices(names, mode)` | `src/server/services/marketPrices.ts` | Next.js 5min revalidate |
+| `getCachedAllMarketPrices(mode)` / `getCachedMarketPrices(names, mode)` | `src/server/services/marketPrices.ts` | Next.js 5min revalidate |
 
-Market price data in Redis is written by the daily cron job (`refreshTarkovMarketPrices`), not by `getCachedMarketPrices`. The read service is effectively read-only with respect to Redis.
+Market price data in Redis is written by the daily cron job (`refreshTarkovDevMarketPrices`), not by `getCachedMarketPrices`. The read service is effectively read-only with respect to Redis.
 
 ---
 

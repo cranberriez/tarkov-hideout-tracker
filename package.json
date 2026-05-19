@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "pull-prices": "node --env-file=.env scripts/pull-prices.mjs"
   },
   "dependencies": {
     "@floating-ui/react-dom": "^2.1.6",

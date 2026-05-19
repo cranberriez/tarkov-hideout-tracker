@@ -20,6 +20,7 @@ import {
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
+import { getFleaPrice } from "@/lib/utils/market-price";
 
 interface ItemsListProps {
     onClickItem: (item: ItemDetails) => void;
@@ -326,7 +327,7 @@ export function ItemsList({
                 if (norm === "roubles" || norm === "dollars" || norm === "euros") return true;
                 const marketPrice = getPrice(norm);
                 if (!marketPrice) return true;
-                const unitPrice = marketPrice.avg24hPrice ?? marketPrice.price ?? undefined;
+                const unitPrice = getFleaPrice(marketPrice);
                 if (unitPrice == null) return true;
                 return unitPrice >= cheapPriceThreshold;
             });

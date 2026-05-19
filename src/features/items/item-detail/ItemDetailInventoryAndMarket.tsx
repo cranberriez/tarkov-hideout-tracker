@@ -4,6 +4,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type { MarketPrice } from "@/types";
 import { MarketStatBox } from "./MarketStatBox";
 import { Minus, Plus } from "lucide-react";
+import { hasFleaMarketData } from "@/lib/utils/market-price";
 
 interface ItemDetailInventoryAndMarketProps {
     isFiat: boolean;
@@ -17,8 +18,8 @@ interface ItemDetailInventoryAndMarketProps {
     hasInventoryChanges: boolean;
     onCancelChanges: () => void;
     onConfirmChanges: () => void;
-    renderMarketValue: (value?: number) => string;
-    renderPercentChange: (value?: number) => string;
+    renderMarketValue: (value?: number | null) => string;
+    renderPercentChange: (value?: number | null) => string;
 }
 
 export function ItemDetailInventoryAndMarket({
@@ -36,6 +37,8 @@ export function ItemDetailInventoryAndMarket({
     renderMarketValue,
     renderPercentChange,
 }: ItemDetailInventoryAndMarketProps) {
+    const fleaUnavailable = !!marketPrice && !hasFleaMarketData(marketPrice);
+
     const handleIncrement = (setter: Dispatch<SetStateAction<number>>, value: number) => {
         setter(value + 1);
     };
@@ -137,37 +140,48 @@ export function ItemDetailInventoryAndMarket({
                 </h3>
 
                 {!isFiat ? (
-                    <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-2 sm:gap-3">
-                        <MarketStatBox
-                            label="Current Price"
-                            value={renderMarketValue(marketPrice?.price)}
-                        />
-                        <MarketStatBox
-                            label="Avg 24h"
-                            value={renderMarketValue(marketPrice?.avg24hPrice)}
-                        />
-                        <MarketStatBox
-                            label="Change 24h"
-                            value={renderPercentChange(marketPrice?.diff24h)}
-                        />
-                        <MarketStatBox
-                            label="Avg 7 days"
-                            value={renderMarketValue(marketPrice?.avg7daysPrice)}
-                        />
-                        <MarketStatBox
-                            label="Last Updated"
-                            value={
-                                loading && !marketPrice ? "..." : relativeUpdatedAt ?? "-"
-                            }
-                        />
-                        {marketPrice?.traderName && marketPrice.traderPrice !== undefined && (
+                    <>
+                        <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-2 sm:gap-3">
                             <MarketStatBox
-                                label={marketPrice.traderName}
-                                value={renderMarketValue(marketPrice.traderPrice)}
-                                labelClassName="text-blue-400"
+                                label="Last Low"
+                                value={
+                                    fleaUnavailable
+                                        ? "No flea"
+                                        : renderMarketValue(marketPrice?.price)
+                                }
                             />
-                        )}
-                    </div>
+                            <MarketStatBox
+                                label="Avg 24h"
+                                value={renderMarketValue(marketPrice?.avg24hPrice)}
+                            />
+                            <MarketStatBox
+                                label="Low 24h"
+                                value={renderMarketValue(marketPrice?.low24hPrice)}
+                            />
+                            <MarketStatBox
+                                label="High 24h"
+                                value={renderMarketValue(marketPrice?.high24hPrice)}
+                            />
+                            <MarketStatBox
+                                label="Change 48h"
+                                value={renderPercentChange(marketPrice?.changeLast48hPercent)}
+                            />
+                            <MarketStatBox
+                                label="Offers"
+                                value={
+                                    marketPrice?.lastOfferCount == null
+                                        ? "-"
+                                        : new Intl.NumberFormat("en-US").format(
+                                              marketPrice.lastOfferCount,
+                                          )
+                                }
+                            />
+                        </div>
+                        <div className="mt-2 text-[11px] text-muted-foreground">
+                            Last updated:{" "}
+                            {loading && !marketPrice ? "..." : relativeUpdatedAt ?? "-"}
+                        </div>
+                    </>
                 ) : (
                     <MarketStatBox
                         label="Rouble Cost"

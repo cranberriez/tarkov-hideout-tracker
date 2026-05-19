@@ -116,15 +116,14 @@ export interface ItemDetails {
 }
 
 export interface MarketPrice {
-    price?: number;
-    avg24hPrice?: number;
-    avg7daysPrice?: number;
-    updated?: string;
-    link?: string;
-    diff24h?: number;
-    traderName?: string;
-    traderPrice?: number;
-    traderPriceCur?: string;
+    price?: number | null;
+    avg24hPrice?: number | null;
+    high24hPrice?: number | null;
+    low24hPrice?: number | null;
+    lastLowPrice?: number | null;
+    lastOfferCount?: number | null;
+    changeLast48hPercent?: number | null;
+    diff24h?: number | null;
 }
 
 export interface ItemsPayload {

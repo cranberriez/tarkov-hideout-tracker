@@ -5,6 +5,7 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 import { poolItems } from "@/lib/utils/item-pooling";
+import { getFleaPrice } from "@/lib/utils/market-price";
 import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
 import { deriveQuestAnyOfGroups, deriveQuestItemStates } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
@@ -242,7 +243,7 @@ export function ItemsStatsRow({
                     return true;
                 }
                 const marketPrice = normalizedName ? priceBucket?.prices[normalizedName] : undefined;
-                const unitPrice = marketPrice?.avg24hPrice ?? marketPrice?.price;
+                const unitPrice = getFleaPrice(marketPrice);
                 return unitPrice == null || unitPrice >= cheapPriceThreshold;
             });
 

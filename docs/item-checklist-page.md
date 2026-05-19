@@ -134,7 +134,7 @@ Additional filters:
 
 ## Prices
 
-Prices come from `PriceDataContext.marketPricesByMode`. The active `gameMode` selects the PVP or PVE price bucket. Price maps are keyed by `normalizedName`.
+Prices come from `PriceDataContext.marketPricesByMode`. The active `gameMode` selects the PVP or PVE price bucket. Price maps are keyed by `normalizedName` and include both hideout-required and quest-required items.
 
 No client-side price fetching occurs on the items page.
 

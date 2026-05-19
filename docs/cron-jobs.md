@@ -2,13 +2,13 @@
 
 ## Overview
 
-A single Vercel cron job refreshes Tarkov Market prices once per day. Market prices are too expensive to fetch on every request — the bulk cron approach fetches all prices once and stores them in Redis for the read path to consume cheaply.
+A single Vercel cron job refreshes Tarkov.dev flea market prices once per day. Market prices are dynamic enough that the app keeps them separate from base item metadata, but the refresh only fetches hideout-required and quest-required items rather than the full item catalogue.
 
 ---
 
-## `GET /api/cron/bulk-update`
+## `GET /api/cron/price-update`
 
-**File:** `src/app/api/cron/bulk-update/route.ts`
+**File:** `src/app/api/cron/price-update/route.ts`
 **Schedule:** `0 0 * * *` (daily at 00:00 UTC)
 **Configured in:** `vercel.json`
 
@@ -16,7 +16,7 @@ A single Vercel cron job refreshes Tarkov Market prices once per day. Market pri
 
 Protected by a bearer token. Vercel injects it automatically; manual calls must include:
 
-```
+```text
 Authorization: Bearer <CRON_SECRET>
 ```
 
@@ -24,66 +24,70 @@ Requests without a valid token return HTTP 401.
 
 ### What It Does
 
-1. Calls `refreshTarkovMarketPrices("PVP")` and `refreshTarkovMarketPrices("PVE")` in parallel.
-2. Returns a JSON summary of the result (items written, any errors).
+1. Calls `refreshTarkovDevMarketPrices("PVP")` and `refreshTarkovDevMarketPrices("PVE")` in parallel.
+2. Returns a JSON summary of the result.
 
 ---
 
-## `refreshTarkovMarketPrices(mode)`
+## `refreshTarkovDevMarketPrices(mode)`
 
-**File:** `src/server/services/tarkovMarketBulk.ts`
+**File:** `src/server/services/tarkovDevMarket.ts`
 
 ### Process
 
-1. Fetch the full item catalogue from Tarkov Market:
-   - PVP: `https://api.tarkov-market.app/api/v1/items/all`
-   - PVE: `https://api.tarkov-market.app/api/v1/pve/items/all`
-   - Auth header: `x-api-key: <TARKOV_MARKET_KEY>`
-
-2. Load the list of hideout-required items from Redis (`hideout:items:filtered:v1`) to get their `normalizedName`s.
-
-3. Filter the full Tarkov Market response to only items in the required set.
-
-4. Write a compact map `{ normalizedName: MarketPrice }` to Redis:
-   - PVP: `tarkov-market:all-prices:filtered:v1:pvp`
-   - PVE: `tarkov-market:all-prices:filtered:v1:pve`
+1. Load hideout-required items from `getHideoutRequiredItems()` and quest-required items from `getCachedFullQuestData()`.
+2. Fetch volatile flea market fields from Tarkov.dev GraphQL:
+   - PVP: `gameMode: regular`
+   - PVE: `gameMode: pve`
+3. Write a compact map `{ normalizedName: MarketPrice | null }` to Redis:
+   - PVP: `item-market-data:filtered:v2:pvp`
+   - PVE: `item-market-data:filtered:v2:pve`
 
 ### MarketPrice Shape
 
 ```ts
 interface MarketPrice {
-  price?: number;           // current flea price
-  avg24hPrice?: number;
-  avg7daysPrice?: number;
-  diff24h?: number;         // % price change in 24h
-  updated?: string;         // ISO timestamp from Tarkov Market
-  traderName?: string;
-  traderPrice?: number;
-  traderPriceCur?: string;  // currency code
+  price?: number | null;                  // compatibility alias from lastLowPrice
+  avg24hPrice?: number | null;
+  high24hPrice?: number | null;
+  low24hPrice?: number | null;
+  lastLowPrice?: number | null;
+  lastOfferCount?: number | null;
+  changeLast48hPercent?: number | null;
+  diff24h?: number | null;                // compatibility alias from changeLast48hPercent
 }
 ```
+
+If flea fields are `null`, the item is not available on the flea market for that game mode. The current UI renders those values as `-`.
 
 ---
 
 ## Read Path
 
-Client components never call Tarkov Market directly. Prices are read via `getCachedMarketPrices()` in `PriceDataLayout` (a server component):
+Client components never fetch prices directly. Prices are read via `getCachedMarketPrices()` in `PriceDataLayout` (a server component):
 
-```
-Cron writes Redis → getCachedMarketPrices reads Redis → PriceDataContext → client components
+```text
+Cron writes Redis -> getCachedMarketPrices reads Redis -> PriceDataContext -> client components
 ```
 
-If the cron job hasn't run yet (e.g., fresh deploy), `getCachedMarketPrices` returns an empty price map. Components gracefully handle `null`/`undefined` prices by showing `-`.
+If the cron job has not run yet, `getCachedMarketPrices` returns an empty price map. Components gracefully handle `null`/`undefined` prices by showing `-`.
+During migration from the old Tarkov Market integration, the read service falls back to the previous Redis price keys if the new `item-market-data:*` keys are missing or empty.
 
 ---
 
 ## Manual Trigger
 
-To refresh prices outside the cron schedule (e.g., after a game patch), send:
+To refresh prices outside the cron schedule, send:
 
-```
-GET /api/cron/bulk-update
+```text
+GET /api/cron/price-update
 Authorization: Bearer <CRON_SECRET>
+```
+
+For local development, run the same service directly:
+
+```bash
+npm run pull-prices
 ```
 
 ---
@@ -93,6 +97,6 @@ Authorization: Bearer <CRON_SECRET>
 | Symptom | Likely Cause | Fix |
 |---|---|---|
 | All prices show `-` | Redis key missing or cron never ran | Trigger the cron manually |
-| PVE prices missing | Tarkov Market PVE endpoint error | Check Tarkov Market API status; re-trigger cron |
+| PVE prices missing | Tarkov.dev PVE query error | Check server logs and re-trigger cron |
 | Cron returns 401 | `CRON_SECRET` env var mismatch | Verify env var in Vercel dashboard |
 | Prices very stale | Cron is failing silently | Check Vercel cron logs in the dashboard |

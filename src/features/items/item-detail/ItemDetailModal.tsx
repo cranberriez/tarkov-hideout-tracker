@@ -17,6 +17,7 @@ import type { QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
 import { deriveQuestItemState } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
+import { formatRoubles } from "@/lib/utils/market-price";
 
 export interface ItemDetailModalProps {
     item: ItemDetails | null;
@@ -139,21 +140,20 @@ export function ItemDetailModal({
     const loading = pricesLoading || !priceBucket || priceBucket.updatedAt === null;
     const marketPrice = selectedItem ? priceBucket?.prices[selectedNormalizedName] : undefined;
 
-    const formatPrice = (price?: number) => {
-        if (price === undefined) return "-";
-        return `${new Intl.NumberFormat("en-US").format(price)} ₽`;
+    const formatPrice = (price?: number | null) => {
+        return formatRoubles(price);
     };
 
-    const renderMarketValue = (value?: number) => {
+    const renderMarketValue = (value?: number | null) => {
         if (loading && !marketPrice) return "...";
-        if (!loading && (!marketPrice || value === undefined)) return "-";
+        if (!loading && (!marketPrice || value == null)) return "-";
         return formatPrice(value);
     };
 
-    const renderPercentChange = (value?: number) => {
+    const renderPercentChange = (value?: number | null) => {
         if (loading && !marketPrice) return "...";
-        if (!loading && (!marketPrice || value === undefined)) return "-";
-        if (value === undefined) return "-";
+        if (!loading && (!marketPrice || value == null)) return "-";
+        if (value == null) return "-";
         return `${value.toFixed(2)}%`;
     };
 
@@ -183,14 +183,7 @@ export function ItemDetailModal({
     const isEuro = selectedNormalizedName === "euros";
     const isFiat = isDollar || isEuro;
 
-    const itemUpdatedTimestamp = (() => {
-        if (!marketPrice?.updated) return null;
-        const parsed = Date.parse(marketPrice.updated);
-        if (Number.isNaN(parsed)) return null;
-        return parsed;
-    })();
-
-    const relativeUpdatedAt = formatRelativeUpdatedAt(itemUpdatedTimestamp);
+    const relativeUpdatedAt = formatRelativeUpdatedAt(priceBucket?.updatedAt ?? null);
     const owned = itemCounts[selectedItemId] ?? { have: 0, haveFir: 0 };
 
     const needsBreakdown = useMemo(() => {
@@ -286,7 +279,6 @@ export function ItemDetailModal({
                 <div className="flex items-start justify-between border-b border-border-color bg-card p-3 sm:p-5">
                     <ItemDetailHeader
                         item={selectedItem}
-                        marketPrice={marketPrice}
                         totalCount={totalCount}
                         owned={owned}
                         needsBreakdown={needsBreakdown}

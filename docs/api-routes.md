@@ -8,18 +8,17 @@ For the original plan that included public routes (`/api/hideout/stations`, `/ap
 
 ## Public Routes
 
-### `GET /api/cron/bulk-update`
+### `GET /api/cron/price-update`
 
-**File:** `src/app/api/cron/bulk-update/route.ts`
+**File:** `src/app/api/cron/price-update/route.ts`
 
 Triggered daily at **00:00 UTC** by Vercel Cron (configured in `vercel.json`). Protected by `CRON_SECRET`; requests without the matching `Authorization: Bearer <secret>` header are rejected with 401.
 
 **What it does:**
 
-1. Calls `refreshTarkovMarketPrices("PVP")` and `refreshTarkovMarketPrices("PVE")` in parallel.
-2. Each call fetches the full item catalogue from Tarkov Market (`/api/v1/items/all` for PVP, `/api/v1/pve/items/all` for PVE).
-3. Filters the response down to hideout-required items.
-4. Writes compact `normalizedName -> MarketPrice` maps into Redis.
+1. Calls `refreshTarkovDevMarketPrices("PVP")` and `refreshTarkovDevMarketPrices("PVE")` in parallel.
+2. Each call fetches hideout-required and quest-required item flea market fields from Tarkov.dev GraphQL using `gameMode: regular` or `gameMode: pve`.
+3. Writes compact `normalizedName -> MarketPrice` maps into Redis.
 
 See `cron-jobs.md` for full details.
 
@@ -59,11 +58,11 @@ Reads the pre-built bulk price map from Redis and returns a subset filtered to t
 TimedResponse<Record<string, MarketPrice | null>>;
 ```
 
-### `refreshTarkovMarketPrices(mode)`
+### `refreshTarkovDevMarketPrices(mode)`
 
-**File:** `src/server/services/tarkovMarketBulk.ts`
+**File:** `src/server/services/tarkovDevMarket.ts`
 
-Called by the cron route only. Fetches the full item list from Tarkov Market, filters to hideout-required items, and writes the PVP/PVE price maps to Redis.
+Called by the cron route only. Fetches volatile flea market fields for hideout-required and quest-required items from Tarkov.dev and writes the PVP/PVE price maps to Redis.
 
 ### `getCachedQuestData()`
 
@@ -101,14 +100,6 @@ Fetches the trader list from Tarkov.dev GraphQL. The service remains available f
 TimedResponse<{ traders: Trader[] }>;
 ```
 
-### `getTarkovMarketItemByNormalizedName(name, mode)` (Legacy)
-
-**File:** `src/server/services/tarkovMarket.ts`
-
-Per-item Tarkov Market lookup with its own Redis cache. Kept as a fallback/debugging tool. It is not used in the main data flow.
-
----
-
 ## Redis Client
 
 **File:** `src/server/redis.ts`
@@ -123,5 +114,4 @@ Singleton Upstash Redis client. Initialized from `UPSTASH_REDIS_REST_URL` and `U
 | ------------------------------------------------ | ------------------------------------------- |
 | `UPSTASH_REDIS_REST_URL` / `KV_REST_API_URL`     | Redis client                                |
 | `UPSTASH_REDIS_REST_TOKEN` / `KV_REST_API_TOKEN` | Redis client                                |
-| `TARKOV_MARKET_KEY`                              | Tarkov Market API auth header (`x-api-key`) |
-| `CRON_SECRET`                                    | Guards `/api/cron/bulk-update`              |
+| `CRON_SECRET`                                    | Guards `/api/cron/price-update`             |

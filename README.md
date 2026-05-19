@@ -20,7 +20,7 @@ A comprehensive tool for Escape from Tarkov players to track their Hideout progr
 -   **Hideout Tracking**: Interactive dashboard to manage your Hideout station levels and visualize your progress.
 -   **Item Requirements**: Automatically calculates the total items needed to complete your Hideout based on your current station levels.
 -   **Inventory Management**: Track your collected items and see exactly what remains to be found.
--   **Cost Analysis**: (When API Key available) View current market prices for required items to estimate upgrade costs.
+-   **Cost Analysis**: View current Tarkov.dev flea market prices for required items to estimate upgrade costs.
 
 ## Development Setup
 
@@ -34,14 +34,7 @@ The application requires a Redis instance for data caching and state management.
 -   Set the `REDIS_URL` environment variable to your connection string.
 -   If using Vercel KV/Upstash, you may also need to set `KV_REST_API_URL`, `KV_REST_API_TOKEN`, etc., as seen in `.sample.env`.
 
-### 2. Tarkov Market API Key (Optional)
-
-This project integrates with the Tarkov Market API to provide pricing data.
-
--   **Note**: Getting an API key requires a paid subscription to Tarkov Market.
--   **Without a Key**: The application is designed to fail gracefully. It will still function for tracking progress and inventory, but price data will not be available.
-
-### 3. Environment Variables
+### 2. Environment Variables
 
 Copy the `.sample.env` file to `.env.local` and fill in your details:
 
@@ -55,11 +48,11 @@ Edit `.env.local`:
 # Redis / Upstash Configuration
 REDIS_URL="redis://localhost:6379" # or your remote redis URL
 
-# Optional: Tarkov Market API
-TARKOV_MARKET_KEY="your_api_key_here"
+# Cron endpoint bearer token
+CRON_SECRET="your_secret_here"
 ```
 
-### 4. Run the Development Server
+### 3. Run the Development Server
 
 Install dependencies:
 
@@ -79,7 +72,13 @@ yarn dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser.
 
+Refresh local price data:
+
+```bash
+npm run pull-prices
+```
+
 ## Learn More
 
 -   [Next.js Documentation](https://nextjs.org/docs)
--   [Tarkov Market API](https://tarkov-market.com/api/v1/doc)
+-   [Tarkov.dev API](https://api.tarkov.dev/)

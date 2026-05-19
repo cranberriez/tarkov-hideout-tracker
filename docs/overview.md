@@ -10,7 +10,7 @@ A Next.js web app for tracking hideout upgrades and item requirements in Escape 
 - **Simulate in-game progression** starting from a configurable state based on game edition.
 - **Pool required items** across all stations into a single checklist, respecting the user's current progress.
 - **Separate FiR from non-FiR** requirements — some items must be Found in Raid; the app tracks both counts independently.
-- **Show live market prices** for both PVP and PVE game modes (flea + best trader).
+- **Show live flea market prices** for both PVP and PVE game modes.
 - **Let users manage inventory** — track how many of each item they already have.
 - **Support game edition bonuses** — automatically set starting Stash and Cultist Circle levels.
 - **Provide simple views**: a hideout-focused station view, an item checklist view, and a quest item requirements view.
@@ -84,7 +84,7 @@ Items below the `cheapPriceThreshold` (default 5,000 ₽). Can be hidden from th
 
 - Hideout station structure (from Tarkov.dev GraphQL, cached 12h)
 - Required item metadata (from Tarkov.dev, cached 12h)
-- Market prices for PVP and PVE (from Tarkov Market, refreshed daily via cron)
+- Market prices for PVP and PVE (from Tarkov.dev GraphQL, refreshed daily via cron)
 - Quest data (from Tarkov.dev GraphQL, cached 12h) is fetched by pages that need it. `/quests` receives full quest data as server props and derives trader/map lists from that data.
 
 See `state-management.md` for store shapes and `data-and-price-context-architecture.md` for the server data flow.
@@ -109,7 +109,7 @@ See `state-management.md` for store shapes and `data-and-price-context-architect
 | Source                              | What it provides                                                             |
 | ----------------------------------- | ---------------------------------------------------------------------------- |
 | Tarkov.dev GraphQL                  | Station structure, item metadata, trader/skill info, quest data, trader list |
-| Tarkov Market REST                  | Flea + trader prices for PVP and PVE modes                                   |
+| Tarkov.dev GraphQL                  | Station structure, item metadata, trader/skill info, quest data, and flea prices |
 | `wiki-data.json` + `foundInRaid.ts` | Manual overrides for requirements and FiR flags                              |
 | localStorage                        | All user progress and preferences                                            |
 
@@ -117,4 +117,4 @@ See `state-management.md` for store shapes and `data-and-price-context-architect
 
 ## Deployment
 
-Hosted on Vercel. A daily cron job at 00:00 UTC refreshes market prices via `/api/cron/bulk-update`. See `cron-jobs.md`.
+Hosted on Vercel. A daily cron job at 00:00 UTC refreshes market prices via `/api/cron/price-update`. See `cron-jobs.md`.

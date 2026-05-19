@@ -58,7 +58,7 @@ Docs are grouped by purpose:
 ## External APIs & Integrations
 
 - **[graphql-queries.md](graphql-queries.md)** - Current architecture
-  Tarkov.dev GraphQL queries used for hideout station structure and item metadata.
+  Tarkov.dev GraphQL queries used for hideout station structure, item metadata, and flea prices.
 
 - **[hideoutQL.md](hideoutQL.md)** - Notes
   Minimal reference GraphQL query for hideout stations.
@@ -67,10 +67,10 @@ Docs are grouped by purpose:
   Live schema findings for the `tasks` and `traders` queries - full field reference, objective type breakdown, and service implementation notes.
 
 - **[cron-jobs.md](cron-jobs.md)** - Current architecture
-  Vercel cron setup, bulk Tarkov Market price refresh, manual trigger instructions, and troubleshooting.
+  Vercel cron setup, Tarkov.dev flea price refresh, manual trigger instructions, and troubleshooting.
 
-- **[tarkov-market-protection.md](tarkov-market-protection.md)** - Current architecture
-  How the Tarkov Market API key is protected (server-only architecture) and historical context on the previous public-route design.
+- **[tarkov-market-protection.md](tarkov-market-protection.md)** - Historical note
+  Old Tarkov Market integration context. Current price data comes from Tarkov.dev GraphQL.
 
 ---
 

@@ -7,6 +7,7 @@ import type { ItemSize } from "@/lib/stores/useUserStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 import { computeNeeds } from "@/lib/utils/item-needs";
+import { formatRoubles, getFleaPrice, hasFleaMarketData } from "@/lib/utils/market-price";
 
 interface ItemRowProps {
     item: ItemDetails;
@@ -53,11 +54,6 @@ export function ItemRow({
     isQuest = false,
     onClick,
 }: ItemRowProps) {
-    const formatPrice = (price?: number) => {
-        if (price === undefined) return "???";
-        return new Intl.NumberFormat("en-US").format(price);
-    };
-
     const { marketPricesByMode, loading: pricesLoading } = usePriceDataContext();
     const { itemCounts, gameMode } = useUserStore();
     const mode = gameMode === "PVE" ? "PVE" : "PVP";
@@ -67,7 +63,8 @@ export function ItemRow({
     const getPrice = (normalizedName: string) => priceBucket?.prices[normalizedName];
     const owned = itemCounts[item.id] ?? { have: 0, haveFir: 0 };
     const marketPrice = getPrice(item.normalizedName);
-    const unitPrice = marketPrice?.avg24hPrice ?? marketPrice?.price;
+    const unitPrice = getFleaPrice(marketPrice);
+    const hasFleaData = hasFleaMarketData(marketPrice);
 
     // Helper to determine if an item is a currency for display purposes
     const isCurrency =
@@ -83,7 +80,7 @@ export function ItemRow({
     });
 
     // Calculate total estimated cost if we have price data
-    const estimatedTotal = unitPrice ? unitPrice * needs.neededNonFir : 0;
+    const estimatedTotal = unitPrice != null ? unitPrice * needs.neededNonFir : null;
 
     const firRequired = firCount ?? 0;
     const nonFirRequired = Math.max(0, count - firRequired);
@@ -284,14 +281,14 @@ export function ItemRow({
                         </div>
                         <div className="text-sm font-medium text-gray-300 leading-tight">
                             {loading && !marketPrice && <span className="text-gray-500">...</span>}
-                            {!loading && marketPrice === null && (
-                                <span className="text-gray-500">-</span>
+                            {!loading && (marketPrice === null || marketPrice === undefined) && (
+                                <span className="text-gray-500">No data</span>
                             )}
-                            {!loading && marketPrice && unitPrice !== undefined && (
-                                <>
-                                    {formatPrice(estimatedTotal)}
-                                    <span className="text-[12px] text-gray-500 ml-0.5">₽</span>
-                                </>
+                            {!loading && marketPrice && !hasFleaData && (
+                                <span className="text-gray-500">No flea</span>
+                            )}
+                            {!loading && marketPrice && hasFleaData && (
+                                <>{formatRoubles(estimatedTotal)}</>
                             )}
                         </div>
                     </div>

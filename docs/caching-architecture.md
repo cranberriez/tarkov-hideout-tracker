@@ -17,10 +17,10 @@ Most Redis-backed services store a body key plus a `:meta` key containing `{ upd
 | `quests:all:v3` + `:meta`                            | Quests with `giveItem` objectives only                         | `getQuestData()` on cache miss/stale data            | 12h        |
 | `quests:full:v3` + `:meta`                           | Full quest list, all objective types, map/trader/prestige data | `getFullQuestData()` on cache miss/stale data        | 12h        |
 | `traders:all:v1` + `:meta`                           | Full trader list                                               | `getTraders()` on cache miss/stale data              | 12h        |
-| `tarkov-market:all-prices:filtered:v1:pvp` + `:meta` | PVP price map keyed by `normalizedName`                        | Cron job (`refreshTarkovMarketPrices("PVP")`)        | Daily cron |
-| `tarkov-market:all-prices:filtered:v1:pve` + `:meta` | PVE price map keyed by `normalizedName`                        | Cron job (`refreshTarkovMarketPrices("PVE")`)        | Daily cron |
+| `item-market-data:filtered:v2:pvp` + `:meta`          | PVP hideout + quest flea price map keyed by `normalizedName`     | Cron job (`refreshTarkovDevMarketPrices("PVP")`)     | Daily cron |
+| `item-market-data:filtered:v2:pve` + `:meta`          | PVE hideout + quest flea price map keyed by `normalizedName`     | Cron job (`refreshTarkovDevMarketPrices("PVE")`)     | Daily cron |
 
-Legacy per-item keys use `tarkov-market:item:v4:{mode}:{normalizedName}` plus `:meta`. They are only used by the legacy per-item service in `src/server/services/tarkovMarket.ts`, not by the main page data flow.
+Legacy Tarkov Market keys may exist in Redis from older deployments. The read service falls back to those keys only when the new Tarkov.dev price keys are missing or empty, so existing deployments keep showing prices until `/api/cron/price-update` has populated the new namespace.
 
 ---
 
@@ -49,8 +49,8 @@ Browser request
       -> getCachedHideoutStations()
       -> getCachedHideoutRequiredItems()
       -> PriceDataLayout
-          -> getCachedMarketPrices(required item names, "PVP")
-          -> getCachedMarketPrices(required item names, "PVE")
+          -> getCachedAllMarketPrices("PVP")
+          -> getCachedAllMarketPrices("PVE")
 
 /items page
   -> getCachedFullQuestData()
@@ -61,7 +61,7 @@ Browser request
   -> build quest item metadata and availability metadata for the client
 ```
 
-Market prices in Redis are written only by the cron job. `getCachedMarketPrices` never writes price data to Redis; if the Redis key is missing, it returns empty/null price data.
+Market prices in Redis are written only by the cron job. `getCachedAllMarketPrices` and `getCachedMarketPrices` never write price data to Redis; if the Redis key is missing, they return empty/null price data.
 
 ---
 
@@ -76,7 +76,7 @@ No client-side price fetching occurs. Server components fetch data and distribut
 | Scenario                                              | How to invalidate                                                                                |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Station, item, quest, or trader data changed upstream | Bump the relevant version in `src/lib/cfg/cacheVersions.ts` or wait for the 12h freshness window |
-| Market prices stale                                   | Wait for the 00:00 UTC cron job or call `/api/cron/bulk-update` manually with `CRON_SECRET`      |
+| Market prices stale                                   | Wait for the 00:00 UTC cron job or call `/api/cron/price-update` manually with `CRON_SECRET`     |
 | Next.js in-process cache stale                        | Wait for the `revalidate` window or redeploy                                                     |
 
 ---
