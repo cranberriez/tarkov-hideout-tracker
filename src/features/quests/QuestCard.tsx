@@ -176,47 +176,51 @@ function ObjectiveRow({
                                 )}
                             </div>
                         )}
-                        <div className="flex flex-wrap gap-1.5">
-                            {item.items.map((itm) => (
-                                <div
-                                    key={itm.id}
-                                    className={`flex items-center gap-1.5 rounded border border-white/10 bg-black/40 px-2 py-1 ${onItemClick ? "cursor-pointer hover:border-white/25 transition-colors" : ""}`}
-                                    onClick={
-                                        onItemClick
-                                            ? (e) => {
-                                                  e.stopPropagation();
-                                                  onItemClick(itm.id);
-                                              }
-                                            : undefined
-                                    }
-                                >
-                                    {(itm.iconLink ?? itm.gridImageLink) && (
-                                        <span
-                                            className={`flex h-6 w-6 items-center justify-center rounded-sm bg-black/35 ${
-                                                item.foundInRaid ? "ring-1 ring-orange-500" : ""
-                                            }`}
-                                        >
-                                            <img
-                                                src={itm.iconLink ?? itm.gridImageLink ?? ""}
-                                                alt={itm.name}
-                                                className="h-5 w-5 object-contain"
-                                            />
+                        {objective.type === "giveItem" && (
+                            <div className="flex flex-wrap gap-1.5">
+                                {item.items.map((itm) => (
+                                    <div
+                                        key={itm.id}
+                                        className={`flex items-center gap-1.5 rounded border border-white/10 bg-black/40 px-2 py-1 ${onItemClick ? "cursor-pointer hover:border-white/25 transition-colors" : ""}`}
+                                        onClick={
+                                            onItemClick
+                                                ? (e) => {
+                                                      e.stopPropagation();
+                                                      onItemClick(itm.id);
+                                                  }
+                                                : undefined
+                                        }
+                                    >
+                                        {(itm.iconLink ?? itm.gridImageLink) && (
+                                            <span
+                                                className={`flex h-6 w-6 items-center justify-center rounded-sm bg-black/35 ${
+                                                    item.foundInRaid ? "ring-1 ring-orange-500" : ""
+                                                }`}
+                                            >
+                                                <img
+                                                    src={itm.iconLink ?? itm.gridImageLink ?? ""}
+                                                    alt={itm.name}
+                                                    className="h-5 w-5 object-contain"
+                                                />
+                                            </span>
+                                        )}
+                                        <span className="text-[11px] text-gray-200">
+                                            {itm.name}
                                         </span>
-                                    )}
-                                    <span className="text-[11px] text-gray-200">{itm.name}</span>
-                                    {!hasItemChoices && (
-                                        <span className="text-[11px] text-gray-500">
-                                            x{item.count}
-                                        </span>
-                                    )}
-                                    {!hasItemChoices && item.foundInRaid && (
-                                        <span className="text-[9px] text-orange-400 font-medium">
-                                            FiR
-                                        </span>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                                        {!hasItemChoices && (
+                                            <span className="text-[11px] text-gray-500">
+                                                x{item.count}
+                                            </span>
+                                        )}
+                                        {!hasItemChoices && item.foundInRaid && (
+                                            <span className="text-[9px] text-orange-400 font-medium">
+                                                FiR
+                                            </span>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -251,7 +255,8 @@ function QuestChip({
     const prerequisiteSatisfied =
         (questRef.prerequisiteType === "complete" && prerequisiteCompleted) ||
         (questRef.prerequisiteType === "failed" && prerequisiteFailed) ||
-        (questRef.prerequisiteType === "resolved" && (prerequisiteCompleted || prerequisiteFailed)) ||
+        (questRef.prerequisiteType === "resolved" &&
+            (prerequisiteCompleted || prerequisiteFailed)) ||
         (questRef.prerequisiteType === "active" && (prerequisiteCompleted || prerequisiteFailed));
 
     return (
@@ -830,8 +835,8 @@ export function QuestCard({
                     <CircleSlash size={16} className={ignored ? "stroke-[2.25]" : ""} />
                 </button>
 
-                {!forceExpand && (
-                    expanded ? (
+                {!forceExpand &&
+                    (expanded ? (
                         <ChevronDown
                             size={14}
                             aria-label="Collapse quest details"
@@ -843,8 +848,7 @@ export function QuestCard({
                             aria-label="Expand quest details"
                             className="shrink-0 text-gray-500"
                         />
-                    )
-                )}
+                    ))}
             </div>
 
             {/* Compact item strip */}
