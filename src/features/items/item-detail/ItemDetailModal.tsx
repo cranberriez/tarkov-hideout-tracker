@@ -16,6 +16,7 @@ import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 import type { QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
 import { deriveQuestItemState } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
+import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 
 export interface ItemDetailModalProps {
     item: ItemDetails | null;
@@ -457,7 +458,7 @@ export function ItemDetailModal({
                                                         <CircleSlash size={12} />
                                                     </button>
                                                     <Link
-                                                        href={`/quests#quest-${quest.questId}`}
+                                                        href={getQuestDeepLinkHref(quest.questId)}
                                                         className="rounded p-1 text-gray-600 hover:text-gray-300 transition-colors"
                                                         title="View on quests page"
                                                     >

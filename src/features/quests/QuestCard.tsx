@@ -64,6 +64,8 @@ interface QuestCardProps {
     leadsToQuests: QuestRef[];
     attachedTop?: boolean;
     className?: string;
+    domId?: string;
+    forceExpand?: boolean;
     showDebugButton?: boolean;
     highlighted?: boolean;
     onQuestLinkClick?: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
@@ -313,6 +315,8 @@ export function QuestCard({
     leadsToQuests,
     attachedTop = false,
     className,
+    domId,
+    forceExpand = false,
     showDebugButton = false,
     highlighted = false,
     onQuestLinkClick,
@@ -369,6 +373,7 @@ export function QuestCard({
     const hasMutuallyExclusiveBranch =
         mutuallyExclusiveQuestIds.length > 0 || questsFailedByCompletingThisQuest.length > 0;
     const failedRequirementIds = getFailedQuestRequirementIds(quest);
+    const isExpanded = forceExpand || expanded;
 
     const giveItemObjectives = quest.objectives.filter(isGiveItemObjective);
     const allHandInItems = [
@@ -503,7 +508,7 @@ export function QuestCard({
 
     return (
         <div
-            id={`quest-${quest.id}`}
+            id={domId ?? `quest-${quest.id}`}
             className={cn(
                 "overflow-hidden border transition-colors",
                 attachedTop ? "rounded-b-md rounded-t-none" : "rounded-md",
@@ -536,8 +541,13 @@ export function QuestCard({
         >
             {/* Header row */}
             <div
-                className="flex cursor-pointer items-center gap-2 px-2.5 py-2.5 sm:gap-2.5 sm:px-3"
-                onClick={() => setExpanded((v) => !v)}
+                className={cn(
+                    "flex items-center gap-2 px-2.5 py-2.5 sm:gap-2.5 sm:px-3",
+                    !forceExpand && "cursor-pointer",
+                )}
+                onClick={() => {
+                    if (!forceExpand) setExpanded((v) => !v);
+                }}
             >
                 {/* Completion toggle */}
                 <button
@@ -820,23 +830,25 @@ export function QuestCard({
                     <CircleSlash size={16} className={ignored ? "stroke-[2.25]" : ""} />
                 </button>
 
-                {expanded ? (
-                    <ChevronDown
-                        size={14}
-                        aria-label="Collapse quest details"
-                        className="shrink-0 text-gray-500"
-                    />
-                ) : (
-                    <ChevronRight
-                        size={14}
-                        aria-label="Expand quest details"
-                        className="shrink-0 text-gray-500"
-                    />
+                {!forceExpand && (
+                    expanded ? (
+                        <ChevronDown
+                            size={14}
+                            aria-label="Collapse quest details"
+                            className="shrink-0 text-gray-500"
+                        />
+                    ) : (
+                        <ChevronRight
+                            size={14}
+                            aria-label="Expand quest details"
+                            className="shrink-0 text-gray-500"
+                        />
+                    )
                 )}
             </div>
 
             {/* Compact item strip */}
-            {!expanded && !completed && allHandInItems.length > 0 && (
+            {!isExpanded && !completed && allHandInItems.length > 0 && (
                 <div className="flex items-center gap-1 px-2.5 pb-2.5 pl-[3rem] sm:px-3 sm:pl-[52px]">
                     {allHandInItems.slice(0, COMPACT_PREVIEW_ITEM_LIMIT).map((item) => (
                         <div
@@ -875,7 +887,7 @@ export function QuestCard({
             )}
 
             {/* Expanded content */}
-            {expanded && (
+            {isExpanded && (
                 <div className="px-3 py-3 space-y-3">
                     <div className="flex items-start justify-between gap-3 sm:hidden">
                         <div className="flex flex-wrap gap-1.5">

@@ -10,6 +10,7 @@ import { QuestCard, type QuestRef } from "../QuestCard";
 import { cn } from "@/lib/utils";
 import type { FullQuest } from "@/types";
 import { isQuestAvailableForProfile } from "../quest-sync";
+import { clearQuestDeepLink, getQuestDeepLinkId } from "../quest-deep-link";
 import { QUEST_SCROLL_TO_TRADER_EVENT } from "./QuestsSidebar";
 import {
     partitionLinkedPrerequisites,
@@ -885,10 +886,12 @@ export function QuestsTree() {
         questsById,
         traders,
         completedCount,
+        onQuestClick,
     } = useQuestsContext();
     const [highlightedQuestId, setHighlightedQuestId] = useState<string | null>(null);
     const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
     const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const handledDeepLinkRef = useRef(false);
 
     // --- data memos (must come before virtualizer) ---
 
@@ -1039,17 +1042,22 @@ export function QuestsTree() {
     // expandQuestPath opens any collapsed groups in the path, then highlightQuest scrolls
     // the virtualizer to the trader section (if off-screen) before scrolling to the quest.
     useEffect(() => {
-        const hash = window.location.hash;
-        const match = hash.match(/^#quest-(.+)$/);
-        if (!match) return;
-        const questId = match[1];
-        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        if (handledDeepLinkRef.current) return;
+        const questId = getQuestDeepLinkId(window.location);
+        if (!questId) return;
+        handledDeepLinkRef.current = true;
+        clearQuestDeepLink();
+        const isVisible = filteredQuests.some((filteredQuest) => filteredQuest.id === questId);
+        if (!isVisible) {
+            onQuestClick?.(questId);
+            return;
+        }
         const frame = requestAnimationFrame(() => {
             expandQuestPath(questId);
             highlightQuest(questId);
         });
         return () => cancelAnimationFrame(frame);
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [filteredQuests, onQuestClick]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // --- render ---
 
@@ -1098,6 +1106,12 @@ export function QuestsTree() {
                                         treeMeta={treeMeta}
                                         highlightedQuestId={highlightedQuestId}
                                         onQuestLinkClick={(questId, event) => {
+                                            if (onQuestClick) {
+                                                event?.preventDefault();
+                                                event?.stopPropagation();
+                                                onQuestClick(questId);
+                                                return;
+                                            }
                                             expandQuestPath(questId);
                                             highlightQuest(questId, event);
                                         }}

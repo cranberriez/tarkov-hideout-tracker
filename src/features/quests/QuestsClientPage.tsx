@@ -14,6 +14,7 @@ import { QuestsSyncBar } from "./components/QuestsSyncBar";
 import { QuestsTree } from "./components/QuestsTree";
 import { SlidersIcon } from "./components/quest-ui";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
+import { QuestDetailModal } from "./QuestDetailModal";
 import { QuestCascadeConfirmDialog } from "./components/QuestCascadeConfirmDialog";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -64,6 +65,7 @@ export function QuestsClientPage({
     void updatedAt;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+    const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
 
     const { stations } = useDataContext();
     const { stationLevels, hiddenStations, completedRequirements } = useUserStore(
@@ -98,9 +100,16 @@ export function QuestsClientPage({
     }, [quests]);
 
     const selectedItem = selectedItemId ? (questItemDetails[selectedItemId] ?? null) : null;
+    const selectedQuest = selectedQuestId
+        ? (quests.find((quest) => quest.id === selectedQuestId) ?? null)
+        : null;
 
     return (
-        <QuestsProvider quests={quests} onItemClick={setSelectedItemId}>
+        <QuestsProvider
+            quests={quests}
+            onItemClick={setSelectedItemId}
+            onQuestClick={setSelectedQuestId}
+        >
             {/* Mobile sidebar overlay */}
             {sidebarOpen && (
                 <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setSidebarOpen(false)}>
@@ -160,6 +169,12 @@ export function QuestsClientPage({
                 completedRequirements={completedRequirements}
                 questItemIndex={questItemIndex}
                 questAvailabilityQuests={questAvailabilityQuests}
+            />
+            <QuestDetailModal
+                quest={selectedQuest}
+                isOpen={!!selectedQuest}
+                onClose={() => setSelectedQuestId(null)}
+                onQuestChange={setSelectedQuestId}
             />
             <QuestCascadeConfirmDialog />
         </QuestsProvider>
