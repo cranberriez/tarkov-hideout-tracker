@@ -21,6 +21,7 @@ import {
     shouldFoldLinkedPrerequisites,
     type LinkedPrerequisiteStatus,
 } from "./quest-tree-prerequisites";
+import { buildTraderTree } from "./quest-tree-builder";
 
 const QUEST_HIGHLIGHT_DURATION_MS = 30_000;
 const QUEST_SCROLL_TOP_OFFSET_VH = 0.3;
@@ -35,45 +36,6 @@ function scrollToQuest(questId: string) {
 
     window.history.replaceState(null, "", `#quest-${questId}`);
     window.scrollTo({ top, behavior: "smooth" });
-}
-
-function buildTraderTree(traderQuests: FullQuest[]): {
-    rootIds: string[];
-    childrenOf: Map<string, string[]>;
-    parentOf: Map<string, string | null>;
-} {
-    const indexById = new Map(traderQuests.map((q, i) => [q.id, i]));
-    const traderQuestIds = new Set(traderQuests.map((q) => q.id));
-    const parentOf = new Map<string, string | null>();
-
-    for (const quest of traderQuests) {
-        const sameTraderPrereqs = quest.taskRequirements.filter((r) =>
-            traderQuestIds.has(r.task.id),
-        );
-        if (sameTraderPrereqs.length === 0) {
-            parentOf.set(quest.id, null);
-        } else {
-            const primary = sameTraderPrereqs.reduce((best, r) =>
-                (indexById.get(r.task.id) ?? 0) > (indexById.get(best.task.id) ?? 0) ? r : best,
-            );
-            parentOf.set(quest.id, primary.task.id);
-        }
-    }
-
-    const childrenOf = new Map<string, string[]>();
-    const rootIds: string[] = [];
-
-    for (const [questId, parentId] of parentOf) {
-        if (parentId === null) {
-            rootIds.push(questId);
-        } else {
-            const arr = childrenOf.get(parentId) ?? [];
-            arr.push(questId);
-            childrenOf.set(parentId, arr);
-        }
-    }
-
-    return { rootIds, childrenOf, parentOf };
 }
 
 function toRef(id: string, fallbackName: string, questsById: Map<string, FullQuest>): QuestRef {
@@ -924,11 +886,11 @@ export function QuestsTree() {
         for (const trader of traders) {
             const traderQuests = questsByTraderId.get(trader.id) ?? [];
             if (traderQuests.length > 0) {
-                map.set(trader.id, buildTraderTree(traderQuests));
+                map.set(trader.id, buildTraderTree(traderQuests, filteredQuests));
             }
         }
         return map;
-    }, [questsByTraderId, traders]);
+    }, [filteredQuests, questsByTraderId, traders]);
 
     const visibleTraders = useMemo(
         () => traders.filter((t) => (questsByTraderId.get(t.id) ?? []).length > 0),
