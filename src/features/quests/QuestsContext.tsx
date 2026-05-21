@@ -450,6 +450,11 @@ export function QuestsProvider({
             failureMap,
             userState.failedQuests,
         );
+        const rootAutoFailedQuestIds = getAutoFailedQuestIds(
+            [questId],
+            failureMap,
+            userState.failedQuests,
+        );
 
         const shouldConfirm =
             cascade.crossTraderQuestIds.length > 0 ||
@@ -470,6 +475,7 @@ export function QuestsProvider({
             rootQuestId: questId,
             questIds: cascade.toComplete,
             autoFailedQuestIds,
+            rootAutoFailedQuestIds,
             crossTraderQuestIds: cascade.crossTraderQuestIds,
             sensitiveQuestIds: cascade.sensitiveQuestIds,
         });

@@ -13,6 +13,7 @@ export interface QuestCascadeRequest {
     rootQuestId: string;
     questIds: string[];
     autoFailedQuestIds?: string[];
+    rootAutoFailedQuestIds?: string[];
     crossTraderQuestIds: string[];
     sensitiveQuestIds: string[];
 }

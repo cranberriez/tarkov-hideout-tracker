@@ -50,6 +50,14 @@ export function QuestCascadeConfirmDialog() {
         closeRequest();
     };
 
+    const handleCompleteSelectedOnly = () => {
+        applyQuestCompletionChange({
+            complete: [request.rootQuestId],
+            fail: request.rootAutoFailedQuestIds ?? [],
+        });
+        closeRequest();
+    };
+
     return (
         <Dialog
             open={true}
@@ -129,7 +137,7 @@ export function QuestCascadeConfirmDialog() {
                     </div>
                 </div>
 
-                <div className="flex justify-end gap-2 border-t border-border-color bg-black/40 px-6 py-3">
+                <div className="flex flex-wrap justify-end gap-2 border-t border-border-color bg-black/40 px-6 py-3">
                     <button
                         type="button"
                         onClick={closeRequest}
@@ -137,10 +145,19 @@ export function QuestCascadeConfirmDialog() {
                     >
                         Cancel
                     </button>
+                    {isComplete && request.questIds.some((questId) => questId !== request.rootQuestId) && (
+                        <button
+                            type="button"
+                            onClick={handleCompleteSelectedOnly}
+                            className="rounded-sm border border-tarkov-green/30 bg-tarkov-green/10 px-3 py-2 text-sm font-semibold text-tarkov-green transition-colors hover:border-tarkov-green/60"
+                        >
+                            Complete Only Selected
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={handleConfirm}
-                        className="rounded-sm border border-tarkov-green/30 bg-tarkov-green/10 px-3 py-2 text-sm font-semibold text-tarkov-green transition-colors hover:border-tarkov-green/60"
+                        className="rounded-sm border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm font-semibold text-amber-100 transition-colors hover:border-amber-300/60 hover:bg-amber-500/15"
                     >
                         Confirm
                     </button>
