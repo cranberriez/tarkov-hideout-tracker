@@ -1,4 +1,5 @@
 import type { FullQuest } from "@/types";
+import { getQuestMapGroupsForQuest } from "./quest-map-groups";
 
 export type QuestSortMode = "default" | "level" | "xp" | "unlockImpact";
 
@@ -160,5 +161,21 @@ export function sortQuestsForQuestView(
         }
 
         return compareByDefaultOrder(a, b, questOrderById);
+    });
+}
+
+export function sortQuestsForMapView(
+    quests: FullQuest[],
+    sortMode: QuestSortMode,
+    questOrderById: Map<string, number>,
+    unlockImpactById: Map<string, number>,
+) {
+    const sorted = sortQuestsForQuestView(quests, sortMode, questOrderById, unlockImpactById);
+
+    return [...sorted].sort((a, b) => {
+        const mapCountDiff = getQuestMapGroupsForQuest(a).length - getQuestMapGroupsForQuest(b).length;
+        if (mapCountDiff !== 0) return mapCountDiff;
+
+        return sorted.indexOf(a) - sorted.indexOf(b);
     });
 }

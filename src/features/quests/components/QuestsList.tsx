@@ -9,6 +9,7 @@ import { QuestCard, type QuestRef } from "../QuestCard";
 import { buildQuestMapGroups, getQuestMapGroupsForQuest } from "../quest-map-groups";
 import {
     buildQuestUnlockImpactMap,
+    sortQuestsForMapView,
     sortQuestsForQuestView,
 } from "../quest-sorting";
 import {
@@ -127,6 +128,7 @@ export function QuestsList() {
         failedCount,
         viewMode,
         sortMode,
+        selectedMaps,
         traders,
         showDebug,
         onQuestClick,
@@ -197,7 +199,7 @@ export function QuestsList() {
         for (const [mapKey, mapQuests] of map) {
             map.set(
                 mapKey,
-                sortQuestsForQuestView(
+                sortQuestsForMapView(
                     mapQuests,
                     sortMode,
                     questOrderById,
@@ -222,10 +224,14 @@ export function QuestsList() {
         return map;
     }, [quests, viewMode]);
 
-    const mapGroups = useMemo(
-        () => (viewMode === "byMap" ? buildQuestMapGroups(quests, true) : []),
-        [quests, viewMode],
-    );
+    const mapGroups = useMemo(() => {
+        if (viewMode !== "byMap") return [];
+
+        const groups = buildQuestMapGroups(quests, true);
+        if (selectedMaps.size === 0) return groups;
+
+        return groups.filter((group) => selectedMaps.has(group.key));
+    }, [quests, selectedMaps, viewMode]);
 
     const flatQuests = useMemo(() => {
         if (viewMode !== "flatList") return [];

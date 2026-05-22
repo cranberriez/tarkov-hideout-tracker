@@ -1,12 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import type { FullQuest } from "@/types";
+import type { FullQuest, QuestMap } from "@/types";
 import {
     buildQuestUnlockImpactMap,
+    sortQuestsForMapView,
     sortQuestsForQuestView,
     type QuestSortMode,
 } from "./quest-sorting";
+
+const customs: QuestMap = { id: "customs", name: "Customs", normalizedName: "customs" };
+const shoreline: QuestMap = { id: "shoreline", name: "Shoreline", normalizedName: "shoreline" };
 
 function makeQuest(
     id: string,
@@ -44,6 +48,20 @@ function sortIds(
 ) {
     const questOrderById = new Map(orderIds.map((id, index) => [id, index]));
     return sortQuestsForQuestView(
+        quests,
+        sortMode,
+        questOrderById,
+        buildQuestUnlockImpactMap(quests),
+    ).map((quest) => quest.id);
+}
+
+function sortMapIds(
+    quests: FullQuest[],
+    sortMode: QuestSortMode,
+    orderIds: string[] = quests.map((quest) => quest.id),
+) {
+    const questOrderById = new Map(orderIds.map((id, index) => [id, index]));
+    return sortQuestsForMapView(
         quests,
         sortMode,
         questOrderById,
@@ -123,5 +141,27 @@ test("non-default sort modes use default order as stable tie-breaker", () => {
         "first",
         "second",
         "third",
+    ]);
+});
+
+test("map view sort demotes quests that belong to multiple map groups", () => {
+    const quests = [
+        makeQuest("multi-map", {
+            objectives: [
+                {
+                    id: "obj-1",
+                    type: "visit",
+                    description: "Visit Customs",
+                    optional: false,
+                    maps: [customs, shoreline],
+                },
+            ],
+        }),
+        makeQuest("single-map", { map: customs }),
+    ];
+
+    assert.deepEqual(sortMapIds(quests, "default", ["multi-map", "single-map"]), [
+        "single-map",
+        "multi-map",
     ]);
 });
