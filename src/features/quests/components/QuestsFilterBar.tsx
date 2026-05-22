@@ -1,11 +1,17 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Minus, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { QuestSortMode } from "@/lib/stores/useUserStore";
 import {
+    DropdownMenuCheckboxItem,
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useQuestsContext } from "../QuestsContext";
@@ -23,6 +29,8 @@ export function QuestsFilterBar() {
         selectedTraders,
         hideCompleted,
         showAvailableOnly,
+        visibilityMode,
+        activeDepth,
         showHandInOnly,
         showFirHandInOnly,
         showPinnedOnly,
@@ -30,7 +38,8 @@ export function QuestsFilterBar() {
         showDebug,
         showPrereqs,
         setHideCompleted,
-        setShowAvailableOnly,
+        setVisibilityMode,
+        setActiveDepth,
         setShowHandInOnly,
         setShowFirHandInOnly,
         setShowPinnedOnly,
@@ -44,6 +53,12 @@ export function QuestsFilterBar() {
         clearTraders,
     } = useQuestsContext();
     const sortLabel = SORT_OPTIONS.find((option) => option.value === sortMode)?.label ?? "Default";
+    const visibilityLabel =
+        visibilityMode === "activeDepth"
+            ? `Active + ${activeDepth}`
+            : visibilityMode === "hideLocked" || showAvailableOnly
+              ? "Hide Locked"
+              : "All";
 
     return (
         <div className="flex items-center gap-2 flex-wrap">
@@ -93,42 +108,88 @@ export function QuestsFilterBar() {
 
             <Divider />
 
-            <FilterButton
-                active={hideCompleted}
-                onClick={() => setHideCompleted(!hideCompleted)}
-                label="Hide Completed"
-            />
-            <FilterButton
-                active={showAvailableOnly}
-                onClick={() => setShowAvailableOnly(!showAvailableOnly)}
-                label="Available Only"
-            />
-            <FilterButton
-                active={showHandInOnly}
-                onClick={() => setShowHandInOnly(!showHandInOnly)}
-                label="Hand-In Only"
-            />
-            <FilterButton
-                active={showFirHandInOnly}
-                disabled={!showHandInOnly}
-                onClick={() => setShowFirHandInOnly(!showFirHandInOnly)}
-                label="FiR Hand-Ins"
-            />
-            <FilterButton
-                active={showPinnedOnly}
-                onClick={() => setShowPinnedOnly(!showPinnedOnly)}
-                label="Pinned Only"
-            />
-            <FilterButton
-                active={showIgnored}
-                onClick={() => setShowIgnored(!showIgnored)}
-                label="Show Ignored"
-            />
-            <FilterButton
-                active={!showPrereqs}
-                onClick={() => setShowPrereqs(!showPrereqs)}
-                label="Hide Pre-Req Links"
-            />
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <button
+                        type="button"
+                        className="flex shrink-0 items-center gap-2 rounded-sm border border-white/10 bg-black/20 px-3 py-2 text-xs font-medium text-gray-300 transition-colors hover:border-white/30 hover:bg-black/40 hover:text-white"
+                    >
+                        View: {visibilityLabel}
+                        <ChevronDown size={13} className="text-gray-500" />
+                    </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="min-w-52">
+                    <DropdownMenuLabel className="px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+                        Quests
+                    </DropdownMenuLabel>
+                    <DropdownMenuCheckboxItem
+                        checked={hideCompleted}
+                        onSelect={(event) => event.preventDefault()}
+                        onCheckedChange={(checked) => setHideCompleted(checked === true)}
+                    >
+                        Hide Completed
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup
+                        value={visibilityMode}
+                        onValueChange={(value) => {
+                            if (value === "all" || value === "hideLocked" || value === "activeDepth") {
+                                setVisibilityMode(value);
+                            }
+                        }}
+                    >
+                        <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="hideLocked">Hide Locked</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="activeDepth">Active + Depth</DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuCheckboxItem
+                        checked={showPinnedOnly}
+                        onSelect={(event) => event.preventDefault()}
+                        onCheckedChange={(checked) => setShowPinnedOnly(checked === true)}
+                    >
+                        Pinned Only
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                        checked={showIgnored}
+                        onSelect={(event) => event.preventDefault()}
+                        onCheckedChange={(checked) => setShowIgnored(checked === true)}
+                    >
+                        Show Ignored
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                        checked={!showPrereqs}
+                        onSelect={(event) => event.preventDefault()}
+                        onCheckedChange={(checked) => setShowPrereqs(checked !== true)}
+                    >
+                        Hide Pre-Req Links
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+                        Items
+                    </DropdownMenuLabel>
+                    <DropdownMenuCheckboxItem
+                        checked={showHandInOnly}
+                        onSelect={(event) => event.preventDefault()}
+                        onCheckedChange={(checked) => setShowHandInOnly(checked === true)}
+                    >
+                        Hand-In Only
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                        checked={showFirHandInOnly}
+                        disabled={!showHandInOnly}
+                        onSelect={(event) => event.preventDefault()}
+                        onCheckedChange={(checked) => setShowFirHandInOnly(checked === true)}
+                    >
+                        FiR Hand-Ins
+                    </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            {visibilityMode === "activeDepth" && (
+                <ActiveDepthInput value={activeDepth} onCommit={setActiveDepth} />
+            )}
+
             <FilterButton
                 active={showDebug}
                 onClick={() => setShowDebug(!showDebug)}
@@ -142,6 +203,82 @@ export function QuestsFilterBar() {
                     label="Clear Trader Filter"
                 />
             )}
+        </div>
+    );
+}
+
+function ActiveDepthInput({
+    value,
+    onCommit,
+}: {
+    value: number;
+    onCommit: (value: number) => void;
+}) {
+    const [draftValue, setDraftValue] = useState(String(value));
+
+    useEffect(() => {
+        setDraftValue(String(value));
+    }, [value]);
+
+    const commit = (nextDraftValue = draftValue) => {
+        const parsed = Number(nextDraftValue.trim());
+        if (!Number.isFinite(parsed)) {
+            setDraftValue(String(value));
+            return;
+        }
+
+        const nextValue = Math.max(0, Math.floor(parsed));
+        onCommit(nextValue);
+        setDraftValue(String(nextValue));
+    };
+
+    const step = (delta: number) => {
+        const nextValue = Math.max(0, value + delta);
+        onCommit(nextValue);
+        setDraftValue(String(nextValue));
+    };
+
+    return (
+        <div className="flex h-9 shrink-0 items-center gap-2 text-xs font-medium text-gray-300">
+            <span className="px-1">Depth</span>
+            <div className="flex overflow-hidden rounded-sm border border-white/10 bg-black/20">
+                <button
+                    type="button"
+                    onClick={() => step(-1)}
+                    disabled={value <= 0}
+                    title="Decrease depth"
+                    className="grid h-8 w-8 place-items-center text-gray-300 transition-colors hover:bg-white/8 hover:text-white disabled:cursor-not-allowed disabled:text-gray-700 disabled:hover:bg-transparent"
+                >
+                    <Minus size={13} />
+                </button>
+                <input
+                    type="text"
+                    inputMode="numeric"
+                    value={draftValue}
+                    onChange={(event) => setDraftValue(event.target.value)}
+                    onBlur={() => commit()}
+                    onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                            event.currentTarget.blur();
+                        } else if (event.key === "ArrowUp") {
+                            event.preventDefault();
+                            step(1);
+                        } else if (event.key === "ArrowDown") {
+                            event.preventDefault();
+                            step(-1);
+                        }
+                    }}
+                    className="h-8 w-11 border-x border-white/10 bg-black/30 text-center font-mono text-base font-semibold text-white outline-none transition-colors focus:bg-black/50"
+                />
+                <button
+                    type="button"
+                    onClick={() => step(1)}
+                    title="Increase depth"
+                    className="grid h-8 w-8 place-items-center text-gray-300 transition-colors hover:bg-white/8 hover:text-white"
+                >
+                    <Plus size={13} />
+                </button>
+            </div>
         </div>
     );
 }

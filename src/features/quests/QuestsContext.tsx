@@ -2,7 +2,12 @@
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { useUserStore, type QuestSortMode, type QuestViewMode } from "@/lib/stores/useUserStore";
+import {
+    useUserStore,
+    type QuestSortMode,
+    type QuestViewMode,
+    type QuestVisibilityMode,
+} from "@/lib/stores/useUserStore";
 import type { FullQuest } from "@/types";
 import { hasFirGiveItemObjectives, hasGiveItemObjectives } from "@/lib/utils/quest-item-index";
 import { compareQuestTradersByOrder } from "@/lib/cfg/questTraderOrder";
@@ -43,6 +48,8 @@ interface QuestsContextValue {
     selectedMaps: Set<string>;
     hideCompleted: boolean;
     showAvailableOnly: boolean;
+    visibilityMode: QuestVisibilityMode;
+    activeDepth: number;
     showHandInOnly: boolean;
     showFirHandInOnly: boolean;
     showPinnedOnly: boolean;
@@ -79,6 +86,8 @@ interface QuestsContextValue {
     toggleLightkeeper: () => void;
     setHideCompleted: (value: boolean) => void;
     setShowAvailableOnly: (value: boolean) => void;
+    setVisibilityMode: (value: QuestVisibilityMode) => void;
+    setActiveDepth: (value: number) => void;
     setShowHandInOnly: (value: boolean) => void;
     setShowFirHandInOnly: (value: boolean) => void;
     setShowPinnedOnly: (value: boolean) => void;
@@ -187,6 +196,8 @@ export function QuestsProvider({
         questSelectedMaps,
         hideCompleted,
         showAvailableOnly,
+        visibilityMode,
+        activeDepth,
         showHandInOnly,
         showFirHandInOnly,
         showPinnedOnly,
@@ -203,6 +214,8 @@ export function QuestsProvider({
         setQuestSelectedMaps,
         setHideCompleted,
         setShowAvailableOnly,
+        setVisibilityMode,
+        setActiveDepth,
         setShowHandInOnly,
         setShowFirHandInOnly,
         setShowPinnedOnly,
@@ -226,6 +239,8 @@ export function QuestsProvider({
             questSelectedMaps: state.questSelectedMaps,
             hideCompleted: state.questHideCompleted,
             showAvailableOnly: state.questShowAvailableOnly,
+            visibilityMode: state.questVisibilityMode,
+            activeDepth: state.questActiveDepth,
             showHandInOnly: state.questShowHandInOnly,
             showFirHandInOnly: state.questShowFirHandInOnly,
             showPinnedOnly: state.questShowPinnedOnly,
@@ -242,6 +257,8 @@ export function QuestsProvider({
             setQuestSelectedMaps: state.setQuestSelectedMaps,
             setHideCompleted: state.setQuestHideCompleted,
             setShowAvailableOnly: state.setQuestShowAvailableOnly,
+            setVisibilityMode: state.setQuestVisibilityMode,
+            setActiveDepth: state.setQuestActiveDepth,
             setShowHandInOnly: state.setQuestShowHandInOnly,
             setShowFirHandInOnly: state.setQuestShowFirHandInOnly,
             setShowPinnedOnly: state.setQuestShowPinnedOnly,
@@ -295,6 +312,33 @@ export function QuestsProvider({
 
     const failureMap = useMemo(() => buildQuestFailureMap(quests), [quests]);
 
+    const activeDepthQuestIds = useMemo(() => {
+        if (visibilityMode !== "activeDepth") return null;
+
+        const maxDepth = Math.max(0, Math.floor(activeDepth));
+        const result = new Set<string>();
+        const queue: { questId: string; depth: number }[] = [];
+
+        for (const quest of quests) {
+            if (!isQuestAvailableForProfile(quest, syncProfile, questsById)) continue;
+            result.add(quest.id);
+            queue.push({ questId: quest.id, depth: 0 });
+        }
+
+        while (queue.length > 0) {
+            const current = queue.shift()!;
+            if (current.depth >= maxDepth) continue;
+
+            for (const nextQuestId of leadsToByQuestId.get(current.questId) ?? []) {
+                if (result.has(nextQuestId)) continue;
+                result.add(nextQuestId);
+                queue.push({ questId: nextQuestId, depth: current.depth + 1 });
+            }
+        }
+
+        return result;
+    }, [activeDepth, leadsToByQuestId, quests, questsById, syncProfile, visibilityMode]);
+
     const isQuestDisabled = (questId: string) => {
         const quest = questsById.get(questId);
         return quest ? isQuestDisabledByCompletedFailedRequirement(quest, completedQuests) : false;
@@ -332,7 +376,12 @@ export function QuestsProvider({
 
             if (hideCompleted && resolved) return false;
             if (!showIgnored && ignoredQuests[quest.id]) return false;
-            if (showAvailableOnly && !isQuestAvailableForProfile(quest, syncProfile, questsById)) return false;
+            if (
+                visibilityMode === "hideLocked" &&
+                !isQuestAvailableForProfile(quest, syncProfile, questsById)
+            )
+                return false;
+            if (visibilityMode === "activeDepth" && !activeDepthQuestIds?.has(quest.id)) return false;
             if (showPinnedOnly && !pinnedQuests[quest.id]) return false;
             if (showHandInOnly && !hasGiveItemObjectives(quest)) return false;
             if (showFirHandInOnly && !hasFirGiveItemObjectives(quest)) return false;
@@ -358,7 +407,8 @@ export function QuestsProvider({
         failedQuests,
         showIgnored,
         ignoredQuests,
-        showAvailableOnly,
+        visibilityMode,
+        activeDepthQuestIds,
         syncProfile,
         questsById,
         showPinnedOnly,
@@ -624,6 +674,8 @@ export function QuestsProvider({
                 selectedMaps,
                 hideCompleted,
                 showAvailableOnly,
+                visibilityMode,
+                activeDepth,
                 showHandInOnly,
                 showFirHandInOnly,
                 showPinnedOnly,
@@ -657,6 +709,8 @@ export function QuestsProvider({
                 toggleLightkeeper,
                 setHideCompleted,
                 setShowAvailableOnly,
+                setVisibilityMode,
+                setActiveDepth,
                 setShowHandInOnly,
                 setShowFirHandInOnly,
                 setShowPinnedOnly,

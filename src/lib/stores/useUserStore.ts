@@ -17,6 +17,7 @@ export type ItemSourceFilter = "all" | "hideout" | "quest";
 export type ItemQuestVisibilityMode = "available" | "nextLayer" | "allFuture" | "custom";
 export type QuestViewMode = "byMap" | "byTrader" | "tree" | "flatList";
 export type QuestSortMode = "default" | "level" | "xp" | "unlockImpact";
+export type QuestVisibilityMode = "all" | "hideLocked" | "activeDepth";
 
 type StationEditionTarget = Pick<Station, "id" | "normalizedName">;
 
@@ -68,6 +69,8 @@ interface UserState {
     questSelectedMaps: string[];
     questHideCompleted: boolean;
     questShowAvailableOnly: boolean;
+    questVisibilityMode: QuestVisibilityMode;
+    questActiveDepth: number;
     questShowHandInOnly: boolean;
     questShowFirHandInOnly: boolean;
     questShowPinnedOnly: boolean;
@@ -151,6 +154,8 @@ interface UserState {
     setQuestSelectedMaps: (maps: string[]) => void;
     setQuestHideCompleted: (v: boolean) => void;
     setQuestShowAvailableOnly: (v: boolean) => void;
+    setQuestVisibilityMode: (v: QuestVisibilityMode) => void;
+    setQuestActiveDepth: (v: number) => void;
     setQuestShowHandInOnly: (v: boolean) => void;
     setQuestShowFirHandInOnly: (v: boolean) => void;
     setQuestShowPinnedOnly: (v: boolean) => void;
@@ -221,6 +226,8 @@ export const useUserStore = create<UserState>()(
             questSelectedMaps: [],
             questHideCompleted: false,
             questShowAvailableOnly: false,
+            questVisibilityMode: "all",
+            questActiveDepth: 2,
             questShowHandInOnly: false,
             questShowFirHandInOnly: false,
             questShowPinnedOnly: false,
@@ -414,7 +421,20 @@ export const useUserStore = create<UserState>()(
             setQuestShowLightkeeper: (v) => set({ questShowLightkeeper: v }),
             setQuestSelectedMaps: (maps) => set({ questSelectedMaps: maps }),
             setQuestHideCompleted: (v) => set({ questHideCompleted: v }),
-            setQuestShowAvailableOnly: (v) => set({ questShowAvailableOnly: v }),
+            setQuestShowAvailableOnly: (v) =>
+                set({
+                    questShowAvailableOnly: v,
+                    questVisibilityMode: v ? "hideLocked" : "all",
+                }),
+            setQuestVisibilityMode: (v) =>
+                set({
+                    questVisibilityMode: v,
+                    questShowAvailableOnly: v === "hideLocked",
+                }),
+            setQuestActiveDepth: (v) =>
+                set({
+                    questActiveDepth: Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0,
+                }),
             setQuestShowHandInOnly: (v) =>
                 set((state) => ({
                     questShowHandInOnly: v,
@@ -629,6 +649,8 @@ export const useUserStore = create<UserState>()(
                     questSelectedMaps: [],
                     questHideCompleted: false,
                     questShowAvailableOnly: false,
+                    questVisibilityMode: "all",
+                    questActiveDepth: 2,
                     questShowHandInOnly: false,
                     questShowFirHandInOnly: false,
                     questShowPinnedOnly: false,
@@ -654,7 +676,7 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: USER_STORE_STORAGE_KEY,
-            version: 13,
+            version: 14,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -780,6 +802,15 @@ export const useUserStore = create<UserState>()(
                         ...nextState,
                         questViewMode,
                         questSortMode,
+                    };
+                }
+
+                if (version < 14) {
+                    nextState = {
+                        ...nextState,
+                        questVisibilityMode:
+                            nextState.questShowAvailableOnly === true ? "hideLocked" : "all",
+                        questActiveDepth: 2,
                     };
                 }
 

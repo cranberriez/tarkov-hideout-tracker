@@ -61,6 +61,8 @@ export function StorageResetCard() {
             questSelectedMaps: state.questSelectedMaps,
             questHideCompleted: state.questHideCompleted,
             questShowAvailableOnly: state.questShowAvailableOnly,
+            questVisibilityMode: state.questVisibilityMode,
+            questActiveDepth: state.questActiveDepth,
             questShowHandInOnly: state.questShowHandInOnly,
             questShowFirHandInOnly: state.questShowFirHandInOnly,
             questShowPinnedOnly: state.questShowPinnedOnly,
