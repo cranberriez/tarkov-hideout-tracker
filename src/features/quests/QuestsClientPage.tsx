@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useShallow } from "zustand/react/shallow";
 import type { FullQuest, ItemDetails } from "@/types";
 import { QuestsProvider, useQuestsContext } from "./QuestsContext";
@@ -15,15 +16,64 @@ import { SlidersIcon } from "./components/quest-ui";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { QuestDetailModal } from "./QuestDetailModal";
 import { QuestCascadeConfirmDialog } from "./components/QuestCascadeConfirmDialog";
+import {
+    clearQuestDeepLink,
+    getQuestDeepLinkId,
+} from "./quest-deep-link";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 
-function QuestsContent() {
+type QuestNavigationRequest = {
+    questId: string;
+    requestId: number;
+};
+
+function QuestsContent({
+    questNavigationRequest,
+}: {
+    questNavigationRequest: QuestNavigationRequest | null;
+}) {
     const { viewMode } = useQuestsContext();
-    if (viewMode === "tree") return <QuestsTree />;
-    return <QuestsList />;
+    if (viewMode === "tree") {
+        return <QuestsTree questNavigationRequest={questNavigationRequest} />;
+    }
+    return <QuestsList questNavigationRequest={questNavigationRequest} />;
+}
+
+function QuestDeepLinkHandler({
+    onItemSelect,
+    onQuestSelect,
+    onQuestNavigate,
+}: {
+    onItemSelect: (itemId: string | null) => void;
+    onQuestSelect: (questId: string | null) => void;
+    onQuestNavigate: (questId: string) => void;
+}) {
+    const searchParams = useSearchParams();
+    const searchParamKey = searchParams.toString();
+    const { filteredQuests, questsById } = useQuestsContext();
+
+    useEffect(() => {
+        const questId = getQuestDeepLinkId(window.location);
+        if (!questId) return;
+
+        clearQuestDeepLink();
+        if (!questsById.has(questId)) return;
+
+        onItemSelect(null);
+        const isVisible = filteredQuests.some((quest) => quest.id === questId);
+        if (!isVisible) {
+            onQuestSelect(questId);
+            return;
+        }
+
+        onQuestSelect(null);
+        onQuestNavigate(questId);
+    }, [filteredQuests, onItemSelect, onQuestNavigate, onQuestSelect, questsById, searchParamKey]);
+
+    return null;
 }
 
 function DesktopQuestsSidebar() {
@@ -67,6 +117,8 @@ export function QuestsClientPage({
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
+    const [questNavigationRequest, setQuestNavigationRequest] =
+        useState<QuestNavigationRequest | null>(null);
 
     const { stations } = useDataContext();
     const { stationLevels, hiddenStations, completedRequirements } = useUserStore(
@@ -154,10 +206,21 @@ export function QuestsClientPage({
                         </div>
                         <QuestsFilterBar />
                         <QuestsQuickGuide />
-                        <QuestsContent />
+                        <QuestsContent questNavigationRequest={questNavigationRequest} />
                     </div>
                 </div>
             </div>
+
+            <QuestDeepLinkHandler
+                onItemSelect={setSelectedItemId}
+                onQuestSelect={setSelectedQuestId}
+                onQuestNavigate={(questId) =>
+                    setQuestNavigationRequest((current) => ({
+                        questId,
+                        requestId: (current?.requestId ?? 0) + 1,
+                    }))
+                }
+            />
 
             <ItemDetailModal
                 item={selectedItem}

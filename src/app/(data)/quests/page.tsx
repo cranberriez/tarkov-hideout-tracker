@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getCachedFullQuestData, orderQuestsByPrerequisites } from "@/server/services/quests";
 import { buildQuestAnyOfGroups, buildQuestItemIndex } from "@/lib/utils/quest-item-index";
 import { toQuestAvailabilityQuest } from "@/lib/utils/quest-availability";
@@ -13,12 +14,14 @@ export default async function QuestsPage() {
     const questAvailabilityQuests = quests.map(toQuestAvailabilityQuest);
 
     return (
-        <QuestsClientPage
-            quests={quests}
-            updatedAt={questsResponse.updatedAt}
-            questItemIndex={questItemIndex}
-            questAnyOfGroups={questAnyOfGroups}
-            questAvailabilityQuests={questAvailabilityQuests}
-        />
+        <Suspense fallback={null}>
+            <QuestsClientPage
+                quests={quests}
+                updatedAt={questsResponse.updatedAt}
+                questItemIndex={questItemIndex}
+                questAnyOfGroups={questAnyOfGroups}
+                questAvailabilityQuests={questAvailabilityQuests}
+            />
+        </Suspense>
     );
 }

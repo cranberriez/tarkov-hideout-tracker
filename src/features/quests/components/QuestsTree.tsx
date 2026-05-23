@@ -11,8 +11,6 @@ import { cn } from "@/lib/utils";
 import type { FullQuest } from "@/types";
 import { isQuestAvailableForProfile } from "../quest-sync";
 import {
-    clearQuestDeepLink,
-    getQuestDeepLinkId,
     QUEST_NAVIGATE_TO_QUEST_EVENT,
 } from "../quest-deep-link";
 import { QUEST_SCROLL_TO_TRADER_EVENT } from "./QuestsSidebar";
@@ -28,7 +26,7 @@ const QUEST_SCROLL_TOP_OFFSET_VH = 0.3;
 
 function scrollToQuest(questId: string) {
     const target = document.getElementById(`quest-${questId}`);
-    if (!target) return;
+    if (!target) return false;
 
     const targetTop = target.getBoundingClientRect().top + window.scrollY;
     const offset = window.innerHeight * QUEST_SCROLL_TOP_OFFSET_VH;
@@ -36,6 +34,7 @@ function scrollToQuest(questId: string) {
 
     window.history.replaceState(null, "", `#quest-${questId}`);
     window.scrollTo({ top, behavior: "smooth" });
+    return true;
 }
 
 function toRef(id: string, fallbackName: string, questsById: Map<string, FullQuest>): QuestRef {
@@ -845,7 +844,16 @@ const TRADER_HEADER_HEIGHT = 72;
 const TRADER_EXPANDED_OVERHEAD = 28; // mt-1 + mb-4 + pb-2 on the content wrapper
 const QUEST_ROW_HEIGHT = 60;
 
-export function QuestsTree() {
+interface QuestNavigationRequest {
+    questId: string;
+    requestId: number;
+}
+
+interface QuestsTreeProps {
+    questNavigationRequest: QuestNavigationRequest | null;
+}
+
+export function QuestsTree({ questNavigationRequest }: QuestsTreeProps) {
     const {
         filteredQuests,
         quests,
@@ -857,7 +865,7 @@ export function QuestsTree() {
     const [highlightedQuestId, setHighlightedQuestId] = useState<string | null>(null);
     const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
     const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const handledDeepLinkRef = useRef(false);
+    const handledQuestNavigationRequestIdRef = useRef<number | null>(null);
 
     // --- data memos (must come before virtualizer) ---
 
@@ -978,18 +986,18 @@ export function QuestsTree() {
         event?.preventDefault();
         setHighlightedQuestId(questId);
 
-        const quest = questsById.get(questId);
-        if (quest && !document.getElementById(`trader-${quest.trader.id}`)) {
-            // Trader section is outside the virtual window — scroll it into view first,
-            // then scroll to the specific quest once it has rendered.
-            const traderIndex = visibleTraders.findIndex((t) => t.id === quest.trader.id);
-            if (traderIndex !== -1) {
-                virtualizer.scrollToIndex(traderIndex, { align: "start" });
-                requestAnimationFrame(() => requestAnimationFrame(() => scrollToQuest(questId)));
-            }
-        } else {
-            scrollToQuest(questId);
-        }
+        requestAnimationFrame(() => {
+            if (scrollToQuest(questId)) return;
+
+            const quest = questsById.get(questId);
+            const traderIndex = quest
+                ? visibleTraders.findIndex((trader) => trader.id === quest.trader.id)
+                : -1;
+            if (traderIndex === -1) return;
+
+            virtualizer.scrollToIndex(traderIndex, { align: "start" });
+            requestAnimationFrame(() => requestAnimationFrame(() => scrollToQuest(questId)));
+        });
 
         if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
         highlightTimeoutRef.current = setTimeout(() => {
@@ -1028,22 +1036,16 @@ export function QuestsTree() {
             window.removeEventListener(QUEST_NAVIGATE_TO_QUEST_EVENT, handleQuestNavigation);
     }, [scrollToVisibleQuest]);
 
-    // Handle URL hash on mount — e.g. "view on quests page" links from the items page.
-    // expandQuestPath opens any collapsed groups in the path, then highlightQuest scrolls
-    // the virtualizer to the trader section (if off-screen) before scrolling to the quest.
     useEffect(() => {
-        if (handledDeepLinkRef.current) return;
-        const questId = getQuestDeepLinkId(window.location);
-        if (!questId) return;
-        handledDeepLinkRef.current = true;
-        clearQuestDeepLink();
-        const frame = requestAnimationFrame(() => {
-            if (!scrollToVisibleQuest(questId)) {
-                onQuestClick?.(questId);
-            }
-        });
+        if (!questNavigationRequest) return;
+        if (handledQuestNavigationRequestIdRef.current === questNavigationRequest.requestId) return;
+        handledQuestNavigationRequestIdRef.current = questNavigationRequest.requestId;
+
+        const frame = requestAnimationFrame(() =>
+            scrollToVisibleQuest(questNavigationRequest.questId),
+        );
         return () => cancelAnimationFrame(frame);
-    }, [onQuestClick, scrollToVisibleQuest]);
+    }, [questNavigationRequest, scrollToVisibleQuest]);
 
     // --- render ---
 

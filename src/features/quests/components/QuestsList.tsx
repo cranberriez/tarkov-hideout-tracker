@@ -13,8 +13,6 @@ import {
     sortQuestsForQuestView,
 } from "../quest-sorting";
 import {
-    clearQuestDeepLink,
-    getQuestDeepLinkId,
     QUEST_NAVIGATE_TO_QUEST_EVENT,
 } from "../quest-deep-link";
 import { cn } from "@/lib/utils";
@@ -117,8 +115,18 @@ type VirtualRow = HeaderRow | QuestRow;
 // Estimated heights used for initial layout before measurement
 const ESTIMATED_HEADER_HEIGHT = 80;
 const ESTIMATED_QUEST_HEIGHT = 60;
+const QUEST_HIGHLIGHT_DURATION_MS = 30_000;
 
-export function QuestsList() {
+interface QuestNavigationRequest {
+    questId: string;
+    requestId: number;
+}
+
+interface QuestsListProps {
+    questNavigationRequest: QuestNavigationRequest | null;
+}
+
+export function QuestsList({ questNavigationRequest }: QuestsListProps) {
     const {
         quests,
         filteredQuests,
@@ -344,7 +352,18 @@ export function QuestsList() {
     }, [rows, viewMode, virtualizer]);
 
     const [pendingScrollQuestId, setPendingScrollQuestId] = useState<string | null>(null);
-    const handledDeepLinkRef = useRef(false);
+    const [highlightedQuestId, setHighlightedQuestId] = useState<string | null>(null);
+    const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const handledQuestNavigationRequestIdRef = useRef<number | null>(null);
+
+    const highlightQuest = useCallback((questId: string) => {
+        setHighlightedQuestId(questId);
+        if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
+        highlightTimeoutRef.current = setTimeout(() => {
+            setHighlightedQuestId((current) => (current === questId ? null : current));
+            highlightTimeoutRef.current = null;
+        }, QUEST_HIGHLIGHT_DURATION_MS);
+    }, []);
 
     const scrollToVisibleQuest = useCallback(
         (questId: string) => {
@@ -359,10 +378,11 @@ export function QuestsList() {
             } else if (viewMode === "byMap") {
                 setGroupCollapsed(`map:${getQuestMapGroupsForQuest(quest)[0]?.key}`, false);
             }
+            highlightQuest(questId);
             setPendingScrollQuestId(questId);
             return true;
         },
-        [filteredQuests, questsById, setGroupCollapsed, viewMode],
+        [filteredQuests, highlightQuest, questsById, setGroupCollapsed, viewMode],
     );
 
     // Fires after rows rebuild (e.g. after a collapsed group is expanded for the target quest)
@@ -389,21 +409,22 @@ export function QuestsList() {
             window.removeEventListener(QUEST_NAVIGATE_TO_QUEST_EVENT, handleQuestNavigation);
     }, [scrollToVisibleQuest]);
 
-    // Handle URL hash on mount — e.g. "view on quests page" links from the items page
     useEffect(() => {
-        if (handledDeepLinkRef.current) return;
-        const questId = getQuestDeepLinkId(window.location);
-        if (!questId) return;
-        handledDeepLinkRef.current = true;
-        clearQuestDeepLink();
-        if (!questsById.has(questId)) return;
-        const frame = requestAnimationFrame(() => {
-            if (!scrollToVisibleQuest(questId)) {
-                onQuestClick?.(questId);
-            }
-        });
+        if (!questNavigationRequest) return;
+        if (handledQuestNavigationRequestIdRef.current === questNavigationRequest.requestId) return;
+        handledQuestNavigationRequestIdRef.current = questNavigationRequest.requestId;
+
+        const frame = requestAnimationFrame(() =>
+            scrollToVisibleQuest(questNavigationRequest.questId),
+        );
         return () => cancelAnimationFrame(frame);
-    }, [onQuestClick, questsById, scrollToVisibleQuest]);
+    }, [questNavigationRequest, scrollToVisibleQuest]);
+
+    useEffect(() => {
+        return () => {
+            if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
+        };
+    }, []);
 
     function toRef(id: string, fallbackName: string): QuestRef {
         const q = questsById.get(id);
@@ -461,6 +482,7 @@ export function QuestsList() {
                 }))}
                 leadsToQuests={(leadsToByQuestId.get(quest.id) ?? []).map((id) => toRef(id, id))}
                 showDebugButton={showDebug}
+                highlighted={highlightedQuestId === quest.id}
                 onQuestLinkClick={(targetQuestId, event) => {
                     const target = questsById.get(targetQuestId);
                     if (!target) return;
