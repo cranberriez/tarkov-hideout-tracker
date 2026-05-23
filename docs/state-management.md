@@ -7,7 +7,7 @@ Client-side state lives in two Zustand stores. Server-fetched data (stations, it
 ## `useUserStore` — User Progress & Preferences
 
 **File:** `src/lib/stores/useUserStore.ts`
-**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 13.
+**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 14.
 
 Do not change the storage key. Bump the version and add a migration only when the persisted state shape requires it.
 
@@ -57,6 +57,8 @@ questShowLightkeeper: boolean;
 questSelectedMaps: string[];
 questHideCompleted: boolean;
 questShowAvailableOnly: boolean;
+questVisibilityMode: "all" | "hideLocked" | "activeDepth";
+questActiveDepth: number;
 questShowHandInOnly: boolean;
 questShowFirHandInOnly: boolean;
 questShowPinnedOnly: boolean;
@@ -101,6 +103,7 @@ type GameMode = "PVP" | "PVE";
 type ItemSize = "Icon" | "Compact" | "Expanded";
 type ItemSourceFilter = "all" | "hideout" | "quest";
 type ItemQuestVisibilityMode = "available" | "nextLayer" | "allFuture" | "custom";
+type QuestVisibilityMode = "all" | "hideLocked" | "activeDepth";
 ```
 
 ### Key Actions
