@@ -53,12 +53,6 @@ export function QuestsFilterBar() {
         clearTraders,
     } = useQuestsContext();
     const sortLabel = SORT_OPTIONS.find((option) => option.value === sortMode)?.label ?? "Default";
-    const visibilityLabel =
-        visibilityMode === "activeDepth"
-            ? `Active + ${activeDepth}`
-            : visibilityMode === "hideLocked" || showAvailableOnly
-              ? "Hide Locked"
-              : "All";
 
     return (
         <div className="flex items-center gap-2 flex-wrap">
@@ -114,7 +108,7 @@ export function QuestsFilterBar() {
                         type="button"
                         className="flex shrink-0 items-center gap-2 rounded-sm border border-white/10 bg-black/20 px-3 py-2 text-xs font-medium text-gray-300 transition-colors hover:border-white/30 hover:bg-black/40 hover:text-white"
                     >
-                        View: {visibilityLabel}
+                        View Settings
                         <ChevronDown size={13} className="text-gray-500" />
                     </button>
                 </DropdownMenuTrigger>
@@ -133,14 +127,22 @@ export function QuestsFilterBar() {
                     <DropdownMenuRadioGroup
                         value={visibilityMode}
                         onValueChange={(value) => {
-                            if (value === "all" || value === "hideLocked" || value === "activeDepth") {
+                            if (
+                                value === "all" ||
+                                value === "hideLocked" ||
+                                value === "activeDepth"
+                            ) {
                                 setVisibilityMode(value);
                             }
                         }}
                     >
                         <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="hideLocked">Hide Locked</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="activeDepth">Active + Depth</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="hideLocked">
+                            Hide Locked
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="activeDepth">
+                            Active + Depth
+                        </DropdownMenuRadioItem>
                     </DropdownMenuRadioGroup>
                     <DropdownMenuSeparator />
                     <DropdownMenuCheckboxItem
@@ -239,7 +241,7 @@ function ActiveDepthInput({
     };
 
     return (
-        <div className="flex h-9 shrink-0 items-center gap-2 text-xs font-medium text-gray-300">
+        <div className="flex shrink-0 items-center gap-2 text-xs font-medium text-gray-300">
             <span className="px-1">Depth</span>
             <div className="flex overflow-hidden rounded-sm border border-white/10 bg-black/20">
                 <button
@@ -268,7 +270,7 @@ function ActiveDepthInput({
                             step(-1);
                         }
                     }}
-                    className="h-8 w-11 border-x border-white/10 bg-black/30 text-center font-mono text-base font-semibold text-white outline-none transition-colors focus:bg-black/50"
+                    className="h-8 w-11 border-x border-white/10 bg-white/5 text-center font-mono text-base font-semibold text-white outline-none transition-colors focus:bg-black/50"
                 />
                 <button
                     type="button"
