@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { refreshTarkovDevMarketPrices } from "@/server/services/tarkovDevMarket";
 
 export async function GET(req: NextRequest) {
@@ -15,6 +16,7 @@ export async function GET(req: NextRequest) {
             refreshTarkovDevMarketPrices("PVP"),
             refreshTarkovDevMarketPrices("PVE"),
         ]);
+        revalidateTag("market-prices");
 
         return NextResponse.json({ ok: true, results: [pvp, pve] }, { status: 200 });
     } catch (error) {

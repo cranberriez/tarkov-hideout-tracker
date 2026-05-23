@@ -361,6 +361,7 @@ export function ItemDetailModal({
                                 hasInventoryChanges={hasInventoryChanges}
                                 onCancelChanges={handleCancelInventoryChanges}
                                 onConfirmChanges={handleConfirmInventoryChanges}
+                                valuationCount={draftNonFir + draftFir}
                                 renderMarketValue={renderMarketValue}
                                 renderPercentChange={renderPercentChange}
                             />

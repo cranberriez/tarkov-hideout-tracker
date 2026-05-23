@@ -25,6 +25,20 @@ interface TarkovDevMarketItem {
     lastLowPrice: number | null;
     lastOfferCount: number | null;
     changeLast48hPercent: number | null;
+    sellFor: TarkovDevVendorPrice[];
+}
+
+interface TarkovDevVendorPrice {
+    vendor: {
+        name: string;
+        normalizedName: string;
+        trader?: {
+            imageLink?: string | null;
+        } | null;
+    };
+    currency: string;
+    price: number;
+    priceRUB: number;
 }
 
 interface TarkovDevMarketResponse {
@@ -56,6 +70,20 @@ query ItemFleaMarketData($ids: [ID!]!, $gameMode: GameMode!) {
     lastLowPrice
     lastOfferCount
     changeLast48hPercent
+    sellFor {
+      vendor {
+        name
+        normalizedName
+        ... on TraderOffer {
+          trader {
+            imageLink
+          }
+        }
+      }
+      currency
+      price
+      priceRUB
+    }
   }
 }
 `;
@@ -83,6 +111,16 @@ function toMarketPrice(item: TarkovDevMarketItem): MarketPrice {
         lastOfferCount: item.lastOfferCount,
         changeLast48hPercent: item.changeLast48hPercent,
         diff24h: item.changeLast48hPercent,
+        sellFor: (item.sellFor ?? []).map((offer) => ({
+            vendor: {
+                name: offer.vendor.name,
+                normalizedName: offer.vendor.normalizedName,
+                imageLink: offer.vendor.trader?.imageLink ?? null,
+            },
+            currency: offer.currency,
+            price: offer.price,
+            priceRUB: offer.priceRUB,
+        })),
     };
 }
 

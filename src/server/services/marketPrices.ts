@@ -14,6 +14,7 @@ import { unstable_cache } from "next/cache";
 export type GameMode = "PVP" | "PVE";
 
 const FILTERED_PRICES_KEY_PREFIX = `item-market-data:filtered:v${CACHE_VERSIONS.marketPrices}`;
+const PREVIOUS_FILTERED_PRICES_KEY_PREFIX = "item-market-data:filtered:v2";
 const LEGACY_FILTERED_PRICES_KEY_PREFIX = "tarkov-market:all-prices:filtered:v1";
 
 interface RedisMeta {
@@ -47,6 +48,22 @@ async function loadFilteredPrices(
             return {
                 data,
                 updatedAt: cachedMeta.updatedAt ?? 0,
+            };
+        }
+    }
+
+    const previousKeys = buildFilteredKeys(mode, PREVIOUS_FILTERED_PRICES_KEY_PREFIX);
+    const [previousBody, previousMeta] = await redis.mget<[string, RedisMeta]>(
+        previousKeys.bodyKey,
+        previousKeys.metaKey
+    );
+
+    if (previousBody && previousMeta && typeof previousMeta === "object") {
+        const data = parsePriceMap(previousBody);
+        if (Object.keys(data).length > 0) {
+            return {
+                data,
+                updatedAt: previousMeta.updatedAt ?? 0,
             };
         }
     }
@@ -122,7 +139,7 @@ export const getCachedMarketPrices = unstable_cache(
         return getMarketPrices(normalizedNames, gameMode);
     },
     ["market-prices", `v${CACHE_VERSIONS.marketPrices}`],
-    { revalidate: 5 * 60 }
+    { revalidate: 5 * 60, tags: ["market-prices"] }
 );
 
 export const getCachedAllMarketPrices = unstable_cache(
@@ -130,5 +147,5 @@ export const getCachedAllMarketPrices = unstable_cache(
         return getAllMarketPrices(gameMode);
     },
     ["market-prices-all", `v${CACHE_VERSIONS.marketPrices}`],
-    { revalidate: 5 * 60 }
+    { revalidate: 5 * 60, tags: ["market-prices"] }
 );

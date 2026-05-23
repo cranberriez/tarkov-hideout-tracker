@@ -4,7 +4,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type { MarketPrice } from "@/types";
 import { MarketStatBox } from "./MarketStatBox";
 import { Minus, Plus } from "lucide-react";
-import { hasFleaMarketData } from "@/lib/utils/market-price";
+import { formatRoubles, hasFleaMarketData } from "@/lib/utils/market-price";
 
 interface ItemDetailInventoryAndMarketProps {
     isFiat: boolean;
@@ -18,6 +18,7 @@ interface ItemDetailInventoryAndMarketProps {
     hasInventoryChanges: boolean;
     onCancelChanges: () => void;
     onConfirmChanges: () => void;
+    valuationCount: number;
     renderMarketValue: (value?: number | null) => string;
     renderPercentChange: (value?: number | null) => string;
 }
@@ -34,10 +35,16 @@ export function ItemDetailInventoryAndMarket({
     hasInventoryChanges,
     onCancelChanges,
     onConfirmChanges,
+    valuationCount,
     renderMarketValue,
     renderPercentChange,
 }: ItemDetailInventoryAndMarketProps) {
     const fleaUnavailable = !!marketPrice && !hasFleaMarketData(marketPrice);
+    const traderValuationCount = Math.max(1, Math.floor(valuationCount));
+    const topTraderValuations = (marketPrice?.sellFor ?? [])
+        .filter((offer) => offer.priceRUB > 0 && offer.vendor.normalizedName !== "flea-market")
+        .sort((a, b) => b.priceRUB - a.priceRUB)
+        .slice(0, 3);
 
     const handleIncrement = (setter: Dispatch<SetStateAction<number>>, value: number) => {
         setter(value + 1);
@@ -45,6 +52,11 @@ export function ItemDetailInventoryAndMarket({
 
     const handleDecrement = (setter: Dispatch<SetStateAction<number>>, value: number) => {
         setter(Math.max(0, value - 1));
+    };
+
+    const formatDollars = (value: number | null | undefined) => {
+        if (value == null || Number.isNaN(value)) return "-";
+        return `$${new Intl.NumberFormat("en-US").format(value)}`;
     };
 
     return (
@@ -177,6 +189,46 @@ export function ItemDetailInventoryAndMarket({
                                 }
                             />
                         </div>
+                        {topTraderValuations.length > 0 && (
+                            <div className="mt-2 grid grid-cols-1 gap-x-3 gap-y-1 min-[480px]:grid-cols-3">
+                                {topTraderValuations.map((offer) => {
+                                    const isPeacekeeper =
+                                        offer.vendor.normalizedName === "peacekeeper" ||
+                                        offer.currency === "USD";
+                                    const totalPrice = offer.price * traderValuationCount;
+                                    const totalRoubles = offer.priceRUB * traderValuationCount;
+
+                                    return (
+                                        <div
+                                            key={offer.vendor.normalizedName}
+                                            className="flex min-w-0 items-center gap-1.5 text-xs"
+                                        >
+                                            {offer.vendor.imageLink ? (
+                                                <img
+                                                    src={offer.vendor.imageLink}
+                                                    alt={offer.vendor.name}
+                                                    className="h-4 w-4 shrink-0 rounded-full object-cover"
+                                                />
+                                            ) : (
+                                                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px] text-gray-500">
+                                                    {offer.vendor.name[0]}
+                                                </span>
+                                            )}
+                                            <span className="min-w-0 truncate text-gray-400">
+                                                {offer.vendor.name}
+                                            </span>
+                                            <span className="shrink-0 font-mono text-white">
+                                                {isPeacekeeper
+                                                    ? `${formatDollars(totalPrice)} (${formatRoubles(
+                                                          totalRoubles,
+                                                      )})`
+                                                    : formatRoubles(totalRoubles)}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                         <div className="mt-2 text-[11px] text-muted-foreground">
                             Last updated:{" "}
                             {loading && !marketPrice ? "..." : relativeUpdatedAt ?? "-"}

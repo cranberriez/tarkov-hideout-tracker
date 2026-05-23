@@ -95,6 +95,7 @@ export interface VendorPrice {
     vendor: {
         name: string;
         normalizedName: string;
+        imageLink?: string | null;
     };
     currency: string;
     price: number;
@@ -124,6 +125,7 @@ export interface MarketPrice {
     lastOfferCount?: number | null;
     changeLast48hPercent?: number | null;
     diff24h?: number | null;
+    sellFor?: VendorPrice[];
 }
 
 export interface ItemsPayload {
