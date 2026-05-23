@@ -1,6 +1,5 @@
 "use client";
 
-import { QuestFlagFilters } from "@/components/core/QuestFlagFilters";
 import { ChevronDown, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ItemsCheckboxControl } from "./ItemsCheckboxControl";
@@ -25,10 +24,6 @@ interface ItemsFiltersPanelProps {
     onItemShowFutureFirChange: (value: boolean) => void;
     itemShowIgnored: boolean;
     onItemShowIgnoredChange: (value: boolean) => void;
-    showKappa: boolean;
-    onShowKappaChange: (value: boolean) => void;
-    showLightkeeper: boolean;
-    onShowLightkeeperChange: (value: boolean) => void;
     hideCheap: boolean;
     onHideCheapChange: (value: boolean) => void;
     cheapPriceThreshold: number;
@@ -53,10 +48,6 @@ export function ItemsFiltersPanel({
     onItemShowFutureFirChange,
     itemShowIgnored,
     onItemShowIgnoredChange,
-    showKappa,
-    onShowKappaChange,
-    showLightkeeper,
-    onShowLightkeeperChange,
     hideCheap,
     onHideCheapChange,
     cheapPriceThreshold,
@@ -161,13 +152,6 @@ export function ItemsFiltersPanel({
                     </div>
 
                     <div className="space-y-1">
-                        <QuestFlagFilters
-                            showKappa={showKappa}
-                            showLightkeeper={showLightkeeper}
-                            onToggleKappa={() => onShowKappaChange(!showKappa)}
-                            onToggleLightkeeper={() => onShowLightkeeperChange(!showLightkeeper)}
-                            expand
-                        />
                         <ItemsCheckboxControl
                             id="items-filter-pinned-only"
                             label="Pinned Only"

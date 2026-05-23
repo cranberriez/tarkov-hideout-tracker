@@ -5,7 +5,6 @@ import { useShallow } from "zustand/react/shallow";
 import type { FullQuest, ItemDetails } from "@/types";
 import { QuestsProvider, useQuestsContext } from "./QuestsContext";
 import { QuestsSidebar } from "./components/QuestsSidebar";
-import { QuestsCharacterBar } from "./components/QuestsCharacterBar";
 import { QuestsFilterBar } from "./components/QuestsFilterBar";
 import { QuestsList } from "./components/QuestsList";
 import { QuestsQuickGuide } from "./components/QuestsQuickGuide";
@@ -147,7 +146,6 @@ export function QuestsClientPage({
                     </div>
 
                     <div className="flex flex-col gap-3 pb-8">
-                        <QuestsCharacterBar />
                         <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto]">
                             <QuestsSearchBar />
                             <QuestsSyncBar quests={quests} />

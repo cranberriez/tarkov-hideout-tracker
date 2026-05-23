@@ -14,6 +14,7 @@ import {
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
+import { PlayerProfileMenu } from "./PlayerProfileMenu";
 
 const links = [
     {
@@ -73,18 +74,20 @@ export function Navbar() {
                                     "flex items-center gap-2 rounded px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors",
                                     isQuickAddOpen
                                         ? "bg-foreground/80 text-card"
-                                        : "bg-tarkov-green text-black hover:bg-tarkov-green-dim"
+                                        : "bg-tarkov-green text-black hover:bg-tarkov-green-dim",
                                 )}
                             >
                                 <Plus size={15} />
                                 <span>Add</span>
                             </button>
 
+                            <PlayerProfileMenu />
+
                             <DropdownMenu>
                                 <DropdownMenuTrigger
                                     className={cn(
                                         "flex items-center gap-2 rounded p-2 text-gray-400 transition-colors hover:text-white",
-                                        isSecondaryRoute && "bg-foreground/80 text-card"
+                                        isSecondaryRoute && "bg-foreground/80 text-card",
                                     )}
                                     aria-label="Menu"
                                 >
@@ -97,7 +100,7 @@ export function Navbar() {
                                             asChild
                                             className={cn(
                                                 currentPage === link.href &&
-                                                    "bg-accent text-accent-foreground"
+                                                    "bg-accent text-accent-foreground",
                                             )}
                                         >
                                             <Link
@@ -114,7 +117,7 @@ export function Navbar() {
                                         asChild
                                         className={cn(
                                             currentPage === "/news" &&
-                                                "bg-accent text-accent-foreground"
+                                                "bg-accent text-accent-foreground",
                                         )}
                                     >
                                         <Link href="/news" className="w-full">
@@ -125,7 +128,7 @@ export function Navbar() {
                                         asChild
                                         className={cn(
                                             currentPage === "/settings" &&
-                                                "bg-accent text-accent-foreground"
+                                                "bg-accent text-accent-foreground",
                                         )}
                                     >
                                         <Link href="/settings" className="w-full">
@@ -145,14 +148,13 @@ export function Navbar() {
                         <button
                             onClick={() => setQuickAddOpen(true)}
                             className={cn(
-                                "flex items-center gap-2 rounded px-3 py-2 transition-colors",
+                                "flex items-center gap-2 rounded px-3 py-2.5 transition-colors",
                                 isQuickAddOpen
                                     ? "bg-foreground/80 text-card"
-                                    : "bg-tarkov-green text-black hover:bg-tarkov-green-dim"
+                                    : "bg-tarkov-green text-black hover:bg-tarkov-green-dim",
                             )}
                         >
                             <Plus size={16} />
-                            Add Items
                         </button>
 
                         {links.map((link) => (
@@ -163,7 +165,7 @@ export function Navbar() {
                                     "flex items-center gap-2 rounded px-3 py-2 transition-colors",
                                     currentPage === link.href
                                         ? "bg-foreground/80 text-card"
-                                        : "hover:text-white"
+                                        : "hover:text-white",
                                 )}
                             >
                                 <link.icon size={16} />
@@ -171,13 +173,15 @@ export function Navbar() {
                             </Link>
                         ))}
 
+                        <PlayerProfileMenu />
+
                         <DropdownMenu>
                             <DropdownMenuTrigger
                                 className={cn(
                                     "flex items-center gap-2 rounded p-2 transition-colors",
                                     isSecondaryRoute
                                         ? "bg-foreground/80 text-card"
-                                        : "hover:text-white"
+                                        : "hover:text-white",
                                 )}
                                 aria-label="Menu"
                             >
@@ -188,7 +192,7 @@ export function Navbar() {
                                     asChild
                                     className={cn(
                                         currentPage === "/news" &&
-                                            "bg-accent text-accent-foreground"
+                                            "bg-accent text-accent-foreground",
                                     )}
                                 >
                                     <Link href="/news" className="w-full">
@@ -199,7 +203,7 @@ export function Navbar() {
                                     asChild
                                     className={cn(
                                         currentPage === "/settings" &&
-                                            "bg-accent text-accent-foreground"
+                                            "bg-accent text-accent-foreground",
                                     )}
                                 >
                                     <Link href="/settings" className="w-full">

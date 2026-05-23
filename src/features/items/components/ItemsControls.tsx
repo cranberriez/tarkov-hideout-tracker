@@ -37,15 +37,11 @@ export function ItemsControls({ onOpenSearch, children }: ItemsControlsProps) {
         itemQuestCustomLevelLookahead,
         itemShowFutureFir,
         itemShowIgnored,
-        questShowKappa,
-        questShowLightkeeper,
         setItemQuestVisibilityMode,
         setItemQuestCustomLookahead,
         setItemQuestCustomLevelLookahead,
         setItemShowFutureFir,
         setItemShowIgnored,
-        setQuestShowKappa,
-        setQuestShowLightkeeper,
     } = useUserStore();
 
     return (
@@ -92,10 +88,6 @@ export function ItemsControls({ onOpenSearch, children }: ItemsControlsProps) {
                         onItemShowFutureFirChange={setItemShowFutureFir}
                         itemShowIgnored={itemShowIgnored}
                         onItemShowIgnoredChange={setItemShowIgnored}
-                        showKappa={questShowKappa}
-                        onShowKappaChange={setQuestShowKappa}
-                        showLightkeeper={questShowLightkeeper}
-                        onShowLightkeeperChange={setQuestShowLightkeeper}
                         hideCheap={hideCheap}
                         onHideCheapChange={setHideCheap}
                         cheapPriceThreshold={cheapPriceThreshold}
