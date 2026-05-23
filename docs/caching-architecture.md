@@ -17,10 +17,10 @@ Most Redis-backed services store a body key plus a `:meta` key containing `{ upd
 | `quests:all:v3` + `:meta`                            | Quests with `giveItem` objectives only                         | `getQuestData()` on cache miss/stale data            | 12h        |
 | `quests:full:v3` + `:meta`                           | Full quest list, all objective types, map/trader/prestige data | `getFullQuestData()` on cache miss/stale data        | 12h        |
 | `traders:all:v1` + `:meta`                           | Full trader list                                               | `getTraders()` on cache miss/stale data              | 12h        |
-| `item-market-data:filtered:v2:pvp` + `:meta`          | PVP hideout + quest flea price map keyed by `normalizedName`     | Cron job (`refreshTarkovDevMarketPrices("PVP")`)     | Daily cron |
-| `item-market-data:filtered:v2:pve` + `:meta`          | PVE hideout + quest flea price map keyed by `normalizedName`     | Cron job (`refreshTarkovDevMarketPrices("PVE")`)     | Daily cron |
+| `item-market-data:filtered:v3:pvp` + `:meta`          | PVP hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshTarkovDevMarketPrices("PVP")`)     | Daily cron |
+| `item-market-data:filtered:v3:pve` + `:meta`          | PVE hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshTarkovDevMarketPrices("PVE")`)     | Daily cron |
 
-Legacy Tarkov Market keys may exist in Redis from older deployments. The read service falls back to those keys only when the new Tarkov.dev price keys are missing or empty, so existing deployments keep showing prices until `/api/cron/price-update` has populated the new namespace.
+Older Tarkov.dev price keys and legacy Tarkov Market keys may exist in Redis from older deployments. The read service falls back to the previous Tarkov.dev key first, then the legacy Tarkov Market key, only when the current keys are missing or empty. Existing deployments keep showing flea prices until `/api/cron/price-update` has populated the new namespace with trader sell values.
 
 ---
 
@@ -32,7 +32,7 @@ Each server service wraps its Redis read/fetch logic in `unstable_cache`, giving
 | ------------------------------------ | ---------------------------- | ------------ | ------------------------------------------------------------------- |
 | `getCachedHideoutStations()`         | `["hideout-stations"]`       | 12 hours     | Station data is re-read from the service at most every 12h          |
 | `getCachedHideoutRequiredItems()`    | `["hideout-required-items"]` | 12 hours     | Hideout item metadata is re-read from the service at most every 12h |
-| `getCachedMarketPrices(names, mode)` | `["market-prices"]`          | 5 minutes    | Price subsets are re-read from Redis at most every 5 minutes        |
+| `getCachedMarketPrices(names, mode)` | `["market-prices"]`, tag `market-prices` | 5 minutes    | Price subsets are re-read from Redis at most every 5 minutes, or immediately after the cron route revalidates the tag |
 | `getCachedQuestData()`               | `["quests"]`                 | 12 hours     | Give-item quest data is re-read from the service at most every 12h  |
 | `getCachedFullQuestData()`           | `["quests-full"]`            | 12 hours     | Full quest data is re-read from the service at most every 12h       |
 | `getCachedTraders()`                 | `["traders"]`                | 12 hours     | Trader list is re-read from the service at most every 12h           |

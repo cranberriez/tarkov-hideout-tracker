@@ -1,6 +1,6 @@
 # Item Checklist Page
 
-The `/items` route shows the user's combined item demand across hideout upgrades and quest hand-ins. It merges server-fetched hideout data from `DataContext` with quest item metadata built server-side from full quest data.
+The `/items` route shows the user's combined item demand across hideout upgrades, quest hand-ins, and quest stash/plant item objectives. It merges server-fetched hideout data from `DataContext` with quest item metadata built server-side from full quest data.
 
 ---
 
@@ -14,7 +14,7 @@ The `/items` route shows the user's combined item demand across hideout upgrades
 | `src/features/items/components/ItemsStatsRow.tsx`    | Summary stats for visible hideout/quest demand                                                                         |
 | `src/features/items/components/ItemsControls.tsx`    | View, source, quest visibility, and display controls                                                                   |
 | `src/features/items/components/ItemSearchModal.tsx`  | Search modal; accepts a merged `itemPool` so quest-only items are searchable                                           |
-| `src/features/items/item-detail/ItemDetailModal.tsx` | Full item detail modal with hideout requirements and quest hand-ins                                                    |
+| `src/features/items/item-detail/ItemDetailModal.tsx` | Full item detail modal with hideout requirements, exact quest item demand, and item-group quest references             |
 | `src/lib/utils/item-pooling.ts`                      | Pools hideout item requirements from station data                                                                      |
 | `src/lib/utils/quest-item-index.ts`                  | Builds and derives quest item states and any-of groups                                                                 |
 | `src/lib/utils/quest-availability.ts`                | Quest availability checks used by item quest visibility modes                                                          |

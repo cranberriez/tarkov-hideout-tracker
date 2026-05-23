@@ -17,7 +17,7 @@ Triggered daily at **00:00 UTC** by Vercel Cron (configured in `vercel.json`). P
 **What it does:**
 
 1. Calls `refreshTarkovDevMarketPrices("PVP")` and `refreshTarkovDevMarketPrices("PVE")` in parallel.
-2. Each call fetches hideout-required and quest-required item flea market fields from Tarkov.dev GraphQL using `gameMode: regular` or `gameMode: pve`.
+2. Each call fetches hideout-required and quest-required item flea market fields and trader sell values from Tarkov.dev GraphQL using `gameMode: regular` or `gameMode: pve`.
 3. Writes compact `normalizedName -> MarketPrice` maps into Redis.
 
 See `cron-jobs.md` for full details.
@@ -62,7 +62,7 @@ TimedResponse<Record<string, MarketPrice | null>>;
 
 **File:** `src/server/services/tarkovDevMarket.ts`
 
-Called by the cron route only. Fetches volatile flea market fields for hideout-required and quest-required items from Tarkov.dev and writes the PVP/PVE price maps to Redis.
+Called by the cron route only. Fetches volatile flea market fields and `sellFor` trader values for hideout-required and quest-required items from Tarkov.dev and writes the PVP/PVE price maps to Redis.
 
 ### `getCachedQuestData()`
 

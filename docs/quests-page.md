@@ -213,8 +213,8 @@ Run this when changing manual sync behavior before `npm run lint` and `npm run b
 - Completion, pin, ignore, and have-items controls backed by `useUserStore`.
 - Failed and disabled quest states for fail-capable mutually exclusive branches.
 - Trader avatar, quest name, level/map/kappa/LK/faction/trader-loyalty/prestige badges.
-- Compact item strip for `giveItem` objectives; item thumbnails call `onItemClick(itemId)`.
-- Broad any-item `giveItem` objectives keep a partial preview of up to 15 items and are excluded from exact item checklist demand.
+- Compact item strip for exact `giveItem` and `plantItem` objectives; item thumbnails call `onItemClick(itemId)`.
+- Broad any-item `giveItem` and `plantItem` objectives keep a partial preview of up to 15 items and are excluded from exact item checklist demand.
 - Expanded objective rows for all objective types.
 - Requires/unlocks chips linked to `#quest-{id}`.
 - Optional debug JSON when `questShowDebug` is enabled.

@@ -159,7 +159,8 @@ All objective types share these base fields:
 
 | `type` | Concrete type | Description |
 |---|---|---|
-| `giveItem` | `TaskObjectiveItem` | Hand items to trader — the primary type we care about |
+| `giveItem` | `TaskObjectiveItem` | Hand items to trader — one of the item-demand types we care about |
+| `plantItem` | `TaskObjectiveItem` | Stash/plant regular inventory items in a location; count these as item demand |
 | `visit` | `TaskObjectiveBasic` | Visit a location |
 | `extract` | `TaskObjectiveExtract` | Extract from a map |
 | `shoot` | `TaskObjectiveShoot` | Kill enemies with conditions |
@@ -175,7 +176,7 @@ All objective types share these base fields:
 | `hideoutStation` | `TaskObjectiveHideoutStation` | Build a hideout station level |
 | `useItem` | `TaskObjectiveUseItem` | Use an item in-raid |
 
-### `TaskObjectiveItem` — the `giveItem` type
+### `TaskObjectiveItem` — `giveItem` and `plantItem`
 
 Additional fields beyond the base interface:
 
@@ -200,7 +201,7 @@ Additional fields beyond the base interface:
 | `count` | `Int!` | |
 | `possibleLocations` | `[MapWithPosition]` | Where to find the item |
 
-`QuestItem` has no `iconLink` or `gridImageLink`. These objectives cannot be cross-referenced with flea/trader data. **Filter these out** when building an item hand-in list — use `type === "giveItem"` as the guard.
+`QuestItem` has no `iconLink` or `gridImageLink`. These objectives cannot be cross-referenced with flea/trader data. **Filter these out** when building an item demand list — use regular inventory item objectives such as `giveItem` and `plantItem` as the guard.
 
 ---
 
