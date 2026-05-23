@@ -564,13 +564,13 @@ export function ItemDetailModal({
                                                 </Link>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 pt-1">
+                                        <div className="flex flex-wrap items-center gap-1 pt-1">
                                             {group.items.map((groupItem) => {
                                                 const isSelected = groupItem.id === selectedItem.id;
                                                 return (
                                                     <div
                                                         key={groupItem.id}
-                                                        className={`flex shrink-0 items-center gap-1.5 rounded border px-2 py-1 ${
+                                                        className={`flex max-w-full items-center gap-1.5 rounded border px-1.5 py-0.5 ${
                                                             isSelected
                                                                 ? "border-tarkov-green/40 bg-tarkov-green/10 text-white"
                                                                 : "border-white/10 bg-black/30 text-gray-300"
@@ -579,7 +579,7 @@ export function ItemDetailModal({
                                                     >
                                                         {(groupItem.iconLink ??
                                                             groupItem.gridImageLink) && (
-                                                            <span className="flex h-5 w-5 items-center justify-center rounded-sm bg-black/35">
+                                                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-black/35">
                                                                 <img
                                                                     src={
                                                                         groupItem.iconLink ??
@@ -587,18 +587,18 @@ export function ItemDetailModal({
                                                                         ""
                                                                     }
                                                                     alt={groupItem.name}
-                                                                    className="h-4 w-4 object-contain"
+                                                                    className="h-5 w-5 object-contain"
                                                                 />
                                                             </span>
                                                         )}
-                                                        <span className="max-w-28 truncate text-[11px]">
+                                                        <span className="max-w-36 truncate text-xs leading-snug">
                                                             {groupItem.name}
                                                         </span>
                                                     </div>
                                                 );
                                             })}
                                             {group.isPartial && (
-                                                <span className="shrink-0 rounded border border-blue-400/20 bg-blue-400/10 px-2 py-1 text-[10px] text-blue-200">
+                                                <span className="rounded border border-blue-400/20 bg-blue-400/10 px-1.5 py-0.5 text-xs text-blue-200">
                                                     +{Math.max(group.totalItemCount - group.items.length, 0)}{" "}
                                                     more
                                                 </span>
