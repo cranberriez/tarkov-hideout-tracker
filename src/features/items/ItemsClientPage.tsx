@@ -74,8 +74,21 @@ export function ItemsClientPage({
                 };
             }
         }
+        for (const group of questAnyOfGroups) {
+            for (const item of group.items) {
+                if (!pool[item.id]) {
+                    pool[item.id] = {
+                        id: item.id,
+                        name: item.name,
+                        normalizedName: item.normalizedName,
+                        iconLink: item.iconLink,
+                        gridImageLink: item.gridImageLink,
+                    };
+                }
+            }
+        }
         return Object.values(pool);
-    }, [items, questItemIndex]);
+    }, [items, questAnyOfGroups, questItemIndex]);
 
     return (
         <main className="container mx-auto px-6 py-8">
@@ -140,6 +153,7 @@ export function ItemsClientPage({
                     hiddenStations={hiddenStations}
                     completedRequirements={completedRequirements}
                     questItemIndex={questItemIndex}
+                    questAnyOfGroups={questAnyOfGroups}
                     questAvailabilityQuests={questAvailabilityQuestList}
                 />
             )}

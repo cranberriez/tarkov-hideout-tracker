@@ -69,7 +69,10 @@ export function toQuestAvailabilityQuest(quest: QuestAvailabilitySource): QuestA
         minPlayerLevel: quest.minPlayerLevel,
         kappaRequired: quest.kappaRequired ?? false,
         lightkeeperRequired: quest.lightkeeperRequired ?? false,
-        hasItemHandIn: quest.objectives?.some((objective) => objective.type === "giveItem") ?? false,
+        hasItemHandIn:
+            quest.objectives?.some(
+                (objective) => objective.type === "giveItem" || objective.type === "plantItem",
+            ) ?? false,
         taskRequirements: quest.taskRequirements,
         failConditions: "failConditions" in quest ? (quest.failConditions ?? []) : [],
         trader: quest.trader,

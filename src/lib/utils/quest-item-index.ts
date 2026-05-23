@@ -204,10 +204,12 @@ interface QuestItemDeriveContext {
     questsById: ReadonlyMap<string, QuestAvailabilityQuest>;
 }
 
-function isGiveItemObjective(
+function isQuestItemDemandObjective(
     objective: QuestObjectiveItemType | FullQuestObjective,
 ): objective is QuestObjectiveItemType {
-    return objective.type === "giveItem" && "items" in objective;
+    return (
+        (objective.type === "giveItem" || objective.type === "plantItem") && "items" in objective
+    );
 }
 
 function isFindItemObjective(
@@ -256,12 +258,12 @@ function formatAnyOfObjectiveLabel(
 }
 
 export function hasGiveItemObjectives(quest: FullQuest | Quest): boolean {
-    return quest.objectives.some((objective) => isGiveItemObjective(objective));
+    return quest.objectives.some((objective) => isQuestItemDemandObjective(objective));
 }
 
 export function hasFirGiveItemObjectives(quest: FullQuest | Quest): boolean {
     return quest.objectives.some(
-        (objective) => isGiveItemObjective(objective) && objective.foundInRaid,
+        (objective) => isQuestItemDemandObjective(objective) && objective.foundInRaid,
     );
 }
 
@@ -313,7 +315,7 @@ export function buildQuestItemIndex(quests: QuestItemSource[]): QuestItemIndexEn
         const itemLinks = new Map<string, QuestItemLink>();
 
         for (const objective of quest.objectives) {
-            if (!isGiveItemObjective(objective)) continue;
+            if (!isQuestItemDemandObjective(objective)) continue;
             if (classifyGiveItemObjective(objective) !== "specific") continue;
 
             for (const item of objective.items) {
@@ -362,7 +364,7 @@ export function buildQuestItemIndex(quests: QuestItemSource[]): QuestItemIndexEn
             const giveItemChoices = quest.objectives.reduce<
                 Array<QuestObjectiveItemType["items"][number]>
             >((acc, objective) => {
-                if (isGiveItemObjective(objective)) {
+                if (isQuestItemDemandObjective(objective)) {
                     acc.push(...objective.items);
                 }
                 return acc;
@@ -389,7 +391,7 @@ export function buildQuestAnyOfGroups(quests: QuestItemSource[]): QuestAnyOfGrou
 
     for (const quest of quests) {
         for (const [objectiveIndex, objective] of quest.objectives.entries()) {
-            if (!isGiveItemObjective(objective) || objective.items.length <= 1) continue;
+            if (!isQuestItemDemandObjective(objective) || objective.items.length <= 1) continue;
             const itemScope = classifyGiveItemObjective(objective);
             const isPartial = itemScope === "broadAny";
             const totalItemCount = objective.totalItemCount ?? objective.items.length;

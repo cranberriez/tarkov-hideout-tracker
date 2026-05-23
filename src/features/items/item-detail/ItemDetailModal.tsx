@@ -13,8 +13,8 @@ import { ItemDetailHeader } from "./ItemDetailHeader";
 import { ItemDetailInventoryAndMarket } from "./ItemDetailInventoryAndMarket";
 import { ItemDetailHideoutRequirements } from "./ItemDetailHideoutRequirements";
 import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
-import type { QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
-import { deriveQuestItemState } from "@/lib/utils/quest-item-index";
+import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
+import { deriveQuestAnyOfGroups, deriveQuestItemState } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 import { formatRoubles } from "@/lib/utils/market-price";
@@ -28,6 +28,7 @@ export interface ItemDetailModalProps {
     hiddenStations: Record<string, boolean>;
     completedRequirements: Record<string, boolean>;
     questItemIndex?: QuestItemIndexEntry[];
+    questAnyOfGroups?: QuestAnyOfGroupEntry[];
     questAvailabilityQuests?: QuestAvailabilityQuest[];
 }
 
@@ -40,6 +41,7 @@ export function ItemDetailModal({
     hiddenStations,
     completedRequirements,
     questItemIndex = [],
+    questAnyOfGroups = [],
     questAvailabilityQuests = [],
 }: ItemDetailModalProps) {
     const selectedItem = item;
@@ -244,6 +246,51 @@ export function ItemDetailModal({
         questShowLightkeeper,
     ]);
 
+    const questAnyOfGroupState = useMemo(() => {
+        if (!selectedItem) return [];
+
+        return deriveQuestAnyOfGroups(questAnyOfGroups, {
+            completedQuests,
+            failedQuests,
+            ignoredQuests,
+            pinnedQuests,
+            playerLevel,
+            prestigeLevel,
+            faction: questFaction,
+            traderLoyaltyLevels: questTraderLoyaltyLevels,
+            quests: questAvailabilityQuests,
+            visibilityMode: itemQuestVisibilityMode,
+            customLookahead: itemQuestCustomLookahead,
+            customLevelLookahead: itemQuestCustomLevelLookahead,
+            showFutureFir: itemShowFutureFir,
+            showIgnored: itemShowIgnored,
+            showKappa: questShowKappa,
+            showLightkeeper: questShowLightkeeper,
+        }).filter((group) => group.items.some((groupItem) => groupItem.id === selectedItem.id));
+    }, [
+        selectedItem,
+        questAnyOfGroups,
+        completedQuests,
+        failedQuests,
+        ignoredQuests,
+        pinnedQuests,
+        playerLevel,
+        prestigeLevel,
+        questFaction,
+        questTraderLoyaltyLevels,
+        questAvailabilityQuests,
+        itemQuestVisibilityMode,
+        itemQuestCustomLookahead,
+        itemQuestCustomLevelLookahead,
+        itemShowFutureFir,
+        itemShowIgnored,
+        questShowKappa,
+        questShowLightkeeper,
+    ]);
+
+    const hasQuestRequirements =
+        (questItemState?.relatedQuests.length ?? 0) > 0 || questAnyOfGroupState.length > 0;
+
     const [draftNonFir, setDraftNonFir] = useState(owned.have);
     const [draftFir, setDraftFir] = useState(owned.haveFir);
 
@@ -328,7 +375,7 @@ export function ItemDetailModal({
                         )}
                     </div>
 
-                    {questItemState && questItemState.relatedQuests.length > 0 && (
+                    {hasQuestRequirements && (
                         <section className="mt-5 rounded-md border border-white/10 bg-card p-4">
                             <div className="mb-3 flex items-center justify-between gap-3">
                                 <div>
@@ -341,13 +388,17 @@ export function ItemDetailModal({
                                     </p>
                                 </div>
                                 <div className="text-right text-xs text-gray-500">
-                                    <div>{questItemState.relatedQuestCount} active quests</div>
-                                    <div>{questItemState.pinnedQuestCount} pinned</div>
+                                    <div>
+                                        {(questItemState?.relatedQuestCount ?? 0) +
+                                            questAnyOfGroupState.length}{" "}
+                                        active quests
+                                    </div>
+                                    <div>{questItemState?.pinnedQuestCount ?? 0} pinned</div>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                {questItemState.relatedQuests.map((quest) => {
+                                {questItemState?.relatedQuests.map((quest) => {
                                     const isCompleted = !!completedQuests[quest.questId];
                                     const isIgnored = !!ignoredQuests[quest.questId];
                                     const isPinned = !!pinnedQuests[quest.questId];
@@ -473,6 +524,88 @@ export function ItemDetailModal({
                                         </div>
                                     );
                                 })}
+                                {questAnyOfGroupState.map((group) => (
+                                    <div
+                                        key={group.groupId}
+                                        className="space-y-1.5 rounded-md border border-white/8 bg-black/20 px-3 py-2"
+                                    >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <span className="flex-1 min-w-0 truncate text-sm font-medium text-white">
+                                                {group.questName}
+                                            </span>
+                                            <span className="shrink-0 rounded border border-purple-400/20 bg-purple-400/10 px-1.5 py-0.5 text-[10px] text-purple-200">
+                                                item group
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between gap-2 min-w-0">
+                                            <span className="truncate text-xs text-gray-500">
+                                                {group.traderName}
+                                                {group.minPlayerLevel != null
+                                                    ? ` - Lv. ${group.minPlayerLevel}`
+                                                    : ""}
+                                                {" - "}
+                                                {group.objectiveLabel}
+                                            </span>
+                                            <div className="flex shrink-0 items-center gap-1">
+                                                <span className="rounded border border-white/10 bg-black/30 px-1.5 py-0.5 text-[10px] text-gray-400">
+                                                    Needs x{group.requiredCount}
+                                                </span>
+                                                {group.requiredFirCount > 0 && (
+                                                    <span className="rounded border border-orange-500/20 bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-bold text-orange-200">
+                                                        FiR
+                                                    </span>
+                                                )}
+                                                <Link
+                                                    href={getQuestDeepLinkHref(group.questId)}
+                                                    className="rounded p-1 text-gray-600 hover:text-gray-300 transition-colors"
+                                                    title="View on quests page"
+                                                >
+                                                    <ExternalLink size={12} />
+                                                </Link>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 pt-1">
+                                            {group.items.map((groupItem) => {
+                                                const isSelected = groupItem.id === selectedItem.id;
+                                                return (
+                                                    <div
+                                                        key={groupItem.id}
+                                                        className={`flex shrink-0 items-center gap-1.5 rounded border px-2 py-1 ${
+                                                            isSelected
+                                                                ? "border-tarkov-green/40 bg-tarkov-green/10 text-white"
+                                                                : "border-white/10 bg-black/30 text-gray-300"
+                                                        }`}
+                                                        title={groupItem.name}
+                                                    >
+                                                        {(groupItem.iconLink ??
+                                                            groupItem.gridImageLink) && (
+                                                            <span className="flex h-5 w-5 items-center justify-center rounded-sm bg-black/35">
+                                                                <img
+                                                                    src={
+                                                                        groupItem.iconLink ??
+                                                                        groupItem.gridImageLink ??
+                                                                        ""
+                                                                    }
+                                                                    alt={groupItem.name}
+                                                                    className="h-4 w-4 object-contain"
+                                                                />
+                                                            </span>
+                                                        )}
+                                                        <span className="max-w-28 truncate text-[11px]">
+                                                            {groupItem.name}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                            {group.isPartial && (
+                                                <span className="shrink-0 rounded border border-blue-400/20 bg-blue-400/10 px-2 py-1 text-[10px] text-blue-200">
+                                                    +{Math.max(group.totalItemCount - group.items.length, 0)}{" "}
+                                                    more
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </section>
                     )}

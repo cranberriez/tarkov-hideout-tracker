@@ -67,6 +67,40 @@ test("buildQuestItemIndex excludes broad any item objectives from exact item dem
     assert.deepEqual(buildQuestItemIndex(quests), []);
 });
 
+test("buildQuestItemIndex includes exact plant item objectives in item demand", () => {
+    const quests = [
+        makeQuest({
+            id: "plant-item",
+            name: "Bad Habit",
+            objectives: [
+                {
+                    id: "obj-plant",
+                    type: "plantItem",
+                    description: "Stash a Toilet paper inside the secret container stash",
+                    optional: false,
+                    count: 1,
+                    foundInRaid: false,
+                    items: [
+                        {
+                            id: "toilet-paper",
+                            name: "Toilet paper",
+                            normalizedName: "toilet-paper",
+                            iconLink: "/toilet-paper.png",
+                            gridImageLink: "/toilet-paper-grid.png",
+                        },
+                    ],
+                },
+            ],
+        }),
+    ];
+
+    const [entry] = buildQuestItemIndex(quests);
+
+    assert.equal(entry?.itemId, "toilet-paper");
+    assert.equal(entry?.quests[0]?.questId, "plant-item");
+    assert.equal(entry?.quests[0]?.requiredCount, 1);
+});
+
 test("buildQuestAnyOfGroups marks broad any item objectives as partial previews", () => {
     const quests = [
         makeQuest({

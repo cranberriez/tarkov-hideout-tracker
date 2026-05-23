@@ -1,5 +1,5 @@
 import { getCachedFullQuestData, orderQuestsByPrerequisites } from "@/server/services/quests";
-import { buildQuestItemIndex } from "@/lib/utils/quest-item-index";
+import { buildQuestAnyOfGroups, buildQuestItemIndex } from "@/lib/utils/quest-item-index";
 import { toQuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { QuestsClientPage } from "@/features/quests/QuestsClientPage";
 
@@ -9,6 +9,7 @@ export default async function QuestsPage() {
     const questsResponse = await getCachedFullQuestData();
     const quests = orderQuestsByPrerequisites(questsResponse.data.quests);
     const questItemIndex = buildQuestItemIndex(quests);
+    const questAnyOfGroups = buildQuestAnyOfGroups(quests);
     const questAvailabilityQuests = quests.map(toQuestAvailabilityQuest);
 
     return (
@@ -16,6 +17,7 @@ export default async function QuestsPage() {
             quests={quests}
             updatedAt={questsResponse.updatedAt}
             questItemIndex={questItemIndex}
+            questAnyOfGroups={questAnyOfGroups}
             questAvailabilityQuests={questAvailabilityQuests}
         />
     );

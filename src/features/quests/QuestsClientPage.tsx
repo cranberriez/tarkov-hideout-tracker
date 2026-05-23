@@ -17,7 +17,7 @@ import { QuestDetailModal } from "./QuestDetailModal";
 import { QuestCascadeConfirmDialog } from "./components/QuestCascadeConfirmDialog";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import type { QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
+import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 
 function QuestsContent() {
@@ -52,6 +52,7 @@ interface QuestsClientPageProps {
     quests: FullQuest[];
     updatedAt: number;
     questItemIndex: QuestItemIndexEntry[];
+    questAnyOfGroups: QuestAnyOfGroupEntry[];
     questAvailabilityQuests: QuestAvailabilityQuest[];
 }
 
@@ -59,6 +60,7 @@ export function QuestsClientPage({
     quests,
     updatedAt,
     questItemIndex,
+    questAnyOfGroups,
     questAvailabilityQuests,
 }: QuestsClientPageProps) {
     void updatedAt;
@@ -166,6 +168,7 @@ export function QuestsClientPage({
                 hiddenStations={hiddenStations}
                 completedRequirements={completedRequirements}
                 questItemIndex={questItemIndex}
+                questAnyOfGroups={questAnyOfGroups}
                 questAvailabilityQuests={questAvailabilityQuests}
             />
             <QuestDetailModal

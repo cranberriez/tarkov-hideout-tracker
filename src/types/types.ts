@@ -228,7 +228,7 @@ export interface QuestObjectiveBase {
 }
 
 export interface QuestObjectiveItemType extends QuestObjectiveBase {
-    type: "giveItem" | "findItem";
+    type: "giveItem" | "findItem" | "plantItem";
     count: number;
     foundInRaid: boolean;
     items: QuestItem[];

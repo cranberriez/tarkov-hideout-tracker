@@ -676,10 +676,10 @@ function mapFullObjective(o: RawFullObjective): FullQuestObjective {
         maps: o.maps ?? [],
     };
 
-    if ((o.type === "giveItem" || o.type === "findItem") && o.items) {
+    if ((o.type === "giveItem" || o.type === "findItem" || o.type === "plantItem") && o.items) {
         return {
             ...base,
-            type: o.type as "giveItem" | "findItem",
+            type: o.type as "giveItem" | "findItem" | "plantItem",
             count: o.count ?? 0,
             foundInRaid: o.foundInRaid ?? false,
             items: o.items,
@@ -793,7 +793,13 @@ function mapFullObjective(o: RawFullObjective): FullQuestObjective {
 }
 
 function shouldHydrateFullObjectiveItems(objective: RawFullObjective, itemIndex: number) {
-    if (objective.type !== "giveItem" && objective.type !== "findItem") return false;
+    if (
+        objective.type !== "giveItem" &&
+        objective.type !== "findItem" &&
+        objective.type !== "plantItem"
+    ) {
+        return false;
+    }
     const total = objective.items?.length ?? 0;
     if (total <= 1) return true;
     return itemIndex < 15;

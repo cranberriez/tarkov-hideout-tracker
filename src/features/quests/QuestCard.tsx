@@ -78,11 +78,17 @@ const questDetailChipBaseClass =
 const COMPACT_PREVIEW_ITEM_LIMIT = 5;
 
 function isItemObjective(o: FullQuestObjective): o is QuestObjectiveItemType {
-    return (o.type === "giveItem" || o.type === "findItem") && "items" in o;
+    return (
+        (o.type === "giveItem" || o.type === "findItem" || o.type === "plantItem") &&
+        "items" in o
+    );
 }
 
-function isGiveItemObjective(o: FullQuestObjective): o is QuestObjectiveItemType {
-    return o.type === "giveItem" && "items" in o;
+function isQuestItemDemandObjective(o: FullQuestObjective): o is QuestObjectiveItemType {
+    return (
+        (o.type === "giveItem" || o.type === "plantItem") &&
+        "items" in o
+    );
 }
 
 function isShootObjective(o: FullQuestObjective): o is QuestObjectiveShootType {
@@ -93,6 +99,7 @@ function ObjectiveIcon({ type }: { type: string }) {
     const cls = "shrink-0 mt-0.5";
     switch (type) {
         case "giveItem":
+        case "plantItem":
             return <Package size={13} className={`${cls} text-tarkov-green/60`} />;
         case "findItem":
             return <Search size={13} className={`${cls} text-blue-400/60`} />;
@@ -176,7 +183,7 @@ function ObjectiveRow({
                                 )}
                             </div>
                         )}
-                        {objective.type === "giveItem" && (
+                        {(objective.type === "giveItem" || objective.type === "plantItem") && (
                             <div className="flex flex-wrap gap-1.5">
                                 {item.items.map((itm) => (
                                     <div
@@ -380,7 +387,7 @@ export function QuestCard({
     const failedRequirementIds = getFailedQuestRequirementIds(quest);
     const isExpanded = forceExpand || expanded;
 
-    const giveItemObjectives = quest.objectives.filter(isGiveItemObjective);
+    const giveItemObjectives = quest.objectives.filter(isQuestItemDemandObjective);
     const allHandInItems = [
         ...new Map(
             giveItemObjectives.flatMap((o) =>
