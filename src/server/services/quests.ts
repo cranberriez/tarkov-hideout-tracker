@@ -674,6 +674,7 @@ function mapFullObjective(o: RawFullObjective): FullQuestObjective {
         description: o.description,
         optional: o.optional,
         maps: o.maps ?? [],
+        requiredKeys: o.requiredKeys,
     };
 
     if ((o.type === "giveItem" || o.type === "findItem" || o.type === "plantItem") && o.items) {
@@ -709,7 +710,6 @@ function mapFullObjective(o: RawFullObjective): FullQuestObjective {
             count: o.count,
             exitStatus: o.exitStatus ?? [],
             zoneNames: o.zoneNames ?? [],
-            requiredKeys: o.requiredKeys,
         };
     }
 

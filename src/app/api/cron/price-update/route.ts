@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
             refreshTarkovDevMarketPrices("PVP"),
             refreshTarkovDevMarketPrices("PVE"),
         ]);
-        revalidateTag("market-prices");
+        revalidateTag("market-prices", { expire: 0 });
 
         return NextResponse.json({ ok: true, results: [pvp, pve] }, { status: 200 });
     } catch (error) {

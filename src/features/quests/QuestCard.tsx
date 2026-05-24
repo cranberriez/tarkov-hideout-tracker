@@ -22,10 +22,12 @@ import {
     CircleSlash,
     Lock,
     AlertTriangle,
+    KeyRound,
 } from "lucide-react";
 import type {
     FullQuest,
     FullQuestObjective,
+    QuestItem,
     QuestObjectiveItemType,
     QuestObjectiveShootType,
 } from "@/types";
@@ -95,6 +97,16 @@ function isShootObjective(o: FullQuestObjective): o is QuestObjectiveShootType {
     return o.type === "shoot" && "target" in o;
 }
 
+function getRequiredKeyGroups(objective: FullQuestObjective): QuestItem[][] {
+    return (objective.requiredKeys ?? [])
+        .map((group) => group.filter((key) => key?.id && key.name))
+        .filter((group) => group.length > 0);
+}
+
+function hasRequiredKeys(objective: FullQuestObjective) {
+    return getRequiredKeyGroups(objective).length > 0;
+}
+
 function ObjectiveIcon({ type }: { type: string }) {
     const cls = "shrink-0 mt-0.5";
     switch (type) {
@@ -121,6 +133,43 @@ function ObjectiveIcon({ type }: { type: string }) {
     }
 }
 
+function RequiredKeysList({ groups }: { groups: QuestItem[][] }) {
+    if (groups.length === 0) return null;
+
+    return (
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            <span className="text-[10px] font-medium uppercase text-gray-600">
+                Required keys
+            </span>
+            {groups.map((group, groupIndex) => (
+                <div
+                    key={`required-key-group-${groupIndex}`}
+                    className="contents"
+                >
+                    {groupIndex > 0 && (
+                        <span className="text-[10px] text-gray-600">or</span>
+                    )}
+                    {group.map((key) => (
+                        <span
+                            key={key.id}
+                            className="inline-flex min-h-7 items-center gap-1.5 rounded border border-white/10 bg-black/35 px-2 py-1 text-[11px] leading-snug text-gray-200"
+                        >
+                            {(key.iconLink ?? key.gridImageLink) && (
+                                <img
+                                    src={key.iconLink ?? key.gridImageLink ?? ""}
+                                    alt=""
+                                    className="h-5 w-5 shrink-0 object-contain"
+                                />
+                            )}
+                            {key.name}
+                        </span>
+                    ))}
+                </div>
+            ))}
+        </div>
+    );
+}
+
 function ObjectiveRow({
     objective,
     onItemClick,
@@ -132,9 +181,10 @@ function ObjectiveRow({
     const shoot = isShootObjective(objective) ? objective : null;
     const hasItemChoices = !!item && item.items.length > 1;
     const isPartialItemList = !!item?.isPartial;
+    const requiredKeyGroups = getRequiredKeyGroups(objective);
 
     return (
-        <div className={`flex items-center gap-2 ${objective.optional ? "opacity-50" : ""}`}>
+        <div className={`flex items-start gap-2 ${objective.optional ? "opacity-50" : ""}`}>
             <div className="flex items-center gap-1">
                 <ObjectiveIcon type={objective.type} />
                 {objective?.count &&
@@ -156,6 +206,7 @@ function ObjectiveRow({
                         ))}
                     </div>
                 )}
+                <RequiredKeysList groups={requiredKeyGroups} />
                 {item && item.items.length > 0 && (
                     <div
                         className={
@@ -388,6 +439,7 @@ export function QuestCard({
     const isExpanded = forceExpand || expanded;
 
     const giveItemObjectives = quest.objectives.filter(isQuestItemDemandObjective);
+    const questHasRequiredKeys = quest.objectives.some(hasRequiredKeys);
     const allHandInItems = [
         ...new Map(
             giveItemObjectives.flatMap((o) =>
@@ -668,6 +720,14 @@ export function QuestCard({
                     >
                         {quest.name}
                     </span>
+                    {!isExpanded && questHasRequiredKeys && (
+                        <KeyRound
+                            size={14}
+                            className="shrink-0 text-yellow-300/75"
+                            role="img"
+                            aria-label="Requires key"
+                        />
+                    )}
                     <span
                         className={`${questMetaChipBaseClass} hidden shrink-0 sm:inline-flex ${
                             completed

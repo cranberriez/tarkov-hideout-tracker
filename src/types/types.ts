@@ -227,6 +227,7 @@ export interface QuestObjectiveBase {
     optional: boolean;
     count?: number;
     maps?: QuestMap[];
+    requiredKeys?: QuestItem[][];
 }
 
 export interface QuestObjectiveItemType extends QuestObjectiveBase {
@@ -254,7 +255,6 @@ export interface QuestObjectiveExtractType extends QuestObjectiveBase {
     exitName: string | null;
     exitStatus?: string[];
     zoneNames?: string[];
-    requiredKeys?: QuestItem[][];
 }
 
 export interface QuestObjectiveBuildItemType extends QuestObjectiveBase {

@@ -214,6 +214,7 @@ Run this when changing manual sync behavior before `npm run lint` and `npm run b
 - Failed and disabled quest states for fail-capable mutually exclusive branches.
 - Trader avatar, quest name, level/map/kappa/LK/faction/trader-loyalty/prestige badges.
 - Compact item strip for exact `giveItem` and `plantItem` objectives; item thumbnails call `onItemClick(itemId)`.
+- Compact cards show a bare key icon when any objective has `requiredKeys`; expanded objective rows show the relevant key items under that objective.
 - Broad any-item `giveItem` and `plantItem` objectives keep a partial preview of up to 15 items and are excluded from exact item checklist demand.
 - Expanded objective rows for all objective types.
 - Requires/unlocks chips linked to `#quest-{id}`.
@@ -233,7 +234,7 @@ API quirks to keep in mind:
 
 | Layer                    | Key                                      | Freshness                   |
 | ------------------------ | ---------------------------------------- | --------------------------- |
-| Redis                    | `quests:full:v5` + `quests:full:v5:meta` | 12h service freshness check |
+| Redis                    | `quests:full:v6` + `quests:full:v6:meta` | 12h service freshness check |
 | Next.js `unstable_cache` | `["quests-full"]`                        | `revalidate: 43200`         |
 
 To invalidate quest data for application code, bump the relevant version in `src/lib/cfg/cacheVersions.ts`. See `caching-architecture.md`.
