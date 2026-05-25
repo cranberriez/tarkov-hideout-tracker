@@ -53,12 +53,18 @@ export function QuestActionButton({ type, active, className, onClick }: QuestAct
         <button
             onClick={onClick}
             aria-label={label}
-            className={cn("shrink-0 rounded-md p-1.5 transition-all", active ? activeClass : inactiveClass, className)}
+            className={cn(
+                "shrink-0 rounded-md p-1.5 transition-all",
+                active ? activeClass : inactiveClass,
+                className,
+            )}
             title={label}
         >
             <Icon
                 size={16}
-                className={isPin && active ? "fill-current" : !isPin && active ? "stroke-[2.25]" : ""}
+                className={
+                    isPin && active ? "fill-current" : !isPin && active ? "stroke-[2.25]" : ""
+                }
             />
         </button>
     );
@@ -223,7 +229,7 @@ export function QuestCardHeader({
 
             <div className="flex min-w-0 flex-1 items-center gap-1.5">
                 <span
-                    className={`min-w-0 flex-1 text-sm font-medium leading-tight line-clamp-2 sm:truncate ${
+                    className={`min-w-0 text-sm font-medium leading-tight line-clamp-2 sm:truncate ${
                         completed
                             ? "text-gray-600 line-through"
                             : failed || disabled
@@ -233,7 +239,7 @@ export function QuestCardHeader({
                 >
                     {quest.name}
                 </span>
-                {!expanded && questHasRequiredKeys && (
+                {questHasRequiredKeys && (
                     <KeyRound
                         size={14}
                         className="shrink-0 text-yellow-300/75"

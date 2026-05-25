@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { useShallow } from "zustand/react/shallow";
 import { CheckCircle, ChevronDown, Circle, Lock } from "lucide-react";
@@ -9,81 +9,21 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { QuestCard, type QuestRef } from "../QuestCard";
 import { cn } from "@/lib/utils";
 import type { FullQuest } from "@/types";
-import { isQuestAvailableForProfile } from "../quest-sync";
+import type { TraderTreeMeta } from "./quest-tree-builder";
+import type { LinkedPrerequisiteStatus } from "./quest-tree-prerequisites";
 import {
-    QUEST_NAVIGATE_TO_QUEST_EVENT,
-} from "../quest-deep-link";
-import { QUEST_SCROLL_TO_TRADER_EVENT } from "./QuestsSidebar";
-import {
-    partitionLinkedPrerequisites,
-    shouldFoldLinkedPrerequisites,
-    type LinkedPrerequisiteStatus,
-} from "./quest-tree-prerequisites";
-import { buildTraderTree } from "./quest-tree-builder";
-
-const QUEST_HIGHLIGHT_DURATION_MS = 30_000;
-const QUEST_SCROLL_TOP_OFFSET_VH = 0.3;
-
-function scrollToQuest(questId: string) {
-    const target = document.getElementById(`quest-${questId}`);
-    if (!target) return false;
-
-    const targetTop = target.getBoundingClientRect().top + window.scrollY;
-    const offset = window.innerHeight * QUEST_SCROLL_TOP_OFFSET_VH;
-    const top = Math.max(0, targetTop - offset);
-
-    window.history.replaceState(null, "", `#quest-${questId}`);
-    window.scrollTo({ top, behavior: "smooth" });
-    return true;
-}
-
-function toRef(id: string, fallbackName: string, questsById: Map<string, FullQuest>): QuestRef {
-    const q = questsById.get(id);
-    return {
-        id,
-        name: q?.name ?? fallbackName,
-        trader: q
-            ? {
-                  imageLink: q.trader.imageLink ?? null,
-                  image4xLink: q.trader.image4xLink ?? null,
-                  name: q.trader.name,
-              }
-            : { imageLink: null, image4xLink: null, name: "?" },
-    };
-}
-
-function getPrerequisiteType(statuses: string[]): QuestRef["prerequisiteType"] {
-    const normalized = statuses.map((status) => status.toLowerCase());
-    if (normalized.includes("complete") && normalized.includes("failed")) return "resolved";
-    if (normalized.includes("failed")) return "failed";
-    if (normalized.includes("active")) return "active";
-    return "complete";
-}
-
-function countAllDescendants(ids: string[], childrenOf: Map<string, string[]>): number {
-    let total = ids.length;
-    for (const id of ids) {
-        const children = childrenOf.get(id) ?? [];
-        if (children.length > 0) total += countAllDescendants(children, childrenOf);
-    }
-    return total;
-}
-
-function collectLinearChainIds(startId: string, childrenOf: Map<string, string[]>): string[] {
-    const ids: string[] = [];
-    let currentId = startId;
-
-    while (true) {
-        const children = childrenOf.get(currentId) ?? [];
-        if (children.length !== 1) break;
-
-        const nextId = children[0];
-        ids.push(nextId);
-        currentId = nextId;
-    }
-
-    return ids;
-}
+    buildLinkedPrerequisiteEntries,
+    buildQuestTreeData,
+    collectLinearChainIds,
+    countAllDescendants,
+    getBranchCollapseKey,
+    getLinearCollapseKey,
+    getPrerequisiteType,
+    getTraderCollapseKey,
+    getTraderCompletion,
+    toQuestRef,
+} from "./quest-tree-view-model";
+import { useQuestTreeNavigation, type QuestNavigationRequest } from "./useQuestTreeNavigation";
 
 function getIndentPx(depth: number) {
     if (depth < 4) return 20;
@@ -331,14 +271,6 @@ const BAR_OVERLAP = 4;
 const LINEAR_CHAIN_OFFSET = 14;
 const MOBILE_TREE_CARD_CLASS = "w-[17rem] max-w-[calc(100vw-2.75rem)] sm:w-auto sm:max-w-none";
 
-function getBranchCollapseKey(questId: string) {
-    return `branch:${questId}`;
-}
-
-function getLinearCollapseKey(questId: string) {
-    return `linear:${questId}`;
-}
-
 function QuestNodeCard({
     questId,
     parentOf,
@@ -356,55 +288,19 @@ function QuestNodeCard({
             ignoredQuests: state.ignoredQuests,
         })),
     );
-    const { syncProfile, showPrereqs, showDebug, questsById, leadsToByQuestId } = useQuestsContext();
+    const { syncProfile, showPrereqs, showDebug, questsById, leadsToByQuestId } =
+        useQuestsContext();
     const quest = questsById.get(questId);
     if (!quest) return null;
 
-    const primaryParentId = parentOf.get(questId) ?? null;
-    const linkedPrerequisites = quest.taskRequirements
-        .filter((req) => req.task.id !== primaryParentId)
-        .map((req) => {
-            const questRef = toRef(req.task.id, req.task.name, questsById);
-            const linkedQuest = questsById.get(req.task.id);
-            const status: LinkedPrerequisiteStatus = completedQuests[req.task.id]
-                ? "completed"
-                : linkedQuest && isQuestAvailableForProfile(linkedQuest, syncProfile, questsById)
-                  ? "available"
-                  : "locked";
-
-            return { questRef, status };
-        });
-    const foldPrerequisites = shouldFoldLinkedPrerequisites({
-        completed: !!completedQuests[quest.id],
-        ignored: !!ignoredQuests[quest.id],
-        prerequisiteIds: quest.taskRequirements.map((req) => req.task.id),
+    const prerequisiteEntries = buildLinkedPrerequisiteEntries({
+        quest,
+        parentOf,
+        questsById,
+        completedQuests,
+        ignoredQuests,
+        syncProfile,
     });
-    const partitionedPrerequisites = partitionLinkedPrerequisites({
-        completed: !!completedQuests[quest.id],
-        ignored: !!ignoredQuests[quest.id],
-        linkedPrerequisites: linkedPrerequisites.map((item) => ({
-            id: item.questRef.id,
-            status: item.status,
-        })),
-    });
-    const prerequisiteEntries = [
-        ...partitionedPrerequisites.expanded.map((item) => ({
-            questRef:
-                linkedPrerequisites.find(
-                    (linkedPrerequisite) => linkedPrerequisite.questRef.id === item.id,
-                )?.questRef ?? toRef(item.id, item.id, questsById),
-            status: item.status,
-            folded: false,
-        })),
-        ...partitionedPrerequisites.folded.map((item) => ({
-            questRef:
-                linkedPrerequisites.find(
-                    (linkedPrerequisite) => linkedPrerequisite.questRef.id === item.id,
-                )?.questRef ?? toRef(item.id, item.id, questsById),
-            status: item.status,
-            folded: foldPrerequisites,
-        })),
-    ];
 
     return (
         <>
@@ -417,16 +313,14 @@ function QuestNodeCard({
             )}
             <QuestCard
                 quest={quest}
-                prerequisiteQuests={quest.taskRequirements.map((req) =>
-                    ({
-                        ...toRef(req.task.id, req.task.name, questsById),
-                        prerequisiteType: getPrerequisiteType(req.status),
-                    }),
-                )}
+                prerequisiteQuests={quest.taskRequirements.map((req) => ({
+                    ...toQuestRef(req.task.id, req.task.name, questsById),
+                    prerequisiteType: getPrerequisiteType(req.status),
+                }))}
                 leadsToQuests={(leadsToByQuestId.get(quest.id) ?? []).map((id) =>
-                    toRef(id, id, questsById),
+                    toQuestRef(id, id, questsById),
                 )}
-                attachedTop={showPrereqs && linkedPrerequisites.length > 0}
+                attachedTop={showPrereqs && prerequisiteEntries.length > 0}
                 className={MOBILE_TREE_CARD_CLASS}
                 showDebugButton={showDebug}
                 highlighted={highlightedQuestId === quest.id}
@@ -483,10 +377,7 @@ function BranchChildren({
             }}
         >
             {isCollapsed ? (
-                <CollapseHint
-                    count={countAllDescendants(childIds, childrenOf)}
-                    onShow={onExpand}
-                />
+                <CollapseHint count={countAllDescendants(childIds, childrenOf)} onShow={onExpand} />
             ) : (
                 <>
                     <button
@@ -630,7 +521,8 @@ function QuestTreeNode({
                         <>
                             {linearChainIds.map((linearQuestId, index) => {
                                 const linearChildren = childrenOf.get(linearQuestId) ?? [];
-                                const branchAfterLinear = linearChildren.length > 1 ? linearChildren : [];
+                                const branchAfterLinear =
+                                    linearChildren.length > 1 ? linearChildren : [];
                                 const hasNextLinearQuest = index < linearChainIds.length - 1;
 
                                 return (
@@ -640,7 +532,9 @@ function QuestTreeNode({
                                         style={{ paddingLeft: `${LINEAR_CHAIN_OFFSET}px` }}
                                     >
                                         <button
-                                            onClick={() => setGroupCollapsed(linearCollapseKey, true)}
+                                            onClick={() =>
+                                                setGroupCollapsed(linearCollapseKey, true)
+                                            }
                                             title="Collapse"
                                             className="absolute left-0 z-10 cursor-pointer"
                                             onMouseEnter={onLinearRailEnter}
@@ -754,7 +648,7 @@ function TraderTreeSection({
 }: {
     trader: FullQuest["trader"];
     allTraderQuests: FullQuest[];
-    treeMeta: ReturnType<typeof buildTraderTree>;
+    treeMeta: TraderTreeMeta;
     highlightedQuestId: string | null;
     onQuestLinkClick: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
     collapsedGroups: Set<string>;
@@ -763,16 +657,17 @@ function TraderTreeSection({
     const completedQuests = useUserStore((state) => state.completedQuests);
 
     const { rootIds, childrenOf, parentOf } = treeMeta;
-
-    const total = allTraderQuests.length;
-    const completed = allTraderQuests.filter((q) => completedQuests[q.id]).length;
-    const pct = total > 0 ? (completed / total) * 100 : 0;
+    const { total, completed, pct } = getTraderCompletion(allTraderQuests, completedQuests);
+    const traderCollapseKey = getTraderCollapseKey(trader.id);
 
     return (
         <div id={`trader-${trader.id}`} className="mt-2">
             <button
                 onClick={() =>
-                    setGroupCollapsed(`trader:${trader.id}`, !collapsedGroups.has(`trader:${trader.id}`))
+                    setGroupCollapsed(
+                        traderCollapseKey,
+                        !collapsedGroups.has(traderCollapseKey),
+                    )
                 }
                 className="group flex items-center gap-3 p-2 w-full text-left rounded-lg border border-transparent hover:bg-white/1 transition-colors"
             >
@@ -808,12 +703,12 @@ function TraderTreeSection({
                         size={13}
                         className={cn(
                             "text-gray-600 group-hover:text-gray-400 shrink-0 transition-[transform,color]",
-                            collapsedGroups.has(`trader:${trader.id}`) && "-rotate-90",
+                            collapsedGroups.has(traderCollapseKey) && "-rotate-90",
                         )}
                     />
                 </div>
             </button>
-            {!collapsedGroups.has(`trader:${trader.id}`) && (
+            {!collapsedGroups.has(traderCollapseKey) && (
                 <div className="mt-1 mb-4 overflow-x-auto pb-2 sm:overflow-visible sm:pb-0">
                     <div className="min-w-max pr-2 sm:min-w-0 sm:pr-0">
                         {rootIds.map((rootId) => (
@@ -844,66 +739,27 @@ const TRADER_HEADER_HEIGHT = 72;
 const TRADER_EXPANDED_OVERHEAD = 28; // mt-1 + mb-4 + pb-2 on the content wrapper
 const QUEST_ROW_HEIGHT = 60;
 
-interface QuestNavigationRequest {
-    questId: string;
-    requestId: number;
-}
-
 interface QuestsTreeProps {
     questNavigationRequest: QuestNavigationRequest | null;
 }
 
 export function QuestsTree({ questNavigationRequest }: QuestsTreeProps) {
-    const {
-        filteredQuests,
-        quests,
-        questsById,
-        traders,
-        completedCount,
-        onQuestClick,
-    } = useQuestsContext();
-    const [highlightedQuestId, setHighlightedQuestId] = useState<string | null>(null);
+    const { filteredQuests, quests, questsById, traders, completedCount, onQuestClick } =
+        useQuestsContext();
     const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
-    const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const handledQuestNavigationRequestIdRef = useRef<number | null>(null);
 
     // --- data memos (must come before virtualizer) ---
 
-    const questsByTraderId = useMemo(() => {
-        const map = new Map<string, FullQuest[]>();
-        for (const quest of filteredQuests) {
-            const arr = map.get(quest.trader.id) ?? [];
-            arr.push(quest);
-            map.set(quest.trader.id, arr);
-        }
-        return map;
-    }, [filteredQuests]);
-
-    const allQuestsByTraderId = useMemo(() => {
-        const map = new Map<string, FullQuest[]>();
-        for (const quest of quests) {
-            const arr = map.get(quest.trader.id) ?? [];
-            arr.push(quest);
-            map.set(quest.trader.id, arr);
-        }
-        return map;
-    }, [quests]);
-
-    const treeMetaByTraderId = useMemo(() => {
-        const map = new Map<string, ReturnType<typeof buildTraderTree>>();
-        for (const trader of traders) {
-            const traderQuests = questsByTraderId.get(trader.id) ?? [];
-            if (traderQuests.length > 0) {
-                map.set(trader.id, buildTraderTree(traderQuests, filteredQuests));
-            }
-        }
-        return map;
-    }, [filteredQuests, questsByTraderId, traders]);
-
-    const visibleTraders = useMemo(
-        () => traders.filter((t) => (questsByTraderId.get(t.id) ?? []).length > 0),
-        [traders, questsByTraderId],
-    );
+    const { questsByTraderId, allQuestsByTraderId, treeMetaByTraderId, visibleTraders } =
+        useMemo(
+            () =>
+                buildQuestTreeData({
+                    filteredQuests,
+                    quests,
+                    traders,
+                }),
+            [filteredQuests, quests, traders],
+        );
 
     // --- virtualizer ---
 
@@ -918,28 +774,13 @@ export function QuestsTree({ questNavigationRequest }: QuestsTreeProps) {
         count: visibleTraders.length,
         estimateSize: (index) => {
             const trader = visibleTraders[index];
-            if (collapsedGroups.has(`trader:${trader.id}`)) return TRADER_HEADER_HEIGHT;
+            if (collapsedGroups.has(getTraderCollapseKey(trader.id))) return TRADER_HEADER_HEIGHT;
             const questCount = questsByTraderId.get(trader.id)?.length ?? 0;
             return TRADER_HEADER_HEIGHT + TRADER_EXPANDED_OVERHEAD + questCount * QUEST_ROW_HEIGHT;
         },
         overscan: 3,
         scrollMargin,
     });
-
-    useEffect(() => {
-        const handleScrollToTrader = (event: Event) => {
-            const traderId = (event as CustomEvent<{ traderId?: string }>).detail?.traderId;
-            if (!traderId) return;
-
-            const index = visibleTraders.findIndex((trader) => trader.id === traderId);
-            if (index === -1) return;
-
-            virtualizer.scrollToIndex(index, { align: "start", behavior: "smooth" });
-        };
-
-        window.addEventListener(QUEST_SCROLL_TO_TRADER_EVENT, handleScrollToTrader);
-        return () => window.removeEventListener(QUEST_SCROLL_TO_TRADER_EVENT, handleScrollToTrader);
-    }, [visibleTraders, virtualizer]);
 
     // --- handlers ---
 
@@ -952,100 +793,15 @@ export function QuestsTree({ questNavigationRequest }: QuestsTreeProps) {
         });
     }, []);
 
-    const expandQuestPath = useCallback((questId: string) => {
-        const quest = questsById.get(questId);
-        if (!quest) return;
-
-        const treeMeta = treeMetaByTraderId.get(quest.trader.id);
-        if (!treeMeta) return;
-
-        setCollapsedGroups((current) => {
-            const next = new Set(current);
-            next.delete(`trader:${quest.trader.id}`);
-
-            let currentQuestId: string | null = questId;
-            while (currentQuestId) {
-                const parentQuestId: string | null = treeMeta.parentOf.get(currentQuestId) ?? null;
-                if (!parentQuestId) break;
-
-                const siblings = treeMeta.childrenOf.get(parentQuestId) ?? [];
-                if (siblings.length > 1) {
-                    next.delete(getBranchCollapseKey(parentQuestId));
-                } else if (siblings.length === 1) {
-                    next.delete(getLinearCollapseKey(parentQuestId));
-                }
-
-                currentQuestId = parentQuestId;
-            }
-
-            return next;
-        });
-    }, [questsById, treeMetaByTraderId]);
-
-    const highlightQuest = useCallback((questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => {
-        event?.preventDefault();
-        setHighlightedQuestId(questId);
-
-        requestAnimationFrame(() => {
-            if (scrollToQuest(questId)) return;
-
-            const quest = questsById.get(questId);
-            const traderIndex = quest
-                ? visibleTraders.findIndex((trader) => trader.id === quest.trader.id)
-                : -1;
-            if (traderIndex === -1) return;
-
-            virtualizer.scrollToIndex(traderIndex, { align: "start" });
-            requestAnimationFrame(() => requestAnimationFrame(() => scrollToQuest(questId)));
-        });
-
-        if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
-        highlightTimeoutRef.current = setTimeout(() => {
-            setHighlightedQuestId((current) => (current === questId ? null : current));
-            highlightTimeoutRef.current = null;
-        }, QUEST_HIGHLIGHT_DURATION_MS);
-    }, [questsById, visibleTraders, virtualizer]);
-
-    const scrollToVisibleQuest = useCallback(
-        (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => {
-            const isVisible = filteredQuests.some((filteredQuest) => filteredQuest.id === questId);
-            if (!isVisible) return false;
-
-            expandQuestPath(questId);
-            highlightQuest(questId, event);
-            return true;
-        },
-        [expandQuestPath, filteredQuests, highlightQuest],
-    );
-
-    useEffect(() => {
-        return () => {
-            if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
-        };
-    }, []);
-
-    useEffect(() => {
-        const handleQuestNavigation = (event: Event) => {
-            const questId = (event as CustomEvent<{ questId?: string }>).detail?.questId;
-            if (!questId) return;
-            scrollToVisibleQuest(questId);
-        };
-
-        window.addEventListener(QUEST_NAVIGATE_TO_QUEST_EVENT, handleQuestNavigation);
-        return () =>
-            window.removeEventListener(QUEST_NAVIGATE_TO_QUEST_EVENT, handleQuestNavigation);
-    }, [scrollToVisibleQuest]);
-
-    useEffect(() => {
-        if (!questNavigationRequest) return;
-        if (handledQuestNavigationRequestIdRef.current === questNavigationRequest.requestId) return;
-        handledQuestNavigationRequestIdRef.current = questNavigationRequest.requestId;
-
-        const frame = requestAnimationFrame(() =>
-            scrollToVisibleQuest(questNavigationRequest.questId),
-        );
-        return () => cancelAnimationFrame(frame);
-    }, [questNavigationRequest, scrollToVisibleQuest]);
+    const { highlightedQuestId, scrollToVisibleQuest } = useQuestTreeNavigation({
+        filteredQuests,
+        questsById,
+        treeMetaByTraderId,
+        visibleTraders,
+        virtualizer,
+        questNavigationRequest,
+        setCollapsedGroups,
+    });
 
     // --- render ---
 
