@@ -1,6 +1,6 @@
 import type { FullQuest } from "../../types/types";
 import { getSensitiveBackfillQuest } from "../../lib/utils/sensitive-quest-backfill";
-import { statusIncludesComplete } from "../../lib/utils/quest-failures";
+import { statusRequiresCompletion } from "../../lib/utils/quest-failures";
 
 export interface QuestCascadeCompleteResult {
     toComplete: string[];
@@ -39,7 +39,7 @@ export function collectCompleteCascade(
 
         toComplete.add(questId);
         for (const requirement of quest.taskRequirements) {
-            if (!statusIncludesComplete(requirement.status)) continue;
+            if (!statusRequiresCompletion(requirement.status)) continue;
             queue.push(requirement.task.id);
         }
     }
@@ -102,6 +102,16 @@ export function collectUncompleteCascade(
         const dependents = leadsToByQuestId.get(questId);
         if (!dependents) continue;
         for (const dependentId of dependents) {
+            const dependentQuest = questsById.get(dependentId);
+            if (
+                !dependentQuest?.taskRequirements.some(
+                    (requirement) =>
+                        requirement.task.id === questId &&
+                        statusRequiresCompletion(requirement.status),
+                )
+            )
+                continue;
+
             queue.push(dependentId);
         }
     }

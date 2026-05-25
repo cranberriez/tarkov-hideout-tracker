@@ -13,6 +13,7 @@ import {
     buildQuestFailureMap,
     getAutoFailedQuestIds,
     getMutuallyExclusiveQuestIds,
+    statusRequiresCompletion,
 } from "../../lib/utils/quest-failures";
 
 export type FactionFilter = NonNullable<QuestAvailabilityProfile["faction"]>;
@@ -153,7 +154,14 @@ export function syncTraderProgress({
         for (const quest of activeTraderQuests) {
             if (selectedQuestIdSet.has(quest.id)) continue;
             if (nextCompletedQuests[quest.id]) continue;
-            if (!quest.taskRequirements.some((requirement) => completedAnchorIds.has(requirement.task.id))) continue;
+            if (
+                !quest.taskRequirements.some(
+                    (requirement) =>
+                        statusRequiresCompletion(requirement.status) &&
+                        completedAnchorIds.has(requirement.task.id),
+                )
+            )
+                continue;
             if (!isQuestAvailableForProfile(quest, syncProfile, questAvailabilityById)) continue;
             const mutuallyExclusiveQuestIds = getMutuallyExclusiveQuestIds(quest);
             if (

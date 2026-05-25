@@ -30,6 +30,18 @@ export function statusIncludesFailed(statuses: readonly string[]) {
     return statuses.some((status) => normalizeStatus(status) === "failed");
 }
 
+export function statusIncludesActive(statuses: readonly string[]) {
+    return statuses.some((status) => normalizeStatus(status) === "active");
+}
+
+export function statusRequiresCompletion(statuses: readonly string[]) {
+    return (
+        statusIncludesComplete(statuses) &&
+        !statusIncludesActive(statuses) &&
+        !statusIncludesFailed(statuses)
+    );
+}
+
 export function questCanFail(quest: Pick<QuestFailureSource, "failConditions">) {
     return (quest.failConditions ?? []).length > 0;
 }

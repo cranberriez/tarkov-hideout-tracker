@@ -1,4 +1,5 @@
 import type { FullQuest } from "../../types/types";
+import { statusRequiresCompletion } from "./quest-failures";
 
 export interface SensitiveBackfillQuest {
     id: string;
@@ -90,6 +91,10 @@ export function collectTransitivePrerequisiteIds(
         }
 
         for (const requirement of quest.taskRequirements) {
+            if (!statusRequiresCompletion(requirement.status)) {
+                continue;
+            }
+
             const prerequisiteId = requirement.task.id;
             if (
                 options.resolvedQuestIds?.has(prerequisiteId) ||

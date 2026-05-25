@@ -90,6 +90,28 @@ test("collectCompleteCascade does not complete active-only task requirements", (
     assert.deepEqual(result.toComplete, ["out-of-curiosity"]);
 });
 
+test("collectCompleteCascade does not complete active-or-complete task requirements", () => {
+    const quests = [
+        makeQuest({ id: "chemical-4", name: "Chemical - Part 4" }),
+        makeQuest({
+            id: "out-of-curiosity",
+            name: "Out of Curiosity",
+            taskRequirements: [
+                {
+                    task: { id: "chemical-4", name: "Chemical - Part 4" },
+                    status: ["active", "Success"],
+                },
+            ],
+        }),
+    ];
+    const result = collectCompleteCascade("out-of-curiosity", {
+        questsById: buildQuestsById(quests),
+        completedQuests: {},
+    });
+
+    assert.deepEqual(result.toComplete, ["out-of-curiosity"]);
+});
+
 test("collectCompleteCascade flags cross-trader prereqs relative to the root", () => {
     const quests = [
         makeQuest({ id: "ther-root", name: "T", trader: therapist }),
@@ -170,6 +192,26 @@ test("collectUncompleteCascade returns just the root when nothing downstream is 
     const result = collectUncompleteCascade("root", {
         questsById: buildQuestsById(quests),
         completedQuests: { root: true },
+        leadsToByQuestId: buildLeadsTo(quests),
+    });
+
+    assert.deepEqual(result.toUncomplete, ["root"]);
+});
+
+test("collectUncompleteCascade does not uncomplete active-or-complete dependents", () => {
+    const quests = [
+        makeQuest({ id: "root", name: "Root" }),
+        makeQuest({
+            id: "dependent",
+            name: "Dependent",
+            taskRequirements: [
+                { task: { id: "root", name: "Root" }, status: ["active", "Success"] },
+            ],
+        }),
+    ];
+    const result = collectUncompleteCascade("root", {
+        questsById: buildQuestsById(quests),
+        completedQuests: { root: true, dependent: true },
         leadsToByQuestId: buildLeadsTo(quests),
     });
 

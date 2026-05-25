@@ -131,6 +131,61 @@ test("syncTraderProgress completes prerequisites across traders without completi
     assert.equal(result.nextCompletedQuests.selected ?? false, false);
 });
 
+test("syncTraderProgress does not complete active-only prerequisites for selected quests", () => {
+    const quests = [
+        makeQuest({ id: "accepted-prereq", name: "Accepted Prereq" }),
+        makeQuest({
+            id: "selected",
+            name: "Selected",
+            taskRequirements: [
+                { task: { id: "accepted-prereq", name: "Accepted Prereq" }, status: ["active"] },
+            ],
+        }),
+    ];
+
+    const result = syncTraderProgress({
+        quests,
+        traderId: "prapor",
+        selectedQuestIds: ["selected"],
+        profile: makeProfile(),
+        questsWithItems: {},
+    });
+
+    assert.deepEqual(result.prerequisiteCompletedIds, []);
+    assert.deepEqual(result.completedIds, []);
+    assert.equal(result.nextCompletedQuests["accepted-prereq"] ?? false, false);
+    assert.equal(result.nextCompletedQuests.selected ?? false, false);
+});
+
+test("syncTraderProgress does not complete active-or-complete prerequisites for selected quests", () => {
+    const quests = [
+        makeQuest({ id: "accepted-prereq", name: "Accepted Prereq" }),
+        makeQuest({
+            id: "selected",
+            name: "Selected",
+            taskRequirements: [
+                {
+                    task: { id: "accepted-prereq", name: "Accepted Prereq" },
+                    status: ["active", "Success"],
+                },
+            ],
+        }),
+    ];
+
+    const result = syncTraderProgress({
+        quests,
+        traderId: "prapor",
+        selectedQuestIds: ["selected"],
+        profile: makeProfile(),
+        questsWithItems: {},
+    });
+
+    assert.deepEqual(result.prerequisiteCompletedIds, []);
+    assert.deepEqual(result.completedIds, []);
+    assert.equal(result.nextCompletedQuests["accepted-prereq"] ?? false, false);
+    assert.equal(result.nextCompletedQuests.selected ?? false, false);
+});
+
 test("syncTraderProgress completes same-trader dangling branches but not selected or future quests", () => {
     const quests = [
         makeQuest({ id: "a", name: "A" }),
