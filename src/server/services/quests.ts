@@ -470,6 +470,9 @@ query TasksFull {
           iconLink
         }
         count
+        requiredKeys {
+          ...CompactItem
+        }
       }
       ... on TaskObjectiveSkill {
         skillLevel {
@@ -513,6 +516,9 @@ query TasksFull {
         compareMethod
         count
         zoneNames
+        requiredKeys {
+          ...CompactItem
+        }
       }
     }
   }
