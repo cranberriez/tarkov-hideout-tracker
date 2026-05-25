@@ -410,26 +410,6 @@ export function ItemDetailModal({
                                         >
                                             {/* Row 1: completion + name + status */}
                                             <div className="flex items-center gap-2 min-w-0">
-                                                <button
-                                                    onClick={() =>
-                                                        toggleQuestCompletion(quest.questId)
-                                                    }
-                                                    className="shrink-0 text-gray-600 hover:text-tarkov-green transition-colors"
-                                                    title={
-                                                        isCompleted
-                                                            ? "Mark incomplete"
-                                                            : "Mark complete"
-                                                    }
-                                                >
-                                                    {isCompleted ? (
-                                                        <CheckCircle
-                                                            size={14}
-                                                            className="text-tarkov-green"
-                                                        />
-                                                    ) : (
-                                                        <Circle size={14} />
-                                                    )}
-                                                </button>
                                                 <span
                                                     className={`flex-1 min-w-0 truncate text-sm font-medium ${isCompleted ? "line-through text-gray-600" : "text-white"}`}
                                                 >
@@ -600,7 +580,11 @@ export function ItemDetailModal({
                                             })}
                                             {group.isPartial && (
                                                 <span className="rounded border border-blue-400/20 bg-blue-400/10 px-1.5 py-0.5 text-xs text-blue-200">
-                                                    +{Math.max(group.totalItemCount - group.items.length, 0)}{" "}
+                                                    +
+                                                    {Math.max(
+                                                        group.totalItemCount - group.items.length,
+                                                        0,
+                                                    )}{" "}
                                                     more
                                                 </span>
                                             )}
