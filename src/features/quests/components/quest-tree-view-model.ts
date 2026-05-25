@@ -173,15 +173,19 @@ export function buildLinkedPrerequisiteEntries({
             return { questRef, status };
         });
 
+    const visibleLinkedPrerequisites = linkedPrerequisites.filter(
+        (item) => item.status !== "completed",
+    );
+
     const foldPrerequisites = shouldFoldLinkedPrerequisites({
         completed: !!completedQuests[quest.id],
         ignored: !!ignoredQuests[quest.id],
-        prerequisiteIds: quest.taskRequirements.map((req) => req.task.id),
+        prerequisiteIds: visibleLinkedPrerequisites.map((item) => item.questRef.id),
     });
     const partitionedPrerequisites = partitionLinkedPrerequisites({
         completed: !!completedQuests[quest.id],
         ignored: !!ignoredQuests[quest.id],
-        linkedPrerequisites: linkedPrerequisites.map((item) => ({
+        linkedPrerequisites: visibleLinkedPrerequisites.map((item) => ({
             id: item.questRef.id,
             status: item.status,
         })),
@@ -190,7 +194,7 @@ export function buildLinkedPrerequisiteEntries({
     return [
         ...partitionedPrerequisites.expanded.map((item) => ({
             questRef:
-                linkedPrerequisites.find(
+                visibleLinkedPrerequisites.find(
                     (linkedPrerequisite) => linkedPrerequisite.questRef.id === item.id,
                 )?.questRef ?? toQuestRef(item.id, item.id, questsById),
             status: item.status,
@@ -198,7 +202,7 @@ export function buildLinkedPrerequisiteEntries({
         })),
         ...partitionedPrerequisites.folded.map((item) => ({
             questRef:
-                linkedPrerequisites.find(
+                visibleLinkedPrerequisites.find(
                     (linkedPrerequisite) => linkedPrerequisite.questRef.id === item.id,
                 )?.questRef ?? toQuestRef(item.id, item.id, questsById),
             status: item.status,

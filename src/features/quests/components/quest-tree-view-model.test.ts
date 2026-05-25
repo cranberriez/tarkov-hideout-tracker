@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import type { FullQuest } from "../../../types";
 import {
+    buildLinkedPrerequisiteEntries,
     buildQuestTreeData,
     collectLinearChainIds,
     countAllDescendants,
@@ -77,4 +78,55 @@ test("getTraderCompletion calculates completed totals and percentage", () => {
         completed: 1,
         pct: 50,
     });
+});
+
+test("buildLinkedPrerequisiteEntries hides completed external prerequisites", () => {
+    const quest = makeQuest("quest", "trader-a", [
+        "primary-parent",
+        "completed-external",
+        "locked-external",
+    ]);
+    const parentOf = new Map<string, string | null>([["quest", "primary-parent"]]);
+    const questsById = new Map([["quest", quest]]);
+
+    const entries = buildLinkedPrerequisiteEntries({
+        quest,
+        parentOf,
+        questsById,
+        completedQuests: { "completed-external": true },
+        ignoredQuests: {},
+        syncProfile: {
+            playerLevel: 1,
+            prestigeLevel: 0,
+            faction: null,
+            traderLoyaltyLevels: {},
+            completedQuests: { "completed-external": true },
+        },
+    });
+
+    assert.deepEqual(
+        entries.map((entry) => [entry.questRef.id, entry.status, entry.folded]),
+        [["locked-external", "locked", false]],
+    );
+});
+
+test("buildLinkedPrerequisiteEntries returns no entries when all external prerequisites are completed", () => {
+    const quest = makeQuest("quest", "trader-a", ["completed-a", "completed-b"]);
+
+    const entries = buildLinkedPrerequisiteEntries({
+        quest,
+        parentOf: new Map([["quest", null]]),
+        questsById: new Map([["quest", quest]]),
+        completedQuests: { "completed-a": true, "completed-b": true },
+        ignoredQuests: {},
+        syncProfile: {
+            playerLevel: 1,
+            prestigeLevel: 0,
+            faction: null,
+            traderLoyaltyLevels: {},
+            completedQuests: { "completed-a": true, "completed-b": true },
+        },
+    });
+
+    assert.deepEqual(entries, []);
 });
