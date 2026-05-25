@@ -80,7 +80,7 @@ export function ItemDetailInventoryAndMarket({
                                 value={draftNonFir}
                                 onChange={(e) =>
                                     setDraftNonFir(
-                                        Math.max(0, Number.parseInt(e.target.value || "0", 10))
+                                        Math.max(0, Number.parseInt(e.target.value || "0", 10)),
                                     )
                                 }
                                 className="w-16 bg-black/40 border border-border-color px-1.5 py-1 rounded text-center font-mono text-sm text-foreground focus:ring-1 focus:ring-primary"
@@ -110,7 +110,7 @@ export function ItemDetailInventoryAndMarket({
                                 value={draftFir}
                                 onChange={(e) =>
                                     setDraftFir(
-                                        Math.max(0, Number.parseInt(e.target.value || "0", 10))
+                                        Math.max(0, Number.parseInt(e.target.value || "0", 10)),
                                     )
                                 }
                                 className="w-16 bg-black/40 border border-orange-500 px-1.5 py-1 rounded text-center font-mono text-sm text-foreground focus:ring-1 focus:ring-primary"
@@ -124,7 +124,7 @@ export function ItemDetailInventoryAndMarket({
                             </button>
                         </div>
                     </div>
-                    
+
                     <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-color mt-2">
                         <button
                             type="button"
@@ -142,7 +142,6 @@ export function ItemDetailInventoryAndMarket({
                             Confirm Changes
                         </button>
                     </div>
-                    
                 </div>
             </div>
 
@@ -190,7 +189,7 @@ export function ItemDetailInventoryAndMarket({
                             />
                         </div>
                         {topTraderValuations.length > 0 && (
-                            <div className="mt-2 grid grid-cols-1 gap-x-3 gap-y-1 min-[480px]:grid-cols-3">
+                            <div className="mt-2 flex flex-col gap-1">
                                 {topTraderValuations.map((offer) => {
                                     const isPeacekeeper =
                                         offer.vendor.normalizedName === "peacekeeper" ||
@@ -231,7 +230,7 @@ export function ItemDetailInventoryAndMarket({
                         )}
                         <div className="mt-2 text-[11px] text-muted-foreground">
                             Last updated:{" "}
-                            {loading && !marketPrice ? "..." : relativeUpdatedAt ?? "-"}
+                            {loading && !marketPrice ? "..." : (relativeUpdatedAt ?? "-")}
                         </div>
                     </>
                 ) : (
