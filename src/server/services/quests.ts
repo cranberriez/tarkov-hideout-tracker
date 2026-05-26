@@ -10,6 +10,7 @@ import type {
     QuestTraderRequirement,
     QuestPrestige,
     QuestFailCondition,
+    QuestTraderStandingReward,
 } from "@/types";
 import { unstable_cache } from "next/cache";
 
@@ -352,6 +353,30 @@ query TasksFull {
       imageLink
       iconLink
     }
+    finishRewards {
+      traderStanding {
+        trader {
+          id
+          name
+          normalizedName
+          imageLink
+          image4xLink
+        }
+        standing
+      }
+    }
+    failureOutcome {
+      traderStanding {
+        trader {
+          id
+          name
+          normalizedName
+          imageLink
+          image4xLink
+        }
+        standing
+      }
+    }
     objectives {
       id
       type
@@ -614,6 +639,21 @@ interface RawPrestige {
     iconLink?: string | null;
 }
 
+interface RawTraderStandingReward {
+    trader: {
+        id: string;
+        name: string;
+        normalizedName: string;
+        imageLink?: string | null;
+        image4xLink?: string | null;
+    };
+    standing: number;
+}
+
+interface RawTaskRewards {
+    traderStanding?: RawTraderStandingReward[];
+}
+
 interface RawQuestMap {
     id: string;
     name: string;
@@ -666,6 +706,8 @@ interface RawFullTask {
     failConditions: RawFailCondition[];
     traderRequirements: RawTraderRequirement[];
     requiredPrestige?: RawPrestige | null;
+    finishRewards?: RawTaskRewards | null;
+    failureOutcome?: RawTaskRewards | null;
     objectives: RawFullObjective[];
 }
 
@@ -796,6 +838,21 @@ function mapFullObjective(o: RawFullObjective): FullQuestObjective {
     }
 
     return base;
+}
+
+function mapTraderStandingRewards(
+    rewards: RawTaskRewards | null | undefined,
+): QuestTraderStandingReward[] {
+    return (rewards?.traderStanding ?? []).map((reward) => ({
+        trader: {
+            id: reward.trader.id,
+            name: reward.trader.name,
+            normalizedName: reward.trader.normalizedName,
+            imageLink: reward.trader.imageLink,
+            image4xLink: reward.trader.image4xLink,
+        },
+        standing: reward.standing,
+    }));
 }
 
 function shouldHydrateFullObjectiveItems(objective: RawFullObjective, itemIndex: number) {
@@ -960,6 +1017,8 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
                           iconLink: t.requiredPrestige.iconLink,
                       } satisfies QuestPrestige)
                     : null,
+                finishTraderStandingRewards: mapTraderStandingRewards(t.finishRewards),
+                failureTraderStandingRewards: mapTraderStandingRewards(t.failureOutcome),
                 objectives: t.objectives.map(mapFullObjective),
             }),
         );

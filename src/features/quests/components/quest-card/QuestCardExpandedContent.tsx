@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, ExternalLink } from "lucide-react";
-import type { FullQuest } from "@/types";
+import type { FullQuest, QuestTraderStandingReward } from "@/types";
 import { ObjectiveRow } from "./QuestObjectiveRows";
 import { QuestRelationChip } from "./QuestRelationChip";
 import { QuestActionButton } from "./QuestCardHeader";
@@ -47,6 +47,9 @@ export function QuestCardExpandedContent({
     onTogglePinned,
     onToggleIgnored,
 }: QuestCardExpandedContentProps) {
+    const finishTraderStandingRewards = quest.finishTraderStandingRewards ?? [];
+    const failureTraderStandingRewards = quest.failureTraderStandingRewards ?? [];
+
     return (
         <div className="px-3 py-3 space-y-3">
             <div className="flex items-start justify-between gap-3 sm:hidden">
@@ -157,6 +160,31 @@ export function QuestCardExpandedContent({
                 </div>
             )}
 
+            {(finishTraderStandingRewards.length > 0 ||
+                failureTraderStandingRewards.length > 0) && (
+                <div className="space-y-1.5">
+                    <span className="text-[10px] uppercase tracking-wider text-gray-600 font-bold">
+                        Trader Reputation
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                        {finishTraderStandingRewards.map((reward) => (
+                            <TraderStandingRewardChip
+                                key={`finish-${reward.trader.id}-${reward.standing}`}
+                                reward={reward}
+                                outcome="Completion"
+                            />
+                        ))}
+                        {failureTraderStandingRewards.map((reward) => (
+                            <TraderStandingRewardChip
+                                key={`failure-${reward.trader.id}-${reward.standing}`}
+                                reward={reward}
+                                outcome="Failure"
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div className="space-y-2">
                 <span className="text-[10px] uppercase tracking-wider text-gray-600 font-bold">
                     Objectives
@@ -256,3 +284,53 @@ export function QuestCardExpandedContent({
     );
 }
 
+function TraderStandingRewardChip({
+    reward,
+    outcome,
+}: {
+    reward: QuestTraderStandingReward;
+    outcome: "Completion" | "Failure";
+}) {
+    const isNegative = reward.standing < 0;
+    const imageLink = reward.trader.image4xLink ?? reward.trader.imageLink;
+
+    return (
+        <span
+            className={`${questDetailChipBaseClass} ${
+                isNegative
+                    ? "text-red-200 bg-red-500/10 border-red-500/20"
+                    : "text-tarkov-green bg-tarkov-green/10 border-tarkov-green/20"
+            }`}
+            title={`${outcome}: ${reward.trader.name} reputation ${formatStanding(reward.standing)}`}
+        >
+            {imageLink ? (
+                <img
+                    src={imageLink}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-4 w-4 rounded-full object-cover"
+                />
+            ) : (
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/10 text-[9px]">
+                    {reward.trader.name[0]}
+                </span>
+            )}
+            <span className="font-medium">{reward.trader.name}</span>
+            <span>{formatStanding(reward.standing)}</span>
+            {outcome === "Failure" && (
+                <span className="rounded bg-black/30 px-1 py-0.5 text-[10px] uppercase leading-none text-red-200/80">
+                    Failure
+                </span>
+            )}
+        </span>
+    );
+}
+
+function formatStanding(value: number) {
+    const formatted = Math.abs(value).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 3,
+    });
+
+    return `${value < 0 ? "-" : "+"}${formatted}`;
+}

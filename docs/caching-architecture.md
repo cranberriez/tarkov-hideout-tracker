@@ -14,8 +14,8 @@ Most Redis-backed services store a body key plus a `:meta` key containing `{ upd
 | ---------------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------- | ---------- |
 | `hideout:stations:v6` + `:meta`                      | Full station list                                              | `getHideoutStations()` on cache miss/stale data      | 12h        |
 | `hideout:items:filtered:v1` + `:meta`                | Hideout-required item metadata                                 | `getHideoutRequiredItems()` on cache miss/stale data | 12h        |
-| `quests:all:v3` + `:meta`                            | Quests with `giveItem` objectives only                         | `getQuestData()` on cache miss/stale data            | 12h        |
-| `quests:full:v3` + `:meta`                           | Full quest list, all objective types, map/trader/prestige data | `getFullQuestData()` on cache miss/stale data        | 12h        |
+| `quests:all:v4` + `:meta`                            | Quests with `giveItem` objectives only                         | `getQuestData()` on cache miss/stale data            | 12h        |
+| `quests:full:v7` + `:meta`                           | Full quest list, all objective types, map/trader/prestige/reputation reward data | `getFullQuestData()` on cache miss/stale data        | 12h        |
 | `traders:all:v1` + `:meta`                           | Full trader list                                               | `getTraders()` on cache miss/stale data              | 12h        |
 | `item-market-data:filtered:v3:pvp` + `:meta`          | PVP hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshTarkovDevMarketPrices("PVP")`)     | Daily cron |
 | `item-market-data:filtered:v3:pve` + `:meta`          | PVE hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshTarkovDevMarketPrices("PVE")`)     | Daily cron |

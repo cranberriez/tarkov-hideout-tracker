@@ -3,6 +3,6 @@ export const CACHE_VERSIONS = {
     hideoutItems: 1,
     marketPrices: 3,
     quests: 4,
-    questsFull: 6,
+    questsFull: 7,
     traders: 1,
 } as const;

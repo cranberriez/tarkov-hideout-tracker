@@ -100,8 +100,9 @@ query Tasks {
 | `tarkovDataId` | Internal Tarkov ID, not needed for display |
 | `taskImageLink` | Task splash art — not used in current card design |
 | `map` | Top-level map hint; objective-level `maps` is more precise |
-| `startRewards` / `finishRewards` | Reward display not planned yet |
-| `failureOutcome` | Failure outcome display not planned |
+| `startRewards` | Not used |
+| `finishRewards` | Only `traderStanding` is used for quest card reputation display |
+| `failureOutcome` | Only `traderStanding` is used for quest card reputation penalties |
 | `restartable` | Not used |
 | `requiredPrestige` | Prestige system display not planned |
 | `traderRequirements` | Trader loyalty gating — could be added later |

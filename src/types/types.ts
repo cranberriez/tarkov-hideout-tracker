@@ -345,6 +345,17 @@ export interface QuestPrestige {
     iconLink?: string | null;
 }
 
+export interface QuestTraderStandingReward {
+    trader: {
+        id: string;
+        name: string;
+        normalizedName: string;
+        imageLink?: string | null;
+        image4xLink?: string | null;
+    };
+    standing: number;
+}
+
 export interface FullQuest {
     id: string;
     name: string;
@@ -367,6 +378,8 @@ export interface FullQuest {
     failConditions?: QuestFailCondition[];
     traderRequirements: QuestTraderRequirement[];
     requiredPrestige?: QuestPrestige | null;
+    finishTraderStandingRewards?: QuestTraderStandingReward[];
+    failureTraderStandingRewards?: QuestTraderStandingReward[];
     objectives: FullQuestObjective[];
 }
 
