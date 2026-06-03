@@ -1,56 +1,70 @@
 # Tarkov Hideout Tracker
 
-A comprehensive tool for Escape from Tarkov players to track their Hideout progress, manage inventory, and calculate item requirements for upgrades.
+A web app for Escape from Tarkov players to track hideout upgrades, inventory,
+quest progress, quest hand-ins, and item requirements.
 
 ## Features
 
-### Version 2.0 Major Update
+-   **Quests page**: Browse Tarkov.dev quest data by tree, trader, map, or list.
+-   **Quest progress**: Track completed, failed, pinned, ignored, and item-ready quests.
+-   **Manual quest sync**: Rebuild quest progress trader by trader from the quests currently visible in game.
+-   **Quest log import**: Semi-automated log importing helps keep quest state closer to your character.
+-   **Character settings**: Adjust level, faction, prestige, trader loyalty, game edition, and game mode in one place.
+-   **Quest items on Items**: Include quest hand-ins and quest item groups alongside hideout requirements.
+-   **Item filtering**: Filter by hideout items, quest items, available/future quest demand, FiR, pinned quests, Kappa, and Lightkeeper.
+-   **Hideout tracking**: Manage station levels, hidden stations, upgrade readiness, and missing requirements.
+-   **Inventory management**: Track collected item counts, including separate Found in Raid and non-FiR counts.
+-   **Price data**: View Tarkov.dev flea market prices for PVP and PVE.
 
--   **Individual Item Counts**: Granular control over your inventory. Track the exact number of items you have versus what you need.
--   **Hideout Station Statuses**:
-    -   **Ready to Upgrade**: You have all items and prerequisite station levels.
-    -   **Missing Requirements**: Shows exactly what items or station levels are missing.
-    -   **Illegal State**: Indicates if a station cannot be upgraded due to logical constraints (e.g., requiring a higher level of another station that isn't met).
--   **"Add Items" Feature**: Quickly tally up loot after a raid. These items feed directly into your total counts.
--   **FiR vs. Non-FiR Separation**: Strict separation between **Found in Raid** and **Non-Found in Raid** items to ensure you don't accidentally use quest items for crafting.
--   **Smart Item Usage**: The app knows when to use FiR items for non-FiR requirements only if they aren't needed for other FiR-specific upgrades.
+## Current Limitations
 
-### Core Features
+Only one character profile is currently supported. Switching between PVP and PVE
+changes pricing and quest visibility, but it does not create a separate account
+or separate quest progress.
 
--   **Hideout Tracking**: Interactive dashboard to manage your Hideout station levels and visualize your progress.
--   **Item Requirements**: Automatically calculates the total items needed to complete your Hideout based on your current station levels.
--   **Inventory Management**: Track your collected items and see exactly what remains to be found.
--   **Cost Analysis**: View current Tarkov.dev flea market prices for required items to estimate upgrade costs.
+## Other Tarkov Trackers
+
+This site started as a pet project and learning tool for an early-career web
+developer. If you want more features, deeper progression tools, or probably more
+active development, check out these excellent sites:
+
+-   [ttracker.org](https://ttracker.org/)
+-   [tarkovtracker.org](https://tarkovtracker.org/)
+-   [kappas.pages.dev](https://kappas.pages.dev/)
 
 ## Development Setup
 
 To set up the project locally, you will need a few prerequisites.
 
-### 1. Redis Storage (Required)
+### 1. Storage
 
-The application requires a Redis instance for data caching and state management.
+The hosted project runs on Vercel and uses a linked Vercel/Upstash Redis storage
+database for cached server data and daily price snapshots.
 
--   You can use **Upstash Redis** (easiest for Vercel deployments) or any standard **Redis** instance.
--   Set the `REDIS_URL` environment variable to your connection string.
--   If using Vercel KV/Upstash, you may also need to set `KV_REST_API_URL`, `KV_REST_API_TOKEN`, etc., as seen in `.sample.env`.
+For local development, copy the linked storage environment variables from Vercel
+or provide equivalent Upstash Redis REST credentials. The Redis client currently
+expects REST-style variables, so a local Redis connection string may require code
+tweaks if you are not using Vercel/Upstash.
 
 ### 2. Environment Variables
 
-Copy the `.sample.env` file to `.env.local` and fill in your details:
+Copy the `.sample.env` file to `.env` and fill in your details:
 
 ```bash
-cp .sample.env .env.local
+cp .sample.env .env
 ```
 
-Edit `.env.local`:
+Typical variables:
 
 ```env
-# Redis / Upstash Configuration
-REDIS_URL="redis://localhost:6379" # or your remote redis URL
-
-# Cron endpoint bearer token
+KV_REST_API_URL="..."
+KV_REST_API_TOKEN="..."
 CRON_SECRET="your_secret_here"
 ```
+
+Depending on how storage is linked, Vercel/Upstash may provide `KV_*` variables
+or `UPSTASH_REDIS_REST_*` variables. Use whichever pair your environment
+provides. `CRON_SECRET` is only needed for the protected price refresh endpoint.
 
 ### 3. Run the Development Server
 
@@ -58,19 +72,22 @@ Install dependencies:
 
 ```bash
 npm install
-# or
-yarn install
 ```
 
 Start the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser.
+
+Run production checks:
+
+```bash
+npm run lint
+npm run build
+```
 
 Refresh local price data:
 
