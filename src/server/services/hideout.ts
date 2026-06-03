@@ -1,6 +1,7 @@
 import { redis } from "@/server/redis";
 import { requiresFoundInRaid } from "@/lib/cfg/foundInRaid";
 import { wikiData } from "@/lib/data/wiki-data";
+import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { unstable_cache } from "next/cache";
 import {
     HideoutStationsPayload,
@@ -14,7 +15,7 @@ import {
 } from "@/types";
 
 const CACHE_WINDOW_MS = 12 * 60 * 60 * 1000; // 12 hours
-const REDIS_KEY = "hideout:stations:v6";
+const REDIS_KEY = `hideout:stations:v${CACHE_VERSIONS.hideoutStations}`;
 const REDIS_KEY_META = `${REDIS_KEY}:meta`;
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
 
@@ -162,13 +163,24 @@ export async function getHideoutStations(): Promise<TimedResponse<HideoutStation
 
     // 2. Fetch from Tarkov.dev
     console.log("Fetching fresh hideout stations from Tarkov.dev");
-    const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query: HIDEOUT_STATIONS_QUERY }),
-    });
+    let res: Response;
+    try {
+        res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ query: HIDEOUT_STATIONS_QUERY }),
+        });
+    } catch (error) {
+        console.error("Tarkov.dev hideoutStations fetch threw", error);
+        if (cachedBody) {
+            console.log("Using stale cached stations due to fetch error");
+            const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
+            return body as TimedResponse<HideoutStationsPayload>;
+        }
+        throw error;
+    }
 
     if (!res.ok) {
         const text = await res.text();

@@ -2,12 +2,10 @@
 
 import type { ItemDetails } from "@/types";
 import type { NeedBreakdown } from "@/lib/utils/item-needs";
-import type { MarketPrice } from "@/types";
 import { ExternalLink } from "lucide-react";
 
 interface ItemDetailHeaderProps {
     item: ItemDetails;
-    marketPrice: MarketPrice | null | undefined;
     totalCount: number;
     owned: { have: number; haveFir: number };
     needsBreakdown: NeedBreakdown | null;
@@ -15,7 +13,6 @@ interface ItemDetailHeaderProps {
 
 export function ItemDetailHeader({
     item,
-    marketPrice,
     totalCount,
     owned,
     needsBreakdown,
@@ -60,16 +57,6 @@ export function ItemDetailHeader({
                                 className="hover:underline hover:text-tarkov-green flex items-center gap-1 transition-colors"
                             >
                                 Tarkov.dev <ExternalLink size={10} />
-                            </a>
-                        )}
-                        {marketPrice?.link && (
-                            <a
-                                href={marketPrice.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:underline hover:text-tarkov-green flex items-center gap-1 transition-colors"
-                            >
-                                Tarkov Market <ExternalLink size={10} />
                             </a>
                         )}
                     </div>

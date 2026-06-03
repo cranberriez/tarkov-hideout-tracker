@@ -2,6 +2,9 @@
 @import "tw-animate-css";
 
 :root {
+    --font-geist-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-geist-mono: "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
+
     /* Tarkov-esque Dark Theme */ /* Very dark gray/black */
     --card-bg: oklch(0.1647 0.0042 285.94); /* Slightly lighter for cards */
     --accent-green-dim: oklch(0.868 0.1558 144.09); /* Light green for text */

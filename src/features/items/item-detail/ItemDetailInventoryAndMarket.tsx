@@ -4,6 +4,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type { MarketPrice } from "@/types";
 import { MarketStatBox } from "./MarketStatBox";
 import { Minus, Plus } from "lucide-react";
+import { formatRoubles, hasFleaMarketData } from "@/lib/utils/market-price";
 
 interface ItemDetailInventoryAndMarketProps {
     isFiat: boolean;
@@ -17,8 +18,9 @@ interface ItemDetailInventoryAndMarketProps {
     hasInventoryChanges: boolean;
     onCancelChanges: () => void;
     onConfirmChanges: () => void;
-    renderMarketValue: (value?: number) => string;
-    renderPercentChange: (value?: number) => string;
+    valuationCount: number;
+    renderMarketValue: (value?: number | null) => string;
+    renderPercentChange: (value?: number | null) => string;
 }
 
 export function ItemDetailInventoryAndMarket({
@@ -33,15 +35,28 @@ export function ItemDetailInventoryAndMarket({
     hasInventoryChanges,
     onCancelChanges,
     onConfirmChanges,
+    valuationCount,
     renderMarketValue,
     renderPercentChange,
 }: ItemDetailInventoryAndMarketProps) {
+    const fleaUnavailable = !!marketPrice && !hasFleaMarketData(marketPrice);
+    const traderValuationCount = Math.max(1, Math.floor(valuationCount));
+    const topTraderValuations = (marketPrice?.sellFor ?? [])
+        .filter((offer) => offer.priceRUB > 0 && offer.vendor.normalizedName !== "flea-market")
+        .sort((a, b) => b.priceRUB - a.priceRUB)
+        .slice(0, 3);
+
     const handleIncrement = (setter: Dispatch<SetStateAction<number>>, value: number) => {
         setter(value + 1);
     };
 
     const handleDecrement = (setter: Dispatch<SetStateAction<number>>, value: number) => {
         setter(Math.max(0, value - 1));
+    };
+
+    const formatDollars = (value: number | null | undefined) => {
+        if (value == null || Number.isNaN(value)) return "-";
+        return `$${new Intl.NumberFormat("en-US").format(value)}`;
     };
 
     return (
@@ -65,7 +80,7 @@ export function ItemDetailInventoryAndMarket({
                                 value={draftNonFir}
                                 onChange={(e) =>
                                     setDraftNonFir(
-                                        Math.max(0, Number.parseInt(e.target.value || "0", 10))
+                                        Math.max(0, Number.parseInt(e.target.value || "0", 10)),
                                     )
                                 }
                                 className="w-16 bg-black/40 border border-border-color px-1.5 py-1 rounded text-center font-mono text-sm text-foreground focus:ring-1 focus:ring-primary"
@@ -95,7 +110,7 @@ export function ItemDetailInventoryAndMarket({
                                 value={draftFir}
                                 onChange={(e) =>
                                     setDraftFir(
-                                        Math.max(0, Number.parseInt(e.target.value || "0", 10))
+                                        Math.max(0, Number.parseInt(e.target.value || "0", 10)),
                                     )
                                 }
                                 className="w-16 bg-black/40 border border-orange-500 px-1.5 py-1 rounded text-center font-mono text-sm text-foreground focus:ring-1 focus:ring-primary"
@@ -109,7 +124,7 @@ export function ItemDetailInventoryAndMarket({
                             </button>
                         </div>
                     </div>
-                    
+
                     <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-color mt-2">
                         <button
                             type="button"
@@ -127,7 +142,6 @@ export function ItemDetailInventoryAndMarket({
                             Confirm Changes
                         </button>
                     </div>
-                    
                 </div>
             </div>
 
@@ -137,37 +151,88 @@ export function ItemDetailInventoryAndMarket({
                 </h3>
 
                 {!isFiat ? (
-                    <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-2 sm:gap-3">
-                        <MarketStatBox
-                            label="Current Price"
-                            value={renderMarketValue(marketPrice?.price)}
-                        />
-                        <MarketStatBox
-                            label="Avg 24h"
-                            value={renderMarketValue(marketPrice?.avg24hPrice)}
-                        />
-                        <MarketStatBox
-                            label="Change 24h"
-                            value={renderPercentChange(marketPrice?.diff24h)}
-                        />
-                        <MarketStatBox
-                            label="Avg 7 days"
-                            value={renderMarketValue(marketPrice?.avg7daysPrice)}
-                        />
-                        <MarketStatBox
-                            label="Last Updated"
-                            value={
-                                loading && !marketPrice ? "..." : relativeUpdatedAt ?? "-"
-                            }
-                        />
-                        {marketPrice?.traderName && marketPrice.traderPrice !== undefined && (
+                    <>
+                        <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-2 sm:gap-3">
                             <MarketStatBox
-                                label={marketPrice.traderName}
-                                value={renderMarketValue(marketPrice.traderPrice)}
-                                labelClassName="text-blue-400"
+                                label="Last Low"
+                                value={
+                                    fleaUnavailable
+                                        ? "No flea"
+                                        : renderMarketValue(marketPrice?.price)
+                                }
                             />
+                            <MarketStatBox
+                                label="Avg 24h"
+                                value={renderMarketValue(marketPrice?.avg24hPrice)}
+                            />
+                            <MarketStatBox
+                                label="Low 24h"
+                                value={renderMarketValue(marketPrice?.low24hPrice)}
+                            />
+                            <MarketStatBox
+                                label="High 24h"
+                                value={renderMarketValue(marketPrice?.high24hPrice)}
+                            />
+                            <MarketStatBox
+                                label="Change 48h"
+                                value={renderPercentChange(marketPrice?.changeLast48hPercent)}
+                            />
+                            <MarketStatBox
+                                label="Offers"
+                                value={
+                                    marketPrice?.lastOfferCount == null
+                                        ? "-"
+                                        : new Intl.NumberFormat("en-US").format(
+                                              marketPrice.lastOfferCount,
+                                          )
+                                }
+                            />
+                        </div>
+                        {topTraderValuations.length > 0 && (
+                            <div className="mt-2 flex flex-col gap-1">
+                                {topTraderValuations.map((offer) => {
+                                    const isPeacekeeper =
+                                        offer.vendor.normalizedName === "peacekeeper" ||
+                                        offer.currency === "USD";
+                                    const totalPrice = offer.price * traderValuationCount;
+                                    const totalRoubles = offer.priceRUB * traderValuationCount;
+
+                                    return (
+                                        <div
+                                            key={offer.vendor.normalizedName}
+                                            className="flex min-w-0 items-center gap-1.5 text-xs"
+                                        >
+                                            {offer.vendor.imageLink ? (
+                                                <img
+                                                    src={offer.vendor.imageLink}
+                                                    alt={offer.vendor.name}
+                                                    className="h-4 w-4 shrink-0 rounded-full object-cover"
+                                                />
+                                            ) : (
+                                                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px] text-gray-500">
+                                                    {offer.vendor.name[0]}
+                                                </span>
+                                            )}
+                                            <span className="min-w-0 truncate text-gray-400">
+                                                {offer.vendor.name}
+                                            </span>
+                                            <span className="shrink-0 font-mono text-white">
+                                                {isPeacekeeper
+                                                    ? `${formatDollars(totalPrice)} (${formatRoubles(
+                                                          totalRoubles,
+                                                      )})`
+                                                    : formatRoubles(totalRoubles)}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         )}
-                    </div>
+                        <div className="mt-2 text-[11px] text-muted-foreground">
+                            Last updated:{" "}
+                            {loading && !marketPrice ? "..." : (relativeUpdatedAt ?? "-")}
+                        </div>
+                    </>
                 ) : (
                     <MarketStatBox
                         label="Rouble Cost"

@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { ItemDetails, Station } from "@/types";
-import { X } from "lucide-react";
+import { X, Pin, CircleSlash, CheckCircle, Circle, ExternalLink } from "lucide-react";
+import Link from "next/link";
 import { stationOrder } from "@/lib/cfg/stationOrder";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { formatRelativeUpdatedAt } from "@/lib/utils/format-time";
@@ -12,6 +13,11 @@ import { ItemDetailHeader } from "./ItemDetailHeader";
 import { ItemDetailInventoryAndMarket } from "./ItemDetailInventoryAndMarket";
 import { ItemDetailHideoutRequirements } from "./ItemDetailHideoutRequirements";
 import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
+import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
+import { deriveQuestAnyOfGroups, deriveQuestItemState } from "@/lib/utils/quest-item-index";
+import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
+import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
+import { formatRoubles } from "@/lib/utils/market-price";
 
 export interface ItemDetailModalProps {
     item: ItemDetails | null;
@@ -21,7 +27,9 @@ export interface ItemDetailModalProps {
     stationLevels: Record<string, number>;
     hiddenStations: Record<string, boolean>;
     completedRequirements: Record<string, boolean>;
-    toggleRequirement: (requirementId: string) => void;
+    questItemIndex?: QuestItemIndexEntry[];
+    questAnyOfGroups?: QuestAnyOfGroupEntry[];
+    questAvailabilityQuests?: QuestAvailabilityQuest[];
 }
 
 export function ItemDetailModal({
@@ -32,12 +40,16 @@ export function ItemDetailModal({
     stationLevels,
     hiddenStations,
     completedRequirements,
-    toggleRequirement,
+    questItemIndex = [],
+    questAnyOfGroups = [],
+    questAvailabilityQuests = [],
 }: ItemDetailModalProps) {
-    if (!item) return null;
+    const selectedItem = item;
+    const selectedItemId = selectedItem?.id ?? "";
+    const selectedNormalizedName = selectedItem?.normalizedName ?? "";
 
     const stationRequirements = useMemo(() => {
-        if (!stations) return [];
+        if (!selectedItem || !stations) return [];
 
         const reqs: {
             stationName: string;
@@ -59,9 +71,9 @@ export function ItemDetailModal({
 
             station.levels.forEach((level) => {
                 level.itemRequirements.forEach((req) => {
-                    if (req.item.id === item.id) {
+                    if (req.item.id === selectedItem.id) {
                         const isFir = req.attributes.some(
-                            (attr) => attr.name === "found_in_raid" && attr.value === "true"
+                            (attr) => attr.name === "found_in_raid" && attr.value === "true",
                         );
                         reqs.push({
                             stationName: station.name,
@@ -99,76 +111,88 @@ export function ItemDetailModal({
 
             return getOrder(reqA.stationNormalizedName) - getOrder(reqB.stationNormalizedName);
         });
-    }, [item, stations, stationLevels]);
+    }, [selectedItem, stations, stationLevels]);
 
     const { marketPricesByMode, loading: pricesLoading } = usePriceDataContext();
-    const { gameMode } = useUserStore();
+    const {
+        completedQuests,
+        failedQuests,
+        ignoredQuests,
+        pinnedQuests,
+        gameMode,
+        playerLevel,
+        prestigeLevel,
+        questTraderLoyaltyLevels,
+        questFaction,
+        itemQuestVisibilityMode,
+        itemQuestCustomLookahead,
+        itemQuestCustomLevelLookahead,
+        itemShowFutureFir,
+        itemShowIgnored,
+        questShowKappa,
+        questShowLightkeeper,
+        itemCounts,
+        addItemCounts,
+        toggleQuestCompletion,
+        toggleIgnoredQuest,
+        togglePinnedQuest,
+    } = useUserStore();
     const mode = gameMode === "PVE" ? "PVE" : "PVP";
     const priceBucket = marketPricesByMode[mode];
     const loading = pricesLoading || !priceBucket || priceBucket.updatedAt === null;
-    const marketPrice = priceBucket?.prices[item.normalizedName];
+    const marketPrice = selectedItem ? priceBucket?.prices[selectedNormalizedName] : undefined;
 
-    const formatPrice = (price?: number) => {
-        if (price === undefined) return "-";
-        return new Intl.NumberFormat("en-US").format(price) + " ₽";
+    const formatPrice = (price?: number | null) => {
+        return formatRoubles(price);
     };
 
-    const renderMarketValue = (value?: number) => {
+    const renderMarketValue = (value?: number | null) => {
         if (loading && !marketPrice) return "...";
-        if (!loading && (!marketPrice || value === undefined)) return "-";
+        if (!loading && (!marketPrice || value == null)) return "-";
         return formatPrice(value);
     };
 
-    const renderPercentChange = (value?: number) => {
+    const renderPercentChange = (value?: number | null) => {
         if (loading && !marketPrice) return "...";
-        if (!loading && (!marketPrice || value === undefined)) return "-";
-        if (value === undefined) return "-";
+        if (!loading && (!marketPrice || value == null)) return "-";
+        if (value == null) return "-";
         return `${value.toFixed(2)}%`;
     };
 
     const { totalCount, totalFir } = useMemo(() => {
-        let totalCount = 0;
-        let totalFir = 0;
+        let nextTotalCount = 0;
+        let nextTotalFir = 0;
 
         stationRequirements.forEach(([, reqs]) => {
             reqs.forEach((req) => {
                 const isManuallyCompleted = completedRequirements[req.requirementId];
-
                 if (req.isCompleted || isManuallyCompleted) {
                     return;
                 }
 
-                totalCount += req.count;
+                nextTotalCount += req.count;
                 if (req.isFir) {
-                    totalFir += req.count;
+                    nextTotalFir += req.count;
                 }
             });
         });
 
-        return { totalCount, totalFir };
+        return { totalCount: nextTotalCount, totalFir: nextTotalFir };
     }, [stationRequirements, completedRequirements]);
 
-    const isRouble = item.normalizedName === "roubles";
-    const isDollar = item.normalizedName === "dollars";
-    const isEuro = item.normalizedName === "euros";
+    const isRouble = selectedNormalizedName === "roubles";
+    const isDollar = selectedNormalizedName === "dollars";
+    const isEuro = selectedNormalizedName === "euros";
     const isFiat = isDollar || isEuro;
 
-    const itemUpdatedTimestamp = (() => {
-        if (!marketPrice?.updated) return null;
-        const parsed = Date.parse(marketPrice.updated);
-        if (Number.isNaN(parsed)) return null;
-        return parsed;
-    })();
-
-    const relativeUpdatedAt = formatRelativeUpdatedAt(itemUpdatedTimestamp);
-
-    const { itemCounts, addItemCounts } = useUserStore();
-    const owned = itemCounts[item.id] ?? { have: 0, haveFir: 0 };
+    const relativeUpdatedAt = formatRelativeUpdatedAt(priceBucket?.updatedAt ?? null);
+    const owned = itemCounts[selectedItemId] ?? { have: 0, haveFir: 0 };
 
     const needsBreakdown = useMemo(() => {
         if (totalCount === 0) {
             return null;
         }
+
         return computeNeeds({
             totalRequired: totalCount,
             requiredFir: totalFir,
@@ -176,6 +200,96 @@ export function ItemDetailModal({
             haveFir: owned.haveFir,
         });
     }, [totalCount, totalFir, owned.have, owned.haveFir]);
+
+    const questItemState = useMemo(() => {
+        if (!selectedItem) return null;
+
+        const entry = questItemIndex.find((questEntry) => questEntry.itemId === selectedItem.id);
+        if (!entry) return null;
+
+        return deriveQuestItemState(entry, {
+            completedQuests,
+            failedQuests,
+            ignoredQuests,
+            pinnedQuests,
+            playerLevel,
+            prestigeLevel,
+            faction: questFaction,
+            traderLoyaltyLevels: questTraderLoyaltyLevels,
+            quests: questAvailabilityQuests,
+            visibilityMode: itemQuestVisibilityMode,
+            customLookahead: itemQuestCustomLookahead,
+            customLevelLookahead: itemQuestCustomLevelLookahead,
+            showFutureFir: itemShowFutureFir,
+            showIgnored: itemShowIgnored,
+            showKappa: questShowKappa,
+            showLightkeeper: questShowLightkeeper,
+        });
+    }, [
+        selectedItem,
+        questItemIndex,
+        completedQuests,
+        failedQuests,
+        ignoredQuests,
+        pinnedQuests,
+        playerLevel,
+        prestigeLevel,
+        questFaction,
+        questTraderLoyaltyLevels,
+        questAvailabilityQuests,
+        itemQuestVisibilityMode,
+        itemQuestCustomLookahead,
+        itemQuestCustomLevelLookahead,
+        itemShowFutureFir,
+        itemShowIgnored,
+        questShowKappa,
+        questShowLightkeeper,
+    ]);
+
+    const questAnyOfGroupState = useMemo(() => {
+        if (!selectedItem) return [];
+
+        return deriveQuestAnyOfGroups(questAnyOfGroups, {
+            completedQuests,
+            failedQuests,
+            ignoredQuests,
+            pinnedQuests,
+            playerLevel,
+            prestigeLevel,
+            faction: questFaction,
+            traderLoyaltyLevels: questTraderLoyaltyLevels,
+            quests: questAvailabilityQuests,
+            visibilityMode: itemQuestVisibilityMode,
+            customLookahead: itemQuestCustomLookahead,
+            customLevelLookahead: itemQuestCustomLevelLookahead,
+            showFutureFir: itemShowFutureFir,
+            showIgnored: itemShowIgnored,
+            showKappa: questShowKappa,
+            showLightkeeper: questShowLightkeeper,
+        }).filter((group) => group.items.some((groupItem) => groupItem.id === selectedItem.id));
+    }, [
+        selectedItem,
+        questAnyOfGroups,
+        completedQuests,
+        failedQuests,
+        ignoredQuests,
+        pinnedQuests,
+        playerLevel,
+        prestigeLevel,
+        questFaction,
+        questTraderLoyaltyLevels,
+        questAvailabilityQuests,
+        itemQuestVisibilityMode,
+        itemQuestCustomLookahead,
+        itemQuestCustomLevelLookahead,
+        itemShowFutureFir,
+        itemShowIgnored,
+        questShowKappa,
+        questShowLightkeeper,
+    ]);
+
+    const hasQuestRequirements =
+        (questItemState?.relatedQuests.length ?? 0) > 0 || questAnyOfGroupState.length > 0;
 
     const [draftNonFir, setDraftNonFir] = useState(owned.have);
     const [draftFir, setDraftFir] = useState(owned.haveFir);
@@ -188,44 +302,51 @@ export function ItemDetailModal({
     };
 
     const handleConfirmInventoryChanges = () => {
-        if (!hasInventoryChanges) return;
+        if (!selectedItem || !hasInventoryChanges) return;
 
         const haveDelta = draftNonFir - owned.have;
         const haveFirDelta = draftFir - owned.haveFir;
 
         if (haveDelta !== 0 || haveFirDelta !== 0) {
-            addItemCounts(item.id, haveDelta, haveFirDelta);
+            addItemCounts(selectedItem.id, haveDelta, haveFirDelta);
         }
     };
+
+    if (!selectedItem) {
+        return null;
+    }
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent
                 showCloseButton={false}
-                className="w-full sm:max-w-3xl md:max-w-5xl max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col"
+                className="flex max-h-[90vh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl md:max-w-5xl"
             >
-                <DialogTitle className="sr-only">{item.name}</DialogTitle>
-                <div className="flex items-start justify-between p-3 sm:p-5 border-b border-border-color bg-card">
+                <DialogTitle className="sr-only">{selectedItem.name}</DialogTitle>
+                <div className="flex items-start justify-between border-b border-border-color bg-card p-3 sm:p-5">
                     <ItemDetailHeader
-                        item={item}
-                        marketPrice={marketPrice}
+                        item={selectedItem}
                         totalCount={totalCount}
                         owned={owned}
                         needsBreakdown={needsBreakdown}
                     />
                     <button
                         onClick={onClose}
-                        className="text-muted-foreground hover:text-foreground p-2 hover:bg-white/10 rounded-full transition-colors shrink-0"
+                        className="shrink-0 rounded-full p-2 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
                     >
                         <X size={24} />
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-3 sm:p-5 bg-background">
+                <div className="flex-1 overflow-y-auto bg-background p-3 sm:p-5">
                     <div
-                        className={`grid grid-cols-1 ${
-                            isRouble ? "lg:grid-cols-2" : "lg:grid-cols-3"
-                        } gap-5`}
+                        className={`grid grid-cols-1 gap-5 ${
+                            !isRouble && stationRequirements.length > 0
+                                ? "lg:grid-cols-3"
+                                : isRouble && stationRequirements.length > 0
+                                  ? "lg:grid-cols-2"
+                                  : ""
+                        }`}
                     >
                         {!isRouble && (
                             <ItemDetailInventoryAndMarket
@@ -240,17 +361,239 @@ export function ItemDetailModal({
                                 hasInventoryChanges={hasInventoryChanges}
                                 onCancelChanges={handleCancelInventoryChanges}
                                 onConfirmChanges={handleConfirmInventoryChanges}
+                                valuationCount={draftNonFir + draftFir}
                                 renderMarketValue={renderMarketValue}
                                 renderPercentChange={renderPercentChange}
                             />
                         )}
 
-                        <ItemDetailHideoutRequirements
-                            stationRequirements={stationRequirements}
-                            stationLevels={stationLevels}
-                            hiddenStations={hiddenStations}
-                        />
+                        {stationRequirements.length > 0 && (
+                            <ItemDetailHideoutRequirements
+                                stationRequirements={stationRequirements}
+                                stationLevels={stationLevels}
+                                hiddenStations={hiddenStations}
+                            />
+                        )}
                     </div>
+
+                    {hasQuestRequirements && (
+                        <section className="mt-5 rounded-md border border-white/10 bg-card p-4">
+                            <div className="mb-3 flex items-center justify-between gap-3">
+                                <div>
+                                    <h3 className="text-sm font-semibold text-white">
+                                        Quest Hand-Ins
+                                    </h3>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Uses the same quest visibility rules as the items page,
+                                        including pinned and FiR overrides.
+                                    </p>
+                                </div>
+                                <div className="text-right text-xs text-gray-500">
+                                    <div>
+                                        {(questItemState?.relatedQuestCount ?? 0) +
+                                            questAnyOfGroupState.length}{" "}
+                                        active quests
+                                    </div>
+                                    <div>{questItemState?.pinnedQuestCount ?? 0} pinned</div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                {questItemState?.relatedQuests.map((quest) => {
+                                    const isCompleted = !!completedQuests[quest.questId];
+                                    const isIgnored = !!ignoredQuests[quest.questId];
+                                    const isPinned = !!pinnedQuests[quest.questId];
+                                    return (
+                                        <div
+                                            key={quest.questId}
+                                            className="rounded-md border border-white/8 bg-black/20 px-3 py-2 space-y-1.5"
+                                        >
+                                            {/* Row 1: completion + name + status */}
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <span
+                                                    className={`flex-1 min-w-0 truncate text-sm font-medium ${isCompleted ? "line-through text-gray-600" : "text-white"}`}
+                                                >
+                                                    {quest.questName}
+                                                </span>
+                                                <span
+                                                    className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] ${
+                                                        quest.status === "available"
+                                                            ? "border-blue-400/20 bg-blue-400/10 text-blue-300"
+                                                            : quest.status === "future"
+                                                              ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
+                                                              : quest.status === "completed"
+                                                                ? "border-tarkov-green/20 bg-tarkov-green/10 text-tarkov-green"
+                                                                : "border-white/10 bg-black/30 text-gray-400"
+                                                    }`}
+                                                >
+                                                    {quest.status}
+                                                </span>
+                                            </div>
+
+                                            {/* Row 2: meta + badges + actions */}
+                                            <div className="flex items-center justify-between gap-2 min-w-0">
+                                                <span className="truncate text-xs text-gray-500">
+                                                    {quest.traderName}
+                                                    {quest.minPlayerLevel != null
+                                                        ? ` · Lv. ${quest.minPlayerLevel}`
+                                                        : ""}
+                                                </span>
+                                                <div className="flex shrink-0 items-center gap-1">
+                                                    {quest.requiredCount - quest.requiredFirCount >
+                                                        0 && (
+                                                        <span className="rounded border border-white/10 bg-black/30 px-1.5 py-0.5 text-[10px] text-gray-400">
+                                                            x
+                                                            {quest.requiredCount -
+                                                                quest.requiredFirCount}
+                                                        </span>
+                                                    )}
+                                                    {quest.requiredFirCount > 0 && (
+                                                        <span className="rounded border border-orange-500/20 bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-bold text-orange-200">
+                                                            FiR x{quest.requiredFirCount}
+                                                        </span>
+                                                    )}
+                                                    <button
+                                                        onClick={() =>
+                                                            togglePinnedQuest(quest.questId)
+                                                        }
+                                                        className={`rounded p-1 transition-colors ${isPinned ? "text-sky-300" : "text-gray-600 hover:text-sky-300"}`}
+                                                        title={
+                                                            isPinned ? "Unpin quest" : "Pin quest"
+                                                        }
+                                                    >
+                                                        <Pin
+                                                            size={12}
+                                                            className={
+                                                                isPinned ? "fill-current" : ""
+                                                            }
+                                                        />
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            toggleIgnoredQuest(quest.questId)
+                                                        }
+                                                        className={`rounded p-1 transition-colors ${isIgnored ? "text-red-300" : "text-gray-600 hover:text-red-300"}`}
+                                                        title={
+                                                            isIgnored
+                                                                ? "Stop ignoring"
+                                                                : "Ignore quest"
+                                                        }
+                                                    >
+                                                        <CircleSlash size={12} />
+                                                    </button>
+                                                    <Link
+                                                        href={getQuestDeepLinkHref(quest.questId)}
+                                                        className="rounded p-1 text-gray-600 hover:text-gray-300 transition-colors"
+                                                        title="View on quests page"
+                                                    >
+                                                        <ExternalLink size={12} />
+                                                    </Link>
+
+                                                    {quest.questWikiLink && (
+                                                        <Link
+                                                            href={quest.questWikiLink}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="rounded p-1 text-gray-600 hover:text-gray-300 transition-colors text-xs hover:underline"
+                                                            title="View quest details"
+                                                        >
+                                                            Wiki
+                                                        </Link>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                {questAnyOfGroupState.map((group) => (
+                                    <div
+                                        key={group.groupId}
+                                        className="space-y-1.5 rounded-md border border-white/8 bg-black/20 px-3 py-2"
+                                    >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <span className="flex-1 min-w-0 truncate text-sm font-medium text-white">
+                                                {group.questName}
+                                            </span>
+                                            <span className="shrink-0 rounded border border-purple-400/20 bg-purple-400/10 px-1.5 py-0.5 text-[10px] text-purple-200">
+                                                item group
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between gap-2 min-w-0">
+                                            <span className="truncate text-xs text-gray-500">
+                                                {group.traderName}
+                                                {group.minPlayerLevel != null
+                                                    ? ` - Lv. ${group.minPlayerLevel}`
+                                                    : ""}
+                                                {" - "}
+                                                {group.objectiveLabel}
+                                            </span>
+                                            <div className="flex shrink-0 items-center gap-1">
+                                                <span className="rounded border border-white/10 bg-black/30 px-1.5 py-0.5 text-[10px] text-gray-400">
+                                                    Needs x{group.requiredCount}
+                                                </span>
+                                                {group.requiredFirCount > 0 && (
+                                                    <span className="rounded border border-orange-500/20 bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-bold text-orange-200">
+                                                        FiR
+                                                    </span>
+                                                )}
+                                                <Link
+                                                    href={getQuestDeepLinkHref(group.questId)}
+                                                    className="rounded p-1 text-gray-600 hover:text-gray-300 transition-colors"
+                                                    title="View on quests page"
+                                                >
+                                                    <ExternalLink size={12} />
+                                                </Link>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-1 pt-1">
+                                            {group.items.map((groupItem) => {
+                                                const isSelected = groupItem.id === selectedItem.id;
+                                                return (
+                                                    <div
+                                                        key={groupItem.id}
+                                                        className={`flex max-w-full items-center gap-1.5 rounded border px-1.5 py-0.5 ${
+                                                            isSelected
+                                                                ? "border-tarkov-green/40 bg-tarkov-green/10 text-white"
+                                                                : "border-white/10 bg-black/30 text-gray-300"
+                                                        }`}
+                                                        title={groupItem.name}
+                                                    >
+                                                        {(groupItem.iconLink ??
+                                                            groupItem.gridImageLink) && (
+                                                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-black/35">
+                                                                <img
+                                                                    src={
+                                                                        groupItem.iconLink ??
+                                                                        groupItem.gridImageLink ??
+                                                                        ""
+                                                                    }
+                                                                    alt={groupItem.name}
+                                                                    className="h-5 w-5 object-contain"
+                                                                />
+                                                            </span>
+                                                        )}
+                                                        <span className="max-w-36 truncate text-xs leading-snug">
+                                                            {groupItem.name}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                            {group.isPartial && (
+                                                <span className="rounded border border-blue-400/20 bg-blue-400/10 px-1.5 py-0.5 text-xs text-blue-200">
+                                                    +
+                                                    {Math.max(
+                                                        group.totalItemCount - group.items.length,
+                                                        0,
+                                                    )}{" "}
+                                                    more
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>

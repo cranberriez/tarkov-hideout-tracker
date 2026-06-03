@@ -25,17 +25,6 @@ export function Footer() {
                         </a>
                     </span>
                     <span>
-                        Price data powered by{" "}
-                        <a
-                            href="https://tarkov-market.com/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="transition-colors text-tarkov-green-dim hover:text-tarkov-green hover:underline"
-                        >
-                            tarkov-market.com
-                        </a>
-                    </span>
-                    <span>
                         Escape from Tarkov{" "}
                         <a
                             href="https://escapefromtarkov.fandom.com/wiki/Escape_from_Tarkov_Wiki"

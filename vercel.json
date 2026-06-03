@@ -1,7 +1,7 @@
 {
     "crons": [
         {
-            "path": "/api/cron/bulk-update",
+            "path": "/api/cron/price-update",
             "schedule": "0 0 * * *"
         }
     ]

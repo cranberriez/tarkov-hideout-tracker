@@ -21,10 +21,10 @@ export function Post_v2_11_28() {
 
             <h3 className="text-xl font-semibold mt-4">Individual Item Counts</h3>
             <p>
-                We've introduced individual item counts displayed directly on the Hideout and Items
-                pages. This allows you to more finely adjust and control the items you have marked
-                as collected. You can now see live counts and instantly know when you have enough
-                resources to craft your station upgrades.
+                We&apos;ve introduced individual item counts displayed directly on the Hideout and
+                Items pages. This allows you to more finely adjust and control the items you have
+                marked as collected. You can now see live counts and instantly know when you have
+                enough resources to craft your station upgrades.
             </p>
             <p>
                 The biggest bonus is that you can actively and quickly see exactly what items you
@@ -36,7 +36,7 @@ export function Post_v2_11_28() {
             />
             <p>
                 Something to note here is that for something like Wires, we ONLY display and count
-                the non found in raid items, because that's whats required. In the case where you
+                the non found in raid items, because that&apos;s whats required. In the case where you
                 have found in raid version of an Item we only need non-found in raid, we will not
                 show you have the required # of items to avoid using FiR items where non-FiR can be
                 used instead.
@@ -47,7 +47,7 @@ export function Post_v2_11_28() {
             </h3>
             <p>
                 Hideout stations will display whether or not they can be currently upgraded based on
-                the items you have, and your other station levels. We don't track skills and trader
+                the items you have, and your other station levels. We don&apos;t track skills and trader
                 levels but they are displayed as requirements.
             </p>
             <p>Stations can display 3 different messages to indicate their status.</p>
@@ -64,7 +64,7 @@ export function Post_v2_11_28() {
                 </li>
                 <li>
                     <span className="font-mono uppercase text-red-400">Illegal State </span> This
-                    station's current level requires other stations at levels they are currently not
+                    station&apos;s current level requires other stations at levels they are currently not
                     at.
                 </li>
             </ul>
@@ -74,11 +74,11 @@ export function Post_v2_11_28() {
                 contain
             />
 
-            <h3 className="text-xl font-semibold mt-4">New "Add Items" Feature</h3>
+            <h3 className="text-xl font-semibold mt-4">New &ldquo;Add Items&rdquo; Feature</h3>
             <p>
-                Finished a raid? Use the new "Add Items" feature to quickly tally up the loot you
-                just acquired. These items will feed directly into your total counts across the
-                game, making post-raid organization much faster.
+                Finished a raid? Use the new &ldquo;Add Items&rdquo; feature to quickly tally up the
+                loot you just acquired. These items will feed directly into your total counts across
+                the game, making post-raid organization much faster.
             </p>
             <PostImage
                 label="Add Items Modal Interface"
@@ -105,14 +105,14 @@ export function Post_v2_11_28() {
 
             <h3 className="text-xl font-semibold mt-4">Migration & Changes</h3>
             <p>
-                Please note that the old "click to complete" functionality in the hideout has been
-                removed. We have converted your previous progress into currently acquired items to
-                the best of our ability.
+                Please note that the old &ldquo;click to complete&rdquo; functionality in the
+                hideout has been removed. We have converted your previous progress into currently
+                acquired items to the best of our ability.
             </p>
 
             <h3 className="text-xl font-semibold mt-4">Performance & Requirements</h3>
             <p>
-                We are aware that general load times aren't as optimal as they could be, and we will
+                We are aware that general load times aren&apos;t as optimal as they could be, and we will
                 be working to improve them as we go.
             </p>
             <p>

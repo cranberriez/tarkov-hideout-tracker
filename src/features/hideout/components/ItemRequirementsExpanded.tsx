@@ -6,6 +6,8 @@ import { CircleCheckBig, Check } from "lucide-react";
 import { formatNumber } from "@/lib/utils/format-number";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
+import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
+import { formatCompactRoubles, getFleaPrice, hasFleaMarketData } from "@/lib/utils/market-price";
 
 export function ExpandedItemRequirements({
     nextLevelData,
@@ -14,6 +16,11 @@ export function ExpandedItemRequirements({
     pooledFirByItem,
 }: BaseItemRequirementsProps) {
     const itemCounts = useUserStore((state) => state.itemCounts);
+    const gameMode = useUserStore((state) => state.gameMode);
+    const { marketPricesByMode, loading: pricesLoading } = usePriceDataContext();
+    const mode = gameMode === "PVE" ? "PVE" : "PVP";
+    const priceBucket = marketPricesByMode[mode];
+    const pricesLoadingForMode = pricesLoading || !priceBucket || priceBucket.updatedAt === null;
     return (
         <div className="flex flex-col gap-1.5">
             {nextLevelData.itemRequirements
@@ -29,6 +36,15 @@ export function ExpandedItemRequirements({
                     const isFir = req.attributes.some(
                         (a) => a.name === "found_in_raid" && a.value === "true"
                     );
+                    const marketPrice = priceBucket?.prices[norm];
+                    const fleaPrice = getFleaPrice(marketPrice);
+                    const priceLabel = pricesLoadingForMode
+                        ? "..."
+                        : marketPrice && !hasFleaMarketData(marketPrice)
+                          ? "No flea"
+                          : fleaPrice != null
+                            ? `${formatCompactRoubles(fleaPrice)} ₽`
+                            : "No data";
 
                     const owned = itemCounts[req.item.id] ?? { have: 0, haveFir: 0 };
                     const globalFirRemaining = pooledFirByItem[req.item.id] ?? 0;
@@ -133,6 +149,11 @@ export function ExpandedItemRequirements({
                                 {isFir && !isCompleted && (
                                     <div className="text-orange-500" title="Found In Raid">
                                         <CircleCheckBig className="w-4 h-4" />
+                                    </div>
+                                )}
+                                {!isCurrency && (
+                                    <div className="ml-2 shrink-0 text-right text-[10px] font-mono text-gray-500">
+                                        {priceLabel}
                                     </div>
                                 )}
                             </div>

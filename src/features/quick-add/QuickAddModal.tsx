@@ -1,27 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Plus, X, Search } from "lucide-react";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
 import type { ItemDetails } from "@/types";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-interface PendingItem {
-    tempId: string;
-    item: ItemDetails;
-    nonFir: number;
-    fir: number;
-}
 
 export function QuickAddModal() {
     const { 
@@ -37,14 +23,6 @@ export function QuickAddModal() {
     // State for the new item row
     const [isSearching, setIsSearching] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-
-    useEffect(() => {
-        if (!isQuickAddOpen) {
-            // Reset search state when closed, but NOT the pending items
-            setIsSearching(false);
-            setSearchQuery("");
-        }
-    }, [isQuickAddOpen]);
 
     const searchResults = useMemo(() => {
         if (!searchQuery || !items) return [];
@@ -70,6 +48,18 @@ export function QuickAddModal() {
         return results;
     }, [searchQuery, items]);
 
+    const resetSearchState = () => {
+        setIsSearching(false);
+        setSearchQuery("");
+    };
+
+    const handleOpenChange = (open: boolean) => {
+        if (!open) {
+            resetSearchState();
+        }
+        setQuickAddOpen(open);
+    };
+
     const handleAddItem = (item: ItemDetails) => {
         setPendingQuickAddItems([
             ...pendingQuickAddItems,
@@ -80,8 +70,7 @@ export function QuickAddModal() {
                 fir: 0
             }
         ]);
-        setIsSearching(false);
-        setSearchQuery("");
+        resetSearchState();
     };
 
     const handleRemoveItem = (tempId: string) => {
@@ -105,18 +94,18 @@ export function QuickAddModal() {
             }
         });
         clearPendingQuickAddItems();
-        setQuickAddOpen(false);
+        handleOpenChange(false);
     };
 
     const handleCancel = () => {
         clearPendingQuickAddItems();
-        setQuickAddOpen(false);
+        handleOpenChange(false);
     };
 
     if (!isQuickAddOpen) return null;
 
     return (
-        <Dialog open={isQuickAddOpen} onOpenChange={setQuickAddOpen}>
+        <Dialog open={isQuickAddOpen} onOpenChange={handleOpenChange}>
             <DialogContent className="w-full md:max-w-2xl bg-card border-border-color p-0 overflow-hidden flex flex-col max-h-[80vh]">
                 <div className="p-4 border-b border-border-color bg-black/40">
                     <DialogTitle className="text-lg font-semibold">
