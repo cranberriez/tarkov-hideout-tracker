@@ -4,7 +4,7 @@ import { buildQuestAnyOfGroups, buildQuestItemIndex } from "@/lib/utils/quest-it
 import { toQuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { QuestsClientPage } from "@/features/quests/QuestsClientPage";
 
-export const revalidate = 43200;
+export const revalidate = 1209600; // 14 days; tag revalidation handles freshness
 
 export default async function QuestsPage() {
     const questsResponse = await getCachedFullQuestData();

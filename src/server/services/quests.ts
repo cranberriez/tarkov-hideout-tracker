@@ -282,7 +282,9 @@ async function getQuestData(): Promise<TimedResponse<QuestsPayload>> {
 }
 
 export const getCachedQuestData = unstable_cache(getQuestData, ["quests"], {
-    revalidate: 43200,
+    // Quest data changes rarely; invalidate via /api/revalidate?tag=quests.
+    revalidate: 14 * 24 * 60 * 60,
+    tags: ["quests"],
 });
 
 // ---- Full quest service (all quests, all objective types, map data) ----
@@ -1038,5 +1040,7 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
 }
 
 export const getCachedFullQuestData = unstable_cache(getFullQuestData, ["quests-full"], {
-    revalidate: 43200,
+    // Quest data changes rarely; invalidate via /api/revalidate?tag=quests.
+    revalidate: 14 * 24 * 60 * 60,
+    tags: ["quests"],
 });
