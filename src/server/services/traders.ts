@@ -75,5 +75,7 @@ async function getTraders(): Promise<TimedResponse<TradersPayload>> {
 }
 
 export const getCachedTraders = unstable_cache(getTraders, ["traders"], {
-    revalidate: 43200,
+    // Trader data changes rarely; invalidated alongside quest data.
+    revalidate: 14 * 24 * 60 * 60,
+    tags: ["quests"],
 });

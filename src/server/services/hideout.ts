@@ -335,5 +335,7 @@ export const getCachedHideoutStations = unstable_cache(
         return getHideoutStations();
     },
     ["hideout-stations"],
-    { revalidate: 12 * 60 * 60 }
+    // Station data only changes with game patches. Long time-based
+    // revalidate; invalidate on demand via /api/revalidate?tag=hideout-data.
+    { revalidate: 14 * 24 * 60 * 60, tags: ["hideout-data"] }
 );

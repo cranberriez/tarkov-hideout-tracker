@@ -165,5 +165,6 @@ export async function getHideoutRequiredItems(
 export const getCachedHideoutRequiredItems = unstable_cache(
     async () => getHideoutRequiredItems(),
     ["hideout-required-items"],
-    { revalidate: 12 * 60 * 60 },
+    // Invalidate on demand via /api/revalidate?tag=hideout-data.
+    { revalidate: 14 * 24 * 60 * 60, tags: ["hideout-data"] },
 );

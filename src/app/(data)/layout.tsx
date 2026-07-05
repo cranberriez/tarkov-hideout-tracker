@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import type { ReactNode } from "react";
 import { getCachedHideoutStations } from "@/server/services/hideout";
 import { getCachedHideoutRequiredItems } from "@/server/services/items";
@@ -25,12 +24,10 @@ export default async function DataLayout({ children }: DataLayoutProps) {
 
     return (
         <DataProvider value={value}>
-            <Suspense fallback={null}>
-                <PriceDataLayout>
-                    {children}
-                    <QuickAddModal />
-                </PriceDataLayout>
-            </Suspense>
+            <PriceDataLayout>
+                {children}
+                <QuickAddModal />
+            </PriceDataLayout>
         </DataProvider>
     );
 }

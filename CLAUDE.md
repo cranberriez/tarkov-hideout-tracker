@@ -30,17 +30,26 @@ Copy `.sample.env` to `.env`. Required variables:
 ### Data Flow
 
 ```
-Tarkov.dev GraphQL ──► server/services/ ──► Redis (12h TTL) ──► (data)/layout.tsx
-                                                                  ├── DataContext  (stations + items)
-                                                                  └── PriceDataLayout
-                                                                        └── PriceDataContext (PVP + PVE prices)
+Tarkov.dev GraphQL ──► server/services/ ──► Redis ──► (data)/layout.tsx ──► DataContext (stations + items)
 
-Tarkov Market REST ──► /api/cron/bulk-update ──► Redis (daily)
-                                  ▲
-                          Vercel cron at 00:00 UTC
+Prices (client-fetched, NOT embedded in pages):
+Redis ──► /api/prices/[mode]  (ISR route, tag "market-prices")
+              └──► fetched client-side by PriceDataLayout ──► PriceDataContext
+
+Cron at 00:00 UTC ──► /api/cron/price-update ──► Redis + revalidateTag("market-prices")
 ```
 
-All pages under `src/app/(data)/` are inside this route group and receive station/item/price data automatically through server-side context. The root `/` redirects to `/hideout`.
+All pages under `src/app/(data)/` receive station/item data through server-side context. Prices are fetched client-side per game mode from `/api/prices/[mode]` (CDN/ISR-cached; keep them out of the RSC payload — this was a major Vercel cost issue). The root `/` redirects to `/hideout`.
+
+### Cache Invalidation
+
+Pages and `unstable_cache` entries use long time-based revalidates (14 days) plus tags: `market-prices` (revalidated daily by the price cron), `hideout-data` (stations + items), `quests` (quests + traders). To invalidate after a game patch:
+
+```
+curl -H "Authorization: Bearer $CRON_SECRET" "https://<host>/api/revalidate?tag=quests"
+```
+
+Keep short `revalidate` values out of anything rendered by the `(data)` layout — the lowest revalidate used during a render sets the ISR interval for the whole route and drives up Vercel ISR writes.
 
 ### Server Services (`src/server/services/`)
 
