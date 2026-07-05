@@ -18,134 +18,135 @@ const PREVIOUS_FILTERED_PRICES_KEY_PREFIX = "item-market-data:filtered:v2";
 const LEGACY_FILTERED_PRICES_KEY_PREFIX = "tarkov-market:all-prices:filtered:v1";
 
 interface RedisMeta {
-    updatedAt: number;
+	updatedAt: number;
 }
 
 function buildFilteredKeys(mode: GameMode, prefix = FILTERED_PRICES_KEY_PREFIX) {
-    const modeKey = mode.toLowerCase();
-    const baseKey = `${prefix}:${modeKey}`;
-    return {
-        bodyKey: baseKey,
-        metaKey: `${baseKey}:meta`,
-    };
+	const modeKey = mode.toLowerCase();
+	const baseKey = `${prefix}:${modeKey}`;
+	return {
+		bodyKey: baseKey,
+		metaKey: `${baseKey}:meta`,
+	};
 }
 
 function parsePriceMap(cachedBody: unknown): { [normalizedName: string]: MarketPrice | null } {
-    return typeof cachedBody === "object"
-        ? (cachedBody as { [normalizedName: string]: MarketPrice | null })
-        : (JSON.parse(String(cachedBody)) as { [normalizedName: string]: MarketPrice | null });
+	return typeof cachedBody === "object"
+		? (cachedBody as { [normalizedName: string]: MarketPrice | null })
+		: (JSON.parse(String(cachedBody)) as { [normalizedName: string]: MarketPrice | null });
 }
 
 async function loadFilteredPrices(
-    mode: GameMode
+	mode: GameMode,
 ): Promise<TimedResponse<{ [normalizedName: string]: MarketPrice | null }>> {
-    const { bodyKey, metaKey } = buildFilteredKeys(mode);
-    const [cachedBody, cachedMeta] = await redis.mget<[string, RedisMeta]>(bodyKey, metaKey);
+	const { bodyKey, metaKey } = buildFilteredKeys(mode);
+	const [cachedBody, cachedMeta] = await redis.mget<[string, RedisMeta]>(bodyKey, metaKey);
 
-    if (cachedBody && cachedMeta && typeof cachedMeta === "object") {
-        const data = parsePriceMap(cachedBody);
-        if (Object.keys(data).length > 0) {
-            return {
-                data,
-                updatedAt: cachedMeta.updatedAt ?? 0,
-            };
-        }
-    }
+	if (cachedBody && cachedMeta && typeof cachedMeta === "object") {
+		const data = parsePriceMap(cachedBody);
+		if (Object.keys(data).length > 0) {
+			return {
+				data,
+				updatedAt: cachedMeta.updatedAt ?? 0,
+			};
+		}
+	}
 
-    const previousKeys = buildFilteredKeys(mode, PREVIOUS_FILTERED_PRICES_KEY_PREFIX);
-    const [previousBody, previousMeta] = await redis.mget<[string, RedisMeta]>(
-        previousKeys.bodyKey,
-        previousKeys.metaKey
-    );
+	const previousKeys = buildFilteredKeys(mode, PREVIOUS_FILTERED_PRICES_KEY_PREFIX);
+	const [previousBody, previousMeta] = await redis.mget<[string, RedisMeta]>(
+		previousKeys.bodyKey,
+		previousKeys.metaKey,
+	);
 
-    if (previousBody && previousMeta && typeof previousMeta === "object") {
-        const data = parsePriceMap(previousBody);
-        if (Object.keys(data).length > 0) {
-            return {
-                data,
-                updatedAt: previousMeta.updatedAt ?? 0,
-            };
-        }
-    }
+	if (previousBody && previousMeta && typeof previousMeta === "object") {
+		const data = parsePriceMap(previousBody);
+		if (Object.keys(data).length > 0) {
+			return {
+				data,
+				updatedAt: previousMeta.updatedAt ?? 0,
+			};
+		}
+	}
 
-    const legacyKeys = buildFilteredKeys(mode, LEGACY_FILTERED_PRICES_KEY_PREFIX);
-    const [legacyBody, legacyMeta] = await redis.mget<[string, RedisMeta]>(
-        legacyKeys.bodyKey,
-        legacyKeys.metaKey
-    );
+	const legacyKeys = buildFilteredKeys(mode, LEGACY_FILTERED_PRICES_KEY_PREFIX);
+	const [legacyBody, legacyMeta] = await redis.mget<[string, RedisMeta]>(
+		legacyKeys.bodyKey,
+		legacyKeys.metaKey,
+	);
 
-    if (!legacyBody || !legacyMeta || typeof legacyMeta !== "object") {
-        return {
-            data: {},
-            updatedAt: 0,
-        };
-    }
+	if (!legacyBody || !legacyMeta || typeof legacyMeta !== "object") {
+		return {
+			data: {},
+			updatedAt: 0,
+		};
+	}
 
-    const data = parsePriceMap(legacyBody);
+	const data = parsePriceMap(legacyBody);
 
-    return {
-        data,
-        updatedAt: legacyMeta.updatedAt ?? 0,
-    };
+	return {
+		data,
+		updatedAt: legacyMeta.updatedAt ?? 0,
+	};
 }
 
 export async function getAllMarketPrices(
-    gameMode: GameMode
+	gameMode: GameMode,
 ): Promise<TimedResponse<{ [normalizedName: string]: MarketPrice | null }>> {
-    const response = await loadFilteredPrices(gameMode);
-    return {
-        data: response.data,
-        updatedAt: response.updatedAt || Date.now(),
-    };
+	const response = await loadFilteredPrices(gameMode);
+	return {
+		data: response.data,
+		updatedAt: response.updatedAt || 0,
+	};
 }
 
 export async function getMarketPrices(
-    normalizedNames: string[],
-    gameMode: GameMode
+	normalizedNames: string[],
+	gameMode: GameMode,
 ): Promise<TimedResponse<{ [normalizedName: string]: MarketPrice | null }>> {
-    const uniqueNames = Array.from(
-        new Set(
-            normalizedNames
-                .map((name) => (typeof name === "string" ? name.trim() : ""))
-                .filter((name) => name.length > 0)
-        )
-    );
+	const uniqueNames = Array.from(
+		new Set(
+			normalizedNames
+				.map((name) => (typeof name === "string" ? name.trim() : ""))
+				.filter((name) => name.length > 0),
+		),
+	);
 
-    if (uniqueNames.length === 0) {
-        return {
-            data: {},
-            updatedAt: Date.now(),
-        };
-    }
+	if (uniqueNames.length === 0) {
+		return {
+			data: {},
+			updatedAt: 0,
+		};
+	}
 
-    const { data: allPrices, updatedAt } = await loadFilteredPrices(gameMode);
+	const { data: allPrices, updatedAt } = await loadFilteredPrices(gameMode);
 
-    const aggregated: { [normalizedName: string]: MarketPrice | null } = {};
+	const aggregated: { [normalizedName: string]: MarketPrice | null } = {};
 
-    for (const name of uniqueNames) {
-        aggregated[name] = Object.prototype.hasOwnProperty.call(allPrices, name)
-            ? allPrices[name]
-            : null;
-    }
+	for (const name of uniqueNames) {
+		aggregated[name] = Object.prototype.hasOwnProperty.call(allPrices, name)
+			? allPrices[name]
+			: null;
+	}
 
-    return {
-        data: aggregated,
-        updatedAt: updatedAt || Date.now(),
-    };
+	return {
+		data: aggregated,
+		updatedAt: updatedAt || 0,
+	};
 }
 
 export const getCachedMarketPrices = unstable_cache(
-    async (normalizedNames: string[], gameMode: GameMode) => {
-        return getMarketPrices(normalizedNames, gameMode);
-    },
-    ["market-prices", `v${CACHE_VERSIONS.marketPrices}`],
-    { revalidate: 5 * 60, tags: ["market-prices"] }
+	async (normalizedNames: string[], gameMode: GameMode) => {
+		return getMarketPrices(normalizedNames, gameMode);
+	},
+	["market-prices", `v${CACHE_VERSIONS.marketPrices}`],
+	// Price data only changes when the daily cron runs
+	{ revalidate: 24 * 60 * 60, tags: ["market-prices"] },
 );
 
 export const getCachedAllMarketPrices = unstable_cache(
-    async (gameMode: GameMode) => {
-        return getAllMarketPrices(gameMode);
-    },
-    ["market-prices-all", `v${CACHE_VERSIONS.marketPrices}`],
-    { revalidate: 5 * 60, tags: ["market-prices"] }
+	async (gameMode: GameMode) => {
+		return getAllMarketPrices(gameMode);
+	},
+	["market-prices-all", `v${CACHE_VERSIONS.marketPrices}`],
+	{ revalidate: 24 * 60 * 60, tags: ["market-prices"] },
 );
