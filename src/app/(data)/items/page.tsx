@@ -1,4 +1,5 @@
-import { getCachedFullQuestData, orderQuestsByPrerequisites } from "@/server/services/quests";
+import { orderQuestsByPrerequisites } from "@/server/services/quests";
+import { getCachedFullQuestData } from "@/server/services/tarkovData";
 import { toQuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { buildQuestAnyOfGroups, buildQuestItemIndex } from "@/lib/utils/quest-item-index";
 import { ItemsClientPage } from "@/features/items/ItemsClientPage";

@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
-import { getCachedHideoutStations } from "@/server/services/hideout";
-import { getCachedHideoutRequiredItems } from "@/server/services/items";
+import {
+    getCachedHideoutRequiredItems,
+    getCachedHideoutStations,
+} from "@/server/services/tarkovData";
 import { DataProvider, type DataContextValue } from "@/app/(data)/_dataContext";
 import PriceDataLayout from "@/app/(data)/PriceDataLayout";
 import { QuickAddModal } from "@/features/quick-add/QuickAddModal";

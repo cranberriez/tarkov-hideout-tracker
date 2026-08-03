@@ -1,0 +1,30 @@
+import type { TimedResponse } from "@/types";
+
+export function parseNonEmptyTimedResponse<TPayload>(
+    cachedBody: unknown,
+    selectEntries: (payload: TPayload) => unknown[] | undefined,
+): TimedResponse<TPayload> | null {
+    if (!cachedBody) return null;
+
+    try {
+        const parsed =
+            typeof cachedBody === "string"
+                ? (JSON.parse(cachedBody) as TimedResponse<TPayload>)
+                : (cachedBody as TimedResponse<TPayload>);
+        const entries = parsed?.data ? selectEntries(parsed.data) : undefined;
+        return Array.isArray(entries) && entries.length > 0 ? parsed : null;
+    } catch (error) {
+        console.error("Ignoring invalid cached Tarkov data", error);
+        return null;
+    }
+}
+
+export function isFreshCache(cachedMeta: unknown, now = Date.now()): boolean {
+    if (!cachedMeta || typeof cachedMeta !== "object" || !("updatedAt" in cachedMeta)) {
+        return false;
+    }
+
+    const updatedAt = (cachedMeta as { updatedAt?: unknown }).updatedAt;
+    return typeof updatedAt === "number" && now - updatedAt < 12 * 60 * 60 * 1000;
+}
+

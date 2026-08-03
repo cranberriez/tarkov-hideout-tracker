@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import { refreshTarkovDevMarketPrices } from "@/server/services/tarkovDevMarket";
+import { refreshMarketPrices } from "@/server/services/tarkovData";
 
 export async function GET(req: NextRequest) {
     const expected = process.env.CRON_SECRET ? `Bearer ${process.env.CRON_SECRET}` : null;
@@ -13,8 +13,8 @@ export async function GET(req: NextRequest) {
 
     try {
         const [pvp, pve] = await Promise.all([
-            refreshTarkovDevMarketPrices("PVP"),
-            refreshTarkovDevMarketPrices("PVE"),
+            refreshMarketPrices("PVP"),
+            refreshMarketPrices("PVE"),
         ]);
         revalidateTag("market-prices", { expire: 0 });
 

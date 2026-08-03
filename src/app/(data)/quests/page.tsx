@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { getCachedFullQuestData, orderQuestsByPrerequisites } from "@/server/services/quests";
+import { orderQuestsByPrerequisites } from "@/server/services/quests";
+import { getCachedFullQuestData } from "@/server/services/tarkovData";
 import { buildQuestAnyOfGroups, buildQuestItemIndex } from "@/lib/utils/quest-item-index";
 import { toQuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { QuestsClientPage } from "@/features/quests/QuestsClientPage";
