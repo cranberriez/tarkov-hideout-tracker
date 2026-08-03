@@ -1,6 +1,6 @@
 # API Routes & Server Services
 
-The app uses **no public API routes for hideout, items, quest, or market price page data**. Page data fetching happens in server components/services and is delivered to client components via React context or server props. The only public route is the Vercel cron endpoint.
+The app uses **no public API routes for hideout, items, quest, or market price page data**. Page data fetching happens in server components/services and is delivered to client components via React context or server props. `src/server/services/tarkovData.ts` selects the JSON (default) or GraphQL provider without changing page imports. The only public data-mutation route is the Vercel cron endpoint.
 
 For the original plan that included public routes (`/api/hideout/stations`, `/api/market/items`, etc.), see git history. That pattern was superseded by the server-service + context architecture described in `data-and-price-context-architecture.md`.
 

@@ -108,10 +108,13 @@ See `state-management.md` for store shapes and `data-and-price-context-architect
 
 | Source                              | What it provides                                                             |
 | ----------------------------------- | ---------------------------------------------------------------------------- |
+| Tarkov.dev JSON API                 | Default source for station, item, trader, quest, map, and flea-price data     |
 | Tarkov.dev GraphQL                  | Station structure, item metadata, trader/skill info, quest data, trader list |
 | Tarkov.dev GraphQL                  | Station structure, item metadata, trader/skill info, quest data, and flea prices |
 | `wiki-data.json` + `foundInRaid.ts` | Manual overrides for requirements and FiR flags                              |
 | localStorage                        | All user progress and preferences                                            |
+
+The server selects the JSON or GraphQL implementation through `TARKOV_DATA_SOURCE`; see `tarkov-json-api.md`.
 
 ---
 

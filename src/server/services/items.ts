@@ -3,16 +3,17 @@ import { getHideoutStations } from "@/server/services/hideout";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import type { ItemsPayload, TimedResponse, ItemDetails } from "@/types";
 import { unstable_cache } from "next/cache";
+import { isFreshCache, parseNonEmptyTimedResponse } from "@/server/services/tarkovJson/cache";
 
-const CACHE_WINDOW_MS = 12 * 60 * 60 * 1000; // 12 hours
 const REDIS_KEY = `hideout:items:filtered:v${CACHE_VERSIONS.hideoutItems}`;
 const REDIS_KEY_META = `${REDIS_KEY}:meta`;
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
 
 interface TarkovItemsResponse {
-    data: {
+    data?: {
         items: ItemDetails[];
-    };
+    } | null;
+    errors?: Array<{ message?: string }>;
 }
 
 const ITEMS_QUERY = `
@@ -46,20 +47,12 @@ export async function getHideoutRequiredItems(
         REDIS_KEY_META,
     );
 
-    let isFresh = false;
-    if (cachedBody && cachedMeta && typeof cachedMeta === "object") {
-        const age = Date.now() - cachedMeta.updatedAt;
-        if (age < CACHE_WINDOW_MS) {
-            isFresh = true;
-        }
-    }
+    const cached = parseNonEmptyTimedResponse<ItemsPayload>(cachedBody, (payload) => payload.items);
+    const isFresh = isFreshCache(cachedMeta);
 
-    if (isFresh && cachedBody) {
+    if (isFresh && cached) {
         console.log("Using cached filtered items");
-        if (typeof cachedBody === "object") {
-            return cachedBody as TimedResponse<ItemsPayload>;
-        }
-        return JSON.parse(cachedBody) as TimedResponse<ItemsPayload>;
+        return cached;
     }
 
     // 2. Fetch Stations to determine required Item IDs
@@ -111,12 +104,9 @@ export async function getHideoutRequiredItems(
         res = await fetch(TARKOV_GRAPHQL_ENDPOINT, fetchOptions);
     } catch (error) {
         console.error("Tarkov.dev items fetch threw", error);
-        if (cachedBody) {
+        if (cached) {
             console.log("Using stale cached items due to fetch error");
-            if (typeof cachedBody === "object") {
-                return cachedBody as TimedResponse<ItemsPayload>;
-            }
-            return JSON.parse(cachedBody) as TimedResponse<ItemsPayload>;
+            return cached;
         }
         throw error;
     }
@@ -127,18 +117,21 @@ export async function getHideoutRequiredItems(
         const text = await res.text();
         console.error("Tarkov.dev items error", res.status, text);
         // Fallback to stale cache
-        if (cachedBody) {
+        if (cached) {
             console.log("Using stale cached items due to upstream error");
-            if (typeof cachedBody === "object") {
-                return cachedBody as TimedResponse<ItemsPayload>;
-            }
-            return JSON.parse(cachedBody) as TimedResponse<ItemsPayload>;
+            return cached;
         }
 
         throw new Error("Failed to fetch items");
     } else {
         const json = (await res.json()) as TarkovItemsResponse;
-        items = json.data?.items ?? [];
+        const upstreamItems = json.data?.items;
+        if (json.errors?.length || !Array.isArray(upstreamItems) || upstreamItems.length === 0) {
+            console.error("Tarkov.dev items returned invalid GraphQL data", json.errors);
+            if (cached) return cached;
+            throw new Error("Tarkov.dev returned no items");
+        }
+        items = upstreamItems;
     }
 
     // 4. Cache the filtered result

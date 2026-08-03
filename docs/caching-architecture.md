@@ -2,6 +2,8 @@
 
 The app uses two caching layers in combination: **Upstash Redis** for persistent cross-request storage and **Next.js `unstable_cache`** for ISR-style in-process caching.
 
+Both Tarkov JSON and GraphQL providers use the same compact Redis payloads. JSON adapters reject empty cached/upstream datasets and never overwrite a valid stale body with missing data. See `tarkov-json-api.md`.
+
 Cache version constants live in `src/lib/cfg/cacheVersions.ts`. To invalidate a Redis-backed data set for application code, bump the relevant version constant and deploy.
 
 ---

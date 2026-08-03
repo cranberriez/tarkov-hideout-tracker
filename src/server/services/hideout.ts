@@ -3,6 +3,7 @@ import { requiresFoundInRaid } from "@/lib/cfg/foundInRaid";
 import { wikiData } from "@/lib/data/wiki-data";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { unstable_cache } from "next/cache";
+import { isFreshCache, parseNonEmptyTimedResponse } from "@/server/services/tarkovJson/cache";
 import {
     HideoutStationsPayload,
     TimedResponse,
@@ -14,7 +15,6 @@ import {
     TraderRequirement,
 } from "@/types";
 
-const CACHE_WINDOW_MS = 12 * 60 * 60 * 1000; // 12 hours
 const REDIS_KEY = `hideout:stations:v${CACHE_VERSIONS.hideoutStations}`;
 const REDIS_KEY_META = `${REDIS_KEY}:meta`;
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
@@ -76,9 +76,10 @@ interface TarkovHideoutStation {
 }
 
 interface TarkovHideoutStationsResponse {
-    data: {
+    data?: {
         hideoutStations: TarkovHideoutStation[];
-    };
+    } | null;
+    errors?: Array<{ message?: string }>;
 }
 
 const HIDEOUT_STATIONS_QUERY = `
@@ -144,21 +145,15 @@ export async function getHideoutStations(): Promise<TimedResponse<HideoutStation
         REDIS_KEY_META
     );
 
-    let isFresh = false;
+    const cached = parseNonEmptyTimedResponse<HideoutStationsPayload>(
+        cachedBody,
+        (payload) => payload.stations,
+    );
+    const isFresh = isFreshCache(cachedMeta);
 
-    if (cachedBody && cachedMeta && typeof cachedMeta === "object") {
-        const age = Date.now() - cachedMeta.updatedAt;
-        if (age < CACHE_WINDOW_MS) {
-            isFresh = true;
-        }
-    }
-
-    if (isFresh && cachedBody) {
+    if (isFresh && cached) {
         console.log("Using cached hideout stations");
-        if (typeof cachedBody === "object") {
-            return cachedBody as TimedResponse<HideoutStationsPayload>;
-        }
-        return JSON.parse(cachedBody) as TimedResponse<HideoutStationsPayload>;
+        return cached;
     }
 
     // 2. Fetch from Tarkov.dev
@@ -174,10 +169,9 @@ export async function getHideoutStations(): Promise<TimedResponse<HideoutStation
         });
     } catch (error) {
         console.error("Tarkov.dev hideoutStations fetch threw", error);
-        if (cachedBody) {
+        if (cached) {
             console.log("Using stale cached stations due to fetch error");
-            const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
-            return body as TimedResponse<HideoutStationsPayload>;
+            return cached;
         }
         throw error;
     }
@@ -185,17 +179,22 @@ export async function getHideoutStations(): Promise<TimedResponse<HideoutStation
     if (!res.ok) {
         const text = await res.text();
         console.error("Tarkov.dev hideoutStations error", res.status, text);
-        if (cachedBody) {
+        if (cached) {
             console.log("Using stale cached stations due to upstream error");
-            const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
-            return body as TimedResponse<HideoutStationsPayload>;
+            return cached;
         }
         throw new Error("Failed to fetch hideout stations");
     }
 
     const json = (await res.json()) as TarkovHideoutStationsResponse;
+    const upstreamStations = json.data?.hideoutStations;
+    if (json.errors?.length || !Array.isArray(upstreamStations) || upstreamStations.length === 0) {
+        console.error("Tarkov.dev hideoutStations returned invalid GraphQL data", json.errors);
+        if (cached) return cached;
+        throw new Error("Tarkov.dev returned no hideout stations");
+    }
 
-    const stations: Station[] = (json.data?.hideoutStations ?? []).map((s): Station => {
+    const stations: Station[] = upstreamStations.map((s): Station => {
         const wikiStation = wikiData.find((ws) => ws.normalizedName === s.normalizedName);
 
         const levels = (s.levels ?? []).map((lvl): StationLevel => {

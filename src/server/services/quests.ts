@@ -13,8 +13,8 @@ import type {
     QuestTraderStandingReward,
 } from "@/types";
 import { unstable_cache } from "next/cache";
+import { isFreshCache, parseNonEmptyTimedResponse } from "@/server/services/tarkovJson/cache";
 
-const CACHE_WINDOW_MS = 12 * 60 * 60 * 1000;
 const REDIS_KEY = `quests:all:v${CACHE_VERSIONS.quests}`;
 const REDIS_KEY_META = `${REDIS_KEY}:meta`;
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
@@ -122,7 +122,8 @@ interface RawTask {
 }
 
 interface TasksApiResponse {
-    data: { tasks: RawTask[] };
+    data?: { tasks: RawTask[] } | null;
+    errors?: Array<{ message?: string }>;
 }
 
 type QuestLike = {
@@ -196,13 +197,13 @@ async function getQuestData(): Promise<TimedResponse<QuestsPayload>> {
         REDIS_KEY_META,
     );
 
-    if (cachedBody && cachedMeta && typeof cachedMeta === "object") {
-        const age = Date.now() - cachedMeta.updatedAt;
-        if (age < CACHE_WINDOW_MS) {
-            console.log("Using cached quest data");
-            if (typeof cachedBody === "object") return cachedBody as TimedResponse<QuestsPayload>;
-            return JSON.parse(cachedBody) as TimedResponse<QuestsPayload>;
-        }
+    const cached = parseNonEmptyTimedResponse<QuestsPayload>(
+        cachedBody,
+        (payload) => payload.quests,
+    );
+    if (cached && isFreshCache(cachedMeta)) {
+        console.log("Using cached quest data");
+        return cached;
     }
 
     console.log("Fetching fresh quest data from Tarkov.dev");
@@ -215,10 +216,9 @@ async function getQuestData(): Promise<TimedResponse<QuestsPayload>> {
         });
     } catch (error) {
         console.error("Tarkov.dev tasks fetch threw", error);
-        if (cachedBody) {
+        if (cached) {
             console.log("Using stale quest cache due to fetch error");
-            const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
-            return body as TimedResponse<QuestsPayload>;
+            return cached;
         }
         throw error;
     }
@@ -226,16 +226,20 @@ async function getQuestData(): Promise<TimedResponse<QuestsPayload>> {
     if (!res.ok) {
         const text = await res.text();
         console.error("Tarkov.dev tasks error", res.status, text);
-        if (cachedBody) {
+        if (cached) {
             console.log("Using stale quest cache due to upstream error");
-            const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
-            return body as TimedResponse<QuestsPayload>;
+            return cached;
         }
         throw new Error("Failed to fetch quest data");
     }
 
     const json = (await res.json()) as TasksApiResponse;
-    const rawTasks = json.data?.tasks ?? [];
+    const rawTasks = json.data?.tasks;
+    if (json.errors?.length || !Array.isArray(rawTasks) || rawTasks.length === 0) {
+        console.error("Tarkov.dev tasks returned invalid GraphQL data", json.errors);
+        if (cached) return cached;
+        throw new Error("Tarkov.dev returned no tasks");
+    }
 
     const quests: Quest[] = rawTasks
         .filter((t) => t.objectives.some((o) => o.type === "giveItem"))
@@ -714,7 +718,8 @@ interface RawFullTask {
 }
 
 interface FullTasksApiResponse {
-    data: { tasks: RawFullTask[] };
+    data?: { tasks: RawFullTask[] } | null;
+    errors?: Array<{ message?: string }>;
 }
 
 function mapFullObjective(o: RawFullObjective): FullQuestObjective {
@@ -923,14 +928,13 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
         FULL_REDIS_KEY_META,
     );
 
-    if (cachedBody && cachedMeta && typeof cachedMeta === "object") {
-        const age = Date.now() - cachedMeta.updatedAt;
-        if (age < CACHE_WINDOW_MS) {
-            console.log("Using cached full quest data");
-            if (typeof cachedBody === "object")
-                return cachedBody as TimedResponse<FullQuestsPayload>;
-            return JSON.parse(cachedBody) as TimedResponse<FullQuestsPayload>;
-        }
+    const cached = parseNonEmptyTimedResponse<FullQuestsPayload>(
+        cachedBody,
+        (payload) => payload.quests,
+    );
+    if (cached && isFreshCache(cachedMeta)) {
+        console.log("Using cached full quest data");
+        return cached;
     }
 
     console.log("Fetching fresh full quest data from Tarkov.dev");
@@ -943,10 +947,9 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
         });
     } catch (error) {
         console.error("Tarkov.dev full tasks fetch threw", error);
-        if (cachedBody) {
+        if (cached) {
             console.log("Using stale full quest cache due to fetch error");
-            const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
-            return body as TimedResponse<FullQuestsPayload>;
+            return cached;
         }
         throw error;
     }
@@ -954,16 +957,20 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
     if (!res.ok) {
         const text = await res.text();
         console.error("Tarkov.dev full tasks error", res.status, text);
-        if (cachedBody) {
+        if (cached) {
             console.log("Using stale full quest cache due to upstream error");
-            const body = typeof cachedBody === "object" ? cachedBody : JSON.parse(cachedBody);
-            return body as TimedResponse<FullQuestsPayload>;
+            return cached;
         }
         throw new Error("Failed to fetch full quest data");
     }
 
     const json = (await res.json()) as FullTasksApiResponse;
-    const rawTasks = json.data?.tasks ?? [];
+    const rawTasks = json.data?.tasks;
+    if (json.errors?.length || !Array.isArray(rawTasks) || rawTasks.length === 0) {
+        console.error("Tarkov.dev full tasks returned invalid GraphQL data", json.errors);
+        if (cached) return cached;
+        throw new Error("Tarkov.dev returned no full tasks");
+    }
     await hydrateFullQuestObjectiveItems(rawTasks);
 
     // Tasks with minPlayerLevel < 1 are Fence/scav-karma quests that don't apply to normal PMC progression

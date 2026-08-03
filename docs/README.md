@@ -57,6 +57,9 @@ Docs are grouped by purpose:
 
 ## External APIs & Integrations
 
+- **[tarkov-json-api.md](tarkov-json-api.md)** - Current architecture
+  Reversible JSON/GraphQL provider selection, JSON record hydration, translations, and cache-safety behavior.
+
 - **[graphql-queries.md](graphql-queries.md)** - Current architecture
   Tarkov.dev GraphQL queries used for hideout station structure, item metadata, and flea prices.
 

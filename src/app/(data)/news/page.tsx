@@ -1,5 +1,6 @@
 import { Post_v3_6_3 } from "./_posts/post_v3_6-3";
 import { Post_v2_11_28 } from "./_posts/post_v2_11-28";
+import { PostTarkov11 } from "./_posts/post_tarkov_1-1";
 
 export default function NewsPage() {
     return (
@@ -14,6 +15,7 @@ export default function NewsPage() {
             </div>
 
             <div className="flex flex-col gap-7">
+                <PostTarkov11 />
                 <Post_v3_6_3 />
                 <Post_v2_11_28 />
             </div>
