@@ -2,7 +2,10 @@ import { unstable_cache } from "next/cache";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { redis } from "@/server/redis";
 import { fetchTarkovJsonDataset } from "@/server/services/tarkovJson/client";
-import { isFreshCache, parseNonEmptyTimedResponse } from "@/server/services/tarkovJson/cache";
+import {
+    isProgressionCacheUsable,
+    parseNonEmptyTimedResponse,
+} from "@/server/services/tarkovJson/cache";
 import type { TimedResponse, Trader, TradersPayload } from "@/types";
 
 const REDIS_KEY = `traders:all:v${CACHE_VERSIONS.traders}`;
@@ -21,7 +24,7 @@ export async function getJsonTraders(): Promise<TimedResponse<TradersPayload>> {
         cachedBody,
         (payload) => payload.traders,
     );
-    if (cached && isFreshCache(cachedMeta)) return cached;
+    if (cached && isProgressionCacheUsable(cachedMeta)) return cached;
 
     try {
         const dataset = await fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders");
@@ -49,7 +52,6 @@ export async function getJsonTraders(): Promise<TimedResponse<TradersPayload>> {
 }
 
 export const getCachedJsonTraders = unstable_cache(getJsonTraders, ["json-traders"], {
-    revalidate: 14 * 24 * 60 * 60,
+    revalidate: false,
     tags: ["traders"],
 });
-

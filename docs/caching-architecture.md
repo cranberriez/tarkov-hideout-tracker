@@ -4,6 +4,8 @@ The app uses two caching layers in combination: **Upstash Redis** for persistent
 
 Both Tarkov JSON and GraphQL providers use the same compact Redis payloads. JSON adapters reject empty cached/upstream datasets and never overwrite a valid stale body with missing data. See `tarkov-json-api.md`.
 
+> **Tarkov 1.1 freeze:** Progression caches (hideout, items, quests, and traders) are currently frozen by `PROGRESSION_DATA_FROZEN` in `src/lib/cfg/cacheVersions.ts`. Existing non-empty Redis data is used regardless of age, and the corresponding Next.js caches do not revalidate automatically. Market prices continue refreshing independently. Lift the freeze only after the new upstream data and application behavior have been verified.
+
 Cache version constants live in `src/lib/cfg/cacheVersions.ts`. To invalidate a Redis-backed data set for application code, bump the relevant version constant and deploy.
 
 ---
@@ -32,12 +34,12 @@ Each server service wraps its Redis read/fetch logic in `unstable_cache`, giving
 
 | Service function                     | `unstable_cache` key         | `revalidate` | Effect                                                              |
 | ------------------------------------ | ---------------------------- | ------------ | ------------------------------------------------------------------- |
-| `getCachedHideoutStations()`         | `["hideout-stations"]`       | 12 hours     | Station data is re-read from the service at most every 12h          |
-| `getCachedHideoutRequiredItems()`    | `["hideout-required-items"]` | 12 hours     | Hideout item metadata is re-read from the service at most every 12h |
+| `getCachedHideoutStations()`         | `["hideout-stations"]`       | Frozen       | Uses the current station dataset indefinitely                       |
+| `getCachedHideoutRequiredItems()`    | `["hideout-required-items"]` | Frozen       | Uses the current hideout item dataset indefinitely                  |
 | `getCachedMarketPrices(names, mode)` | `["market-prices"]`, tag `market-prices` | 5 minutes    | Price subsets are re-read from Redis at most every 5 minutes, or immediately after the cron route revalidates the tag |
-| `getCachedQuestData()`               | `["quests"]`                 | 12 hours     | Give-item quest data is re-read from the service at most every 12h  |
-| `getCachedFullQuestData()`           | `["quests-full"]`            | 12 hours     | Full quest data is re-read from the service at most every 12h       |
-| `getCachedTraders()`                 | `["traders"]`                | 12 hours     | Trader list is re-read from the service at most every 12h           |
+| `getCachedQuestData()`               | `["quests"]`                 | Frozen       | Uses the current give-item quest dataset indefinitely               |
+| `getCachedFullQuestData()`           | `["quests-full"]`            | Frozen       | Uses the current full quest dataset indefinitely                    |
+| `getCachedTraders()`                 | `["traders"]`                | Frozen       | Uses the current trader dataset indefinitely                        |
 
 The `unstable_cache` layer sits above Redis. On a Next.js cache hit inside the revalidate window, the function does not reach Redis.
 
@@ -77,7 +79,7 @@ No client-side price fetching occurs. Server components fetch data and distribut
 
 | Scenario                                              | How to invalidate                                                                                |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Station, item, quest, or trader data changed upstream | Bump the relevant version in `src/lib/cfg/cacheVersions.ts` or wait for the 12h freshness window |
+| Verified Tarkov 1.1 progression data is ready         | Set `PROGRESSION_DATA_FROZEN` to `false`, deploy, then explicitly invalidate the relevant tag or bump its cache version |
 | Market prices stale                                   | Wait for the 00:00 UTC cron job or call `/api/cron/price-update` manually with `CRON_SECRET`     |
 | Next.js in-process cache stale                        | Wait for the `revalidate` window or redeploy                                                     |
 

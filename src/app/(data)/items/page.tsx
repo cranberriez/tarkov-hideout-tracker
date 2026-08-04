@@ -4,7 +4,7 @@ import { toQuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { buildQuestAnyOfGroups, buildQuestItemIndex } from "@/lib/utils/quest-item-index";
 import { ItemsClientPage } from "@/features/items/ItemsClientPage";
 
-export const revalidate = 1209600; // 14 days; tag revalidation handles freshness
+export const revalidate = false; // Frozen during the Tarkov 1.1 transition
 
 export default async function ItemsPage() {
     const questsResponse = await getCachedFullQuestData();

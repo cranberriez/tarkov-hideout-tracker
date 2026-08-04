@@ -4,7 +4,10 @@ import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { wikiData } from "@/lib/data/wiki-data";
 import { redis } from "@/server/redis";
 import { fetchTarkovJsonDataset } from "@/server/services/tarkovJson/client";
-import { isFreshCache, parseNonEmptyTimedResponse } from "@/server/services/tarkovJson/cache";
+import {
+    isProgressionCacheUsable,
+    parseNonEmptyTimedResponse,
+} from "@/server/services/tarkovJson/cache";
 import type {
     HideoutStationsPayload,
     ItemRequirement,
@@ -80,7 +83,7 @@ export async function getJsonHideoutStations(): Promise<TimedResponse<HideoutSta
         (payload) => payload.stations,
     );
 
-    if (cached && isFreshCache(cachedMeta)) {
+    if (cached && isProgressionCacheUsable(cachedMeta)) {
         console.log("Using cached hideout stations");
         return cached;
     }
@@ -253,6 +256,5 @@ export async function getJsonHideoutStations(): Promise<TimedResponse<HideoutSta
 export const getCachedJsonHideoutStations = unstable_cache(
     getJsonHideoutStations,
     ["json-hideout-stations"],
-    { revalidate: 14 * 24 * 60 * 60, tags: ["hideout-data"] },
+    { revalidate: false, tags: ["hideout-data"] },
 );
-

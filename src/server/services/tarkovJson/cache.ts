@@ -1,4 +1,5 @@
 import type { TimedResponse } from "@/types";
+import { PROGRESSION_DATA_FROZEN } from "@/lib/cfg/cacheVersions";
 
 export function parseNonEmptyTimedResponse<TPayload>(
     cachedBody: unknown,
@@ -28,3 +29,15 @@ export function isFreshCache(cachedMeta: unknown, now = Date.now()): boolean {
     return typeof updatedAt === "number" && now - updatedAt < 12 * 60 * 60 * 1000;
 }
 
+export function isProgressionCacheUsable(cachedMeta: unknown, now = Date.now()): boolean {
+    if (PROGRESSION_DATA_FROZEN) {
+        return (
+            !!cachedMeta &&
+            typeof cachedMeta === "object" &&
+            "updatedAt" in cachedMeta &&
+            typeof (cachedMeta as { updatedAt?: unknown }).updatedAt === "number"
+        );
+    }
+
+    return isFreshCache(cachedMeta, now);
+}

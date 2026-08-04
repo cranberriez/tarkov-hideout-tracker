@@ -13,7 +13,10 @@ import type {
     QuestTraderStandingReward,
 } from "@/types";
 import { unstable_cache } from "next/cache";
-import { isFreshCache, parseNonEmptyTimedResponse } from "@/server/services/tarkovJson/cache";
+import {
+    isProgressionCacheUsable,
+    parseNonEmptyTimedResponse,
+} from "@/server/services/tarkovJson/cache";
 
 const REDIS_KEY = `quests:all:v${CACHE_VERSIONS.quests}`;
 const REDIS_KEY_META = `${REDIS_KEY}:meta`;
@@ -201,7 +204,7 @@ async function getQuestData(): Promise<TimedResponse<QuestsPayload>> {
         cachedBody,
         (payload) => payload.quests,
     );
-    if (cached && isFreshCache(cachedMeta)) {
+    if (cached && isProgressionCacheUsable(cachedMeta)) {
         console.log("Using cached quest data");
         return cached;
     }
@@ -286,8 +289,8 @@ async function getQuestData(): Promise<TimedResponse<QuestsPayload>> {
 }
 
 export const getCachedQuestData = unstable_cache(getQuestData, ["quests"], {
-    // Quest data changes rarely; invalidate via /api/revalidate?tag=quests.
-    revalidate: 14 * 24 * 60 * 60,
+    // Frozen indefinitely during the Tarkov 1.1 transition.
+    revalidate: false,
     tags: ["quests"],
 });
 
@@ -932,7 +935,7 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
         cachedBody,
         (payload) => payload.quests,
     );
-    if (cached && isFreshCache(cachedMeta)) {
+    if (cached && isProgressionCacheUsable(cachedMeta)) {
         console.log("Using cached full quest data");
         return cached;
     }
@@ -1047,7 +1050,7 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
 }
 
 export const getCachedFullQuestData = unstable_cache(getFullQuestData, ["quests-full"], {
-    // Quest data changes rarely; invalidate via /api/revalidate?tag=quests.
-    revalidate: 14 * 24 * 60 * 60,
+    // Frozen indefinitely during the Tarkov 1.1 transition.
+    revalidate: false,
     tags: ["quests"],
 });

@@ -3,7 +3,10 @@ import { getHideoutStations } from "@/server/services/hideout";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import type { ItemsPayload, TimedResponse, ItemDetails } from "@/types";
 import { unstable_cache } from "next/cache";
-import { isFreshCache, parseNonEmptyTimedResponse } from "@/server/services/tarkovJson/cache";
+import {
+    isProgressionCacheUsable,
+    parseNonEmptyTimedResponse,
+} from "@/server/services/tarkovJson/cache";
 
 const REDIS_KEY = `hideout:items:filtered:v${CACHE_VERSIONS.hideoutItems}`;
 const REDIS_KEY_META = `${REDIS_KEY}:meta`;
@@ -48,7 +51,7 @@ export async function getHideoutRequiredItems(
     );
 
     const cached = parseNonEmptyTimedResponse<ItemsPayload>(cachedBody, (payload) => payload.items);
-    const isFresh = isFreshCache(cachedMeta);
+    const isFresh = isProgressionCacheUsable(cachedMeta);
 
     if (isFresh && cached) {
         console.log("Using cached filtered items");
@@ -158,6 +161,6 @@ export async function getHideoutRequiredItems(
 export const getCachedHideoutRequiredItems = unstable_cache(
     async () => getHideoutRequiredItems(),
     ["hideout-required-items"],
-    // Invalidate on demand via /api/revalidate?tag=hideout-data.
-    { revalidate: 14 * 24 * 60 * 60, tags: ["hideout-data"] },
+    // Frozen indefinitely during the Tarkov 1.1 transition.
+    { revalidate: false, tags: ["hideout-data"] },
 );

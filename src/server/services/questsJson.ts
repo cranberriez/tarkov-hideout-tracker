@@ -2,7 +2,10 @@ import { unstable_cache } from "next/cache";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { redis } from "@/server/redis";
 import { fetchTarkovJsonDataset } from "@/server/services/tarkovJson/client";
-import { isFreshCache, parseNonEmptyTimedResponse } from "@/server/services/tarkovJson/cache";
+import {
+    isProgressionCacheUsable,
+    parseNonEmptyTimedResponse,
+} from "@/server/services/tarkovJson/cache";
 import type {
     FullQuest,
     FullQuestObjective,
@@ -545,7 +548,7 @@ export async function getJsonFullQuestData(): Promise<TimedResponse<FullQuestsPa
         cachedBody,
         (payload) => payload.quests,
     );
-    if (cached && isFreshCache(cachedMeta)) return cached;
+    if (cached && isProgressionCacheUsable(cachedMeta)) return cached;
 
     try {
         const quests = await fetchAndMapFullQuests();
@@ -576,7 +579,7 @@ export async function getJsonQuestData(): Promise<TimedResponse<QuestsPayload>> 
         cachedBody,
         (payload) => payload.quests,
     );
-    if (cached && isFreshCache(cachedMeta)) return cached;
+    if (cached && isProgressionCacheUsable(cachedMeta)) return cached;
 
     try {
         const full = await getJsonFullQuestData();
@@ -635,12 +638,12 @@ export async function getJsonQuestData(): Promise<TimedResponse<QuestsPayload>> 
 }
 
 export const getCachedJsonQuestData = unstable_cache(getJsonQuestData, ["json-quests"], {
-    revalidate: 14 * 24 * 60 * 60,
+    revalidate: false,
     tags: ["quests"],
 });
 
 export const getCachedJsonFullQuestData = unstable_cache(
     getJsonFullQuestData,
     ["json-quests-full"],
-    { revalidate: 14 * 24 * 60 * 60, tags: ["quests"] },
+    { revalidate: false, tags: ["quests"] },
 );

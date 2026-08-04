@@ -3,7 +3,10 @@ import { requiresFoundInRaid } from "@/lib/cfg/foundInRaid";
 import { wikiData } from "@/lib/data/wiki-data";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { unstable_cache } from "next/cache";
-import { isFreshCache, parseNonEmptyTimedResponse } from "@/server/services/tarkovJson/cache";
+import {
+    isProgressionCacheUsable,
+    parseNonEmptyTimedResponse,
+} from "@/server/services/tarkovJson/cache";
 import {
     HideoutStationsPayload,
     TimedResponse,
@@ -149,7 +152,7 @@ export async function getHideoutStations(): Promise<TimedResponse<HideoutStation
         cachedBody,
         (payload) => payload.stations,
     );
-    const isFresh = isFreshCache(cachedMeta);
+    const isFresh = isProgressionCacheUsable(cachedMeta);
 
     if (isFresh && cached) {
         console.log("Using cached hideout stations");
@@ -335,6 +338,6 @@ export const getCachedHideoutStations = unstable_cache(
     },
     ["hideout-stations"],
     // Station data only changes with game patches. Long time-based
-    // revalidate; invalidate on demand via /api/revalidate?tag=hideout-data.
-    { revalidate: 14 * 24 * 60 * 60, tags: ["hideout-data"] }
+    // Frozen indefinitely during the Tarkov 1.1 transition.
+    { revalidate: false, tags: ["hideout-data"] }
 );

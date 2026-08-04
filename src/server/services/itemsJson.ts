@@ -2,7 +2,10 @@ import { unstable_cache } from "next/cache";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { redis } from "@/server/redis";
 import { getJsonHideoutStations } from "@/server/services/hideoutJson";
-import { isFreshCache, parseNonEmptyTimedResponse } from "@/server/services/tarkovJson/cache";
+import {
+    isProgressionCacheUsable,
+    parseNonEmptyTimedResponse,
+} from "@/server/services/tarkovJson/cache";
 import type { ItemDetails, ItemsPayload, TimedResponse } from "@/types";
 
 const REDIS_KEY = `hideout:items:filtered:v${CACHE_VERSIONS.hideoutItems}`;
@@ -22,7 +25,7 @@ export async function getJsonHideoutRequiredItems(
     );
     const cached = parseNonEmptyTimedResponse<ItemsPayload>(cachedBody, (payload) => payload.items);
 
-    if (cached && isFreshCache(cachedMeta)) {
+    if (cached && isProgressionCacheUsable(cachedMeta)) {
         console.log("Using cached filtered items");
         return cached;
     }
@@ -70,5 +73,5 @@ export async function getJsonHideoutRequiredItems(
 export const getCachedJsonHideoutRequiredItems = unstable_cache(
     getJsonHideoutRequiredItems,
     ["json-hideout-required-items"],
-    { revalidate: 14 * 24 * 60 * 60, tags: ["hideout-data"] },
+    { revalidate: false, tags: ["hideout-data"] },
 );
