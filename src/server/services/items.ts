@@ -3,6 +3,8 @@ import { getHideoutStations } from "@/server/services/hideout";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import type { ItemsPayload, TimedResponse, ItemDetails } from "@/types";
 import { unstable_cache } from "next/cache";
+import { cacheWhenEnabled } from "@/server/cache";
+import { TARKOV_GRAPHQL_HEADERS } from "@/server/services/tarkovApi";
 import {
     isProgressionCacheUsable,
     parseNonEmptyTimedResponse,
@@ -87,9 +89,7 @@ export async function getHideoutRequiredItems(
     console.log(`Fetching ${queryIds.length} specific items from Tarkov.dev...`);
     const fetchOptions: RequestInit = {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
+        headers: TARKOV_GRAPHQL_HEADERS,
         body: JSON.stringify({
             query: ITEMS_QUERY,
             variables: { ids: queryIds },
@@ -158,9 +158,14 @@ export async function getHideoutRequiredItems(
     return body;
 }
 
-export const getCachedHideoutRequiredItems = unstable_cache(
+const cachedHideoutRequiredItems = unstable_cache(
     async () => getHideoutRequiredItems(),
     ["hideout-required-items"],
     // Frozen indefinitely during the Tarkov 1.1 transition.
     { revalidate: false, tags: ["hideout-data"] },
+);
+
+export const getCachedHideoutRequiredItems = cacheWhenEnabled(
+    getHideoutRequiredItems,
+    cachedHideoutRequiredItems,
 );

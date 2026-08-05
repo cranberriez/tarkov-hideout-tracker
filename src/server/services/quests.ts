@@ -13,6 +13,8 @@ import type {
     QuestTraderStandingReward,
 } from "@/types";
 import { unstable_cache } from "next/cache";
+import { cacheWhenEnabled } from "@/server/cache";
+import { TARKOV_GRAPHQL_HEADERS } from "@/server/services/tarkovApi";
 import {
     isProgressionCacheUsable,
     parseNonEmptyTimedResponse,
@@ -214,7 +216,7 @@ async function getQuestData(): Promise<TimedResponse<QuestsPayload>> {
     try {
         res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: TARKOV_GRAPHQL_HEADERS,
             body: JSON.stringify({ query: TASKS_QUERY }),
         });
     } catch (error) {
@@ -288,11 +290,13 @@ async function getQuestData(): Promise<TimedResponse<QuestsPayload>> {
     return body;
 }
 
-export const getCachedQuestData = unstable_cache(getQuestData, ["quests"], {
+const cachedQuestData = unstable_cache(getQuestData, ["quests"], {
     // Frozen indefinitely during the Tarkov 1.1 transition.
     revalidate: false,
     tags: ["quests"],
 });
+
+export const getCachedQuestData = cacheWhenEnabled(getQuestData, cachedQuestData);
 
 // ---- Full quest service (all quests, all objective types, map data) ----
 
@@ -885,7 +889,7 @@ async function fetchQuestObjectiveItemsById(
 
     const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: TARKOV_GRAPHQL_HEADERS,
         body: JSON.stringify({ query: QUEST_ITEMS_QUERY, variables: { ids: itemIds } }),
     });
 
@@ -945,7 +949,7 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
     try {
         res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: TARKOV_GRAPHQL_HEADERS,
             body: JSON.stringify({ query: FULL_TASKS_QUERY }),
         });
     } catch (error) {
@@ -1049,8 +1053,10 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
     return body;
 }
 
-export const getCachedFullQuestData = unstable_cache(getFullQuestData, ["quests-full"], {
+const cachedFullQuestData = unstable_cache(getFullQuestData, ["quests-full"], {
     // Frozen indefinitely during the Tarkov 1.1 transition.
     revalidate: false,
     tags: ["quests"],
 });
+
+export const getCachedFullQuestData = cacheWhenEnabled(getFullQuestData, cachedFullQuestData);

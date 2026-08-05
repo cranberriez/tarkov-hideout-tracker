@@ -2,6 +2,8 @@ import { redis } from "@/server/redis";
 import { CACHE_VERSIONS, PROGRESSION_DATA_FROZEN } from "@/lib/cfg/cacheVersions";
 import type { Trader, TradersPayload, TimedResponse } from "@/types";
 import { unstable_cache } from "next/cache";
+import { cacheWhenEnabled } from "@/server/cache";
+import { TARKOV_GRAPHQL_HEADERS } from "@/server/services/tarkovApi";
 
 const CACHE_WINDOW_MS = 12 * 60 * 60 * 1000;
 const REDIS_KEY = `traders:all:v${CACHE_VERSIONS.traders}`;
@@ -42,7 +44,7 @@ async function getTraders(): Promise<TimedResponse<TradersPayload>> {
     console.log("Fetching fresh trader data from Tarkov.dev");
     const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: TARKOV_GRAPHQL_HEADERS,
         body: JSON.stringify({ query: TRADERS_QUERY }),
     });
 
@@ -74,8 +76,10 @@ async function getTraders(): Promise<TimedResponse<TradersPayload>> {
     return body;
 }
 
-export const getCachedTraders = unstable_cache(getTraders, ["traders"], {
+const cachedTraders = unstable_cache(getTraders, ["traders"], {
     // Frozen indefinitely during the Tarkov 1.1 transition.
     revalidate: false,
     tags: ["quests"],
 });
+
+export const getCachedTraders = cacheWhenEnabled(getTraders, cachedTraders);

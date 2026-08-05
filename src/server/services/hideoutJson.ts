@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { cacheWhenEnabled } from "@/server/cache";
 import { requiresFoundInRaid } from "@/lib/cfg/foundInRaid";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { wikiData } from "@/lib/data/wiki-data";
@@ -253,8 +254,13 @@ export async function getJsonHideoutStations(): Promise<TimedResponse<HideoutSta
     }
 }
 
-export const getCachedJsonHideoutStations = unstable_cache(
+const cachedJsonHideoutStations = unstable_cache(
     getJsonHideoutStations,
     ["json-hideout-stations"],
     { revalidate: false, tags: ["hideout-data"] },
+);
+
+export const getCachedJsonHideoutStations = cacheWhenEnabled(
+    getJsonHideoutStations,
+    cachedJsonHideoutStations,
 );

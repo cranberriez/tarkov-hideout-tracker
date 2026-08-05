@@ -10,6 +10,7 @@ import type { TimedResponse, MarketPrice } from "@/types";
 import { redis } from "@/server/redis";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { unstable_cache } from "next/cache";
+import { cacheWhenEnabled } from "@/server/cache";
 
 export type GameMode = "PVP" | "PVE";
 
@@ -134,7 +135,7 @@ export async function getMarketPrices(
 	};
 }
 
-export const getCachedMarketPrices = unstable_cache(
+const cachedMarketPrices = unstable_cache(
 	async (normalizedNames: string[], gameMode: GameMode) => {
 		return getMarketPrices(normalizedNames, gameMode);
 	},
@@ -143,10 +144,16 @@ export const getCachedMarketPrices = unstable_cache(
 	{ revalidate: 24 * 60 * 60, tags: ["market-prices"] },
 );
 
-export const getCachedAllMarketPrices = unstable_cache(
+const cachedAllMarketPrices = unstable_cache(
 	async (gameMode: GameMode) => {
 		return getAllMarketPrices(gameMode);
 	},
 	["market-prices-all", `v${CACHE_VERSIONS.marketPrices}`],
 	{ revalidate: 24 * 60 * 60, tags: ["market-prices"] },
+);
+
+export const getCachedMarketPrices = cacheWhenEnabled(getMarketPrices, cachedMarketPrices);
+export const getCachedAllMarketPrices = cacheWhenEnabled(
+	getAllMarketPrices,
+	cachedAllMarketPrices,
 );

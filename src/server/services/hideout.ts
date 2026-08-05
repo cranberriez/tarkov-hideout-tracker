@@ -3,6 +3,8 @@ import { requiresFoundInRaid } from "@/lib/cfg/foundInRaid";
 import { wikiData } from "@/lib/data/wiki-data";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { unstable_cache } from "next/cache";
+import { cacheWhenEnabled } from "@/server/cache";
+import { TARKOV_GRAPHQL_HEADERS } from "@/server/services/tarkovApi";
 import {
     isProgressionCacheUsable,
     parseNonEmptyTimedResponse,
@@ -165,9 +167,7 @@ export async function getHideoutStations(): Promise<TimedResponse<HideoutStation
     try {
         res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers: TARKOV_GRAPHQL_HEADERS,
             body: JSON.stringify({ query: HIDEOUT_STATIONS_QUERY }),
         });
     } catch (error) {
@@ -332,7 +332,7 @@ export async function getHideoutStations(): Promise<TimedResponse<HideoutStation
     return body;
 }
 
-export const getCachedHideoutStations = unstable_cache(
+const cachedHideoutStations = unstable_cache(
     async () => {
         return getHideoutStations();
     },
@@ -340,4 +340,9 @@ export const getCachedHideoutStations = unstable_cache(
     // Station data only changes with game patches. Long time-based
     // Frozen indefinitely during the Tarkov 1.1 transition.
     { revalidate: false, tags: ["hideout-data"] }
+);
+
+export const getCachedHideoutStations = cacheWhenEnabled(
+    getHideoutStations,
+    cachedHideoutStations,
 );

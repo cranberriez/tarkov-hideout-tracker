@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { cacheWhenEnabled } from "@/server/cache";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { redis } from "@/server/redis";
 import { fetchTarkovJsonDataset } from "@/server/services/tarkovJson/client";
@@ -637,13 +638,23 @@ export async function getJsonQuestData(): Promise<TimedResponse<QuestsPayload>> 
     }
 }
 
-export const getCachedJsonQuestData = unstable_cache(getJsonQuestData, ["json-quests"], {
+const cachedJsonQuestData = unstable_cache(getJsonQuestData, ["json-quests"], {
     revalidate: false,
     tags: ["quests"],
 });
 
-export const getCachedJsonFullQuestData = unstable_cache(
+const cachedJsonFullQuestData = unstable_cache(
     getJsonFullQuestData,
     ["json-quests-full"],
     { revalidate: false, tags: ["quests"] },
+);
+
+export const getCachedJsonQuestData = cacheWhenEnabled(
+    getJsonQuestData,
+    cachedJsonQuestData,
+);
+
+export const getCachedJsonFullQuestData = cacheWhenEnabled(
+    getJsonFullQuestData,
+    cachedJsonFullQuestData,
 );

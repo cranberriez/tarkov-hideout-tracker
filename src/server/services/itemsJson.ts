@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { cacheWhenEnabled } from "@/server/cache";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { redis } from "@/server/redis";
 import { getJsonHideoutStations } from "@/server/services/hideoutJson";
@@ -70,8 +71,13 @@ export async function getJsonHideoutRequiredItems(
     }
 }
 
-export const getCachedJsonHideoutRequiredItems = unstable_cache(
+const cachedJsonHideoutRequiredItems = unstable_cache(
     getJsonHideoutRequiredItems,
     ["json-hideout-required-items"],
     { revalidate: false, tags: ["hideout-data"] },
+);
+
+export const getCachedJsonHideoutRequiredItems = cacheWhenEnabled(
+    getJsonHideoutRequiredItems,
+    cachedJsonHideoutRequiredItems,
 );

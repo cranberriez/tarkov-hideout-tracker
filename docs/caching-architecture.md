@@ -8,6 +8,12 @@ Both Tarkov JSON and GraphQL providers use the same compact Redis payloads. JSON
 
 Cache version constants live in `src/lib/cfg/cacheVersions.ts`. To invalidate a Redis-backed data set for application code, bump the relevant version constant and deploy.
 
+## Development Cache Toggle
+
+Set `CACHE_ENABLED=false` in `.env` while running in development to bypass both cache layers. In this mode the server does not create a Redis client, read Redis, write Redis, or use the `unstable_cache` wrappers; progression requests go directly to the selected upstream provider. Restart the development server after changing the value.
+
+The toggle is intentionally ignored outside development. Production and other environments always use the normal cache behavior, even if `CACHE_ENABLED=false` is present.
+
 ---
 
 ## Redis Keys

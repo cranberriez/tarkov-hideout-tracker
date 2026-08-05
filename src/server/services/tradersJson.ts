@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { cacheWhenEnabled } from "@/server/cache";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { redis } from "@/server/redis";
 import { fetchTarkovJsonDataset } from "@/server/services/tarkovJson/client";
@@ -51,7 +52,9 @@ export async function getJsonTraders(): Promise<TimedResponse<TradersPayload>> {
     }
 }
 
-export const getCachedJsonTraders = unstable_cache(getJsonTraders, ["json-traders"], {
+const cachedJsonTraders = unstable_cache(getJsonTraders, ["json-traders"], {
     revalidate: false,
     tags: ["traders"],
 });
+
+export const getCachedJsonTraders = cacheWhenEnabled(getJsonTraders, cachedJsonTraders);

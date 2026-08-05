@@ -1,8 +1,5 @@
-import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
-
-// Initialize Redis
-const redis = Redis.fromEnv();
+import { redis } from "@/server/redis";
 
 export const POST = async () => {
     // Fetch data from Redis
