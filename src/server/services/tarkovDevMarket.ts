@@ -5,6 +5,7 @@ import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { buildQuestAnyOfGroups, buildQuestItemIndex } from "@/lib/utils/quest-item-index";
 import type { MarketPrice } from "@/types";
 import type { GameMode } from "@/server/services/marketPrices";
+import { TARKOV_GRAPHQL_HEADERS } from "@/server/services/tarkovApi";
 
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
 const FILTERED_PRICES_KEY_PREFIX = `item-market-data:filtered:v${CACHE_VERSIONS.marketPrices}`;
@@ -130,9 +131,7 @@ async function fetchTarkovDevMarketItems(
 ): Promise<TarkovDevMarketItem[]> {
     const res = await fetch(TARKOV_GRAPHQL_ENDPOINT, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
+        headers: TARKOV_GRAPHQL_HEADERS,
         body: JSON.stringify({
             query: ITEM_FLEA_MARKET_QUERY,
             variables: {

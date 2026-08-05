@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { fetchTarkovJsonDataset } from "./client";
+import { TARKOV_API_USER_AGENT } from "../tarkovApi";
 
 test("fetchTarkovJsonDataset combines base data with the English locale", async (context) => {
-    context.mock.method(globalThis, "fetch", async (input) => {
+    context.mock.method(globalThis, "fetch", async (input, init) => {
+        assert.equal(new Headers(init?.headers).get("User-Agent"), TARKOV_API_USER_AGENT);
         const url = String(input);
         if (url.endsWith("_en")) {
             return Response.json({ data: { token: "Translated" } });
@@ -27,4 +29,3 @@ test("fetchTarkovJsonDataset rejects missing base data", async (context) => {
 
     await assert.rejects(fetchTarkovJsonDataset("tasks"), /response is missing data/);
 });
-

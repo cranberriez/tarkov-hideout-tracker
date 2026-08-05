@@ -7,6 +7,8 @@ The application can load Tarkov data from either the original GraphQL services o
 
 The selection facade is `src/server/services/tarkovData.ts`. Pages and cron routes import data-fetching entry points from this facade. The original GraphQL service files remain intact so switching back does not require a code change.
 
+All requests to the Tarkov.dev JSON and GraphQL APIs send the shared user agent `TarkovHideoutTracker/1.0 (+https://tarkovhideout.com)`. Keep this identity on new upstream request paths so Tarkov.dev can attribute traffic to tarkovhideout.com.
+
 ## JSON API Shape
 
 The JSON API publishes a base dataset and an English locale dictionary for each translatable endpoint:
@@ -43,4 +45,3 @@ TARKOV_DATA_SOURCE=json
 ```
 
 Use `graphql` to switch back when the GraphQL endpoint is healthy. After changing providers, invoke the authenticated `/api/revalidate` route for the `hideout-data` and `quests` tags if an immediate refresh is required.
-

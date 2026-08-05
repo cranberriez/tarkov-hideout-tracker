@@ -1,3 +1,5 @@
+import { TARKOV_API_HEADERS } from "../tarkovApi";
+
 const TARKOV_JSON_BASE_URL = "https://json.tarkov.dev";
 
 export type TarkovJsonGameMode = "regular" | "pve";
@@ -25,7 +27,10 @@ async function fetchJson<T>(path: string): Promise<T> {
     if (existing) return existing;
 
     const request = (async () => {
-        const response = await fetch(url, { cache: "no-store" });
+        const response = await fetch(url, {
+            headers: TARKOV_API_HEADERS,
+            cache: "no-store",
+        });
         if (!response.ok) {
             const details = await response.text().catch(() => "");
             throw new Error(
@@ -71,4 +76,3 @@ export async function fetchTarkovJsonDataset<T extends object>(
         },
     };
 }
-
