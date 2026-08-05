@@ -10,18 +10,18 @@ export function PostTarkov11() {
                 </p>
 
                 <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 p-4">
-                    <h3 className="mt-0 text-amber-100">Please do not rely on the tracker at launch</h3>
+                    <h3 className="mt-0 text-amber-100">Hideout items and upgrades should be accurate</h3>
                     <p>
-                        The tracker will keep its current data and will not be updated until I can
-                        confirm the new data and site behavior are working correctly. Until this
-                        notice is removed, verify requirements and progression decisions in game or
-                        with another current source.
+                        Hideout item requirements and upgrade data have been updated for Tarkov 1.1.
+                        Quest data is still being reviewed and may be incomplete or inaccurate for a
+                        while, so verify quest requirements and progression decisions in game or with
+                        another current source.
                     </p>
                 </div>
 
                 <p>
-                    This may take some time. Thank you for your patience while the tracker catches
-                    up with 1.1.
+                    Quest data may take some time to catch up. Thank you for your patience while the
+                    tracker finishes the transition to 1.1.
                 </p>
             </NewsPost>
         </div>

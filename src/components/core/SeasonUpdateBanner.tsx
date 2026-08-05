@@ -14,8 +14,8 @@ export function SeasonUpdateBanner() {
                         className="mt-0.5 size-4 shrink-0 text-amber-400 sm:mt-0"
                     />
                     <p className="leading-5">
-                        <span className="font-semibold">Tarkov 1.1 is changing progression.</span>{" "}
-                        Site data may be incomplete or inaccurate while we catch up.
+                        <span className="font-semibold">Hideout items and upgrades should be accurate for Tarkov 1.1.</span>{" "}
+                        Quest data may be incomplete or inaccurate while we catch up.
                     </p>
                 </div>
                 <Link
