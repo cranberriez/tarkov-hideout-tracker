@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { FullQuest } from "@/types";
+import type { MapViewTransform } from "@/features/maps/map-view-transform";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
 import { clearQuestDeepLink, getQuestDeepLinkId } from "../quest-deep-link";
@@ -13,7 +14,16 @@ import { RaidPlannerPane } from "./RaidPlannerPane";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 export function QuestWorkspace({ quests }: { quests: FullQuest[] }) {
-    const { mode, questsById, setSelectedQuestId } = useQuestWorkspace();
+    const { mode, plannerMapKey, questsById, setSelectedQuestId } = useQuestWorkspace();
+    const [plannerViews, setPlannerViews] = useState(() => new Map<string, MapViewTransform>());
+    const rememberPlannerView = useCallback((mapKey: string, view: MapViewTransform | null) => {
+        setPlannerViews((current) => {
+            const next = new Map(current);
+            if (view) next.set(mapKey, view);
+            else next.delete(mapKey);
+            return next;
+        });
+    }, []);
     const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
     useEffect(() => {
         document.body.classList.add("quest-workspace-active");
@@ -43,7 +53,14 @@ export function QuestWorkspace({ quests }: { quests: FullQuest[] }) {
                 </section>
                 <section className="flex min-h-0 min-w-0 flex-col">
                     <QuestActionBar quests={quests} />
-                    {mode === "planner" ? <RaidPlannerPane /> : <QuestDetailsPane />}
+                    {mode === "planner" ? (
+                        <RaidPlannerPane
+                            rememberedView={plannerMapKey
+                                ? plannerViews.get(plannerMapKey) ?? null
+                                : null}
+                            onViewChange={rememberPlannerView}
+                        />
+                    ) : <QuestDetailsPane />}
                 </section>
             </div>
         </main>

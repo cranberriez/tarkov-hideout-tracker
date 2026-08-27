@@ -45,7 +45,9 @@ Factory's 90-degree rotation is handled by this shared formula rather than a map
 fit-to-markers, zone outlines, marker selection/focus, responsive sizing, and
 visible map attribution. Marker coordinates and size remain fixed on hover/focus;
 only the highlight ring and objective tooltip change. Quest hover/focus and map
-marker focus remain synchronized.
+marker focus remain synchronized. The Raid Planner keeps each map's pan and zoom
+in session memory, so opening a marker's quest details and returning to the
+planner restores the same view without adding persistent user-store fields.
 
 Icebreaker, The Lab, and The Labyrinth currently return an intentional unsupported state because their configured interactive entries do not have validated SVG paths. Floor definitions and height extents are retained in the compact manifest for a later floor-control pass; the initial viewer displays the SVG's default layer.
 

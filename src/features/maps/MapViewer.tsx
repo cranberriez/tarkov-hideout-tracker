@@ -11,6 +11,8 @@ import { zoomViewAroundPoint, type MapViewTransform } from "./map-view-transform
 interface MapViewerProps {
     mapKey: string;
     markers: MapOverlayMarker[];
+    rememberedView?: MapViewTransform | null;
+    onViewChange?: (view: MapViewTransform | null) => void;
     highlightedQuestId?: string | null;
     onMarkerSelect?: (marker: MapOverlayMarker) => void;
     onMarkerFocus?: (marker: MapOverlayMarker | null) => void;
@@ -22,6 +24,8 @@ const MAX_SCALE = 5;
 export function MapViewer({
     mapKey,
     markers,
+    rememberedView,
+    onViewChange,
     highlightedQuestId,
     onMarkerSelect,
     onMarkerFocus,
@@ -122,14 +126,19 @@ export function MapViewer({
     }, [containerSize, projectedMarkers, stageSize]);
 
     const viewKey = `${mapKey}:${stageSize.width}:${stageSize.height}:${markers.map((marker) => marker.id).join("|")}`;
-    const view = manualView?.key === viewKey ? manualView.value : fittedView;
-    const fitMarkers = useCallback(() => setManualView(null), []);
+    const view = manualView?.key === viewKey ? manualView.value : rememberedView ?? fittedView;
+    const fitMarkers = useCallback(() => {
+        setManualView({ key: viewKey, value: fittedView });
+        onViewChange?.(null);
+    }, [fittedView, onViewChange, viewKey]);
+
+    const updateView = (value: MapViewTransform) => {
+        setManualView({ key: viewKey, value });
+        onViewChange?.(value);
+    };
 
     const zoomBy = (factor: number, focalPoint = { x: 0, y: 0 }) => {
-        setManualView({
-            key: viewKey,
-            value: zoomViewAroundPoint(view, factor, focalPoint, MIN_SCALE, MAX_SCALE),
-        });
+        updateView(zoomViewAroundPoint(view, factor, focalPoint, MIN_SCALE, MAX_SCALE));
     };
 
     if (loadState !== "ready" || !definition) {
@@ -174,7 +183,7 @@ export function MapViewer({
                 const dx = event.clientX - drag.x;
                 const dy = event.clientY - drag.y;
                 dragRef.current = { ...drag, x: event.clientX, y: event.clientY };
-                setManualView({ key: viewKey, value: { ...view, x: view.x + dx, y: view.y + dy } });
+                updateView({ ...view, x: view.x + dx, y: view.y + dy });
             }}
             onPointerUp={() => { dragRef.current = null; }}
             onPointerCancel={() => { dragRef.current = null; }}

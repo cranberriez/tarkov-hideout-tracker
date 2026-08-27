@@ -2,11 +2,17 @@
 
 import { ChevronLeft } from "lucide-react";
 import { MapViewer } from "@/features/maps/MapViewer";
+import type { MapViewTransform } from "@/features/maps/map-view-transform";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 import { buildRaidPlannerMarkers, questHasRenderedLocation } from "./raid-planner-markers";
 
-export function RaidPlannerPane() {
+interface RaidPlannerPaneProps {
+    rememberedView: MapViewTransform | null;
+    onViewChange: (mapKey: string, view: MapViewTransform | null) => void;
+}
+
+export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPaneProps) {
     const {
         maps, plannerMapKey, selectPlannerMap, clearPlannerMap, filteredQuests,
         markerByQuestId, highlightedQuestId, setHighlightedQuestId, setSelectedQuestId,
@@ -63,6 +69,8 @@ export function RaidPlannerPane() {
             <MapViewer
                 mapKey={selectedMap.key}
                 markers={markers}
+                rememberedView={rememberedView}
+                onViewChange={(view) => onViewChange(selectedMap.key, view)}
                 highlightedQuestId={highlightedQuestId}
                 onMarkerFocus={(marker) => focusQuest(marker?.questId ?? null)}
                 onMarkerSelect={(marker) => {
