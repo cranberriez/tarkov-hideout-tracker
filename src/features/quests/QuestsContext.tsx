@@ -627,36 +627,25 @@ export function QuestsProvider({
     const undoLastQuestSync = () => {
         if (!lastQuestSyncAction || lastQuestSyncAction.completedIds.length === 0) return false;
 
-        useUserStore.setState((state) => {
-            const completedQuestsDraft = { ...state.completedQuests };
-            const failedQuestsDraft = { ...state.failedQuests };
-            const questsWithItemsDraft = { ...state.questsWithItems };
-            const affectedQuestIds = [
-                ...lastQuestSyncAction.completedIds,
-                ...lastQuestSyncAction.autoFailedQuestIds,
-            ];
+        const state = useUserStore.getState();
+        const affectedQuestIds = [
+            ...lastQuestSyncAction.completedIds,
+            ...lastQuestSyncAction.autoFailedQuestIds,
+        ];
+        const complete = affectedQuestIds.filter(
+            (questId) => !!lastQuestSyncAction.previousCompletedQuests[questId] && !state.completedQuests[questId],
+        );
+        const uncomplete = affectedQuestIds.filter(
+            (questId) => !lastQuestSyncAction.previousCompletedQuests[questId] && !!state.completedQuests[questId],
+        );
+        state.applyQuestCompletionChange({ complete, uncomplete });
 
-            restoreRecordValues(
-                completedQuestsDraft,
-                lastQuestSyncAction.previousCompletedQuests,
-                affectedQuestIds,
-            );
-            restoreRecordValues(
-                failedQuestsDraft,
-                lastQuestSyncAction.previousFailedQuests,
-                affectedQuestIds,
-            );
-            restoreRecordValues(
-                questsWithItemsDraft,
-                lastQuestSyncAction.previousQuestsWithItems,
-                affectedQuestIds,
-            );
-
-            return {
-                completedQuests: completedQuestsDraft,
-                failedQuests: failedQuestsDraft,
-                questsWithItems: questsWithItemsDraft,
-            };
+        useUserStore.setState((currentState) => {
+            const failedQuests = { ...currentState.failedQuests };
+            const questsWithItems = { ...currentState.questsWithItems };
+            restoreRecordValues(failedQuests, lastQuestSyncAction.previousFailedQuests, affectedQuestIds);
+            restoreRecordValues(questsWithItems, lastQuestSyncAction.previousQuestsWithItems, affectedQuestIds);
+            return { failedQuests, questsWithItems };
         });
 
         setLastQuestSyncAction(null);

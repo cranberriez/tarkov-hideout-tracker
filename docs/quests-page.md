@@ -76,6 +76,11 @@ failedQuests: Record<string, boolean>;
 questsWithItems: Record<string, boolean>;
 ignoredQuests: Record<string, boolean>;
 pinnedQuests: Record<string, boolean>;
+questChangeHistory: Array<{
+    questId: string;
+    timestamp: number;
+    change: "completed" | "uncompleted";
+}>;
 
 playerLevel: number;
 prestigeLevel: number;
@@ -110,6 +115,19 @@ questSidebarCollapsed: boolean;
 - `traders` and `allMaps`: deduped filter lists derived from full quest data.
 - `questSortMode`: applied to By Trader, By Map, and List views.
 - Manual sync helpers that call `quest-sync.ts` and write results back to `useUserStore`.
+
+The workspace keeps quests completed during an `Active`-only view visible for the
+rest of the current filter session. Changing a quest filter or search text clears
+that temporary retention, as does refreshing the page. This prevents the quest
+the user just completed from disappearing before they can review or undo it.
+
+The History button beside search replaces the left quest log with reverse-
+chronological completion changes. History entries persist only the quest ID,
+timestamp, and whether the quest was completed or uncompleted. Current quest data
+is joined at render time, and selecting a history entry opens the normal quest
+details pane where all standard actions remain available. Entries are deduplicated
+by quest ID and change type, so each quest contributes at most one completion and
+one uncompletion item. Repeating a change replaces its older item and timestamp.
 
 ## Quest Organization and Series Review
 
@@ -151,7 +169,7 @@ availability, but do not change a quest's issuing-trader category. JSON
 raw gates; they are not currently interpreted as loyalty levels or series IDs.
 
 Organization changes do not alter persisted progress. The localStorage key remains
-`tarkov-hideout-user-state` at Zustand version 15, and `completedQuests`,
+`tarkov-hideout-user-state` at Zustand version 17, and `completedQuests`,
 `failedQuests`, `questsWithItems`, `ignoredQuests`, and `pinnedQuests` remain maps
 keyed by the upstream quest IDs. Categories, series names, and manifest ordering
 must never be used to infer or rewrite completion records.

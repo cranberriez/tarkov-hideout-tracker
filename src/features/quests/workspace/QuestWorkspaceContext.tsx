@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { FullQuest } from "@/types";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -18,6 +18,7 @@ import {
 } from "./quest-workspace-utils";
 
 export type QuestWorkspaceMode = "details" | "planner";
+export type QuestListMode = "quests" | "history";
 export type QuestFilterSection = "traders" | "maps" | "status" | "types" | null;
 
 interface QuestWorkspaceContextValue {
@@ -38,6 +39,7 @@ interface QuestWorkspaceContextValue {
     openFilter: QuestFilterSection;
     searchQuery: string;
     mode: QuestWorkspaceMode;
+    listMode: QuestListMode;
     plannerMapKey: string | null;
     highlightedQuestId: string | null;
     setSelectedQuestId: (questId: string | null) => void;
@@ -51,6 +53,8 @@ interface QuestWorkspaceContextValue {
     setOpenFilter: (section: QuestFilterSection) => void;
     setSearchQuery: (query: string) => void;
     setMode: (mode: QuestWorkspaceMode) => void;
+    setListMode: (mode: QuestListMode) => void;
+    retainQuestAfterCompletion: (questId: string) => void;
     selectPlannerMap: (mapKey: string) => void;
     clearPlannerMap: () => void;
     setHighlightedQuestId: (questId: string | null) => void;
@@ -76,6 +80,8 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
     const [openFilter, setOpenFilter] = useState<QuestFilterSection>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [mode, setMode] = useState<QuestWorkspaceMode>("details");
+    const [listMode, setListMode] = useState<QuestListMode>("quests");
+    const [retainedCompletedQuestIds, setRetainedCompletedQuestIds] = useState<Set<string>>(() => new Set());
     const [plannerMapKey, setPlannerMapKey] = useState<string | null>(null);
     const [highlightedQuestId, setHighlightedQuestId] = useState<string | null>(null);
     const profile = useUserStore(
@@ -88,6 +94,7 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             failedQuests: state.failedQuests,
         })),
     );
+    const previousCompletedQuests = useRef(profile.completedQuests);
 
     const questsById = useMemo(() => new Map(quests.map((quest) => [quest.id, quest])), [quests]);
     const statusByQuestId = useMemo(
@@ -110,11 +117,16 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
         [plannerMapKey, quests],
     );
     const normalizedSearch = searchQuery.trim().toLowerCase();
+    const onlyActiveSelected = selectedStatuses.size === 1 && selectedStatuses.has("active");
     const filteredQuests = useMemo(() => quests.filter((quest) => {
         if (selectedTraderIds.size > 0 && !selectedTraderIds.has(quest.trader.id)) return false;
         if (selectedMapKeys.size > 0 && !questMatchesSelectedMapGroups(quest, selectedMapKeys)) return false;
         const status = statusByQuestId.get(quest.id);
-        if (status && !selectedStatuses.has(status.status)) return false;
+        if (
+            status &&
+            !selectedStatuses.has(status.status) &&
+            !(onlyActiveSelected && status.status === "completed" && retainedCompletedQuestIds.has(quest.id))
+        ) return false;
         if (selectedObjectiveCategories.size > 0) {
             const categories = getQuestObjectiveCategories(quest);
             if (![...selectedObjectiveCategories].some((category) => categories.has(category))) return false;
@@ -124,7 +136,26 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             if (!haystack.includes(normalizedSearch)) return false;
         }
         return true;
-    }), [normalizedSearch, quests, selectedMapKeys, selectedObjectiveCategories, selectedStatuses, selectedTraderIds, statusByQuestId]);
+    }), [normalizedSearch, onlyActiveSelected, quests, retainedCompletedQuestIds, selectedMapKeys, selectedObjectiveCategories, selectedStatuses, selectedTraderIds, statusByQuestId]);
+
+    useEffect(() => {
+        const previous = previousCompletedQuests.current;
+        previousCompletedQuests.current = profile.completedQuests;
+        if (!onlyActiveSelected) return;
+
+        const newlyCompleted = quests
+            .filter((quest) => !previous[quest.id] && profile.completedQuests[quest.id])
+            .map((quest) => quest.id);
+        if (newlyCompleted.length === 0) return;
+
+        setRetainedCompletedQuestIds((current) => new Set([...current, ...newlyCompleted]));
+    }, [onlyActiveSelected, profile.completedQuests, quests]);
+
+    const clearRetainedCompletedQuests = () => setRetainedCompletedQuestIds(new Set());
+    const retainQuestAfterCompletion = (questId: string) => {
+        if (!onlyActiveSelected) return;
+        setRetainedCompletedQuestIds((current) => new Set(current).add(questId));
+    };
 
     const selectPlannerMap = (mapKey: string) => {
         setPlannerMapKey(mapKey);
@@ -151,19 +182,22 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             openFilter,
             searchQuery,
             mode,
+            listMode,
             plannerMapKey,
             highlightedQuestId,
             setSelectedQuestId,
-            toggleTrader: (id) => setSelectedTraderIds((current) => toggleSetValue(current, id)),
-            clearTraders: () => setSelectedTraderIds(new Set()),
-            toggleMap: (key) => setSelectedMapKeys((current) => toggleSetValue(current, key)),
-            clearMaps: () => setSelectedMapKeys(new Set()),
-            toggleStatus: (status) => setSelectedStatuses((current) => toggleSetValue(current, status)),
-            toggleObjectiveCategory: (category) => setSelectedObjectiveCategories((current) => toggleSetValue(current, category)),
-            clearObjectiveCategories: () => setSelectedObjectiveCategories(new Set()),
+            toggleTrader: (id) => { clearRetainedCompletedQuests(); setSelectedTraderIds((current) => toggleSetValue(current, id)); },
+            clearTraders: () => { clearRetainedCompletedQuests(); setSelectedTraderIds(new Set()); },
+            toggleMap: (key) => { clearRetainedCompletedQuests(); setSelectedMapKeys((current) => toggleSetValue(current, key)); },
+            clearMaps: () => { clearRetainedCompletedQuests(); setSelectedMapKeys(new Set()); },
+            toggleStatus: (status) => { clearRetainedCompletedQuests(); setSelectedStatuses((current) => toggleSetValue(current, status)); },
+            toggleObjectiveCategory: (category) => { clearRetainedCompletedQuests(); setSelectedObjectiveCategories((current) => toggleSetValue(current, category)); },
+            clearObjectiveCategories: () => { clearRetainedCompletedQuests(); setSelectedObjectiveCategories(new Set()); },
             setOpenFilter,
-            setSearchQuery,
+            setSearchQuery: (query) => { clearRetainedCompletedQuests(); setSearchQuery(query); },
             setMode,
+            setListMode,
+            retainQuestAfterCompletion,
             selectPlannerMap,
             clearPlannerMap: () => {
                 setPlannerMapKey(null);

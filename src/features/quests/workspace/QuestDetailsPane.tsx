@@ -11,7 +11,7 @@ import { useQuestsContext } from "../QuestsContext";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 export function QuestDetailsPane() {
-    const { selectedQuest: quest, statusByQuestId, questsById, setSelectedQuestId } = useQuestWorkspace();
+    const { selectedQuest: quest, statusByQuestId, questsById, setSelectedQuestId, retainQuestAfterCompletion } = useQuestWorkspace();
     const { leadsToByQuestId, onItemClick, requestToggleQuestCompletion, requestFailQuest, requestResetQuestStatus } = useQuestsContext();
     const pinned = useUserStore((state) => quest ? !!state.pinnedQuests[quest.id] : false);
     const haveItems = useUserStore((state) => quest ? !!state.questsWithItems[quest.id] : false);
@@ -65,7 +65,7 @@ export function QuestDetailsPane() {
                         {quest.lightkeeperRequired && <span className="border border-cyan-400/20 bg-cyan-400/8 px-2 py-1 text-cyan-300">Lightkeeper</span>}
                     </div>
                     <div className="mt-6 flex flex-wrap gap-2">
-                        <button type="button" onClick={() => requestToggleQuestCompletion(quest.id)} className={cn("inline-flex items-center gap-2 border px-3 py-2 text-xs font-semibold transition-colors", status.status === "completed" ? "border-tarkov-green/30 bg-tarkov-green/10 text-tarkov-green hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-300" : "border-tarkov-green/30 bg-tarkov-green/10 text-tarkov-green hover:border-tarkov-green/60")}><CheckCircle2 size={14} />{status.status === "completed" ? "Mark incomplete" : "Complete"}</button>
+                        <button type="button" onClick={() => { if (status.status !== "completed") retainQuestAfterCompletion(quest.id); requestToggleQuestCompletion(quest.id); }} className={cn("inline-flex items-center gap-2 border px-3 py-2 text-xs font-semibold transition-colors", status.status === "completed" ? "border-tarkov-green/30 bg-tarkov-green/10 text-tarkov-green hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-300" : "border-tarkov-green/30 bg-tarkov-green/10 text-tarkov-green hover:border-tarkov-green/60")}><CheckCircle2 size={14} />{status.status === "completed" ? "Mark incomplete" : "Complete"}</button>
                         {questCanFail(quest) && !status.terminal && <button type="button" onClick={() => requestFailQuest(quest.id)} className="inline-flex items-center gap-2 border border-red-400/25 bg-red-400/8 px-3 py-2 text-xs text-red-300"><XCircle size={14} /> Failed</button>}
                         {status.terminal === "failed" && <button type="button" onClick={() => requestResetQuestStatus(quest.id)} className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-300"><RotateCcw size={14} /> Reset</button>}
                         <button type="button" onClick={() => togglePinnedQuest(quest.id)} className={cn("inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-400", pinned && "border-sky-400/25 bg-sky-400/8 text-sky-300")}><Pin size={14} className={pinned ? "fill-current" : ""} />{pinned ? "Unpin" : "Pin"}</button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Compass, PanelTopClose, PanelTopOpen, Search, SlidersHorizontal, Upload, X } from "lucide-react";
+import { Compass, History, PanelTopClose, PanelTopOpen, Search, SlidersHorizontal, Upload, X } from "lucide-react";
 import { useState } from "react";
 import type { FullQuest } from "@/types";
 import { useUIStore } from "@/lib/stores/useUIStore";
@@ -10,7 +10,7 @@ import { QuestLogImportDialog } from "../components/QuestLogImportDialog";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 export function QuestActionBar({ quests }: { quests: FullQuest[] }) {
-    const { searchQuery, setSearchQuery, mode, setMode } = useQuestWorkspace();
+    const { searchQuery, setSearchQuery, mode, setMode, listMode, setListMode } = useQuestWorkspace();
     const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
     const setMainNavHidden = useUIStore((state) => state.setMainNavHidden);
     const [searchOpen, setSearchOpen] = useState(false);
@@ -27,6 +27,19 @@ export function QuestActionBar({ quests }: { quests: FullQuest[] }) {
                 >
                     {isMainNavHidden ? <PanelTopOpen size={14} /> : <PanelTopClose size={14} />}
                     <span className="hidden sm:inline">{isMainNavHidden ? "Show Nav" : "Hide Nav"}</span>
+                </button>
+                <button
+                    type="button"
+                    aria-pressed={listMode === "history"}
+                    onClick={() => setListMode(listMode === "history" ? "quests" : "history")}
+                    className={cn(
+                        "inline-flex items-center gap-2 border px-3 py-2 text-xs transition-colors",
+                        listMode === "history"
+                            ? "border-tarkov-green/40 bg-tarkov-green/10 text-tarkov-green"
+                            : "border-white/8 bg-white/3 text-gray-400 hover:border-white/20 hover:text-white",
+                    )}
+                >
+                    <History size={14} /> <span className="hidden sm:inline">History</span>
                 </button>
                 {searchOpen ? (
                     <div className="flex min-w-0 flex-1 items-center gap-2 border-b border-tarkov-green/50 px-1 py-1.5">

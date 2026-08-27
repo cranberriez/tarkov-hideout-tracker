@@ -366,8 +366,17 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
             return;
         }
 
+        const completedQuestIds = Object.keys(result.nextCompletedQuests).filter(
+            (questId) => result.nextCompletedQuests[questId] && !state.completedQuests[questId],
+        );
+        const uncompletedQuestIds = Object.keys(state.completedQuests).filter(
+            (questId) => state.completedQuests[questId] && !result.nextCompletedQuests[questId],
+        );
+        state.applyQuestCompletionChange({
+            complete: completedQuestIds,
+            uncomplete: uncompletedQuestIds,
+        });
         useUserStore.setState({
-            completedQuests: result.nextCompletedQuests,
             questsWithItems: result.nextQuestsWithItems,
             gameMode: result.nextGameMode,
         });

@@ -32,7 +32,10 @@ export function QuestListPane() {
         selectedQuestId,
         setSelectedQuestId,
         highlightedQuestId,
+        listMode,
     } = useQuestWorkspace();
+
+    if (listMode === "history") return <QuestHistoryList />;
 
     return (
         <div className="min-h-0 flex-1 overflow-y-auto scroll-smooth bg-[#0b0c0e]">
@@ -58,18 +61,79 @@ export function QuestListPane() {
     );
 }
 
+function QuestHistoryList() {
+    const history = useUserStore((state) => state.questChangeHistory);
+    const {
+        questsById,
+        selectedQuestId,
+        setSelectedQuestId,
+        setMode,
+    } = useQuestWorkspace();
+    const entries = [...history].reverse().filter((entry) => questsById.has(entry.questId));
+
+    return (
+        <div className="min-h-0 flex-1 overflow-y-auto scroll-smooth bg-[#0b0c0e]">
+            <div className="flex h-8 items-center justify-between border-b border-white/8 px-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-gray-600">
+                <span>Quest history</span>
+                <span>{entries.length} changes</span>
+            </div>
+            {entries.map((entry, index) => (
+                <div key={`${entry.timestamp}-${entry.questId}-${index}`} className="border-b border-white/10">
+                    <div className={cn(
+                        "flex items-center justify-between border-b px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em]",
+                        entry.change === "completed"
+                            ? "border-tarkov-green/15 bg-tarkov-green/7 text-tarkov-green/80"
+                            : "border-amber-300/15 bg-amber-300/7 text-amber-200/80",
+                    )}>
+                        <span>{entry.change === "completed" ? "Marked completed" : "Marked incomplete"}</span>
+                        <time dateTime={new Date(entry.timestamp).toISOString()} title={new Date(entry.timestamp).toLocaleString()}>
+                            {formatHistoryTime(entry.timestamp)}
+                        </time>
+                    </div>
+                    <QuestListItem
+                        questId={entry.questId}
+                        selected={selectedQuestId === entry.questId}
+                        highlighted={false}
+                        onSelect={() => {
+                            setSelectedQuestId(entry.questId);
+                            setMode("details");
+                        }}
+                        includeElementId={false}
+                    />
+                </div>
+            ))}
+            {entries.length === 0 && (
+                <div className="border-b border-dashed border-white/10 px-5 py-14 text-center text-sm text-gray-600">
+                    Quest completion changes will appear here.
+                </div>
+            )}
+        </div>
+    );
+}
+
+function formatHistoryTime(timestamp: number) {
+    const date = new Date(timestamp);
+    const today = new Date();
+    const sameDay = date.toDateString() === today.toDateString();
+    return sameDay
+        ? date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+        : date.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
 function QuestListItem({
     questId,
     selected,
     highlighted,
     onSelect,
+    includeElementId = true,
 }: {
     questId: string;
     selected: boolean;
     highlighted: boolean;
     onSelect: () => void;
+    includeElementId?: boolean;
 }) {
-    const { questsById, statusByQuestId, markerByQuestId, mode } = useQuestWorkspace();
+    const { questsById, statusByQuestId, markerByQuestId, mode, retainQuestAfterCompletion } = useQuestWorkspace();
     const quest = questsById.get(questId)!;
     const status = statusByQuestId.get(questId)!;
     const marker = markerByQuestId.get(questId);
@@ -87,7 +151,7 @@ function QuestListItem({
 
     return (
         <article
-            id={`quest-workspace-${quest.id}`}
+            id={includeElementId ? `quest-workspace-${quest.id}` : undefined}
             tabIndex={0}
             role="button"
             aria-pressed={selected}
@@ -171,7 +235,10 @@ function QuestListItem({
                         <button
                             type="button"
                             title={completed ? "Mark incomplete" : "Mark complete"}
-                            onClick={() => requestToggleQuestCompletion(quest.id)}
+                            onClick={() => {
+                                if (!completed) retainQuestAfterCompletion(quest.id);
+                                requestToggleQuestCompletion(quest.id);
+                            }}
                             className={cn(
                                 "group/complete relative flex h-7 w-7 items-center justify-center rounded transition-colors",
                                 completed

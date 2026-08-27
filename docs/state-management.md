@@ -7,7 +7,7 @@ Client-side state lives in two Zustand stores. Server-fetched data (stations, it
 ## `useUserStore` — User Progress & Preferences
 
 **File:** `src/lib/stores/useUserStore.ts`
-**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 15.
+**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 17.
 
 Do not change the storage key. Bump the version and add a migration only when the persisted state shape requires it.
 
@@ -23,6 +23,11 @@ failedQuests: Record<string, boolean>;           // questId → failed
 questsWithItems: Record<string, boolean>;        // questId → hand-in items collected
 ignoredQuests: Record<string, boolean>;          // questId → hidden from demand
 pinnedQuests: Record<string, boolean>;           // questId → manually prioritized
+questChangeHistory: Array<{                     // chronological; max one entry per quest/change pair
+    questId: string;
+    timestamp: number;
+    change: "completed" | "uncompleted";
+}>;
 
 // Inventory
 itemCounts: Record<string, { have: number; haveFir: number }>; // itemId → owned counts
@@ -116,6 +121,7 @@ type QuestVisibilityMode = "all" | "hideLocked" | "activeDepth";
 | `toggleHiddenStation(id)`                        | Toggle hidden flag for a station                                                                     |
 | `toggleRequirement(reqId)`                       | Manually tick/untick a single requirement                                                            |
 | `toggleQuestCompletion(questId)`                 | Toggle quest completion                                                                              |
+| `applyQuestCompletionChange(changes)`            | Apply completion/cascade changes and append real completion transitions to quest history             |
 | `applyQuestFailureChange({ fail, unFail })`      | Mark quests failed or clear failed state; failing clears completed and hand-in item state             |
 | `toggleQuestHaveItems(questId)`                  | Toggle whether hand-in items have been collected for a quest                                         |
 | `toggleIgnoredQuest(questId)`                    | Toggle whether a quest is ignored in quest demand                                                    |

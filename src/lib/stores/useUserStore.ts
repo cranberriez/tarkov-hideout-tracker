@@ -19,6 +19,42 @@ export type QuestViewMode = "byMap" | "byTrader" | "flatList";
 export type QuestCardSize = "small" | "large";
 export type QuestSortMode = "default" | "level" | "xp" | "unlockImpact";
 export type QuestVisibilityMode = "all" | "hideLocked" | "activeDepth";
+export type QuestChangeType = "completed" | "uncompleted";
+
+export interface QuestChangeHistoryEntry {
+    questId: string;
+    timestamp: number;
+    change: QuestChangeType;
+}
+
+function mergeQuestChangeHistory(
+    history: QuestChangeHistoryEntry[],
+    entries: QuestChangeHistoryEntry[],
+) {
+    return entries.reduce(
+        (current, entry) => [
+            ...current.filter(
+                (existing) =>
+                    existing.questId !== entry.questId || existing.change !== entry.change,
+            ),
+            entry,
+        ],
+        [...history],
+    );
+}
+
+function normalizeQuestChangeHistory(value: unknown): QuestChangeHistoryEntry[] {
+    if (!Array.isArray(value)) return [];
+    const validEntries = value.filter(
+        (entry): entry is QuestChangeHistoryEntry =>
+            typeof entry === "object" &&
+            entry !== null &&
+            typeof entry.questId === "string" &&
+            typeof entry.timestamp === "number" &&
+            (entry.change === "completed" || entry.change === "uncompleted"),
+    );
+    return mergeQuestChangeHistory([], validEntries);
+}
 
 type StationEditionTarget = Pick<Station, "id" | "normalizedName">;
 
@@ -32,6 +68,7 @@ interface UserState {
     questsWithItems: Record<string, boolean>; // questId -> items collected but not handed in
     ignoredQuests: Record<string, boolean>; // questId -> hidden from quest demand
     pinnedQuests: Record<string, boolean>; // questId -> manually prioritized
+    questChangeHistory: QuestChangeHistoryEntry[];
 
     // Per-item ownership counts
     itemCounts: Record<string, { have: number; haveFir: number }>; // itemId -> counts
@@ -199,6 +236,7 @@ export const useUserStore = create<UserState>()(
             questsWithItems: {},
             ignoredQuests: DEFAULT_IGNORED_QUESTS,
             pinnedQuests: {},
+            questChangeHistory: [],
             itemCounts: {},
             checklistViewMode: "all",
             itemSourceFilter: "all",
@@ -289,6 +327,14 @@ export const useUserStore = create<UserState>()(
                     const willComplete = !state.completedQuests[questId];
                     return {
                         completedQuests: { ...state.completedQuests, [questId]: willComplete },
+                        questChangeHistory: mergeQuestChangeHistory(
+                            state.questChangeHistory,
+                            [{
+                                questId,
+                                timestamp: Date.now(),
+                                change: willComplete ? "completed" : "uncompleted",
+                            }],
+                        ),
                         ...(willComplete
                             ? { failedQuests: { ...state.failedQuests, [questId]: false } }
                             : {}),
@@ -313,11 +359,26 @@ export const useUserStore = create<UserState>()(
                     const nextCompletedQuests = { ...state.completedQuests };
                     const nextFailedQuests = { ...state.failedQuests };
                     const nextQuestsWithItems = { ...state.questsWithItems };
+                    const timestamp = Date.now();
+                    const historyEntries: QuestChangeHistoryEntry[] = [];
 
-                    for (const questId of complete) nextCompletedQuests[questId] = true;
-                    for (const questId of uncomplete) nextCompletedQuests[questId] = false;
+                    for (const questId of complete) {
+                        if (!nextCompletedQuests[questId]) {
+                            historyEntries.push({ questId, timestamp, change: "completed" });
+                        }
+                        nextCompletedQuests[questId] = true;
+                    }
+                    for (const questId of uncomplete) {
+                        if (nextCompletedQuests[questId]) {
+                            historyEntries.push({ questId, timestamp, change: "uncompleted" });
+                        }
+                        nextCompletedQuests[questId] = false;
+                    }
                     for (const questId of complete) nextFailedQuests[questId] = false;
                     for (const questId of fail) {
+                        if (nextCompletedQuests[questId]) {
+                            historyEntries.push({ questId, timestamp, change: "uncompleted" });
+                        }
                         nextFailedQuests[questId] = true;
                         nextCompletedQuests[questId] = false;
                         nextQuestsWithItems[questId] = false;
@@ -329,6 +390,10 @@ export const useUserStore = create<UserState>()(
                         completedQuests: nextCompletedQuests,
                         failedQuests: nextFailedQuests,
                         questsWithItems: nextQuestsWithItems,
+                        questChangeHistory: mergeQuestChangeHistory(
+                            state.questChangeHistory,
+                            historyEntries,
+                        ),
                     };
                 }),
 
@@ -339,8 +404,13 @@ export const useUserStore = create<UserState>()(
                     const nextCompletedQuests = { ...state.completedQuests };
                     const nextFailedQuests = { ...state.failedQuests };
                     const nextQuestsWithItems = { ...state.questsWithItems };
+                    const timestamp = Date.now();
+                    const historyEntries: QuestChangeHistoryEntry[] = [];
 
                     for (const questId of fail) {
+                        if (nextCompletedQuests[questId]) {
+                            historyEntries.push({ questId, timestamp, change: "uncompleted" });
+                        }
                         nextFailedQuests[questId] = true;
                         nextCompletedQuests[questId] = false;
                         nextQuestsWithItems[questId] = false;
@@ -351,6 +421,10 @@ export const useUserStore = create<UserState>()(
                         completedQuests: nextCompletedQuests,
                         failedQuests: nextFailedQuests,
                         questsWithItems: nextQuestsWithItems,
+                        questChangeHistory: mergeQuestChangeHistory(
+                            state.questChangeHistory,
+                            historyEntries,
+                        ),
                     };
                 }),
 
@@ -613,6 +687,7 @@ export const useUserStore = create<UserState>()(
                     questsWithItems: {},
                     ignoredQuests: {},
                     pinnedQuests: {},
+                    questChangeHistory: [],
                 }));
             },
 
@@ -626,6 +701,7 @@ export const useUserStore = create<UserState>()(
                     questsWithItems: {},
                     ignoredQuests: {},
                     pinnedQuests: {},
+                    questChangeHistory: [],
                     itemCounts: {},
                     checklistViewMode: "all",
                     itemSourceFilter: "all",
@@ -682,7 +758,7 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: USER_STORE_STORAGE_KEY,
-            version: 15,
+            version: 17,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -829,6 +905,22 @@ export const useUserStore = create<UserState>()(
                                 ? nextState.questViewMode
                                 : "byTrader",
                         questCardSize: "small",
+                    };
+                }
+
+                if (version < 16) {
+                    nextState = {
+                        ...nextState,
+                        questChangeHistory: [],
+                    };
+                }
+
+                if (version < 17) {
+                    nextState = {
+                        ...nextState,
+                        questChangeHistory: normalizeQuestChangeHistory(
+                            nextState.questChangeHistory,
+                        ),
                     };
                 }
 
