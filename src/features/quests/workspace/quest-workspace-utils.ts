@@ -6,11 +6,16 @@ import type {
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { isQuestTraderLoyaltyRequirement } from "@/lib/utils/quest-trader-gates";
 import { isQuestDisabledByCompletedFailedRequirement } from "@/lib/utils/quest-failures";
+import {
+    compareTraderTierCompletionCount,
+    countCompletedTraderTierQuests,
+    getTraderTierCompletionGate,
+} from "@/lib/utils/quest-trader-completion-gates";
 
 export type { QuestObjectiveCategory, QuestWorkspaceStatus } from "@/lib/stores/useUserStore";
 
 export interface QuestLockReason {
-    kind: "quest" | "level" | "loyalty" | "prestige" | "faction" | "branch";
+    kind: "quest" | "level" | "loyalty" | "task-count" | "prestige" | "faction" | "branch";
     label: string;
 }
 
@@ -79,6 +84,7 @@ function compareValue(current: number, method: string, required: number) {
 export function getQuestWorkspaceStatus(
     quest: FullQuest,
     profile: QuestWorkspaceProfile,
+    questsById: ReadonlyMap<string, FullQuest>,
 ): QuestWorkspaceStatusInfo {
     const terminal = profile.completedQuests[quest.id]
         ? "completed"
@@ -121,6 +127,21 @@ export function getQuestWorkspaceStatus(
             reasons.push({
                 kind: "loyalty",
                 label: `${requirement.trader.name} LL${requirement.value}`,
+            });
+        }
+    }
+    for (const requirement of quest.otherRequirements) {
+        const gate = getTraderTierCompletionGate(requirement);
+        if (!gate) continue;
+        const completedCount = countCompletedTraderTierQuests(
+            questsById.values(),
+            profile.completedQuests,
+            gate,
+        );
+        if (!compareTraderTierCompletionCount(completedCount, gate)) {
+            reasons.push({
+                kind: "task-count",
+                label: `Complete ${gate.requiredCount} ${gate.trader} LL${gate.tier} tasks (${completedCount}/${gate.requiredCount})`,
             });
         }
     }

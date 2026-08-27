@@ -5,6 +5,12 @@ import { Bug, CheckCircle2, ExternalLink, Flag, Lock, PackageCheck, Pin, RotateC
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import { formatQuestTraderGate } from "@/lib/utils/quest-trader-gates";
+import {
+    compareTraderTierCompletionCount,
+    countCompletedTraderTierQuests,
+    formatTraderTierCompletionGate,
+    getTraderTierCompletionGate,
+} from "@/lib/utils/quest-trader-completion-gates";
 import { questCanFail } from "@/lib/utils/quest-failures";
 import type { FullQuest, FullQuestObjective, QuestOtherRequirement, QuestTraderStandingReward } from "@/types";
 import { ObjectiveRow } from "../components/quest-card/QuestObjectiveRows";
@@ -17,6 +23,7 @@ export function QuestDetailsPane() {
     const { leadsToByQuestId, onItemClick, requestToggleQuestCompletion, requestFailQuest, requestResetQuestStatus } = useQuestsContext();
     const pinned = useUserStore((state) => quest ? !!state.pinnedQuests[quest.id] : false);
     const haveItems = useUserStore((state) => quest ? !!state.questsWithItems[quest.id] : false);
+    const completedQuests = useUserStore((state) => state.completedQuests);
     const togglePinnedQuest = useUserStore((state) => state.togglePinnedQuest);
     const toggleQuestHaveItems = useUserStore((state) => state.toggleQuestHaveItems);
 
@@ -36,6 +43,12 @@ export function QuestDetailsPane() {
     const traderImage = quest.trader.image4xLink ?? quest.trader.imageLink;
     const leadsTo = (leadsToByQuestId.get(quest.id) ?? []).map((id) => questsById.get(id)).filter(Boolean);
     const objectivePresentation = buildObjectivePresentation(quest.objectives);
+    const traderTierCompletionGates = quest.otherRequirements
+        .map(getTraderTierCompletionGate)
+        .filter((gate): gate is NonNullable<typeof gate> => gate !== null);
+    const unknownOtherRequirements = quest.otherRequirements.filter(
+        (requirement) => !getTraderTierCompletionGate(requirement),
+    );
 
     return (
         <div className="relative min-h-0 flex-1 overflow-y-auto bg-[#0b0c0e]">
@@ -115,7 +128,12 @@ export function QuestDetailsPane() {
                         <section><SectionLabel>Prestige requirement</SectionLabel><div className="flex items-center gap-3 border border-white/8 bg-white/3 px-3 py-2.5 text-sm text-gray-300">{(quest.requiredPrestige.iconLink ?? quest.requiredPrestige.imageLink) && <img src={quest.requiredPrestige.iconLink ?? quest.requiredPrestige.imageLink ?? ""} alt="" className="h-9 w-9 object-contain" />}<div><p>{quest.requiredPrestige.name}</p><p className="text-xs text-gray-600">Prestige level {quest.requiredPrestige.prestigeLevel}</p></div></div></section>
                     )}
                     {quest.traderRequirements.length > 0 && <section><SectionLabel>Trader gates</SectionLabel><div className="space-y-2">{quest.traderRequirements.map((requirement) => <div key={requirement.id} className="border border-white/8 bg-white/3 px-3 py-2.5 text-sm text-gray-400">{formatQuestTraderGate(requirement)}</div>)}</div></section>}
-                    {quest.otherRequirements.length > 0 && <section><SectionLabel>Other gates</SectionLabel><div className="space-y-2">{quest.otherRequirements.map((requirement, index) => <OtherRequirement key={requirement.id ?? `${requirement.type}-${index}`} requirement={requirement} />)}</div></section>}
+                    {traderTierCompletionGates.length > 0 && <section><SectionLabel>Trader task gates</SectionLabel><div className="space-y-2">{traderTierCompletionGates.map((gate) => {
+                        const completedCount = countCompletedTraderTierQuests(questsById.values(), completedQuests, gate);
+                        const satisfied = compareTraderTierCompletionCount(completedCount, gate);
+                        return <div key={gate.variableId} title={formatTraderTierCompletionGate(gate)} className={cn("border px-3 py-2.5 text-sm", satisfied ? "border-tarkov-green/20 bg-tarkov-green/5 text-tarkov-green" : "border-red-400/15 bg-red-400/5 text-red-200/80")}><p>{completedCount}/{gate.requiredCount} {gate.trader} LL{gate.tier} tasks completed</p></div>;
+                    })}</div></section>}
+                    {unknownOtherRequirements.length > 0 && <section><SectionLabel>Other gates</SectionLabel><div className="space-y-2">{unknownOtherRequirements.map((requirement, index) => <OtherRequirement key={requirement.id ?? `${requirement.type}-${index}`} requirement={requirement} />)}</div></section>}
                     {quest.taskRequirements.length > 0 && <section><SectionLabel>Requires</SectionLabel><div className="space-y-1">{quest.taskRequirements.map((requirement) => <button type="button" key={requirement.task.id} onClick={() => setSelectedQuestId(requirement.task.id)} className="block w-full border-l border-white/10 px-3 py-2 text-left text-sm text-gray-400 hover:border-tarkov-green hover:text-white"><span className="block">{requirement.task.name}</span>{requirement.status.length > 0 && <span className="text-xs text-gray-600">Status: {requirement.status.join(" or ")}</span>}</button>)}</div></section>}
                     {leadsTo.length > 0 && <section><SectionLabel>Unlocks</SectionLabel><div className="space-y-1">{leadsTo.map((nextQuest) => nextQuest && <button type="button" key={nextQuest.id} onClick={() => setSelectedQuestId(nextQuest.id)} className="block w-full border-l border-white/10 px-3 py-2 text-left text-sm text-gray-400 hover:border-tarkov-green hover:text-white">{nextQuest.name}</button>)}</div></section>}
                     {(quest.failureTraderStandingRewards?.length ?? 0) > 0 && <StandingRewards label="Failure reputation" rewards={quest.failureTraderStandingRewards ?? []} />}

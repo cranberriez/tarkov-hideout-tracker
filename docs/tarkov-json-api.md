@@ -65,9 +65,11 @@ Trader requirements are preserved with their upstream `requirementType`:
 The JSON adapter also preserves `otherRequirements` as typed raw gates. Known
 records can include `id`, `type`, `compareMethod`, and `value`, with type-specific
 fields such as `traders` or `variableId`; additional upstream properties are
-retained. `globalVariable` and
-`dialogue` gates are carried through for future behavior but are not interpreted as
-loyalty levels, quest IDs, or series membership today.
+retained. Recognized trader-tier completion `globalVariable` IDs are mapped by
+`quest-trader-completion-gates.ts`: a gate such as Prapor LL1 `>= 3` remains
+locked until three quests assigned to Prapor's LL1 tier are marked complete.
+These known counters receive a readable task-count display and locked reason.
+Unknown `globalVariable` and `dialogue` gates remain preserved and non-blocking.
 
 ## Series Candidates and Curated Organization
 

@@ -179,9 +179,11 @@ are the authoritative quest prerequisite/status edges used by availability, sync
 cascade, and relationship display. A trader requirement of `level` (or the legacy
 `loyaltyLevel` spelling) is a loyalty-level gate; `reputation` is a standing gate
 and must not be treated as LL. Cross-trader level gates remain visible and affect
-availability, but do not change a quest's issuing-trader category. JSON
-`otherRequirements` such as `globalVariable` and `dialogue` are preserved as typed
-raw gates; they are not currently interpreted as loyalty levels or series IDs.
+availability, but do not change a quest's issuing-trader category. Known JSON
+`globalVariable` trader-tier completion counters are evaluated against completed
+quests from the matching issuing trader and LL category. They appear as readable
+trader-task gates and locked reasons instead of generic “Other gates.” Unknown
+`globalVariable` and `dialogue` requirements remain preserved as typed raw gates.
 
 Organization changes do not alter persisted progress. The localStorage key remains
 `tarkov-hideout-user-state` at Zustand version 17, and `completedQuests`,
@@ -195,7 +197,7 @@ must never be used to infer or rewrite completion records.
 
 `QuestsSearchBar` stores immediate input locally and debounces writes to `QuestsContext.searchQuery`. `filteredQuests` matches search text against quest name, trader name, and map name after the persisted filters are applied.
 
-The page supports filters for completion, availability, hand-in objectives, FiR hand-ins, pinned quests, ignored quests, kappa/LK quest chains, selected traders, selected maps, faction, player level, prestige, and trader loyalty.
+The page supports filters for completion, availability, hand-in objectives, FiR hand-ins, pinned quests, ignored quests, kappa/LK quest chains, selected traders, selected maps, faction, player level, prestige, trader loyalty, and known trader-tier quest-completion gates.
 
 Map filtering uses both `quest.map` and `quest.objectives[].maps`. Quests with objective-level maps appear in each matching map group. Quests with no quest-level or objective-level maps are treated as `Any Map` and remain visible when a concrete map filter is selected. In the By Map view, an active sidebar map filter limits the rendered map headers to the selected map groups so overlapping quests do not repopulate unrelated map sections.
 

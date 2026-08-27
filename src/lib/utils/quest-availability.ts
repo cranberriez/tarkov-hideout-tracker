@@ -5,6 +5,7 @@ import type {
     QuestTraderRequirement,
     QuestPrestige,
     QuestFailCondition,
+    QuestOtherRequirement,
 } from "@/types";
 import {
     isQuestDisabledByCompletedFailedRequirement,
@@ -12,6 +13,11 @@ import {
     statusIncludesFailed,
 } from "./quest-failures";
 import { isQuestTraderLoyaltyRequirement } from "./quest-trader-gates";
+import {
+    compareTraderTierCompletionCount,
+    countCompletedTraderTierQuests,
+    getTraderTierCompletionGate,
+} from "./quest-trader-completion-gates";
 
 export type QuestFactionFilter = "USEC" | "BEAR";
 
@@ -41,6 +47,7 @@ export interface QuestAvailabilityQuest {
         image4xLink?: string | null;
     };
     traderRequirements: QuestTraderRequirement[];
+    otherRequirements: QuestOtherRequirement[];
     requiredPrestige?: QuestPrestige | null;
 }
 
@@ -59,7 +66,7 @@ type QuestAvailabilitySource = Pick<
     | "failConditions"
     | "trader"
 > &
-    Partial<Pick<FullQuest, "traderRequirements" | "requiredPrestige">> & {
+    Partial<Pick<FullQuest, "traderRequirements" | "otherRequirements" | "requiredPrestige">> & {
         objectives?: FullQuest["objectives"] | Quest["objectives"];
     };
 
@@ -78,6 +85,7 @@ export function toQuestAvailabilityQuest(quest: QuestAvailabilitySource): QuestA
         failConditions: "failConditions" in quest ? (quest.failConditions ?? []) : [],
         trader: quest.trader,
         traderRequirements: quest.traderRequirements ?? [],
+        otherRequirements: quest.otherRequirements ?? [],
         requiredPrestige: quest.requiredPrestige ?? null,
     };
 }
@@ -134,6 +142,23 @@ function traderLoyaltyRequirementsSatisfied(
         });
 }
 
+function traderTierCompletionRequirementsSatisfied(
+    quest: QuestAvailabilityQuest,
+    profile: QuestAvailabilityProfile,
+    questsById: ReadonlyMap<string, QuestAvailabilityQuest>,
+) {
+    return (quest.otherRequirements ?? []).every((requirement) => {
+        const gate = getTraderTierCompletionGate(requirement);
+        if (!gate) return true;
+        const completedCount = countCompletedTraderTierQuests(
+            questsById.values(),
+            profile.completedQuests,
+            gate,
+        );
+        return compareTraderTierCompletionCount(completedCount, gate);
+    });
+}
+
 function requirementAllowsActiveStatus(requirement: QuestPrerequisite) {
     return requirement.status.some((status) => status.trim().toLowerCase() === "active");
 }
@@ -185,6 +210,7 @@ export function isQuestAvailableForProfile(
     if ((quest.requiredPrestige?.prestigeLevel ?? 0) > profile.prestigeLevel) return false;
 
     if (!traderLoyaltyRequirementsSatisfied(quest, profile)) return false;
+    if (!traderTierCompletionRequirementsSatisfied(quest, profile, questsById)) return false;
     if (visiting.has(quest.id)) return false;
 
     visiting.add(quest.id);

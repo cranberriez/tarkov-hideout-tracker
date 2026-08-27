@@ -142,8 +142,8 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
 
     const questsById = useMemo(() => new Map(quests.map((quest) => [quest.id, quest])), [quests]);
     const statusByQuestId = useMemo(
-        () => new Map(quests.map((quest) => [quest.id, getQuestWorkspaceStatus(quest, profile)])),
-        [profile, quests],
+        () => new Map(quests.map((quest) => [quest.id, getQuestWorkspaceStatus(quest, profile, questsById)])),
+        [profile, quests, questsById],
     );
     const traders = useMemo(() => {
         const unique = new Map<string, FullQuest["trader"]>();

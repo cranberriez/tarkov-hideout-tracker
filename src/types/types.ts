@@ -364,6 +364,7 @@ export interface QuestOtherRequirement {
     id?: string | null;
     type: string;
     requirementType?: string | null;
+    variableId?: string | null;
     compareMethod?: string | null;
     value?: number | string | boolean | null;
     [key: string]: unknown;

@@ -22,6 +22,7 @@ function makeQuest(overrides: Partial<QuestAvailabilityQuest> & Pick<QuestAvaila
             image4xLink: null,
         },
         traderRequirements: overrides.traderRequirements ?? [],
+        otherRequirements: overrides.otherRequirements ?? [],
         requiredPrestige: overrides.requiredPrestige ?? null,
     };
 }
@@ -282,6 +283,75 @@ test("mixed trader gates enforce every level gate while ignoring reputation", ()
             makeProfile({ traderLoyaltyLevels: { skier: 2, therapist: 3 } }),
             questsById,
         ),
+        true,
+    );
+});
+
+test("known trader-tier completion counters lock until enough matching quests are completed", () => {
+    const prapor = {
+        id: "prapor",
+        name: "Prapor",
+        normalizedName: "prapor",
+        imageLink: null,
+        image4xLink: null,
+    };
+    const tierOneQuests = ["p1", "p2", "p3"].map((id) => makeQuest({
+        id,
+        trader: prapor,
+    }));
+    const tierTwoQuest = makeQuest({
+        id: "p-ll2",
+        trader: prapor,
+        traderRequirements: [makeTraderRequirement("prapor", "level", 2)],
+    });
+    const gatedQuest = makeQuest({
+        id: "gated",
+        trader: prapor,
+        otherRequirements: [{
+            id: "gate-id",
+            type: "globalVariable",
+            variableId: "6a20540cf1b67a977cc5a088",
+            compareMethod: ">=",
+            value: 3,
+        }],
+    });
+    const questsById = buildQuestAvailabilityMap([
+        ...tierOneQuests,
+        tierTwoQuest,
+        gatedQuest,
+    ]);
+
+    assert.equal(
+        isQuestAvailableForProfile(
+            gatedQuest,
+            makeProfile({ completedQuests: { p1: true, p2: true, "p-ll2": true } }),
+            questsById,
+        ),
+        false,
+    );
+    assert.equal(
+        isQuestAvailableForProfile(
+            gatedQuest,
+            makeProfile({ completedQuests: { p1: true, p2: true, p3: true } }),
+            questsById,
+        ),
+        true,
+    );
+});
+
+test("unknown global variables remain non-blocking", () => {
+    const quest = makeQuest({
+        id: "unknown-gate",
+        otherRequirements: [{
+            type: "globalVariable",
+            variableId: "unknown-variable",
+            compareMethod: ">=",
+            value: 99,
+        }],
+    });
+
+    assert.equal(
+        isQuestAvailableForProfile(quest, makeProfile(), buildQuestAvailabilityMap([quest])),
         true,
     );
 });
