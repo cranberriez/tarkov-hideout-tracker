@@ -54,6 +54,7 @@ interface QuestWorkspaceContextValue {
     highlightedQuestId: string | null;
     setSelectedQuestId: (questId: string | null) => void;
     toggleTrader: (traderId: string) => void;
+    showOnlyTrader: (traderId: string) => void;
     clearTraders: () => void;
     setFilterByTraderRequirements: (enabled: boolean) => void;
     toggleMap: (mapKey: string) => void;
@@ -246,6 +247,11 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             highlightedQuestId,
             setSelectedQuestId,
             toggleTrader: (id) => { clearRetainedCompletedQuests(); store.setSelectedTraderIds([...toggleSetValue(selectedTraderIds, id)]); },
+            showOnlyTrader: (id) => {
+                clearRetainedCompletedQuests();
+                store.setSelectedTraderIds([id]);
+                setOpenFilter(null);
+            },
             clearTraders: () => { clearRetainedCompletedQuests(); store.setSelectedTraderIds([]); },
             setFilterByTraderRequirements: (enabled) => { clearRetainedCompletedQuests(); store.setFilterByTraderRequirements(enabled); },
             toggleMap: (key) => { clearRetainedCompletedQuests(); store.setSelectedMapKeys([...toggleSetValue(selectedMapKeys, key)]); },

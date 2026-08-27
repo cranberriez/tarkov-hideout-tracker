@@ -6,7 +6,7 @@ import type { MapViewTransform } from "@/features/maps/map-view-transform";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
 import { clearQuestDeepLink, getQuestDeepLinkId } from "../quest-deep-link";
-import { QuestFilterBar } from "./QuestFilterBar";
+import { QuestFilterBar, QuestTraderBar } from "./QuestFilterBar";
 import { QuestListPane } from "./QuestListPane";
 import { QuestActionBar } from "./QuestActionBar";
 import { QuestDetailsPane } from "./QuestDetailsPane";
@@ -49,6 +49,7 @@ export function QuestWorkspace({ quests }: { quests: FullQuest[] }) {
             <div className="grid min-h-0 flex-1 grid-rows-2 overflow-hidden bg-[#0b0c0e] lg:grid-cols-[clamp(380px,34vw,560px)_minmax(0,1fr)] lg:grid-rows-1">
                 <section className="flex min-h-0 min-w-0 flex-col border-b border-white/10 lg:border-b-0 lg:border-r">
                     <QuestFilterBar />
+                    <QuestTraderBar />
                     <QuestListPane />
                 </section>
                 <section className="flex min-h-0 min-w-0 flex-col">

@@ -117,18 +117,23 @@ questSidebarCollapsed: boolean;
 - `questSortMode`: applied to By Trader, By Map, and List views.
 - Manual sync helpers that call `quest-sync.ts` and write results back to `useUserStore`.
 
-The workspace's filter headers use an in-pane selection state: choosing Traders,
-Maps, Status, or Filter / Sort replaces the left quest list with that section's
-options at the same bounded width. Trader, map, status, quest-type, and sort
-selections are persisted in localStorage and shared across game-mode profiles.
-Filter / Sort combines enabled-by-default trader and issuing-trader loyalty-level grouping,
-the four existing sort modes, and the quest-type filter. Group headers show their
+The workspace keeps a fixed row of square trader portraits between the Map / Status /
+Filter controls and the quest list. The leftmost `All` button clears the trader
+filter, each portrait switches directly to that trader, and an inset overlay frame
+marks selected portraits without changing their size. The rightmost settings button
+replaces the quest list with the trader selection and loyalty-level controls. Maps,
+Status, and Filter / Sort use the same in-pane selection pattern at the list's bounded width. Trader, map,
+status, quest-type, and sort selections are persisted in localStorage and shared
+across game-mode profiles. Filter / Sort combines the trader-requirement filter,
+enabled-by-default trader and issuing-trader loyalty-level grouping, the four
+existing sort modes, and the quest-type filter. Group headers show their
 visible quest count and collapse their complete nested section when clicked. The
+issuing-trader group headers are shown only when `All` traders are selected. The
 grouping switches and collapsed groups are local workspace display state and reset
-to both grouping levels enabled when the workspace remounts. Trader additional options include an
-enabled-by-default requirement toggle and per-trader LL1-LL4 profile controls.
-Fence has LL1/max controls plus an exact persisted standing input; BTR Driver
-and Lightkeeper have no loyalty controls. Quest list rows display the issuing
+to both grouping levels enabled when the workspace remounts. Trader settings
+include per-trader LL1-LL4 profile controls. Fence has LL1/max controls plus an
+exact persisted standing input; BTR Driver and Lightkeeper have no loyalty
+controls. Quest list rows display the issuing
 trader's required loyalty level beside the trader name, with a crown for LL4.
 
 The workspace keeps quests completed during an `Active`-only view visible for the

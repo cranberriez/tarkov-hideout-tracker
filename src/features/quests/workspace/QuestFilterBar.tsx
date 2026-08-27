@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, CircleDot, Crown, SlidersHorizontal, X } from "lucide-react";
+import { Check, CircleDot, Crown, Settings, X } from "lucide-react";
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
@@ -86,21 +86,6 @@ function AnyRow({ active, onClick, count }: { active: boolean; onClick: () => vo
     return <MenuRow selected={active} onClick={onClick} label="Any" count={count} description="Do not limit this filter" />;
 }
 
-function TraderFaces() {
-    const { traders, selectedTraderIds } = useQuestWorkspace();
-    const visible = (selectedTraderIds.size ? traders.filter((trader) => selectedTraderIds.has(trader.id)) : traders).slice(0, 4);
-    return (
-        <span className="flex items-center pl-1">
-            {visible.map((trader, index) => (
-                (trader.image4xLink ?? trader.imageLink) ? (
-                    <img key={trader.id} src={trader.image4xLink ?? trader.imageLink ?? ""} alt="" className="h-5 w-5 rounded-full border border-[#17181a] object-cover" style={{ marginLeft: index ? -6 : 0, zIndex: visible.length - index }} />
-                ) : null
-            ))}
-            {selectedTraderIds.size === 0 && <span className="ml-1.5 text-[10px] text-gray-500">ANY</span>}
-        </span>
-    );
-}
-
 export function QuestFilterBar() {
     const {
         maps,
@@ -115,7 +100,6 @@ export function QuestFilterBar() {
 
     return (
         <div className="flex divide-x divide-white/8 border-b border-white/10 bg-[#101113]">
-            <FilterTrigger section="traders" label="Traders" summary={<TraderFaces />} />
             <FilterTrigger section="maps" label="Map" summary={selectedMapNames.length === 0 ? "Any map" : selectedMapNames.length === 1 ? selectedMapNames[0] : `${selectedMapNames.length} selected`} />
             <FilterTrigger section="status" label="Status" summary={statusSummary.length === 3 ? "All states" : statusSummary.length ? statusSummary.join(", ") : "None"} />
             <FilterTrigger
@@ -146,6 +130,97 @@ const TRADER_ORDER = [
     "btr-driver",
     "lightkeeper",
 ] as const;
+
+function orderTraders(traders: ReturnType<typeof useQuestWorkspace>["traders"]) {
+    return [...traders].sort((left, right) => {
+        const leftRank = TRADER_ORDER.indexOf(normalizedTraderKey(left) as typeof TRADER_ORDER[number]);
+        const rightRank = TRADER_ORDER.indexOf(normalizedTraderKey(right) as typeof TRADER_ORDER[number]);
+        return (leftRank === -1 ? Number.MAX_SAFE_INTEGER : leftRank) -
+            (rightRank === -1 ? Number.MAX_SAFE_INTEGER : rightRank) ||
+            left.name.localeCompare(right.name);
+    });
+}
+
+export function QuestTraderBar() {
+    const {
+        traders,
+        selectedTraderIds,
+        clearTraders,
+        showOnlyTrader,
+        openFilter,
+        setOpenFilter,
+    } = useQuestWorkspace();
+    const orderedTraders = orderTraders(traders);
+    const allSelected = selectedTraderIds.size === 0;
+
+    const buttonClass = (selected: boolean) => cn(
+        "relative flex min-w-0 flex-1 aspect-square cursor-pointer items-center justify-center overflow-hidden border-r border-white/8 bg-[#101113] text-gray-500 transition-colors hover:bg-white/7 hover:text-white focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-tarkov-green",
+        selected && "z-[1] bg-tarkov-green/10 text-tarkov-green shadow-[inset_0_-2px_0_#9cae7c]",
+    );
+
+    return (
+        <div className="flex w-full shrink-0 border-b border-white/10 bg-[#101113]">
+            <button
+                type="button"
+                aria-label="Show quests from all traders"
+                aria-pressed={allSelected}
+                title="All traders"
+                onClick={() => {
+                    clearTraders();
+                    setOpenFilter(null);
+                }}
+                className={buttonClass(allSelected)}
+            >
+                <span className="text-[10px] font-semibold uppercase tracking-[0.08em]">All</span>
+            </button>
+            {orderedTraders.map((trader) => {
+                const selected = selectedTraderIds.has(trader.id);
+                const traderImage = trader.image4xLink ?? trader.imageLink;
+                return (
+                    <button
+                        key={trader.id}
+                        type="button"
+                        aria-label={`Show ${trader.name} quests`}
+                        aria-pressed={selected}
+                        title={trader.name}
+                        onClick={() => showOnlyTrader(trader.id)}
+                        className={buttonClass(selected)}
+                    >
+                        {traderImage ? (
+                            <img
+                                src={traderImage}
+                                alt=""
+                                className={cn(
+                                    "h-full w-full object-cover grayscale-[20%] transition-[filter,opacity]",
+                                    selected ? "opacity-100 grayscale-0" : "opacity-65 hover:opacity-100",
+                                )}
+                            />
+                        ) : (
+                            <CircleDot className="h-[38%] w-[38%]" aria-hidden="true" />
+                        )}
+                        <span
+                            aria-hidden="true"
+                            className={cn(
+                                "pointer-events-none absolute inset-0.5 z-[1] ring-1 ring-inset ring-white/15 transition-[box-shadow]",
+                                selected && "ring-2 ring-tarkov-green",
+                            )}
+                        />
+                    </button>
+                );
+            })}
+            <button
+                type="button"
+                aria-label="Adjust trader filters and loyalty levels"
+                aria-expanded={openFilter === "traders"}
+                title="Trader settings"
+                onClick={() => setOpenFilter(openFilter === "traders" ? null : "traders")}
+                className={cn(buttonClass(openFilter === "traders"), "border-r-0")}
+            >
+                <Settings className="h-[42%] w-[42%]" aria-hidden="true" />
+            </button>
+        </div>
+    );
+}
 
 function LoyaltyLevelMark({ level }: { level: QuestTraderLoyaltyLevel }) {
     return level === 4
@@ -274,13 +349,7 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
         setShowHiddenQuests,
     } = useQuestWorkspace();
     const titles = { traders: "Select traders", maps: "Select maps", status: "Select quest status", filters: "Filter / sort" };
-    const orderedTraders = [...traders].sort((left, right) => {
-        const leftRank = TRADER_ORDER.indexOf(normalizedTraderKey(left) as typeof TRADER_ORDER[number]);
-        const rightRank = TRADER_ORDER.indexOf(normalizedTraderKey(right) as typeof TRADER_ORDER[number]);
-        return (leftRank === -1 ? Number.MAX_SAFE_INTEGER : leftRank) -
-            (rightRank === -1 ? Number.MAX_SAFE_INTEGER : rightRank) ||
-            left.name.localeCompare(right.name);
-    });
+    const orderedTraders = orderTraders(traders);
 
     return (
         <div className="min-h-0 flex-1 overflow-y-auto bg-[#0b0c0e]">
@@ -291,19 +360,6 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
             <div>
                 {section === "traders" && <>
                     <AnyRow active={selectedTraderIds.size === 0} onClick={clearTraders} count={quests.length} />
-                    <div className="border-b border-white/8 bg-white/[0.02] px-3 py-3">
-                        <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-600"><SlidersHorizontal size={13} /> Additional options</div>
-                        <label className="flex cursor-pointer items-center justify-between gap-4 py-1 text-xs text-gray-300">
-                            <span>Filter quests by reputation requirement</span>
-                            <input
-                                type="checkbox"
-                                checked={filterByTraderRequirements}
-                                onChange={(event) => setFilterByTraderRequirements(event.target.checked)}
-                                className="peer sr-only"
-                            />
-                            <span className="relative h-5 w-9 shrink-0 rounded-full bg-white/10 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-gray-500 after:transition-transform peer-checked:bg-tarkov-green/25 peer-checked:after:translate-x-4 peer-checked:after:bg-tarkov-green peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-tarkov-green" />
-                        </label>
-                    </div>
                     {orderedTraders.map((trader) => (
                         <TraderSelectionRow
                             key={trader.id}
@@ -323,6 +379,14 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
                         onChange={setShowHiddenQuests}
                         label="Show hidden quests"
                         description="Include quests you have chosen to hide"
+                    />
+
+                    <FilterSectionTitle>Requirements</FilterSectionTitle>
+                    <ToggleRow
+                        checked={filterByTraderRequirements}
+                        onChange={setFilterByTraderRequirements}
+                        label="Filter quests by reputation requirement"
+                        description="Use your trader loyalty levels and Fence reputation"
                     />
 
                     <FilterSectionTitle>Grouping</FilterSectionTitle>

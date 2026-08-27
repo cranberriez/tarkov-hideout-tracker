@@ -47,6 +47,7 @@ export function QuestListPane() {
         listMode,
         openFilter,
         quests,
+        selectedTraderIds,
         groupByTrader,
         groupByLoyaltyLevel,
         sortMode,
@@ -73,6 +74,7 @@ export function QuestListPane() {
             return next;
         });
     };
+    const showTraderGroups = groupByTrader && selectedTraderIds.size === 0;
 
     if (openFilter) return <QuestFilterSelectionPane section={openFilter} />;
     if (listMode === "history") return <QuestHistoryList />;
@@ -81,7 +83,7 @@ export function QuestListPane() {
         <div className="min-h-0 flex-1 overflow-y-auto scroll-smooth bg-[#0b0c0e]">
             <GroupedQuestRows
                 quests={sortedQuests}
-                groupByTrader={groupByTrader}
+                groupByTrader={showTraderGroups}
                 groupByLoyaltyLevel={groupByLoyaltyLevel}
                 collapsedGroups={collapsedGroups}
                 onToggleGroup={toggleGroup}
