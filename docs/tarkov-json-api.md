@@ -71,6 +71,13 @@ locked until three quests assigned to Prapor's LL1 tier are marked complete.
 These known counters receive a readable task-count display and locked reason.
 Unknown `globalVariable` and `dialogue` gates remain preserved and non-blocking.
 
+Tarkov.dev does not expose the in-game trader-tab assignment consistently. The
+reviewed ID-keyed overlay in `src/lib/data/quest-trader-tab-overrides.json` supplies
+that display/counting classification without changing the normalized provider
+payload or cache shape. Numeric values take precedence for LL grouping and
+trader-tier completion counts; `essential` quests are excluded from LL counters.
+Provider `traderRequirements` continue to control availability independently.
+
 ## Series Candidates and Curated Organization
 
 Series organization is derived after fetching JSON/GraphQL data. The curated

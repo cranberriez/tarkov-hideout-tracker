@@ -108,6 +108,27 @@ test("uses only the issuing trader's level gate and supports legacy loyaltyLevel
     assert.equal(result.byQuestId.get("legacy-level")?.category, "tier-2");
 });
 
+test("applies reviewed numeric and essential trader-tab overrides", () => {
+    const quests = [
+        makeQuest("59674eb386f774539f14813a", "prapor"),
+        makeQuest("597a171586f77405ba6887d3", "prapor"),
+    ];
+
+    const result = deriveQuestOrganization(quests, { version: 1, series: [] });
+
+    assert.deepEqual(
+        result.entries.map((entry) => [entry.questId, entry.category, entry.issuingTraderTier]),
+        [
+            ["59674eb386f774539f14813a", "tier-2", 2],
+            ["597a171586f77405ba6887d3", "series", 1],
+        ],
+    );
+    assert.equal(
+        result.byQuestId.get("597a171586f77405ba6887d3")?.seriesName,
+        "Other essential quests",
+    );
+});
+
 test("clamps invalid issuing-trader tiers and reports each issue", () => {
     const quests = [
         makeQuest("too-low", "trader-a", [traderRequirement("low", "trader-a", 0)]),

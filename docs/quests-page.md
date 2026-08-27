@@ -159,6 +159,20 @@ orders, invalid orders, issuing-trader mismatches, and invalid tier values. A
 cross-trader series must opt in with `allowCrossTrader: true` in the manifest.
 Names and prerequisite graphs are not used at runtime to guess series membership.
 
+Reviewed in-game trader tabs are a removable, ID-keyed overlay in
+`src/lib/data/quest-trader-tab-overrides.json`. Numeric entries override the
+provider-derived issuing-trader tier for quest grouping, tier badges, and
+trader-tier completion counters. `essential` entries are grouped outside LL1–LL4
+and do not increment those counters. The overlay does not replace or mutate
+Tarkov.dev `traderRequirements`; those remain availability gates. Lookup code is
+isolated in `src/lib/utils/quest-trader-tab-overrides.ts`, so removing an entry
+restores provider-derived behavior for that quest.
+
+To compare a reviewed core snapshot with a Tarkov.dev task snapshot and regenerate
+the overlay, run `npm run quest-data-compare -- --write-overrides
+src/lib/data/quest-trader-tab-overrides.json`. The comparison joins exclusively by
+quest ID and writes no name-derived matches.
+
 To produce review candidates from a downloaded task snapshot, run:
 
 ```bash

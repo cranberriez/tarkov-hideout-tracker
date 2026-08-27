@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "pull-prices": "node --env-file=.env scripts/pull-prices.mjs",
-    "quest-series-candidates": "node scripts/generate-quest-series-candidates.mjs"
+    "quest-series-candidates": "node scripts/generate-quest-series-candidates.mjs",
+    "quest-data-compare": "node scripts/compare-quest-data.mjs"
   },
   "dependencies": {
     "@floating-ui/react-dom": "^2.1.6",

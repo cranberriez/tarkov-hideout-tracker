@@ -21,6 +21,10 @@ import {
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { getQuestIssuingTraderLoyaltyLevel } from "@/lib/utils/quest-trader-gates";
+import {
+    getQuestTraderTabOverride,
+    isEssentialQuestOverride,
+} from "@/lib/utils/quest-trader-tab-overrides";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useQuestsContext } from "../QuestsContext";
 import { buildQuestUnlockImpactMap, sortQuestsForQuestView } from "../quest-sorting";
@@ -123,21 +127,28 @@ function GroupedQuestRows({
     ));
 
     const renderLoyaltyLevelGroups = (groupQuests: typeof quests, parentId = "all") => {
-        const groups = new Map<number, typeof quests>();
+        const groups = new Map<number | "essential", typeof quests>();
         groupQuests.forEach((quest) => {
-            const level = getQuestIssuingTraderLoyaltyLevel(quest);
-            groups.set(level, [...(groups.get(level) ?? []), quest]);
+            const tab = getQuestTraderTabOverride(quest.id);
+            const group = tab === "essential"
+                ? "essential"
+                : getQuestIssuingTraderLoyaltyLevel(quest);
+            groups.set(group, [...(groups.get(group) ?? []), quest]);
         });
 
         return [...groups.entries()]
-            .sort(([left], [right]) => left - right)
-            .map(([level, loyaltyLevelQuests]) => {
-                const groupId = `${parentId}:loyalty-level:${level}`;
+            .sort(([left], [right]) => {
+                if (left === "essential") return 1;
+                if (right === "essential") return -1;
+                return left - right;
+            })
+            .map(([group, loyaltyLevelQuests]) => {
+                const groupId = `${parentId}:loyalty-level:${group}`;
                 const collapsed = collapsedGroups.has(groupId);
                 return (
                     <section key={groupId}>
                         <QuestGroupHeader
-                            label={`Loyalty level ${level}`}
+                            label={group === "essential" ? "Essential" : `Loyalty level ${group}`}
                             count={loyaltyLevelQuests.length}
                             collapsed={collapsed}
                             nested
@@ -292,6 +303,7 @@ function QuestListItem({
     const categories = [...getQuestObjectiveCategories(quest)].slice(0, 2);
     const traderImage = quest.trader.image4xLink ?? quest.trader.imageLink;
     const traderLoyaltyLevel = getQuestIssuingTraderLoyaltyLevel(quest);
+    const essential = isEssentialQuestOverride(quest.id);
 
     return (
         <article
@@ -408,15 +420,24 @@ function QuestListItem({
                             <img src={traderImage} alt="" className="h-3.5 w-3.5 rounded-full object-cover" />
                         )}
                         <span className="truncate font-medium">{quest.trader.name}</span>
-                        <span
-                            className="flex h-3.5 min-w-3.5 shrink-0 items-center justify-center text-tarkov-green/75"
-                            title={`Requires ${quest.trader.name} loyalty level ${traderLoyaltyLevel}`}
-                            aria-label={`Requires trader loyalty level ${traderLoyaltyLevel}`}
-                        >
-                            {traderLoyaltyLevel === 4
-                                ? <Crown size={10} />
-                                : <span className="font-serif text-[9px] font-bold leading-none">{["", "I", "II", "III"][traderLoyaltyLevel]}</span>}
-                        </span>
+                        {essential ? (
+                            <span
+                                className="shrink-0 font-serif text-[9px] font-bold uppercase text-amber-300/75"
+                                title="Essential quest"
+                            >
+                                Essential
+                            </span>
+                        ) : (
+                            <span
+                                className="flex h-3.5 min-w-3.5 shrink-0 items-center justify-center text-tarkov-green/75"
+                                title={`${quest.trader.name} loyalty level ${traderLoyaltyLevel} tab`}
+                                aria-label={`Trader loyalty level ${traderLoyaltyLevel} tab`}
+                            >
+                                {traderLoyaltyLevel === 4
+                                    ? <Crown size={10} />
+                                    : <span className="font-serif text-[9px] font-bold leading-none">{["", "I", "II", "III"][traderLoyaltyLevel]}</span>}
+                            </span>
+                        )}
                     </span>
                     {status.status === "locked" && (
                         <span className="flex shrink-0 items-center gap-1 uppercase text-red-300/70">

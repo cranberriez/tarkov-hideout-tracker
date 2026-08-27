@@ -4,7 +4,10 @@ import type {
     QuestWorkspaceStatus,
 } from "@/lib/stores/useUserStore";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
-import { isQuestTraderLoyaltyRequirement } from "@/lib/utils/quest-trader-gates";
+import {
+    getQuestTraderGateType,
+    questTraderRequirementMatchesProfile,
+} from "@/lib/utils/quest-trader-gates";
 import { isQuestDisabledByCompletedFailedRequirement } from "@/lib/utils/quest-failures";
 import {
     compareTraderTierCompletionCount,
@@ -15,7 +18,7 @@ import {
 export type { QuestObjectiveCategory, QuestWorkspaceStatus } from "@/lib/stores/useUserStore";
 
 export interface QuestLockReason {
-    kind: "quest" | "level" | "loyalty" | "task-count" | "prestige" | "faction" | "branch";
+    kind: "quest" | "level" | "loyalty" | "reputation" | "task-count" | "prestige" | "faction" | "branch";
     label: string;
 }
 
@@ -31,6 +34,7 @@ export interface QuestWorkspaceProfile {
     prestigeLevel: number;
     faction: "USEC" | "BEAR" | null;
     traderLoyaltyLevels: Record<string, number>;
+    fenceReputation: number;
     completedQuests: Record<string, boolean>;
     failedQuests: Record<string, boolean>;
 }
@@ -66,20 +70,6 @@ export const OBJECTIVE_CATEGORY_SHORT_LABELS: Record<QuestObjectiveCategory, str
 };
 
 const OBJECTIVE_CATEGORY_ORDER = Object.keys(OBJECTIVE_CATEGORY_LABELS) as QuestObjectiveCategory[];
-
-function compareValue(current: number, method: string, required: number) {
-    switch (method.trim()) {
-        case ">": return current > required;
-        case "<": return current < required;
-        case "<=": return current <= required;
-        case "=":
-        case "==":
-        case "===": return current === required;
-        case "!=":
-        case "!==": return current !== required;
-        default: return current >= required;
-    }
-}
 
 export function getQuestWorkspaceStatus(
     quest: FullQuest,
@@ -121,14 +111,16 @@ export function getQuestWorkspaceStatus(
     if ((quest.requiredPrestige?.prestigeLevel ?? 0) > profile.prestigeLevel) {
         reasons.push({ kind: "prestige", label: `Requires prestige ${quest.requiredPrestige?.prestigeLevel}` });
     }
-    for (const requirement of quest.traderRequirements.filter(isQuestTraderLoyaltyRequirement)) {
-        const current = profile.traderLoyaltyLevels[requirement.trader.id] ?? 1;
-        if (!compareValue(current, requirement.compareMethod, requirement.value)) {
-            reasons.push({
-                kind: "loyalty",
-                label: `${requirement.trader.name} LL${requirement.value}`,
-            });
-        }
+    for (const requirement of quest.traderRequirements) {
+        if (questTraderRequirementMatchesProfile(requirement, profile)) continue;
+
+        const gateType = getQuestTraderGateType(requirement);
+        reasons.push({
+            kind: gateType === "reputation" ? "reputation" : "loyalty",
+            label: gateType === "reputation"
+                ? `${requirement.trader.name} Rep ${requirement.compareMethod} ${requirement.value}`
+                : `${requirement.trader.name} LL${requirement.value}`,
+        });
     }
     for (const requirement of quest.otherRequirements) {
         const gate = getTraderTierCompletionGate(requirement);

@@ -1,4 +1,5 @@
 import type { FullQuest, QuestTraderRequirement } from "@/types";
+import { getQuestLoyaltyLevelOverride } from "./quest-trader-tab-overrides";
 
 export type QuestTraderGateType = "level" | "reputation" | "unknown";
 
@@ -49,8 +50,11 @@ export type QuestTraderLoyaltyLevel = 1 | 2 | 3 | 4;
  * the tier shown for the issuing trader.
  */
 export function getQuestIssuingTraderLoyaltyLevel(
-    quest: Pick<FullQuest, "trader" | "traderRequirements">,
+    quest: Pick<FullQuest, "trader" | "traderRequirements"> & { id?: string },
 ): QuestTraderLoyaltyLevel {
+    const override = quest.id ? getQuestLoyaltyLevelOverride(quest.id) : null;
+    if (override !== null) return override;
+
     const ownTraderLevels = quest.traderRequirements
         .filter(
             (requirement) =>
@@ -78,35 +82,45 @@ function compareTraderRequirement(current: number, method: string, required: num
     }
 }
 
+export interface QuestTraderRequirementProfile {
+    traderLoyaltyLevels: Record<string, number>;
+    fenceReputation: number;
+}
+
+export function questTraderRequirementMatchesProfile(
+    requirement: QuestTraderRequirement,
+    profile: QuestTraderRequirementProfile,
+) {
+    const type = getQuestTraderGateType(requirement);
+    if (type === "level") {
+        return compareTraderRequirement(
+            profile.traderLoyaltyLevels[requirement.trader.id] ?? 1,
+            requirement.compareMethod,
+            requirement.value,
+        );
+    }
+
+    const isFence =
+        requirement.trader.normalizedName === "fence" ||
+        requirement.trader.name.trim().toLowerCase() === "fence";
+    if (type === "reputation" && isFence) {
+        return compareTraderRequirement(
+            profile.fenceReputation,
+            requirement.compareMethod,
+            requirement.value,
+        );
+    }
+
+    return true;
+}
+
 export function questMatchesTraderRequirementProfile(
     quest: Pick<FullQuest, "traderRequirements">,
-    profile: {
-        traderLoyaltyLevels: Record<string, number>;
-        fenceReputation: number;
-    },
+    profile: QuestTraderRequirementProfile,
 ) {
-    return quest.traderRequirements.every((requirement) => {
-        const type = getQuestTraderGateType(requirement);
-        if (type === "level") {
-            return compareTraderRequirement(
-                profile.traderLoyaltyLevels[requirement.trader.id] ?? 1,
-                requirement.compareMethod,
-                requirement.value,
-            );
-        }
-        if (
-            type === "reputation" &&
-            (requirement.trader.normalizedName === "fence" ||
-                requirement.trader.name.toLowerCase() === "fence")
-        ) {
-            return compareTraderRequirement(
-                profile.fenceReputation,
-                requirement.compareMethod,
-                requirement.value,
-            );
-        }
-        return true;
-    });
+    return quest.traderRequirements.every((requirement) =>
+        questTraderRequirementMatchesProfile(requirement, profile),
+    );
 }
 
 /**

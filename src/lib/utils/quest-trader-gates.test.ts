@@ -9,6 +9,7 @@ import {
     getQuestIssuingTraderLoyaltyLevel,
     isQuestTraderLoyaltyRequirement,
     questMatchesTraderRequirementProfile,
+    questTraderRequirementMatchesProfile,
 } from "./quest-trader-gates";
 
 function makeRequirement(
@@ -52,6 +53,16 @@ test("derives the issuing trader loyalty level and defaults ungated quests to le
     }), 3);
 });
 
+test("uses the reviewed trader-tab tier when Tarkov.dev has no level gate", () => {
+    const prapor = { id: "prapor", name: "Prapor", normalizedName: "prapor" };
+
+    assert.equal(getQuestIssuingTraderLoyaltyLevel({
+        id: "59674eb386f774539f14813a",
+        trader: prapor,
+        traderRequirements: [],
+    }), 2);
+});
+
 test("matches loyalty and Fence reputation requirements against the trader profile", () => {
     const trader = { id: "trader", name: "Trader", normalizedName: "trader" };
     const fence = { id: "fence", name: "Fence", normalizedName: "fence" };
@@ -64,6 +75,28 @@ test("matches loyalty and Fence reputation requirements against the trader profi
     assert.equal(questMatchesTraderRequirementProfile({ traderRequirements: [
         makeRequirement("reputation", { trader: fence, value: 2, compareMethod: ">" }),
     ] }, profile), false);
+});
+
+test("matches maximum Fence reputation requirements at the exact boundary", () => {
+    const fence = { id: "fence", name: "Fence", normalizedName: "fence" };
+    const requirement = makeRequirement("reputation", {
+        trader: fence,
+        value: -1,
+        compareMethod: "<=",
+    });
+
+    assert.equal(questTraderRequirementMatchesProfile(requirement, {
+        traderLoyaltyLevels: {},
+        fenceReputation: 0,
+    }), false);
+    assert.equal(questTraderRequirementMatchesProfile(requirement, {
+        traderLoyaltyLevels: {},
+        fenceReputation: -1,
+    }), true);
+    assert.equal(questTraderRequirementMatchesProfile(requirement, {
+        traderLoyaltyLevels: {},
+        fenceReputation: -2,
+    }), true);
 });
 
 test("keeps reputation and unknown gate kinds distinct", () => {

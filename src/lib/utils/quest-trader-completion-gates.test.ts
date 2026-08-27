@@ -73,6 +73,25 @@ test("counts only completed quests from the counter's trader and tier", () => {
     assert.equal(compareTraderTierCompletionCount(3, gate), true);
 });
 
+test("counts numeric trader-tab overrides and excludes essential quests", () => {
+    const quests = [
+        makeQuest("59674eb386f774539f14813a"), // Delivery From the Past: reviewed LL2
+        makeQuest("597a171586f77405ba6887d3"), // Big Customer: essential
+    ];
+    const completed = Object.fromEntries(quests.map((quest) => [quest.id, true]));
+
+    assert.equal(countCompletedTraderTierQuests(
+        quests,
+        completed,
+        { trader: "Prapor", tier: 2 },
+    ), 1);
+    assert.equal(countCompletedTraderTierQuests(
+        quests,
+        completed,
+        { trader: "Prapor", tier: 1 },
+    ), 0);
+});
+
 test("leaves unknown global variables unclassified", () => {
     assert.equal(getTraderTierCompletionGate({
         type: "globalVariable",

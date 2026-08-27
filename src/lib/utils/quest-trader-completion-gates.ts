@@ -1,5 +1,6 @@
 import type { QuestOtherRequirement } from "@/types";
 import { getQuestIssuingTraderLoyaltyLevel } from "./quest-trader-gates";
+import { isEssentialQuestOverride } from "./quest-trader-tab-overrides";
 
 export type TraderTier = 1 | 2 | 3 | 4;
 
@@ -112,6 +113,7 @@ export function countCompletedTraderTierQuests(
 
     for (const quest of quests) {
         if (!completedQuests[quest.id]) continue;
+        if (isEssentialQuestOverride(quest.id)) continue;
         const actualTrader = normalizeTraderName(quest.trader.normalizedName || quest.trader.name);
         if (actualTrader !== expectedTrader) continue;
         if (getQuestIssuingTraderLoyaltyLevel(quest) === gate.tier) count += 1;

@@ -1,6 +1,10 @@
 import type { FullQuest } from "@/types";
 import defaultSeriesManifest from "../data/quest-series.json";
 import { isQuestTraderLoyaltyRequirement } from "./quest-trader-gates";
+import {
+    getQuestLoyaltyLevelOverride,
+    isEssentialQuestOverride,
+} from "./quest-trader-tab-overrides";
 
 export type QuestCategory = "tier-1" | "tier-2" | "tier-3" | "tier-4" | "series";
 
@@ -65,6 +69,9 @@ function getOwnTraderTier(
     quest: FullQuest,
     validationIssues: QuestOrganizationValidationIssue[],
 ): 1 | 2 | 3 | 4 {
+    const override = getQuestLoyaltyLevelOverride(quest.id);
+    if (override !== null) return override;
+
     const ownLevelRequirements = (quest.traderRequirements ?? []).filter(
         (requirement) =>
             requirement.trader.id === quest.trader.id && isQuestTraderLoyaltyRequirement(requirement),
@@ -211,7 +218,14 @@ export function deriveQuestOrganization(
     const tierIssues: QuestOrganizationValidationIssue[] = [];
 
     for (const quest of quests) {
-        const series = seriesByQuestId.get(quest.id);
+        const manifestSeries = seriesByQuestId.get(quest.id);
+        const series = manifestSeries ?? (isEssentialQuestOverride(quest.id)
+            ? {
+                  seriesId: `essential-unassigned-${quest.trader.id}`,
+                  seriesName: "Other essential quests",
+                  seriesOrder: Number.MAX_SAFE_INTEGER,
+              }
+            : undefined);
         const issuingTraderTier = getOwnTraderTier(quest, tierIssues);
         const entry: DerivedQuestOrganization = {
             questId: quest.id,
