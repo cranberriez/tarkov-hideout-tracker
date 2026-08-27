@@ -5,7 +5,7 @@ This document describes the **implemented** quest log import feature in the ques
 The original idea started as a parser-only prototype. The current feature now goes further:
 
 - parses EFT logs fully client-side
-- classifies quest events as `PVP`, `PVE`, or `unknown`
+- classifies quest events as `PVP`, `PVE`, `KORD`, or `unknown`
 - shows a two-step import modal
 - lets the user optionally auto-complete prerequisite quests
 - writes selected quests into the existing persisted quest state
@@ -58,7 +58,7 @@ This handles:
 
 This handles:
 
-- grouping parsed events into importable PVP/PVE quest rows
+- grouping parsed events into importable PVP/PVE/KORD quest rows
 - filtering out already completed quests
 - prerequisite backfill logic
 - localStorage seen-file cache helpers
@@ -80,7 +80,7 @@ This renders the upload button beside the existing sync button.
 5. The app validates the selection before parsing.
 6. The app filters to only relevant `push-notifications*.log` files.
 7. The app skips already-seen relevant files using localStorage-backed file dedupe.
-8. The app parses quest events and groups them into `PVP`, `PVE`, and `unknown`.
+8. The app parses quest events and groups them into `PVP`, `PVE`, `KORD`, and `unknown`.
 9. Already completed quests are filtered out of the importable lists.
 10. User reviews a mode-specific list and optional prerequisite toggles.
 11. User continues to a second review step in the same modal.
@@ -235,11 +235,14 @@ Each parsed quest event is tagged as:
 
 - `pvp`
 - `pve`
+- `kord`
 - `unknown`
 
 ### PVP
 
-PVP is inferred from the most recent prior `UserConfirmed` payload with:
+PVP is inferred from a regular notification websocket host such as
+`wsn-01.escapefromtarkov.com`. For older logs without an endpoint line, it falls
+back to the most recent prior `UserConfirmed` payload with:
 
 ```json
 {
@@ -254,6 +257,16 @@ PVE is inferred from the most recent prior line containing either:
 
 - `wsn-pve-`
 - `gw-pve.escapefromtarkov.com`
+
+### KORD
+
+KORD seasonal mode is inferred from the most recent prior notification websocket
+host containing:
+
+- `wsn-pvp-season-`
+
+The seasonal endpoint is authoritative. A later `UserConfirmed` payload with
+`"mode": "deathmatch"` does not reclassify that session as regular PVP.
 
 ### Inheritance Rule
 
@@ -310,9 +323,10 @@ After parsing and resolution, events are grouped into:
 
 - `PVP`
 - `PVE`
+- `KORD`
 - `unknown mode`
 
-For `PVP` and `PVE`, multiple event groups for the same quest are merged into one import row.
+For `PVP`, `PVE`, and `KORD`, multiple event groups for the same quest are merged into one import row.
 
 Each import row tracks:
 
@@ -334,7 +348,7 @@ Before rendering importable quest rows, the feature removes any quests already m
 
 This affects:
 
-- step 1 importable PVP/PVE sections
+- step 1 importable PVP/PVE/KORD sections
 - step 2 review screen
 
 If new relevant files are found but all importable quests are already complete:
@@ -354,6 +368,7 @@ The first modal step shows:
 - optional file/cache notices
 - importable `PVP` section
 - importable `PVE` section
+- importable `KORD` seasonal section
 - optional Info panel
 
 Each quest row shows:
@@ -377,7 +392,7 @@ If that quest row is present and its prerequisite toggle is enabled, the row sho
 
 ### Step 2: Review
 
-Clicking `Continue with PVP Quests` or `Continue with PVE Quests` moves the modal to a second review step.
+Clicking an import button for PVP, PVE, or KORD moves the modal to a second review step.
 
 This review step is mode-specific and invalidates the other mode for that import pass.
 
@@ -407,6 +422,7 @@ The user imports one mode at a time:
 
 - `PVP`
 - `PVE`
+- `KORD`
 
 Unknown-mode quests are not imported.
 
@@ -444,7 +460,7 @@ Shown when relevant files were selected but all relevant files are already in th
 
 ### All Quests Already Completed
 
-Shown when new relevant files were parsed but all resolved importable PVP/PVE quests are already complete.
+Shown when new relevant files were parsed but all resolved importable PVP/PVE/KORD quests are already complete.
 
 ### No Push-Notification Logs
 

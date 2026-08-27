@@ -2,12 +2,12 @@ import type { FullQuest } from "../../types/types.ts";
 import type { ParsedQuestEventType, QuestLogParseResult, ResolvedAggregatedQuestEvent } from "./quest-log-parser.ts";
 import { collectTransitivePrerequisiteIds } from "./sensitive-quest-backfill";
 
-export type ImportGameMode = "PVP" | "PVE";
+export type ImportGameMode = "PVP" | "PVE" | "KORD";
 
 export interface QuestImportRow {
     questId: string;
     quest: FullQuest;
-    raidMode: "pvp" | "pve";
+    raidMode: "pvp" | "pve" | "kord";
     types: ParsedQuestEventType[];
     hasStarted: boolean;
     hasCompleted: boolean;
@@ -20,6 +20,7 @@ export interface QuestImportRow {
 export interface QuestImportBuckets {
     pvp: QuestImportRow[];
     pve: QuestImportRow[];
+    kord: QuestImportRow[];
     unknownMode: ResolvedAggregatedQuestEvent[];
 }
 
@@ -43,11 +44,12 @@ export const ENABLE_QUEST_LOG_FILE_DEDUPE = true;
 export function buildQuestImportBuckets(parseResult: QuestLogParseResult): QuestImportBuckets {
     const pvp = buildModeRows(parseResult.resolvedGroups, "pvp");
     const pve = buildModeRows(parseResult.resolvedGroups, "pve");
+    const kord = buildModeRows(parseResult.resolvedGroups, "kord");
     const unknownMode = parseResult.resolvedGroups.filter(
         (group) => group.quest && group.raidMode === "unknown",
     );
 
-    return { pvp, pve, unknownMode };
+    return { pvp, pve, kord, unknownMode };
 }
 
 export function applyQuestImportSelection(input: {
@@ -190,7 +192,7 @@ export function writeSeenQuestLogFingerprints(fingerprints: Iterable<string>) {
 
 function buildModeRows(
     groups: ResolvedAggregatedQuestEvent[],
-    raidMode: "pvp" | "pve",
+    raidMode: "pvp" | "pve" | "kord",
 ): QuestImportRow[] {
     const rows = new Map<string, QuestImportRow>();
 

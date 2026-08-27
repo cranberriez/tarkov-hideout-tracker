@@ -118,9 +118,14 @@ questSidebarCollapsed: boolean;
 - Manual sync helpers that call `quest-sync.ts` and write results back to `useUserStore`.
 
 The workspace's filter headers use an in-pane selection state: choosing Traders,
-Maps, Status, or Quest type replaces the left quest log with that section's
-options at the same bounded width. The selections in all four sections are
-persisted in localStorage and shared across game-mode profiles. Trader additional options include an
+Maps, Status, or Filter / Sort replaces the left quest list with that section's
+options at the same bounded width. Trader, map, status, quest-type, and sort
+selections are persisted in localStorage and shared across game-mode profiles.
+Filter / Sort combines enabled-by-default trader and issuing-trader loyalty-level grouping,
+the four existing sort modes, and the quest-type filter. Group headers show their
+visible quest count and collapse their complete nested section when clicked. The
+grouping switches and collapsed groups are local workspace display state and reset
+to both grouping levels enabled when the workspace remounts. Trader additional options include an
 enabled-by-default requirement toggle and per-trader LL1-LL4 profile controls.
 Fence has LL1/max controls plus an exact persisted standing input; BTR Driver
 and Lightkeeper have no loyalty controls. Quest list rows display the issuing
@@ -237,6 +242,10 @@ Quest item modals read flea market data from `PriceDataContext`. The shared pric
 ---
 
 ## Manual Quest Sync
+
+Manual sync is temporarily hidden in the UI while the workflow is reviewed. Its
+implementation remains available and is gated by `ENABLE_MANUAL_QUEST_SYNC` in
+`src/features/quests/quest-feature-flags.ts`.
 
 Manual sync reconstructs completed quest state from the quests a player can currently see for one trader. The user selects active quests for that trader; the app completes prerequisite chains and can infer other completed branches.
 

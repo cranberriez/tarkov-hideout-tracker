@@ -40,6 +40,7 @@ function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name"
 
 test("buildQuestImportBuckets merges started and completed groups for the same quest and mode", () => {
     const quest = makeQuest({ id: "quest-alpha", name: "Quest Alpha" });
+    const kordQuest = makeQuest({ id: "quest-kord", name: "Quest KORD" });
     const parseResult: QuestLogParseResult = {
         totals: {
             filesScanned: 1,
@@ -51,6 +52,7 @@ test("buildQuestImportBuckets merges started and completed groups for the same q
             completedEvents: 1,
             pvpEvents: 2,
             pveEvents: 0,
+            kordEvents: 1,
             unknownEvents: 0,
         },
         filteredFiles: ["push-notifications_000.log"],
@@ -70,6 +72,19 @@ test("buildQuestImportBuckets merges started and completed groups for the same q
                 traderIds: [],
                 sourceFiles: ["push-notifications_000.log"],
                 quest,
+            },
+            {
+                questId: "quest-kord",
+                type: "completed",
+                raidMode: "kord",
+                firstTimestamp: new Date("2026-08-27T10:05:00Z"),
+                latestTimestamp: new Date("2026-08-27T10:05:00Z"),
+                eventCount: 1,
+                occurrenceCount: 1,
+                hasRewards: true,
+                traderIds: [],
+                sourceFiles: ["push-notifications_002.log"],
+                quest: kordQuest,
             },
             {
                 questId: "quest-alpha",
@@ -95,6 +110,36 @@ test("buildQuestImportBuckets merges started and completed groups for the same q
     assert.equal(buckets.pvp[0]?.hasCompleted, true);
     assert.equal(buckets.pvp[0]?.occurrenceCount, 3);
     assert.deepEqual(buckets.pvp[0]?.types, ["completed", "started"]);
+    assert.equal(buckets.kord.length, 1);
+    assert.equal(buckets.kord[0]?.raidMode, "kord");
+});
+
+test("applyQuestImportSelection routes seasonal quests to the KORD profile", () => {
+    const quest = makeQuest({ id: "quest-kord", name: "Quest KORD" });
+    const result = applyQuestImportSelection({
+        mode: "KORD",
+        rows: [
+            {
+                questId: quest.id,
+                quest,
+                raidMode: "kord",
+                types: ["completed"],
+                hasStarted: false,
+                hasCompleted: true,
+                occurrenceCount: 1,
+                eventCount: 1,
+                latestTimestamp: new Date("2026-08-27T10:05:00Z"),
+                sourceFiles: ["push-notifications_002.log"],
+            },
+        ],
+        autoCompleteSelections: {},
+        completedQuests: {},
+        questsWithItems: {},
+        questsById: new Map([[quest.id, quest]]),
+    });
+
+    assert.equal(result.nextGameMode, "KORD");
+    assert.equal(result.nextCompletedQuests[quest.id], true);
 });
 
 test("applyQuestImportSelection imports rows and optional prerequisite chains", () => {

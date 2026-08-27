@@ -112,34 +112,33 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     >([]);
 
     const { questsById } = useQuestsContext();
-    const completedQuests = useUserStore((state) => state.completedQuests);
-    const questsWithItems = useUserStore((state) => state.questsWithItems);
-    const playerLevel = useUserStore((state) => state.playerLevel);
-    const prestigeLevel = useUserStore((state) => state.prestigeLevel);
-    const questFaction = useUserStore((state) => state.questFaction);
-    const questTraderLoyaltyLevels = useUserStore((state) => state.questTraderLoyaltyLevels);
-    const availabilityProfile = useMemo(
-        () => ({
-            playerLevel,
-            prestigeLevel,
-            faction: questFaction,
-            traderLoyaltyLevels: questTraderLoyaltyLevels,
-            completedQuests,
-        }),
-        [completedQuests, playerLevel, prestigeLevel, questFaction, questTraderLoyaltyLevels],
-    );
-    const availableQuestIds = useMemo(() => {
+    const profiles = useUserStore((state) => state.profiles);
+    const availableQuestIdsByMode = useMemo(() => {
         const availabilityMap = buildQuestAvailabilityMap(quests);
-        const availableIds = new Set<string>();
+        const result = {} as Record<ImportGameMode, Set<string>>;
 
-        for (const quest of quests) {
-            if (isQuestAvailableForProfile(quest, availabilityProfile, availabilityMap)) {
-                availableIds.add(quest.id);
+        for (const mode of ["PVP", "PVE", "KORD"] as const) {
+            const profile = profiles[mode];
+            const availableIds = new Set<string>();
+            const availabilityProfile = {
+                playerLevel: profile.playerLevel,
+                prestigeLevel: profile.prestigeLevel,
+                faction: profile.questFaction,
+                traderLoyaltyLevels: profile.questTraderLoyaltyLevels,
+                completedQuests: profile.completedQuests,
+            };
+
+            for (const quest of quests) {
+                if (isQuestAvailableForProfile(quest, availabilityProfile, availabilityMap)) {
+                    availableIds.add(quest.id);
+                }
             }
+
+            result[mode] = availableIds;
         }
 
-        return availableIds;
-    }, [availabilityProfile, quests]);
+        return result;
+    }, [profiles, quests]);
 
     const directoryInputProps: DirectoryInputAttributes = {
         id: "quest-log-folder-upload",
@@ -243,6 +242,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
             setAutoCompleteSelections({
                 ...setAllQuestImportSelections(buckets.pvp, false),
                 ...setAllQuestImportSelections(buckets.pve, false),
+                ...setAllQuestImportSelections(buckets.kord, false),
             });
 
             if (result.totals.filesParsed === 0) {
@@ -324,8 +324,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     }
 
     function handleReviewMode(mode: ImportGameMode) {
-        const rows =
-            mode === "PVP" ? (parsedView?.buckets.pvp ?? []) : (parsedView?.buckets.pve ?? []);
+        const rows = parsedView ? getModeRows(parsedView.buckets, mode) : [];
         if (rows.length === 0) {
             setImportNotice(`No ${mode} quests are available to import.`);
             return;
@@ -339,14 +338,14 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     }
 
     function handleImportMode(mode: ImportGameMode) {
-        const rows =
-            mode === "PVP" ? (parsedView?.buckets.pvp ?? []) : (parsedView?.buckets.pve ?? []);
+        const rows = parsedView ? getModeRows(parsedView.buckets, mode) : [];
         if (rows.length === 0) {
             setImportNotice(`No ${mode} quests are available to import.`);
             return;
         }
 
         const state = useUserStore.getState();
+        const targetProfile = state.profiles[mode];
         const result = applyQuestImportSelection({
             mode,
             rows,
@@ -356,8 +355,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                     autoCompleteSelections[getSelectionKey(mode, row.questId)] ?? false,
                 ]),
             ),
-            completedQuests: state.completedQuests,
-            questsWithItems: state.questsWithItems,
+            completedQuests: targetProfile.completedQuests,
+            questsWithItems: targetProfile.questsWithItems,
             questsById,
             allowedSensitiveBackfillQuestIds,
             deniedSensitiveBackfillQuestIds,
@@ -415,20 +414,34 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     const filteredPvpRows = parsedView
         ? filterIncompleteQuestImportRows({
               rows: parsedView.buckets.pvp,
-              completedQuests,
-              availableQuestIds,
+              completedQuests: profiles.PVP.completedQuests,
+              availableQuestIds: availableQuestIdsByMode.PVP,
           })
         : [];
     const filteredPveRows = parsedView
         ? filterIncompleteQuestImportRows({
               rows: parsedView.buckets.pve,
-              completedQuests,
-              availableQuestIds,
+              completedQuests: profiles.PVE.completedQuests,
+              availableQuestIds: availableQuestIdsByMode.PVE,
           })
         : [];
-    const hasAnyImportableRows = filteredPvpRows.length > 0 || filteredPveRows.length > 0;
+    const filteredKordRows = parsedView
+        ? filterIncompleteQuestImportRows({
+              rows: parsedView.buckets.kord,
+              completedQuests: profiles.KORD.completedQuests,
+              availableQuestIds: availableQuestIdsByMode.KORD,
+          })
+        : [];
+    const hasAnyImportableRows =
+        filteredPvpRows.length > 0 || filteredPveRows.length > 0 || filteredKordRows.length > 0;
     const reviewRows =
-        reviewMode === "PVP" ? filteredPvpRows : reviewMode === "PVE" ? filteredPveRows : [];
+        reviewMode === "PVP"
+            ? filteredPvpRows
+            : reviewMode === "PVE"
+              ? filteredPveRows
+              : reviewMode === "KORD"
+                ? filteredKordRows
+                : [];
     const reviewPreview =
         reviewMode && parsedView
             ? applyQuestImportSelection({
@@ -440,8 +453,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                           autoCompleteSelections[getSelectionKey(reviewMode, row.questId)] ?? false,
                       ]),
                   ),
-                  completedQuests,
-                  questsWithItems,
+                  completedQuests: profiles[reviewMode].completedQuests,
+                  questsWithItems: profiles[reviewMode].questsWithItems,
                   questsById,
                   allowedSensitiveBackfillQuestIds,
                   deniedSensitiveBackfillQuestIds,
@@ -496,9 +509,9 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                             Choose EFT logs folder
                                         </div>
                                         <p className="max-w-2xl text-pretty text-sm text-gray-400">
-                                            The importer identifies PVP vs PVE quest notifications
-                                            from your local logs and lets you choose which set to
-                                            import.
+                                            The importer identifies PVP, PVE, and KORD seasonal
+                                            quest notifications from your local logs and lets you
+                                            choose which set to import.
                                         </p>
                                         <p className="text-xs text-gray-500">
                                             <code className="rounded bg-white/5 px-1.5 py-0.5 text-gray-300">
@@ -580,8 +593,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         </h2>
                                         <p className="text-pretty text-sm text-gray-400">
                                             Choose your EFT logs folder and the importer will
-                                            identify PVP vs PVE quest notifications so you can pick
-                                            which set to import.
+                                            identify PVP, PVE, and KORD seasonal quest notifications
+                                            so you can pick which set to import.
                                         </p>
                                         <p className="text-xs text-gray-500">
                                             <code className="rounded bg-white/5 px-1.5 py-0.5 text-gray-300">
@@ -659,7 +672,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         title="PVP Quests"
                                         mode="PVP"
                                         rows={filteredPvpRows}
-                                        completedQuests={completedQuests}
+                                        completedQuests={profiles.PVP.completedQuests}
                                         autoCompleteSelections={autoCompleteSelections}
                                         onToggleAutoComplete={handleToggleAutoComplete}
                                         onEnableAll={() =>
@@ -676,7 +689,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         title="PVE Quests"
                                         mode="PVE"
                                         rows={filteredPveRows}
-                                        completedQuests={completedQuests}
+                                        completedQuests={profiles.PVE.completedQuests}
                                         autoCompleteSelections={autoCompleteSelections}
                                         onToggleAutoComplete={handleToggleAutoComplete}
                                         onEnableAll={() =>
@@ -684,6 +697,23 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         }
                                         onDisableAll={() =>
                                             handleSetAllForMode("PVE", filteredPveRows, false)
+                                        }
+                                    />
+                                )}
+
+                                {filteredKordRows.length > 0 && (
+                                    <ModeSection
+                                        title="KORD Seasonal Quests"
+                                        mode="KORD"
+                                        rows={filteredKordRows}
+                                        completedQuests={profiles.KORD.completedQuests}
+                                        autoCompleteSelections={autoCompleteSelections}
+                                        onToggleAutoComplete={handleToggleAutoComplete}
+                                        onEnableAll={() =>
+                                            handleSetAllForMode("KORD", filteredKordRows, true)
+                                        }
+                                        onDisableAll={() =>
+                                            handleSetAllForMode("KORD", filteredKordRows, false)
                                         }
                                     />
                                 )}
@@ -775,6 +805,15 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                                     className="rounded-sm border border-white/10 bg-gradient-to-b from-[#142737] to-[#0f1b28] px-3 py-2 text-sm font-semibold text-gray-100 transition-colors hover:border-white/20 hover:from-[#1a3145] hover:to-[#122231] hover:text-white"
                                                 >
                                                     Import PVE Quests
+                                                </button>
+                                            )}
+                                            {filteredKordRows.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleReviewMode("KORD")}
+                                                    className="rounded-sm border border-white/10 bg-gradient-to-b from-[#34301a] to-[#211f13] px-3 py-2 text-sm font-semibold text-gray-100 transition-colors hover:border-white/20 hover:from-[#403b20] hover:to-[#292617] hover:text-white"
+                                                >
+                                                    Import KORD Seasonal Quests
                                                 </button>
                                             )}
                                         </div>
@@ -887,7 +926,9 @@ function ModeSection({
     const accentClasses =
         mode === "PVP"
             ? "from-red-500/25 via-red-500/8 to-transparent"
-            : "from-sky-400/25 via-sky-400/8 to-transparent";
+            : mode === "PVE"
+              ? "from-sky-400/25 via-sky-400/8 to-transparent"
+              : "from-amber-400/25 via-amber-400/8 to-transparent";
 
     return (
         <section className="rounded-lg border border-white/10 bg-black/20">
@@ -1215,6 +1256,7 @@ function InfoPanel({
                     <SummaryCard label="Completed" value={result.totals.completedEvents} />
                     <SummaryCard label="PVP" value={result.totals.pvpEvents} />
                     <SummaryCard label="PVE" value={result.totals.pveEvents} />
+                    <SummaryCard label="KORD" value={result.totals.kordEvents} />
                     <SummaryCard label="Resolved Groups" value={result.resolvedGroups.length} />
                 </section>
 
@@ -1380,6 +1422,12 @@ function RawEventsSection({ events }: { events: ParsedQuestEvent[] }) {
 
 function getSelectionKey(mode: ImportGameMode, questId: string) {
     return `${mode}:${questId}`;
+}
+
+function getModeRows(buckets: QuestImportBuckets, mode: ImportGameMode) {
+    if (mode === "PVP") return buckets.pvp;
+    if (mode === "PVE") return buckets.pve;
+    return buckets.kord;
 }
 
 function formatTimestamp(timestamp: Date | null) {

@@ -1,6 +1,6 @@
 import type { FullQuest } from "../../types/types.ts";
 
-export type ParsedRaidMode = "pvp" | "pve" | "unknown";
+export type ParsedRaidMode = "pvp" | "pve" | "kord" | "unknown";
 export type ParsedQuestEventType = "started" | "completed";
 
 export interface QuestLogReward {
@@ -52,6 +52,7 @@ export interface QuestLogParseTotals {
     completedEvents: number;
     pvpEvents: number;
     pveEvents: number;
+    kordEvents: number;
     unknownEvents: number;
 }
 
@@ -89,6 +90,8 @@ interface ParsedQuestLogFileResult {
 const PUSH_NOTIFICATION_FILE_PATTERN = /push-notifications.*\.log$/i;
 const CHAT_MESSAGE_TRIGGER = "Got notification | ChatMessageReceived";
 const PVE_SIGNAL_PATTERNS = ["wsn-pve-", "gw-pve.escapefromtarkov.com"];
+const KORD_SIGNAL_PATTERNS = ["wsn-pvp-season-"];
+const PVP_WEBSOCKET_SIGNAL = /wss:\/\/wsn-\d+\.escapefromtarkov\.com/i;
 export const QUEST_LOG_WIPE_CUTOFF_DATE = new Date(2025, 10, 15);
 const QUEST_LOG_WIPE_CUTOFF_MS = QUEST_LOG_WIPE_CUTOFF_DATE.getTime();
 
@@ -142,12 +145,17 @@ function parseQuestLogFileWithCutoffStats(
         const line = lines[index] ?? "";
         const lowerLine = line.toLowerCase();
 
-        if (isPveSignal(lowerLine)) {
-            currentRaidMode = "pve";
+        const endpointRaidMode = getEndpointRaidModeSignal(lowerLine);
+        if (endpointRaidMode) {
+            currentRaidMode = endpointRaidMode;
         } else {
             const raidModeSignal = extractRaidModeSignal(lines, index);
             if (raidModeSignal) {
-                currentRaidMode = raidModeSignal.raidMode;
+                // UserConfirmed only distinguishes PVE from non-PVE. Keep the more
+                // specific mode already established by the notification endpoint.
+                if (currentRaidMode === "unknown") {
+                    currentRaidMode = raidModeSignal.raidMode;
+                }
                 index = raidModeSignal.endIndex;
                 continue;
             }
@@ -217,6 +225,7 @@ export function parseQuestLogFiles(files: QuestLogFileInput[], quests: FullQuest
             completedEvents: dedupedEvents.filter((event) => event.type === "completed").length,
             pvpEvents: dedupedEvents.filter((event) => event.raidMode === "pvp").length,
             pveEvents: dedupedEvents.filter((event) => event.raidMode === "pve").length,
+            kordEvents: dedupedEvents.filter((event) => event.raidMode === "kord").length,
             unknownEvents: dedupedEvents.filter((event) => event.raidMode === "unknown").length,
         },
         filteredFiles: matched.map((file) => file.name),
@@ -573,8 +582,17 @@ function isDuplicateQuestEvent(left: ParsedQuestEvent, right: ParsedQuestEvent) 
     return Math.abs(left.timestampMs - right.timestampMs) <= 1000;
 }
 
-function isPveSignal(line: string) {
-    return PVE_SIGNAL_PATTERNS.some((pattern) => line.includes(pattern));
+function getEndpointRaidModeSignal(line: string): ParsedRaidMode | null {
+    if (KORD_SIGNAL_PATTERNS.some((pattern) => line.includes(pattern))) {
+        return "kord";
+    }
+    if (PVE_SIGNAL_PATTERNS.some((pattern) => line.includes(pattern))) {
+        return "pve";
+    }
+    if (PVP_WEBSOCKET_SIGNAL.test(line)) {
+        return "pvp";
+    }
+    return null;
 }
 
 function isRelevantQuestLogFile(file: QuestLogFileLike) {

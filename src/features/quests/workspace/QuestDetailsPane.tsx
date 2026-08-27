@@ -20,7 +20,7 @@ export function QuestDetailsPane() {
 
     if (!quest) {
         return (
-            <div className="flex min-h-[420px] flex-1 items-center justify-center bg-[radial-gradient(circle_at_50%_45%,rgba(255,255,255,0.025),transparent_45%)] p-8 text-center">
+            <div className="flex min-h-[420px] border-t border-white/10 flex-1 items-center justify-center bg-[radial-gradient(circle_at_50%_45%,rgba(255,255,255,0.025),transparent_45%)] p-8 text-center">
                 <div className="max-w-xs">
                     <Flag size={24} className="mx-auto mb-4 text-gray-800" />
                     <p className="text-sm text-gray-600">Select a quest from the log to inspect its objectives, requirements, and progression links.</p>

@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { FullQuest } from "@/types";
-import { useUserStore } from "@/lib/stores/useUserStore";
+import { useUserStore, type QuestSortMode } from "@/lib/stores/useUserStore";
 import { buildQuestMapGroups, questMatchesSelectedMapGroups } from "../quest-map-groups";
 import {
     questMatchesTraderRequirementProfile,
@@ -22,7 +22,7 @@ import {
 
 export type QuestWorkspaceMode = "details" | "planner";
 export type QuestListMode = "quests" | "history";
-export type QuestFilterSection = "traders" | "maps" | "status" | "types" | null;
+export type QuestFilterSection = "traders" | "maps" | "status" | "filters" | null;
 
 interface QuestWorkspaceContextValue {
     quests: FullQuest[];
@@ -40,6 +40,9 @@ interface QuestWorkspaceContextValue {
     selectedMapKeys: Set<string>;
     selectedStatuses: Set<QuestWorkspaceStatus>;
     selectedObjectiveCategories: Set<QuestObjectiveCategory>;
+    groupByTrader: boolean;
+    groupByLoyaltyLevel: boolean;
+    sortMode: QuestSortMode;
     openFilter: QuestFilterSection;
     searchQuery: string;
     mode: QuestWorkspaceMode;
@@ -55,6 +58,9 @@ interface QuestWorkspaceContextValue {
     toggleStatus: (status: QuestWorkspaceStatus) => void;
     toggleObjectiveCategory: (category: QuestObjectiveCategory) => void;
     clearObjectiveCategories: () => void;
+    setGroupByTrader: (enabled: boolean) => void;
+    setGroupByLoyaltyLevel: (enabled: boolean) => void;
+    setSortMode: (mode: QuestSortMode) => void;
     setOpenFilter: (section: QuestFilterSection) => void;
     setSearchQuery: (query: string) => void;
     setMode: (mode: QuestWorkspaceMode) => void;
@@ -80,6 +86,8 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
     const [searchQuery, setSearchQuery] = useState("");
     const [mode, setMode] = useState<QuestWorkspaceMode>("details");
     const [listMode, setListMode] = useState<QuestListMode>("quests");
+    const [groupByTrader, setGroupByTrader] = useState(true);
+    const [groupByLoyaltyLevel, setGroupByLoyaltyLevel] = useState(true);
     const [retainedCompletedQuestIds, setRetainedCompletedQuestIds] = useState<Set<string>>(() => new Set());
     const [plannerMapKey, setPlannerMapKey] = useState<string | null>(null);
     const [highlightedQuestId, setHighlightedQuestId] = useState<string | null>(null);
@@ -97,12 +105,14 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             selectedMapKeys: state.questWorkspaceSelectedMaps,
             selectedStatuses: state.questWorkspaceSelectedStatuses,
             selectedObjectiveCategories: state.questWorkspaceSelectedObjectiveCategories,
+            sortMode: state.questSortMode,
             setSelectedTraderIds: state.setQuestWorkspaceSelectedTraders,
             setFilterByTraderRequirements: state.setQuestWorkspaceFilterByTraderRequirements,
             setSelectedMapKeys: state.setQuestWorkspaceSelectedMaps,
             setSelectedStatuses: state.setQuestWorkspaceSelectedStatuses,
             setSelectedObjectiveCategories:
                 state.setQuestWorkspaceSelectedObjectiveCategories,
+            setSortMode: state.setQuestSortMode,
         })),
     );
     const profile = useMemo(
@@ -216,6 +226,9 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             selectedMapKeys,
             selectedStatuses,
             selectedObjectiveCategories,
+            groupByTrader,
+            groupByLoyaltyLevel,
+            sortMode: store.sortMode,
             openFilter,
             searchQuery,
             mode,
@@ -231,6 +244,9 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             toggleStatus: (status) => { clearRetainedCompletedQuests(); store.setSelectedStatuses([...toggleSetValue(selectedStatuses, status)]); },
             toggleObjectiveCategory: (category) => { clearRetainedCompletedQuests(); store.setSelectedObjectiveCategories([...toggleSetValue(selectedObjectiveCategories, category)]); },
             clearObjectiveCategories: () => { clearRetainedCompletedQuests(); store.setSelectedObjectiveCategories([]); },
+            setGroupByTrader,
+            setGroupByLoyaltyLevel,
+            setSortMode: store.setSortMode,
             setOpenFilter,
             setSearchQuery: (query) => { clearRetainedCompletedQuests(); setSearchQuery(query); },
             setMode,

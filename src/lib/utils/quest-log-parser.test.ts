@@ -106,6 +106,41 @@ test("parseQuestLogFile inherits pvp mode from a prior multiline UserConfirmed p
     assert.equal(events[0]?.raidMode, "pvp");
 });
 
+test("parseQuestLogFile keeps seasonal websocket mode when UserConfirmed says deathmatch", () => {
+    const logText = `
+2026-08-27 03:14:08.841 NotificationManager: new params received url: ws:wss://wsn-pvp-season-02.escapefromtarkov.com/push/notifier/getwebsocket/token
+2026-08-27 03:22:39.296 Got notification | UserConfirmed
+{
+  "type": "userConfirmed",
+  "mode": "deathmatch"
+}
+2026-08-27 03:22:45.000 Got notification | ChatMessageReceived
+{
+  "message": {
+    "type": 12,
+    "templateId": "quest-seasonal successMessageText [prapor] [0]",
+    "uid": "54cb50c76803fa8b248b4571",
+    "hasRewards": false
+  }
+}
+2026-08-27 03:30:00.000 NotificationManager: new params received url: ws:wss://wsn-01.escapefromtarkov.com/push/notifier/getwebsocket/token
+2026-08-27 03:30:05.000 Got notification | ChatMessageReceived
+{
+  "message": {
+    "type": 10,
+    "templateId": "quest-regular description [prapor] [0]",
+    "uid": "54cb50c76803fa8b248b4571",
+    "hasRewards": false
+  }
+}`;
+
+    const events = parseQuestLogFile(logText, "push-notifications_000.log");
+
+    assert.equal(events.length, 2);
+    assert.equal(events[0]?.raidMode, "kord");
+    assert.equal(events[1]?.raidMode, "pvp");
+});
+
 test("dedupeQuestEvents collapses repeated deliveries within one second and keeps tally", () => {
     const events = parseQuestLogFile(
         `

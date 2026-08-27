@@ -2,6 +2,8 @@
 
 import {
     CheckCircle2,
+    ChevronDown,
+    ChevronRight,
     Circle,
     Crown,
     Crosshair,
@@ -16,10 +18,12 @@ import {
     RotateCcw,
     Search,
 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { getQuestIssuingTraderLoyaltyLevel } from "@/lib/utils/quest-trader-gates";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useQuestsContext } from "../QuestsContext";
+import { buildQuestUnlockImpactMap, sortQuestsForQuestView } from "../quest-sorting";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 import { QuestFilterSelectionPane } from "./QuestFilterBar";
 import {
@@ -37,32 +41,166 @@ export function QuestListPane() {
         highlightedQuestId,
         listMode,
         openFilter,
+        quests,
+        groupByTrader,
+        groupByLoyaltyLevel,
+        sortMode,
     } = useQuestWorkspace();
+    const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
+    const questOrderById = useMemo(
+        () => new Map(quests.map((quest, index) => [quest.id, index])),
+        [quests],
+    );
+    const unlockImpactById = useMemo(() => buildQuestUnlockImpactMap(quests), [quests]);
+    const sortedQuests = useMemo(() => {
+        return sortQuestsForQuestView(
+            filteredQuests,
+            sortMode,
+            questOrderById,
+            unlockImpactById,
+        );
+    }, [filteredQuests, questOrderById, sortMode, unlockImpactById]);
+    const toggleGroup = (groupId: string) => {
+        setCollapsedGroups((current) => {
+            const next = new Set(current);
+            if (next.has(groupId)) next.delete(groupId);
+            else next.add(groupId);
+            return next;
+        });
+    };
 
     if (openFilter) return <QuestFilterSelectionPane section={openFilter} />;
     if (listMode === "history") return <QuestHistoryList />;
 
     return (
         <div className="min-h-0 flex-1 overflow-y-auto scroll-smooth bg-[#0b0c0e]">
-            <div className="flex h-8 items-center justify-between border-b border-white/8 px-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-gray-600">
-                <span>Quest log</span>
-                <span>{filteredQuests.length} quests</span>
-            </div>
-            {filteredQuests.map((quest) => (
-                <QuestListItem
-                    key={quest.id}
-                    questId={quest.id}
-                    selected={selectedQuestId === quest.id}
-                    highlighted={highlightedQuestId === quest.id}
-                    onSelect={() => setSelectedQuestId(quest.id)}
-                />
-            ))}
+            <GroupedQuestRows
+                quests={sortedQuests}
+                groupByTrader={groupByTrader}
+                groupByLoyaltyLevel={groupByLoyaltyLevel}
+                collapsedGroups={collapsedGroups}
+                onToggleGroup={toggleGroup}
+                selectedQuestId={selectedQuestId}
+                highlightedQuestId={highlightedQuestId}
+                onSelectQuest={setSelectedQuestId}
+            />
             {filteredQuests.length === 0 && (
                 <div className="border-b border-dashed border-white/10 px-5 py-14 text-center text-sm text-gray-600">
                     No quests match these filters.
                 </div>
             )}
         </div>
+    );
+}
+
+function GroupedQuestRows({
+    quests,
+    groupByTrader,
+    groupByLoyaltyLevel,
+    collapsedGroups,
+    onToggleGroup,
+    selectedQuestId,
+    highlightedQuestId,
+    onSelectQuest,
+}: {
+    quests: ReturnType<typeof useQuestWorkspace>["quests"];
+    groupByTrader: boolean;
+    groupByLoyaltyLevel: boolean;
+    collapsedGroups: Set<string>;
+    onToggleGroup: (groupId: string) => void;
+    selectedQuestId: string | null;
+    highlightedQuestId: string | null;
+    onSelectQuest: (questId: string) => void;
+}) {
+    const renderRows = (groupQuests: typeof quests) => groupQuests.map((quest) => (
+        <QuestListItem
+            key={quest.id}
+            questId={quest.id}
+            selected={selectedQuestId === quest.id}
+            highlighted={highlightedQuestId === quest.id}
+            onSelect={() => onSelectQuest(quest.id)}
+        />
+    ));
+
+    const renderLoyaltyLevelGroups = (groupQuests: typeof quests, parentId = "all") => {
+        const groups = new Map<number, typeof quests>();
+        groupQuests.forEach((quest) => {
+            const level = getQuestIssuingTraderLoyaltyLevel(quest);
+            groups.set(level, [...(groups.get(level) ?? []), quest]);
+        });
+
+        return [...groups.entries()]
+            .sort(([left], [right]) => left - right)
+            .map(([level, loyaltyLevelQuests]) => {
+                const groupId = `${parentId}:loyalty-level:${level}`;
+                const collapsed = collapsedGroups.has(groupId);
+                return (
+                    <section key={groupId}>
+                        <QuestGroupHeader
+                            label={`Loyalty level ${level}`}
+                            count={loyaltyLevelQuests.length}
+                            collapsed={collapsed}
+                            nested
+                            onClick={() => onToggleGroup(groupId)}
+                        />
+                        {!collapsed && renderRows(loyaltyLevelQuests)}
+                    </section>
+                );
+            });
+    };
+
+    if (groupByTrader) {
+        const groups = new Map<string, typeof quests>();
+        quests.forEach((quest) => groups.set(quest.trader.id, [...(groups.get(quest.trader.id) ?? []), quest]));
+        return [...groups.entries()].map(([traderId, traderQuests]) => {
+            const groupId = `trader:${traderId}`;
+            const collapsed = collapsedGroups.has(groupId);
+            const trader = traderQuests[0].trader;
+            const traderImage = trader.image4xLink ?? trader.imageLink;
+            return (
+                <section key={groupId}>
+                    <QuestGroupHeader
+                        label={trader.name}
+                        count={traderQuests.length}
+                        collapsed={collapsed}
+                        image={traderImage}
+                        onClick={() => onToggleGroup(groupId)}
+                    />
+                    {!collapsed && (groupByLoyaltyLevel
+                        ? renderLoyaltyLevelGroups(traderQuests, groupId)
+                        : renderRows(traderQuests))}
+                </section>
+            );
+        });
+    }
+
+    if (groupByLoyaltyLevel) return renderLoyaltyLevelGroups(quests);
+    return renderRows(quests);
+}
+
+function QuestGroupHeader({ label, count, collapsed, onClick, image, nested = false }: {
+    label: string;
+    count: number;
+    collapsed: boolean;
+    onClick: () => void;
+    image?: string | null;
+    nested?: boolean;
+}) {
+    return (
+        <button
+            type="button"
+            aria-expanded={!collapsed}
+            onClick={onClick}
+            className={cn(
+                "flex w-full cursor-pointer items-center gap-2 border-b border-white/8 bg-[#0f1012] px-3 text-left text-[9px] font-semibold uppercase tracking-[0.16em] text-gray-500 transition-colors hover:bg-white/[0.045] hover:text-gray-300",
+                nested ? "h-7 pl-7" : "h-8",
+            )}
+        >
+            {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+            {image && <img src={image} alt="" className="h-4 w-4 rounded-full object-cover grayscale-[20%]" />}
+            <span className="min-w-0 flex-1 truncate">{label}</span>
+            <span className="font-mono font-normal tracking-normal text-gray-600">{count}</span>
+        </button>
     );
 }
 
@@ -264,12 +402,12 @@ function QuestListItem({
                     </div>
                 </div>
 
-                <div className="mt-0.5 flex min-w-0 items-center gap-2 text-[9px] text-gray-600">
+                <div className="mt-0.5 flex min-w-0 items-center gap-2 text-[10px] text-gray-500">
                     <span className="flex min-w-0 items-center gap-1">
                         {traderImage && (
                             <img src={traderImage} alt="" className="h-3.5 w-3.5 rounded-full object-cover" />
                         )}
-                        <span className="truncate">{quest.trader.name}</span>
+                        <span className="truncate font-medium">{quest.trader.name}</span>
                         <span
                             className="flex h-3.5 min-w-3.5 shrink-0 items-center justify-center text-tarkov-green/75"
                             title={`Requires ${quest.trader.name} loyalty level ${traderLoyaltyLevel}`}
@@ -291,11 +429,11 @@ function QuestListItem({
                     )}
                 </div>
 
-                <p className="mt-1 line-clamp-1 text-[10px] leading-4 text-gray-500">
+                <p className="mt-1 line-clamp-1 text-[11px] leading-4 text-gray-500">
                     {getQuestObjectiveSummary(quest)}
                 </p>
 
-                <div className="mt-1 flex min-w-0 items-center gap-2 text-[9px] text-gray-600">
+                <div className="mt-1 flex min-w-0 items-center gap-2 text-[10px] font-medium text-gray-500">
                     {quest.map && (
                         <span className="flex shrink-0 items-center gap-1">
                             <MapPin size={10} /> {quest.map.name}

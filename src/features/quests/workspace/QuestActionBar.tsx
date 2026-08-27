@@ -7,6 +7,7 @@ import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
 import { QuestSyncDialog } from "../components/QuestSyncDialog";
 import { QuestLogImportDialog } from "../components/QuestLogImportDialog";
+import { ENABLE_MANUAL_QUEST_SYNC } from "../quest-feature-flags";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 export function QuestActionBar({ quests }: { quests: FullQuest[] }) {
@@ -18,7 +19,7 @@ export function QuestActionBar({ quests }: { quests: FullQuest[] }) {
     const [importOpen, setImportOpen] = useState(false);
     return (
         <>
-            <div className="flex min-h-14 items-center gap-2 border-b border-white/10 bg-[#101113] px-3 sm:px-4">
+            <div className="flex min-h-14 items-center gap-2 bg-[#101113] px-3 sm:px-4">
                 <button
                     type="button"
                     aria-pressed={isMainNavHidden}
@@ -51,11 +52,15 @@ export function QuestActionBar({ quests }: { quests: FullQuest[] }) {
                     <button type="button" onClick={() => setSearchOpen(true)} className="inline-flex items-center gap-2 border border-white/8 bg-white/3 px-3 py-2 text-xs text-gray-400 transition-colors hover:border-white/20 hover:text-white"><Search size={14} /> Search</button>
                 )}
                 {!searchOpen && <div className="flex-1" />}
-                <button type="button" onClick={() => setSyncOpen(true)} className="hidden items-center gap-2 border border-white/8 bg-white/3 px-3 py-2 text-xs text-gray-400 transition-colors hover:border-white/20 hover:text-white sm:inline-flex"><SlidersHorizontal size={14} /> Sync</button>
+                {ENABLE_MANUAL_QUEST_SYNC && (
+                    <button type="button" onClick={() => setSyncOpen(true)} className="hidden items-center gap-2 border border-white/8 bg-white/3 px-3 py-2 text-xs text-gray-400 transition-colors hover:border-white/20 hover:text-white sm:inline-flex"><SlidersHorizontal size={14} /> Sync</button>
+                )}
                 <button type="button" onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 border border-white/8 bg-white/3 px-3 py-2 text-xs text-gray-400 transition-colors hover:border-white/20 hover:text-white"><Upload size={14} /> <span className="hidden sm:inline">Upload</span></button>
                 <button type="button" aria-pressed={mode === "planner"} onClick={() => setMode(mode === "planner" ? "details" : "planner")} className={cn("inline-flex items-center gap-2 border px-3 py-2 text-xs font-semibold transition-colors", mode === "planner" ? "border-tarkov-green/50 bg-tarkov-green/12 text-tarkov-green" : "border-white/8 bg-white/3 text-gray-300 hover:border-tarkov-green/35 hover:text-tarkov-green")}><Compass size={15} /> Raid planner</button>
             </div>
-            <QuestSyncDialog open={syncOpen} onOpenChange={setSyncOpen} />
+            {ENABLE_MANUAL_QUEST_SYNC && (
+                <QuestSyncDialog open={syncOpen} onOpenChange={setSyncOpen} />
+            )}
             <QuestLogImportDialog open={importOpen} onOpenChange={setImportOpen} quests={quests} />
         </>
     );

@@ -34,7 +34,7 @@ function FilterTrigger({
                 aria-expanded={open}
                 onClick={() => setOpenFilter(open ? null : section)}
                 className={cn(
-                    "flex h-14 w-full min-w-0 cursor-pointer items-center gap-2 border-r border-white/8 px-3 text-left transition-colors hover:bg-white/5",
+                    "flex h-14 w-full min-w-0 cursor-pointer items-center gap-2 px-3 text-left transition-colors hover:bg-white/5",
                     open && "bg-white/7 text-white",
                 )}
             >
@@ -107,16 +107,26 @@ export function QuestFilterBar() {
         selectedMapKeys,
         selectedStatuses,
         selectedObjectiveCategories,
+        groupByTrader,
+        groupByLoyaltyLevel,
     } = useQuestWorkspace();
     const selectedMapNames = maps.filter((map) => selectedMapKeys.has(map.key)).map((map) => map.name);
     const statusSummary = STATUS_OPTIONS.filter((option) => selectedStatuses.has(option.id)).map((option) => option.label);
 
     return (
-        <div className="flex border-b border-white/10 bg-[#101113]">
+        <div className="flex divide-x divide-white/8 border-b border-white/10 bg-[#101113]">
             <FilterTrigger section="traders" label="Traders" summary={<TraderFaces />} />
             <FilterTrigger section="maps" label="Map" summary={selectedMapNames.length === 0 ? "Any map" : selectedMapNames.length === 1 ? selectedMapNames[0] : `${selectedMapNames.length} selected`} />
             <FilterTrigger section="status" label="Status" summary={statusSummary.length === 3 ? "All states" : statusSummary.length ? statusSummary.join(", ") : "None"} />
-            <FilterTrigger section="types" label="Quest type" summary={selectedObjectiveCategories.size === 0 ? "Any type" : selectedObjectiveCategories.size === 1 ? OBJECTIVE_CATEGORY_LABELS[[...selectedObjectiveCategories][0]] : `${selectedObjectiveCategories.size} selected`} />
+            <FilterTrigger
+                section="filters"
+                label="Filter / sort"
+                summary={groupByTrader && groupByLoyaltyLevel
+                    ? "Trader + loyalty level"
+                    : selectedObjectiveCategories.size > 0
+                      ? `${selectedObjectiveCategories.size} quest types`
+                      : "Customise view"}
+            />
         </div>
     );
 }
@@ -259,8 +269,10 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
         selectedObjectiveCategories, toggleTrader, clearTraders,
         setFilterByTraderRequirements, toggleMap, clearMaps, toggleStatus, toggleObjectiveCategory,
         clearObjectiveCategories, statusByQuestId, setOpenFilter,
+        groupByTrader, groupByLoyaltyLevel, sortMode,
+        setGroupByTrader, setGroupByLoyaltyLevel, setSortMode,
     } = useQuestWorkspace();
-    const titles = { traders: "Select traders", maps: "Select maps", status: "Select quest status", types: "Select quest types" };
+    const titles = { traders: "Select traders", maps: "Select maps", status: "Select quest status", filters: "Filter / sort" };
     const orderedTraders = [...traders].sort((left, right) => {
         const leftRank = TRADER_ORDER.indexOf(normalizedTraderKey(left) as typeof TRADER_ORDER[number]);
         const rightRank = TRADER_ORDER.indexOf(normalizedTraderKey(right) as typeof TRADER_ORDER[number]);
@@ -303,8 +315,70 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
                 </>}
                 {section === "maps" && <><AnyRow active={selectedMapKeys.size === 0} onClick={clearMaps} count={quests.length} />{maps.map((map) => <MenuRow key={map.key} selected={selectedMapKeys.has(map.key)} onClick={() => toggleMap(map.key)} label={map.name} count={quests.filter((quest) => getQuestMapGroupsForQuest(quest).some((group) => group.key === map.key)).length} />)}</>}
                 {section === "status" && <>{STATUS_OPTIONS.map((option) => <MenuRow key={option.id} selected={selectedStatuses.has(option.id)} onClick={() => toggleStatus(option.id)} label={option.label} description={option.description} count={quests.filter((quest) => { const status = statusByQuestId.get(quest.id); return status?.status === option.id && (option.id === "completed" || !status.terminal); }).length} />)}<div className="mt-2 border-t border-white/8 px-3 py-2 text-[10px] leading-relaxed text-gray-600">Locked reasons include quest, level, loyalty, prestige, faction, and branch gates. Pinning is independent from quest status.</div></>}
-                {section === "types" && <><AnyRow active={selectedObjectiveCategories.size === 0} onClick={clearObjectiveCategories} count={quests.length} />{objectiveCategories.map((category) => <MenuRow key={category} selected={selectedObjectiveCategories.has(category)} onClick={() => toggleObjectiveCategory(category)} label={OBJECTIVE_CATEGORY_LABELS[category]} count={quests.filter((quest) => getQuestObjectiveCategories(quest).has(category)).length} />)}</>}
+                {section === "filters" && <>
+                    <FilterSectionTitle>Grouping</FilterSectionTitle>
+                    <ToggleRow
+                        checked={groupByTrader}
+                        onChange={setGroupByTrader}
+                        label="Group by trader"
+                        description="Separate quests by their issuing trader"
+                    />
+                    <ToggleRow
+                        checked={groupByLoyaltyLevel}
+                        onChange={setGroupByLoyaltyLevel}
+                        label="Group by loyalty level"
+                        description="Separate quests by the issuing trader's required LL"
+                    />
+
+                    <FilterSectionTitle>Sort</FilterSectionTitle>
+                    {SORT_OPTIONS.map((option) => (
+                        <MenuRow
+                            key={option.id}
+                            selected={sortMode === option.id}
+                            onClick={() => setSortMode(option.id)}
+                            label={option.label}
+                            description={option.description}
+                        />
+                    ))}
+
+                    <FilterSectionTitle>Quest types</FilterSectionTitle>
+                    <AnyRow active={selectedObjectiveCategories.size === 0} onClick={clearObjectiveCategories} count={quests.length} />
+                    {objectiveCategories.map((category) => <MenuRow key={category} selected={selectedObjectiveCategories.has(category)} onClick={() => toggleObjectiveCategory(category)} label={OBJECTIVE_CATEGORY_LABELS[category]} count={quests.filter((quest) => getQuestObjectiveCategories(quest).has(category)).length} />)}
+                </>}
             </div>
         </div>
+    );
+}
+
+const SORT_OPTIONS = [
+    { id: "default", label: "Quest chain", description: "Keep prerequisite quests together" },
+    { id: "level", label: "Player level", description: "Lowest required level first" },
+    { id: "xp", label: "Experience", description: "Highest XP reward first" },
+    { id: "unlockImpact", label: "Unlock impact", description: "Quests that unlock the most follow-ups first" },
+] as const;
+
+function FilterSectionTitle({ children }: { children: React.ReactNode }) {
+    return (
+        <div className="border-y border-white/8 bg-white/[0.025] px-3 py-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-gray-600 first:border-t-0">
+            {children}
+        </div>
+    );
+}
+
+function ToggleRow({ checked, onChange, label, description }: {
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+    label: string;
+    description: string;
+}) {
+    return (
+        <label className="flex cursor-pointer items-center justify-between gap-4 px-3 py-2.5 transition-colors hover:bg-white/5">
+            <span className="min-w-0">
+                <span className="block text-sm text-gray-200">{label}</span>
+                <span className="block text-[10px] text-gray-600">{description}</span>
+            </span>
+            <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="peer sr-only" />
+            <span className="relative h-5 w-9 shrink-0 rounded-full bg-white/10 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-gray-500 after:transition-transform peer-checked:bg-tarkov-green/25 peer-checked:after:translate-x-4 peer-checked:after:bg-tarkov-green peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-tarkov-green" />
+        </label>
     );
 }
