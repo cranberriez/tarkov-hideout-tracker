@@ -1,0 +1,86 @@
+{
+    "version": 1,
+    "series": [
+        {
+            "id": "gunsmith",
+            "name": "Gunsmith",
+            "traderId": "5a7c2eca46aef81a7ca2145d",
+            "members": [
+                { "questId": "5ae327c886f7745c7b3f2f3f", "order": 1 },
+                { "questId": "5ae3270f86f77445ba41d4dd", "order": 2 },
+                { "questId": "5ae3277186f7745973054106", "order": 3 },
+                { "questId": "5ac2426c86f774138762edfe", "order": 4 },
+                { "questId": "5ae3280386f7742a41359364", "order": 5 },
+                { "questId": "5ac2428686f77412450b42bf", "order": 6 },
+                { "questId": "5ac244eb86f7741356335af1", "order": 7 },
+                { "questId": "5ae3267986f7742a413592fe", "order": 8 },
+                { "questId": "5ac23c6186f7741247042bad", "order": 9 },
+                { "questId": "5b47799d86f7746c5d6a5fd8", "order": 10 },
+                { "questId": "639872f9decada40426d3447", "order": 11 },
+                { "questId": "639872fa9b4fb827b200d8e5", "order": 12 },
+                { "questId": "639872fc93ae507d5858c3a6", "order": 13 }
+            ]
+        },
+        {
+            "id": "gunsmith-master",
+            "name": "Gunsmith Master",
+            "traderId": "5a7c2eca46aef81a7ca2145d",
+            "members": [
+                { "questId": "639872fe8871e1272b10ccf6", "order": 1 },
+                { "questId": "5ac244c486f77413e12cf945", "order": 2 },
+                { "questId": "5ac242ab86f77412464f68b4", "order": 3 },
+                { "questId": "5b47749f86f7746c5d6a5fd4", "order": 4 },
+                { "questId": "5b477b6f86f7747290681823", "order": 5 },
+                { "questId": "639873003693c63d86328f25", "order": 6 },
+                { "questId": "5b477f7686f7744d1b23c4d2", "order": 7 },
+                { "questId": "63987301e11ec11ff5504036", "order": 8 },
+                { "questId": "5b47825886f77468074618d3", "order": 9 },
+                { "questId": "64f83bb69878a0569d6ecfbe", "order": 10 },
+                { "questId": "64f83bcdde58fc437700d8fa", "order": 11 },
+                { "questId": "676529af9c90953d090882e7", "order": 12 },
+                { "questId": "64f83bd983cfca080a362c82", "order": 13 }
+            ]
+        },
+        {
+            "id": "the-tarkov-shooter",
+            "name": "The Tarkov Shooter",
+            "traderId": "5c0647fdd443bc2504c2d371",
+            "members": [
+                { "questId": "5bc4776586f774512d07cf05", "order": 1 },
+                { "questId": "5bc479e586f7747f376c7da3", "order": 2 },
+                { "questId": "5bc47dbf86f7741ee74e93b9", "order": 3 },
+                { "questId": "5bc480a686f7741af0342e29", "order": 4 },
+                { "questId": "5bc4826c86f774106d22d88b", "order": 5 },
+                { "questId": "5bc4836986f7740c0152911c", "order": 6 },
+                { "questId": "5bc4856986f77454c317bea7", "order": 7 },
+                { "questId": "5bc4893c86f774626f5ebf3e", "order": 8 }
+            ]
+        },
+        {
+            "id": "the-punisher",
+            "name": "The Punisher",
+            "traderId": "54cb50c76803fa8b248b4571",
+            "members": [
+                { "questId": "59c512ad86f7741f0d09de9b", "order": 1 },
+                { "questId": "59c50a9e86f7745fef66f4ff", "order": 2 },
+                { "questId": "59c50c8886f7745fed3193bf", "order": 3 },
+                { "questId": "59ca264786f77445a80ed044", "order": 4 },
+                { "questId": "59ca29fb86f77445ab465c87", "order": 5 },
+                { "questId": "59ca2eb686f77445a80ed049", "order": 6 }
+            ]
+        },
+        {
+            "id": "health-care-privacy",
+            "name": "Health Care Privacy",
+            "traderId": "54cb57776803fa99248b456e",
+            "members": [
+                { "questId": "5a68661a86f774500f48afb0", "order": 1 },
+                { "questId": "5a68663e86f774501078f78a", "order": 2 },
+                { "questId": "5a68665c86f774255929b4c7", "order": 3 },
+                { "questId": "5a68667486f7742607157d28", "order": 4 },
+                { "questId": "5a68669a86f774255929b4d4", "order": 5 },
+                { "questId": "669fa3a3ad7f1eac2607ed48", "order": 6 }
+            ]
+        }
+    ]
+}

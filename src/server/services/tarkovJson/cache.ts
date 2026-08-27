@@ -1,5 +1,5 @@
 import type { TimedResponse } from "@/types";
-import { PROGRESSION_DATA_FROZEN } from "@/lib/cfg/cacheVersions";
+import { PROGRESSION_DATA_FROZEN } from "../../../lib/cfg/cacheVersions";
 
 export function parseNonEmptyTimedResponse<TPayload>(
     cachedBody: unknown,

@@ -1,6 +1,6 @@
 # API Routes & Server Services
 
-The app uses **no public API routes for hideout, items, quest, or market price page data**. Page data fetching happens in server components/services and is delivered to client components via React context or server props. `src/server/services/tarkovData.ts` selects the JSON (default) or GraphQL provider without changing page imports. The only public data-mutation route is the Vercel cron endpoint.
+The app uses **no public API routes for hideout, items, quest, or market price page data**. Page data fetching happens in server components/services and is delivered to client components via React context or server props. `src/server/services/tarkovData.ts` routes all quest data through the Tarkov.dev JSON API; its legacy provider selection applies only to the remaining non-quest services. The only public data-mutation route is the Vercel cron endpoint.
 
 For the original plan that included public routes (`/api/hideout/stations`, `/api/market/items`, etc.), see git history. That pattern was superseded by the server-service + context architecture described in `data-and-price-context-architecture.md`.
 
@@ -66,9 +66,9 @@ Called by the cron route only. Fetches volatile flea market fields and `sellFor`
 
 ### `getCachedQuestData()`
 
-**File:** `src/server/services/quests.ts`
+**File:** `src/server/services/questsJson.ts`
 
-Fetches Tarkov.dev tasks and filters the result to quests that have `giveItem` objectives. Each returned quest keeps only `giveItem` objectives. This is the lighter quest shape used when full objective detail is not needed.
+Fetches Tarkov.dev's `/regular/tasks` JSON dataset and filters the result to quests that have `giveItem` objectives. Each returned quest keeps only `giveItem` objectives. This is the lighter quest shape used when full objective detail is not needed.
 
 ```ts
 TimedResponse<{ quests: Quest[] }>;
@@ -76,9 +76,9 @@ TimedResponse<{ quests: Quest[] }>;
 
 ### `getCachedFullQuestData()`
 
-**File:** `src/server/services/quests.ts`
+**File:** `src/server/services/questsJson.ts`
 
-Fetches full Tarkov.dev task data for normal PMC quest progression, including all objective types, fail conditions, maps, trader requirements, prestige requirements, and trader images. This is the current source for both `/items` quest item metadata and `/quests`.
+Fetches and hydrates the full Tarkov.dev `/regular/tasks` JSON dataset, including level-0 quests, all objective types, fail conditions, maps, trader requirements, prestige requirements, and trader images. Tarkov 1.1 uses `minPlayerLevel: 0` for some normal PMC quest lines, so player level is no longer used as a server-side inclusion filter. This is the only runtime quest provider and is the current source for both `/items` quest item metadata and `/quests`.
 
 ```ts
 TimedResponse<{ quests: FullQuest[] }>;

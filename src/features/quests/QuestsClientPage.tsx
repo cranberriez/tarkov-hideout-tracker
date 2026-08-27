@@ -11,7 +11,6 @@ import { QuestsList } from "./components/QuestsList";
 import { QuestsQuickGuide } from "./components/QuestsQuickGuide";
 import { QuestsSearchBar } from "./components/QuestsSearchBar";
 import { QuestsSyncBar } from "./components/QuestsSyncBar";
-import { QuestsTree } from "./components/QuestsTree";
 import { SlidersIcon } from "./components/quest-ui";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { QuestDetailModal } from "./QuestDetailModal";
@@ -35,10 +34,6 @@ function QuestsContent({
 }: {
     questNavigationRequest: QuestNavigationRequest | null;
 }) {
-    const { viewMode } = useQuestsContext();
-    if (viewMode === "tree") {
-        return <QuestsTree questNavigationRequest={questNavigationRequest} />;
-    }
     return <QuestsList questNavigationRequest={questNavigationRequest} />;
 }
 

@@ -85,7 +85,7 @@ Items below the `cheapPriceThreshold` (default 5,000 ₽). Can be hidden from th
 - Hideout station structure (from Tarkov.dev GraphQL, cached 12h)
 - Required item metadata (from Tarkov.dev, cached 12h)
 - Market prices for PVP and PVE (from Tarkov.dev GraphQL, refreshed daily via cron)
-- Quest data (from Tarkov.dev GraphQL, cached 12h) is fetched by pages that need it. `/quests` receives full quest data as server props and derives trader/map lists from that data.
+- Quest data (from the Tarkov.dev JSON API, cached in Redis) is fetched by pages that need it. `/quests` receives full quest data as server props and derives trader/map lists from that data.
 
 See `state-management.md` for store shapes and `data-and-price-context-architecture.md` for the server data flow.
 
@@ -108,13 +108,12 @@ See `state-management.md` for store shapes and `data-and-price-context-architect
 
 | Source                              | What it provides                                                             |
 | ----------------------------------- | ---------------------------------------------------------------------------- |
-| Tarkov.dev JSON API                 | Default source for station, item, trader, quest, map, and flea-price data     |
-| Tarkov.dev GraphQL                  | Station structure, item metadata, trader/skill info, quest data, trader list |
-| Tarkov.dev GraphQL                  | Station structure, item metadata, trader/skill info, quest data, and flea prices |
+| Tarkov.dev JSON API                 | Exclusive quest source and default source for station, item, trader, map, and flea-price data |
+| Tarkov.dev GraphQL                  | Legacy optional provider for non-quest station, item, trader, and flea-price data |
 | `wiki-data.json` + `foundInRaid.ts` | Manual overrides for requirements and FiR flags                              |
 | localStorage                        | All user progress and preferences                                            |
 
-The server selects the JSON or GraphQL implementation through `TARKOV_DATA_SOURCE`; see `tarkov-json-api.md`.
+The server selects the JSON or GraphQL implementation for remaining non-quest data through `TARKOV_DATA_SOURCE`. Quest data always uses JSON; see `tarkov-json-api.md`.
 
 ---
 

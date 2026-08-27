@@ -15,10 +15,6 @@ import {
     getJsonHideoutRequiredItems,
 } from "@/server/services/itemsJson";
 import {
-    getCachedFullQuestData as getCachedGraphqlFullQuestData,
-    getCachedQuestData as getCachedGraphqlQuestData,
-} from "@/server/services/quests";
-import {
     getCachedJsonFullQuestData,
     getCachedJsonQuestData,
 } from "@/server/services/questsJson";
@@ -48,12 +44,10 @@ export const getCachedHideoutRequiredItems =
         ? getCachedJsonHideoutRequiredItems
         : getCachedGraphqlHideoutRequiredItems;
 
-export const getCachedQuestData =
-    tarkovDataSource === "json" ? getCachedJsonQuestData : getCachedGraphqlQuestData;
-export const getCachedFullQuestData =
-    tarkovDataSource === "json"
-        ? getCachedJsonFullQuestData
-        : getCachedGraphqlFullQuestData;
+// Quest data always comes from Tarkov.dev's JSON API. GraphQL is deprecated and
+// must not be re-enabled for quest consumers through TARKOV_DATA_SOURCE.
+export const getCachedQuestData = getCachedJsonQuestData;
+export const getCachedFullQuestData = getCachedJsonFullQuestData;
 
 export const getCachedTraders =
     tarkovDataSource === "json" ? getCachedJsonTraders : getCachedGraphqlTraders;

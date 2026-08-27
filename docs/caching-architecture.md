@@ -14,6 +14,25 @@ Set `CACHE_ENABLED=false` in `.env` while running in development to bypass both 
 
 The toggle is intentionally ignored outside development. Production and other environments always use the normal cache behavior, even if `CACHE_ENABLED=false` is present.
 
+## Development Redis Namespace
+
+When `NODE_ENV === "development"` and Redis caching is enabled, the shared
+`src/server/redis.ts` wrapper prefixes every Redis key with `dev:`. This covers
+body keys, `:meta` keys, market-price previous/legacy fallback keys, and both
+reads and writes from every Redis-backed service. For example:
+
+```text
+production: quests:full:v10
+development: dev:quests:full:v10
+```
+
+The production form remains byte-for-byte unchanged. The namespace is applied at
+the Redis boundary, so individual service key definitions, cache version numbers,
+Next.js `unstable_cache` key arrays, and localStorage persistence do not change.
+`NODE_ENV` values other than exactly `development` also use the historical keys.
+When `CACHE_ENABLED=false` disables the development Redis client, no Redis keys
+are read or written.
+
 ---
 
 ## Redis Keys
@@ -24,8 +43,8 @@ Most Redis-backed services store a body key plus a `:meta` key containing `{ upd
 | ---------------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------- | ---------- |
 | `hideout:stations:v6` + `:meta`                      | Full station list                                              | `getHideoutStations()` on cache miss/stale data      | 12h        |
 | `hideout:items:filtered:v1` + `:meta`                | Hideout-required item metadata                                 | `getHideoutRequiredItems()` on cache miss/stale data | 12h        |
-| `quests:all:v4` + `:meta`                            | Quests with `giveItem` objectives only                         | `getQuestData()` on cache miss/stale data            | 12h        |
-| `quests:full:v7` + `:meta`                           | Full quest list, all objective types, map/trader/prestige/reputation reward data | `getFullQuestData()` on cache miss/stale data        | 12h        |
+| `quests:all:v5` + `:meta`                            | Quests with `giveItem` objectives only                         | `getQuestData()` on cache miss/stale data            | 12h        |
+| `quests:full:v10` + `:meta`                          | Full quest list, quest splash images, all objective types, map/trader/prestige/reputation reward data | `getFullQuestData()` on cache miss/stale data        | 12h        |
 | `traders:all:v1` + `:meta`                           | Full trader list                                               | `getTraders()` on cache miss/stale data              | 12h        |
 | `item-market-data:filtered:v3:pvp` + `:meta`          | PVP hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshTarkovDevMarketPrices("PVP")`)     | Daily cron |
 | `item-market-data:filtered:v3:pve` + `:meta`          | PVE hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshTarkovDevMarketPrices("PVE")`)     | Daily cron |

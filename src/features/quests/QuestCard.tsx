@@ -6,6 +6,8 @@ import { AlertTriangle } from "lucide-react";
 import type { FullQuest } from "@/types";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
+import { formatQuestTraderGate } from "@/lib/utils/quest-trader-gates";
+import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";
 import { useQuestsContext } from "./QuestsContext";
 import { isQuestAvailableForProfile } from "./quest-sync";
 import {
@@ -192,7 +194,7 @@ export function QuestCard({
                   },
               ]
             : []),
-        ...(quest.minPlayerLevel != null
+        ...(hasDisplayQuestLevel(quest.minPlayerLevel)
             ? [
                   {
                       key: "level",
@@ -225,7 +227,7 @@ export function QuestCard({
         ...quest.traderRequirements.map((req) => ({
             key: `trader-${req.id}`,
             className: "text-cyan-400/80 bg-cyan-400/10 border-cyan-400/20",
-            label: `${req.trader.name} LL${req.value}`,
+            label: formatQuestTraderGate(req),
         })),
         ...(quest.requiredPrestige
             ? [
@@ -237,6 +239,56 @@ export function QuestCard({
               ]
             : []),
     ];
+
+    const cardHeader = (
+        <QuestCardHeader
+            quest={quest}
+            sortMetadata={sortMetadata}
+            completed={completed}
+            failed={failed}
+            disabled={disabled}
+            ignored={ignored}
+            pinned={pinned}
+            available={available}
+            canFail={canFail}
+            forceExpand={forceExpand}
+            expanded={isExpanded}
+            debugOpen={debugOpen}
+            showDebugButton={showDebugButton}
+            completedRequirementCount={completedRequirementCount}
+            hasFailWarning={hasFailWarning}
+            hasMutuallyExclusiveBranch={hasMutuallyExclusiveBranch}
+            questHasRequiredKeys={questHasRequiredKeys}
+            onToggleExpanded={() => setExpanded((v) => !v)}
+            onToggleDebug={() => setDebugOpen((v) => !v)}
+            onToggleComplete={() => requestToggleQuestCompletion(quest.id)}
+            onFailQuest={() => requestFailQuest(quest.id)}
+            onResetQuestStatus={() => requestResetQuestStatus(quest.id)}
+            onTogglePinned={() => togglePinnedQuest(quest.id)}
+            onToggleIgnored={() => toggleIgnoredQuest(quest.id)}
+        />
+    );
+    const expandedContent = isExpanded ? (
+        <QuestCardExpandedContent
+            quest={quest}
+            mobileSummaryChips={mobileSummaryChips}
+            mobileMetadataChips={mobileMetadataChips}
+            pinned={pinned}
+            ignored={ignored}
+            disabled={disabled}
+            hasFailWarning={hasFailWarning}
+            failedRequirementIds={failedRequirementIds}
+            questsFailedByCompletingThisQuest={questsFailedByCompletingThisQuest}
+            completedRequirementCount={completedRequirementCount}
+            prerequisiteQuests={prerequisiteQuests}
+            leadsToQuests={leadsToQuests}
+            questsById={questsById}
+            onItemClick={onItemClick ?? undefined}
+            onQuestLinkClick={onQuestLinkClick}
+            onTogglePinned={() => togglePinnedQuest(quest.id)}
+            onToggleIgnored={() => toggleIgnoredQuest(quest.id)}
+        />
+    ) : null;
 
     return (
         <div
@@ -271,61 +323,14 @@ export function QuestCard({
                 className,
             )}
         >
-            <QuestCardHeader
-                quest={quest}
-                sortMetadata={sortMetadata}
-                completed={completed}
-                failed={failed}
-                disabled={disabled}
-                ignored={ignored}
-                pinned={pinned}
-                available={available}
-                canFail={canFail}
-                forceExpand={forceExpand}
-                expanded={isExpanded}
-                debugOpen={debugOpen}
-                showDebugButton={showDebugButton}
-                completedRequirementCount={completedRequirementCount}
-                hasFailWarning={hasFailWarning}
-                hasMutuallyExclusiveBranch={hasMutuallyExclusiveBranch}
-                questHasRequiredKeys={questHasRequiredKeys}
-                onToggleExpanded={() => setExpanded((v) => !v)}
-                onToggleDebug={() => setDebugOpen((v) => !v)}
-                onToggleComplete={() => requestToggleQuestCompletion(quest.id)}
-                onFailQuest={() => requestFailQuest(quest.id)}
-                onResetQuestStatus={() => requestResetQuestStatus(quest.id)}
-                onTogglePinned={() => togglePinnedQuest(quest.id)}
-                onToggleIgnored={() => toggleIgnoredQuest(quest.id)}
-            />
-
+            {cardHeader}
             {!isExpanded && !completed && allHandInItems.length > 0 && (
                 <QuestCompactItemStrip
                     items={allHandInItems}
                     onItemClick={onItemClick ?? undefined}
                 />
             )}
-
-            {isExpanded && (
-                <QuestCardExpandedContent
-                    quest={quest}
-                    mobileSummaryChips={mobileSummaryChips}
-                    mobileMetadataChips={mobileMetadataChips}
-                    pinned={pinned}
-                    ignored={ignored}
-                    disabled={disabled}
-                    hasFailWarning={hasFailWarning}
-                    failedRequirementIds={failedRequirementIds}
-                    questsFailedByCompletingThisQuest={questsFailedByCompletingThisQuest}
-                    completedRequirementCount={completedRequirementCount}
-                    prerequisiteQuests={prerequisiteQuests}
-                    leadsToQuests={leadsToQuests}
-                    questsById={questsById}
-                    onItemClick={onItemClick ?? undefined}
-                    onQuestLinkClick={onQuestLinkClick}
-                    onTogglePinned={() => togglePinnedQuest(quest.id)}
-                    onToggleIgnored={() => toggleIgnoredQuest(quest.id)}
-                />
-            )}
+            {expandedContent}
 
             {/* Debug JSON panel */}
             {debugOpen && (

@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import type { FullQuest } from "@/types";
 import { cn } from "@/lib/utils";
+import { formatQuestTraderGate } from "@/lib/utils/quest-trader-gates";
+import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -124,17 +126,17 @@ export function QuestCardHeader({
     onToggleIgnored,
 }: QuestCardHeaderProps) {
     const showStatusChip = failed || disabled || ignored || !available;
-
     return (
         <div
             className={cn(
-                "flex items-center gap-2 px-2.5 py-2.5 sm:gap-2.5 sm:px-3",
+                "relative px-2.5 py-2.5 sm:px-3",
                 !forceExpand && "cursor-pointer",
             )}
             onClick={() => {
                 if (!forceExpand) onToggleExpanded();
             }}
         >
+            <div className="relative z-10 flex w-full items-center gap-2 sm:gap-2.5">
             <button
                 onClick={(e) => {
                     e.stopPropagation();
@@ -219,10 +221,12 @@ export function QuestCardHeader({
                 <img
                     src={quest.trader.image4xLink ?? quest.trader.imageLink ?? ""}
                     alt={quest.trader.name}
-                    className="w-6 h-6 rounded-full shrink-0 object-cover"
+                    className="h-6 w-6 shrink-0 rounded-full object-cover"
                 />
             ) : (
-                <div className="w-6 h-6 rounded-full shrink-0 bg-white/10 flex items-center justify-center text-[10px] text-gray-400">
+                <div
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] text-gray-400"
+                >
                     {quest.trader.name[0]}
                 </div>
             )}
@@ -306,7 +310,7 @@ export function QuestCardHeader({
                         Branch
                     </span>
                 )}
-                {quest.minPlayerLevel != null && (
+                {hasDisplayQuestLevel(quest.minPlayerLevel) && (
                     <span
                         className={`${questMetaChipBaseClass} hidden text-gray-400 bg-black/40 border-white/10 sm:inline-flex`}
                     >
@@ -351,9 +355,9 @@ export function QuestCardHeader({
                     <span
                         key={req.id}
                         className={`${questMetaChipBaseClass} text-cyan-400/80 bg-cyan-400/10 border-cyan-400/20`}
-                        title={`${req.trader.name} loyalty ${req.compareMethod} ${req.value}`}
+                        title={formatQuestTraderGate(req)}
                     >
-                        {req.trader.name} LL{req.value}
+                        {formatQuestTraderGate(req)}
                     </span>
                 ))}
                 {quest.requiredPrestige && (
@@ -415,6 +419,7 @@ export function QuestCardHeader({
                         className="shrink-0 text-gray-500"
                     />
                 ))}
+            </div>
         </div>
     );
 }

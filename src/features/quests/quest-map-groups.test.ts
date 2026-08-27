@@ -29,6 +29,7 @@ function makeQuest(overrides: Partial<FullQuest>): FullQuest {
         },
         taskRequirements: [],
         traderRequirements: [],
+        otherRequirements: [],
         requiredPrestige: null,
         objectives: [],
         ...overrides,

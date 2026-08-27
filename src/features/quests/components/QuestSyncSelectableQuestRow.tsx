@@ -1,6 +1,8 @@
 "use client";
 
 import type { FullQuest } from "@/types";
+import { formatQuestTraderGate } from "@/lib/utils/quest-trader-gates";
+import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";
 
 export function QuestSyncSelectableQuestRow({
     quest,
@@ -32,11 +34,13 @@ export function QuestSyncSelectableQuestRow({
             <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm text-white">{quest.name}</span>
                 <span className="mt-1 flex flex-wrap gap-2 text-[10px] uppercase tracking-wide text-gray-500">
-                    {quest.minPlayerLevel != null && <span>Lv.{quest.minPlayerLevel}</span>}
+                    {hasDisplayQuestLevel(quest.minPlayerLevel) && (
+                        <span>Lv.{quest.minPlayerLevel}</span>
+                    )}
                     {quest.requiredPrestige && <span>P{quest.requiredPrestige.prestigeLevel}</span>}
                     {quest.traderRequirements.map((requirement) => (
                         <span key={requirement.id}>
-                            {requirement.trader.name} LL{requirement.value}
+                            {formatQuestTraderGate(requirement)}
                         </span>
                     ))}
                     {checked && <span className="text-amber-300">ACTIVE</span>}

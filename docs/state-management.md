@@ -7,7 +7,7 @@ Client-side state lives in two Zustand stores. Server-fetched data (stations, it
 ## `useUserStore` — User Progress & Preferences
 
 **File:** `src/lib/stores/useUserStore.ts`
-**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 14.
+**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 15.
 
 Do not change the storage key. Bump the version and add a migration only when the persisted state shape requires it.
 
@@ -48,7 +48,8 @@ itemsSize: "Icon" | "Compact" | "Expanded";
 playerLevel: number;
 prestigeLevel: number;
 questTraderLoyaltyLevels: Record<string, number>;
-questViewMode: "byMap" | "byTrader" | "tree" | "flatList";
+questViewMode: "byMap" | "byTrader" | "flatList";
+questCardSize: "small" | "large"; // Legacy compatibility field; quest cards use one compact layout.
 questSortMode: "default" | "level" | "xp" | "unlockImpact";
 questSelectedTraders: string[];
 questFaction: "USEC" | "BEAR" | null;

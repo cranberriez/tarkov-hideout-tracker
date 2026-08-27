@@ -35,6 +35,7 @@ function makeQuest(
             status: ["complete"],
         })),
         traderRequirements: [],
+        otherRequirements: [],
         requiredPrestige: null,
         objectives: [],
         ...questOverrides,

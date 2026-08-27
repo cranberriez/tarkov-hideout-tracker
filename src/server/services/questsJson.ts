@@ -4,6 +4,10 @@ import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { redis } from "@/server/redis";
 import { fetchTarkovJsonDataset } from "@/server/services/tarkovJson/client";
 import {
+    mapQuestOtherRequirements,
+    type RawQuestOtherRequirement,
+} from "@/server/services/quest-requirements";
+import {
     isProgressionCacheUsable,
     parseNonEmptyTimedResponse,
 } from "@/server/services/tarkovJson/cache";
@@ -128,6 +132,7 @@ interface JsonTask {
     trader: string;
     taskRequirements?: JsonTaskRequirement[];
     traderRequirements?: JsonTraderRequirement[];
+    otherRequirements?: RawQuestOtherRequirement[];
     failConditions?: JsonFailCondition[];
     requiredPrestige?: string | null;
     finishRewards?: JsonRewardSet;
@@ -464,9 +469,7 @@ async function fetchAndMapFullQuests(): Promise<FullQuest[]> {
         translateHideout: hideoutDataset.translate,
     };
 
-    return rawTasks
-        .filter((task) => task.minPlayerLevel == null || task.minPlayerLevel >= 1)
-        .map((task): FullQuest => {
+    return rawTasks.map((task): FullQuest => {
             const trader = context.traders[task.trader];
             if (!trader) throw new Error(`Tarkov JSON quest trader ${task.trader} was not found`);
 
@@ -530,6 +533,7 @@ async function fetchAndMapFullQuests(): Promise<FullQuest[]> {
                         };
                     })
                     .filter((requirement): requirement is NonNullable<typeof requirement> => requirement !== null),
+                otherRequirements: mapQuestOtherRequirements(task.otherRequirements),
                 requiredPrestige,
                 finishTraderStandingRewards: mapStandingRewards(task.finishRewards, context),
                 failureTraderStandingRewards: mapStandingRewards(task.failureOutcome, context),
@@ -537,7 +541,7 @@ async function fetchAndMapFullQuests(): Promise<FullQuest[]> {
                     mapObjective(objective, context),
                 ),
             };
-        });
+    });
 }
 
 export async function getJsonFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {

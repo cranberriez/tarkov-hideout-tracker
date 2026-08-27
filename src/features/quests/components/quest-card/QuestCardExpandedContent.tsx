@@ -6,6 +6,7 @@ import { ObjectiveRow } from "./QuestObjectiveRows";
 import { QuestRelationChip } from "./QuestRelationChip";
 import { QuestActionButton } from "./QuestCardHeader";
 import { questDetailChipBaseClass } from "./styles";
+import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";
 import type { QuestChipData, QuestRef } from "./types";
 
 interface QuestCardExpandedContentProps {
@@ -200,13 +201,13 @@ export function QuestCardExpandedContent({
                 </div>
             </div>
 
-            {(quest.minPlayerLevel != null || quest.taskRequirements.length > 0) && (
+            {(hasDisplayQuestLevel(quest.minPlayerLevel) || quest.taskRequirements.length > 0) && (
                 <div className="space-y-1.5">
                     <span className="text-[10px] uppercase tracking-wider text-gray-600 font-bold">
                         Requirements
                     </span>
                     <div className="flex flex-wrap gap-1.5">
-                        {quest.minPlayerLevel != null && (
+                        {hasDisplayQuestLevel(quest.minPlayerLevel) && (
                             <span
                                 className={`${questDetailChipBaseClass} text-gray-400 bg-black/40 border-white/10`}
                             >

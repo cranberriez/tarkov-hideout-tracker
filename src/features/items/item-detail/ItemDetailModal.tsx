@@ -18,6 +18,7 @@ import { deriveQuestAnyOfGroups, deriveQuestItemState } from "@/lib/utils/quest-
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 import { formatRoubles } from "@/lib/utils/market-price";
+import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";
 
 export interface ItemDetailModalProps {
     item: ItemDetails | null;
@@ -434,7 +435,7 @@ export function ItemDetailModal({
                                             <div className="flex items-center justify-between gap-2 min-w-0">
                                                 <span className="truncate text-xs text-gray-500">
                                                     {quest.traderName}
-                                                    {quest.minPlayerLevel != null
+                                                    {hasDisplayQuestLevel(quest.minPlayerLevel)
                                                         ? ` · Lv. ${quest.minPlayerLevel}`
                                                         : ""}
                                                 </span>
@@ -521,7 +522,7 @@ export function ItemDetailModal({
                                         <div className="flex items-center justify-between gap-2 min-w-0">
                                             <span className="truncate text-xs text-gray-500">
                                                 {group.traderName}
-                                                {group.minPlayerLevel != null
+                                                {hasDisplayQuestLevel(group.minPlayerLevel)
                                                     ? ` - Lv. ${group.minPlayerLevel}`
                                                     : ""}
                                                 {" - "}

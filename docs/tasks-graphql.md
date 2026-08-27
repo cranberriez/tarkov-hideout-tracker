@@ -98,7 +98,6 @@ query Tasks {
 | Field | Reason to omit |
 |---|---|
 | `tarkovDataId` | Internal Tarkov ID, not needed for display |
-| `taskImageLink` | Task splash art — not used in current card design |
 | `map` | Top-level map hint; objective-level `maps` is more precise |
 | `startRewards` | Not used |
 | `finishRewards` | Only `traderStanding` is used for quest card reputation display |
@@ -215,7 +214,7 @@ Both services use the centralized `CACHE_VERSIONS` in `src/lib/cfg/cacheVersions
 ```ts
 export const CACHE_VERSIONS = {
   // ...existing keys...
-  quests: 3,   // bump when query shape changes
+  quests: 5,   // bump when query shape changes
   traders: 1,
 }
 ```

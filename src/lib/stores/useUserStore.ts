@@ -15,7 +15,8 @@ export type GameMode = "PVP" | "PVE";
 export type ItemSize = "Icon" | "Compact" | "Expanded";
 export type ItemSourceFilter = "all" | "hideout" | "quest";
 export type ItemQuestVisibilityMode = "available" | "nextLayer" | "allFuture" | "custom";
-export type QuestViewMode = "byMap" | "byTrader" | "tree" | "flatList";
+export type QuestViewMode = "byMap" | "byTrader" | "flatList";
+export type QuestCardSize = "small" | "large";
 export type QuestSortMode = "default" | "level" | "xp" | "unlockImpact";
 export type QuestVisibilityMode = "all" | "hideLocked" | "activeDepth";
 
@@ -61,6 +62,7 @@ interface UserState {
 
     // Quest page filter preferences (persisted)
     questViewMode: QuestViewMode;
+    questCardSize: QuestCardSize;
     questSortMode: QuestSortMode;
     questSelectedTraders: string[];
     questFaction: "USEC" | "BEAR" | null;
@@ -146,6 +148,7 @@ interface UserState {
     setQuestTraderLoyaltyLevel: (traderId: string, level: number) => void;
 
     setQuestViewMode: (mode: QuestViewMode) => void;
+    setQuestCardSize: (size: QuestCardSize) => void;
     setQuestSortMode: (mode: QuestSortMode) => void;
     setQuestSelectedTraders: (ids: string[]) => void;
     setQuestFaction: (f: "USEC" | "BEAR" | null) => void;
@@ -217,7 +220,8 @@ export const useUserStore = create<UserState>()(
             prestigeLevel: 0,
             questTraderLoyaltyLevels: {},
 
-            questViewMode: "tree",
+            questViewMode: "byTrader",
+            questCardSize: "small",
             questSortMode: "default",
             questSelectedTraders: [],
             questFaction: "USEC",
@@ -414,6 +418,7 @@ export const useUserStore = create<UserState>()(
                 })),
 
             setQuestViewMode: (mode) => set({ questViewMode: mode }),
+            setQuestCardSize: (size) => set({ questCardSize: size }),
             setQuestSortMode: (mode) => set({ questSortMode: mode }),
             setQuestSelectedTraders: (ids) => set({ questSelectedTraders: ids }),
             setQuestFaction: (f) => set({ questFaction: f }),
@@ -640,7 +645,8 @@ export const useUserStore = create<UserState>()(
                     playerLevel: 1,
                     prestigeLevel: 0,
                     questTraderLoyaltyLevels: {},
-                    questViewMode: "tree",
+                    questViewMode: "byTrader",
+                    questCardSize: "small",
                     questSortMode: "default",
                     questSelectedTraders: [],
                     questFaction: "USEC",
@@ -676,7 +682,7 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: USER_STORE_STORAGE_KEY,
-            version: 14,
+            version: 15,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -811,6 +817,18 @@ export const useUserStore = create<UserState>()(
                         questVisibilityMode:
                             nextState.questShowAvailableOnly === true ? "hideLocked" : "all",
                         questActiveDepth: 2,
+                    };
+                }
+
+                if (version < 15) {
+                    nextState = {
+                        ...nextState,
+                        questViewMode:
+                            nextState.questViewMode === "byMap" ||
+                            nextState.questViewMode === "flatList"
+                                ? nextState.questViewMode
+                                : "byTrader",
+                        questCardSize: "small",
                     };
                 }
 

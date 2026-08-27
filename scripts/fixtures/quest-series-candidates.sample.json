@@ -1,0 +1,46 @@
+{
+  "tasks": {
+    "g1": {
+      "id": "g1",
+      "name": "Gunsmith - Part 1",
+      "trader": "mechanic",
+      "factionName": "Any",
+      "taskRequirements": []
+    },
+    "g2": {
+      "id": "g2",
+      "name": "Gunsmith - Part 2",
+      "trader": "mechanic",
+      "factionName": "Any",
+      "taskRequirements": [{ "task": "g1", "status": ["complete"] }]
+    },
+    "g3": {
+      "id": "g3",
+      "name": "Gunsmith - Part 3",
+      "trader": "mechanic",
+      "factionName": "USEC",
+      "taskRequirements": [{ "task": "g2", "status": ["complete"] }]
+    },
+    "g4": {
+      "id": "g4",
+      "name": "Gunsmith - Part 3",
+      "trader": "therapist",
+      "factionName": "BEAR",
+      "taskRequirements": [{ "task": "g2", "status": ["complete"] }]
+    },
+    "h1": {
+      "id": "h1",
+      "name": "The Huntsman Path - Trophy",
+      "trader": "jaeger",
+      "factionName": "Any",
+      "taskRequirements": [{ "task": "g1", "status": ["complete"] }]
+    },
+    "h2": {
+      "id": "h2",
+      "name": "The Huntsman Path - Trophy",
+      "trader": "jaeger",
+      "factionName": "Any",
+      "taskRequirements": [{ "task": "h1", "status": ["complete"] }]
+    }
+  }
+}

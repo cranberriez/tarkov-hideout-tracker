@@ -27,6 +27,7 @@ function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name"
         taskRequirements: overrides.taskRequirements ?? [],
         failConditions: overrides.failConditions ?? [],
         traderRequirements: overrides.traderRequirements ?? [],
+        otherRequirements: overrides.otherRequirements ?? [],
         requiredPrestige: overrides.requiredPrestige ?? null,
         objectives: overrides.objectives ?? [],
         wikiLink: overrides.wikiLink ?? null,

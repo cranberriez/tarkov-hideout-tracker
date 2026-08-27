@@ -11,6 +11,7 @@ import {
     statusIncludesComplete,
     statusIncludesFailed,
 } from "./quest-failures";
+import { isQuestTraderLoyaltyRequirement } from "./quest-trader-gates";
 
 export type QuestFactionFilter = "USEC" | "BEAR";
 
@@ -90,11 +91,47 @@ export function matchesFactionVisibility(
     return questFaction !== "USEC";
 }
 
-function getRequiredLoyaltyForQuest(quest: QuestAvailabilityQuest, traderId: string) {
-    return (quest.traderRequirements ?? []).reduce((highest, requirement) => {
-        if (requirement.trader.id !== traderId) return highest;
-        return Math.max(highest, requirement.value);
-    }, 1);
+function compareTraderLoyalty(
+    currentLevel: number,
+    compareMethod: string,
+    requiredLevel: number,
+) {
+    switch (compareMethod.trim()) {
+        case ">":
+            return currentLevel > requiredLevel;
+        case "<":
+            return currentLevel < requiredLevel;
+        case "<=":
+            return currentLevel <= requiredLevel;
+        case "=":
+        case "==":
+        case "===":
+            return currentLevel === requiredLevel;
+        case "!=":
+        case "!==":
+            return currentLevel !== requiredLevel;
+        case ">=":
+        default:
+            // Current Tarkov data uses >=. Keep that behavior for an
+            // unrecognized comparator rather than silently opening a gate.
+            return currentLevel >= requiredLevel;
+    }
+}
+
+function traderLoyaltyRequirementsSatisfied(
+    quest: QuestAvailabilityQuest,
+    profile: QuestAvailabilityProfile,
+) {
+    return (quest.traderRequirements ?? [])
+        .filter(isQuestTraderLoyaltyRequirement)
+        .every((requirement) => {
+            const traderLoyalty = profile.traderLoyaltyLevels[requirement.trader.id] ?? 1;
+            return compareTraderLoyalty(
+                traderLoyalty,
+                requirement.compareMethod,
+                requirement.value,
+            );
+        });
 }
 
 function requirementAllowsActiveStatus(requirement: QuestPrerequisite) {
@@ -147,8 +184,7 @@ export function isQuestAvailableForProfile(
     if ((quest.minPlayerLevel ?? 0) > profile.playerLevel) return false;
     if ((quest.requiredPrestige?.prestigeLevel ?? 0) > profile.prestigeLevel) return false;
 
-    const traderLoyalty = profile.traderLoyaltyLevels[quest.trader.id] ?? 1;
-    if (getRequiredLoyaltyForQuest(quest, quest.trader.id) > traderLoyalty) return false;
+    if (!traderLoyaltyRequirementsSatisfied(quest, profile)) return false;
     if (visiting.has(quest.id)) return false;
 
     visiting.add(quest.id);

@@ -57,9 +57,6 @@ export function QuestsFilterBar() {
     return (
         <div className="flex items-center gap-2 flex-wrap">
             <SegGroup>
-                <SegButton active={viewMode === "tree"} onClick={() => setViewMode("tree")}>
-                    Tree
-                </SegButton>
                 <SegButton active={viewMode === "byTrader"} onClick={() => setViewMode("byTrader")}>
                     By Trader
                 </SegButton>
@@ -75,13 +72,8 @@ export function QuestsFilterBar() {
                 <DropdownMenuTrigger asChild>
                     <button
                         type="button"
-                        disabled={viewMode === "tree"}
                         className="flex shrink-0 items-center gap-2 rounded-sm border border-white/10 bg-black/20 px-3 py-2 text-xs font-medium text-gray-300 transition-colors hover:border-white/30 hover:bg-black/40 hover:text-white disabled:cursor-not-allowed disabled:border-white/5 disabled:bg-black/10 disabled:text-gray-600 disabled:hover:border-white/5 disabled:hover:bg-black/10 disabled:hover:text-gray-600"
-                        title={
-                            viewMode === "tree"
-                                ? "Sort applies to By Trader, By Map, and List views"
-                                : "Sort quests"
-                        }
+                        title="Sort quests"
                     >
                         Sort: {sortLabel}
                         <ChevronDown size={13} className="text-gray-500" />

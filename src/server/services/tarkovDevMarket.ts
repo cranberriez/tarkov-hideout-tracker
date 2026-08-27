@@ -1,6 +1,7 @@
 import { redis } from "@/server/redis";
 import { getHideoutRequiredItems } from "@/server/services/items";
-import { getCachedFullQuestData, orderQuestsByPrerequisites } from "@/server/services/quests";
+import { orderQuestsByPrerequisites } from "@/server/services/quests";
+import { getCachedJsonFullQuestData } from "@/server/services/questsJson";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { buildQuestAnyOfGroups, buildQuestItemIndex } from "@/lib/utils/quest-item-index";
 import type { MarketPrice } from "@/types";
@@ -164,7 +165,7 @@ async function fetchTarkovDevMarketItems(
 async function getPriceTrackedItems(): Promise<PriceTrackedItem[]> {
     const [{ data: hideoutItemsPayload }, questsResponse] = await Promise.all([
         getHideoutRequiredItems(),
-        getCachedFullQuestData(),
+        getCachedJsonFullQuestData(),
     ]);
 
     const tracked = new Map<string, PriceTrackedItem>();

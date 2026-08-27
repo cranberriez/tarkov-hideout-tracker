@@ -1,6 +1,6 @@
 # Quests Page
 
-The `/quests` route displays Tarkov.dev quest data: objectives, prerequisites, unlock chains, completion tracking, manual sync, and quest item hand-ins. Four view modes are exposed in the UI: **Tree**, **By Trader**, **By Map**, and **List**. The persisted internal value for By Map is `questViewMode: "byMap"`; older persisted `"list"` values are migrated to `"byMap"`.
+The `/quests` route displays Tarkov.dev quest data: objectives, prerequisites, unlock chains, completion tracking, manual sync, and quest item hand-ins. Three view modes are exposed in the UI: **By Trader**, **By Map**, and **List**. Persisted legacy Tree selections migrate to By Trader.
 
 ---
 
@@ -13,7 +13,6 @@ The `/quests` route displays Tarkov.dev quest data: objectives, prerequisites, u
 | `src/features/quests/QuestsContext.tsx`                 | React context + provider; reads store filters, owns local search text, computes derived quest maps and filtered quest lists   |
 | `src/features/quests/QuestCard.tsx`                     | Individual quest card; badges, objectives, item thumbnails, prerequisite/unlock chips, pin/ignore/complete/have-items actions |
 | `src/features/quests/components/QuestsList.tsx`         | By Map and By Trader grouped views, plus the ungrouped List view                                                              |
-| `src/features/quests/components/QuestsTree.tsx`         | Tree view; per-trader trees with collapsible branches                                                                         |
 | `src/features/quests/components/QuestsSidebar.tsx`      | Filter sidebar; trader and map multi-select, kappa/LK filters, view mode controls                                             |
 | `src/features/quests/components/QuestsCharacterBar.tsx` | Player level, prestige, faction, and trader loyalty controls                                                                  |
 | `src/features/quests/components/QuestsFilterBar.tsx`    | Hide completed, available only, hand-in, pinned, ignored, and prerequisite/debug toggles                                      |
@@ -22,9 +21,10 @@ The `/quests` route displays Tarkov.dev quest data: objectives, prerequisites, u
 | `src/features/quests/components/QuestSyncDialog.tsx`    | Manual sync dialog state and step routing                                                                                     |
 | `src/features/quests/quest-sync.ts`                     | Pure manual sync engine and availability wrapper                                                                              |
 | `src/features/quests/quest-map-groups.ts`               | Map-group normalization for filters and By Map grouping                                                                       |
-| `src/features/quests/quest-sorting.ts`                  | Sort utilities for non-tree quest views and unlock-impact counts                                                              |
+| `src/features/quests/quest-sorting.ts`                  | Sort utilities for quest views and unlock-impact counts                                                                       |
 | `src/features/quests/components/quest-ui.tsx`           | Shared UI primitives                                                                                                          |
-| `src/server/services/quests.ts`                         | `getCachedFullQuestData()` and `orderQuestsByPrerequisites()`                                                                 |
+| `src/server/services/questsJson.ts`                     | JSON-only `getCachedJsonFullQuestData()` implementation                                                                       |
+| `src/server/services/quests.ts`                         | Shared `orderQuestsByPrerequisites()` utility; GraphQL fetching in this file is legacy and is not used by the route            |
 | `src/lib/utils/quest-item-index.ts`                     | Builds and derives quest item hand-in metadata                                                                                |
 | `src/lib/utils/quest-availability.ts`                   | Converts full quests to the lighter availability shape and checks profile availability                                        |
 
@@ -44,11 +44,11 @@ The `/quests` route displays Tarkov.dev quest data: objectives, prerequisites, u
        questAvailabilityQuests={...}
      />
       -> <QuestsProvider onItemClick={setSelectedItemId}>
-          -> QuestsContent renders QuestsTree or QuestsList
+          -> QuestsContent renders QuestsList
           -> Quest item clicks open ItemDetailModal
 ```
 
-Quest data is not part of the shared `(data)/layout.tsx` context. Pages that need quest data fetch it server-side. The quests page derives `traders` and `allMaps` from the loaded full quest data; it does not currently need `getCachedTraders()`.
+Quest data is not part of the shared `(data)/layout.tsx` context. Pages that need quest data fetch it server-side. `getCachedFullQuestData()` is exported by `tarkovData.ts`, but always resolves to the JSON implementation regardless of `TARKOV_DATA_SOURCE`; `/quests` and `/items` therefore cannot fall back to GraphQL. The quests page derives `traders` and `allMaps` from the loaded full quest data; it does not currently need `getCachedTraders()`.
 
 ---
 
@@ -60,7 +60,7 @@ Quest data is not part of the shared `(data)/layout.tsx` context. Pages that nee
 - Breaks cycles with a `visiting` guard set.
 - Sorts by `prerequisiteDepth`, then `minPlayerLevel`, then `name`.
 
-The sorted order is load-bearing for `QuestsTree`, which uses same-trader prerequisite order to assign a primary parent in each trader tree.
+The sorted order supplies the default chain-aware order used by the virtualized quest lists.
 
 ---
 
@@ -82,7 +82,8 @@ prestigeLevel: number;
 questFaction: "USEC" | "BEAR" | null;
 questTraderLoyaltyLevels: Record<string, number>;
 
-questViewMode: "byMap" | "byTrader" | "tree" | "flatList";
+questViewMode: "byMap" | "byTrader" | "flatList";
+questCardSize: "small" | "large"; // Legacy compatibility field; no longer exposed in the UI.
 questSortMode: "default" | "level" | "xp" | "unlockImpact";
 questSelectedTraders: string[];
 questSelectedMaps: string[];
@@ -107,8 +108,53 @@ questSidebarCollapsed: boolean;
 - `kappaQuestIds` / `lightkeeperQuestIds`: transitive prerequisite closures.
 - `filteredQuests`: active filters and local search applied in order.
 - `traders` and `allMaps`: deduped filter lists derived from full quest data.
-- `questSortMode`: applied to By Trader, By Map, and List views only; Tree keeps prerequisite layout.
+- `questSortMode`: applied to By Trader, By Map, and List views.
 - Manual sync helpers that call `quest-sync.ts` and write results back to `useUserStore`.
+
+## Quest Organization and Series Review
+
+The By Trader view can organize quests into five derived categories: Trader Tier 1
+(LL1), Trader Tier 2 (LL2), Trader Tier 3 (LL3), Trader Tier 4 (LL4), and Series
+Quests. This organization is derived from the loaded `FullQuest[]` data and the
+curated ID-based manifest at `src/lib/data/quest-series.json`; it is not stored in
+Zustand. Series membership has precedence over the issuing trader's tier, and
+members inside a series use the manifest's explicit `order`.
+
+`src/lib/utils/quest-organization.ts` validates the manifest before deriving the
+organization. It reports unknown quest IDs, duplicate series membership, duplicate
+orders, invalid orders, issuing-trader mismatches, and invalid tier values. A
+cross-trader series must opt in with `allowCrossTrader: true` in the manifest.
+Names and prerequisite graphs are not used at runtime to guess series membership.
+
+To produce review candidates from a downloaded task snapshot, run:
+
+```bash
+npm run quest-series-candidates -- path/to/tasks.json > quest-series-candidates.json
+```
+
+The read-only tool in `scripts/generate-quest-series-candidates.mjs` accepts a raw
+tasks record or array, a mapped quests array, and serialized `body` wrappers such
+as a fetch-cache response. Its deterministic stdout report groups numbered names,
+same-trader prerequisite components with at least two quests, and repeated prefixes
+such as `Gunsmith` and `The Huntsman Path`. It flags duplicate names, branches,
+faction variants, cross-trader members, and cross-trader prerequisite edges for
+manual review. The report is only a candidate list; commit only reviewed manifest
+entries, and do not use runtime name matching as production behavior.
+
+Progression gates remain separate from display organization. `taskRequirements`
+are the authoritative quest prerequisite/status edges used by availability, sync,
+cascade, and relationship display. A trader requirement of `level` (or the legacy
+`loyaltyLevel` spelling) is a loyalty-level gate; `reputation` is a standing gate
+and must not be treated as LL. Cross-trader level gates remain visible and affect
+availability, but do not change a quest's issuing-trader category. JSON
+`otherRequirements` such as `globalVariable` and `dialogue` are preserved as typed
+raw gates; they are not currently interpreted as loyalty levels or series IDs.
+
+Organization changes do not alter persisted progress. The localStorage key remains
+`tarkov-hideout-user-state` at Zustand version 15, and `completedQuests`,
+`failedQuests`, `questsWithItems`, `ignoredQuests`, and `pinnedQuests` remain maps
+keyed by the upstream quest IDs. Categories, series names, and manifest ordering
+must never be used to infer or rewrite completion records.
 
 ---
 
@@ -124,7 +170,7 @@ Map filtering uses both `quest.map` and `quest.objectives[].maps`. Quests with o
 
 ## State Subscription & Performance Notes
 
-The quest page is render-heavy, especially in tree mode. Prefer Zustand selectors over bare `useUserStore()`:
+The quest page is render-heavy. Prefer Zustand selectors over bare `useUserStore()`:
 
 ```ts
 const completedQuests = useUserStore((state) => state.completedQuests);
@@ -143,12 +189,11 @@ Derived quest data should stay scoped to the active view:
 
 | View                             | Component        | Expensive derived work                              |
 | -------------------------------- | ---------------- | --------------------------------------------------- |
-| Tree                             | `QuestsTree.tsx` | Trader grouping, tree metadata, `buildTraderTree()` |
 | By Trader                        | `QuestsList.tsx` | Trader grouping and selected sort mode              |
 | By Map (`questViewMode: "byMap"`) | `QuestsList.tsx` | Map grouping and selected sort mode                 |
 | List (`questViewMode: "flatList"`) | `QuestsList.tsx` | Single virtualized list and selected sort mode      |
 
-Non-tree views support these sort modes:
+All quest views support these sort modes:
 
 | Sort mode        | Behavior                                                                    |
 | ---------------- | --------------------------------------------------------------------------- |
@@ -215,7 +260,7 @@ Run this when changing manual sync behavior before `npm run lint` and `npm run b
 - Trader avatar, quest name, level/map/kappa/LK/faction/trader-loyalty/prestige badges.
 - Trader reputation rewards from completion and trader reputation penalties from quest failure.
 - Compact item strip for exact `giveItem` and `plantItem` objectives; item thumbnails call `onItemClick(itemId)`.
-- Compact cards show a bare key icon when any objective has `requiredKeys`; expanded objective rows show the relevant key items under that objective.
+- Collapsed cards show a bare key icon when any objective has `requiredKeys`; expanded objective rows show the relevant key items under that objective.
 - Broad any-item `giveItem` and `plantItem` objectives keep a partial preview of up to 15 items and are excluded from exact item checklist demand.
 - Expanded objective rows for all objective types.
 - Requires/unlocks chips linked to `#quest-{id}`.
@@ -226,7 +271,7 @@ API quirks to keep in mind:
 | Field                                    | Quirk                                   | Correct handling                                             |
 | ---------------------------------------- | --------------------------------------- | ------------------------------------------------------------ |
 | `quest.factionName`                      | Returns `"Any"` for unrestricted quests | Only render faction badge for exactly `"USEC"` or `"BEAR"`   |
-| `quest.minPlayerLevel`                   | Can be `0` or `null`                    | Check `!= null` instead of truthiness                        |
+| `quest.minPlayerLevel`                   | `0` represents no useful displayed minimum | Keep it in progression data, but render a level badge only when greater than zero |
 | `quest.trader.imageLink` / `image4xLink` | Can be `null` or `undefined`            | Normalize to `null` where a stable reference shape is needed |
 
 ---
@@ -235,13 +280,7 @@ API quirks to keep in mind:
 
 | Layer                    | Key                                      | Freshness                   |
 | ------------------------ | ---------------------------------------- | --------------------------- |
-| Redis                    | `quests:full:v7` + `quests:full:v7:meta` | 12h service freshness check |
+| Redis                    | `quests:full:v10` + `quests:full:v10:meta` | 12h service freshness check |
 | Next.js `unstable_cache` | `["quests-full"]`                        | `revalidate: 43200`         |
 
 To invalidate quest data for application code, bump the relevant version in `src/lib/cfg/cacheVersions.ts`. See `caching-architecture.md`.
-
----
-
-## Planned Work
-
-Graph view remains a future feature: a pannable/zoomable graph showing the full quest dependency chain. A likely implementation would use React Flow (`@xyflow/react`) with Dagre for layout and should respect the active `filteredQuests` set.

@@ -980,15 +980,7 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
     }
     await hydrateFullQuestObjectiveItems(rawTasks);
 
-    // Tasks with minPlayerLevel < 1 are Fence/scav-karma quests that don't apply to normal PMC progression
-    const quests: FullQuest[] = rawTasks
-        .filter(
-            (t) =>
-                t.minPlayerLevel === undefined ||
-                t.minPlayerLevel === null ||
-                t.minPlayerLevel >= 1,
-        )
-        .map(
+    const quests: FullQuest[] = rawTasks.map(
             (t): FullQuest => ({
                 id: t.id,
                 name: t.name,
@@ -1024,6 +1016,10 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
                         value: r.value,
                     }),
                 ),
+                // GraphQL does not expose the JSON provider's additional
+                // progression gates. Keep the shared shape stable without
+                // inventing semantics for unavailable fields.
+                otherRequirements: [],
                 requiredPrestige: t.requiredPrestige
                     ? ({
                           id: t.requiredPrestige.id,
@@ -1037,7 +1033,7 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
                 failureTraderStandingRewards: mapTraderStandingRewards(t.failureOutcome),
                 objectives: t.objectives.map(mapFullObjective),
             }),
-        );
+    );
 
     const payload: FullQuestsPayload = { quests };
     const updatedAt = Date.now();

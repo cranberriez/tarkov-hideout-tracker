@@ -13,6 +13,11 @@ import {
     sortQuestsForQuestView,
 } from "../quest-sorting";
 import {
+    deriveQuestOrganization,
+    QUEST_SERIES_MANIFEST,
+    type QuestCategory,
+} from "@/lib/utils/quest-organization";
+import {
     QUEST_NAVIGATE_TO_QUEST_EVENT,
 } from "../quest-deep-link";
 import { cn } from "@/lib/utils";
@@ -105,6 +110,40 @@ type HeaderRow = {
     visibleCount: number;
 };
 
+interface SeriesQuestGroup {
+    seriesId: string;
+    name: string;
+    allQuests: FullQuest[];
+    quests: FullQuest[];
+}
+
+interface TraderCategoryGroup {
+    category: QuestCategory;
+    allQuests: FullQuest[];
+    quests: FullQuest[];
+    seriesGroups: SeriesQuestGroup[];
+}
+
+const QUEST_CATEGORY_ORDER: QuestCategory[] = [
+    "tier-1",
+    "tier-2",
+    "tier-3",
+    "tier-4",
+    "series",
+];
+
+const QUEST_CATEGORY_LABELS: Record<QuestCategory, string> = {
+    "tier-1": "Trader Tier 1 (LL1)",
+    "tier-2": "Trader Tier 2 (LL2)",
+    "tier-3": "Trader Tier 3 (LL3)",
+    "tier-4": "Trader Tier 4 (LL4)",
+    series: "Series Quests",
+};
+
+const SERIES_ORDER_BY_ID = new Map(
+    QUEST_SERIES_MANIFEST.series.map((series, index) => [series.id, index]),
+);
+
 type QuestRow = {
     kind: "quest";
     quest: FullQuest;
@@ -114,7 +153,7 @@ type VirtualRow = HeaderRow | QuestRow;
 
 // Estimated heights used for initial layout before measurement
 const ESTIMATED_HEADER_HEIGHT = 80;
-const ESTIMATED_QUEST_HEIGHT = 60;
+const ESTIMATED_SMALL_QUEST_HEIGHT = 60;
 const QUEST_HIGHLIGHT_DURATION_MS = 30_000;
 
 interface QuestNavigationRequest {
@@ -148,6 +187,8 @@ export function QuestsList({ questNavigationRequest }: QuestsListProps) {
         [quests],
     );
     const unlockImpactById = useMemo(() => buildQuestUnlockImpactMap(quests), [quests]);
+    const questOrganization = useMemo(() => deriveQuestOrganization(quests), [quests]);
+    const organizationByQuestId = questOrganization.byQuestId;
 
     const setGroupCollapsed = useCallback((key: string, collapsed: boolean) => {
         setCollapsedGroups((current) => {
@@ -180,6 +221,126 @@ export function QuestsList({ questNavigationRequest }: QuestsListProps) {
         }
         return map;
     }, [filteredQuests, questOrderById, sortMode, unlockImpactById, viewMode]);
+
+    const traderCategoryGroups = useMemo(() => {
+        if (viewMode !== "byTrader") return new Map<string, Map<QuestCategory, TraderCategoryGroup>>();
+
+        const allByTraderCategory = new Map<string, Map<QuestCategory, FullQuest[]>>();
+        const visibleByTraderCategory = new Map<string, Map<QuestCategory, FullQuest[]>>();
+
+        const addQuest = (
+            target: Map<string, Map<QuestCategory, FullQuest[]>>,
+            quest: FullQuest,
+        ) => {
+            const category = organizationByQuestId.get(quest.id)?.category ?? "tier-1";
+            const byCategory = target.get(quest.trader.id) ?? new Map<QuestCategory, FullQuest[]>();
+            const categoryQuests = byCategory.get(category) ?? [];
+            categoryQuests.push(quest);
+            byCategory.set(category, categoryQuests);
+            target.set(quest.trader.id, byCategory);
+        };
+
+        for (const quest of quests) addQuest(allByTraderCategory, quest);
+        for (const quest of filteredQuests) addQuest(visibleByTraderCategory, quest);
+
+        const result = new Map<string, Map<QuestCategory, TraderCategoryGroup>>();
+        for (const [traderId, allByCategory] of allByTraderCategory) {
+            const visibleByCategory = visibleByTraderCategory.get(traderId) ?? new Map();
+            const categoryGroups = new Map<QuestCategory, TraderCategoryGroup>();
+
+            for (const category of QUEST_CATEGORY_ORDER) {
+                const allCategoryQuests = allByCategory.get(category) ?? [];
+                const visibleCategoryQuests = visibleByCategory.get(category) ?? [];
+                if (allCategoryQuests.length === 0) continue;
+
+                const seriesGroups =
+                    category === "series"
+                        ? (() => {
+                              const allBySeries = new Map<string, FullQuest[]>();
+                              const visibleBySeries = new Map<string, FullQuest[]>();
+
+                              for (const quest of allCategoryQuests) {
+                                  const seriesId = organizationByQuestId.get(quest.id)?.seriesId;
+                                  if (!seriesId) continue;
+                                  const seriesQuests = allBySeries.get(seriesId) ?? [];
+                                  seriesQuests.push(quest);
+                                  allBySeries.set(seriesId, seriesQuests);
+                              }
+                              for (const quest of visibleCategoryQuests) {
+                                  const seriesId = organizationByQuestId.get(quest.id)?.seriesId;
+                                  if (!seriesId) continue;
+                                  const seriesQuests = visibleBySeries.get(seriesId) ?? [];
+                                  seriesQuests.push(quest);
+                                  visibleBySeries.set(seriesId, seriesQuests);
+                              }
+
+                              return [...allBySeries.entries()]
+                                  .map(([seriesId, allQuests]) => {
+                                      const visibleQuests = visibleBySeries.get(seriesId) ?? [];
+                                      const sortByManifestOrder = (a: FullQuest, b: FullQuest) => {
+                                          const aOrder =
+                                              organizationByQuestId.get(a.id)?.seriesOrder ??
+                                              Number.MAX_SAFE_INTEGER;
+                                          const bOrder =
+                                              organizationByQuestId.get(b.id)?.seriesOrder ??
+                                              Number.MAX_SAFE_INTEGER;
+                                          if (aOrder !== bOrder) return aOrder - bOrder;
+                                          return (
+                                              (questOrderById.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+                                              (questOrderById.get(b.id) ?? Number.MAX_SAFE_INTEGER)
+                                          );
+                                      };
+
+                                      return {
+                                          seriesId,
+                                          name:
+                                              organizationByQuestId.get(allQuests[0].id)?.seriesName ??
+                                              seriesId,
+                                          allQuests: [...allQuests].sort(sortByManifestOrder),
+                                          quests: [...visibleQuests].sort(sortByManifestOrder),
+                                      } satisfies SeriesQuestGroup;
+                                  })
+                                  .filter((group) => group.quests.length > 0)
+                                  .sort(
+                                      (a, b) =>
+                                          (SERIES_ORDER_BY_ID.get(a.seriesId) ?? Number.MAX_SAFE_INTEGER) -
+                                              (SERIES_ORDER_BY_ID.get(b.seriesId) ?? Number.MAX_SAFE_INTEGER) ||
+                                          a.name.localeCompare(b.name),
+                                  );
+                          })()
+                        : [];
+
+                const sortedVisibleQuests =
+                    category === "series"
+                        ? visibleCategoryQuests
+                        : sortQuestsForQuestView(
+                              visibleCategoryQuests,
+                              sortMode,
+                              questOrderById,
+                              unlockImpactById,
+                          );
+
+                categoryGroups.set(category, {
+                    category,
+                    allQuests: allCategoryQuests,
+                    quests: sortedVisibleQuests,
+                    seriesGroups,
+                });
+            }
+
+            result.set(traderId, categoryGroups);
+        }
+
+        return result;
+    }, [
+        filteredQuests,
+        organizationByQuestId,
+        quests,
+        questOrderById,
+        sortMode,
+        unlockImpactById,
+        viewMode,
+    ]);
 
     const allQuestsByTraderId = useMemo(() => {
         if (viewMode !== "byTrader") return new Map<string, FullQuest[]>();
@@ -276,8 +437,46 @@ export function QuestsList({ questNavigationRequest }: QuestsListProps) {
                 });
 
                 if (!collapsedGroups.has(groupKey)) {
-                    for (const quest of traderQuests) {
-                        result.push({ kind: "quest", quest });
+                    const categoryGroups = traderCategoryGroups.get(trader.id);
+                    for (const category of QUEST_CATEGORY_ORDER) {
+                        const categoryGroup = categoryGroups?.get(category);
+                        if (!categoryGroup || categoryGroup.quests.length === 0) continue;
+
+                        const categoryGroupKey = `${groupKey}:category:${category}`;
+                        result.push({
+                            kind: "header",
+                            groupKey: categoryGroupKey,
+                            domId: `category-${trader.id}-${category}`,
+                            title: QUEST_CATEGORY_LABELS[category],
+                            allQuests: categoryGroup.allQuests,
+                            visibleCount: categoryGroup.quests.length,
+                        });
+
+                        if (collapsedGroups.has(categoryGroupKey)) continue;
+
+                        if (category === "series") {
+                            for (const seriesGroup of categoryGroup.seriesGroups) {
+                                const seriesGroupKey = `${categoryGroupKey}:series:${seriesGroup.seriesId}`;
+                                result.push({
+                                    kind: "header",
+                                    groupKey: seriesGroupKey,
+                                    domId: `series-${trader.id}-${seriesGroup.seriesId}`,
+                                    title: seriesGroup.name,
+                                    allQuests: seriesGroup.allQuests,
+                                    visibleCount: seriesGroup.quests.length,
+                                });
+
+                                if (!collapsedGroups.has(seriesGroupKey)) {
+                                    for (const quest of seriesGroup.quests) {
+                                        result.push({ kind: "quest", quest });
+                                    }
+                                }
+                            }
+                        } else {
+                            for (const quest of categoryGroup.quests) {
+                                result.push({ kind: "quest", quest });
+                            }
+                        }
                     }
                 }
             }
@@ -311,6 +510,7 @@ export function QuestsList({ questNavigationRequest }: QuestsListProps) {
         traders,
         questsByTraderId,
         allQuestsByTraderId,
+        traderCategoryGroups,
         mapGroups,
         questsByMapKey,
         allQuestsByMapKey,
@@ -327,7 +527,9 @@ export function QuestsList({ questNavigationRequest }: QuestsListProps) {
     const virtualizer = useWindowVirtualizer({
         count: rows.length,
         estimateSize: (index) =>
-            rows[index]?.kind === "header" ? ESTIMATED_HEADER_HEIGHT : ESTIMATED_QUEST_HEIGHT,
+            rows[index]?.kind === "header"
+                ? ESTIMATED_HEADER_HEIGHT
+                : ESTIMATED_SMALL_QUEST_HEIGHT,
         overscan: 8,
         scrollMargin,
     });
@@ -374,7 +576,20 @@ export function QuestsList({ questNavigationRequest }: QuestsListProps) {
             if (!isVisible) return false;
 
             if (viewMode === "byTrader") {
-                setGroupCollapsed(`trader:${quest.trader.id}`, false);
+                const traderGroupKey = `trader:${quest.trader.id}`;
+                setGroupCollapsed(traderGroupKey, false);
+
+                const organization = organizationByQuestId.get(questId);
+                if (organization) {
+                    const categoryGroupKey = `${traderGroupKey}:category:${organization.category}`;
+                    setGroupCollapsed(categoryGroupKey, false);
+                    if (organization.seriesId) {
+                        setGroupCollapsed(
+                            `${categoryGroupKey}:series:${organization.seriesId}`,
+                            false,
+                        );
+                    }
+                }
             } else if (viewMode === "byMap") {
                 setGroupCollapsed(`map:${getQuestMapGroupsForQuest(quest)[0]?.key}`, false);
             }
@@ -382,7 +597,14 @@ export function QuestsList({ questNavigationRequest }: QuestsListProps) {
             setPendingScrollQuestId(questId);
             return true;
         },
-        [filteredQuests, highlightQuest, questsById, setGroupCollapsed, viewMode],
+        [
+            filteredQuests,
+            highlightQuest,
+            organizationByQuestId,
+            questsById,
+            setGroupCollapsed,
+            viewMode,
+        ],
     );
 
     // Fires after rows rebuild (e.g. after a collapsed group is expanded for the target quest)

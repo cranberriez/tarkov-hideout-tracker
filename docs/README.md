@@ -41,6 +41,9 @@ Docs are grouped by purpose:
 - **[quests-page.md](quests-page.md)** - Feature spec
   Quests page - quest item requirements, trader/map views, prerequisite ordering, manual sync, and caching.
 
+- **[quest-data-and-category-rework.md](quest-data-and-category-rework.md)** - Current data flow and implementation plan
+  How quest data enters the app and the planned LL1-LL4 plus Series Quests organization.
+
 - **[quick-add-feature.md](quick-add-feature.md)** - Feature spec
   Quick Add modal - post-raid item input, fuzzy search, FiR/non-FiR counts.
 

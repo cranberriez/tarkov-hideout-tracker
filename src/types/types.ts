@@ -337,6 +337,22 @@ export interface QuestTraderRequirement {
     value: number;
 }
 
+/**
+ * Progression gates that are not represented by task or trader requirements.
+ *
+ * The JSON provider can add new gate kinds without a corresponding client
+ * behavior yet. Keep the known discriminator fields typed while retaining all
+ * upstream properties so a newer gate is not silently discarded.
+ */
+export interface QuestOtherRequirement {
+    id?: string | null;
+    type: string;
+    requirementType?: string | null;
+    compareMethod?: string | null;
+    value?: number | string | boolean | null;
+    [key: string]: unknown;
+}
+
 export interface QuestPrestige {
     id: string;
     name: string;
@@ -377,6 +393,7 @@ export interface FullQuest {
     taskRequirements: QuestPrerequisite[];
     failConditions?: QuestFailCondition[];
     traderRequirements: QuestTraderRequirement[];
+    otherRequirements: QuestOtherRequirement[];
     requiredPrestige?: QuestPrestige | null;
     finishTraderStandingRewards?: QuestTraderStandingReward[];
     failureTraderStandingRewards?: QuestTraderStandingReward[];

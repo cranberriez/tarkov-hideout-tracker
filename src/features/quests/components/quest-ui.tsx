@@ -56,14 +56,19 @@ export function SegButton({
     active,
     onClick,
     children,
+    title,
 }: {
     active: boolean;
     onClick: () => void;
     children: ReactNode;
+    title?: string;
 }) {
     return (
         <button
+            type="button"
             onClick={onClick}
+            aria-pressed={active}
+            title={title}
             className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-xs transition-all ${
                 active
                     ? "bg-tarkov-green text-black shadow-sm"
