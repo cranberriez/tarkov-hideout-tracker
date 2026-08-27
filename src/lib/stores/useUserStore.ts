@@ -22,7 +22,7 @@ export type QuestViewMode = "byMap" | "byTrader" | "flatList";
 export type QuestCardSize = "small" | "large";
 export type QuestSortMode = "default" | "level" | "xp" | "unlockImpact";
 export type QuestVisibilityMode = "all" | "hideLocked" | "activeDepth";
-export type QuestWorkspaceStatus = "active" | "completed" | "locked";
+export type QuestWorkspaceStatus = "active" | "completed" | "failed" | "locked";
 export type QuestObjectiveCategory =
     | "hand-in"
     | "find"
@@ -443,7 +443,7 @@ export const useUserStore = create<UserState>()(
             questWorkspaceSelectedTraders: [],
             questWorkspaceFilterByTraderRequirements: true,
             questWorkspaceSelectedMaps: [],
-            questWorkspaceSelectedStatuses: ["active", "completed", "locked"],
+            questWorkspaceSelectedStatuses: ["active", "completed", "failed", "locked"],
             questWorkspaceSelectedObjectiveCategories: [],
 
             itemShowPinnedQuestSection: true,
@@ -936,7 +936,7 @@ export const useUserStore = create<UserState>()(
                     questWorkspaceSelectedTraders: [],
                     questWorkspaceFilterByTraderRequirements: true,
                     questWorkspaceSelectedMaps: [],
-                    questWorkspaceSelectedStatuses: ["active", "completed", "locked"],
+                    questWorkspaceSelectedStatuses: ["active", "completed", "failed", "locked"],
                     questWorkspaceSelectedObjectiveCategories: [],
                     itemShowPinnedQuestSection: true,
                     itemShowPinnedQuestOnly: false,
@@ -985,7 +985,7 @@ export const useUserStore = create<UserState>()(
         },
         {
             name: USER_STORE_STORAGE_KEY,
-            version: 19,
+            version: 20,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -1171,6 +1171,29 @@ export const useUserStore = create<UserState>()(
                         profiles,
                         deprecatedLegacyState,
                         gameMode: "PVP",
+                    };
+                }
+
+                if (version < 20) {
+                    const selectedStatuses = Array.isArray(
+                        nextState.questWorkspaceSelectedStatuses,
+                    )
+                        ? nextState.questWorkspaceSelectedStatuses.filter(
+                              (status): status is QuestWorkspaceStatus =>
+                                  status === "active" ||
+                                  status === "completed" ||
+                                  status === "failed" ||
+                                  status === "locked",
+                          )
+                        : ["active", "completed", "locked"];
+
+                    nextState = {
+                        ...nextState,
+                        questWorkspaceSelectedStatuses:
+                            selectedStatuses.includes("locked") &&
+                            !selectedStatuses.includes("failed")
+                                ? [...selectedStatuses, "failed"]
+                                : selectedStatuses,
                     };
                 }
 

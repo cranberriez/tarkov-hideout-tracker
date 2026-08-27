@@ -561,14 +561,18 @@ test("syncTraderProgress auto-fails mutually exclusive quests when syncing compl
         makeQuest({
             id: "root",
             name: "Root",
+        }),
+        makeQuest({
+            id: "exclusive",
+            name: "Exclusive",
             failConditions: [
                 {
-                    id: "root-fails-exclusive",
+                    id: "exclusive-fails-when-root-completes",
                     type: "taskStatus",
                     description: "",
                     optional: false,
                     status: ["Success"],
-                    task: { id: "exclusive", name: "Exclusive" },
+                    task: { id: "root", name: "Root" },
                 },
             ],
         }),
@@ -577,7 +581,6 @@ test("syncTraderProgress auto-fails mutually exclusive quests when syncing compl
             name: "Selected",
             taskRequirements: [{ task: { id: "root", name: "Root" }, status: ["Success"] }],
         }),
-        makeQuest({ id: "exclusive", name: "Exclusive" }),
     ];
 
     const result = syncTraderProgress({

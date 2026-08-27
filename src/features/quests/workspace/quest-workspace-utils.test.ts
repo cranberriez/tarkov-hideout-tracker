@@ -62,3 +62,16 @@ test("marks a maximum-Fence-reputation quest locked at the default standing", ()
         "active",
     );
 });
+
+test("reports failed quests as resolved failed status instead of locked", () => {
+    const questsById = new Map([[compensationForDamage.id, compensationForDamage]]);
+    const status = getQuestWorkspaceStatus(
+        compensationForDamage,
+        { ...makeProfile(-1), failedQuests: { [compensationForDamage.id]: true } },
+        questsById,
+    );
+
+    assert.equal(status.status, "failed");
+    assert.equal(status.label, "Failed");
+    assert.equal(status.terminal, "failed");
+});

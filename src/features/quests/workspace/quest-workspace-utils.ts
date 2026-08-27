@@ -42,6 +42,7 @@ export interface QuestWorkspaceProfile {
 export const STATUS_OPTIONS: Array<{ id: QuestWorkspaceStatus; label: string; description: string }> = [
     { id: "active", label: "Active", description: "Available and incomplete quests" },
     { id: "completed", label: "Completed", description: "Quests marked complete" },
+    { id: "failed", label: "Failed", description: "Resolved quests whose failure condition was met" },
     { id: "locked", label: "Locked", description: "Quests with unmet progression gates" },
 ];
 
@@ -88,7 +89,7 @@ export function getQuestWorkspaceStatus(
     }
     if (terminal === "failed") {
         return {
-            status: "locked",
+            status: "failed",
             label: "Failed",
             reasons: [{ kind: "branch", label: "Quest marked failed" }],
             terminal,

@@ -7,7 +7,7 @@ Client-side state lives in two Zustand stores. Server-fetched data (stations, it
 ## `useUserStore` — User Progress & Preferences
 
 **File:** `src/lib/stores/useUserStore.ts`
-**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 19.
+**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 20.
 
 Do not change the storage key. Bump the version and add a migration only when the persisted state shape requires it.
 
@@ -78,7 +78,7 @@ questSidebarCollapsed: boolean;
 questWorkspaceSelectedTraders: string[];
 questWorkspaceFilterByTraderRequirements: boolean;
 questWorkspaceSelectedMaps: string[];
-questWorkspaceSelectedStatuses: Array<"active" | "completed" | "locked">;
+questWorkspaceSelectedStatuses: Array<"active" | "completed" | "failed" | "locked">;
 questWorkspaceSelectedObjectiveCategories: QuestObjectiveCategory[];
 
 // Item page quest demand preferences

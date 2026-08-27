@@ -39,7 +39,7 @@ function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name"
     };
 }
 
-test("buildQuestFailureMap maps completed quests to their fail-condition targets", () => {
+test("buildQuestFailureMap maps a completed condition target to the quest it fails", () => {
     const quests = [
         makeQuest({ id: "branch-a", name: "Branch A" }),
         makeQuest({
@@ -60,7 +60,8 @@ test("buildQuestFailureMap maps completed quests to their fail-condition targets
 
     const failureMap = buildQuestFailureMap(quests);
 
-    assert.deepEqual(failureMap.get("branch-b"), ["branch-a"]);
+    assert.deepEqual(failureMap.get("branch-a"), ["branch-b"]);
+    assert.equal(failureMap.has("branch-b"), false);
 });
 
 test("buildQuestFailureMap maps Out of Curiosity completion to its failed branches", () => {
@@ -93,13 +94,15 @@ test("buildQuestFailureMap maps Out of Curiosity completion to its failed branch
 
     const failureMap = buildQuestFailureMap(quests);
 
-    assert.deepEqual(failureMap.get("597a160786f77477531d39d2"), [
-        "597a0f5686f774273b74f676",
-        "597a171586f77405ba6887d3",
+    assert.deepEqual(failureMap.get("597a0f5686f774273b74f676"), [
+        "597a160786f77477531d39d2",
+    ]);
+    assert.deepEqual(failureMap.get("597a171586f77405ba6887d3"), [
+        "597a160786f77477531d39d2",
     ]);
     assert.deepEqual(
-        getAutoFailedQuestIds(["597a160786f77477531d39d2"], failureMap, {}),
-        ["597a0f5686f774273b74f676", "597a171586f77405ba6887d3"],
+        getAutoFailedQuestIds(["597a0f5686f774273b74f676"], failureMap, {}),
+        ["597a160786f77477531d39d2"],
     );
 });
 

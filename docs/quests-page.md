@@ -136,6 +136,13 @@ exact persisted standing input; BTR Driver and Lightkeeper have no loyalty
 controls. Quest list rows display the issuing
 trader's required loyalty level beside the trader name, with a crown for LL4.
 
+Failed quests are a distinct resolved workspace status. They are excluded from
+`Active`, shown separately from progression-locked quests, and can be selected with
+the `Failed` status filter. Completing a quest automatically fails any quest whose
+non-optional task-status failure condition references that completed quest. Existing
+workspace filters are migrated so users who previously included `Locked` continue
+to see failed quests after the status is split.
+
 The workspace keeps quests completed during an `Active`-only view visible for the
 rest of the current filter session. Changing a quest filter or search text clears
 that temporary retention, as does refreshing the page. This prevents the quest

@@ -18,6 +18,7 @@ import {
     Pin,
     RotateCcw,
     Search,
+    XCircle,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -300,6 +301,8 @@ function QuestListItem({
     const toggleIgnoredQuest = useUserStore((state) => state.toggleIgnoredQuest);
     const { requestToggleQuestCompletion } = useQuestsContext();
     const completed = status.status === "completed";
+    const failed = status.status === "failed";
+    const resolved = completed || failed;
     const categories = [...getQuestObjectiveCategories(quest)].slice(0, 2);
     const traderImage = quest.trader.image4xLink ?? quest.trader.imageLink;
     const traderLoyaltyLevel = getQuestIssuingTraderLoyaltyLevel(quest);
@@ -319,7 +322,7 @@ function QuestListItem({
                 }
             }}
             className={cn(
-                "group relative grid min-h-24 cursor-pointer grid-cols-[108px_minmax(0,1fr)] overflow-hidden border-b border-white/8 bg-[#111214] text-left outline-none transition-colors focus-visible:bg-white/6",
+                "group relative grid min-h-20 cursor-pointer grid-cols-[108px_minmax(0,1fr)] overflow-hidden border-b border-white/8 bg-[#111214] text-left outline-none transition-colors focus-visible:bg-white/6",
                 selected && "bg-white/6 shadow-[inset_3px_0_0_var(--accent-green)]",
                 highlighted && "bg-white/10",
             )}
@@ -331,7 +334,7 @@ function QuestListItem({
                         alt=""
                         className={cn(
                             "absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-[1.025]",
-                            completed && "opacity-50",
+                            resolved && "opacity-50",
                         )}
                     />
                 ) : (
@@ -355,7 +358,7 @@ function QuestListItem({
                     <h3
                         className={cn(
                             "min-w-0 flex-1 truncate text-[13px] font-semibold leading-5 text-gray-100",
-                            completed && "text-gray-500",
+                            resolved && "text-gray-500",
                         )}
                     >
                         {quest.name}
@@ -443,15 +446,20 @@ function QuestListItem({
                             <Lock size={10} /> {status.label}
                         </span>
                     )}
+                    {failed && (
+                        <span className="flex shrink-0 items-center gap-1 uppercase text-red-300/70">
+                            <XCircle size={10} /> Failed
+                        </span>
+                    )}
                     {(quest.minPlayerLevel ?? 0) > 0 && <span className="shrink-0">Lv {quest.minPlayerLevel}</span>}
                     {quest.objectives.some((objective) => objective.requiredKeys?.length) && (
                         <KeyRound size={10} className="shrink-0 text-amber-300/70" />
                     )}
                 </div>
 
-                <p className="mt-1 line-clamp-1 text-[11px] leading-4 text-gray-500">
+                {/* <p className="mt-1 line-clamp-1 text-[11px] leading-4 text-gray-500">
                     {getQuestObjectiveSummary(quest)}
-                </p>
+                </p> */}
 
                 <div className="mt-1 flex min-w-0 items-center gap-2 text-[10px] font-medium text-gray-500">
                     {quest.map && (
