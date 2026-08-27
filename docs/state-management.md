@@ -7,7 +7,7 @@ Client-side state lives in two Zustand stores. Server-fetched data (stations, it
 ## `useUserStore` — User Progress & Preferences
 
 **File:** `src/lib/stores/useUserStore.ts`
-**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 17.
+**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 18.
 
 Do not change the storage key. Bump the version and add a migration only when the persisted state shape requires it.
 
@@ -53,6 +53,7 @@ itemsSize: "Icon" | "Compact" | "Expanded";
 playerLevel: number;
 prestigeLevel: number;
 questTraderLoyaltyLevels: Record<string, number>;
+questFenceReputation: number;                 // exact Fence standing used by quest requirement filtering
 questViewMode: "byMap" | "byTrader" | "flatList";
 questCardSize: "small" | "large"; // Legacy compatibility field; quest cards use one compact layout.
 questSortMode: "default" | "level" | "xp" | "unlockImpact";
@@ -126,6 +127,7 @@ type QuestVisibilityMode = "all" | "hideLocked" | "activeDepth";
 | `toggleQuestHaveItems(questId)`                  | Toggle whether hand-in items have been collected for a quest                                         |
 | `toggleIgnoredQuest(questId)`                    | Toggle whether a quest is ignored in quest demand                                                    |
 | `togglePinnedQuest(questId)`                     | Toggle whether a quest is pinned                                                                     |
+| `setQuestFenceReputation(value)`                  | Set exact Fence standing used by quest requirement filtering                                         |
 | `addItemCounts(itemId, haveDelta, haveFirDelta)` | Add to owned inventory counts                                                                        |
 | `setItemSourceFilter(value)`                     | Set items page source filter (`all`, `hideout`, `quest`)                                             |
 | `applyEditionBonuses(stations)`                  | Set starting Stash/Cultist levels based on `gameEdition`; no-ops if already applied for this edition |

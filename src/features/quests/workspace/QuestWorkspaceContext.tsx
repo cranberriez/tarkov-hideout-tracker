@@ -6,6 +6,9 @@ import type { FullQuest } from "@/types";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { buildQuestMapGroups, questMatchesSelectedMapGroups } from "../quest-map-groups";
 import {
+    questMatchesTraderRequirementProfile,
+} from "@/lib/utils/quest-trader-gates";
+import {
     createQuestMarkerAssignments,
     getAvailableObjectiveCategories,
     getQuestMapKeys,
@@ -33,6 +36,7 @@ interface QuestWorkspaceContextValue {
     selectedQuestId: string | null;
     selectedQuest: FullQuest | null;
     selectedTraderIds: Set<string>;
+    filterByTraderRequirements: boolean;
     selectedMapKeys: Set<string>;
     selectedStatuses: Set<QuestWorkspaceStatus>;
     selectedObjectiveCategories: Set<QuestObjectiveCategory>;
@@ -45,6 +49,7 @@ interface QuestWorkspaceContextValue {
     setSelectedQuestId: (questId: string | null) => void;
     toggleTrader: (traderId: string) => void;
     clearTraders: () => void;
+    setFilterByTraderRequirements: (enabled: boolean) => void;
     toggleMap: (mapKey: string) => void;
     clearMaps: () => void;
     toggleStatus: (status: QuestWorkspaceStatus) => void;
@@ -72,6 +77,7 @@ function toggleSetValue<T>(current: Set<T>, value: T) {
 export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest[]; children: ReactNode }) {
     const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
     const [selectedTraderIds, setSelectedTraderIds] = useState<Set<string>>(() => new Set());
+    const [filterByTraderRequirements, setFilterByTraderRequirements] = useState(true);
     const [selectedMapKeys, setSelectedMapKeys] = useState<Set<string>>(() => new Set());
     const [selectedStatuses, setSelectedStatuses] = useState<Set<QuestWorkspaceStatus>>(
         () => new Set(["active", "completed", "locked"]),
@@ -90,6 +96,7 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             prestigeLevel: state.prestigeLevel,
             faction: state.questFaction,
             traderLoyaltyLevels: state.questTraderLoyaltyLevels,
+            fenceReputation: state.questFenceReputation,
             completedQuests: state.completedQuests,
             failedQuests: state.failedQuests,
         })),
@@ -120,6 +127,10 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
     const onlyActiveSelected = selectedStatuses.size === 1 && selectedStatuses.has("active");
     const filteredQuests = useMemo(() => quests.filter((quest) => {
         if (selectedTraderIds.size > 0 && !selectedTraderIds.has(quest.trader.id)) return false;
+        if (
+            filterByTraderRequirements &&
+            !questMatchesTraderRequirementProfile(quest, profile)
+        ) return false;
         if (selectedMapKeys.size > 0 && !questMatchesSelectedMapGroups(quest, selectedMapKeys)) return false;
         const status = statusByQuestId.get(quest.id);
         if (
@@ -136,7 +147,7 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             if (!haystack.includes(normalizedSearch)) return false;
         }
         return true;
-    }), [normalizedSearch, onlyActiveSelected, quests, retainedCompletedQuestIds, selectedMapKeys, selectedObjectiveCategories, selectedStatuses, selectedTraderIds, statusByQuestId]);
+    }), [filterByTraderRequirements, normalizedSearch, onlyActiveSelected, profile, quests, retainedCompletedQuestIds, selectedMapKeys, selectedObjectiveCategories, selectedStatuses, selectedTraderIds, statusByQuestId]);
 
     useEffect(() => {
         const previous = previousCompletedQuests.current;
@@ -176,6 +187,7 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             selectedQuestId,
             selectedQuest: selectedQuestId ? questsById.get(selectedQuestId) ?? null : null,
             selectedTraderIds,
+            filterByTraderRequirements,
             selectedMapKeys,
             selectedStatuses,
             selectedObjectiveCategories,
@@ -188,6 +200,7 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             setSelectedQuestId,
             toggleTrader: (id) => { clearRetainedCompletedQuests(); setSelectedTraderIds((current) => toggleSetValue(current, id)); },
             clearTraders: () => { clearRetainedCompletedQuests(); setSelectedTraderIds(new Set()); },
+            setFilterByTraderRequirements: (enabled) => { clearRetainedCompletedQuests(); setFilterByTraderRequirements(enabled); },
             toggleMap: (key) => { clearRetainedCompletedQuests(); setSelectedMapKeys((current) => toggleSetValue(current, key)); },
             clearMaps: () => { clearRetainedCompletedQuests(); setSelectedMapKeys(new Set()); },
             toggleStatus: (status) => { clearRetainedCompletedQuests(); setSelectedStatuses((current) => toggleSetValue(current, status)); },

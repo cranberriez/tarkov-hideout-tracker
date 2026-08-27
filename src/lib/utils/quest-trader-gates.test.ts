@@ -6,7 +6,9 @@ import {
     deriveQuestTraderGate,
     formatQuestTraderGate,
     getQuestTraderGateType,
+    getQuestIssuingTraderLoyaltyLevel,
     isQuestTraderLoyaltyRequirement,
+    questMatchesTraderRequirementProfile,
 } from "./quest-trader-gates";
 
 function makeRequirement(
@@ -36,6 +38,32 @@ test("classifies JSON and legacy loyalty gate names as level", () => {
     assert.equal(getQuestTraderGateType(legacyGate), "level");
     assert.equal(isQuestTraderLoyaltyRequirement(jsonGate), true);
     assert.equal(isQuestTraderLoyaltyRequirement(legacyGate), true);
+});
+
+test("derives the issuing trader loyalty level and defaults ungated quests to level 1", () => {
+    const trader = { id: "trader", name: "Trader", normalizedName: "trader" };
+    assert.equal(getQuestIssuingTraderLoyaltyLevel({ trader, traderRequirements: [] }), 1);
+    assert.equal(getQuestIssuingTraderLoyaltyLevel({
+        trader,
+        traderRequirements: [
+            makeRequirement("level", { value: 3, trader }),
+            makeRequirement("level", { value: 4, trader: { ...trader, id: "other" } }),
+        ],
+    }), 3);
+});
+
+test("matches loyalty and Fence reputation requirements against the trader profile", () => {
+    const trader = { id: "trader", name: "Trader", normalizedName: "trader" };
+    const fence = { id: "fence", name: "Fence", normalizedName: "fence" };
+    const profile = { traderLoyaltyLevels: { trader: 2 }, fenceReputation: 1.5 };
+
+    assert.equal(questMatchesTraderRequirementProfile({ traderRequirements: [
+        makeRequirement("level", { trader, value: 2 }),
+        makeRequirement("reputation", { trader: fence, value: 1, compareMethod: ">=" }),
+    ] }, profile), true);
+    assert.equal(questMatchesTraderRequirementProfile({ traderRequirements: [
+        makeRequirement("reputation", { trader: fence, value: 2, compareMethod: ">" }),
+    ] }, profile), false);
 });
 
 test("keeps reputation and unknown gate kinds distinct", () => {

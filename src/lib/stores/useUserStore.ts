@@ -96,6 +96,7 @@ interface UserState {
     playerLevel: number;
     prestigeLevel: number;
     questTraderLoyaltyLevels: Record<string, number>;
+    questFenceReputation: number;
 
     // Quest page filter preferences (persisted)
     questViewMode: QuestViewMode;
@@ -183,6 +184,7 @@ interface UserState {
     setPlayerLevel: (level: number) => void;
     setPrestigeLevel: (level: number) => void;
     setQuestTraderLoyaltyLevel: (traderId: string, level: number) => void;
+    setQuestFenceReputation: (reputation: number) => void;
 
     setQuestViewMode: (mode: QuestViewMode) => void;
     setQuestCardSize: (size: QuestCardSize) => void;
@@ -257,6 +259,7 @@ export const useUserStore = create<UserState>()(
             playerLevel: 1,
             prestigeLevel: 0,
             questTraderLoyaltyLevels: {},
+            questFenceReputation: 0,
 
             questViewMode: "byTrader",
             questCardSize: "small",
@@ -490,6 +493,8 @@ export const useUserStore = create<UserState>()(
                         [traderId]: level,
                     },
                 })),
+            setQuestFenceReputation: (reputation) =>
+                set({ questFenceReputation: Number.isFinite(reputation) ? reputation : 0 }),
 
             setQuestViewMode: (mode) => set({ questViewMode: mode }),
             setQuestCardSize: (size) => set({ questCardSize: size }),
@@ -721,6 +726,7 @@ export const useUserStore = create<UserState>()(
                     playerLevel: 1,
                     prestigeLevel: 0,
                     questTraderLoyaltyLevels: {},
+                    questFenceReputation: 0,
                     questViewMode: "byTrader",
                     questCardSize: "small",
                     questSortMode: "default",
@@ -758,7 +764,7 @@ export const useUserStore = create<UserState>()(
         }),
         {
             name: USER_STORE_STORAGE_KEY,
-            version: 17,
+            version: 18,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -921,6 +927,17 @@ export const useUserStore = create<UserState>()(
                         questChangeHistory: normalizeQuestChangeHistory(
                             nextState.questChangeHistory,
                         ),
+                    };
+                }
+
+                if (version < 18) {
+                    nextState = {
+                        ...nextState,
+                        questFenceReputation:
+                            typeof nextState.questFenceReputation === "number" &&
+                            Number.isFinite(nextState.questFenceReputation)
+                                ? nextState.questFenceReputation
+                                : 0,
                     };
                 }
 

@@ -3,6 +3,7 @@
 import {
     CheckCircle2,
     Circle,
+    Crown,
     Crosshair,
     DoorOpen,
     Hammer,
@@ -16,9 +17,11 @@ import {
     Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getQuestIssuingTraderLoyaltyLevel } from "@/lib/utils/quest-trader-gates";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useQuestsContext } from "../QuestsContext";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
+import { QuestFilterSelectionPane } from "./QuestFilterBar";
 import {
     getQuestObjectiveCategories,
     getQuestObjectiveSummary,
@@ -33,8 +36,10 @@ export function QuestListPane() {
         setSelectedQuestId,
         highlightedQuestId,
         listMode,
+        openFilter,
     } = useQuestWorkspace();
 
+    if (openFilter) return <QuestFilterSelectionPane section={openFilter} />;
     if (listMode === "history") return <QuestHistoryList />;
 
     return (
@@ -148,6 +153,7 @@ function QuestListItem({
     );
     const categories = [...getQuestObjectiveCategories(quest)].slice(0, 2);
     const traderImage = quest.trader.image4xLink ?? quest.trader.imageLink;
+    const traderLoyaltyLevel = getQuestIssuingTraderLoyaltyLevel(quest);
 
     return (
         <article
@@ -264,6 +270,15 @@ function QuestListItem({
                             <img src={traderImage} alt="" className="h-3.5 w-3.5 rounded-full object-cover" />
                         )}
                         <span className="truncate">{quest.trader.name}</span>
+                        <span
+                            className="flex h-3.5 min-w-3.5 shrink-0 items-center justify-center text-tarkov-green/75"
+                            title={`Requires ${quest.trader.name} loyalty level ${traderLoyaltyLevel}`}
+                            aria-label={`Requires trader loyalty level ${traderLoyaltyLevel}`}
+                        >
+                            {traderLoyaltyLevel === 4
+                                ? <Crown size={10} />
+                                : <span className="font-serif text-[9px] font-bold leading-none">{["", "I", "II", "III"][traderLoyaltyLevel]}</span>}
+                        </span>
                     </span>
                     {status.status === "locked" && (
                         <span className="flex shrink-0 items-center gap-1 uppercase text-red-300/70">

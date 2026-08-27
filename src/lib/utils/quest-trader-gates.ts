@@ -1,4 +1,4 @@
-import type { QuestTraderRequirement } from "@/types";
+import type { FullQuest, QuestTraderRequirement } from "@/types";
 
 export type QuestTraderGateType = "level" | "reputation" | "unknown";
 
@@ -39,6 +39,74 @@ export function deriveQuestTraderGate(
 
 export function isQuestTraderLoyaltyRequirement(requirement: QuestTraderRequirement) {
     return getQuestTraderGateType(requirement) === "level";
+}
+
+export type QuestTraderLoyaltyLevel = 1 | 2 | 3 | 4;
+
+/**
+ * Return the issuing trader loyalty level required by a quest. Quests without
+ * an explicit own-trader level gate are LL1. Cross-trader gates do not change
+ * the tier shown for the issuing trader.
+ */
+export function getQuestIssuingTraderLoyaltyLevel(
+    quest: Pick<FullQuest, "trader" | "traderRequirements">,
+): QuestTraderLoyaltyLevel {
+    const ownTraderLevels = quest.traderRequirements
+        .filter(
+            (requirement) =>
+                requirement.trader.id === quest.trader.id &&
+                isQuestTraderLoyaltyRequirement(requirement),
+        )
+        .map((requirement) => requirement.value)
+        .filter((value) => Number.isFinite(value));
+
+    const level = ownTraderLevels.length > 0 ? Math.max(...ownTraderLevels) : 1;
+    return Math.min(4, Math.max(1, Math.round(level))) as QuestTraderLoyaltyLevel;
+}
+
+function compareTraderRequirement(current: number, method: string, required: number) {
+    switch (method.trim()) {
+        case ">": return current > required;
+        case "<": return current < required;
+        case "<=": return current <= required;
+        case "=":
+        case "==":
+        case "===": return current === required;
+        case "!=":
+        case "!==": return current !== required;
+        default: return current >= required;
+    }
+}
+
+export function questMatchesTraderRequirementProfile(
+    quest: Pick<FullQuest, "traderRequirements">,
+    profile: {
+        traderLoyaltyLevels: Record<string, number>;
+        fenceReputation: number;
+    },
+) {
+    return quest.traderRequirements.every((requirement) => {
+        const type = getQuestTraderGateType(requirement);
+        if (type === "level") {
+            return compareTraderRequirement(
+                profile.traderLoyaltyLevels[requirement.trader.id] ?? 1,
+                requirement.compareMethod,
+                requirement.value,
+            );
+        }
+        if (
+            type === "reputation" &&
+            (requirement.trader.normalizedName === "fence" ||
+                requirement.trader.name.toLowerCase() === "fence")
+        ) {
+            return compareTraderRequirement(
+                profile.fenceReputation,
+                requirement.compareMethod,
+                requirement.value,
+            );
+        }
+        return true;
+    });
 }
 
 /**

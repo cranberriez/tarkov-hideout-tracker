@@ -86,6 +86,7 @@ playerLevel: number;
 prestigeLevel: number;
 questFaction: "USEC" | "BEAR" | null;
 questTraderLoyaltyLevels: Record<string, number>;
+questFenceReputation: number;
 
 questViewMode: "byMap" | "byTrader" | "flatList";
 questCardSize: "small" | "large"; // Legacy compatibility field; no longer exposed in the UI.
@@ -115,6 +116,14 @@ questSidebarCollapsed: boolean;
 - `traders` and `allMaps`: deduped filter lists derived from full quest data.
 - `questSortMode`: applied to By Trader, By Map, and List views.
 - Manual sync helpers that call `quest-sync.ts` and write results back to `useUserStore`.
+
+The workspace's filter headers use an in-pane selection state: choosing Traders,
+Maps, Status, or Quest type replaces the left quest log with that section's
+options at the same bounded width. Trader additional options include an
+enabled-by-default requirement toggle and per-trader LL1-LL4 profile controls.
+Fence has LL1/max controls plus an exact persisted standing input; BTR Driver
+and Lightkeeper have no loyalty controls. Quest list rows display the issuing
+trader's required loyalty level beside the trader name, with a crown for LL4.
 
 The workspace keeps quests completed during an `Active`-only view visible for the
 rest of the current filter session. Changing a quest filter or search text clears
