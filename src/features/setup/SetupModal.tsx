@@ -34,34 +34,6 @@ export function SetupModal() {
     const [stations] = useState<SetupStation[]>(STATIC_STATIONS);
     const [activeView, setActiveView] = useState<"settings" | "quick-levels">("settings");
 
-    // Automatically open only on true first visit, based on persisted state
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-
-        try {
-            const raw = localStorage.getItem("tarkov-hideout-user-state");
-            if (hasPendingLegacyConversion) return;
-
-            if (!raw) {
-                if (!hasCompletedSetup) {
-                    setSetupOpen(true);
-                }
-                return;
-            }
-
-            const parsed = JSON.parse(raw) as { state?: { hasCompletedSetup?: boolean } };
-            const done = parsed?.state?.hasCompletedSetup ?? false;
-
-            if (!done && !hasCompletedSetup) {
-                setSetupOpen(true);
-            }
-        } catch {
-            if (!hasCompletedSetup) {
-                setSetupOpen(true);
-            }
-        }
-    }, [hasCompletedSetup, hasPendingLegacyConversion, setSetupOpen]);
-
     // Apply bonuses whenever edition changes
     useEffect(() => {
         if (gameEdition && stations) {
@@ -85,22 +57,24 @@ export function SetupModal() {
                 className="w-full md:max-w-3xl p-0 gap-0 overflow-hidden rounded-md bg-card border border-border-color"
             >
                 <div className="px-6 py-4 flex items-center justify-between border-b border-border-color bg-black/60">
-                    <DialogTitle className="text-sm font-semibold tracking-[0.2em] text-gray-400">
-                        INITIAL SETUP
-                    </DialogTitle>
+                    <div>
+                        <DialogTitle className="text-sm font-semibold tracking-[0.2em] text-gray-300">
+                            {hasCompletedSetup ? "EDIT SETUP" : "SET UP YOUR PROFILE"}
+                        </DialogTitle>
+                        <p className="mt-1 text-xs text-gray-500">
+                            {activeView === "settings"
+                                ? "Choose the profile that matches your Tarkov character."
+                                : "Set each station to its current in-game level."}
+                        </p>
+                    </div>
                     <button
-                        onClick={handleFinish}
-                        className="text-gray-500 hover:text-white transition-colors"
+                        type="button"
+                        onClick={() => setSetupOpen(false)}
+                        className="rounded-sm p-1 text-gray-500 transition-colors hover:bg-white/5 hover:text-white"
+                        aria-label="Close setup"
                     >
                         <X size={18} />
                     </button>
-                </div>
-
-                <div className="px-6 pt-4 pb-3 border-b border-border-color bg-black/40">
-                    <div className="text-xs text-gray-500">
-                        Configure your game settings and hideout levels so item requirements and
-                        prices match your account.
-                    </div>
                 </div>
 
                 <div className="p-6 max-h-[65vh] overflow-y-auto bg-black/40">
@@ -126,7 +100,7 @@ export function SetupModal() {
                                 disabled={!canFinish}
                                 className="px-4 py-2 rounded-sm font-medium text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Save & Close
+                                Save Setup
                             </button>
                             <button
                                 onClick={() => setActiveView("quick-levels")}
@@ -137,7 +111,7 @@ export function SetupModal() {
                                         : "bg-black/40 text-gray-600 border border-white/10 cursor-not-allowed"
                                 }`}
                             >
-                                Set Hideout Levels &rarr;
+                                Hideout Levels &rarr;
                             </button>
                         </>
                     ) : (

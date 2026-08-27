@@ -36,10 +36,7 @@ export function QuickHideoutLevels({
 
     return (
         <div className="flex flex-col gap-4">
-            <p className="text-xs text-gray-500">
-                Quickly set your current level for each hideout station. Level 0 means not
-                constructed.
-            </p>
+            <p className="text-xs text-gray-500">Level 0 means not constructed.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {sortedStations.map((station) => {
                     const currentLevel = stationLevels[station.id] ?? 0;

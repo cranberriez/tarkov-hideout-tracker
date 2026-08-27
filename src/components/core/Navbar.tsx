@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Boxes, House, Menu, Plus, ScrollText } from "lucide-react";
+import { Boxes, House, Menu, Plus, ScrollText, Settings2 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
     DropdownMenu,
@@ -36,6 +36,7 @@ const links = [
 
 export function Navbar() {
     const setSetupOpen = useUserStore((state) => state.setSetupOpen);
+    const hasCompletedSetup = useUserStore((state) => state.hasCompletedSetup);
     const isQuickAddOpen = useUIStore((state) => state.isQuickAddOpen);
     const setQuickAddOpen = useUIStore((state) => state.setQuickAddOpen);
     const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
@@ -82,10 +83,14 @@ export function Navbar() {
                                 )}
                             >
                                 <Plus size={15} />
-                                <span>Add</span>
+                                <span className="hidden sm:inline">Add</span>
                             </button>
 
                             <PlayerProfileMenu />
+
+                            {!hasCompletedSetup && (
+                                <SetupButton onClick={() => setSetupOpen(true)} compact />
+                            )}
 
                             <DropdownMenu>
                                 <DropdownMenuTrigger
@@ -179,6 +184,10 @@ export function Navbar() {
 
                         <PlayerProfileMenu />
 
+                        {!hasCompletedSetup && (
+                            <SetupButton onClick={() => setSetupOpen(true)} />
+                        )}
+
                         <DropdownMenu>
                             <DropdownMenuTrigger
                                 className={cn(
@@ -224,5 +233,21 @@ export function Navbar() {
                 </div>
             </div>
         </nav>
+    );
+}
+
+function SetupButton({ onClick, compact = false }: { onClick: () => void; compact?: boolean }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={cn(
+                "flex h-10 items-center justify-center gap-2 rounded border border-tarkov-green/60 bg-tarkov-green/10 font-semibold uppercase tracking-wide text-tarkov-green shadow-[0_0_18px_rgba(157,255,0,0.12)] transition-all hover:border-tarkov-green hover:bg-tarkov-green hover:text-black",
+                compact ? "px-2 text-[11px]" : "px-3 text-xs",
+            )}
+        >
+            <Settings2 size={compact ? 14 : 15} />
+            Setup
+        </button>
     );
 }

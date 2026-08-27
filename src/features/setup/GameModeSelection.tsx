@@ -11,8 +11,8 @@ export function GameModeSelection({ selected, onSelect }: GameModeSelectionProps
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex flex-col">
-				<h3 className="text-lg font-medium text-white">What version do you primarily play on?</h3>
-				<p className="text-xs text-gray-500 mt-1">Each mode has a separate character, inventory, hideout, and quest history.</p>
+				<h3 className="text-base font-medium text-white">Game mode</h3>
+				<p className="text-xs text-gray-500 mt-1">Progress is tracked separately for each mode.</p>
 			</div>
 			<div className="flex flex-col sm:flex-row gap-3">
 				{GAME_MODES.map((mode) => {

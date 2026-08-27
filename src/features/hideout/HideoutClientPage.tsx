@@ -37,8 +37,8 @@ export function HideoutClientPage() {
                 <div className="mb-4 flex items-center gap-3 rounded border border-yellow-500/40 bg-yellow-900/20 px-3 py-2 text-xs text-yellow-100 w-full">
                     <div className="flex-1">
                         Increasing or decreasing station levels will affect your item counts. Use
-                        the Setup in the extra menu at the top to modify base station levels
-                        without adjusting item requirements.
+                        Setup at the top to modify base station levels without adjusting item
+                        requirements.
                     </div>
                     <button
                         type="button"

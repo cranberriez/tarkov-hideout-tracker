@@ -2,7 +2,7 @@
 
 ## Overview
 
-On first visit (when `hasCompletedSetup === false`), users are presented with an onboarding flow to choose their **game edition** and **game mode**. This configures starting station levels and the market price data source for the session.
+On first visit (when `hasCompletedSetup === false`), users see a prominent **Setup** button in the navigation bar. The setup dialog opens only when they select that button; it does not interrupt their first page view. The flow configures their **game edition**, **game mode**, and optional current hideout levels.
 
 ---
 
@@ -17,20 +17,18 @@ On first visit (when `hasCompletedSetup === false`), users are presented with an
 `SetupModal` is rendered in `src/app/layout.tsx` (root layout) so it is available on all pages. It opens when `isSetupOpen === true` in `useUserStore`.
 
 If an unhandled `deprecatedLegacyState` snapshot exists, the legacy profile
-conversion dialog takes precedence over initial setup. After conversion, setup
-opens only when the converted legacy profile had not completed setup.
-Canceling the conversion also releases initial setup and leaves the old snapshot
-available from Settings.
+conversion dialog takes precedence over setup. The old snapshot remains available
+from Settings if conversion is canceled.
 
 ---
 
 ## Flow
 
-1. On first load, `HideoutClientPage` calls `setSetupOpen(true)` if `!hasCompletedSetup`.
-2. `SetupModal` renders `GameModeSelection` first.
-3. After mode is selected, renders `EditionSelection`.
-4. On edition selection, calls `completeSetup()` (sets `hasCompletedSetup: true`, `isSetupOpen: false`).
-5. `applyEditionBonuses(stations)` is called, which sets the starting Stash and Cultist Circle levels.
+1. When `!hasCompletedSetup`, `Navbar` renders a highlighted Setup button beside the character preview.
+2. Selecting Setup calls `setSetupOpen(true)` and opens `SetupModal`.
+3. `SetupModal` renders game mode and edition selection, with an optional hideout-level step.
+4. Saving calls `completeSetup()` (sets `hasCompletedSetup: true`, `isSetupOpen: false`).
+5. `applyEditionBonuses(stations)` sets the starting Stash and Cultist Circle levels.
 
 The modal can also be reopened from anywhere via `setSetupOpen(true)` (e.g., a "Change Edition" button in settings).
 
