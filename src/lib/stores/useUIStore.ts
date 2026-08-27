@@ -19,6 +19,9 @@ export interface QuestCascadeRequest {
 }
 
 interface UIState {
+    isMainNavHidden: boolean;
+    setMainNavHidden: (isHidden: boolean) => void;
+
     isQuickAddOpen: boolean;
     setQuickAddOpen: (isOpen: boolean) => void;
     pendingQuickAddItems: PendingItem[];
@@ -31,6 +34,9 @@ interface UIState {
 }
 
 export const useUIStore = create<UIState>((set) => ({
+    isMainNavHidden: false,
+    setMainNavHidden: (isHidden) => set({ isMainNavHidden: isHidden }),
+
     isQuickAddOpen: false,
     setQuickAddOpen: (isOpen) => set({ isQuickAddOpen: isOpen }),
     pendingQuickAddItems: [],

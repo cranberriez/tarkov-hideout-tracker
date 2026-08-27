@@ -144,6 +144,30 @@ function QuestListItem({
                         className="flex shrink-0 items-center gap-0.5"
                         onClick={(event) => event.stopPropagation()}
                     >
+                        {hasItemObjectives && (
+                            <button
+                                type="button"
+                                title={haveItems ? "Items not ready" : "Items ready"}
+                                onClick={() => toggleQuestHaveItems(quest.id)}
+                                className={cn(
+                                    "flex h-7 w-7 items-center justify-center rounded text-gray-600 transition-colors hover:bg-amber-300/8 hover:text-amber-300",
+                                    haveItems && "bg-amber-300/8 text-amber-300",
+                                )}
+                            >
+                                <PackageCheck size={14} />
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            title={pinned ? "Unpin quest" : "Pin quest"}
+                            onClick={() => togglePinnedQuest(quest.id)}
+                            className={cn(
+                                "-mb-px flex h-7 w-7 items-center justify-center rounded text-gray-600 transition-colors hover:bg-sky-400/8 hover:text-sky-300",
+                                pinned && "bg-sky-400/8 text-sky-300",
+                            )}
+                        >
+                            <Pin size={14} className={pinned ? "fill-current" : ""} />
+                        </button>
                         <button
                             type="button"
                             title={completed ? "Mark incomplete" : "Mark complete"}
@@ -164,30 +188,6 @@ function QuestListItem({
                                 <Circle size={15} />
                             )}
                         </button>
-                        <button
-                            type="button"
-                            title={pinned ? "Unpin quest" : "Pin quest"}
-                            onClick={() => togglePinnedQuest(quest.id)}
-                            className={cn(
-                                "flex h-7 w-7 items-center justify-center rounded text-gray-600 transition-colors hover:bg-sky-400/8 hover:text-sky-300",
-                                pinned && "bg-sky-400/8 text-sky-300",
-                            )}
-                        >
-                            <Pin size={14} className={pinned ? "fill-current" : ""} />
-                        </button>
-                        {hasItemObjectives && (
-                            <button
-                                type="button"
-                                title={haveItems ? "Items not ready" : "Items ready"}
-                                onClick={() => toggleQuestHaveItems(quest.id)}
-                                className={cn(
-                                    "flex h-7 w-7 items-center justify-center rounded text-gray-600 transition-colors hover:bg-amber-300/8 hover:text-amber-300",
-                                    haveItems && "bg-amber-300/8 text-amber-300",
-                                )}
-                            >
-                                <PackageCheck size={14} />
-                            </button>
-                        )}
                     </div>
                 </div>
 

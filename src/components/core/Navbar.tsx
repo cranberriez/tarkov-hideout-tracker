@@ -36,9 +36,13 @@ const links = [
 
 export function Navbar() {
     const setSetupOpen = useUserStore((state) => state.setSetupOpen);
-    const { isQuickAddOpen, setQuickAddOpen } = useUIStore();
+    const isQuickAddOpen = useUIStore((state) => state.isQuickAddOpen);
+    const setQuickAddOpen = useUIStore((state) => state.setQuickAddOpen);
+    const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
     const currentPage = usePathname();
     const isSecondaryRoute = currentPage === "/settings" || currentPage === "/news";
+
+    if (currentPage === "/quests" && isMainNavHidden) return null;
 
     return (
         <nav className="border-b bg-card">

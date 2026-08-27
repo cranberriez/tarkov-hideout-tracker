@@ -1,8 +1,9 @@
 "use client";
 
-import { Compass, Search, SlidersHorizontal, Upload, X } from "lucide-react";
+import { Compass, PanelTopClose, PanelTopOpen, Search, SlidersHorizontal, Upload, X } from "lucide-react";
 import { useState } from "react";
 import type { FullQuest } from "@/types";
+import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
 import { QuestSyncDialog } from "../components/QuestSyncDialog";
 import { QuestLogImportDialog } from "../components/QuestLogImportDialog";
@@ -10,12 +11,23 @@ import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 export function QuestActionBar({ quests }: { quests: FullQuest[] }) {
     const { searchQuery, setSearchQuery, mode, setMode } = useQuestWorkspace();
+    const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
+    const setMainNavHidden = useUIStore((state) => state.setMainNavHidden);
     const [searchOpen, setSearchOpen] = useState(false);
     const [syncOpen, setSyncOpen] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
     return (
         <>
             <div className="flex min-h-14 items-center gap-2 border-b border-white/10 bg-[#101113] px-3 sm:px-4">
+                <button
+                    type="button"
+                    aria-pressed={isMainNavHidden}
+                    onClick={() => setMainNavHidden(!isMainNavHidden)}
+                    className="inline-flex items-center gap-2 border border-white/8 bg-white/3 px-3 py-2 text-xs text-gray-400 transition-colors hover:border-white/20 hover:text-white"
+                >
+                    {isMainNavHidden ? <PanelTopOpen size={14} /> : <PanelTopClose size={14} />}
+                    <span className="hidden sm:inline">{isMainNavHidden ? "Show Nav" : "Hide Nav"}</span>
+                </button>
                 {searchOpen ? (
                     <div className="flex min-w-0 flex-1 items-center gap-2 border-b border-tarkov-green/50 px-1 py-1.5">
                         <Search size={15} className="text-gray-500" />

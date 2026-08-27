@@ -147,6 +147,7 @@ type QuestVisibilityMode = "all" | "hideLocked" | "activeDepth";
 ### State Shape
 
 ```ts
+isMainNavHidden: boolean;
 isQuickAddOpen: boolean;
 pendingQuickAddItems: PendingItem[];
 
@@ -162,6 +163,7 @@ interface PendingItem {
 
 | Action                           | Effect                                             |
 | -------------------------------- | -------------------------------------------------- |
+| `setMainNavHidden(bool)`         | Hide/show the main nav from the quests workspace   |
 | `setQuickAddOpen(bool)`          | Open/close the Quick Add modal                     |
 | `setPendingQuickAddItems(items)` | Set the list of items staged in the modal          |
 | `clearPendingQuickAddItems()`    | Empty the staged list (called on commit or cancel) |

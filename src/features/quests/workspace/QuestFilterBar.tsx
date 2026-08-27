@@ -156,7 +156,11 @@ export function QuestFilterBar() {
                         onClick={() => toggleStatus(option.id)}
                         label={option.label}
                         description={option.description}
-                        count={quests.filter((quest) => statusByQuestId.get(quest.id)?.status === option.id && !statusByQuestId.get(quest.id)?.terminal).length}
+                        count={quests.filter((quest) => {
+                            const status = statusByQuestId.get(quest.id);
+                            return status?.status === option.id &&
+                                (option.id === "completed" || !status.terminal);
+                        }).length}
                     />
                 ))}
                 <div className="mt-2 border-t border-white/8 px-3 py-2 text-[10px] leading-relaxed text-gray-600">
