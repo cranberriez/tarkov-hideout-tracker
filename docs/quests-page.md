@@ -316,10 +316,11 @@ per positioned zone plus polygon outlines when present. Every location belonging
 to the same quest shares its list symbol and color. Hover/focus remains
 bidirectional between markers and quest rows.
 
-Quests associated with the selected map but lacking positioned zone geometry stay
-visible in a `Location unavailable` group. Quest-item possible spawn locations are
-preserved in the objective data but deliberately deferred; their adapter is ready
-to repeat one quest symbol across every possible spawn when that UI is enabled.
+Quests associated with the selected map but lacking any positioned zone or quest-
+item geometry stay visible in a `Location unavailable` group. Possible quest-item
+spawns repeat one shared quest symbol at every known position. Duplicate positions
+inside one quest are collapsed into one marker and their objective information is
+combined in its tooltip.
 
 Quest detail panes do not render maps yet.
 

@@ -22,7 +22,11 @@ The browser receives only the selected compact render definition and selected SV
 
 Each normalized objective can carry `locations`, with a hydrated map identity, optional 3D position, optional outline, optional top/bottom heights, and a source of `zone` or `possibleLocation`. Invalid optional points are omitted; positions are never fabricated from outlines.
 
-The Raid Planner currently renders positioned `zone` locations. Quest-item `possibleLocation` records are preserved for the follow-up implementation but are not displayed yet. The marker adapter already supports displaying them with one shared symbol repeated at every possible spawn for the quest.
+The Raid Planner renders positioned `zone` and quest-item `possibleLocation`
+records. Every possible spawn for a quest item uses the quest's shared symbol.
+Locations within the same quest whose coordinates match to the nearest centimeter
+are represented by one marker; their objective descriptions, objective IDs, and
+distinct outlines are merged into that marker.
 
 ## Projection
 
@@ -37,7 +41,11 @@ Factory's 90-degree rotation is handled by this shared formula rather than a map
 
 ## Rendering and support
 
-`MapViewer` provides drag panning, wheel/button zoom, fit-to-markers, zone outlines, marker selection/focus, coincident-marker offsets, responsive sizing, and visible map attribution. Quest hover/focus and map marker focus remain synchronized.
+`MapViewer` provides drag panning, cursor-anchored wheel zoom, button zoom,
+fit-to-markers, zone outlines, marker selection/focus, responsive sizing, and
+visible map attribution. Marker coordinates and size remain fixed on hover/focus;
+only the highlight ring and objective tooltip change. Quest hover/focus and map
+marker focus remain synchronized.
 
 Icebreaker, The Lab, and The Labyrinth currently return an intentional unsupported state because their configured interactive entries do not have validated SVG paths. Floor definitions and height extents are retained in the compact manifest for a later floor-control pass; the initial viewer displays the SVG's default layer.
 

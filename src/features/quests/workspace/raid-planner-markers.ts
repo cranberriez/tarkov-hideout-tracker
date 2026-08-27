@@ -43,30 +43,52 @@ export function buildRaidPlannerMarkers(
     quests: FullQuest[],
     mapKey: string,
     styles: ReadonlyMap<string, QuestMarkerStyle>,
-    options: { includePossibleLocations?: boolean } = {},
 ) {
     const markers: MapOverlayMarker[] = [];
     for (const quest of quests) {
         const style = styles.get(quest.id);
         if (!style) continue;
+        const markerByPosition = new Map<string, MapOverlayMarker>();
         for (const objective of quest.objectives) {
             (objective.locations ?? []).forEach((location, locationIndex) => {
                 if (!isLocationOnMap(location, mapKey) || !location.position) return;
-                if (location.source === "possibleLocation" && !options.includePossibleLocations) return;
-                markers.push({
-                    id: `${quest.id}:${objective.id}:${location.source}:${locationIndex}`,
+                const positionKey = [location.position.x, location.position.y, location.position.z]
+                    .map((coordinate) => coordinate.toFixed(2))
+                    .join(":");
+                const existing = markerByPosition.get(positionKey);
+                if (existing) {
+                    if (!existing.descriptions.includes(objective.description)) {
+                        existing.descriptions.push(objective.description);
+                    }
+                    if (!existing.objectiveIds?.includes(objective.id)) {
+                        existing.objectiveIds?.push(objective.id);
+                    }
+                    if (location.outline.length > 0) {
+                        const outlineKey = JSON.stringify(location.outline);
+                        const alreadyIncluded = existing.outlines?.some(
+                            (outline) => JSON.stringify(outline) === outlineKey,
+                        );
+                        if (!alreadyIncluded) existing.outlines?.push(location.outline);
+                    }
+                    return;
+                }
+                const marker: MapOverlayMarker = {
+                    id: `${quest.id}:${positionKey}:${locationIndex}`,
                     mapId: location.map.id,
                     kind: "quest",
                     position: location.position,
-                    outline: location.outline,
+                    outlines: location.outline.length > 0 ? [location.outline] : [],
                     label: style.label,
-                    description: `${quest.name}: ${objective.description}`,
+                    title: quest.name,
+                    descriptions: [objective.description],
                     color: style.color,
                     questId: quest.id,
-                    objectiveId: objective.id,
-                });
+                    objectiveIds: [objective.id],
+                };
+                markerByPosition.set(positionKey, marker);
             });
         }
+        markers.push(...markerByPosition.values());
     }
     return markers;
 }
@@ -74,7 +96,7 @@ export function buildRaidPlannerMarkers(
 export function questHasRenderedLocation(quest: FullQuest, mapKey: string) {
     return quest.objectives.some((objective) =>
         (objective.locations ?? []).some((location) =>
-            location.source === "zone" && !!location.position && isLocationOnMap(location, mapKey),
+            !!location.position && isLocationOnMap(location, mapKey),
         ),
     );
 }

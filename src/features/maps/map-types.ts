@@ -45,10 +45,11 @@ export interface MapOverlayMarker {
     mapId: string;
     kind: "quest" | "extract" | "transit" | "goon";
     position: MapPoint3D;
-    outline?: MapPoint3D[];
+    outlines?: MapPoint3D[][];
     label: string;
-    description: string;
+    title: string;
+    descriptions: string[];
     color?: string;
     questId?: string;
-    objectiveId?: string;
+    objectiveIds?: string[];
 }

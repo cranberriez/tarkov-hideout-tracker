@@ -6,6 +6,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { getProjectedMapAspectRatio, worldToMapPoint } from "./map-projection";
 import type { MapOverlayMarker, MapRenderDefinition } from "./map-types";
+import { zoomViewAroundPoint, type MapViewTransform } from "./map-view-transform";
 
 interface MapViewerProps {
     mapKey: string;
@@ -13,12 +14,6 @@ interface MapViewerProps {
     highlightedQuestId?: string | null;
     onMarkerSelect?: (marker: MapOverlayMarker) => void;
     onMarkerFocus?: (marker: MapOverlayMarker | null) => void;
-}
-
-interface ViewTransform {
-    scale: number;
-    x: number;
-    y: number;
 }
 
 const MIN_SCALE = 1;
@@ -39,7 +34,7 @@ export function MapViewer({
         definition: MapRenderDefinition | null;
     } | null>(null);
     const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-    const [manualView, setManualView] = useState<{ key: string; value: ViewTransform } | null>(null);
+    const [manualView, setManualView] = useState<{ key: string; value: MapViewTransform } | null>(null);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -74,22 +69,14 @@ export function MapViewer({
 
     const projectedMarkers = useMemo(() => {
         if (!definition) return [];
-        const collisionCounts = new Map<string, number>();
         return markers.map((marker) => {
             const point = worldToMapPoint(marker.position, definition);
-            const collisionKey = `${point.percentX.toFixed(2)}:${point.percentY.toFixed(2)}`;
-            const collisionIndex = collisionCounts.get(collisionKey) ?? 0;
-            collisionCounts.set(collisionKey, collisionIndex + 1);
-            const angle = collisionIndex * 2.399963;
-            const radius = collisionIndex === 0 ? 0 : 1.25 * Math.ceil(collisionIndex / 6);
             return {
                 marker,
-                point: {
-                    ...point,
-                    percentX: point.percentX + Math.cos(angle) * radius,
-                    percentY: point.percentY + Math.sin(angle) * radius,
-                },
-                outline: marker.outline?.map((position) => worldToMapPoint(position, definition)) ?? [],
+                point,
+                outlines: marker.outlines?.map((outline) =>
+                    outline.map((position) => worldToMapPoint(position, definition)),
+                ) ?? [],
             };
         });
     }, [definition, markers]);
@@ -103,12 +90,18 @@ export function MapViewer({
             : { width: containerSize.width, height: containerSize.width / aspectRatio };
     }, [containerSize, definition]);
 
-    const fittedView = useMemo<ViewTransform>(() => {
+    const fittedView = useMemo<MapViewTransform>(() => {
         if (!stageSize.width || !stageSize.height || projectedMarkers.length === 0) {
             return { scale: 1, x: 0, y: 0 };
         }
-        const xs = projectedMarkers.flatMap(({ point, outline }) => [point.percentX, ...outline.map((entry) => entry.percentX)]);
-        const ys = projectedMarkers.flatMap(({ point, outline }) => [point.percentY, ...outline.map((entry) => entry.percentY)]);
+        const xs = projectedMarkers.flatMap(({ point, outlines }) => [
+            point.percentX,
+            ...outlines.flatMap((outline) => outline.map((entry) => entry.percentX)),
+        ]);
+        const ys = projectedMarkers.flatMap(({ point, outlines }) => [
+            point.percentY,
+            ...outlines.flatMap((outline) => outline.map((entry) => entry.percentY)),
+        ]);
         const minX = Math.min(...xs);
         const maxX = Math.max(...xs);
         const minY = Math.min(...ys);
@@ -132,10 +125,10 @@ export function MapViewer({
     const view = manualView?.key === viewKey ? manualView.value : fittedView;
     const fitMarkers = useCallback(() => setManualView(null), []);
 
-    const zoomBy = (factor: number) => {
+    const zoomBy = (factor: number, focalPoint = { x: 0, y: 0 }) => {
         setManualView({
             key: viewKey,
-            value: { ...view, scale: Math.min(MAX_SCALE, Math.max(MIN_SCALE, view.scale * factor)) },
+            value: zoomViewAroundPoint(view, factor, focalPoint, MIN_SCALE, MAX_SCALE),
         });
     };
 
@@ -164,7 +157,11 @@ export function MapViewer({
             className="relative h-full min-h-72 touch-none overflow-hidden bg-[#08090a]"
             onWheel={(event) => {
                 event.preventDefault();
-                zoomBy(event.deltaY < 0 ? 1.15 : 1 / 1.15);
+                const bounds = event.currentTarget.getBoundingClientRect();
+                zoomBy(event.deltaY < 0 ? 1.15 : 1 / 1.15, {
+                    x: event.clientX - bounds.left - bounds.width / 2,
+                    y: event.clientY - bounds.top - bounds.height / 2,
+                });
             }}
             onPointerDown={(event) => {
                 if ((event.target as HTMLElement).closest("button")) return;
@@ -201,32 +198,34 @@ export function MapViewer({
                     className="select-none"
                 />
                 <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
-                    {projectedMarkers.map(({ marker, outline }) => outline.length > 2 && (
-                        <polygon
-                            key={`${marker.id}:outline`}
-                            points={outline.map((point) => `${point.percentX},${point.percentY}`).join(" ")}
-                            fill={marker.color ?? "#9dbb61"}
-                            fillOpacity="0.12"
-                            stroke={marker.color ?? "#9dbb61"}
-                            strokeOpacity="0.75"
-                            strokeWidth={0.25 / view.scale}
-                            vectorEffect="non-scaling-stroke"
-                        />
-                    ))}
+                    {projectedMarkers.flatMap(({ marker, outlines }) =>
+                        outlines.map((outline, outlineIndex) => outline.length > 2 && (
+                            <polygon
+                                key={`${marker.id}:outline:${outlineIndex}`}
+                                points={outline.map((point) => `${point.percentX},${point.percentY}`).join(" ")}
+                                fill={marker.color ?? "#9dbb61"}
+                                fillOpacity="0.2"
+                                stroke={marker.color ?? "#9dbb61"}
+                                strokeOpacity="0.8"
+                                strokeWidth={0.25 / view.scale}
+                                vectorEffect="non-scaling-stroke"
+                            />
+                        )),
+                    )}
                 </svg>
                 {projectedMarkers.map(({ marker, point }) => (
                     <button
                         type="button"
                         key={marker.id}
-                        aria-label={`${marker.label}: ${marker.description}`}
+                        aria-label={`${marker.label}: ${marker.title}: ${marker.descriptions.join("; ")}`}
                         onMouseEnter={() => onMarkerFocus?.(marker)}
                         onMouseLeave={() => onMarkerFocus?.(null)}
                         onFocus={() => onMarkerFocus?.(marker)}
                         onBlur={() => onMarkerFocus?.(null)}
                         onClick={() => onMarkerSelect?.(marker)}
                         className={cn(
-                            "group absolute z-10 flex h-7 min-w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 bg-black/90 px-1.5 font-mono text-[11px] font-bold shadow-xl outline-none transition-transform hover:scale-125 focus-visible:scale-125",
-                            highlightedQuestId === marker.questId && "scale-125 ring-2 ring-white/60",
+                            "group absolute z-20 flex h-7 min-w-7 items-center justify-center rounded-full border-2 bg-black/90 px-1.5 font-mono text-[11px] font-bold shadow-xl outline-none hover:z-[100] focus-visible:z-[100]",
+                            highlightedQuestId === marker.questId && "ring-2 ring-white/60",
                         )}
                         style={{
                             left: `${point.percentX}%`,
@@ -237,9 +236,13 @@ export function MapViewer({
                         }}
                     >
                         {marker.label}
-                        <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 hidden w-64 -translate-x-1/2 border border-white/12 bg-[#111214]/95 p-3 text-left font-sans font-normal shadow-2xl backdrop-blur group-hover:block group-focus-visible:block">
-                            <span className="block text-xs font-semibold text-white">{marker.description.split(": ")[0]}</span>
-                            <span className="mt-1 block text-[10px] leading-relaxed text-gray-400">{marker.description.split(": ").slice(1).join(": ")}</span>
+                        <span className="pointer-events-none absolute bottom-full left-1/2 z-[110] mb-2 hidden w-72 -translate-x-1/2 border border-white/12 bg-[#111214]/95 p-3 text-left font-sans font-normal shadow-2xl backdrop-blur group-hover:block group-focus-visible:block">
+                            <span className="block text-xs font-semibold text-white">{marker.title}</span>
+                            <span className="mt-2 block space-y-1 text-[10px] leading-relaxed text-gray-400">
+                                {marker.descriptions.map((description) => (
+                                    <span key={description} className="block">{description}</span>
+                                ))}
+                            </span>
                         </span>
                     </button>
                 ))}
