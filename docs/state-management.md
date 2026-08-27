@@ -69,7 +69,7 @@ questActiveDepth: number;
 questShowHandInOnly: boolean;
 questShowFirHandInOnly: boolean;
 questShowPinnedOnly: boolean;
-questShowIgnored: boolean;
+questShowIgnored: boolean;                    // show hidden quests (default false)
 questShowDebug: boolean;
 questShowPrereqs: boolean;
 questSidebarCollapsed: boolean;

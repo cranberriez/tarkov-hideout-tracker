@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bug, CheckCircle2, Circle, ExternalLink, Flag, PackageCheck, Pin, RotateCcw, X, XCircle } from "lucide-react";
+import { Bug, CheckCircle2, Circle, Eye, EyeOff, ExternalLink, Flag, Pin, RotateCcw, X, XCircle } from "lucide-react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import { formatQuestTraderGate, getQuestTraderGateType } from "@/lib/utils/quest-trader-gates";
@@ -23,7 +23,7 @@ export function QuestDetailsPane() {
     const { selectedQuest: quest, statusByQuestId, questsById, maps, setSelectedQuestId, retainQuestAfterCompletion } = useQuestWorkspace();
     const { leadsToByQuestId, onItemClick, requestToggleQuestCompletion, requestFailQuest, requestResetQuestStatus } = useQuestsContext();
     const pinned = useUserStore((state) => quest ? !!state.pinnedQuests[quest.id] : false);
-    const haveItems = useUserStore((state) => quest ? !!state.questsWithItems[quest.id] : false);
+    const hidden = useUserStore((state) => quest ? !!state.ignoredQuests[quest.id] : false);
     const completedQuests = useUserStore((state) => state.completedQuests);
     const failedQuests = useUserStore((state) => state.failedQuests);
     const playerLevel = useUserStore((state) => state.playerLevel);
@@ -32,7 +32,7 @@ export function QuestDetailsPane() {
     const traderLoyaltyLevels = useUserStore((state) => state.questTraderLoyaltyLevels);
     const fenceReputation = useUserStore((state) => state.questFenceReputation);
     const togglePinnedQuest = useUserStore((state) => state.togglePinnedQuest);
-    const toggleQuestHaveItems = useUserStore((state) => state.toggleQuestHaveItems);
+    const toggleIgnoredQuest = useUserStore((state) => state.toggleIgnoredQuest);
 
     if (!quest) {
         return (
@@ -46,7 +46,6 @@ export function QuestDetailsPane() {
     }
 
     const status = statusByQuestId.get(quest.id)!;
-    const hasItemObjectives = quest.objectives.some((objective) => objective.type === "giveItem" || objective.type === "plantItem");
     const traderImage = quest.trader.image4xLink ?? quest.trader.imageLink;
     const leadsTo = (leadsToByQuestId.get(quest.id) ?? []).map((id) => questsById.get(id)).filter(Boolean);
     const objectivePresentation = buildObjectivePresentation(quest.objectives);
@@ -101,7 +100,7 @@ export function QuestDetailsPane() {
                         {questCanFail(quest) && !status.terminal && <button type="button" onClick={() => requestFailQuest(quest.id)} className="inline-flex items-center gap-2 border border-red-400/25 bg-red-400/8 px-3 py-2 text-xs text-red-300"><XCircle size={14} /> Failed</button>}
                         {status.terminal === "failed" && <button type="button" onClick={() => requestResetQuestStatus(quest.id)} className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-300"><RotateCcw size={14} /> Reset</button>}
                         <button type="button" onClick={() => togglePinnedQuest(quest.id)} className={cn("inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-400", pinned && "border-sky-400/25 bg-sky-400/8 text-sky-300")}><Pin size={14} className={pinned ? "fill-current" : ""} />{pinned ? "Unpin" : "Pin"}</button>
-                        {hasItemObjectives && <button type="button" onClick={() => toggleQuestHaveItems(quest.id)} className={cn("inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-400", haveItems && "border-amber-400/25 bg-amber-400/8 text-amber-300")}><PackageCheck size={14} />Items {haveItems ? "ready" : "needed"}</button>}
+                        <button type="button" onClick={() => toggleIgnoredQuest(quest.id)} className={cn("inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-400", hidden && "border-violet-400/25 bg-violet-400/8 text-violet-300")}>{hidden ? <Eye size={14} /> : <EyeOff size={14} />}{hidden ? "Show" : "Hide"}</button>
                     </div>
                 </div>
             </header>

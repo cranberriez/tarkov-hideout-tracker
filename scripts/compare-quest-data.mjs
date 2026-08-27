@@ -101,7 +101,7 @@ function parseArguments(argv) {
     }
     return {
         corePath: positional[0] ?? "src/lib/data/quests_core.json",
-        tarkovPath: positional[1] ?? "src/lib/data/tarkov-dev-tasks.json",
+        tarkovPath: positional[1] ?? "src/lib/data/tasks-pvp-season.json",
         writeOverrides,
     };
 }

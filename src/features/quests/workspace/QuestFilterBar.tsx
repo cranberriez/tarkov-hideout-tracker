@@ -269,8 +269,9 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
         selectedObjectiveCategories, toggleTrader, clearTraders,
         setFilterByTraderRequirements, toggleMap, clearMaps, toggleStatus, toggleObjectiveCategory,
         clearObjectiveCategories, statusByQuestId, setOpenFilter,
-        groupByTrader, groupByLoyaltyLevel, sortMode,
+        groupByTrader, groupByLoyaltyLevel, sortMode, showHiddenQuests,
         setGroupByTrader, setGroupByLoyaltyLevel, setSortMode,
+        setShowHiddenQuests,
     } = useQuestWorkspace();
     const titles = { traders: "Select traders", maps: "Select maps", status: "Select quest status", filters: "Filter / sort" };
     const orderedTraders = [...traders].sort((left, right) => {
@@ -316,6 +317,14 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
                 {section === "maps" && <><AnyRow active={selectedMapKeys.size === 0} onClick={clearMaps} count={quests.length} />{maps.map((map) => <MenuRow key={map.key} selected={selectedMapKeys.has(map.key)} onClick={() => toggleMap(map.key)} label={map.name} count={quests.filter((quest) => getQuestMapGroupsForQuest(quest).some((group) => group.key === map.key)).length} />)}</>}
                 {section === "status" && <>{STATUS_OPTIONS.map((option) => <MenuRow key={option.id} selected={selectedStatuses.has(option.id)} onClick={() => toggleStatus(option.id)} label={option.label} description={option.description} count={quests.filter((quest) => { const status = statusByQuestId.get(quest.id); return status?.status === option.id && (option.id === "completed" || !status.terminal); }).length} />)}<div className="mt-2 border-t border-white/8 px-3 py-2 text-[10px] leading-relaxed text-gray-600">Locked reasons include quest, level, loyalty, trader task count, prestige, faction, and branch gates. Pinning is independent from quest status.</div></>}
                 {section === "filters" && <>
+                    <FilterSectionTitle>Visibility</FilterSectionTitle>
+                    <ToggleRow
+                        checked={showHiddenQuests}
+                        onChange={setShowHiddenQuests}
+                        label="Show hidden quests"
+                        description="Include quests you have chosen to hide"
+                    />
+
                     <FilterSectionTitle>Grouping</FilterSectionTitle>
                     <ToggleRow
                         checked={groupByTrader}

@@ -42,6 +42,7 @@ interface QuestWorkspaceContextValue {
     selectedMapKeys: Set<string>;
     selectedStatuses: Set<QuestWorkspaceStatus>;
     selectedObjectiveCategories: Set<QuestObjectiveCategory>;
+    showHiddenQuests: boolean;
     groupByTrader: boolean;
     groupByLoyaltyLevel: boolean;
     sortMode: QuestSortMode;
@@ -60,6 +61,7 @@ interface QuestWorkspaceContextValue {
     toggleStatus: (status: QuestWorkspaceStatus) => void;
     toggleObjectiveCategory: (category: QuestObjectiveCategory) => void;
     clearObjectiveCategories: () => void;
+    setShowHiddenQuests: (enabled: boolean) => void;
     setGroupByTrader: (enabled: boolean) => void;
     setGroupByLoyaltyLevel: (enabled: boolean) => void;
     setSortMode: (mode: QuestSortMode) => void;
@@ -102,6 +104,8 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             fenceReputation: state.questFenceReputation,
             completedQuests: state.completedQuests,
             failedQuests: state.failedQuests,
+            hiddenQuests: state.ignoredQuests,
+            showHiddenQuests: state.questShowIgnored,
             selectedTraderIds: state.questWorkspaceSelectedTraders,
             filterByTraderRequirements: state.questWorkspaceFilterByTraderRequirements,
             selectedMapKeys: state.questWorkspaceSelectedMaps,
@@ -114,6 +118,7 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             setSelectedStatuses: state.setQuestWorkspaceSelectedStatuses,
             setSelectedObjectiveCategories:
                 state.setQuestWorkspaceSelectedObjectiveCategories,
+            setShowHiddenQuests: state.setQuestShowIgnored,
             setSortMode: state.setQuestSortMode,
         })),
     );
@@ -163,6 +168,7 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
     const normalizedSearch = searchQuery.trim().toLowerCase();
     const onlyActiveSelected = selectedStatuses.size === 1 && selectedStatuses.has("active");
     const filteredQuests = useMemo(() => quests.filter((quest) => {
+        if (!store.showHiddenQuests && store.hiddenQuests[quest.id]) return false;
         if (selectedTraderIds.size > 0 && !selectedTraderIds.has(quest.trader.id)) return false;
         if (
             filterByTraderRequirements &&
@@ -184,7 +190,7 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             if (!haystack.includes(normalizedSearch)) return false;
         }
         return true;
-    }), [filterByTraderRequirements, normalizedSearch, onlyActiveSelected, profile, quests, retainedCompletedQuestIds, selectedMapKeys, selectedObjectiveCategories, selectedStatuses, selectedTraderIds, statusByQuestId]);
+    }), [filterByTraderRequirements, normalizedSearch, onlyActiveSelected, profile, quests, retainedCompletedQuestIds, selectedMapKeys, selectedObjectiveCategories, selectedStatuses, selectedTraderIds, statusByQuestId, store.hiddenQuests, store.showHiddenQuests]);
 
     useEffect(() => {
         const previous = previousCompletedQuests.current;
@@ -228,6 +234,7 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             selectedMapKeys,
             selectedStatuses,
             selectedObjectiveCategories,
+            showHiddenQuests: store.showHiddenQuests,
             groupByTrader,
             groupByLoyaltyLevel,
             sortMode: store.sortMode,
@@ -246,6 +253,10 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             toggleStatus: (status) => { clearRetainedCompletedQuests(); store.setSelectedStatuses([...toggleSetValue(selectedStatuses, status)]); },
             toggleObjectiveCategory: (category) => { clearRetainedCompletedQuests(); store.setSelectedObjectiveCategories([...toggleSetValue(selectedObjectiveCategories, category)]); },
             clearObjectiveCategories: () => { clearRetainedCompletedQuests(); store.setSelectedObjectiveCategories([]); },
+            setShowHiddenQuests: (enabled) => {
+                clearRetainedCompletedQuests();
+                store.setShowHiddenQuests(enabled);
+            },
             setGroupByTrader,
             setGroupByLoyaltyLevel,
             setSortMode: store.setSortMode,

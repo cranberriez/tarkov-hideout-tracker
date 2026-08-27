@@ -11,7 +11,7 @@ The `/quests` route displays Tarkov.dev quest data in a full-height split worksp
 | `src/app/(data)/quests/page.tsx`                        | Server component; fetches full quest data, builds quest item and availability metadata, passes props to `QuestsClientPage`    |
 | `src/features/quests/QuestsClientPage.tsx`              | Client shell; manages selected item modal state, renders search/filter chrome, wraps content in `QuestsProvider`              |
 | `src/features/quests/QuestsContext.tsx`                 | React context + provider; reads store filters, owns local search text, computes derived quest maps and filtered quest lists   |
-| `src/features/quests/QuestCard.tsx`                     | Individual quest card; badges, objectives, item thumbnails, prerequisite/unlock chips, pin/ignore/complete/have-items actions |
+| `src/features/quests/QuestCard.tsx`                     | Individual legacy quest card; badges, objectives, item thumbnails, prerequisite/unlock chips, pin/ignore/complete actions |
 | `src/features/quests/components/QuestsList.tsx`         | By Map and By Trader grouped views, plus the ungrouped List view                                                              |
 | `src/features/quests/components/QuestsSidebar.tsx`      | Filter sidebar; trader and map multi-select, kappa/LK filters, view mode controls                                             |
 | `src/features/quests/components/QuestsCharacterBar.tsx` | Player level, prestige, faction, and trader loyalty controls                                                                  |
@@ -212,7 +212,7 @@ must never be used to infer or rewrite completion records.
 
 `QuestsSearchBar` stores immediate input locally and debounces writes to `QuestsContext.searchQuery`. `filteredQuests` matches search text against quest name, trader name, and map name after the persisted filters are applied.
 
-The page supports filters for completion, availability, hand-in objectives, FiR hand-ins, pinned quests, ignored quests, kappa/LK quest chains, selected traders, selected maps, faction, player level, prestige, trader loyalty, and known trader-tier quest-completion gates.
+The page supports filters for completion, availability, hand-in objectives, FiR hand-ins, pinned quests, hidden quests, kappa/LK quest chains, selected traders, selected maps, faction, player level, prestige, trader loyalty, and known trader-tier quest-completion gates. Hidden quests are excluded by default and can be included with **Show hidden quests** under Filter / Sort.
 
 Map filtering uses both `quest.map` and `quest.objectives[].maps`. Quests with objective-level maps appear in each matching map group. Quests with no quest-level or objective-level maps are treated as `Any Map` and remain visible when a concrete map filter is selected. In the By Map view, an active sidebar map filter limits the rendered map headers to the selected map groups so overlapping quests do not repopulate unrelated map sections.
 
@@ -319,8 +319,8 @@ above a consolidated Requirements section; the current normalized quest shape
 supplies `wikiLink` only. The header lists deduplicated locations derived from the
 quest and its objectives. Unrestricted and complete-map sets display as `ANY`;
 sets missing only one or two maps display as `Any Map, EXCEPT (...)`; smaller
-sets list their allowed maps. Quest status sits beside the completion and pin
-actions; XP and faction are omitted from the header metadata. Kappa-required and
+sets list their allowed maps. Quest status sits beside the completion, pin, and
+hide/show actions; XP and faction are omitted from the header metadata. Kappa-required and
 Lightkeeper-required markers sit beside the level metadata. Requirements
 appear before Objectives as a compact vertical list with status symbols and text,
 and the section is omitted when the quest has no requirements. The list includes player level,
@@ -368,7 +368,7 @@ pane must not infer those fields from objective text.
 
 `QuestCard.tsx` renders:
 
-- Completion, pin, ignore, and have-items controls backed by `useUserStore`.
+- Completion, pin, and hide/show controls backed by `useUserStore`.
 - Failed and disabled quest states for fail-capable mutually exclusive branches.
 - Trader avatar, quest name, level/map/kappa/LK/faction/trader-loyalty/prestige badges.
 - Trader reputation rewards from completion and trader reputation penalties from quest failure.

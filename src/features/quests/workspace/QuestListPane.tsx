@@ -13,7 +13,8 @@ import {
     Lock,
     MapPin,
     Package,
-    PackageCheck,
+    Eye,
+    EyeOff,
     Pin,
     RotateCcw,
     Search,
@@ -292,14 +293,11 @@ function QuestListItem({
     const status = statusByQuestId.get(questId)!;
     const marker = markerByQuestId.get(questId);
     const pinned = useUserStore((state) => !!state.pinnedQuests[questId]);
-    const haveItems = useUserStore((state) => !!state.questsWithItems[questId]);
+    const hidden = useUserStore((state) => !!state.ignoredQuests[questId]);
     const togglePinnedQuest = useUserStore((state) => state.togglePinnedQuest);
-    const toggleQuestHaveItems = useUserStore((state) => state.toggleQuestHaveItems);
+    const toggleIgnoredQuest = useUserStore((state) => state.toggleIgnoredQuest);
     const { requestToggleQuestCompletion } = useQuestsContext();
     const completed = status.status === "completed";
-    const hasItemObjectives = quest.objectives.some(
-        (objective) => objective.type === "giveItem" || objective.type === "plantItem",
-    );
     const categories = [...getQuestObjectiveCategories(quest)].slice(0, 2);
     const traderImage = quest.trader.image4xLink ?? quest.trader.imageLink;
     const traderLoyaltyLevel = getQuestIssuingTraderLoyaltyLevel(quest);
@@ -364,19 +362,18 @@ function QuestListItem({
                         className="flex shrink-0 items-center gap-0.5"
                         onClick={(event) => event.stopPropagation()}
                     >
-                        {hasItemObjectives && (
-                            <button
-                                type="button"
-                                title={haveItems ? "Items not ready" : "Items ready"}
-                                onClick={() => toggleQuestHaveItems(quest.id)}
-                                className={cn(
-                                    "flex h-7 w-7 items-center justify-center rounded text-gray-600 transition-colors hover:bg-amber-300/8 hover:text-amber-300",
-                                    haveItems && "bg-amber-300/8 text-amber-300",
-                                )}
-                            >
-                                <PackageCheck size={14} />
-                            </button>
-                        )}
+                        <button
+                            type="button"
+                            title={hidden ? "Show quest" : "Hide quest"}
+                            aria-label={hidden ? "Show quest" : "Hide quest"}
+                            onClick={() => toggleIgnoredQuest(quest.id)}
+                            className={cn(
+                                "flex h-7 w-7 items-center justify-center rounded text-gray-600 transition-colors hover:bg-violet-300/8 hover:text-violet-300",
+                                hidden && "bg-violet-300/8 text-violet-300",
+                            )}
+                        >
+                            {hidden ? <Eye size={14} /> : <EyeOff size={14} />}
+                        </button>
                         <button
                             type="button"
                             title={pinned ? "Unpin quest" : "Pin quest"}
