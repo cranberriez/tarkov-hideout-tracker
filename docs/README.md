@@ -31,6 +31,9 @@ Docs are grouped by purpose:
 - **[caching-architecture.md](caching-architecture.md)** - Current architecture
   Redis keys, Next.js `unstable_cache` wrappers, cache invalidation strategy, and how to add a new cached data source.
 
+- **[mapping-architecture.md](mapping-architecture.md)** - Current architecture
+  Quest objective geometry, compact SVG map manifests, projection, and the Raid Planner map viewer.
+
 ---
 
 ## Features

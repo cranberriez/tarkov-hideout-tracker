@@ -9,16 +9,18 @@ import {
     questMatchesTraderRequirementProfile,
 } from "@/lib/utils/quest-trader-gates";
 import {
-    createQuestMarkerAssignments,
     getAvailableObjectiveCategories,
     getQuestMapKeys,
     getQuestObjectiveCategories,
     getQuestWorkspaceStatus,
-    type QuestMarkerAssignment,
     type QuestObjectiveCategory,
     type QuestWorkspaceStatus,
     type QuestWorkspaceStatusInfo,
 } from "./quest-workspace-utils";
+import {
+    createQuestMarkerStyles,
+    type QuestMarkerStyle,
+} from "./raid-planner-markers";
 
 export type QuestWorkspaceMode = "details" | "planner";
 export type QuestListMode = "quests" | "history";
@@ -32,7 +34,7 @@ interface QuestWorkspaceContextValue {
     maps: ReturnType<typeof buildQuestMapGroups>;
     objectiveCategories: QuestObjectiveCategory[];
     statusByQuestId: Map<string, QuestWorkspaceStatusInfo>;
-    markerByQuestId: Map<string, QuestMarkerAssignment>;
+    markerByQuestId: Map<string, QuestMarkerStyle>;
     selectedQuestId: string | null;
     selectedQuest: FullQuest | null;
     selectedTraderIds: Set<string>;
@@ -151,7 +153,7 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
     const maps = useMemo(() => buildQuestMapGroups(quests), [quests]);
     const objectiveCategories = useMemo(() => getAvailableObjectiveCategories(quests), [quests]);
     const markerByQuestId = useMemo(
-        () => createQuestMarkerAssignments(
+        () => createQuestMarkerStyles(
             plannerMapKey
                 ? quests.filter((quest) => getQuestMapKeys(quest).has(plannerMapKey))
                 : [],

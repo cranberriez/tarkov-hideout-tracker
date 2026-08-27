@@ -14,6 +14,7 @@ import {
     isProgressionCacheUsable,
     parseNonEmptyTimedResponse,
 } from "@/server/services/tarkovJson/cache";
+import { normalizeQuestObjectiveLocations } from "@/server/services/quest-objective-locations";
 import type {
     FullQuest,
     FullQuestObjective,
@@ -92,7 +93,16 @@ interface JsonObjective {
     optional?: boolean;
     count?: number;
     maps?: string[];
-    zones?: Array<{ name?: string }>;
+    zones?: Array<{
+        id?: string;
+        name?: string;
+        map?: string;
+        position?: unknown;
+        outline?: unknown;
+        top?: unknown;
+        bottom?: unknown;
+    }>;
+    possibleLocations?: Array<{ map?: string; positions?: unknown }>;
     requiredKeys?: string[] | string[][];
     items?: string[];
     foundInRaid?: boolean;
@@ -234,6 +244,10 @@ function mapObjective(objective: JsonObjective, context: MappingContext): FullQu
         .map((id) => toQuestMap(id, context))
         .filter((map): map is QuestMap => map !== null);
     const requiredKeys = toRequiredKeyGroups(objective.requiredKeys, context);
+    const locations = normalizeQuestObjectiveLocations(
+        objective,
+        (mapId) => toQuestMap(mapId, context),
+    );
     const base = {
         id: objective.id,
         type: objective.type,
@@ -241,6 +255,7 @@ function mapObjective(objective: JsonObjective, context: MappingContext): FullQu
         optional: objective.optional ?? false,
         maps,
         requiredKeys,
+        locations,
     };
 
     if (["giveItem", "findItem", "plantItem"].includes(objective.type)) {

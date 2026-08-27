@@ -203,6 +203,11 @@ Additional fields beyond the base interface:
 
 `QuestItem` has no `iconLink` or `gridImageLink`. These objectives cannot be cross-referenced with flea/trader data. **Filter these out** when building an item demand list — use regular inventory item objectives such as `giveItem` and `plantItem` as the guard.
 
+The runtime quest provider is now the JSON API. Its full-objective adapter retains
+zone geometry and flattens each `possibleLocations[].positions[]` entry into a
+normalized objective location. See `mapping-architecture.md`; this GraphQL file
+remains a schema reference rather than the quests page's active fetch path.
+
 ---
 
 ## Service implementation notes

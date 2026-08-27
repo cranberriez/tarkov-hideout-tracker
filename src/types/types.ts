@@ -218,6 +218,21 @@ export interface QuestMap {
     normalizedName: string;
 }
 
+export interface MapPoint3D {
+    x: number;
+    y: number;
+    z: number;
+}
+
+export interface QuestMapLocation {
+    map: QuestMap;
+    position?: MapPoint3D;
+    outline: MapPoint3D[];
+    top?: number;
+    bottom?: number;
+    source: "zone" | "possibleLocation";
+}
+
 export type QuestItemObjectiveScope = "specific" | "anyOf" | "broadAny";
 
 export interface QuestObjectiveBase {
@@ -228,6 +243,7 @@ export interface QuestObjectiveBase {
     count?: number;
     maps?: QuestMap[];
     requiredKeys?: QuestItem[][];
+    locations?: QuestMapLocation[];
 }
 
 export interface QuestObjectiveItemType extends QuestObjectiveBase {

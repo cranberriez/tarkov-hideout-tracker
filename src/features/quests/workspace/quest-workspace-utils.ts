@@ -177,42 +177,6 @@ export function getQuestMapKeys(quest: FullQuest) {
     return new Set(getQuestMapGroupsForQuest(quest).map((group) => group.key));
 }
 
-export interface QuestMarkerAssignment {
-    color: string;
-    label: string;
-    x: number;
-    y: number;
-}
-
-function getMarkerLabel(index: number) {
-    if (index < 26) return String.fromCharCode(97 + index);
-    if (index < 52) return String.fromCharCode(65 + index - 26);
-    return `${String.fromCharCode(97 + ((index - 52) % 26))}${Math.floor((index - 52) / 26) + 1}`;
-}
-
-export function hashQuestId(value: string) {
-    let hash = 2166136261;
-    for (let i = 0; i < value.length; i += 1) {
-        hash ^= value.charCodeAt(i);
-        hash = Math.imul(hash, 16777619);
-    }
-    return hash >>> 0;
-}
-
-export function createQuestMarkerAssignments(quests: FullQuest[]) {
-    const result = new Map<string, QuestMarkerAssignment>();
-    quests.forEach((quest, index) => {
-        const hash = hashQuestId(quest.id);
-        result.set(quest.id, {
-            color: `hsl(${(hash % 360 + index * 137.508) % 360} 72% 58%)`,
-            label: getMarkerLabel(index),
-            x: 9 + (hash % 83),
-            y: 10 + ((hash >>> 9) % 79),
-        });
-    });
-    return result;
-}
-
 export function getQuestObjectiveSummary(quest: FullQuest) {
     const descriptions = quest.objectives
         .filter((objective) => !objective.optional)

@@ -307,6 +307,22 @@ button in the bottom-right corner opens normalized objective JSON and the normal
 full quest JSON for inspection. This debug drawer is display-only and does not add
 or change persisted quest preferences.
 
+## Raid Planner mapping
+
+The Raid Planner uses real objective zone geometry from the normalized JSON quest
+payload. It loads only the selected map's compact SVG definition, projects the
+world `x/z` plane using the configured rotation/transform, and renders one marker
+per positioned zone plus polygon outlines when present. Every location belonging
+to the same quest shares its list symbol and color. Hover/focus remains
+bidirectional between markers and quest rows.
+
+Quests associated with the selected map but lacking positioned zone geometry stay
+visible in a `Location unavailable` group. Quest-item possible spawn locations are
+preserved in the objective data but deliberately deferred; their adapter is ready
+to repeat one quest symbol across every possible spawn when that UI is enabled.
+
+Quest detail panes do not render maps yet.
+
 The full quest cache retains complete objective item groups for this expandable
 display. Broad any-of groups remain classified separately and are not treated as
 exact checklist demand. The provider does not currently retain wiki dialogue, guide
@@ -344,7 +360,7 @@ API quirks to keep in mind:
 
 | Layer                    | Key                                      | Freshness                   |
 | ------------------------ | ---------------------------------------- | --------------------------- |
-| Redis                    | `quests:full:v10` + `quests:full:v10:meta` | 12h service freshness check |
+| Redis                    | `quests:full:v13:{mode}` + matching `:meta` key | 12h service freshness check |
 | Next.js `unstable_cache` | `["quests-full"]`                        | `revalidate: 43200`         |
 
 To invalidate quest data for application code, bump the relevant version in `src/lib/cfg/cacheVersions.ts`. See `caching-architecture.md`.

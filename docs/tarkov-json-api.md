@@ -46,6 +46,12 @@ availability, manual sync, completion cascades, and relationship display.
 The adapter keeps level-0 tasks: Tarkov 1.1 now uses `minPlayerLevel: 0` for some
 normal PMC quest lines, so that value is display/availability data rather than a
 safe server-side exclusion signal.
+
+Full objectives preserve normalized map geometry in `locations`: zone positions,
+outlines, top/bottom heights, and quest-item `possibleLocations`. Map IDs are
+hydrated through the existing localized map context. Missing or malformed optional
+points are omitted without creating synthetic coordinates. The Raid Planner uses
+zone locations today; possible quest-item spawns are retained for a follow-up UI.
 Trader requirements are preserved with their upstream `requirementType`:
 
 - `level` is a trader loyalty-level gate and is displayed/evaluated as LL.
