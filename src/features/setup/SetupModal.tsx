@@ -22,7 +22,14 @@ export function SetupModal() {
         hasCompletedSetup,
         stationLevels,
         setStationLevel,
+        deprecatedLegacyState,
+        hasConvertedDeprecatedLegacyState,
+        hasDismissedDeprecatedLegacyState,
     } = useUserStore();
+    const hasPendingLegacyConversion =
+        deprecatedLegacyState !== null &&
+        !hasConvertedDeprecatedLegacyState &&
+        !hasDismissedDeprecatedLegacyState;
 
     const [stations] = useState<SetupStation[]>(STATIC_STATIONS);
     const [activeView, setActiveView] = useState<"settings" | "quick-levels">("settings");
@@ -33,6 +40,8 @@ export function SetupModal() {
 
         try {
             const raw = localStorage.getItem("tarkov-hideout-user-state");
+            if (hasPendingLegacyConversion) return;
+
             if (!raw) {
                 if (!hasCompletedSetup) {
                     setSetupOpen(true);
@@ -51,7 +60,7 @@ export function SetupModal() {
                 setSetupOpen(true);
             }
         }
-    }, [hasCompletedSetup, setSetupOpen]);
+    }, [hasCompletedSetup, hasPendingLegacyConversion, setSetupOpen]);
 
     // Apply bonuses whenever edition changes
     useEffect(() => {
@@ -60,7 +69,7 @@ export function SetupModal() {
         }
     }, [gameEdition, stations, applyEditionBonuses]);
 
-    if (!isSetupOpen) return null;
+    if (!isSetupOpen || hasPendingLegacyConversion) return null;
 
     const handleFinish = () => {
         completeSetup();

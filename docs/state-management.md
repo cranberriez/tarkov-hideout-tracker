@@ -100,6 +100,8 @@ gameEdition: GameEdition | null;   // null until setup is completed
 gameMode: "PVP" | "PVE" | "KORD"; // active character and data/price mode
 profiles: Record<GameMode, PlayerProfileState>;
 deprecatedLegacyState: Record<string, unknown> | null; // complete pre-v19 snapshot
+hasConvertedDeprecatedLegacyState: boolean; // whether the retained snapshot was assigned
+hasDismissedDeprecatedLegacyState: boolean; // suppress automatic prompting without deleting data
 hasCompletedSetup: boolean;
 isSetupOpen: boolean;
 editionBonusesAppliedFor: GameEdition | null; // tracks which edition bonuses have been applied
@@ -143,6 +145,7 @@ type QuestVisibilityMode = "all" | "hideLocked" | "activeDepth";
 | `initializeDefaults(stations)`                   | Seed `stationLevels` to 0 for new stations; enforce minimum stash/cultist levels for the edition     |
 | `importStationLevels(levels)`                    | Bulk-overwrite station levels (used by import feature)                                               |
 | `resetAll()`                                     | Reset all state to defaults (clears progress, settings, setup)                                       |
+| `convertDeprecatedLegacyState(mode)`             | Copy the retained pre-profile snapshot into one profile without deleting the snapshot                |
 
 ### Edition Bonus Logic (`applyEditionBonuses`)
 
@@ -167,6 +170,7 @@ type QuestVisibilityMode = "all" | "hideLocked" | "activeDepth";
 isMainNavHidden: boolean;
 isQuickAddOpen: boolean;
 pendingQuickAddItems: PendingItem[];
+isLegacyProfileConversionOpen: boolean;
 
 interface PendingItem {
     tempId: string;
@@ -184,6 +188,7 @@ interface PendingItem {
 | `setQuickAddOpen(bool)`          | Open/close the Quick Add modal                     |
 | `setPendingQuickAddItems(items)` | Set the list of items staged in the modal          |
 | `clearPendingQuickAddItems()`    | Empty the staged list (called on commit or cancel) |
+| `setLegacyProfileConversionOpen(bool)` | Open the retained-profile conversion dialog from Settings |
 
 ---
 

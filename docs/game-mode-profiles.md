@@ -22,8 +22,17 @@ filter preferences remain shared between profiles.
 
 The localStorage key remains `tarkov-hideout-user-state`. Version 19 preserves the
 entire version-18 payload in `deprecatedLegacyState`, then creates clean PVP, PVE,
-and KORD profiles. Legacy data is intentionally not assigned to a new profile;
-that will be handled by a future explicit conversion flow.
+and KORD profiles. Legacy data is intentionally not assigned automatically. When
+an unhandled snapshot exists, the app opens a conversion dialog that summarizes
+the old character progress and asks the user to choose a destination profile.
+Confirming copies profile-scoped fields into that profile, switches to it, and sets
+`hasConvertedDeprecatedLegacyState`. The original snapshot is retained unchanged.
+The dialog can be reopened from Settings; when no snapshot exists, no automatic
+dialog is shown. Canceling sets `hasDismissedDeprecatedLegacyState`, which suppresses
+future automatic prompts while keeping restoration available from Settings.
+Destination profiles with existing progress are marked in the picker. Choosing
+one adds a second confirmation screen comparing the old snapshot on the left
+with the current destination data on the right before replacement is allowed.
 
 The active mode is mirrored to the `tarkov-active-game-mode` cookie. Server
 components use the cookie to select mode-prefixed progression data. Switching in

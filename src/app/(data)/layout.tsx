@@ -7,6 +7,7 @@ import { DataProvider, type DataContextValue } from "@/app/(data)/_dataContext";
 import PriceDataLayout from "@/app/(data)/PriceDataLayout";
 import { QuickAddModal } from "@/features/quick-add/QuickAddModal";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
+import { LegacyProfileConversionDialog } from "@/features/profile-conversion/LegacyProfileConversionDialog";
 
 interface DataLayoutProps {
     children: ReactNode;
@@ -31,6 +32,7 @@ export default async function DataLayout({ children }: DataLayoutProps) {
             <PriceDataLayout>
                 {children}
                 <QuickAddModal />
+                <LegacyProfileConversionDialog />
             </PriceDataLayout>
         </DataProvider>
     );

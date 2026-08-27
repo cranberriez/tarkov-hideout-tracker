@@ -31,6 +31,9 @@ interface UIState {
     questCascadeRequest: QuestCascadeRequest | null;
     openQuestCascadeRequest: (request: QuestCascadeRequest) => void;
     closeQuestCascadeRequest: () => void;
+
+    isLegacyProfileConversionOpen: boolean;
+    setLegacyProfileConversionOpen: (isOpen: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -46,4 +49,8 @@ export const useUIStore = create<UIState>((set) => ({
     questCascadeRequest: null,
     openQuestCascadeRequest: (request) => set({ questCascadeRequest: request }),
     closeQuestCascadeRequest: () => set({ questCascadeRequest: null }),
+
+    isLegacyProfileConversionOpen: false,
+    setLegacyProfileConversionOpen: (isOpen) =>
+        set({ isLegacyProfileConversionOpen: isOpen }),
 }));

@@ -135,6 +135,8 @@ const PLAYER_PROFILE_KEYS = Object.keys(createDefaultPlayerProfile()) as Array<
 interface UserState {
     profiles: Record<GameMode, PlayerProfileState>;
     deprecatedLegacyState: Record<string, unknown> | null;
+    hasConvertedDeprecatedLegacyState: boolean;
+    hasDismissedDeprecatedLegacyState: boolean;
     // Per-station progress and visibility
     stationLevels: Record<string, number>; // stationId -> current level
     hiddenStations: Record<string, boolean>; // stationId -> hidden?
@@ -313,6 +315,8 @@ interface UserState {
     resetQuestData: () => void;
     resetAll: () => void;
     applyProfilePatch: (patch: Partial<PlayerProfileState>) => void;
+    convertDeprecatedLegacyState: (targetMode: GameMode) => void;
+    dismissDeprecatedLegacyState: () => void;
 
     // Initialization helpers
     initializeDefaults: (stations: Station[]) => void;
@@ -324,6 +328,38 @@ function pickPlayerProfile(state: Partial<UserState>): Partial<PlayerProfileStat
         if (key in state) Object.assign(profile, { [key]: state[key] });
     }
     return profile;
+}
+
+function createPlayerProfileFromLegacyState(
+    legacyState: Record<string, unknown>,
+): PlayerProfileState {
+    const legacyProfile = pickPlayerProfile(
+        legacyState as unknown as Partial<UserState>,
+    );
+    const profile = {
+        ...createDefaultPlayerProfile(),
+        ...legacyProfile,
+    } as PlayerProfileState;
+
+    return {
+        ...profile,
+        stationLevels: { ...profile.stationLevels },
+        hiddenStations: { ...profile.hiddenStations },
+        completedRequirements: { ...profile.completedRequirements },
+        completedQuests: { ...profile.completedQuests },
+        failedQuests: { ...profile.failedQuests },
+        questsWithItems: { ...profile.questsWithItems },
+        ignoredQuests: { ...profile.ignoredQuests },
+        pinnedQuests: { ...profile.pinnedQuests },
+        questChangeHistory: normalizeQuestChangeHistory(profile.questChangeHistory),
+        itemCounts: Object.fromEntries(
+            Object.entries(profile.itemCounts).map(([itemId, counts]) => [
+                itemId,
+                { ...counts },
+            ]),
+        ),
+        questTraderLoyaltyLevels: { ...profile.questTraderLoyaltyLevels },
+    };
 }
 
 export const useUserStore = create<UserState>()(
@@ -352,6 +388,8 @@ export const useUserStore = create<UserState>()(
             return ({
             profiles: createDefaultProfiles(),
             deprecatedLegacyState: null,
+            hasConvertedDeprecatedLegacyState: false,
+            hasDismissedDeprecatedLegacyState: false,
             stationLevels: {},
             hiddenStations: {},
             completedRequirements: {},
@@ -915,9 +953,34 @@ export const useUserStore = create<UserState>()(
                     editionBonusesAppliedFor: null,
                     profiles,
                     deprecatedLegacyState: null,
+                    hasConvertedDeprecatedLegacyState: false,
+                    hasDismissedDeprecatedLegacyState: false,
                 }));
             },
             applyProfilePatch: (patch) => set(patch),
+            convertDeprecatedLegacyState: (targetMode) =>
+                rawSet((state) => {
+                    if (!state.deprecatedLegacyState) return {};
+                    const convertedProfile = createPlayerProfileFromLegacyState(
+                        state.deprecatedLegacyState,
+                    );
+                    if (typeof document !== "undefined") {
+                        document.cookie = `tarkov-active-game-mode=${targetMode}; path=/; max-age=31536000; samesite=lax`;
+                    }
+                    return {
+                        ...convertedProfile,
+                        profiles: {
+                            ...state.profiles,
+                            [targetMode]: convertedProfile,
+                        },
+                        gameMode: targetMode,
+                        hasConvertedDeprecatedLegacyState: true,
+                        hasDismissedDeprecatedLegacyState: false,
+                        isSetupOpen: !convertedProfile.hasCompletedSetup,
+                    };
+                }),
+            dismissDeprecatedLegacyState: () =>
+                rawSet({ hasDismissedDeprecatedLegacyState: true }),
         });
         },
         {

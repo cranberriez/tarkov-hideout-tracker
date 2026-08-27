@@ -16,6 +16,12 @@ On first visit (when `hasCompletedSetup === false`), users are presented with an
 
 `SetupModal` is rendered in `src/app/layout.tsx` (root layout) so it is available on all pages. It opens when `isSetupOpen === true` in `useUserStore`.
 
+If an unhandled `deprecatedLegacyState` snapshot exists, the legacy profile
+conversion dialog takes precedence over initial setup. After conversion, setup
+opens only when the converted legacy profile had not completed setup.
+Canceling the conversion also releases initial setup and leaves the old snapshot
+available from Settings.
+
 ---
 
 ## Flow
