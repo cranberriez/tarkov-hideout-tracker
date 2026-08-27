@@ -64,6 +64,7 @@ export function SetupModal() {
 
     const handleFinish = () => {
         completeSetup();
+        window.location.reload();
     };
 
     const canFinish = gameEdition !== null;
@@ -79,7 +80,7 @@ export function SetupModal() {
                         INITIAL SETUP
                     </DialogTitle>
                     <button
-                        onClick={() => completeSetup()}
+                        onClick={handleFinish}
                         className="text-gray-500 hover:text-white transition-colors"
                     >
                         <X size={18} />
@@ -96,8 +97,8 @@ export function SetupModal() {
                 <div className="p-6 max-h-[65vh] overflow-y-auto bg-black/40">
                     {activeView === "settings" ? (
                         <div className="space-y-8">
-                            <EditionSelection selected={gameEdition} onSelect={setGameEdition} />
                             <GameModeSelection selected={gameMode} onSelect={setGameMode} />
+                            <EditionSelection selected={gameEdition} onSelect={setGameEdition} />
                         </div>
                     ) : (
                         <QuickHideoutLevels

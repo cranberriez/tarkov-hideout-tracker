@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
-import { Check } from "lucide-react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
+import { Check, LoaderCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useShallow } from "zustand/react/shallow";
 import { QuestFlagFilters } from "@/components/core/QuestFlagFilters";
-import { useUserStore, type GameMode } from "@/lib/stores/useUserStore";
+import { GAME_MODES, useUserStore, type GameMode } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 
 const PRESTIGE_LEVELS = [1, 2, 3, 4, 5, 6];
-const GAME_MODES: GameMode[] = ["PVP", "PVE"];
 type Faction = "USEC" | "BEAR" | null;
 
 export function PlayerProfileMenu() {
     const [isOpen, setIsOpen] = useState(false);
+    const [isSwitching, startSwitch] = useTransition();
+    const router = useRouter();
     const rootRef = useRef<HTMLDivElement>(null);
 
     const {
@@ -61,11 +63,22 @@ export function PlayerProfileMenu() {
     const compactModeClasses =
         gameMode === "PVE"
             ? "before:bg-[radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.24)_0%,transparent_32%)]"
-            : "before:bg-[radial-gradient(circle_at_bottom_right,rgba(239,68,68,0.24)_0%,transparent_32%)]";
+            : gameMode === "KORD"
+              ? "before:bg-[radial-gradient(circle_at_bottom_right,rgba(251,191,36,0.24)_0%,transparent_32%)]"
+              : "before:bg-[radial-gradient(circle_at_bottom_right,rgba(239,68,68,0.24)_0%,transparent_32%)]";
     const panelModeClasses =
         gameMode === "PVE"
             ? "before:bg-[radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.24)_0%,transparent_22%)]"
-            : "before:bg-[radial-gradient(circle_at_bottom_right,rgba(239,68,68,0.24)_0%,transparent_22%)]";
+            : gameMode === "KORD"
+              ? "before:bg-[radial-gradient(circle_at_bottom_right,rgba(251,191,36,0.24)_0%,transparent_22%)]"
+              : "before:bg-[radial-gradient(circle_at_bottom_right,rgba(239,68,68,0.24)_0%,transparent_22%)]";
+
+    function switchProfile(mode: GameMode) {
+        if (mode === gameMode || isSwitching) return;
+        setGameMode(mode);
+        setIsOpen(false);
+        startSwitch(() => router.refresh());
+    }
 
     function closePinnedPanel(activeElement?: HTMLElement) {
         setIsOpen(false);
@@ -90,6 +103,9 @@ export function PlayerProfileMenu() {
                 <FactionShield faction={faction} size={16} className="relative z-10 shrink-0" />
                 <span className="relative z-10 font-mono text-sm font-semibold leading-none">
                     {playerLevel}
+                </span>
+                <span className="relative z-10 rounded-sm bg-white/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-gray-300">
+                    {gameMode}
                 </span>
                 {prestigeLevel > 0 && (
                     <span className="relative z-10 rounded-sm bg-purple-500/20 px-1.5 py-0.5 font-mono text-xs font-bold text-purple-300">
@@ -193,7 +209,7 @@ export function PlayerProfileMenu() {
                         </ControlGroup>
 
                         <ControlGroup label="Faction">
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-3 gap-2">
                                 <SegmentButton
                                     active={faction === "USEC"}
                                     onClick={() => setQuestFaction(faction === "USEC" ? null : "USEC")}
@@ -215,7 +231,7 @@ export function PlayerProfileMenu() {
                                     <SegmentButton
                                         key={mode}
                                         active={gameMode === mode}
-                                        onClick={() => setGameMode(mode)}
+                                        onClick={() => switchProfile(mode)}
                                     >
                                         {mode}
                                     </SegmentButton>
@@ -235,6 +251,14 @@ export function PlayerProfileMenu() {
                     </div>
                 )}
             </div>
+            {isSwitching && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm">
+                    <div className="flex items-center gap-3 rounded-md border border-white/10 bg-[#111] px-5 py-4 text-sm font-medium text-white shadow-2xl">
+                        <LoaderCircle className="animate-spin text-tarkov-green" size={18} />
+                        Loading {gameMode} character…
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

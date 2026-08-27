@@ -37,8 +37,8 @@ An item + quantity needed to build/upgrade. May require the item to be "Found in
 **Hidden Station**
 A station the user has chosen to exclude. Hidden stations are omitted from pooled item counts when `showHidden` is false (the default).
 
-**Game Mode (PVP / PVE)**
-Controls which market price set is shown. Prices are fetched for both modes on every request; the user switches mode without a reload.
+**Game Mode Profiles (PVP / PVE / KORD)**
+Selects an independent character profile and the matching Tarkov.dev dataset. PVP maps to `regular`, PVE to `pve`, and KORD to `pvp-season`. Character progress, inventory, quests, trader state, faction, goals, and edition are isolated per mode.
 
 **Game Edition**
 Determines the starting Stash level and whether Cultist Circle starts at level 1:
@@ -78,13 +78,14 @@ Items below the `cheapPriceThreshold` (default 5,000 ₽). Can be hidden from th
 - Manually completed individual requirements
 - Item counts owned (`have` / `haveFir`)
 - All view filters and preferences
-- Game edition and game mode
+- Three game-mode profiles plus the active game mode
+- A retained, deprecated snapshot of pre-profile user data when upgrading from store version 18
 
 **Server-fetched (via React context or server props):**
 
 - Hideout station structure (from Tarkov.dev GraphQL, cached 12h)
 - Required item metadata (from Tarkov.dev, cached 12h)
-- Market prices for PVP and PVE (from Tarkov.dev GraphQL, refreshed daily via cron)
+- Market prices for PVP, PVE, and KORD (from Tarkov.dev, refreshed daily via cron)
 - Quest data (from the Tarkov.dev JSON API, cached in Redis) is fetched by pages that need it. `/quests` receives full quest data as server props and derives trader/map lists from that data.
 
 See `state-management.md` for store shapes and `data-and-price-context-architecture.md` for the server data flow.

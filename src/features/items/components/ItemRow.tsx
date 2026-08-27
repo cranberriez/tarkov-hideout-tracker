@@ -56,7 +56,7 @@ export function ItemRow({
 }: ItemRowProps) {
     const { marketPricesByMode, loading: pricesLoading } = usePriceDataContext();
     const { itemCounts, gameMode } = useUserStore();
-    const mode = gameMode === "PVE" ? "PVE" : "PVP";
+    const mode = gameMode;
     const priceBucket = marketPricesByMode[mode];
     // Use local loading state if bucket is missing/empty, but also respect the global loading flag
     const loading = pricesLoading || !priceBucket || priceBucket.updatedAt === null;

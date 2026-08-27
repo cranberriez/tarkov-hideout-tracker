@@ -1,19 +1,13 @@
 import type { FullQuest } from "@/types";
+import type {
+    QuestObjectiveCategory,
+    QuestWorkspaceStatus,
+} from "@/lib/stores/useUserStore";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { isQuestTraderLoyaltyRequirement } from "@/lib/utils/quest-trader-gates";
 import { isQuestDisabledByCompletedFailedRequirement } from "@/lib/utils/quest-failures";
 
-export type QuestWorkspaceStatus = "active" | "completed" | "locked";
-export type QuestObjectiveCategory =
-    | "hand-in"
-    | "find"
-    | "plant"
-    | "eliminate"
-    | "extract"
-    | "location"
-    | "build"
-    | "use"
-    | "other";
+export type { QuestObjectiveCategory, QuestWorkspaceStatus } from "@/lib/stores/useUserStore";
 
 export interface QuestLockReason {
     kind: "quest" | "level" | "loyalty" | "prestige" | "faction" | "branch";

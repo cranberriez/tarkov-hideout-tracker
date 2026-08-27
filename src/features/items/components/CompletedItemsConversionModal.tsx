@@ -85,7 +85,7 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
             addItemCounts(itemId, nonFir, totalFir);
         });
 
-        useUserStore.setState({ completedRequirements: {} });
+        useUserStore.getState().applyProfilePatch({ completedRequirements: {} });
 
         onClose();
     };

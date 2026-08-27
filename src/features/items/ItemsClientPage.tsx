@@ -33,7 +33,6 @@ export function ItemsClientPage({
         hiddenStations,
         completedRequirements,
         gameMode,
-        setGameMode,
         initializeDefaults,
     } = useUserStore();
 
@@ -99,19 +98,18 @@ export function ItemsClientPage({
                     </h1>
                 </div>
                 <div className="flex items-center gap-3 self-start rounded-sm border border-white/10 bg-black/20 px-3 py-2 text-xs text-gray-400 sm:self-auto">
-                    <span>Show prices for</span>
-                    <button
-                        type="button"
-                        onClick={() => setGameMode(gameMode === "PVP" ? "PVE" : "PVP")}
+                    <span>Active profile prices</span>
+                    <span
                         className={`inline-flex items-center gap-2 rounded-sm border px-3 py-1.5 font-mono font-semibold tracking-wide transition-all shadow-md ${
                             gameMode === "PVP"
                                 ? "border-red-500/70 bg-red-900/60 text-red-200 shadow-[0_0_18px_rgba(248,113,113,0.45)]"
-                                : "border-sky-400/80 bg-sky-900/70 text-sky-100 shadow-[0_0_20px_rgba(56,189,248,0.7)]"
+                                : gameMode === "PVE"
+                                  ? "border-sky-400/80 bg-sky-900/70 text-sky-100 shadow-[0_0_20px_rgba(56,189,248,0.7)]"
+                                  : "border-amber-400/80 bg-amber-900/70 text-amber-100 shadow-[0_0_20px_rgba(251,191,36,0.45)]"
                         }`}
-                        title="Click to switch between PVP and PVE prices"
                     >
                         <span>{gameMode}</span>
-                    </button>
+                    </span>
                 </div>
             </div>
 

@@ -7,14 +7,14 @@ Client-side state lives in two Zustand stores. Server-fetched data (stations, it
 ## `useUserStore` — User Progress & Preferences
 
 **File:** `src/lib/stores/useUserStore.ts`
-**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 18.
+**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 19.
 
 Do not change the storage key. Bump the version and add a migration only when the persisted state shape requires it.
 
 ### State Shape
 
 ```ts
-// Progress
+// Active profile projection (also stored in profiles[gameMode])
 stationLevels: Record<string, number>;          // stationId → current level (0 = unbuilt)
 hiddenStations: Record<string, boolean>;         // stationId → excluded from pooled counts
 completedRequirements: Record<string, boolean>;  // requirementId → manually ticked off
@@ -74,6 +74,13 @@ questShowDebug: boolean;
 questShowPrereqs: boolean;
 questSidebarCollapsed: boolean;
 
+// Profile-independent quest workspace filters
+questWorkspaceSelectedTraders: string[];
+questWorkspaceFilterByTraderRequirements: boolean;
+questWorkspaceSelectedMaps: string[];
+questWorkspaceSelectedStatuses: Array<"active" | "completed" | "locked">;
+questWorkspaceSelectedObjectiveCategories: QuestObjectiveCategory[];
+
 // Item page quest demand preferences
 itemShowPinnedQuestSection: boolean;
 itemShowPinnedQuestOnly: boolean;
@@ -90,7 +97,9 @@ hasSeenHideoutLevelWarning: boolean;
 
 // Game settings
 gameEdition: GameEdition | null;   // null until setup is completed
-gameMode: "PVP" | "PVE";           // controls which market price bucket is used
+gameMode: "PVP" | "PVE" | "KORD"; // active character and data/price mode
+profiles: Record<GameMode, PlayerProfileState>;
+deprecatedLegacyState: Record<string, unknown> | null; // complete pre-v19 snapshot
 hasCompletedSetup: boolean;
 isSetupOpen: boolean;
 editionBonusesAppliedFor: GameEdition | null; // tracks which edition bonuses have been applied
@@ -106,7 +115,7 @@ type GameEdition =
     | "Edge of Darkness"
     | "Unheard";
 
-type GameMode = "PVP" | "PVE";
+type GameMode = "PVP" | "PVE" | "KORD";
 type ItemSize = "Icon" | "Compact" | "Expanded";
 type ItemSourceFilter = "all" | "hideout" | "quest";
 type ItemQuestVisibilityMode = "available" | "nextLayer" | "allFuture" | "custom";
@@ -231,7 +240,7 @@ const itemPrice = prices[item.normalizedName];
 | Game edition / mode setup          | `useUserStore` (localStorage)                                                                        |
 | Quick Add modal + staged items     | `useUIStore` (in-memory)                                                                             |
 | Hideout stations + required items  | `DataContext` (server → context)                                                                     |
-| Market prices (PVP + PVE)          | `PriceDataContext` (server → context)                                                                |
+| Market prices (PVP + PVE + KORD)   | `PriceDataContext` (client route fetch → context)                                                    |
 | Quest data                         | Server props to pages that need it; `/quests` wraps it in `QuestsContext` for derived quest UI state |
 
 ---

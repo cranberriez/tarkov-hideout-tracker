@@ -1,7 +1,11 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { DEFAULT_IGNORED_QUESTS } from "@/lib/cfg/defaultIgnoredQuests";
-import type { Station } from "@/types";
+import { DEFAULT_IGNORED_QUESTS } from "../cfg/defaultIgnoredQuests";
+import { GAME_MODES, toTarkovJsonGameMode, type GameMode } from "../game-mode";
+import type { Station } from "../../types";
+
+export { GAME_MODES, toTarkovJsonGameMode };
+export type { GameMode };
 
 export const USER_STORE_STORAGE_KEY = "tarkov-hideout-user-state";
 
@@ -11,7 +15,6 @@ export type GameEdition =
     | "Prepare for Escape"
     | "Edge of Darkness"
     | "Unheard";
-export type GameMode = "PVP" | "PVE";
 export type ItemSize = "Icon" | "Compact" | "Expanded";
 export type ItemSourceFilter = "all" | "hideout" | "quest";
 export type ItemQuestVisibilityMode = "available" | "nextLayer" | "allFuture" | "custom";
@@ -19,6 +22,17 @@ export type QuestViewMode = "byMap" | "byTrader" | "flatList";
 export type QuestCardSize = "small" | "large";
 export type QuestSortMode = "default" | "level" | "xp" | "unlockImpact";
 export type QuestVisibilityMode = "all" | "hideLocked" | "activeDepth";
+export type QuestWorkspaceStatus = "active" | "completed" | "locked";
+export type QuestObjectiveCategory =
+    | "hand-in"
+    | "find"
+    | "plant"
+    | "eliminate"
+    | "extract"
+    | "location"
+    | "build"
+    | "use"
+    | "other";
 export type QuestChangeType = "completed" | "uncompleted";
 
 export interface QuestChangeHistoryEntry {
@@ -58,7 +72,69 @@ function normalizeQuestChangeHistory(value: unknown): QuestChangeHistoryEntry[] 
 
 type StationEditionTarget = Pick<Station, "id" | "normalizedName">;
 
+export interface PlayerProfileState {
+    stationLevels: Record<string, number>;
+    hiddenStations: Record<string, boolean>;
+    completedRequirements: Record<string, boolean>;
+    completedQuests: Record<string, boolean>;
+    failedQuests: Record<string, boolean>;
+    questsWithItems: Record<string, boolean>;
+    ignoredQuests: Record<string, boolean>;
+    pinnedQuests: Record<string, boolean>;
+    questChangeHistory: QuestChangeHistoryEntry[];
+    itemCounts: Record<string, { have: number; haveFir: number }>;
+    playerLevel: number;
+    prestigeLevel: number;
+    questTraderLoyaltyLevels: Record<string, number>;
+    questFenceReputation: number;
+    questFaction: "USEC" | "BEAR" | null;
+    questShowKappa: boolean;
+    questShowLightkeeper: boolean;
+    gameEdition: GameEdition | null;
+    editionBonusesAppliedFor: GameEdition | null;
+    hasCompletedSetup: boolean;
+}
+
+function createDefaultPlayerProfile(): PlayerProfileState {
+    return {
+        stationLevels: {},
+        hiddenStations: {},
+        completedRequirements: {},
+        completedQuests: {},
+        failedQuests: {},
+        questsWithItems: {},
+        ignoredQuests: { ...DEFAULT_IGNORED_QUESTS },
+        pinnedQuests: {},
+        questChangeHistory: [],
+        itemCounts: {},
+        playerLevel: 1,
+        prestigeLevel: 0,
+        questTraderLoyaltyLevels: {},
+        questFenceReputation: 0,
+        questFaction: "USEC",
+        questShowKappa: false,
+        questShowLightkeeper: false,
+        gameEdition: null,
+        editionBonusesAppliedFor: null,
+        hasCompletedSetup: false,
+    };
+}
+
+function createDefaultProfiles(): Record<GameMode, PlayerProfileState> {
+    return {
+        PVP: createDefaultPlayerProfile(),
+        PVE: createDefaultPlayerProfile(),
+        KORD: createDefaultPlayerProfile(),
+    };
+}
+
+const PLAYER_PROFILE_KEYS = Object.keys(createDefaultPlayerProfile()) as Array<
+    keyof PlayerProfileState
+>;
+
 interface UserState {
+    profiles: Record<GameMode, PlayerProfileState>;
+    deprecatedLegacyState: Record<string, unknown> | null;
     // Per-station progress and visibility
     stationLevels: Record<string, number>; // stationId -> current level
     hiddenStations: Record<string, boolean>; // stationId -> hidden?
@@ -118,6 +194,13 @@ interface UserState {
     questShowDebug: boolean;
     questShowPrereqs: boolean;
     questSidebarCollapsed: boolean;
+
+    // Profile-independent quest workspace filters (persisted)
+    questWorkspaceSelectedTraders: string[];
+    questWorkspaceFilterByTraderRequirements: boolean;
+    questWorkspaceSelectedMaps: string[];
+    questWorkspaceSelectedStatuses: QuestWorkspaceStatus[];
+    questWorkspaceSelectedObjectiveCategories: QuestObjectiveCategory[];
 
     itemShowPinnedQuestSection: boolean;
     itemShowPinnedQuestOnly: boolean;
@@ -205,6 +288,13 @@ interface UserState {
     setQuestShowDebug: (v: boolean) => void;
     setQuestShowPrereqs: (v: boolean) => void;
     setQuestSidebarCollapsed: (v: boolean) => void;
+    setQuestWorkspaceSelectedTraders: (ids: string[]) => void;
+    setQuestWorkspaceFilterByTraderRequirements: (enabled: boolean) => void;
+    setQuestWorkspaceSelectedMaps: (mapKeys: string[]) => void;
+    setQuestWorkspaceSelectedStatuses: (statuses: QuestWorkspaceStatus[]) => void;
+    setQuestWorkspaceSelectedObjectiveCategories: (
+        categories: QuestObjectiveCategory[],
+    ) => void;
 
     setItemShowPinnedQuestSection: (v: boolean) => void;
     setItemShowPinnedQuestOnly: (v: boolean) => void;
@@ -222,14 +312,46 @@ interface UserState {
     resetItemData: () => void;
     resetQuestData: () => void;
     resetAll: () => void;
+    applyProfilePatch: (patch: Partial<PlayerProfileState>) => void;
 
     // Initialization helpers
     initializeDefaults: (stations: Station[]) => void;
 }
 
+function pickPlayerProfile(state: Partial<UserState>): Partial<PlayerProfileState> {
+    const profile: Partial<PlayerProfileState> = {};
+    for (const key of PLAYER_PROFILE_KEYS) {
+        if (key in state) Object.assign(profile, { [key]: state[key] });
+    }
+    return profile;
+}
+
 export const useUserStore = create<UserState>()(
     persist(
-        (set, get) => ({
+        (rawSet, get) => {
+            const setWithProfileSync = (
+                update: Partial<UserState> | ((state: UserState) => Partial<UserState>),
+            ) =>
+                rawSet((state) => {
+                    const patch = typeof update === "function" ? update(state) : update;
+                    const profilePatch = pickPlayerProfile(patch);
+                    if (Object.keys(profilePatch).length === 0) return patch;
+                    return {
+                        ...patch,
+                        profiles: {
+                            ...state.profiles,
+                            [state.gameMode]: {
+                                ...state.profiles[state.gameMode],
+                                ...profilePatch,
+                            },
+                        },
+                    };
+                });
+            const set = setWithProfileSync;
+
+            return ({
+            profiles: createDefaultProfiles(),
+            deprecatedLegacyState: null,
             stationLevels: {},
             hiddenStations: {},
             completedRequirements: {},
@@ -280,6 +402,11 @@ export const useUserStore = create<UserState>()(
             questShowDebug: false,
             questShowPrereqs: true,
             questSidebarCollapsed: false,
+            questWorkspaceSelectedTraders: [],
+            questWorkspaceFilterByTraderRequirements: true,
+            questWorkspaceSelectedMaps: [],
+            questWorkspaceSelectedStatuses: ["active", "completed", "locked"],
+            questWorkspaceSelectedObjectiveCategories: [],
 
             itemShowPinnedQuestSection: true,
             itemShowPinnedQuestOnly: false,
@@ -533,6 +660,16 @@ export const useUserStore = create<UserState>()(
             setQuestShowDebug: (v) => set({ questShowDebug: v }),
             setQuestShowPrereqs: (v) => set({ questShowPrereqs: v }),
             setQuestSidebarCollapsed: (v) => set({ questSidebarCollapsed: v }),
+            setQuestWorkspaceSelectedTraders: (ids) =>
+                set({ questWorkspaceSelectedTraders: ids }),
+            setQuestWorkspaceFilterByTraderRequirements: (enabled) =>
+                set({ questWorkspaceFilterByTraderRequirements: enabled }),
+            setQuestWorkspaceSelectedMaps: (mapKeys) =>
+                set({ questWorkspaceSelectedMaps: mapKeys }),
+            setQuestWorkspaceSelectedStatuses: (statuses) =>
+                set({ questWorkspaceSelectedStatuses: statuses }),
+            setQuestWorkspaceSelectedObjectiveCategories: (categories) =>
+                set({ questWorkspaceSelectedObjectiveCategories: categories }),
 
             setItemShowPinnedQuestSection: (v) =>
                 set((state) => ({
@@ -568,7 +705,15 @@ export const useUserStore = create<UserState>()(
             setHasSeenHideoutLevelWarning: (value) => set({ hasSeenHideoutLevelWarning: value }),
 
             setGameEdition: (edition) => set({ gameEdition: edition }),
-            setGameMode: (mode) => set({ gameMode: mode }),
+            setGameMode: (mode) =>
+                rawSet((state) => {
+                    if (state.gameMode === mode) return {};
+                    const profile = state.profiles[mode] ?? createDefaultPlayerProfile();
+                    if (typeof document !== "undefined") {
+                        document.cookie = `tarkov-active-game-mode=${mode}; path=/; max-age=31536000; samesite=lax`;
+                    }
+                    return { ...profile, gameMode: mode };
+                }),
             completeSetup: () => set({ hasCompletedSetup: true, isSetupOpen: false }),
             setSetupOpen: (isOpen) => set({ isSetupOpen: isOpen }),
 
@@ -697,7 +842,11 @@ export const useUserStore = create<UserState>()(
             },
 
             resetAll: () => {
-                set(() => ({
+                const profiles = createDefaultProfiles();
+                if (typeof document !== "undefined") {
+                    document.cookie = "tarkov-active-game-mode=PVP; path=/; max-age=31536000; samesite=lax";
+                }
+                rawSet(() => ({
                     stationLevels: {},
                     hiddenStations: {},
                     completedRequirements: {},
@@ -746,6 +895,11 @@ export const useUserStore = create<UserState>()(
                     questShowDebug: false,
                     questShowPrereqs: true,
                     questSidebarCollapsed: false,
+                    questWorkspaceSelectedTraders: [],
+                    questWorkspaceFilterByTraderRequirements: true,
+                    questWorkspaceSelectedMaps: [],
+                    questWorkspaceSelectedStatuses: ["active", "completed", "locked"],
+                    questWorkspaceSelectedObjectiveCategories: [],
                     itemShowPinnedQuestSection: true,
                     itemShowPinnedQuestOnly: false,
                     itemQuestMaxDepth: 1,
@@ -759,12 +913,16 @@ export const useUserStore = create<UserState>()(
                     hasCompletedSetup: false,
                     isSetupOpen: false,
                     editionBonusesAppliedFor: null,
+                    profiles,
+                    deprecatedLegacyState: null,
                 }));
             },
-        }),
+            applyProfilePatch: (patch) => set(patch),
+        });
+        },
         {
             name: USER_STORE_STORAGE_KEY,
-            version: 18,
+            version: 19,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -938,6 +1096,18 @@ export const useUserStore = create<UserState>()(
                             Number.isFinite(nextState.questFenceReputation)
                                 ? nextState.questFenceReputation
                                 : 0,
+                    };
+                }
+
+                if (version < 19) {
+                    const deprecatedLegacyState = { ...nextState };
+                    const profiles = createDefaultProfiles();
+                    nextState = {
+                        ...nextState,
+                        ...profiles.PVP,
+                        profiles,
+                        deprecatedLegacyState,
+                        gameMode: "PVP",
                     };
                 }
 

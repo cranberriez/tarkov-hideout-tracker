@@ -197,7 +197,7 @@ export function ItemsStatsRow({
         return groups;
     }, [activeQuestGroups, itemShowPinnedQuestOnly, itemSourceFilter, showFirOnly]);
 
-    const mode = gameMode === "PVE" ? "PVE" : "PVP";
+    const mode = gameMode;
     const priceBucket = marketPricesByMode[mode];
 
     const stats = useMemo(() => {

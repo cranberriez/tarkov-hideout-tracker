@@ -19,7 +19,7 @@ This document describes how hideout/items data and market price data are fetched
 Two server-backed React contexts distribute data to client components:
 
 1. **`DataContext`** — static/semi-static data (stations, items). Provided by `(data)/layout.tsx`, blocking.
-2. **`PriceDataContext`** — dynamic market prices (PVP + PVE). Provided by `PriceDataLayout.tsx`, wrapped in `<Suspense>`.
+2. **`PriceDataContext`** — dynamic market prices (PVP + PVE + KORD). Provided by `PriceDataLayout.tsx`, wrapped in `<Suspense>`.
 
 Both contexts are client components (they use `createContext`/`useContext`), but they are composed by server components that do the actual fetching.
 
@@ -83,7 +83,7 @@ interface PriceDataContextValue {
 
 **Provided by:** `src/app/(data)/PriceDataLayout.tsx`
 
-`PriceDataLayout` fetches the full cached PVP and PVE price maps in parallel via `getCachedAllMarketPrices`, then renders `PriceDataProvider`. Because it is wrapped in `<Suspense>` by `DataLayout`, it streams in after the station/items shell renders.
+`PriceDataLayout` fetches `/api/prices/[mode]` for the active profile first, then prefetches the other two modes. It renders the results through `PriceDataProvider` without embedding the price maps in the server-component payload.
 
 ---
 

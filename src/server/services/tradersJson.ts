@@ -2,24 +2,32 @@ import { unstable_cache } from "next/cache";
 import { cacheWhenEnabled } from "@/server/cache";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { redis } from "@/server/redis";
-import { fetchTarkovJsonDataset } from "@/server/services/tarkovJson/client";
+import {
+    fetchTarkovJsonDataset,
+    type TarkovJsonGameMode,
+} from "@/server/services/tarkovJson/client";
 import {
     isProgressionCacheUsable,
     parseNonEmptyTimedResponse,
 } from "@/server/services/tarkovJson/cache";
 import type { TimedResponse, Trader, TradersPayload } from "@/types";
 
-const REDIS_KEY = `traders:all:v${CACHE_VERSIONS.traders}`;
-const REDIS_KEY_META = `${REDIS_KEY}:meta`;
+function buildRedisKeys(gameMode: TarkovJsonGameMode) {
+    const bodyKey = `traders:all:v${CACHE_VERSIONS.traders}:${gameMode}`;
+    return { bodyKey, metaKey: `${bodyKey}:meta` };
+}
 
 interface JsonTrader extends Trader {
     name: string;
 }
 
-export async function getJsonTraders(): Promise<TimedResponse<TradersPayload>> {
+export async function getJsonTraders(
+    gameMode: TarkovJsonGameMode = "regular",
+): Promise<TimedResponse<TradersPayload>> {
+    const { bodyKey, metaKey } = buildRedisKeys(gameMode);
     const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
-        REDIS_KEY,
-        REDIS_KEY_META,
+        bodyKey,
+        metaKey,
     );
     const cached = parseNonEmptyTimedResponse<TradersPayload>(
         cachedBody,
@@ -28,7 +36,10 @@ export async function getJsonTraders(): Promise<TimedResponse<TradersPayload>> {
     if (cached && isProgressionCacheUsable(cachedMeta)) return cached;
 
     try {
-        const dataset = await fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders");
+        const dataset = await fetchTarkovJsonDataset<Record<string, JsonTrader>>(
+            "traders",
+            gameMode,
+        );
         const traders: Trader[] = Object.values(dataset.data).map((trader) => ({
             id: trader.id,
             name: dataset.translate(trader.name),
@@ -41,8 +52,8 @@ export async function getJsonTraders(): Promise<TimedResponse<TradersPayload>> {
         const updatedAt = Date.now();
         const body: TimedResponse<TradersPayload> = { data: { traders }, updatedAt };
         await redis.mset({
-            [REDIS_KEY]: JSON.stringify(body),
-            [REDIS_KEY_META]: { updatedAt },
+            [bodyKey]: JSON.stringify(body),
+            [metaKey]: { updatedAt },
         });
         return body;
     } catch (error) {

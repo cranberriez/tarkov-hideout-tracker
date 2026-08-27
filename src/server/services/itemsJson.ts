@@ -3,14 +3,17 @@ import { cacheWhenEnabled } from "@/server/cache";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { redis } from "@/server/redis";
 import { getJsonHideoutStations } from "@/server/services/hideoutJson";
+import type { TarkovJsonGameMode } from "@/server/services/tarkovJson/client";
 import {
     isProgressionCacheUsable,
     parseNonEmptyTimedResponse,
 } from "@/server/services/tarkovJson/cache";
 import type { ItemDetails, ItemsPayload, TimedResponse } from "@/types";
 
-const REDIS_KEY = `hideout:items:filtered:v${CACHE_VERSIONS.hideoutItems}`;
-const REDIS_KEY_META = `${REDIS_KEY}:meta`;
+function buildRedisKeys(gameMode: TarkovJsonGameMode) {
+    const bodyKey = `hideout:items:filtered:v${CACHE_VERSIONS.hideoutItems}:${gameMode}`;
+    return { bodyKey, metaKey: `${bodyKey}:meta` };
+}
 
 export interface GetJsonHideoutRequiredItemsOptions {
     revalidateSeconds?: number;
@@ -18,11 +21,13 @@ export interface GetJsonHideoutRequiredItemsOptions {
 
 export async function getJsonHideoutRequiredItems(
     options?: GetJsonHideoutRequiredItemsOptions,
+    gameMode: TarkovJsonGameMode = "regular",
 ): Promise<TimedResponse<ItemsPayload>> {
     void options;
+    const { bodyKey, metaKey } = buildRedisKeys(gameMode);
     const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
-        REDIS_KEY,
-        REDIS_KEY_META,
+        bodyKey,
+        metaKey,
     );
     const cached = parseNonEmptyTimedResponse<ItemsPayload>(cachedBody, (payload) => payload.items);
 
@@ -32,7 +37,7 @@ export async function getJsonHideoutRequiredItems(
     }
 
     try {
-        const stationsResponse = await getJsonHideoutStations();
+        const stationsResponse = await getJsonHideoutStations(gameMode);
         const itemsById = new Map<string, ItemDetails>();
 
         for (const station of stationsResponse.data.stations) {
@@ -57,8 +62,8 @@ export async function getJsonHideoutRequiredItems(
         const updatedAt = Date.now();
         const body: TimedResponse<ItemsPayload> = { data: { items }, updatedAt };
         await redis.mset({
-            [REDIS_KEY]: JSON.stringify(body),
-            [REDIS_KEY_META]: { updatedAt },
+            [bodyKey]: JSON.stringify(body),
+            [metaKey]: { updatedAt },
         });
         return body;
     } catch (error) {

@@ -9,6 +9,7 @@ import {
     type TarkovJsonGameMode,
 } from "@/server/services/tarkovJson/client";
 import type { GameMode } from "@/server/services/marketPrices";
+import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import type { MarketPrice } from "@/types";
 
 const FILTERED_PRICES_KEY_PREFIX = `item-market-data:filtered:v${CACHE_VERSIONS.marketPrices}`;
@@ -52,19 +53,15 @@ export interface RefreshTarkovJsonMarketPricesResult {
     updatedAt: number;
 }
 
-function toJsonGameMode(mode: GameMode): TarkovJsonGameMode {
-    return mode === "PVE" ? "pve" : "regular";
-}
-
 function buildFilteredKeys(mode: GameMode) {
     const baseKey = `${FILTERED_PRICES_KEY_PREFIX}:${mode.toLowerCase()}`;
     return { bodyKey: baseKey, metaKey: `${baseKey}:meta` };
 }
 
-async function getPriceTrackedItems(): Promise<PriceTrackedItem[]> {
+async function getPriceTrackedItems(gameMode: TarkovJsonGameMode): Promise<PriceTrackedItem[]> {
     const [{ data: hideoutItems }, questsResponse] = await Promise.all([
-        getJsonHideoutRequiredItems(),
-        getCachedJsonFullQuestData(),
+        getJsonHideoutRequiredItems(undefined, gameMode),
+        getCachedJsonFullQuestData(gameMode),
     ]);
     const tracked = new Map<string, PriceTrackedItem>();
 
@@ -93,9 +90,9 @@ async function getPriceTrackedItems(): Promise<PriceTrackedItem[]> {
 export async function refreshTarkovJsonMarketPrices(
     mode: GameMode,
 ): Promise<RefreshTarkovJsonMarketPricesResult> {
-    const gameMode = toJsonGameMode(mode);
+    const gameMode = toTarkovJsonGameMode(mode);
     const [requiredItems, itemsDataset, tradersDataset] = await Promise.all([
-        getPriceTrackedItems(),
+        getPriceTrackedItems(gameMode),
         fetchTarkovJsonDataset<JsonItemsData>("items", gameMode),
         fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders", gameMode),
     ]);
@@ -148,4 +145,3 @@ export async function refreshTarkovJsonMarketPrices(
     });
     return { mode, itemCount: Object.keys(filtered).length, updatedAt };
 }
-

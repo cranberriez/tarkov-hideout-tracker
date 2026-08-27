@@ -6,15 +6,17 @@ import {
 import { DataProvider, type DataContextValue } from "@/app/(data)/_dataContext";
 import PriceDataLayout from "@/app/(data)/PriceDataLayout";
 import { QuickAddModal } from "@/features/quick-add/QuickAddModal";
+import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
 
 interface DataLayoutProps {
     children: ReactNode;
 }
 
 export default async function DataLayout({ children }: DataLayoutProps) {
+    const gameMode = await getActiveTarkovJsonGameMode();
     const [stationsResponse, itemsResponse] = await Promise.all([
-        getCachedHideoutStations(),
-        getCachedHideoutRequiredItems(),
+        getCachedHideoutStations(gameMode),
+        getCachedHideoutRequiredItems(gameMode),
     ]);
 
     const value: DataContextValue = {

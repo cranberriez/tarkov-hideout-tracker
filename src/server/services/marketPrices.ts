@@ -11,8 +11,9 @@ import { redis } from "@/server/redis";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { unstable_cache } from "next/cache";
 import { cacheWhenEnabled } from "@/server/cache";
+import type { GameMode } from "@/lib/game-mode";
 
-export type GameMode = "PVP" | "PVE";
+export type { GameMode } from "@/lib/game-mode";
 
 const FILTERED_PRICES_KEY_PREFIX = `item-market-data:filtered:v${CACHE_VERSIONS.marketPrices}`;
 const PREVIOUS_FILTERED_PRICES_KEY_PREFIX = "item-market-data:filtered:v2";

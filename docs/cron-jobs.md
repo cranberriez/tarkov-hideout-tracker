@@ -24,7 +24,7 @@ Requests without a valid token return HTTP 401.
 
 ### What It Does
 
-1. Calls `refreshTarkovDevMarketPrices("PVP")` and `refreshTarkovDevMarketPrices("PVE")` in parallel.
+1. Calls `refreshMarketPrices("PVP")`, `refreshMarketPrices("PVE")`, and `refreshMarketPrices("KORD")` in parallel.
 2. Invalidates the `market-prices` Next.js cache tag so client-facing server renders see the new Redis data immediately.
 3. Returns a JSON summary of the result.
 
@@ -37,12 +37,14 @@ Requests without a valid token return HTTP 401.
 ### Process
 
 1. Load hideout-required items from `getHideoutRequiredItems()` and quest-required items from `getCachedFullQuestData()`.
-2. Fetch volatile flea market fields and `sellFor` trader values from Tarkov.dev GraphQL:
+2. Fetch volatile flea market fields and trader sell values from Tarkov.dev:
    - PVP: `gameMode: regular`
    - PVE: `gameMode: pve`
+   - KORD: JSON prefix `pvp-season`
 3. Write a compact map `{ normalizedName: MarketPrice | null }` to Redis:
    - PVP: `item-market-data:filtered:v3:pvp`
    - PVE: `item-market-data:filtered:v3:pve`
+   - KORD: `item-market-data:filtered:v3:kord`
 
 ### MarketPrice Shape
 
@@ -104,6 +106,6 @@ npm run pull-prices
 | Symptom | Likely Cause | Fix |
 |---|---|---|
 | All prices show `-` | Redis key missing or cron never ran | Trigger the cron manually |
-| PVE prices missing | Tarkov.dev PVE query error | Check server logs and re-trigger cron |
+| PVE or KORD prices missing | Tarkov.dev mode-specific query error | Check server logs and re-trigger cron |
 | Cron returns 401 | `CRON_SECRET` env var mismatch | Verify env var in Vercel dashboard |
 | Prices very stale | Cron is failing silently | Check Vercel cron logs in the dashboard |

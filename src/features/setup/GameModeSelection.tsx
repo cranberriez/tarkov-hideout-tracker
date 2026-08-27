@@ -1,6 +1,6 @@
 "use client";
 
-import { GameMode } from "@/lib/stores/useUserStore";
+import { GAME_MODES, type GameMode } from "@/lib/stores/useUserStore";
 
 interface GameModeSelectionProps {
 	selected: GameMode;
@@ -12,10 +12,10 @@ export function GameModeSelection({ selected, onSelect }: GameModeSelectionProps
 		<div className="flex flex-col gap-4">
 			<div className="flex flex-col">
 				<h3 className="text-lg font-medium text-white">What version do you primarily play on?</h3>
-				<p className="text-xs text-gray-500 mt-1">This will effect shown flea market prices.</p>
+				<p className="text-xs text-gray-500 mt-1">Each mode has a separate character, inventory, hideout, and quest history.</p>
 			</div>
 			<div className="flex flex-col sm:flex-row gap-3">
-				{(["PVP", "PVE"] as GameMode[]).map((mode) => {
+				{GAME_MODES.map((mode) => {
 					const isSelected = selected === mode;
 					return (
 						<button

@@ -119,7 +119,8 @@ questSidebarCollapsed: boolean;
 
 The workspace's filter headers use an in-pane selection state: choosing Traders,
 Maps, Status, or Quest type replaces the left quest log with that section's
-options at the same bounded width. Trader additional options include an
+options at the same bounded width. The selections in all four sections are
+persisted in localStorage and shared across game-mode profiles. Trader additional options include an
 enabled-by-default requirement toggle and per-trader LL1-LL4 profile controls.
 Fence has LL1/max controls plus an exact persisted standing input; BTR Driver
 and Lightkeeper have no loyalty controls. Quest list rows display the issuing

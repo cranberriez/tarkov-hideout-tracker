@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, type InputHTMLAttributes } from "react";
+import { useRouter } from "next/navigation";
 import { useQuestsContext } from "../QuestsContext";
 import {
     AlertCircle,
@@ -84,6 +85,7 @@ interface ImportSummary {
 }
 
 export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImportDialogProps) {
+    const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [isParsing, setIsParsing] = useState(false);
     const [parsedView, setParsedView] = useState<ParsedImportView | null>(null);
@@ -366,20 +368,24 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
             return;
         }
 
+        if (state.gameMode !== result.nextGameMode) {
+            state.setGameMode(result.nextGameMode);
+        }
+        const targetState = useUserStore.getState();
         const completedQuestIds = Object.keys(result.nextCompletedQuests).filter(
-            (questId) => result.nextCompletedQuests[questId] && !state.completedQuests[questId],
+            (questId) => result.nextCompletedQuests[questId] && !targetState.completedQuests[questId],
         );
-        const uncompletedQuestIds = Object.keys(state.completedQuests).filter(
-            (questId) => state.completedQuests[questId] && !result.nextCompletedQuests[questId],
+        const uncompletedQuestIds = Object.keys(targetState.completedQuests).filter(
+            (questId) => targetState.completedQuests[questId] && !result.nextCompletedQuests[questId],
         );
-        state.applyQuestCompletionChange({
+        targetState.applyQuestCompletionChange({
             complete: completedQuestIds,
             uncomplete: uncompletedQuestIds,
         });
-        useUserStore.setState({
+        useUserStore.getState().applyProfilePatch({
             questsWithItems: result.nextQuestsWithItems,
-            gameMode: result.nextGameMode,
         });
+        router.refresh();
 
         if (ENABLE_QUEST_LOG_FILE_DEDUPE && pendingSeenFileFingerprints.length > 0) {
             const seenFingerprints = readSeenQuestLogFingerprints();

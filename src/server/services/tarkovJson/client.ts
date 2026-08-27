@@ -1,8 +1,10 @@
 import { TARKOV_API_HEADERS } from "../tarkovApi";
+import type { TarkovJsonGameMode } from "@/lib/game-mode";
+
+export type { TarkovJsonGameMode } from "@/lib/game-mode";
 
 const TARKOV_JSON_BASE_URL = "https://json.tarkov.dev";
 
-export type TarkovJsonGameMode = "regular" | "pve";
 export type TarkovJsonEndpoint = "hideout" | "items" | "maps" | "tasks" | "traders";
 
 interface TarkovJsonResponse<T> {

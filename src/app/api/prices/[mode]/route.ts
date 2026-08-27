@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCachedAllMarketPrices } from "@/server/services/marketPrices";
+import { parseGameMode } from "@/lib/game-mode";
 
 // Statically cached (ISR) route handler. The response is served from the
 // CDN / ISR cache instead of being embedded in every page's RSC payload.
@@ -10,12 +11,12 @@ export const revalidate = 86400; // 24h
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-    return [{ mode: "pvp" }, { mode: "pve" }];
+    return [{ mode: "pvp" }, { mode: "pve" }, { mode: "kord" }];
 }
 
 export async function GET(_req: Request, { params }: { params: Promise<{ mode: string }> }) {
     const { mode } = await params;
-    const gameMode = mode === "pve" ? "PVE" : "PVP";
+    const gameMode = parseGameMode(mode);
 
     const prices = await getCachedAllMarketPrices(gameMode);
 

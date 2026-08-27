@@ -29,3 +29,19 @@ test("fetchTarkovJsonDataset rejects missing base data", async (context) => {
 
     await assert.rejects(fetchTarkovJsonDataset("tasks"), /response is missing data/);
 });
+
+test("fetchTarkovJsonDataset prefixes seasonal requests with pvp-season", async (context) => {
+    const urls: string[] = [];
+    context.mock.method(globalThis, "fetch", async (input) => {
+        urls.push(String(input));
+        return String(input).endsWith("_en")
+            ? Response.json({ data: { token: "Translated" } })
+            : Response.json({ data: { entry: { name: "token" } } });
+    });
+
+    await fetchTarkovJsonDataset("tasks", "pvp-season");
+    assert.deepEqual(urls.sort(), [
+        "https://json.tarkov.dev/pvp-season/tasks",
+        "https://json.tarkov.dev/pvp-season/tasks_en",
+    ]);
+});

@@ -11,7 +11,7 @@ On first visit (when `hasCompletedSetup === false`), users are presented with an
 | Component | File | Purpose |
 |---|---|---|
 | `SetupModal` | `src/features/setup/SetupModal.tsx` | Wrapper that manages the two-step flow |
-| `GameModeSelection` | `src/features/setup/GameModeSelection.tsx` | Step 1 — choose PVP or PVE |
+| `GameModeSelection` | `src/features/setup/GameModeSelection.tsx` | Choose PVP, PVE, or KORD profile |
 | `EditionSelection` | `src/features/setup/EditionSelection.tsx` | Step 2 — choose game edition |
 
 `SetupModal` is rendered in `src/app/layout.tsx` (root layout) so it is available on all pages. It opens when `isSetupOpen === true` in `useUserStore`.
@@ -30,9 +30,9 @@ The modal can also be reopened from anywhere via `setSetupOpen(true)` (e.g., a "
 
 ---
 
-## Game Mode (PVP / PVE)
+## Game Mode Profiles (PVP / PVE / KORD)
 
-Stored in `useUserStore.gameMode`. Defaults to `"PVP"`.
+Stored in `useUserStore.gameMode`. Defaults to `"PVP"`. Each mode has independent character progress; see `game-mode-profiles.md`.
 
 Controls which bucket of market prices is read from `PriceDataContext`:
 
@@ -40,7 +40,7 @@ Controls which bucket of market prices is read from `PriceDataContext`:
 const prices = marketPricesByMode[gameMode].prices;
 ```
 
-Both PVP and PVE prices are fetched on every page load — switching modes is instant with no re-fetch.
+The active mode's prices load first, then the other modes are prefetched. Progression data is refreshed when the character profile changes.
 
 ---
 
@@ -77,7 +77,7 @@ If the user changes edition after setup:
 ```ts
 // useUserStore fields relevant to setup
 gameEdition: GameEdition | null;
-gameMode: "PVP" | "PVE";
+gameMode: "PVP" | "PVE" | "KORD";
 hasCompletedSetup: boolean;
 isSetupOpen: boolean;
 editionBonusesAppliedFor: GameEdition | null;

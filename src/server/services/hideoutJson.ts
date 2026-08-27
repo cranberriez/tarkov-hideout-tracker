@@ -4,7 +4,10 @@ import { requiresFoundInRaid } from "@/lib/cfg/foundInRaid";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { wikiData } from "@/lib/data/wiki-data";
 import { redis } from "@/server/redis";
-import { fetchTarkovJsonDataset } from "@/server/services/tarkovJson/client";
+import {
+    fetchTarkovJsonDataset,
+    type TarkovJsonGameMode,
+} from "@/server/services/tarkovJson/client";
 import {
     isProgressionCacheUsable,
     parseNonEmptyTimedResponse,
@@ -17,8 +20,10 @@ import type {
     TimedResponse,
 } from "@/types";
 
-const REDIS_KEY = `hideout:stations:v${CACHE_VERSIONS.hideoutStations}`;
-const REDIS_KEY_META = `${REDIS_KEY}:meta`;
+function buildRedisKeys(gameMode: TarkovJsonGameMode) {
+    const bodyKey = `hideout:stations:v${CACHE_VERSIONS.hideoutStations}:${gameMode}`;
+    return { bodyKey, metaKey: `${bodyKey}:meta` };
+}
 
 interface JsonItem {
     id: string;
@@ -74,10 +79,13 @@ function mapAttributes(attributes: JsonHideoutRequirement["attributes"]): Requir
     }));
 }
 
-export async function getJsonHideoutStations(): Promise<TimedResponse<HideoutStationsPayload>> {
+export async function getJsonHideoutStations(
+    gameMode: TarkovJsonGameMode = "regular",
+): Promise<TimedResponse<HideoutStationsPayload>> {
+    const { bodyKey, metaKey } = buildRedisKeys(gameMode);
     const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
-        REDIS_KEY,
-        REDIS_KEY_META,
+        bodyKey,
+        metaKey,
     );
     const cached = parseNonEmptyTimedResponse<HideoutStationsPayload>(
         cachedBody,
@@ -91,9 +99,9 @@ export async function getJsonHideoutStations(): Promise<TimedResponse<HideoutSta
 
     try {
         const [hideoutDataset, itemsDataset, tradersDataset] = await Promise.all([
-            fetchTarkovJsonDataset<Record<string, JsonHideoutStation>>("hideout"),
-            fetchTarkovJsonDataset<JsonItemsData>("items"),
-            fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders"),
+            fetchTarkovJsonDataset<Record<string, JsonHideoutStation>>("hideout", gameMode),
+            fetchTarkovJsonDataset<JsonItemsData>("items", gameMode),
+            fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders", gameMode),
         ]);
 
         const rawStations = Object.values(hideoutDataset.data);
@@ -240,8 +248,8 @@ export async function getJsonHideoutStations(): Promise<TimedResponse<HideoutSta
             updatedAt,
         };
         await redis.mset({
-            [REDIS_KEY]: JSON.stringify(body),
-            [REDIS_KEY_META]: { updatedAt },
+            [bodyKey]: JSON.stringify(body),
+            [metaKey]: { updatedAt },
         });
         return body;
     } catch (error) {

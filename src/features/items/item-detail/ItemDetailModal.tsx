@@ -138,7 +138,7 @@ export function ItemDetailModal({
         toggleIgnoredQuest,
         togglePinnedQuest,
     } = useUserStore();
-    const mode = gameMode === "PVE" ? "PVE" : "PVP";
+    const mode = gameMode;
     const priceBucket = marketPricesByMode[mode];
     const loading = pricesLoading || !priceBucket || priceBucket.updatedAt === null;
     const marketPrice = selectedItem ? priceBucket?.prices[selectedNormalizedName] : undefined;

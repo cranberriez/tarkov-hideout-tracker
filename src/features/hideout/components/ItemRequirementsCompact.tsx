@@ -18,7 +18,7 @@ export function CompactItemRequirements({
     const itemCounts = useUserStore((state) => state.itemCounts);
     const gameMode = useUserStore((state) => state.gameMode);
     const { marketPricesByMode, loading: pricesLoading } = usePriceDataContext();
-    const mode = gameMode === "PVE" ? "PVE" : "PVP";
+    const mode = gameMode;
     const priceBucket = marketPricesByMode[mode];
     const pricesLoadingForMode = pricesLoading || !priceBucket || priceBucket.updatedAt === null;
     return (

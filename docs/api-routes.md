@@ -16,8 +16,8 @@ Triggered daily at **00:00 UTC** by Vercel Cron (configured in `vercel.json`). P
 
 **What it does:**
 
-1. Calls `refreshTarkovDevMarketPrices("PVP")` and `refreshTarkovDevMarketPrices("PVE")` in parallel.
-2. Each call fetches hideout-required and quest-required item flea market fields and trader sell values from Tarkov.dev GraphQL using `gameMode: regular` or `gameMode: pve`.
+1. Calls `refreshMarketPrices("PVP")`, `refreshMarketPrices("PVE")`, and `refreshMarketPrices("KORD")` in parallel.
+2. Each call fetches hideout-required and quest-required item flea market fields and trader sell values using `regular`, `pve`, or `pvp-season`.
 3. Writes compact `normalizedName -> MarketPrice` maps into Redis.
 
 See `cron-jobs.md` for full details.
@@ -68,7 +68,7 @@ Called by the cron route only. Fetches volatile flea market fields and `sellFor`
 
 **File:** `src/server/services/questsJson.ts`
 
-Fetches Tarkov.dev's `/regular/tasks` JSON dataset and filters the result to quests that have `giveItem` objectives. Each returned quest keeps only `giveItem` objectives. This is the lighter quest shape used when full objective detail is not needed.
+Fetches the active profile's mode-prefixed Tarkov.dev tasks dataset and filters the result to quests that have `giveItem` objectives. Each returned quest keeps only `giveItem` objectives. This is the lighter quest shape used when full objective detail is not needed.
 
 ```ts
 TimedResponse<{ quests: Quest[] }>;
@@ -78,7 +78,7 @@ TimedResponse<{ quests: Quest[] }>;
 
 **File:** `src/server/services/questsJson.ts`
 
-Fetches and hydrates the full Tarkov.dev `/regular/tasks` JSON dataset, including level-0 quests, all objective types, fail conditions, maps, trader requirements, prestige requirements, and trader images. Tarkov 1.1 uses `minPlayerLevel: 0` for some normal PMC quest lines, so player level is no longer used as a server-side inclusion filter. This is the only runtime quest provider and is the current source for both `/items` quest item metadata and `/quests`.
+Fetches and hydrates the active profile's `/regular/tasks`, `/pve/tasks`, or `/pvp-season/tasks` JSON dataset, including level-0 quests, all objective types, fail conditions, maps, trader requirements, prestige requirements, and trader images. This is the only runtime quest provider and is the current source for both `/items` quest item metadata and `/quests`.
 
 ```ts
 TimedResponse<{ quests: FullQuest[] }>;

@@ -41,13 +41,14 @@ Most Redis-backed services store a body key plus a `:meta` key containing `{ upd
 
 | Key                                                  | Content                                                        | Written by                                           | Freshness  |
 | ---------------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------- | ---------- |
-| `hideout:stations:v6` + `:meta`                      | Full station list                                              | `getHideoutStations()` on cache miss/stale data      | 12h        |
-| `hideout:items:filtered:v1` + `:meta`                | Hideout-required item metadata                                 | `getHideoutRequiredItems()` on cache miss/stale data | 12h        |
-| `quests:all:v5` + `:meta`                            | Quests with `giveItem` objectives only                         | `getQuestData()` on cache miss/stale data            | 12h        |
-| `quests:full:v11` + `:meta`                          | Full quest list, quest splash images, all objective types, map/trader/prestige/reputation reward data | `getFullQuestData()` on cache miss/stale data        | 12h        |
-| `traders:all:v1` + `:meta`                           | Full trader list                                               | `getTraders()` on cache miss/stale data              | 12h        |
+| `hideout:stations:v6:{regular|pve|pvp-season}` + `:meta` | Mode-specific station list                                  | `getHideoutStations()` on cache miss/stale data      | 12h        |
+| `hideout:items:filtered:v2:{regular|pve|pvp-season}` + `:meta` | Mode-specific hideout item metadata                     | `getHideoutRequiredItems()` on cache miss/stale data | 12h        |
+| `quests:all:v5:{regular|pve|pvp-season}` + `:meta`   | Mode-specific quests with `giveItem` objectives                | `getQuestData()` on cache miss/stale data            | 12h        |
+| `quests:full:v11:{regular|pve|pvp-season}` + `:meta` | Mode-specific full quest list                                  | `getFullQuestData()` on cache miss/stale data        | 12h        |
+| `traders:all:v1:{regular|pve|pvp-season}` + `:meta`  | Mode-specific trader list                                      | `getTraders()` on cache miss/stale data              | 12h        |
 | `item-market-data:filtered:v3:pvp` + `:meta`          | PVP hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshTarkovDevMarketPrices("PVP")`)     | Daily cron |
 | `item-market-data:filtered:v3:pve` + `:meta`          | PVE hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshTarkovDevMarketPrices("PVE")`)     | Daily cron |
+| `item-market-data:filtered:v3:kord` + `:meta`         | KORD hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshMarketPrices("KORD")`)             | Daily cron |
 
 Older Tarkov.dev price keys and legacy Tarkov Market keys may exist in Redis from older deployments. The read service falls back to the previous Tarkov.dev key first, then the legacy Tarkov Market key, only when the current keys are missing or empty. Existing deployments keep showing flea prices until `/api/cron/price-update` has populated the new namespace with trader sell values.
 
@@ -73,20 +74,19 @@ The `unstable_cache` layer sits above Redis. On a Next.js cache hit inside the r
 ## Caching Flow Per Request
 
 ```text
-Browser request
+Browser request (mode cookie)
   -> (data)/layout.tsx
-      -> getCachedHideoutStations()
-      -> getCachedHideoutRequiredItems()
+      -> getCachedHideoutStations(mode)
+      -> getCachedHideoutRequiredItems(mode)
       -> PriceDataLayout
-          -> getCachedAllMarketPrices("PVP")
-          -> getCachedAllMarketPrices("PVE")
+          -> /api/prices/{pvp|pve|kord}
 
 /items page
-  -> getCachedFullQuestData()
+  -> getCachedFullQuestData(mode)
   -> build quest item metadata for the client
 
 /quests page
-  -> getCachedFullQuestData()
+  -> getCachedFullQuestData(mode)
   -> build quest item metadata and availability metadata for the client
 ```
 
@@ -96,7 +96,7 @@ Market prices in Redis are written only by the cron job. `getCachedAllMarketPric
 
 ## Browser / Client
 
-No client-side price fetching occurs. Server components fetch data and distribute it through React context or server props. Zustand (`useUserStore`) handles localStorage persistence of user progress and preferences only.
+`PriceDataLayout` fetches the active mode's cached route first and prefetches the remaining price buckets. Progression data is still fetched by server components. Zustand stores the independent local character profiles and shared preferences.
 
 ---
 

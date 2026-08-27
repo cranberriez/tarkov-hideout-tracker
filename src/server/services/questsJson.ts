@@ -2,7 +2,10 @@ import { unstable_cache } from "next/cache";
 import { cacheWhenEnabled } from "@/server/cache";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { redis } from "@/server/redis";
-import { fetchTarkovJsonDataset } from "@/server/services/tarkovJson/client";
+import {
+    fetchTarkovJsonDataset,
+    type TarkovJsonGameMode,
+} from "@/server/services/tarkovJson/client";
 import {
     mapQuestOtherRequirements,
     type RawQuestOtherRequirement,
@@ -26,10 +29,16 @@ import type {
     TimedResponse,
 } from "@/types";
 
-const QUESTS_REDIS_KEY = `quests:all:v${CACHE_VERSIONS.quests}`;
-const QUESTS_REDIS_KEY_META = `${QUESTS_REDIS_KEY}:meta`;
-const FULL_REDIS_KEY = `quests:full:v${CACHE_VERSIONS.questsFull}`;
-const FULL_REDIS_KEY_META = `${FULL_REDIS_KEY}:meta`;
+function buildQuestRedisKeys(gameMode: TarkovJsonGameMode) {
+    const questsBodyKey = `quests:all:v${CACHE_VERSIONS.quests}:${gameMode}`;
+    const fullBodyKey = `quests:full:v${CACHE_VERSIONS.questsFull}:${gameMode}`;
+    return {
+        questsBodyKey,
+        questsMetaKey: `${questsBodyKey}:meta`,
+        fullBodyKey,
+        fullMetaKey: `${fullBodyKey}:meta`,
+    };
+}
 
 interface JsonItem {
     id: string;
@@ -435,16 +444,16 @@ function mapStandingRewards(
     return mapped;
 }
 
-async function fetchAndMapFullQuests(): Promise<FullQuest[]> {
+async function fetchAndMapFullQuests(gameMode: TarkovJsonGameMode): Promise<FullQuest[]> {
     const [tasksDataset, itemsDataset, tradersDataset, mapsDataset, hideoutDataset] =
         await Promise.all([
-            fetchTarkovJsonDataset<JsonTasksData>("tasks"),
-            fetchTarkovJsonDataset<JsonItemsData>("items"),
-            fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders"),
-            fetchTarkovJsonDataset<JsonMapsData>("maps"),
+            fetchTarkovJsonDataset<JsonTasksData>("tasks", gameMode),
+            fetchTarkovJsonDataset<JsonItemsData>("items", gameMode),
+            fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders", gameMode),
+            fetchTarkovJsonDataset<JsonMapsData>("maps", gameMode),
             fetchTarkovJsonDataset<
                 Record<string, { id: string; name: string; normalizedName: string }>
-            >("hideout"),
+            >("hideout", gameMode),
         ]);
 
     const rawTasks = Object.values(tasksDataset.data.tasks ?? {});
@@ -546,10 +555,13 @@ async function fetchAndMapFullQuests(): Promise<FullQuest[]> {
     });
 }
 
-export async function getJsonFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
+export async function getJsonFullQuestData(
+    gameMode: TarkovJsonGameMode = "regular",
+): Promise<TimedResponse<FullQuestsPayload>> {
+    const { fullBodyKey, fullMetaKey } = buildQuestRedisKeys(gameMode);
     const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
-        FULL_REDIS_KEY,
-        FULL_REDIS_KEY_META,
+        fullBodyKey,
+        fullMetaKey,
     );
     const cached = parseNonEmptyTimedResponse<FullQuestsPayload>(
         cachedBody,
@@ -558,13 +570,13 @@ export async function getJsonFullQuestData(): Promise<TimedResponse<FullQuestsPa
     if (cached && isProgressionCacheUsable(cachedMeta)) return cached;
 
     try {
-        const quests = await fetchAndMapFullQuests();
+        const quests = await fetchAndMapFullQuests(gameMode);
         if (quests.length === 0) throw new Error("Tarkov JSON task mapping produced no quests");
         const updatedAt = Date.now();
         const body: TimedResponse<FullQuestsPayload> = { data: { quests }, updatedAt };
         await redis.mset({
-            [FULL_REDIS_KEY]: JSON.stringify(body),
-            [FULL_REDIS_KEY_META]: { updatedAt },
+            [fullBodyKey]: JSON.stringify(body),
+            [fullMetaKey]: { updatedAt },
         });
         return body;
     } catch (error) {
@@ -577,10 +589,13 @@ export async function getJsonFullQuestData(): Promise<TimedResponse<FullQuestsPa
     }
 }
 
-export async function getJsonQuestData(): Promise<TimedResponse<QuestsPayload>> {
+export async function getJsonQuestData(
+    gameMode: TarkovJsonGameMode = "regular",
+): Promise<TimedResponse<QuestsPayload>> {
+    const { questsBodyKey, questsMetaKey } = buildQuestRedisKeys(gameMode);
     const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
-        QUESTS_REDIS_KEY,
-        QUESTS_REDIS_KEY_META,
+        questsBodyKey,
+        questsMetaKey,
     );
     const cached = parseNonEmptyTimedResponse<QuestsPayload>(
         cachedBody,
@@ -589,7 +604,7 @@ export async function getJsonQuestData(): Promise<TimedResponse<QuestsPayload>> 
     if (cached && isProgressionCacheUsable(cachedMeta)) return cached;
 
     try {
-        const full = await getJsonFullQuestData();
+        const full = await getJsonFullQuestData(gameMode);
         const isGiveItemObjective = (
             objective: FullQuestObjective,
         ): objective is QuestObjectiveItemType =>
@@ -630,8 +645,8 @@ export async function getJsonQuestData(): Promise<TimedResponse<QuestsPayload>> 
         const updatedAt = Date.now();
         const body: TimedResponse<QuestsPayload> = { data: { quests }, updatedAt };
         await redis.mset({
-            [QUESTS_REDIS_KEY]: JSON.stringify(body),
-            [QUESTS_REDIS_KEY_META]: { updatedAt },
+            [questsBodyKey]: JSON.stringify(body),
+            [questsMetaKey]: { updatedAt },
         });
         return body;
     } catch (error) {

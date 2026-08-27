@@ -30,10 +30,12 @@ export default function PriceDataLayout({ children }: PriceDataLayoutProps) {
     >({
         PVP: EMPTY_MODE_STATE,
         PVE: EMPTY_MODE_STATE,
+        KORD: EMPTY_MODE_STATE,
     });
     const [loadedModes, setLoadedModes] = useState<Record<GameMode, boolean>>({
         PVP: false,
         PVE: false,
+        KORD: false,
     });
 
     // Dedupes in-flight requests across renders/mode switches.
@@ -69,11 +71,13 @@ export default function PriceDataLayout({ children }: PriceDataLayoutProps) {
             }
         }
 
-        const activeMode: GameMode = gameMode === "PVE" ? "PVE" : "PVP";
-        const otherMode: GameMode = activeMode === "PVE" ? "PVP" : "PVE";
+        const activeMode = gameMode;
+        const otherModes: GameMode[] = (["PVP", "PVE", "KORD"] as GameMode[]).filter(
+            (mode) => mode !== activeMode,
+        );
 
         void loadMode(activeMode).then(() => {
-            if (!cancelled) void loadMode(otherMode);
+            if (!cancelled) void Promise.all(otherModes.map(loadMode));
         });
 
         return () => {
@@ -81,7 +85,7 @@ export default function PriceDataLayout({ children }: PriceDataLayoutProps) {
         };
     }, [gameMode]);
 
-    const activeMode: GameMode = gameMode === "PVE" ? "PVE" : "PVP";
+    const activeMode = gameMode;
 
     const value: PriceDataContextValue = {
         marketPricesByMode,

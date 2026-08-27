@@ -225,7 +225,7 @@ export function ItemsList({
         return details;
     }, [itemsById, questAnyOfGroups, questItemIndex]);
 
-    const mode = gameMode === "PVE" ? "PVE" : "PVP";
+    const mode = gameMode;
     const priceBucket = marketPricesByMode[mode];
     const getPrice = (normalizedName: string) => priceBucket?.prices[normalizedName];
 

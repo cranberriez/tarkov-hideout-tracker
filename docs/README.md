@@ -19,6 +19,9 @@ Docs are grouped by purpose:
 - **[state-management.md](state-management.md)** - Current architecture
   Zustand stores (`useUserStore`, `useUIStore`) - full state shapes, actions, and separation from server-fetched data.
 
+- **[game-mode-profiles.md](game-mode-profiles.md)** - Current architecture
+  Independent PVP, PVE, and KORD character profiles, legacy-state retention, cookies, and mode-aware server data.
+
 - **[data-and-price-context-architecture.md](data-and-price-context-architecture.md)** - Current architecture
   How server services, React contexts (`DataContext`, `PriceDataContext`), and `<Suspense>` work together to deliver station/item/price data.
 

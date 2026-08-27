@@ -21,13 +21,13 @@ The JSON API publishes a base dataset and an English locale dictionary for each 
 /regular/maps        /regular/maps_en
 ```
 
-PVE market refreshes use the equivalent `/pve/items` and `/pve/traders` datasets. Base records refer to related entities by ID and contain translation keys. The adapters hydrate those references and translate them into the existing application types.
+PVE uses the equivalent `/pve/*` datasets and KORD uses `/pvp-season/*`. Base records refer to related entities by ID and contain translation keys. The adapters hydrate those references and translate them into the existing application types.
 
 ## Compatibility and Caching
 
 JSON and GraphQL providers expose the same `TimedResponse` payloads and use the existing versioned Redis keys. No client component, Zustand field, persisted storage key, or persistence behavior changes when the provider changes.
 
-Every JSON adapter validates both cached and upstream data:
+Every JSON adapter validates both cached and upstream data. Progression Redis keys are separated by `regular`, `pve`, or `pvp-season`:
 
 - Empty or malformed Redis bodies are ignored rather than treated as fresh.
 - Missing or empty upstream datasets throw before `redis.mset`.

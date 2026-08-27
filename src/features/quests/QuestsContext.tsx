@@ -640,13 +640,14 @@ export function QuestsProvider({
         );
         state.applyQuestCompletionChange({ complete, uncomplete });
 
-        useUserStore.setState((currentState) => {
+        const currentState = useUserStore.getState();
+        {
             const failedQuests = { ...currentState.failedQuests };
             const questsWithItems = { ...currentState.questsWithItems };
             restoreRecordValues(failedQuests, lastQuestSyncAction.previousFailedQuests, affectedQuestIds);
             restoreRecordValues(questsWithItems, lastQuestSyncAction.previousQuestsWithItems, affectedQuestIds);
-            return { failedQuests, questsWithItems };
-        });
+            currentState.applyProfilePatch({ failedQuests, questsWithItems });
+        }
 
         setLastQuestSyncAction(null);
         return true;

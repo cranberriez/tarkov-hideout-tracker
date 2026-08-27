@@ -12,13 +12,14 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const [pvp, pve] = await Promise.all([
+        const [pvp, pve, kord] = await Promise.all([
             refreshMarketPrices("PVP"),
             refreshMarketPrices("PVE"),
+            refreshMarketPrices("KORD"),
         ]);
         revalidateTag("market-prices", { expire: 0 });
 
-        return NextResponse.json({ ok: true, results: [pvp, pve] }, { status: 200 });
+        return NextResponse.json({ ok: true, results: [pvp, pve, kord] }, { status: 200 });
     } catch (error) {
         console.error("price-update cron failed", error);
         return new NextResponse("Price update failed", { status: 500 });
