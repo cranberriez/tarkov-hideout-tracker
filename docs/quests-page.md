@@ -180,6 +180,12 @@ Tarkov.dev `traderRequirements`; those remain availability gates. Lookup code is
 isolated in `src/lib/utils/quest-trader-tab-overrides.ts`, so removing an entry
 restores provider-derived behavior for that quest.
 
+Validated removed quests use the separate ID manifest
+`src/lib/data/removed-quests.json`. They are excluded by default and do not
+contribute quest item demand or trader-tier completion counts. For data review,
+enable `SHOW_REMOVED_QUESTS` in `quest-feature-flags.ts`; retained records receive
+`removed: true` and render with a red border in the quest list.
+
 To compare a reviewed core snapshot with a Tarkov.dev task snapshot and regenerate
 the overlay, run `npm run quest-data-compare -- --write-overrides
 src/lib/data/quest-trader-tab-overrides.json`. The comparison joins exclusively by

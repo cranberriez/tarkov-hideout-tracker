@@ -53,6 +53,7 @@ export const TRADER_TIER_COMPLETION_COUNTERS: Readonly<
 
 export interface TraderTierQuest {
     id: string;
+    removed?: boolean;
     trader: { id: string; name: string; normalizedName: string };
     traderRequirements: Parameters<typeof getQuestIssuingTraderLoyaltyLevel>[0]["traderRequirements"];
 }
@@ -112,6 +113,7 @@ export function countCompletedTraderTierQuests(
     let count = 0;
 
     for (const quest of quests) {
+        if (quest.removed) continue;
         if (!completedQuests[quest.id]) continue;
         if (isEssentialQuestOverride(quest.id)) continue;
         const actualTrader = normalizeTraderName(quest.trader.normalizedName || quest.trader.name);

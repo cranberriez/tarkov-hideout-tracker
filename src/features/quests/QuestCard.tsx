@@ -296,8 +296,10 @@ export function QuestCard({
             className={cn(
                 "overflow-hidden border transition-colors",
                 attachedTop ? "rounded-b-md rounded-t-none" : "rounded-md",
-                highlighted
-                    ? "border-tarkov-green shadow-[0_0_0_1px_rgba(157,255,0,0.18)]"
+                quest.removed
+                    ? "border-red-500/70 bg-red-500/5 shadow-[0_0_0_1px_rgba(239,68,68,0.12)]"
+                    : highlighted
+                      ? "border-tarkov-green shadow-[0_0_0_1px_rgba(157,255,0,0.18)]"
                     : completed
                       ? "border-white/5 bg-black/10"
                       : failed
@@ -309,8 +311,10 @@ export function QuestCard({
                             : pinned
                               ? "border-sky-500/20 bg-[linear-gradient(90deg,rgba(56,189,248,0.16)_0%,rgba(56,189,248,0.08)_30%,rgba(17,17,17,0.95)_72%)] hover:border-sky-400/30"
                               : "border-white/10 hover:border-white/15",
-                completed
-                    ? "bg-black/10"
+                quest.removed
+                    ? "bg-red-500/5"
+                    : completed
+                      ? "bg-black/10"
                     : failed
                       ? "bg-red-500/10"
                       : disabled

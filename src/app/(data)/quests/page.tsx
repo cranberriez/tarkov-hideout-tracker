@@ -5,16 +5,26 @@ import { buildQuestAnyOfGroups, buildQuestItemIndex } from "@/lib/utils/quest-it
 import { toQuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { QuestsClientPage } from "@/features/quests/QuestsClientPage";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
+import { SHOW_REMOVED_QUESTS } from "@/features/quests/quest-feature-flags";
+import {
+    excludeRemovedQuests,
+    prepareQuestsForDisplay,
+} from "@/lib/utils/removed-quests";
 
 export const revalidate = false; // Frozen during the Tarkov 1.1 transition
 
 export default async function QuestsPage() {
     const gameMode = await getActiveTarkovJsonGameMode();
     const questsResponse = await getCachedFullQuestData(gameMode);
-    const quests = orderQuestsByPrerequisites(questsResponse.data.quests);
-    const questItemIndex = buildQuestItemIndex(quests);
-    const questAnyOfGroups = buildQuestAnyOfGroups(quests);
-    const questAvailabilityQuests = quests.map(toQuestAvailabilityQuest);
+    const quests = orderQuestsByPrerequisites(
+        prepareQuestsForDisplay(questsResponse.data.quests, SHOW_REMOVED_QUESTS),
+    );
+    const progressionQuests = orderQuestsByPrerequisites(
+        excludeRemovedQuests(questsResponse.data.quests),
+    );
+    const questItemIndex = buildQuestItemIndex(progressionQuests);
+    const questAnyOfGroups = buildQuestAnyOfGroups(progressionQuests);
+    const questAvailabilityQuests = progressionQuests.map(toQuestAvailabilityQuest);
 
     return (
         <Suspense fallback={null}>

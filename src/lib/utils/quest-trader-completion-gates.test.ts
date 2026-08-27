@@ -92,6 +92,16 @@ test("counts numeric trader-tab overrides and excludes essential quests", () => 
     ), 0);
 });
 
+test("excludes removed quests from trader-tier completion counts", () => {
+    const removedQuest = { ...makeQuest("removed"), removed: true };
+
+    assert.equal(countCompletedTraderTierQuests(
+        [removedQuest],
+        { removed: true },
+        { trader: "Prapor", tier: 1 },
+    ), 0);
+});
+
 test("leaves unknown global variables unclassified", () => {
     assert.equal(getTraderTierCompletionGate({
         type: "globalVariable",

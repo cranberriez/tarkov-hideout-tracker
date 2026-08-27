@@ -4,6 +4,7 @@ import { orderQuestsByPrerequisites } from "@/server/services/quests";
 import { getCachedJsonFullQuestData } from "@/server/services/questsJson";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { buildQuestAnyOfGroups, buildQuestItemIndex } from "@/lib/utils/quest-item-index";
+import { excludeRemovedQuests } from "@/lib/utils/removed-quests";
 import type { MarketPrice } from "@/types";
 import type { GameMode } from "@/server/services/marketPrices";
 import { TARKOV_GRAPHQL_HEADERS } from "@/server/services/tarkovApi";
@@ -175,7 +176,9 @@ async function getPriceTrackedItems(): Promise<PriceTrackedItem[]> {
         tracked.set(item.id, { id: item.id, normalizedName: item.normalizedName });
     }
 
-    const quests = orderQuestsByPrerequisites(questsResponse.data.quests);
+    const quests = orderQuestsByPrerequisites(
+        excludeRemovedQuests(questsResponse.data.quests),
+    );
     const questItemIndex = buildQuestItemIndex(quests);
     const questAnyOfGroups = buildQuestAnyOfGroups(quests);
 

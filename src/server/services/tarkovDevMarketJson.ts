@@ -11,6 +11,7 @@ import {
 import type { GameMode } from "@/server/services/marketPrices";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import type { MarketPrice } from "@/types";
+import { excludeRemovedQuests } from "@/lib/utils/removed-quests";
 
 const FILTERED_PRICES_KEY_PREFIX = `item-market-data:filtered:v${CACHE_VERSIONS.marketPrices}`;
 
@@ -71,7 +72,9 @@ async function getPriceTrackedItems(gameMode: TarkovJsonGameMode): Promise<Price
         }
     }
 
-    const quests = orderQuestsByPrerequisites(questsResponse.data.quests);
+    const quests = orderQuestsByPrerequisites(
+        excludeRemovedQuests(questsResponse.data.quests),
+    );
     for (const item of buildQuestItemIndex(quests)) {
         if (item.itemId && item.normalizedName) {
             tracked.set(item.itemId, { id: item.itemId, normalizedName: item.normalizedName });

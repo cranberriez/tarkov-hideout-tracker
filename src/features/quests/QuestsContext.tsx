@@ -425,12 +425,12 @@ export function QuestsProvider({
     ]);
 
     const completedCount = useMemo(
-        () => quests.filter((q) => completedQuests[q.id]).length,
+        () => quests.filter((q) => !q.removed && completedQuests[q.id]).length,
         [quests, completedQuests],
     );
 
     const failedCount = useMemo(
-        () => quests.filter((q) => failedQuests[q.id]).length,
+        () => quests.filter((q) => !q.removed && failedQuests[q.id]).length,
         [quests, failedQuests],
     );
 

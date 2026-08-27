@@ -322,7 +322,10 @@ function QuestListItem({
                 }
             }}
             className={cn(
-                "group relative grid min-h-20 cursor-pointer grid-cols-[108px_minmax(0,1fr)] overflow-hidden border-b border-white/8 bg-[#111214] text-left outline-none transition-colors focus-visible:bg-white/6",
+                "group relative grid min-h-20 cursor-pointer grid-cols-[108px_minmax(0,1fr)] overflow-hidden text-left outline-none transition-colors focus-visible:bg-white/6",
+                quest.removed
+                    ? "border border-red-500/70 bg-red-500/5"
+                    : "border-b border-white/8 bg-[#111214]",
                 selected && "bg-white/6 shadow-[inset_3px_0_0_var(--accent-green)]",
                 highlighted && "bg-white/10",
             )}
@@ -438,6 +441,11 @@ function QuestListItem({
                                 {traderLoyaltyLevel === 4
                                     ? <Crown size={10} />
                                     : <span className="font-serif text-[9px] font-bold leading-none">{["", "I", "II", "III"][traderLoyaltyLevel]}</span>}
+                            </span>
+                        )}
+                        {quest.removed && (
+                            <span className="shrink-0 font-serif text-[9px] font-bold uppercase text-red-300">
+                                Removed
                             </span>
                         )}
                     </span>

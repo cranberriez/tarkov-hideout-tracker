@@ -78,6 +78,13 @@ payload or cache shape. Numeric values take precedence for LL grouping and
 trader-tier completion counts; `essential` quests are excluded from LL counters.
 Provider `traderRequirements` continue to control availability independently.
 
+Validated quests removed from the live game are listed by ID in
+`src/lib/data/removed-quests.json`. They are excluded before quest item demand,
+availability metadata, and tracked market-item lists are derived. The review flag
+`SHOW_REMOVED_QUESTS` in `src/features/quests/quest-feature-flags.ts` is disabled
+by default. Enabling it retains removed quests on the quest page with
+`removed: true`; it does not restore them to item-demand or market-price inputs.
+
 ## Series Candidates and Curated Organization
 
 Series organization is derived after fetching JSON/GraphQL data. The curated
