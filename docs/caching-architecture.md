@@ -22,8 +22,8 @@ body keys, `:meta` keys, market-price previous/legacy fallback keys, and both
 reads and writes from every Redis-backed service. For example:
 
 ```text
-production: quests:full:v10
-development: dev:quests:full:v10
+production: quests:full:v11
+development: dev:quests:full:v11
 ```
 
 The production form remains byte-for-byte unchanged. The namespace is applied at
@@ -44,7 +44,7 @@ Most Redis-backed services store a body key plus a `:meta` key containing `{ upd
 | `hideout:stations:v6` + `:meta`                      | Full station list                                              | `getHideoutStations()` on cache miss/stale data      | 12h        |
 | `hideout:items:filtered:v1` + `:meta`                | Hideout-required item metadata                                 | `getHideoutRequiredItems()` on cache miss/stale data | 12h        |
 | `quests:all:v5` + `:meta`                            | Quests with `giveItem` objectives only                         | `getQuestData()` on cache miss/stale data            | 12h        |
-| `quests:full:v10` + `:meta`                          | Full quest list, quest splash images, all objective types, map/trader/prestige/reputation reward data | `getFullQuestData()` on cache miss/stale data        | 12h        |
+| `quests:full:v11` + `:meta`                          | Full quest list, quest splash images, all objective types, map/trader/prestige/reputation reward data | `getFullQuestData()` on cache miss/stale data        | 12h        |
 | `traders:all:v1` + `:meta`                           | Full trader list                                               | `getTraders()` on cache miss/stale data              | 12h        |
 | `item-market-data:filtered:v3:pvp` + `:meta`          | PVP hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshTarkovDevMarketPrices("PVP")`)     | Daily cron |
 | `item-market-data:filtered:v3:pve` + `:meta`          | PVE hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshTarkovDevMarketPrices("PVE")`)     | Daily cron |

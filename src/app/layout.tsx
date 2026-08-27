@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/core/Navbar";
-import { Footer } from "@/components/core/Footer";
+import { RouteAwareFooter } from "@/components/core/RouteAwareFooter";
 import { SetupModal } from "../features/setup/SetupModal";
 import { Analytics } from "@vercel/analytics/next";
 import { SeasonUpdateBanner } from "@/components/core/SeasonUpdateBanner";
@@ -23,11 +23,11 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
-            <body className="antialiased min-h-screen flex flex-col">
+            <body className="antialiased flex min-h-dvh flex-col">
                 <Navbar />
-                <SeasonUpdateBanner />
-                <div className="flex-1">{children}</div>
-                <Footer />
+                {/* <SeasonUpdateBanner /> */}
+                <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+                <RouteAwareFooter />
                 <SetupModal />
                 <Analytics />
             </body>

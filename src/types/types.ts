@@ -376,6 +376,7 @@ export interface FullQuest {
     id: string;
     name: string;
     normalizedName: string;
+    taskImageLink?: string | null;
     wikiLink?: string | null;
     minPlayerLevel?: number | null;
     kappaRequired?: boolean | null;

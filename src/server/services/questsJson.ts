@@ -122,6 +122,7 @@ interface JsonTask {
     id: string;
     name: string;
     normalizedName: string;
+    taskImageLink?: string | null;
     wikiLink?: string | null;
     minPlayerLevel?: number | null;
     kappaRequired?: boolean | null;
@@ -490,6 +491,7 @@ async function fetchAndMapFullQuests(): Promise<FullQuest[]> {
                 id: task.id,
                 name: context.translateTask(task.name),
                 normalizedName: task.normalizedName,
+                taskImageLink: task.taskImageLink,
                 wikiLink: task.wikiLink,
                 minPlayerLevel: task.minPlayerLevel,
                 kappaRequired: task.kappaRequired,

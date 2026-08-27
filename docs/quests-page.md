@@ -1,6 +1,6 @@
 # Quests Page
 
-The `/quests` route displays Tarkov.dev quest data: objectives, prerequisites, unlock chains, completion tracking, manual sync, and quest item hand-ins. Three view modes are exposed in the UI: **By Trader**, **By Map**, and **List**. Persisted legacy Tree selections migrate to By Trader.
+The `/quests` route displays Tarkov.dev quest data in a full-height split workspace: a compact filtered quest log on the left and inline quest details or Raid Planner on the right. The legacy By Trader, By Map, and List components remain in the source for compatibility and focused reuse, but are no longer the route's primary presentation. See `quests-workspace-redesign.md` for the current interaction model.
 
 ---
 

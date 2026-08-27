@@ -102,6 +102,12 @@ body {
     font-family: var(--font-sans), sans-serif;
 }
 
+body.quest-workspace-active {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+}
+
 @layer base {
     * {
         @apply border-border outline-ring/50;
