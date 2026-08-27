@@ -22,8 +22,8 @@ body keys, `:meta` keys, market-price previous/legacy fallback keys, and both
 reads and writes from every Redis-backed service. For example:
 
 ```text
-production: quests:full:v11
-development: dev:quests:full:v11
+production: quests:full:v12
+development: dev:quests:full:v12
 ```
 
 The production form remains byte-for-byte unchanged. The namespace is applied at
@@ -44,7 +44,7 @@ Most Redis-backed services store a body key plus a `:meta` key containing `{ upd
 | `hideout:stations:v6:{regular|pve|pvp-season}` + `:meta` | Mode-specific station list                                  | `getHideoutStations()` on cache miss/stale data      | 12h        |
 | `hideout:items:filtered:v2:{regular|pve|pvp-season}` + `:meta` | Mode-specific hideout item metadata                     | `getHideoutRequiredItems()` on cache miss/stale data | 12h        |
 | `quests:all:v5:{regular|pve|pvp-season}` + `:meta`   | Mode-specific quests with `giveItem` objectives                | `getQuestData()` on cache miss/stale data            | 12h        |
-| `quests:full:v11:{regular|pve|pvp-season}` + `:meta` | Mode-specific full quest list                                  | `getFullQuestData()` on cache miss/stale data        | 12h        |
+| `quests:full:v12:{regular|pve|pvp-season}` + `:meta` | Mode-specific full quest list, including complete objective item groups | `getFullQuestData()` on cache miss/stale data | 12h |
 | `traders:all:v1:{regular|pve|pvp-season}` + `:meta`  | Mode-specific trader list                                      | `getTraders()` on cache miss/stale data              | 12h        |
 | `item-market-data:filtered:v3:pvp` + `:meta`          | PVP hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshTarkovDevMarketPrices("PVP")`)     | Daily cron |
 | `item-market-data:filtered:v3:pve` + `:meta`          | PVE hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshTarkovDevMarketPrices("PVE")`)     | Daily cron |

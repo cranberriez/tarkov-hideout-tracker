@@ -30,11 +30,16 @@ export function QuestsClientPage({ quests, updatedAt, questItemIndex, questAnyOf
     );
     const questItemDetails = useMemo(() => {
         const details: Record<string, ItemDetails> = {};
+        const addItem = (item: { id: string; name: string; normalizedName: string; iconLink?: string | null; gridImageLink?: string | null }) => {
+            details[item.id] ??= { id: item.id, name: item.name, normalizedName: item.normalizedName, iconLink: item.iconLink ?? undefined, gridImageLink: item.gridImageLink ?? undefined };
+        };
         quests.forEach((quest) => quest.objectives.forEach((objective) => {
-            if (!("items" in objective) || !Array.isArray(objective.items)) return;
-            objective.items.forEach((item) => {
-                details[item.id] ??= { id: item.id, name: item.name, normalizedName: item.normalizedName, iconLink: item.iconLink, gridImageLink: item.gridImageLink };
-            });
+            if ("items" in objective && Array.isArray(objective.items)) objective.items.forEach(addItem);
+            objective.requiredKeys?.flat().forEach(addItem);
+            if ("questItem" in objective && objective.questItem) addItem(objective.questItem);
+            if ("item" in objective && objective.item) addItem(objective.item);
+            if ("containsAll" in objective && Array.isArray(objective.containsAll)) objective.containsAll.forEach(addItem);
+            if ("useAny" in objective && Array.isArray(objective.useAny)) objective.useAny.forEach(addItem);
         }));
         return details;
     }, [quests]);

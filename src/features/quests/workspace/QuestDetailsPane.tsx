@@ -1,16 +1,18 @@
 "use client";
 
-import { CheckCircle2, ExternalLink, Flag, Lock, PackageCheck, Pin, RotateCcw, XCircle } from "lucide-react";
+import { useState } from "react";
+import { Bug, CheckCircle2, ExternalLink, Flag, Lock, PackageCheck, Pin, RotateCcw, X, XCircle } from "lucide-react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import { formatQuestTraderGate } from "@/lib/utils/quest-trader-gates";
 import { questCanFail } from "@/lib/utils/quest-failures";
-import type { FullQuestObjective, QuestOtherRequirement, QuestTraderStandingReward } from "@/types";
+import type { FullQuest, FullQuestObjective, QuestOtherRequirement, QuestTraderStandingReward } from "@/types";
 import { ObjectiveRow } from "../components/quest-card/QuestObjectiveRows";
 import { useQuestsContext } from "../QuestsContext";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 export function QuestDetailsPane() {
+    const [showDebug, setShowDebug] = useState(false);
     const { selectedQuest: quest, statusByQuestId, questsById, setSelectedQuestId, retainQuestAfterCompletion } = useQuestWorkspace();
     const { leadsToByQuestId, onItemClick, requestToggleQuestCompletion, requestFailQuest, requestResetQuestStatus } = useQuestsContext();
     const pinned = useUserStore((state) => quest ? !!state.pinnedQuests[quest.id] : false);
@@ -33,9 +35,10 @@ export function QuestDetailsPane() {
     const hasItemObjectives = quest.objectives.some((objective) => objective.type === "giveItem" || objective.type === "plantItem");
     const traderImage = quest.trader.image4xLink ?? quest.trader.imageLink;
     const leadsTo = (leadsToByQuestId.get(quest.id) ?? []).map((id) => questsById.get(id)).filter(Boolean);
+    const objectivePresentation = buildObjectivePresentation(quest.objectives);
 
     return (
-        <div className="min-h-0 flex-1 overflow-y-auto bg-[#0b0c0e]">
+        <div className="relative min-h-0 flex-1 overflow-y-auto bg-[#0b0c0e]">
             <header className="relative min-h-64 overflow-hidden border-b border-white/8 bg-[#15171a] px-6 py-8 sm:px-9 sm:py-10">
                 {quest.taskImageLink && (
                     <div
@@ -55,7 +58,7 @@ export function QuestDetailsPane() {
                         </div>
                     </div>
                     <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">{quest.name}</h1>
-                    <div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-wider">
+                    <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wider">
                         <span className={cn("border px-2 py-1", status.status === "locked" ? "border-red-400/25 bg-red-400/8 text-red-300" : status.status === "completed" ? "border-tarkov-green/25 bg-tarkov-green/8 text-tarkov-green" : "border-sky-400/25 bg-sky-400/8 text-sky-300")}>{status.label}</span>
                         {(quest.minPlayerLevel ?? 0) > 0 && <MetadataBadge>Level {quest.minPlayerLevel}</MetadataBadge>}
                         <MetadataBadge>{quest.experience.toLocaleString()} XP</MetadataBadge>
@@ -74,35 +77,62 @@ export function QuestDetailsPane() {
                 </div>
             </header>
 
-            <div className="mx-auto grid max-w-6xl gap-8 px-6 py-8 sm:px-9 xl:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="grid max-w-6xl gap-10 px-6 py-10 sm:px-9 xl:grid-cols-[minmax(0,1fr)_320px]">
                 <section>
+                    {quest.wikiLink && (
+                        <div className="mb-7">
+                            <a href={quest.wikiLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs text-gray-500 transition-colors hover:text-tarkov-green">
+                                Open quest wiki <ExternalLink size={12} />
+                            </a>
+                        </div>
+                    )}
                     <SectionLabel>Objectives</SectionLabel>
                     {quest.objectives.length > 0 ? (
-                        <div className="space-y-5">
-                            {quest.objectives.map((objective) => (
-                                <div key={objective.id} className="border-b border-white/6 pb-5">
-                                    <ObjectiveRow objective={objective} onItemClick={onItemClick ?? undefined} />
-                                    <ObjectiveDetails objective={objective} />
+                        <div className="space-y-7">
+                            {objectivePresentation.map(({ objective, showItems }) => (
+                                <div key={objective.id}>
+                                    <ObjectiveRow objective={objective} onItemClick={onItemClick ?? undefined} itemDisplay="rows" showItems={showItems} />
                                 </div>
                             ))}
                         </div>
                     ) : <p className="text-xs text-gray-600">No objectives provided.</p>}
+
+                    <div className="mt-12">
+                        <SectionLabel>Rewards</SectionLabel>
+                        <div className="space-y-2.5 text-sm">
+                            <p className="text-gray-300"><span className="mr-2 text-gray-600">Experience</span>{quest.experience.toLocaleString()} XP</p>
+                            {(quest.finishTraderStandingRewards ?? []).map((reward, index) => (
+                                <p key={`${reward.trader.id}-${index}`} className={reward.standing >= 0 ? "text-tarkov-green" : "text-red-300"}>
+                                    <span className="mr-2 text-gray-600">{reward.trader.name} reputation</span>{formatStanding(reward.standing)}
+                                </p>
+                            ))}
+                        </div>
+                    </div>
                 </section>
                 <aside className="space-y-7">
-                    {status.reasons.length > 0 && <section><SectionLabel>Locked by</SectionLabel><div className="space-y-2">{status.reasons.map((reason, index) => <div key={`${reason.kind}-${index}`} className="flex items-center gap-2 border border-red-400/12 bg-red-400/5 px-3 py-2 text-xs text-red-200/80"><Lock size={12} />{reason.label}</div>)}</div></section>}
+                    {status.reasons.length > 0 && <section><SectionLabel>Locked by</SectionLabel><div className="space-y-2">{status.reasons.map((reason, index) => <div key={`${reason.kind}-${index}`} className="flex items-center gap-2 border border-red-400/12 bg-red-400/5 px-3 py-2.5 text-sm text-red-200/80"><Lock size={14} />{reason.label}</div>)}</div></section>}
                     {quest.requiredPrestige && (
-                        <section><SectionLabel>Prestige requirement</SectionLabel><div className="flex items-center gap-3 border border-white/8 bg-white/3 px-3 py-2 text-xs text-gray-300">{(quest.requiredPrestige.iconLink ?? quest.requiredPrestige.imageLink) && <img src={quest.requiredPrestige.iconLink ?? quest.requiredPrestige.imageLink ?? ""} alt="" className="h-8 w-8 object-contain" />}<div><p>{quest.requiredPrestige.name}</p><p className="text-gray-600">Prestige level {quest.requiredPrestige.prestigeLevel}</p></div></div></section>
+                        <section><SectionLabel>Prestige requirement</SectionLabel><div className="flex items-center gap-3 border border-white/8 bg-white/3 px-3 py-2.5 text-sm text-gray-300">{(quest.requiredPrestige.iconLink ?? quest.requiredPrestige.imageLink) && <img src={quest.requiredPrestige.iconLink ?? quest.requiredPrestige.imageLink ?? ""} alt="" className="h-9 w-9 object-contain" />}<div><p>{quest.requiredPrestige.name}</p><p className="text-xs text-gray-600">Prestige level {quest.requiredPrestige.prestigeLevel}</p></div></div></section>
                     )}
-                    {quest.traderRequirements.length > 0 && <section><SectionLabel>Trader gates</SectionLabel><div className="space-y-2">{quest.traderRequirements.map((requirement) => <div key={requirement.id} className="border border-white/8 bg-white/3 px-3 py-2 text-xs text-gray-400">{formatQuestTraderGate(requirement)}</div>)}</div></section>}
+                    {quest.traderRequirements.length > 0 && <section><SectionLabel>Trader gates</SectionLabel><div className="space-y-2">{quest.traderRequirements.map((requirement) => <div key={requirement.id} className="border border-white/8 bg-white/3 px-3 py-2.5 text-sm text-gray-400">{formatQuestTraderGate(requirement)}</div>)}</div></section>}
                     {quest.otherRequirements.length > 0 && <section><SectionLabel>Other gates</SectionLabel><div className="space-y-2">{quest.otherRequirements.map((requirement, index) => <OtherRequirement key={requirement.id ?? `${requirement.type}-${index}`} requirement={requirement} />)}</div></section>}
-                    {quest.taskRequirements.length > 0 && <section><SectionLabel>Requires</SectionLabel><div className="space-y-1">{quest.taskRequirements.map((requirement) => <button type="button" key={requirement.task.id} onClick={() => setSelectedQuestId(requirement.task.id)} className="block w-full border-l border-white/10 px-3 py-1.5 text-left text-xs text-gray-400 hover:border-tarkov-green hover:text-white"><span className="block">{requirement.task.name}</span>{requirement.status.length > 0 && <span className="text-[10px] text-gray-600">Status: {requirement.status.join(" or ")}</span>}</button>)}</div></section>}
-                    {leadsTo.length > 0 && <section><SectionLabel>Unlocks</SectionLabel><div className="space-y-1">{leadsTo.map((nextQuest) => nextQuest && <button type="button" key={nextQuest.id} onClick={() => setSelectedQuestId(nextQuest.id)} className="block w-full border-l border-white/10 px-3 py-1.5 text-left text-xs text-gray-400 hover:border-tarkov-green hover:text-white">{nextQuest.name}</button>)}</div></section>}
-                    {(quest.finishTraderStandingRewards?.length ?? 0) > 0 && <StandingRewards label="Reputation rewards" rewards={quest.finishTraderStandingRewards ?? []} />}
+                    {quest.taskRequirements.length > 0 && <section><SectionLabel>Requires</SectionLabel><div className="space-y-1">{quest.taskRequirements.map((requirement) => <button type="button" key={requirement.task.id} onClick={() => setSelectedQuestId(requirement.task.id)} className="block w-full border-l border-white/10 px-3 py-2 text-left text-sm text-gray-400 hover:border-tarkov-green hover:text-white"><span className="block">{requirement.task.name}</span>{requirement.status.length > 0 && <span className="text-xs text-gray-600">Status: {requirement.status.join(" or ")}</span>}</button>)}</div></section>}
+                    {leadsTo.length > 0 && <section><SectionLabel>Unlocks</SectionLabel><div className="space-y-1">{leadsTo.map((nextQuest) => nextQuest && <button type="button" key={nextQuest.id} onClick={() => setSelectedQuestId(nextQuest.id)} className="block w-full border-l border-white/10 px-3 py-2 text-left text-sm text-gray-400 hover:border-tarkov-green hover:text-white">{nextQuest.name}</button>)}</div></section>}
                     {(quest.failureTraderStandingRewards?.length ?? 0) > 0 && <StandingRewards label="Failure reputation" rewards={quest.failureTraderStandingRewards ?? []} />}
                     {(quest.failConditions?.length ?? 0) > 0 && <section><SectionLabel>Failure conditions</SectionLabel><div className="space-y-2">{quest.failConditions?.map((condition) => <div key={condition.id} className="border border-red-400/12 bg-red-400/5 px-3 py-2 text-xs text-red-200/80"><p>{condition.description || condition.type}</p>{condition.type === "taskStatus" && "status" in condition && <p className="mt-1 text-[10px] text-red-200/40">Quest status: {condition.status.join(" or ")}</p>}</div>)}</div></section>}
-                    {quest.wikiLink && <a href={quest.wikiLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-tarkov-green">Open quest wiki <ExternalLink size={12} /></a>}
                 </aside>
             </div>
+
+            {showDebug && <QuestDebugPanel quest={quest} onClose={() => setShowDebug(false)} />}
+            <button
+                type="button"
+                onClick={() => setShowDebug((visible) => !visible)}
+                aria-label={showDebug ? "Hide quest debug data" : "Show quest debug data"}
+                aria-expanded={showDebug}
+                className={cn("fixed bottom-5 right-5 z-50 flex h-9 w-9 items-center justify-center rounded-full border bg-[#111316] shadow-xl transition-colors", showDebug ? "border-tarkov-green/50 text-tarkov-green" : "border-white/12 text-gray-600 hover:border-white/25 hover:text-gray-300")}
+            >
+                <Bug size={15} />
+            </button>
         </div>
     );
 }
@@ -112,62 +142,99 @@ function MetadataBadge({ children }: { children: React.ReactNode }) {
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-    return <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-600">{children}</h2>;
+    return <h2 className="mb-3.5 text-xs font-semibold uppercase tracking-[0.2em] text-gray-600">{children}</h2>;
 }
 
-function DetailChips({ values }: { values: Array<string | null | undefined | false> }) {
-    const visible = values.filter((value): value is string => typeof value === "string" && value.length > 0);
-    if (visible.length === 0) return null;
-    return <div className="ml-5 mt-2 flex flex-wrap gap-1.5">{visible.map((value, index) => <span key={`${value}-${index}`} className="border border-white/8 bg-white/3 px-2 py-1 text-[10px] text-gray-500">{value}</span>)}</div>;
+interface ObjectivePresentation {
+    objective: FullQuestObjective;
+    showItems: boolean;
 }
 
-function ObjectiveDetails({ objective }: { objective: FullQuestObjective }) {
-    const shared = [`Type: ${objective.type}`, objective.maps?.length ? `Maps: ${objective.maps.map((map) => map.name).join(", ")}` : null, objective.count != null ? `Count: ${objective.count}` : null];
-    switch (objective.type) {
-        case "shoot":
-            if ("target" in objective) return <DetailChips values={[...shared, objective.targetNames?.length ? `Targets: ${objective.targetNames.join(", ")}` : objective.target ? `Target: ${objective.target}` : null, objective.shotType ? `Method: ${objective.shotType}` : null, objective.zoneNames?.length ? `Zones: ${objective.zoneNames.join(", ")}` : null, objective.bodyParts.length ? `Body parts: ${objective.bodyParts.join(", ")}` : null]} />;
-            break;
-        case "extract":
-            if ("exitName" in objective) return <DetailChips values={[...shared, objective.exitName ? `Exit: ${objective.exitName}` : null, objective.exitStatus?.length ? `Exit status: ${objective.exitStatus.join(", ")}` : null, objective.zoneNames?.length ? `Zones: ${objective.zoneNames.join(", ")}` : null]} />;
-            break;
-        case "buildItem":
-            if ("item" in objective) return <DetailChips values={[...shared, `Build: ${objective.item.name}`, objective.containsAll.length ? `Must contain: ${objective.containsAll.map((item) => item.name).join(", ")}` : null, objective.containsCategory.length ? `Categories: ${objective.containsCategory.map((category) => category.name).join(", ")}` : null, ...formatBuildAttributes(objective.attributes)]} />;
-            break;
-        case "hideoutStation":
-            if ("hideoutStation" in objective) return <DetailChips values={[...shared, `Station: ${objective.hideoutStation.name}`, objective.stationLevel != null ? `Station level: ${objective.stationLevel}` : null]} />;
-            break;
-        case "pickupQuestItem":
-        case "findQuestItem":
-            if ("questItem" in objective) return <DetailChips values={[...shared, `Quest item: ${objective.questItem.name}`]} />;
-            break;
-        case "taskStatus":
-            if ("task" in objective) return <DetailChips values={[...shared, `Quest: ${objective.task.name}`, objective.status.length ? `Status: ${objective.status.join(" or ")}` : null]} />;
-            break;
-        case "traderLevel":
-            if ("trader" in objective && "level" in objective) return <DetailChips values={[...shared, `Trader: ${objective.trader.name}`, `Loyalty level: ${objective.level}`]} />;
-            break;
-        case "traderStanding":
-            if ("trader" in objective && "compareMethod" in objective) return <DetailChips values={[...shared, `Trader: ${objective.trader.name}`, `Standing ${objective.compareMethod} ${objective.value}`]} />;
-            break;
-        case "playerLevel":
-            if ("playerLevel" in objective) return <DetailChips values={[...shared, `Player level: ${objective.playerLevel}`]} />;
-            break;
-        case "useItem":
-            if ("useAny" in objective) return <DetailChips values={[...shared, objective.useAny.length ? `Use: ${objective.useAny.map((item) => item.name).join(" or ")}` : null, `Requirement: ${objective.compareMethod} ${objective.count}`, objective.zoneNames.length ? `Zones: ${objective.zoneNames.join(", ")}` : null]} />;
-            break;
-    }
-    return <DetailChips values={shared} />;
+function getRegularItemKey(objective: FullQuestObjective) {
+    if (!("items" in objective) || !Array.isArray(objective.items) || objective.items.length === 0) return null;
+    return objective.items.map((item) => item.id).sort().join(":");
+}
+
+function getQuestItemKey(objective: FullQuestObjective) {
+    if ((objective.type !== "pickupQuestItem" && objective.type !== "findQuestItem") || !("questItem" in objective)) return null;
+    return objective.questItem.id;
+}
+
+function buildObjectivePresentation(objectives: FullQuestObjective[]): ObjectivePresentation[] {
+    const deferredFindByGiveIndex = new Map<number, number>();
+    const deferredFindIndices = new Set<number>();
+
+    objectives.forEach((objective, findIndex) => {
+        if (objective.type !== "findItem") return;
+        const itemKey = getRegularItemKey(objective);
+        if (!itemKey) return;
+        const giveIndex = objectives.findIndex((candidate, candidateIndex) =>
+            candidateIndex > findIndex && candidate.type === "giveItem" && getRegularItemKey(candidate) === itemKey
+        );
+        if (giveIndex >= 0 && !deferredFindByGiveIndex.has(giveIndex)) {
+            deferredFindByGiveIndex.set(giveIndex, findIndex);
+            deferredFindIndices.add(findIndex);
+        }
+    });
+
+    const questItemGroups = new Map<string, number[]>();
+    objectives.forEach((objective, index) => {
+        const itemKey = getQuestItemKey(objective);
+        if (itemKey) questItemGroups.set(itemKey, [...(questItemGroups.get(itemKey) ?? []), index]);
+    });
+    const deferredQuestItemIndices = new Set([...questItemGroups.values()].flatMap((indices) => indices.slice(0, -1)));
+
+    const result: ObjectivePresentation[] = [];
+    objectives.forEach((objective, index) => {
+        if (deferredFindIndices.has(index) || deferredQuestItemIndices.has(index)) return;
+
+        const findIndex = deferredFindByGiveIndex.get(index);
+        if (findIndex != null) result.push({ objective: objectives[findIndex], showItems: false });
+
+        const questItemKey = getQuestItemKey(objective);
+        const questItemGroup = questItemKey ? questItemGroups.get(questItemKey) ?? [] : [];
+        if (questItemGroup.length > 1 && questItemGroup.at(-1) === index) {
+            questItemGroup.slice(0, -1).forEach((groupIndex) => result.push({ objective: objectives[groupIndex], showItems: false }));
+        }
+
+        result.push({ objective, showItems: true });
+    });
+    return result;
+}
+
+function QuestDebugPanel({ quest, onClose }: { quest: FullQuest; onClose: () => void }) {
+    return (
+        <aside className="fixed bottom-16 right-5 z-50 flex max-h-[70vh] w-[min(680px,calc(100vw-2.5rem))] flex-col overflow-hidden border border-white/15 bg-[#101215] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                <div><p className="text-xs font-semibold text-white">Quest debug data</p><p className="mt-0.5 text-[10px] text-gray-600">Normalized data received by this page</p></div>
+                <button type="button" onClick={onClose} aria-label="Close quest debug data" className="text-gray-600 hover:text-white"><X size={15} /></button>
+            </div>
+            <div className="min-h-0 overflow-y-auto p-4">
+                <DebugJson label="Objectives" value={quest.objectives} />
+                <DebugJson label="Full quest" value={quest} />
+            </div>
+        </aside>
+    );
+}
+
+function DebugJson({ label, value }: { label: string; value: unknown }) {
+    return (
+        <details className="mb-3 border border-white/8 bg-black/25" open={label === "Objectives"}>
+            <summary className="cursor-pointer px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">{label}</summary>
+            <pre className="max-h-80 overflow-auto border-t border-white/8 p-3 text-[10px] leading-relaxed text-gray-500">{JSON.stringify(value, null, 2)}</pre>
+        </details>
+    );
 }
 
 function OtherRequirement({ requirement }: { requirement: QuestOtherRequirement }) {
     const label = requirement.requirementType || requirement.type || "Requirement";
     const knownKeys = new Set(["id", "type", "requirementType"]);
     const details = Object.entries(requirement).filter(([key, value]) => !knownKeys.has(key) && value != null).map(([key, value]) => `${humanize(key)}: ${formatUnknownValue(value)}`);
-    return <div className="border border-white/8 bg-white/3 px-3 py-2 text-xs text-gray-400"><p>{humanize(label)}</p>{details.length > 0 && <p className="mt-1 text-[10px] text-gray-600">{details.join(" · ")}</p>}</div>;
+    return <div className="border border-white/8 bg-white/3 px-3 py-2.5 text-sm text-gray-400"><p>{humanize(label)}</p>{details.length > 0 && <p className="mt-1 text-xs text-gray-600">{details.join(" · ")}</p>}</div>;
 }
 
 function StandingRewards({ label, rewards }: { label: string; rewards: QuestTraderStandingReward[] }) {
-    return <section><SectionLabel>{label}</SectionLabel><div className="space-y-2">{rewards.map((reward, index) => <div key={`${reward.trader.id}-${index}`} className="flex items-center justify-between border border-white/8 px-3 py-2 text-xs"><span className="text-gray-400">{reward.trader.name}</span><span className={reward.standing >= 0 ? "text-tarkov-green" : "text-red-300"}>{formatStanding(reward.standing)}</span></div>)}</div></section>;
+    return <section><SectionLabel>{label}</SectionLabel><div className="space-y-2">{rewards.map((reward, index) => <div key={`${reward.trader.id}-${index}`} className="flex items-center justify-between border border-white/8 px-3 py-2.5 text-sm"><span className="text-gray-400">{reward.trader.name}</span><span className={reward.standing >= 0 ? "text-tarkov-green" : "text-red-300"}>{formatStanding(reward.standing)}</span></div>)}</div></section>;
 }
 
 function formatStanding(value: number) {
@@ -182,20 +249,4 @@ function formatUnknownValue(value: unknown): string {
     if (Array.isArray(value)) return value.map(formatUnknownValue).join(", ");
     if (typeof value === "object" && value !== null) return Object.entries(value).map(([key, nested]) => `${humanize(key)} ${formatUnknownValue(nested)}`).join(", ");
     return String(value);
-}
-
-function formatBuildAttributes(value: unknown): string[] {
-    const attributes = Array.isArray(value)
-        ? value
-        : typeof value === "object" && value !== null
-            ? Object.entries(value).map(([name, requirement]) => ({ name, requirement }))
-            : [];
-    return attributes.map((attribute) => {
-        if (typeof attribute !== "object" || attribute === null) return formatUnknownValue(attribute);
-        const record = attribute as Record<string, unknown>;
-        const requirement = typeof record.requirement === "object" && record.requirement !== null
-            ? record.requirement as Record<string, unknown>
-            : {};
-        return `${humanize(String(record.name ?? "Requirement"))} ${String(requirement.compareMethod ?? "")} ${String(requirement.value ?? "")}`.trim();
-    });
 }

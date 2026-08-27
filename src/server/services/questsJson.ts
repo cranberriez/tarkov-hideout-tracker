@@ -252,7 +252,10 @@ function mapObjective(objective: JsonObjective, context: MappingContext): FullQu
             type: objective.type as "giveItem" | "findItem" | "plantItem",
             count: objective.count ?? 0,
             foundInRaid: objective.foundInRaid ?? false,
-            items: isPartial ? allItems.slice(0, 15) : allItems,
+            // Keep the full set for the selected-quest expandable item table.
+            // Demand classification still uses isPartial/totalItemCount and does
+            // not treat broad any-of groups as exact checklist requirements.
+            items: allItems,
             totalItemCount,
             isPartial,
         };

@@ -288,6 +288,33 @@ Run this when changing manual sync behavior before `npm run lint` and `npm run b
 
 ---
 
+## Workspace Quest Details
+
+Selecting a quest opens a cohesive tracker detail pane. It presents Tarkov.dev's
+human-readable objective descriptions with larger interactive item rows directly
+under the relevant objective. Matching find and hand-over objectives are placed
+together and show their shared items once after the hand-over objective. Repeated
+quest-item records follow the same presentation. Any item group over ten entries
+starts with a ten-item preview and can be expanded in place to the complete group.
+Completion XP and trader-standing rewards appear last as compact text.
+The bounded detail layout is left-aligned within the pane. Provider links appear
+above Objectives; the current normalized quest shape supplies `wikiLink` only.
+Objective item rows prefer the non-grid `iconLink` image and fall back to
+`gridImageLink` when needed. Rewards remain a compact vertical list.
+
+Raw objective metadata is not rendered as chips below each objective. A local bug
+button in the bottom-right corner opens normalized objective JSON and the normalized
+full quest JSON for inspection. This debug drawer is display-only and does not add
+or change persisted quest preferences.
+
+The full quest cache retains complete objective item groups for this expandable
+display. Broad any-of groups remain classified separately and are not treated as
+exact checklist demand. The provider does not currently retain wiki dialogue, guide
+prose/screenshots, or the full conditional item/currency reward sets. The detail
+pane must not infer those fields from objective text.
+
+---
+
 ## QuestCard Anatomy
 
 `QuestCard.tsx` renders:
@@ -298,7 +325,7 @@ Run this when changing manual sync behavior before `npm run lint` and `npm run b
 - Trader reputation rewards from completion and trader reputation penalties from quest failure.
 - Compact item strip for exact `giveItem` and `plantItem` objectives; item thumbnails call `onItemClick(itemId)`.
 - Collapsed cards show a bare key icon when any objective has `requiredKeys`; expanded objective rows show the relevant key items under that objective.
-- Broad any-item `giveItem` and `plantItem` objectives keep a partial preview of up to 15 items and are excluded from exact item checklist demand.
+- Broad any-item `giveItem` and `plantItem` objectives keep a partial preview of up to 15 items in checklist-derived group data and are excluded from exact item checklist demand. The full quest objective retains all items for the expandable selected-quest display.
 - Expanded objective rows for all objective types.
 - Requires/unlocks chips linked to `#quest-{id}`.
 - Optional debug JSON when `questShowDebug` is enabled.
