@@ -79,8 +79,8 @@ This renders the upload button beside the existing sync button.
 4. User selects the EFT `Logs` folder or one or more `log_*` subfolders.
 5. The app validates the selection before parsing.
 6. The app filters to only relevant `push-notifications*.log` files.
-7. The app skips already-seen relevant files using localStorage-backed file dedupe.
-8. The app parses quest events and groups them into `PVP`, `PVE`, `KORD`, and `unknown`.
+7. The app skips modes already processed from each relevant file using a localStorage-backed partial-file cache.
+8. The app parses quest events for the active profile mode and ignores other modes for that pass.
 9. Already completed quests are filtered out of the importable lists.
 10. User reviews a mode-specific list and optional prerequisite toggles.
 11. User continues to a second review step in the same modal.
@@ -149,6 +149,19 @@ Only relevant files:
 - accepted EFT log paths
 - matching `push-notifications*.log`
 
+Each fingerprint stores the modes already imported from that file (`PVP`, `PVE`,
+and/or `KORD`). Importing one mode from a mixed file does not hide the remaining
+modes on a later upload.
+
+The uploader processes only the active profile mode. For example, uploading a
+mixed file while KORD is active excludes its PVP and PVE events without marking
+those modes processed. Switching profiles and selecting the unchanged file later
+allows that profile's events to be imported.
+
+Legacy string-only entries under the same key are interpreted as fully processed
+for all three modes. This preserves existing avoidance behavior without clearing
+or invalidating the user's cache.
+
 ### Fingerprint
 
 The seen-file fingerprint is based on:
@@ -161,11 +174,11 @@ This is intentional because EFT logs are appended while the game remains open. I
 
 ### Cache UX
 
-If a selection contains relevant files but all of them are already cached:
+If a selection contains relevant files but every mode in them is already processed:
 
 - parsing does not continue
 - the modal stays on the initial upload state
-- the modal shows `No new files seen.`
+- the modal shows that no unprocessed logs were found for the active mode
 - a `Clear cache` action is shown under that notice
 
 ---

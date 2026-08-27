@@ -141,6 +141,32 @@ test("parseQuestLogFile keeps seasonal websocket mode when UserConfirmed says de
     assert.equal(events[1]?.raidMode, "pvp");
 });
 
+test("parseQuestLogFiles can exclude a processed mode while retaining other modes in one file", () => {
+    const seasonalQuest = makeQuest({ id: "quest-seasonal", name: "Seasonal Quest" });
+    const regularQuest = makeQuest({ id: "quest-regular", name: "Regular Quest" });
+    const result = parseQuestLogFiles(
+        [
+            {
+                name: "push-notifications_000.log",
+                excludedRaidModes: ["kord"],
+                text: `
+2026-08-27 03:14:08.841 ws:wss://wsn-pvp-season-02.escapefromtarkov.com/push/notifier/getwebsocket/token
+2026-08-27 03:14:10.000 Got notification | ChatMessageReceived
+{"message":{"type":12,"templateId":"quest-seasonal successMessageText","hasRewards":false}}
+2026-08-27 03:30:00.000 ws:wss://wsn-01.escapefromtarkov.com/push/notifier/getwebsocket/token
+2026-08-27 03:30:05.000 Got notification | ChatMessageReceived
+{"message":{"type":12,"templateId":"quest-regular successMessageText","hasRewards":false}}
+`,
+            },
+        ],
+        [seasonalQuest, regularQuest],
+    );
+
+    assert.deepEqual(result.events.map((event) => event.questId), ["quest-regular"]);
+    assert.equal(result.totals.kordEvents, 0);
+    assert.equal(result.totals.pvpEvents, 1);
+});
+
 test("dedupeQuestEvents collapses repeated deliveries within one second and keeps tally", () => {
     const events = parseQuestLogFile(
         `

@@ -74,6 +74,7 @@ export interface QuestLogFileLike {
 
 export interface QuestLogFileInput extends QuestLogFileLike {
     text: string;
+    excludedRaidModes?: Array<Exclude<ParsedRaidMode, "unknown">>;
 }
 
 interface JsonBlockResult {
@@ -196,10 +197,21 @@ function parseQuestLogFileWithCutoffStats(
 
 export function parseQuestLogFiles(files: QuestLogFileInput[], quests: FullQuest[]): QuestLogParseResult {
     const { matched, ignored } = filterQuestLogFiles(files);
-    const parsedFiles = matched.map((file) => ({
-        file,
-        result: parseQuestLogFileWithCutoffStats(file.text, file.name, file.webkitRelativePath || file.name),
-    }));
+    const parsedFiles = matched.map((file) => {
+        const result = parseQuestLogFileWithCutoffStats(
+            file.text,
+            file.name,
+            file.webkitRelativePath || file.name,
+        );
+        const excludedModes = new Set<ParsedRaidMode>(file.excludedRaidModes ?? []);
+        return {
+            file,
+            result: {
+                ...result,
+                events: result.events.filter((event) => !excludedModes.has(event.raidMode)),
+            },
+        };
+    });
     const rawEvents = parsedFiles.flatMap((parsedFile) => parsedFile.result.events);
     const preWipeEventsIgnored = parsedFiles.reduce(
         (count, parsedFile) => count + parsedFile.result.preWipeEventsIgnored,

@@ -22,17 +22,19 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import {
     ENABLE_QUEST_LOG_FILE_DEDUPE,
+    IMPORT_GAME_MODES,
     QUEST_LOG_IMPORT_SEEN_FILES_KEY,
     applyQuestImportSelection,
     buildQuestImportBuckets,
     createQuestLogFileFingerprint,
     filterIncompleteQuestImportRows,
-    readSeenQuestLogFingerprints,
+    readQuestLogProcessedFileModes,
     setAllQuestImportSelections,
+    toParsedRaidMode,
     type ImportGameMode,
     type QuestImportBuckets,
     type QuestImportRow,
-    writeSeenQuestLogFingerprints,
+    writeQuestLogProcessedFileModes,
 } from "@/lib/utils/quest-log-import";
 import {
     filterQuestLogFiles,
@@ -112,6 +114,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
     >([]);
 
     const { questsById } = useQuestsContext();
+    const gameMode = useUserStore((state) => state.gameMode);
     const profiles = useUserStore((state) => state.profiles);
     const availableQuestIdsByMode = useMemo(() => {
         const availabilityMap = buildQuestAvailabilityMap(quests);
@@ -197,16 +200,21 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
             let filesToParse = matched;
             const newFingerprints: string[] = [];
             const preWipeFileNamesFromPath = getPreWipeQuestLogFileNames(matched);
+            let processedFileModes = new Map<string, Set<ImportGameMode>>();
 
             if (ENABLE_QUEST_LOG_FILE_DEDUPE) {
-                const seenFingerprints = readSeenQuestLogFingerprints();
+                processedFileModes = readQuestLogProcessedFileModes();
                 filesToParse = matched.filter((file) => {
                     const fingerprint = createQuestLogFileFingerprint(file);
-                    const isNewFile = options.ignoreSeenFiles || !seenFingerprints.has(fingerprint);
-                    if (isNewFile) {
+                    const processedModes = processedFileModes.get(fingerprint);
+                    const hasUnprocessedMode =
+                        options.ignoreSeenFiles ||
+                        !processedModes ||
+                        !processedModes.has(gameMode);
+                    if (hasUnprocessedMode) {
                         newFingerprints.push(fingerprint);
                     }
-                    return isNewFile;
+                    return hasUnprocessedMode;
                 });
             } else {
                 newFingerprints.push(...matched.map((file) => createQuestLogFileFingerprint(file)));
@@ -217,16 +225,21 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                 setAutoCompleteSelections({});
                 setPendingSeenFileFingerprints([]);
                 setPreWipeIgnoredFileNames(preWipeFileNamesFromPath);
-                setCacheNotice("No new files seen.");
+                setCacheNotice(`No unprocessed ${gameMode} quest logs found in these files.`);
                 return;
             }
 
             const fileInputs = await Promise.all(
-                filesToParse.map(async (file) => ({
-                    name: file.name,
-                    webkitRelativePath: file.webkitRelativePath,
-                    text: await file.text(),
-                })),
+                filesToParse.map(async (file) => {
+                    return {
+                        name: file.name,
+                        webkitRelativePath: file.webkitRelativePath,
+                        text: await file.text(),
+                        excludedRaidModes: IMPORT_GAME_MODES.filter(
+                            (mode) => mode !== gameMode,
+                        ).map(toParsedRaidMode),
+                    };
+                }),
             );
 
             const result = parseQuestLogFiles(fileInputs, quests);
@@ -387,11 +400,13 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
         router.refresh();
 
         if (ENABLE_QUEST_LOG_FILE_DEDUPE && pendingSeenFileFingerprints.length > 0) {
-            const seenFingerprints = readSeenQuestLogFingerprints();
+            const processedFiles = readQuestLogProcessedFileModes();
             for (const fingerprint of pendingSeenFileFingerprints) {
-                seenFingerprints.add(fingerprint);
+                const processedModes = processedFiles.get(fingerprint) ?? new Set<ImportGameMode>();
+                processedModes.add(mode);
+                processedFiles.set(fingerprint, processedModes);
             }
-            writeSeenQuestLogFingerprints(seenFingerprints);
+            writeQuestLogProcessedFileModes(processedFiles);
             setPendingSeenFileFingerprints([]);
         }
 
@@ -509,9 +524,9 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                             Choose EFT logs folder
                                         </div>
                                         <p className="max-w-2xl text-pretty text-sm text-gray-400">
-                                            The importer identifies PVP, PVE, and KORD seasonal
-                                            quest notifications from your local logs and lets you
-                                            choose which set to import.
+                                            The importer reads {gameMode} quest notifications for
+                                            your active profile. Other modes in the same files stay
+                                            unprocessed for a later upload.
                                         </p>
                                         <p className="text-xs text-gray-500">
                                             <code className="rounded bg-white/5 px-1.5 py-0.5 text-gray-300">
@@ -593,8 +608,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         </h2>
                                         <p className="text-pretty text-sm text-gray-400">
                                             Choose your EFT logs folder and the importer will
-                                            identify PVP, PVE, and KORD seasonal quest notifications
-                                            so you can pick which set to import.
+                                            import {gameMode} quest notifications for your active
+                                            profile. Other modes in the same files stay unprocessed.
                                         </p>
                                         <p className="text-xs text-gray-500">
                                             <code className="rounded bg-white/5 px-1.5 py-0.5 text-gray-300">
@@ -613,7 +628,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 
                                     {cacheNotice && (
                                         <div className="mt-5 flex w-full flex-col items-center justify-center gap-3 rounded-sm border border-amber-400/35 bg-amber-500/12 px-4 py-3 text-center text-sm text-amber-100 sm:flex-row sm:flex-wrap">
-                                            <div>No new files seen.</div>
+                                            <div>{cacheNotice}</div>
                                             <button
                                                 type="button"
                                                 onClick={handleClearCache}
@@ -636,7 +651,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                         {cacheNotice && showSourceSummary && (
                             <div className="mt-5 rounded-sm border border-amber-400/35 bg-amber-500/12 px-4 py-3 text-sm text-amber-100">
                                 <div className="flex flex-col items-center justify-center gap-3 text-center sm:flex-row sm:flex-wrap">
-                                    <div>No new files seen.</div>
+                                    <div>{cacheNotice}</div>
                                     <button
                                         type="button"
                                         onClick={handleClearCache}

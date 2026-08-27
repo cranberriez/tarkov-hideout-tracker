@@ -1,8 +1,14 @@
 import type { FullQuest } from "../../types/types.ts";
-import type { ParsedQuestEventType, QuestLogParseResult, ResolvedAggregatedQuestEvent } from "./quest-log-parser.ts";
+import type {
+    ParsedQuestEventType,
+    ParsedRaidMode,
+    QuestLogParseResult,
+    ResolvedAggregatedQuestEvent,
+} from "./quest-log-parser.ts";
 import { collectTransitivePrerequisiteIds } from "./sensitive-quest-backfill";
 
 export type ImportGameMode = "PVP" | "PVE" | "KORD";
+export const IMPORT_GAME_MODES: readonly ImportGameMode[] = ["PVP", "PVE", "KORD"];
 
 export interface QuestImportRow {
     questId: string;
@@ -162,32 +168,86 @@ export function createQuestLogFileFingerprint(file: {
     });
 }
 
-export function readSeenQuestLogFingerprints() {
+export function parseQuestLogProcessedFileModes(rawValue: unknown) {
+    const processedFiles = new Map<string, Set<ImportGameMode>>();
+    if (!Array.isArray(rawValue)) {
+        return processedFiles;
+    }
+
+    for (const item of rawValue) {
+        if (typeof item === "string") {
+            // Legacy entries treated the entire fingerprint as seen. Preserve that
+            // behavior instead of unexpectedly resurfacing old imports.
+            processedFiles.set(item, new Set(IMPORT_GAME_MODES));
+            continue;
+        }
+
+        if (!item || typeof item !== "object" || Array.isArray(item)) {
+            continue;
+        }
+
+        const record = item as Record<string, unknown>;
+        if (typeof record.fingerprint !== "string" || !Array.isArray(record.processedModes)) {
+            continue;
+        }
+
+        const processedModes = new Set(
+            record.processedModes.filter(isImportGameMode),
+        );
+        if (processedModes.size > 0) {
+            processedFiles.set(record.fingerprint, processedModes);
+        }
+    }
+
+    return processedFiles;
+}
+
+export function readQuestLogProcessedFileModes() {
     if (typeof window === "undefined") {
-        return new Set<string>();
+        return new Map<string, Set<ImportGameMode>>();
     }
 
     try {
         const rawValue = window.localStorage.getItem(QUEST_LOG_IMPORT_SEEN_FILES_KEY);
         if (!rawValue) {
-            return new Set<string>();
+            return new Map<string, Set<ImportGameMode>>();
         }
         const parsed = JSON.parse(rawValue) as unknown;
-        return Array.isArray(parsed) ? new Set(parsed.filter((item) => typeof item === "string")) : new Set<string>();
+        return parseQuestLogProcessedFileModes(parsed);
     } catch {
-        return new Set<string>();
+        return new Map<string, Set<ImportGameMode>>();
     }
 }
 
-export function writeSeenQuestLogFingerprints(fingerprints: Iterable<string>) {
+export function writeQuestLogProcessedFileModes(
+    processedFiles: ReadonlyMap<string, ReadonlySet<ImportGameMode>>,
+) {
     if (typeof window === "undefined") {
         return;
     }
 
+    const serialized = Array.from(processedFiles.entries())
+        .map(([fingerprint, processedModes]) => ({
+            fingerprint,
+            processedModes: IMPORT_GAME_MODES.filter((mode) => processedModes.has(mode)),
+        }))
+        .filter((record) => record.processedModes.length > 0)
+        .sort((left, right) => left.fingerprint.localeCompare(right.fingerprint));
+
     window.localStorage.setItem(
         QUEST_LOG_IMPORT_SEEN_FILES_KEY,
-        JSON.stringify(Array.from(new Set(fingerprints)).sort((left, right) => left.localeCompare(right))),
+        JSON.stringify(serialized),
     );
+}
+
+export function toParsedRaidMode(mode: ImportGameMode): Exclude<ParsedRaidMode, "unknown"> {
+    if (mode === "PVP") return "pvp";
+    if (mode === "PVE") return "pve";
+    return "kord";
+}
+
+function isImportGameMode(value: unknown): value is ImportGameMode {
+    return typeof value === "string" && IMPORT_GAME_MODES.includes(value as ImportGameMode);
 }
 
 function buildModeRows(

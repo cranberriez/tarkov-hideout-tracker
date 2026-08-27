@@ -6,6 +6,7 @@ import {
     applyQuestImportSelection,
     buildQuestImportBuckets,
     filterIncompleteQuestImportRows,
+    parseQuestLogProcessedFileModes,
     setAllQuestImportSelections,
 } from "./quest-log-import.ts";
 import type { QuestLogParseResult } from "./quest-log-parser.ts";
@@ -140,6 +141,22 @@ test("applyQuestImportSelection routes seasonal quests to the KORD profile", () 
 
     assert.equal(result.nextGameMode, "KORD");
     assert.equal(result.nextCompletedQuests[quest.id], true);
+});
+
+test("processed-file cache preserves legacy entries and supports partial modes", () => {
+    const processedFiles = parseQuestLogProcessedFileModes([
+        "legacy-fingerprint",
+        {
+            fingerprint: "partial-fingerprint",
+            processedModes: ["KORD", "invalid"],
+        },
+    ]);
+
+    assert.deepEqual(
+        Array.from(processedFiles.get("legacy-fingerprint") ?? []).sort(),
+        ["KORD", "PVE", "PVP"],
+    );
+    assert.deepEqual(Array.from(processedFiles.get("partial-fingerprint") ?? []), ["KORD"]);
 });
 
 test("applyQuestImportSelection imports rows and optional prerequisite chains", () => {
