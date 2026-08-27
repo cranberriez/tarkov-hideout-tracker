@@ -287,7 +287,7 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
                 <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">{titles[section]}</span>
                 <button type="button" onClick={() => setOpenFilter(null)} className="flex h-7 cursor-pointer items-center gap-1.5 px-2 text-xs text-gray-500 transition-colors hover:bg-white/5 hover:text-white"><X size={13} /> Done</button>
             </div>
-            <div className="p-2">
+            <div>
                 {section === "traders" && <>
                     <AnyRow active={selectedTraderIds.size === 0} onClick={clearTraders} count={quests.length} />
                     <div className="border-b border-white/8 bg-white/[0.02] px-3 py-3">

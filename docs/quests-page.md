@@ -182,8 +182,9 @@ and must not be treated as LL. Cross-trader level gates remain visible and affec
 availability, but do not change a quest's issuing-trader category. Known JSON
 `globalVariable` trader-tier completion counters are evaluated against completed
 quests from the matching issuing trader and LL category. They appear as readable
-trader-task gates and locked reasons instead of generic “Other gates.” Unknown
-`globalVariable` and `dialogue` requirements remain preserved as typed raw gates.
+progress rows in the quest detail Requirements section instead of generic “Other
+gates.” Unknown `globalVariable` and `dialogue` requirements remain preserved as
+typed raw gates and are shown in the same consolidated list.
 
 Organization changes do not alter persisted progress. The localStorage key remains
 `tarkov-hideout-user-state` at Zustand version 17, and `completedQuests`,
@@ -298,11 +299,26 @@ under the relevant objective. Matching find and hand-over objectives are placed
 together and show their shared items once after the hand-over objective. Repeated
 quest-item records follow the same presentation. Any item group over ten entries
 starts with a ten-item preview and can be expanded in place to the complete group.
-Completion XP and trader-standing rewards appear last as compact text.
+Trader-standing rewards appear last as compact text.
 The bounded detail layout is left-aligned within the pane. Provider links appear
-above Objectives; the current normalized quest shape supplies `wikiLink` only.
+above a consolidated Requirements section; the current normalized quest shape
+supplies `wikiLink` only. The header lists deduplicated locations derived from the
+quest and its objectives. Unrestricted and complete-map sets display as `ANY`;
+sets missing only one or two maps display as `Any Map, EXCEPT (...)`; smaller
+sets list their allowed maps. Quest status sits beside the completion and pin
+actions; XP and faction are omitted from the header metadata. Kappa-required and
+Lightkeeper-required markers sit beside the level metadata. Requirements
+appear before Objectives as a compact vertical list with status symbols and text,
+and the section is omitted when the quest has no requirements. The list includes player level,
+faction, prestige, trader loyalty or reputation, trader-tier task counts, other
+upstream gates, and specific prerequisite-task outcomes. Only the underlined
+prerequisite task name is interactive; the requirement symbol and label are not
+part of its click target. Unlocks are plain underlined quest-name links in a
+vertical text list. Requirement and unlock cards, plus the former separate sidebar
+gate sections, are not rendered.
 Objective item rows prefer the non-grid `iconLink` image and fall back to
-`gridImageLink` when needed. Rewards remain a compact vertical list.
+`gridImageLink` when needed. XP is omitted from Rewards; trader-standing rewards,
+when present, remain a compact vertical list.
 
 Raw objective metadata is not rendered as chips below each objective. A local bug
 button in the bottom-right corner opens normalized objective JSON and the normalized

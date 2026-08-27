@@ -80,6 +80,31 @@ export function getQuestMapGroupsForQuest(quest: FullQuest): QuestMapGroup[] {
     });
 }
 
+export function formatQuestMapSummary(
+    quest: FullQuest,
+    allMapGroups: readonly QuestMapGroup[],
+) {
+    const questGroups = getQuestMapGroupsForQuest(quest);
+    if (questGroups.some((group) => group.key === NO_QUEST_MAP_GROUP_KEY)) return "ANY";
+
+    const concreteMapGroups = allMapGroups.filter((group) => group.key !== NO_QUEST_MAP_GROUP_KEY);
+    if (concreteMapGroups.length === 0) {
+        return questGroups.map((group) => group.name).join(" · ") || "ANY";
+    }
+
+    const questMapKeys = new Set(questGroups.map((group) => group.key));
+    const excludedMapGroups = concreteMapGroups
+        .filter((group) => !questMapKeys.has(group.key))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+    if (excludedMapGroups.length === 0) return "ANY";
+    if (excludedMapGroups.length <= 2) {
+        return `Any Map, EXCEPT (${excludedMapGroups.map((group) => group.name).join(", ")})`;
+    }
+
+    return questGroups.map((group) => group.name).join(" · ");
+}
+
 export function questMatchesSelectedMapGroups(
     quest: FullQuest,
     selectedMaps: ReadonlySet<string>,
