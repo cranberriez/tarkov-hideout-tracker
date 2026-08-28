@@ -5,14 +5,16 @@ import { buildQuestAnyOfGroups, buildQuestItemIndex } from "@/lib/utils/quest-it
 import { ItemsClientPage } from "@/features/items/ItemsClientPage";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
 import { excludeRemovedQuests } from "@/lib/utils/removed-quests";
+import { applyQuestFactionOverrides } from "@/lib/utils/quest-faction-overrides";
 
 export const revalidate = false; // Frozen during the Tarkov 1.1 transition
 
 export default async function ItemsPage() {
     const gameMode = await getActiveTarkovJsonGameMode();
     const questsResponse = await getCachedFullQuestData(gameMode);
+    const normalizedQuests = applyQuestFactionOverrides(questsResponse.data.quests);
     const orderedQuests = orderQuestsByPrerequisites(
-        excludeRemovedQuests(questsResponse.data.quests),
+        excludeRemovedQuests(normalizedQuests),
     );
     const questItemIndex = buildQuestItemIndex(orderedQuests);
     const questAnyOfGroups = buildQuestAnyOfGroups(orderedQuests);

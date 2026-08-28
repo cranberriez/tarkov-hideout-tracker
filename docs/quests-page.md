@@ -180,6 +180,12 @@ Tarkov.dev `traderRequirements`; those remain availability gates. Lookup code is
 isolated in `src/lib/utils/quest-trader-tab-overrides.ts`, so removing an entry
 restores provider-derived behavior for that quest.
 
+Known provider faction errors use the separate ID-keyed overlay
+`src/lib/data/quest-faction-overrides.json`. Oil Run and Debtor are corrected from
+`Any` to `BEAR` before quest visibility, availability, and item-demand metadata are
+derived. The cached provider response and persisted user progress remain
+unchanged.
+
 Validated removed quests use the separate ID manifest
 `src/lib/data/removed-quests.json`. They are excluded by default and do not
 contribute quest item demand or trader-tier completion counts. For data review,

@@ -78,6 +78,12 @@ payload or cache shape. Numeric values take precedence for LL grouping and
 trader-tier completion counts; `essential` quests are excluded from LL counters.
 Provider `traderRequirements` continue to control availability independently.
 
+Reviewed faction corrections are kept in the separate ID-keyed overlay
+`src/lib/data/quest-faction-overrides.json`. This currently corrects Oil Run and
+Debtor to BEAR when the provider reports `Any`, without changing cached payloads or
+persisted quest progress. The correction is applied before quest availability
+and quest item demand are derived.
+
 Validated quests removed from the live game are listed by ID in
 `src/lib/data/removed-quests.json`. They are excluded before quest item demand,
 availability metadata, and tracked market-item lists are derived. The review flag

@@ -10,17 +10,19 @@ import {
     excludeRemovedQuests,
     prepareQuestsForDisplay,
 } from "@/lib/utils/removed-quests";
+import { applyQuestFactionOverrides } from "@/lib/utils/quest-faction-overrides";
 
 export const revalidate = false; // Frozen during the Tarkov 1.1 transition
 
 export default async function QuestsPage() {
     const gameMode = await getActiveTarkovJsonGameMode();
     const questsResponse = await getCachedFullQuestData(gameMode);
+    const normalizedQuests = applyQuestFactionOverrides(questsResponse.data.quests);
     const quests = orderQuestsByPrerequisites(
-        prepareQuestsForDisplay(questsResponse.data.quests, SHOW_REMOVED_QUESTS),
+        prepareQuestsForDisplay(normalizedQuests, SHOW_REMOVED_QUESTS),
     );
     const progressionQuests = orderQuestsByPrerequisites(
-        excludeRemovedQuests(questsResponse.data.quests),
+        excludeRemovedQuests(normalizedQuests),
     );
     const questItemIndex = buildQuestItemIndex(progressionQuests);
     const questAnyOfGroups = buildQuestAnyOfGroups(progressionQuests);
