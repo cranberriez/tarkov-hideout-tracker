@@ -3,16 +3,23 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { FullQuest } from "@/types";
-import { useUserStore, type QuestSortMode } from "@/lib/stores/useUserStore";
+import {
+    useUserStore,
+    type QuestSortMode,
+    type QuestWorkspaceLockedFilterSettings,
+} from "@/lib/stores/useUserStore";
 import { buildQuestMapGroups, questMatchesSelectedMapGroups } from "../quest-map-groups";
 import {
     questMatchesTraderRequirementProfile,
 } from "@/lib/utils/quest-trader-gates";
 import {
     getAvailableObjectiveCategories,
+    buildNextTaskCountGateByGroup,
     getQuestMapKeys,
     getQuestObjectiveCategories,
     getQuestWorkspaceStatus,
+    isUpcomingLockedQuest,
+    questMatchesLockedFilters,
     type QuestObjectiveCategory,
     type QuestWorkspaceStatus,
     type QuestWorkspaceStatusInfo,
@@ -41,6 +48,8 @@ interface QuestWorkspaceContextValue {
     filterByTraderRequirements: boolean;
     selectedMapKeys: Set<string>;
     selectedStatuses: Set<QuestWorkspaceStatus>;
+    lockedFilters: QuestWorkspaceLockedFilterSettings;
+    upcomingLockedQuestIds: Set<string>;
     selectedObjectiveCategories: Set<QuestObjectiveCategory>;
     showHiddenQuests: boolean;
     groupByTrader: boolean;
@@ -60,6 +69,7 @@ interface QuestWorkspaceContextValue {
     toggleMap: (mapKey: string) => void;
     clearMaps: () => void;
     toggleStatus: (status: QuestWorkspaceStatus) => void;
+    setLockedFilters: (filters: Partial<QuestWorkspaceLockedFilterSettings>) => void;
     toggleObjectiveCategory: (category: QuestObjectiveCategory) => void;
     clearObjectiveCategories: () => void;
     setShowHiddenQuests: (enabled: boolean) => void;
@@ -111,12 +121,14 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             filterByTraderRequirements: state.questWorkspaceFilterByTraderRequirements,
             selectedMapKeys: state.questWorkspaceSelectedMaps,
             selectedStatuses: state.questWorkspaceSelectedStatuses,
+            lockedFilters: state.questWorkspaceLockedFilters,
             selectedObjectiveCategories: state.questWorkspaceSelectedObjectiveCategories,
             sortMode: state.questSortMode,
             setSelectedTraderIds: state.setQuestWorkspaceSelectedTraders,
             setFilterByTraderRequirements: state.setQuestWorkspaceFilterByTraderRequirements,
             setSelectedMapKeys: state.setQuestWorkspaceSelectedMaps,
             setSelectedStatuses: state.setQuestWorkspaceSelectedStatuses,
+            setLockedFilters: state.setQuestWorkspaceLockedFilters,
             setSelectedObjectiveCategories:
                 state.setQuestWorkspaceSelectedObjectiveCategories,
             setShowHiddenQuests: state.setQuestShowIgnored,
@@ -160,6 +172,25 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
         () => new Map(quests.map((quest) => [quest.id, getQuestWorkspaceStatus(quest, profile, questsById)])),
         [profile, quests, questsById],
     );
+    const nextTaskCountGateByGroup = useMemo(
+        () => buildNextTaskCountGateByGroup(statusByQuestId.values()),
+        [statusByQuestId],
+    );
+    const upcomingLockedQuestIds = useMemo(
+        () => new Set(
+            quests
+                .filter((quest) => {
+                    const status = statusByQuestId.get(quest.id);
+                    return status && isUpcomingLockedQuest(
+                        status,
+                        store.lockedFilters,
+                        nextTaskCountGateByGroup,
+                    );
+                })
+                .map((quest) => quest.id),
+        ),
+        [nextTaskCountGateByGroup, quests, statusByQuestId, store.lockedFilters],
+    );
     const traders = useMemo(() => {
         const unique = new Map<string, FullQuest["trader"]>();
         quests.forEach((quest) => unique.set(quest.trader.id, quest.trader));
@@ -191,6 +222,15 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             !selectedStatuses.has(status.status) &&
             !(onlyActiveSelected && status.status === "completed" && retainedCompletedQuestIds.has(quest.id))
         ) return false;
+        if (
+            status?.status === "locked" &&
+            selectedStatuses.has("locked") &&
+            !questMatchesLockedFilters(
+                status,
+                store.lockedFilters,
+                nextTaskCountGateByGroup,
+            )
+        ) return false;
         if (selectedObjectiveCategories.size > 0) {
             const categories = getQuestObjectiveCategories(quest);
             if (![...selectedObjectiveCategories].some((category) => categories.has(category))) return false;
@@ -200,7 +240,7 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             if (!haystack.includes(normalizedSearch)) return false;
         }
         return true;
-    }), [filterByTraderRequirements, normalizedSearch, onlyActiveSelected, profile, quests, retainedCompletedQuestIds, selectedMapKeys, selectedObjectiveCategories, selectedStatuses, selectedTraderIds, statusByQuestId, store.hiddenQuests, store.showHiddenQuests]);
+    }), [filterByTraderRequirements, nextTaskCountGateByGroup, normalizedSearch, onlyActiveSelected, profile, quests, retainedCompletedQuestIds, selectedMapKeys, selectedObjectiveCategories, selectedStatuses, selectedTraderIds, statusByQuestId, store.hiddenQuests, store.lockedFilters, store.showHiddenQuests]);
 
     useEffect(() => {
         const previous = previousCompletedQuests.current;
@@ -242,6 +282,8 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             filterByTraderRequirements,
             selectedMapKeys,
             selectedStatuses,
+            lockedFilters: store.lockedFilters,
+            upcomingLockedQuestIds,
             selectedObjectiveCategories,
             showHiddenQuests: store.showHiddenQuests,
             groupByTrader,
@@ -279,6 +321,7 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
                 store.setSelectedMapKeys([]);
             },
             toggleStatus: (status) => { clearRetainedCompletedQuests(); store.setSelectedStatuses([...toggleSetValue(selectedStatuses, status)]); },
+            setLockedFilters: store.setLockedFilters,
             toggleObjectiveCategory: (category) => { clearRetainedCompletedQuests(); store.setSelectedObjectiveCategories([...toggleSetValue(selectedObjectiveCategories, category)]); },
             clearObjectiveCategories: () => { clearRetainedCompletedQuests(); store.setSelectedObjectiveCategories([]); },
             setShowHiddenQuests: (enabled) => {

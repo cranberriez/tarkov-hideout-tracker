@@ -1,25 +1,29 @@
 import type { FullQuest } from "@/types";
 import type {
     QuestObjectiveCategory,
+    QuestWorkspaceLockedFilterSettings,
     QuestWorkspaceStatus,
 } from "@/lib/stores/useUserStore";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import {
     getQuestTraderGateType,
     questTraderRequirementMatchesProfile,
-} from "@/lib/utils/quest-trader-gates";
-import { isQuestDisabledByCompletedFailedRequirement } from "@/lib/utils/quest-failures";
+} from "../../../lib/utils/quest-trader-gates";
+import { isQuestDisabledByCompletedFailedRequirement } from "../../../lib/utils/quest-failures";
 import {
     compareTraderTierCompletionCount,
     countCompletedTraderTierQuests,
     getTraderTierCompletionGate,
-} from "@/lib/utils/quest-trader-completion-gates";
+} from "../../../lib/utils/quest-trader-completion-gates";
 
 export type { QuestObjectiveCategory, QuestWorkspaceStatus } from "@/lib/stores/useUserStore";
 
 export interface QuestLockReason {
     kind: "quest" | "level" | "loyalty" | "reputation" | "task-count" | "prestige" | "faction" | "branch";
     label: string;
+    currentValue?: number;
+    requiredValue?: number;
+    groupKey?: string;
 }
 
 export interface QuestWorkspaceStatusInfo {
@@ -72,6 +76,45 @@ export const OBJECTIVE_CATEGORY_SHORT_LABELS: Record<QuestObjectiveCategory, str
 
 const OBJECTIVE_CATEGORY_ORDER = Object.keys(OBJECTIVE_CATEGORY_LABELS) as QuestObjectiveCategory[];
 
+function isTaskRequirementMet(
+    requirement: FullQuest["taskRequirements"][number],
+    profile: QuestWorkspaceProfile,
+) {
+    const statuses = requirement.status.map((status) => status.trim().toLowerCase());
+    const prerequisiteComplete = !!profile.completedQuests[requirement.task.id];
+    const prerequisiteFailed = !!profile.failedQuests[requirement.task.id];
+    if (statuses.includes("complete") && (prerequisiteComplete || prerequisiteFailed)) return true;
+    if (statuses.includes("failed") && prerequisiteFailed) return true;
+    return false;
+}
+
+function getMissingPrerequisiteQuestIds(
+    quest: FullQuest,
+    profile: QuestWorkspaceProfile,
+    questsById: ReadonlyMap<string, FullQuest>,
+) {
+    const missingIds = new Set<string>();
+    const visiting = new Set<string>();
+
+    const visit = (current: FullQuest) => {
+        if (visiting.has(current.id)) return;
+        visiting.add(current.id);
+
+        for (const requirement of current.taskRequirements) {
+            if (isTaskRequirementMet(requirement, profile)) continue;
+            missingIds.add(requirement.task.id);
+            const prerequisite = questsById.get(requirement.task.id);
+            if (prerequisite) visit(prerequisite);
+        }
+
+        visiting.delete(current.id);
+    };
+
+    visit(quest);
+    missingIds.delete(quest.id);
+    return missingIds;
+}
+
 export function getQuestWorkspaceStatus(
     quest: FullQuest,
     profile: QuestWorkspaceProfile,
@@ -107,7 +150,12 @@ export function getQuestWorkspaceStatus(
         reasons.push({ kind: "faction", label: `Requires ${quest.factionName}` });
     }
     if ((quest.minPlayerLevel ?? 0) > profile.playerLevel) {
-        reasons.push({ kind: "level", label: `Requires level ${quest.minPlayerLevel}` });
+        reasons.push({
+            kind: "level",
+            label: `Requires level ${quest.minPlayerLevel}`,
+            currentValue: profile.playerLevel,
+            requiredValue: quest.minPlayerLevel ?? 0,
+        });
     }
     if ((quest.requiredPrestige?.prestigeLevel ?? 0) > profile.prestigeLevel) {
         reasons.push({ kind: "prestige", label: `Requires prestige ${quest.requiredPrestige?.prestigeLevel}` });
@@ -135,28 +183,114 @@ export function getQuestWorkspaceStatus(
             reasons.push({
                 kind: "task-count",
                 label: `Complete ${gate.requiredCount} ${gate.trader} LL${gate.tier} tasks (${completedCount}/${gate.requiredCount})`,
+                currentValue: completedCount,
+                requiredValue: gate.requiredCount,
+                groupKey: gate.variableId,
             });
         }
     }
-    const missingPrerequisites = quest.taskRequirements.filter((requirement) => {
-        const statuses = requirement.status.map((status) => status.trim().toLowerCase());
-        const prerequisiteComplete = !!profile.completedQuests[requirement.task.id];
-        const prerequisiteFailed = !!profile.failedQuests[requirement.task.id];
-        if (statuses.includes("complete") && (prerequisiteComplete || prerequisiteFailed)) return false;
-        if (statuses.includes("failed") && prerequisiteFailed) return false;
-        return true;
-    });
-    if (missingPrerequisites.length > 0) {
+    const missingPrerequisiteIds = getMissingPrerequisiteQuestIds(quest, profile, questsById);
+    if (missingPrerequisiteIds.size > 0) {
+        const [firstMissingId] = missingPrerequisiteIds;
+        const firstMissingName = questsById.get(firstMissingId)?.name ??
+            quest.taskRequirements.find((requirement) => requirement.task.id === firstMissingId)?.task.name ??
+            "previous quest";
         reasons.push({
             kind: "quest",
-            label: missingPrerequisites.length === 1
-                ? `Requires ${missingPrerequisites[0].task.name}`
-                : `${missingPrerequisites.length} prerequisite quests`,
+            label: missingPrerequisiteIds.size === 1
+                ? `Requires ${firstMissingName}`
+                : `${missingPrerequisiteIds.size} prerequisite quests remaining`,
+            currentValue: 0,
+            requiredValue: missingPrerequisiteIds.size,
         });
     }
 
     if (reasons.length > 0) return { status: "locked", label: "Locked", reasons, terminal };
     return { status: "active", label: "Active", reasons, terminal };
+}
+
+export function buildNextTaskCountGateByGroup(
+    statuses: Iterable<QuestWorkspaceStatusInfo>,
+) {
+    const nextGateByGroup = new Map<string, number>();
+
+    for (const status of statuses) {
+        if (status.status !== "locked") continue;
+        for (const reason of status.reasons) {
+            if (
+                reason.kind !== "task-count" ||
+                !reason.groupKey ||
+                reason.requiredValue === undefined
+            ) continue;
+
+            const current = nextGateByGroup.get(reason.groupKey);
+            if (current === undefined || reason.requiredValue < current) {
+                nextGateByGroup.set(reason.groupKey, reason.requiredValue);
+            }
+        }
+    }
+
+    return nextGateByGroup;
+}
+
+function getMissingCount(reason: QuestLockReason) {
+    if (reason.currentValue === undefined || reason.requiredValue === undefined) {
+        return Number.POSITIVE_INFINITY;
+    }
+    return Math.max(0, reason.requiredValue - reason.currentValue);
+}
+
+export function questMatchesLockedFilters(
+    status: QuestWorkspaceStatusInfo,
+    filters: QuestWorkspaceLockedFilterSettings,
+    nextTaskCountGateByGroup: ReadonlyMap<string, number>,
+) {
+    if (status.status !== "locked") return true;
+    if (filters.showAll) return true;
+
+    return status.reasons.every((reason) => {
+        if (reason.kind === "level") {
+            return filters.showPlayerLevel && (
+                !filters.playerLevelUpcomingOnly ||
+                getMissingCount(reason) <= filters.playerLevelLookahead
+            );
+        }
+        if (reason.kind === "task-count") {
+            return filters.showTaskCount && (
+                !filters.taskCountUpcomingOnly ||
+                (reason.groupKey !== undefined &&
+                    reason.requiredValue === nextTaskCountGateByGroup.get(reason.groupKey))
+            );
+        }
+        if (reason.kind === "quest") {
+            return filters.showPrerequisite && (
+                !filters.prerequisiteUpcomingOnly ||
+                getMissingCount(reason) <= filters.prerequisiteLookahead
+            );
+        }
+        if (reason.kind === "faction") return filters.showFaction;
+        return true;
+    });
+}
+
+export function isUpcomingLockedQuest(
+    status: QuestWorkspaceStatusInfo,
+    filters: QuestWorkspaceLockedFilterSettings,
+    nextTaskCountGateByGroup: ReadonlyMap<string, number>,
+) {
+    if (filters.showAll) return false;
+    if (!questMatchesLockedFilters(status, filters, nextTaskCountGateByGroup)) return false;
+
+    const progressionReasons = status.reasons.filter((reason) =>
+        reason.kind === "level" || reason.kind === "task-count" || reason.kind === "quest",
+    );
+    if (progressionReasons.length === 0) return false;
+
+    return progressionReasons.every((reason) => {
+        if (reason.kind === "level") return filters.playerLevelUpcomingOnly;
+        if (reason.kind === "task-count") return filters.taskCountUpcomingOnly;
+        return filters.prerequisiteUpcomingOnly;
+    });
 }
 
 export function getObjectiveCategory(type: string): QuestObjectiveCategory {

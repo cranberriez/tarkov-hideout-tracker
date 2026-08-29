@@ -7,7 +7,7 @@ Client-side state lives in two Zustand stores. Server-fetched data (stations, it
 ## `useUserStore` — User Progress & Preferences
 
 **File:** `src/lib/stores/useUserStore.ts`
-**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 20.
+**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 22.
 
 Do not change the storage key. Bump the version and add a migration only when the persisted state shape requires it.
 
@@ -56,7 +56,7 @@ questTraderLoyaltyLevels: Record<string, number>;
 questFenceReputation: number;                 // exact Fence standing used by quest requirement filtering
 questViewMode: "byMap" | "byTrader" | "flatList";
 questCardSize: "small" | "large"; // Legacy compatibility field; quest cards use one compact layout.
-questSortMode: "default" | "level" | "xp" | "unlockImpact";
+questSortMode: "unlockOrder" | "default" | "level" | "xp" | "unlockImpact";
 questSelectedTraders: string[];
 questFaction: "USEC" | "BEAR" | null;
 questShowKappa: boolean;
@@ -79,6 +79,18 @@ questWorkspaceSelectedTraders: string[];
 questWorkspaceFilterByTraderRequirements: boolean;
 questWorkspaceSelectedMaps: string[];
 questWorkspaceSelectedStatuses: Array<"active" | "completed" | "failed" | "locked">;
+questWorkspaceLockedFilters: {
+    showAll: boolean;                     // default false; bypass all reason filters
+    showPlayerLevel: boolean;             // default false
+    playerLevelUpcomingOnly: boolean;     // default true
+    playerLevelLookahead: number;         // default 5
+    showTaskCount: boolean;               // default true
+    taskCountUpcomingOnly: boolean;       // default true; next milestone only
+    showPrerequisite: boolean;            // default true
+    prerequisiteUpcomingOnly: boolean;    // default true
+    prerequisiteLookahead: number;        // default 1
+    showFaction: boolean;                 // default false
+};
 questWorkspaceSelectedObjectiveCategories: QuestObjectiveCategory[];
 
 // Item page quest demand preferences

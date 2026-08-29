@@ -1,7 +1,8 @@
 import type { FullQuest } from "@/types";
+import { getTraderTierCompletionGate } from "../../lib/utils/quest-trader-completion-gates";
 import { getQuestMapGroupsForQuest } from "./quest-map-groups";
 
-export type QuestSortMode = "default" | "level" | "xp" | "unlockImpact";
+export type QuestSortMode = "unlockOrder" | "default" | "level" | "xp" | "unlockImpact";
 
 function compareByDefaultOrder(
     a: FullQuest,
@@ -25,9 +26,39 @@ function compareQuestsByRootOrder(
     return compareByDefaultOrder(a, b, questOrderById);
 }
 
+function getQuestTaskCountUnlock(quest: FullQuest) {
+    let requiredCount = 0;
+
+    for (const requirement of quest.otherRequirements) {
+        const gate = getTraderTierCompletionGate(requirement);
+        if (gate) requiredCount = Math.max(requiredCount, gate.requiredCount);
+    }
+
+    return requiredCount;
+}
+
+function compareQuestsByUnlockOrder(
+    a: FullQuest,
+    b: FullQuest,
+    questOrderById: Map<string, number>,
+) {
+    const levelDiff = (a.minPlayerLevel ?? 0) - (b.minPlayerLevel ?? 0);
+    if (levelDiff !== 0) return levelDiff;
+
+    const taskCountDiff = getQuestTaskCountUnlock(a) - getQuestTaskCountUnlock(b);
+    if (taskCountDiff !== 0) return taskCountDiff;
+
+    const prerequisiteCountDiff = a.taskRequirements.length - b.taskRequirements.length;
+    if (prerequisiteCountDiff !== 0) return prerequisiteCountDiff;
+
+    return compareByDefaultOrder(a, b, questOrderById);
+}
+
 function sortQuestsByChains(
     quests: FullQuest[],
     questOrderById: Map<string, number>,
+    compareQuests: (a: FullQuest, b: FullQuest) => number = (a, b) =>
+        compareQuestsByRootOrder(a, b, questOrderById),
 ) {
     const questsById = new Map(quests.map((quest) => [quest.id, quest]));
     const groupQuestIds = new Set(quests.map((quest) => quest.id));
@@ -63,10 +94,10 @@ function sortQuestsByChains(
     }
 
     for (const children of childrenByQuestId.values()) {
-        children.sort((a, b) => compareQuestsByRootOrder(a, b, questOrderById));
+        children.sort(compareQuests);
     }
 
-    roots.sort((a, b) => compareQuestsByRootOrder(a, b, questOrderById));
+    roots.sort(compareQuests);
 
     const sorted: FullQuest[] = [];
     const visitedQuestIds = new Set<string>();
@@ -86,7 +117,7 @@ function sortQuestsByChains(
         appendQuestAndChildren(root);
     }
 
-    for (const quest of [...quests].sort((a, b) => compareQuestsByRootOrder(a, b, questOrderById))) {
+    for (const quest of [...quests].sort(compareQuests)) {
         appendQuestAndChildren(quest);
     }
 
@@ -139,6 +170,14 @@ export function sortQuestsForQuestView(
     questOrderById: Map<string, number>,
     unlockImpactById: Map<string, number>,
 ) {
+    if (sortMode === "unlockOrder") {
+        return sortQuestsByChains(
+            quests,
+            questOrderById,
+            (a, b) => compareQuestsByUnlockOrder(a, b, questOrderById),
+        );
+    }
+
     if (sortMode === "default") {
         return sortQuestsByChains(quests, questOrderById);
     }

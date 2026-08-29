@@ -20,9 +20,21 @@ export type ItemSourceFilter = "all" | "hideout" | "quest";
 export type ItemQuestVisibilityMode = "available" | "nextLayer" | "allFuture" | "custom";
 export type QuestViewMode = "byMap" | "byTrader" | "flatList";
 export type QuestCardSize = "small" | "large";
-export type QuestSortMode = "default" | "level" | "xp" | "unlockImpact";
+export type QuestSortMode = "unlockOrder" | "default" | "level" | "xp" | "unlockImpact";
 export type QuestVisibilityMode = "all" | "hideLocked" | "activeDepth";
 export type QuestWorkspaceStatus = "active" | "completed" | "failed" | "locked";
+export interface QuestWorkspaceLockedFilterSettings {
+    showAll: boolean;
+    showPlayerLevel: boolean;
+    playerLevelUpcomingOnly: boolean;
+    playerLevelLookahead: number;
+    showTaskCount: boolean;
+    taskCountUpcomingOnly: boolean;
+    showPrerequisite: boolean;
+    prerequisiteUpcomingOnly: boolean;
+    prerequisiteLookahead: number;
+    showFaction: boolean;
+}
 export type QuestObjectiveCategory =
     | "hand-in"
     | "find"
@@ -34,6 +46,19 @@ export type QuestObjectiveCategory =
     | "use"
     | "other";
 export type QuestChangeType = "completed" | "uncompleted";
+
+export const DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS: QuestWorkspaceLockedFilterSettings = {
+    showAll: false,
+    showPlayerLevel: false,
+    playerLevelUpcomingOnly: true,
+    playerLevelLookahead: 5,
+    showTaskCount: true,
+    taskCountUpcomingOnly: true,
+    showPrerequisite: true,
+    prerequisiteUpcomingOnly: true,
+    prerequisiteLookahead: 1,
+    showFaction: false,
+};
 
 export interface QuestChangeHistoryEntry {
     questId: string;
@@ -202,6 +227,7 @@ interface UserState {
     questWorkspaceFilterByTraderRequirements: boolean;
     questWorkspaceSelectedMaps: string[];
     questWorkspaceSelectedStatuses: QuestWorkspaceStatus[];
+    questWorkspaceLockedFilters: QuestWorkspaceLockedFilterSettings;
     questWorkspaceSelectedObjectiveCategories: QuestObjectiveCategory[];
 
     itemShowPinnedQuestSection: boolean;
@@ -294,6 +320,9 @@ interface UserState {
     setQuestWorkspaceFilterByTraderRequirements: (enabled: boolean) => void;
     setQuestWorkspaceSelectedMaps: (mapKeys: string[]) => void;
     setQuestWorkspaceSelectedStatuses: (statuses: QuestWorkspaceStatus[]) => void;
+    setQuestWorkspaceLockedFilters: (
+        filters: Partial<QuestWorkspaceLockedFilterSettings>,
+    ) => void;
     setQuestWorkspaceSelectedObjectiveCategories: (
         categories: QuestObjectiveCategory[],
     ) => void;
@@ -423,7 +452,7 @@ export const useUserStore = create<UserState>()(
 
             questViewMode: "byTrader",
             questCardSize: "small",
-            questSortMode: "default",
+            questSortMode: "unlockOrder",
             questSelectedTraders: [],
             questFaction: "USEC",
             questShowKappa: false,
@@ -444,6 +473,7 @@ export const useUserStore = create<UserState>()(
             questWorkspaceFilterByTraderRequirements: true,
             questWorkspaceSelectedMaps: [],
             questWorkspaceSelectedStatuses: ["active", "completed", "failed", "locked"],
+            questWorkspaceLockedFilters: { ...DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS },
             questWorkspaceSelectedObjectiveCategories: [],
 
             itemShowPinnedQuestSection: true,
@@ -706,6 +736,13 @@ export const useUserStore = create<UserState>()(
                 set({ questWorkspaceSelectedMaps: mapKeys }),
             setQuestWorkspaceSelectedStatuses: (statuses) =>
                 set({ questWorkspaceSelectedStatuses: statuses }),
+            setQuestWorkspaceLockedFilters: (filters) =>
+                set((state) => ({
+                    questWorkspaceLockedFilters: {
+                        ...state.questWorkspaceLockedFilters,
+                        ...filters,
+                    },
+                })),
             setQuestWorkspaceSelectedObjectiveCategories: (categories) =>
                 set({ questWorkspaceSelectedObjectiveCategories: categories }),
 
@@ -916,7 +953,7 @@ export const useUserStore = create<UserState>()(
                     questFenceReputation: 0,
                     questViewMode: "byTrader",
                     questCardSize: "small",
-                    questSortMode: "default",
+                    questSortMode: "unlockOrder",
                     questSelectedTraders: [],
                     questFaction: "USEC",
                     questShowKappa: false,
@@ -937,6 +974,7 @@ export const useUserStore = create<UserState>()(
                     questWorkspaceFilterByTraderRequirements: true,
                     questWorkspaceSelectedMaps: [],
                     questWorkspaceSelectedStatuses: ["active", "completed", "failed", "locked"],
+                    questWorkspaceLockedFilters: { ...DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS },
                     questWorkspaceSelectedObjectiveCategories: [],
                     itemShowPinnedQuestSection: true,
                     itemShowPinnedQuestOnly: false,
@@ -985,7 +1023,7 @@ export const useUserStore = create<UserState>()(
         },
         {
             name: USER_STORE_STORAGE_KEY,
-            version: 20,
+            version: 22,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -1100,6 +1138,7 @@ export const useUserStore = create<UserState>()(
                               : "tree";
 
                     const questSortMode =
+                        nextState.questSortMode === "unlockOrder" ||
                         nextState.questSortMode === "level" ||
                         nextState.questSortMode === "xp" ||
                         nextState.questSortMode === "unlockImpact" ||
@@ -1194,6 +1233,53 @@ export const useUserStore = create<UserState>()(
                             !selectedStatuses.includes("failed")
                                 ? [...selectedStatuses, "failed"]
                                 : selectedStatuses,
+                    };
+                }
+
+                if (version < 21) {
+                    const lockedFilters =
+                        typeof nextState.questWorkspaceLockedFilters === "object" &&
+                        nextState.questWorkspaceLockedFilters !== null
+                            ? nextState.questWorkspaceLockedFilters as Partial<QuestWorkspaceLockedFilterSettings>
+                            : {};
+
+                    nextState = {
+                        ...nextState,
+                        questSortMode:
+                            nextState.questSortMode === "default"
+                                ? "unlockOrder"
+                                : nextState.questSortMode,
+                        questWorkspaceLockedFilters: {
+                            ...DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS,
+                            ...lockedFilters,
+                            playerLevelLookahead:
+                                typeof lockedFilters.playerLevelLookahead === "number" &&
+                                Number.isFinite(lockedFilters.playerLevelLookahead)
+                                    ? Math.max(0, Math.floor(lockedFilters.playerLevelLookahead))
+                                    : DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS.playerLevelLookahead,
+                            prerequisiteLookahead:
+                                typeof lockedFilters.prerequisiteLookahead === "number" &&
+                                Number.isFinite(lockedFilters.prerequisiteLookahead)
+                                    ? Math.max(1, Math.floor(lockedFilters.prerequisiteLookahead))
+                                    : DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS.prerequisiteLookahead,
+                        },
+                    };
+                }
+
+                if (version < 22) {
+                    const lockedFilters =
+                        typeof nextState.questWorkspaceLockedFilters === "object" &&
+                        nextState.questWorkspaceLockedFilters !== null
+                            ? nextState.questWorkspaceLockedFilters as Partial<QuestWorkspaceLockedFilterSettings>
+                            : {};
+
+                    nextState = {
+                        ...nextState,
+                        questWorkspaceLockedFilters: {
+                            ...DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS,
+                            ...lockedFilters,
+                            showAll: lockedFilters.showAll === true,
+                        },
                     };
                 }
 

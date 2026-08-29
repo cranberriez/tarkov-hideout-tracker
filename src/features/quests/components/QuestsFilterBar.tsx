@@ -18,6 +18,7 @@ import { useQuestsContext } from "../QuestsContext";
 import { Divider, FilterButton, SegButton, SegGroup } from "./quest-ui";
 
 const SORT_OPTIONS: { value: QuestSortMode; label: string }[] = [
+    { value: "unlockOrder", label: "Unlock Order" },
     { value: "default", label: "Default" },
     { value: "level", label: "Level" },
     { value: "xp", label: "XP" },

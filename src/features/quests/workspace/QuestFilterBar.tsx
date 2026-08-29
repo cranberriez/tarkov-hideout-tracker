@@ -341,8 +341,9 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
     const {
         quests, traders, maps, objectiveCategories, selectedTraderIds,
         filterByTraderRequirements, selectedMapKeys, selectedStatuses,
+        lockedFilters,
         selectedObjectiveCategories, toggleTrader, clearTraders,
-        setFilterByTraderRequirements, toggleMap, clearMaps, toggleStatus, toggleObjectiveCategory,
+        setFilterByTraderRequirements, toggleMap, clearMaps, toggleStatus, setLockedFilters, toggleObjectiveCategory,
         clearObjectiveCategories, statusByQuestId, setOpenFilter,
         groupByTrader, groupByLoyaltyLevel, sortMode, showHiddenQuests,
         setGroupByTrader, setGroupByLoyaltyLevel, setSortMode,
@@ -371,7 +372,70 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
                     ))}
                 </>}
                 {section === "maps" && <><AnyRow active={selectedMapKeys.size === 0} onClick={clearMaps} count={quests.length} />{maps.map((map) => <MenuRow key={map.key} selected={selectedMapKeys.has(map.key)} onClick={() => toggleMap(map.key)} label={map.name} count={quests.filter((quest) => getQuestMapGroupsForQuest(quest).some((group) => group.key === map.key)).length} />)}</>}
-                {section === "status" && <>{STATUS_OPTIONS.map((option) => <MenuRow key={option.id} selected={selectedStatuses.has(option.id)} onClick={() => toggleStatus(option.id)} label={option.label} description={option.description} count={quests.filter((quest) => statusByQuestId.get(quest.id)?.status === option.id).length} />)}<div className="mt-2 border-t border-white/8 px-3 py-2 text-[10px] leading-relaxed text-gray-600">Failed quests are resolved branches and are separate from locked quests with unmet progression gates. Pinning is independent from quest status.</div></>}
+                {section === "status" && <>
+                    {STATUS_OPTIONS.map((option) => <MenuRow key={option.id} selected={selectedStatuses.has(option.id)} onClick={() => toggleStatus(option.id)} label={option.label} description={option.description} count={quests.filter((quest) => statusByQuestId.get(quest.id)?.status === option.id).length} />)}
+                    {selectedStatuses.has("locked") && <>
+                        <FilterSectionTitle>Locked reasons</FilterSectionTitle>
+                        <ToggleRow
+                            checked={lockedFilters.showAll}
+                            onChange={(checked) => setLockedFilters({ showAll: checked })}
+                            label="Show ALL Locked Tasks"
+                            description="Override the reason filters and include every locked quest"
+                            emphasized
+                        />
+                        <fieldset className={cn(
+                            "transition-opacity",
+                            lockedFilters.showAll && "opacity-35",
+                        )} disabled={lockedFilters.showAll}>
+                            <ToggleRow
+                                checked={lockedFilters.showPlayerLevel}
+                                onChange={(checked) => setLockedFilters({ showPlayerLevel: checked })}
+                                label="Player level"
+                                description="Show quests locked by your PMC level"
+                            />
+                            {lockedFilters.showPlayerLevel && <UpcomingRuleRow
+                                checked={lockedFilters.playerLevelUpcomingOnly}
+                                onChange={(checked) => setLockedFilters({ playerLevelUpcomingOnly: checked })}
+                                description="Only show quests within this many levels"
+                                value={lockedFilters.playerLevelLookahead}
+                                min={0}
+                                onValueChange={(value) => setLockedFilters({ playerLevelLookahead: value })}
+                            />}
+                            <ToggleRow
+                                checked={lockedFilters.showTaskCount}
+                                onChange={(checked) => setLockedFilters({ showTaskCount: checked })}
+                                label="Number of completed quests"
+                                description="Show quests locked by trader task-count milestones"
+                            />
+                            {lockedFilters.showTaskCount && <UpcomingRuleRow
+                                checked={lockedFilters.taskCountUpcomingOnly}
+                                onChange={(checked) => setLockedFilters({ taskCountUpcomingOnly: checked })}
+                                description="Only show the next incomplete milestone (for example 1, then 3, then 5)"
+                            />}
+                            <ToggleRow
+                                checked={lockedFilters.showPrerequisite}
+                                onChange={(checked) => setLockedFilters({ showPrerequisite: checked })}
+                                label="Previous quest incomplete"
+                                description="Show quests with unfinished prerequisite quests"
+                            />
+                            {lockedFilters.showPrerequisite && <UpcomingRuleRow
+                                checked={lockedFilters.prerequisiteUpcomingOnly}
+                                onChange={(checked) => setLockedFilters({ prerequisiteUpcomingOnly: checked })}
+                                description="Only show quests within this many missing prerequisites"
+                                value={lockedFilters.prerequisiteLookahead}
+                                min={1}
+                                onValueChange={(value) => setLockedFilters({ prerequisiteLookahead: value })}
+                            />}
+                            <ToggleRow
+                                checked={lockedFilters.showFaction}
+                                onChange={(checked) => setLockedFilters({ showFaction: checked })}
+                                label="Incorrect faction"
+                                description="Show quests restricted to the other faction"
+                            />
+                        </fieldset>
+                        <div className="mt-2 border-t border-white/8 px-3 py-2 text-[10px] leading-relaxed text-gray-600">A locked quest must pass every applicable reason filter. Other gates, such as loyalty, reputation, prestige, and branches, remain visible.</div>
+                    </>}
+                </>}
                 {section === "filters" && <>
                     <FilterSectionTitle>Visibility</FilterSectionTitle>
                     <ToggleRow
@@ -424,6 +488,7 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
 }
 
 const SORT_OPTIONS = [
+    { id: "unlockOrder", label: "Unlock order", description: "Player level, then task-count milestone, while keeping quest chains together" },
     { id: "default", label: "Quest chain", description: "Keep prerequisite quests together" },
     { id: "level", label: "Player level", description: "Lowest required level first" },
     { id: "xp", label: "Experience", description: "Highest XP reward first" },
@@ -438,20 +503,72 @@ function FilterSectionTitle({ children }: { children: React.ReactNode }) {
     );
 }
 
-function ToggleRow({ checked, onChange, label, description }: {
+function ToggleRow({ checked, onChange, label, description, emphasized = false }: {
     checked: boolean;
     onChange: (checked: boolean) => void;
     label: string;
     description: string;
+    emphasized?: boolean;
 }) {
     return (
-        <label className="flex cursor-pointer items-center justify-between gap-4 px-3 py-2.5 transition-colors hover:bg-white/5">
+        <label className={cn(
+            "flex cursor-pointer items-center justify-between gap-4 px-3 py-2.5 transition-colors hover:bg-white/5",
+            emphasized && "border-y border-amber-300/20 bg-amber-300/[0.06] hover:bg-amber-300/[0.09]",
+        )}>
             <span className="min-w-0">
-                <span className="block text-sm text-gray-200">{label}</span>
+                <span className={cn("block text-sm text-gray-200", emphasized && "font-semibold text-amber-200")}>{label}</span>
                 <span className="block text-[10px] text-gray-600">{description}</span>
             </span>
             <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="peer sr-only" />
             <span className="relative h-5 w-9 shrink-0 rounded-full bg-white/10 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-gray-500 after:transition-transform peer-checked:bg-tarkov-green/25 peer-checked:after:translate-x-4 peer-checked:after:bg-tarkov-green peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-tarkov-green" />
         </label>
+    );
+}
+
+function UpcomingRuleRow({
+    checked,
+    onChange,
+    description,
+    value,
+    min = 0,
+    onValueChange,
+}: {
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+    description: string;
+    value?: number;
+    min?: number;
+    onValueChange?: (value: number) => void;
+}) {
+    return (
+        <div className="flex items-center gap-3 border-b border-white/5 bg-black/15 py-2 pl-7 pr-3">
+            <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5">
+                <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(event) => onChange(event.target.checked)}
+                    className="h-3.5 w-3.5 accent-[#9cae7c]"
+                />
+                <span className="min-w-0">
+                    <span className="block text-xs text-gray-300">Show upcoming only</span>
+                    <span className="block text-[10px] leading-relaxed text-gray-600">{description}</span>
+                </span>
+            </label>
+            {value !== undefined && onValueChange && (
+                <input
+                    type="number"
+                    min={min}
+                    step={1}
+                    aria-label="Upcoming range"
+                    value={value}
+                    disabled={!checked}
+                    onChange={(event) => {
+                        const next = Number(event.target.value);
+                        if (Number.isFinite(next)) onValueChange(Math.max(min, Math.floor(next)));
+                    }}
+                    className="h-8 w-14 border border-white/10 bg-black/25 px-2 text-center font-mono text-xs text-gray-200 outline-none transition-colors focus:border-tarkov-green/50 disabled:cursor-not-allowed disabled:opacity-35"
+                />
+            )}
+        </div>
     );
 }

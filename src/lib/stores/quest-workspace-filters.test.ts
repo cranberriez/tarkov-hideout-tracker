@@ -9,6 +9,10 @@ test("keeps quest workspace filters global and trader loyalty profile-specific",
     useUserStore.getState().setQuestWorkspaceFilterByTraderRequirements(false);
     useUserStore.getState().setQuestWorkspaceSelectedMaps(["customs"]);
     useUserStore.getState().setQuestWorkspaceSelectedStatuses(["active"]);
+    useUserStore.getState().setQuestWorkspaceLockedFilters({
+        showPlayerLevel: true,
+        playerLevelLookahead: 3,
+    });
     useUserStore.getState().setQuestWorkspaceSelectedObjectiveCategories(["hand-in"]);
     useUserStore.getState().setQuestTraderLoyaltyLevel("prapor", 4);
 
@@ -19,6 +23,8 @@ test("keeps quest workspace filters global and trader loyalty profile-specific",
     assert.equal(pveState.questWorkspaceFilterByTraderRequirements, false);
     assert.deepEqual(pveState.questWorkspaceSelectedMaps, ["customs"]);
     assert.deepEqual(pveState.questWorkspaceSelectedStatuses, ["active"]);
+    assert.equal(pveState.questWorkspaceLockedFilters.showPlayerLevel, true);
+    assert.equal(pveState.questWorkspaceLockedFilters.playerLevelLookahead, 3);
     assert.deepEqual(pveState.questWorkspaceSelectedObjectiveCategories, ["hand-in"]);
     assert.deepEqual(pveState.questTraderLoyaltyLevels, {});
 

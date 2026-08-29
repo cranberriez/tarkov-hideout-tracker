@@ -54,13 +54,24 @@ Quest data is not part of the shared `(data)/layout.tsx` context. Pages that nee
 
 ## Quest Ordering
 
-`orderQuestsByPrerequisites()` in `src/server/services/quests.ts`:
+`orderQuestsByPrerequisites()` in `src/server/services/quests.ts` supplies the
+server's stable manifest order. The workspace then applies the selected view sort
+from `src/features/quests/quest-sorting.ts`.
+
+The default workspace sort is **Unlock order**:
+
+- Sort chain roots by required player level.
+- Then sort by the trader-tier completed-task milestone, such as 1, 3, or 5 tasks.
+- Then prefer quests with fewer direct prerequisites.
+- Keep each prerequisite chain together, with its children directly after their parent.
+
+The legacy **Quest chain** sort continues to use the server order below:
 
 - Computes `prerequisiteDepth` as the longest prerequisite chain depth.
 - Breaks cycles with a `visiting` guard set.
 - Sorts by `prerequisiteDepth`, then `minPlayerLevel`, then `name`.
 
-The sorted order supplies the default chain-aware order used by the virtualized quest lists.
+The sorted order supplies the stable tie-breaker used by the quest lists.
 
 ---
 
@@ -90,7 +101,7 @@ questFenceReputation: number;
 
 questViewMode: "byMap" | "byTrader" | "flatList";
 questCardSize: "small" | "large"; // Legacy compatibility field; no longer exposed in the UI.
-questSortMode: "default" | "level" | "xp" | "unlockImpact";
+questSortMode: "unlockOrder" | "default" | "level" | "xp" | "unlockImpact";
 questSelectedTraders: string[];
 questSelectedMaps: string[];
 questHideCompleted: boolean;
@@ -116,6 +127,16 @@ questSidebarCollapsed: boolean;
 - `traders` and `allMaps`: deduped filter lists derived from full quest data.
 - `questSortMode`: applied to By Trader, By Map, and List views.
 - Manual sync helpers that call `quest-sync.ts` and write results back to `useUserStore`.
+
+When **Locked** is selected in the workspace status filter, its reason controls are
+shown underneath it. A locked quest must pass every applicable controlled reason.
+The emphasized **Show ALL regardless of reason** override bypasses these controls,
+shows every locked quest, and temporarily disables the individual reason inputs.
+The defaults hide player-level and wrong-faction locks, show task-count and missing-
+prerequisite locks, and restrict those visible progression locks to upcoming quests.
+Upcoming means the next unmet trader task-count milestone or one missing direct
+prerequisite. If player-level locks are enabled, their default upcoming range is
+five levels. Matching locked rows are labeled **Upcoming**.
 
 The workspace keeps a fixed row of square trader portraits between the Map / Status /
 Filter controls and the quest list. The leftmost `All` button clears the trader

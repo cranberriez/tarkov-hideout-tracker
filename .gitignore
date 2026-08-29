@@ -43,3 +43,8 @@ docs/notes.txt
 
 # codex
 .codex-analysis/
+
+# Large data sources for comparisons
+src/lib/data/quests-full.json
+src/lib/data/tasks-pve.json
+src/lib/data/tasks-regular.json

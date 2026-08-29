@@ -82,6 +82,45 @@ test("default sort preserves chain-aware order", () => {
     ]);
 });
 
+test("unlock order sorts by player level and then trader task-count milestone", () => {
+    const taskCountRequirement = (requiredCount: number) => ({
+        type: "globalVariable",
+        requirementType: "globalVariable",
+        variableId: "6a20540cf1b67a977cc5a088",
+        compareMethod: ">=",
+        value: requiredCount,
+    });
+    const quests = [
+        makeQuest("level-two", { minPlayerLevel: 2 }),
+        makeQuest("five-tasks", {
+            otherRequirements: [taskCountRequirement(5)],
+        }),
+        makeQuest("one-task", {
+            otherRequirements: [taskCountRequirement(1)],
+        }),
+        makeQuest("no-task-gate"),
+    ];
+
+    assert.deepEqual(sortIds(quests, "unlockOrder"), [
+        "no-task-gate",
+        "one-task",
+        "five-tasks",
+        "level-two",
+    ]);
+});
+
+test("unlock order keeps prerequisite chains together", () => {
+    const root = makeQuest("root");
+    const child = makeQuest("child", { minPlayerLevel: 20, prereqIds: ["root"] });
+    const other = makeQuest("other", { minPlayerLevel: 2 });
+
+    assert.deepEqual(sortIds([child, other, root], "unlockOrder"), [
+        "root",
+        "child",
+        "other",
+    ]);
+});
+
 test("level sort orders lower level requirements first", () => {
     const quests = [
         makeQuest("late", { minPlayerLevel: 20 }),

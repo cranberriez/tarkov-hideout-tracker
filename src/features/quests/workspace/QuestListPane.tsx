@@ -291,7 +291,14 @@ function QuestListItem({
     onSelect: () => void;
     includeElementId?: boolean;
 }) {
-    const { questsById, statusByQuestId, markerByQuestId, mode, retainQuestAfterCompletion } = useQuestWorkspace();
+    const {
+        questsById,
+        statusByQuestId,
+        upcomingLockedQuestIds,
+        markerByQuestId,
+        mode,
+        retainQuestAfterCompletion,
+    } = useQuestWorkspace();
     const quest = questsById.get(questId)!;
     const status = statusByQuestId.get(questId)!;
     const marker = markerByQuestId.get(questId);
@@ -307,6 +314,7 @@ function QuestListItem({
     const traderImage = quest.trader.image4xLink ?? quest.trader.imageLink;
     const traderLoyaltyLevel = getQuestIssuingTraderLoyaltyLevel(quest);
     const essential = isEssentialQuestOverride(quest.id);
+    const upcoming = upcomingLockedQuestIds.has(quest.id);
 
     return (
         <article
@@ -454,8 +462,11 @@ function QuestListItem({
                         )}
                     </span>
                     {status.status === "locked" && (
-                        <span className="flex shrink-0 items-center gap-1 uppercase text-red-300/70">
-                            <Lock size={10} /> {status.label}
+                        <span className={cn(
+                            "flex shrink-0 items-center gap-1 uppercase",
+                            upcoming ? "text-amber-300/80" : "text-red-300/70",
+                        )}>
+                            <Lock size={10} /> {upcoming ? "Upcoming" : status.label}
                         </span>
                     )}
                     {failed && (
