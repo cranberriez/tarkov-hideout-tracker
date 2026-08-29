@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { FullQuest } from "@/types";
+import { prepareQuestSeriesForGameMode } from "../../../lib/utils/quest-series";
 import { buildQuestBranchLines } from "./quest-branch-graph";
 
 function quest(
@@ -116,7 +117,7 @@ test("condenses repeated BTR failure routes to one per source quest", () => {
     );
 });
 
-test("only exposes the BTR Driver and Collector visualizers", () => {
+test("does not infer visualizer series from removed map groups", () => {
     const labyrinthMap = { id: "labyrinth", name: "The Labyrinth", normalizedName: "the-labyrinth" };
     const icebreakerMap = { id: "icebreaker", name: "Icebreaker", normalizedName: "icebreaker" };
     const quests = [
@@ -134,6 +135,190 @@ test("only exposes the BTR Driver and Collector visualizers", () => {
         buildQuestBranchLines(quests).map((line) => line.id),
         ["btr-driver", "collector"],
     );
+});
+
+test("does not expose ordinary reviewed quest series", () => {
+    const ids = [
+        "666314b4d7f171c4c20226c3",
+        "666314b0acf8442f8b0531a1",
+        "666314b2a9290f9e0806cca3",
+        "666314bafd5ca9577902e03a",
+    ];
+    const quests = ids.map((id, index) => quest(id, `Good Times ${index + 1}`));
+
+    assert.deepEqual(buildQuestBranchLines(quests), []);
+});
+
+test("does not infer an Essential quest series", () => {
+    const shady = {
+        ...quest("67a09636b8725511260bc421", "Shady Contractor"),
+        trader: { id: "mechanic", name: "Mechanic", normalizedName: "mechanic" },
+    };
+    const needle = {
+        ...quest(
+            "67a0964e972c11a3f507731b",
+            "Needle in a Haystack",
+            [{ task: { id: shady.id, name: shady.name }, status: ["complete"] }],
+        ),
+        trader: { id: "mechanic", name: "Mechanic", normalizedName: "mechanic" },
+    };
+
+    assert.deepEqual(buildQuestBranchLines([shady, needle]), []);
+});
+
+test("builds the explicit Lightkeeper access line through Information Source", () => {
+    const members = [
+        ["625d6ff5ddc94657c21a1625", "Network Provider - Part 1"],
+        ["625d6ffaf7308432be1d44c5", "Network Provider - Part 2"],
+        ["625d6ffcaa168e51321d69d7", "Assessment - Part 1"],
+        ["625d6fff4149f1149b5b12c9", "Assessment - Part 2"],
+        ["625d7001c4874104f230c0c5", "Assessment - Part 3"],
+        ["625d70031ed3bb5bcc5bd9e5", "Key to the Tower"],
+        ["625d7005a4eb80027c4f2e09", "Knock-Knock"],
+        ["625d700cc48e6c62a440fab5", "Getting Acquainted"],
+        ["63966faeea19ac7ed845db2c", "Information Source"],
+    ] as const;
+    const quests = members.map(([id, name], index) => ({
+        ...quest(id, name),
+        trader: index === members.length - 1
+            ? { id: "lightkeeper", name: "Lightkeeper", normalizedName: "lightkeeper" }
+            : { id: "mechanic", name: "Mechanic", normalizedName: "mechanic" },
+    }));
+
+    const line = buildQuestBranchLines(quests).find(
+        (candidate) => candidate.id === "lightkeeper-access",
+    );
+    assert.ok(line);
+    assert.deepEqual(line.nodes.map((node) => node.quest.id), members.map(([id]) => id));
+    assert.deepEqual(line.nodes.map((node) => node.rank), members.map((_, index) => index));
+});
+
+test("limits the Lightkeeper graph to Information Source through Trouble in the Big City", () => {
+    const informationSource = {
+        ...quest("63966faeea19ac7ed845db2c", "Information Source"),
+        trader: { id: "lightkeeper", name: "Lightkeeper", normalizedName: "lightkeeper" },
+    };
+    const missingInformant = {
+        ...quest(
+            "63966fbeea19ac7ed845db2e",
+            "Missing Informant",
+            [{ task: { id: informationSource.id, name: informationSource.name }, status: ["complete"] }],
+        ),
+        trader: informationSource.trader,
+    };
+    const troubleInTheBigCity = {
+        ...quest(
+            "63967028c4a91c5cb76abd81",
+            "Trouble in the Big City",
+            [{ task: { id: missingInformant.id, name: missingInformant.name }, status: ["complete"] }],
+        ),
+        trader: informationSource.trader,
+    };
+    const unrelated = {
+        ...quest("67a09761e720611a6a01f288", "Keeper's Word"),
+        trader: informationSource.trader,
+    };
+
+    const line = buildQuestBranchLines([
+        informationSource,
+        missingInformant,
+        troubleInTheBigCity,
+        unrelated,
+    ]).find(
+        (candidate) => candidate.id === "lightkeeper",
+    );
+    assert.ok(line);
+    assert.equal(line.kind, "special");
+    assert.deepEqual(line.nodes.map((node) => node.quest.id), [
+        informationSource.id,
+        missingInformant.id,
+        troubleInTheBigCity.id,
+    ]);
+});
+
+test("builds the Ref graph as a strict forward closure from the PVP Easy Money root", () => {
+    const root = {
+        ...quest("66058cb22cee99303f1ba067", "Easy Money - Part 1"),
+        trader: { id: "skier", name: "Skier", normalizedName: "skier" },
+    };
+    const easyMoneyTwo = {
+        ...quest(
+            "66058cb5ae4719735349b9e8",
+            "Easy Money - Part 2",
+            [{ task: { id: root.id, name: root.name }, status: ["complete"] }],
+        ),
+        trader: { id: "ref", name: "Ref", normalizedName: "ref" },
+    };
+    const balancing = {
+        ...quest(
+            "66058cb7c7f3584787181476",
+            "Balancing - Part 1",
+            [{ task: { id: easyMoneyTwo.id, name: easyMoneyTwo.name }, status: ["complete"] }],
+        ),
+        trader: easyMoneyTwo.trader,
+    };
+    const unrelated = {
+        ...quest("697877e0c639962b2e0cf24f", "Unconnected Ref quest"),
+        trader: easyMoneyTwo.trader,
+    };
+
+    const line = buildQuestBranchLines([root, easyMoneyTwo, balancing, unrelated]).find(
+        (candidate) => candidate.id === "ref",
+    );
+    assert.ok(line);
+    assert.deepEqual(line.nodes.map((node) => node.quest.id), [root.id, easyMoneyTwo.id, balancing.id]);
+});
+
+test("supports the PVE Easy Money root and omits Ref when neither root exists", () => {
+    const root = {
+        ...quest("6834145ebc1f443d7603c8a7", "Easy Money - Part 1 [PVE ZONE]"),
+        trader: { id: "skier", name: "Skier", normalizedName: "skier" },
+    };
+    const next = {
+        ...quest(
+            "6834158f2f0e2a7eb90b62c8",
+            "Easy Money - Part 2 [PVE ZONE]",
+            [{ task: { id: root.id, name: root.name }, status: ["complete"] }],
+        ),
+        trader: { id: "ref", name: "Ref", normalizedName: "ref" },
+    };
+    const seasonalOnly = {
+        ...quest("675c15fbf7da9792a4059871", "Provide Viewership"),
+        trader: next.trader,
+    };
+
+    assert.ok(buildQuestBranchLines([root, next]).some((line) => line.id === "ref"));
+    assert.equal(buildQuestBranchLines([seasonalOnly]).some((line) => line.id === "ref"), false);
+});
+
+test("keeps Lightkeeper quests in the BTR graph only outside seasonal mode", () => {
+    const btrStart = quest("btr-start", "BTR start");
+    const btrChoice = quest(
+        "btr-choice",
+        "BTR choice",
+        [{ task: { id: btrStart.id, name: btrStart.name }, status: ["active"] }],
+    );
+    const lightkeeperFollowUp = {
+        ...quest(
+            "lightkeeper-follow-up",
+            "Lightkeeper follow-up",
+            [{ task: { id: btrChoice.id, name: btrChoice.name }, status: ["complete"] }],
+        ),
+        trader: { id: "lightkeeper", name: "Lightkeeper", normalizedName: "lightkeeper" },
+    };
+    const quests = [btrStart, btrChoice, lightkeeperFollowUp];
+
+    const regularLine = buildQuestBranchLines(
+        prepareQuestSeriesForGameMode(quests, "regular"),
+    ).find((candidate) => candidate.id === "btr-driver");
+    const seasonalLine = buildQuestBranchLines(
+        prepareQuestSeriesForGameMode(quests, "pvp-season"),
+    ).find((candidate) => candidate.id === "btr-driver");
+
+    assert.ok(regularLine);
+    assert.ok(seasonalLine);
+    assert.equal(regularLine.nodes.some((node) => node.quest.id === lightkeeperFollowUp.id), true);
+    assert.equal(seasonalLine.nodes.some((node) => node.quest.id === lightkeeperFollowUp.id), false);
 });
 
 test("keeps each BTR route in its predecessor column", () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, GitBranch, Lock, XCircle } from "lucide-react";
-import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import { cn } from "@/lib/utils";
 import type { QuestBranchEdge, QuestBranchLine, QuestBranchNode } from "./quest-branch-graph";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
@@ -203,14 +203,16 @@ function LineIndex({ onSelect }: { onSelect: (line: QuestBranchLine) => void }) 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7">
             <div className="mx-auto max-w-4xl">
                 <div className="mb-5">
-                    <h2 className="font-serif text-xl font-semibold text-gray-100">Quest series</h2>
+                    <h2 className="font-serif text-xl font-semibold text-gray-100">Quest visualizer</h2>
                 </div>
                 {branchLines.length === 0 ? (
                     <div className="border border-white/8 bg-white/3 px-5 py-8 text-center text-sm text-gray-500">
-                        No branched quest series are available in the current quest data.
+                        No quest series are available in the current quest data.
                     </div>
                 ) : (
-                    <div className="grid gap-3 md:grid-cols-2">
+                    <section>
+                        <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-600">Special questlines</h3>
+                        <div className="grid gap-3 md:grid-cols-2">
                         {branchLines.map((line) => {
                             const activeNodes = line.nodes.filter(
                                 (node) => statusByQuestId.get(node.quest.id)?.status === "active",
@@ -229,6 +231,7 @@ function LineIndex({ onSelect }: { onSelect: (line: QuestBranchLine) => void }) 
                                     <div className="flex items-center gap-2">
                                         <GitBranch size={16} className="text-tarkov-green" />
                                         <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-100">{line.name}</h3>
+                                        <span className="border border-amber-300/20 bg-amber-300/5 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-amber-200/70">Special</span>
                                         <span className="text-[10px] uppercase tracking-wider text-gray-600">{line.nodes.length} quests</span>
                                     </div>
                                     <p className="mb-2 mt-4 text-[10px] font-semibold uppercase tracking-widest text-gray-600">
@@ -248,7 +251,8 @@ function LineIndex({ onSelect }: { onSelect: (line: QuestBranchLine) => void }) 
                                 </button>
                             );
                         })}
-                    </div>
+                        </div>
+                    </section>
                 )}
             </div>
         </div>
@@ -266,7 +270,15 @@ function TraderIcon({ node }: { node: QuestBranchNode }) {
     );
 }
 
-function SeriesGraph({ line, onBack }: { line: QuestBranchLine; onBack: () => void }) {
+function SeriesGraph({
+    line,
+    onBack,
+    focusedQuestId,
+}: {
+    line: QuestBranchLine;
+    onBack: () => void;
+    focusedQuestId: string | null;
+}) {
     const { statusByQuestId, setSelectedQuestId, setMode } = useQuestWorkspace();
     const [hoveredQuestId, setHoveredQuestId] = useState<string | null>(null);
     const [zoom, setZoom] = useState(1);
@@ -283,6 +295,9 @@ function SeriesGraph({ line, onBack }: { line: QuestBranchLine; onBack: () => vo
     const nodesById = useMemo(
         () => new Map(displayNodes.map((node) => [node.quest.id, node])),
         [displayNodes],
+    );
+    const activeQuestId = hoveredQuestId ?? (
+        focusedQuestId && nodesById.has(focusedQuestId) ? focusedQuestId : null
     );
     const maxRank = Math.max(0, ...displayNodes.map((node) => node.rank));
     const maxLane = Math.max(0, ...displayNodes.map((node) => node.lane));
@@ -447,24 +462,49 @@ function SeriesGraph({ line, onBack }: { line: QuestBranchLine; onBack: () => vo
     const width = baseNodeAreaWidth;
     const height = PADDING_Y * 2 + NODE_HEIGHT + maxRank * Y_STEP;
     const connectedQuestIds = useMemo(() => {
-        if (!hoveredQuestId) return new Set<string>();
-        const result = new Set([hoveredQuestId]);
+        if (!activeQuestId) return new Set<string>();
+        const result = new Set([activeQuestId]);
         for (const edge of line.edges) {
-            if (edge.sourceId === hoveredQuestId) result.add(edge.targetId);
-            if (edge.targetId === hoveredQuestId) result.add(edge.sourceId);
+            if (edge.sourceId === activeQuestId) result.add(edge.targetId);
+            if (edge.targetId === activeQuestId) result.add(edge.sourceId);
         }
         return result;
-    }, [hoveredQuestId, line.edges]);
+    }, [activeQuestId, line.edges]);
     const orderedEdges = useMemo(
         () => [...line.edges].sort((a, b) => {
-            const aHighlighted = hoveredQuestId && (a.sourceId === hoveredQuestId || a.targetId === hoveredQuestId);
-            const bHighlighted = hoveredQuestId && (b.sourceId === hoveredQuestId || b.targetId === hoveredQuestId);
+            const aHighlighted = activeQuestId && (a.sourceId === activeQuestId || a.targetId === activeQuestId);
+            const bHighlighted = activeQuestId && (b.sourceId === activeQuestId || b.targetId === activeQuestId);
             if (aHighlighted !== bHighlighted) return Number(aHighlighted) - Number(bHighlighted);
             const order = { failure: 0, exclusive: 1, requirement: 2 };
             return order[a.kind] - order[b.kind];
         }),
-        [hoveredQuestId, line.edges],
+        [activeQuestId, line.edges],
     );
+
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        const focusedNode = focusedQuestId ? nodesById.get(focusedQuestId) : null;
+        const entryNodes = focusedNode
+            ? [focusedNode]
+            : displayNodes.filter((node) => node.rank === Math.min(...displayNodes.map((entry) => entry.rank)));
+        if (entryNodes.length === 0) return;
+        const centerX = entryNodes.reduce(
+            (sum, node) => sum + nodePosition(node).x + NODE_WIDTH / 2,
+            0,
+        ) / entryNodes.length;
+        const focusedPosition = focusedNode ? nodePosition(focusedNode) : null;
+        const frame = requestAnimationFrame(() => {
+            container.scrollTo({
+                left: centerX * zoom - container.clientWidth / 2,
+                top: focusedPosition
+                    ? (focusedPosition.y + NODE_HEIGHT / 2) * zoom - container.clientHeight / 2
+                    : 0,
+                behavior: "smooth",
+            });
+        });
+        return () => cancelAnimationFrame(frame);
+    }, [displayNodes, focusedQuestId, line.id, nodesById, zoom]);
 
     const changeZoom = (nextZoom: number) => {
         const boundedZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(nextZoom * 10) / 10));
@@ -588,14 +628,14 @@ function SeriesGraph({ line, onBack }: { line: QuestBranchLine; onBack: () => vo
                             const geometry = edgeGeometry(edge, nodesById, routing);
                             if (!geometry) return null;
                             const color = edgeColor(edge);
-                            const isHighlighted = hoveredQuestId !== null &&
-                                (edge.sourceId === hoveredQuestId || edge.targetId === hoveredQuestId);
+                            const isHighlighted = activeQuestId !== null &&
+                                (edge.sourceId === activeQuestId || edge.targetId === activeQuestId);
                             const sourceName = nodesById.get(edge.sourceId)?.quest.name ?? edge.sourceId;
                             const targetName = nodesById.get(edge.targetId)?.quest.name ?? edge.targetId;
                             return (
                                 <g
                                     key={edge.id}
-                                    opacity={hoveredQuestId ? (isHighlighted ? 1 : 0.08) : 0.82}
+                                    opacity={activeQuestId ? (isHighlighted ? 1 : 0.08) : 0.82}
                                     className="transition-opacity duration-150"
                                 >
                                     <title>{`${sourceName} → ${targetName}: ${edge.label}`}</title>
@@ -646,7 +686,8 @@ function SeriesGraph({ line, onBack }: { line: QuestBranchLine; onBack: () => vo
                                 onBlur={() => setHoveredQuestId(null)}
                                 className={cn(
                                     "absolute flex h-[74px] w-[240px] cursor-pointer items-start gap-3 border bg-[#151619] px-3 pt-3 text-left shadow-lg transition-[opacity,filter,border-color,background-color] duration-150 hover:border-tarkov-green/50 hover:bg-[#191b1e] focus-visible:z-20",
-                                    hoveredQuestId && !connectedQuestIds.has(node.quest.id) ? "opacity-20 grayscale" : "z-10 opacity-100",
+                                    activeQuestId && !connectedQuestIds.has(node.quest.id) ? "opacity-20 grayscale" : "z-10 opacity-100",
+                                    focusedQuestId === node.quest.id && "ring-2 ring-cyan-300/70 ring-offset-2 ring-offset-[#0b0c0e]",
                                     status?.status === "completed" ? "border-tarkov-green/35" : status?.status === "failed" ? "border-red-400/40" : status?.status === "active" ? "border-sky-400/35" : "border-white/12",
                                 )}
                                 style={{ left: position.x, top: position.y }}
@@ -679,20 +720,26 @@ function SeriesGraph({ line, onBack }: { line: QuestBranchLine; onBack: () => vo
 }
 
 export function QuestVisualizerPane() {
-    const { branchLines, branchLineByQuestId, selectedQuestId } = useQuestWorkspace();
-    const selectedQuestLine = selectedQuestId ? branchLineByQuestId.get(selectedQuestId) ?? null : null;
-    const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
-    const [showIndex, setShowIndex] = useState(false);
-
-    const selectedLine = showIndex
-        ? null
-        : selectedLineId
-          ? branchLines.find((line) => line.id === selectedLineId) ?? null
-          : selectedQuestLine;
+    const {
+        branchLines,
+        visualizerLineId,
+        visualizerFocusQuestId,
+        openQuestVisualizer,
+        showQuestVisualizerIndex,
+    } = useQuestWorkspace();
+    const selectedLine = visualizerLineId
+        ? branchLines.find((line) => line.id === visualizerLineId) ?? null
+        : null;
 
     if (!selectedLine) {
-        return <LineIndex onSelect={(line) => { setSelectedLineId(line.id); setShowIndex(false); }} />;
+        return <LineIndex onSelect={(line) => openQuestVisualizer(line.id)} />;
     }
 
-    return <SeriesGraph line={selectedLine} onBack={() => setShowIndex(true)} />;
+    return (
+        <SeriesGraph
+            line={selectedLine}
+            focusedQuestId={visualizerFocusQuestId}
+            onBack={showQuestVisualizerIndex}
+        />
+    );
 }

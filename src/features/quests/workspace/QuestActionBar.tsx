@@ -11,7 +11,15 @@ import { ENABLE_MANUAL_QUEST_SYNC } from "../quest-feature-flags";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 export function QuestActionBar({ quests }: { quests: FullQuest[] }) {
-    const { searchQuery, setSearchQuery, mode, setMode, listMode, setListMode } = useQuestWorkspace();
+    const {
+        searchQuery,
+        setSearchQuery,
+        mode,
+        setMode,
+        listMode,
+        setListMode,
+        showQuestVisualizerIndex,
+    } = useQuestWorkspace();
     const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
     const setMainNavHidden = useUIStore((state) => state.setMainNavHidden);
     const [searchOpen, setSearchOpen] = useState(false);
@@ -56,7 +64,7 @@ export function QuestActionBar({ quests }: { quests: FullQuest[] }) {
                     <button type="button" onClick={() => setSyncOpen(true)} className="hidden items-center gap-2 border border-white/8 bg-white/3 px-3 py-2 text-xs text-gray-400 transition-colors hover:border-white/20 hover:text-white sm:inline-flex"><SlidersHorizontal size={14} /> Sync</button>
                 )}
                 <button type="button" onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 border border-white/8 bg-white/3 px-3 py-2 text-xs text-gray-400 transition-colors hover:border-white/20 hover:text-white"><Upload size={14} /> <span className="hidden sm:inline">Upload</span></button>
-                <button type="button" aria-pressed={mode === "visualizer"} onClick={() => setMode(mode === "visualizer" ? "details" : "visualizer")} className={cn("inline-flex items-center gap-2 border px-3 py-2 text-xs font-semibold transition-colors", mode === "visualizer" ? "border-tarkov-green/50 bg-tarkov-green/12 text-tarkov-green" : "border-white/8 bg-white/3 text-gray-300 hover:border-tarkov-green/35 hover:text-tarkov-green")}><GitBranch size={15} /> Visualizer</button>
+                <button type="button" aria-pressed={mode === "visualizer"} onClick={() => mode === "visualizer" ? setMode("details") : showQuestVisualizerIndex()} className={cn("inline-flex items-center gap-2 border px-3 py-2 text-xs font-semibold transition-colors", mode === "visualizer" ? "border-tarkov-green/50 bg-tarkov-green/12 text-tarkov-green" : "border-white/8 bg-white/3 text-gray-300 hover:border-tarkov-green/35 hover:text-tarkov-green")}><GitBranch size={15} /> Visualizer</button>
                 <button type="button" aria-pressed={mode === "planner"} onClick={() => setMode(mode === "planner" ? "details" : "planner")} className={cn("inline-flex items-center gap-2 border px-3 py-2 text-xs font-semibold transition-colors", mode === "planner" ? "border-tarkov-green/50 bg-tarkov-green/12 text-tarkov-green" : "border-white/8 bg-white/3 text-gray-300 hover:border-tarkov-green/35 hover:text-tarkov-green")}><Compass size={15} /> Raid planner</button>
             </div>
             {ENABLE_MANUAL_QUEST_SYNC && (

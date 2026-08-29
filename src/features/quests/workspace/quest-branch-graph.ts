@@ -2,6 +2,36 @@ import type { FullQuest, QuestFailConditionTaskStatus } from "../../../types";
 import { getQuestRelationTiming, type QuestRelationTiming } from "../../../lib/utils/quest-relations";
 import { statusIncludesComplete } from "../../../lib/utils/quest-failures";
 
+const LIGHTKEEPER_ACCESS_QUEST_IDS = [
+    "625d6ff5ddc94657c21a1625", // Network Provider - Part 1
+    "625d6ffaf7308432be1d44c5", // Network Provider - Part 2
+    "625d6ffcaa168e51321d69d7", // Assessment - Part 1
+    "625d6fff4149f1149b5b12c9", // Assessment - Part 2
+    "625d7001c4874104f230c0c5", // Assessment - Part 3
+    "625d70031ed3bb5bcc5bd9e5", // Key to the Tower
+    "625d7005a4eb80027c4f2e09", // Knock-Knock
+    "625d700cc48e6c62a440fab5", // Getting Acquainted
+    "63966faeea19ac7ed845db2c", // Information Source
+] as const;
+
+const LIGHTKEEPER_QUEST_IDS = [
+    "63966faeea19ac7ed845db2c", // Information Source
+    "63966fbeea19ac7ed845db2e", // Missing Informant
+    "63966fccac6f8f3c677b9d89", // Snatch
+    "63966fe7ea74a47c2d3fc0e6", // Return the Favor
+    "63966fd9ea19ac7ed845db30", // Payback
+    "63966ff54c3ef01b6f3ffad8", // Provocation
+    "639670029113f06a7c3b2377", // Following the Bread Crumbs
+    "6396700fea19ac7ed845db32", // Spotter
+    "6396701b9113f06a7c3b2379", // Make an Impression
+    "63967028c4a91c5cb76abd81", // Trouble in the Big City
+] as const;
+
+const REF_QUESTLINE_ROOT_IDS = [
+    "66058cb22cee99303f1ba067", // Easy Money - Part 1 (PVP)
+    "6834145ebc1f443d7603c8a7", // Easy Money - Part 1 [PVE ZONE]
+] as const;
+
 export type QuestBranchEdgeKind = "requirement" | "failure" | "exclusive";
 
 export interface QuestBranchEdge {
@@ -23,6 +53,7 @@ export interface QuestBranchNode {
 export interface QuestBranchLine {
     id: string;
     name: string;
+    kind: "special";
     nodes: QuestBranchNode[];
     edges: QuestBranchEdge[];
 }
@@ -246,19 +277,42 @@ export function buildQuestBranchLines(quests: readonly FullQuest[]): QuestBranch
     const questsById = new Map(quests.map((quest) => [quest.id, quest]));
     const components = connectedComponents(quests, edges);
     const lines: QuestBranchLine[] = [];
+    const requirementChildrenById = new Map<string, string[]>();
+    for (const edge of edges) {
+        if (edge.kind !== "requirement") continue;
+        requirementChildrenById.set(edge.sourceId, [
+            ...(requirementChildrenById.get(edge.sourceId) ?? []),
+            edge.targetId,
+        ]);
+    }
 
-    const makeLine = (
-        id: string,
-        name: string,
-        questIds: Iterable<string>,
+    const makeLine = ({
+        id,
+        name,
+        questIds,
+        kind,
         collapseFailureBranches = false,
-        centeredQuestId?: string,
-    ) => {
+        centeredQuestId,
+        supplementalEdges = [],
+    }: {
+        id: string;
+        name: string;
+        questIds: Iterable<string>;
+        kind: QuestBranchLine["kind"];
+        collapseFailureBranches?: boolean;
+        centeredQuestId?: string;
+        supplementalEdges?: QuestBranchEdge[];
+    }) => {
         const componentIds = new Set([...questIds].filter((questId) => questsById.has(questId)));
         if (componentIds.size < 2) return;
-        const componentEdges = edges.filter(
-            (edge) => componentIds.has(edge.sourceId) && componentIds.has(edge.targetId),
-        );
+        const componentEdges = [
+            ...edges.filter(
+                (edge) => componentIds.has(edge.sourceId) && componentIds.has(edge.targetId),
+            ),
+            ...supplementalEdges.filter(
+                (edge) => componentIds.has(edge.sourceId) && componentIds.has(edge.targetId),
+            ),
+        ];
         const initialNodes = layoutNodes(quests, componentIds, componentEdges, centeredQuestId);
         let visibleEdges = componentEdges;
         if (collapseFailureBranches) {
@@ -281,6 +335,7 @@ export function buildQuestBranchLines(quests: readonly FullQuest[]): QuestBranch
         lines.push({
             id,
             name,
+            kind,
             nodes: layoutNodes(quests, componentIds, visibleEdges, centeredQuestId),
             edges: visibleEdges,
         });
@@ -299,12 +354,13 @@ export function buildQuestBranchLines(quests: readonly FullQuest[]): QuestBranch
         }))
         .sort((a, b) => b.length - a.length)[0];
     if (btrComponent) {
-        makeLine(
-            "btr-driver",
-            "BTR Driver questline",
-            btrComponent,
-            true,
-        );
+        makeLine({
+            id: "btr-driver",
+            name: "BTR Driver questline",
+            questIds: btrComponent,
+            kind: "special",
+            collapseFailureBranches: true,
+        });
     }
 
     const collectReverseClosure = (rootId: string) => {
@@ -324,13 +380,71 @@ export function buildQuestBranchLines(quests: readonly FullQuest[]): QuestBranch
         (quest) => quest.normalizedName === "collector" || quest.name === "Collector",
     );
     if (collector) {
-        makeLine(
-            "collector",
-            "Collector questline",
-            collectReverseClosure(collector.id),
-            false,
-            collector.id,
-        );
+        makeLine({
+            id: "collector",
+            name: "Collector questline",
+            questIds: collectReverseClosure(collector.id),
+            kind: "special",
+            centeredQuestId: collector.id,
+        });
+    }
+
+    const lightkeeperAccessQuests = LIGHTKEEPER_ACCESS_QUEST_IDS.flatMap(
+        (questId) => questsById.get(questId) ?? [],
+    );
+    if (lightkeeperAccessQuests.length === LIGHTKEEPER_ACCESS_QUEST_IDS.length) {
+        const supplementalEdges = lightkeeperAccessQuests.slice(1).flatMap((target, index) => {
+            const source = lightkeeperAccessQuests[index];
+            const hasDirectRequirement = edges.some(
+                (edge) => edge.kind === "requirement" &&
+                    edge.sourceId === source.id && edge.targetId === target.id,
+            );
+            if (hasDirectRequirement) return [];
+            return [{
+                id: `special-order:lightkeeper-access:${source.id}:${target.id}`,
+                sourceId: source.id,
+                targetId: target.id,
+                kind: "requirement" as const,
+                timing: "complete" as const,
+                label: "On complete",
+            }];
+        });
+        makeLine({
+            id: "lightkeeper-access",
+            name: "Lightkeeper access questline",
+            questIds: lightkeeperAccessQuests.map((quest) => quest.id),
+            kind: "special",
+            supplementalEdges,
+        });
+    }
+
+    const lightkeeperQuestIds = LIGHTKEEPER_QUEST_IDS.filter((questId) => questsById.has(questId));
+    makeLine({
+        id: "lightkeeper",
+        name: "Lightkeeper questline",
+        questIds: lightkeeperQuestIds,
+        kind: "special",
+    });
+
+    const collectForwardClosure = (rootId: string) => {
+        const result = new Set<string>();
+        const pending = [rootId];
+        while (pending.length > 0) {
+            const questId = pending.pop()!;
+            if (result.has(questId) || !questsById.has(questId)) continue;
+            result.add(questId);
+            pending.push(...(requirementChildrenById.get(questId) ?? []));
+        }
+        return result;
+    };
+    const refRootId = REF_QUESTLINE_ROOT_IDS.find((questId) => questsById.has(questId));
+    if (refRootId) {
+        makeLine({
+            id: "ref",
+            name: "Ref questline",
+            questIds: collectForwardClosure(refRootId),
+            kind: "special",
+        });
     }
 
     return lines;

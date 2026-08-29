@@ -48,6 +48,7 @@ interface QuestWorkspaceContextValue {
     markerByQuestId: Map<string, QuestMarkerStyle>;
     branchLines: QuestBranchLine[];
     branchLineByQuestId: Map<string, QuestBranchLine>;
+    branchLinesByQuestId: Map<string, QuestBranchLine[]>;
     selectedQuestId: string | null;
     selectedQuest: FullQuest | null;
     selectedTraderIds: Set<string>;
@@ -67,6 +68,8 @@ interface QuestWorkspaceContextValue {
     listMode: QuestListMode;
     plannerMapKey: string | null;
     highlightedQuestId: string | null;
+    visualizerLineId: string | null;
+    visualizerFocusQuestId: string | null;
     setSelectedQuestId: (questId: string | null) => void;
     toggleTrader: (traderId: string) => void;
     showOnlyTrader: (traderId: string) => void;
@@ -90,6 +93,8 @@ interface QuestWorkspaceContextValue {
     selectPlannerMap: (mapKey: string) => void;
     clearPlannerMap: () => void;
     setHighlightedQuestId: (questId: string | null) => void;
+    openQuestVisualizer: (lineId: string, focusQuestId?: string | null) => void;
+    showQuestVisualizerIndex: () => void;
 }
 
 const QuestWorkspaceContext = createContext<QuestWorkspaceContextValue | null>(null);
@@ -112,6 +117,8 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
     const [retainedCompletedQuestIds, setRetainedCompletedQuestIds] = useState<Set<string>>(() => new Set());
     const [plannerMapKey, setPlannerMapKey] = useState<string | null>(null);
     const [highlightedQuestId, setHighlightedQuestId] = useState<string | null>(null);
+    const [visualizerLineId, setVisualizerLineId] = useState<string | null>(null);
+    const [visualizerFocusQuestId, setVisualizerFocusQuestId] = useState<string | null>(null);
     const store = useUserStore(
         useShallow((state) => ({
             playerLevel: state.playerLevel,
@@ -222,6 +229,15 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
         }
         return result;
     }, [branchLines]);
+    const branchLinesByQuestId = useMemo(() => {
+        const result = new Map<string, QuestBranchLine[]>();
+        for (const line of branchLines) {
+            for (const node of line.nodes) {
+                result.set(node.quest.id, [...(result.get(node.quest.id) ?? []), line]);
+            }
+        }
+        return result;
+    }, [branchLines]);
     const normalizedSearch = searchQuery.trim().toLowerCase();
     const onlyActiveSelected = selectedStatuses.size === 1 && selectedStatuses.has("active");
     const filteredQuests = useMemo(() => quests.filter((quest) => {
@@ -282,6 +298,18 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
         setMode("planner");
     };
 
+    const openQuestVisualizer = (lineId: string, focusQuestId: string | null = null) => {
+        setVisualizerLineId(lineId);
+        setVisualizerFocusQuestId(focusQuestId);
+        setMode("visualizer");
+    };
+
+    const showQuestVisualizerIndex = () => {
+        setVisualizerLineId(null);
+        setVisualizerFocusQuestId(null);
+        setMode("visualizer");
+    };
+
     return (
         <QuestWorkspaceContext.Provider value={{
             quests,
@@ -294,6 +322,7 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             markerByQuestId,
             branchLines,
             branchLineByQuestId,
+            branchLinesByQuestId,
             selectedQuestId,
             selectedQuest: selectedQuestId ? questsById.get(selectedQuestId) ?? null : null,
             selectedTraderIds,
@@ -313,6 +342,8 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             listMode,
             plannerMapKey,
             highlightedQuestId,
+            visualizerLineId,
+            visualizerFocusQuestId,
             setSelectedQuestId,
             toggleTrader: (id) => { clearRetainedCompletedQuests(); store.setSelectedTraderIds([...toggleSetValue(selectedTraderIds, id)]); },
             showOnlyTrader: (id) => {
@@ -359,6 +390,8 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
                 setPlannerMapKey(null);
             },
             setHighlightedQuestId,
+            openQuestVisualizer,
+            showQuestVisualizerIndex,
         }}>
             {children}
         </QuestWorkspaceContext.Provider>

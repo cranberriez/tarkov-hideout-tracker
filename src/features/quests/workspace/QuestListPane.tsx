@@ -473,11 +473,13 @@ function QuestListItem({
                         {quest.name}
                     </h3>
                     {branchLine && (
-                        <GitBranch
-                            size={13}
-                            className="mt-1 shrink-0 text-tarkov-green/70"
+                        <span
+                            className="flex h-7 w-7 shrink-0 items-center justify-center text-tarkov-green/70"
                             aria-label={`Part of ${branchLine.name}`}
-                        />
+                            title={`Part of ${branchLine.name}`}
+                        >
+                            <GitBranch size={14} />
+                        </span>
                     )}
                     <div
                         className="flex shrink-0 items-center gap-0.5"

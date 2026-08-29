@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useDeferredValue, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Bug, CheckCircle2, Circle, Eye, EyeOff, ExternalLink, Flag, MapPinned, Pin, RotateCcw, X, XCircle } from "lucide-react";
+import { AlertTriangle, Bug, CheckCircle2, Circle, Eye, EyeOff, ExternalLink, Flag, GitBranch, MapPinned, Pin, RotateCcw, X, XCircle } from "lucide-react";
 import type { MapOverlayMarker } from "@/features/maps/map-types";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
@@ -48,7 +48,17 @@ export function QuestDetailsPane() {
         requestKey: number;
     } | null>(null);
     const mapSectionRef = useRef<HTMLElement>(null);
-    const { quests, selectedQuest: quest, statusByQuestId, questsById, maps, setSelectedQuestId, retainQuestAfterCompletion } = useQuestWorkspace();
+    const {
+        quests,
+        selectedQuest: quest,
+        statusByQuestId,
+        questsById,
+        maps,
+        branchLinesByQuestId,
+        setSelectedQuestId,
+        retainQuestAfterCompletion,
+        openQuestVisualizer,
+    } = useQuestWorkspace();
     const { leadsToByQuestId, onItemClick, requestToggleQuestCompletion, requestFailQuest, requestResetQuestStatus } = useQuestsContext();
     const pinned = useUserStore((state) => quest ? !!state.pinnedQuests[quest.id] : false);
     const hidden = useUserStore((state) => quest ? !!state.ignoredQuests[quest.id] : false);
@@ -86,6 +96,9 @@ export function QuestDetailsPane() {
     }
 
     const status = statusByQuestId.get(quest.id)!;
+    const visualizerLines = [...(branchLinesByQuestId.get(quest.id) ?? [])].sort(
+        (left, right) => Number(left.kind === "special") - Number(right.kind === "special"),
+    );
     const multipleChoiceQuests = (multipleChoiceGroups.get(quest.id) ?? [])
         .flatMap((questId) => questsById.get(questId) ?? []);
     const essential = isEssentialQuest(quest.id);
@@ -169,7 +182,7 @@ export function QuestDetailsPane() {
 
     return (
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#0b0c0e]">
-            <header className="relative min-h-64 shrink-0 overflow-hidden border-b border-white/8 bg-[#15171a] px-6 py-8 sm:px-9 sm:py-10">
+            <header className="relative z-10 min-h-64 shrink-0 overflow-visible border-b border-white/8 bg-[#15171a] px-6 py-8 sm:px-9 sm:py-10">
                 {quest.taskImageLink && (
                     <div
                         className="pointer-events-none absolute inset-y-0 right-0"
@@ -208,6 +221,38 @@ export function QuestDetailsPane() {
                         {status.terminal === "failed" && <button type="button" onClick={() => requestResetQuestStatus(quest.id)} className={cn(questActionButtonClass, "border-white/15 bg-white/7 text-gray-300 hover:border-white/30 hover:bg-white/12 hover:text-white")}><RotateCcw size={14} /> Reset</button>}
                         <button type="button" onClick={() => togglePinnedQuest(quest.id)} className={cn(questActionButtonClass, "border-white/15 bg-white/7 text-gray-400 hover:border-sky-400/40 hover:bg-sky-400/12 hover:text-sky-200", pinned && "border-sky-400/35 bg-sky-400/12 text-sky-300")}><Pin size={14} className={pinned ? "fill-current" : ""} />{pinned ? "Unpin" : "Pin"}</button>
                         <button type="button" onClick={() => toggleIgnoredQuest(quest.id)} className={cn(questActionButtonClass, "border-white/15 bg-white/7 text-gray-400 hover:border-violet-400/40 hover:bg-violet-400/12 hover:text-violet-200", hidden && "border-violet-400/35 bg-violet-400/12 text-violet-300")}>{hidden ? <Eye size={14} /> : <EyeOff size={14} />}{hidden ? "Show" : "Hide"}</button>
+                        {visualizerLines.length === 1 && (
+                            <button
+                                type="button"
+                                onClick={() => openQuestVisualizer(visualizerLines[0].id, quest.id)}
+                                className={cn(questActionButtonClass, "border-cyan-400/25 bg-cyan-400/8 text-cyan-200 hover:border-cyan-300/50 hover:bg-cyan-400/15")}
+                            >
+                                <GitBranch size={14} /> Visualize
+                            </button>
+                        )}
+                        {visualizerLines.length > 1 && (
+                            <details className="group relative">
+                                <summary className={cn(questActionButtonClass, "cursor-pointer list-none border-cyan-400/25 bg-cyan-400/8 text-cyan-200 hover:border-cyan-300/50 hover:bg-cyan-400/15 [&::-webkit-details-marker]:hidden")}>
+                                    <GitBranch size={14} /> Visualize
+                                </summary>
+                                <div className="absolute left-0 top-full z-[100] mt-1 min-w-56 border border-white/12 bg-[#111214] p-1 shadow-2xl">
+                                    {visualizerLines.map((line) => (
+                                        <button
+                                            key={line.id}
+                                            type="button"
+                                            onClick={(event) => {
+                                                event.currentTarget.closest("details")?.removeAttribute("open");
+                                                openQuestVisualizer(line.id, quest.id);
+                                            }}
+                                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 transition-colors hover:bg-white/8 hover:text-white"
+                                        >
+                                            <span className="min-w-0 flex-1 truncate">{line.name}</span>
+                                            {line.kind === "special" && <span className="text-[9px] font-semibold uppercase tracking-wider text-amber-300/70">Special</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                            </details>
+                        )}
                         {quest.wikiLink && <a href={quest.wikiLink} target="_blank" rel="noopener noreferrer" className={cn(questActionButtonClass, "border-white/15 bg-white/7 text-gray-400 hover:border-white/30 hover:bg-white/12 hover:text-white")}>Quest wiki <ExternalLink size={12} /></a>}
                     </div>
                 </div>

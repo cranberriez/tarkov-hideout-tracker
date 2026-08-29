@@ -489,13 +489,31 @@ pane must not infer those fields from objective text.
 ## Quest series visualizer
 
 The quest workspace action bar includes a **Visualizer** mode immediately before
-the Raid Planner. Its index is intentionally limited to two useful progression
-maps instead of listing every connected quest chain: **BTR Driver** and
-**Collector**. Ordinary trader chains are deliberately omitted.
+the Raid Planner. Its index contains only five explicitly supported special
+graphs: **BTR Driver**, **Collector**, **Lightkeeper access**, **Lightkeeper**, and
+**Ref**.
+Ordinary named quest series and automatically inferred series are not visualized.
 
 Collector is generated as a strict reverse prerequisite closure from the Collector
 quest, so unrelated quests that happen to follow one of its prerequisites are not
-included.
+included. Lightkeeper access is an explicit ordered line from Network Provider -
+Part 1 through Information Source, the first Lightkeeper-issued quest. When provider
+data omits a direct relationship between adjacent access-line members, the reviewed
+order supplies a display-only **On complete** progression link. This does not change
+quest availability or progress data. The Lightkeeper graph is explicitly limited
+to the connected progression from Information Source through Trouble in the Big
+City; unrelated Lightkeeper quests are omitted.
+
+The Ref graph is a strict forward prerequisite closure from the mode-specific
+Skier quest Easy Money - Part 1. It includes the connected Ref progression and
+its cross-trader branches. The PVP and PVE root IDs are explicit, so the graph is
+not inferred from names and does not appear in KORD/seasonal mode where neither
+root exists.
+
+KORD/seasonal mode removes Lightkeeper-issued and Lightkeeper-required quests before
+graphs are built. As a result, both Lightkeeper graphs are absent there, and
+Lightkeeper quests appear inside the connected BTR Driver graph only in non-seasonal
+modes.
 
 Requirement lines are labeled by their actual status timing: **On accept**, **On
 complete**, **On fail**, or **On complete or fail**. On-accept links are blue,
@@ -526,10 +544,13 @@ rather than being merged by name. The BTR view keeps one representative failure
 route per source quest, condensing repeated branch-wide auto-failure links that
 otherwise obscure the progression graph.
 
-Quests belonging to one of the curated series receive a small branch icon in the quest
-list. Opening the visualizer with one of those quests selected goes directly to
-its series. With no matching selection, the visualizer shows a series index whose
-questline cards open the complete graph. Each card lists currently active quests,
+Quests belonging to a visualizable series receive a small branch icon in the
+quest list and a **Visualize** action in quest details. The action opens the
+chosen series, centers the originating quest, and keeps that quest plus its
+direct connections highlighted until another quest is hovered. A quest may
+belong to more than one graph; in that case the action presents a series choice
+and labels special graphs. The global Visualizer action opens the series index,
+whose full cards open their graphs. Each card lists currently active quests,
 falling back to the starting quests when none are active.
 
 ## QuestCard Anatomy
