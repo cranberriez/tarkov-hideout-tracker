@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useDeferredValue, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useMemo, useRef, useState } from "react";
 import { Bug, CheckCircle2, Circle, Eye, EyeOff, ExternalLink, Flag, MapPinned, Pin, RotateCcw, X, XCircle } from "lucide-react";
 import type { MapOverlayMarker } from "@/features/maps/map-types";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -36,6 +36,8 @@ const LazyMapViewer = dynamic(
 
 export function QuestDetailsPane() {
     const [showDebug, setShowDebug] = useState(false);
+    const [objectiveFloorNames, setObjectiveFloorNames] = useState<ReadonlyMap<string, string[]>>(new Map());
+    const [hoveredObjectiveId, setHoveredObjectiveId] = useState<string | null>(null);
     const [mapTarget, setMapTarget] = useState<{
         questId: string;
         mapKey: string;
@@ -61,6 +63,9 @@ export function QuestDetailsPane() {
         [quest],
     );
     const deferredMapData = useDeferredValue(questMapData);
+    const handleObjectiveFloorsChange = useCallback((floors: ReadonlyMap<string, string[]>) => {
+        setObjectiveFloorNames(floors);
+    }, []);
 
     if (!quest) {
         return (
@@ -318,10 +323,13 @@ export function QuestDetailsPane() {
                                         ? "Multiple spawns"
                                         : "Multiple locations"
                                     : null;
+                                const floorNames = objectiveFloorNames.get(objective.id) ?? [];
                                 const isFocused = focusedObjectiveId === objective.id;
                                 return (
                                     <div
                                         key={objective.id}
+                                        onMouseEnter={() => { if (objectiveMaps.length > 0) setHoveredObjectiveId(objective.id); }}
+                                        onMouseLeave={() => setHoveredObjectiveId(null)}
                                         className={cn(
                                             objectiveMaps.length > 0 && "border-l-2 bg-white/[0.015] py-3 pl-4 pr-3",
                                             isFocused && "bg-white/[0.045]",
@@ -343,6 +351,11 @@ export function QuestDetailsPane() {
                                                         ))}
                                                     </span>
                                                     Mapped objective
+                                                    {floorNames.map((floorName) => (
+                                                        <span key={floorName} className="border border-sky-300/20 bg-sky-300/8 px-1.5 py-0.5 text-[9px] tracking-[0.14em] text-sky-200/80">
+                                                            {floorName}
+                                                        </span>
+                                                    ))}
                                                     {multipleLocationLabel && (
                                                         <span className="border border-amber-300/20 bg-amber-300/8 px-1.5 py-0.5 text-[9px] tracking-[0.14em] text-amber-200/80">
                                                             {multipleLocationLabel}
@@ -426,9 +439,11 @@ export function QuestDetailsPane() {
                             <LazyMapViewer
                                 mapKey={panelSelectedMap.key}
                                 markers={panelMarkers}
-                                highlightedObjectiveId={!isMapUpdatePending ? focusedObjectiveId : null}
+                                compactAttribution
+                                highlightedObjectiveId={!isMapUpdatePending ? hoveredObjectiveId ?? focusedObjectiveId : null}
                                 focusedObjectiveId={!isMapUpdatePending ? focusedObjectiveId : null}
                                 focusRequestKey={!isMapUpdatePending ? focusRequestKey : null}
+                                onObjectiveFloorsChange={handleObjectiveFloorsChange}
                                 onMarkerSelect={(marker) => {
                                     const objectiveId = marker.objectiveIds?.[0];
                                     if (objectiveId) showObjectiveOnMap(panelSelectedMap.key, objectiveId);

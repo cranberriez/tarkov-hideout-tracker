@@ -72,6 +72,21 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
                 rememberedView={rememberedView}
                 onViewChange={(view) => onViewChange(selectedMap.key, view)}
                 highlightedQuestId={highlightedQuestId}
+                topRightContent={(
+                    <div className="max-w-64 border border-white/10 bg-black/80 px-3 py-2 text-[10px] shadow-xl backdrop-blur-sm">
+                        <p className="font-semibold uppercase tracking-wider text-gray-300">
+                            {markers.length} mapped location{markers.length === 1 ? "" : "s"}
+                        </p>
+                        {unavailableQuests.length > 0 && (
+                            <details className="mt-1 text-gray-500">
+                                <summary className="cursor-pointer hover:text-gray-300">Location unavailable · {unavailableQuests.length}</summary>
+                                <ul className="mt-2 max-h-36 space-y-1 overflow-y-auto border-t border-white/8 pt-2">
+                                    {unavailableQuests.map((quest) => <li key={quest.id}>{quest.name}</li>)}
+                                </ul>
+                            </details>
+                        )}
+                    </div>
+                )}
                 onMarkerFocus={(marker) => focusQuest(marker?.questId ?? null)}
                 onMarkerSelect={(marker) => {
                     if (!marker.questId) return;
@@ -86,19 +101,6 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
             >
                 <ChevronLeft size={14} /> {selectedMap.name}
             </button>
-            <div className="absolute right-3 top-3 z-30 max-w-64 border border-white/10 bg-black/80 px-3 py-2 text-[10px] shadow-xl backdrop-blur-sm">
-                <p className="font-semibold uppercase tracking-wider text-gray-300">
-                    {markers.length} mapped location{markers.length === 1 ? "" : "s"}
-                </p>
-                {unavailableQuests.length > 0 && (
-                    <details className="mt-1 text-gray-500">
-                        <summary className="cursor-pointer hover:text-gray-300">Location unavailable · {unavailableQuests.length}</summary>
-                        <ul className="mt-2 max-h-36 space-y-1 overflow-y-auto border-t border-white/8 pt-2">
-                            {unavailableQuests.map((quest) => <li key={quest.id}>{quest.name}</li>)}
-                        </ul>
-                    </details>
-                )}
-            </div>
         </div>
     );
 }

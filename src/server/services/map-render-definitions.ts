@@ -53,29 +53,47 @@ function reduceDefinition(group: UnknownRecord, candidate: UnknownRecord): MapRe
     const key = typeof candidate.key === "string" ? candidate.key : null;
     const normalizedName = typeof group.normalizedName === "string" ? group.normalizedName : null;
     const bounds = toBounds(candidate.bounds);
+    const svgBounds = toBounds(candidate.svgBounds) ?? undefined;
     const transform = numberTuple(candidate.transform, 4);
     const svgPath = typeof candidate.svgPath === "string" ? candidate.svgPath : null;
     if (!key || !normalizedName || !bounds || !transform || !svgPath) return null;
 
     const baseLayer = typeof candidate.svgLayer === "string" ? candidate.svgLayer : "Ground_Level";
-    const heightRange = numberTuple(candidate.heightRange, 2) ?? undefined;
+    const heightRange = numberTuple(candidate.heightRange, 2) ??
+        numberTuple(candidate._heightRange, 2) ??
+        undefined;
+    const groundLowerBound = heightRange ? Math.min(...heightRange) : 0;
     const floors: MapFloorDefinition[] = [{
         id: baseLayer,
         name: "Ground",
         svgLayer: baseLayer,
         isBase: true,
+        isDefaultVisible: true,
+        position: "base",
+        stackOrder: 0,
         heightRange,
         extents: heightRange ? [{ height: heightRange, bounds: [bounds] }] : [],
     }];
     if (Array.isArray(candidate.layers)) {
-        for (const rawLayer of candidate.layers) {
+        for (const [layerIndex, rawLayer] of candidate.layers.entries()) {
             if (!isRecord(rawLayer) || typeof rawLayer.svgLayer !== "string") continue;
+            const name = typeof rawLayer.name === "string" ? rawLayer.name : rawLayer.svgLayer;
+            const extents = toExtents(rawLayer.extents);
+            const minimumLayerHeight = Math.min(
+                ...extents.map((extent) => Math.min(...extent.height)),
+            );
+            const isBelow = groundLowerBound <= -999
+                ? minimumLayerHeight <= -999
+                : minimumLayerHeight < groundLowerBound;
             floors.push({
                 id: rawLayer.svgLayer,
-                name: typeof rawLayer.name === "string" ? rawLayer.name : rawLayer.svgLayer,
+                name,
                 svgLayer: rawLayer.svgLayer,
                 isBase: false,
-                extents: toExtents(rawLayer.extents),
+                isDefaultVisible: rawLayer.show === true,
+                position: isBelow ? "below" : "above",
+                stackOrder: layerIndex + 1,
+                extents,
             });
         }
     }
@@ -87,6 +105,7 @@ function reduceDefinition(group: UnknownRecord, candidate: UnknownRecord): MapRe
             ? candidate.altMaps.filter((alias): alias is string => typeof alias === "string")
             : [],
         bounds,
+        svgBounds,
         transform,
         coordinateRotation: typeof candidate.coordinateRotation === "number" ? candidate.coordinateRotation : 0,
         minZoom: typeof candidate.minZoom === "number" ? candidate.minZoom : 1,

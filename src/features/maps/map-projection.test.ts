@@ -24,3 +24,16 @@ test("applies Factory's 90-degree rotation before its transform", () => {
     assert.ok(point.percentX >= 0 && point.percentX <= 100);
     assert.ok(point.percentY >= 0 && point.percentY <= 100);
 });
+
+test("normalizes against dedicated SVG bounds when artwork differs from gameplay bounds", () => {
+    const point = worldToMapPoint(
+        { x: 0, y: 0, z: 0 },
+        {
+            bounds: [[100, -100], [-100, 100]],
+            svgBounds: [[100, -50], [-100, 150]],
+            transform: [1, 0, 1, 0],
+            coordinateRotation: 0,
+        },
+    );
+    assert.equal(point.percentY, 75);
+});

@@ -9,6 +9,25 @@ export interface MapViewPoint {
     y: number;
 }
 
+export interface MapViewSize {
+    width: number;
+    height: number;
+}
+
+export function constrainMapView(
+    view: MapViewTransform,
+    stage: MapViewSize,
+    viewport: MapViewSize,
+): MapViewTransform {
+    const maxX = Math.max(0, (stage.width * view.scale - viewport.width) / 2);
+    const maxY = Math.max(0, (stage.height * view.scale - viewport.height) / 2);
+    return {
+        ...view,
+        x: maxX === 0 ? 0 : Math.min(maxX, Math.max(-maxX, view.x)),
+        y: maxY === 0 ? 0 : Math.min(maxY, Math.max(-maxY, view.y)),
+    };
+}
+
 export function zoomViewAroundPoint(
     view: MapViewTransform,
     factor: number,

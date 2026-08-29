@@ -395,9 +395,21 @@ combined. All locations for one objective reuse that objective group's symbol;
 multi-point objectives show **Multiple spawns** or **Multiple locations** beside
 the mapped cue. **Show on map** switches the viewer to the objective's map and fits
 its known point or points; quests spanning multiple maps expose compact map tabs.
+Mapped objective rows also show resolved floor names such as **Ground**,
+**3rd Floor**, or **Bunkers**, derived from each location's XYZ position and the
+selected map's height and local-bound metadata.
 Factory and Night Factory aliases resolve to the daytime Factory map. Objectives
 without precise coordinates keep their normal presentation and do not receive
 synthetic locations.
+
+The shared viewer keeps Ground fixed and exposes optional named SVG layers in a
+manual switcher ordered from highest to lowest Y range. Several optional layers
+can remain visible together. Upper floors leave Ground fully opaque; numerically
+below-ground layers use a strong Ground fade. Objective markers and outlines stay
+visible regardless of artwork-layer selection. Hovering or focusing an objective
+temporarily switches the optional artwork to its resolved layer, then restores
+the user's selection. The switcher summarizes visible layers and shows each
+layer's current marker count.
 
 The detail map viewer is a client-only lazy chunk. Per-quest marker data is
 memoized, and map updates are deferred during quest selection so the textual

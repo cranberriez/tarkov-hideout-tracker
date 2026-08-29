@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LocateFixed, Minus, Plus } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { ChevronDown, Layers3, LocateFixed, Minus, Plus } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { getProjectedMapAspectRatio, worldToMapPoint } from "./map-projection";
+import { orderMapFloorsTopToBottom, resolveMapFloors } from "./map-floor-resolution";
 import type { MapOverlayMarker, MapRenderDefinition } from "./map-types";
-import { zoomViewAroundPoint, type MapViewTransform } from "./map-view-transform";
+import { constrainMapView, zoomViewAroundPoint, type MapViewTransform } from "./map-view-transform";
 
 interface MapViewerProps {
     mapKey: string;
@@ -19,10 +20,13 @@ interface MapViewerProps {
     focusRequestKey?: string | number | null;
     onMarkerSelect?: (marker: MapOverlayMarker) => void;
     onMarkerFocus?: (marker: MapOverlayMarker | null) => void;
+    onObjectiveFloorsChange?: (floors: ReadonlyMap<string, string[]>) => void;
+    topRightContent?: ReactNode;
+    compactAttribution?: boolean;
 }
 
 const MIN_SCALE = 1;
-const MAX_SCALE = 5;
+const MAX_SCALE = 7;
 
 export function MapViewer({
     mapKey,
@@ -35,6 +39,9 @@ export function MapViewer({
     focusRequestKey,
     onMarkerSelect,
     onMarkerFocus,
+    onObjectiveFloorsChange,
+    topRightContent,
+    compactAttribution = false,
 }: MapViewerProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const dragRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
@@ -49,6 +56,11 @@ export function MapViewer({
         value: MapViewTransform;
         focusRequestKey: string | number | null;
     } | null>(null);
+    const [floorVisibilityState, setFloorVisibilityState] = useState<{
+        mapKey: string;
+        values: Record<string, boolean>;
+    }>({ mapKey, values: {} });
+    const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -88,12 +100,62 @@ export function MapViewer({
             return {
                 marker,
                 point,
+                floors: resolveMapFloors(marker.position, definition),
                 outlines: marker.outlines?.map((outline) =>
                     outline.map((position) => worldToMapPoint(position, definition)),
                 ) ?? [],
             };
         });
     }, [definition, markers]);
+
+    const floorVisibilityOverrides = useMemo(
+        () => floorVisibilityState.mapKey === mapKey ? floorVisibilityState.values : {},
+        [floorVisibilityState, mapKey],
+    );
+    const layerFocus = useMemo(() => {
+        const objectiveId = highlightedObjectiveId ?? focusedObjectiveId;
+        const entries = hoveredMarkerId
+            ? projectedMarkers.filter(({ marker }) => marker.id === hoveredMarkerId)
+            : objectiveId
+              ? projectedMarkers.filter(({ marker }) => marker.objectiveIds?.includes(objectiveId))
+              : [];
+        return {
+            active: entries.length > 0,
+            floorIds: new Set(entries.flatMap(({ floors }) => floors.map(({ floor }) => floor.id))),
+        };
+    }, [focusedObjectiveId, highlightedObjectiveId, hoveredMarkerId, projectedMarkers]);
+    const visibleFloors = useMemo(() => definition?.floors
+        .filter((floor) => floor.isBase || (
+            layerFocus.active
+                ? layerFocus.floorIds.has(floor.id)
+                : (floorVisibilityOverrides[floor.id] ?? floor.isDefaultVisible)
+        ))
+        .sort((left, right) => left.stackOrder - right.stackOrder) ?? [],
+    [definition, floorVisibilityOverrides, layerFocus]);
+    const visibleFloorIds = useMemo(() => new Set(visibleFloors.map((floor) => floor.id)), [visibleFloors]);
+    const orderedFloors = useMemo(
+        () => definition ? orderMapFloorsTopToBottom(definition.floors) : [],
+        [definition],
+    );
+    const layerImageUrl = useMemo(() => {
+        if (!definition) return "";
+        const params = new URLSearchParams();
+        visibleFloors.forEach((floor) => params.append("layer", floor.id));
+        return `${definition.svgPath}?${params.toString()}`;
+    }, [definition, visibleFloors]);
+
+    useEffect(() => {
+        if (!onObjectiveFloorsChange) return;
+        const floorNamesByObjective = new Map<string, Set<string>>();
+        projectedMarkers.forEach(({ marker, floors }) => marker.objectiveIds?.forEach((objectiveId) => {
+            const names = floorNamesByObjective.get(objectiveId) ?? new Set<string>();
+            floors.forEach(({ floor }) => names.add(floor.name));
+            floorNamesByObjective.set(objectiveId, names);
+        }));
+        onObjectiveFloorsChange(new Map(
+            [...floorNamesByObjective].map(([objectiveId, names]) => [objectiveId, [...names]]),
+        ));
+    }, [onObjectiveFloorsChange, projectedMarkers]);
 
     const stageSize = useMemo(() => {
         if (!definition || !containerSize.width || !containerSize.height) return { width: 0, height: 0 };
@@ -151,15 +213,20 @@ export function MapViewer({
         manualView.focusRequestKey === (focusRequestKey ?? null)
         ? manualView.value
         : null;
-    const view = currentManualView ?? focusedView ?? rememberedView ?? fittedView;
+    const unconstrainedView = currentManualView ?? focusedView ?? rememberedView ?? fittedView;
+    const view = useMemo(
+        () => constrainMapView(unconstrainedView, stageSize, containerSize),
+        [containerSize, stageSize, unconstrainedView],
+    );
     const fitMarkers = useCallback(() => {
         setManualView({ key: viewKey, value: fittedView, focusRequestKey: focusRequestKey ?? null });
         onViewChange?.(null);
     }, [fittedView, focusRequestKey, onViewChange, viewKey]);
 
     const updateView = (value: MapViewTransform) => {
-        setManualView({ key: viewKey, value, focusRequestKey: focusRequestKey ?? null });
-        onViewChange?.(value);
+        const constrainedValue = constrainMapView(value, stageSize, containerSize);
+        setManualView({ key: viewKey, value: constrainedValue, focusRequestKey: focusRequestKey ?? null });
+        onViewChange?.(constrainedValue);
     };
 
     const zoomBy = (factor: number, focalPoint = { x: 0, y: 0 }) => {
@@ -198,7 +265,7 @@ export function MapViewer({
                 });
             }}
             onPointerDown={(event) => {
-                if ((event.target as HTMLElement).closest("button")) return;
+                if ((event.target as HTMLElement).closest("button, summary, a")) return;
                 dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
                 event.currentTarget.setPointerCapture(event.pointerId);
             }}
@@ -223,7 +290,8 @@ export function MapViewer({
                 }}
             >
                 <Image
-                    src={definition.svgPath}
+                    key={layerImageUrl}
+                    src={layerImageUrl}
                     alt=""
                     fill
                     unoptimized
@@ -247,15 +315,15 @@ export function MapViewer({
                         )),
                     )}
                 </svg>
-                {projectedMarkers.map(({ marker, point }) => (
+                {projectedMarkers.map(({ marker, point, floors }) => (
                     <button
                         type="button"
                         key={marker.id}
                         aria-label={`${marker.label}: ${marker.title}: ${marker.descriptions.join("; ")}`}
-                        onMouseEnter={() => onMarkerFocus?.(marker)}
-                        onMouseLeave={() => onMarkerFocus?.(null)}
-                        onFocus={() => onMarkerFocus?.(marker)}
-                        onBlur={() => onMarkerFocus?.(null)}
+                        onMouseEnter={() => { setHoveredMarkerId(marker.id); onMarkerFocus?.(marker); }}
+                        onMouseLeave={() => { setHoveredMarkerId(null); onMarkerFocus?.(null); }}
+                        onFocus={() => { setHoveredMarkerId(marker.id); onMarkerFocus?.(marker); }}
+                        onBlur={() => { setHoveredMarkerId(null); onMarkerFocus?.(null); }}
                         onClick={() => onMarkerSelect?.(marker)}
                         className={cn(
                             "group absolute z-20 flex h-7 min-w-7 items-center justify-center rounded-full border-2 bg-black/90 px-1.5 font-mono text-[11px] font-bold shadow-xl outline-none hover:z-[100] focus-visible:z-[100]",
@@ -274,6 +342,9 @@ export function MapViewer({
                         {marker.label}
                         <span className="pointer-events-none absolute bottom-full left-1/2 z-[110] mb-2 hidden w-72 -translate-x-1/2 border border-white/12 bg-[#111214]/95 p-3 text-left font-sans font-normal shadow-2xl backdrop-blur group-hover:block group-focus-visible:block">
                             <span className="block text-xs font-semibold text-white">{marker.title}</span>
+                            <span className="mt-1 block text-[9px] font-semibold uppercase tracking-wider text-gray-500">
+                                {floors.map(({ floor }) => floor.name).join(" · ")}
+                            </span>
                             <span className="mt-2 block space-y-1 text-[10px] leading-relaxed text-gray-400">
                                 {marker.descriptions.map((description) => (
                                     <span key={description} className="block">{description}</span>
@@ -284,15 +355,77 @@ export function MapViewer({
                 ))}
             </div>
 
+            {definition.floors.length > 1 && (
+                <details className="group absolute bottom-3 left-3 z-30 w-52 border border-white/10 bg-black/85 text-xs shadow-xl backdrop-blur-sm">
+                    <summary
+                        className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-gray-300 hover:text-white"
+                        title={`Visible layers: ${visibleFloors.map((floor) => floor.name).join(", ")}`}
+                    >
+                        <Layers3 size={14} />
+                        <span className="min-w-0 flex-1 truncate">
+                            {visibleFloors.length === 1 ? visibleFloors[0].name : `${visibleFloors.length} layers visible`}
+                        </span>
+                        <ChevronDown size={13} className="shrink-0 text-gray-500 transition-transform group-open:rotate-180" />
+                    </summary>
+                    <div className="border-t border-white/10 p-2">
+                        {orderedFloors.map((floor) => {
+                            const isVisible = visibleFloorIds.has(floor.id);
+                            const markerCount = projectedMarkers.filter(({ floors }) =>
+                                floors.some(({ floor: markerFloor }) => markerFloor.id === floor.id),
+                            ).length;
+                            if (floor.isBase) {
+                                return (
+                                    <div key={floor.id} className="flex w-full items-center gap-2 px-2 py-2 text-gray-300">
+                                        <span className="h-2 w-2 rounded-full border border-tarkov-green bg-tarkov-green" />
+                                        <span className="flex-1">{floor.name}</span>
+                                        <span className="text-[9px] uppercase tracking-wider text-gray-600">Always</span>
+                                    </div>
+                                );
+                            }
+                            return (
+                                <button
+                                    type="button"
+                                    key={floor.id}
+                                    aria-pressed={isVisible}
+                                    onClick={() => setFloorVisibilityState((current) => ({
+                                        mapKey,
+                                        values: {
+                                            ...(current.mapKey === mapKey ? current.values : {}),
+                                            [floor.id]: !isVisible,
+                                        },
+                                    }))}
+                                    className="flex w-full items-center gap-2 px-2 py-2 text-left text-gray-400 hover:bg-white/5 hover:text-white"
+                                >
+                                    <span className={cn("h-2 w-2 rounded-full border", isVisible ? "border-tarkov-green bg-tarkov-green" : "border-gray-600")} />
+                                    <span className="flex-1">{floor.name}</span>
+                                    {markerCount > 0 && <span className="text-[9px] text-gray-600">{markerCount}</span>}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </details>
+            )}
+
             <div className="absolute bottom-3 right-3 z-20 flex border border-white/10 bg-black/80 shadow-xl backdrop-blur-sm">
                 <button type="button" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.25)} className="p-2 text-gray-300 hover:text-white"><Minus size={15} /></button>
                 <button type="button" aria-label="Fit quest locations" onClick={fitMarkers} className="border-x border-white/10 p-2 text-gray-300 hover:text-white"><LocateFixed size={15} /></button>
                 <button type="button" aria-label="Zoom in" onClick={() => zoomBy(1.25)} className="p-2 text-gray-300 hover:text-white"><Plus size={15} /></button>
             </div>
-            <p className="absolute bottom-3 left-3 z-20 max-w-[60%] bg-black/70 px-2 py-1 text-[9px] leading-relaxed text-gray-500 backdrop-blur-sm">
-                Map by <a href={definition.attribution.authorLink} target="_blank" rel="noreferrer" className="text-gray-300 hover:text-white">{definition.attribution.author}</a>
-                {" · "}<a href={definition.attribution.licenseLink} target="_blank" rel="noreferrer" className="text-gray-300 hover:text-white">{definition.attribution.license}</a>
-            </p>
+            <div className={cn(
+                "absolute z-30 flex max-w-[calc(100%-6rem)] items-start gap-2",
+                compactAttribution ? "right-2 top-2" : "right-3 top-3",
+            )}>
+                {topRightContent}
+                <p className={cn(
+                    "shrink-0 leading-relaxed text-gray-500 backdrop-blur-sm",
+                    compactAttribution
+                        ? "bg-black/40 px-1.5 py-1 text-[7px]"
+                        : "border border-white/10 bg-black/80 px-2.5 py-2 text-[9px] shadow-xl",
+                )}>
+                    {compactAttribution ? "Map: " : "Map by "}<a href={definition.attribution.authorLink} target="_blank" rel="noreferrer" className={cn("hover:text-white", compactAttribution ? "text-gray-400" : "text-gray-300")}>{definition.attribution.author}</a>
+                    {" · "}<a href={definition.attribution.licenseLink} target="_blank" rel="noreferrer" className="text-gray-300 hover:text-white">{definition.attribution.license}</a>
+                </p>
+            </div>
         </div>
     );
 }

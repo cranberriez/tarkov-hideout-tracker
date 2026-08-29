@@ -50,26 +50,74 @@ The projection follows the official tarkov.dev map implementation:
 1. Treat world `x` and `z` as the horizontal map plane. World `y` is elevation.
 2. Rotate `(x, z)` by `coordinateRotation`.
 3. Apply `transform` as `[scaleX, offsetX, scaleY, offsetY]`, with the SVG vertical axis inverted.
-4. Normalize against the projected map bounds for SVG percentage placement.
+4. Normalize against `svgBounds` when the artwork declares bounds that differ
+   from gameplay bounds; otherwise use the projected map bounds.
 
 Factory's 90-degree rotation is handled by this shared formula rather than a map-specific adjustment.
+Reserve is the current map where dedicated SVG bounds matter. Its artwork has a
+different vertical extent than its gameplay bounds, and using `svgBounds` avoids
+a systematic vertical marker offset.
+
+## SVG floors and layers
+
+The compact render manifest retains each named SVG floor, its default visibility,
+stack order, height extents, and optional local world-coordinate bounds. The
+viewer resolves a marker's floor from its full XYZ position:
+
+1. Match elevation (`y`) against each floor extent.
+2. When an extent has local bounds, also require the marker's world `x/z` point
+   to be inside one of those bounds.
+3. Prefer spatially specific matches and preserve overlapping matches.
+4. Fall back to the base layer when no configured floor matches.
+
+The same-origin SVG route injects visibility rules for the selected named groups.
+This keeps the upstream SVG as the artwork source while allowing several layers
+to be composed at once. Ground is always included and is not selectable. Optional
+layers use their configured default visibility and can be toggled independently.
+Upper floors render above a fully opaque Ground layer. Numerically below-ground
+layers render above a much more transparent Ground layer so their paths remain
+legible. Hovering or focusing a mapped objective temporarily switches the optional
+artwork to its resolved layer, then restores the manual selection. Markers and
+outlines remain visible regardless of artwork-layer selection.
+
+The control orders layers from highest to lowest representative Y value, with
+fixed Ground between upper and below-ground groups. Below-ground classification
+comes from numeric height bounds rather than names, covering labels such as
+Garage, Bunkers, Tunnels, and Underground consistently.
+
+Only layers with a validated `svgLayer` in `maps.json` are exposed. Interchange
+supports Ground, 2nd Floor, and 3rd Floor; Reserve currently supports Ground and
+Bunkers. Reserve's numbered upper-floor metadata does not name SVG groups, so
+those floors cannot be toggled until the artwork metadata supplies group IDs.
 
 ## Rendering and support
 
 `MapViewer` provides drag panning, cursor-anchored wheel zoom, button zoom,
 fit-to-markers, objective-focused fitting, zone outlines, marker selection/focus, responsive sizing, and
-visible map attribution. Marker coordinates and size remain fixed on hover/focus;
+visible map attribution. Its layer summary lists currently visible floors,
+provides independent optional-layer toggles and per-floor marker counts, and adds the resolved
+floor name to marker tooltips. Marker coordinates and size remain fixed on hover/focus;
 only the highlight ring and objective tooltip change. Quest hover/focus and map
 marker focus remain synchronized. The Raid Planner keeps each map's pan and zoom
 in session memory, so opening a marker's quest details and returning to the
 planner restores the same view without adding persistent user-store fields.
+
+The layer control is anchored at the bottom-left and expands upward with an
+explicit collapse caret. Zoom is capped at 7x. Every manual, remembered, focused,
+or cursor-anchored view is constrained against the scaled artwork dimensions, so
+panning can reach the map edges but cannot move the artwork completely outside
+the viewport. Attribution appears in the top-right overlay row beside Raid
+Planner location counts, or by itself for consumers without top-right status.
+Embedded quest-detail maps use a smaller text-only attribution treatment with a
+faint background so licensing remains visible without occupying meaningful map
+space.
 
 The quest-detail consumer loads `MapViewer` as a client-only dynamic chunk. Its
 quest-specific marker payload is memoized, and map updates use a deferred value so
 the header and textual details can switch before the SVG viewer performs its next
 projection/render pass.
 
-Icebreaker, The Lab, and The Labyrinth currently return an intentional unsupported state because their configured interactive entries do not have validated SVG paths. Floor definitions and height extents are retained in the compact manifest for a later floor-control pass; the initial viewer displays the SVG's default layer.
+Icebreaker, The Lab, and The Labyrinth currently return an intentional unsupported state because their configured interactive entries do not have validated SVG paths.
 
 SVG maps are attributed to their configured authors and the `CC BY-NC-SA 4.0` license in the viewer.
 

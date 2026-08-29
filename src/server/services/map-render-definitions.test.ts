@@ -15,3 +15,12 @@ test("resolves configured aliases and rejects maps without SVG artwork", () => {
     assert.equal(getMapRenderDefinition("the-lab"), null);
     assert.equal(getMapRenderDefinition("icebreaker"), null);
 });
+
+test("retains SVG bounds and named default-visible layers", () => {
+    const reserve = getMapRenderDefinition("reserve");
+    assert.deepEqual(reserve?.svgBounds, [[289, -274], [-303, 272]]);
+    assert.equal(reserve?.floors.find((floor) => floor.name === "Bunkers")?.position, "below");
+
+    const interchange = getMapRenderDefinition("interchange");
+    assert.equal(interchange?.floors.find((floor) => floor.name === "2nd Floor")?.isDefaultVisible, true);
+});

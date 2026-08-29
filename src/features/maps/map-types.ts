@@ -10,6 +10,9 @@ export interface MapFloorDefinition {
     name: string;
     svgLayer: string;
     isBase: boolean;
+    isDefaultVisible: boolean;
+    position: "below" | "base" | "above";
+    stackOrder: number;
     heightRange?: [number, number];
     extents: MapFloorExtent[];
 }
@@ -19,6 +22,7 @@ export interface MapRenderDefinition {
     normalizedName: string;
     aliases: string[];
     bounds: [[number, number], [number, number]];
+    svgBounds?: [[number, number], [number, number]];
     transform: [number, number, number, number];
     coordinateRotation: number;
     minZoom: number;

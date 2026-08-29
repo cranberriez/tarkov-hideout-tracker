@@ -30,14 +30,15 @@ function projectHorizontalPoint(
  */
 export function worldToMapPoint(
     position: MapPoint3D,
-    definition: Pick<MapRenderDefinition, "bounds" | "coordinateRotation" | "transform">,
+    definition: Pick<MapRenderDefinition, "bounds" | "svgBounds" | "coordinateRotation" | "transform">,
 ): ProjectedMapPoint {
     const projected = projectHorizontalPoint(position.x, position.z, definition);
-    const xs = definition.bounds.flatMap(([x]) =>
-        definition.bounds.map(([, z]) => projectHorizontalPoint(x, z, definition).x),
+    const normalizationBounds = definition.svgBounds ?? definition.bounds;
+    const xs = normalizationBounds.flatMap(([x]) =>
+        normalizationBounds.map(([, z]) => projectHorizontalPoint(x, z, definition).x),
     );
-    const ys = definition.bounds.flatMap(([, z]) =>
-        definition.bounds.map(([x]) => projectHorizontalPoint(x, z, definition).y),
+    const ys = normalizationBounds.flatMap(([, z]) =>
+        normalizationBounds.map(([x]) => projectHorizontalPoint(x, z, definition).y),
     );
     const minX = Math.min(...xs);
     const maxX = Math.max(...xs);
@@ -51,10 +52,11 @@ export function worldToMapPoint(
 }
 
 export function getProjectedMapAspectRatio(
-    definition: Pick<MapRenderDefinition, "bounds" | "coordinateRotation" | "transform">,
+    definition: Pick<MapRenderDefinition, "bounds" | "svgBounds" | "coordinateRotation" | "transform">,
 ) {
-    const points = definition.bounds.flatMap(([x]) =>
-        definition.bounds.map(([, z]) => projectHorizontalPoint(x, z, definition)),
+    const normalizationBounds = definition.svgBounds ?? definition.bounds;
+    const points = normalizationBounds.flatMap(([x]) =>
+        normalizationBounds.map(([, z]) => projectHorizontalPoint(x, z, definition)),
     );
     const width = Math.max(...points.map((point) => point.x)) - Math.min(...points.map((point) => point.x));
     const height = Math.max(...points.map((point) => point.y)) - Math.min(...points.map((point) => point.y));
