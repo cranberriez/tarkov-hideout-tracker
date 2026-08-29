@@ -296,9 +296,7 @@ function SeriesGraph({
         () => new Map(displayNodes.map((node) => [node.quest.id, node])),
         [displayNodes],
     );
-    const activeQuestId = hoveredQuestId ?? (
-        focusedQuestId && nodesById.has(focusedQuestId) ? focusedQuestId : null
-    );
+    const activeQuestId = hoveredQuestId;
     const maxRank = Math.max(0, ...displayNodes.map((node) => node.rank));
     const maxLane = Math.max(0, ...displayNodes.map((node) => node.lane));
     const baseNodeAreaWidth = PADDING_X * 2 + NODE_WIDTH + maxLane * X_STEP;
@@ -680,10 +678,8 @@ function SeriesGraph({
                                     setMode("details");
                                 }}
                                 title={`Open ${node.quest.name}`}
-                                onMouseEnter={() => setHoveredQuestId(node.quest.id)}
+                                onMouseMove={() => setHoveredQuestId(node.quest.id)}
                                 onMouseLeave={() => setHoveredQuestId(null)}
-                                onFocus={() => setHoveredQuestId(node.quest.id)}
-                                onBlur={() => setHoveredQuestId(null)}
                                 className={cn(
                                     "absolute flex h-[74px] w-[240px] cursor-pointer items-start gap-3 border bg-[#151619] px-3 pt-3 text-left shadow-lg transition-[opacity,filter,border-color,background-color] duration-150 hover:border-tarkov-green/50 hover:bg-[#191b1e] focus-visible:z-20",
                                     activeQuestId && !connectedQuestIds.has(node.quest.id) ? "opacity-20 grayscale" : "z-10 opacity-100",

@@ -527,10 +527,12 @@ columns and keep a quest directly beneath its predecessor whenever the column is
 free. Collector is centered beneath the full span of its prerequisite chains.
 Every connection uses only horizontal and vertical segments. Failure and
 mutually exclusive relationships route outside the affected columns or row,
-while long links select obstacle-free gutters between cards. Connections that
+while long links select obstacle-free gutters between cards. The Ref graph aligns
+Surprise Gift, Between Two Fires, and Decisions, Decisions on one horizontal row
+to present their mutually exclusive choice together. Connections that
 converge on the same target use staggered horizontal rails and separate target
 ports, and shared long-distance corridors receive small offsets so parallel
-links remain distinguishable. Hovering or focusing a quest dims unrelated
+links remain distinguishable. Hovering a quest dims unrelated
 quests and edges, keeps directly connected quests visible, and draws its
 connected edges last with a heavier stroke.
 
@@ -546,8 +548,8 @@ otherwise obscure the progression graph.
 
 Quests belonging to a visualizable series receive a small branch icon in the
 quest list and a **Visualize** action in quest details. The action opens the
-chosen series, centers the originating quest, and keeps that quest plus its
-direct connections highlighted until another quest is hovered. A quest may
+chosen series, centers the originating quest, and marks it with a cyan outline
+without dimming the rest of the graph. A quest may
 belong to more than one graph; in that case the action presents a series choice
 and labels special graphs. The global Visualizer action opens the series index,
 whose full cards open their graphs. Each card lists currently active quests,

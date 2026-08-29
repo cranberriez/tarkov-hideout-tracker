@@ -261,12 +261,50 @@ test("builds the Ref graph as a strict forward closure from the PVP Easy Money r
         ...quest("697877e0c639962b2e0cf24f", "Unconnected Ref quest"),
         trader: easyMoneyTwo.trader,
     };
+    const betweenTwoFires = {
+        ...quest(
+            "66058ccf06ef1d50a60c1f48",
+            "Between Two Fires",
+            [{ task: { id: balancing.id, name: balancing.name }, status: ["complete"] }],
+        ),
+        trader: { id: "fence", name: "Fence", normalizedName: "fence" },
+    };
+    const surpriseGift = {
+        ...quest(
+            "67e993b1ac26bf29380a320b",
+            "Surprise Gift",
+            [{ task: { id: betweenTwoFires.id, name: betweenTwoFires.name }, status: ["active"] }],
+        ),
+        trader: { id: "lightkeeper", name: "Lightkeeper", normalizedName: "lightkeeper" },
+    };
+    const decisions = {
+        ...quest(
+            "66058cd19f59e625462acc90",
+            "Decisions, Decisions",
+            [{ task: { id: betweenTwoFires.id, name: betweenTwoFires.name }, status: ["active"] }],
+        ),
+        trader: easyMoneyTwo.trader,
+    };
 
-    const line = buildQuestBranchLines([root, easyMoneyTwo, balancing, unrelated]).find(
+    const line = buildQuestBranchLines([
+        root,
+        easyMoneyTwo,
+        balancing,
+        betweenTwoFires,
+        surpriseGift,
+        decisions,
+        unrelated,
+    ]).find(
         (candidate) => candidate.id === "ref",
     );
     assert.ok(line);
-    assert.deepEqual(line.nodes.map((node) => node.quest.id), [root.id, easyMoneyTwo.id, balancing.id]);
+    assert.equal(line.nodes.some((node) => node.quest.id === unrelated.id), false);
+    const choiceNodes = [surpriseGift, betweenTwoFires, decisions].map((choice) =>
+        line.nodes.find((node) => node.quest.id === choice.id),
+    );
+    assert.equal(choiceNodes.every((node) => node !== undefined), true);
+    assert.equal(new Set(choiceNodes.map((node) => node?.rank)).size, 1);
+    assert.equal(new Set(choiceNodes.map((node) => node?.lane)).size, 3);
 });
 
 test("supports the PVE Easy Money root and omits Ref when neither root exists", () => {

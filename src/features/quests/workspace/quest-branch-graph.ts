@@ -32,6 +32,19 @@ const REF_QUESTLINE_ROOT_IDS = [
     "6834145ebc1f443d7603c8a7", // Easy Money - Part 1 [PVE ZONE]
 ] as const;
 
+const REF_MUTUALLY_EXCLUSIVE_ROWS = [
+    [
+        "67e993b1ac26bf29380a320b", // Surprise Gift (PVP)
+        "66058ccf06ef1d50a60c1f48", // Between Two Fires (PVP)
+        "66058cd19f59e625462acc90", // Decisions, Decisions (PVP)
+    ],
+    [
+        "683427418f5b18d29a05d9e3", // Surprise Gift (PVE)
+        "683425dd8f5b18d29a05d9d1", // Between Two Fires [PVE ZONE]
+        "6834254f2f0e2a7eb90b62ef", // Decisions, Decisions [PVE ZONE]
+    ],
+] as const;
+
 export type QuestBranchEdgeKind = "requirement" | "failure" | "exclusive";
 
 export interface QuestBranchEdge {
@@ -164,6 +177,7 @@ function layoutNodes(
     componentIds: ReadonlySet<string>,
     componentEdges: readonly QuestBranchEdge[],
     centeredQuestId?: string,
+    alignedRows: readonly (readonly string[])[] = [],
 ) {
     const prerequisiteParents = new Map<string, string[]>();
     for (const edge of componentEdges) {
@@ -247,6 +261,26 @@ function layoutNodes(
         }
     }
 
+    for (const alignedRow of alignedRows) {
+        const questIds = alignedRow.filter((questId) => componentIds.has(questId));
+        if (questIds.length < 2) continue;
+        const targetRank = Math.max(...questIds.map((questId) => rankById.get(questId) ?? 0));
+        const occupiedLanes = new Set(
+            [...rankById]
+                .filter(([questId, rank]) => rank === targetRank && !questIds.includes(questId))
+                .map(([questId]) => laneById.get(questId))
+                .filter((lane): lane is number => lane !== undefined),
+        );
+        let startLane = 0;
+        while (questIds.some((_, index) => occupiedLanes.has(startLane + index))) {
+            startLane += 1;
+        }
+        questIds.forEach((questId, index) => {
+            rankById.set(questId, targetRank);
+            laneById.set(questId, startLane + index);
+        });
+    }
+
     if (centeredQuestId && laneById.has(centeredQuestId)) {
         const prerequisiteLanes = [...laneById]
             .filter(([questId]) => questId !== centeredQuestId)
@@ -294,6 +328,7 @@ export function buildQuestBranchLines(quests: readonly FullQuest[]): QuestBranch
         collapseFailureBranches = false,
         centeredQuestId,
         supplementalEdges = [],
+        alignedRows = [],
     }: {
         id: string;
         name: string;
@@ -302,6 +337,7 @@ export function buildQuestBranchLines(quests: readonly FullQuest[]): QuestBranch
         collapseFailureBranches?: boolean;
         centeredQuestId?: string;
         supplementalEdges?: QuestBranchEdge[];
+        alignedRows?: readonly (readonly string[])[];
     }) => {
         const componentIds = new Set([...questIds].filter((questId) => questsById.has(questId)));
         if (componentIds.size < 2) return;
@@ -313,7 +349,13 @@ export function buildQuestBranchLines(quests: readonly FullQuest[]): QuestBranch
                 (edge) => componentIds.has(edge.sourceId) && componentIds.has(edge.targetId),
             ),
         ];
-        const initialNodes = layoutNodes(quests, componentIds, componentEdges, centeredQuestId);
+        const initialNodes = layoutNodes(
+            quests,
+            componentIds,
+            componentEdges,
+            centeredQuestId,
+            alignedRows,
+        );
         let visibleEdges = componentEdges;
         if (collapseFailureBranches) {
             const rankById = new Map(initialNodes.map((node) => [node.quest.id, node.rank]));
@@ -336,7 +378,13 @@ export function buildQuestBranchLines(quests: readonly FullQuest[]): QuestBranch
             id,
             name,
             kind,
-            nodes: layoutNodes(quests, componentIds, visibleEdges, centeredQuestId),
+            nodes: layoutNodes(
+                quests,
+                componentIds,
+                visibleEdges,
+                centeredQuestId,
+                alignedRows,
+            ),
             edges: visibleEdges,
         });
     };
@@ -444,6 +492,7 @@ export function buildQuestBranchLines(quests: readonly FullQuest[]): QuestBranch
             name: "Ref questline",
             questIds: collectForwardClosure(refRootId),
             kind: "special",
+            alignedRows: REF_MUTUALLY_EXCLUSIVE_ROWS,
         });
     }
 
