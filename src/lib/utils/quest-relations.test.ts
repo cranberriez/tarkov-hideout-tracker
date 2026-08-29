@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { formatQuestUnlockTiming, getQuestRelationTiming } from "./quest-relations";
+import { formatQuestUnlockTiming, formatTaskRequirementStatus, getQuestRelationTiming } from "./quest-relations";
 
 test("maps task requirement statuses to quest relationship timing", () => {
     assert.equal(getQuestRelationTiming(["complete"]), "complete");
@@ -15,4 +15,10 @@ test("formats unlock timing for display", () => {
     assert.equal(formatQuestUnlockTiming(["active"]), "On accept");
     assert.equal(formatQuestUnlockTiming(["failed"]), "On fail");
     assert.equal(formatQuestUnlockTiming(["complete", "failed"]), "On complete or fail");
+});
+
+test("formats active task requirements as quest active", () => {
+    assert.equal(formatTaskRequirementStatus(["Active"]), "Quest active");
+    assert.equal(formatTaskRequirementStatus(["complete"]), "Task completed");
+    assert.equal(formatTaskRequirementStatus(["complete", "failed"]), "Task completed or failed");
 });

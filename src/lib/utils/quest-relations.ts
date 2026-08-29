@@ -21,3 +21,16 @@ export function formatQuestUnlockTiming(statuses: readonly string[]) {
             return "On complete";
     }
 }
+
+export function formatTaskRequirementStatus(statuses: readonly string[]) {
+    switch (getQuestRelationTiming(statuses)) {
+        case "active":
+            return "Quest active";
+        case "failed":
+            return "Task failed";
+        case "resolved":
+            return "Task completed or failed";
+        default:
+            return "Task completed";
+    }
+}

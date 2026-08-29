@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import type { FullQuest } from "../../types/types";
 import {
+    buildMultipleChoiceQuestGroups,
     buildQuestFailureMap,
     getAutoFailedQuestIds,
     getFailedQuestRequirementIds,
@@ -163,4 +164,44 @@ test("getAutoFailedQuestIds includes completed conflicts and skips already faile
         ),
         ["branch-b", "branch-c"],
     );
+});
+
+test("buildMultipleChoiceQuestGroups finds reciprocal all-against-all quest choices", () => {
+    const choiceIds = ["chemical-4", "big-customer", "out-of-curiosity"];
+    const quests = choiceIds.map((id) => makeQuest({
+        id,
+        name: id,
+        failConditions: choiceIds.filter((otherId) => otherId !== id).map((otherId) => ({
+            id: `${id}-fails-on-${otherId}`,
+            type: "taskStatus",
+            description: "",
+            optional: false,
+            status: ["complete"],
+            task: { id: otherId },
+        })),
+    }));
+
+    const groups = buildMultipleChoiceQuestGroups(quests);
+
+    for (const id of choiceIds) assert.deepEqual(groups.get(id), choiceIds);
+});
+
+test("buildMultipleChoiceQuestGroups excludes one-way conflicts", () => {
+    const quests = [
+        makeQuest({
+            id: "one-way-a",
+            name: "One Way A",
+            failConditions: [{
+                id: "a-fails-on-b",
+                type: "taskStatus",
+                description: "",
+                optional: false,
+                status: ["complete"],
+                task: { id: "one-way-b" },
+            }],
+        }),
+        makeQuest({ id: "one-way-b", name: "One Way B" }),
+    ];
+
+    assert.equal(buildMultipleChoiceQuestGroups(quests).size, 0);
 });

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useDeferredValue, useMemo, useRef, useState } from "react";
-import { Bug, CheckCircle2, Circle, Eye, EyeOff, ExternalLink, Flag, MapPinned, Pin, RotateCcw, X, XCircle } from "lucide-react";
+import { AlertTriangle, Bug, CheckCircle2, Circle, Eye, EyeOff, ExternalLink, Flag, MapPinned, Pin, RotateCcw, X, XCircle } from "lucide-react";
 import type { MapOverlayMarker } from "@/features/maps/map-types";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
@@ -15,8 +15,8 @@ import {
     getTraderTierCompletionGate,
 } from "@/lib/utils/quest-trader-completion-gates";
 import { isEssentialQuest } from "@/lib/utils/quest-series";
-import { questCanFail } from "@/lib/utils/quest-failures";
-import { formatQuestUnlockTiming } from "@/lib/utils/quest-relations";
+import { buildMultipleChoiceQuestGroups, questCanFail } from "@/lib/utils/quest-failures";
+import { formatQuestUnlockTiming, formatTaskRequirementStatus } from "@/lib/utils/quest-relations";
 import type { FullQuest, FullQuestObjective, QuestOtherRequirement, QuestTraderStandingReward } from "@/types";
 import { ObjectiveRow } from "../components/quest-card/QuestObjectiveRows";
 import { formatQuestMapSummary } from "../quest-map-groups";
@@ -48,7 +48,7 @@ export function QuestDetailsPane() {
         requestKey: number;
     } | null>(null);
     const mapSectionRef = useRef<HTMLElement>(null);
-    const { selectedQuest: quest, statusByQuestId, questsById, maps, setSelectedQuestId, retainQuestAfterCompletion } = useQuestWorkspace();
+    const { quests, selectedQuest: quest, statusByQuestId, questsById, maps, setSelectedQuestId, retainQuestAfterCompletion } = useQuestWorkspace();
     const { leadsToByQuestId, onItemClick, requestToggleQuestCompletion, requestFailQuest, requestResetQuestStatus } = useQuestsContext();
     const pinned = useUserStore((state) => quest ? !!state.pinnedQuests[quest.id] : false);
     const hidden = useUserStore((state) => quest ? !!state.ignoredQuests[quest.id] : false);
@@ -64,6 +64,10 @@ export function QuestDetailsPane() {
     const questMapData = useMemo(
         () => quest ? buildQuestDetailMapData(quest) : null,
         [quest],
+    );
+    const multipleChoiceGroups = useMemo(
+        () => buildMultipleChoiceQuestGroups(quests),
+        [quests],
     );
     const deferredMapData = useDeferredValue(questMapData);
     const handleObjectiveFloorsChange = useCallback((floors: ReadonlyMap<string, string[]>) => {
@@ -82,6 +86,8 @@ export function QuestDetailsPane() {
     }
 
     const status = statusByQuestId.get(quest.id)!;
+    const multipleChoiceQuests = (multipleChoiceGroups.get(quest.id) ?? [])
+        .flatMap((questId) => questsById.get(questId) ?? []);
     const essential = isEssentialQuest(quest.id);
     const traderTabLabel = essential
         ? "Essential"
@@ -202,21 +208,38 @@ export function QuestDetailsPane() {
                         {status.terminal === "failed" && <button type="button" onClick={() => requestResetQuestStatus(quest.id)} className={cn(questActionButtonClass, "border-white/15 bg-white/7 text-gray-300 hover:border-white/30 hover:bg-white/12 hover:text-white")}><RotateCcw size={14} /> Reset</button>}
                         <button type="button" onClick={() => togglePinnedQuest(quest.id)} className={cn(questActionButtonClass, "border-white/15 bg-white/7 text-gray-400 hover:border-sky-400/40 hover:bg-sky-400/12 hover:text-sky-200", pinned && "border-sky-400/35 bg-sky-400/12 text-sky-300")}><Pin size={14} className={pinned ? "fill-current" : ""} />{pinned ? "Unpin" : "Pin"}</button>
                         <button type="button" onClick={() => toggleIgnoredQuest(quest.id)} className={cn(questActionButtonClass, "border-white/15 bg-white/7 text-gray-400 hover:border-violet-400/40 hover:bg-violet-400/12 hover:text-violet-200", hidden && "border-violet-400/35 bg-violet-400/12 text-violet-300")}>{hidden ? <Eye size={14} /> : <EyeOff size={14} />}{hidden ? "Show" : "Hide"}</button>
+                        {quest.wikiLink && <a href={quest.wikiLink} target="_blank" rel="noopener noreferrer" className={cn(questActionButtonClass, "border-white/15 bg-white/7 text-gray-400 hover:border-white/30 hover:bg-white/12 hover:text-white")}>Quest wiki <ExternalLink size={12} /></a>}
                     </div>
                 </div>
             </header>
 
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(360px,46%)] xl:overflow-hidden">
             <div className="min-w-0 xl:overflow-y-auto">
+            {multipleChoiceQuests.length > 1 && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-amber-300/25 bg-amber-300/10 px-6 py-3 text-amber-100 sm:px-9">
+                    <AlertTriangle size={18} className="shrink-0 text-amber-300" />
+                    <div className="min-w-52 flex-1">
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-300">This is a multiple choice quest</p>
+                        <p className="mt-0.5 text-xs text-amber-100/65">Only one quest in this group can be completed.</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                        {multipleChoiceQuests.map((choiceQuest) => choiceQuest.id === quest.id ? (
+                            <span key={choiceQuest.id} className="font-semibold text-amber-100">{choiceQuest.name}</span>
+                        ) : (
+                            <button
+                                key={choiceQuest.id}
+                                type="button"
+                                onClick={() => setSelectedQuestId(choiceQuest.id)}
+                                className="cursor-pointer text-amber-200/70 underline decoration-amber-200/30 underline-offset-4 transition-colors hover:text-amber-100 hover:decoration-current"
+                            >
+                                {choiceQuest.name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
             <div className="max-w-6xl px-6 py-10 sm:px-9">
                 <section>
-                    {quest.wikiLink && (
-                        <div className="mb-7">
-                            <a href={quest.wikiLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs text-gray-500 transition-colors hover:text-tarkov-green">
-                                Open quest wiki <ExternalLink size={12} />
-                            </a>
-                        </div>
-                    )}
                     {detailColumnCount > 0 && <div className={cn(
                         "mb-12 grid gap-8",
                         detailColumnCount === 2 && "md:grid-cols-2",
@@ -704,13 +727,6 @@ function isTaskRequirementSatisfied(statuses: string[], completed: boolean, fail
     if (normalized.some((status) => status === "fail" || status === "failed")) return failed;
     if (normalized.includes("active")) return completed || failed;
     return completed;
-}
-
-function formatTaskRequirementStatus(statuses: string[]) {
-    const normalized = statuses.map((status) => status.trim().toLowerCase());
-    if (normalized.some((status) => status === "fail" || status === "failed")) return "Task failed";
-    if (normalized.includes("active")) return "Task attempted";
-    return "Task completed";
 }
 
 function StandingRewards({ label, rewards }: { label: string; rewards: QuestTraderStandingReward[] }) {

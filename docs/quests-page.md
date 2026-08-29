@@ -412,6 +412,13 @@ prerequisite task name is interactive; the requirement symbol and label are not
 part of its click target. Unlocks are plain underlined quest-name links in a
 vertical text list. Failure reputation is grouped with failure conditions. Requirement
 and unlock cards, plus the former separate sidebar gate sections, are not rendered.
+An `Active` task requirement is labeled **Quest active**, matching the upstream
+status and the corresponding **On accept** unlock timing. The left details column
+also shows an edge-to-edge multiple-choice warning above its requirements and
+objectives when non-optional task-status failure conditions are reciprocal across
+the entire choice group. This is derived from quest data; one-way or incomplete
+failure relationships are not labeled as multiple choice. The quest wiki link is
+part of the header action row.
 Objective item rows prefer the non-grid `iconLink` image and fall back to
 `gridImageLink` when needed. XP is omitted from Rewards; trader-standing rewards,
 when present, remain a compact vertical list.

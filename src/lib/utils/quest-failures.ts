@@ -8,6 +8,7 @@ export interface QuestFailureSource {
 }
 
 export type QuestFailureMap = Map<string, string[]>;
+export type MultipleChoiceQuestGroups = Map<string, string[]>;
 
 function normalizeStatus(status: string) {
     return status.trim().toLowerCase();
@@ -115,4 +116,70 @@ export function getMutuallyExclusiveQuestIds(quest: Pick<QuestFailureSource, "fa
             );
         })
         .map((condition) => condition.task.id);
+}
+
+/**
+ * Finds data-driven quest choice groups. A group is only returned when every quest has a
+ * non-optional completion fail condition for every other quest in the group. One-way
+ * failure conditions are deliberately excluded because they do not guarantee that only
+ * one quest can be completed.
+ */
+export function buildMultipleChoiceQuestGroups<T extends QuestFailureSource>(
+    quests: readonly T[],
+): MultipleChoiceQuestGroups {
+    const questIds = new Set(quests.map((quest) => quest.id));
+    const failureTargetsByQuestId = new Map(
+        quests.map((quest) => [
+            quest.id,
+            new Set(getMutuallyExclusiveQuestIds(quest).filter((id) => questIds.has(id))),
+        ]),
+    );
+    const mutualNeighborsByQuestId = new Map<string, Set<string>>(
+        quests.map((quest) => [quest.id, new Set<string>()]),
+    );
+
+    for (const quest of quests) {
+        for (const targetId of failureTargetsByQuestId.get(quest.id) ?? []) {
+            if (!failureTargetsByQuestId.get(targetId)?.has(quest.id)) continue;
+            mutualNeighborsByQuestId.get(quest.id)?.add(targetId);
+            mutualNeighborsByQuestId.get(targetId)?.add(quest.id);
+        }
+    }
+
+    const groups: MultipleChoiceQuestGroups = new Map();
+    const visited = new Set<string>();
+
+    for (const quest of quests) {
+        if (visited.has(quest.id)) continue;
+
+        const component: string[] = [];
+        const pending = [quest.id];
+        visited.add(quest.id);
+
+        while (pending.length > 0) {
+            const currentId = pending.pop()!;
+            component.push(currentId);
+            for (const neighborId of mutualNeighborsByQuestId.get(currentId) ?? []) {
+                if (visited.has(neighborId)) continue;
+                visited.add(neighborId);
+                pending.push(neighborId);
+            }
+        }
+
+        if (component.length < 2) continue;
+        const isCompleteChoiceGroup = component.every((questId) =>
+            component.every(
+                (otherId) =>
+                    questId === otherId || mutualNeighborsByQuestId.get(questId)?.has(otherId),
+            ),
+        );
+        if (!isCompleteChoiceGroup) continue;
+
+        const groupIds = quests
+            .map((candidate) => candidate.id)
+            .filter((id) => component.includes(id));
+        for (const questId of groupIds) groups.set(questId, groupIds);
+    }
+
+    return groups;
 }
