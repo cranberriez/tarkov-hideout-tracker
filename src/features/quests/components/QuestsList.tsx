@@ -21,6 +21,7 @@ import {
     QUEST_NAVIGATE_TO_QUEST_EVENT,
 } from "../quest-deep-link";
 import { cn } from "@/lib/utils";
+import { getQuestRelationTiming } from "@/lib/utils/quest-relations";
 import type { FullQuest } from "@/types";
 import { QUEST_SCROLL_TO_TRADER_EVENT } from "./QuestsSidebar";
 
@@ -663,14 +664,6 @@ export function QuestsList({ questNavigationRequest }: QuestsListProps) {
         };
     }
 
-    function getPrerequisiteType(statuses: string[]): QuestRef["prerequisiteType"] {
-        const normalized = statuses.map((status) => status.toLowerCase());
-        if (normalized.includes("complete") && normalized.includes("failed")) return "resolved";
-        if (normalized.includes("failed")) return "failed";
-        if (normalized.includes("active")) return "active";
-        return "complete";
-    }
-
     function getSortMetadata(quest: FullQuest) {
         if (sortMode === "xp") {
             return {
@@ -700,9 +693,16 @@ export function QuestsList({ questNavigationRequest }: QuestsListProps) {
                 sortMetadata={getSortMetadata(quest)}
                 prerequisiteQuests={quest.taskRequirements.map((req) => ({
                     ...toRef(req.task.id, req.task.name),
-                    prerequisiteType: getPrerequisiteType(req.status),
+                    prerequisiteType: getQuestRelationTiming(req.status),
                 }))}
-                leadsToQuests={(leadsToByQuestId.get(quest.id) ?? []).map((id) => toRef(id, id))}
+                leadsToQuests={(leadsToByQuestId.get(quest.id) ?? []).map((id) => {
+                    const target = questsById.get(id);
+                    const requirement = target?.taskRequirements.find((entry) => entry.task.id === quest.id);
+                    return {
+                        ...toRef(id, id),
+                        prerequisiteType: getQuestRelationTiming(requirement?.status ?? []),
+                    };
+                })}
                 showDebugButton={showDebug}
                 highlighted={highlightedQuestId === quest.id}
                 onQuestLinkClick={(targetQuestId, event) => {

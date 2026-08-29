@@ -6,10 +6,11 @@ import type { QuestRef } from "./types";
 
 interface QuestRelationChipProps {
     questRef: QuestRef;
+    direction?: "requirement" | "unlock";
     onQuestLinkClick?: (questId: string, event?: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
-export function QuestRelationChip({ questRef, onQuestLinkClick }: QuestRelationChipProps) {
+export function QuestRelationChip({ questRef, direction = "requirement", onQuestLinkClick }: QuestRelationChipProps) {
     const prerequisiteCompleted = useUserStore((state) => !!state.completedQuests[questRef.id]);
     const prerequisiteFailed = useUserStore((state) => !!state.failedQuests[questRef.id]);
     const prerequisiteHint =
@@ -59,12 +60,12 @@ export function QuestRelationChip({ questRef, onQuestLinkClick }: QuestRelationC
                     )}
                 >
                     {questRef.prerequisiteType === "complete"
-                        ? "Complete"
+                        ? direction === "unlock" ? "On complete" : "Complete"
                         : questRef.prerequisiteType === "failed"
-                          ? "Fail"
+                          ? direction === "unlock" ? "On fail" : "Fail"
                           : questRef.prerequisiteType === "resolved"
-                            ? "Complete/Fail"
-                            : "Accept"}
+                            ? direction === "unlock" ? "On complete/fail" : "Complete/Fail"
+                            : direction === "unlock" ? "On accept" : "Accept"}
                 </span>
             )}
             {(questRef.trader.image4xLink ?? questRef.trader.imageLink) ? (

@@ -14,6 +14,7 @@ import {
     getTraderTierCompletionGate,
 } from "@/lib/utils/quest-trader-completion-gates";
 import { questCanFail } from "@/lib/utils/quest-failures";
+import { formatQuestUnlockTiming } from "@/lib/utils/quest-relations";
 import type { FullQuest, FullQuestObjective, QuestOtherRequirement, QuestTraderStandingReward } from "@/types";
 import { ObjectiveRow } from "../components/quest-card/QuestObjectiveRows";
 import { formatQuestMapSummary } from "../quest-map-groups";
@@ -80,7 +81,12 @@ export function QuestDetailsPane() {
 
     const status = statusByQuestId.get(quest.id)!;
     const traderImage = quest.trader.image4xLink ?? quest.trader.imageLink;
-    const leadsTo = (leadsToByQuestId.get(quest.id) ?? []).map((id) => questsById.get(id)).filter(Boolean);
+    const leadsTo = (leadsToByQuestId.get(quest.id) ?? []).flatMap((id) => {
+        const nextQuest = questsById.get(id);
+        if (!nextQuest) return [];
+        const requirement = nextQuest.taskRequirements.find((entry) => entry.task.id === quest.id);
+        return [{ quest: nextQuest, timing: formatQuestUnlockTiming(requirement?.status ?? []) }];
+    });
     const objectivePresentation = buildObjectivePresentation(quest.objectives);
     const traderTierCompletionGates = quest.otherRequirements
         .map(getTraderTierCompletionGate)
@@ -277,8 +283,11 @@ export function QuestDetailsPane() {
                         {leadsTo.length > 0 && <section className="min-w-0">
                             <SectionLabel>Unlocks</SectionLabel>
                             <div className="space-y-2.5 text-sm">
-                                {leadsTo.map((nextQuest) => nextQuest && (
+                                {leadsTo.map(({ quest: nextQuest, timing }) => (
                                     <div key={nextQuest.id}>
+                                        <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+                                            {timing}
+                                        </p>
                                         <button
                                             type="button"
                                             onClick={() => setSelectedQuestId(nextQuest.id)}
@@ -293,7 +302,27 @@ export function QuestDetailsPane() {
                         {hasFailureDetails && <section className="min-w-0">
                             <SectionLabel>Failure conditions</SectionLabel>
                             <div className="space-y-5">
-                                {(quest.failConditions?.length ?? 0) > 0 && <div className="space-y-2">{quest.failConditions?.map((condition) => <div key={condition.id} className="border border-red-400/12 bg-red-400/5 px-3 py-2 text-xs text-red-200/80"><p>{condition.description || condition.type}</p>{condition.type === "taskStatus" && "status" in condition && <p className="mt-1 text-[10px] text-red-200/40">Quest status: {condition.status.join(" or ")}</p>}</div>)}</div>}
+                                {(quest.failConditions?.length ?? 0) > 0 && <div className="space-y-2">{quest.failConditions?.map((condition) => {
+                                    const referencedQuest = condition.type === "taskStatus" && "task" in condition
+                                        ? questsById.get(condition.task.id)
+                                        : null;
+                                    return (
+                                        <div key={condition.id} className="border border-red-400/12 bg-red-400/5 px-3 py-2 text-xs text-red-200/80">
+                                            {referencedQuest ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSelectedQuestId(referencedQuest.id)}
+                                                    className="cursor-pointer text-left underline decoration-red-200/30 underline-offset-4 transition-colors hover:text-red-100 hover:decoration-current"
+                                                >
+                                                    {referencedQuest.name}
+                                                </button>
+                                            ) : (
+                                                <p>{condition.description || condition.type}</p>
+                                            )}
+                                            {condition.type === "taskStatus" && "status" in condition && <p className="mt-1 text-[10px] text-red-200/40">Quest status: {condition.status.join(" or ")}</p>}
+                                        </div>
+                                    );
+                                })}</div>}
                                 {(quest.failureTraderStandingRewards?.length ?? 0) > 0 && <StandingRewards label="Failure reputation" rewards={quest.failureTraderStandingRewards ?? []} />}
                             </div>
                         </section>}

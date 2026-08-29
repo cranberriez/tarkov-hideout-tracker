@@ -404,7 +404,9 @@ function QuestListItem({
                                 "group/complete relative flex h-7 w-7 items-center justify-center rounded transition-colors",
                                 completed
                                     ? "bg-tarkov-green/12 text-tarkov-green hover:bg-red-400/12 hover:text-red-300"
-                                    : "text-gray-600 hover:bg-tarkov-green/10 hover:text-tarkov-green",
+                                    : failed
+                                      ? "bg-red-400/10 text-red-300 hover:bg-red-400/16 hover:text-red-200"
+                                      : "text-gray-600 hover:bg-tarkov-green/10 hover:text-tarkov-green",
                             )}
                         >
                             {completed ? (
@@ -412,6 +414,8 @@ function QuestListItem({
                                     <CheckCircle2 size={15} className="group-hover/complete:hidden" />
                                     <RotateCcw size={15} className="hidden group-hover/complete:block" />
                                 </>
+                            ) : failed ? (
+                                <XCircle size={15} />
                             ) : (
                                 <Circle size={15} />
                             )}

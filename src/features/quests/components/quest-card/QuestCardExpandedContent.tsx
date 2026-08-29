@@ -253,6 +253,7 @@ export function QuestCardExpandedContent({
                             <QuestRelationChip
                                 key={ref.id}
                                 questRef={ref}
+                                direction="unlock"
                                 onQuestLinkClick={onQuestLinkClick}
                             />
                         ))}
