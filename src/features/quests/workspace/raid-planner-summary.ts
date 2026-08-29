@@ -1,4 +1,4 @@
-import type { FullQuest, QuestItem } from "@/types";
+import type { FullQuest, FullQuestObjective, QuestItem } from "@/types";
 import type { QuestObjectiveCategory, QuestWorkspaceStatusInfo } from "./quest-workspace-utils";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { getObjectiveCategory } from "./quest-workspace-utils";
@@ -25,6 +25,15 @@ export interface RaidPlannerMapSummary {
     questCount: number;
     objectiveGroups: RaidPlannerObjectiveGroup[];
     requiredKeys: QuestItem[];
+}
+
+export interface RaidPlannerKillObjective {
+    questId: string;
+    questName: string;
+    objectiveId: string;
+    summary: string;
+    fullDescription: string;
+    optional: boolean;
 }
 
 export function getActiveRaidPlannerQuests(
@@ -75,4 +84,64 @@ export function buildRaidPlannerMapSummary(quests: FullQuest[], mapKey: string):
         }),
         requiredKeys: [...requiredKeys.values()].sort((left, right) => left.name.localeCompare(right.name)),
     };
+}
+
+export function shortenKillObjective(objective: FullQuestObjective) {
+    const description = objective.description.trim().replace(/\s+/g, " ");
+    const fallbackTarget = (
+        "targetNames" in objective && objective.targetNames?.filter(Boolean).join(" / ")
+    ) || ("target" in objective ? objective.target : "targets");
+    const fallback = `Kill ${objective.count || 1} ${fallbackTarget}`;
+    if (!description) return fallback;
+
+    const shortened = description
+        .replace(/^eliminate\s+/i, "")
+        .replace(/^kill\s+/i, "")
+        .replace(/\s+on (?:the map )?/gi, " · ")
+        .replace(/\s+while (?:using|wearing)\s+/gi, " · ")
+        .replace(/\s+from a distance of (?:more than|at least)\s+/gi, " · ")
+        .replace(/\s+with\s+/gi, " · ")
+        .replace(/\s*·\s*/g, " · ");
+
+    return shortened.length > 110
+        ? `${shortened.slice(0, 107).trimEnd()}…`
+        : shortened;
+}
+
+export function buildRaidPlannerKillList(quests: FullQuest[]): RaidPlannerKillObjective[] {
+    return quests.flatMap((quest) => quest.objectives
+        .filter((objective) => objective.type === "shoot")
+        .map((objective) => ({
+            questId: quest.id,
+            questName: quest.name,
+            objectiveId: objective.id,
+            summary: shortenKillObjective(objective),
+            fullDescription: objective.description,
+            optional: objective.optional,
+        })));
+}
+
+export function buildRaidPlannerObjectiveKeyIndex(quests: FullQuest[]) {
+    const result = new Map<string, QuestItem[]>();
+    for (const quest of quests) {
+        for (const objective of quest.objectives) {
+            const keys = new Map<string, QuestItem>();
+            for (const key of (objective.requiredKeys ?? []).flat()) {
+                if (key?.id && key.name) keys.set(key.id, key);
+            }
+            if (keys.size > 0) result.set(objective.id, [...keys.values()]);
+        }
+    }
+    return result;
+}
+
+export function getRaidPlannerMarkerKeys(
+    objectiveIds: readonly string[] | undefined,
+    keyIndex: ReadonlyMap<string, QuestItem[]>,
+) {
+    const keys = new Map<string, QuestItem>();
+    for (const objectiveId of objectiveIds ?? []) {
+        for (const key of keyIndex.get(objectiveId) ?? []) keys.set(key.id, key);
+    }
+    return [...keys.values()].sort((left, right) => left.name.localeCompare(right.name));
 }

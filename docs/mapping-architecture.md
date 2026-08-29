@@ -99,10 +99,16 @@ provides independent optional-layer toggles and per-floor marker counts, and add
 floor name to marker tooltips. Marker coordinates and size remain fixed on hover/focus.
 Hovering a Raid Planner marker shows its objective tooltip without changing or
 scrolling the quest list; clicking the marker selects, highlights, and scrolls to
-its quest. Quest-list hover/focus can still highlight the corresponding map marker.
+its quest. When one or more objectives represented by a marker require keys, the
+tooltip deduplicates and displays those keys using the same compact icon and short-
+name tiles as the planner menu. Quest-list hover/focus can still highlight the corresponding map marker.
 The Raid Planner keeps each map's pan and zoom
 in session memory, so opening a marker's quest details and returning to the
 planner restores the same view without adding persistent user-store fields.
+Below the selected-map back button, a red-tinted **Kill List** control expands to
+a vertical summary of every shooting objective from the map's active quests.
+Descriptions are compacted for raid planning, with the original objective retained
+as hover text.
 
 The layer control is anchored at the bottom-left and expands upward with an
 explicit collapse caret. Zoom is capped at 7x. Every manual, remembered, focused,
@@ -122,7 +128,7 @@ projection/render pass.
 The Raid Planner map picker spans the available planner pane and summarizes only
 profile-active quests. Each map card groups those quests by objective category,
 calls out category counts that require keys, and shows the deduplicated required
-keys as compact image tiles with Tarkov short names and full-name hover text.
+keys as compact square grid-image tiles with full-name hover text.
 Supported cards reuse the same proxied Tarkov.dev SVG artwork as the map
 viewer; unsupported maps remain text-only. The selected-map marker set also uses
 only active quests, regardless of the workspace's completed, failed, or locked

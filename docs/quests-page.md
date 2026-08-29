@@ -441,7 +441,8 @@ payload. It loads only the selected map's compact SVG definition, projects the
 world `x/z` plane using the configured rotation/transform, and renders one marker
 per positioned zone plus polygon outlines when present. Every location belonging
 to the same quest shares its list symbol and color. Hovering a marker only shows
-its tooltip; clicking it selects and scrolls to the corresponding quest row.
+its tooltip; keyed objectives add compact required-key tiles to that preview.
+Clicking a marker selects and scrolls to the corresponding quest row.
 
 The Raid Planner keeps its selected map separate from the normal quest map filter.
 While the planner is open, its map temporarily drives the visible quest list and
@@ -454,6 +455,11 @@ status filter. Quests without positioned geometry do not receive synthetic
 markers. Possible quest-item spawns repeat one shared quest symbol at every known
 position. Duplicate positions inside one quest are collapsed into one marker and
 their objective information is combined in its tooltip.
+
+The selected-map overlay includes a collapsible **Kill List** beneath the back
+button. It lists every shooting objective from active quests on that map using a
+short raid-oriented description, while the full upstream wording remains available
+as hover text.
 
 Quest detail panes reuse the shared `MapViewer` for objectives with precise
 positions. On wide layouts the quest header spans the full pane, while the section

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, KeyRound } from "lucide-react";
+import { ChevronLeft, Crosshair, KeyRound } from "lucide-react";
 import Image from "next/image";
 import { MapViewer } from "@/features/maps/MapViewer";
 import type { MapViewTransform } from "@/features/maps/map-view-transform";
@@ -10,8 +10,11 @@ import { useQuestWorkspace } from "./QuestWorkspaceContext";
 import { buildRaidPlannerMarkers } from "./raid-planner-markers";
 import { OBJECTIVE_CATEGORY_SHORT_LABELS } from "./quest-workspace-utils";
 import {
+    buildRaidPlannerKillList,
     buildRaidPlannerMapSummary,
+    buildRaidPlannerObjectiveKeyIndex,
     getActiveRaidPlannerQuests,
+    getRaidPlannerMarkerKeys,
 } from "./raid-planner-summary";
 
 interface RaidPlannerPaneProps {
@@ -20,6 +23,7 @@ interface RaidPlannerPaneProps {
 }
 
 export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPaneProps) {
+    const [isKillListOpen, setIsKillListOpen] = useState(false);
     const {
         quests, maps, plannerMapKey, selectPlannerMap, clearPlannerMap, statusByQuestId,
         markerByQuestId, highlightedQuestId, setHighlightedQuestId, setSelectedQuestId,
@@ -69,6 +73,8 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
     }
 
     const markers = buildRaidPlannerMarkers(plannerQuests, selectedMap.key, markerByQuestId);
+    const killObjectives = buildRaidPlannerKillList(plannerQuests);
+    const objectiveKeyIndex = buildRaidPlannerObjectiveKeyIndex(plannerQuests);
 
     return (
         <div className="relative min-h-0 flex-1 overflow-hidden bg-[#111316]">
@@ -78,19 +84,81 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
                 rememberedView={rememberedView}
                 onViewChange={(view) => onViewChange(selectedMap.key, view)}
                 highlightedQuestId={highlightedQuestId}
+                renderMarkerDetails={(marker) => {
+                    const requiredKeys = getRaidPlannerMarkerKeys(marker.objectiveIds, objectiveKeyIndex);
+                    if (requiredKeys.length === 0) return null;
+                    return (
+                        <span className="mt-3 block border-t border-white/10 pt-2.5">
+                            <span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300/70">
+                                <KeyRound size={10} /> Required keys
+                            </span>
+                            <span className="mt-2 flex flex-wrap gap-1.5">
+                                {requiredKeys.map((key) => <RaidPlannerKey key={key.id} item={key} />)}
+                            </span>
+                        </span>
+                    );
+                }}
                 onMarkerSelect={(marker) => {
                     if (!marker.questId) return;
                     setSelectedQuestId(marker.questId);
                     focusQuest(marker.questId);
                 }}
             />
-            <button
-                type="button"
-                onClick={clearPlannerMap}
-                className="absolute left-3 top-3 z-30 inline-flex items-center gap-2 border border-white/12 bg-black/80 px-3 py-2 text-xs font-medium text-gray-200 shadow-xl backdrop-blur-sm transition-colors hover:border-tarkov-green/40 hover:text-tarkov-green"
-            >
-                <ChevronLeft size={14} /> {selectedMap.name}
-            </button>
+            <div className="absolute left-3 top-3 z-30 flex w-80 max-w-[calc(100%_-_1.5rem)] flex-col items-start gap-2">
+                <button
+                    type="button"
+                    onClick={() => {
+                        setIsKillListOpen(false);
+                        clearPlannerMap();
+                    }}
+                    className="inline-flex items-center gap-2 border border-white/12 bg-black/80 px-3 py-2 text-xs font-medium text-gray-200 shadow-xl backdrop-blur-sm transition-colors hover:border-tarkov-green/40 hover:text-tarkov-green"
+                >
+                    <ChevronLeft size={14} /> {selectedMap.name}
+                </button>
+                <button
+                    type="button"
+                    aria-expanded={isKillListOpen}
+                    aria-controls="raid-planner-kill-list"
+                    onClick={() => setIsKillListOpen((open) => !open)}
+                    className="inline-flex items-center gap-2 border border-red-400/25 bg-red-950/75 px-3 py-2 text-xs font-medium text-red-100 shadow-xl backdrop-blur-sm transition-colors hover:border-red-300/45 hover:bg-red-950/90"
+                >
+                    <Crosshair size={14} className="text-red-300/80" />
+                    Kill List
+                    <span className="text-[10px] text-red-200/50">{killObjectives.length}</span>
+                </button>
+                {isKillListOpen && (
+                    <div
+                        id="raid-planner-kill-list"
+                        className="max-h-[min(60vh,32rem)] w-full overflow-y-auto border border-red-400/20 bg-[#130d0e]/95 shadow-2xl backdrop-blur-md"
+                    >
+                        {killObjectives.length > 0 ? (
+                            <div className="divide-y divide-red-200/8">
+                                {killObjectives.map((objective) => (
+                                    <div
+                                        key={`${objective.questId}:${objective.objectiveId}`}
+                                        title={objective.fullDescription}
+                                        className={objective.optional ? "px-3 py-2.5 opacity-55" : "px-3 py-2.5"}
+                                    >
+                                        <div className="flex items-start gap-2">
+                                            <Crosshair size={12} className="mt-0.5 shrink-0 text-red-300/65" />
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] font-semibold leading-4 text-red-100/90">
+                                                    {objective.summary}
+                                                </p>
+                                                <p className="mt-0.5 truncate text-[9px] text-gray-500">
+                                                    {objective.questName}{objective.optional ? " · Optional" : ""}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="px-3 py-3 text-[10px] text-gray-500">No active kill objectives on this map.</p>
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
@@ -155,7 +223,7 @@ function RaidPlannerMapCard({
                 )}
 
                 {summary.requiredKeys.length > 0 && (
-                    <span className="mt-4 block border-t border-white/8 pt-3">
+                    <span className="mt-4 block">
                         <span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300/70">
                             <KeyRound size={10} /> Required keys
                         </span>
@@ -175,39 +243,26 @@ function RaidPlannerMapCard({
     );
 }
 
-function getKeyDisplayName(name: string, shortName?: string) {
-    const compact = shortName?.trim();
-    if (compact) return compact;
-    return name
-        .replace(/^key to (?:the )?/i, "")
-        .replace(/\s+key$/i, "")
-        .trim() || name;
-}
-
 function RaidPlannerKey({ item }: { item: ReturnType<typeof buildRaidPlannerMapSummary>["requiredKeys"][number] }) {
-    const image = item.iconLink ?? item.gridImageLink;
-    const displayName = getKeyDisplayName(item.name, item.shortName);
+    const image = item.gridImageLink ?? item.iconLink;
 
     return (
         <span
             title={item.name}
             aria-label={item.name}
-            className="relative h-16 w-20 shrink-0 overflow-hidden border border-white/12 bg-[#10171a]/95 shadow-sm transition-colors group-hover:border-white/20"
+            className="relative h-16 w-16 shrink-0 overflow-hidden"
         >
-            <span className="absolute left-1 right-1 top-1 z-10 block truncate text-left text-[9px] font-medium leading-tight text-gray-200 [text-shadow:0_1px_2px_#000,0_0_4px_#000]">
-                {displayName}
-            </span>
             {image ? (
                 <Image
                     src={image}
                     alt=""
                     aria-hidden="true"
                     width={64}
-                    height={54}
-                    className="absolute inset-x-0 bottom-0 h-[3.4rem] w-full object-contain drop-shadow-lg"
+                    height={64}
+                    className="absolute inset-0 h-full w-full object-cover"
                 />
             ) : (
-                <KeyRound size={34} className="absolute bottom-2 left-1/2 -translate-x-1/2 text-gray-600" />
+                <KeyRound size={34} className="absolute inset-0 m-auto text-gray-600" />
             )}
         </span>
     );

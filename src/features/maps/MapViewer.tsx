@@ -20,6 +20,7 @@ interface MapViewerProps {
     focusRequestKey?: string | number | null;
     onMarkerSelect?: (marker: MapOverlayMarker) => void;
     onMarkerFocus?: (marker: MapOverlayMarker | null) => void;
+    renderMarkerDetails?: (marker: MapOverlayMarker) => ReactNode;
     onObjectiveFloorsChange?: (floors: ReadonlyMap<string, string[]>) => void;
     topRightContent?: ReactNode;
     compactAttribution?: boolean;
@@ -39,6 +40,7 @@ export function MapViewer({
     focusRequestKey,
     onMarkerSelect,
     onMarkerFocus,
+    renderMarkerDetails,
     onObjectiveFloorsChange,
     topRightContent,
     compactAttribution = false,
@@ -350,6 +352,7 @@ export function MapViewer({
                                     <span key={description} className="block">{description}</span>
                                 ))}
                             </span>
+                            {renderMarkerDetails?.(marker)}
                         </span>
                     </button>
                 ))}
