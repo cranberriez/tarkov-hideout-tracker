@@ -361,7 +361,7 @@ Objective item rows prefer the non-grid `iconLink` image and fall back to
 when present, remain a compact vertical list.
 
 Raw objective metadata is not rendered as chips below each objective. A local bug
-button in the bottom-right corner opens normalized objective JSON and the normalized
+button in the bottom-left corner opens normalized objective JSON and the normalized
 full quest JSON for inspection. This debug drawer is display-only and does not add
 or change persisted quest preferences.
 
@@ -373,6 +373,11 @@ world `x/z` plane using the configured rotation/transform, and renders one marke
 per positioned zone plus polygon outlines when present. Every location belonging
 to the same quest shares its list symbol and color. Hover/focus remains
 bidirectional between markers and quest rows.
+
+The Raid Planner keeps its selected map separate from the normal quest map filter.
+While the planner is open, its map temporarily drives the visible quest list and
+map filter display. Leaving the planner restores the normal filter unchanged, and
+re-entering the planner returns to its previously selected map.
 
 Quests associated with the selected map but lacking any positioned zone or quest-
 item geometry stay visible in a `Location unavailable` group. Possible quest-item

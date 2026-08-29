@@ -455,7 +455,7 @@ export function QuestDetailsPane() {
                 onClick={() => setShowDebug((visible) => !visible)}
                 aria-label={showDebug ? "Hide quest debug data" : "Show quest debug data"}
                 aria-expanded={showDebug}
-                className={cn("fixed bottom-5 right-5 z-50 flex h-9 w-9 items-center justify-center rounded-full border bg-[#111316] shadow-xl transition-colors", showDebug ? "border-tarkov-green/50 text-tarkov-green" : "border-white/12 text-gray-600 hover:border-white/25 hover:text-gray-300")}
+                className={cn("fixed bottom-5 left-5 z-50 flex h-9 w-9 items-center justify-center rounded-full border bg-[#111316] shadow-xl transition-colors", showDebug ? "border-tarkov-green/50 text-tarkov-green" : "border-white/12 text-gray-600 hover:border-white/25 hover:text-gray-300")}
             >
                 <Bug size={15} />
             </button>

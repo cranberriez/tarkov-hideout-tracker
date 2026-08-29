@@ -137,7 +137,16 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             store.fenceReputation, store.completedQuests, store.failedQuests],
     );
     const selectedTraderIds = useMemo(() => new Set(store.selectedTraderIds), [store.selectedTraderIds]);
-    const selectedMapKeys = useMemo(() => new Set(store.selectedMapKeys), [store.selectedMapKeys]);
+    const externalSelectedMapKeys = useMemo(
+        () => new Set(store.selectedMapKeys),
+        [store.selectedMapKeys],
+    );
+    const selectedMapKeys = useMemo(
+        () => mode === "planner" && plannerMapKey
+            ? new Set([plannerMapKey])
+            : externalSelectedMapKeys,
+        [externalSelectedMapKeys, mode, plannerMapKey],
+    );
     const selectedStatuses = useMemo(() => new Set(store.selectedStatuses), [store.selectedStatuses]);
     const selectedObjectiveCategories = useMemo(
         () => new Set(store.selectedObjectiveCategories),
@@ -214,7 +223,6 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
 
     const selectPlannerMap = (mapKey: string) => {
         setPlannerMapKey(mapKey);
-        store.setSelectedMapKeys([mapKey]);
         setMode("planner");
     };
 
@@ -254,8 +262,22 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             },
             clearTraders: () => { clearRetainedCompletedQuests(); store.setSelectedTraderIds([]); },
             setFilterByTraderRequirements: (enabled) => { clearRetainedCompletedQuests(); store.setFilterByTraderRequirements(enabled); },
-            toggleMap: (key) => { clearRetainedCompletedQuests(); store.setSelectedMapKeys([...toggleSetValue(selectedMapKeys, key)]); },
-            clearMaps: () => { clearRetainedCompletedQuests(); store.setSelectedMapKeys([]); },
+            toggleMap: (key) => {
+                clearRetainedCompletedQuests();
+                if (mode === "planner") {
+                    setPlannerMapKey(plannerMapKey === key ? null : key);
+                    return;
+                }
+                store.setSelectedMapKeys([...toggleSetValue(externalSelectedMapKeys, key)]);
+            },
+            clearMaps: () => {
+                clearRetainedCompletedQuests();
+                if (mode === "planner") {
+                    setPlannerMapKey(null);
+                    return;
+                }
+                store.setSelectedMapKeys([]);
+            },
             toggleStatus: (status) => { clearRetainedCompletedQuests(); store.setSelectedStatuses([...toggleSetValue(selectedStatuses, status)]); },
             toggleObjectiveCategory: (category) => { clearRetainedCompletedQuests(); store.setSelectedObjectiveCategories([...toggleSetValue(selectedObjectiveCategories, category)]); },
             clearObjectiveCategories: () => { clearRetainedCompletedQuests(); store.setSelectedObjectiveCategories([]); },
@@ -274,7 +296,6 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             selectPlannerMap,
             clearPlannerMap: () => {
                 setPlannerMapKey(null);
-                store.setSelectedMapKeys([]);
             },
             setHighlightedQuestId,
         }}>
