@@ -86,6 +86,7 @@ interface RawObjectiveItem {
     id: string;
     name: string;
     normalizedName: string;
+    shortName?: string;
     iconLink?: string;
     gridImageLink?: string;
 }
@@ -566,6 +567,7 @@ fragment CompactItem on Item {
   id
   name
   normalizedName
+  shortName
   iconLink
 }
 `;
@@ -576,6 +578,7 @@ query QuestObjectiveItems($ids: [ID]) {
     id
     name
     normalizedName
+    shortName
     iconLink
   }
 }

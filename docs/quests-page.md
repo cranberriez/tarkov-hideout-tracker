@@ -440,19 +440,20 @@ The Raid Planner uses real objective zone geometry from the normalized JSON ques
 payload. It loads only the selected map's compact SVG definition, projects the
 world `x/z` plane using the configured rotation/transform, and renders one marker
 per positioned zone plus polygon outlines when present. Every location belonging
-to the same quest shares its list symbol and color. Hover/focus remains
-bidirectional between markers and quest rows.
+to the same quest shares its list symbol and color. Hovering a marker only shows
+its tooltip; clicking it selects and scrolls to the corresponding quest row.
 
 The Raid Planner keeps its selected map separate from the normal quest map filter.
 While the planner is open, its map temporarily drives the visible quest list and
 map filter display. Leaving the planner restores the normal filter unchanged, and
 re-entering the planner returns to its previously selected map.
 
-Quests associated with the selected map but lacking any positioned zone or quest-
-item geometry stay visible in a `Location unavailable` group. Possible quest-item
-spawns repeat one shared quest symbol at every known position. Duplicate positions
-inside one quest are collapsed into one marker and their objective information is
-combined in its tooltip.
+Only profile-active quests contribute Raid Planner markers and map-card summaries;
+locked, completed, and failed quests are excluded regardless of the workspace
+status filter. Quests without positioned geometry do not receive synthetic
+markers. Possible quest-item spawns repeat one shared quest symbol at every known
+position. Duplicate positions inside one quest are collapsed into one marker and
+their objective information is combined in its tooltip.
 
 Quest detail panes reuse the shared `MapViewer` for objectives with precise
 positions. On wide layouts the quest header spans the full pane, while the section

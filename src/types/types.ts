@@ -138,6 +138,7 @@ export interface QuestItem {
     id: string;
     name: string;
     normalizedName: string;
+    shortName?: string;
     iconLink?: string;
     gridImageLink?: string;
 }

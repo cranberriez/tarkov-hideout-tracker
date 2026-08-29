@@ -45,6 +45,7 @@ interface JsonItem {
     id: string;
     name: string;
     normalizedName: string;
+    shortName?: string;
     iconLink?: string;
     gridImageLink?: string;
 }
@@ -207,6 +208,7 @@ function toQuestItem(id: string, context: MappingContext): QuestItem | null {
         id: item.id,
         name: translate(item.name),
         normalizedName: item.normalizedName,
+        shortName: item.shortName ? translate(item.shortName) : undefined,
         iconLink: item.iconLink,
         gridImageLink: item.gridImageLink,
     };

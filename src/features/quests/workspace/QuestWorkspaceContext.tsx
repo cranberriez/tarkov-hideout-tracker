@@ -214,10 +214,13 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
     const markerByQuestId = useMemo(
         () => createQuestMarkerStyles(
             plannerMapKey
-                ? quests.filter((quest) => getQuestMapKeys(quest).has(plannerMapKey))
+                ? quests.filter((quest) =>
+                      statusByQuestId.get(quest.id)?.status === "active" &&
+                      getQuestMapKeys(quest).has(plannerMapKey),
+                  )
                 : [],
         ),
-        [plannerMapKey, quests],
+        [plannerMapKey, quests, statusByQuestId],
     );
     const branchLines = useMemo(() => buildQuestBranchLines(quests), [quests]);
     const branchLineByQuestId = useMemo(() => {

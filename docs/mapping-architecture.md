@@ -96,9 +96,11 @@ those floors cannot be toggled until the artwork metadata supplies group IDs.
 fit-to-markers, objective-focused fitting, zone outlines, marker selection/focus, responsive sizing, and
 visible map attribution. Its layer summary lists currently visible floors,
 provides independent optional-layer toggles and per-floor marker counts, and adds the resolved
-floor name to marker tooltips. Marker coordinates and size remain fixed on hover/focus;
-only the highlight ring and objective tooltip change. Quest hover/focus and map
-marker focus remain synchronized. The Raid Planner keeps each map's pan and zoom
+floor name to marker tooltips. Marker coordinates and size remain fixed on hover/focus.
+Hovering a Raid Planner marker shows its objective tooltip without changing or
+scrolling the quest list; clicking the marker selects, highlights, and scrolls to
+its quest. Quest-list hover/focus can still highlight the corresponding map marker.
+The Raid Planner keeps each map's pan and zoom
 in session memory, so opening a marker's quest details and returning to the
 planner restores the same view without adding persistent user-store fields.
 
@@ -106,8 +108,8 @@ The layer control is anchored at the bottom-left and expands upward with an
 explicit collapse caret. Zoom is capped at 7x. Every manual, remembered, focused,
 or cursor-anchored view is constrained against the scaled artwork dimensions, so
 panning can reach the map edges but cannot move the artwork completely outside
-the viewport. Attribution appears in the top-right overlay row beside Raid
-Planner location counts, or by itself for consumers without top-right status.
+the viewport. Attribution appears by itself in the Raid Planner's top-right
+overlay row.
 Embedded quest-detail maps use a smaller text-only attribution treatment with a
 faint background so licensing remains visible without occupying meaningful map
 space.
@@ -116,6 +118,15 @@ The quest-detail consumer loads `MapViewer` as a client-only dynamic chunk. Its
 quest-specific marker payload is memoized, and map updates use a deferred value so
 the header and textual details can switch before the SVG viewer performs its next
 projection/render pass.
+
+The Raid Planner map picker spans the available planner pane and summarizes only
+profile-active quests. Each map card groups those quests by objective category,
+calls out category counts that require keys, and shows the deduplicated required
+keys as compact image tiles with Tarkov short names and full-name hover text.
+Supported cards reuse the same proxied Tarkov.dev SVG artwork as the map
+viewer; unsupported maps remain text-only. The selected-map marker set also uses
+only active quests, regardless of the workspace's completed, failed, or locked
+status filters.
 
 Icebreaker, The Lab, and The Labyrinth currently return an intentional unsupported state because their configured interactive entries do not have validated SVG paths.
 
