@@ -10,6 +10,22 @@ export interface QuestFailureSource {
 export type QuestFailureMap = Map<string, string[]>;
 export type MultipleChoiceQuestGroups = Map<string, string[]>;
 
+const customFailConditionText: Readonly<Record<string, string>> = {
+    "673f5069fd98c4d6d89e7a4c": "Marking an Wheels on Customs fails the quest",
+    "639c6674eb92d6238e058dea":
+        "Killing Zryachiy will fail the quest losing access to it",
+    "5f04539a29383318cb417b44": "KILLING SANITAR",
+    "63a6c752d4153566a073285a":
+        "By killing Zryachiy you will fail and lose access to this quest.",
+    "6667196a74bbc3a671ef49f8":
+        'Killing Scavs, Scav Raiders, Rogues, or Bosses will fail the quest. Killing any of them after finishing the quest but before selecting "Complete" will still fail the quest.',
+    "6667323ff686168c451ad02c": "Killing any boss will fail the quest.",
+};
+
+const customMultipleChoiceQuestGroups: readonly (readonly string[])[] = [
+    ["5edac34d0bb72a50635c2bfa", "5edab4b1218d181e29451435"],
+];
+
 function normalizeStatus(status: string) {
     return status.trim().toLowerCase();
 }
@@ -49,6 +65,27 @@ export function questCanFail(quest: Pick<QuestFailureSource, "failConditions">) 
 
 export function hasGenericFailWarning(quest: Pick<QuestFailureSource, "failConditions">) {
     return (quest.failConditions ?? []).some((condition) => condition.type !== "taskStatus");
+}
+
+export function getQuestFailConditionText(condition: QuestFailCondition) {
+    const providerDescription = condition.description.trim();
+
+    if (providerDescription && providerDescription !== condition.id) return providerDescription;
+    return customFailConditionText[condition.id] ?? (providerDescription || condition.type);
+}
+
+export function getQuestFailWarningText(
+    quest: Pick<QuestFailureSource, "failConditions">,
+) {
+    const conditions = quest.failConditions ?? [];
+    const customCondition = conditions.find(
+        (condition) =>
+            customFailConditionText[condition.id] &&
+            condition.description.trim() === condition.id,
+    );
+    const condition = customCondition ?? conditions[0];
+
+    return condition ? getQuestFailConditionText(condition) : null;
 }
 
 export function getFailedQuestRequirementIds(
@@ -119,7 +156,9 @@ export function getMutuallyExclusiveQuestIds(quest: Pick<QuestFailureSource, "fa
 }
 
 /**
- * Finds data-driven quest choice groups. A group is only returned when every quest has a
+ * Finds data-driven quest choice groups, then adds explicitly known semantic choices that
+ * the provider conditions cannot describe reciprocally. A derived group is only returned
+ * when every quest has a
  * non-optional completion fail condition for every other quest in the group. One-way
  * failure conditions are deliberately excluded because they do not guarantee that only
  * one quest can be completed.
@@ -179,6 +218,12 @@ export function buildMultipleChoiceQuestGroups<T extends QuestFailureSource>(
             .map((candidate) => candidate.id)
             .filter((id) => component.includes(id));
         for (const questId of groupIds) groups.set(questId, groupIds);
+    }
+
+    for (const customGroup of customMultipleChoiceQuestGroups) {
+        const groupIds = customGroup.filter((id) => questIds.has(id));
+        if (groupIds.length !== customGroup.length) continue;
+        for (const questId of groupIds) groups.set(questId, [...groupIds]);
     }
 
     return groups;

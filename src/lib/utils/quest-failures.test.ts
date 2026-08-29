@@ -7,6 +7,8 @@ import {
     buildQuestFailureMap,
     getAutoFailedQuestIds,
     getFailedQuestRequirementIds,
+    getQuestFailConditionText,
+    getQuestFailWarningText,
     hasGenericFailWarning,
     isQuestDisabledByCompletedFailedRequirement,
     questCanFail,
@@ -121,6 +123,77 @@ test("generic fail conditions warn but do not create automatic failures", () => 
     assert.equal(buildQuestFailureMap(quests).size, 0);
 });
 
+test("custom fail condition text replaces opaque provider descriptions", () => {
+    const hotWheelsCondition = {
+        id: "673f5069fd98c4d6d89e7a4c",
+        type: "plantItem",
+        description: "673f5069fd98c4d6d89e7a4c",
+    };
+    const gettingAcquaintedCondition = {
+        id: "639c6674eb92d6238e058dea",
+        type: "traderStanding",
+        description: "639c6674eb92d6238e058dea",
+    };
+
+    assert.equal(
+        getQuestFailConditionText(hotWheelsCondition),
+        "Marking an Wheels on Customs fails the quest",
+    );
+    assert.equal(
+        getQuestFailConditionText(gettingAcquaintedCondition),
+        "Killing Zryachiy will fail the quest losing access to it",
+    );
+});
+
+test("provider fail condition text takes precedence over a custom fallback", () => {
+    assert.equal(
+        getQuestFailConditionText({
+            id: "5f04539a29383318cb417b44",
+            type: "shoot",
+            description: "Do not eliminate Sanitar",
+        }),
+        "Do not eliminate Sanitar",
+    );
+});
+
+test("confirmed generic conditions have human-readable fallback text", () => {
+    const expectedTextByConditionId = {
+        "5f04539a29383318cb417b44": "KILLING SANITAR",
+        "63a6c752d4153566a073285a":
+            "By killing Zryachiy you will fail and lose access to this quest.",
+        "6667196a74bbc3a671ef49f8":
+            'Killing Scavs, Scav Raiders, Rogues, or Bosses will fail the quest. Killing any of them after finishing the quest but before selecting "Complete" will still fail the quest.',
+        "6667323ff686168c451ad02c": "Killing any boss will fail the quest.",
+    };
+
+    for (const [id, expectedText] of Object.entries(expectedTextByConditionId)) {
+        assert.equal(
+            getQuestFailConditionText({ id, type: "generic", description: id }),
+            expectedText,
+        );
+    }
+});
+
+test("quest fail warnings prefer custom text over an earlier generic condition", () => {
+    const quest = makeQuest({
+        id: "custom-warning",
+        name: "Custom Warning",
+        failConditions: [
+            { id: "generic", type: "visit", description: "Generic warning" },
+            {
+                id: "673f5069fd98c4d6d89e7a4c",
+                type: "plantItem",
+                description: "673f5069fd98c4d6d89e7a4c",
+            },
+        ],
+    });
+
+    assert.equal(
+        getQuestFailWarningText(quest),
+        "Marking an Wheels on Customs fails the quest",
+    );
+});
+
 test("failed prerequisites are detected and completed targets disable the quest", () => {
     const quest = makeQuest({
         id: "trust-regain",
@@ -204,4 +277,16 @@ test("buildMultipleChoiceQuestGroups excludes one-way conflicts", () => {
     ];
 
     assert.equal(buildMultipleChoiceQuestGroups(quests).size, 0);
+});
+
+test("buildMultipleChoiceQuestGroups includes the custom Sanitar choice", () => {
+    const quests = [
+        makeQuest({ id: "5edac34d0bb72a50635c2bfa", name: "A Difficult Choice" }),
+        makeQuest({ id: "5edab4b1218d181e29451435", name: "The Huntsman Path - Sadist" }),
+    ];
+
+    const groups = buildMultipleChoiceQuestGroups(quests);
+
+    assert.deepEqual(groups.get(quests[0].id), quests.map((quest) => quest.id));
+    assert.deepEqual(groups.get(quests[1].id), quests.map((quest) => quest.id));
 });

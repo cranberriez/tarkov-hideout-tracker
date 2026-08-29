@@ -15,7 +15,11 @@ import {
     getTraderTierCompletionGate,
 } from "@/lib/utils/quest-trader-completion-gates";
 import { isEssentialQuest } from "@/lib/utils/quest-series";
-import { buildMultipleChoiceQuestGroups, questCanFail } from "@/lib/utils/quest-failures";
+import {
+    buildMultipleChoiceQuestGroups,
+    getQuestFailConditionText,
+    questCanFail,
+} from "@/lib/utils/quest-failures";
 import { formatQuestUnlockTiming, formatTaskRequirementStatus } from "@/lib/utils/quest-relations";
 import type { FullQuest, FullQuestObjective, QuestOtherRequirement, QuestTraderStandingReward } from "@/types";
 import { ObjectiveRow } from "../components/quest-card/QuestObjectiveRows";
@@ -399,7 +403,7 @@ export function QuestDetailsPane() {
                                                     {referencedQuest.name}
                                                 </button>
                                             ) : (
-                                                <p>{condition.description || condition.type}</p>
+                                                <p>{getQuestFailConditionText(condition)}</p>
                                             )}
                                             {condition.type === "taskStatus" && "status" in condition && <p className="mt-1 text-[10px] text-red-200/40">Quest status: {condition.status.join(" or ")}</p>}
                                         </div>

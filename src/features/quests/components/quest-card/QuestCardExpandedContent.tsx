@@ -7,6 +7,7 @@ import { QuestRelationChip } from "./QuestRelationChip";
 import { QuestActionButton } from "./QuestCardHeader";
 import { questDetailChipBaseClass } from "./styles";
 import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";
+import { getQuestFailWarningText } from "@/lib/utils/quest-failures";
 import type { QuestChipData, QuestRef } from "./types";
 
 interface QuestCardExpandedContentProps {
@@ -50,6 +51,7 @@ export function QuestCardExpandedContent({
 }: QuestCardExpandedContentProps) {
     const finishTraderStandingRewards = quest.finishTraderStandingRewards ?? [];
     const failureTraderStandingRewards = quest.failureTraderStandingRewards ?? [];
+    const failWarningText = getQuestFailWarningText(quest);
 
     return (
         <div className="px-3 py-3 space-y-3">
@@ -119,10 +121,7 @@ export function QuestCardExpandedContent({
                             className={`${questDetailChipBaseClass} text-amber-300 bg-amber-500/10 border-amber-500/20`}
                         >
                             <AlertTriangle size={13} />
-                            Can fail -{" "}
-                            {quest.failConditions?.[0]?.description
-                                ? quest.failConditions?.[0]?.description
-                                : "check wiki"}
+                            Can fail - {failWarningText ?? "check wiki"}
                         </span>
                     )}
                     {questsFailedByCompletingThisQuest.length > 0 && (

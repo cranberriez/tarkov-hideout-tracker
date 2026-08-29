@@ -412,6 +412,12 @@ prerequisite task name is interactive; the requirement symbol and label are not
 part of its click target. Unlocks are plain underlined quest-name links in a
 vertical text list. Failure reputation is grouped with failure conditions. Requirement
 and unlock cards, plus the former separate sidebar gate sections, are not rendered.
+Known non-branch failure conditions whose provider description is still identical
+to the condition ID use condition-ID-specific fallback text from `quest-failures.ts`.
+Meaningful provider descriptions always take precedence. The Sanitar choice between
+**A Difficult Choice** and **The Huntsman Path - Sadist** is explicitly included in
+the multiple-choice banner because its relationship is not fully expressed through
+reciprocal task-status failure conditions.
 An `Active` task requirement is labeled **Quest active**, matching the upstream
 status and the corresponding **On accept** unlock timing. The left details column
 also shows an edge-to-edge multiple-choice warning above its requirements and
