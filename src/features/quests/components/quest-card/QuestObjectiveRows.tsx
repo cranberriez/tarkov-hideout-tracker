@@ -116,12 +116,16 @@ interface ObjectiveRowProps {
     onItemClick?: (itemId: string) => void;
     itemDisplay?: "compact" | "rows";
     showItems?: boolean;
+    objectiveCompletion?: {
+        completed: boolean;
+        onToggle: () => void;
+    };
 }
 
 const WORKSPACE_ITEM_PREVIEW_LIMIT = 10;
 const COMPACT_ITEM_PREVIEW_LIMIT = 15;
 
-export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", showItems = true }: ObjectiveRowProps) {
+export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", showItems = true, objectiveCompletion }: ObjectiveRowProps) {
     const [showAllItems, setShowAllItems] = useState(false);
     const item = isItemObjective(objective) ? objective : null;
     const shoot = isShootObjective(objective) ? objective : null;
@@ -148,7 +152,31 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
                         objective.type === "playerLevel") && <span>{objective.count}</span>}
             </div>
             <div className="flex-1 min-w-0 space-y-1">
-                <p className={itemDisplay === "rows" ? "text-sm leading-relaxed text-gray-200" : "text-xs leading-snug text-gray-300"}>{objective.description}</p>
+                <div className="flex items-start justify-between gap-3">
+                    <p className={objectiveCompletion?.completed
+                        ? "text-sm leading-relaxed text-gray-500 line-through decoration-white/20"
+                        : itemDisplay === "rows"
+                          ? "text-sm leading-relaxed text-gray-200"
+                          : "text-xs leading-snug text-gray-300"
+                    }>{objective.description}</p>
+                    {objectiveCompletion && (
+                        <button
+                            type="button"
+                            aria-pressed={objectiveCompletion.completed}
+                            aria-label={`${objectiveCompletion.completed ? "Undo completion of" : "Complete"} objective: ${objective.description}`}
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                objectiveCompletion.onToggle();
+                            }}
+                            className={objectiveCompletion.completed
+                                ? "shrink-0 border border-tarkov-green/25 bg-tarkov-green/8 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-tarkov-green/75 transition-colors hover:border-white/25 hover:text-white"
+                                : "shrink-0 border border-white/12 bg-black/25 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-500 transition-colors hover:border-tarkov-green/40 hover:text-tarkov-green"
+                            }
+                        >
+                            {objectiveCompletion.completed ? "Undo" : "Complete"}
+                        </button>
+                    )}
+                </div>
                 {shoot && shoot.bodyParts.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                         {shoot.bodyParts.map((part) => (

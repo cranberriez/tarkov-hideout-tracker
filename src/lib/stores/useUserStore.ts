@@ -102,6 +102,7 @@ export interface PlayerProfileState {
     hiddenStations: Record<string, boolean>;
     completedRequirements: Record<string, boolean>;
     completedQuests: Record<string, boolean>;
+    completedQuestObjectives: Record<string, Record<string, boolean>>;
     failedQuests: Record<string, boolean>;
     questsWithItems: Record<string, boolean>;
     ignoredQuests: Record<string, boolean>;
@@ -126,6 +127,7 @@ function createDefaultPlayerProfile(): PlayerProfileState {
         hiddenStations: {},
         completedRequirements: {},
         completedQuests: {},
+        completedQuestObjectives: {},
         failedQuests: {},
         questsWithItems: {},
         ignoredQuests: { ...DEFAULT_IGNORED_QUESTS },
@@ -167,6 +169,7 @@ interface UserState {
     hiddenStations: Record<string, boolean>; // stationId -> hidden?
     completedRequirements: Record<string, boolean>; // requirementId -> completed?
     completedQuests: Record<string, boolean>; // questId -> completed?
+    completedQuestObjectives: Record<string, Record<string, boolean>>; // questId -> objectiveId -> visited?
     failedQuests: Record<string, boolean>; // questId -> failed?
     questsWithItems: Record<string, boolean>; // questId -> items collected but not handed in
     ignoredQuests: Record<string, boolean>; // questId -> hidden from quest demand
@@ -257,6 +260,7 @@ interface UserState {
     toggleHiddenStation: (stationId: string) => void;
     toggleRequirement: (requirementId: string) => void;
     toggleQuestCompletion: (questId: string) => void;
+    toggleQuestObjectiveCompletion: (questId: string, objectiveId: string) => void;
     applyQuestCompletionChange: (changes: {
         complete?: string[];
         uncomplete?: string[];
@@ -376,6 +380,12 @@ function createPlayerProfileFromLegacyState(
         hiddenStations: { ...profile.hiddenStations },
         completedRequirements: { ...profile.completedRequirements },
         completedQuests: { ...profile.completedQuests },
+        completedQuestObjectives: Object.fromEntries(
+            Object.entries(profile.completedQuestObjectives).map(([questId, objectives]) => [
+                questId,
+                { ...objectives },
+            ]),
+        ),
         failedQuests: { ...profile.failedQuests },
         questsWithItems: { ...profile.questsWithItems },
         ignoredQuests: { ...profile.ignoredQuests },
@@ -423,6 +433,7 @@ export const useUserStore = create<UserState>()(
             hiddenStations: {},
             completedRequirements: {},
             completedQuests: {},
+            completedQuestObjectives: {},
             failedQuests: {},
             questsWithItems: {},
             ignoredQuests: DEFAULT_IGNORED_QUESTS,
@@ -523,6 +534,8 @@ export const useUserStore = create<UserState>()(
             toggleQuestCompletion: (questId) =>
                 set((state) => {
                     const willComplete = !state.completedQuests[questId];
+                    const nextCompletedQuestObjectives = { ...state.completedQuestObjectives };
+                    if (willComplete) delete nextCompletedQuestObjectives[questId];
                     return {
                         completedQuests: { ...state.completedQuests, [questId]: willComplete },
                         questChangeHistory: mergeQuestChangeHistory(
@@ -540,8 +553,22 @@ export const useUserStore = create<UserState>()(
                         ...(willComplete
                             ? { questsWithItems: { ...state.questsWithItems, [questId]: false } }
                             : {}),
+                        ...(willComplete
+                            ? { completedQuestObjectives: nextCompletedQuestObjectives }
+                            : {}),
                     };
                 }),
+
+            toggleQuestObjectiveCompletion: (questId, objectiveId) =>
+                set((state) => ({
+                    completedQuestObjectives: {
+                        ...state.completedQuestObjectives,
+                        [questId]: {
+                            ...state.completedQuestObjectives[questId],
+                            [objectiveId]: !state.completedQuestObjectives[questId]?.[objectiveId],
+                        },
+                    },
+                })),
 
             applyQuestCompletionChange: ({ complete = [], uncomplete = [], fail = [], unFail = [] }) =>
                 set((state) => {
@@ -555,6 +582,7 @@ export const useUserStore = create<UserState>()(
                     }
 
                     const nextCompletedQuests = { ...state.completedQuests };
+                    const nextCompletedQuestObjectives = { ...state.completedQuestObjectives };
                     const nextFailedQuests = { ...state.failedQuests };
                     const nextQuestsWithItems = { ...state.questsWithItems };
                     const timestamp = Date.now();
@@ -565,6 +593,7 @@ export const useUserStore = create<UserState>()(
                             historyEntries.push({ questId, timestamp, change: "completed" });
                         }
                         nextCompletedQuests[questId] = true;
+                        delete nextCompletedQuestObjectives[questId];
                     }
                     for (const questId of uncomplete) {
                         if (nextCompletedQuests[questId]) {
@@ -588,6 +617,9 @@ export const useUserStore = create<UserState>()(
                         completedQuests: nextCompletedQuests,
                         failedQuests: nextFailedQuests,
                         questsWithItems: nextQuestsWithItems,
+                        ...(complete.length > 0
+                            ? { completedQuestObjectives: nextCompletedQuestObjectives }
+                            : {}),
                         questChangeHistory: mergeQuestChangeHistory(
                             state.questChangeHistory,
                             historyEntries,
@@ -789,6 +821,7 @@ export const useUserStore = create<UserState>()(
                     }
                     return { ...profile, gameMode: mode };
                 }),
+
             completeSetup: () => set({ hasCompletedSetup: true, isSetupOpen: false }),
             setSetupOpen: (isOpen) => set({ isSetupOpen: isOpen }),
 
@@ -908,6 +941,7 @@ export const useUserStore = create<UserState>()(
             resetQuestData: () => {
                 set(() => ({
                     completedQuests: {},
+                    completedQuestObjectives: {},
                     failedQuests: {},
                     questsWithItems: {},
                     ignoredQuests: {},
@@ -926,6 +960,7 @@ export const useUserStore = create<UserState>()(
                     hiddenStations: {},
                     completedRequirements: {},
                     completedQuests: {},
+                    completedQuestObjectives: {},
                     failedQuests: {},
                     questsWithItems: {},
                     ignoredQuests: {},
@@ -1023,7 +1058,7 @@ export const useUserStore = create<UserState>()(
         },
         {
             name: USER_STORE_STORAGE_KEY,
-            version: 22,
+            version: 23,
             migrate: (persistedState, version) => {
                 let nextState =
                     persistedState && typeof persistedState === "object"
@@ -1280,6 +1315,30 @@ export const useUserStore = create<UserState>()(
                             ...lockedFilters,
                             showAll: lockedFilters.showAll === true,
                         },
+                    };
+                }
+
+                if (version < 23) {
+                    const persistedProfiles =
+                        typeof nextState.profiles === "object" && nextState.profiles !== null
+                            ? nextState.profiles as Partial<Record<GameMode, Partial<PlayerProfileState>>>
+                            : {};
+                    const profiles = createDefaultProfiles();
+
+                    for (const mode of ["PVP", "PVE", "KORD"] as const) {
+                        const persistedProfile = persistedProfiles[mode];
+                        if (!persistedProfile) continue;
+                        profiles[mode] = {
+                            ...profiles[mode],
+                            ...persistedProfile,
+                            completedQuestObjectives: {},
+                        };
+                    }
+
+                    nextState = {
+                        ...nextState,
+                        completedQuestObjectives: {},
+                        profiles,
                     };
                 }
 

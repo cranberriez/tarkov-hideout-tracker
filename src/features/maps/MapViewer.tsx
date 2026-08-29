@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, Eye, EyeOff, Layers3, LocateFixed, Minus, Plus } from "lucide-react";
+import { Check, ChevronDown, Eye, EyeOff, Layers3, LocateFixed, Minus, Plus, X } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { getProjectedMapAspectRatio, worldToMapPoint } from "./map-projection";
@@ -20,6 +20,8 @@ interface MapViewerProps {
     focusRequestKey?: string | number | null;
     onMarkerSelect?: (marker: MapOverlayMarker) => void;
     onMarkerFocus?: (marker: MapOverlayMarker | null) => void;
+    onMarkerComplete?: (marker: MapOverlayMarker) => void;
+    canCompleteMarker?: (marker: MapOverlayMarker) => boolean;
     renderMarkerDetails?: (marker: MapOverlayMarker) => ReactNode;
     onObjectiveFloorsChange?: (floors: ReadonlyMap<string, string[]>) => void;
     topRightContent?: ReactNode;
@@ -38,6 +40,73 @@ function getNavigationLabelTransform(percentX: number, scale: number) {
     };
 }
 
+function MarkerPopup({
+    marker,
+    floorNames,
+    pinned,
+    completed,
+    canComplete,
+    renderMarkerDetails,
+    onComplete,
+    onClose,
+}: {
+    marker: MapOverlayMarker;
+    floorNames: string[];
+    pinned: boolean;
+    completed: boolean;
+    canComplete: boolean;
+    renderMarkerDetails?: (marker: MapOverlayMarker) => ReactNode;
+    onComplete: () => void;
+    onClose: () => void;
+}) {
+    return (
+        <div
+            data-marker-popup
+            className={cn(
+                "absolute bottom-full left-1/2 z-[110] w-72 -translate-x-1/2 pb-2 text-left font-sans font-normal",
+                pinned ? "block" : "hidden group-hover:block group-focus-within:block",
+            )}
+        >
+            <div className="border border-white/12 bg-[#111214]/95 p-3 shadow-2xl backdrop-blur">
+                <div className="flex items-start justify-between gap-3">
+                    <span className="min-w-0 flex-1 text-xs font-semibold text-white">{marker.title}</span>
+                    <span className="flex shrink-0 items-center gap-1">
+                        {canComplete && (
+                            <button
+                                type="button"
+                                disabled={completed}
+                                onClick={onComplete}
+                                className="inline-flex items-center gap-1 border border-tarkov-green/30 bg-tarkov-green/8 px-1.5 py-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-tarkov-green transition-colors hover:border-tarkov-green/60 hover:bg-tarkov-green/15 disabled:cursor-default disabled:opacity-60"
+                            >
+                                <Check size={9} /> {completed ? "Completed" : "Complete"}
+                            </button>
+                        )}
+                        {pinned && (
+                            <button
+                                type="button"
+                                aria-label="Close marker details"
+                                onClick={onClose}
+                                className="inline-flex h-5 w-5 items-center justify-center border border-white/10 text-gray-500 transition-colors hover:border-white/25 hover:text-white"
+                            >
+                                <X size={11} />
+                            </button>
+                        )}
+                    </span>
+                </div>
+                <span className="mt-1 block text-[9px] font-semibold uppercase tracking-wider text-gray-500">
+                    {floorNames.join(" · ")}
+                </span>
+                <span className="mt-2 block space-y-1 text-[10px] leading-relaxed text-gray-400">
+                    {marker.descriptions.map((description) => (
+                        <span key={description} className="block">{description}</span>
+                    ))}
+                </span>
+                {renderMarkerDetails?.(marker)}
+            </div>
+        </div>
+    );
+}
+
 export function MapViewer({
     mapKey,
     markers,
@@ -49,6 +118,8 @@ export function MapViewer({
     focusRequestKey,
     onMarkerSelect,
     onMarkerFocus,
+    onMarkerComplete,
+    canCompleteMarker,
     renderMarkerDetails,
     onObjectiveFloorsChange,
     topRightContent,
@@ -72,7 +143,26 @@ export function MapViewer({
         values: Record<string, boolean>;
     }>({ mapKey, values: {} });
     const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null);
+    const [pinnedMarkerPopup, setPinnedMarkerPopup] = useState<{
+        mapKey: string;
+        marker: MapOverlayMarker;
+        percentX: number;
+        percentY: number;
+        floorNames: string[];
+        completed: boolean;
+    } | null>(null);
     const [navigationLabelsVisible, setNavigationLabelsVisible] = useState(false);
+
+    useEffect(() => {
+        if (!pinnedMarkerPopup) return;
+        const dismissPinnedPopup = (event: PointerEvent) => {
+            const target = event.target;
+            if (target instanceof Element && target.closest("[data-marker-popup]")) return;
+            setPinnedMarkerPopup(null);
+        };
+        document.addEventListener("pointerdown", dismissPinnedPopup, true);
+        return () => document.removeEventListener("pointerdown", dismissPinnedPopup, true);
+    }, [pinnedMarkerPopup]);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -281,7 +371,10 @@ export function MapViewer({
                 });
             }}
             onPointerDown={(event) => {
-                if ((event.target as HTMLElement).closest("button, summary, a")) return;
+                const target = event.target as HTMLElement;
+                if (target.closest("[data-marker-popup]")) return;
+                setPinnedMarkerPopup(null);
+                if (target.closest("button, summary, a")) return;
                 dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
                 event.currentTarget.setPointerCapture(event.pointerId);
             }}
@@ -372,18 +465,12 @@ export function MapViewer({
                             </span>
                         );
                     }
-                    return <button
-                        type="button"
+                    const isPinned = pinnedMarkerPopup?.mapKey === mapKey && pinnedMarkerPopup.marker.id === marker.id;
+                    const markerCanBeCompleted = !!onMarkerComplete && (canCompleteMarker?.(marker) ?? true);
+                    return <div
                         key={marker.id}
-                        aria-label={`${marker.label}: ${marker.title}: ${marker.descriptions.join("; ")}`}
-                        onMouseEnter={() => { setHoveredMarkerId(marker.id); onMarkerFocus?.(marker); }}
-                        onMouseLeave={() => { setHoveredMarkerId(null); onMarkerFocus?.(null); }}
-                        onFocus={() => { setHoveredMarkerId(marker.id); onMarkerFocus?.(marker); }}
-                        onBlur={() => { setHoveredMarkerId(null); onMarkerFocus?.(null); }}
-                        onClick={() => onMarkerSelect?.(marker)}
                         className={cn(
-                            "group absolute z-20 flex items-center justify-center border-2 bg-black/90 font-mono font-bold shadow-xl outline-none hover:z-[100] focus-visible:z-[100]",
-                            "h-7 min-w-7 rounded-full px-1.5 text-[11px]",
+                            "group absolute z-20 flex h-7 min-w-7 items-center justify-center rounded-full hover:z-[100] focus-within:z-[100]",
                             (highlightedQuestId === marker.questId ||
                                 (!!highlightedObjectiveId && marker.objectiveIds?.includes(highlightedObjectiveId))) &&
                                 "ring-2 ring-white/70",
@@ -396,21 +483,74 @@ export function MapViewer({
                             transform: `translate(-50%, -50%) scale(${1 / view.scale})`,
                         }}
                     >
-                        {marker.label}
-                        <span className="pointer-events-none absolute bottom-full left-1/2 z-[110] mb-2 hidden w-72 -translate-x-1/2 border border-white/12 bg-[#111214]/95 p-3 text-left font-sans font-normal shadow-2xl backdrop-blur group-hover:block group-focus-visible:block">
-                            <span className="block text-xs font-semibold text-white">{marker.title}</span>
-                            <span className="mt-1 block text-[9px] font-semibold uppercase tracking-wider text-gray-500">
-                                {floors.map(({ floor }) => floor.name).join(" · ")}
-                            </span>
-                            <span className="mt-2 block space-y-1 text-[10px] leading-relaxed text-gray-400">
-                                {marker.descriptions.map((description) => (
-                                    <span key={description} className="block">{description}</span>
-                                ))}
-                            </span>
-                            {renderMarkerDetails?.(marker)}
-                        </span>
-                    </button>;
+                        <button
+                            type="button"
+                            aria-label={`${marker.label}: ${marker.title}: ${marker.descriptions.join("; ")}`}
+                            aria-expanded={isPinned}
+                            onMouseEnter={() => { setHoveredMarkerId(marker.id); onMarkerFocus?.(marker); }}
+                            onMouseLeave={() => { setHoveredMarkerId(null); onMarkerFocus?.(null); }}
+                            onFocus={() => { setHoveredMarkerId(marker.id); onMarkerFocus?.(marker); }}
+                            onBlur={() => { setHoveredMarkerId(null); onMarkerFocus?.(null); }}
+                            onClick={() => {
+                                setPinnedMarkerPopup({
+                                    mapKey,
+                                    marker,
+                                    percentX: point.percentX,
+                                    percentY: point.percentY,
+                                    floorNames: floors.map(({ floor }) => floor.name),
+                                    completed: false,
+                                });
+                                onMarkerSelect?.(marker);
+                            }}
+                            className="flex h-7 min-w-7 items-center justify-center rounded-full border-2 bg-black/90 px-1.5 font-mono text-[11px] font-bold shadow-xl outline-none"
+                            style={{ color: marker.color, borderColor: marker.color }}
+                        >
+                            {marker.label}
+                        </button>
+                        <MarkerPopup
+                            marker={marker}
+                            floorNames={floors.map(({ floor }) => floor.name)}
+                            pinned={isPinned}
+                            completed={isPinned && pinnedMarkerPopup.completed}
+                            canComplete={markerCanBeCompleted}
+                            renderMarkerDetails={renderMarkerDetails}
+                            onComplete={() => {
+                                setPinnedMarkerPopup({
+                                    mapKey,
+                                    marker,
+                                    percentX: point.percentX,
+                                    percentY: point.percentY,
+                                    floorNames: floors.map(({ floor }) => floor.name),
+                                    completed: true,
+                                });
+                                onMarkerComplete?.(marker);
+                            }}
+                            onClose={() => setPinnedMarkerPopup(null)}
+                        />
+                    </div>;
                 })}
+                {pinnedMarkerPopup?.mapKey === mapKey &&
+                    !projectedMarkers.some(({ marker }) => marker.id === pinnedMarkerPopup.marker.id) && (
+                        <div
+                            className="absolute z-[100] h-7 w-7"
+                            style={{
+                                left: `${pinnedMarkerPopup.percentX}%`,
+                                top: `${pinnedMarkerPopup.percentY}%`,
+                                transform: `translate(-50%, -50%) scale(${1 / view.scale})`,
+                            }}
+                        >
+                            <MarkerPopup
+                                marker={pinnedMarkerPopup.marker}
+                                floorNames={pinnedMarkerPopup.floorNames}
+                                pinned
+                                completed={pinnedMarkerPopup.completed}
+                                canComplete={pinnedMarkerPopup.completed}
+                                renderMarkerDetails={renderMarkerDetails}
+                                onComplete={() => {}}
+                                onClose={() => setPinnedMarkerPopup(null)}
+                            />
+                        </div>
+                    )}
             </div>
 
             {definition.floors.length > 1 && (

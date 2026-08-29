@@ -59,12 +59,16 @@ export function getPositionedObjectiveMaps(objective: FullQuestObjective): Posit
         .sort((left, right) => left.name.localeCompare(right.name));
 }
 
-export function getQuestDetailMaps(quest: FullQuest): PositionedObjectiveMap[] {
+export function getQuestDetailMaps(
+    quest: FullQuest,
+    completedObjectiveIds: ReadonlySet<string> = new Set(),
+): PositionedObjectiveMap[] {
     const groups = new Map<string, {
         group: PositionedObjectiveMap;
         positionKeys: Set<string>;
     }>();
     for (const objective of quest.objectives) {
+        if (completedObjectiveIds.has(objective.id)) continue;
         for (const location of getPositionedLocations(objective)) {
             const mapGroup = getQuestMapGroup(location.map);
             const positionKey = getPositionKey(location);
@@ -139,9 +143,11 @@ export function buildQuestDetailMarkers(
     quest: FullQuest,
     mapKey: string,
     styles = createQuestDetailObjectiveStyles(quest),
+    completedObjectiveIds: ReadonlySet<string> = new Set(),
 ) {
     const markerByPosition = new Map<string, MapOverlayMarker>();
     for (const objective of quest.objectives) {
+        if (completedObjectiveIds.has(objective.id)) continue;
         for (const [locationIndex, location] of (objective.locations ?? []).entries()) {
             if (!location.position || !isLocationOnMap(location, mapKey)) continue;
             const positionKey = getPositionKey({ ...location, position: location.position });

@@ -48,3 +48,14 @@ test("possible quest-item spawns reuse one quest symbol at every known spawn", (
     assert.deepEqual(new Set(markers.map((marker) => marker.label)).size, 1);
     assert.deepEqual(new Set(markers.map((marker) => marker.color)).size, 1);
 });
+
+test("omits visited objectives before combining planner markers", () => {
+    const styles = createQuestMarkerStyles([quest]);
+    const markers = buildRaidPlannerMarkers([quest], "customs", styles, {
+        [quest.id]: { "objective-1": true },
+    });
+
+    assert.equal(markers.length, 1);
+    assert.deepEqual(markers[0].objectiveIds, ["objective-2"]);
+    assert.deepEqual(markers[0].descriptions, ["Inspect the same marked place"]);
+});

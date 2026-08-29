@@ -65,6 +65,13 @@ multi-point geometry. Factory and Night Factory share the daytime Factory group
 and artwork. Objectives without coordinates remain unchanged and do not receive
 fabricated markers.
 
+Positioned objectives in multi-objective quests can be marked visited from quest
+details. Visited state is stored per game-mode profile and filters the objective
+before detail-map and Raid Planner markers are grouped, so shared-position markers
+retain only the unvisited objectives. The textual row remains available for undo.
+Whole-quest completion discards that quest's visited-objective records, so reopening
+an uncompleted quest restores all of its objective markers.
+
 ## Projection
 
 The projection follows the official tarkov.dev map implementation:
@@ -119,6 +126,10 @@ fit-to-markers, objective-focused fitting, zone outlines, marker selection/focus
 visible map attribution. Its layer summary lists currently visible floors,
 provides independent optional-layer toggles and per-floor marker counts, and adds the resolved
 floor name to marker tooltips. Marker coordinates and size remain fixed on hover/focus.
+Clicking a quest marker pins its detail popup. Eligible mapped objectives expose a
+compact **Complete** action beside a close button in the popup header. Completing
+the objective preserves that popup as a snapshot even after its marker is filtered;
+clicking elsewhere or using the close button dismisses it.
 The Raid Planner renders green PMC-extract zones and orange transit zones for the
 selected map without adding separate point markers. Persistent labels default to
 off and can be shown with the control beside the zoom buttons. Hovering or

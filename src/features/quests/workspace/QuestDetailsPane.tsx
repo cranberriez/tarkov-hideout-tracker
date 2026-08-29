@@ -66,6 +66,7 @@ export function QuestDetailsPane() {
     const { leadsToByQuestId, onItemClick, requestToggleQuestCompletion, requestFailQuest, requestResetQuestStatus } = useQuestsContext();
     const pinned = useUserStore((state) => quest ? !!state.pinnedQuests[quest.id] : false);
     const hidden = useUserStore((state) => quest ? !!state.ignoredQuests[quest.id] : false);
+    const completedQuestObjectives = useUserStore((state) => state.completedQuestObjectives);
     const completedQuests = useUserStore((state) => state.completedQuests);
     const failedQuests = useUserStore((state) => state.failedQuests);
     const playerLevel = useUserStore((state) => state.playerLevel);
@@ -75,9 +76,20 @@ export function QuestDetailsPane() {
     const fenceReputation = useUserStore((state) => state.questFenceReputation);
     const togglePinnedQuest = useUserStore((state) => state.togglePinnedQuest);
     const toggleIgnoredQuest = useUserStore((state) => state.toggleIgnoredQuest);
+    const toggleQuestObjectiveCompletion = useUserStore((state) => state.toggleQuestObjectiveCompletion);
+    const completedObjectiveIds = useMemo(
+        () => new Set(
+            quest
+                ? Object.entries(completedQuestObjectives[quest.id] ?? {})
+                    .filter(([, completed]) => completed)
+                    .map(([objectiveId]) => objectiveId)
+                : [],
+        ),
+        [completedQuestObjectives, quest],
+    );
     const questMapData = useMemo(
-        () => quest ? buildQuestDetailMapData(quest) : null,
-        [quest],
+        () => quest ? buildQuestDetailMapData(quest, completedObjectiveIds) : null,
+        [completedObjectiveIds, quest],
     );
     const multipleChoiceGroups = useMemo(
         () => buildMultipleChoiceQuestGroups(quests),
@@ -417,7 +429,10 @@ export function QuestDetailsPane() {
                     {quest.objectives.length > 0 ? (
                         <div className="space-y-7">
                             {objectivePresentation.map(({ objective, showItems }) => {
-                                const objectiveMaps = getPositionedObjectiveMaps(objective);
+                                const isObjectiveCompleted = completedObjectiveIds.has(objective.id);
+                                const positionedObjectiveMaps = getPositionedObjectiveMaps(objective);
+                                const canCompleteObjective = quest.objectives.length > 1 && positionedObjectiveMaps.length > 0;
+                                const objectiveMaps = isObjectiveCompleted ? [] : positionedObjectiveMaps;
                                 const cueMapKey = objectiveMaps.some((map) => map.key === selectedDetailMapKey)
                                     ? selectedDetailMapKey
                                     : objectiveMaps[0]?.key;
@@ -493,7 +508,16 @@ export function QuestDetailsPane() {
                                                 </div>
                                             </div>
                                         )}
-                                        <ObjectiveRow objective={objective} onItemClick={onItemClick ?? undefined} itemDisplay="rows" showItems={showItems} />
+                                        <ObjectiveRow
+                                            objective={objective}
+                                            onItemClick={onItemClick ?? undefined}
+                                            itemDisplay="rows"
+                                            showItems={showItems}
+                                            objectiveCompletion={canCompleteObjective ? {
+                                                completed: isObjectiveCompleted,
+                                                onToggle: () => toggleQuestObjectiveCompletion(quest.id, objective.id),
+                                            } : undefined}
+                                        />
                                     </div>
                                 );
                             })}
@@ -559,6 +583,12 @@ export function QuestDetailsPane() {
                                 focusedObjectiveId={!isMapUpdatePending ? focusedObjectiveId : null}
                                 focusRequestKey={!isMapUpdatePending ? focusRequestKey : null}
                                 onObjectiveFloorsChange={handleObjectiveFloorsChange}
+                                onMarkerComplete={!isMapUpdatePending && quest.objectives.length > 1 ? (marker) => {
+                                    const questId = marker.questId ?? quest.id;
+                                    marker.objectiveIds?.forEach((objectiveId) => {
+                                        toggleQuestObjectiveCompletion(questId, objectiveId);
+                                    });
+                                } : undefined}
                                 onMarkerSelect={(marker) => {
                                     const objectiveId = marker.objectiveIds?.[0];
                                     if (objectiveId) showObjectiveOnMap(panelSelectedMap.key, objectiveId);
@@ -593,15 +623,15 @@ export function QuestDetailsPane() {
     );
 }
 
-function buildQuestDetailMapData(quest: FullQuest) {
-    const maps = getQuestDetailMaps(quest);
+function buildQuestDetailMapData(quest: FullQuest, completedObjectiveIds: ReadonlySet<string>) {
+    const maps = getQuestDetailMaps(quest, completedObjectiveIds);
     const styles = createQuestDetailObjectiveStyles(quest);
     return {
         questId: quest.id,
         maps,
         styles,
         markersByMap: new Map(
-            maps.map((map) => [map.key, buildQuestDetailMarkers(quest, map.key, styles)]),
+            maps.map((map) => [map.key, buildQuestDetailMarkers(quest, map.key, styles, completedObjectiveIds)]),
         ),
     };
 }

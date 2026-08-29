@@ -83,6 +83,7 @@ Important persisted quest fields:
 
 ```ts
 completedQuests: Record<string, boolean>;
+completedQuestObjectives: Record<string, Record<string, boolean>>;
 failedQuests: Record<string, boolean>;
 questsWithItems: Record<string, boolean>;
 ignoredQuests: Record<string, boolean>;
@@ -477,6 +478,21 @@ selected map's height and local-bound metadata.
 Factory and Night Factory aliases resolve to the daytime Factory map. Objectives
 without precise coordinates keep their normal presentation and do not receive
 synthetic locations.
+
+When a quest has multiple objectives, each positioned objective row includes a
+small **Complete** control beside its description. This profile-specific visited
+state is separate from whole-quest completion. Visited objectives remain in the
+text list with an **Undo** action, while their detail-map and Raid Planner marker
+contributions are omitted until restored.
+
+Clicking an objective marker pins its popup. The popup header provides the same
+**Complete** action and a compact close control; an outside click also dismisses it.
+If completion removes the marker, the popup remains pinned as a completed snapshot
+until explicitly dismissed.
+
+Completing the whole quest discards its visited-objective records. Uncompleting the
+quest therefore starts every objective as unvisited again, without retaining stale
+per-objective storage.
 
 The shared viewer keeps Ground fixed and exposes optional named SVG layers in a
 manual switcher ordered from highest to lowest Y range. Several optional layers

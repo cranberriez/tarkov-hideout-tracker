@@ -43,6 +43,7 @@ export function buildRaidPlannerMarkers(
     quests: FullQuest[],
     mapKey: string,
     styles: ReadonlyMap<string, QuestMarkerStyle>,
+    completedQuestObjectives: Readonly<Record<string, Readonly<Record<string, boolean>>>> = {},
 ) {
     const markers: MapOverlayMarker[] = [];
     for (const quest of quests) {
@@ -50,6 +51,7 @@ export function buildRaidPlannerMarkers(
         if (!style) continue;
         const markerByPosition = new Map<string, MapOverlayMarker>();
         for (const objective of quest.objectives) {
+            if (completedQuestObjectives[quest.id]?.[objective.id]) continue;
             (objective.locations ?? []).forEach((location, locationIndex) => {
                 if (!isLocationOnMap(location, mapKey) || !location.position) return;
                 const positionKey = [location.position.x, location.position.y, location.position.z]

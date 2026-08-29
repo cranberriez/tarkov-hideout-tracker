@@ -80,6 +80,23 @@ test("reuses one symbol across every location in an objective component", () => 
     );
 });
 
+test("omits visited objectives before combining coincident markers", () => {
+    const completedObjectiveIds = new Set(["objective-1"]);
+    const styles = createQuestDetailObjectiveStyles(quest);
+    const markers = buildQuestDetailMarkers(quest, "customs", styles, completedObjectiveIds);
+
+    assert.equal(markers.length, 2);
+    assert.deepEqual(markers.map((marker) => marker.objectiveIds), [
+        ["objective-2"],
+        ["objective-3"],
+    ]);
+    assert.deepEqual(markers[0].descriptions, ["Mark the truck"]);
+    assert.deepEqual(
+        getQuestDetailMaps(quest, completedObjectiveIds).map(({ key, locationCount }) => ({ key, locationCount })),
+        [{ key: "customs", locationCount: 2 }],
+    );
+});
+
 test("prefers daytime Factory when day and night aliases share a location", () => {
     const factory = { id: "factory-day", name: "Factory", normalizedName: "factory" };
     const nightFactory = { id: "factory-night", name: "Night Factory", normalizedName: "night-factory" };

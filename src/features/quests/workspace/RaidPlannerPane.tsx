@@ -6,6 +6,7 @@ import Image from "next/image";
 import { MapViewer } from "@/features/maps/MapViewer";
 import type { MapViewTransform } from "@/features/maps/map-view-transform";
 import type { MapOverlayMarker } from "@/features/maps/map-types";
+import { useUserStore } from "@/lib/stores/useUserStore";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 import { buildRaidPlannerMarkers } from "./raid-planner-markers";
@@ -29,6 +30,8 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
         mapKey: string;
         markers: MapOverlayMarker[];
     } | null>(null);
+    const completedQuestObjectives = useUserStore((state) => state.completedQuestObjectives);
+    const toggleQuestObjectiveCompletion = useUserStore((state) => state.toggleQuestObjectiveCompletion);
     const {
         quests, maps, plannerMapKey, selectPlannerMap, clearPlannerMap, statusByQuestId,
         markerByQuestId, highlightedQuestId, setHighlightedQuestId, setSelectedQuestId,
@@ -95,11 +98,14 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
     }
 
     const markers = [
-        ...buildRaidPlannerMarkers(plannerQuests, selectedMap.key, markerByQuestId),
+        ...buildRaidPlannerMarkers(plannerQuests, selectedMap.key, markerByQuestId, completedQuestObjectives),
         ...(navigationMarkers?.mapKey === selectedMap.key ? navigationMarkers.markers : []),
     ];
     const killObjectives = buildRaidPlannerKillList(plannerQuests);
     const objectiveKeyIndex = buildRaidPlannerObjectiveKeyIndex(plannerQuests);
+    const completableQuestIds = new Set(
+        plannerQuests.filter((quest) => quest.objectives.length > 1).map((quest) => quest.id),
+    );
 
     return (
         <div className="relative min-h-0 flex-1 overflow-hidden bg-[#111316]">
@@ -109,6 +115,14 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
                 rememberedView={rememberedView}
                 onViewChange={(view) => onViewChange(selectedMap.key, view)}
                 highlightedQuestId={highlightedQuestId}
+                canCompleteMarker={(marker) => !!marker.questId && completableQuestIds.has(marker.questId)}
+                onMarkerComplete={(marker) => {
+                    if (!marker.questId) return;
+                    const questId = marker.questId;
+                    marker.objectiveIds?.forEach((objectiveId) => {
+                        toggleQuestObjectiveCompletion(questId, objectiveId);
+                    });
+                }}
                 renderMarkerDetails={(marker) => {
                     const requiredKeys = getRaidPlannerMarkerKeys(marker.objectiveIds, objectiveKeyIndex);
                     if (requiredKeys.length === 0) return null;

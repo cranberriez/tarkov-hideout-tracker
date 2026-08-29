@@ -7,7 +7,7 @@ Client-side state lives in two Zustand stores. Server-fetched data (stations, it
 ## `useUserStore` — User Progress & Preferences
 
 **File:** `src/lib/stores/useUserStore.ts`
-**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 22.
+**Persisted:** Yes — localStorage key `tarkov-hideout-user-state`, version 23.
 
 Do not change the storage key. Bump the version and add a migration only when the persisted state shape requires it.
 
@@ -19,6 +19,7 @@ stationLevels: Record<string, number>;          // stationId → current level (
 hiddenStations: Record<string, boolean>;         // stationId → excluded from pooled counts
 completedRequirements: Record<string, boolean>;  // requirementId → manually ticked off
 completedQuests: Record<string, boolean>;        // questId → completed
+completedQuestObjectives: Record<string, Record<string, boolean>>; // questId → positioned objectiveId → visited
 failedQuests: Record<string, boolean>;           // questId → failed
 questsWithItems: Record<string, boolean>;        // questId → hand-in items collected
 ignoredQuests: Record<string, boolean>;          // questId → hidden from demand
@@ -144,8 +145,9 @@ type QuestVisibilityMode = "all" | "hideLocked" | "activeDepth";
 | `incrementStationLevel(id)`                      | Advance a station by one level                                                                       |
 | `toggleHiddenStation(id)`                        | Toggle hidden flag for a station                                                                     |
 | `toggleRequirement(reqId)`                       | Manually tick/untick a single requirement                                                            |
-| `toggleQuestCompletion(questId)`                 | Toggle quest completion                                                                              |
-| `applyQuestCompletionChange(changes)`            | Apply completion/cascade changes and append real completion transitions to quest history             |
+| `toggleQuestCompletion(questId)`                 | Toggle quest completion; completing discards that quest's visited-objective records                  |
+| `toggleQuestObjectiveCompletion(questId, objectiveId)` | Toggle whether a positioned objective has been visited; scoped to the active profile                 |
+| `applyQuestCompletionChange(changes)`            | Apply completion/cascade changes, discard visited objectives for completed quests, and append history |
 | `applyQuestFailureChange({ fail, unFail })`      | Mark quests failed or clear failed state; failing clears completed and hand-in item state             |
 | `toggleQuestHaveItems(questId)`                  | Toggle whether hand-in items have been collected for a quest                                         |
 | `toggleIgnoredQuest(questId)`                    | Toggle whether a quest is ignored in quest demand                                                    |
