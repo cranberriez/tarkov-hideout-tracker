@@ -486,6 +486,52 @@ pane must not infer those fields from objective text.
 
 ---
 
+## Quest series visualizer
+
+The quest workspace action bar includes a **Visualizer** mode immediately before
+the Raid Planner. Its index is intentionally limited to two useful progression
+maps instead of listing every connected quest chain: **BTR Driver** and
+**Collector**. Ordinary trader chains are deliberately omitted.
+
+Collector is generated as a strict reverse prerequisite closure from the Collector
+quest, so unrelated quests that happen to follow one of its prerequisites are not
+included.
+
+Requirement lines are labeled by their actual status timing: **On accept**, **On
+complete**, **On fail**, or **On complete or fail**. On-accept links are blue,
+completion links are green, and on-fail plus causes-failure links are solid red.
+Non-optional task-status failure conditions render as failure lines. Reciprocal
+completion failures are collapsed into one dotted **Mutually exclusive**
+connection. Quest nodes show the trader icon and current profile status and open
+the normal quest details when selected.
+Progression runs vertically from top to bottom. Quest routes use stable global
+columns and keep a quest directly beneath its predecessor whenever the column is
+free. Collector is centered beneath the full span of its prerequisite chains.
+Every connection uses only horizontal and vertical segments. Failure and
+mutually exclusive relationships route outside the affected columns or row,
+while long links select obstacle-free gutters between cards. Connections that
+converge on the same target use staggered horizontal rails and separate target
+ports, and shared long-distance corridors receive small offsets so parallel
+links remain distinguishable. Hovering or focusing a quest dims unrelated
+quests and edges, keeps directly connected quests visible, and draws its
+connected edges last with a heavier stroke.
+
+The graph canvas supports direct navigation: drag empty canvas space to pan,
+use the mouse wheel for vertical scrolling, and hold Shift while scrolling for
+horizontal movement. Header controls zoom from 50% to 150% in 10% steps; the
+percentage button resets the graph to 100% while preserving the viewport center.
+
+Same-name upstream records remain separate nodes and receive small route labels
+rather than being merged by name. The BTR view keeps one representative failure
+route per source quest, condensing repeated branch-wide auto-failure links that
+otherwise obscure the progression graph.
+
+Quests belonging to one of the curated series receive a small branch icon in the quest
+list. Opening the visualizer with one of those quests selected goes directly to
+its series. With no matching selection, the visualizer shows a series index whose
+questline cards open the complete graph. Each card lists currently active quests,
+falling back to the starting quests when none are active.
+
 ## QuestCard Anatomy
 
 `QuestCard.tsx` renders:

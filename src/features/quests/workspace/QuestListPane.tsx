@@ -15,6 +15,7 @@ import {
     Package,
     Eye,
     EyeOff,
+    GitBranch,
     Pin,
     RotateCcw,
     Search,
@@ -391,12 +392,14 @@ function QuestListItem({
         statusByQuestId,
         upcomingLockedQuestIds,
         markerByQuestId,
+        branchLineByQuestId,
         mode,
         retainQuestAfterCompletion,
     } = useQuestWorkspace();
     const quest = questsById.get(questId)!;
     const status = statusByQuestId.get(questId)!;
     const marker = markerByQuestId.get(questId);
+    const branchLine = branchLineByQuestId.get(questId);
     const pinned = useUserStore((state) => !!state.pinnedQuests[questId]);
     const hidden = useUserStore((state) => !!state.ignoredQuests[questId]);
     const togglePinnedQuest = useUserStore((state) => state.togglePinnedQuest);
@@ -469,6 +472,13 @@ function QuestListItem({
                     >
                         {quest.name}
                     </h3>
+                    {branchLine && (
+                        <GitBranch
+                            size={13}
+                            className="mt-1 shrink-0 text-tarkov-green/70"
+                            aria-label={`Part of ${branchLine.name}`}
+                        />
+                    )}
                     <div
                         className="flex shrink-0 items-center gap-0.5"
                         onClick={(event) => event.stopPropagation()}

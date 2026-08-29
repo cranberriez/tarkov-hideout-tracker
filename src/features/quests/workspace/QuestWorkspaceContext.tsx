@@ -28,8 +28,12 @@ import {
     createQuestMarkerStyles,
     type QuestMarkerStyle,
 } from "./raid-planner-markers";
+import {
+    buildQuestBranchLines,
+    type QuestBranchLine,
+} from "./quest-branch-graph";
 
-export type QuestWorkspaceMode = "details" | "planner";
+export type QuestWorkspaceMode = "details" | "visualizer" | "planner";
 export type QuestListMode = "quests" | "history";
 export type QuestFilterSection = "traders" | "maps" | "status" | "filters" | null;
 
@@ -42,6 +46,8 @@ interface QuestWorkspaceContextValue {
     objectiveCategories: QuestObjectiveCategory[];
     statusByQuestId: Map<string, QuestWorkspaceStatusInfo>;
     markerByQuestId: Map<string, QuestMarkerStyle>;
+    branchLines: QuestBranchLine[];
+    branchLineByQuestId: Map<string, QuestBranchLine>;
     selectedQuestId: string | null;
     selectedQuest: FullQuest | null;
     selectedTraderIds: Set<string>;
@@ -206,6 +212,16 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
         ),
         [plannerMapKey, quests],
     );
+    const branchLines = useMemo(() => buildQuestBranchLines(quests), [quests]);
+    const branchLineByQuestId = useMemo(() => {
+        const result = new Map<string, QuestBranchLine>();
+        for (const line of branchLines) {
+            for (const node of line.nodes) {
+                if (!result.has(node.quest.id)) result.set(node.quest.id, line);
+            }
+        }
+        return result;
+    }, [branchLines]);
     const normalizedSearch = searchQuery.trim().toLowerCase();
     const onlyActiveSelected = selectedStatuses.size === 1 && selectedStatuses.has("active");
     const filteredQuests = useMemo(() => quests.filter((quest) => {
@@ -276,6 +292,8 @@ export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest
             objectiveCategories,
             statusByQuestId,
             markerByQuestId,
+            branchLines,
+            branchLineByQuestId,
             selectedQuestId,
             selectedQuest: selectedQuestId ? questsById.get(selectedQuestId) ?? null : null,
             selectedTraderIds,

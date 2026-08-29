@@ -11,6 +11,7 @@ import { QuestListPane } from "./QuestListPane";
 import { QuestActionBar } from "./QuestActionBar";
 import { QuestDetailsPane } from "./QuestDetailsPane";
 import { RaidPlannerPane } from "./RaidPlannerPane";
+import { QuestVisualizerPane } from "./QuestVisualizerPane";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 export function QuestWorkspace({ quests }: { quests: FullQuest[] }) {
@@ -61,6 +62,8 @@ export function QuestWorkspace({ quests }: { quests: FullQuest[] }) {
                                 : null}
                             onViewChange={rememberPlannerView}
                         />
+                    ) : mode === "visualizer" ? (
+                        <QuestVisualizerPane />
                     ) : <QuestDetailsPane />}
                 </section>
             </div>
