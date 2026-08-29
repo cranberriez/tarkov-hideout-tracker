@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, Layers3, LocateFixed, Minus, Plus } from "lucide-react";
+import { ChevronDown, Eye, EyeOff, Layers3, LocateFixed, Minus, Plus } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { getProjectedMapAspectRatio, worldToMapPoint } from "./map-projection";
@@ -28,6 +28,12 @@ interface MapViewerProps {
 
 const MIN_SCALE = 1;
 const MAX_SCALE = 7;
+
+function getNavigationLabelPosition(percentX: number) {
+    if (percentX < 12) return "left-1/2";
+    if (percentX > 88) return "right-1/2";
+    return "left-1/2 -translate-x-1/2";
+}
 
 export function MapViewer({
     mapKey,
@@ -63,6 +69,7 @@ export function MapViewer({
         values: Record<string, boolean>;
     }>({ mapKey, values: {} });
     const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null);
+    const [navigationLabelsVisible, setNavigationLabelsVisible] = useState(true);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -109,6 +116,10 @@ export function MapViewer({
             };
         });
     }, [definition, markers]);
+    const hasNavigationMarkers = useMemo(
+        () => projectedMarkers.some(({ marker }) => marker.kind === "extract" || marker.kind === "transit"),
+        [projectedMarkers],
+    );
 
     const floorVisibilityOverrides = useMemo(
         () => floorVisibilityState.mapKey === mapKey ? floorVisibilityState.values : {},
@@ -317,8 +328,8 @@ export function MapViewer({
                         )),
                     )}
                 </svg>
-                {projectedMarkers.map(({ marker, point, floors }) => (
-                    <button
+                {projectedMarkers.map(({ marker, point, floors }) => {
+                    return <button
                         type="button"
                         key={marker.id}
                         aria-label={`${marker.label}: ${marker.title}: ${marker.descriptions.join("; ")}`}
@@ -328,7 +339,10 @@ export function MapViewer({
                         onBlur={() => { setHoveredMarkerId(null); onMarkerFocus?.(null); }}
                         onClick={() => onMarkerSelect?.(marker)}
                         className={cn(
-                            "group absolute z-20 flex h-7 min-w-7 items-center justify-center rounded-full border-2 bg-black/90 px-1.5 font-mono text-[11px] font-bold shadow-xl outline-none hover:z-[100] focus-visible:z-[100]",
+                            "group absolute z-20 flex items-center justify-center border-2 bg-black/90 font-mono font-bold shadow-xl outline-none hover:z-[100] focus-visible:z-[100]",
+                            marker.kind === "quest"
+                                ? "h-7 min-w-7 rounded-full px-1.5 text-[11px]"
+                                : "h-3 w-3 min-w-0 rounded-[2px] p-0",
                             (highlightedQuestId === marker.questId ||
                                 (!!highlightedObjectiveId && marker.objectiveIds?.includes(highlightedObjectiveId))) &&
                                 "ring-2 ring-white/70",
@@ -341,21 +355,35 @@ export function MapViewer({
                             transform: `translate(-50%, -50%) scale(${1 / view.scale})`,
                         }}
                     >
-                        {marker.label}
-                        <span className="pointer-events-none absolute bottom-full left-1/2 z-[110] mb-2 hidden w-72 -translate-x-1/2 border border-white/12 bg-[#111214]/95 p-3 text-left font-sans font-normal shadow-2xl backdrop-blur group-hover:block group-focus-visible:block">
-                            <span className="block text-xs font-semibold text-white">{marker.title}</span>
-                            <span className="mt-1 block text-[9px] font-semibold uppercase tracking-wider text-gray-500">
-                                {floors.map(({ floor }) => floor.name).join(" · ")}
+                        {marker.kind === "quest" ? marker.label : (
+                            <span
+                                className={cn(
+                                    "pointer-events-none absolute bottom-full mb-1 whitespace-nowrap font-sans text-[9px] font-bold uppercase tracking-wide [text-shadow:0_1px_2px_#000,0_0_3px_#000,0_0_7px_#000]",
+                                    getNavigationLabelPosition(point.percentX),
+                                    navigationLabelsVisible
+                                        ? "block"
+                                        : "hidden group-hover:block group-focus-visible:block",
+                                )}
+                            >
+                                {marker.label}
                             </span>
-                            <span className="mt-2 block space-y-1 text-[10px] leading-relaxed text-gray-400">
-                                {marker.descriptions.map((description) => (
-                                    <span key={description} className="block">{description}</span>
-                                ))}
+                        )}
+                        {marker.kind === "quest" && (
+                            <span className="pointer-events-none absolute bottom-full left-1/2 z-[110] mb-2 hidden w-72 -translate-x-1/2 border border-white/12 bg-[#111214]/95 p-3 text-left font-sans font-normal shadow-2xl backdrop-blur group-hover:block group-focus-visible:block">
+                                <span className="block text-xs font-semibold text-white">{marker.title}</span>
+                                <span className="mt-1 block text-[9px] font-semibold uppercase tracking-wider text-gray-500">
+                                    {floors.map(({ floor }) => floor.name).join(" · ")}
+                                </span>
+                                <span className="mt-2 block space-y-1 text-[10px] leading-relaxed text-gray-400">
+                                    {marker.descriptions.map((description) => (
+                                        <span key={description} className="block">{description}</span>
+                                    ))}
+                                </span>
+                                {renderMarkerDetails?.(marker)}
                             </span>
-                            {renderMarkerDetails?.(marker)}
-                        </span>
-                    </button>
-                ))}
+                        )}
+                    </button>;
+                })}
             </div>
 
             {definition.floors.length > 1 && (
@@ -409,10 +437,26 @@ export function MapViewer({
                 </details>
             )}
 
-            <div className="absolute bottom-3 right-3 z-20 flex border border-white/10 bg-black/80 shadow-xl backdrop-blur-sm">
-                <button type="button" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.25)} className="p-2 text-gray-300 hover:text-white"><Minus size={15} /></button>
-                <button type="button" aria-label="Fit quest locations" onClick={fitMarkers} className="border-x border-white/10 p-2 text-gray-300 hover:text-white"><LocateFixed size={15} /></button>
-                <button type="button" aria-label="Zoom in" onClick={() => zoomBy(1.25)} className="p-2 text-gray-300 hover:text-white"><Plus size={15} /></button>
+            <div className="absolute bottom-3 right-3 z-20 flex items-center gap-2">
+                {hasNavigationMarkers && (
+                    <button
+                        type="button"
+                        aria-label={navigationLabelsVisible ? "Hide extract and transit labels" : "Show extract and transit labels"}
+                        aria-pressed={navigationLabelsVisible}
+                        onClick={() => setNavigationLabelsVisible((visible) => !visible)}
+                        className={cn(
+                            "border border-white/10 bg-black/80 p-2 shadow-xl backdrop-blur-sm hover:text-white",
+                            navigationLabelsVisible ? "text-tarkov-green" : "text-gray-500",
+                        )}
+                    >
+                        {navigationLabelsVisible ? <Eye size={15} /> : <EyeOff size={15} />}
+                    </button>
+                )}
+                <div className="flex border border-white/10 bg-black/80 shadow-xl backdrop-blur-sm">
+                    <button type="button" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.25)} className="p-2 text-gray-300 hover:text-white"><Minus size={15} /></button>
+                    <button type="button" aria-label="Fit map markers" onClick={fitMarkers} className="border-x border-white/10 p-2 text-gray-300 hover:text-white"><LocateFixed size={15} /></button>
+                    <button type="button" aria-label="Zoom in" onClick={() => zoomBy(1.25)} className="p-2 text-gray-300 hover:text-white"><Plus size={15} /></button>
+                </div>
             </div>
             <div className={cn(
                 "absolute z-30 flex max-w-[calc(100%-6rem)] items-start gap-2",

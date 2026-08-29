@@ -1,0 +1,1430 @@
+{
+  "schemaVersion": 1,
+  "map": {
+    "id": "69af492a4819ea4ba10a69c5",
+    "name": "Icebreaker",
+    "normalizedName": "icebreaker"
+  },
+  "bosses": [
+    {
+      "id": "bossBullyBlackDiv",
+      "name": "Black Div. Boss",
+      "normalizedName": "black-div-boss",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "EngineHide",
+          "spawnKey": "BotZoneEngineHide",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 2.168,
+              "y": 15.7212505,
+              "z": -22.101
+            },
+            {
+              "x": -9.818,
+              "y": 18.4212513,
+              "z": -14.7
+            },
+            {
+              "x": -3.235,
+              "y": 15.7212505,
+              "z": -21.542
+            },
+            {
+              "x": -9.818,
+              "y": 18.4212513,
+              "z": -19.052
+            },
+            {
+              "x": -0.388,
+              "y": 17.0409355,
+              "z": -21.36
+            },
+            {
+              "x": -1.826,
+              "y": 15.7212505,
+              "z": -22.577
+            },
+            {
+              "x": 9.405,
+              "y": 18.4212513,
+              "z": -19.359
+            },
+            {
+              "x": 3.269,
+              "y": 18.4212513,
+              "z": -21.36
+            },
+            {
+              "x": -3.219,
+              "y": 15.7212505,
+              "z": -22.577
+            },
+            {
+              "x": 3.145,
+              "y": 15.7212505,
+              "z": -21.79
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossBullyBlackDiv",
+      "name": "Black Div. Boss",
+      "normalizedName": "black-div-boss",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "EngineHide",
+          "spawnKey": "BotZoneEngineHide",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 2.168,
+              "y": 15.7212505,
+              "z": -22.101
+            },
+            {
+              "x": -9.818,
+              "y": 18.4212513,
+              "z": -14.7
+            },
+            {
+              "x": -3.235,
+              "y": 15.7212505,
+              "z": -21.542
+            },
+            {
+              "x": -9.818,
+              "y": 18.4212513,
+              "z": -19.052
+            },
+            {
+              "x": -0.388,
+              "y": 17.0409355,
+              "z": -21.36
+            },
+            {
+              "x": -1.826,
+              "y": 15.7212505,
+              "z": -22.577
+            },
+            {
+              "x": 9.405,
+              "y": 18.4212513,
+              "z": -19.359
+            },
+            {
+              "x": 3.269,
+              "y": 18.4212513,
+              "z": -21.36
+            },
+            {
+              "x": -3.219,
+              "y": 15.7212505,
+              "z": -22.577
+            },
+            {
+              "x": 3.145,
+              "y": 15.7212505,
+              "z": -21.79
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossBullyBlackDiv",
+      "name": "Black Div. Boss",
+      "normalizedName": "black-div-boss",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "EngineHide",
+          "spawnKey": "BotZoneEngineHide",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 2.168,
+              "y": 15.7212505,
+              "z": -22.101
+            },
+            {
+              "x": -9.818,
+              "y": 18.4212513,
+              "z": -14.7
+            },
+            {
+              "x": -3.235,
+              "y": 15.7212505,
+              "z": -21.542
+            },
+            {
+              "x": -9.818,
+              "y": 18.4212513,
+              "z": -19.052
+            },
+            {
+              "x": -0.388,
+              "y": 17.0409355,
+              "z": -21.36
+            },
+            {
+              "x": -1.826,
+              "y": 15.7212505,
+              "z": -22.577
+            },
+            {
+              "x": 9.405,
+              "y": 18.4212513,
+              "z": -19.359
+            },
+            {
+              "x": 3.269,
+              "y": 18.4212513,
+              "z": -21.36
+            },
+            {
+              "x": -3.219,
+              "y": 15.7212505,
+              "z": -22.577
+            },
+            {
+              "x": 3.145,
+              "y": 15.7212505,
+              "z": -21.79
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossBullyBlackDiv",
+      "name": "Black Div. Boss",
+      "normalizedName": "black-div-boss",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "EngineHide",
+          "spawnKey": "BotZoneEngineHide",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 2.168,
+              "y": 15.7212505,
+              "z": -22.101
+            },
+            {
+              "x": -9.818,
+              "y": 18.4212513,
+              "z": -14.7
+            },
+            {
+              "x": -3.235,
+              "y": 15.7212505,
+              "z": -21.542
+            },
+            {
+              "x": -9.818,
+              "y": 18.4212513,
+              "z": -19.052
+            },
+            {
+              "x": -0.388,
+              "y": 17.0409355,
+              "z": -21.36
+            },
+            {
+              "x": -1.826,
+              "y": 15.7212505,
+              "z": -22.577
+            },
+            {
+              "x": 9.405,
+              "y": 18.4212513,
+              "z": -19.359
+            },
+            {
+              "x": 3.269,
+              "y": 18.4212513,
+              "z": -21.36
+            },
+            {
+              "x": -3.219,
+              "y": 15.7212505,
+              "z": -22.577
+            },
+            {
+              "x": 3.145,
+              "y": 15.7212505,
+              "z": -21.79
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossBullyBlackDiv",
+      "name": "Black Div. Boss",
+      "normalizedName": "black-div-boss",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "EngineHide",
+          "spawnKey": "BotZoneEngineHide",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 2.168,
+              "y": 15.7212505,
+              "z": -22.101
+            },
+            {
+              "x": -9.818,
+              "y": 18.4212513,
+              "z": -14.7
+            },
+            {
+              "x": -3.235,
+              "y": 15.7212505,
+              "z": -21.542
+            },
+            {
+              "x": -9.818,
+              "y": 18.4212513,
+              "z": -19.052
+            },
+            {
+              "x": -0.388,
+              "y": 17.0409355,
+              "z": -21.36
+            },
+            {
+              "x": -1.826,
+              "y": 15.7212505,
+              "z": -22.577
+            },
+            {
+              "x": 9.405,
+              "y": 18.4212513,
+              "z": -19.359
+            },
+            {
+              "x": 3.269,
+              "y": 18.4212513,
+              "z": -21.36
+            },
+            {
+              "x": -3.219,
+              "y": 15.7212505,
+              "z": -22.577
+            },
+            {
+              "x": 3.145,
+              "y": 15.7212505,
+              "z": -21.79
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossBullyBlackDiv",
+      "name": "Black Div. Boss",
+      "normalizedName": "black-div-boss",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "Stern",
+          "spawnKey": "BotZoneStern",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -0.14,
+              "y": 16.1496181,
+              "z": -75.23
+            },
+            {
+              "x": 2.34,
+              "y": 15.9712505,
+              "z": -69.37
+            },
+            {
+              "x": -1.53,
+              "y": 15.9788942,
+              "z": -69.02
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossBullyBlackDiv",
+      "name": "Black Div. Boss",
+      "normalizedName": "black-div-boss",
+      "spawnChance": 0.7,
+      "locations": [
+        {
+          "name": "Stern",
+          "spawnKey": "BotZoneStern",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -0.14,
+              "y": 16.1496181,
+              "z": -75.23
+            },
+            {
+              "x": 2.34,
+              "y": 15.9712505,
+              "z": -69.37
+            },
+            {
+              "x": -1.53,
+              "y": 15.9788942,
+              "z": -69.02
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossBullyBlackDiv",
+      "name": "Black Div. Boss",
+      "normalizedName": "black-div-boss",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "Stern",
+          "spawnKey": "BotZoneStern",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -0.14,
+              "y": 16.1496181,
+              "z": -75.23
+            },
+            {
+              "x": 2.34,
+              "y": 15.9712505,
+              "z": -69.37
+            },
+            {
+              "x": -1.53,
+              "y": 15.9788942,
+              "z": -69.02
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossBullyBlackDiv",
+      "name": "Black Div. Boss",
+      "normalizedName": "black-div-boss",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "Stern",
+          "spawnKey": "BotZoneStern",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -0.14,
+              "y": 16.1496181,
+              "z": -75.23
+            },
+            {
+              "x": 2.34,
+              "y": 15.9712505,
+              "z": -69.37
+            },
+            {
+              "x": -1.53,
+              "y": 15.9788942,
+              "z": -69.02
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossBullyBlackDiv",
+      "name": "Black Div. Boss",
+      "normalizedName": "black-div-boss",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "EngineHide",
+          "spawnKey": "BotZoneEngineHide",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 2.168,
+              "y": 15.7212505,
+              "z": -22.101
+            },
+            {
+              "x": -9.818,
+              "y": 18.4212513,
+              "z": -14.7
+            },
+            {
+              "x": -3.235,
+              "y": 15.7212505,
+              "z": -21.542
+            },
+            {
+              "x": -9.818,
+              "y": 18.4212513,
+              "z": -19.052
+            },
+            {
+              "x": -0.388,
+              "y": 17.0409355,
+              "z": -21.36
+            },
+            {
+              "x": -1.826,
+              "y": 15.7212505,
+              "z": -22.577
+            },
+            {
+              "x": 9.405,
+              "y": 18.4212513,
+              "z": -19.359
+            },
+            {
+              "x": 3.269,
+              "y": 18.4212513,
+              "z": -21.36
+            },
+            {
+              "x": -3.219,
+              "y": 15.7212505,
+              "z": -22.577
+            },
+            {
+              "x": 3.145,
+              "y": 15.7212505,
+              "z": -21.79
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossBullyBlackDiv",
+      "name": "Black Div. Boss",
+      "normalizedName": "black-div-boss",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "EngineHide",
+          "spawnKey": "BotZoneEngineHide",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 2.168,
+              "y": 15.7212505,
+              "z": -22.101
+            },
+            {
+              "x": -9.818,
+              "y": 18.4212513,
+              "z": -14.7
+            },
+            {
+              "x": -3.235,
+              "y": 15.7212505,
+              "z": -21.542
+            },
+            {
+              "x": -9.818,
+              "y": 18.4212513,
+              "z": -19.052
+            },
+            {
+              "x": -0.388,
+              "y": 17.0409355,
+              "z": -21.36
+            },
+            {
+              "x": -1.826,
+              "y": 15.7212505,
+              "z": -22.577
+            },
+            {
+              "x": 9.405,
+              "y": 18.4212513,
+              "z": -19.359
+            },
+            {
+              "x": 3.269,
+              "y": 18.4212513,
+              "z": -21.36
+            },
+            {
+              "x": -3.219,
+              "y": 15.7212505,
+              "z": -22.577
+            },
+            {
+              "x": 3.145,
+              "y": 15.7212505,
+              "z": -21.79
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "pmcBotBlackDiv",
+      "name": "Black Div. Raider",
+      "normalizedName": "black-div-raider",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "SternTop",
+          "spawnKey": "BotZoneSternTop",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 11.63,
+              "y": 21.0908031,
+              "z": -65.58
+            },
+            {
+              "x": -7.67,
+              "y": 21.1148624,
+              "z": -68.16
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "pmcBotBlackDiv",
+      "name": "Black Div. Raider",
+      "normalizedName": "black-div-raider",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "SternTop",
+          "spawnKey": "BotZoneSternTop",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 11.63,
+              "y": 21.0908031,
+              "z": -65.58
+            },
+            {
+              "x": -7.67,
+              "y": 21.1148624,
+              "z": -68.16
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "pmcBotBlackDiv",
+      "name": "Black Div. Raider",
+      "normalizedName": "black-div-raider",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "SternTop",
+          "spawnKey": "BotZoneSternTop",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 11.63,
+              "y": 21.0908031,
+              "z": -65.58
+            },
+            {
+              "x": -7.67,
+              "y": 21.1148624,
+              "z": -68.16
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "pmcBotBlackDiv",
+      "name": "Black Div. Raider",
+      "normalizedName": "black-div-raider",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "Stern",
+          "spawnKey": "BotZoneStern",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -0.14,
+              "y": 16.1496181,
+              "z": -75.23
+            },
+            {
+              "x": 2.34,
+              "y": 15.9712505,
+              "z": -69.37
+            },
+            {
+              "x": -1.53,
+              "y": 15.9788942,
+              "z": -69.02
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "pmcBotBlackDiv",
+      "name": "Black Div. Raider",
+      "normalizedName": "black-div-raider",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "Stern",
+          "spawnKey": "BotZoneStern",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -0.14,
+              "y": 16.1496181,
+              "z": -75.23
+            },
+            {
+              "x": 2.34,
+              "y": 15.9712505,
+              "z": -69.37
+            },
+            {
+              "x": -1.53,
+              "y": 15.9788942,
+              "z": -69.02
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "pmcBotBlackDiv",
+      "name": "Black Div. Raider",
+      "normalizedName": "black-div-raider",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "Stern",
+          "spawnKey": "BotZoneStern",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -0.14,
+              "y": 16.1496181,
+              "z": -75.23
+            },
+            {
+              "x": 2.34,
+              "y": 15.9712505,
+              "z": -69.37
+            },
+            {
+              "x": -1.53,
+              "y": 15.9788942,
+              "z": -69.02
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "pmcBotBlackDiv",
+      "name": "Black Div. Raider",
+      "normalizedName": "black-div-raider",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "Outside_t3",
+          "spawnKey": "BotZoneOutside_t3",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -10.5583611,
+              "y": 21.071249,
+              "z": 16.8478012
+            },
+            {
+              "x": -11.1723614,
+              "y": 21.0733356,
+              "z": 13.6968021
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "pmcBotBlackDiv",
+      "name": "Black Div. Raider",
+      "normalizedName": "black-div-raider",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "Inside_t4",
+          "spawnKey": "BotZoneInside_t4",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -1.75636148,
+              "y": 34.67604,
+              "z": 37.1968
+            },
+            {
+              "x": -6.14736176,
+              "y": 34.57721,
+              "z": 36.2198029
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "pmcBotBlackDiv",
+      "name": "Black Div. Raider",
+      "normalizedName": "black-div-raider",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "Stern",
+          "spawnKey": "BotZoneStern",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -0.14,
+              "y": 16.1496181,
+              "z": -75.23
+            },
+            {
+              "x": 2.34,
+              "y": 15.9712505,
+              "z": -69.37
+            },
+            {
+              "x": -1.53,
+              "y": 15.9788942,
+              "z": -69.02
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "pmcBotBlackDiv",
+      "name": "Black Div. Raider",
+      "normalizedName": "black-div-raider",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "SternTop",
+          "spawnKey": "BotZoneSternTop",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 11.63,
+              "y": 21.0908031,
+              "z": -65.58
+            },
+            {
+              "x": -7.67,
+              "y": 21.1148624,
+              "z": -68.16
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossKnight",
+      "name": "Knight",
+      "normalizedName": "knight",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "Mash_t1",
+          "spawnKey": "BotZoneMash_t1",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 0.433,
+              "y": 15.6712513,
+              "z": 26.77
+            },
+            {
+              "x": -1.628,
+              "y": 15.6712513,
+              "z": 26.435
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "ExUsec",
+      "name": "Rogue",
+      "normalizedName": "rogue",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "Front",
+          "spawnKey": "BotZoneFront",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -0.598,
+              "y": 15.6712513,
+              "z": 38.703
+            },
+            {
+              "x": 2.767,
+              "y": 15.6712513,
+              "z": 37.432
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "ExUsec",
+      "name": "Rogue",
+      "normalizedName": "rogue",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "Kitchen",
+          "spawnKey": "BotZoneKitchen",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -3.987,
+              "y": 15.6712513,
+              "z": 47.583
+            },
+            {
+              "x": 3.13,
+              "y": 15.7749195,
+              "z": 43.55
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "ExUsec",
+      "name": "Rogue",
+      "normalizedName": "rogue",
+      "spawnChance": 0.5,
+      "locations": [
+        {
+          "name": "KorrDown1",
+          "spawnKey": "BotZoneKorrDown1",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -11.697,
+              "y": 15.7212505,
+              "z": 44.672
+            },
+            {
+              "x": -11.611,
+              "y": 15.7212505,
+              "z": 43.346
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "ExUsec",
+      "name": "Rogue",
+      "normalizedName": "rogue",
+      "spawnChance": 0.5,
+      "locations": [
+        {
+          "name": "Room_Eng",
+          "spawnKey": "BotZoneRoom_Eng",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 0.912,
+              "y": 18.384306,
+              "z": 29.047
+            },
+            {
+              "x": -0.169,
+              "y": 18.3712482,
+              "z": 27.321
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "ExUsec",
+      "name": "Rogue",
+      "normalizedName": "rogue",
+      "spawnChance": 0.5,
+      "locations": [
+        {
+          "name": "Room_Eng2",
+          "spawnKey": "BotZoneRoom_Eng2",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 8.523,
+              "y": 18.4212513,
+              "z": 31.459
+            },
+            {
+              "x": 6.768,
+              "y": 18.4212513,
+              "z": 32.749
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "ExUsec",
+      "name": "Rogue",
+      "normalizedName": "rogue",
+      "spawnChance": 0.5,
+      "locations": [
+        {
+          "name": "Front2",
+          "spawnKey": "BotZoneFront2",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -2.525,
+              "y": 18.3712482,
+              "z": 39.045
+            },
+            {
+              "x": -4.469,
+              "y": 18.3712482,
+              "z": 36.782
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossWedge",
+      "name": "The Wedge",
+      "normalizedName": "the-wedge",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "RoomsFour",
+          "spawnKey": "BotZoneRoomsFour",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -3.65,
+              "y": 26.47125,
+              "z": 37.14
+            },
+            {
+              "x": -6.7,
+              "y": 26.5348873,
+              "z": 31.2
+            },
+            {
+              "x": 3.623,
+              "y": 26.47125,
+              "z": 37.14
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossWedge",
+      "name": "The Wedge",
+      "normalizedName": "the-wedge",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "RoomsThird",
+          "spawnKey": "BotZoneRoomsThird",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 3.21,
+              "y": 23.77125,
+              "z": 26.93
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossWedge",
+      "name": "The Wedge",
+      "normalizedName": "the-wedge",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "RoomsThirdKitchen",
+          "spawnKey": "BotZoneRoomsThirdKitchen",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 3.857,
+              "y": 23.77125,
+              "z": 48.769
+            },
+            {
+              "x": 6.43,
+              "y": 23.77125,
+              "z": 45.21
+            },
+            {
+              "x": -1.48,
+              "y": 23.77125,
+              "z": 48.26
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossWedge",
+      "name": "The Wedge",
+      "normalizedName": "the-wedge",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "RoomsFour",
+          "spawnKey": "BotZoneRoomsFour",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -3.65,
+              "y": 26.47125,
+              "z": 37.14
+            },
+            {
+              "x": -6.7,
+              "y": 26.5348873,
+              "z": 31.2
+            },
+            {
+              "x": 3.623,
+              "y": 26.47125,
+              "z": 37.14
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossWedge",
+      "name": "The Wedge",
+      "normalizedName": "the-wedge",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "RoomsThirdKitchen",
+          "spawnKey": "BotZoneRoomsThirdKitchen",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 3.857,
+              "y": 23.77125,
+              "z": 48.769
+            },
+            {
+              "x": 6.43,
+              "y": 23.77125,
+              "z": 45.21
+            },
+            {
+              "x": -1.48,
+              "y": 23.77125,
+              "z": 48.26
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossWedge",
+      "name": "The Wedge",
+      "normalizedName": "the-wedge",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "RoomsThird",
+          "spawnKey": "BotZoneRoomsThird",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 3.21,
+              "y": 23.77125,
+              "z": 26.93
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossWedge",
+      "name": "The Wedge",
+      "normalizedName": "the-wedge",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "RoomsFour",
+          "spawnKey": "BotZoneRoomsFour",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -3.65,
+              "y": 26.47125,
+              "z": 37.14
+            },
+            {
+              "x": -6.7,
+              "y": 26.5348873,
+              "z": 31.2
+            },
+            {
+              "x": 3.623,
+              "y": 26.47125,
+              "z": 37.14
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossWedge",
+      "name": "The Wedge",
+      "normalizedName": "the-wedge",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "RoomsThirdKitchen",
+          "spawnKey": "BotZoneRoomsThirdKitchen",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 3.857,
+              "y": 23.77125,
+              "z": 48.769
+            },
+            {
+              "x": 6.43,
+              "y": 23.77125,
+              "z": 45.21
+            },
+            {
+              "x": -1.48,
+              "y": 23.77125,
+              "z": 48.26
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossWedge",
+      "name": "The Wedge",
+      "normalizedName": "the-wedge",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "RoomsThird",
+          "spawnKey": "BotZoneRoomsThird",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 3.21,
+              "y": 23.77125,
+              "z": 26.93
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossWedge",
+      "name": "The Wedge",
+      "normalizedName": "the-wedge",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "RoomsFour",
+          "spawnKey": "BotZoneRoomsFour",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -3.65,
+              "y": 26.47125,
+              "z": 37.14
+            },
+            {
+              "x": -6.7,
+              "y": 26.5348873,
+              "z": 31.2
+            },
+            {
+              "x": 3.623,
+              "y": 26.47125,
+              "z": 37.14
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossWedge",
+      "name": "The Wedge",
+      "normalizedName": "the-wedge",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "RoomsThirdKitchen",
+          "spawnKey": "BotZoneRoomsThirdKitchen",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 3.857,
+              "y": 23.77125,
+              "z": 48.769
+            },
+            {
+              "x": 6.43,
+              "y": 23.77125,
+              "z": 45.21
+            },
+            {
+              "x": -1.48,
+              "y": 23.77125,
+              "z": 48.26
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossWedge",
+      "name": "The Wedge",
+      "normalizedName": "the-wedge",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "RoomsThird",
+          "spawnKey": "BotZoneRoomsThird",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 3.21,
+              "y": 23.77125,
+              "z": 26.93
+            }
+          ]
+        }
+      ],
+      "spawnTime": 9999,
+      "spawnTimeRandom": false
+    }
+  ]
+}

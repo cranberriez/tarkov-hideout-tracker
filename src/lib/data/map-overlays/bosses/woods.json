@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "map": {
+    "id": "5704e3c2d2720bac5b8b4567",
+    "name": "Woods",
+    "normalizedName": "woods"
+  },
+  "bosses": [
+    {
+      "id": "sectantPriest",
+      "name": "Cultist Priest",
+      "normalizedName": "cultist-priest",
+      "spawnChance": 0.2,
+      "locations": [
+        {
+          "name": "Rundown Village",
+          "spawnKey": "ZoneBrokenVill",
+          "chance": 0.5,
+          "positions": [
+            {
+              "x": -55.9500122,
+              "y": 7.597872,
+              "z": -759.37
+            },
+            {
+              "x": -49.76001,
+              "y": 8.014783,
+              "z": -766.39
+            },
+            {
+              "x": -117.590027,
+              "y": 11.9433193,
+              "z": -729.39
+            },
+            {
+              "x": -130.62,
+              "y": 13.0453444,
+              "z": -623.1699
+            },
+            {
+              "x": -84.17999,
+              "y": 8.84712,
+              "z": -607.78
+            },
+            {
+              "x": -174.460022,
+              "y": 9.385831,
+              "z": -713.929932
+            },
+            {
+              "x": -6.42999268,
+              "y": 10.9864779,
+              "z": -786.35
+            },
+            {
+              "x": 9.660004,
+              "y": 15.707283,
+              "z": -780.569946
+            },
+            {
+              "x": -171.68,
+              "y": 14.8065891,
+              "z": -617.699951
+            }
+          ]
+        },
+        {
+          "name": "West of Lumber Mill",
+          "spawnKey": "ZoneMiniHouse",
+          "chance": 0.5,
+          "positions": [
+            {
+              "x": 307.94,
+              "y": -0.59301734,
+              "z": -159.809982
+            },
+            {
+              "x": 375.81,
+              "y": -1.05202746,
+              "z": -115.25
+            },
+            {
+              "x": 242.89,
+              "y": 1.51325369,
+              "z": -164.249985
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossKnight",
+      "name": "Knight",
+      "normalizedName": "knight",
+      "spawnChance": 0.2,
+      "locations": [
+        {
+          "name": "Northwest Scav Bunker",
+          "spawnKey": "ZoneScavBase2",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 178.999985,
+              "y": 18.13865,
+              "z": -771.420044
+            },
+            {
+              "x": 280.36,
+              "y": 8.309144,
+              "z": -674.51
+            },
+            {
+              "x": 157.48999,
+              "y": 24.37865,
+              "z": -690.61
+            },
+            {
+              "x": 268.699982,
+              "y": 17.5370255,
+              "z": -756.9
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": true
+    },
+    {
+      "id": "bossKojaniy",
+      "name": "Shturman",
+      "normalizedName": "shturman",
+      "spawnChance": 0.6,
+      "locations": [
+        {
+          "name": "Lumber Mill",
+          "spawnKey": "ZoneWoodCutter",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 102.62,
+              "y": 7.21457958,
+              "z": -152.19
+            },
+            {
+              "x": -2.308197,
+              "y": -1.44134891,
+              "z": -74.57119
+            },
+            {
+              "x": 125.9,
+              "y": 0.277326226,
+              "z": 4.92
+            },
+            {
+              "x": 135.05,
+              "y": 8.544661,
+              "z": -174.15
+            },
+            {
+              "x": 63.2168045,
+              "y": -7.55134869,
+              "z": 35.2158127
+            },
+            {
+              "x": 87.7668,
+              "y": -15.89571,
+              "z": 114.385811
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    }
+  ]
+}

@@ -1,7 +1,25 @@
 # Mapping Architecture
 
 The shared mapping slice powers both the quests workspace Raid Planner and embedded
-quest-detail objective maps. Map overlays such as extracts are not implemented yet.
+quest-detail objective maps. The Raid Planner displays PMC extracts and transits;
+boss overlays are retained as compact source data but are not displayed yet.
+
+## Map overlay snapshot
+
+`src/lib/data/map-overlays/` contains maintenance-time reductions of Tarkov.dev's
+`/regular/maps` and `/regular/maps_en` JSON datasets. It keeps translated map,
+extract, transit, boss, and spawn-zone labels together with the geometry needed by the
+existing world-to-map projection. It intentionally omits loot, generic player and
+scav spawns, locks, hazards, and other large map records.
+
+The data is split into `extracts/<map>.json` (PMC extracts plus transits) and
+`bosses/<map>.json`, with a small `manifest.json` for review. The Raid Planner API
+loads only the selected map's navigation chunk and filters out non-PMC extracts.
+
+Refresh it explicitly with `npm run pull-map-overlays`. This is not a runtime fetch:
+the committed snapshot remains stable until a maintainer reviews and commits a new
+pull. Boss location points are candidate positions reported for a boss spawn zone;
+they should be presented as possible areas rather than guaranteed exact spawn pins.
 
 ## Data flow
 
@@ -15,6 +33,10 @@ src/lib/data/maps.json
   -> server-only compact reducer
   -> /api/maps/render/{mapKey}
   -> shared MapViewer
+
+src/lib/data/map-overlays/extracts/{map}.json
+  -> /api/maps/overlays/{mapKey} (PMC filter)
+  -> Raid Planner green extract and orange transit labels
 ```
 
 The browser receives only the selected compact render definition and selected SVG. It never receives the complete `maps.json` source or any raster tile paths. SVG assets are fetched through a same-origin, allow-listed server route using the project user agent.
@@ -97,6 +119,11 @@ fit-to-markers, objective-focused fitting, zone outlines, marker selection/focus
 visible map attribution. Its layer summary lists currently visible floors,
 provides independent optional-layer toggles and per-floor marker counts, and adds the resolved
 floor name to marker tooltips. Marker coordinates and size remain fixed on hover/focus.
+The Raid Planner adds small green PMC-extract boxes and orange transit boxes for
+the selected map. Their labels are plain colored text with a dark shadow. A control
+beside the zoom buttons hides or shows the persistent labels without removing the
+boxes; hidden labels reappear while their box is hovered or keyboard-focused. Scav
+extracts and boss data are not sent to this view.
 Hovering a Raid Planner marker shows its objective tooltip without changing or
 scrolling the quest list; clicking the marker selects, highlights, and scrolls to
 its quest. When one or more objectives represented by a marker require keys, the

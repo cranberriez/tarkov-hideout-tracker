@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "map": {
+    "id": "59fc81d786f774390775787e",
+    "name": "Night Factory",
+    "normalizedName": "night-factory"
+  },
+  "bosses": [
+    {
+      "id": "sectantPriest",
+      "name": "Cultist Priest",
+      "normalizedName": "cultist-priest",
+      "spawnChance": 0.08,
+      "locations": [
+        {
+          "name": "Any scav spawn",
+          "spawnKey": "BotZone",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 31.813,
+              "y": 0.141,
+              "z": 21.202
+            },
+            {
+              "x": 15.249,
+              "y": 4.563,
+              "z": 41.209
+            },
+            {
+              "x": -6.77,
+              "y": 0.17,
+              "z": 10.01
+            },
+            {
+              "x": 36.043,
+              "y": 1.09,
+              "z": 38.348
+            },
+            {
+              "x": 30.758,
+              "y": 0.26,
+              "z": 15.164
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1
+    },
+    {
+      "id": "bossTagilla",
+      "name": "Tagilla",
+      "normalizedName": "tagilla",
+      "spawnChance": 0.6,
+      "locations": [
+        {
+          "name": "Any scav spawn",
+          "spawnKey": "BotZone",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 31.813,
+              "y": 0.141,
+              "z": 21.202
+            },
+            {
+              "x": 15.249,
+              "y": 4.563,
+              "z": 41.209
+            },
+            {
+              "x": -6.77,
+              "y": 0.17,
+              "z": 10.01
+            },
+            {
+              "x": 36.043,
+              "y": 1.09,
+              "z": 38.348
+            },
+            {
+              "x": 30.758,
+              "y": 0.26,
+              "z": 15.164
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "map": {
+    "id": "5714dc692459777137212e12",
+    "name": "Streets of Tarkov",
+    "normalizedName": "streets-of-tarkov"
+  },
+  "bosses": [
+    {
+      "id": "bossBoar",
+      "name": "Kaban",
+      "normalizedName": "kaban",
+      "spawnChance": 0.6,
+      "locations": [
+        {
+          "name": "Car Dealership",
+          "spawnKey": "ZoneCarShowroom",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 85.81,
+              "y": 5.38299561,
+              "z": 348.52
+            },
+            {
+              "x": 78.042,
+              "y": 2.80299687,
+              "z": 286.172
+            },
+            {
+              "x": 58.914,
+              "y": 2.6289978,
+              "z": 324.237
+            },
+            {
+              "x": 76.327,
+              "y": 2.78199768,
+              "z": 288.368
+            },
+            {
+              "x": 101.45,
+              "y": 5.03851843,
+              "z": 312.85
+            },
+            {
+              "x": 100.996,
+              "y": 2.67999649,
+              "z": 271.171021
+            },
+            {
+              "x": 81.4,
+              "y": 2.73099518,
+              "z": 297.38
+            },
+            {
+              "x": 89.824,
+              "y": 2.70902157,
+              "z": 314.917
+            },
+            {
+              "x": 101.469,
+              "y": 2.68346357,
+              "z": 290.25
+            },
+            {
+              "x": 71.815,
+              "y": 2.67999649,
+              "z": 266.432
+            },
+            {
+              "x": 82.266,
+              "y": 2.78199768,
+              "z": 266.358
+            },
+            {
+              "x": 95.922,
+              "y": 2.67999649,
+              "z": 306.475
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossKolontay",
+      "name": "Kollontay",
+      "normalizedName": "kollontay",
+      "spawnChance": 0.6,
+      "locations": [
+        {
+          "name": "Klimov Shopping Mall",
+          "spawnKey": "ZoneClimova",
+          "chance": 0.5,
+          "positions": [
+            {
+              "x": -155.72,
+              "y": 0.664130151,
+              "z": -58.1299973
+            },
+            {
+              "x": -123.55,
+              "y": 5.12799454,
+              "z": -31.5099983
+            },
+            {
+              "x": -147.264,
+              "y": 0.6399956,
+              "z": -66.349
+            },
+            {
+              "x": -153.62,
+              "y": 0.6758954,
+              "z": -64.64
+            },
+            {
+              "x": -136.07,
+              "y": 0.6399956,
+              "z": -71.29
+            }
+          ]
+        },
+        {
+          "name": "Ministry of the Interior Academy",
+          "spawnKey": "ZoneMvd",
+          "chance": 0.5,
+          "positions": [
+            {
+              "x": -254.2,
+              "y": 2.98599625,
+              "z": 149.62999
+            },
+            {
+              "x": -253.98999,
+              "y": 2.98599625,
+              "z": 125.359993
+            },
+            {
+              "x": -258.28,
+              "y": 2.31656575,
+              "z": 140.75
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    }
+  ]
+}

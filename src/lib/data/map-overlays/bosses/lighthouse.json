@@ -1,0 +1,385 @@
+{
+  "schemaVersion": 1,
+  "map": {
+    "id": "5704e4dad2720bb55b8b4567",
+    "name": "Lighthouse",
+    "normalizedName": "lighthouse"
+  },
+  "bosses": [
+    {
+      "id": "bossKnight",
+      "name": "Knight",
+      "normalizedName": "knight",
+      "spawnChance": 0.2,
+      "locations": [
+        {
+          "name": "Chalet",
+          "spawnKey": "Zone_Chalet",
+          "chance": 0.5,
+          "positions": [
+            {
+              "x": -62.0599976,
+              "y": 19.86565,
+              "z": -134.26001
+            },
+            {
+              "x": -123.577026,
+              "y": 18.21967,
+              "z": -132.695
+            },
+            {
+              "x": -124.53,
+              "y": 18.21967,
+              "z": -135.450012
+            },
+            {
+              "x": -81,
+              "y": 16.4738655,
+              "z": 19.2799988
+            }
+          ]
+        },
+        {
+          "name": "Water Treatment North Building",
+          "spawnKey": "Zone_TreatmentContainers",
+          "chance": 0.5,
+          "positions": [
+            {
+              "x": -109.02002,
+              "y": 4.92964935,
+              "z": -729.52
+            },
+            {
+              "x": -66.66,
+              "y": 4.92964935,
+              "z": -753.74
+            },
+            {
+              "x": -106.490021,
+              "y": 4.94265,
+              "z": -754.910034
+            },
+            {
+              "x": -94.92001,
+              "y": 4.93265152,
+              "z": -750.14
+            },
+            {
+              "x": -130.090027,
+              "y": 7.734501,
+              "z": -747.189941
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": true
+    },
+    {
+      "id": "ExUsec",
+      "name": "Rogue",
+      "normalizedName": "rogue",
+      "spawnChance": 0.8,
+      "locations": [
+        {
+          "name": "Water Treatment Southwest Gate",
+          "spawnKey": "Zone_Blockpost",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -8.040009,
+              "y": 7.268448,
+              "z": -452.21
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "ExUsec",
+      "name": "Rogue",
+      "normalizedName": "rogue",
+      "spawnChance": 0.8,
+      "locations": [
+        {
+          "name": "Water Treatment North Building",
+          "spawnKey": "Zone_RoofContainers",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -124.830017,
+              "y": 14.0356522,
+              "z": -738.319946
+            },
+            {
+              "x": -66.2750244,
+              "y": 14.0756493,
+              "z": -734.574
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "ExUsec",
+      "name": "Rogue",
+      "normalizedName": "rogue",
+      "spawnChance": 0.5,
+      "locations": [
+        {
+          "name": "Water Treatment East Building",
+          "spawnKey": "Zone_TreatmentRocks",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -199.430008,
+              "y": 4.92964935,
+              "z": -680.459961
+            },
+            {
+              "x": -198.790009,
+              "y": 5.189949,
+              "z": -697.670044
+            },
+            {
+              "x": -180.530014,
+              "y": 5.02565,
+              "z": -647.310059
+            },
+            {
+              "x": -180.49,
+              "y": 5.02565,
+              "z": -633.040039
+            },
+            {
+              "x": -172.51001,
+              "y": 5.02565,
+              "z": -655.47
+            },
+            {
+              "x": -199.700012,
+              "y": 4.910652,
+              "z": -665.11
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "ExUsec",
+      "name": "Rogue",
+      "normalizedName": "rogue",
+      "spawnChance": 0.5,
+      "locations": [
+        {
+          "name": "Water Treatment West Building",
+          "spawnKey": "Zone_TreatmentBeach",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 105.329987,
+              "y": 7.43565,
+              "z": -529.73
+            },
+            {
+              "x": 54.1099854,
+              "y": 4.95064926,
+              "z": -606.329956
+            },
+            {
+              "x": 111.659973,
+              "y": 5.02565,
+              "z": -671.98
+            },
+            {
+              "x": 30.5999756,
+              "y": 4.90765,
+              "z": -631.13
+            },
+            {
+              "x": 37.48999,
+              "y": 4.94265,
+              "z": -641.36
+            },
+            {
+              "x": 55.44998,
+              "y": 4.94265,
+              "z": -633.199951
+            },
+            {
+              "x": 51.8299866,
+              "y": 5.187237,
+              "z": -589.9
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "ExUsec",
+      "name": "Rogue",
+      "normalizedName": "rogue",
+      "spawnChance": 0.8,
+      "locations": [
+        {
+          "name": "Water Treatment East Building Roof",
+          "spawnKey": "Zone_RoofRocks",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -181.590012,
+              "y": 14.0029526,
+              "z": -659.829956
+            },
+            {
+              "x": -186.51001,
+              "y": 14.0341454,
+              "z": -643.839966
+            },
+            {
+              "x": -185.700012,
+              "y": 13.9855,
+              "z": -693.6416
+            },
+            {
+              "x": -190.35,
+              "y": 13.9855,
+              "z": -660.22
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "ExUsec",
+      "name": "Rogue",
+      "normalizedName": "rogue",
+      "spawnChance": 0.8,
+      "locations": [
+        {
+          "name": "Water Treatment West Building Roof",
+          "spawnKey": "Zone_RoofBeach",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 29.8399963,
+              "y": 13.95565,
+              "z": -623.39
+            },
+            {
+              "x": 29.3799744,
+              "y": 14.0556488,
+              "z": -621.069946
+            },
+            {
+              "x": 30.5599976,
+              "y": 13.95565,
+              "z": -591.73
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "ExUsec",
+      "name": "Rogue",
+      "normalizedName": "rogue",
+      "spawnChance": 0.2,
+      "locations": [
+        {
+          "name": "Water Treatment Helicopter",
+          "spawnKey": "Zone_Hellicopter",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -130.75,
+              "y": 4.945652,
+              "z": -738.22
+            },
+            {
+              "x": -62.53,
+              "y": 3.95565033,
+              "z": -586.410034
+            },
+            {
+              "x": -56.8900146,
+              "y": 1.88565063,
+              "z": -586.440063
+            },
+            {
+              "x": -84.34003,
+              "y": -0.104351044,
+              "z": -565.560059
+            },
+            {
+              "x": -83.70001,
+              "y": -0.106666565,
+              "z": -541.36
+            },
+            {
+              "x": -101.01001,
+              "y": 0.0156517029,
+              "z": -537.61
+            },
+            {
+              "x": -90.26001,
+              "y": 1.71564865,
+              "z": -577.11
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossZryachiy",
+      "name": "Zryachiy",
+      "normalizedName": "zryachiy",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "Island",
+          "spawnKey": "Zone_Island",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 356.39,
+              "y": 15.51865,
+              "z": 553.695
+            },
+            {
+              "x": 329.55,
+              "y": 1.75564957,
+              "z": 505.63
+            },
+            {
+              "x": 371.841,
+              "y": 15.1656494,
+              "z": 571.147
+            },
+            {
+              "x": 365.69,
+              "y": 15.5336494,
+              "z": 545.678
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    }
+  ]
+}

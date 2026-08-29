@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "map": {
+    "id": "55f2d3fd4bdc2d5f408b4567",
+    "name": "Factory",
+    "normalizedName": "factory"
+  },
+  "bosses": [
+    {
+      "id": "bossTagilla",
+      "name": "Tagilla",
+      "normalizedName": "tagilla",
+      "spawnChance": 0.35,
+      "locations": [
+        {
+          "name": "Any scav spawn",
+          "spawnKey": "BotZone",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 31.813,
+              "y": 0.141,
+              "z": 21.202
+            },
+            {
+              "x": 15.249,
+              "y": 4.563,
+              "z": 41.209
+            },
+            {
+              "x": -6.77,
+              "y": 0.17,
+              "z": 10.01
+            },
+            {
+              "x": 36.043,
+              "y": 1.09,
+              "z": 38.348
+            },
+            {
+              "x": 30.758,
+              "y": 0.26,
+              "z": 15.164
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    }
+  ]
+}

@@ -1,0 +1,263 @@
+{
+  "schemaVersion": 1,
+  "map": {
+    "id": "5704e5fad2720bc05b8b4567",
+    "name": "Reserve",
+    "normalizedName": "reserve"
+  },
+  "bosses": [
+    {
+      "id": "bossGluhar",
+      "name": "Glukhar",
+      "normalizedName": "glukhar",
+      "spawnChance": 0.35,
+      "locations": [
+        {
+          "name": "Barracks",
+          "spawnKey": "ZoneBarrack",
+          "chance": 0.25,
+          "positions": [
+            {
+              "x": -153.22,
+              "y": -6.93600464,
+              "z": 52.2
+            },
+            {
+              "x": -118.6,
+              "y": -6.93600464,
+              "z": -3.04
+            }
+          ]
+        },
+        {
+          "name": "K Buildings",
+          "spawnKey": "ZoneRailStrorage",
+          "chance": 0.25,
+          "positions": [
+            {
+              "x": 23.48,
+              "y": -5.10800171,
+              "z": -128.25
+            }
+          ]
+        },
+        {
+          "name": "Storage Bunker",
+          "spawnKey": "ZoneSubStorage",
+          "chance": 0.25,
+          "positions": [
+            {
+              "x": 58.35,
+              "y": -12.2260056,
+              "z": -155.19
+            }
+          ]
+        },
+        {
+          "name": "White Knight",
+          "spawnKey": "ZonePTOR2",
+          "chance": 0.25,
+          "positions": [
+            {
+              "x": 74.39,
+              "y": -6.746002,
+              "z": -41.15
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "PmcBot",
+      "name": "Raider",
+      "normalizedName": "raider",
+      "spawnChance": 0.4,
+      "locations": [
+        {
+          "name": "K Buildings",
+          "spawnKey": "ZoneRailStrorage",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 23.48,
+              "y": -5.10800171,
+              "z": -128.25
+            }
+          ]
+        }
+      ],
+      "spawnTime": 1470,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "PmcBot",
+      "name": "Raider",
+      "normalizedName": "raider",
+      "spawnChance": 0.3,
+      "locations": [
+        {
+          "name": "K Buildings",
+          "spawnKey": "ZoneRailStrorage",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 23.48,
+              "y": -5.10800171,
+              "z": -128.25
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false,
+      "spawnTrigger": "Switch"
+    },
+    {
+      "id": "PmcBot",
+      "name": "Raider",
+      "normalizedName": "raider",
+      "spawnChance": 0.3,
+      "locations": [
+        {
+          "name": "Command Bunker",
+          "spawnKey": "ZoneSubCommand",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -104.219,
+              "y": -14.4960022,
+              "z": 33.834
+            },
+            {
+              "x": -86.14,
+              "y": -14.3970032,
+              "z": 21.38
+            },
+            {
+              "x": -90.439,
+              "y": -14.5108719,
+              "z": 14.514
+            },
+            {
+              "x": -82.439,
+              "y": -14.2580032,
+              "z": 28.901
+            },
+            {
+              "x": -117.59,
+              "y": -14.5930023,
+              "z": 58.736
+            },
+            {
+              "x": -105.636,
+              "y": -14.4990005,
+              "z": 21.839
+            },
+            {
+              "x": -99.945,
+              "y": -14.5070038,
+              "z": 17.43
+            },
+            {
+              "x": -85.138,
+              "y": -14.5049973,
+              "z": 36.945
+            },
+            {
+              "x": -89.81,
+              "y": -14.4660034,
+              "z": 17.202
+            },
+            {
+              "x": -94.91,
+              "y": -14.75,
+              "z": 3.42
+            },
+            {
+              "x": -136.37,
+              "y": -14.6259995,
+              "z": 41.582
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false,
+      "spawnTrigger": "autoId_00000_D2_LEVER"
+    },
+    {
+      "id": "PmcBot",
+      "name": "Raider",
+      "normalizedName": "raider",
+      "spawnChance": 0.3,
+      "locations": [
+        {
+          "name": "Command Bunker",
+          "spawnKey": "ZoneSubCommand",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -104.219,
+              "y": -14.4960022,
+              "z": 33.834
+            },
+            {
+              "x": -86.14,
+              "y": -14.3970032,
+              "z": 21.38
+            },
+            {
+              "x": -90.439,
+              "y": -14.5108719,
+              "z": 14.514
+            },
+            {
+              "x": -82.439,
+              "y": -14.2580032,
+              "z": 28.901
+            },
+            {
+              "x": -117.59,
+              "y": -14.5930023,
+              "z": 58.736
+            },
+            {
+              "x": -105.636,
+              "y": -14.4990005,
+              "z": 21.839
+            },
+            {
+              "x": -99.945,
+              "y": -14.5070038,
+              "z": 17.43
+            },
+            {
+              "x": -85.138,
+              "y": -14.5049973,
+              "z": 36.945
+            },
+            {
+              "x": -89.81,
+              "y": -14.4660034,
+              "z": 17.202
+            },
+            {
+              "x": -94.91,
+              "y": -14.75,
+              "z": 3.42
+            },
+            {
+              "x": -136.37,
+              "y": -14.6259995,
+              "z": 41.582
+            }
+          ]
+        }
+      ],
+      "spawnTime": 3,
+      "spawnTimeRandom": false
+    }
+  ]
+}

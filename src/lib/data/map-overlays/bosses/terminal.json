@@ -1,0 +1,921 @@
+{
+  "schemaVersion": 1,
+  "map": {
+    "id": "65cc8f81a9aac3e77d0cfd3e",
+    "name": "Terminal",
+    "normalizedName": "terminal"
+  },
+  "bosses": [
+    {
+      "id": "vsRF",
+      "name": "AF",
+      "normalizedName": "af",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "1VSRF1Spawn3",
+          "spawnKey": "Zone1VSRF1Spawn3",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 133.810059,
+              "y": -60.46134,
+              "z": -392.249969
+            },
+            {
+              "x": 135.530029,
+              "y": -60.02134,
+              "z": -387.869965
+            },
+            {
+              "x": 136.63,
+              "y": -60.45134,
+              "z": -402.659973
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "vsRF",
+      "name": "AF",
+      "normalizedName": "af",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "1VSRF1Spawn3",
+          "spawnKey": "Zone1VSRF1Spawn3",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 133.810059,
+              "y": -60.46134,
+              "z": -392.249969
+            },
+            {
+              "x": 135.530029,
+              "y": -60.02134,
+              "z": -387.869965
+            },
+            {
+              "x": 136.63,
+              "y": -60.45134,
+              "z": -402.659973
+            }
+          ]
+        }
+      ],
+      "spawnTime": 40,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "vsRF",
+      "name": "AF",
+      "normalizedName": "af",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "1VSRFStoreAmbush10",
+          "spawnKey": "Zone1VSRFStoreAmbush10",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 186.764038,
+              "y": -60.2443428,
+              "z": -240.268982
+            },
+            {
+              "x": 196.693,
+              "y": -60.2163429,
+              "z": -241.826965
+            },
+            {
+              "x": 168.710083,
+              "y": -60.27134,
+              "z": -213.269989
+            },
+            {
+              "x": 164.7201,
+              "y": -60.2513428,
+              "z": -217.999969
+            }
+          ]
+        }
+      ],
+      "spawnTime": 750,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "vsRF",
+      "name": "AF",
+      "normalizedName": "af",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "1VSRFStoreAmbush10",
+          "spawnKey": "Zone1VSRFStoreAmbush10",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 186.764038,
+              "y": -60.2443428,
+              "z": -240.268982
+            },
+            {
+              "x": 196.693,
+              "y": -60.2163429,
+              "z": -241.826965
+            },
+            {
+              "x": 168.710083,
+              "y": -60.27134,
+              "z": -213.269989
+            },
+            {
+              "x": 164.7201,
+              "y": -60.2513428,
+              "z": -217.999969
+            }
+          ]
+        }
+      ],
+      "spawnTime": 770,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "vsRF",
+      "name": "AF",
+      "normalizedName": "af",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "2VSRFPassMiddle15",
+          "spawnKey": "Zone2VSRFPassMiddle15",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -18.7698975,
+              "y": -60.2513428,
+              "z": -113.259949
+            },
+            {
+              "x": -14.5360107,
+              "y": -60.24034,
+              "z": -147.060974
+            }
+          ]
+        }
+      ],
+      "spawnTime": 1700,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "vsRF",
+      "name": "AF",
+      "normalizedName": "af",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "2VSRFColumns22",
+          "spawnKey": "Zone2VSRFColumns22",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 132.290039,
+              "y": -60.37134,
+              "z": 235.790039
+            },
+            {
+              "x": 141.070068,
+              "y": -60.37134,
+              "z": 247.790039
+            },
+            {
+              "x": 129.7301,
+              "y": -60.37134,
+              "z": 241.100037
+            }
+          ]
+        }
+      ],
+      "spawnTime": 1850,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "vsRF",
+      "name": "AF",
+      "normalizedName": "af",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "2VSRFContainers24",
+          "spawnKey": "Zone2VSRFContainers24",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -161.97998,
+              "y": -60.19134,
+              "z": 44.9100342
+            },
+            {
+              "x": -155.199951,
+              "y": -60.40134,
+              "z": 38.9000244
+            },
+            {
+              "x": -136.079956,
+              "y": -60.40134,
+              "z": 34.4100342
+            }
+          ]
+        }
+      ],
+      "spawnTime": 1880,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "vsRF",
+      "name": "AF",
+      "normalizedName": "af",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "2VSRFExit33",
+          "spawnKey": "Zone2VSRFExit33",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -289.436035,
+              "y": -61.36434,
+              "z": 58.88501
+            },
+            {
+              "x": -283.4099,
+              "y": -61.36434,
+              "z": 60.1500244
+            },
+            {
+              "x": -282.194946,
+              "y": -61.36034,
+              "z": 76.5150146
+            }
+          ]
+        }
+      ],
+      "spawnTime": 2100,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "vsRFSniper",
+      "name": "AF",
+      "normalizedName": "af",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "1VSRFSnipeRoofPort2",
+          "spawnKey": "Zone1VSRFSnipeRoofPort2",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 9.070068,
+              "y": -51.8413429,
+              "z": -212.47998
+            },
+            {
+              "x": 20.1600342,
+              "y": -51.8413429,
+              "z": -211.719971
+            }
+          ]
+        }
+      ],
+      "spawnTime": 600,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "blackDivision",
+      "name": "Black Div.",
+      "normalizedName": "black-div",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "1BD1PortAmbush1",
+          "spawnKey": "Zone1BD1PortAmbush1",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 21.77002,
+              "y": -60.42134,
+              "z": -353.929962
+            },
+            {
+              "x": 20.01001,
+              "y": -60.4313431,
+              "z": -347.089966
+            },
+            {
+              "x": -1.33996582,
+              "y": -60.3913422,
+              "z": -313.309967
+            },
+            {
+              "x": 20.3800049,
+              "y": -60.22134,
+              "z": -348.459961
+            }
+          ]
+        }
+      ],
+      "spawnTime": 5820,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "blackDivision",
+      "name": "Black Div.",
+      "normalizedName": "black-div",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "1BD1PortAmbush1",
+          "spawnKey": "Zone1BD1PortAmbush1",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 21.77002,
+              "y": -60.42134,
+              "z": -353.929962
+            },
+            {
+              "x": 20.01001,
+              "y": -60.4313431,
+              "z": -347.089966
+            },
+            {
+              "x": -1.33996582,
+              "y": -60.3913422,
+              "z": -313.309967
+            },
+            {
+              "x": 20.3800049,
+              "y": -60.22134,
+              "z": -348.459961
+            }
+          ]
+        }
+      ],
+      "spawnTime": 5860,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "blackDivision",
+      "name": "Black Div.",
+      "normalizedName": "black-div",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "1BDGateAmbush13",
+          "spawnKey": "Zone1BDGateAmbush13",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 38.1929932,
+              "y": -60.4313431,
+              "z": -144.871948
+            },
+            {
+              "x": 41.5,
+              "y": -60.4113426,
+              "z": -154.112976
+            },
+            {
+              "x": 40.01001,
+              "y": -60.4473419,
+              "z": -156.48999
+            }
+          ]
+        }
+      ],
+      "spawnTime": 950,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "blackDivision",
+      "name": "Black Div.",
+      "normalizedName": "black-div",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "1BD1HangarAmbush11",
+          "spawnKey": "Zone1BD1HangarAmbush11",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 275.63,
+              "y": -60.28134,
+              "z": -170.159973
+            },
+            {
+              "x": 281.62,
+              "y": -60.20134,
+              "z": -189.549988
+            },
+            {
+              "x": 269.26,
+              "y": -60.20134,
+              "z": -171.179962
+            },
+            {
+              "x": 283.710083,
+              "y": -60.20134,
+              "z": -171.779968
+            }
+          ]
+        }
+      ],
+      "spawnTime": 835,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "blackDivision",
+      "name": "Black Div.",
+      "normalizedName": "black-div",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "1BD1HangarAmbush11",
+          "spawnKey": "Zone1BD1HangarAmbush11",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 275.63,
+              "y": -60.28134,
+              "z": -170.159973
+            },
+            {
+              "x": 281.62,
+              "y": -60.20134,
+              "z": -189.549988
+            },
+            {
+              "x": 269.26,
+              "y": -60.20134,
+              "z": -171.179962
+            },
+            {
+              "x": 283.710083,
+              "y": -60.20134,
+              "z": -171.779968
+            }
+          ]
+        }
+      ],
+      "spawnTime": 890,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "blackDivision",
+      "name": "Black Div.",
+      "normalizedName": "black-div",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "1BD1HangarAmbush11",
+          "spawnKey": "Zone1BD1HangarAmbush11",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 275.63,
+              "y": -60.28134,
+              "z": -170.159973
+            },
+            {
+              "x": 281.62,
+              "y": -60.20134,
+              "z": -189.549988
+            },
+            {
+              "x": 269.26,
+              "y": -60.20134,
+              "z": -171.179962
+            },
+            {
+              "x": 283.710083,
+              "y": -60.20134,
+              "z": -171.779968
+            }
+          ]
+        }
+      ],
+      "spawnTime": 810,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "blackDivision",
+      "name": "Black Div.",
+      "normalizedName": "black-div",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "2BDWarehouse18",
+          "spawnKey": "Zone2BDWarehouse18",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 189.5,
+              "y": -60.40134,
+              "z": -41.3199463
+            },
+            {
+              "x": 182.800049,
+              "y": -60.40134,
+              "z": -34.27997
+            },
+            {
+              "x": 176.650024,
+              "y": -60.40134,
+              "z": -34.69995
+            }
+          ]
+        }
+      ],
+      "spawnTime": 1800,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "blackDivision",
+      "name": "Black Div.",
+      "normalizedName": "black-div",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "2BDWarehouse19",
+          "spawnKey": "Zone2BDWarehouse19",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 210.25,
+              "y": -60.46134,
+              "z": 40.0900269
+            },
+            {
+              "x": 197.77002,
+              "y": -60.46134,
+              "z": 43.54004
+            },
+            {
+              "x": 211,
+              "y": -60.46134,
+              "z": 29.2300415
+            }
+          ]
+        }
+      ],
+      "spawnTime": 1810,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "blackDivision",
+      "name": "Black Div.",
+      "normalizedName": "black-div",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "2BDColumns23",
+          "spawnKey": "Zone2BDColumns23",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 86.39905,
+              "y": -60.263,
+              "z": 105.468994
+            },
+            {
+              "x": 87.58899,
+              "y": -60.263,
+              "z": 133.889038
+            },
+            {
+              "x": 82.35901,
+              "y": -60.303,
+              "z": 140.639038
+            }
+          ]
+        }
+      ],
+      "spawnTime": 1840,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "blackDivision",
+      "name": "Black Div.",
+      "normalizedName": "black-div",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "2BDPort28",
+          "spawnKey": "Zone2BDPort28",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -6.75097656,
+              "y": -60.413002,
+              "z": 202.569031
+            },
+            {
+              "x": -12.72998,
+              "y": -59.373,
+              "z": 235.841
+            },
+            {
+              "x": 3.24902344,
+              "y": -60.413002,
+              "z": 204.669
+            }
+          ]
+        }
+      ],
+      "spawnTime": 1890,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "blackDivision",
+      "name": "Black Div.",
+      "normalizedName": "black-div",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "2BDPort30",
+          "spawnKey": "Zone2BDPort30",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -85.96802,
+              "y": -60.421,
+              "z": 396.534
+            },
+            {
+              "x": -88.06091,
+              "y": -60.421,
+              "z": 406.079041
+            },
+            {
+              "x": -77.19092,
+              "y": -60.421,
+              "z": 400.289
+            }
+          ]
+        }
+      ],
+      "spawnTime": 1900,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "blackDivision",
+      "name": "Black Div.",
+      "normalizedName": "black-div",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "2BDPort31",
+          "spawnKey": "Zone2BDPort31",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -181.161011,
+              "y": -60.4330025,
+              "z": 293.239
+            },
+            {
+              "x": -176.671021,
+              "y": -60.3830032,
+              "z": 299.219
+            }
+          ]
+        }
+      ],
+      "spawnTime": 1920,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "blackDivision",
+      "name": "Black Div.",
+      "normalizedName": "black-div",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "2BDPort32",
+          "spawnKey": "Zone2BDPort32",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -372.021,
+              "y": -60.373,
+              "z": 328.85907
+            },
+            {
+              "x": -349.68103,
+              "y": -60.373,
+              "z": 337.84906
+            },
+            {
+              "x": -361.261,
+              "y": -60.373,
+              "z": 326.289
+            }
+          ]
+        }
+      ],
+      "spawnTime": 2000,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "blackDivision",
+      "name": "Black Div.",
+      "normalizedName": "black-div",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "1BD1HangarBD11",
+          "spawnKey": "Zone1BD1HangarBD11",
+          "chance": 1,
+          "positions": [
+            {
+              "x": 274.13,
+              "y": -60.2933426,
+              "z": -218.766968
+            },
+            {
+              "x": 273.957031,
+              "y": -60.3259048,
+              "z": -266.977966
+            }
+          ]
+        }
+      ],
+      "spawnTime": 2845,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossGluhar",
+      "name": "Glukhar",
+      "normalizedName": "glukhar",
+      "spawnChance": 0.2,
+      "locations": [
+        {
+          "name": "2ScavPort29",
+          "spawnKey": "Zone2ScavPort29",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -73.276,
+              "y": -60.24734,
+              "z": 190.63
+            },
+            {
+              "x": -77.77991,
+              "y": -60.4113426,
+              "z": 197.920044
+            },
+            {
+              "x": -60.98999,
+              "y": -60.39234,
+              "z": 181.900024
+            }
+          ]
+        }
+      ],
+      "spawnTime": 5790,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossKilla",
+      "name": "Killa",
+      "normalizedName": "killa",
+      "spawnChance": 0.2,
+      "locations": [
+        {
+          "name": "2ScavPort29",
+          "spawnKey": "Zone2ScavPort29",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -73.276,
+              "y": -60.24734,
+              "z": 190.63
+            },
+            {
+              "x": -77.77991,
+              "y": -60.4113426,
+              "z": 197.920044
+            },
+            {
+              "x": -60.98999,
+              "y": -60.39234,
+              "z": 181.900024
+            }
+          ]
+        }
+      ],
+      "spawnTime": 5790,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossBully",
+      "name": "Reshala",
+      "normalizedName": "reshala",
+      "spawnChance": 0.2,
+      "locations": [
+        {
+          "name": "2ScavPort29",
+          "spawnKey": "Zone2ScavPort29",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -73.276,
+              "y": -60.24734,
+              "z": 190.63
+            },
+            {
+              "x": -77.77991,
+              "y": -60.4113426,
+              "z": 197.920044
+            },
+            {
+              "x": -60.98999,
+              "y": -60.39234,
+              "z": 181.900024
+            }
+          ]
+        }
+      ],
+      "spawnTime": 5790,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossSanitar",
+      "name": "Sanitar",
+      "normalizedName": "sanitar",
+      "spawnChance": 0.2,
+      "locations": [
+        {
+          "name": "2ScavPort29",
+          "spawnKey": "Zone2ScavPort29",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -73.276,
+              "y": -60.24734,
+              "z": 190.63
+            },
+            {
+              "x": -77.77991,
+              "y": -60.4113426,
+              "z": 197.920044
+            },
+            {
+              "x": -60.98999,
+              "y": -60.39234,
+              "z": 181.900024
+            }
+          ]
+        }
+      ],
+      "spawnTime": 5790,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossTagilla",
+      "name": "Tagilla",
+      "normalizedName": "tagilla",
+      "spawnChance": 0.2,
+      "locations": [
+        {
+          "name": "2ScavPort29",
+          "spawnKey": "Zone2ScavPort29",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -73.276,
+              "y": -60.24734,
+              "z": 190.63
+            },
+            {
+              "x": -77.77991,
+              "y": -60.4113426,
+              "z": 197.920044
+            },
+            {
+              "x": -60.98999,
+              "y": -60.39234,
+              "z": 181.900024
+            }
+          ]
+        }
+      ],
+      "spawnTime": 5790,
+      "spawnTimeRandom": false
+    }
+  ]
+}

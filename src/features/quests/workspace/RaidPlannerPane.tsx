@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, Crosshair, KeyRound } from "lucide-react";
 import Image from "next/image";
 import { MapViewer } from "@/features/maps/MapViewer";
 import type { MapViewTransform } from "@/features/maps/map-view-transform";
+import type { MapOverlayMarker } from "@/features/maps/map-types";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 import { buildRaidPlannerMarkers } from "./raid-planner-markers";
@@ -24,17 +25,38 @@ interface RaidPlannerPaneProps {
 
 export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPaneProps) {
     const [isKillListOpen, setIsKillListOpen] = useState(false);
+    const [navigationMarkers, setNavigationMarkers] = useState<{
+        mapKey: string;
+        markers: MapOverlayMarker[];
+    } | null>(null);
     const {
         quests, maps, plannerMapKey, selectPlannerMap, clearPlannerMap, statusByQuestId,
         markerByQuestId, highlightedQuestId, setHighlightedQuestId, setSelectedQuestId,
     } = useQuestWorkspace();
     const activeQuests = getActiveRaidPlannerQuests(quests, statusByQuestId);
     const selectedMap = maps.find((map) => map.key === plannerMapKey) ?? null;
+    const selectedMapKey = selectedMap?.key;
     const plannerQuests = selectedMap
         ? activeQuests.filter((quest) =>
               getQuestMapGroupsForQuest(quest).some((map) => map.key === selectedMap.key),
           )
         : [];
+
+    useEffect(() => {
+        if (!selectedMapKey) return;
+        const controller = new AbortController();
+        fetch(`/api/maps/overlays/${encodeURIComponent(selectedMapKey)}`, { signal: controller.signal })
+            .then(async (response) => {
+                if (!response.ok) return { markers: [] };
+                return response.json() as Promise<{ markers: MapOverlayMarker[] }>;
+            })
+            .then(({ markers }) => setNavigationMarkers({ mapKey: selectedMapKey, markers }))
+            .catch((error: unknown) => {
+                if (error instanceof DOMException && error.name === "AbortError") return;
+                setNavigationMarkers({ mapKey: selectedMapKey, markers: [] });
+            });
+        return () => controller.abort();
+    }, [selectedMapKey]);
 
     const focusQuest = (questId: string | null) => {
         setHighlightedQuestId(questId);
@@ -72,7 +94,10 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
         );
     }
 
-    const markers = buildRaidPlannerMarkers(plannerQuests, selectedMap.key, markerByQuestId);
+    const markers = [
+        ...buildRaidPlannerMarkers(plannerQuests, selectedMap.key, markerByQuestId),
+        ...(navigationMarkers?.mapKey === selectedMap.key ? navigationMarkers.markers : []),
+    ];
     const killObjectives = buildRaidPlannerKillList(plannerQuests);
     const objectiveKeyIndex = buildRaidPlannerObjectiveKeyIndex(plannerQuests);
 

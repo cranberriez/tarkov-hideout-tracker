@@ -1,0 +1,286 @@
+{
+  "schemaVersion": 1,
+  "map": {
+    "id": "5704e554d2720bac5b8b456e",
+    "name": "Shoreline",
+    "normalizedName": "shoreline"
+  },
+  "bosses": [
+    {
+      "id": "Sentry",
+      "name": "AF",
+      "normalizedName": "af",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "GateTowerRight",
+          "spawnKey": "ZoneGateTowerRight",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -988.300049,
+              "y": -60.3179359,
+              "z": 374.97998
+            },
+            {
+              "x": -984.410034,
+              "y": -60.231575,
+              "z": 376.13
+            },
+            {
+              "x": -992.03,
+              "y": -59.39135,
+              "z": 378.13
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "Sentry",
+      "name": "AF",
+      "normalizedName": "af",
+      "spawnChance": 1,
+      "locations": [
+        {
+          "name": "GateTowerLeft",
+          "spawnKey": "ZoneGateTowerLeft",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -960.73,
+              "y": -60.11157,
+              "z": 389.47998
+            },
+            {
+              "x": -947.28,
+              "y": -58.9738,
+              "z": 392.63
+            },
+            {
+              "x": -944.3009,
+              "y": -58.8701553,
+              "z": 398.997742
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "sectantPriest",
+      "name": "Cultist Priest",
+      "normalizedName": "cultist-priest",
+      "spawnChance": 0.17,
+      "locations": [
+        {
+          "name": "East Wing",
+          "spawnKey": "ZoneSanatorium2",
+          "chance": 0.2,
+          "positions": [
+            {
+              "x": -326.03,
+              "y": -5.14499569,
+              "z": -105.619995
+            },
+            {
+              "x": -291.389984,
+              "y": -5.907771,
+              "z": -54.5399933
+            },
+            {
+              "x": -312.623,
+              "y": -3.70999813,
+              "z": -83.31999
+            },
+            {
+              "x": -342.65,
+              "y": -3.70999813,
+              "z": -82.83
+            },
+            {
+              "x": -325.729,
+              "y": -3.68473339,
+              "z": -82.48799
+            },
+            {
+              "x": -272.846,
+              "y": -4.146323,
+              "z": -133.515
+            }
+          ]
+        },
+        {
+          "name": "Northeast of Sunken Village",
+          "spawnKey": "ZoneForestSpawn",
+          "chance": 0.6,
+          "positions": [
+            {
+              "x": 162.59,
+              "y": -34.72,
+              "z": -296.289978
+            },
+            {
+              "x": 143.34,
+              "y": -33.5435829,
+              "z": -288.24
+            },
+            {
+              "x": 181.433884,
+              "y": -36.9815331,
+              "z": -268.557648
+            },
+            {
+              "x": 148.199982,
+              "y": -37.4015236,
+              "z": -256.7
+            }
+          ]
+        },
+        {
+          "name": "West Wing",
+          "spawnKey": "ZoneSanatorium1",
+          "chance": 0.2,
+          "positions": [
+            {
+              "x": -168.695984,
+              "y": -3.70999813,
+              "z": -83.987
+            },
+            {
+              "x": -156.265991,
+              "y": -3.70999813,
+              "z": -82.5099945
+            },
+            {
+              "x": -231.303,
+              "y": -4.165,
+              "z": -136.390991
+            },
+            {
+              "x": -146.11,
+              "y": -3.70999813,
+              "z": -82.6199951
+            },
+            {
+              "x": -135.68,
+              "y": -5.13054562,
+              "z": -171.279984
+            },
+            {
+              "x": -227.107,
+              "y": -5.03603649,
+              "z": -54.086
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    },
+    {
+      "id": "bossKnight",
+      "name": "Knight",
+      "normalizedName": "knight",
+      "spawnChance": 0.2,
+      "locations": [
+        {
+          "name": "Weather Station",
+          "spawnKey": "ZoneMeteoStation",
+          "chance": 1,
+          "positions": [
+            {
+              "x": -527.13,
+              "y": -27.0361423,
+              "z": 287.35
+            },
+            {
+              "x": -490.86,
+              "y": -24.1662445,
+              "z": 203.33
+            },
+            {
+              "x": -464.853973,
+              "y": -25.340004,
+              "z": 272.68
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": true
+    },
+    {
+      "id": "bossSanitar",
+      "name": "Sanitar",
+      "normalizedName": "sanitar",
+      "spawnChance": 0.6,
+      "locations": [
+        {
+          "name": "Greenhouses",
+          "spawnKey": "ZoneGreenHouses",
+          "chance": 0.5,
+          "positions": [
+            {
+              "x": 128.37,
+              "y": -48.475,
+              "z": 76.78
+            },
+            {
+              "x": 160.559982,
+              "y": -48.305706,
+              "z": 62.09999
+            },
+            {
+              "x": 122.47,
+              "y": -48.4566422,
+              "z": 92.81999
+            },
+            {
+              "x": 109.22998,
+              "y": -48.45083,
+              "z": 95.87999
+            }
+          ]
+        },
+        {
+          "name": "Pier",
+          "spawnKey": "ZonePort",
+          "chance": 0.5,
+          "positions": [
+            {
+              "x": -323.5232,
+              "y": -62.0306168,
+              "z": 498.4858
+            },
+            {
+              "x": -358.3532,
+              "y": -62.0498123,
+              "z": 555.8658
+            },
+            {
+              "x": -356.953217,
+              "y": -61.9312248,
+              "z": 528.2658
+            },
+            {
+              "x": -309.5032,
+              "y": -62.055,
+              "z": 505.5958
+            },
+            {
+              "x": -296.3232,
+              "y": -62.055,
+              "z": 490.1558
+            }
+          ]
+        }
+      ],
+      "spawnTime": -1,
+      "spawnTimeRandom": false
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "provider": "tarkov.dev JSON API",
+    "gameMode": "regular",
+    "mapsUrl": "https://json.tarkov.dev/regular/maps",
+    "localeUrl": "https://json.tarkov.dev/regular/maps_en"
+  },
+  "maps": [
+    {
+      "id": "56f40101d2720b2a4d8b45d6",
+      "name": "Customs",
+      "normalizedName": "customs",
+      "extractCount": 9,
+      "transitCount": 4,
+      "bossRuleCount": 3
+    },
+    {
+      "id": "55f2d3fd4bdc2d5f408b4567",
+      "name": "Factory",
+      "normalizedName": "factory",
+      "extractCount": 6,
+      "transitCount": 3,
+      "bossRuleCount": 1
+    },
+    {
+      "id": "653e6760052c01c1c805532f",
+      "name": "Ground Zero",
+      "normalizedName": "ground-zero",
+      "extractCount": 3,
+      "transitCount": 1,
+      "bossRuleCount": 0
+    },
+    {
+      "id": "65b8d6f5cdde2479cb2a3125",
+      "name": "Ground Zero 21+",
+      "normalizedName": "ground-zero-21",
+      "extractCount": 3,
+      "transitCount": 1,
+      "bossRuleCount": 1
+    },
+    {
+      "id": "68236e8153654e8c1200798a",
+      "name": "Ground Zero Tutorial",
+      "normalizedName": "ground-zero-tutorial",
+      "extractCount": 0,
+      "transitCount": 0,
+      "bossRuleCount": 0
+    },
+    {
+      "id": "69af492a4819ea4ba10a69c5",
+      "name": "Icebreaker",
+      "normalizedName": "icebreaker",
+      "extractCount": 0,
+      "transitCount": 0,
+      "bossRuleCount": 40
+    },
+    {
+      "id": "5714dbc024597771384a510d",
+      "name": "Interchange",
+      "normalizedName": "interchange",
+      "extractCount": 3,
+      "transitCount": 2,
+      "bossRuleCount": 2
+    },
+    {
+      "id": "5704e4dad2720bb55b8b4567",
+      "name": "Lighthouse",
+      "normalizedName": "lighthouse",
+      "extractCount": 6,
+      "transitCount": 3,
+      "bossRuleCount": 9
+    },
+    {
+      "id": "59fc81d786f774390775787e",
+      "name": "Night Factory",
+      "normalizedName": "night-factory",
+      "extractCount": 6,
+      "transitCount": 3,
+      "bossRuleCount": 2
+    },
+    {
+      "id": "5704e5fad2720bc05b8b4567",
+      "name": "Reserve",
+      "normalizedName": "reserve",
+      "extractCount": 3,
+      "transitCount": 3,
+      "bossRuleCount": 5
+    },
+    {
+      "id": "5704e554d2720bac5b8b456e",
+      "name": "Shoreline",
+      "normalizedName": "shoreline",
+      "extractCount": 8,
+      "transitCount": 3,
+      "bossRuleCount": 5
+    },
+    {
+      "id": "5714dc692459777137212e12",
+      "name": "Streets of Tarkov",
+      "normalizedName": "streets-of-tarkov",
+      "extractCount": 10,
+      "transitCount": 3,
+      "bossRuleCount": 2
+    },
+    {
+      "id": "65cc8f81a9aac3e77d0cfd3e",
+      "name": "Terminal",
+      "normalizedName": "terminal",
+      "extractCount": 0,
+      "transitCount": 0,
+      "bossRuleCount": 28
+    },
+    {
+      "id": "5b0fc42d86f7744a585f9105",
+      "name": "The Lab",
+      "normalizedName": "the-lab",
+      "extractCount": 4,
+      "transitCount": 1,
+      "bossRuleCount": 16
+    },
+    {
+      "id": "6a294a5b5eb5f9a1700417b7",
+      "name": "The Lab (Dark)",
+      "normalizedName": "the-lab-dark",
+      "extractCount": 0,
+      "transitCount": 0,
+      "bossRuleCount": 9
+    },
+    {
+      "id": "6733700029c367a3d40b02af",
+      "name": "The Labyrinth",
+      "normalizedName": "the-labyrinth",
+      "extractCount": 2,
+      "transitCount": 0,
+      "bossRuleCount": 0
+    },
+    {
+      "id": "5704e3c2d2720bac5b8b4567",
+      "name": "Woods",
+      "normalizedName": "woods",
+      "extractCount": 9,
+      "transitCount": 4,
+      "bossRuleCount": 3
+    }
+  ]
+}
