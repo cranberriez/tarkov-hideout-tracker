@@ -14,6 +14,9 @@ interface MapViewerProps {
     rememberedView?: MapViewTransform | null;
     onViewChange?: (view: MapViewTransform | null) => void;
     highlightedQuestId?: string | null;
+    highlightedObjectiveId?: string | null;
+    focusedObjectiveId?: string | null;
+    focusRequestKey?: string | number | null;
     onMarkerSelect?: (marker: MapOverlayMarker) => void;
     onMarkerFocus?: (marker: MapOverlayMarker | null) => void;
 }
@@ -27,6 +30,9 @@ export function MapViewer({
     rememberedView,
     onViewChange,
     highlightedQuestId,
+    highlightedObjectiveId,
+    focusedObjectiveId,
+    focusRequestKey,
     onMarkerSelect,
     onMarkerFocus,
 }: MapViewerProps) {
@@ -38,7 +44,11 @@ export function MapViewer({
         definition: MapRenderDefinition | null;
     } | null>(null);
     const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-    const [manualView, setManualView] = useState<{ key: string; value: MapViewTransform } | null>(null);
+    const [manualView, setManualView] = useState<{
+        key: string;
+        value: MapViewTransform;
+        focusRequestKey: string | number | null;
+    } | null>(null);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -94,15 +104,15 @@ export function MapViewer({
             : { width: containerSize.width, height: containerSize.width / aspectRatio };
     }, [containerSize, definition]);
 
-    const fittedView = useMemo<MapViewTransform>(() => {
-        if (!stageSize.width || !stageSize.height || projectedMarkers.length === 0) {
+    const fitProjectedMarkers = useCallback((entries: typeof projectedMarkers): MapViewTransform => {
+        if (!stageSize.width || !stageSize.height || entries.length === 0) {
             return { scale: 1, x: 0, y: 0 };
         }
-        const xs = projectedMarkers.flatMap(({ point, outlines }) => [
+        const xs = entries.flatMap(({ point, outlines }) => [
             point.percentX,
             ...outlines.flatMap((outline) => outline.map((entry) => entry.percentX)),
         ]);
-        const ys = projectedMarkers.flatMap(({ point, outlines }) => [
+        const ys = entries.flatMap(({ point, outlines }) => [
             point.percentY,
             ...outlines.flatMap((outline) => outline.map((entry) => entry.percentY)),
         ]);
@@ -123,17 +133,32 @@ export function MapViewer({
             x: -(centerX - 0.5) * stageSize.width * scale,
             y: -(centerY - 0.5) * stageSize.height * scale,
         };
-    }, [containerSize, projectedMarkers, stageSize]);
+    }, [containerSize.height, containerSize.width, stageSize.height, stageSize.width]);
+    const fittedView = useMemo<MapViewTransform>(
+        () => fitProjectedMarkers(projectedMarkers),
+        [fitProjectedMarkers, projectedMarkers],
+    );
 
     const viewKey = `${mapKey}:${stageSize.width}:${stageSize.height}:${markers.map((marker) => marker.id).join("|")}`;
-    const view = manualView?.key === viewKey ? manualView.value : rememberedView ?? fittedView;
+    const focusedView = useMemo(() => {
+        if (!focusedObjectiveId || focusRequestKey == null) return null;
+        const entries = projectedMarkers.filter(({ marker }) =>
+            marker.objectiveIds?.includes(focusedObjectiveId),
+        );
+        return entries.length > 0 ? fitProjectedMarkers(entries) : null;
+    }, [fitProjectedMarkers, focusRequestKey, focusedObjectiveId, projectedMarkers]);
+    const currentManualView = manualView?.key === viewKey &&
+        manualView.focusRequestKey === (focusRequestKey ?? null)
+        ? manualView.value
+        : null;
+    const view = currentManualView ?? focusedView ?? rememberedView ?? fittedView;
     const fitMarkers = useCallback(() => {
-        setManualView({ key: viewKey, value: fittedView });
+        setManualView({ key: viewKey, value: fittedView, focusRequestKey: focusRequestKey ?? null });
         onViewChange?.(null);
-    }, [fittedView, onViewChange, viewKey]);
+    }, [fittedView, focusRequestKey, onViewChange, viewKey]);
 
     const updateView = (value: MapViewTransform) => {
-        setManualView({ key: viewKey, value });
+        setManualView({ key: viewKey, value, focusRequestKey: focusRequestKey ?? null });
         onViewChange?.(value);
     };
 
@@ -234,7 +259,9 @@ export function MapViewer({
                         onClick={() => onMarkerSelect?.(marker)}
                         className={cn(
                             "group absolute z-20 flex h-7 min-w-7 items-center justify-center rounded-full border-2 bg-black/90 px-1.5 font-mono text-[11px] font-bold shadow-xl outline-none hover:z-[100] focus-visible:z-[100]",
-                            highlightedQuestId === marker.questId && "ring-2 ring-white/60",
+                            (highlightedQuestId === marker.questId ||
+                                (!!highlightedObjectiveId && marker.objectiveIds?.includes(highlightedObjectiveId))) &&
+                                "ring-2 ring-white/70",
                         )}
                         style={{
                             left: `${point.percentX}%`,

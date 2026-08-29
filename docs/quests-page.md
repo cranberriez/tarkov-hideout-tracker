@@ -380,7 +380,23 @@ spawns repeat one shared quest symbol at every known position. Duplicate positio
 inside one quest are collapsed into one marker and their objective information is
 combined in its tooltip.
 
-Quest detail panes do not render maps yet.
+Quest detail panes reuse the shared `MapViewer` for objectives with precise
+positions. On wide layouts the quest header spans the full pane, while the section
+beneath it splits into independently scrolling details and a separate,
+always-visible right map column. A numbered, color-coded cue
+beside each mapped objective matches its map markers. Objectives that share the
+same rounded world position also share one marker, with their descriptions and IDs
+combined. All locations for one objective reuse that objective group's symbol;
+multi-point objectives show **Multiple spawns** or **Multiple locations** beside
+the mapped cue. **Show on map** switches the viewer to the objective's map and fits
+its known point or points; quests spanning multiple maps expose compact map tabs.
+Factory and Night Factory aliases resolve to the daytime Factory map. Objectives
+without precise coordinates keep their normal presentation and do not receive
+synthetic locations.
+
+The detail map viewer is a client-only lazy chunk. Per-quest marker data is
+memoized, and map updates are deferred during quest selection so the textual
+details can update before the heavier SVG projection/render work completes.
 
 The full quest cache retains complete objective item groups for this expandable
 display. Broad any-of groups remain classified separately and are not treated as

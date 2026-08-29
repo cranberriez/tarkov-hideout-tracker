@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Bug, CheckCircle2, Circle, Eye, EyeOff, ExternalLink, Flag, Pin, RotateCcw, X, XCircle } from "lucide-react";
+import dynamic from "next/dynamic";
+import { useDeferredValue, useMemo, useRef, useState } from "react";
+import { Bug, CheckCircle2, Circle, Eye, EyeOff, ExternalLink, Flag, MapPinned, Pin, RotateCcw, X, XCircle } from "lucide-react";
+import type { MapOverlayMarker } from "@/features/maps/map-types";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import { formatQuestTraderGate, getQuestTraderGateType } from "@/lib/utils/quest-trader-gates";
@@ -16,10 +18,31 @@ import type { FullQuest, FullQuestObjective, QuestOtherRequirement, QuestTraderS
 import { ObjectiveRow } from "../components/quest-card/QuestObjectiveRows";
 import { formatQuestMapSummary } from "../quest-map-groups";
 import { useQuestsContext } from "../QuestsContext";
+import {
+    buildQuestDetailMarkers,
+    createQuestDetailObjectiveStyles,
+    getPositionedObjectiveMaps,
+    getQuestDetailMaps,
+} from "./quest-detail-markers";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
+
+const LazyMapViewer = dynamic(
+    () => import("@/features/maps/MapViewer").then((module) => module.MapViewer),
+    {
+        ssr: false,
+        loading: () => <MapLoadingPlaceholder label="Loading objective map…" />,
+    },
+);
 
 export function QuestDetailsPane() {
     const [showDebug, setShowDebug] = useState(false);
+    const [mapTarget, setMapTarget] = useState<{
+        questId: string;
+        mapKey: string;
+        objectiveId: string | null;
+        requestKey: number;
+    } | null>(null);
+    const mapSectionRef = useRef<HTMLElement>(null);
     const { selectedQuest: quest, statusByQuestId, questsById, maps, setSelectedQuestId, retainQuestAfterCompletion } = useQuestWorkspace();
     const { leadsToByQuestId, onItemClick, requestToggleQuestCompletion, requestFailQuest, requestResetQuestStatus } = useQuestsContext();
     const pinned = useUserStore((state) => quest ? !!state.pinnedQuests[quest.id] : false);
@@ -33,6 +56,11 @@ export function QuestDetailsPane() {
     const fenceReputation = useUserStore((state) => state.questFenceReputation);
     const togglePinnedQuest = useUserStore((state) => state.togglePinnedQuest);
     const toggleIgnoredQuest = useUserStore((state) => state.toggleIgnoredQuest);
+    const questMapData = useMemo(
+        () => quest ? buildQuestDetailMapData(quest) : null,
+        [quest],
+    );
+    const deferredMapData = useDeferredValue(questMapData);
 
     if (!quest) {
         return (
@@ -68,10 +96,57 @@ export function QuestDetailsPane() {
         (quest.failConditions?.length ?? 0) > 0;
     const detailColumnCount = Number(hasRequirements) + Number(leadsTo.length > 0) + Number(hasFailureDetails);
     const locationLabel = formatQuestMapSummary(quest, maps);
+    const detailMaps = questMapData?.maps ?? [];
+    const selectedDetailMapKey = mapTarget?.questId === quest.id &&
+        detailMaps.some((map) => map.key === mapTarget.mapKey)
+        ? mapTarget.mapKey
+        : detailMaps[0]?.key ?? null;
+    const selectedDetailMap = detailMaps.find((map) => map.key === selectedDetailMapKey) ?? null;
+    const detailMarkersByMap: Map<string, MapOverlayMarker[]> =
+        questMapData?.markersByMap ?? new Map<string, MapOverlayMarker[]>();
+    const detailMarkers = selectedDetailMapKey
+        ? detailMarkersByMap.get(selectedDetailMapKey) ?? []
+        : [];
+    const panelMapData = deferredMapData ?? questMapData;
+    const panelMapKey = panelMapData && mapTarget?.questId === panelMapData.questId &&
+        panelMapData.maps.some((map) => map.key === mapTarget.mapKey)
+        ? mapTarget.mapKey
+        : panelMapData?.maps[0]?.key ?? null;
+    const panelSelectedMap = panelMapData?.maps.find((map) => map.key === panelMapKey) ?? null;
+    const panelMarkers = panelMapKey
+        ? panelMapData?.markersByMap.get(panelMapKey) ?? []
+        : [];
+    const isMapUpdatePending = !!panelMapData && panelMapData.questId !== quest.id;
+    const focusedObjectiveId = mapTarget?.questId === quest.id &&
+        mapTarget.mapKey === selectedDetailMapKey
+        ? mapTarget.objectiveId
+        : null;
+    const focusRequestKey = focusedObjectiveId ? mapTarget?.requestKey ?? null : null;
+
+    const showObjectiveOnMap = (mapKey: string, objectiveId: string) => {
+        setMapTarget((current) => ({
+            questId: quest.id,
+            mapKey,
+            objectiveId,
+            requestKey: (current?.requestKey ?? 0) + 1,
+        }));
+        if (!window.matchMedia("(min-width: 1280px)").matches) {
+            requestAnimationFrame(() => mapSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
+        }
+    };
+
+    const selectDetailMap = (mapKey: string) => {
+        setMapTarget((current) => ({
+            questId: quest.id,
+            mapKey,
+            objectiveId: null,
+            requestKey: (current?.requestKey ?? 0) + 1,
+        }));
+    };
 
     return (
-        <div className="relative min-h-0 flex-1 overflow-y-auto bg-[#0b0c0e]">
-            <header className="relative min-h-64 overflow-hidden border-b border-white/8 bg-[#15171a] px-6 py-8 sm:px-9 sm:py-10">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#0b0c0e]">
+            <header className="relative min-h-64 shrink-0 overflow-hidden border-b border-white/8 bg-[#15171a] px-6 py-8 sm:px-9 sm:py-10">
                 {quest.taskImageLink && (
                     <div
                         className="pointer-events-none absolute inset-y-0 right-0"
@@ -106,6 +181,8 @@ export function QuestDetailsPane() {
                 </div>
             </header>
 
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(360px,46%)] xl:overflow-hidden">
+            <div className="min-w-0 xl:overflow-y-auto">
             <div className="max-w-6xl px-6 py-10 sm:px-9">
                 <section>
                     {quest.wikiLink && (
@@ -219,11 +296,79 @@ export function QuestDetailsPane() {
                     <SectionLabel>Objectives</SectionLabel>
                     {quest.objectives.length > 0 ? (
                         <div className="space-y-7">
-                            {objectivePresentation.map(({ objective, showItems }) => (
-                                <div key={objective.id}>
-                                    <ObjectiveRow objective={objective} onItemClick={onItemClick ?? undefined} itemDisplay="rows" showItems={showItems} />
-                                </div>
-                            ))}
+                            {objectivePresentation.map(({ objective, showItems }) => {
+                                const objectiveMaps = getPositionedObjectiveMaps(objective);
+                                const cueMapKey = objectiveMaps.some((map) => map.key === selectedDetailMapKey)
+                                    ? selectedDetailMapKey
+                                    : objectiveMaps[0]?.key;
+                                const objectiveMarkers = cueMapKey
+                                    ? (detailMarkersByMap.get(cueMapKey) ?? []).filter((marker) =>
+                                          marker.objectiveIds?.includes(objective.id),
+                                      )
+                                    : [];
+                                const objectiveMarkerCues = [...new Map<string, MapOverlayMarker>(
+                                    objectiveMarkers.map((marker) => [`${marker.label}:${marker.color}`, marker]),
+                                ).values()];
+                                const positionedLocationCount = objectiveMaps.reduce(
+                                    (count, map) => count + map.locationCount,
+                                    0,
+                                );
+                                const multipleLocationLabel = positionedLocationCount > 1
+                                    ? objective.locations?.some((location) => location.position && location.source === "possibleLocation")
+                                        ? "Multiple spawns"
+                                        : "Multiple locations"
+                                    : null;
+                                const isFocused = focusedObjectiveId === objective.id;
+                                return (
+                                    <div
+                                        key={objective.id}
+                                        className={cn(
+                                            objectiveMaps.length > 0 && "border-l-2 bg-white/[0.015] py-3 pl-4 pr-3",
+                                            isFocused && "bg-white/[0.045]",
+                                        )}
+                                        style={objectiveMaps.length > 0 ? { borderLeftColor: objectiveMarkers[0]?.color } : undefined}
+                                    >
+                                        {objectiveMaps.length > 0 && (
+                                            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                                                <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                                                    <span className="flex -space-x-1">
+                                                        {objectiveMarkerCues.map((marker) => (
+                                                            <span
+                                                                key={marker.id}
+                                                                className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border bg-black/90 px-1 font-mono text-[10px]"
+                                                                style={{ color: marker.color, borderColor: marker.color }}
+                                                            >
+                                                                {marker.label}
+                                                            </span>
+                                                        ))}
+                                                    </span>
+                                                    Mapped objective
+                                                    {multipleLocationLabel && (
+                                                        <span className="border border-amber-300/20 bg-amber-300/8 px-1.5 py-0.5 text-[9px] tracking-[0.14em] text-amber-200/80">
+                                                            {multipleLocationLabel}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {objectiveMaps.map((map) => (
+                                                        <button
+                                                            type="button"
+                                                            key={map.key}
+                                                            onClick={() => showObjectiveOnMap(map.key, objective.id)}
+                                                            className="inline-flex items-center gap-1.5 border border-white/10 bg-black/25 px-2 py-1 text-[10px] font-medium text-gray-400 transition-colors hover:border-tarkov-green/40 hover:text-tarkov-green"
+                                                        >
+                                                            <MapPinned size={11} />
+                                                            {objectiveMaps.length > 1 ? `Show on ${map.name}` : "Show on map"}
+                                                            {map.locationCount > 1 && <span className="text-gray-600">· {map.locationCount}</span>}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        <ObjectiveRow objective={objective} onItemClick={onItemClick ?? undefined} itemDisplay="rows" showItems={showItems} />
+                                    </div>
+                                );
+                            })}
                         </div>
                     ) : <p className="text-xs text-gray-600">No objectives provided.</p>}
 
@@ -239,6 +384,70 @@ export function QuestDetailsPane() {
                     </div>}
                 </section>
             </div>
+            </div>
+
+            {selectedDetailMap && (
+                <aside
+                    ref={mapSectionRef}
+                    className="order-first flex h-[52vh] min-h-80 flex-col border-b border-white/10 bg-[#0a0b0d] xl:order-last xl:h-auto xl:min-h-0 xl:border-b-0 xl:border-l"
+                >
+                    <div className="shrink-0 border-b border-white/10 bg-[#101113] px-4 py-3">
+                        <div className="flex flex-wrap items-end justify-between gap-3">
+                            <div>
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">Objective map</p>
+                                <p className="mt-1 text-xs text-gray-400">
+                                    {detailMarkers.length} mapped location{detailMarkers.length === 1 ? "" : "s"} on {selectedDetailMap.name}
+                                </p>
+                            </div>
+                            {detailMaps.length > 1 && (
+                                <div className="flex flex-wrap gap-1.5" aria-label="Quest objective maps">
+                                    {detailMaps.map((map) => (
+                                        <button
+                                            type="button"
+                                            key={map.key}
+                                            aria-pressed={map.key === selectedDetailMapKey}
+                                            onClick={() => selectDetailMap(map.key)}
+                                            className={cn(
+                                                "border px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider transition-colors",
+                                                map.key === selectedDetailMapKey
+                                                    ? "border-tarkov-green/45 bg-tarkov-green/10 text-tarkov-green"
+                                                    : "border-white/10 bg-white/3 text-gray-500 hover:border-white/25 hover:text-gray-200",
+                                            )}
+                                        >
+                                            {map.name} · {map.locationCount}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <div className="relative min-h-0 flex-1 overflow-hidden bg-[#08090a]">
+                        {panelSelectedMap ? (
+                            <LazyMapViewer
+                                mapKey={panelSelectedMap.key}
+                                markers={panelMarkers}
+                                highlightedObjectiveId={!isMapUpdatePending ? focusedObjectiveId : null}
+                                focusedObjectiveId={!isMapUpdatePending ? focusedObjectiveId : null}
+                                focusRequestKey={!isMapUpdatePending ? focusRequestKey : null}
+                                onMarkerSelect={(marker) => {
+                                    const objectiveId = marker.objectiveIds?.[0];
+                                    if (objectiveId) showObjectiveOnMap(panelSelectedMap.key, objectiveId);
+                                }}
+                            />
+                        ) : (
+                            <MapLoadingPlaceholder label="Preparing objective map…" />
+                        )}
+                        {isMapUpdatePending && (
+                            <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-black/35 backdrop-blur-[1px]">
+                                <span className="border border-white/10 bg-black/80 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-300 shadow-xl">
+                                    Updating map…
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </aside>
+            )}
+            </div>
 
             {showDebug && <QuestDebugPanel quest={quest} onClose={() => setShowDebug(false)} />}
             <button
@@ -250,6 +459,30 @@ export function QuestDetailsPane() {
             >
                 <Bug size={15} />
             </button>
+        </div>
+    );
+}
+
+function buildQuestDetailMapData(quest: FullQuest) {
+    const maps = getQuestDetailMaps(quest);
+    const styles = createQuestDetailObjectiveStyles(quest);
+    return {
+        questId: quest.id,
+        maps,
+        styles,
+        markersByMap: new Map(
+            maps.map((map) => [map.key, buildQuestDetailMarkers(quest, map.key, styles)]),
+        ),
+    };
+}
+
+function MapLoadingPlaceholder({ label }: { label: string }) {
+    return (
+        <div className="flex h-full min-h-72 items-center justify-center bg-[#0b0c0e] p-8 text-center">
+            <div>
+                <span className="mx-auto block h-5 w-5 animate-spin rounded-full border-2 border-white/10 border-t-tarkov-green" />
+                <p className="mt-3 text-xs font-medium text-gray-500">{label}</p>
+            </div>
         </div>
     );
 }
