@@ -136,7 +136,9 @@ The defaults hide player-level and wrong-faction locks, show task-count and miss
 prerequisite locks, and restrict those visible progression locks to upcoming quests.
 Upcoming means the next unmet trader task-count milestone or one missing direct
 prerequisite. If player-level locks are enabled, their default upcoming range is
-five levels. Matching locked rows are labeled **Upcoming**.
+five levels. A task-count milestone gated behind LL2–LL4 is not upcoming until the
+profile has reached that required trader loyalty level. Matching locked rows are
+labeled **Upcoming**.
 
 The workspace keeps a fixed row of square trader portraits between the Map / Status /
 Filter controls and the quest list. The leftmost `All` button clears the trader
@@ -186,6 +188,12 @@ curated ID-based manifest at `src/lib/data/quest-series.json`; it is not stored 
 Zustand. Series membership has precedence over the issuing trader's tier, and
 members inside a series use the manifest's explicit `order`.
 
+Series records may also set `essential: true` and `lightkeeperRequired: true`.
+The curated Network Provider series uses both flags for the complete access line:
+Network Provider Parts 1–2, Assessment Parts 1–3, Key to the Tower, Knock-Knock,
+and Getting Acquainted. These flags correct display metadata without changing the
+cached provider payload or persisted quest progress.
+
 `src/lib/utils/quest-organization.ts` validates the manifest before deriving the
 organization. It reports unknown quest IDs, duplicate series membership, duplicate
 orders, invalid orders, issuing-trader mismatches, and invalid tier values. A
@@ -200,6 +208,29 @@ and do not increment those counters. The overlay does not replace or mutate
 Tarkov.dev `traderRequirements`; those remain availability gates. Lookup code is
 isolated in `src/lib/utils/quest-trader-tab-overrides.ts`, so removing an entry
 restores provider-derived behavior for that quest.
+
+For non-essential quests, a known issuing-trader task-completion gate also raises
+the displayed bracket to that gate's LL tier. For example, a quest requiring one
+LL4 task is grouped and labeled LL4 instead of falling back to LL1. Quest detail
+headers show the resulting LL or Essential label beside the title.
+
+In the workspace, Essential quests retain their labeled category row. Direct
+same-trader prerequisite links between Essential quests derive visual series
+beneath that category. Each connected series has its own titled horizontal header
+and thin border; clicking the header expands or condenses only that series.
+Cross-trader links, links through non-Essential quests, and singleton Essential
+quests terminate the visual series. Singleton quests remain ordinary rows in the
+Essential category. Expanded series show every member allowed by the current quest
+filters. Condensed series show only currently active members while retaining the
+title header. This Essential category and grouping remain available when loyalty-
+level grouping is disabled. The visual chain derivation is separate from the
+curated manifest used for server-side organization metadata.
+
+KORD/seasonal data excludes quests marked as Lightkeeper requirements and quests
+issued by Lightkeeper before quest lists, availability metadata, and item-demand
+indexes are built. Lightkeeper therefore does not appear as a seasonal trader or
+filter option. The bottom of the KORD trader-selection list notes that Lightkeeper
+is inaccessible in the seasonal profile.
 
 Known provider faction errors use the separate ID-keyed overlay
 `src/lib/data/quest-faction-overrides.json`. Oil Run and Debtor are corrected from

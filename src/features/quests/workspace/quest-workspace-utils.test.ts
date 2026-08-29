@@ -4,6 +4,7 @@ import test from "node:test";
 import type { FullQuest } from "@/types";
 import type { QuestWorkspaceLockedFilterSettings } from "../../../lib/stores/useUserStore";
 import {
+    buildEssentialQuestSeries,
     buildNextTaskCountGateByGroup,
     getQuestWorkspaceStatus,
     isUpcomingLockedQuest,
@@ -11,6 +12,66 @@ import {
     type QuestWorkspaceProfile,
     type QuestWorkspaceStatusInfo,
 } from "./quest-workspace-utils";
+
+function makeSeriesQuest(
+    id: string,
+    name: string,
+    traderId: string,
+    prerequisiteIds: string[] = [],
+): FullQuest {
+    return {
+        id,
+        name,
+        normalizedName: name.toLowerCase().replaceAll(" ", "-"),
+        experience: 0,
+        trader: { id: traderId, name: traderId, normalizedName: traderId },
+        taskRequirements: prerequisiteIds.map((prerequisiteId) => ({
+            task: { id: prerequisiteId, name: prerequisiteId },
+            status: ["complete"],
+        })),
+        traderRequirements: [],
+        otherRequirements: [],
+        objectives: [],
+    };
+}
+
+test("builds separate Essential series from direct same-trader prerequisite chains", () => {
+    const quests = [
+        makeSeriesQuest("punisher-1", "The Punisher - Part 1", "prapor"),
+        makeSeriesQuest("punisher-2", "The Punisher - Part 2", "prapor", ["punisher-1"]),
+        makeSeriesQuest("good-times-1", "The Good Times - Part 1", "prapor"),
+        makeSeriesQuest("hell-1", "Hell on Earth - Part 1", "prapor", ["good-times-1"]),
+        makeSeriesQuest("hell-2", "Hell on Earth - Part 2", "prapor", ["hell-1"]),
+    ];
+
+    assert.deepEqual(buildEssentialQuestSeries(quests), [
+        {
+            id: "punisher-1",
+            title: "The Punisher",
+            questIds: ["punisher-1", "punisher-2"],
+        },
+        {
+            id: "good-times-1",
+            title: "The Good Times",
+            questIds: ["good-times-1", "hell-1", "hell-2"],
+        },
+    ]);
+});
+
+test("stops Essential series at cross-trader, non-Essential, and singleton boundaries", () => {
+    const essentialQuests = [
+        makeSeriesQuest("root", "Root", "prapor"),
+        makeSeriesQuest("same-trader-child", "Same Trader Child", "prapor", ["root"]),
+        makeSeriesQuest("cross-trader-child", "Cross Trader Child", "therapist", ["same-trader-child"]),
+        makeSeriesQuest("after-non-essential", "After Non-Essential", "prapor", ["ordinary"]),
+    ];
+
+    assert.deepEqual(buildEssentialQuestSeries(essentialQuests), [{
+        id: "root",
+        title: "Root",
+        questIds: ["root", "same-trader-child"],
+    }]);
+});
 
 const DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS: QuestWorkspaceLockedFilterSettings = {
     showAll: false,
@@ -170,6 +231,31 @@ test("task-count upcoming mode exposes only the next locked milestone", () => {
     assert.equal(questMatchesLockedFilters(first, DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS, nextGates), true);
     assert.equal(questMatchesLockedFilters(later, DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS, nextGates), false);
     assert.equal(isUpcomingLockedQuest(first, DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS, nextGates), true);
+});
+
+test("task-count upcoming mode hides milestones above the current trader loyalty", () => {
+    const status: QuestWorkspaceStatusInfo = {
+        status: "locked",
+        label: "Locked",
+        terminal: null,
+        reasons: [
+            { kind: "loyalty", label: "Mechanic LL4", currentValue: 3, requiredValue: 4 },
+            {
+                kind: "task-count",
+                label: "Complete 1 Mechanic LL4 task",
+                currentValue: 0,
+                requiredValue: 1,
+                groupKey: "mechanic-ll4",
+            },
+        ],
+    };
+    const nextGates = new Map([["mechanic-ll4", 1]]);
+
+    assert.equal(
+        questMatchesLockedFilters(status, DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS, nextGates),
+        false,
+    );
+    assert.equal(isUpcomingLockedQuest(status, DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS, nextGates), false);
 });
 
 test("prerequisite upcoming range counts the incomplete quest chain", () => {

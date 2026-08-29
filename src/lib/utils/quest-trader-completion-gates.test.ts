@@ -5,6 +5,7 @@ import type { QuestAvailabilityQuest } from "./quest-availability";
 import {
     compareTraderTierCompletionCount,
     countCompletedTraderTierQuests,
+    getQuestTraderTabLoyaltyLevel,
     getTraderTierCompletionGate,
 } from "./quest-trader-completion-gates";
 
@@ -44,6 +45,18 @@ test("recognizes a mapped global variable as a trader-tier completion gate", () 
         compareMethod: ">=",
         requiredCount: 3,
     });
+});
+
+test("uses an issuing-trader task-count gate as the reviewed loyalty bracket", () => {
+    const quest = makeQuest("mechanic-ll4-milestone", "Mechanic");
+    quest.otherRequirements = [{
+        type: "globalVariable",
+        variableId: "6a3d1c0990e9ffe15463e961",
+        compareMethod: ">=",
+        value: 1,
+    }];
+
+    assert.equal(getQuestTraderTabLoyaltyLevel(quest), 4);
 });
 
 test("counts only completed quests from the counter's trader and tier", () => {

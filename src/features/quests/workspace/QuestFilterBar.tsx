@@ -349,6 +349,7 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
         setGroupByTrader, setGroupByLoyaltyLevel, setSortMode,
         setShowHiddenQuests,
     } = useQuestWorkspace();
+    const gameMode = useUserStore((state) => state.gameMode);
     const titles = { traders: "Select traders", maps: "Select maps", status: "Select quest status", filters: "Filter / sort" };
     const orderedTraders = orderTraders(traders);
 
@@ -370,6 +371,11 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
                             count={quests.filter((quest) => quest.trader.id === trader.id).length}
                         />
                     ))}
+                    {gameMode === "KORD" && (
+                        <p className="border-b border-amber-300/10 bg-amber-300/[0.035] px-3 py-2.5 text-[10px] leading-relaxed text-amber-200/55">
+                            Lightkeeper is inaccessible in the KORD seasonal profile.
+                        </p>
+                    )}
                 </>}
                 {section === "maps" && <><AnyRow active={selectedMapKeys.size === 0} onClick={clearMaps} count={quests.length} />{maps.map((map) => <MenuRow key={map.key} selected={selectedMapKeys.has(map.key)} onClick={() => toggleMap(map.key)} label={map.name} count={quests.filter((quest) => getQuestMapGroupsForQuest(quest).some((group) => group.key === map.key)).length} />)}</>}
                 {section === "status" && <>

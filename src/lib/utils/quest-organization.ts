@@ -1,31 +1,21 @@
 import type { FullQuest } from "@/types";
-import defaultSeriesManifest from "../data/quest-series.json";
+import { getQuestTraderTabLoyaltyLevel } from "./quest-trader-completion-gates";
 import { isQuestTraderLoyaltyRequirement } from "./quest-trader-gates";
+import { getQuestLoyaltyLevelOverride } from "./quest-trader-tab-overrides";
 import {
-    getQuestLoyaltyLevelOverride,
-    isEssentialQuestOverride,
-} from "./quest-trader-tab-overrides";
+    isEssentialQuest,
+    QUEST_SERIES_MANIFEST,
+    type QuestSeriesManifest,
+} from "./quest-series";
+
+export {
+    QUEST_SERIES_MANIFEST,
+    type QuestSeriesDefinition,
+    type QuestSeriesManifest,
+    type QuestSeriesMember,
+} from "./quest-series";
 
 export type QuestCategory = "tier-1" | "tier-2" | "tier-3" | "tier-4" | "series";
-
-export interface QuestSeriesMember {
-    questId: string;
-    order: number;
-}
-
-export interface QuestSeriesDefinition {
-    id: string;
-    name: string;
-    traderId: string;
-    members: QuestSeriesMember[];
-    /** Cross-trader membership is unusual and must be explicit in the manifest. */
-    allowCrossTrader?: boolean;
-}
-
-export interface QuestSeriesManifest {
-    version: number;
-    series: QuestSeriesDefinition[];
-}
 
 export interface DerivedQuestOrganization {
     questId: string;
@@ -63,8 +53,6 @@ export interface QuestOrganizationResult {
     validationIssues: QuestOrganizationValidationIssue[];
 }
 
-export const QUEST_SERIES_MANIFEST = defaultSeriesManifest as QuestSeriesManifest;
-
 function getOwnTraderTier(
     quest: FullQuest,
     validationIssues: QuestOrganizationValidationIssue[],
@@ -77,7 +65,7 @@ function getOwnTraderTier(
             requirement.trader.id === quest.trader.id && isQuestTraderLoyaltyRequirement(requirement),
     );
 
-    if (ownLevelRequirements.length === 0) return 1;
+    if (ownLevelRequirements.length === 0) return getQuestTraderTabLoyaltyLevel(quest);
 
     let highestValidTier = 1;
     for (const requirement of ownLevelRequirements) {
@@ -100,7 +88,10 @@ function getOwnTraderTier(
         highestValidTier = Math.max(highestValidTier, clampedValue);
     }
 
-    return highestValidTier as 1 | 2 | 3 | 4;
+    return Math.max(
+        highestValidTier,
+        getQuestTraderTabLoyaltyLevel(quest),
+    ) as 1 | 2 | 3 | 4;
 }
 
 export function validateQuestSeriesManifest(
@@ -219,7 +210,7 @@ export function deriveQuestOrganization(
 
     for (const quest of quests) {
         const manifestSeries = seriesByQuestId.get(quest.id);
-        const series = manifestSeries ?? (isEssentialQuestOverride(quest.id)
+        const series = manifestSeries ?? (isEssentialQuest(quest.id)
             ? {
                   seriesId: `essential-unassigned-${quest.trader.id}`,
                   seriesName: "Other essential quests",

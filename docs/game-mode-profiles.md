@@ -39,5 +39,10 @@ components use the cookie to select mode-prefixed progression data. Switching in
 the character panel updates local state and the cookie, then refreshes the current
 route behind a loading overlay.
 
+KORD does not provide Lightkeeper. Quest and item pages remove Lightkeeper-issued
+quests and all quests marked as Lightkeeper progression before building their
+display and demand metadata. Curated essential series can supply that progression
+flag when the upstream seasonal payload is incomplete.
+
 Progression and price Redis keys include the game-mode suffix. This prevents
 records returned by `regular`, `pve`, and `pvp-season` from sharing a cache entry.

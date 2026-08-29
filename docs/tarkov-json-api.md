@@ -100,6 +100,12 @@ then applies Series-first precedence before assigning non-series quests to LL1â€
 The manifest is keyed by stable quest IDs and is intentionally separate from the
 persisted user store.
 
+Series entries can mark a reviewed line as `essential` and/or
+`lightkeeperRequired`. These derived flags power Essential-series grouping and
+correct incomplete provider progression metadata. In KORD (`pvp-season`), quests
+issued by Lightkeeper and all Lightkeeper-required quests are removed before quest
+and item indexes are built.
+
 Use the maintenance command below to review candidates from a downloaded task
 snapshot:
 

@@ -88,6 +88,78 @@ function isTaskRequirementMet(
     return false;
 }
 
+export interface EssentialQuestSeries {
+    id: string;
+    title: string;
+    questIds: string[];
+}
+
+function getEssentialQuestSeriesTitle(rootQuestName: string) {
+    return rootQuestName
+        .replace(/\s*\[PVE ZONE\]\s*$/i, "")
+        .replace(/\s+-\s+Part\s+\d+.*$/i, "")
+        .trim();
+}
+
+/**
+ * Derive visual series from direct prerequisite links between Essential quests.
+ * Cross-trader and non-Essential links deliberately terminate a series.
+ */
+export function buildEssentialQuestSeries(essentialQuests: FullQuest[]): EssentialQuestSeries[] {
+    const questById = new Map(essentialQuests.map((quest) => [quest.id, quest]));
+    const orderById = new Map(essentialQuests.map((quest, index) => [quest.id, index]));
+    const neighborsById = new Map(essentialQuests.map((quest) => [quest.id, new Set<string>()]));
+
+    for (const quest of essentialQuests) {
+        for (const requirement of quest.taskRequirements) {
+            const prerequisite = questById.get(requirement.task.id);
+            if (!prerequisite || prerequisite.trader.id !== quest.trader.id) continue;
+
+            neighborsById.get(quest.id)?.add(prerequisite.id);
+            neighborsById.get(prerequisite.id)?.add(quest.id);
+        }
+    }
+
+    const visited = new Set<string>();
+    const series: EssentialQuestSeries[] = [];
+
+    for (const quest of essentialQuests) {
+        if (visited.has(quest.id)) continue;
+
+        const componentIds: string[] = [];
+        const pending = [quest.id];
+        visited.add(quest.id);
+
+        while (pending.length > 0) {
+            const questId = pending.pop();
+            if (!questId) continue;
+            componentIds.push(questId);
+
+            for (const neighborId of neighborsById.get(questId) ?? []) {
+                if (visited.has(neighborId)) continue;
+                visited.add(neighborId);
+                pending.push(neighborId);
+            }
+        }
+
+        // A lone Essential quest is a category member, not a series.
+        if (componentIds.length < 2) continue;
+
+        componentIds.sort((left, right) =>
+            (orderById.get(left) ?? Number.MAX_SAFE_INTEGER) -
+            (orderById.get(right) ?? Number.MAX_SAFE_INTEGER),
+        );
+        const rootQuest = questById.get(componentIds[0])!;
+        series.push({
+            id: rootQuest.id,
+            title: getEssentialQuestSeriesTitle(rootQuest.name),
+            questIds: componentIds,
+        });
+    }
+
+    return series;
+}
+
 function getMissingPrerequisiteQuestIds(
     quest: FullQuest,
     profile: QuestWorkspaceProfile,
@@ -169,6 +241,10 @@ export function getQuestWorkspaceStatus(
             label: gateType === "reputation"
                 ? `${requirement.trader.name} Rep ${requirement.compareMethod} ${requirement.value}`
                 : `${requirement.trader.name} LL${requirement.value}`,
+            ...(gateType === "level" ? {
+                currentValue: profile.traderLoyaltyLevels[requirement.trader.id] ?? 1,
+                requiredValue: requirement.value,
+            } : {}),
         });
     }
     for (const requirement of quest.otherRequirements) {
@@ -247,6 +323,7 @@ export function questMatchesLockedFilters(
 ) {
     if (status.status !== "locked") return true;
     if (filters.showAll) return true;
+    const hasTaskCountGate = status.reasons.some((reason) => reason.kind === "task-count");
 
     return status.reasons.every((reason) => {
         if (reason.kind === "level") {
@@ -269,6 +346,10 @@ export function questMatchesLockedFilters(
             );
         }
         if (reason.kind === "faction") return filters.showFaction;
+        // A task-count milestone is not upcoming until the trader LL that owns
+        // that milestone has been reached. Loyalty-only locks retain their
+        // existing visibility behavior.
+        if (reason.kind === "loyalty" && hasTaskCountGate) return false;
         return true;
     });
 }

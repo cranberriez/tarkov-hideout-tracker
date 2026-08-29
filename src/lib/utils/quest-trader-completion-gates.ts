@@ -1,6 +1,10 @@
 import type { QuestOtherRequirement } from "@/types";
-import { getQuestIssuingTraderLoyaltyLevel } from "./quest-trader-gates";
-import { isEssentialQuestOverride } from "./quest-trader-tab-overrides";
+import {
+    getQuestIssuingTraderLoyaltyLevel,
+    type QuestTraderLoyaltyLevel,
+} from "./quest-trader-gates";
+import { getQuestLoyaltyLevelOverride } from "./quest-trader-tab-overrides";
+import { isEssentialQuest } from "./quest-series";
 
 export type TraderTier = 1 | 2 | 3 | 4;
 
@@ -56,10 +60,34 @@ export interface TraderTierQuest {
     removed?: boolean;
     trader: { id: string; name: string; normalizedName: string };
     traderRequirements: Parameters<typeof getQuestIssuingTraderLoyaltyLevel>[0]["traderRequirements"];
+    otherRequirements?: QuestOtherRequirement[];
 }
 
 function normalizeTraderName(value: string) {
     return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+/**
+ * Return the reviewed trader-tab tier for a quest. A known completion gate for
+ * the issuing trader raises the quest into that LL bracket instead of leaving
+ * an otherwise ungated quest in LL1. Explicit numeric overrides remain final.
+ */
+export function getQuestTraderTabLoyaltyLevel(
+    quest: TraderTierQuest,
+): QuestTraderLoyaltyLevel {
+    const override = getQuestLoyaltyLevelOverride(quest.id);
+    if (override !== null) return override;
+
+    const baseTier = getQuestIssuingTraderLoyaltyLevel(quest);
+    const issuingTrader = normalizeTraderName(quest.trader.normalizedName || quest.trader.name);
+    const completionGateTiers = (quest.otherRequirements ?? [])
+        .map(getTraderTierCompletionGate)
+        .filter((gate): gate is TraderTierCompletionGate =>
+            gate !== null && normalizeTraderName(gate.trader) === issuingTrader,
+        )
+        .map((gate) => gate.tier);
+
+    return Math.max(baseTier, ...completionGateTiers) as QuestTraderLoyaltyLevel;
 }
 
 function getRequirementVariableId(requirement: QuestOtherRequirement) {
@@ -115,10 +143,10 @@ export function countCompletedTraderTierQuests(
     for (const quest of quests) {
         if (quest.removed) continue;
         if (!completedQuests[quest.id]) continue;
-        if (isEssentialQuestOverride(quest.id)) continue;
+        if (isEssentialQuest(quest.id)) continue;
         const actualTrader = normalizeTraderName(quest.trader.normalizedName || quest.trader.name);
         if (actualTrader !== expectedTrader) continue;
-        if (getQuestIssuingTraderLoyaltyLevel(quest) === gate.tier) count += 1;
+        if (getQuestTraderTabLoyaltyLevel(quest) === gate.tier) count += 1;
     }
 
     return count;

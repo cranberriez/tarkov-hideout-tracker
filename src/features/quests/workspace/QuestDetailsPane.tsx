@@ -11,8 +11,10 @@ import {
     compareTraderTierCompletionCount,
     countCompletedTraderTierQuests,
     formatTraderTierCompletionGate,
+    getQuestTraderTabLoyaltyLevel,
     getTraderTierCompletionGate,
 } from "@/lib/utils/quest-trader-completion-gates";
+import { isEssentialQuest } from "@/lib/utils/quest-series";
 import { questCanFail } from "@/lib/utils/quest-failures";
 import { formatQuestUnlockTiming } from "@/lib/utils/quest-relations";
 import type { FullQuest, FullQuestObjective, QuestOtherRequirement, QuestTraderStandingReward } from "@/types";
@@ -80,6 +82,10 @@ export function QuestDetailsPane() {
     }
 
     const status = statusByQuestId.get(quest.id)!;
+    const essential = isEssentialQuest(quest.id);
+    const traderTabLabel = essential
+        ? "Essential"
+        : `LL${getQuestTraderTabLoyaltyLevel(quest)}`;
     const traderImage = quest.trader.image4xLink ?? quest.trader.imageLink;
     const leadsTo = (leadsToByQuestId.get(quest.id) ?? []).flatMap((id) => {
         const nextQuest = questsById.get(id);
@@ -175,7 +181,15 @@ export function QuestDetailsPane() {
                             <p className="text-xs text-gray-400">{locationLabel}</p>
                         </div>
                     </div>
-                    <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">{quest.name}</h1>
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">{quest.name}</h1>
+                        <span className={cn(
+                            "text-sm font-semibold uppercase tracking-[0.14em]",
+                            essential ? "text-amber-300/80" : "text-tarkov-green/75",
+                        )}>
+                            {traderTabLabel}
+                        </span>
+                    </div>
                     {hasHeaderMetadata && <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wider">
                         {quest.requiredPrestige && <MetadataBadge>Prestige {quest.requiredPrestige.prestigeLevel}</MetadataBadge>}
                         {quest.kappaRequired && <span className="border border-amber-400/20 bg-amber-400/8 px-2 py-1 text-amber-300">Kappa required</span>}

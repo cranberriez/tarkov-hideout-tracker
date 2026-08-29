@@ -108,6 +108,21 @@ test("uses only the issuing trader's level gate and supports legacy loyaltyLevel
     assert.equal(result.byQuestId.get("legacy-level")?.category, "tier-2");
 });
 
+test("places an issuing-trader completion milestone in that loyalty bracket", () => {
+    const quest = makeQuest("mechanic-ll4-milestone", "Mechanic");
+    quest.otherRequirements = [{
+        type: "globalVariable",
+        variableId: "6a3d1c0990e9ffe15463e961",
+        compareMethod: ">=",
+        value: 1,
+    }];
+
+    const result = deriveQuestOrganization([quest], { version: 1, series: [] });
+
+    assert.equal(result.byQuestId.get(quest.id)?.category, "tier-4");
+    assert.equal(result.byQuestId.get(quest.id)?.issuingTraderTier, 4);
+});
+
 test("applies reviewed numeric and essential trader-tab overrides", () => {
     const quests = [
         makeQuest("59674eb386f774539f14813a", "prapor"),
@@ -127,6 +142,18 @@ test("applies reviewed numeric and essential trader-tab overrides", () => {
         result.byQuestId.get("597a171586f77405ba6887d3")?.seriesName,
         "Other essential quests",
     );
+});
+
+test("organizes the curated Network Provider line as an essential named series", () => {
+    const quest = makeQuest("625d700cc48e6c62a440fab5", "5a7c2eca46aef81a7ca2145d");
+
+    const result = deriveQuestOrganization([quest]);
+    const organization = result.byQuestId.get(quest.id);
+
+    assert.equal(organization?.category, "series");
+    assert.equal(organization?.seriesId, "network-provider");
+    assert.equal(organization?.seriesName, "Network Provider");
+    assert.equal(organization?.seriesOrder, 8);
 });
 
 test("clamps invalid issuing-trader tiers and reports each issue", () => {

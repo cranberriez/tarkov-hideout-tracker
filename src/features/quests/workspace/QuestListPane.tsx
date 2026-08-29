@@ -22,17 +22,15 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { getQuestIssuingTraderLoyaltyLevel } from "@/lib/utils/quest-trader-gates";
-import {
-    getQuestTraderTabOverride,
-    isEssentialQuestOverride,
-} from "@/lib/utils/quest-trader-tab-overrides";
+import { getQuestTraderTabLoyaltyLevel } from "@/lib/utils/quest-trader-completion-gates";
+import { isEssentialQuest } from "@/lib/utils/quest-series";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useQuestsContext } from "../QuestsContext";
 import { buildQuestUnlockImpactMap, sortQuestsForQuestView } from "../quest-sorting";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 import { QuestFilterSelectionPane } from "./QuestFilterBar";
 import {
+    buildEssentialQuestSeries,
     getQuestObjectiveCategories,
     getQuestObjectiveSummary,
     OBJECTIVE_CATEGORY_SHORT_LABELS,
@@ -120,6 +118,18 @@ function GroupedQuestRows({
     highlightedQuestId: string | null;
     onSelectQuest: (questId: string) => void;
 }) {
+    const { statusByQuestId, quests: allQuests } = useQuestWorkspace();
+    const essentialSeries = useMemo(
+        () => buildEssentialQuestSeries(allQuests.filter((quest) => isEssentialQuest(quest.id))),
+        [allQuests],
+    );
+    const essentialSeriesByQuestId = useMemo(() => {
+        const result = new Map<string, (typeof essentialSeries)[number]>();
+        for (const series of essentialSeries) {
+            for (const questId of series.questIds) result.set(questId, series);
+        }
+        return result;
+    }, [essentialSeries]);
     const renderRows = (groupQuests: typeof quests) => groupQuests.map((quest) => (
         <QuestListItem
             key={quest.id}
@@ -130,13 +140,95 @@ function GroupedQuestRows({
         />
     ));
 
+    const renderEssentialSeries = (
+        series: (typeof essentialSeries)[number],
+        visibleSeriesQuests: typeof quests,
+        parentId: string,
+    ) => {
+        const groupId = `${parentId}:essential-series:${series.id}`;
+        const condensed = collapsedGroups.has(groupId);
+        const visibleQuestById = new Map(visibleSeriesQuests.map((quest) => [quest.id, quest]));
+        const orderedQuests = series.questIds
+            .map((questId) => visibleQuestById.get(questId))
+            .filter((quest): quest is (typeof visibleSeriesQuests)[number] => !!quest);
+        const displayedQuests = condensed
+            ? orderedQuests.filter((quest) => statusByQuestId.get(quest.id)?.status === "active")
+            : orderedQuests;
+
+        return (
+            <section
+                key={groupId}
+                className="border-x border-b border-amber-300/15 bg-amber-300/[0.015]"
+            >
+                <button
+                    type="button"
+                    aria-expanded={!condensed}
+                    onClick={() => onToggleGroup(groupId)}
+                    className="flex h-8 w-full items-center gap-2 border-y border-amber-300/18 bg-amber-300/[0.045] px-3 text-left text-[9px] font-semibold uppercase tracking-[0.15em] text-amber-200/70 transition-colors hover:bg-amber-300/[0.08] hover:text-amber-100 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-amber-200"
+                >
+                    {condensed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                    <span className="min-w-0 flex-1 truncate">{series.title}</span>
+                    <span className="font-mono font-normal tracking-normal text-amber-200/40">
+                        {condensed ? `${displayedQuests.length} active` : `${orderedQuests.length} quests`}
+                    </span>
+                </button>
+                {renderRows(displayedQuests)}
+            </section>
+        );
+    };
+
+    const renderEssentialCategory = (essentialQuests: typeof quests, parentId: string) => {
+        if (essentialQuests.length === 0) return null;
+        const questsBySeriesId = new Map<string, typeof quests>();
+        const ungroupedQuests: typeof quests = [];
+
+        for (const quest of essentialQuests) {
+            const series = essentialSeriesByQuestId.get(quest.id);
+            if (!series) {
+                ungroupedQuests.push(quest);
+                continue;
+            }
+            questsBySeriesId.set(series.id, [
+                ...(questsBySeriesId.get(series.id) ?? []),
+                quest,
+            ]);
+        }
+
+        return (
+            <section>
+                <div className="flex h-7 items-center border-b border-white/8 bg-[#0f1012] px-3 pl-7 text-[9px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+                    <span className="min-w-0 flex-1 truncate">Essential</span>
+                    <span className="font-mono font-normal tracking-normal text-gray-600">{essentialQuests.length}</span>
+                </div>
+                {essentialSeries.map((series) => {
+                    const visibleSeriesQuests = questsBySeriesId.get(series.id);
+                    return visibleSeriesQuests
+                        ? renderEssentialSeries(series, visibleSeriesQuests, parentId)
+                        : null;
+                })}
+                {renderRows(ungroupedQuests)}
+            </section>
+        );
+    };
+
+    const renderRowsWithEssentialGroup = (groupQuests: typeof quests, parentId: string) => {
+        const regularQuests = groupQuests.filter((quest) => !isEssentialQuest(quest.id));
+        const essentialQuests = groupQuests.filter((quest) => isEssentialQuest(quest.id));
+
+        return (
+            <>
+                {renderRows(regularQuests)}
+                {renderEssentialCategory(essentialQuests, parentId)}
+            </>
+        );
+    };
+
     const renderLoyaltyLevelGroups = (groupQuests: typeof quests, parentId = "all") => {
         const groups = new Map<number | "essential", typeof quests>();
         groupQuests.forEach((quest) => {
-            const tab = getQuestTraderTabOverride(quest.id);
-            const group = tab === "essential"
+            const group = isEssentialQuest(quest.id)
                 ? "essential"
-                : getQuestIssuingTraderLoyaltyLevel(quest);
+                : getQuestTraderTabLoyaltyLevel(quest);
             groups.set(group, [...(groups.get(group) ?? []), quest]);
         });
 
@@ -149,10 +241,13 @@ function GroupedQuestRows({
             .map(([group, loyaltyLevelQuests]) => {
                 const groupId = `${parentId}:loyalty-level:${group}`;
                 const collapsed = collapsedGroups.has(groupId);
+                if (group === "essential") {
+                    return <div key={groupId}>{renderEssentialCategory(loyaltyLevelQuests, groupId)}</div>;
+                }
                 return (
                     <section key={groupId}>
                         <QuestGroupHeader
-                            label={group === "essential" ? "Essential" : `Loyalty level ${group}`}
+                            label={`Loyalty level ${group}`}
                             count={loyaltyLevelQuests.length}
                             collapsed={collapsed}
                             nested
@@ -183,14 +278,14 @@ function GroupedQuestRows({
                     />
                     {!collapsed && (groupByLoyaltyLevel
                         ? renderLoyaltyLevelGroups(traderQuests, groupId)
-                        : renderRows(traderQuests))}
+                        : renderRowsWithEssentialGroup(traderQuests, groupId))}
                 </section>
             );
         });
     }
 
     if (groupByLoyaltyLevel) return renderLoyaltyLevelGroups(quests);
-    return renderRows(quests);
+    return renderRowsWithEssentialGroup(quests, "all");
 }
 
 function QuestGroupHeader({ label, count, collapsed, onClick, image, nested = false }: {
@@ -312,8 +407,8 @@ function QuestListItem({
     const resolved = completed || failed;
     const categories = [...getQuestObjectiveCategories(quest)].slice(0, 2);
     const traderImage = quest.trader.image4xLink ?? quest.trader.imageLink;
-    const traderLoyaltyLevel = getQuestIssuingTraderLoyaltyLevel(quest);
-    const essential = isEssentialQuestOverride(quest.id);
+    const traderLoyaltyLevel = getQuestTraderTabLoyaltyLevel(quest);
+    const essential = isEssentialQuest(quest.id);
     const upcoming = upcomingLockedQuestIds.has(quest.id);
 
     return (

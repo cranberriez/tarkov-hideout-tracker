@@ -2,6 +2,23 @@
     "version": 1,
     "series": [
         {
+            "id": "network-provider",
+            "name": "Network Provider",
+            "traderId": "5a7c2eca46aef81a7ca2145d",
+            "essential": true,
+            "lightkeeperRequired": true,
+            "members": [
+                { "questId": "625d6ff5ddc94657c21a1625", "order": 1 },
+                { "questId": "625d6ffaf7308432be1d44c5", "order": 2 },
+                { "questId": "625d6ffcaa168e51321d69d7", "order": 3 },
+                { "questId": "625d6fff4149f1149b5b12c9", "order": 4 },
+                { "questId": "625d7001c4874104f230c0c5", "order": 5 },
+                { "questId": "625d70031ed3bb5bcc5bd9e5", "order": 6 },
+                { "questId": "625d7005a4eb80027c4f2e09", "order": 7 },
+                { "questId": "625d700cc48e6c62a440fab5", "order": 8 }
+            ]
+        },
+        {
             "id": "gunsmith",
             "name": "Gunsmith",
             "traderId": "5a7c2eca46aef81a7ca2145d",
