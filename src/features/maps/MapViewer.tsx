@@ -29,10 +29,13 @@ interface MapViewerProps {
 const MIN_SCALE = 1;
 const MAX_SCALE = 7;
 
-function getNavigationLabelPosition(percentX: number) {
-    if (percentX < 12) return "left-1/2";
-    if (percentX > 88) return "right-1/2";
-    return "left-1/2 -translate-x-1/2";
+function getNavigationLabelTransform(percentX: number, scale: number) {
+    const translateX = percentX < 12 ? "0%" : percentX > 88 ? "-100%" : "-50%";
+    const transformOrigin = percentX < 12 ? "left center" : percentX > 88 ? "right center" : "center";
+    return {
+        transform: `translate(${translateX}, -115%) scale(${1 / scale})`,
+        transformOrigin,
+    };
 }
 
 export function MapViewer({
@@ -69,7 +72,7 @@ export function MapViewer({
         values: Record<string, boolean>;
     }>({ mapKey, values: {} });
     const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null);
-    const [navigationLabelsVisible, setNavigationLabelsVisible] = useState(true);
+    const [navigationLabelsVisible, setNavigationLabelsVisible] = useState(false);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -313,8 +316,9 @@ export function MapViewer({
                     className="select-none"
                 />
                 <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
-                    {projectedMarkers.flatMap(({ marker, outlines }) =>
-                        outlines.map((outline, outlineIndex) => outline.length > 2 && (
+                    {projectedMarkers.flatMap(({ marker, outlines }) => {
+                        const isNavigationOverlay = marker.kind === "extract" || marker.kind === "transit";
+                        return outlines.map((outline, outlineIndex) => outline.length > 2 && (
                             <polygon
                                 key={`${marker.id}:outline:${outlineIndex}`}
                                 points={outline.map((point) => `${point.percentX},${point.percentY}`).join(" ")}
@@ -324,11 +328,50 @@ export function MapViewer({
                                 strokeOpacity="0.8"
                                 strokeWidth={0.25 / view.scale}
                                 vectorEffect="non-scaling-stroke"
+                                className={isNavigationOverlay ? "pointer-events-auto outline-none" : undefined}
+                                tabIndex={isNavigationOverlay ? 0 : undefined}
+                                role={isNavigationOverlay ? "img" : undefined}
+                                aria-label={isNavigationOverlay ? marker.label : undefined}
+                                onMouseEnter={isNavigationOverlay ? () => {
+                                    setHoveredMarkerId(marker.id);
+                                    onMarkerFocus?.(marker);
+                                } : undefined}
+                                onMouseLeave={isNavigationOverlay ? () => {
+                                    setHoveredMarkerId(null);
+                                    onMarkerFocus?.(null);
+                                } : undefined}
+                                onFocus={isNavigationOverlay ? () => {
+                                    setHoveredMarkerId(marker.id);
+                                    onMarkerFocus?.(marker);
+                                } : undefined}
+                                onBlur={isNavigationOverlay ? () => {
+                                    setHoveredMarkerId(null);
+                                    onMarkerFocus?.(null);
+                                } : undefined}
                             />
-                        )),
-                    )}
+                        ));
+                    })}
                 </svg>
                 {projectedMarkers.map(({ marker, point, floors }) => {
+                    if (marker.kind !== "quest") {
+                        if (!navigationLabelsVisible && hoveredMarkerId !== marker.id) return null;
+                        const labelTransform = getNavigationLabelTransform(point.percentX, view.scale);
+                        return (
+                            <span
+                                key={`${marker.id}:label`}
+                                aria-hidden="true"
+                                className="pointer-events-none absolute z-30 whitespace-nowrap font-sans text-[9px] font-bold uppercase tracking-wide [text-shadow:0_1px_2px_#000,0_0_3px_#000,0_0_7px_#000]"
+                                style={{
+                                    left: `${point.percentX}%`,
+                                    top: `${point.percentY}%`,
+                                    color: marker.color,
+                                    ...labelTransform,
+                                }}
+                            >
+                                {marker.label}
+                            </span>
+                        );
+                    }
                     return <button
                         type="button"
                         key={marker.id}
@@ -340,9 +383,7 @@ export function MapViewer({
                         onClick={() => onMarkerSelect?.(marker)}
                         className={cn(
                             "group absolute z-20 flex items-center justify-center border-2 bg-black/90 font-mono font-bold shadow-xl outline-none hover:z-[100] focus-visible:z-[100]",
-                            marker.kind === "quest"
-                                ? "h-7 min-w-7 rounded-full px-1.5 text-[11px]"
-                                : "h-3 w-3 min-w-0 rounded-[2px] p-0",
+                            "h-7 min-w-7 rounded-full px-1.5 text-[11px]",
                             (highlightedQuestId === marker.questId ||
                                 (!!highlightedObjectiveId && marker.objectiveIds?.includes(highlightedObjectiveId))) &&
                                 "ring-2 ring-white/70",
@@ -355,33 +396,19 @@ export function MapViewer({
                             transform: `translate(-50%, -50%) scale(${1 / view.scale})`,
                         }}
                     >
-                        {marker.kind === "quest" ? marker.label : (
-                            <span
-                                className={cn(
-                                    "pointer-events-none absolute bottom-full mb-1 whitespace-nowrap font-sans text-[9px] font-bold uppercase tracking-wide [text-shadow:0_1px_2px_#000,0_0_3px_#000,0_0_7px_#000]",
-                                    getNavigationLabelPosition(point.percentX),
-                                    navigationLabelsVisible
-                                        ? "block"
-                                        : "hidden group-hover:block group-focus-visible:block",
-                                )}
-                            >
-                                {marker.label}
+                        {marker.label}
+                        <span className="pointer-events-none absolute bottom-full left-1/2 z-[110] mb-2 hidden w-72 -translate-x-1/2 border border-white/12 bg-[#111214]/95 p-3 text-left font-sans font-normal shadow-2xl backdrop-blur group-hover:block group-focus-visible:block">
+                            <span className="block text-xs font-semibold text-white">{marker.title}</span>
+                            <span className="mt-1 block text-[9px] font-semibold uppercase tracking-wider text-gray-500">
+                                {floors.map(({ floor }) => floor.name).join(" · ")}
                             </span>
-                        )}
-                        {marker.kind === "quest" && (
-                            <span className="pointer-events-none absolute bottom-full left-1/2 z-[110] mb-2 hidden w-72 -translate-x-1/2 border border-white/12 bg-[#111214]/95 p-3 text-left font-sans font-normal shadow-2xl backdrop-blur group-hover:block group-focus-visible:block">
-                                <span className="block text-xs font-semibold text-white">{marker.title}</span>
-                                <span className="mt-1 block text-[9px] font-semibold uppercase tracking-wider text-gray-500">
-                                    {floors.map(({ floor }) => floor.name).join(" · ")}
-                                </span>
-                                <span className="mt-2 block space-y-1 text-[10px] leading-relaxed text-gray-400">
-                                    {marker.descriptions.map((description) => (
-                                        <span key={description} className="block">{description}</span>
-                                    ))}
-                                </span>
-                                {renderMarkerDetails?.(marker)}
+                            <span className="mt-2 block space-y-1 text-[10px] leading-relaxed text-gray-400">
+                                {marker.descriptions.map((description) => (
+                                    <span key={description} className="block">{description}</span>
+                                ))}
                             </span>
-                        )}
+                            {renderMarkerDetails?.(marker)}
+                        </span>
                     </button>;
                 })}
             </div>

@@ -119,11 +119,11 @@ fit-to-markers, objective-focused fitting, zone outlines, marker selection/focus
 visible map attribution. Its layer summary lists currently visible floors,
 provides independent optional-layer toggles and per-floor marker counts, and adds the resolved
 floor name to marker tooltips. Marker coordinates and size remain fixed on hover/focus.
-The Raid Planner adds small green PMC-extract boxes and orange transit boxes for
-the selected map. Their labels are plain colored text with a dark shadow. A control
-beside the zoom buttons hides or shows the persistent labels without removing the
-boxes; hidden labels reappear while their box is hovered or keyboard-focused. Scav
-extracts and boss data are not sent to this view.
+The Raid Planner renders green PMC-extract zones and orange transit zones for the
+selected map without adding separate point markers. Persistent labels default to
+off and can be shown with the control beside the zoom buttons. Hovering or
+keyboard-focusing a zone reveals its plain colored, dark-shadowed label regardless
+of the toggle. Scav extracts and boss data are not sent to this view.
 Hovering a Raid Planner marker shows its objective tooltip without changing or
 scrolling the quest list; clicking the marker selects, highlights, and scrolls to
 its quest. When one or more objectives represented by a marker require keys, the
