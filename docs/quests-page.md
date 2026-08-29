@@ -345,15 +345,17 @@ quest and its objectives. Unrestricted and complete-map sets display as `ANY`;
 sets missing only one or two maps display as `Any Map, EXCEPT (...)`; smaller
 sets list their allowed maps. Quest status sits beside the completion, pin, and
 hide/show actions; XP and faction are omitted from the header metadata. Kappa-required and
-Lightkeeper-required markers sit beside the level metadata. Requirements
-appear before Objectives as a compact vertical list with status symbols and text,
-and the section is omitted when the quest has no requirements. The list includes player level,
+Lightkeeper-required markers remain in the header metadata; the duplicate player-level
+badge is omitted because level remains visible in Requirements. Requirements, Unlocks,
+and Failure Conditions appear together in a responsive row before Objectives. Empty groups
+are omitted, and the visible groups expand across one, two, or three columns without divider
+lines. Requirements use a compact vertical list with status symbols and text. The list includes player level,
 faction, prestige, trader loyalty or reputation, trader-tier task counts, other
 upstream gates, and specific prerequisite-task outcomes. Only the underlined
 prerequisite task name is interactive; the requirement symbol and label are not
 part of its click target. Unlocks are plain underlined quest-name links in a
-vertical text list. Requirement and unlock cards, plus the former separate sidebar
-gate sections, are not rendered.
+vertical text list. Failure reputation is grouped with failure conditions. Requirement
+and unlock cards, plus the former separate sidebar gate sections, are not rendered.
 Objective item rows prefer the non-grid `iconLink` image and fall back to
 `gridImageLink` when needed. XP is omitted from Rewards; trader-standing rewards,
 when present, remain a compact vertical list.

@@ -61,10 +61,12 @@ export function QuestDetailsPane() {
         quest.traderRequirements.length > 0 ||
         quest.otherRequirements.length > 0 ||
         quest.taskRequirements.length > 0;
-    const hasHeaderMetadata = (quest.minPlayerLevel ?? 0) > 0 ||
-        !!quest.requiredPrestige ||
+    const hasHeaderMetadata = !!quest.requiredPrestige ||
         !!quest.kappaRequired ||
         !!quest.lightkeeperRequired;
+    const hasFailureDetails = (quest.failureTraderStandingRewards?.length ?? 0) > 0 ||
+        (quest.failConditions?.length ?? 0) > 0;
+    const detailColumnCount = Number(hasRequirements) + Number(leadsTo.length > 0) + Number(hasFailureDetails);
     const locationLabel = formatQuestMapSummary(quest, maps);
 
     return (
@@ -89,23 +91,22 @@ export function QuestDetailsPane() {
                     </div>
                     <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">{quest.name}</h1>
                     {hasHeaderMetadata && <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wider">
-                        {(quest.minPlayerLevel ?? 0) > 0 && <MetadataBadge>Level {quest.minPlayerLevel}</MetadataBadge>}
                         {quest.requiredPrestige && <MetadataBadge>Prestige {quest.requiredPrestige.prestigeLevel}</MetadataBadge>}
                         {quest.kappaRequired && <span className="border border-amber-400/20 bg-amber-400/8 px-2 py-1 text-amber-300">Kappa required</span>}
                         {quest.lightkeeperRequired && <span className="border border-cyan-400/20 bg-cyan-400/8 px-2 py-1 text-cyan-300">Lightkeeper required</span>}
                     </div>}
                     <div className="mt-6 flex flex-wrap gap-2">
                         <span className={cn("inline-flex items-center border px-3 py-2 text-xs font-semibold uppercase tracking-wider", status.status === "locked" || status.status === "failed" ? "border-red-400/25 bg-red-400/8 text-red-300" : status.status === "completed" ? "border-tarkov-green/25 bg-tarkov-green/8 text-tarkov-green" : "border-sky-400/25 bg-sky-400/8 text-sky-300")}>{status.label}</span>
-                        <button type="button" onClick={() => { if (status.status !== "completed") retainQuestAfterCompletion(quest.id); requestToggleQuestCompletion(quest.id); }} className={cn("inline-flex items-center gap-2 border px-3 py-2 text-xs font-semibold transition-colors", status.status === "completed" ? "border-tarkov-green/30 bg-tarkov-green/10 text-tarkov-green hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-300" : "border-tarkov-green/30 bg-tarkov-green/10 text-tarkov-green hover:border-tarkov-green/60")}><CheckCircle2 size={14} />{status.status === "completed" ? "Mark incomplete" : "Complete"}</button>
-                        {questCanFail(quest) && !status.terminal && <button type="button" onClick={() => requestFailQuest(quest.id)} className="inline-flex items-center gap-2 border border-red-400/25 bg-red-400/8 px-3 py-2 text-xs text-red-300"><XCircle size={14} /> Failed</button>}
-                        {status.terminal === "failed" && <button type="button" onClick={() => requestResetQuestStatus(quest.id)} className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-300"><RotateCcw size={14} /> Reset</button>}
-                        <button type="button" onClick={() => togglePinnedQuest(quest.id)} className={cn("inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-400", pinned && "border-sky-400/25 bg-sky-400/8 text-sky-300")}><Pin size={14} className={pinned ? "fill-current" : ""} />{pinned ? "Unpin" : "Pin"}</button>
-                        <button type="button" onClick={() => toggleIgnoredQuest(quest.id)} className={cn("inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-400", hidden && "border-violet-400/25 bg-violet-400/8 text-violet-300")}>{hidden ? <Eye size={14} /> : <EyeOff size={14} />}{hidden ? "Show" : "Hide"}</button>
+                        <button type="button" onClick={() => { if (status.status !== "completed") retainQuestAfterCompletion(quest.id); requestToggleQuestCompletion(quest.id); }} className={cn(questActionButtonClass, status.status === "completed" ? "border-tarkov-green/30 bg-tarkov-green/10 text-tarkov-green hover:border-red-400/50 hover:bg-red-400/15 hover:text-red-200" : "border-tarkov-green/35 bg-tarkov-green/12 text-tarkov-green hover:border-tarkov-green/70 hover:bg-tarkov-green/20")}><CheckCircle2 size={14} />{status.status === "completed" ? "Mark incomplete" : "Complete"}</button>
+                        {questCanFail(quest) && !status.terminal && <button type="button" onClick={() => requestFailQuest(quest.id)} className={cn(questActionButtonClass, "border-red-400/35 bg-red-400/10 text-red-300 hover:border-red-400/65 hover:bg-red-400/20 hover:text-red-200")}><XCircle size={14} /> Fail</button>}
+                        {status.terminal === "failed" && <button type="button" onClick={() => requestResetQuestStatus(quest.id)} className={cn(questActionButtonClass, "border-white/15 bg-white/7 text-gray-300 hover:border-white/30 hover:bg-white/12 hover:text-white")}><RotateCcw size={14} /> Reset</button>}
+                        <button type="button" onClick={() => togglePinnedQuest(quest.id)} className={cn(questActionButtonClass, "border-white/15 bg-white/7 text-gray-400 hover:border-sky-400/40 hover:bg-sky-400/12 hover:text-sky-200", pinned && "border-sky-400/35 bg-sky-400/12 text-sky-300")}><Pin size={14} className={pinned ? "fill-current" : ""} />{pinned ? "Unpin" : "Pin"}</button>
+                        <button type="button" onClick={() => toggleIgnoredQuest(quest.id)} className={cn(questActionButtonClass, "border-white/15 bg-white/7 text-gray-400 hover:border-violet-400/40 hover:bg-violet-400/12 hover:text-violet-200", hidden && "border-violet-400/35 bg-violet-400/12 text-violet-300")}>{hidden ? <Eye size={14} /> : <EyeOff size={14} />}{hidden ? "Show" : "Hide"}</button>
                     </div>
                 </div>
             </header>
 
-            <div className="grid max-w-6xl gap-10 px-6 py-10 sm:px-9 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="max-w-6xl px-6 py-10 sm:px-9">
                 <section>
                     {quest.wikiLink && (
                         <div className="mb-7">
@@ -114,9 +115,14 @@ export function QuestDetailsPane() {
                             </a>
                         </div>
                     )}
-                    {hasRequirements && <div className="mb-12">
-                        <SectionLabel>Requirements</SectionLabel>
-                        <div className="space-y-2.5 text-sm">
+                    {detailColumnCount > 0 && <div className={cn(
+                        "mb-12 grid gap-8",
+                        detailColumnCount === 2 && "md:grid-cols-2",
+                        detailColumnCount === 3 && "md:grid-cols-3",
+                    )}>
+                        {hasRequirements && <section className="min-w-0">
+                            <SectionLabel>Requirements</SectionLabel>
+                            <div className="space-y-2.5 text-sm">
                             {(quest.minPlayerLevel ?? 0) > 0 && (
                                 <RequirementRow
                                     satisfied={playerLevel >= (quest.minPlayerLevel ?? 0)}
@@ -184,7 +190,31 @@ export function QuestDetailsPane() {
                                     {requirement.task.name}
                                 </RequirementRow>
                             ))}
-                        </div>
+                            </div>
+                        </section>}
+                        {leadsTo.length > 0 && <section className="min-w-0">
+                            <SectionLabel>Unlocks</SectionLabel>
+                            <div className="space-y-2.5 text-sm">
+                                {leadsTo.map((nextQuest) => nextQuest && (
+                                    <div key={nextQuest.id}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedQuestId(nextQuest.id)}
+                                            className="cursor-pointer text-left text-gray-300 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white hover:decoration-current"
+                                        >
+                                            {nextQuest.name}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>}
+                        {hasFailureDetails && <section className="min-w-0">
+                            <SectionLabel>Failure conditions</SectionLabel>
+                            <div className="space-y-5">
+                                {(quest.failConditions?.length ?? 0) > 0 && <div className="space-y-2">{quest.failConditions?.map((condition) => <div key={condition.id} className="border border-red-400/12 bg-red-400/5 px-3 py-2 text-xs text-red-200/80"><p>{condition.description || condition.type}</p>{condition.type === "taskStatus" && "status" in condition && <p className="mt-1 text-[10px] text-red-200/40">Quest status: {condition.status.join(" or ")}</p>}</div>)}</div>}
+                                {(quest.failureTraderStandingRewards?.length ?? 0) > 0 && <StandingRewards label="Failure reputation" rewards={quest.failureTraderStandingRewards ?? []} />}
+                            </div>
+                        </section>}
                     </div>}
                     <SectionLabel>Objectives</SectionLabel>
                     {quest.objectives.length > 0 ? (
@@ -208,26 +238,6 @@ export function QuestDetailsPane() {
                         </div>
                     </div>}
                 </section>
-                <aside className="space-y-7">
-                    {leadsTo.length > 0 && <section>
-                        <SectionLabel>Unlocks</SectionLabel>
-                        <div className="space-y-2.5 text-sm">
-                            {leadsTo.map((nextQuest) => nextQuest && (
-                                <div key={nextQuest.id}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedQuestId(nextQuest.id)}
-                                        className="cursor-pointer text-left text-gray-300 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white hover:decoration-current"
-                                    >
-                                        {nextQuest.name}
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </section>}
-                    {(quest.failureTraderStandingRewards?.length ?? 0) > 0 && <StandingRewards label="Failure reputation" rewards={quest.failureTraderStandingRewards ?? []} />}
-                    {(quest.failConditions?.length ?? 0) > 0 && <section><SectionLabel>Failure conditions</SectionLabel><div className="space-y-2">{quest.failConditions?.map((condition) => <div key={condition.id} className="border border-red-400/12 bg-red-400/5 px-3 py-2 text-xs text-red-200/80"><p>{condition.description || condition.type}</p>{condition.type === "taskStatus" && "status" in condition && <p className="mt-1 text-[10px] text-red-200/40">Quest status: {condition.status.join(" or ")}</p>}</div>)}</div></section>}
-                </aside>
             </div>
 
             {showDebug && <QuestDebugPanel quest={quest} onClose={() => setShowDebug(false)} />}
@@ -251,6 +261,8 @@ function MetadataBadge({ children }: { children: React.ReactNode }) {
 function SectionLabel({ children }: { children: React.ReactNode }) {
     return <h2 className="mb-3.5 text-xs font-semibold uppercase tracking-[0.2em] text-gray-600">{children}</h2>;
 }
+
+const questActionButtonClass = "inline-flex cursor-pointer select-none items-center gap-2 border px-3 py-2 text-xs font-semibold shadow-[0_2px_0_rgba(0,0,0,0.35)] transition-[transform,background-color,border-color,color,box-shadow] hover:-translate-y-px active:translate-y-px active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#15171a]";
 
 function RequirementRow({
     children,
