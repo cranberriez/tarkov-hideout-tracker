@@ -223,8 +223,12 @@ quests terminate the visual series. Singleton quests remain ordinary rows in the
 Essential category. Expanded series show every member allowed by the current quest
 filters. Condensed series show only currently active members while retaining the
 title header. This Essential category and grouping remain available when loyalty-
-level grouping is disabled. The visual chain derivation is separate from the
-curated manifest used for server-side organization metadata.
+level grouping is disabled. Curated manifest series take precedence over automatic
+same-trader chains, allowing reviewed display membership to bridge known cross-
+trader prerequisite detours without pulling those other traders' quests into the
+display block. The Good Times series uses this hybrid rule: its Prapor block
+contains Part 1, Hell on Earth Parts 1–2, and Part 2, while the Quality Standard
+and Airmail bridge quests remain in their own trader categories.
 
 KORD/seasonal data excludes quests marked as Lightkeeper requirements and quests
 issued by Lightkeeper before quest lists, availability metadata, and item-demand

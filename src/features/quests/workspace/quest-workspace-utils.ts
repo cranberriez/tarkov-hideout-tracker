@@ -15,6 +15,7 @@ import {
     countCompletedTraderTierQuests,
     getTraderTierCompletionGate,
 } from "../../../lib/utils/quest-trader-completion-gates";
+import { QUEST_SERIES_MANIFEST } from "../../../lib/utils/quest-series";
 
 export type { QuestObjectiveCategory, QuestWorkspaceStatus } from "@/lib/stores/useUserStore";
 
@@ -94,6 +95,17 @@ export interface EssentialQuestSeries {
     questIds: string[];
 }
 
+const CURATED_ESSENTIAL_QUEST_SERIES: EssentialQuestSeries[] = QUEST_SERIES_MANIFEST.series
+    .filter((series) => series.essential)
+    .map((series) => ({
+        id: series.id,
+        title: series.name,
+        questIds: series.members
+            .slice()
+            .sort((left, right) => left.order - right.order)
+            .map((member) => member.questId),
+    }));
+
 function getEssentialQuestSeriesTitle(rootQuestName: string) {
     return rootQuestName
         .replace(/\s*\[PVE ZONE\]\s*$/i, "")
@@ -105,14 +117,30 @@ function getEssentialQuestSeriesTitle(rootQuestName: string) {
  * Derive visual series from direct prerequisite links between Essential quests.
  * Cross-trader and non-Essential links deliberately terminate a series.
  */
-export function buildEssentialQuestSeries(essentialQuests: FullQuest[]): EssentialQuestSeries[] {
+export function buildEssentialQuestSeries(
+    essentialQuests: FullQuest[],
+    curatedSeries: EssentialQuestSeries[] = CURATED_ESSENTIAL_QUEST_SERIES,
+): EssentialQuestSeries[] {
     const questById = new Map(essentialQuests.map((quest) => [quest.id, quest]));
     const orderById = new Map(essentialQuests.map((quest, index) => [quest.id, index]));
-    const neighborsById = new Map(essentialQuests.map((quest) => [quest.id, new Set<string>()]));
+    const claimedQuestIds = new Set<string>();
+    const series: EssentialQuestSeries[] = [];
 
-    for (const quest of essentialQuests) {
+    for (const curated of curatedSeries) {
+        const availableQuestIds = curated.questIds.filter((questId) => questById.has(questId));
+        if (availableQuestIds.length < 2) continue;
+
+        series.push({ ...curated, questIds: availableQuestIds });
+        for (const questId of availableQuestIds) claimedQuestIds.add(questId);
+    }
+
+    const automaticQuests = essentialQuests.filter((quest) => !claimedQuestIds.has(quest.id));
+    const automaticQuestById = new Map(automaticQuests.map((quest) => [quest.id, quest]));
+    const neighborsById = new Map(automaticQuests.map((quest) => [quest.id, new Set<string>()]));
+
+    for (const quest of automaticQuests) {
         for (const requirement of quest.taskRequirements) {
-            const prerequisite = questById.get(requirement.task.id);
+            const prerequisite = automaticQuestById.get(requirement.task.id);
             if (!prerequisite || prerequisite.trader.id !== quest.trader.id) continue;
 
             neighborsById.get(quest.id)?.add(prerequisite.id);
@@ -121,9 +149,8 @@ export function buildEssentialQuestSeries(essentialQuests: FullQuest[]): Essenti
     }
 
     const visited = new Set<string>();
-    const series: EssentialQuestSeries[] = [];
 
-    for (const quest of essentialQuests) {
+    for (const quest of automaticQuests) {
         if (visited.has(quest.id)) continue;
 
         const componentIds: string[] = [];
@@ -157,7 +184,11 @@ export function buildEssentialQuestSeries(essentialQuests: FullQuest[]): Essenti
         });
     }
 
-    return series;
+    return series.sort((left, right) => {
+        const leftOrder = Math.min(...left.questIds.map((questId) => orderById.get(questId) ?? Number.MAX_SAFE_INTEGER));
+        const rightOrder = Math.min(...right.questIds.map((questId) => orderById.get(questId) ?? Number.MAX_SAFE_INTEGER));
+        return leftOrder - rightOrder;
+    });
 }
 
 function getMissingPrerequisiteQuestIds(

@@ -55,6 +55,23 @@ test("defines the full Network Provider access line as one ordered essential ser
     );
 });
 
+test("keeps Good Times Part 2 in its reviewed Essential display series", () => {
+    const expectedMembers = [
+        "666314b4d7f171c4c20226c3",
+        "666314b0acf8442f8b0531a1",
+        "666314b2a9290f9e0806cca3",
+        "666314bafd5ca9577902e03a",
+    ];
+
+    assert.deepEqual(
+        expectedMembers.map((questId) => {
+            const membership = getEssentialQuestSeriesMembership(questId);
+            return [membership?.series.id, membership?.order];
+        }),
+        expectedMembers.map((_, index) => ["the-good-times", index + 1]),
+    );
+});
+
 test("marks every Network Provider series member as Lightkeeper-required", () => {
     const quests = NETWORK_PROVIDER_SERIES.map(([id, name]) => makeQuest(id, name));
     const prepared = applyQuestSeriesMetadata(quests);

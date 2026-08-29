@@ -19,6 +19,18 @@
             ]
         },
         {
+            "id": "the-good-times",
+            "name": "The Good Times",
+            "traderId": "54cb50c76803fa8b248b4571",
+            "essential": true,
+            "members": [
+                { "questId": "666314b4d7f171c4c20226c3", "order": 1 },
+                { "questId": "666314b0acf8442f8b0531a1", "order": 2 },
+                { "questId": "666314b2a9290f9e0806cca3", "order": 3 },
+                { "questId": "666314bafd5ca9577902e03a", "order": 4 }
+            ]
+        },
+        {
             "id": "gunsmith",
             "name": "Gunsmith",
             "traderId": "5a7c2eca46aef81a7ca2145d",

@@ -73,6 +73,25 @@ test("stops Essential series at cross-trader, non-Essential, and singleton bound
     }]);
 });
 
+test("uses a curated Essential series to bridge a reviewed cross-trader detour", () => {
+    const quests = [
+        makeSeriesQuest("good-times-1", "The Good Times - Part 1", "prapor"),
+        makeSeriesQuest("quality-standard", "Quality Standard", "therapist", ["good-times-1"]),
+        makeSeriesQuest("airmail", "Airmail", "mechanic", ["quality-standard"]),
+        makeSeriesQuest("good-times-2", "The Good Times - Part 2", "prapor", ["airmail"]),
+    ];
+
+    assert.deepEqual(buildEssentialQuestSeries(quests, [{
+        id: "the-good-times",
+        title: "The Good Times",
+        questIds: ["good-times-1", "good-times-2"],
+    }]), [{
+        id: "the-good-times",
+        title: "The Good Times",
+        questIds: ["good-times-1", "good-times-2"],
+    }]);
+});
+
 const DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS: QuestWorkspaceLockedFilterSettings = {
     showAll: false,
     showPlayerLevel: false,
