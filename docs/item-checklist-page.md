@@ -135,7 +135,7 @@ Additional filters:
 
 Prices come from `ItemDetails.marketPrice`, normalized from the same mode-specific Tarkov.dev `/items` record as the item metadata. No client-side price fetch or separate price map is used.
 
-Items with trader valuations but no flea-market values keep the Market section and show a subdued `NO FLEA` badge, so useful trader prices are not hidden or mistaken for missing item data.
+The Market header shows `minLevelForFlea` whenever the item provides it, with a green check or red X based on the stored player level. Items with trader valuations but neither flea-market values nor a minimum flea level instead show a subdued `NO FLEA` badge. Eligibility does not hide or otherwise alter any values.
 
 ---
 

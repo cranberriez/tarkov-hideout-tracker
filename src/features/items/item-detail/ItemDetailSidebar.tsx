@@ -12,6 +12,8 @@ interface ItemDetailSidebarProps {
     relativeUpdatedAt: string | null;
     isFiat: boolean;
     showMarket: boolean;
+    minLevelForFlea?: number | null;
+    playerLevel: number;
     onAddItemCounts: (itemId: string, haveDelta: number, haveFirDelta: number) => void;
 }
 
@@ -22,6 +24,8 @@ export function ItemDetailSidebar({
     relativeUpdatedAt,
     isFiat,
     showMarket,
+    minLevelForFlea,
+    playerLevel,
     onAddItemCounts,
 }: ItemDetailSidebarProps) {
     const [draftNonFir, setDraftNonFir] = useState(owned.have);
@@ -55,6 +59,8 @@ export function ItemDetailSidebar({
                     relativeUpdatedAt={relativeUpdatedAt}
                     valuationCount={draftNonFir + draftFir}
                     isFiat={isFiat}
+                    minLevelForFlea={minLevelForFlea}
+                    playerLevel={playerLevel}
                 />
             )}
         </aside>

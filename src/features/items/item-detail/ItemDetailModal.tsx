@@ -346,6 +346,8 @@ export function ItemDetailModal({
                                     relativeUpdatedAt={relativeUpdatedAt}
                                     isFiat={isFiat}
                                     showMarket={showMarket}
+                                    minLevelForFlea={selectedItem.minLevelForFlea}
+                                    playerLevel={playerLevel}
                                     onAddItemCounts={addItemCounts}
                                 />
                             )}

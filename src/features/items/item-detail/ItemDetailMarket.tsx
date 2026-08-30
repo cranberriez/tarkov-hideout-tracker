@@ -1,7 +1,7 @@
 "use client";
 
 import type { MarketPrice } from "@/types";
-import { ArrowDownRight, ArrowUpRight, Clock3, Store } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Check, Clock3, Store, X } from "lucide-react";
 import { formatRoubles, hasFleaMarketData } from "@/lib/utils/market-price";
 import { ItemDetailSection } from "./ItemDetailSection";
 
@@ -10,6 +10,8 @@ interface ItemDetailMarketProps {
     relativeUpdatedAt: string | null;
     valuationCount: number;
     isFiat: boolean;
+    minLevelForFlea?: number | null;
+    playerLevel: number;
 }
 
 export function hasItemMarketData(marketPrice: MarketPrice | null | undefined) {
@@ -26,10 +28,13 @@ export function ItemDetailMarket({
     relativeUpdatedAt,
     valuationCount,
     isFiat,
+    minLevelForFlea,
+    playerLevel,
 }: ItemDetailMarketProps) {
     if (!hasItemMarketData(marketPrice)) return null;
 
     const hasFleaData = hasFleaMarketData(marketPrice);
+    const canSellOnFlea = minLevelForFlea != null && playerLevel >= minLevelForFlea;
     const fleaPrice = marketPrice.avg24hPrice ?? marketPrice.lastLowPrice ?? marketPrice.price;
     const traderValuationCount = Math.max(1, Math.floor(valuationCount));
     const topTraderValuations = (marketPrice.sellFor ?? [])
@@ -60,10 +65,21 @@ export function ItemDetailMarket({
             className="border-t border-border-color"
             aside={
                 <div className="flex items-center gap-2">
-                    {!isFiat && !hasFleaData && (
-                        <span className="rounded border border-red-400/25 bg-red-400/8 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-red-300/90">
-                            No flea
-                        </span>
+                    {!isFiat && (minLevelForFlea != null || !hasFleaData) && (
+                        minLevelForFlea != null ? (
+                            <span className="flex items-center gap-1 rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                                Flea level {minLevelForFlea}
+                                {canSellOnFlea ? (
+                                    <Check size={11} strokeWidth={2.5} className="text-green-400" />
+                                ) : (
+                                    <X size={11} strokeWidth={2.5} className="text-red-400" />
+                                )}
+                            </span>
+                        ) : (
+                            <span className="rounded border border-red-400/25 bg-red-400/8 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-red-300/90">
+                                No flea
+                            </span>
+                        )
                     )}
                     {relativeUpdatedAt && (
                         <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
