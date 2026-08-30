@@ -135,6 +135,8 @@ Additional filters:
 
 Prices come from `ItemDetails.marketPrice`, normalized from the same mode-specific Tarkov.dev `/items` record as the item metadata. No client-side price fetch or separate price map is used.
 
+Items with trader valuations but no flea-market values keep the Market section and show a subdued `NO FLEA` badge, so useful trader prices are not hidden or mistaken for missing item data.
+
 ---
 
 ## Item Search & Detail Modal

@@ -29,6 +29,7 @@ export function ItemDetailMarket({
 }: ItemDetailMarketProps) {
     if (!hasItemMarketData(marketPrice)) return null;
 
+    const hasFleaData = hasFleaMarketData(marketPrice);
     const fleaPrice = marketPrice.avg24hPrice ?? marketPrice.lastLowPrice ?? marketPrice.price;
     const traderValuationCount = Math.max(1, Math.floor(valuationCount));
     const topTraderValuations = (marketPrice.sellFor ?? [])
@@ -56,12 +57,20 @@ export function ItemDetailMarket({
     return (
         <ItemDetailSection
             title={isFiat ? "Exchange value" : "Market"}
+            className="border-t border-border-color"
             aside={
-                relativeUpdatedAt ? (
-                    <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                        <Clock3 size={11} /> {relativeUpdatedAt}
-                    </span>
-                ) : null
+                <div className="flex items-center gap-2">
+                    {!isFiat && !hasFleaData && (
+                        <span className="rounded border border-red-400/25 bg-red-400/8 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-red-300/90">
+                            No flea
+                        </span>
+                    )}
+                    {relativeUpdatedAt && (
+                        <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                            <Clock3 size={11} /> {relativeUpdatedAt}
+                        </span>
+                    )}
+                </div>
             }
         >
             {fleaPrice != null && (
