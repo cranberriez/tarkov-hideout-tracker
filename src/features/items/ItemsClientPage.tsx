@@ -12,6 +12,7 @@ import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
+import { DataLoadError } from "@/components/core/DataLoadError";
 
 interface ItemsClientPageProps {
     questItemIndex: QuestItemIndexEntry[];
@@ -24,7 +25,14 @@ export function ItemsClientPage({
     questAnyOfGroups,
     questAvailabilityQuests,
 }: ItemsClientPageProps) {
-    const { stations, stationsUpdatedAt, items, itemsUpdatedAt } = useDataContext();
+    const {
+        stations,
+        stationsUpdatedAt,
+        stationsError,
+        items,
+        itemsUpdatedAt,
+        itemsError,
+    } = useDataContext();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
 
@@ -114,19 +122,35 @@ export function ItemsClientPage({
             </div>
 
             <div className="mb-8">
-                <ItemsControls onOpenSearch={() => setIsSearchOpen(true)}>
-                    <ItemsStatsRow
-                        questItemIndex={questItemIndex}
-                        questAnyOfGroups={questAnyOfGroups}
-                        questAvailabilityQuests={questAvailabilityQuestList}
+                {stationsError || itemsError || !stations || !items ? (
+                    <DataLoadError
+                        title="Hideout item data is unavailable"
+                        messages={[
+                            ...(stationsError ? [stationsError] : []),
+                            ...(itemsError ? [itemsError] : []),
+                            ...(!stations && !stationsError
+                                ? ["Hideout station data could not be loaded."]
+                                : []),
+                            ...(!items && !itemsError
+                                ? ["Hideout item data could not be loaded."]
+                                : []),
+                        ]}
                     />
-                    <ItemsList
-                        onClickItem={setSelectedItem}
-                        questItemIndex={questItemIndex}
-                        questAnyOfGroups={questAnyOfGroups}
-                        questAvailabilityQuests={questAvailabilityQuestList}
-                    />
-                </ItemsControls>
+                ) : (
+                    <ItemsControls onOpenSearch={() => setIsSearchOpen(true)}>
+                        <ItemsStatsRow
+                            questItemIndex={questItemIndex}
+                            questAnyOfGroups={questAnyOfGroups}
+                            questAvailabilityQuests={questAvailabilityQuestList}
+                        />
+                        <ItemsList
+                            onClickItem={setSelectedItem}
+                            questItemIndex={questItemIndex}
+                            questAnyOfGroups={questAnyOfGroups}
+                            questAvailabilityQuests={questAvailabilityQuestList}
+                        />
+                    </ItemsControls>
+                )}
             </div>
 
             <DataLastUpdated />

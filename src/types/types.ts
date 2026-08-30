@@ -89,6 +89,13 @@ export interface ItemsPricesPayload {
 export interface TimedResponse<TPayload> {
     data: TPayload;
     updatedAt: number; // ms since epoch
+    diagnostics?: DataResponseDiagnostics;
+}
+
+export interface DataResponseDiagnostics {
+    provider: "json" | "graphql";
+    localePaths?: string[];
+    usedRegularLocaleFallback?: boolean;
 }
 
 export interface VendorPrice {

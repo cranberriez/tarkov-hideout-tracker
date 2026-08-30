@@ -243,9 +243,21 @@ export async function getJsonHideoutStations(
         }
 
         const updatedAt = Date.now();
+        const localeResults = [
+            hideoutDataset.locale,
+            itemsDataset.locale,
+            tradersDataset.locale,
+        ];
         const body: TimedResponse<HideoutStationsPayload> = {
             data: { stations },
             updatedAt,
+            diagnostics: {
+                provider: "json",
+                localePaths: [...new Set(localeResults.map((locale) => locale.resolvedPath))],
+                usedRegularLocaleFallback: localeResults.some(
+                    (locale) => locale.usedRegularFallback,
+                ),
+            },
         };
         await redis.mset({
             [bodyKey]: JSON.stringify(body),

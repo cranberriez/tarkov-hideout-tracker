@@ -34,7 +34,17 @@ Every JSON adapter validates both cached and upstream data. Progression Redis ke
 - A valid stale Redis body is returned when an upstream refresh fails.
 - An invalid upstream response never overwrites a valid Redis body.
 
-The JSON client fetches base and `_en` locale payloads together. Concurrent requests for the same URL share one in-flight promise to avoid duplicate downloads of the large item dataset during a cold render.
+The JSON client fetches base and `_en` locale payloads together. If a PVE or KORD
+mode-specific locale payload is unavailable, the client falls back to the matching
+`/regular/*_en` dictionary while retaining the requested mode's base records. A
+missing base dataset still fails, as does a missing regular locale fallback.
+Concurrent requests for the same URL share one in-flight promise to avoid duplicate
+downloads of the large item dataset during a cold render.
+
+Newly normalized JSON responses record additive diagnostics with the resolved
+locale dictionary paths and whether the regular-English fallback was used. These
+fields do not alter normalized records or persisted user state, and older cached
+responses without diagnostics remain compatible.
 
 ## Task Progression Fields
 

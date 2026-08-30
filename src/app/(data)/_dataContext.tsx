@@ -3,13 +3,17 @@
 
 import { createContext, useContext } from "react";
 import type { ReactNode } from "react";
-import type { Station, ItemDetails } from "@/types";
+import type { DataResponseDiagnostics, Station, ItemDetails } from "@/types";
 
 export interface DataContextValue {
     stations: Station[] | null;
     stationsUpdatedAt: number | null;
+    stationsError: string | null;
+    stationsDiagnostics: DataResponseDiagnostics | null;
     items: ItemDetails[] | null;
     itemsUpdatedAt: number | null;
+    itemsError: string | null;
+    itemsDiagnostics: DataResponseDiagnostics | null;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);

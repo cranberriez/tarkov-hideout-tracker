@@ -60,7 +60,11 @@ export async function getJsonHideoutRequiredItems(
         }
 
         const updatedAt = Date.now();
-        const body: TimedResponse<ItemsPayload> = { data: { items }, updatedAt };
+        const body: TimedResponse<ItemsPayload> = {
+            data: { items },
+            updatedAt,
+            diagnostics: stationsResponse.diagnostics,
+        };
         await redis.mset({
             [bodyKey]: JSON.stringify(body),
             [metaKey]: { updatedAt },

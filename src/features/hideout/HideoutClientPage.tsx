@@ -6,9 +6,10 @@ import { HideoutControls } from "@/features/hideout/components/HideoutControls";
 import { HideoutConversionGate } from "@/features/hideout/components/HideoutConversionGate";
 import { HideoutList } from "@/features/hideout/components/HideoutList";
 import { useDataContext } from "@/app/(data)/_dataContext";
+import { DataLoadError } from "@/components/core/DataLoadError";
 
 export function HideoutClientPage() {
-    const { stations, stationsUpdatedAt } = useDataContext();
+    const { stations, stationsUpdatedAt, stationsError } = useDataContext();
     const { initializeDefaults, hasSeenHideoutLevelWarning, setHasSeenHideoutLevelWarning } =
         useUserStore();
 
@@ -50,7 +51,14 @@ export function HideoutClientPage() {
                 </div>
             )}
 
-            <HideoutList />
+            {stationsError || !stations ? (
+                <DataLoadError
+                    title="Hideout stations are unavailable"
+                    messages={[stationsError ?? "Hideout station data could not be loaded."]}
+                />
+            ) : (
+                <HideoutList />
+            )}
         </main>
     );
 }

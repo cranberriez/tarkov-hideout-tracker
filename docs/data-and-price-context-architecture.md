@@ -33,8 +33,12 @@ Both contexts are client components (they use `createContext`/`useContext`), but
 interface DataContextValue {
   stations: Station[] | null;
   stationsUpdatedAt: number | null;
+  stationsError: string | null;
+  stationsDiagnostics: DataResponseDiagnostics | null;
   items: ItemDetails[] | null;
   itemsUpdatedAt: number | null;
+  itemsError: string | null;
+  itemsDiagnostics: DataResponseDiagnostics | null;
 }
 ```
 
@@ -63,6 +67,18 @@ return (
 
 Station and item data is fetched before any child renders. All pages under `(data)/` can consume it via `useDataContext()`.
 
+The layout settles station and item requests independently. A failed dataset is
+provided as `null` with its corresponding error message instead of failing the
+whole route. Feature pages render retryable data-error notices where unavailable
+data would otherwise appear. The route group's `error.tsx` remains a final safety
+net for page-specific server data and unexpected render failures.
+
+Successful JSON refreshes also carry additive response diagnostics describing the
+resolved locale dictionary paths and whether the regular-English fallback was
+used. Older frozen cache entries remain valid and may omit these optional fields.
+The footer status dialog reads these diagnostics, the active price context, and
+the station/item timestamps without making additional upstream requests.
+
 ---
 
 ## 2. Price Data Context
@@ -83,7 +99,7 @@ interface PriceDataContextValue {
 
 **Provided by:** `src/app/(data)/PriceDataLayout.tsx`
 
-`PriceDataLayout` fetches `/api/prices/[mode]` for the active profile first, then prefetches the other two modes. It renders the results through `PriceDataProvider` without embedding the price maps in the server-component payload.
+`PriceDataLayout` fetches `/api/prices/[mode]` for the active profile first, then prefetches the other two modes. It renders the results through `PriceDataProvider` without embedding the price maps in the server-component payload. Failed price requests resolve the loading state so price consumers do not remain in a permanent loading state.
 
 ---
 

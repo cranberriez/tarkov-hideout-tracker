@@ -17,6 +17,11 @@ test("fetchTarkovJsonDataset combines base data with the English locale", async 
     assert.equal(dataset.data.entry.name, "token");
     assert.equal(dataset.translate("token"), "Translated");
     assert.equal(dataset.translate("unknown"), "unknown");
+    assert.deepEqual(dataset.locale, {
+        requestedPath: "regular/hideout_en",
+        resolvedPath: "regular/hideout_en",
+        usedRegularFallback: false,
+    });
 });
 
 test("fetchTarkovJsonDataset rejects missing base data", async (context) => {
@@ -44,4 +49,58 @@ test("fetchTarkovJsonDataset prefixes seasonal requests with pvp-season", async 
         "https://json.tarkov.dev/pvp-season/tasks",
         "https://json.tarkov.dev/pvp-season/tasks_en",
     ]);
+});
+
+test("fetchTarkovJsonDataset falls back to regular English translations", async (context) => {
+    const urls: string[] = [];
+    context.mock.method(console, "warn", () => undefined);
+    context.mock.method(globalThis, "fetch", async (input) => {
+        const url = String(input);
+        urls.push(url);
+
+        if (url.endsWith("/pvp-season/items_en")) {
+            return new Response('{"error":"Not found"}', {
+                status: 404,
+                statusText: "Not Found",
+            });
+        }
+        if (url.endsWith("/regular/items_en")) {
+            return Response.json({ data: { token: "Fallback translation" } });
+        }
+        return Response.json({ data: { items: { entry: { name: "token" } } } });
+    });
+
+    const dataset = await fetchTarkovJsonDataset<{
+        items: { entry: { name: string } };
+    }>("items", "pvp-season");
+
+    assert.equal(dataset.translate("token"), "Fallback translation");
+    assert.deepEqual(dataset.locale, {
+        requestedPath: "pvp-season/items_en",
+        resolvedPath: "regular/items_en",
+        usedRegularFallback: true,
+    });
+    assert.deepEqual(urls.sort(), [
+        "https://json.tarkov.dev/pvp-season/items",
+        "https://json.tarkov.dev/pvp-season/items_en",
+        "https://json.tarkov.dev/regular/items_en",
+    ]);
+});
+
+test("fetchTarkovJsonDataset still rejects when locale fallback also fails", async (context) => {
+    context.mock.method(console, "warn", () => undefined);
+    context.mock.method(globalThis, "fetch", async (input) => {
+        if (String(input).endsWith("_en")) {
+            return new Response('{"error":"Not found"}', {
+                status: 404,
+                statusText: "Not Found",
+            });
+        }
+        return Response.json({ data: { items: {} } });
+    });
+
+    await assert.rejects(
+        fetchTarkovJsonDataset("items", "pvp-season"),
+        /regular\/items_en: 404 Not Found/,
+    );
 });

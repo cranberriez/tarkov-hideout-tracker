@@ -66,6 +66,9 @@ export default function PriceDataLayout({ children }: PriceDataLayoutProps) {
                 setLoadedModes((prev) => ({ ...prev, [mode]: true }));
             } catch (error) {
                 console.error(`Failed to load ${mode} market prices`, error);
+                if (!cancelled) {
+                    setLoadedModes((prev) => ({ ...prev, [mode]: true }));
+                }
                 // Allow a retry on the next mount/mode switch.
                 requestedModes.current.delete(mode);
             }

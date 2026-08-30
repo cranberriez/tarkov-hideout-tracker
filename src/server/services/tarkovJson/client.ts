@@ -19,6 +19,11 @@ interface TarkovJsonLocaleResponse {
 export interface TarkovJsonDataset<T> {
     data: T;
     translate: (key: string | null | undefined) => string;
+    locale: {
+        requestedPath: string;
+        resolvedPath: string;
+        usedRegularFallback: boolean;
+    };
 }
 
 const inFlightRequests = new Map<string, Promise<unknown>>();
@@ -51,21 +56,53 @@ async function fetchJson<T>(path: string): Promise<T> {
     }
 }
 
+async function fetchLocale(
+    endpoint: TarkovJsonEndpoint,
+    gameMode: TarkovJsonGameMode,
+): Promise<{
+    response: TarkovJsonLocaleResponse;
+    requestedPath: string;
+    resolvedPath: string;
+}> {
+    const localePath = `${gameMode}/${endpoint}_en`;
+
+    try {
+        return {
+            response: await fetchJson<TarkovJsonLocaleResponse>(localePath),
+            requestedPath: localePath,
+            resolvedPath: localePath,
+        };
+    } catch (error) {
+        if (gameMode === "regular") throw error;
+
+        const fallbackPath = `regular/${endpoint}_en`;
+        const reason = error instanceof Error ? error.message : String(error);
+        console.warn(
+            `Tarkov JSON locale ${localePath} was unavailable; falling back to ${fallbackPath} (${reason})`,
+        );
+        return {
+            response: await fetchJson<TarkovJsonLocaleResponse>(fallbackPath),
+            requestedPath: localePath,
+            resolvedPath: fallbackPath,
+        };
+    }
+}
+
 export async function fetchTarkovJsonDataset<T extends object>(
     endpoint: TarkovJsonEndpoint,
     gameMode: TarkovJsonGameMode = "regular",
 ): Promise<TarkovJsonDataset<T>> {
     const path = `${gameMode}/${endpoint}`;
-    const [response, localeResponse] = await Promise.all([
+    const [response, localeResult] = await Promise.all([
         fetchJson<TarkovJsonResponse<T>>(path),
-        fetchJson<TarkovJsonLocaleResponse>(`${path}_en`),
+        fetchLocale(endpoint, gameMode),
     ]);
 
     if (!response.data || typeof response.data !== "object") {
         throw new Error(`Tarkov JSON ${path} response is missing data`);
     }
 
-    const locale = localeResponse.data;
+    const locale = localeResult.response.data;
     if (!locale || Object.keys(locale).length === 0) {
         throw new Error(`Tarkov JSON ${path}_en response is missing translations`);
     }
@@ -75,6 +112,11 @@ export async function fetchTarkovJsonDataset<T extends object>(
         translate: (key) => {
             if (!key) return "";
             return locale[key] || key;
+        },
+        locale: {
+            requestedPath: localeResult.requestedPath,
+            resolvedPath: localeResult.resolvedPath,
+            usedRegularFallback: localeResult.requestedPath !== localeResult.resolvedPath,
         },
     };
 }
