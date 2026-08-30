@@ -148,7 +148,17 @@ The Market header shows `minLevelForFlea` whenever the item provides it, with a 
 
 That merged array is passed to `ItemSearchModal` as `itemPool`, so search is not limited to hideout-required items.
 
-When an item is selected, `ItemDetailModal` resolves its ID against the shared tracked-item catalog before composing the modal, then receives station state, requirement state, quest item index, and quest availability metadata. This keeps group-item clicks attached to the full compact `ItemDetails` record (including market and category data) instead of a quest-objective fallback. Its compact header combines need counts with hideout/quest usage totals, while the connected inventory/market column is composed from optional item data. The Hideout tab condenses station levels and counts into grid rows. The Quests tab uses quest-card styling, keeps completed hand-ins visible after incomplete ones, and exposes direct quest and wiki links. Tabs without relevant data are omitted; the tab structure is intended to accept future trader-purchase and crafting modules when those fields are added to the client item shape.
+When an item is selected, `ItemDetailModal` resolves its ID against the shared tracked-item catalog before composing the modal, then receives station state, requirement state, quest item index, and quest availability metadata. This keeps group-item clicks attached to the full compact `ItemDetails` record (including market and category data) instead of a quest-objective fallback. Its compact header combines need counts with hideout/quest usage totals, while the connected inventory/market column is composed from optional item data.
+
+The modal exposes contextual tabs when data exists:
+
+- **Hideout** condenses station levels and counts into grid rows.
+- **Quests** keeps completed hand-ins visible after incomplete ones and exposes direct quest and wiki links.
+- **Traders** shows cash purchases and barters, including loyalty and quest gates. Locked offers remain visible and are evaluated against the active profile.
+- **Crafting** shows recipe inputs, tools, quest items, duration, station level, edition, and quest gates. Availability uses the active profile's station, edition, and completed-quest state.
+- **History** lazy-loads the mode-specific Tarkov.dev `/prices/{itemId}` dataset. The browser keeps an in-memory copy while the internal route uses a light 15-minute server cache and HTTP browser caching; Redis is not used. Day, 3-day, week, month, and all-time range controls and trend summaries are calculated client-side. The graph and summaries use every upstream price point in the selected range.
+
+Tabs without relevant data are omitted. Trader offers and crafts are joined from Tarkov.dev `/barters` and `/crafts` while the compact tracked-item payload is built, so the full catalog is not serialized to the browser.
 
 ---
 

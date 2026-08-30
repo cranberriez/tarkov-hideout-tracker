@@ -43,6 +43,13 @@ item metadata. The normalized `ItemDetails` shape contains an optional
 Consumers read `item.marketPrice` directly. The application does not maintain a
 daily price cron, a price Redis namespace, `/api/prices/*`, or `PriceDataContext`.
 
+Tracked items also carry compact `traderOffers` and `crafts` arrays joined from
+the mode-specific Tarkov.dev `/barters` and `/crafts` datasets. Only offers and
+recipes producing a tracked item are sent to the client. Flea price history is
+separate: the item modal lazy-loads `/api/items/{itemId}/price-history`, which
+proxies Tarkov.dev `/prices/{itemId}` with a 15-minute Next.js/HTTP cache and no
+Redis storage.
+
 ## Caching
 
 Tracked item records use Redis plus `unstable_cache` with a one-hour freshness

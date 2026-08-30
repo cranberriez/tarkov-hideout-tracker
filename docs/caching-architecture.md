@@ -19,7 +19,7 @@ that freeze because they carry volatile market values.
 | Key | Content | Freshness |
 |---|---|---|
 | `hideout:stations:v6:{regular|pve|pvp-season}` | Mode-specific station list | Frozen |
-| `hideout:items:filtered:v3:{regular|pve|pvp-season}` | Compact hideout + quest item records, including embedded flea/trader pricing | 1 hour |
+| `hideout:items:filtered:v4:{regular|pve|pvp-season}` | Compact hideout + quest item records, including embedded pricing, trader offers, and crafts | 1 hour |
 | `quests:all:v5:{regular|pve|pvp-season}` | Quests with give-item objectives | Frozen |
 | `quests:full:v13:{regular|pve|pvp-season}` | Full quest list | Frozen |
 | `traders:all:v1:{regular|pve|pvp-season}` | Trader list | Frozen |

@@ -5,7 +5,14 @@ export type { TarkovJsonGameMode } from "@/lib/game-mode";
 
 const TARKOV_JSON_BASE_URL = "https://json.tarkov.dev";
 
-export type TarkovJsonEndpoint = "hideout" | "items" | "maps" | "tasks" | "traders";
+export type TarkovJsonEndpoint =
+    | "barters"
+    | "crafts"
+    | "hideout"
+    | "items"
+    | "maps"
+    | "tasks"
+    | "traders";
 
 interface TarkovJsonResponse<T> {
     data?: T;
@@ -119,4 +126,16 @@ export async function fetchTarkovJsonDataset<T extends object>(
             usedRegularFallback: localeResult.requestedPath !== localeResult.resolvedPath,
         },
     };
+}
+
+export async function fetchTarkovJsonData<T extends object>(
+    endpoint: TarkovJsonEndpoint,
+    gameMode: TarkovJsonGameMode = "regular",
+): Promise<T> {
+    const path = `${gameMode}/${endpoint}`;
+    const response = await fetchJson<TarkovJsonResponse<T>>(path);
+    if (!response.data || typeof response.data !== "object") {
+        throw new Error(`Tarkov JSON ${path} response is missing data`);
+    }
+    return response.data;
 }

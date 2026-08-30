@@ -10,6 +10,7 @@ import type {
 import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";
 import type { ItemDetails } from "@/types";
+import { ItemDetailItemChip } from "./ItemDetailItemChip";
 
 interface ItemDetailQuestRequirementsProps {
     selectedItemId: string;
@@ -196,23 +197,15 @@ function AnyOfGroupRow({
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
                 {previewItems.map((item) => (
-                    <span
+                    <ItemDetailItemChip
                         key={item.id}
-                        className={`flex h-10 max-w-44 items-center gap-2 text-[11px] ${
+                        item={item}
+                        className={`text-[11px] ${
                             item.id === selectedItemId
-                                ? "text-foreground"
-                                : "text-muted-foreground"
+                                ? "ring-1 ring-tarkov-green/25"
+                                : "opacity-75"
                         }`}
-                    >
-                        {(item.iconLink ?? item.gridImageLink) && (
-                            <img
-                                src={item.iconLink ?? item.gridImageLink}
-                                alt=""
-                                className="h-8 w-8 shrink-0 object-contain"
-                            />
-                        )}
-                        <span className="min-w-0 truncate">{item.name}</span>
-                    </span>
+                    />
                 ))}
                 {hiddenItemCount > 0 && (
                     <span className="px-1.5 text-[11px] text-muted-foreground">

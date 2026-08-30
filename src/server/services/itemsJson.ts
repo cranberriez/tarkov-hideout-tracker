@@ -4,13 +4,19 @@ import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { redis } from "@/server/redis";
 import { getJsonHideoutStations } from "@/server/services/hideoutJson";
 import { getCachedJsonFullQuestData } from "@/server/services/questsJson";
-import { fetchTarkovJsonDataset } from "@/server/services/tarkovJson/client";
+import {
+    fetchTarkovJsonData,
+    fetchTarkovJsonDataset,
+} from "@/server/services/tarkovJson/client";
 import type { TarkovJsonGameMode } from "@/server/services/tarkovJson/client";
 import { parseNonEmptyTimedResponse } from "@/server/services/tarkovJson/cache";
 import { excludeRemovedQuests } from "@/lib/utils/removed-quests";
 import type {
     FullQuestObjective,
+    ItemAmount,
+    ItemCraftRecipe,
     ItemDetails,
+    ItemTraderOffer,
     ItemsPayload,
     MarketPrice,
     QuestItem,
@@ -74,6 +80,136 @@ interface JsonTrader {
     name: string;
     normalizedName: string;
     imageLink?: string | null;
+}
+
+interface JsonContainedItem {
+    item: string;
+    count?: number;
+    attributes?: { tool?: boolean };
+}
+
+interface JsonBarter {
+    id: string;
+    trader: string;
+    taskUnlock?: string | null;
+    requiredItems?: JsonContainedItem[];
+    minTraderLevel?: number;
+    offeredItem: JsonContainedItem;
+    buyLimit?: number | null;
+}
+
+interface JsonCraft {
+    id: string;
+    station: string;
+    level?: number;
+    duration?: number;
+    taskUnlock?: string | null;
+    requiredItems?: JsonContainedItem[];
+    requiredQuestItems?: JsonContainedItem[];
+    gameEditions?: string[];
+    productItem: JsonContainedItem;
+}
+
+function toItemAmount(
+    containedItem: JsonContainedItem,
+    items: Record<string, JsonMarketItem>,
+    translateItem: (key: string | null | undefined) => string,
+): ItemAmount {
+    const item = items[containedItem.item];
+    return {
+        item: {
+            id: containedItem.item,
+            name: item ? translateItem(item.name) : "Quest item",
+            normalizedName: item?.normalizedName ?? containedItem.item,
+            iconLink: item?.iconLink,
+            gridImageLink: item?.gridImageLink,
+        },
+        count: containedItem.count ?? 1,
+        isTool: containedItem.attributes?.tool === true,
+    };
+}
+
+function indexTraderOffers(
+    barters: JsonBarter[],
+    items: Record<string, JsonMarketItem>,
+    traders: Record<string, JsonTrader>,
+    questsById: Map<string, { id: string; name: string; wikiLink?: string | null }>,
+    translateItem: (key: string | null | undefined) => string,
+    translateTrader: (key: string | null | undefined) => string,
+) {
+    const byItemId = new Map<string, ItemTraderOffer[]>();
+    for (const barter of barters) {
+        const trader = traders[barter.trader];
+        const taskUnlock = barter.taskUnlock
+            ? (questsById.get(barter.taskUnlock) ?? {
+                  id: barter.taskUnlock,
+                  name: "Quest unlock",
+              })
+            : null;
+        const offer: ItemTraderOffer = {
+            id: barter.id,
+            trader: {
+                id: barter.trader,
+                name: translateTrader(trader?.name ?? barter.trader),
+                normalizedName: trader?.normalizedName ?? barter.trader,
+                imageLink: trader?.imageLink,
+            },
+            minTraderLevel: barter.minTraderLevel ?? 1,
+            taskUnlock,
+            requiredItems: (barter.requiredItems ?? []).map((item) =>
+                toItemAmount(item, items, translateItem),
+            ),
+            offeredCount: barter.offeredItem.count ?? 1,
+            buyLimit: barter.buyLimit,
+        };
+        const offers = byItemId.get(barter.offeredItem.item) ?? [];
+        offers.push(offer);
+        byItemId.set(barter.offeredItem.item, offers);
+    }
+    return byItemId;
+}
+
+function indexCrafts(
+    crafts: JsonCraft[],
+    items: Record<string, JsonMarketItem>,
+    stations: Array<{ id: string; name: string; normalizedName: string; imageLink?: string }>,
+    questsById: Map<string, { id: string; name: string; wikiLink?: string | null }>,
+    translateItem: (key: string | null | undefined) => string,
+) {
+    const stationsById = new Map(stations.map((station) => [station.id, station]));
+    const byItemId = new Map<string, ItemCraftRecipe[]>();
+    for (const craft of crafts) {
+        const station = stationsById.get(craft.station);
+        const taskUnlock = craft.taskUnlock
+            ? (questsById.get(craft.taskUnlock) ?? {
+                  id: craft.taskUnlock,
+                  name: "Quest unlock",
+              })
+            : null;
+        const recipe: ItemCraftRecipe = {
+            id: craft.id,
+            station: station ?? {
+                id: craft.station,
+                name: "Unknown station",
+                normalizedName: craft.station,
+            },
+            level: craft.level ?? 1,
+            duration: craft.duration ?? 0,
+            taskUnlock,
+            requiredItems: (craft.requiredItems ?? []).map((item) =>
+                toItemAmount(item, items, translateItem),
+            ),
+            requiredQuestItems: (craft.requiredQuestItems ?? []).map((item) =>
+                toItemAmount(item, items, translateItem),
+            ),
+            gameEditions: craft.gameEditions ?? [],
+            productCount: craft.productItem.count ?? 1,
+        };
+        const recipes = byItemId.get(craft.productItem.item) ?? [];
+        recipes.push(recipe);
+        byItemId.set(craft.productItem.item, recipes);
+    }
+    return byItemId;
 }
 
 function readUpdatedAt(meta: unknown): number | null {
@@ -215,12 +351,21 @@ export async function getJsonHideoutRequiredItems(
     }
 
     try {
-        const [stationsResponse, questsResponse, itemsDataset, tradersDataset] =
+        const [
+            stationsResponse,
+            questsResponse,
+            itemsDataset,
+            tradersDataset,
+            barters,
+            crafts,
+        ] =
             await Promise.all([
                 getJsonHideoutStations(gameMode),
                 getCachedJsonFullQuestData(gameMode),
                 fetchTarkovJsonDataset<JsonItemsData>("items", gameMode),
                 fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders", gameMode),
+                fetchTarkovJsonData<JsonBarter[]>("barters", gameMode),
+                fetchTarkovJsonData<JsonCraft[]>("crafts", gameMode),
             ]);
         const fallbackItemsById = new Map<string, ItemDetails>();
 
@@ -239,17 +384,41 @@ export async function getJsonHideoutRequiredItems(
         }
 
         const categories = itemsDataset.data.itemCategories ?? {};
+        const questsById = new Map(
+            questsResponse.data.quests.map((quest) => [
+                quest.id,
+                { id: quest.id, name: quest.name, wikiLink: quest.wikiLink },
+            ]),
+        );
+        const traderOffersByItemId = indexTraderOffers(
+            barters,
+            itemsDataset.data.items,
+            tradersDataset.data,
+            questsById,
+            itemsDataset.translate,
+            tradersDataset.translate,
+        );
+        const craftsByItemId = indexCrafts(
+            crafts,
+            itemsDataset.data.items,
+            stationsResponse.data.stations,
+            questsById,
+            itemsDataset.translate,
+        );
         const items = [...fallbackItemsById].map(([id, fallback]) => {
             const item = itemsDataset.data.items[id];
-            return item
-                ? toItemDetails(
+            if (!item) return fallback;
+            return {
+                ...toItemDetails(
                       item,
                       categories,
                       tradersDataset.data,
                       itemsDataset.translate,
                       tradersDataset.translate,
-                  )
-                : fallback;
+                ),
+                traderOffers: traderOffersByItemId.get(id) ?? [],
+                crafts: craftsByItemId.get(id) ?? [],
+            };
         });
 
         if (items.length === 0) {

@@ -16,6 +16,7 @@ import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/ques
 import { deriveQuestAnyOfGroups, deriveQuestItemState } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { useDataContext } from "@/app/(data)/_dataContext";
+import { toTarkovJsonGameMode } from "@/lib/game-mode";
 
 export interface ItemDetailModalProps {
     item: ItemDetails | null;
@@ -133,6 +134,8 @@ export function ItemDetailModal({
         questShowLightkeeper,
         itemCounts,
         addItemCounts,
+        gameEdition,
+        gameMode,
     } = useUserStore();
     const marketPrice = selectedItem?.marketPrice;
 
@@ -299,8 +302,17 @@ export function ItemDetailModal({
 
     const showInventory = !isRouble;
     const showMarket = !isRouble && hasItemMarketData(marketPrice);
+    const showPriceHistory =
+        !isRouble &&
+        !isFiat &&
+        (marketPrice?.avg24hPrice != null || marketPrice?.lastLowPrice != null);
     const showSidebar = showInventory || showMarket;
-    const showUsage = stationRequirements.length > 0 || hasQuestRequirements;
+    const showUsage =
+        stationRequirements.length > 0 ||
+        hasQuestRequirements ||
+        (selectedItem.traderOffers?.length ?? 0) > 0 ||
+        (selectedItem.crafts?.length ?? 0) > 0 ||
+        showPriceHistory;
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -366,6 +378,13 @@ export function ItemDetailModal({
                                     questItemState={questItemState}
                                     anyOfGroups={questAnyOfGroupState}
                                     itemDetailsById={itemDetailsById}
+                                    traderOffers={selectedItem.traderOffers ?? []}
+                                    crafts={selectedItem.crafts ?? []}
+                                    completedQuests={completedQuests}
+                                    traderLoyaltyLevels={questTraderLoyaltyLevels}
+                                    gameEdition={gameEdition}
+                                    gameMode={toTarkovJsonGameMode(gameMode)}
+                                    showPriceHistory={showPriceHistory}
                                 />
                             )}
                         </div>

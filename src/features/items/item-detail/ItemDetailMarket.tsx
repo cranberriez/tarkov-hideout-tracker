@@ -66,9 +66,9 @@ export function ItemDetailMarket({
             aside={
                 <div className="flex items-center gap-2">
                     {!isFiat && (minLevelForFlea != null || !hasFleaData) && (
-                        minLevelForFlea != null ? (
-                            <span className="flex items-center gap-1 rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                                Flea level {minLevelForFlea}
+                        minLevelForFlea != null && hasFleaData ? (
+                            <span className="flex items-center gap-1 rounded bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+                                LVL {minLevelForFlea}
                                 {canSellOnFlea ? (
                                     <Check size={11} strokeWidth={2.5} className="text-green-400" />
                                 ) : (
@@ -76,7 +76,7 @@ export function ItemDetailMarket({
                                 )}
                             </span>
                         ) : (
-                            <span className="rounded border border-red-400/25 bg-red-400/8 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-red-300/90">
+                            <span className="rounded bg-red-400/8 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-red-300/90">
                                 No flea
                             </span>
                         )

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ClipboardList, Hammer } from "lucide-react";
+import { ChartNoAxesCombined, ClipboardList, Hammer, ShoppingCart, Wrench } from "lucide-react";
 import type {
     DerivedQuestAnyOfGroup,
     DerivedQuestItemState,
@@ -11,9 +11,14 @@ import {
     type StationRequirementEntry,
 } from "./ItemDetailHideoutRequirements";
 import { ItemDetailQuestRequirements } from "./ItemDetailQuestRequirements";
-import type { ItemDetails } from "@/types";
+import { ItemDetailAcquisition } from "./ItemDetailAcquisition";
+import { ItemDetailCrafting } from "./ItemDetailCrafting";
+import { ItemDetailPriceHistory } from "./ItemDetailPriceHistory";
+import type { ItemCraftRecipe, ItemDetails, ItemTraderOffer } from "@/types";
+import type { GameEdition } from "@/lib/stores/useUserStore";
+import type { TarkovJsonGameMode } from "@/lib/game-mode";
 
-type UsageTab = "hideout" | "quests";
+type UsageTab = "hideout" | "quests" | "traders" | "crafting" | "prices";
 
 interface ItemDetailUsageTabsProps {
     className?: string;
@@ -25,6 +30,13 @@ interface ItemDetailUsageTabsProps {
     questItemState: DerivedQuestItemState | null;
     anyOfGroups: DerivedQuestAnyOfGroup[];
     itemDetailsById: Record<string, ItemDetails>;
+    traderOffers: ItemTraderOffer[];
+    crafts: ItemCraftRecipe[];
+    completedQuests: Record<string, boolean>;
+    traderLoyaltyLevels: Record<string, number>;
+    gameEdition: GameEdition | null;
+    gameMode: TarkovJsonGameMode;
+    showPriceHistory: boolean;
 }
 
 export function ItemDetailUsageTabs({
@@ -37,12 +49,22 @@ export function ItemDetailUsageTabs({
     questItemState,
     anyOfGroups,
     itemDetailsById,
+    traderOffers,
+    crafts,
+    completedQuests,
+    traderLoyaltyLevels,
+    gameEdition,
+    gameMode,
+    showPriceHistory,
 }: ItemDetailUsageTabsProps) {
     const hideoutCount = stationRequirements.reduce((count, [, reqs]) => count + reqs.length, 0);
     const questCount = (questItemState?.relatedQuestCount ?? 0) + anyOfGroups.length;
     const availableTabs: UsageTab[] = [
         ...(hideoutCount > 0 ? (["hideout"] as const) : []),
         ...(questCount > 0 ? (["quests"] as const) : []),
+        ...(traderOffers.length > 0 ? (["traders"] as const) : []),
+        ...(crafts.length > 0 ? (["crafting"] as const) : []),
+        ...(showPriceHistory ? (["prices"] as const) : []),
     ];
     const [activeTab, setActiveTab] = useState<UsageTab>(availableTabs[0] ?? "hideout");
 
@@ -50,7 +72,7 @@ export function ItemDetailUsageTabs({
 
     return (
         <section className={`min-w-0 bg-card/45 ${className}`}>
-            <div className="flex h-10 items-stretch border-b border-border-color" role="tablist">
+            <div className="flex h-10 items-stretch overflow-x-auto border-b border-border-color" role="tablist">
                 {hideoutCount > 0 && (
                     <TabButton
                         active={activeTab === "hideout"}
@@ -69,17 +91,44 @@ export function ItemDetailUsageTabs({
                         icon={<ClipboardList size={13} />}
                     />
                 )}
+                {traderOffers.length > 0 && (
+                    <TabButton
+                        active={activeTab === "traders"}
+                        onClick={() => setActiveTab("traders")}
+                        label="Traders"
+                        count={traderOffers.length}
+                        icon={<ShoppingCart size={13} />}
+                    />
+                )}
+                {crafts.length > 0 && (
+                    <TabButton
+                        active={activeTab === "crafting"}
+                        onClick={() => setActiveTab("crafting")}
+                        label="Crafting"
+                        count={crafts.length}
+                        icon={<Wrench size={13} />}
+                    />
+                )}
+                {showPriceHistory && (
+                    <TabButton
+                        active={activeTab === "prices"}
+                        onClick={() => setActiveTab("prices")}
+                        label="History"
+                        icon={<ChartNoAxesCombined size={13} />}
+                    />
+                )}
             </div>
 
             <div role="tabpanel">
-                {activeTab === "hideout" && hideoutCount > 0 ? (
+                {activeTab === "hideout" && hideoutCount > 0 && (
                     <ItemDetailHideoutRequirements
                         selectedItemImageLink={selectedItemImageLink}
                         stationRequirements={stationRequirements}
                         stationLevels={stationLevels}
                         hiddenStations={hiddenStations}
                     />
-                ) : (
+                )}
+                {activeTab === "quests" && questCount > 0 && (
                     <ItemDetailQuestRequirements
                         selectedItemId={selectedItemId}
                         selectedItemImageLink={selectedItemImageLink}
@@ -87,6 +136,24 @@ export function ItemDetailUsageTabs({
                         anyOfGroups={anyOfGroups}
                         itemDetailsById={itemDetailsById}
                     />
+                )}
+                {activeTab === "traders" && traderOffers.length > 0 && (
+                    <ItemDetailAcquisition
+                        offers={traderOffers}
+                        completedQuests={completedQuests}
+                        traderLoyaltyLevels={traderLoyaltyLevels}
+                    />
+                )}
+                {activeTab === "crafting" && crafts.length > 0 && (
+                    <ItemDetailCrafting
+                        recipes={crafts}
+                        completedQuests={completedQuests}
+                        stationLevels={stationLevels}
+                        gameEdition={gameEdition}
+                    />
+                )}
+                {activeTab === "prices" && showPriceHistory && (
+                    <ItemDetailPriceHistory itemId={selectedItemId} mode={gameMode} />
                 )}
             </div>
         </section>
@@ -103,7 +170,7 @@ function TabButton({
     active: boolean;
     onClick: () => void;
     label: string;
-    count: number;
+    count?: number;
     icon: ReactNode;
 }) {
     return (
@@ -120,7 +187,9 @@ function TabButton({
         >
             {icon}
             {label}
-            <span className="font-mono text-[10px] text-muted-foreground">{count}</span>
+            {count !== undefined && (
+                <span className="font-mono text-[10px] text-muted-foreground">{count}</span>
+            )}
         </button>
     );
 }

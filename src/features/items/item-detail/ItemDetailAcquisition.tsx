@@ -1,0 +1,170 @@
+"use client";
+
+import Link from "next/link";
+import { Check, LockKeyhole, ShoppingCart } from "lucide-react";
+import type { ItemAmount, ItemTraderOffer } from "@/types";
+import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
+import { ItemDetailItemChip } from "./ItemDetailItemChip";
+
+interface ItemDetailAcquisitionProps {
+    offers: ItemTraderOffer[];
+    completedQuests: Record<string, boolean>;
+    traderLoyaltyLevels: Record<string, number>;
+}
+
+export function ItemDetailAcquisition({
+    offers,
+    completedQuests,
+    traderLoyaltyLevels,
+}: ItemDetailAcquisitionProps) {
+    const sorted = [...offers].sort((a, b) => {
+        const aAvailable = isOfferAvailable(a, completedQuests, traderLoyaltyLevels);
+        const bAvailable = isOfferAvailable(b, completedQuests, traderLoyaltyLevels);
+        return Number(bAvailable) - Number(aAvailable) || a.minTraderLevel - b.minTraderLevel;
+    });
+
+    return (
+        <div className="divide-y divide-border-color">
+            {sorted.map((offer) => {
+                const currentLoyalty = traderLoyaltyLevels[offer.trader.id] ?? 1;
+                const loyaltyMet = currentLoyalty >= offer.minTraderLevel;
+                const questMet = !offer.taskUnlock || completedQuests[offer.taskUnlock.id] === true;
+                const available = loyaltyMet && questMet;
+                const isCurrencyPurchase =
+                    offer.requiredItems.length > 0 &&
+                    offer.requiredItems.every((entry) =>
+                        ["roubles", "dollars", "euros"].includes(entry.item.normalizedName),
+                    );
+
+                return (
+                    <div key={offer.id} className="bg-black/10 px-3 py-3">
+                        <div className="flex items-center gap-2.5">
+                            {offer.trader.imageLink ? (
+                                <img
+                                    src={offer.trader.imageLink}
+                                    alt=""
+                                    className="h-8 w-8 rounded-full object-cover"
+                                />
+                            ) : (
+                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5">
+                                    <ShoppingCart size={14} />
+                                </span>
+                            )}
+                            <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="text-sm font-medium text-foreground">
+                                        {offer.trader.name}
+                                    </span>
+                                    <span className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                        {isCurrencyPurchase ? "Purchase" : "Barter"}
+                                    </span>
+                                    <AvailabilityBadge available={available} />
+                                    {!available && (
+                                        <LockedReasons
+                                            offer={offer}
+                                            loyaltyMet={loyaltyMet}
+                                            questMet={questMet}
+                                            currentLoyalty={currentLoyalty}
+                                        />
+                                    )}
+                                </div>
+                                <div className="mt-0.5 text-[11px] text-muted-foreground">
+                                    Receives ×{offer.offeredCount} · LL{offer.minTraderLevel}
+                                    {offer.buyLimit ? ` · Limit ${offer.buyLimit}` : ""}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-2.5 flex flex-wrap gap-2">
+                            {offer.requiredItems.map((entry) => (
+                                <CostItem key={entry.item.id} entry={entry} />
+                            ))}
+                        </div>
+
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+function isOfferAvailable(
+    offer: ItemTraderOffer,
+    completedQuests: Record<string, boolean>,
+    loyalty: Record<string, number>,
+) {
+    return (
+        (loyalty[offer.trader.id] ?? 1) >= offer.minTraderLevel &&
+        (!offer.taskUnlock || completedQuests[offer.taskUnlock.id] === true)
+    );
+}
+
+function CostItem({ entry }: { entry: ItemAmount }) {
+    const currencySymbol =
+        entry.item.normalizedName === "roubles"
+            ? "₽"
+            : entry.item.normalizedName === "dollars"
+              ? "$"
+              : entry.item.normalizedName === "euros"
+                ? "€"
+                : null;
+    return (
+        <ItemDetailItemChip
+            item={entry.item}
+            quantityLabel={
+                currencySymbol
+                    ? `${currencySymbol}${entry.count.toLocaleString()}`
+                    : `×${entry.count}`
+            }
+        />
+    );
+}
+
+function AvailabilityBadge({ available }: { available: boolean }) {
+    return (
+        <span
+            className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] ${
+                available
+                    ? "bg-tarkov-green/10 text-tarkov-green"
+                    : "bg-amber-400/10 text-amber-200"
+            }`}
+        >
+            {available ? <Check size={10} /> : <LockKeyhole size={10} />}
+            {available ? "Available" : "Locked"}
+        </span>
+    );
+}
+
+function LockedReasons({
+    offer,
+    loyaltyMet,
+    questMet,
+    currentLoyalty,
+}: {
+    offer: ItemTraderOffer;
+    loyaltyMet: boolean;
+    questMet: boolean;
+    currentLoyalty: number;
+}) {
+    return (
+        <span className="flex flex-wrap items-center gap-x-1 text-[10px] text-amber-200">
+            {!loyaltyMet && (
+                <span>
+                    Needs LL{offer.minTraderLevel} (current LL{currentLoyalty})
+                </span>
+            )}
+            {!loyaltyMet && !questMet && <span className="text-muted-foreground">·</span>}
+            {!questMet && offer.taskUnlock && (
+                <span>
+                    Needs{" "}
+                    <Link
+                        href={getQuestDeepLinkHref(offer.taskUnlock.id)}
+                        className="underline decoration-amber-200/30 underline-offset-2 hover:text-foreground"
+                    >
+                        {offer.taskUnlock.name}
+                    </Link>
+                </span>
+            )}
+        </span>
+    );
+}
