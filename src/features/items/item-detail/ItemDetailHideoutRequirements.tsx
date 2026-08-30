@@ -37,15 +37,24 @@ export function ItemDetailHideoutRequirements({
     );
     const levels = Array.from({ length: maxStationLevel }, (_, index) => index + 1);
     const isRoomyLayout = maxStationLevel <= 3;
+    const precedingLevelColumns =
+        maxStationLevel > 1
+            ? `repeat(${maxStationLevel - 1}, minmax(76px, 1fr)) `
+            : "";
+    const precedingStationRows =
+        stationRequirements.length > 1
+            ? `repeat(${stationRequirements.length - 1}, max-content) `
+            : "";
 
     return (
-        <div className="overflow-x-auto">
+        <div className="min-h-0 flex-1 overflow-x-auto">
             <div
                 role="table"
                 aria-label="Hideout station item requirements"
-                className="grid w-full"
+                className="grid min-h-full w-full"
                 style={{
-                    gridTemplateColumns: `minmax(156px, 240px) repeat(${Math.max(maxStationLevel - 1, 0)}, minmax(76px, 1fr)) minmax(80px, 1.05fr)`,
+                    gridTemplateColumns: `minmax(156px, 240px) ${precedingLevelColumns}minmax(80px, 1.05fr)`,
+                    gridTemplateRows: `auto ${precedingStationRows}minmax(max-content, 1fr)`,
                 }}
             >
                 <div
@@ -68,8 +77,9 @@ export function ItemDetailHideoutRequirements({
                     ))}
                 </div>
 
-                {stationRequirements.map(([stationName, reqs]) => {
+                {stationRequirements.map(([stationName, reqs], stationIndex) => {
                     const station = reqs[0];
+                    const isLastStation = stationIndex === stationRequirements.length - 1;
                     const currentLevel = stationLevels[station.stationId] ?? 0;
                     const isHidden = hiddenStations[station.stationId];
                     const isComplete = reqs.every((req) => req.isCompleted);
@@ -84,13 +94,15 @@ export function ItemDetailHideoutRequirements({
                         <div
                             key={station.stationId}
                             role="row"
-                            className={`col-span-full grid min-h-14 grid-cols-subgrid border-b border-border-color last:border-b-0 ${
+                            className={`col-span-full grid grid-cols-subgrid border-b border-border-color last:border-b-0 ${
                                 isComplete ? "bg-tarkov-green/[0.025]" : ""
                             }`}
                         >
                             <div
                                 role="cell"
-                                className="flex min-w-0 items-center gap-2.5 p-2"
+                                className={`flex min-h-14 min-w-0 gap-2.5 p-2 ${
+                                    isLastStation ? "items-start" : "items-center"
+                                }`}
                             >
                                 <span
                                     className={`relative shrink-0 overflow-hidden rounded-md bg-white/5 ${
@@ -139,7 +151,9 @@ export function ItemDetailHideoutRequirements({
                                 <div
                                     key={level}
                                     role="cell"
-                                    className={`flex min-h-11 min-w-0 flex-col items-start justify-center p-2 ${
+                                    className={`flex min-h-14 min-w-0 flex-col items-start p-2 ${
+                                        isLastStation ? "justify-start" : "justify-center"
+                                    } ${
                                         level % 2 !== 0 ? "bg-white/[0.035]" : ""
                                     }`}
                                 >

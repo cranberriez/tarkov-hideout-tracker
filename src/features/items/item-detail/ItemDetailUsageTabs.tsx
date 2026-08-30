@@ -85,7 +85,7 @@ export function ItemDetailUsageTabs({
     if (availableTabs.length === 0) return null;
 
     return (
-        <section className={`min-w-0 bg-card/45 ${className}`}>
+        <section className={`flex min-h-0 min-w-0 flex-col bg-card/45 ${className}`}>
             <div className="flex h-10 items-stretch overflow-x-auto border-b border-border-color" role="tablist">
                 {hideoutCount > 0 && (
                     <TabButton
@@ -133,7 +133,7 @@ export function ItemDetailUsageTabs({
                 )}
             </div>
 
-            <div role="tabpanel">
+            <div role="tabpanel" className="flex min-h-0 flex-1 flex-col">
                 {selectedTab === "hideout" && hideoutCount > 0 && (
                     <ItemDetailHideoutRequirements
                         selectedItemImageLink={selectedItemImageLink}
