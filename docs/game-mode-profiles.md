@@ -37,7 +37,13 @@ with the current destination data on the right before replacement is allowed.
 The active mode is mirrored to the `tarkov-active-game-mode` cookie. Server
 components use the cookie to select mode-prefixed progression data. Switching in
 the character panel updates local state and the cookie, then refreshes the current
-route behind a loading overlay.
+route behind a loading overlay. After persisted state hydrates, a client guard
+repairs a missing or stale cookie and refreshes server data so the displayed
+profile and selected dataset cannot drift apart.
+
+KORD hideout requirements use the `pvp-season` payload as authoritative. The
+reviewed wiki quantities, requirement allow-list, and FiR fallbacks used by the
+long-lived PVP/PVE hideouts are not applied to seasonal requirements.
 
 KORD does not provide Lightkeeper. Quest and item pages remove Lightkeeper-issued
 quests and all quests marked as Lightkeeper progression before building their

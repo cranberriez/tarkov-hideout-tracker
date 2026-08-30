@@ -67,6 +67,8 @@ export function ItemDetailModal({
             stationName: string;
             stationNormalizedName: string;
             stationId: string;
+            stationImageLink?: string;
+            stationMaxLevel: number;
             level: number;
             count: number;
             isFir: boolean;
@@ -77,8 +79,10 @@ export function ItemDetailModal({
 
         stations.forEach((station) => {
             const currentLevel = stationLevels[station.id] ?? 0;
-            const maxLevel =
-                station.levels.length > 0 ? station.levels[station.levels.length - 1].level : 0;
+            const maxLevel = station.levels.reduce(
+                (highestLevel, level) => Math.max(highestLevel, level.level),
+                0,
+            );
             const isStationMaxed = currentLevel >= maxLevel;
 
             station.levels.forEach((level) => {
@@ -88,6 +92,8 @@ export function ItemDetailModal({
                             stationName: station.name,
                             stationNormalizedName: station.normalizedName,
                             stationId: station.id,
+                            stationImageLink: station.imageLink,
+                            stationMaxLevel: maxLevel,
                             level: level.level,
                             count: req.count,
                             isFir: req.isFir,

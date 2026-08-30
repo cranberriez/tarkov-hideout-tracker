@@ -613,7 +613,7 @@ API quirks to keep in mind:
 
 | Layer                    | Key                                      | Freshness                   |
 | ------------------------ | ---------------------------------------- | --------------------------- |
-| Redis                    | `quests:full:v14:{mode}` + matching `:meta` key | 24h service freshness check |
+| Redis                    | `quests:full:v15:{mode}` + matching `:meta` key | 24h service freshness check |
 | Next.js `unstable_cache` | `["quests-full"]`                        | `revalidate: 43200`         |
 
 To invalidate quest data for application code, bump the relevant version in `src/lib/cfg/cacheVersions.ts`. See `caching-architecture.md`.

@@ -10,6 +10,7 @@ import { tarkovDataSource } from "@/server/services/tarkovData";
 import { isCacheEnabled } from "@/server/cache";
 import { PROGRESSION_DATA_FROZEN } from "@/lib/cfg/cacheVersions";
 import { getRedisCacheStatus } from "@/server/redis";
+import { ActiveGameModeSync } from "@/components/core/ActiveGameModeSync";
 
 interface DataLayoutProps {
     children: ReactNode;
@@ -50,6 +51,7 @@ export default async function DataLayout({ children }: DataLayoutProps) {
 
     return (
         <DataProvider value={value}>
+            <ActiveGameModeSync />
             {children}
             <RouteAwareFooter
                 statusConfig={{

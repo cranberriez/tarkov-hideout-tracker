@@ -7,6 +7,10 @@ import { redis, writeRedisAfterResponse } from "@/server/redis";
 import { getGlobalItemList, getGlobalSkillList } from "@/server/services/itemsJson";
 import { resolveItemReferences } from "@/server/services/itemReferences";
 import {
+    resolveHideoutRequirementValues,
+    usesReviewedHideoutOverrides,
+} from "@/lib/utils/hideout-requirement-overrides";
+import {
     fetchTarkovJsonDataset,
     type TarkovJsonGameMode,
 } from "@/server/services/tarkovJson/client";
@@ -98,9 +102,11 @@ export async function getJsonHideoutStations(
         );
 
         const stations: Station[] = rawStations.map((station) => {
-            const wikiStation = wikiData.find(
-                (entry) => entry.normalizedName === station.normalizedName,
-            );
+            const wikiStation = usesReviewedHideoutOverrides(gameMode)
+                ? wikiData.find(
+                      (entry) => entry.normalizedName === station.normalizedName,
+                  )
+                : undefined;
 
             return {
                 id: station.id,
@@ -125,24 +131,29 @@ export async function getJsonHideoutStations(
                             (entry) =>
                                 entry.type === "item" && entry.name === item.normalizedName,
                         );
-                        const quantity = wikiRequirement?.quantity ?? requirement.count ?? 0;
-                        const isFir =
+                        const upstreamFoundInRaid =
                             requirement.attributes?.foundInRaid === true ||
-                            requirement.attributes?.foundInRaid === "true" ||
-                            (wikiRequirement?.foundInRaid ??
+                            requirement.attributes?.foundInRaid === "true";
+                        const values = resolveHideoutRequirementValues({
+                            gameMode,
+                            upstreamCount: requirement.count ?? 0,
+                            upstreamFoundInRaid,
+                            reviewedQuantity: wikiRequirement?.quantity,
+                            reviewedFoundInRaid: wikiRequirement?.foundInRaid,
+                            fallbackFoundInRaid:
                                 (requiresFoundInRaid as Record<
                                     string,
                                     Record<number, string[]>
                                 >)[station.normalizedName]?.[level.level]?.includes(
                                     item.normalizedName,
-                                ) ??
-                                false);
+                                ) ?? false,
+                        });
 
                         return {
                             id: requirement.id,
                             itemId: item.id,
-                            count: quantity,
-                            isFir,
+                            count: values.count,
+                            isFir: values.isFir,
                             isTool: requirement.attributes?.tool === true,
                         };
                     });

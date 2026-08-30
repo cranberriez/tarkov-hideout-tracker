@@ -1,7 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { DEFAULT_IGNORED_QUESTS } from "../cfg/defaultIgnoredQuests";
-import { GAME_MODES, toTarkovJsonGameMode, type GameMode } from "../game-mode";
+import {
+    GAME_MODES,
+    serializeActiveGameModeCookie,
+    toTarkovJsonGameMode,
+    type GameMode,
+} from "../game-mode";
 import type { Station } from "../../types";
 
 export { GAME_MODES, toTarkovJsonGameMode };
@@ -817,7 +822,7 @@ export const useUserStore = create<UserState>()(
                     if (state.gameMode === mode) return {};
                     const profile = state.profiles[mode] ?? createDefaultPlayerProfile();
                     if (typeof document !== "undefined") {
-                        document.cookie = `tarkov-active-game-mode=${mode}; path=/; max-age=31536000; samesite=lax`;
+                        document.cookie = serializeActiveGameModeCookie(mode);
                     }
                     return { ...profile, gameMode: mode };
                 }),
@@ -953,7 +958,7 @@ export const useUserStore = create<UserState>()(
             resetAll: () => {
                 const profiles = createDefaultProfiles();
                 if (typeof document !== "undefined") {
-                    document.cookie = "tarkov-active-game-mode=PVP; path=/; max-age=31536000; samesite=lax";
+                    document.cookie = serializeActiveGameModeCookie("PVP");
                 }
                 rawSet(() => ({
                     stationLevels: {},
@@ -1038,7 +1043,7 @@ export const useUserStore = create<UserState>()(
                         state.deprecatedLegacyState,
                     );
                     if (typeof document !== "undefined") {
-                        document.cookie = `tarkov-active-game-mode=${targetMode}; path=/; max-age=31536000; samesite=lax`;
+                        document.cookie = serializeActiveGameModeCookie(targetMode);
                     }
                     return {
                         ...convertedProfile,

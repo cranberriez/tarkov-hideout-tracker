@@ -1,11 +1,11 @@
 export const CACHE_VERSIONS = {
-	hideoutStations: 7,
-	itemCatalog: 3,
-	itemBarters: 1,
-	itemCrafts: 1,
-	quests: 6,
-	questsFull: 14,
-	traders: 1,
+	hideoutStations: 9,
+	itemCatalog: 4,
+	itemBarters: 2,
+	itemCrafts: 2,
+	quests: 7,
+	questsFull: 15,
+	traders: 2,
 } as const;
 
 // Emergency switch for pinning the last known-good progression datasets.

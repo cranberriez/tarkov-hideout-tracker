@@ -1,7 +1,12 @@
 import { cookies } from "next/headers";
-import { parseGameMode, toTarkovJsonGameMode, type GameMode } from "@/lib/game-mode";
+import {
+    ACTIVE_GAME_MODE_COOKIE,
+    parseGameMode,
+    toTarkovJsonGameMode,
+    type GameMode,
+} from "@/lib/game-mode";
 
-export const ACTIVE_GAME_MODE_COOKIE = "tarkov-active-game-mode";
+export { ACTIVE_GAME_MODE_COOKIE };
 
 export async function getActiveGameMode(): Promise<GameMode> {
     const cookieStore = await cookies();
