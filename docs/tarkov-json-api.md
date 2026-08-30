@@ -30,9 +30,12 @@ JSON and GraphQL providers expose the same `TimedResponse` payloads and use the 
 Every JSON adapter validates both cached and upstream data. Progression Redis keys are separated by `regular`, `pve`, or `pvp-season`:
 
 - Empty or malformed Redis bodies are ignored rather than treated as fresh.
+- Redis connection failures are treated as misses and never prevent an upstream fetch.
 - Missing or empty upstream datasets throw before `redis.mset`.
+- Upstream requests time out after 30 seconds.
 - A valid stale Redis body is returned when an upstream refresh fails.
 - An invalid upstream response never overwrites a valid Redis body.
+- Validated Redis writes are scheduled with Next.js `after()` and do not delay the response.
 
 The JSON client fetches base and `_en` locale payloads together. If a PVE or KORD
 mode-specific locale payload is unavailable, the client falls back to the matching

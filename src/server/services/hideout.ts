@@ -1,9 +1,9 @@
-import { redis } from "@/server/redis";
+import { redis, writeRedisAfterResponse } from "@/server/redis";
 import { requiresFoundInRaid } from "@/lib/cfg/foundInRaid";
 import { wikiData } from "@/lib/data/wiki-data";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { unstable_cache } from "next/cache";
-import { cacheWhenEnabled } from "@/server/cache";
+import { cacheWhenEnabled, DATA_CACHE_REVALIDATE_SECONDS } from "@/server/cache";
 import { TARKOV_GRAPHQL_HEADERS } from "@/server/services/tarkovApi";
 import {
     isProgressionCacheUsable,
@@ -324,10 +324,10 @@ export async function getHideoutStations(): Promise<TimedResponse<HideoutStation
     // 3. Store in Redis
     const jsonBody = JSON.stringify(body);
 
-    await redis.mset({
+    await writeRedisAfterResponse({
         [REDIS_KEY]: jsonBody,
         [REDIS_KEY_META]: { updatedAt },
-    });
+    }, "GraphQL hideout stations");
 
     return body;
 }
@@ -337,9 +337,7 @@ const cachedHideoutStations = unstable_cache(
         return getHideoutStations();
     },
     ["hideout-stations"],
-    // Station data only changes with game patches. Long time-based
-    // Frozen indefinitely during the Tarkov 1.1 transition.
-    { revalidate: false, tags: ["hideout-data"] }
+    { revalidate: DATA_CACHE_REVALIDATE_SECONDS, tags: ["hideout-data"] }
 );
 
 export const getCachedHideoutStations = cacheWhenEnabled(

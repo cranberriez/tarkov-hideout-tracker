@@ -85,7 +85,7 @@ Items below the `cheapPriceThreshold` (default 5,000 ₽). Can be hidden from th
 
 - Hideout station structure (from Tarkov.dev GraphQL, cached 12h)
 - Required item metadata (from Tarkov.dev, cached 12h)
-- Tracked item metadata and market prices for the active mode (from Tarkov.dev JSON items, cached for one hour)
+- Tracked item metadata and market prices for the active mode (from Tarkov.dev JSON items, cached for 24 hours in production)
 - Quest data (from the Tarkov.dev JSON API, cached in Redis) is fetched by pages that need it. `/quests` receives full quest data as server props and derives trader/map lists from that data.
 
 See `state-management.md` for store shapes and `data-and-price-context-architecture.md` for the server data flow.

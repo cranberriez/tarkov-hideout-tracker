@@ -52,9 +52,9 @@ Redis storage.
 
 ## Caching
 
-Tracked item records use Redis plus `unstable_cache` with a one-hour freshness
-window and the `item-data` tag. This cache is intentionally independent of the
-temporary progression-data freeze, because price fields are volatile. The raw
+Tracked item records use the primary Next.js cache plus best-effort Redis with a
+24-hour production freshness window and the `item-data` tag. Redis writes are
+scheduled after the response. The raw
 catalog remains server-side; only items referenced by active hideout or quest
 data are sent to the browser.
 

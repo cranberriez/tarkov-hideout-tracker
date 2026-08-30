@@ -12,12 +12,14 @@ import {
 } from "@/components/ui/dialog";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { formatRelativeUpdatedAt, formatUpdatedAt } from "@/lib/utils/format-time";
+import type { RedisCacheState } from "@/server/redis";
 
 export interface DataStatusConfig {
     provider: "json" | "graphql";
     configuredProvider: "json" | "graphql";
     activeDataset: "regular" | "pve" | "pvp-season";
     cacheEnabled: boolean;
+    redisState: RedisCacheState;
     progressionDataFrozen: boolean;
 }
 
@@ -93,6 +95,18 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
             : "The exact dictionary path was not recorded."
         : "This cached response predates locale diagnostics, so the exact dictionary used is unknown.";
     const hasCoreError = Boolean(stationsError || itemsError || !stations || !items);
+    const providerError = stationsError ?? itemsError;
+    const isUsingStaleFallback = [stationsDiagnostics, itemsDiagnostics].some(
+        (entry) => entry?.upstreamStatus === "stale-fallback",
+    );
+    const redisStatus =
+        config.redisState === "available"
+            ? { value: "Available", state: "ok" as const }
+            : config.redisState === "unavailable"
+              ? { value: "Unavailable", state: "warning" as const }
+              : config.redisState === "disabled"
+                ? { value: "Disabled", state: "neutral" as const }
+                : { value: "Not checked", state: "neutral" as const };
 
     return (
         <Dialog>
@@ -131,13 +145,24 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
 
                     <StatusRow
                         label="API provider"
-                        value={config.provider === "json" ? "Tarkov.dev JSON" : "Tarkov.dev GraphQL"}
-                        detail={
-                            config.provider !== config.configuredProvider
-                                ? `${config.activeDataset} requires the JSON provider.`
-                                : `Configured provider: ${config.configuredProvider}.`
+                        value={
+                            hasCoreError
+                                ? "Connection failed"
+                                : isUsingStaleFallback
+                                  ? "Using cached data"
+                                : config.provider === "json"
+                                  ? "Tarkov.dev JSON"
+                                  : "Tarkov.dev GraphQL"
                         }
-                        state="ok"
+                        detail={
+                            providerError ??
+                            (isUsingStaleFallback
+                                ? "The latest provider refresh failed; this is the last validated dataset."
+                                : config.provider !== config.configuredProvider
+                                  ? `${config.activeDataset} requires the JSON provider.`
+                                  : `Configured provider: ${config.configuredProvider}.`)
+                        }
+                        state={hasCoreError ? "error" : isUsingStaleFallback ? "warning" : "ok"}
                     />
                     <StatusRow
                         label="Active dataset"
@@ -151,10 +176,20 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                             config.cacheEnabled && config.progressionDataFrozen
                                 ? "Progression data is pinned to the last known-good cache."
                                 : config.cacheEnabled
-                                  ? "Redis and application caching are active."
+                                  ? "Application caching is active; Redis is a best-effort fallback."
                                   : "Development requests go directly to the upstream provider."
                         }
                         state={config.cacheEnabled ? "ok" : "warning"}
+                    />
+                    <StatusRow
+                        label="Redis fallback"
+                        value={redisStatus.value}
+                        detail={
+                            config.redisState === "unavailable"
+                                ? "Requests continue through the application cache and upstream provider."
+                                : "Redis is optional and is retried on later cache operations."
+                        }
+                        state={redisStatus.state}
                     />
                     <StatusRow
                         label="Localization"

@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
-import { cacheWhenEnabled } from "@/server/cache";
+import { cacheWhenEnabled, DATA_CACHE_REVALIDATE_SECONDS } from "@/server/cache";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
-import { redis } from "@/server/redis";
+import { redis, writeRedisAfterResponse } from "@/server/redis";
 import {
     fetchTarkovJsonDataset,
     type TarkovJsonGameMode,
@@ -12,6 +12,7 @@ import {
 } from "@/server/services/quest-requirements";
 import {
     isProgressionCacheUsable,
+    markStaleFallback,
     parseNonEmptyTimedResponse,
 } from "@/server/services/tarkovJson/cache";
 import { normalizeQuestObjectiveLocations } from "@/server/services/quest-objective-locations";
@@ -593,17 +594,21 @@ export async function getJsonFullQuestData(
         const quests = await fetchAndMapFullQuests(gameMode);
         if (quests.length === 0) throw new Error("Tarkov JSON task mapping produced no quests");
         const updatedAt = Date.now();
-        const body: TimedResponse<FullQuestsPayload> = { data: { quests }, updatedAt };
-        await redis.mset({
+        const body: TimedResponse<FullQuestsPayload> = {
+            data: { quests },
+            updatedAt,
+            diagnostics: { provider: "json", upstreamStatus: "ok" },
+        };
+        await writeRedisAfterResponse({
             [fullBodyKey]: JSON.stringify(body),
             [fullMetaKey]: { updatedAt },
-        });
+        }, "full quests");
         return body;
     } catch (error) {
         console.error("Failed to refresh full quests from Tarkov JSON", error);
         if (cached) {
             console.log("Using stale full quest cache due to JSON upstream error");
-            return cached;
+            return markStaleFallback(cached);
         }
         throw error;
     }
@@ -663,31 +668,35 @@ export async function getJsonQuestData(
         if (quests.length === 0) throw new Error("Tarkov JSON mapping produced no item quests");
 
         const updatedAt = Date.now();
-        const body: TimedResponse<QuestsPayload> = { data: { quests }, updatedAt };
-        await redis.mset({
+        const body: TimedResponse<QuestsPayload> = {
+            data: { quests },
+            updatedAt,
+            diagnostics: { provider: "json", upstreamStatus: "ok" },
+        };
+        await writeRedisAfterResponse({
             [questsBodyKey]: JSON.stringify(body),
             [questsMetaKey]: { updatedAt },
-        });
+        }, "item quests");
         return body;
     } catch (error) {
         console.error("Failed to refresh quests from Tarkov JSON", error);
         if (cached) {
             console.log("Using stale quest cache due to JSON upstream error");
-            return cached;
+            return markStaleFallback(cached);
         }
         throw error;
     }
 }
 
 const cachedJsonQuestData = unstable_cache(getJsonQuestData, ["json-quests"], {
-    revalidate: false,
+    revalidate: DATA_CACHE_REVALIDATE_SECONDS,
     tags: ["quests"],
 });
 
 const cachedJsonFullQuestData = unstable_cache(
     getJsonFullQuestData,
     ["json-quests-full"],
-    { revalidate: false, tags: ["quests"] },
+    { revalidate: DATA_CACHE_REVALIDATE_SECONDS, tags: ["quests"] },
 );
 
 export const getCachedJsonQuestData = cacheWhenEnabled(

@@ -11,6 +11,7 @@ import { RouteAwareFooter } from "@/components/core/RouteAwareFooter";
 import { tarkovDataSource } from "@/server/services/tarkovData";
 import { isCacheEnabled } from "@/server/cache";
 import { PROGRESSION_DATA_FROZEN } from "@/lib/cfg/cacheVersions";
+import { getRedisCacheStatus } from "@/server/redis";
 
 interface DataLayoutProps {
     children: ReactNode;
@@ -69,6 +70,7 @@ export default async function DataLayout({ children }: DataLayoutProps) {
                     configuredProvider: tarkovDataSource,
                     activeDataset: gameMode,
                     cacheEnabled: isCacheEnabled,
+                    redisState: getRedisCacheStatus().state,
                     progressionDataFrozen: PROGRESSION_DATA_FROZEN,
                 }}
             />

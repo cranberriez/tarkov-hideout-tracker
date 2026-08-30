@@ -1,7 +1,11 @@
 import { unstable_cache } from "next/cache";
-import { cacheWhenEnabled } from "@/server/cache";
+import {
+    cacheWhenEnabled,
+    DATA_CACHE_MAX_AGE_MS,
+    DATA_CACHE_REVALIDATE_SECONDS,
+} from "@/server/cache";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
-import { redis } from "@/server/redis";
+import { redis, writeRedisAfterResponse } from "@/server/redis";
 import { getJsonHideoutStations } from "@/server/services/hideoutJson";
 import { getCachedJsonFullQuestData } from "@/server/services/questsJson";
 import {
@@ -9,7 +13,10 @@ import {
     fetchTarkovJsonDataset,
 } from "@/server/services/tarkovJson/client";
 import type { TarkovJsonGameMode } from "@/server/services/tarkovJson/client";
-import { parseNonEmptyTimedResponse } from "@/server/services/tarkovJson/cache";
+import {
+    markStaleFallback,
+    parseNonEmptyTimedResponse,
+} from "@/server/services/tarkovJson/cache";
 import { excludeRemovedQuests } from "@/lib/utils/removed-quests";
 import type {
     FullQuestObjective,
@@ -22,9 +29,6 @@ import type {
     QuestItem,
     TimedResponse,
 } from "@/types";
-
-const ITEM_DATA_REVALIDATE_SECONDS = 60 * 60;
-const ITEM_DATA_MAX_AGE_MS = ITEM_DATA_REVALIDATE_SECONDS * 1000;
 
 interface JsonItemCategory {
     id: string;
@@ -227,7 +231,7 @@ function readUpdatedAt(meta: unknown): number | null {
 
 function isItemCacheFresh(meta: unknown): boolean {
     const updatedAt = readUpdatedAt(meta);
-    return updatedAt !== null && Date.now() - updatedAt < ITEM_DATA_MAX_AGE_MS;
+    return updatedAt !== null && Date.now() - updatedAt < DATA_CACHE_MAX_AGE_MS;
 }
 
 function addQuestObjectiveItems(
@@ -369,6 +373,13 @@ export async function getJsonHideoutRequiredItems(
             ]);
         const fallbackItemsById = new Map<string, ItemDetails>();
 
+        if (Object.keys(itemsDataset.data.items ?? {}).length === 0) {
+            throw new Error("Tarkov JSON items response contained no items");
+        }
+        if (Object.keys(tradersDataset.data ?? {}).length === 0) {
+            throw new Error("Tarkov JSON traders response contained no traders");
+        }
+
         for (const station of stationsResponse.data.stations) {
             for (const level of station.levels) {
                 for (const requirement of level.itemRequirements) {
@@ -438,18 +449,19 @@ export async function getJsonHideoutRequiredItems(
                 usedRegularLocaleFallback:
                     itemsDataset.locale.usedRegularFallback ||
                     tradersDataset.locale.usedRegularFallback,
+                upstreamStatus: "ok",
             },
         };
-        await redis.mset({
+        await writeRedisAfterResponse({
             [bodyKey]: JSON.stringify(body),
             [metaKey]: { updatedAt },
-        });
+        }, "tracked items");
         return body;
     } catch (error) {
         console.error("Failed to refresh tracked items from Tarkov JSON", error);
         if (cached) {
             console.log("Using stale cached items due to JSON upstream error");
-            return cached;
+            return markStaleFallback(cached);
         }
         throw error;
     }
@@ -458,7 +470,7 @@ export async function getJsonHideoutRequiredItems(
 const cachedJsonHideoutRequiredItems = unstable_cache(
     getJsonHideoutRequiredItems,
     ["json-hideout-required-items"],
-    { revalidate: ITEM_DATA_REVALIDATE_SECONDS, tags: ["item-data", "hideout-data"] },
+    { revalidate: DATA_CACHE_REVALIDATE_SECONDS, tags: ["item-data", "hideout-data"] },
 );
 
 export const getCachedJsonHideoutRequiredItems = cacheWhenEnabled(

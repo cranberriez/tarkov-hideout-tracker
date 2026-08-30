@@ -1,4 +1,5 @@
 import type { TimedResponse } from "@/types";
+import { DATA_CACHE_MAX_AGE_MS } from "../../cache";
 import { PROGRESSION_DATA_FROZEN } from "../../../lib/cfg/cacheVersions";
 
 export function parseNonEmptyTimedResponse<TPayload>(
@@ -20,13 +21,26 @@ export function parseNonEmptyTimedResponse<TPayload>(
     }
 }
 
+export function markStaleFallback<TPayload>(
+    response: TimedResponse<TPayload>,
+): TimedResponse<TPayload> {
+    return {
+        ...response,
+        diagnostics: {
+            provider: response.diagnostics?.provider ?? "json",
+            ...response.diagnostics,
+            upstreamStatus: "stale-fallback",
+        },
+    };
+}
+
 export function isFreshCache(cachedMeta: unknown, now = Date.now()): boolean {
     if (!cachedMeta || typeof cachedMeta !== "object" || !("updatedAt" in cachedMeta)) {
         return false;
     }
 
     const updatedAt = (cachedMeta as { updatedAt?: unknown }).updatedAt;
-    return typeof updatedAt === "number" && now - updatedAt < 12 * 60 * 60 * 1000;
+    return typeof updatedAt === "number" && now - updatedAt < DATA_CACHE_MAX_AGE_MS;
 }
 
 export function isProgressionCacheUsable(cachedMeta: unknown, now = Date.now()): boolean {

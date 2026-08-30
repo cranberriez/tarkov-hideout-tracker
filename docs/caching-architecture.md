@@ -1,28 +1,32 @@
 # Caching Architecture
 
-The app uses Upstash Redis for cross-deployment caching and Next.js
-`unstable_cache` for request/render caching. Cache versions live in
+The app uses Next.js `unstable_cache` as its primary request/render cache and
+best-effort Upstash Redis storage as a cross-deployment fallback. Redis read
+failures are treated as cache misses, and Redis write failures never fail a
+request. Cache versions live in
 `src/lib/cfg/cacheVersions.ts`; bump the relevant version instead of deleting
 Redis keys manually.
 
 When `NODE_ENV=development` and `CACHE_ENABLED=false`, both layers are bypassed.
 When development caching is enabled, Redis keys receive a `dev:` prefix.
 
-## Progression freeze
+## Shared freshness
 
-`PROGRESSION_DATA_FROZEN` currently pins station, quest, and trader progression
-records to the last non-empty versioned cache. Item records are excluded from
-that freeze because they carry volatile market values.
+Shared station, quest, trader, and tracked-item responses use a 24-hour
+production freshness window. Development caching uses five minutes when it is
+enabled. `PROGRESSION_DATA_FROZEN` is retained as an emergency switch but is
+normally disabled. Individual item price history remains independently cached
+for 15 minutes and does not use Redis.
 
 ## Redis keys
 
 | Key | Content | Freshness |
 |---|---|---|
-| `hideout:stations:v6:{regular|pve|pvp-season}` | Mode-specific station list | Frozen |
-| `hideout:items:filtered:v4:{regular|pve|pvp-season}` | Compact hideout + quest item records, including embedded pricing, trader offers, and crafts | 1 hour |
-| `quests:all:v5:{regular|pve|pvp-season}` | Quests with give-item objectives | Frozen |
-| `quests:full:v13:{regular|pve|pvp-season}` | Full quest list | Frozen |
-| `traders:all:v1:{regular|pve|pvp-season}` | Trader list | Frozen |
+| `hideout:stations:v6:{regular|pve|pvp-season}` | Mode-specific station list | 24 hours |
+| `hideout:items:filtered:v4:{regular|pve|pvp-season}` | Compact hideout + quest item records, including embedded pricing, trader offers, and crafts | 24 hours |
+| `quests:all:v5:{regular|pve|pvp-season}` | Quests with give-item objectives | 24 hours |
+| `quests:full:v13:{regular|pve|pvp-season}` | Full quest list | 24 hours |
+| `traders:all:v1:{regular|pve|pvp-season}` | Trader list | 24 hours |
 
 Older standalone market-price keys may remain in Redis but are no longer read or
 written by application code.
@@ -31,11 +35,16 @@ written by application code.
 
 | Service | Cache key/tag | Revalidation |
 |---|---|---|
-| `getCachedHideoutStations()` | `hideout-stations` / `hideout-data` | Frozen |
-| `getCachedHideoutRequiredItems()` | `json-hideout-required-items` / `item-data`, `hideout-data` | 1 hour |
-| `getCachedQuestData()` | `json-quests` / `quests` | Frozen |
-| `getCachedFullQuestData()` | `json-quests-full` / `quests` | Frozen |
-| `getCachedTraders()` | provider-specific / trader tag | Frozen |
+| `getCachedHideoutStations()` | `hideout-stations` / `hideout-data` | 24 hours |
+| `getCachedHideoutRequiredItems()` | `json-hideout-required-items` / `item-data`, `hideout-data` | 24 hours |
+| `getCachedQuestData()` | `json-quests` / `quests` | 24 hours |
+| `getCachedFullQuestData()` | `json-quests-full` / `quests` | 24 hours |
+| `getCachedTraders()` | provider-specific / trader tag | 24 hours |
+
+On a validated upstream refresh, the server returns the normalized response to
+Next.js and schedules the Redis body/meta write with Next.js `after()`. This uses
+the same lifecycle in local Next.js development and Vercel's serverless runtime.
+Only validated, non-empty upstream responses reach either cache.
 
 ## Request flow
 

@@ -1,11 +1,14 @@
-import { redis } from "@/server/redis";
+import { redis, writeRedisAfterResponse } from "@/server/redis";
 import { CACHE_VERSIONS, PROGRESSION_DATA_FROZEN } from "@/lib/cfg/cacheVersions";
 import type { Trader, TradersPayload, TimedResponse } from "@/types";
 import { unstable_cache } from "next/cache";
+import {
+    DATA_CACHE_MAX_AGE_MS,
+    DATA_CACHE_REVALIDATE_SECONDS,
+} from "@/server/cache";
 import { cacheWhenEnabled } from "@/server/cache";
 import { TARKOV_GRAPHQL_HEADERS } from "@/server/services/tarkovApi";
 
-const CACHE_WINDOW_MS = 12 * 60 * 60 * 1000;
 const REDIS_KEY = `traders:all:v${CACHE_VERSIONS.traders}`;
 const REDIS_KEY_META = `${REDIS_KEY}:meta`;
 const TARKOV_GRAPHQL_ENDPOINT = "https://api.tarkov.dev/graphql";
@@ -34,7 +37,7 @@ async function getTraders(): Promise<TimedResponse<TradersPayload>> {
 
     if (cachedBody && cachedMeta && typeof cachedMeta === "object") {
         const age = Date.now() - cachedMeta.updatedAt;
-        if (PROGRESSION_DATA_FROZEN || age < CACHE_WINDOW_MS) {
+        if (PROGRESSION_DATA_FROZEN || age < DATA_CACHE_MAX_AGE_MS) {
             console.log("Using cached trader data");
             if (typeof cachedBody === "object") return cachedBody as TimedResponse<TradersPayload>;
             return JSON.parse(cachedBody) as TimedResponse<TradersPayload>;
@@ -66,10 +69,10 @@ async function getTraders(): Promise<TimedResponse<TradersPayload>> {
     const updatedAt = Date.now();
     const body: TimedResponse<TradersPayload> = { data: payload, updatedAt };
 
-    await redis.mset({
+    await writeRedisAfterResponse({
         [REDIS_KEY]: JSON.stringify(body),
         [REDIS_KEY_META]: { updatedAt },
-    });
+    }, "GraphQL traders");
 
     console.log(`Cached ${traders.length} traders`);
 
@@ -77,8 +80,7 @@ async function getTraders(): Promise<TimedResponse<TradersPayload>> {
 }
 
 const cachedTraders = unstable_cache(getTraders, ["traders"], {
-    // Frozen indefinitely during the Tarkov 1.1 transition.
-    revalidate: false,
+    revalidate: DATA_CACHE_REVALIDATE_SECONDS,
     tags: ["quests"],
 });
 

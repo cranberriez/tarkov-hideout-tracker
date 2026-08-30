@@ -1,15 +1,16 @@
 import { unstable_cache } from "next/cache";
-import { cacheWhenEnabled } from "@/server/cache";
+import { cacheWhenEnabled, DATA_CACHE_REVALIDATE_SECONDS } from "@/server/cache";
 import { requiresFoundInRaid } from "@/lib/cfg/foundInRaid";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { wikiData } from "@/lib/data/wiki-data";
-import { redis } from "@/server/redis";
+import { redis, writeRedisAfterResponse } from "@/server/redis";
 import {
     fetchTarkovJsonDataset,
     type TarkovJsonGameMode,
 } from "@/server/services/tarkovJson/client";
 import {
     isProgressionCacheUsable,
+    markStaleFallback,
     parseNonEmptyTimedResponse,
 } from "@/server/services/tarkovJson/cache";
 import type {
@@ -257,18 +258,19 @@ export async function getJsonHideoutStations(
                 usedRegularLocaleFallback: localeResults.some(
                     (locale) => locale.usedRegularFallback,
                 ),
+                upstreamStatus: "ok",
             },
         };
-        await redis.mset({
+        await writeRedisAfterResponse({
             [bodyKey]: JSON.stringify(body),
             [metaKey]: { updatedAt },
-        });
+        }, "hideout stations");
         return body;
     } catch (error) {
         console.error("Failed to refresh hideout stations from Tarkov JSON", error);
         if (cached) {
             console.log("Using stale cached stations due to JSON upstream error");
-            return cached;
+            return markStaleFallback(cached);
         }
         throw error;
     }
@@ -277,7 +279,7 @@ export async function getJsonHideoutStations(
 const cachedJsonHideoutStations = unstable_cache(
     getJsonHideoutStations,
     ["json-hideout-stations"],
-    { revalidate: false, tags: ["hideout-data"] },
+    { revalidate: DATA_CACHE_REVALIDATE_SECONDS, tags: ["hideout-data"] },
 );
 
 export const getCachedJsonHideoutStations = cacheWhenEnabled(

@@ -4,6 +4,7 @@ import type { TarkovJsonGameMode } from "@/lib/game-mode";
 export type { TarkovJsonGameMode } from "@/lib/game-mode";
 
 const TARKOV_JSON_BASE_URL = "https://json.tarkov.dev";
+const TARKOV_JSON_REQUEST_TIMEOUT_MS = 30_000;
 
 export type TarkovJsonEndpoint =
     | "barters"
@@ -44,6 +45,7 @@ async function fetchJson<T>(path: string): Promise<T> {
         const response = await fetch(url, {
             headers: TARKOV_API_HEADERS,
             cache: "no-store",
+            signal: AbortSignal.timeout(TARKOV_JSON_REQUEST_TIMEOUT_MS),
         });
         if (!response.ok) {
             const details = await response.text().catch(() => "");
@@ -61,6 +63,10 @@ async function fetchJson<T>(path: string): Promise<T> {
     } finally {
         inFlightRequests.delete(url);
     }
+}
+
+function hasEntries(data: object): boolean {
+    return Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0;
 }
 
 async function fetchLocale(
@@ -105,8 +111,8 @@ export async function fetchTarkovJsonDataset<T extends object>(
         fetchLocale(endpoint, gameMode),
     ]);
 
-    if (!response.data || typeof response.data !== "object") {
-        throw new Error(`Tarkov JSON ${path} response is missing data`);
+    if (!response.data || typeof response.data !== "object" || !hasEntries(response.data)) {
+        throw new Error(`Tarkov JSON ${path} response is missing or empty data`);
     }
 
     const locale = localeResult.response.data;
@@ -134,8 +140,8 @@ export async function fetchTarkovJsonData<T extends object>(
 ): Promise<T> {
     const path = `${gameMode}/${endpoint}`;
     const response = await fetchJson<TarkovJsonResponse<T>>(path);
-    if (!response.data || typeof response.data !== "object") {
-        throw new Error(`Tarkov JSON ${path} response is missing data`);
+    if (!response.data || typeof response.data !== "object" || !hasEntries(response.data)) {
+        throw new Error(`Tarkov JSON ${path} response is missing or empty data`);
     }
     return response.data;
 }

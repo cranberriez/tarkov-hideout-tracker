@@ -1,4 +1,4 @@
-import { redis } from "@/server/redis";
+import { redis, writeRedisAfterResponse } from "@/server/redis";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import type {
     Quest,
@@ -13,7 +13,7 @@ import type {
     QuestTraderStandingReward,
 } from "@/types";
 import { unstable_cache } from "next/cache";
-import { cacheWhenEnabled } from "@/server/cache";
+import { cacheWhenEnabled, DATA_CACHE_REVALIDATE_SECONDS } from "@/server/cache";
 import { TARKOV_GRAPHQL_HEADERS } from "@/server/services/tarkovApi";
 import {
     isProgressionCacheUsable,
@@ -281,10 +281,10 @@ async function getQuestData(): Promise<TimedResponse<QuestsPayload>> {
     const updatedAt = Date.now();
     const body: TimedResponse<QuestsPayload> = { data: payload, updatedAt };
 
-    await redis.mset({
+    await writeRedisAfterResponse({
         [REDIS_KEY]: JSON.stringify(body),
         [REDIS_KEY_META]: { updatedAt },
-    });
+    }, "GraphQL item quests");
 
     console.log(`Cached ${quests.length} quests with giveItem objectives`);
 
@@ -292,8 +292,7 @@ async function getQuestData(): Promise<TimedResponse<QuestsPayload>> {
 }
 
 const cachedQuestData = unstable_cache(getQuestData, ["quests"], {
-    // Frozen indefinitely during the Tarkov 1.1 transition.
-    revalidate: false,
+    revalidate: DATA_CACHE_REVALIDATE_SECONDS,
     tags: ["quests"],
 });
 
@@ -1042,10 +1041,10 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
     const updatedAt = Date.now();
     const body: TimedResponse<FullQuestsPayload> = { data: payload, updatedAt };
 
-    await redis.mset({
+    await writeRedisAfterResponse({
         [FULL_REDIS_KEY]: JSON.stringify(body),
         [FULL_REDIS_KEY_META]: { updatedAt },
-    });
+    }, "GraphQL full quests");
 
     console.log(`Cached ${quests.length} full quests`);
 
@@ -1053,8 +1052,7 @@ async function getFullQuestData(): Promise<TimedResponse<FullQuestsPayload>> {
 }
 
 const cachedFullQuestData = unstable_cache(getFullQuestData, ["quests-full"], {
-    // Frozen indefinitely during the Tarkov 1.1 transition.
-    revalidate: false,
+    revalidate: DATA_CACHE_REVALIDATE_SECONDS,
     tags: ["quests"],
 });
 

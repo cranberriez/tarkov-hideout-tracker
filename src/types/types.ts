@@ -182,6 +182,7 @@ export interface DataResponseDiagnostics {
     provider: "json" | "graphql";
     localePaths?: string[];
     usedRegularLocaleFallback?: boolean;
+    upstreamStatus?: "ok" | "stale-fallback";
 }
 
 export interface ItemsPayload {

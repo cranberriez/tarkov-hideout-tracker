@@ -6,6 +6,6 @@ export const CACHE_VERSIONS = {
 	traders: 1,
 } as const;
 
-// Keep the last known-good progression datasets until Tarkov 1.1 support has
-// been verified. This does not affect the independently refreshed price cache.
-export const PROGRESSION_DATA_FROZEN = true;
+// Emergency switch for pinning the last known-good progression datasets.
+// Normal production behavior uses the shared time-based freshness window.
+export const PROGRESSION_DATA_FROZEN = false;

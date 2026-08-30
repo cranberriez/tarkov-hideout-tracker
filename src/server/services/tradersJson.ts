@@ -1,13 +1,14 @@
 import { unstable_cache } from "next/cache";
-import { cacheWhenEnabled } from "@/server/cache";
+import { cacheWhenEnabled, DATA_CACHE_REVALIDATE_SECONDS } from "@/server/cache";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
-import { redis } from "@/server/redis";
+import { redis, writeRedisAfterResponse } from "@/server/redis";
 import {
     fetchTarkovJsonDataset,
     type TarkovJsonGameMode,
 } from "@/server/services/tarkovJson/client";
 import {
     isProgressionCacheUsable,
+    markStaleFallback,
     parseNonEmptyTimedResponse,
 } from "@/server/services/tarkovJson/cache";
 import type { TimedResponse, Trader, TradersPayload } from "@/types";
@@ -50,21 +51,25 @@ export async function getJsonTraders(
         if (traders.length === 0) throw new Error("Tarkov JSON response contained no traders");
 
         const updatedAt = Date.now();
-        const body: TimedResponse<TradersPayload> = { data: { traders }, updatedAt };
-        await redis.mset({
+        const body: TimedResponse<TradersPayload> = {
+            data: { traders },
+            updatedAt,
+            diagnostics: { provider: "json", upstreamStatus: "ok" },
+        };
+        await writeRedisAfterResponse({
             [bodyKey]: JSON.stringify(body),
             [metaKey]: { updatedAt },
-        });
+        }, "traders");
         return body;
     } catch (error) {
         console.error("Failed to refresh traders from Tarkov JSON", error);
-        if (cached) return cached;
+        if (cached) return markStaleFallback(cached);
         throw error;
     }
 }
 
 const cachedJsonTraders = unstable_cache(getJsonTraders, ["json-traders"], {
-    revalidate: false,
+    revalidate: DATA_CACHE_REVALIDATE_SECONDS,
     tags: ["traders"],
 });
 

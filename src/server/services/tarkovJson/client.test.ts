@@ -32,7 +32,19 @@ test("fetchTarkovJsonDataset rejects missing base data", async (context) => {
         return Response.json({ data: null });
     });
 
-    await assert.rejects(fetchTarkovJsonDataset("tasks"), /response is missing data/);
+    await assert.rejects(fetchTarkovJsonDataset("tasks"), /response is missing or empty data/);
+});
+
+test("fetchTarkovJsonDataset rejects empty base objects and arrays", async (context) => {
+    context.mock.method(globalThis, "fetch", async (input) => {
+        if (String(input).endsWith("_en")) {
+            return Response.json({ data: { token: "Translated" } });
+        }
+        return Response.json({ data: String(input).includes("tasks") ? [] : {} });
+    });
+
+    await assert.rejects(fetchTarkovJsonDataset("hideout"), /missing or empty data/);
+    await assert.rejects(fetchTarkovJsonDataset("tasks"), /missing or empty data/);
 });
 
 test("fetchTarkovJsonDataset prefixes seasonal requests with pvp-season", async (context) => {
