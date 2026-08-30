@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { TARKOV_API_HEADERS } from "@/server/services/tarkovApi";
+import { normalizePriceHistory } from "@/server/services/priceHistory";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 
 export const revalidate = 900;
 
 const MODES = new Set<TarkovJsonGameMode>(["regular", "pve", "pvp-season"]);
 
-interface UpstreamPricePoint {
-    price?: unknown;
-    priceMin?: unknown;
-    offerCount?: unknown;
-    timestamp?: unknown;
-}
-
 interface UpstreamPriceResponse {
-    data?: UpstreamPricePoint[];
+    data?: unknown;
 }
 
 export async function GET(
@@ -54,27 +48,7 @@ export async function GET(
     }
 
     const body = (await upstream.json()) as UpstreamPriceResponse;
-    const points = (Array.isArray(body.data) ? body.data : [])
-        .map((point) => ({
-            price: Number(point.price),
-            priceMin: Number(point.priceMin),
-            offerCount:
-                point.offerCount === null || point.offerCount === undefined
-                    ? null
-                    : Number(point.offerCount),
-            timestamp: Number(point.timestamp),
-        }))
-        .filter(
-            (point) =>
-                Number.isFinite(point.price) &&
-                point.price >= 0 &&
-                Number.isFinite(point.priceMin) &&
-                point.priceMin >= 0 &&
-                Number.isFinite(point.timestamp) &&
-                point.timestamp > 0 &&
-                (point.offerCount === null || Number.isFinite(point.offerCount)),
-        )
-        .sort((a, b) => a.timestamp - b.timestamp);
+    const points = normalizePriceHistory(body.data);
 
     return NextResponse.json(
         { data: points, fetchedAt: Date.now() },

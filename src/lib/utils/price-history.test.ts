@@ -4,6 +4,7 @@ import {
     calculatePriceHistoryInsights,
     downsamplePriceHistory,
     filterPriceHistory,
+    filterPriceHistoryOutliers,
     type PriceHistoryPoint,
 } from "./price-history";
 
@@ -32,6 +33,28 @@ test("downsamples long histories into representative bucket averages", () => {
     assert.equal(sampled.length, 10);
     assert.equal(sampled[0].price, 1004.5);
     assert.equal(sampled[9].price, 1094.5);
+});
+
+test("keeps ordinary price movement when filtering outliers", () => {
+    const points = Array.from({ length: 100 }, (_, index) => point(index, 1000 + index));
+    const filtered = filterPriceHistoryOutliers(points);
+
+    assert.deepEqual(filtered, points);
+});
+
+test("removes isolated high spikes from chart and summary input", () => {
+    const stable = Array.from({ length: 99 }, (_, index) => point(index, 1000));
+    const spike = point(50.5, 10000);
+    const filtered = filterPriceHistoryOutliers([
+        ...stable.slice(0, 51),
+        spike,
+        ...stable.slice(51),
+    ]);
+    const insights = calculatePriceHistoryInsights(filtered);
+
+    assert.equal(filtered.length, stable.length);
+    assert.equal(insights.average, 1000);
+    assert.equal(insights.high, 1000);
 });
 
 test("reports a directional trend from smoothed range edges", () => {

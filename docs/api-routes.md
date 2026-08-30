@@ -26,6 +26,7 @@ later modal open can restore the full labels.
 ### `GET /api/items/{itemId}/price-history?mode={mode}`
 
 Proxies and validates the mode-specific Tarkov.dev `/prices/{itemId}` series. It
+discards points older than December 1, 2025 before serializing the response. It
 uses a 15-minute Next.js/CDN cache and no Redis storage.
 
 ### `GET /api/revalidate?tag={tag}`

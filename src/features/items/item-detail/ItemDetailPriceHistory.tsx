@@ -15,6 +15,7 @@ import {
     calculatePriceHistoryInsights,
     downsamplePriceHistory,
     filterPriceHistory,
+    filterPriceHistoryOutliers,
     type PriceHistoryPoint,
     type PriceHistoryRange,
 } from "@/lib/utils/price-history";
@@ -72,8 +73,9 @@ export function ItemDetailPriceHistory({ itemId, mode }: ItemDetailPriceHistoryP
         () => filterPriceHistory(points ?? [], range),
         [points, range],
     );
-    const plotted = useMemo(() => downsamplePriceHistory(filtered), [filtered]);
-    const insights = useMemo(() => calculatePriceHistoryInsights(filtered), [filtered]);
+    const visible = useMemo(() => filterPriceHistoryOutliers(filtered), [filtered]);
+    const plotted = useMemo(() => downsamplePriceHistory(visible), [visible]);
+    const insights = useMemo(() => calculatePriceHistoryInsights(visible), [visible]);
 
     if (error) {
         return (
@@ -110,7 +112,7 @@ export function ItemDetailPriceHistory({ itemId, mode }: ItemDetailPriceHistoryP
         );
     }
 
-    const displayPoint = hovered ?? filtered[filtered.length - 1] ?? points[points.length - 1];
+    const displayPoint = hovered ?? visible[visible.length - 1] ?? points[points.length - 1];
 
     return (
         <div className="p-3 sm:p-4">
@@ -213,12 +215,16 @@ function PriceChart({
         const rect = event.currentTarget.getBoundingClientRect();
         const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
         const targetTime = firstTime + ratio * (lastTime - firstTime);
-        let nearest = points[0];
-        for (const point of points) {
-            if (Math.abs(point.timestamp - targetTime) < Math.abs(nearest.timestamp - targetTime)) {
-                nearest = point;
+        let nearestIndex = 0;
+        for (let index = 1; index < points.length; index += 1) {
+            if (
+                Math.abs(points[index].timestamp - targetTime) <
+                Math.abs(points[nearestIndex].timestamp - targetTime)
+            ) {
+                nearestIndex = index;
             }
         }
+        const nearest = points[nearestIndex];
         setActivePoint(nearest);
         onHover(nearest);
     };

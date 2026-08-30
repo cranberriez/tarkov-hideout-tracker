@@ -34,6 +34,7 @@ interface UIState {
 
     isLegacyProfileConversionOpen: boolean;
     setLegacyProfileConversionOpen: (isOpen: boolean) => void;
+
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -53,4 +54,5 @@ export const useUIStore = create<UIState>((set) => ({
     isLegacyProfileConversionOpen: false,
     setLegacyProfileConversionOpen: (isOpen) =>
         set({ isLegacyProfileConversionOpen: isOpen }),
+
 }));

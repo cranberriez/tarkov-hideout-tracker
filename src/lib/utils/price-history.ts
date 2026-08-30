@@ -48,6 +48,33 @@ export function downsamplePriceHistory(points: PriceHistoryPoint[], limit = 600)
     return sampled;
 }
 
+function percentile(sortedValues: number[], fraction: number) {
+    if (sortedValues.length === 1) return sortedValues[0];
+    const position = (sortedValues.length - 1) * fraction;
+    const lowerIndex = Math.floor(position);
+    const upperIndex = Math.ceil(position);
+    const weight = position - lowerIndex;
+    return (
+        sortedValues[lowerIndex] * (1 - weight) +
+        sortedValues[upperIndex] * weight
+    );
+}
+
+export function filterPriceHistoryOutliers(points: PriceHistoryPoint[]) {
+    if (points.length < 4) return points;
+
+    const sortedPrices = points
+        .map((point) => point.price)
+        .sort((left, right) => left - right);
+    const firstQuartile = percentile(sortedPrices, 0.25);
+    const thirdQuartile = percentile(sortedPrices, 0.75);
+    const interquartileRange = thirdQuartile - firstQuartile;
+    const upperFence =
+        thirdQuartile + Math.max(interquartileRange * 3, thirdQuartile * 0.1, 1);
+
+    return points.filter((point) => point.price <= upperFence);
+}
+
 function average(values: number[]) {
     return values.length > 0
         ? values.reduce((total, value) => total + value, 0) / values.length
