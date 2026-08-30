@@ -38,13 +38,7 @@ The modal can also be reopened from anywhere via `setSetupOpen(true)` (e.g., a "
 
 Stored in `useUserStore.gameMode`. Defaults to `"PVP"`. Each mode has independent character progress; see `game-mode-profiles.md`.
 
-Controls which bucket of market prices is read from `PriceDataContext`:
-
-```ts
-const prices = marketPricesByMode[gameMode].prices;
-```
-
-The active mode's prices load first, then the other modes are prefetched. Progression data is refreshed when the character profile changes.
+Controls which mode-specific Tarkov.dev item dataset is server-rendered. The mode cookie is updated and the route refreshes when the character profile changes, so each item carries pricing for the active profile.
 
 ---
 

@@ -23,7 +23,7 @@ Docs are grouped by purpose:
   Independent PVP, PVE, and KORD character profiles, legacy-state retention, cookies, and mode-aware server data.
 
 - **[data-and-price-context-architecture.md](data-and-price-context-architecture.md)** - Current architecture
-  How server services, React contexts (`DataContext`, `PriceDataContext`), and `<Suspense>` work together to deliver station/item/price data.
+  How `DataContext` delivers station data and tracked item records with embedded flea/trader pricing.
 
 - **[api-routes.md](api-routes.md)** - Current architecture
   The only public route (cron endpoint) and the internal server services that replace old public API routes.
@@ -77,9 +77,6 @@ Docs are grouped by purpose:
 
 - **[tasks-graphql.md](tasks-graphql.md)** - Current architecture
   Live schema findings for the `tasks` and `traders` queries - full field reference, objective type breakdown, and service implementation notes.
-
-- **[cron-jobs.md](cron-jobs.md)** - Current architecture
-  Vercel cron setup, Tarkov.dev flea price refresh, manual trigger instructions, and troubleshooting.
 
 - **[tarkov-market-protection.md](tarkov-market-protection.md)** - Historical note
   Old Tarkov Market integration context. Current price data comes from Tarkov.dev GraphQL.

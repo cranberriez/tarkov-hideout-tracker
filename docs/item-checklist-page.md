@@ -27,8 +27,7 @@ The `/items` route shows the user's combined item demand across hideout upgrades
 (data)/layout.tsx
   -> getCachedHideoutStations()
   -> getCachedHideoutRequiredItems()
-  -> DataContext
-  -> PriceDataLayout -> PriceDataContext
+  -> DataContext (tracked items include `marketPrice`)
 
 /items page
   -> getCachedFullQuestData()
@@ -43,7 +42,7 @@ The `/items` route shows the user's combined item demand across hideout upgrades
      />
 ```
 
-`DataContext.items` contains hideout-required items only. Quest-only items are synthesized from `questItemIndex` and `questAnyOfGroups` with the minimal `ItemDetails` fields available from quest objectives.
+`DataContext.items` contains the compact set of hideout- and quest-tracked items. Quest objective data remains the fallback when an upstream item does not exist in the standard item catalog.
 
 ---
 
@@ -134,9 +133,7 @@ Additional filters:
 
 ## Prices
 
-Prices come from `PriceDataContext.marketPricesByMode`. The active `gameMode` selects the PVP or PVE price bucket. Price maps are keyed by `normalizedName` and include both hideout-required and quest-required items.
-
-No client-side price fetching occurs on the items page.
+Prices come from `ItemDetails.marketPrice`, normalized from the same mode-specific Tarkov.dev `/items` record as the item metadata. No client-side price fetch or separate price map is used.
 
 ---
 

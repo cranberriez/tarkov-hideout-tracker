@@ -32,8 +32,7 @@ Copy `.sample.env` to `.env`. Required variables:
 | ------------------------------------------------ | ------------------------------------------------------------ |
 | `UPSTASH_REDIS_REST_URL` / `KV_REST_API_URL`     | Upstash Redis endpoint                                       |
 | `UPSTASH_REDIS_REST_TOKEN` / `KV_REST_API_TOKEN` | Upstash Redis auth token                                     |
-| `TARKOV_MARKET_KEY`                              | Tarkov Market API key (server-only, never exposed to client) |
-| `CRON_SECRET`                                    | Bearer token required by the cron endpoint                   |
+| `CRON_SECRET`                                    | Bearer token required by the cache-revalidation endpoint     |
 
 ## Architecture
 
@@ -42,14 +41,9 @@ Copy `.sample.env` to `.env`. Required variables:
 ### Data Flow
 
 ```
-Tarkov.dev GraphQL ──► server/services/ ──► Redis (12h TTL) ──► (data)/layout.tsx
-                                                                  ├── DataContext  (stations + items)
-                                                                  └── PriceDataLayout
-                                                                        └── PriceDataContext (PVP + PVE prices)
-
-Tarkov Market REST ──► /api/cron/bulk-update ──► Redis (daily)
-                                  ▲
-                          Vercel cron at 00:00 UTC
+Tarkov.dev JSON /items ──► server/services/ ──► Redis (1h) ──► (data)/layout.tsx
+                                                                      └── DataContext
+                                                                          (stations + tracked items with prices)
 ```
 
 All pages under `src/app/(data)/` are inside this route group and receive station/item/price data automatically through server-side context. The root `/` redirects to `/hideout`.
@@ -74,8 +68,7 @@ Quest services expose both lightweight and full quest data. Use `docs/api-routes
 
 **React Contexts** (server data, read-only on client):
 
-- `DataContext` (`src/app/(data)/_dataContext.tsx`) → `stations`, `items`, timestamps. Shape: `{ stations: Station[] | null, stationsUpdatedAt, items: ItemDetails[] | null, itemsUpdatedAt }`. `items` here is **hideout-required items only** — not all tarkov items.
-- `PriceDataContext` (`src/app/(data)/_priceDataContext.tsx`) → market prices by game mode (maps keyed by `normalizedName`).
+- `DataContext` (`src/app/(data)/_dataContext.tsx`) → `stations`, `items`, timestamps. Shape: `{ stations: Station[] | null, stationsUpdatedAt, items: ItemDetails[] | null, itemsUpdatedAt }`. `items` is the compact set of hideout- and quest-tracked items; each standard item may carry `marketPrice` from the active mode's JSON `/items` record.
 - `QuestsContext` (`src/features/quests/QuestsContext.tsx`) → all quest filter state, computed quest lists, sync helpers. Available only inside `<QuestsProvider>`. Includes `onItemClick: ((itemId: string) => void) | null` for triggering item modal from quest components.
 
 ### FiR (Found In Raid)
@@ -205,8 +198,7 @@ Detailed architecture docs are in `docs/`. `docs/README.md` is the index and sho
 
 - `docs/state-management.md` — authoritative store shapes
 - `docs/caching-architecture.md` — Redis key naming, invalidation
-- `docs/data-and-price-context-architecture.md` — DataContext + PriceDataContext pattern
+- `docs/data-and-price-context-architecture.md` — DataContext and embedded item-pricing pattern
 - `docs/quests-page.md` — quests feature spec
-- `docs/cron-jobs.md` — cron setup and manual trigger instructions
 - `docs/item-checklist-page.md` — current items page architecture, item demand, and source filtering behavior
 - `docs/item-source-filtering.md` / `docs/quest-completion-filtering.md` — historical plans; verify against current source before using

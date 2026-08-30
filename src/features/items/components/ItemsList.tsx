@@ -18,7 +18,6 @@ import {
     deriveQuestItemStates,
 } from "@/lib/utils/quest-item-index";
 import { useDataContext } from "@/app/(data)/_dataContext";
-import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { getFleaPrice } from "@/lib/utils/market-price";
 
@@ -57,7 +56,6 @@ export function ItemsList({
     questAvailabilityQuests,
 }: ItemsListProps) {
     const { stations, items } = useDataContext();
-    const { marketPricesByMode } = usePriceDataContext();
     const [expandedGroupIds, setExpandedGroupIds] = useState<Record<string, boolean>>({});
 
     const {
@@ -71,7 +69,6 @@ export function ItemsList({
         useCategorization,
         showFirOnly,
         itemSourceFilter,
-        gameMode,
         completedRequirements,
         completedQuests,
         failedQuests,
@@ -225,10 +222,6 @@ export function ItemsList({
         return details;
     }, [itemsById, questAnyOfGroups, questItemIndex]);
 
-    const mode = gameMode;
-    const priceBucket = marketPricesByMode[mode];
-    const getPrice = (normalizedName: string) => priceBucket?.prices[normalizedName];
-
     const pooledHideoutItems = useMemo(() => {
         if (!stations) return [];
         return poolItems({
@@ -325,7 +318,7 @@ export function ItemsList({
                 if ((item.firCount || 0) > 0) return true;
                 const norm = item.details.normalizedName;
                 if (norm === "roubles" || norm === "dollars" || norm === "euros") return true;
-                const marketPrice = getPrice(norm);
+                const marketPrice = item.details.marketPrice;
                 if (!marketPrice) return true;
                 const unitPrice = getFleaPrice(marketPrice);
                 if (unitPrice == null) return true;

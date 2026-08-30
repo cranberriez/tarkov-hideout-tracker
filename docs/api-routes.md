@@ -1,6 +1,6 @@
 # API Routes & Server Services
 
-The app uses **no public API routes for hideout, items, quest, or market price page data**. Page data fetching happens in server components/services and is delivered to client components via React context or server props. `src/server/services/tarkovData.ts` routes all quest data through the Tarkov.dev JSON API; its legacy provider selection applies only to the remaining non-quest services. The only public data-mutation route is the Vercel cron endpoint.
+The app uses **no public API routes for hideout, items, quest, or market price page data**. Page data fetching happens in server components/services and is delivered to client components via React context or server props. `src/server/services/tarkovData.ts` routes quest and item data through the Tarkov.dev JSON API; its legacy provider selection applies only to remaining station and trader services.
 
 For the original plan that included public routes (`/api/hideout/stations`, `/api/market/items`, etc.), see git history. That pattern was superseded by the server-service + context architecture described in `data-and-price-context-architecture.md`.
 
@@ -8,19 +8,9 @@ For the original plan that included public routes (`/api/hideout/stations`, `/ap
 
 ## Public Routes
 
-### `GET /api/cron/price-update`
-
-**File:** `src/app/api/cron/price-update/route.ts`
-
-Triggered daily at **00:00 UTC** by Vercel Cron (configured in `vercel.json`). Protected by `CRON_SECRET`; requests without the matching `Authorization: Bearer <secret>` header are rejected with 401.
-
-**What it does:**
-
-1. Calls `refreshMarketPrices("PVP")`, `refreshMarketPrices("PVE")`, and `refreshMarketPrices("KORD")` in parallel.
-2. Each call fetches hideout-required and quest-required item flea market fields and trader sell values using `regular`, `pve`, or `pvp-season`.
-3. Writes compact `normalizedName -> MarketPrice` maps into Redis.
-
-See `cron-jobs.md` for full details.
+The authenticated `/api/revalidate` maintenance route can invalidate the
+`item-data`, `hideout-data`, and `quests` cache tags. There is no public item or
+price data route and no price-refresh cron.
 
 ---
 
@@ -32,7 +22,7 @@ These are internal TypeScript modules, not HTTP routes. They are imported direct
 
 **File:** `src/server/services/hideout.ts`
 
-Fetches all hideout stations from Tarkov.dev GraphQL, merges app overrides, and returns a normalized list.
+Fetches all hideout stations from the selected provider, merges app overrides, and returns a normalized list.
 
 ```ts
 TimedResponse<{ stations: Station[] }>;
@@ -40,29 +30,13 @@ TimedResponse<{ stations: Station[] }>;
 
 ### `getCachedHideoutRequiredItems()`
 
-**File:** `src/server/services/items.ts`
+**File:** `src/server/services/itemsJson.ts`
 
-Derives the unique set of item IDs required across all hideout stations, then fetches only those items from Tarkov.dev. Avoids fetching the full item catalogue.
+Derives the unique set of item IDs referenced by hideout and quest data, then maps those records from the mode-specific Tarkov.dev JSON `/items` dataset. Each returned item includes its embedded flea and trader pricing plus useful general metadata; the full catalog is not sent to the browser.
 
 ```ts
 TimedResponse<{ items: ItemDetails[] }>;
 ```
-
-### `getCachedMarketPrices(normalizedNames, gameMode)`
-
-**File:** `src/server/services/marketPrices.ts`
-
-Reads the pre-built bulk price map from Redis and returns a subset filtered to the requested `normalizedNames`. The map is written by the cron job; this service is read-only.
-
-```ts
-TimedResponse<Record<string, MarketPrice | null>>;
-```
-
-### `refreshTarkovDevMarketPrices(mode)`
-
-**File:** `src/server/services/tarkovDevMarket.ts`
-
-Called by the cron route only. Fetches volatile flea market fields and `sellFor` trader values for hideout-required and quest-required items from Tarkov.dev and writes the PVP/PVE price maps to Redis.
 
 ### `getCachedQuestData()`
 
@@ -114,4 +88,4 @@ Singleton Upstash Redis client. Initialized from `UPSTASH_REDIS_REST_URL` and `U
 | ------------------------------------------------ | ------------------------------------------- |
 | `UPSTASH_REDIS_REST_URL` / `KV_REST_API_URL`     | Redis client                                |
 | `UPSTASH_REDIS_REST_TOKEN` / `KV_REST_API_TOKEN` | Redis client                                |
-| `CRON_SECRET`                                    | Guards `/api/cron/price-update`             |
+| `CRON_SECRET`                                    | Guards `/api/revalidate`                    |

@@ -1,120 +1,68 @@
 # Caching Architecture
 
-The app uses two caching layers in combination: **Upstash Redis** for persistent cross-request storage and **Next.js `unstable_cache`** for ISR-style in-process caching.
+The app uses Upstash Redis for cross-deployment caching and Next.js
+`unstable_cache` for request/render caching. Cache versions live in
+`src/lib/cfg/cacheVersions.ts`; bump the relevant version instead of deleting
+Redis keys manually.
 
-Both Tarkov JSON and GraphQL providers use the same compact Redis payloads. JSON adapters reject empty cached/upstream datasets and never overwrite a valid stale body with missing data. See `tarkov-json-api.md`.
+When `NODE_ENV=development` and `CACHE_ENABLED=false`, both layers are bypassed.
+When development caching is enabled, Redis keys receive a `dev:` prefix.
 
-> **Tarkov 1.1 freeze:** Progression caches (hideout, items, quests, and traders) are currently frozen by `PROGRESSION_DATA_FROZEN` in `src/lib/cfg/cacheVersions.ts`. Existing non-empty Redis data is used regardless of age, and the corresponding Next.js caches do not revalidate automatically. Market prices continue refreshing independently. Lift the freeze only after the new upstream data and application behavior have been verified.
+## Progression freeze
 
-Cache version constants live in `src/lib/cfg/cacheVersions.ts`. To invalidate a Redis-backed data set for application code, bump the relevant version constant and deploy.
+`PROGRESSION_DATA_FROZEN` currently pins station, quest, and trader progression
+records to the last non-empty versioned cache. Item records are excluded from
+that freeze because they carry volatile market values.
 
-## Development Cache Toggle
+## Redis keys
 
-Set `CACHE_ENABLED=false` in `.env` while running in development to bypass both cache layers. In this mode the server does not create a Redis client, read Redis, write Redis, or use the `unstable_cache` wrappers; progression requests go directly to the selected upstream provider. Restart the development server after changing the value.
+| Key | Content | Freshness |
+|---|---|---|
+| `hideout:stations:v6:{regular|pve|pvp-season}` | Mode-specific station list | Frozen |
+| `hideout:items:filtered:v3:{regular|pve|pvp-season}` | Compact hideout + quest item records, including embedded flea/trader pricing | 1 hour |
+| `quests:all:v5:{regular|pve|pvp-season}` | Quests with give-item objectives | Frozen |
+| `quests:full:v13:{regular|pve|pvp-season}` | Full quest list | Frozen |
+| `traders:all:v1:{regular|pve|pvp-season}` | Trader list | Frozen |
 
-The toggle is intentionally ignored outside development. Production and other environments always use the normal cache behavior, even if `CACHE_ENABLED=false` is present.
+Older standalone market-price keys may remain in Redis but are no longer read or
+written by application code.
 
-## Development Redis Namespace
+## Next.js cache wrappers
 
-When `NODE_ENV === "development"` and Redis caching is enabled, the shared
-`src/server/redis.ts` wrapper prefixes every Redis key with `dev:`. This covers
-body keys, `:meta` keys, market-price previous/legacy fallback keys, and both
-reads and writes from every Redis-backed service. For example:
+| Service | Cache key/tag | Revalidation |
+|---|---|---|
+| `getCachedHideoutStations()` | `hideout-stations` / `hideout-data` | Frozen |
+| `getCachedHideoutRequiredItems()` | `json-hideout-required-items` / `item-data`, `hideout-data` | 1 hour |
+| `getCachedQuestData()` | `json-quests` / `quests` | Frozen |
+| `getCachedFullQuestData()` | `json-quests-full` / `quests` | Frozen |
+| `getCachedTraders()` | provider-specific / trader tag | Frozen |
 
-```text
-production: quests:full:v13
-development: dev:quests:full:v13
-```
-
-The production form remains byte-for-byte unchanged. The namespace is applied at
-the Redis boundary, so individual service key definitions, cache version numbers,
-Next.js `unstable_cache` key arrays, and localStorage persistence do not change.
-`NODE_ENV` values other than exactly `development` also use the historical keys.
-When `CACHE_ENABLED=false` disables the development Redis client, no Redis keys
-are read or written.
-
----
-
-## Redis Keys
-
-Most Redis-backed services store a body key plus a `:meta` key containing `{ updatedAt: number }`. The service treats Redis data as fresh for 12 hours, then fetches from the upstream source and overwrites both keys. When an upstream fetch fails, services with a stale body generally return the stale body instead of failing the request.
-
-| Key                                                  | Content                                                        | Written by                                           | Freshness  |
-| ---------------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------- | ---------- |
-| `hideout:stations:v6:{regular|pve|pvp-season}` + `:meta` | Mode-specific station list                                  | `getHideoutStations()` on cache miss/stale data      | 12h        |
-| `hideout:items:filtered:v2:{regular|pve|pvp-season}` + `:meta` | Mode-specific hideout item metadata                     | `getHideoutRequiredItems()` on cache miss/stale data | 12h        |
-| `quests:all:v5:{regular|pve|pvp-season}` + `:meta`   | Mode-specific quests with `giveItem` objectives                | `getQuestData()` on cache miss/stale data            | 12h        |
-| `quests:full:v13:{regular|pve|pvp-season}` + `:meta` | Mode-specific full quest list, including complete objective item groups and objective map geometry | `getFullQuestData()` on cache miss/stale data | 12h |
-| `traders:all:v1:{regular|pve|pvp-season}` + `:meta`  | Mode-specific trader list                                      | `getTraders()` on cache miss/stale data              | 12h        |
-| `item-market-data:filtered:v3:pvp` + `:meta`          | PVP hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshTarkovDevMarketPrices("PVP")`)     | Daily cron |
-| `item-market-data:filtered:v3:pve` + `:meta`          | PVE hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshTarkovDevMarketPrices("PVE")`)     | Daily cron |
-| `item-market-data:filtered:v3:kord` + `:meta`         | KORD hideout + quest flea/trader price map keyed by `normalizedName` | Cron job (`refreshMarketPrices("KORD")`)             | Daily cron |
-
-Older Tarkov.dev price keys and legacy Tarkov Market keys may exist in Redis from older deployments. The read service falls back to the previous Tarkov.dev key first, then the legacy Tarkov Market key, only when the current keys are missing or empty. Existing deployments keep showing flea prices until `/api/cron/price-update` has populated the new namespace with trader sell values.
-
----
-
-## Next.js `unstable_cache` Wrappers
-
-Each server service wraps its Redis read/fetch logic in `unstable_cache`, giving it ISR-like behavior inside the Next.js request pipeline.
-
-| Service function                     | `unstable_cache` key         | `revalidate` | Effect                                                              |
-| ------------------------------------ | ---------------------------- | ------------ | ------------------------------------------------------------------- |
-| `getCachedHideoutStations()`         | `["hideout-stations"]`       | Frozen       | Uses the current station dataset indefinitely                       |
-| `getCachedHideoutRequiredItems()`    | `["hideout-required-items"]` | Frozen       | Uses the current hideout item dataset indefinitely                  |
-| `getCachedMarketPrices(names, mode)` | `["market-prices"]`, tag `market-prices` | 5 minutes    | Price subsets are re-read from Redis at most every 5 minutes, or immediately after the cron route revalidates the tag |
-| `getCachedQuestData()`               | `["quests"]`                 | Frozen       | Uses the current give-item quest dataset indefinitely               |
-| `getCachedFullQuestData()`           | `["quests-full"]`            | Frozen       | Uses the current full quest dataset indefinitely                    |
-| `getCachedTraders()`                 | `["traders"]`                | Frozen       | Uses the current trader dataset indefinitely                        |
-
-The `unstable_cache` layer sits above Redis. On a Next.js cache hit inside the revalidate window, the function does not reach Redis.
-
----
-
-## Caching Flow Per Request
+## Request flow
 
 ```text
-Browser request (mode cookie)
-  -> (data)/layout.tsx
-      -> getCachedHideoutStations(mode)
-      -> getCachedHideoutRequiredItems(mode)
-      -> PriceDataLayout
-          -> /api/prices/{pvp|pve|kord}
+(data)/layout.tsx
+  -> cached stations
+  -> cached tracked ItemDetails[] from Tarkov.dev JSON /items
+       -> flea/trader values remain on each item.marketPrice
+  -> DataContext
 
-/items page
-  -> getCachedFullQuestData(mode)
-  -> build quest item metadata for the client
-
-/quests page
-  -> getCachedFullQuestData(mode)
-  -> build quest item metadata and availability metadata for the client
+/items and /quests
+  -> cached full quest progression
+  -> derive quest indexes
+  -> resolve item details from DataContext by item ID
 ```
 
-Market prices in Redis are written only by the cron job. `getCachedAllMarketPrices` and `getCachedMarketPrices` never write price data to Redis; if the Redis key is missing, they return empty/null price data.
+Only tracked items are serialized into the client payload. The full Tarkov.dev
+catalog is used server-side to select those records.
 
----
+## Invalidation
 
-## Browser / Client
+The authenticated `/api/revalidate` maintenance route accepts:
 
-`PriceDataLayout` fetches the active mode's cached route first and prefetches the remaining price buckets. Progression data is still fetched by server components. Zustand stores the independent local character profiles and shared preferences.
+- `item-data` for current item metadata and market values
+- `hideout-data` for stations and tracked items
+- `quests` for quest data
 
----
-
-## Cache Invalidation
-
-| Scenario                                              | How to invalidate                                                                                |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Verified Tarkov 1.1 progression data is ready         | Set `PROGRESSION_DATA_FROZEN` to `false`, deploy, then explicitly invalidate the relevant tag or bump its cache version |
-| Market prices stale                                   | Wait for the 00:00 UTC cron job or call `/api/cron/price-update` manually with `CRON_SECRET`     |
-| Next.js in-process cache stale                        | Wait for the `revalidate` window or redeploy                                                     |
-
----
-
-## Adding a New Cached Data Source
-
-1. Add a service function in `src/server/services/`.
-2. Wrap it with `unstable_cache` and choose a `revalidate` window appropriate to how often the data changes.
-3. Pick a versioned Redis key and add the version to `src/lib/cfg/cacheVersions.ts`.
-4. Store a body key and `:meta` key if the service needs timestamp-based freshness or stale fallback behavior.
-5. Call the service from `(data)/layout.tsx` or a page server component.
-6. Distribute data via an existing context, a new context, or server props following the patterns in `data-and-price-context-architecture.md`.
+Successful upstream refreshes write both the response body and a `:meta` record
+containing `updatedAt`. Invalid or empty upstream responses do not replace a
+valid stale body.

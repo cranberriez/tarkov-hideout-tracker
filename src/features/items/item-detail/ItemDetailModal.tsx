@@ -12,7 +12,6 @@ import { computeNeeds } from "@/lib/utils/item-needs";
 import { ItemDetailHeader } from "./ItemDetailHeader";
 import { ItemDetailInventoryAndMarket } from "./ItemDetailInventoryAndMarket";
 import { ItemDetailHideoutRequirements } from "./ItemDetailHideoutRequirements";
-import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
 import { deriveQuestAnyOfGroups, deriveQuestItemState } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
@@ -114,13 +113,11 @@ export function ItemDetailModal({
         });
     }, [selectedItem, stations, stationLevels]);
 
-    const { marketPricesByMode, loading: pricesLoading } = usePriceDataContext();
     const {
         completedQuests,
         failedQuests,
         ignoredQuests,
         pinnedQuests,
-        gameMode,
         playerLevel,
         prestigeLevel,
         questTraderLoyaltyLevels,
@@ -138,10 +135,8 @@ export function ItemDetailModal({
         toggleIgnoredQuest,
         togglePinnedQuest,
     } = useUserStore();
-    const mode = gameMode;
-    const priceBucket = marketPricesByMode[mode];
-    const loading = pricesLoading || !priceBucket || priceBucket.updatedAt === null;
-    const marketPrice = selectedItem ? priceBucket?.prices[selectedNormalizedName] : undefined;
+    const loading = false;
+    const marketPrice = selectedItem?.marketPrice;
 
     const formatPrice = (price?: number | null) => {
         return formatRoubles(price);
@@ -186,7 +181,7 @@ export function ItemDetailModal({
     const isEuro = selectedNormalizedName === "euros";
     const isFiat = isDollar || isEuro;
 
-    const relativeUpdatedAt = formatRelativeUpdatedAt(priceBucket?.updatedAt ?? null);
+    const relativeUpdatedAt = formatRelativeUpdatedAt(marketPrice?.updatedAt ?? null);
     const owned = itemCounts[selectedItemId] ?? { have: 0, haveFir: 0 };
 
     const needsBreakdown = useMemo(() => {

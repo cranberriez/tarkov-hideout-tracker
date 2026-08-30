@@ -5,7 +5,6 @@ import { Bolt, BookOpen } from "lucide-react";
 import { formatNumber } from "@/lib/utils/format-number";
 import type { ItemSize } from "@/lib/stores/useUserStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 import { computeNeeds } from "@/lib/utils/item-needs";
 import { formatRoubles, getFleaPrice, hasFleaMarketData } from "@/lib/utils/market-price";
 
@@ -54,15 +53,10 @@ export function ItemRow({
     isQuest = false,
     onClick,
 }: ItemRowProps) {
-    const { marketPricesByMode, loading: pricesLoading } = usePriceDataContext();
-    const { itemCounts, gameMode } = useUserStore();
-    const mode = gameMode;
-    const priceBucket = marketPricesByMode[mode];
-    // Use local loading state if bucket is missing/empty, but also respect the global loading flag
-    const loading = pricesLoading || !priceBucket || priceBucket.updatedAt === null;
-    const getPrice = (normalizedName: string) => priceBucket?.prices[normalizedName];
+    const { itemCounts } = useUserStore();
+    const loading = false;
     const owned = itemCounts[item.id] ?? { have: 0, haveFir: 0 };
-    const marketPrice = getPrice(item.normalizedName);
+    const marketPrice = item.marketPrice;
     const unitPrice = getFleaPrice(marketPrice);
     const hasFleaData = hasFleaMarketData(marketPrice);
 

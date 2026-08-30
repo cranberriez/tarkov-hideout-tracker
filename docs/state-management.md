@@ -208,7 +208,7 @@ interface PendingItem {
 
 ## React Contexts — Server-Fetched Data
 
-Data from external APIs is **not** in Zustand. It is fetched server-side and distributed via two contexts:
+Data from external APIs is **not** in Zustand. It is fetched server-side and distributed through `DataContext`:
 
 ### `DataContext` (`src/app/(data)/_dataContext.tsx`)
 
@@ -223,29 +223,7 @@ itemsUpdatedAt: number | null;
 
 Usage: `const { stations, items } = useDataContext();`
 
-### `PriceDataContext` (`src/app/(data)/_priceDataContext.tsx`)
-
-Provided by `PriceDataLayout.tsx` (wrapped in `<Suspense>`). Contains:
-
-```ts
-marketPricesByMode: Record<
-    GameMode,
-    {
-        prices: Record<string, MarketPrice | null>;
-        updatedAt: number | null;
-    }
->;
-loading: boolean;
-```
-
-Usage:
-
-```ts
-const { marketPricesByMode, loading } = usePriceDataContext();
-const { gameMode } = useUserStore();
-const prices = marketPricesByMode[gameMode].prices;
-const itemPrice = prices[item.normalizedName];
-```
+Each `ItemDetails` entry may contain `marketPrice`, sourced from the same active-mode `/items` record. There is no separate client price context.
 
 ---
 
@@ -258,8 +236,7 @@ const itemPrice = prices[item.normalizedName];
 | View filters and preferences       | `useUserStore` (localStorage)                                                                        |
 | Game edition / mode setup          | `useUserStore` (localStorage)                                                                        |
 | Quick Add modal + staged items     | `useUIStore` (in-memory)                                                                             |
-| Hideout stations + required items  | `DataContext` (server → context)                                                                     |
-| Market prices (PVP + PVE + KORD)   | `PriceDataContext` (client route fetch → context)                                                    |
+| Hideout stations + tracked items   | `DataContext` (server → context); each item carries active-mode market data                           |
 | Quest data                         | Server props to pages that need it; `/quests` wraps it in `QuestsContext` for derived quest UI state |
 
 ---

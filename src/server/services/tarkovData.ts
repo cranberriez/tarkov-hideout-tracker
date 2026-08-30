@@ -7,10 +7,6 @@ import {
     getJsonHideoutStations,
 } from "@/server/services/hideoutJson";
 import {
-    getCachedHideoutRequiredItems as getCachedGraphqlHideoutRequiredItems,
-    getHideoutRequiredItems as getGraphqlHideoutRequiredItems,
-} from "@/server/services/items";
-import {
     getCachedJsonHideoutRequiredItems,
     getJsonHideoutRequiredItems,
 } from "@/server/services/itemsJson";
@@ -20,8 +16,6 @@ import {
 } from "@/server/services/questsJson";
 import { getCachedTraders as getCachedGraphqlTraders } from "@/server/services/traders";
 import { getCachedJsonTraders } from "@/server/services/tradersJson";
-import { refreshTarkovDevMarketPrices } from "@/server/services/tarkovDevMarket";
-import { refreshTarkovJsonMarketPrices } from "@/server/services/tarkovDevMarketJson";
 import type { TarkovJsonGameMode } from "@/server/services/tarkovJson/client";
 
 export type TarkovDataSource = "graphql" | "json";
@@ -42,15 +36,11 @@ export async function getCachedHideoutStations(gameMode: TarkovJsonGameMode = "r
 }
 
 export async function getHideoutRequiredItems(gameMode: TarkovJsonGameMode = "regular") {
-    return tarkovDataSource === "json" || gameMode !== "regular"
-        ? getJsonHideoutRequiredItems(undefined, gameMode)
-        : getGraphqlHideoutRequiredItems();
+    return getJsonHideoutRequiredItems(undefined, gameMode);
 }
 
 export async function getCachedHideoutRequiredItems(gameMode: TarkovJsonGameMode = "regular") {
-    return tarkovDataSource === "json" || gameMode !== "regular"
-        ? getCachedJsonHideoutRequiredItems(undefined, gameMode)
-        : getCachedGraphqlHideoutRequiredItems();
+    return getCachedJsonHideoutRequiredItems(undefined, gameMode);
 }
 
 // Quest data always comes from Tarkov.dev's JSON API. GraphQL is deprecated and
@@ -62,10 +52,4 @@ export async function getCachedTraders(gameMode: TarkovJsonGameMode = "regular")
     return tarkovDataSource === "json" || gameMode !== "regular"
         ? getCachedJsonTraders(gameMode)
         : getCachedGraphqlTraders();
-}
-
-export function refreshMarketPrices(mode: Parameters<typeof refreshTarkovJsonMarketPrices>[0]) {
-    return tarkovDataSource === "json" || mode === "KORD"
-        ? refreshTarkovJsonMarketPrices(mode)
-        : refreshTarkovDevMarketPrices(mode);
 }

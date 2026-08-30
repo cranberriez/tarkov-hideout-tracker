@@ -4,7 +4,6 @@ import {
     getCachedHideoutStations,
 } from "@/server/services/tarkovData";
 import { DataProvider, type DataContextValue } from "@/app/(data)/_dataContext";
-import PriceDataLayout from "@/app/(data)/PriceDataLayout";
 import { QuickAddModal } from "@/features/quick-add/QuickAddModal";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
 import { LegacyProfileConversionDialog } from "@/features/profile-conversion/LegacyProfileConversionDialog";
@@ -28,16 +27,29 @@ export default async function DataLayout({ children }: DataLayoutProps) {
     const stationsResponse =
         stationsResult.status === "fulfilled" ? stationsResult.value : null;
     const itemsResponse = itemsResult.status === "fulfilled" ? itemsResult.value : null;
+    const items = itemsResponse?.data.items ?? null;
+    const itemById = new Map((items ?? []).map((item) => [item.id, item]));
+    const stations =
+        stationsResponse?.data.stations.map((station) => ({
+            ...station,
+            levels: station.levels.map((level) => ({
+                ...level,
+                itemRequirements: level.itemRequirements.map((requirement) => ({
+                    ...requirement,
+                    item: itemById.get(requirement.item.id) ?? requirement.item,
+                })),
+            })),
+        })) ?? null;
 
     const value: DataContextValue = {
-        stations: stationsResponse?.data.stations ?? null,
+        stations,
         stationsUpdatedAt: stationsResponse?.updatedAt ?? null,
         stationsError:
             stationsResult.status === "rejected"
                 ? `Hideout station data for ${modeLabel} could not be loaded.`
                 : null,
         stationsDiagnostics: stationsResponse?.diagnostics ?? null,
-        items: itemsResponse?.data.items ?? null,
+        items,
         itemsUpdatedAt: itemsResponse?.updatedAt ?? null,
         itemsError:
             itemsResult.status === "rejected"
@@ -50,20 +62,18 @@ export default async function DataLayout({ children }: DataLayoutProps) {
 
     return (
         <DataProvider value={value}>
-            <PriceDataLayout>
-                {children}
-                <RouteAwareFooter
-                    statusConfig={{
-                        provider,
-                        configuredProvider: tarkovDataSource,
-                        activeDataset: gameMode,
-                        cacheEnabled: isCacheEnabled,
-                        progressionDataFrozen: PROGRESSION_DATA_FROZEN,
-                    }}
-                />
-                <QuickAddModal />
-                <LegacyProfileConversionDialog />
-            </PriceDataLayout>
+            {children}
+            <RouteAwareFooter
+                statusConfig={{
+                    provider,
+                    configuredProvider: tarkovDataSource,
+                    activeDataset: gameMode,
+                    cacheEnabled: isCacheEnabled,
+                    progressionDataFrozen: PROGRESSION_DATA_FROZEN,
+                }}
+            />
+            <QuickAddModal />
+            <LegacyProfileConversionDialog />
         </DataProvider>
     );
 }

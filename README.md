@@ -39,7 +39,7 @@ To set up the project locally, you will need a few prerequisites.
 ### 1. Storage
 
 The hosted project runs on Vercel and uses a linked Vercel/Upstash Redis storage
-database for cached server data and daily price snapshots.
+database for cached server data.
 
 For local development, copy the linked storage environment variables from Vercel
 or provide equivalent Upstash Redis REST credentials. The Redis client currently
@@ -64,7 +64,7 @@ CRON_SECRET="your_secret_here"
 
 Depending on how storage is linked, Vercel/Upstash may provide `KV_*` variables
 or `UPSTASH_REDIS_REST_*` variables. Use whichever pair your environment
-provides. `CRON_SECRET` is only needed for the protected price refresh endpoint.
+provides. `CRON_SECRET` is only needed for the protected manual cache-revalidation endpoint.
 
 ### 3. Run the Development Server
 
@@ -87,12 +87,6 @@ Run production checks:
 ```bash
 npm run lint
 npm run build
-```
-
-Refresh local price data:
-
-```bash
-npm run pull-prices
 ```
 
 ## Learn More

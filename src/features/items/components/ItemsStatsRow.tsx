@@ -3,12 +3,12 @@
 import { useMemo } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useDataContext } from "@/app/(data)/_dataContext";
-import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
 import { poolItems } from "@/lib/utils/item-pooling";
 import { getFleaPrice } from "@/lib/utils/market-price";
 import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
 import { deriveQuestAnyOfGroups, deriveQuestItemStates } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
+import type { MarketPrice } from "@/types";
 
 interface ItemsStatsRowProps {
     questItemIndex: QuestItemIndexEntry[];
@@ -19,6 +19,7 @@ interface ItemsStatsRowProps {
 type MergedStatItem = {
     id: string;
     normalizedName?: string;
+    marketPrice?: MarketPrice | null;
     hideoutCount: number;
     hideoutFirCount: number;
     questCount: number;
@@ -31,7 +32,6 @@ export function ItemsStatsRow({
     questAvailabilityQuests,
 }: ItemsStatsRowProps) {
     const { stations, items } = useDataContext();
-    const { marketPricesByMode } = usePriceDataContext();
     const {
         stationLevels,
         hiddenStations,
@@ -58,7 +58,6 @@ export function ItemsStatsRow({
         showFirOnly,
         hideCheap,
         cheapPriceThreshold,
-        gameMode,
         itemCounts,
     } = useUserStore();
 
@@ -127,11 +126,7 @@ export function ItemsStatsRow({
     const mergedPool = useMemo(() => {
         if (!stations) return [];
 
-        const normalizedNameByItemId = new Map<string, string>();
-        for (const item of items ?? []) normalizedNameByItemId.set(item.id, item.normalizedName);
-        for (const questItem of activeQuestItems) {
-            normalizedNameByItemId.set(questItem.itemId, questItem.normalizedName);
-        }
+        const detailsByItemId = new Map((items ?? []).map((item) => [item.id, item]));
 
         const hideoutItems = poolItems({
             stations,
@@ -146,7 +141,8 @@ export function ItemsStatsRow({
         for (const item of hideoutItems) {
             merged.set(item.id, {
                 id: item.id,
-                normalizedName: normalizedNameByItemId.get(item.id),
+                normalizedName: detailsByItemId.get(item.id)?.normalizedName,
+                marketPrice: detailsByItemId.get(item.id)?.marketPrice,
                 hideoutCount: item.count,
                 hideoutFirCount: item.firCount,
                 questCount: 0,
@@ -168,6 +164,7 @@ export function ItemsStatsRow({
                 merged.set(questItem.itemId, {
                     id: questItem.itemId,
                     normalizedName: questItem.normalizedName,
+                    marketPrice: detailsByItemId.get(questItem.itemId)?.marketPrice,
                     hideoutCount: 0,
                     hideoutFirCount: 0,
                     questCount,
@@ -196,9 +193,6 @@ export function ItemsStatsRow({
         if (showFirOnly) groups = groups.filter((group) => group.requiredFirCount > 0);
         return groups;
     }, [activeQuestGroups, itemShowPinnedQuestOnly, itemSourceFilter, showFirOnly]);
-
-    const mode = gameMode;
-    const priceBucket = marketPricesByMode[mode];
 
     const stats = useMemo(() => {
         const visibleItems = mergedPool
@@ -242,8 +236,7 @@ export function ItemsStatsRow({
                 ) {
                     return true;
                 }
-                const marketPrice = normalizedName ? priceBucket?.prices[normalizedName] : undefined;
-                const unitPrice = getFleaPrice(marketPrice);
+                const unitPrice = getFleaPrice(item.marketPrice);
                 return unitPrice == null || unitPrice >= cheapPriceThreshold;
             });
 
@@ -267,7 +260,6 @@ export function ItemsStatsRow({
         itemShowPinnedQuestOnly,
         itemSourceFilter,
         mergedPool,
-        priceBucket,
         showFirOnly,
         visibleQuestGroups.length,
     ]);

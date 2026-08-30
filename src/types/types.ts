@@ -6,14 +6,64 @@ export interface RequirementAttribute {
     value: string;
 }
 
-export interface HideoutItem {
+export interface ItemCategory {
+    id?: string;
+    name: string;
+    normalizedName: string;
+}
+
+export interface VendorPrice {
+    vendor: {
+        name: string;
+        normalizedName: string;
+        imageLink?: string | null;
+    };
+    currency: string;
+    price: number;
+    priceRUB: number;
+}
+
+export interface MarketPrice {
+    price?: number | null;
+    avg24hPrice?: number | null;
+    high24hPrice?: number | null;
+    low24hPrice?: number | null;
+    lastLowPrice?: number | null;
+    lastOfferCount?: number | null;
+    changeLast48h?: number | null;
+    changeLast48hPercent?: number | null;
+    diff24h?: number | null;
+    updatedAt?: number | null;
+    sellFor?: VendorPrice[];
+}
+
+export interface ItemDetails {
     id: string;
     name: string;
     normalizedName: string;
     shortName?: string;
+    description?: string;
+    updated?: string;
+    width?: number;
+    height?: number;
+    weight?: number;
+    types?: string[];
     iconLink?: string;
     gridImageLink?: string;
+    baseImageLink?: string;
+    inspectImageLink?: string;
+    image512pxLink?: string;
+    image8xLink?: string;
+    link?: string;
+    wikiLink?: string;
+    basePrice?: number | null;
+    minLevelForFlea?: number | null;
+    category?: ItemCategory;
+    categories?: ItemCategory[];
+    marketPrice?: MarketPrice | null;
 }
+
+export type HideoutItem = ItemDetails;
 
 export interface ItemRequirement {
     id: string;
@@ -70,22 +120,6 @@ export interface HideoutStationsPayload {
     stations: Station[];
 }
 
-export interface ItemPrice {
-    id: string;
-    name: string;
-    shortName?: string;
-    iconLink?: string;
-    gridImageLink?: string;
-    avg24hPrice?: number;
-    basePrice?: number;
-    lastLowPrice?: number;
-}
-
-export interface ItemsPricesPayload {
-    // itemId -> price info
-    [itemId: string]: ItemPrice;
-}
-
 export interface TimedResponse<TPayload> {
     data: TPayload;
     updatedAt: number; // ms since epoch
@@ -96,43 +130,6 @@ export interface DataResponseDiagnostics {
     provider: "json" | "graphql";
     localePaths?: string[];
     usedRegularLocaleFallback?: boolean;
-}
-
-export interface VendorPrice {
-    vendor: {
-        name: string;
-        normalizedName: string;
-        imageLink?: string | null;
-    };
-    currency: string;
-    price: number;
-    priceRUB: number;
-}
-
-export interface ItemDetails {
-    id: string;
-    name: string;
-    normalizedName: string;
-    iconLink?: string;
-    gridImageLink?: string;
-    link?: string;
-    wikiLink?: string;
-    category?: {
-        name: string;
-        normalizedName: string;
-    };
-}
-
-export interface MarketPrice {
-    price?: number | null;
-    avg24hPrice?: number | null;
-    high24hPrice?: number | null;
-    low24hPrice?: number | null;
-    lastLowPrice?: number | null;
-    lastOfferCount?: number | null;
-    changeLast48hPercent?: number | null;
-    diff24h?: number | null;
-    sellFor?: VendorPrice[];
 }
 
 export interface ItemsPayload {

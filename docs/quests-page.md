@@ -335,7 +335,7 @@ All quest views support these sort modes:
 
 Quest cards show sort-specific metadata for XP and Unlock Impact sorts. Level sort does not add a separate chip because the card already displays quest level.
 
-Quest item modals read flea market data from `PriceDataContext`. The shared price map includes quest-required items, so quest-only hand-in items can show the same Tarkov.dev flea data as hideout items.
+Quest item modals resolve the selected item from `DataContext.items` and read its embedded `marketPrice`. Tracked quest-only hand-in items therefore use the same Tarkov.dev `/items` record as hideout items.
 
 ---
 

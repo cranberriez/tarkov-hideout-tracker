@@ -9,10 +9,10 @@ import { revalidateTag } from "next/cache";
 //     "https://<host>/api/revalidate?tag=quests"
 //
 // Allowed tags:
-//   market-prices  - flea prices (/api/prices/* and any dependent pages)
-//   hideout-data   - stations + hideout-required items
+//   item-data      - tracked item metadata and prices
+//   hideout-data   - stations + tracked items
 //   quests         - quest, trader data
-const ALLOWED_TAGS = new Set(["market-prices", "hideout-data", "quests"]);
+const ALLOWED_TAGS = new Set(["item-data", "hideout-data", "quests"]);
 
 export async function GET(req: NextRequest) {
     const expected = process.env.CRON_SECRET ? `Bearer ${process.env.CRON_SECRET}` : null;

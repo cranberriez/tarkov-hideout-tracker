@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "pull-prices": "node --env-file=.env scripts/pull-prices.mjs",
     "pull-map-overlays": "node scripts/pull-map-overlays.mjs",
     "quest-series-candidates": "node scripts/generate-quest-series-candidates.mjs",
     "quest-data-compare": "node scripts/compare-quest-data.mjs"

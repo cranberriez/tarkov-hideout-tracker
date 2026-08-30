@@ -24,12 +24,14 @@ interface QuestsClientPageProps {
 export function QuestsClientPage({ quests, updatedAt, questItemIndex, questAnyOfGroups, questAvailabilityQuests }: QuestsClientPageProps) {
     void updatedAt;
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-    const { stations } = useDataContext();
+    const { stations, items } = useDataContext();
     const { stationLevels, hiddenStations, completedRequirements } = useUserStore(
         useShallow((state) => ({ stationLevels: state.stationLevels, hiddenStations: state.hiddenStations, completedRequirements: state.completedRequirements })),
     );
     const questItemDetails = useMemo(() => {
-        const details: Record<string, ItemDetails> = {};
+        const details: Record<string, ItemDetails> = Object.fromEntries(
+            (items ?? []).map((item) => [item.id, item]),
+        );
         const addItem = (item: { id: string; name: string; normalizedName: string; iconLink?: string | null; gridImageLink?: string | null }) => {
             details[item.id] ??= { id: item.id, name: item.name, normalizedName: item.normalizedName, iconLink: item.iconLink ?? undefined, gridImageLink: item.gridImageLink ?? undefined };
         };
@@ -42,7 +44,7 @@ export function QuestsClientPage({ quests, updatedAt, questItemIndex, questAnyOf
             if ("useAny" in objective && Array.isArray(objective.useAny)) objective.useAny.forEach(addItem);
         }));
         return details;
-    }, [quests]);
+    }, [items, quests]);
     const selectedItem = selectedItemId ? questItemDetails[selectedItemId] ?? null : null;
 
     return (

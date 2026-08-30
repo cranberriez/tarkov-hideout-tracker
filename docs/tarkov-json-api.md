@@ -1,11 +1,11 @@
 # Tarkov JSON API Provider
 
-The application loads quest data exclusively from `https://json.tarkov.dev`. Other Tarkov data can still use either the original GraphQL services or the JSON API adapters while that legacy provider switch remains in place. The non-quest provider is selected server-side with `TARKOV_DATA_SOURCE`:
+The application loads quest and item data exclusively from `https://json.tarkov.dev`. Station and trader data can still use either the original GraphQL services or the JSON API adapters while that legacy provider switch remains in place. The remaining provider is selected server-side with `TARKOV_DATA_SOURCE`:
 
 - `json` (default) uses `https://json.tarkov.dev`.
 - `graphql` uses `https://api.tarkov.dev/graphql`.
 
-The selection facade is `src/server/services/tarkovData.ts`. Pages and cron routes import data-fetching entry points from this facade. Its quest exports always resolve to `src/server/services/questsJson.ts`, regardless of `TARKOV_DATA_SOURCE`. The original GraphQL quest implementation remains only as legacy code and must not be wired back into runtime quest consumers.
+The selection facade is `src/server/services/tarkovData.ts`. Its quest exports always resolve to `src/server/services/questsJson.ts`, and its item exports always resolve to `src/server/services/itemsJson.ts`, regardless of `TARKOV_DATA_SOURCE`. The original GraphQL quest and item implementations remain only as legacy code and must not be wired back into runtime consumers.
 
 All requests to the Tarkov.dev JSON and GraphQL APIs send the shared user agent `TarkovHideoutTracker/1.0 (+https://tarkovhideout.com)`. Keep this identity on new upstream request paths so Tarkov.dev can attribute traffic to tarkovhideout.com.
 
@@ -147,7 +147,7 @@ quest-ID maps. Existing completion, failure, hand-in, ignored, and pinned record
 must continue to be looked up by the upstream `quest.id`, even when quest names,
 categories, or series labels change.
 
-## Switching Non-Quest Providers
+## Switching Station and Trader Providers
 
 Set the server-only environment variable and redeploy:
 
@@ -155,4 +155,4 @@ Set the server-only environment variable and redeploy:
 TARKOV_DATA_SOURCE=json
 ```
 
-`graphql` affects only the remaining non-quest services. Quest data stays on the JSON API. After changing providers, invoke the authenticated `/api/revalidate` route for the relevant non-quest tags if an immediate refresh is required.
+`graphql` affects only the remaining station and trader services. Quest and item data stay on the JSON API. After changing providers, invoke the authenticated `/api/revalidate` route for the relevant tags if an immediate refresh is required.
