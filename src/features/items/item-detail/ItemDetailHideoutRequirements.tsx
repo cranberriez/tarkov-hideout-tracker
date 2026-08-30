@@ -24,6 +24,8 @@ interface ItemDetailHideoutRequirementsProps {
     hiddenStations: Record<string, boolean>;
 }
 
+const HIDEOUT_LEVEL_COUNT = 6;
+
 export function ItemDetailHideoutRequirements({
     selectedItemImageLink,
     stationRequirements,
@@ -32,32 +34,36 @@ export function ItemDetailHideoutRequirements({
 }: ItemDetailHideoutRequirementsProps) {
     if (stationRequirements.length === 0) return null;
 
-    const maxStationLevel = Math.max(
-        ...stationRequirements.map(([, reqs]) => reqs[0]?.stationMaxLevel ?? 0),
-    );
-    const levels = Array.from({ length: maxStationLevel }, (_, index) => index + 1);
+    const levels = Array.from({ length: HIDEOUT_LEVEL_COUNT }, (_, index) => index + 1);
 
     return (
         <div className="overflow-x-auto">
             <div
                 role="table"
                 aria-label="Hideout station item requirements"
-                className="grid w-full min-w-max gap-x-3"
+                className="grid w-full"
                 style={{
-                    gridTemplateColumns: `max-content repeat(${maxStationLevel}, minmax(8rem, max-content)) minmax(0, 1fr)`,
+                    gridTemplateColumns: `minmax(148px, 1.5fr) repeat(${HIDEOUT_LEVEL_COUNT}, minmax(76px, 1fr))`,
                 }}
             >
                 <div
                     role="row"
-                    className="col-span-full grid grid-cols-subgrid border-b border-border-color bg-black/15 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                    className="col-span-full grid grid-cols-subgrid border-b border-border-color bg-black/15 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
                 >
-                    <div role="columnheader">Station</div>
+                    <div role="columnheader" className="p-2">
+                        Station
+                    </div>
                     {levels.map((level) => (
-                        <div key={level} role="columnheader" className="text-left">
+                        <div
+                            key={level}
+                            role="columnheader"
+                            className={`p-2 text-left ${
+                                level % 2 === 0 ? "bg-white/[0.035]" : ""
+                            }`}
+                        >
                             Level {level}
                         </div>
                     ))}
-                    <div role="columnheader" aria-hidden="true" className="pr-3" />
                 </div>
 
                 {stationRequirements.map(([stationName, reqs]) => {
@@ -76,11 +82,14 @@ export function ItemDetailHideoutRequirements({
                         <div
                             key={station.stationId}
                             role="row"
-                            className={`col-span-full grid min-h-14 grid-cols-subgrid items-center border-b border-border-color px-3 py-2 last:border-b-0 ${
+                            className={`col-span-full grid min-h-14 grid-cols-subgrid border-b border-border-color last:border-b-0 ${
                                 isComplete ? "bg-tarkov-green/[0.025]" : ""
                             }`}
                         >
-                            <div role="cell" className="flex min-w-0 items-center gap-2.5 pr-3">
+                            <div
+                                role="cell"
+                                className="flex min-w-0 items-center gap-2.5 p-2"
+                            >
                                 <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-md bg-white/5">
                                     <Image
                                         src={
@@ -118,7 +127,9 @@ export function ItemDetailHideoutRequirements({
                                 <div
                                     key={level}
                                     role="cell"
-                                    className="flex min-h-11 flex-col items-start justify-center"
+                                    className={`flex min-h-11 min-w-0 flex-col items-start justify-center p-2 ${
+                                        level % 2 === 0 ? "bg-white/[0.035]" : ""
+                                    }`}
                                 >
                                     {(requirementsByLevel.get(level) ?? []).map((requirement) => (
                                         <RequirementCell
@@ -129,7 +140,6 @@ export function ItemDetailHideoutRequirements({
                                     ))}
                                 </div>
                             ))}
-                            <div role="cell" aria-hidden="true" className="pr-3" />
                         </div>
                     );
                 })}
@@ -174,7 +184,7 @@ function RequirementCell({
                     </span>
                 )}
             </span>
-            <span className="min-w-8 text-left font-mono font-semibold tabular-nums">
+            <span className="text-left font-mono font-semibold tabular-nums">
                 ×{requirement.count}
             </span>
         </div>

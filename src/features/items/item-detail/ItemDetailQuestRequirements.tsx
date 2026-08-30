@@ -237,6 +237,7 @@ function AnyOfGroupRow({
                 <QuestActions questId={group.questId} wikiLink={group.questWikiLink} />
             </div>
             <div className="mt-2 text-[11px] text-muted-foreground">
+                <span className="font-semibold text-white">Any x{group.requiredCount}: </span>
                 {group.objectiveLabel}
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
