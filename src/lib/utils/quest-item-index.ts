@@ -181,6 +181,7 @@ export interface QuestItemDeriveOptions {
     showIgnored?: boolean;
     showKappa?: boolean;
     showLightkeeper?: boolean;
+    includeCompleted?: boolean;
 }
 
 interface QuestItemDeriveContext {
@@ -201,6 +202,7 @@ interface QuestItemDeriveContext {
     showIgnored: boolean;
     showKappa: boolean;
     showLightkeeper: boolean;
+    includeCompleted: boolean;
     questsById: ReadonlyMap<string, QuestAvailabilityQuest>;
 }
 
@@ -447,6 +449,10 @@ export function buildQuestAnyOfGroups(quests: QuestItemSource[]): QuestAnyOfGrou
 }
 
 function compareDerivedQuest(a: DerivedQuestItemQuest, b: DerivedQuestItemQuest): number {
+    if ((a.status === "completed") !== (b.status === "completed")) {
+        return a.status === "completed" ? 1 : -1;
+    }
+
     const bucketOrder: Record<DerivedQuestVisibilityBucket, number> = {
         pinned: 0,
         available: 1,
@@ -613,6 +619,7 @@ function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestIte
     const showIgnored = options.showIgnored ?? false;
     const showKappa = options.showKappa ?? false;
     const showLightkeeper = options.showLightkeeper ?? false;
+    const includeCompleted = options.includeCompleted ?? false;
     const questsById = buildQuestAvailabilityMap(options.quests);
 
     const availabilityProfile: QuestAvailabilityProfile = {
@@ -672,6 +679,7 @@ function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestIte
         showIgnored,
         showKappa,
         showLightkeeper,
+        includeCompleted,
         questsById,
     };
 }
@@ -765,7 +773,7 @@ function deriveQuestItemStateFromContext(
                 !isVisibleByMode;
             const isActive = isVisibleByMode || isPinnedOverride || isFutureFirOverride;
 
-            if (!isActive) {
+            if (!isActive && !(context.includeCompleted && isCompleted)) {
                 return null;
             }
 
@@ -912,7 +920,7 @@ export function deriveQuestAnyOfGroups(
                 !isVisibleByMode;
             const isActive = isVisibleByMode || isPinnedOverride || isFutureFirOverride;
 
-            if (!isActive) return null;
+            if (!isActive && !(context.includeCompleted && isCompleted)) return null;
 
             let status: DerivedQuestItemStatus = "future";
             if (isCompleted) status = "completed";
@@ -956,6 +964,10 @@ export function deriveQuestAnyOfGroups(
         })
         .filter((group): group is DerivedQuestAnyOfGroup => group !== null)
         .sort((a, b) => {
+            if ((a.status === "completed") !== (b.status === "completed")) {
+                return a.status === "completed" ? 1 : -1;
+            }
+
             const bucketOrder: Record<DerivedQuestVisibilityBucket, number> = {
                 pinned: 0,
                 available: 1,

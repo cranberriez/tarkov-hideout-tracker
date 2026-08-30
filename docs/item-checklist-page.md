@@ -147,7 +147,7 @@ Prices come from `ItemDetails.marketPrice`, normalized from the same mode-specif
 
 That merged array is passed to `ItemSearchModal` as `itemPool`, so search is not limited to hideout-required items.
 
-When an item is selected, `ItemDetailModal` receives station state, requirement state, quest item index, and quest availability metadata. It renders both hideout requirement details and quest hand-in details with pin/ignore/complete/have-items actions backed by `useUserStore`.
+When an item is selected, `ItemDetailModal` receives station state, requirement state, quest item index, and quest availability metadata. Its compact header combines need counts with hideout/quest usage totals, while the connected inventory/market column is composed from optional item data. The Hideout tab condenses station levels and counts into grid rows. The Quests tab uses quest-card styling, keeps completed hand-ins visible after incomplete ones, and exposes direct quest and wiki links. Tabs without relevant data are omitted; the tab structure is intended to accept future trader-purchase and crafting modules when those fields are added to the client item shape.
 
 ---
 

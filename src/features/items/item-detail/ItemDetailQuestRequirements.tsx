@@ -1,0 +1,285 @@
+"use client";
+
+import Link from "next/link";
+import { ArrowRight, CheckCircle, Circle, ExternalLink, PackageOpen } from "lucide-react";
+import type {
+    DerivedQuestAnyOfGroup,
+    DerivedQuestItemQuest,
+    DerivedQuestItemState,
+} from "@/lib/utils/quest-item-index";
+import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
+import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";
+
+interface ItemDetailQuestRequirementsProps {
+    selectedItemId: string;
+    selectedItemImageLink?: string;
+    questItemState: DerivedQuestItemState | null;
+    anyOfGroups: DerivedQuestAnyOfGroup[];
+}
+
+export function ItemDetailQuestRequirements({
+    selectedItemId,
+    selectedItemImageLink,
+    questItemState,
+    anyOfGroups,
+}: ItemDetailQuestRequirementsProps) {
+    const totalQuests = (questItemState?.relatedQuestCount ?? 0) + anyOfGroups.length;
+    if (totalQuests === 0) return null;
+
+    const relatedQuests = [...(questItemState?.relatedQuests ?? [])].sort(
+        (a, b) => Number(a.status === "completed") - Number(b.status === "completed"),
+    );
+    const sortedGroups = [...anyOfGroups].sort(
+        (a, b) => Number(a.status === "completed") - Number(b.status === "completed"),
+    );
+
+    return (
+        <div className="divide-y divide-border-color">
+            {relatedQuests.map((quest) => (
+                <QuestRow
+                    key={quest.questId}
+                    quest={quest}
+                    itemImageLink={selectedItemImageLink}
+                />
+            ))}
+            {sortedGroups.map((group) => (
+                <AnyOfGroupRow
+                    key={group.groupId}
+                    group={group}
+                    selectedItemId={selectedItemId}
+                />
+            ))}
+        </div>
+    );
+}
+
+function QuestRow({
+    quest,
+    itemImageLink,
+}: {
+    quest: DerivedQuestItemQuest;
+    itemImageLink?: string;
+}) {
+    const standardCount = quest.requiredCount - quest.requiredFirCount;
+    const isCompleted = quest.status === "completed";
+
+    return (
+        <div className="bg-black/10 px-3 py-2.5 hover:bg-white/[0.02]">
+            <div className="flex min-w-0 items-center gap-2.5">
+                {isCompleted ? (
+                    <CheckCircle size={15} className="shrink-0 text-tarkov-green" />
+                ) : (
+                    <Circle size={15} className="shrink-0 text-gray-600" />
+                )}
+                {quest.traderImageLink ? (
+                    <img
+                        src={quest.traderImage4xLink ?? quest.traderImageLink}
+                        alt=""
+                        className="h-6 w-6 shrink-0 rounded-full object-cover"
+                    />
+                ) : (
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] text-muted-foreground">
+                        {quest.traderName[0]}
+                    </span>
+                )}
+                <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span
+                            className={`truncate text-sm font-medium ${
+                                isCompleted
+                                    ? "text-muted-foreground line-through"
+                                    : "text-foreground"
+                            }`}
+                        >
+                            {quest.questName}
+                        </span>
+                        <QuestStatus status={quest.status} />
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                        {quest.traderName}
+                        {hasDisplayQuestLevel(quest.minPlayerLevel)
+                            ? ` · Level ${quest.minPlayerLevel}`
+                            : ""}
+                    </div>
+                </div>
+                <ItemRequirementCount
+                    imageLink={itemImageLink}
+                    standardCount={standardCount}
+                    firCount={quest.requiredFirCount}
+                />
+                <QuestActions questId={quest.questId} wikiLink={quest.questWikiLink} />
+            </div>
+        </div>
+    );
+}
+
+function AnyOfGroupRow({
+    group,
+    selectedItemId,
+}: {
+    group: DerivedQuestAnyOfGroup;
+    selectedItemId: string;
+}) {
+    const isCompleted = group.status === "completed";
+    const selectedItem = group.items.find((item) => item.id === selectedItemId);
+    const otherItems = group.items.filter((item) => item.id !== selectedItemId);
+    const previewItems = selectedItem
+        ? [selectedItem, ...otherItems.slice(0, 5)]
+        : group.items.slice(0, 6);
+    const hiddenItemCount = Math.max(group.totalItemCount - previewItems.length, 0);
+
+    return (
+        <div className="bg-black/10 px-3 py-2.5 hover:bg-white/[0.02]">
+            <div className="flex min-w-0 items-center gap-2.5">
+                {isCompleted ? (
+                    <CheckCircle size={15} className="shrink-0 text-tarkov-green" />
+                ) : (
+                    <Circle size={15} className="shrink-0 text-gray-600" />
+                )}
+                {group.traderImageLink ? (
+                    <img
+                        src={group.traderImage4xLink ?? group.traderImageLink}
+                        alt=""
+                        className="h-6 w-6 shrink-0 rounded-full object-cover"
+                    />
+                ) : (
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] text-muted-foreground">
+                        {group.traderName[0]}
+                    </span>
+                )}
+                <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span
+                            className={`truncate text-sm font-medium ${
+                                isCompleted
+                                    ? "text-muted-foreground line-through"
+                                    : "text-foreground"
+                            }`}
+                        >
+                            {group.questName}
+                        </span>
+                        <span className="rounded-md bg-violet-400/10 px-1.5 py-0.5 text-[10px] text-violet-200">
+                            Item group
+                        </span>
+                        {group.requiredFirCount > 0 && (
+                            <span className="rounded-md bg-orange-400/10 px-1.5 py-0.5 text-[10px] text-orange-300">
+                                FiR
+                            </span>
+                        )}
+                        <QuestStatus status={group.status} />
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                        {group.traderName}
+                        {hasDisplayQuestLevel(group.minPlayerLevel)
+                            ? ` · Level ${group.minPlayerLevel}`
+                            : ""}
+                    </div>
+                </div>
+                <ItemRequirementCount
+                    imageLink={selectedItem?.iconLink ?? selectedItem?.gridImageLink}
+                    standardCount={group.requiredCount}
+                    firCount={0}
+                />
+                <QuestActions questId={group.questId} wikiLink={group.questWikiLink} />
+            </div>
+            <div className="mt-2 text-[11px] text-muted-foreground">
+                {group.objectiveLabel}
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+                {previewItems.map((item) => (
+                    <span
+                        key={item.id}
+                        className={`flex h-10 max-w-44 items-center gap-2 text-[11px] ${
+                            item.id === selectedItemId
+                                ? "text-foreground"
+                                : "text-muted-foreground"
+                        }`}
+                    >
+                        {(item.iconLink ?? item.gridImageLink) && (
+                            <img
+                                src={item.iconLink ?? item.gridImageLink}
+                                alt=""
+                                className="h-8 w-8 shrink-0 object-contain"
+                            />
+                        )}
+                        <span className="min-w-0 truncate">{item.name}</span>
+                    </span>
+                ))}
+                {hiddenItemCount > 0 && (
+                    <span className="px-1.5 text-[11px] text-muted-foreground">
+                        +{hiddenItemCount} more
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function QuestStatus({ status }: { status: DerivedQuestItemQuest["status"] }) {
+    const styles = {
+        available: "bg-blue-400/10 text-blue-200",
+        future: "bg-amber-400/10 text-amber-200",
+        completed: "bg-tarkov-green/10 text-tarkov-green",
+        ignored: "bg-white/5 text-muted-foreground",
+    };
+    return (
+        <span className={`rounded-md px-1.5 py-0.5 text-[10px] capitalize ${styles[status]}`}>
+            {status}
+        </span>
+    );
+}
+
+function ItemRequirementCount({
+    imageLink,
+    standardCount,
+    firCount,
+}: {
+    imageLink?: string;
+    standardCount: number;
+    firCount: number;
+}) {
+    return (
+        <div className="flex min-w-[4.75rem] shrink-0 items-center justify-end gap-1.5 px-2">
+            <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-md bg-white/5">
+                {imageLink ? (
+                    <img src={imageLink} alt="" className="h-6 w-6 object-contain" />
+                ) : (
+                    <PackageOpen size={13} className="text-muted-foreground" />
+                )}
+            </span>
+            {standardCount > 0 && (
+                <span className="min-w-6 text-right font-mono text-sm font-semibold tabular-nums text-foreground">
+                    ×{standardCount}
+                </span>
+            )}
+            {firCount > 0 && (
+                <span className="whitespace-nowrap font-mono text-xs font-semibold text-orange-300">
+                    FiR ×{firCount}
+                </span>
+            )}
+        </div>
+    );
+}
+
+function QuestActions({ questId, wikiLink }: { questId: string; wikiLink?: string | null }) {
+    return (
+        <div className="flex shrink-0 items-center gap-3 text-[11px]">
+            <Link
+                href={getQuestDeepLinkHref(questId)}
+                className="flex items-center gap-1 font-medium text-foreground transition-colors hover:text-tarkov-green"
+            >
+                View <ArrowRight size={12} />
+            </Link>
+            {wikiLink && (
+                <a
+                    href={wikiLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-muted-foreground underline decoration-white/25 underline-offset-2 transition-colors hover:text-foreground"
+                >
+                    Wiki <ExternalLink size={10} />
+                </a>
+            )}
+        </div>
+    );
+}

@@ -2,13 +2,15 @@
 
 import type { ItemDetails } from "@/types";
 import type { NeedBreakdown } from "@/lib/utils/item-needs";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, PackageOpen } from "lucide-react";
 
 interface ItemDetailHeaderProps {
     item: ItemDetails;
     totalCount: number;
     owned: { have: number; haveFir: number };
     needsBreakdown: NeedBreakdown | null;
+    hideoutUseCount: number;
+    questUseCount: number;
 }
 
 export function ItemDetailHeader({
@@ -16,35 +18,58 @@ export function ItemDetailHeader({
     totalCount,
     owned,
     needsBreakdown,
+    hideoutUseCount,
+    questUseCount,
 }: ItemDetailHeaderProps) {
+    const imageLink =
+        item.image512pxLink ?? item.gridImageLink ?? item.iconLink ?? item.baseImageLink;
+    const categories = (
+        item.categories?.length ? item.categories : item.category ? [item.category] : []
+    ).filter((category) => category.normalizedName !== "item");
+    const categoryLabels = categories
+        .map((category) => category.name.replace(/\s+item$/i, ""))
+        .filter((label, index, labels) => label && labels.indexOf(label) === index);
+
     return (
-        <div className="flex flex-col sm:items-start gap-3 flex-1 min-w-0">
-            <div className="flex items-start gap-3">
-                <div className="w-14 h-14 sm:w-20 sm:h-20 bg-card border border-border-color flex items-center justify-center shrink-0 overflow-hidden relative rounded-sm">
-                    {item.iconLink || item.gridImageLink ? (
+        <div className="flex min-w-0 flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border-color bg-black/30 shadow-inner sm:h-20 sm:w-20">
+                    {imageLink ? (
                         <img
-                            src={item.iconLink || item.gridImageLink}
+                            src={imageLink}
                             alt={item.name}
-                            className="w-full h-full object-contain p-1.5"
+                            className="h-full w-full object-contain p-2"
                         />
                     ) : (
-                        <div className="text-2xl text-muted-foreground">?</div>
+                        <PackageOpen className="h-7 w-7 text-muted-foreground" />
                     )}
                 </div>
                 <div className="min-w-0 flex-1">
-                    <h2 className="text-lg sm:text-xl font-bold text-foreground mb-1">
+                    {categoryLabels.length > 0 && (
+                        <div className="mb-1.5 flex flex-wrap gap-1.5">
+                            {categoryLabels.slice(-2).map((label) => (
+                                <span
+                                    key={label}
+                                    className="text-[10px] font-semibold uppercase tracking-[0.16em] text-tarkov-green-dim"
+                                >
+                                    {label}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                    <h2 className="text-xl font-semibold leading-tight text-foreground">
                         {item.name}
                     </h2>
-                    <span className="inline-flex items-center text-muted-foreground bg-card border border-border-color px-1.5 py-0.5 rounded-sm text-[11px] mb-1.5">
-                        {item.category?.name || "Item"}
-                    </span>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                    {item.shortName && item.shortName !== item.name && (
+                        <p className="mt-1 text-xs text-muted-foreground">{item.shortName}</p>
+                    )}
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                         {item.wikiLink && (
                             <a
                                 href={item.wikiLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="hover:underline hover:text-tarkov-green flex items-center gap-1 transition-colors"
+                                className="flex items-center gap-1 transition-colors hover:text-tarkov-green"
                             >
                                 Wiki <ExternalLink size={10} />
                             </a>
@@ -54,7 +79,7 @@ export function ItemDetailHeader({
                                 href={item.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="hover:underline hover:text-tarkov-green flex items-center gap-1 transition-colors"
+                                className="flex items-center gap-1 transition-colors hover:text-tarkov-green"
                             >
                                 Tarkov.dev <ExternalLink size={10} />
                             </a>
@@ -62,31 +87,69 @@ export function ItemDetailHeader({
                     </div>
                 </div>
             </div>
-
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-                <div className="flex items-center gap-2 bg-card px-2.5 py-1 rounded-md border border-border-color shadow-sm">
-                    <span className="text-muted-foreground font-medium text-xs uppercase tracking-wider">Total</span>
-                    <span className="font-mono font-bold text-foreground text-base">x{totalCount}</span>
+            {(totalCount > 0 || hideoutUseCount > 0 || questUseCount > 0) && (
+                <div className="grid w-full auto-cols-fr grid-flow-col overflow-hidden rounded-lg border border-border-color bg-black/20 lg:w-auto lg:min-w-[500px]">
+                    <SummaryValue label="Required" value={totalCount} />
+                    <SummaryValue
+                        label="Need"
+                        value={needsBreakdown?.neededNonFir ?? 0}
+                        detail={`${owned.have} owned`}
+                        accent="green"
+                    />
+                    <SummaryValue
+                        label="Need FiR"
+                        value={needsBreakdown?.neededFir ?? 0}
+                        detail={`${owned.haveFir} owned`}
+                        accent="orange"
+                    />
+                    {hideoutUseCount > 0 && (
+                        <SummaryValue
+                            label="Hideout"
+                            value={hideoutUseCount}
+                            detail={`upgrade${hideoutUseCount === 1 ? "" : "s"}`}
+                        />
+                    )}
+                    {questUseCount > 0 && (
+                        <SummaryValue
+                            label="Quests"
+                            value={questUseCount}
+                            detail={`hand-in${questUseCount === 1 ? "" : "s"}`}
+                        />
+                    )}
                 </div>
-                {needsBreakdown && (
-                    <>
-                        <div className="flex items-center gap-2 bg-card px-2.5 py-1 rounded-md border border-border-color shadow-sm">
-                            <span className="text-muted-foreground font-medium text-xs uppercase tracking-wider">Non-FiR</span>
-                            <span className="font-mono font-bold text-tarkov-green text-base">
-                                {needsBreakdown.neededNonFir}
-                            </span>
-                            <span className="text-muted-foreground text-[10px] ml-0.5">(have {owned.have})</span>
-                        </div>
-                        <div className="flex items-center gap-2 bg-card px-2.5 py-1 rounded-md border border-border-color shadow-sm">
-                            <span className="text-muted-foreground font-medium text-xs uppercase tracking-wider">FiR</span>
-                            <span className="font-mono font-bold text-orange-500 text-base">
-                                {needsBreakdown.neededFir}
-                            </span>
-                            <span className="text-muted-foreground text-[10px] ml-0.5">(have {owned.haveFir})</span>
-                        </div>
-                    </>
-                )}
+            )}
+        </div>
+    );
+}
+
+function SummaryValue({
+    label,
+    value,
+    detail,
+    accent,
+}: {
+    label: string;
+    value: number;
+    detail?: string;
+    accent?: "green" | "orange";
+}) {
+    return (
+        <div className="border-r border-border-color px-3 py-2.5 last:border-r-0">
+            <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                {label}
             </div>
+            <div
+                className={`mt-0.5 font-mono text-base font-semibold ${
+                    accent === "green"
+                        ? "text-tarkov-green"
+                        : accent === "orange"
+                          ? "text-orange-400"
+                          : "text-foreground"
+                }`}
+            >
+                {value}
+            </div>
+            {detail && <div className="mt-0.5 text-[10px] text-muted-foreground">{detail}</div>}
         </div>
     );
 }

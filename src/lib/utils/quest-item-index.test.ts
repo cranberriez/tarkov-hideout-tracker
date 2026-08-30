@@ -262,6 +262,54 @@ test("deriveQuestItemState treats completed active-only prerequisites as availab
     assert.equal(state.hasAvailableQuest, true);
 });
 
+test("deriveQuestItemState can include completed quests after incomplete quests", () => {
+    const item = {
+        id: "bolts",
+        name: "Bolts",
+        normalizedName: "bolts",
+        iconLink: "/bolts.png",
+        gridImageLink: "/bolts-grid.png",
+    };
+    const makeHandIn = (id: string, name: string) =>
+        makeQuest({
+            id,
+            name,
+            objectives: [
+                {
+                    id: `objective-${id}`,
+                    type: "giveItem",
+                    description: "Hand in bolts",
+                    optional: false,
+                    count: 2,
+                    foundInRaid: false,
+                    items: [item],
+                },
+            ],
+        });
+    const quests = [makeHandIn("completed", "Completed Hand-In"), makeHandIn("active", "Active Hand-In")];
+    const entry = buildQuestItemIndex(quests)[0];
+
+    const state = deriveQuestItemState(entry, {
+        completedQuests: { completed: true },
+        ignoredQuests: {},
+        pinnedQuests: {},
+        playerLevel: 30,
+        prestigeLevel: 0,
+        faction: "USEC",
+        traderLoyaltyLevels: { prapor: 3 },
+        quests,
+        includeCompleted: true,
+    });
+
+    assert.deepEqual(
+        state.relatedQuests.map((quest) => [quest.questId, quest.status]),
+        [
+            ["active", "available"],
+            ["completed", "completed"],
+        ],
+    );
+});
+
 test("deriveQuestItemStates includes next layer quest demand from available roots", () => {
     const quests = [
         makeQuest({ id: "root", name: "Debut" }),
