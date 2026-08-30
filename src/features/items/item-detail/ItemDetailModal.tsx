@@ -18,7 +18,7 @@ import { ItemDetailHeader } from "./ItemDetailHeader";
 import { hasItemMarketData } from "./ItemDetailMarket";
 import { ItemDetailSidebar } from "./ItemDetailSidebar";
 import { ItemDetailUsageTabs } from "./ItemDetailUsageTabs";
-import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
+import type { QuestAnyOfGroupEntry, QuestItemIndexEntry, QuestRewardIndexEntry } from "@/lib/utils/quest-item-index";
 import { deriveQuestAnyOfGroups, deriveQuestItemState } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { useDataContext } from "@/app/(data)/_dataContext";
@@ -36,6 +36,7 @@ export interface ItemDetailModalProps {
     hiddenStations: Record<string, boolean>;
     completedRequirements: Record<string, boolean>;
     questItemIndex?: QuestItemIndexEntry[];
+    questRewardIndex?: QuestRewardIndexEntry[];
     questAnyOfGroups?: QuestAnyOfGroupEntry[];
     questAvailabilityQuests?: QuestAvailabilityQuest[];
 }
@@ -49,6 +50,7 @@ export function ItemDetailModal({
     hiddenStations,
     completedRequirements,
     questItemIndex = [],
+    questRewardIndex = [],
     questAnyOfGroups = [],
     questAvailabilityQuests = [],
 }: ItemDetailModalProps) {
@@ -335,6 +337,11 @@ export function ItemDetailModal({
         questShowLightkeeper,
     ]);
 
+    const questRewards = useMemo(
+        () => questRewardIndex.find((entry) => entry.itemId === selectedItemId)?.quests ?? [],
+        [questRewardIndex, selectedItemId],
+    );
+
     const itemDetailsById = useMemo(() => {
         const details: Record<string, ItemDetails> = {};
         for (const catalogItem of catalogItems ?? []) {
@@ -438,10 +445,12 @@ export function ItemDetailModal({
     }, [itemById, itemUsage, questAvailabilityQuests, stations]);
 
     const hasQuestRequirements =
-        (questItemState?.relatedQuests.length ?? 0) > 0 || questAnyOfGroupState.length > 0;
+        (questItemState?.relatedQuests.length ?? 0) > 0 ||
+        questAnyOfGroupState.length > 0 ||
+        questRewards.length > 0;
     const hideoutUseCount = stationRequirements.reduce((count, [, reqs]) => count + reqs.length, 0);
     const questUseCount =
-        (questItemState?.relatedQuestCount ?? 0) + questAnyOfGroupState.length;
+        (questItemState?.relatedQuestCount ?? 0) + questAnyOfGroupState.length + questRewards.length;
 
     if (!selectedItem) {
         return null;
@@ -527,6 +536,7 @@ export function ItemDetailModal({
                                     stationLevels={stationLevels}
                                     hiddenStations={hiddenStations}
                                     questItemState={questItemState}
+                                    questRewards={questRewards}
                                     anyOfGroups={questAnyOfGroupState}
                                     itemDetailsById={itemDetailsById}
                                     traderOffers={traderOffers}

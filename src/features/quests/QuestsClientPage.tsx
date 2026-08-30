@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { FullQuest, ItemDetails } from "@/types";
-import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
+import type { QuestAnyOfGroupEntry, QuestItemIndexEntry, QuestRewardIndexEntry } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -17,11 +17,12 @@ interface QuestsClientPageProps {
     quests: FullQuest[];
     updatedAt: number;
     questItemIndex: QuestItemIndexEntry[];
+    questRewardIndex: QuestRewardIndexEntry[];
     questAnyOfGroups: QuestAnyOfGroupEntry[];
     questAvailabilityQuests: QuestAvailabilityQuest[];
 }
 
-export function QuestsClientPage({ quests, updatedAt, questItemIndex, questAnyOfGroups, questAvailabilityQuests }: QuestsClientPageProps) {
+export function QuestsClientPage({ quests, updatedAt, questItemIndex, questRewardIndex, questAnyOfGroups, questAvailabilityQuests }: QuestsClientPageProps) {
     void updatedAt;
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const { stations, itemById } = useDataContext();
@@ -37,7 +38,7 @@ export function QuestsClientPage({ quests, updatedAt, questItemIndex, questAnyOf
             <QuestWorkspaceProvider quests={quests}>
                 <QuestWorkspace quests={quests} />
             </QuestWorkspaceProvider>
-            <ItemDetailModal item={selectedItem} isOpen={!!selectedItem} onClose={() => setSelectedItemId(null)} stations={stations ?? []} stationLevels={stationLevels} hiddenStations={hiddenStations} completedRequirements={completedRequirements} questItemIndex={questItemIndex} questAnyOfGroups={questAnyOfGroups} questAvailabilityQuests={questAvailabilityQuests} />
+            <ItemDetailModal item={selectedItem} isOpen={!!selectedItem} onClose={() => setSelectedItemId(null)} stations={stations ?? []} stationLevels={stationLevels} hiddenStations={hiddenStations} completedRequirements={completedRequirements} questItemIndex={questItemIndex} questRewardIndex={questRewardIndex} questAnyOfGroups={questAnyOfGroups} questAvailabilityQuests={questAvailabilityQuests} />
             <QuestCascadeConfirmDialog />
         </QuestsProvider>
     );

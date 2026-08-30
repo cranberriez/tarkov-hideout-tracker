@@ -24,6 +24,7 @@ import type {
     QuestFailCondition,
     QuestSpecificItem,
     QuestMap,
+    QuestItemReward,
     QuestObjectiveItemType,
     QuestPrestige,
     QuestsPayload,
@@ -67,6 +68,7 @@ interface JsonMap {
 
 interface JsonRewardSet {
     traderStanding?: Array<{ trader: string; standing: number }>;
+    items?: Array<{ item: string; count: number }>;
 }
 
 interface JsonTaskRequirement {
@@ -451,6 +453,12 @@ function mapStandingRewards(
     return mapped;
 }
 
+function mapItemRewards(rewards: JsonRewardSet | undefined): QuestItemReward[] {
+    return (rewards?.items ?? [])
+        .filter((reward) => reward.item && Number.isFinite(reward.count) && reward.count > 0)
+        .map((reward) => ({ itemId: reward.item, count: reward.count }));
+}
+
 async function fetchAndMapFullQuests(gameMode: TarkovJsonGameMode): Promise<FullQuest[]> {
     const [tasksDataset, tradersDataset, mapsDataset, hideoutDataset] =
         await Promise.all([
@@ -549,6 +557,7 @@ async function fetchAndMapFullQuests(gameMode: TarkovJsonGameMode): Promise<Full
                     .filter((requirement): requirement is NonNullable<typeof requirement> => requirement !== null),
                 otherRequirements: mapQuestOtherRequirements(task.otherRequirements),
                 requiredPrestige,
+                finishItemRewards: mapItemRewards(task.finishRewards),
                 finishTraderStandingRewards: mapStandingRewards(task.finishRewards, context),
                 failureTraderStandingRewards: mapStandingRewards(task.failureOutcome, context),
                 objectives: (task.objectives ?? []).map((objective) =>

@@ -50,6 +50,11 @@ The `/quests` route displays Tarkov.dev quest data in a full-height split worksp
 
 Quest data is not part of the shared `(data)/layout.tsx` context. Pages that need quest data fetch it server-side. `getCachedFullQuestData()` is exported by `tarkovData.ts` and resolves to the JSON implementation. The quests page derives `traders` and `allMaps` from the loaded full quest data; it does not currently need `getCachedTraders()`.
 
+Completion item rewards are retained as ID/count references on `FullQuest`. The
+quest details pane resolves those IDs through `DataContext.itemById` and shows
+items, experience, and trader reputation together in the bottom Rewards section.
+Reward item clicks open the standard item detail modal.
+
 ---
 
 ## Quest Ordering
@@ -613,7 +618,7 @@ API quirks to keep in mind:
 
 | Layer                    | Key                                      | Freshness                   |
 | ------------------------ | ---------------------------------------- | --------------------------- |
-| Redis                    | `quests:full:v15:{mode}` + matching `:meta` key | 24h service freshness check |
+| Redis                    | `quests:full:v16:{mode}` + matching `:meta` key | 24h service freshness check |
 | Next.js `unstable_cache` | `["quests-full"]`                        | `revalidate: 43200`         |
 
 To invalidate quest data for application code, bump the relevant version in `src/lib/cfg/cacheVersions.ts`. See `caching-architecture.md`.

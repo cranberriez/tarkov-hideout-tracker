@@ -5,6 +5,7 @@ import type { FullQuest } from "../../types/types";
 import {
     buildQuestAnyOfGroups,
     buildQuestItemIndex,
+    buildQuestRewardIndex,
     deriveQuestItemState,
     deriveQuestItemStates,
 } from "./quest-item-index";
@@ -26,6 +27,7 @@ function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name"
         traderRequirements: overrides.traderRequirements ?? [],
         otherRequirements: overrides.otherRequirements ?? [],
         requiredPrestige: overrides.requiredPrestige ?? null,
+        finishItemRewards: overrides.finishItemRewards ?? [],
         objectives: overrides.objectives ?? [],
         wikiLink: overrides.wikiLink ?? null,
         minPlayerLevel: overrides.minPlayerLevel ?? 1,
@@ -35,6 +37,41 @@ function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name"
         map: overrides.map ?? null,
     };
 }
+
+test("buildQuestRewardIndex keeps completion rewards separate from quest demand", () => {
+    const quests = [
+        makeQuest({
+            id: "rewarding-quest",
+            name: "A Fine Reward",
+            finishItemRewards: [
+                { itemId: "reward-item", count: 2 },
+                { itemId: "reward-item", count: 3 },
+            ],
+            objectives: [],
+        }),
+    ];
+
+    assert.deepEqual(buildQuestItemIndex(quests), []);
+    assert.deepEqual(buildQuestRewardIndex(quests), [
+        {
+            itemId: "reward-item",
+            quests: [
+                {
+                    itemId: "reward-item",
+                    count: 5,
+                    questId: "rewarding-quest",
+                    questName: "A Fine Reward",
+                    questWikiLink: null,
+                    minPlayerLevel: 1,
+                    traderId: "prapor",
+                    traderName: "Prapor",
+                    traderImageLink: null,
+                    traderImage4xLink: null,
+                },
+            ],
+        },
+    ]);
+});
 
 function makeQuestItem(index: number) {
     return {

@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, CheckCircle, Circle, ExternalLink, PackageOpen } from "lucide-react";
+import { ArrowRight, CheckCircle, Circle, ExternalLink, Gift, PackageOpen } from "lucide-react";
 import type {
     DerivedQuestAnyOfGroup,
     DerivedQuestItemQuest,
     DerivedQuestItemState,
+    QuestRewardLink,
 } from "@/lib/utils/quest-item-index";
 import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";
@@ -16,18 +17,23 @@ interface ItemDetailQuestRequirementsProps {
     selectedItemId: string;
     selectedItemImageLink?: string;
     questItemState: DerivedQuestItemState | null;
+    questRewards: QuestRewardLink[];
     anyOfGroups: DerivedQuestAnyOfGroup[];
     itemDetailsById: Record<string, ItemDetails>;
+    completedQuests: Record<string, boolean>;
 }
 
 export function ItemDetailQuestRequirements({
     selectedItemId,
     selectedItemImageLink,
     questItemState,
+    questRewards,
     anyOfGroups,
     itemDetailsById,
+    completedQuests,
 }: ItemDetailQuestRequirementsProps) {
-    const totalQuests = (questItemState?.relatedQuestCount ?? 0) + anyOfGroups.length;
+    const requiredQuestCount = (questItemState?.relatedQuestCount ?? 0) + anyOfGroups.length;
+    const totalQuests = requiredQuestCount + questRewards.length;
     if (totalQuests === 0) return null;
 
     const relatedQuests = [...(questItemState?.relatedQuests ?? [])].sort(
@@ -38,22 +44,60 @@ export function ItemDetailQuestRequirements({
     );
 
     return (
-        <div className="divide-y divide-border-color">
-            {relatedQuests.map((quest) => (
-                <QuestRow
-                    key={quest.questId}
-                    quest={quest}
-                    itemImageLink={selectedItemImageLink}
-                />
-            ))}
-            {sortedGroups.map((group) => (
-                <AnyOfGroupRow
-                    key={group.groupId}
-                    group={group}
-                    selectedItemId={selectedItemId}
-                    itemDetailsById={itemDetailsById}
-                />
-            ))}
+        <div>
+            {requiredQuestCount > 0 && (
+                <section>
+                    <div className="border-b border-border-color bg-black/20 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Required for quests
+                    </div>
+                    <div className="divide-y divide-border-color">
+                        {relatedQuests.map((quest) => (
+                            <QuestRow key={quest.questId} quest={quest} itemImageLink={selectedItemImageLink} />
+                        ))}
+                        {sortedGroups.map((group) => (
+                            <AnyOfGroupRow key={group.groupId} group={group} selectedItemId={selectedItemId} itemDetailsById={itemDetailsById} />
+                        ))}
+                    </div>
+                </section>
+            )}
+            {questRewards.length > 0 && (
+                <section className={requiredQuestCount > 0 ? "border-t border-border-color" : ""}>
+                    <div className="border-b border-border-color bg-tarkov-green/[0.04] px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-tarkov-green/80">
+                        Quest rewards
+                    </div>
+                    <div className="divide-y divide-border-color">
+                        {questRewards.map((reward) => (
+                            <QuestRewardRow key={reward.questId} reward={reward} itemImageLink={selectedItemImageLink} completed={!!completedQuests[reward.questId]} />
+                        ))}
+                    </div>
+                </section>
+            )}
+        </div>
+    );
+}
+
+function QuestRewardRow({ reward, itemImageLink, completed }: { reward: QuestRewardLink; itemImageLink?: string; completed: boolean }) {
+    return (
+        <div className="bg-black/10 px-3 py-2.5 hover:bg-white/[0.02]">
+            <div className="flex min-w-0 items-center gap-2.5">
+                <Gift size={15} className="shrink-0 text-tarkov-green" />
+                {reward.traderImageLink ? (
+                    <img src={reward.traderImage4xLink ?? reward.traderImageLink} alt="" className="h-6 w-6 shrink-0 rounded-full object-cover" />
+                ) : (
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] text-muted-foreground">{reward.traderName[0]}</span>
+                )}
+                <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="truncate text-sm font-medium text-foreground">{reward.questName}</span>
+                        {completed && <span className="rounded-md bg-tarkov-green/10 px-1.5 py-0.5 text-[10px] text-tarkov-green">Completed</span>}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                        {reward.traderName}{hasDisplayQuestLevel(reward.minPlayerLevel) ? ` · Level ${reward.minPlayerLevel}` : ""}
+                    </div>
+                </div>
+                <ItemRequirementCount imageLink={itemImageLink} standardCount={reward.count} firCount={0} />
+                <QuestActions questId={reward.questId} wikiLink={reward.questWikiLink} />
+            </div>
         </div>
     );
 }

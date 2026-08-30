@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { orderQuestsByPrerequisites } from "@/server/services/quests";
 import { getCachedFullQuestData } from "@/server/services/tarkovData";
-import { buildQuestAnyOfGroups, buildQuestItemIndex } from "@/lib/utils/quest-item-index";
+import { buildQuestAnyOfGroups, buildQuestItemIndex, buildQuestRewardIndex } from "@/lib/utils/quest-item-index";
 import { toQuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { QuestsClientPage } from "@/features/quests/QuestsClientPage";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
@@ -29,6 +29,7 @@ export default async function QuestsPage() {
         excludeRemovedQuests(normalizedQuests),
     );
     const questItemIndex = buildQuestItemIndex(progressionQuests);
+    const questRewardIndex = buildQuestRewardIndex(progressionQuests);
     const questAnyOfGroups = buildQuestAnyOfGroups(progressionQuests);
     const questAvailabilityQuests = progressionQuests.map(toQuestAvailabilityQuest);
 
@@ -38,6 +39,7 @@ export default async function QuestsPage() {
                 quests={quests}
                 updatedAt={questsResponse.updatedAt}
                 questItemIndex={questItemIndex}
+                questRewardIndex={questRewardIndex}
                 questAnyOfGroups={questAnyOfGroups}
                 questAvailabilityQuests={questAvailabilityQuests}
             />

@@ -1,7 +1,7 @@
 import { orderQuestsByPrerequisites } from "@/server/services/quests";
 import { getCachedFullQuestData } from "@/server/services/tarkovData";
 import { toQuestAvailabilityQuest } from "@/lib/utils/quest-availability";
-import { buildQuestAnyOfGroups, buildQuestItemIndex } from "@/lib/utils/quest-item-index";
+import { buildQuestAnyOfGroups, buildQuestItemIndex, buildQuestRewardIndex } from "@/lib/utils/quest-item-index";
 import { ItemsClientPage } from "@/features/items/ItemsClientPage";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
 import { excludeRemovedQuests } from "@/lib/utils/removed-quests";
@@ -21,12 +21,14 @@ export default async function ItemsPage() {
         excludeRemovedQuests(normalizedQuests),
     );
     const questItemIndex = buildQuestItemIndex(orderedQuests);
+    const questRewardIndex = buildQuestRewardIndex(orderedQuests);
     const questAnyOfGroups = buildQuestAnyOfGroups(orderedQuests);
     const questAvailabilityQuests = orderedQuests.map(toQuestAvailabilityQuest);
 
     return (
         <ItemsClientPage
             questItemIndex={questItemIndex}
+            questRewardIndex={questRewardIndex}
             questAnyOfGroups={questAnyOfGroups}
             questAvailabilityQuests={questAvailabilityQuests}
         />

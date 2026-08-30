@@ -2,7 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useDeferredValue, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Bug, CheckCircle2, Circle, Eye, EyeOff, ExternalLink, Flag, GitBranch, MapPinned, Pin, RotateCcw, X, XCircle } from "lucide-react";
+import { AlertTriangle, Bug, CheckCircle2, Circle, Eye, EyeOff, ExternalLink, Flag, GitBranch, MapPinned, PackageOpen, Pin, RotateCcw, X, XCircle } from "lucide-react";
+import { useDataContext } from "@/app/(data)/_dataContext";
 import type { MapOverlayMarker } from "@/features/maps/map-types";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,7 @@ export function QuestDetailsPane() {
         requestKey: number;
     } | null>(null);
     const mapSectionRef = useRef<HTMLElement>(null);
+    const { itemById } = useDataContext();
     const {
         quests,
         selectedQuest: quest,
@@ -524,14 +526,40 @@ export function QuestDetailsPane() {
                         </div>
                     ) : <p className="text-xs text-gray-600">No objectives provided.</p>}
 
-                    {(quest.finishTraderStandingRewards?.length ?? 0) > 0 && <div className="mt-12">
+                    {(quest.experience > 0 || (quest.finishItemRewards?.length ?? 0) > 0 || (quest.finishTraderStandingRewards?.length ?? 0) > 0) && <div className="mt-12">
                         <SectionLabel>Rewards</SectionLabel>
-                        <div className="space-y-2.5 text-sm">
+                        <div className="grid gap-2.5 sm:grid-cols-2 text-sm">
+                            {quest.experience > 0 && (
+                                <div className="flex items-center justify-between border border-white/8 bg-black/10 px-3 py-2.5">
+                                    <span className="text-gray-500">Experience</span>
+                                    <span className="font-mono font-semibold text-tarkov-green">{quest.experience.toLocaleString()} XP</span>
+                                </div>
+                            )}
                             {(quest.finishTraderStandingRewards ?? []).map((reward, index) => (
-                                <p key={`${reward.trader.id}-${index}`} className={reward.standing >= 0 ? "text-tarkov-green" : "text-red-300"}>
-                                    <span className="mr-2 text-gray-600">{reward.trader.name} reputation</span>{formatStanding(reward.standing)}
-                                </p>
+                                <div key={`${reward.trader.id}-${index}`} className="flex items-center justify-between border border-white/8 bg-black/10 px-3 py-2.5">
+                                    <span className="text-gray-500">{reward.trader.name} reputation</span>
+                                    <span className={reward.standing >= 0 ? "font-mono font-semibold text-tarkov-green" : "font-mono font-semibold text-red-300"}>{formatStanding(reward.standing)}</span>
+                                </div>
                             ))}
+                            {(quest.finishItemRewards ?? []).map((reward, index) => {
+                                const item = itemById[reward.itemId];
+                                const imageLink = item?.iconLink ?? item?.gridImageLink;
+                                return (
+                                    <button
+                                        key={`${reward.itemId}-${index}`}
+                                        type="button"
+                                        onClick={() => item && onItemClick?.(item.id)}
+                                        disabled={!item || !onItemClick}
+                                        className="flex items-center gap-3 border border-white/8 bg-black/10 px-3 py-2.5 text-left transition-colors enabled:hover:border-tarkov-green/30 enabled:hover:bg-tarkov-green/[0.04] disabled:cursor-default"
+                                    >
+                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden bg-white/5">
+                                            {imageLink ? <img src={imageLink} alt="" className="h-8 w-8 object-contain" /> : <PackageOpen size={15} className="text-gray-600" />}
+                                        </span>
+                                        <span className="min-w-0 flex-1 truncate text-gray-300">{item?.name ?? "Unknown item"}</span>
+                                        <span className="shrink-0 font-mono font-semibold text-white">×{reward.count.toLocaleString()}</span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>}
                 </section>

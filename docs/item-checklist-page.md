@@ -104,6 +104,9 @@ record through `itemById`. Hideout and quest usage remain client-derived. The
 modal's acquisition data is loaded separately:
 
 - **Hideout** and **Quests** use the already loaded station/quest references.
+- The **Quests** tab separates quests that require the selected item from quests
+  that award it. Reward sources are informational and never contribute checklist
+  demand or inventory counts.
 - **Traders** and **Crafting** lazily request
   `/api/items/{itemId}/usage?mode=...`. Barter and craft errors render
   independently; successful results are cached in memory by mode and item ID.

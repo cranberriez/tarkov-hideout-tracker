@@ -4,7 +4,7 @@ export const CACHE_VERSIONS = {
 	itemBarters: 2,
 	itemCrafts: 2,
 	quests: 7,
-	questsFull: 15,
+	questsFull: 16,
 	traders: 2,
 } as const;
 

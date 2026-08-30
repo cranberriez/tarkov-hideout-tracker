@@ -10,18 +10,20 @@ import { ItemSearchModal } from "@/features/items/components/ItemSearchModal";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { useDataContext } from "@/app/(data)/_dataContext";
-import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
+import type { QuestAnyOfGroupEntry, QuestItemIndexEntry, QuestRewardIndexEntry } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { DataLoadError } from "@/components/core/DataLoadError";
 
 interface ItemsClientPageProps {
     questItemIndex: QuestItemIndexEntry[];
+    questRewardIndex: QuestRewardIndexEntry[];
     questAnyOfGroups: QuestAnyOfGroupEntry[];
     questAvailabilityQuests: QuestAvailabilityQuest[];
 }
 
 export function ItemsClientPage({
     questItemIndex,
+    questRewardIndex,
     questAnyOfGroups,
     questAvailabilityQuests,
 }: ItemsClientPageProps) {
@@ -145,6 +147,7 @@ export function ItemsClientPage({
                     hiddenStations={hiddenStations}
                     completedRequirements={completedRequirements}
                     questItemIndex={questItemIndex}
+                    questRewardIndex={questRewardIndex}
                     questAnyOfGroups={questAnyOfGroups}
                     questAvailabilityQuests={questAvailabilityQuestList}
                 />

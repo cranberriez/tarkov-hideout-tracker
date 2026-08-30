@@ -5,6 +5,7 @@ import { ChartNoAxesCombined, ClipboardList, Hammer, ShoppingCart, Wrench } from
 import type {
     DerivedQuestAnyOfGroup,
     DerivedQuestItemState,
+    QuestRewardLink,
 } from "@/lib/utils/quest-item-index";
 import {
     ItemDetailHideoutRequirements,
@@ -28,6 +29,7 @@ interface ItemDetailUsageTabsProps {
     stationLevels: Record<string, number>;
     hiddenStations: Record<string, boolean>;
     questItemState: DerivedQuestItemState | null;
+    questRewards: QuestRewardLink[];
     anyOfGroups: DerivedQuestAnyOfGroup[];
     itemDetailsById: Record<string, ItemDetails>;
     traderOffers: ItemTraderOffer[];
@@ -50,6 +52,7 @@ export function ItemDetailUsageTabs({
     stationLevels,
     hiddenStations,
     questItemState,
+    questRewards,
     anyOfGroups,
     itemDetailsById,
     traderOffers,
@@ -64,7 +67,7 @@ export function ItemDetailUsageTabs({
     showPriceHistory,
 }: ItemDetailUsageTabsProps) {
     const hideoutCount = stationRequirements.reduce((count, [, reqs]) => count + reqs.length, 0);
-    const questCount = (questItemState?.relatedQuestCount ?? 0) + anyOfGroups.length;
+    const questCount = (questItemState?.relatedQuestCount ?? 0) + anyOfGroups.length + questRewards.length;
     const availableTabs: UsageTab[] = [
         ...(hideoutCount > 0 ? (["hideout"] as const) : []),
         ...(questCount > 0 ? (["quests"] as const) : []),
@@ -144,8 +147,10 @@ export function ItemDetailUsageTabs({
                         selectedItemId={selectedItemId}
                         selectedItemImageLink={selectedItemImageLink}
                         questItemState={questItemState}
+                        questRewards={questRewards}
                         anyOfGroups={anyOfGroups}
                         itemDetailsById={itemDetailsById}
+                        completedQuests={completedQuests}
                     />
                 )}
                 {selectedTab === "traders" && (

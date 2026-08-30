@@ -552,6 +552,11 @@ export interface QuestTraderStandingReward {
     standing: number;
 }
 
+export interface QuestItemReward {
+    itemId: string;
+    count: number;
+}
+
 export interface FullQuest {
     id: string;
     name: string;
@@ -577,6 +582,7 @@ export interface FullQuest {
     traderRequirements: QuestTraderRequirement[];
     otherRequirements: QuestOtherRequirement[];
     requiredPrestige?: QuestPrestige | null;
+    finishItemRewards?: QuestItemReward[];
     finishTraderStandingRewards?: QuestTraderStandingReward[];
     failureTraderStandingRewards?: QuestTraderStandingReward[];
     objectives: FullQuestObjective[];

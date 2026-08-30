@@ -68,6 +68,24 @@ export interface QuestItemIndexEntry {
     quests: QuestItemLink[];
 }
 
+export interface QuestRewardLink {
+    itemId: string;
+    count: number;
+    questId: string;
+    questName: string;
+    questWikiLink?: string | null;
+    minPlayerLevel?: number | null;
+    traderId: string;
+    traderName: string;
+    traderImageLink?: string | null;
+    traderImage4xLink?: string | null;
+}
+
+export interface QuestRewardIndexEntry {
+    itemId: string;
+    quests: QuestRewardLink[];
+}
+
 export interface QuestAnyOfGroupEntry {
     groupId: string;
     questId: string;
@@ -988,4 +1006,35 @@ export function compareQuestItemState(a: DerivedQuestItemState, b: DerivedQuestI
     }
 
     return a.itemId.localeCompare(b.itemId);
+}
+
+export function buildQuestRewardIndex(quests: FullQuest[]): QuestRewardIndexEntry[] {
+    const rewardsByItemId = new Map<string, QuestRewardIndexEntry>();
+
+    for (const quest of quests) {
+        const rewardCounts = new Map<string, number>();
+        for (const reward of quest.finishItemRewards ?? []) {
+            rewardCounts.set(reward.itemId, (rewardCounts.get(reward.itemId) ?? 0) + reward.count);
+        }
+
+        for (const [itemId, count] of rewardCounts) {
+            const link: QuestRewardLink = {
+                itemId,
+                count,
+                questId: quest.id,
+                questName: quest.name,
+                questWikiLink: quest.wikiLink,
+                minPlayerLevel: quest.minPlayerLevel,
+                traderId: quest.trader.id,
+                traderName: quest.trader.name,
+                traderImageLink: quest.trader.imageLink,
+                traderImage4xLink: quest.trader.image4xLink,
+            };
+            const entry = rewardsByItemId.get(itemId);
+            if (entry) entry.quests.push(link);
+            else rewardsByItemId.set(itemId, { itemId, quests: [link] });
+        }
+    }
+
+    return [...rewardsByItemId.values()];
 }

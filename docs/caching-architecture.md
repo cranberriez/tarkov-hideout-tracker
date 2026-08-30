@@ -38,7 +38,7 @@ Every source service validates cached and upstream data:
 | `items:crafts:v2:{mode}` | Crafts indexed by product item ID | `itemCrafts` |
 | `hideout:stations:v8:{mode}` | Stations with ID-based item requirements | `hideoutStations` |
 | `quests:all:v7:{mode}` | Lightweight give-item quests with standard item IDs | `quests` |
-| `quests:full:v15:{mode}` | Full quest content with ID-based standard-item references | `questsFull` |
+| `quests:full:v16:{mode}` | Full quest content with ID-based standard-item and reward references | `questsFull` |
 | `traders:all:v2:{mode}` | Compact trader list | `traders` |
 
 There is no tracked-item cache. The old `hideout:items:filtered:*` namespace is
