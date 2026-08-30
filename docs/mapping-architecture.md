@@ -178,6 +178,6 @@ SVG maps are attributed to their configured authors and the `CC BY-NC-SA 4.0` li
 
 ## Caching
 
-The normalized full-quest Redis cache is `quests:full:v13:{regular|pve|pvp-season}`. The version changed because objective geometry is now part of `FullQuest`.
+The normalized full-quest Redis cache is `quests:full:v14:{regular|pve|pvp-season}`. The current version includes objective geometry and ID-only standard-item references.
 
 Render manifests are deterministic server-side reductions of the committed metadata. The selected SVG proxy uses framework fetch caching and browser stale-while-revalidate headers. No Zustand persistence fields, keys, versions, or quest ID keys change.

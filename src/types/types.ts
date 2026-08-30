@@ -18,8 +18,8 @@ export interface VendorPrice {
         normalizedName: string;
         imageLink?: string | null;
     };
-    currency: string;
-    price: number;
+    currency?: string;
+    price?: number;
     priceRUB: number;
 }
 
@@ -35,6 +35,105 @@ export interface MarketPrice {
     diff24h?: number | null;
     updatedAt?: number | null;
     sellFor?: VendorPrice[];
+}
+
+export interface GlobalItemVendorPrice {
+    vendor: {
+        id?: string;
+        name: string;
+        normalizedName: string;
+        imageLink?: string | null;
+    };
+    priceRUB: number;
+}
+
+export interface GlobalItemMarketPrice {
+    avg24hPrice?: number | null;
+    high24hPrice?: number | null;
+    low24hPrice?: number | null;
+    lastLowPrice?: number | null;
+    lastOfferCount?: number | null;
+    changeLast48hPercent?: number | null;
+    updatedAt?: number | null;
+    sellFor?: GlobalItemVendorPrice[];
+}
+
+/** A standard item from the mode-specific Tarkov JSON `/items` catalog. */
+export interface GlobalItem {
+    id: string;
+    name: string;
+    normalizedName: string;
+    shortName?: string;
+    iconLink?: string;
+    gridImageLink?: string;
+    image512pxLink?: string;
+    baseImageLink?: string;
+    link?: string;
+    wikiLink?: string;
+    minLevelForFlea?: number | null;
+    category?: ItemCategory;
+    marketPrice?: GlobalItemMarketPrice;
+}
+
+export interface GlobalSkill {
+    id: string;
+    name: string;
+    imageLink?: string;
+}
+
+export interface SkillsPayload {
+    skills: GlobalSkill[];
+}
+
+export interface ItemAmountRef {
+    itemId: string;
+    count: number;
+    isTool?: boolean;
+}
+
+export interface BarterRecord {
+    id: string;
+    offeredItemId: string;
+    offeredCount: number;
+    traderId: string;
+    minTraderLevel: number;
+    taskUnlockId?: string;
+    requiredItems: ItemAmountRef[];
+    buyLimit?: number | null;
+}
+
+export interface CraftRecord {
+    id: string;
+    productItemId: string;
+    productCount: number;
+    stationId: string;
+    level: number;
+    duration: number;
+    taskUnlockId?: string;
+    requiredItems: ItemAmountRef[];
+    requiredQuestItems: ItemAmountRef[];
+    gameEditions: string[];
+}
+
+export interface BartersPayload {
+    bartersByItemId: Record<string, BarterRecord[]>;
+}
+
+export interface CraftsPayload {
+    craftsByItemId: Record<string, CraftRecord[]>;
+}
+
+export interface ItemUsagePayload {
+    barters: BarterRecord[];
+    crafts: CraftRecord[];
+    tradersById?: Record<string, Trader>;
+    taskUnlocksById?: Record<
+        string,
+        { id: string; name: string; wikiLink?: string | null }
+    >;
+    bartersError?: string;
+    craftsError?: string;
+    presentationError?: string;
 }
 
 export interface ItemAmount {
@@ -109,7 +208,6 @@ export interface ItemDetails {
     basePrice?: number | null;
     minLevelForFlea?: number | null;
     category?: ItemCategory;
-    categories?: ItemCategory[];
     marketPrice?: MarketPrice | null;
     traderOffers?: ItemTraderOffer[];
     crafts?: ItemCraftRecipe[];
@@ -119,10 +217,10 @@ export type HideoutItem = ItemDetails;
 
 export interface ItemRequirement {
     id: string;
-    item: HideoutItem;
-    count?: number;
-    quantity?: number;
-    attributes: RequirementAttribute[];
+    itemId: string;
+    count: number;
+    isFir: boolean;
+    isTool: boolean;
 }
 
 export interface StationLevelRequirement {
@@ -186,7 +284,7 @@ export interface DataResponseDiagnostics {
 }
 
 export interface ItemsPayload {
-    items: ItemDetails[];
+    items: GlobalItem[];
 }
 
 // ---- Quests ----
@@ -200,6 +298,11 @@ export interface QuestItem {
     gridImageLink?: string;
 }
 
+/** Compact presentation owned by the task dataset, never an inventory item. */
+export interface QuestSpecificItem extends QuestItem {
+    source: "questSpecific";
+}
+
 export interface QuestObjectiveItem {
     id: string;
     type: "giveItem";
@@ -207,7 +310,8 @@ export interface QuestObjectiveItem {
     optional: boolean;
     count: number;
     foundInRaid: boolean;
-    items: QuestItem[];
+    itemIds: string[];
+    questSpecificItems?: QuestSpecificItem[];
 }
 
 export interface QuestPrerequisite {
@@ -300,7 +404,7 @@ export interface QuestObjectiveBase {
     optional: boolean;
     count?: number;
     maps?: QuestMap[];
-    requiredKeys?: QuestItem[][];
+    requiredKeyIds?: string[][];
     locations?: QuestMapLocation[];
 }
 
@@ -308,7 +412,8 @@ export interface QuestObjectiveItemType extends QuestObjectiveBase {
     type: "giveItem" | "findItem" | "plantItem";
     count: number;
     foundInRaid: boolean;
-    items: QuestItem[];
+    itemIds: string[];
+    questSpecificItems?: QuestSpecificItem[];
     itemScope?: QuestItemObjectiveScope;
     isPartial?: boolean;
     totalItemCount?: number;
@@ -333,9 +438,9 @@ export interface QuestObjectiveExtractType extends QuestObjectiveBase {
 
 export interface QuestObjectiveBuildItemType extends QuestObjectiveBase {
     type: "buildItem";
-    item: QuestItem;
-    containsAll: QuestItem[];
-    containsCategory: Array<{ id: string; name: string; normalizedName: string }>;
+    itemId: string;
+    containsAllItemIds: string[];
+    containsCategoryIds: string[];
     attributes: Array<{ name: string; requirement: { compareMethod: string; value: number } }>;
 }
 
@@ -347,7 +452,7 @@ export interface QuestObjectiveHideoutStationType extends QuestObjectiveBase {
 
 export interface QuestObjectiveQuestItemType extends QuestObjectiveBase {
     type: "pickupQuestItem" | "findQuestItem";
-    questItem: QuestItem;
+    questItem: QuestSpecificItem;
     count: number;
 }
 
@@ -377,7 +482,7 @@ export interface QuestObjectivePlayerLevelType extends QuestObjectiveBase {
 
 export interface QuestObjectiveUseItemType extends QuestObjectiveBase {
     type: "useItem";
-    useAny: QuestItem[];
+    useAnyItemIds: string[];
     compareMethod: string;
     count: number;
     zoneNames: string[];

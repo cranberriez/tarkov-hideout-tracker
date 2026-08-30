@@ -9,8 +9,8 @@ import { revalidateTag } from "next/cache";
 //     "https://<host>/api/revalidate?tag=quests"
 //
 // Allowed tags:
-//   item-data      - tracked item metadata and prices
-//   hideout-data   - stations + tracked items
+//   item-data      - item catalog metadata and prices
+//   hideout-data   - station requirements
 //   quests         - quest, trader data
 const ALLOWED_TAGS = new Set(["item-data", "hideout-data", "quests"]);
 

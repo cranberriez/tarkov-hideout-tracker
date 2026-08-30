@@ -65,10 +65,6 @@ export interface QuestItemLink {
 
 export interface QuestItemIndexEntry {
     itemId: string;
-    normalizedName: string;
-    name: string;
-    iconLink?: string;
-    gridImageLink?: string;
     quests: QuestItemLink[];
 }
 
@@ -111,10 +107,6 @@ export interface DerivedQuestItemQuest extends QuestItemLink {
 
 export interface DerivedQuestItemState {
     itemId: string;
-    normalizedName: string;
-    name: string;
-    iconLink?: string;
-    gridImageLink?: string;
     activeQuestDepth: number | null;
     hasAvailableQuest: boolean;
     hasPinnedQuest: boolean;
@@ -204,7 +196,8 @@ function isQuestItemDemandObjective(
     objective: QuestObjectiveItemType | FullQuestObjective,
 ): objective is QuestObjectiveItemType {
     return (
-        (objective.type === "giveItem" || objective.type === "plantItem") && "items" in objective
+        (objective.type === "giveItem" || objective.type === "plantItem") &&
+        ("itemIds" in objective || "items" in objective)
     );
 }
 
@@ -214,12 +207,20 @@ function isFindItemObjective(
     return objective.type === "findItem";
 }
 
+function getObjectiveItemIds(objective: QuestObjectiveItemType): string[] {
+    if (Array.isArray(objective.itemIds)) return objective.itemIds;
+    // Test and stale-cache tolerance. New quest payloads are always ID-only.
+    const legacyItems = (objective as unknown as { items?: Array<{ id: string }> }).items;
+    return legacyItems?.map((item) => item.id) ?? [];
+}
+
 function classifyGiveItemObjective(objective: QuestObjectiveItemType): QuestItemObjectiveScope {
-    if (objective.items.length <= 1) return "specific";
+    const itemIds = getObjectiveItemIds(objective);
+    if (itemIds.length <= 1) return "specific";
 
     const isLarge =
         objective.isPartial ||
-        (objective.totalItemCount ?? objective.items.length) > BROAD_ANY_ITEM_PREVIEW_LIMIT;
+        (objective.totalItemCount ?? itemIds.length) > BROAD_ANY_ITEM_PREVIEW_LIMIT;
 
     if (isLarge) return "broadAny";
     return "anyOf";
@@ -314,8 +315,8 @@ export function buildQuestItemIndex(quests: QuestItemSource[]): QuestItemIndexEn
             if (!isQuestItemDemandObjective(objective)) continue;
             if (classifyGiveItemObjective(objective) !== "specific") continue;
 
-            for (const item of objective.items) {
-                const existing = itemLinks.get(item.id);
+            for (const itemId of getObjectiveItemIds(objective)) {
+                const existing = itemLinks.get(itemId);
                 if (existing) {
                     existing.requiredCount += objective.count;
                     existing.totalObjectiveCount += objective.count;
@@ -326,8 +327,8 @@ export function buildQuestItemIndex(quests: QuestItemSource[]): QuestItemIndexEn
                     continue;
                 }
 
-                itemLinks.set(item.id, {
-                    itemId: item.id,
+                itemLinks.set(itemId, {
+                    itemId,
                     questId: quest.id,
                     questName: quest.name,
                     questNormalizedName: quest.normalizedName,
@@ -357,28 +358,14 @@ export function buildQuestItemIndex(quests: QuestItemSource[]): QuestItemIndexEn
                 continue;
             }
 
-            const giveItemChoices = quest.objectives.reduce<
-                Array<QuestObjectiveItemType["items"][number]>
-            >((acc, objective) => {
-                if (isQuestItemDemandObjective(objective)) {
-                    acc.push(...objective.items);
-                }
-                return acc;
-            }, []);
-            const item = giveItemChoices.find((candidate) => candidate.id === questLink.itemId);
-
             itemsById.set(questLink.itemId, {
                 itemId: questLink.itemId,
-                normalizedName: item?.normalizedName ?? questLink.itemId,
-                name: item?.name ?? questLink.questName,
-                iconLink: item?.iconLink,
-                gridImageLink: item?.gridImageLink,
                 quests: [{ ...questLink }],
             });
         }
     }
 
-    return Array.from(itemsById.values()).sort((a, b) => a.name.localeCompare(b.name));
+    return Array.from(itemsById.values()).sort((a, b) => a.itemId.localeCompare(b.itemId));
 }
 
 export function buildQuestAnyOfGroups(quests: QuestItemSource[]): QuestAnyOfGroupEntry[] {
@@ -387,13 +374,15 @@ export function buildQuestAnyOfGroups(quests: QuestItemSource[]): QuestAnyOfGrou
 
     for (const quest of quests) {
         for (const [objectiveIndex, objective] of quest.objectives.entries()) {
-            if (!isQuestItemDemandObjective(objective) || objective.items.length <= 1) continue;
+            if (!isQuestItemDemandObjective(objective)) continue;
+            const objectiveItemIds = getObjectiveItemIds(objective);
+            if (objectiveItemIds.length <= 1) continue;
             const itemScope = classifyGiveItemObjective(objective);
             const isPartial = itemScope === "broadAny";
-            const totalItemCount = objective.totalItemCount ?? objective.items.length;
-            const items = isPartial
-                ? objective.items.slice(0, BROAD_ANY_ITEM_PREVIEW_LIMIT)
-                : objective.items;
+            const totalItemCount = objective.totalItemCount ?? objectiveItemIds.length;
+            const itemIds = isPartial
+                ? objectiveItemIds.slice(0, BROAD_ANY_ITEM_PREVIEW_LIMIT)
+                : objectiveItemIds;
 
             groups.push({
                 groupId: `${quest.id}:${objective.id}`,
@@ -420,7 +409,7 @@ export function buildQuestAnyOfGroups(quests: QuestItemSource[]): QuestAnyOfGrou
                 itemScope,
                 isPartial,
                 totalItemCount,
-                itemIds: items.map((item) => item.id),
+                itemIds,
             });
         }
     }
@@ -809,10 +798,6 @@ function deriveQuestItemStateFromContext(
 
     return {
         itemId: entry.itemId,
-        normalizedName: entry.normalizedName,
-        name: entry.name,
-        iconLink: entry.iconLink,
-        gridImageLink: entry.gridImageLink,
         activeQuestDepth,
         hasAvailableQuest: availableQuests.length > 0,
         hasPinnedQuest: pinnedActiveQuests.length > 0,
@@ -1002,5 +987,5 @@ export function compareQuestItemState(a: DerivedQuestItemState, b: DerivedQuestI
         return b.relatedQuestCount - a.relatedQuestCount;
     }
 
-    return a.name.localeCompare(b.name);
+    return a.itemId.localeCompare(b.itemId);
 }

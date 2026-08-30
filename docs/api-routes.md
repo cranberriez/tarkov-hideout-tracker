@@ -1,91 +1,111 @@
 # API Routes & Server Services
 
-The app uses **no public API routes for hideout, items, quest, or market price page data**. Page data fetching happens in server components/services and is delivered to client components via React context or server props. `src/server/services/tarkovData.ts` routes quest and item data through the Tarkov.dev JSON API; its legacy provider selection applies only to remaining station and trader services.
+Page-level station, catalog, and quest data is loaded by server services and
+delivered through React context or server-component props. The two item routes
+below are intentionally lazy because their data is needed only by the item modal.
 
-For the original plan that included public routes (`/api/hideout/stations`, `/api/market/items`, etc.), see git history. That pattern was superseded by the server-service + context architecture described in `data-and-price-context-architecture.md`.
+## HTTP routes
 
----
+### `GET /api/items/{itemId}/usage?mode={mode}`
 
-## Public Routes
+Returns the normalized barters that offer the selected standard item and crafts
+that produce it. `mode` must be `regular`, `pve`, or `pvp-season`; item IDs are
+validated before lookup. The small response also includes only the matched trader
+and task-unlock presentation records needed to render the modal from any page.
 
-The authenticated `/api/revalidate` maintenance route can invalidate the
-`item-data`, `hideout-data`, and `quests` cache tags. There is no public item or
-price data route and no price-refresh cron.
+Barter and craft services settle independently. A partial response includes the
+successful domain plus `bartersError` or `craftsError` and is not cached by either
+the HTTP layer or the modal's in-memory cache, so a later open can retry. Complete
+responses use browser/CDN caching (`max-age=300`, `s-maxage=3600`,
+`stale-while-revalidate=86400`).
 
----
+Trader/task presentation is also optional. If that lookup fails, the response
+uses fallback labels, includes `presentationError`, and remains uncached so a
+later modal open can restore the full labels.
 
-## Server Services
+### `GET /api/items/{itemId}/price-history?mode={mode}`
 
-These are internal TypeScript modules, not HTTP routes. They are imported directly by server components and use Next.js `unstable_cache` for ISR-style caching. See `caching-architecture.md` for current Redis keys and invalidation rules.
+Proxies and validates the mode-specific Tarkov.dev `/prices/{itemId}` series. It
+uses a 15-minute Next.js/CDN cache and no Redis storage.
 
-### `getCachedHideoutStations()`
+### `GET /api/revalidate?tag={tag}`
 
-**File:** `src/server/services/hideout.ts`
+Authenticated with `CRON_SECRET`. Accepted tags are `item-data`, `hideout-data`,
+and `quests`. This invalidates matching Next.js tag entries; it does not remove
+versioned Redis bodies. See `caching-architecture.md` for the current mappings.
 
-Fetches all hideout stations from the selected provider, merges app overrides, and returns a normalized list.
+## Server services
+
+### `getGlobalItemList(mode)`
+
+**File:** `src/server/services/itemsJson.ts`
+
+Loads and normalizes the complete standard-item catalog from `/items`, including
+the compact current market shape. It uses the mode-specific
+`items:catalog:v{itemCatalog}:{mode}` manifest plus bounded Redis chunks and is
+deliberately not wrapped in `unstable_cache`.
+
+```ts
+TimedResponse<{ items: GlobalItem[] }>;
+```
+
+### `getCachedHideoutStations(mode)`
+
+**Files:** `src/server/services/hideoutJson.ts`, `src/server/services/tarkovData.ts`
+
+Loads JSON hideout stations and preserves item requirements as
+`{ id, itemId, count, isFir, isTool }`. Standard item presentation is not embedded
+in stations. The service uses Redis plus the small `hideout-data` Next wrapper.
 
 ```ts
 TimedResponse<{ stations: Station[] }>;
 ```
 
-### `getCachedHideoutRequiredItems()`
+### `getCachedQuestData(mode)` / `getCachedFullQuestData(mode)`
 
-**File:** `src/server/services/itemsJson.ts`
+**Files:** `src/server/services/questsJson.ts`, `src/server/services/tarkovData.ts`
 
-Derives the unique set of item IDs referenced by hideout and quest data, then maps those records from the mode-specific Tarkov.dev JSON `/items` dataset. Each returned item includes its embedded flea and trader pricing plus useful general metadata; the full catalog is not sent to the browser.
-
-```ts
-TimedResponse<{ items: ItemDetails[] }>;
-```
-
-### `getCachedQuestData()`
-
-**File:** `src/server/services/questsJson.ts`
-
-Fetches the active profile's mode-prefixed Tarkov.dev tasks dataset and filters the result to quests that have `giveItem` objectives. Each returned quest keeps only `giveItem` objectives. This is the lighter quest shape used when full objective detail is not needed.
+Load lightweight hand-in quests or full quest content from JSON tasks. Standard
+items are stored as IDs; task-owned quest-specific items retain only compact
+inline presentation. Both responses use Redis and the `quests` Next tag.
 
 ```ts
 TimedResponse<{ quests: Quest[] }>;
-```
-
-### `getCachedFullQuestData()`
-
-**File:** `src/server/services/questsJson.ts`
-
-Fetches and hydrates the active profile's `/regular/tasks`, `/pve/tasks`, or `/pvp-season/tasks` JSON dataset, including level-0 quests, all objective types, fail conditions, maps, trader requirements, prestige requirements, and trader images. This is the only runtime quest provider and is the current source for both `/items` quest item metadata and `/quests`.
-
-```ts
 TimedResponse<{ quests: FullQuest[] }>;
 ```
+
+### `getBarterIndex(mode)` / `getCraftIndex(mode)` / `getItemUsage(itemId, mode)`
+
+**File:** `src/server/services/itemAcquisitionJson.ts`
+
+Normalize `/barters` and `/crafts` into ID-based records indexed by offered or
+produced item ID. The complete indexes are Redis-only. `getItemUsage()` composes
+the small per-item response while keeping domain failures independent.
+
+### `getCachedTraders(mode)`
+
+**Files:** `src/server/services/tradersJson.ts`, `src/server/services/tarkovData.ts`
+
+Loads the compact JSON trader list. The quests UI generally derives its trader
+presentation from full quest data, but this service remains available to server
+consumers.
 
 ### `orderQuestsByPrerequisites(quests)`
 
 **File:** `src/server/services/quests.ts`
 
-Sorts quests by prerequisite chain depth, then `minPlayerLevel`, then name. It works with both the lightweight and full quest shapes as long as they include `id`, `name`, `minPlayerLevel`, and `taskRequirements`.
+Sorts quests by prerequisite depth, minimum level, and name.
 
-### `getCachedTraders()`
+## Runtime provider
 
-**File:** `src/server/services/traders.ts`
+All runtime station, item, quest, trader, barter, and craft services use the
+Tarkov.dev JSON API. `tarkovData.ts` remains a stable import facade for several
+services, not a provider selector. `TARKOV_DATA_SOURCE` does not select a GraphQL
+runtime implementation.
 
-Fetches the trader list from Tarkov.dev GraphQL. The service remains available for future server-side use, but the current quests UI derives its sidebar trader list from the loaded full quest data.
+## Redis client and environment
 
-```ts
-TimedResponse<{ traders: Trader[] }>;
-```
-
-## Redis Client
-
-**File:** `src/server/redis.ts`
-
-Singleton Upstash Redis client. Initialized from `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
-
----
-
-## Environment Variables
-
-| Variable                                         | Used by                                     |
-| ------------------------------------------------ | ------------------------------------------- |
-| `UPSTASH_REDIS_REST_URL` / `KV_REST_API_URL`     | Redis client                                |
-| `UPSTASH_REDIS_REST_TOKEN` / `KV_REST_API_TOKEN` | Redis client                                |
-| `CRON_SECRET`                                    | Guards `/api/revalidate`                    |
+`src/server/redis.ts` owns the singleton Upstash client. Configuration uses
+`UPSTASH_REDIS_REST_URL` / `KV_REST_API_URL` and
+`UPSTASH_REDIS_REST_TOKEN` / `KV_REST_API_TOKEN`. `CRON_SECRET` guards the manual
+revalidation route.

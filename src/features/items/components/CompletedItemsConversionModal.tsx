@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useDataContext } from "@/app/(data)/_dataContext";
-import type { ItemDetails } from "@/types";
 
 interface CompletedItemsConversionModalProps {
     isOpen: boolean;
@@ -12,7 +11,7 @@ interface CompletedItemsConversionModalProps {
 }
 
 export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItemsConversionModalProps) {
-    const { stations, items } = useDataContext();
+    const { stations, itemById } = useDataContext();
     const { stationLevels, completedRequirements, addItemCounts } = useUserStore();
 
     const conversions = useMemo(() => {
@@ -22,15 +21,6 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
             total: number;
             totalFir: number;
         }[];
-
-        const itemsById: Record<string, ItemDetails> | null = (() => {
-            if (!items) return null;
-            const m: Record<string, ItemDetails> = {};
-            items.forEach((item) => {
-                m[item.id] = item;
-            });
-            return m;
-        })();
 
         const map = new Map<
             string,
@@ -52,32 +42,27 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
                 level.itemRequirements.forEach((req) => {
                     if (!completedRequirements[req.id]) return;
 
-                    const quantity = req.count ?? req.quantity ?? 0;
-                    if (quantity <= 0) return;
+                    if (req.count <= 0) return;
 
-                    const isFir = req.attributes.some(
-                        (attr) => attr.name === "found_in_raid" && attr.value === "true"
-                    );
-
-                    const existing = map.get(req.item.id) ?? {
-                        itemId: req.item.id,
-                        itemName: itemsById?.[req.item.id]?.name ?? req.item.name ?? req.item.id,
+                    const existing = map.get(req.itemId) ?? {
+                        itemId: req.itemId,
+                        itemName: itemById[req.itemId]?.name ?? req.itemId,
                         total: 0,
                         totalFir: 0,
                     };
 
-                    existing.total += quantity;
-                    if (isFir) {
-                        existing.totalFir += quantity;
+                    existing.total += req.count;
+                    if (req.isFir) {
+                        existing.totalFir += req.count;
                     }
 
-                    map.set(req.item.id, existing);
+                    map.set(req.itemId, existing);
                 });
             });
         });
 
         return Array.from(map.values()).sort((a, b) => a.itemName.localeCompare(b.itemName));
-    }, [stations, stationLevels, completedRequirements, items]);
+    }, [stations, stationLevels, completedRequirements, itemById]);
 
     const handleApply = () => {
         conversions.forEach(({ itemId, total, totalFir }) => {

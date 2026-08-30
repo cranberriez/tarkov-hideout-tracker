@@ -7,6 +7,7 @@ import { MapViewer } from "@/features/maps/MapViewer";
 import type { MapViewTransform } from "@/features/maps/map-view-transform";
 import type { MapOverlayMarker } from "@/features/maps/map-types";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { useDataContext } from "@/app/(data)/_dataContext";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 import { buildRaidPlannerMarkers } from "./raid-planner-markers";
@@ -25,6 +26,7 @@ interface RaidPlannerPaneProps {
 }
 
 export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPaneProps) {
+    const { itemById } = useDataContext();
     const [isKillListOpen, setIsKillListOpen] = useState(false);
     const [navigationMarkers, setNavigationMarkers] = useState<{
         mapKey: string;
@@ -87,6 +89,7 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
                                     mapKey={map.key}
                                     mapName={map.name}
                                     summary={summary}
+                                    itemById={itemById}
                                     onSelect={() => selectPlannerMap(map.key)}
                                 />
                             );
@@ -124,7 +127,9 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
                     });
                 }}
                 renderMarkerDetails={(marker) => {
-                    const requiredKeys = getRaidPlannerMarkerKeys(marker.objectiveIds, objectiveKeyIndex);
+                    const requiredKeys = getRaidPlannerMarkerKeys(marker.objectiveIds, objectiveKeyIndex)
+                        .map((itemId) => itemById[itemId])
+                        .filter(Boolean);
                     if (requiredKeys.length === 0) return null;
                     return (
                         <span className="mt-3 block border-t border-white/10 pt-2.5">
@@ -206,11 +211,13 @@ function RaidPlannerMapCard({
     mapKey,
     mapName,
     summary,
+    itemById,
     onSelect,
 }: {
     mapKey: string;
     mapName: string;
     summary: ReturnType<typeof buildRaidPlannerMapSummary>;
+    itemById: ReturnType<typeof useDataContext>["itemById"];
     onSelect: () => void;
 }) {
     const [artworkAvailable, setArtworkAvailable] = useState(true);
@@ -261,13 +268,13 @@ function RaidPlannerMapCard({
                     <span className="mt-4 text-xs text-gray-600">No active objectives on this map.</span>
                 )}
 
-                {summary.requiredKeys.length > 0 && (
+                {summary.requiredKeyIds.length > 0 && (
                     <span className="mt-4 block">
                         <span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300/70">
                             <KeyRound size={10} /> Required keys
                         </span>
                         <span className="mt-2 flex flex-wrap gap-1.5">
-                            {summary.requiredKeys.map((key) => (
+                            {summary.requiredKeyIds.map((itemId) => itemById[itemId]).filter(Boolean).map((key) => (
                                 <RaidPlannerKey key={key.id} item={key} />
                             ))}
                         </span>
@@ -282,7 +289,7 @@ function RaidPlannerMapCard({
     );
 }
 
-function RaidPlannerKey({ item }: { item: ReturnType<typeof buildRaidPlannerMapSummary>["requiredKeys"][number] }) {
+function RaidPlannerKey({ item }: { item: ReturnType<typeof useDataContext>["itemById"][string] }) {
     const image = item.gridImageLink ?? item.iconLink;
 
     return (

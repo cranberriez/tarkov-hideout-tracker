@@ -217,13 +217,14 @@ Provided by `(data)/layout.tsx`. Contains:
 ```ts
 stations: Station[] | null;
 stationsUpdatedAt: number | null;
-items: ItemDetails[] | null;
+items: GlobalItem[] | null;
+itemById: Readonly<Record<string, GlobalItem>>; // derived client-side
 itemsUpdatedAt: number | null;
 ```
 
-Usage: `const { stations, items } = useDataContext();`
+Usage: `const { stations, items, itemById } = useDataContext();`
 
-Each `ItemDetails` entry may contain `marketPrice`, sourced from the same active-mode `/items` record. There is no separate client price context.
+Each `GlobalItem` entry may contain `marketPrice`, sourced from the same active-mode `/items` record. There is no separate client price context.
 
 ---
 
@@ -236,7 +237,7 @@ Each `ItemDetails` entry may contain `marketPrice`, sourced from the same active
 | View filters and preferences       | `useUserStore` (localStorage)                                                                        |
 | Game edition / mode setup          | `useUserStore` (localStorage)                                                                        |
 | Quick Add modal + staged items     | `useUIStore` (in-memory)                                                                             |
-| Hideout stations + tracked items   | `DataContext` (server → context); each item carries active-mode market data                           |
+| Hideout stations + global item catalog | `DataContext` (server → context); each standard item carries active-mode market data              |
 | Quest data                         | Server props to pages that need it; `/quests` wraps it in `QuestsContext` for derived quest UI state |
 
 ---

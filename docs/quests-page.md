@@ -24,7 +24,7 @@ The `/quests` route displays Tarkov.dev quest data in a full-height split worksp
 | `src/features/quests/quest-sorting.ts`                  | Sort utilities for quest views and unlock-impact counts                                                                       |
 | `src/features/quests/components/quest-ui.tsx`           | Shared UI primitives                                                                                                          |
 | `src/server/services/questsJson.ts`                     | JSON-only `getCachedJsonFullQuestData()` implementation                                                                       |
-| `src/server/services/quests.ts`                         | Shared `orderQuestsByPrerequisites()` utility; GraphQL fetching in this file is legacy and is not used by the route            |
+| `src/server/services/quests.ts`                         | Shared `orderQuestsByPrerequisites()` utility                                                                                   |
 | `src/lib/utils/quest-item-index.ts`                     | Builds and derives quest item hand-in metadata                                                                                |
 | `src/lib/utils/quest-availability.ts`                   | Converts full quests to the lighter availability shape and checks profile availability                                        |
 
@@ -48,7 +48,7 @@ The `/quests` route displays Tarkov.dev quest data in a full-height split worksp
           -> Quest item clicks open ItemDetailModal
 ```
 
-Quest data is not part of the shared `(data)/layout.tsx` context. Pages that need quest data fetch it server-side. `getCachedFullQuestData()` is exported by `tarkovData.ts`, but always resolves to the JSON implementation regardless of `TARKOV_DATA_SOURCE`; `/quests` and `/items` therefore cannot fall back to GraphQL. The quests page derives `traders` and `allMaps` from the loaded full quest data; it does not currently need `getCachedTraders()`.
+Quest data is not part of the shared `(data)/layout.tsx` context. Pages that need quest data fetch it server-side. `getCachedFullQuestData()` is exported by `tarkovData.ts` and resolves to the JSON implementation. The quests page derives `traders` and `allMaps` from the loaded full quest data; it does not currently need `getCachedTraders()`.
 
 ---
 
@@ -613,7 +613,7 @@ API quirks to keep in mind:
 
 | Layer                    | Key                                      | Freshness                   |
 | ------------------------ | ---------------------------------------- | --------------------------- |
-| Redis                    | `quests:full:v13:{mode}` + matching `:meta` key | 12h service freshness check |
+| Redis                    | `quests:full:v14:{mode}` + matching `:meta` key | 24h service freshness check |
 | Next.js `unstable_cache` | `["quests-full"]`                        | `revalidate: 43200`         |
 
 To invalidate quest data for application code, bump the relevant version in `src/lib/cfg/cacheVersions.ts`. See `caching-architecture.md`.

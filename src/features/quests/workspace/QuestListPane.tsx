@@ -582,7 +582,7 @@ function QuestListItem({
                         </span>
                     )}
                     {(quest.minPlayerLevel ?? 0) > 0 && <span className="shrink-0">Lv {quest.minPlayerLevel}</span>}
-                    {quest.objectives.some((objective) => objective.requiredKeys?.length) && (
+                    {quest.objectives.some((objective) => objective.requiredKeyIds?.length) && (
                         <KeyRound size={10} className="shrink-0 text-amber-300/70" />
                     )}
                 </div>

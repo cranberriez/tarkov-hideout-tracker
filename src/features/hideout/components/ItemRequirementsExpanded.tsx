@@ -7,6 +7,7 @@ import { formatNumber } from "@/lib/utils/format-number";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
 import { formatCompactRoubles, getFleaPrice, hasFleaMarketData } from "@/lib/utils/market-price";
+import { useDataContext } from "@/app/(data)/_dataContext";
 
 export function ExpandedItemRequirements({
     nextLevelData,
@@ -15,22 +16,23 @@ export function ExpandedItemRequirements({
     pooledFirByItem,
 }: BaseItemRequirementsProps) {
     const itemCounts = useUserStore((state) => state.itemCounts);
+    const { itemById } = useDataContext();
     return (
         <div className="flex flex-col gap-1.5">
             {nextLevelData.itemRequirements
                 .filter((req) => {
+                    const item = itemById[req.itemId];
+                    if (!item) return false;
                     if (!hideMoney) return true;
-                    const norm = req.item.normalizedName;
+                    const norm = item.normalizedName;
                     return norm !== "roubles" && norm !== "dollars" && norm !== "euros";
                 })
                 .map((req) => {
-                    const quantity = req.count ?? req.quantity ?? 1;
-                    const norm = req.item.normalizedName;
+                    const item = itemById[req.itemId];
+                    if (!item) return null;
+                    const norm = item.normalizedName;
                     const isCurrency = norm === "roubles" || norm === "dollars" || norm === "euros";
-                    const isFir = req.attributes.some(
-                        (a) => a.name === "found_in_raid" && a.value === "true"
-                    );
-                    const marketPrice = req.item.marketPrice;
+                    const marketPrice = item.marketPrice;
                     const fleaPrice = getFleaPrice(marketPrice);
                     const priceLabel = marketPrice && !hasFleaMarketData(marketPrice)
                           ? "No flea"
@@ -38,32 +40,32 @@ export function ExpandedItemRequirements({
                             ? `${formatCompactRoubles(fleaPrice)} ₽`
                             : "No data";
 
-                    const owned = itemCounts[req.item.id] ?? { have: 0, haveFir: 0 };
-                    const globalFirRemaining = pooledFirByItem[req.item.id] ?? 0;
+                    const owned = itemCounts[req.itemId] ?? { have: 0, haveFir: 0 };
+                    const globalFirRemaining = pooledFirByItem[req.itemId] ?? 0;
                     const firSurplus = Math.max(0, owned.haveFir - globalFirRemaining);
                     const needs = isCurrency
                         ? computeNeeds({
-                              totalRequired: quantity,
+                              totalRequired: req.count,
                               requiredFir: 0,
                               haveNonFir: 0,
                               haveFir: 0,
                           })
-                        : isFir
+                        : req.isFir
                         ? computeNeeds({
-                              totalRequired: quantity,
-                              requiredFir: quantity,
+                              totalRequired: req.count,
+                              requiredFir: req.count,
                               haveNonFir: 0,
                               haveFir: owned.haveFir,
                           })
                         : computeNeeds({
-                              totalRequired: quantity,
+                              totalRequired: req.count,
                               requiredFir: 0,
                               haveNonFir: owned.have + firSurplus,
                               haveFir: 0,
                           });
 
                     const isCompleted = !isCurrency
-                        ? isFir
+                        ? req.isFir
                             ? needs.isSatisfied
                             : needs.isSatisfied && !needs.usesFirForNonFir
                         : false;
@@ -71,7 +73,7 @@ export function ExpandedItemRequirements({
                     return (
                         <div
                             key={req.id}
-                            onClick={() => onClickItem(req.item)}
+                            onClick={() => onClickItem(item)}
                             className={`flex items-center gap-3 bg-black/20 p-1 border transition-colors cursor-pointer ${
                                 isCompleted
                                     ? "border-green-500/30 opacity-60 bg-green-900/5"
@@ -80,13 +82,13 @@ export function ExpandedItemRequirements({
                         >
                             <div
                                 className={`relative w-10 h-10 shrink-0 ${
-                                    isFir ? "ring-1 ring-orange-500" : ""
+                                    req.isFir ? "ring-1 ring-orange-500" : ""
                                 }`}
                             >
-                                {req.item.iconLink && (
+                                {item.iconLink && (
                                     <Image
-                                        src={req.item.iconLink}
-                                        alt={req.item.name}
+                                        src={item.iconLink}
+                                        alt={item.name}
                                         fill
                                         className={`object-contain ${
                                             isCompleted ? "grayscale" : ""
@@ -112,15 +114,15 @@ export function ExpandedItemRequirements({
                                                 isCompleted ? "text-gray-600" : "text-gray-200"
                                             }`}
                                         >
-                                            {req.item.shortName || req.item.name}
+                                            {item.shortName || item.name}
                                         </span>
                                     </div>
                                     <div className="text-[10px] font-mono text-gray-400">
                                         {isCurrency ? (
                                             <span className="text-tarkov-green">
-                                                {formatNumber(quantity)}
+                                                {formatNumber(req.count)}
                                             </span>
-                                        ) : isFir ? (
+                                        ) : req.isFir ? (
                                             <span className="text-orange-400">
                                                 FiR {formatNumber(needs.haveFirReserved)} /{" "}
                                                 {formatNumber(needs.requiredFir)}
@@ -138,7 +140,7 @@ export function ExpandedItemRequirements({
                                         )}
                                     </div>
                                 </div>
-                                {isFir && !isCompleted && (
+                                {req.isFir && !isCompleted && (
                                     <div className="text-orange-500" title="Found In Raid">
                                         <CircleCheckBig className="w-4 h-4" />
                                     </div>

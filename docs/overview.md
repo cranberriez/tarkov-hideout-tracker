@@ -1,123 +1,102 @@
 # Tarkov Hideout Tracker — Overview
 
-A Next.js web app for tracking hideout upgrades and item requirements in Escape From Tarkov.
-
----
+A Next.js app for tracking Escape From Tarkov hideout upgrades, quest item
+requirements, and inventory across PVP, PVE, and KORD profiles.
 
 ## Goals
 
-- **Track all requirements** for every hideout station level.
-- **Simulate in-game progression** starting from a configurable state based on game edition.
-- **Pool required items** across all stations into a single checklist, respecting the user's current progress.
-- **Separate FiR from non-FiR** requirements — some items must be Found in Raid; the app tracks both counts independently.
-- **Show flea market prices** from each active mode's Tarkov.dev item records.
-- **Let users manage inventory** — track how many of each item they already have.
-- **Support game edition bonuses** — automatically set starting Stash and Cultist Circle levels.
-- **Provide simple views**: a hideout-focused station view, an item checklist view, and a quest item requirements view.
+- Track every hideout station level and its remaining requirements.
+- Pool hideout and quest item demand against the user's inventory.
+- Track Found in Raid and ordinary counts independently.
+- Show current flea and trader values for standard items.
+- Preserve independent character progress for each supported game mode.
+- Keep all player progress local and stable across server-data refactors.
 
----
+## Core concepts
 
-## Core Concepts
+**Stations and requirements.** A station contains upgrade levels. Item
+requirements retain stable requirement IDs for completion state and refer to
+standard items by `itemId`.
 
-**Station**
-A hideout module (e.g., Lavatory, Generator, Workbench) with multiple upgrade levels. There are 25 stations tracked.
+**Found in Raid.** The app tracks `have` and `haveFir` independently. Requirement
+FiR values combine upstream attributes with reviewed local overrides.
 
-**Level**
-A specific upgrade level of a station. Each level has item requirements and may have station, skill, or trader prerequisites.
+**Game modes.** PVP maps to the `regular` Tarkov.dev dataset, PVE to `pve`, and
+KORD to `pvp-season`. Progress, inventory, quests, traders, faction, goals, and
+edition are isolated per profile.
 
-**Item Requirement**
-An item + quantity needed to build/upgrade. May require the item to be "Found in Raid" (FiR) based on per-station configuration in `src/lib/cfg/foundInRaid.ts`.
+**Game editions.** Edition controls starting Stash and Cultist Circle levels:
 
-**FiR vs Non-FiR**
+| Edition | Stash | Cultist Circle |
+|---|---:|---:|
+| Standard | 1 | 0 |
+| Left Behind | 2 | 0 |
+| Prepare for Escape | 3 | 0 |
+| Edge of Darkness | 4 | 0 |
+| Unheard | 4 | 1 |
 
-- Some station levels require items with the FiR attribute; others do not.
-- The app tracks both `have` and `haveFir` counts separately in `useUserStore.itemCounts`.
-- `showFirOnly` filter lets users focus on FiR items they still need.
-
-**Hidden Station**
-A station the user has chosen to exclude. Hidden stations are omitted from pooled item counts when `showHidden` is false (the default).
-
-**Game Mode Profiles (PVP / PVE / KORD)**
-Selects an independent character profile and the matching Tarkov.dev dataset. PVP maps to `regular`, PVE to `pve`, and KORD to `pvp-season`. Character progress, inventory, quests, trader state, faction, goals, and edition are isolated per mode.
-
-**Game Edition**
-Determines the starting Stash level and whether Cultist Circle starts at level 1:
-
-| Edition            | Stash | Cultist Circle |
-| ------------------ | ----- | -------------- |
-| Standard           | 1     | 0              |
-| Left Behind        | 2     | 0              |
-| Prepare for Escape | 3     | 0              |
-| Edge of Darkness   | 4     | 0              |
-| Unheard            | 4     | 1              |
-
-**Cheap Items**
-Items below the `cheapPriceThreshold` (default 5,000 ₽). Can be hidden from the checklist with the `hideCheap` filter.
-
----
+**Standard versus quest-specific items.** Standard items come from `/items`, can
+have inventory and market state, and are shared by ID. Quest-specific pickup/find
+items come from task content and are display-only.
 
 ## Pages
 
-| Route       | Purpose                                                                                                                 |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `/`         | Redirects to `/hideout`                                                                                                 |
-| `/hideout`  | Station list with upgrade levels and next-level requirements                                                            |
-| `/items`    | Pooled item checklist across all stations                                                                               |
-| `/quests`   | Quest objectives, prerequisites, manual sync, and hand-in tracking, filterable by trader, map, profile, and quest state |
-| `/news`     | In-app news and update posts                                                                                            |
-| `/settings` | User preferences (not currently a dedicated settings page)                                                              |
+| Route | Purpose |
+|---|---|
+| `/` | Redirects to `/hideout` |
+| `/hideout` | Station upgrades and next-level requirements |
+| `/items` | Combined hideout and quest item checklist |
+| `/quests` | Quest objectives, progression, prerequisites, and planning |
+| `/news` | In-app news and updates |
 
----
+## Application state
 
-## Application State (High Level)
+Persisted in localStorage through `useUserStore`:
 
-**Persisted in localStorage (via Zustand):**
+- station levels, hidden stations, and completed requirements;
+- standard-item inventory counts;
+- quest completion, failure, ignore, pin, and hand-in state;
+- filters, preferences, setup state, and three game-mode profiles.
 
-- Current level per station
-- Hidden/visible flag per station
-- Manually completed individual requirements
-- Item counts owned (`have` / `haveFir`)
-- All view filters and preferences
-- Three game-mode profiles plus the active game mode
-- A retained, deprecated snapshot of pre-profile user data when upgrading from store version 18
+Server-fetched data:
 
-**Server-fetched (via React context or server props):**
+- mode-specific hideout stations with ID-based item requirements;
+- the complete compact standard-item catalog and current market values;
+- full or lightweight quest content with standard item IDs and inline
+  quest-specific presentation;
+- barter and craft indexes, queried lazily per selected standard item.
 
-- Hideout station structure (from Tarkov.dev GraphQL, cached 12h)
-- Required item metadata (from Tarkov.dev, cached 12h)
-- Tracked item metadata and market prices for the active mode (from Tarkov.dev JSON items, cached for 24 hours in production)
-- Quest data (from the Tarkov.dev JSON API, cached in Redis) is fetched by pages that need it. `/quests` receives full quest data as server props and derives trader/map lists from that data.
+`DataContext` exposes station and catalog arrays. Its client provider memoizes
+`itemById`, which lets hideout, checklist, search, quest, and modal components join
+standard item presentation without embedding copies in source records.
 
-See `state-management.md` for store shapes and `data-and-price-context-architecture.md` for the server data flow.
+## Item data flow
 
----
+```text
+/items   -> compact global catalog -> DataContext.items -> client itemById
+/hideout -> station itemId refs --------------------------^
+/tasks   -> standard itemId refs -------------------------^
+         -> quest-specific inline display only
+/barters + /crafts -> Redis indexes -> lazy per-item usage route
+```
 
-## Key Filters (Items Checklist)
+The large catalog, barter index, and craft index use versioned Redis caches only.
+Stations and quests additionally use small Next.js cache wrappers. All runtime
+data services use Tarkov.dev JSON and all caches are isolated by game mode.
 
-| Filter                           | Effect                                          |
-| -------------------------------- | ----------------------------------------------- |
-| `checklistViewMode: "all"`       | All levels above current for each station       |
-| `checklistViewMode: "nextLevel"` | Only the next level per station                 |
-| `showHidden: false`              | Exclude hidden stations from pooled items       |
-| `hideCheap`                      | Hide items below `cheapPriceThreshold`          |
-| `hideMoney`                      | Hide currency items (roubles, dollars, euros)   |
-| `showFirOnly`                    | Show only items where FiR count is still needed |
+## Data sources
 
----
+| Source | What it provides |
+|---|---|
+| Tarkov.dev JSON API | Items, market values, hideout, quests, traders, barters, crafts, maps, and price history |
+| `wiki-data.json` and `foundInRaid.ts` | Reviewed requirement and FiR overrides |
+| localStorage | Player progress and preferences |
 
-## Data Sources
-
-| Source                              | What it provides                                                             |
-| ----------------------------------- | ---------------------------------------------------------------------------- |
-| Tarkov.dev JSON API                 | Quest source and authoritative item metadata, flea-price, and trader-value source |
-| Tarkov.dev GraphQL                  | Legacy optional provider for regular-mode station and trader data |
-| `wiki-data.json` + `foundInRaid.ts` | Manual overrides for requirements and FiR flags                              |
-| localStorage                        | All user progress and preferences                                            |
-
-The server selects the JSON or GraphQL implementation for remaining non-quest data through `TARKOV_DATA_SOURCE`. Quest data always uses JSON; see `tarkov-json-api.md`.
-
----
+See `state-management.md`, `data-and-price-context-architecture.md`, and
+`caching-architecture.md` for detailed contracts.
 
 ## Deployment
 
-Hosted on Vercel. Tracked item records and their embedded prices revalidate hourly.
+The app is deployed on Vercel. Normalized source datasets refresh on a shared
+24-hour production freshness window; price history uses a separate 15-minute
+cache.

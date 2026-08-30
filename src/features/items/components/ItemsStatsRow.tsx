@@ -163,7 +163,7 @@ export function ItemsStatsRow({
             } else if (questCount > 0 || questFirCount > 0) {
                 merged.set(questItem.itemId, {
                     id: questItem.itemId,
-                    normalizedName: questItem.normalizedName,
+                    normalizedName: detailsByItemId.get(questItem.itemId)?.normalizedName,
                     marketPrice: detailsByItemId.get(questItem.itemId)?.marketPrice,
                     hideoutCount: 0,
                     hideoutFirCount: 0,

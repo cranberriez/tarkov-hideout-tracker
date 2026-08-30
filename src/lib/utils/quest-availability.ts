@@ -32,6 +32,9 @@ export interface QuestAvailabilityProfile {
 
 export interface QuestAvailabilityQuest {
     id: string;
+    name?: string;
+    normalizedName?: string;
+    wikiLink?: string | null;
     factionName?: string | null;
     minPlayerLevel?: number | null;
     kappaRequired?: boolean | null;
@@ -58,6 +61,9 @@ export function buildQuestAvailabilityMap<T extends QuestAvailabilityQuest>(ques
 type QuestAvailabilitySource = Pick<
     Quest,
     | "id"
+    | "name"
+    | "normalizedName"
+    | "wikiLink"
     | "factionName"
     | "minPlayerLevel"
     | "kappaRequired"
@@ -73,6 +79,9 @@ type QuestAvailabilitySource = Pick<
 export function toQuestAvailabilityQuest(quest: QuestAvailabilitySource): QuestAvailabilityQuest {
     return {
         id: quest.id,
+        name: quest.name,
+        normalizedName: quest.normalizedName,
+        wikiLink: quest.wikiLink,
         factionName: quest.factionName,
         minPlayerLevel: quest.minPlayerLevel,
         kappaRequired: quest.kappaRequired ?? false,

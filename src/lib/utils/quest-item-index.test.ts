@@ -262,6 +262,37 @@ test("deriveQuestItemState treats completed active-only prerequisites as availab
     assert.equal(state.hasAvailableQuest, true);
 });
 
+test("buildQuestItemIndex excludes quest-specific presentation items from demand", () => {
+    const quests = [
+        makeQuest({
+            id: "quest-specific",
+            name: "Pickup",
+            objectives: [
+                {
+                    id: "pickup-objective",
+                    type: "plantItem",
+                    description: "Plant the package",
+                    optional: false,
+                    count: 1,
+                    foundInRaid: false,
+                    itemIds: [],
+                    questSpecificItems: [
+                        {
+                            source: "questSpecific",
+                            id: "task-package",
+                            name: "Sealed package",
+                            normalizedName: "sealed-package",
+                        },
+                    ],
+                },
+            ],
+        }),
+    ];
+
+    assert.deepEqual(buildQuestItemIndex(quests), []);
+    assert.deepEqual(buildQuestAnyOfGroups(quests), []);
+});
+
 test("deriveQuestItemState can include completed quests after incomplete quests", () => {
     const item = {
         id: "bolts",

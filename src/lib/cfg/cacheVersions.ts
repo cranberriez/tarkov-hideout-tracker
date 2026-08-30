@@ -1,8 +1,10 @@
 export const CACHE_VERSIONS = {
-	hideoutStations: 6,
-	hideoutItems: 4,
-	quests: 5,
-	questsFull: 13,
+	hideoutStations: 7,
+	itemCatalog: 3,
+	itemBarters: 1,
+	itemCrafts: 1,
+	quests: 6,
+	questsFull: 14,
 	traders: 1,
 } as const;
 

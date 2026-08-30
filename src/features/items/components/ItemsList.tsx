@@ -193,21 +193,10 @@ export function ItemsList({
         [activeQuestStates, groupedQuestDeductionsByItemId],
     );
 
-    const allItemDetails = useMemo(() => {
-        const details: Record<string, ItemDetails> = { ...(itemsById ?? {}) };
-        for (const entry of questItemIndex) {
-            if (!details[entry.itemId]) {
-                details[entry.itemId] = {
-                    id: entry.itemId,
-                    name: entry.name,
-                    normalizedName: entry.normalizedName,
-                    iconLink: entry.iconLink,
-                    gridImageLink: entry.gridImageLink,
-                };
-            }
-        }
-        return details;
-    }, [itemsById, questItemIndex]);
+    const allItemDetails = useMemo(
+        () => ({ ...(itemsById ?? {}) }),
+        [itemsById],
+    );
 
     const pooledHideoutItems = useMemo(() => {
         if (!stations) return [];

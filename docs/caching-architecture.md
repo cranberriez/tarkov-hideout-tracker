@@ -1,77 +1,94 @@
 # Caching Architecture
 
-The app uses Next.js `unstable_cache` as its primary request/render cache and
-best-effort Upstash Redis storage as a cross-deployment fallback. Redis read
-failures are treated as cache misses, and Redis write failures never fail a
-request. Cache versions live in
-`src/lib/cfg/cacheVersions.ts`; bump the relevant version instead of deleting
-Redis keys manually.
+The app uses versioned Upstash Redis entries as the cross-deployment cache for
+normalized Tarkov.dev JSON datasets. Small progression responses may also use
+Next.js `unstable_cache`; the global item catalog and the barter/craft indexes are
+deliberately Redis-only because their serialized payloads can exceed Next.js's
+data-cache limit.
 
-When `NODE_ENV=development` and `CACHE_ENABLED=false`, both layers are bypassed.
-When development caching is enabled, Redis keys receive a `dev:` prefix.
+Redis read failures are cache misses, Redis write failures do not fail requests,
+and validated writes are scheduled after the response. Cache versions live in
+`src/lib/cfg/cacheVersions.ts`; change the relevant version when a cached shape
+changes and allow old keys to expire naturally.
 
-## Shared freshness
+When `NODE_ENV=development` and `CACHE_ENABLED=false`, application cache helpers
+are bypassed. Development Redis keys use a `dev:` prefix when caching is enabled.
 
-Shared station, quest, trader, and tracked-item responses use a 24-hour
-production freshness window. Development caching uses five minutes when it is
-enabled. `PROGRESSION_DATA_FROZEN` is retained as an emergency switch but is
-normally disabled. Individual item price history remains independently cached
-for 15 minutes and does not use Redis.
+## Freshness and failure behavior
+
+Normalized source datasets use a 24-hour production freshness window and five
+minutes in development. `PROGRESSION_DATA_FROZEN` can pin progression datasets in
+an emergency but is normally disabled.
+
+Every source service validates cached and upstream data:
+
+- malformed or empty cached bodies are ignored;
+- empty or invalid upstream results are never written;
+- a valid stale body is returned when refresh fails;
+- cache metadata records `updatedAt` separately under a `:meta` key;
+- all keys include `regular`, `pve`, or `pvp-season` to prevent mode mixing.
 
 ## Redis keys
 
-| Key | Content | Freshness |
+| Key | Content | Version field |
 |---|---|---|
-| `hideout:stations:v6:{regular|pve|pvp-season}` | Mode-specific station list | 24 hours |
-| `hideout:items:filtered:v4:{regular|pve|pvp-season}` | Compact hideout + quest item records, including embedded pricing, trader offers, and crafts | 24 hours |
-| `quests:all:v5:{regular|pve|pvp-season}` | Quests with give-item objectives | 24 hours |
-| `quests:full:v13:{regular|pve|pvp-season}` | Full quest list | 24 hours |
-| `traders:all:v1:{regular|pve|pvp-season}` | Trader list | 24 hours |
+| `items:catalog:v3:{mode}` | Validated manifest for the chunked global standard-item catalog | `itemCatalog` |
+| `items:catalog:v3:{mode}:slot:{0|1}:chunk:{n}` | Generation-tagged catalog chunks capped at 750 KiB | `itemCatalog` |
+| `items:barters:v1:{mode}` | Barters indexed by offered item ID | `itemBarters` |
+| `items:crafts:v1:{mode}` | Crafts indexed by product item ID | `itemCrafts` |
+| `hideout:stations:v7:{mode}` | Stations with ID-based item requirements | `hideoutStations` |
+| `quests:all:v6:{mode}` | Lightweight give-item quests with standard item IDs | `quests` |
+| `quests:full:v14:{mode}` | Full quest content with ID-based standard-item references | `questsFull` |
+| `traders:all:v1:{mode}` | Compact trader list | `traders` |
 
-Older standalone market-price keys may remain in Redis but are no longer read or
-written by application code.
+There is no tracked-item cache. The old `hideout:items:filtered:*` namespace is
+not read and should not be manually deleted.
 
 ## Next.js cache wrappers
 
-| Service | Cache key/tag | Revalidation |
+| Service | Next key / tag | Revalidation |
 |---|---|---|
-| `getCachedHideoutStations()` | `hideout-stations` / `hideout-data` | 24 hours |
-| `getCachedHideoutRequiredItems()` | `json-hideout-required-items` / `item-data`, `hideout-data` | 24 hours |
+| `getCachedHideoutStations()` | `json-hideout-stations` / `hideout-data` | 24 hours |
 | `getCachedQuestData()` | `json-quests` / `quests` | 24 hours |
 | `getCachedFullQuestData()` | `json-quests-full` / `quests` | 24 hours |
-| `getCachedTraders()` | provider-specific / trader tag | 24 hours |
+| `getCachedTraders()` | `json-traders` / `traders` | 24 hours |
 
-On a validated upstream refresh, the server returns the normalized response to
-Next.js and schedules the Redis body/meta write with Next.js `after()`. This uses
-the same lifecycle in local Next.js development and Vercel's serverless runtime.
-Only validated, non-empty upstream responses reach either cache.
+`getGlobalItemList()`, `getBarterIndex()`, and `getCraftIndex()` are not wrapped
+in `unstable_cache`. The per-item usage route returns only matching barter/craft
+records and applies HTTP caching. Price history has a separate 15-minute Next/HTTP
+cache and no Redis entry.
+
+The catalog is larger than Upstash's single-request limit in some modes, so it is
+written as alternating generation-tagged chunk sets. The small manifest and meta
+keys are published only after every chunk succeeds. Reads reject incomplete or
+mixed generations and retain the last complete generation as stale fallback.
 
 ## Request flow
 
 ```text
 (data)/layout.tsx
-  -> cached stations
-  -> cached tracked ItemDetails[] from Tarkov.dev JSON /items
-       -> flea/trader values remain on each item.marketPrice
-  -> DataContext
+  -> cached stations (Redis + Next)
+  -> global item catalog (Redis only)
+  -> DataContext(items)
+       -> client builds itemById
 
 /items and /quests
-  -> cached full quest progression
-  -> derive quest indexes
-  -> resolve item details from DataContext by item ID
+  -> cached full quests (Redis + Next)
+  -> client joins standard item IDs through itemById
+
+item modal opens
+  -> /api/items/{itemId}/usage?mode=...
+       -> barter index (Redis only)
+       -> craft index (Redis only)
+       -> matching records only
 ```
 
-Only tracked items are serialized into the client payload. The full Tarkov.dev
-catalog is used server-side to select those records.
+## Tags and invalidation
 
-## Invalidation
-
-The authenticated `/api/revalidate` maintenance route accepts:
-
-- `item-data` for current item metadata and market values
-- `hideout-data` for stations and tracked items
-- `quests` for quest data
-
-Successful upstream refreshes write both the response body and a `:meta` record
-containing `updatedAt`. Invalid or empty upstream responses do not replace a
-valid stale body.
+The authenticated `/api/revalidate` route accepts `hideout-data`, `quests`, and
+`item-data`. Tags invalidate Next.js cache entries only; they do not delete or
+rewrite Redis source caches. `hideout-data` and `quests` currently correspond to
+active Next wrappers. `item-data` remains an accepted maintenance tag, but the
+large catalog has no Next wrapper, so catalog refresh is controlled by Redis
+freshness or an `itemCatalog` version bump. Barter and craft shape changes require
+their own version bumps for the same reason.

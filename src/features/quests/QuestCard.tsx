@@ -5,6 +5,7 @@ import { useShallow } from "zustand/react/shallow";
 import { AlertTriangle } from "lucide-react";
 import type { FullQuest } from "@/types";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { useDataContext } from "@/app/(data)/_dataContext";
 import { cn } from "@/lib/utils";
 import { formatQuestTraderGate } from "@/lib/utils/quest-trader-gates";
 import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";
@@ -60,6 +61,7 @@ export function QuestCard({
 }: QuestCardProps) {
     const [expanded, setExpanded] = useState(false);
     const [debugOpen, setDebugOpen] = useState(false);
+    const { itemById } = useDataContext();
     const {
         syncProfile,
         questsById,
@@ -117,7 +119,10 @@ export function QuestCard({
     const allHandInItems = [
         ...new Map(
             giveItemObjectives.flatMap((o) =>
-                o.items.map((item) => [item.id, { ...item, count: o.count, fir: o.foundInRaid }]),
+                o.itemIds.flatMap((itemId) => {
+                    const item = itemById[itemId];
+                    return item ? [[item.id, { ...item, count: o.count, fir: o.foundInRaid }] as const] : [];
+                }),
             ),
         ).values(),
     ];

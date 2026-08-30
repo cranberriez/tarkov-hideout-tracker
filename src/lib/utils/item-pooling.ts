@@ -54,30 +54,14 @@ export function poolItems({
                 if (completedRequirements[req.id]) {
                     return;
                 }
-                const quantity = req.count ?? req.quantity ?? 0;
-                const existing = itemMap.get(req.item.id) ?? {
-                    id: req.item.id,
+                const existing = itemMap.get(req.itemId) ?? {
+                    id: req.itemId,
                     count: 0,
                     firCount: 0,
                     isTool: false,
                     isHideout: true,
                     isQuest: false,
                 };
-
-                // Check attributes for special properties
-                // NOTE: Tarkov.dev API attributes usage for FiR or Tool is verified here
-                // Usually tools have type: "tool".
-                // FiR might be an attribute or just implied by context (rare in hideout).
-                // We'll check for an attribute named "is_found_in_raid" or similar if it appears,
-                // but primarily we sum quantities.
-
-                // Check for tool attribute
-                const isTool = req.attributes.some((attr) => attr.type === "tool");
-
-                // Check for Found in Raid attribute
-                const isFir = req.attributes.some(
-                    (attr) => attr.name === "found_in_raid" && attr.value === "true"
-                );
 
                 // For now we sum everything. If it is a tool, it's still "required".
                 // If it's a tool, it might not be consumed, but you still need it.
@@ -86,11 +70,11 @@ export function poolItems({
                 // BUT, implementing "max needed at once" logic for tools is complex across stations.
                 // For now, we will sum them as requested, but mark them.
 
-                itemMap.set(req.item.id, {
+                itemMap.set(req.itemId, {
                     ...existing,
-                    count: existing.count + quantity,
-                    firCount: existing.firCount + (isFir ? quantity : 0),
-                    isTool: existing.isTool || isTool,
+                    count: existing.count + req.count,
+                    firCount: existing.firCount + (req.isFir ? req.count : 0),
+                    isTool: existing.isTool || req.isTool,
                 });
             });
         });

@@ -31,7 +31,7 @@ export function StationCard({ station, isLocked = false, pooledFirByItem }: Stat
         addItemCounts,
     } = useUserStore();
 
-    const { stations } = useDataContext();
+    const { stations, itemById } = useDataContext();
 
     const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
 
@@ -82,35 +82,33 @@ export function StationCard({ station, isLocked = false, pooledFirByItem }: Stat
         let itemsMissing = false;
         if (nextLevelData && !itemsMissing) {
             for (const req of nextLevelData.itemRequirements) {
-                const quantity = req.count ?? req.quantity ?? 1;
-                const norm = req.item.normalizedName;
+                const item = itemById[req.itemId];
+                if (!item) continue;
+                const norm = item.normalizedName;
                 const isCurrency = norm === "roubles" || norm === "dollars" || norm === "euros";
-                const isFir = req.attributes.some(
-                    (a) => a.name === "found_in_raid" && a.value === "true"
-                );
 
                 if (isCurrency) {
                     continue;
                 }
 
-                const owned = itemCounts[req.item.id] ?? { have: 0, haveFir: 0 };
+                const owned = itemCounts[req.itemId] ?? { have: 0, haveFir: 0 };
 
-                if (isFir) {
-                    if (owned.haveFir < quantity) {
+                if (req.isFir) {
+                    if (owned.haveFir < req.count) {
                         itemsMissing = true;
                         break;
                     }
                 } else {
-                    const globalFirRemaining = pooledFirByItem[req.item.id] ?? 0;
+                    const globalFirRemaining = pooledFirByItem[req.itemId] ?? 0;
                     const firSurplus = Math.max(0, owned.haveFir - globalFirRemaining);
                     const needs = computeNeeds({
-                        totalRequired: quantity,
+                        totalRequired: req.count,
                         requiredFir: 0,
                         haveNonFir: owned.have + firSurplus,
                         haveFir: 0,
                     });
 
-                    if (needs.effectiveHave < quantity) {
+                    if (needs.effectiveHave < req.count) {
                         itemsMissing = true;
                         break;
                     }
@@ -134,26 +132,24 @@ export function StationCard({ station, isLocked = false, pooledFirByItem }: Stat
         if (!levelData) return;
 
         for (const req of levelData.itemRequirements) {
-            const quantity = req.count ?? req.quantity ?? 1;
-            const norm = req.item.normalizedName;
+            const item = itemById[req.itemId];
+            if (!item) continue;
+            const norm = item.normalizedName;
             const isCurrency = norm === "roubles" || norm === "dollars" || norm === "euros";
-            const isFir = req.attributes.some(
-                (a) => a.name === "found_in_raid" && a.value === "true"
-            );
 
             let haveDelta = 0;
             let haveFirDelta = 0;
 
             if (isCurrency) {
-                haveDelta -= quantity;
-            } else if (isFir) {
-                haveFirDelta -= quantity;
+                haveDelta -= req.count;
+            } else if (req.isFir) {
+                haveFirDelta -= req.count;
             } else {
-                haveDelta -= quantity;
+                haveDelta -= req.count;
             }
 
             if (haveDelta !== 0 || haveFirDelta !== 0) {
-                addItemCounts(req.item.id, haveDelta, haveFirDelta);
+                addItemCounts(req.itemId, haveDelta, haveFirDelta);
             }
         }
 
@@ -167,26 +163,24 @@ export function StationCard({ station, isLocked = false, pooledFirByItem }: Stat
 
         if (levelData) {
             for (const req of levelData.itemRequirements) {
-                const quantity = req.count ?? req.quantity ?? 1;
-                const norm = req.item.normalizedName;
+                const item = itemById[req.itemId];
+                if (!item) continue;
+                const norm = item.normalizedName;
                 const isCurrency = norm === "roubles" || norm === "dollars" || norm === "euros";
-                const isFir = req.attributes.some(
-                    (a) => a.name === "found_in_raid" && a.value === "true"
-                );
 
                 let haveDelta = 0;
                 let haveFirDelta = 0;
 
                 if (isCurrency) {
-                    haveDelta += quantity;
-                } else if (isFir) {
-                    haveFirDelta += quantity;
+                    haveDelta += req.count;
+                } else if (req.isFir) {
+                    haveFirDelta += req.count;
                 } else {
-                    haveDelta += quantity;
+                    haveDelta += req.count;
                 }
 
                 if (haveDelta !== 0 || haveFirDelta !== 0) {
-                    addItemCounts(req.item.id, haveDelta, haveFirDelta);
+                    addItemCounts(req.itemId, haveDelta, haveFirDelta);
                 }
             }
         }

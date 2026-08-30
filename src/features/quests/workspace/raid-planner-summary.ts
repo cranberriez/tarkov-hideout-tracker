@@ -1,4 +1,4 @@
-import type { FullQuest, FullQuestObjective, QuestItem } from "@/types";
+import type { FullQuest, FullQuestObjective } from "@/types";
 import type { QuestObjectiveCategory, QuestWorkspaceStatusInfo } from "./quest-workspace-utils";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { getObjectiveCategory } from "./quest-workspace-utils";
@@ -24,7 +24,7 @@ export interface RaidPlannerObjectiveGroup {
 export interface RaidPlannerMapSummary {
     questCount: number;
     objectiveGroups: RaidPlannerObjectiveGroup[];
-    requiredKeys: QuestItem[];
+    requiredKeyIds: string[];
 }
 
 export interface RaidPlannerKillObjective {
@@ -49,7 +49,7 @@ export function buildRaidPlannerMapSummary(quests: FullQuest[], mapKey: string):
     );
     const questIdsByCategory = new Map<QuestObjectiveCategory, Set<string>>();
     const keyedQuestIdsByCategory = new Map<QuestObjectiveCategory, Set<string>>();
-    const requiredKeys = new Map<string, QuestItem>();
+    const requiredKeyIds = new Set<string>();
 
     for (const quest of mapQuests) {
         for (const objective of quest.objectives) {
@@ -58,15 +58,13 @@ export function buildRaidPlannerMapSummary(quests: FullQuest[], mapKey: string):
             questIds.add(quest.id);
             questIdsByCategory.set(category, questIds);
 
-            const objectiveKeys = (objective.requiredKeys ?? []).flat();
+            const objectiveKeys = (objective.requiredKeyIds ?? []).flat();
             if (objectiveKeys.length > 0) {
                 const keyedQuestIds = keyedQuestIdsByCategory.get(category) ?? new Set<string>();
                 keyedQuestIds.add(quest.id);
                 keyedQuestIdsByCategory.set(category, keyedQuestIds);
             }
-            for (const key of objectiveKeys) {
-                if (key?.id && key.name) requiredKeys.set(key.id, key);
-            }
+            objectiveKeys.forEach((itemId) => requiredKeyIds.add(itemId));
         }
     }
 
@@ -82,7 +80,7 @@ export function buildRaidPlannerMapSummary(quests: FullQuest[], mapKey: string):
                   }]
                 : [];
         }),
-        requiredKeys: [...requiredKeys.values()].sort((left, right) => left.name.localeCompare(right.name)),
+        requiredKeyIds: [...requiredKeyIds].sort(),
     };
 }
 
@@ -122,14 +120,11 @@ export function buildRaidPlannerKillList(quests: FullQuest[]): RaidPlannerKillOb
 }
 
 export function buildRaidPlannerObjectiveKeyIndex(quests: FullQuest[]) {
-    const result = new Map<string, QuestItem[]>();
+    const result = new Map<string, string[]>();
     for (const quest of quests) {
         for (const objective of quest.objectives) {
-            const keys = new Map<string, QuestItem>();
-            for (const key of (objective.requiredKeys ?? []).flat()) {
-                if (key?.id && key.name) keys.set(key.id, key);
-            }
-            if (keys.size > 0) result.set(objective.id, [...keys.values()]);
+            const keys = [...new Set((objective.requiredKeyIds ?? []).flat())];
+            if (keys.length > 0) result.set(objective.id, keys);
         }
     }
     return result;
@@ -137,11 +132,11 @@ export function buildRaidPlannerObjectiveKeyIndex(quests: FullQuest[]) {
 
 export function getRaidPlannerMarkerKeys(
     objectiveIds: readonly string[] | undefined,
-    keyIndex: ReadonlyMap<string, QuestItem[]>,
+    keyIndex: ReadonlyMap<string, string[]>,
 ) {
-    const keys = new Map<string, QuestItem>();
+    const keys = new Set<string>();
     for (const objectiveId of objectiveIds ?? []) {
-        for (const key of keyIndex.get(objectiveId) ?? []) keys.set(key.id, key);
+        for (const itemId of keyIndex.get(objectiveId) ?? []) keys.add(itemId);
     }
-    return [...keys.values()].sort((left, right) => left.name.localeCompare(right.name));
+    return [...keys].sort();
 }

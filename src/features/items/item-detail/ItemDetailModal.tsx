@@ -1,8 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import type { ItemDetails, Station } from "@/types";
+import type {
+    ItemCraftRecipe,
+    ItemDetails,
+    ItemTraderOffer,
+    ItemUsagePayload,
+    Station,
+} from "@/types";
 import { X } from "lucide-react";
 import { stationOrder } from "@/lib/cfg/stationOrder";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -17,6 +23,9 @@ import { deriveQuestAnyOfGroups, deriveQuestItemState } from "@/lib/utils/quest-
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
+import { isCompleteItemUsagePayload } from "@/lib/utils/item-usage";
+
+const itemUsageCache = new Map<string, ItemUsagePayload>();
 
 export interface ItemDetailModalProps {
     item: ItemDetails | null;
@@ -43,11 +52,11 @@ export function ItemDetailModal({
     questAnyOfGroups = [],
     questAvailabilityQuests = [],
 }: ItemDetailModalProps) {
-    const { items: catalogItems } = useDataContext();
+    const { items: catalogItems, itemById } = useDataContext();
     const selectedItem = useMemo(() => {
         if (!item) return null;
-        return catalogItems?.find((catalogItem) => catalogItem.id === item.id) ?? item;
-    }, [catalogItems, item]);
+        return itemById[item.id] ?? item;
+    }, [itemById, item]);
     const selectedItemId = selectedItem?.id ?? "";
     const selectedNormalizedName = selectedItem?.normalizedName ?? "";
 
@@ -74,17 +83,14 @@ export function ItemDetailModal({
 
             station.levels.forEach((level) => {
                 level.itemRequirements.forEach((req) => {
-                    if (req.item.id === selectedItem.id) {
-                        const isFir = req.attributes.some(
-                            (attr) => attr.name === "found_in_raid" && attr.value === "true",
-                        );
+                    if (req.itemId === selectedItem.id) {
                         reqs.push({
                             stationName: station.name,
                             stationNormalizedName: station.normalizedName,
                             stationId: station.id,
                             level: level.level,
-                            count: req.count ?? req.quantity ?? 0,
-                            isFir,
+                            count: req.count,
+                            isFir: req.isFir,
                             isCompleted: currentLevel >= level.level,
                             isStationMaxed,
                             requirementId: req.id,
@@ -137,7 +143,60 @@ export function ItemDetailModal({
         gameEdition,
         gameMode,
     } = useUserStore();
+    const usageKey = `${toTarkovJsonGameMode(gameMode)}:${selectedItemId}`;
+    const [usageResult, setUsageResult] = useState<{ key: string; data: ItemUsagePayload } | null>(
+        () => {
+            const cached = itemUsageCache.get(usageKey);
+            return cached ? { key: usageKey, data: cached } : null;
+        },
+    );
+    const [usageErrorResult, setUsageErrorResult] = useState<{
+        key: string;
+        message: string;
+    } | null>(null);
     const marketPrice = selectedItem?.marketPrice;
+
+    useEffect(() => {
+        if (!isOpen || !selectedItemId || itemUsageCache.has(usageKey)) return;
+
+        const controller = new AbortController();
+        const mode = toTarkovJsonGameMode(gameMode);
+
+        fetch(`/api/items/${encodeURIComponent(selectedItemId)}/usage?mode=${mode}`, {
+            signal: controller.signal,
+        })
+            .then(async (response) => {
+                if (!response.ok) throw new Error(`Item usage request failed (${response.status})`);
+                return (await response.json()) as ItemUsagePayload;
+            })
+            .then((data) => {
+                if (isCompleteItemUsagePayload(data)) {
+                    itemUsageCache.set(usageKey, data);
+                }
+                setUsageErrorResult(null);
+                setUsageResult({ key: usageKey, data });
+            })
+            .catch((error: unknown) => {
+                if (error instanceof DOMException && error.name === "AbortError") return;
+                setUsageErrorResult({
+                    key: usageKey,
+                    message: "Trader and crafting data could not be loaded.",
+                });
+            });
+
+        return () => controller.abort();
+    }, [gameMode, isOpen, selectedItemId, usageKey]);
+
+    const itemUsage =
+        itemUsageCache.get(usageKey) ??
+        (usageResult?.key === usageKey ? usageResult.data : null);
+    const usageRequestError =
+        usageErrorResult?.key === usageKey ? usageErrorResult.message : null;
+    const isUsageLoading =
+        isOpen &&
+        selectedItemId.length > 0 &&
+        itemUsage === null &&
+        usageRequestError === null;
 
     const { totalCount, totalFir } = useMemo(() => {
         let nextTotalCount = 0;
@@ -275,20 +334,102 @@ export function ItemDetailModal({
         for (const catalogItem of catalogItems ?? []) {
             details[catalogItem.id] = catalogItem;
         }
-        for (const entry of questItemIndex) {
-            details[entry.itemId] ??= {
-                id: entry.itemId,
-                name: entry.name,
-                normalizedName: entry.normalizedName,
-                iconLink: entry.iconLink,
-                gridImageLink: entry.gridImageLink,
-            };
-        }
         if (selectedItem) {
             details[selectedItem.id] = selectedItem;
         }
         return details;
-    }, [catalogItems, questItemIndex, selectedItem]);
+    }, [catalogItems, selectedItem]);
+
+    const traderOffers = useMemo<ItemTraderOffer[]>(() => {
+        const traders = new Map(
+            questAvailabilityQuests.map((quest) => [quest.trader.id, quest.trader]),
+        );
+        const quests = new Map(questAvailabilityQuests.map((quest) => [quest.id, quest]));
+        return (itemUsage?.barters ?? []).map((barter) => {
+            const trader =
+                itemUsage?.tradersById?.[barter.traderId] ?? traders.get(barter.traderId);
+            const unlock = barter.taskUnlockId
+                ? itemUsage?.taskUnlocksById?.[barter.taskUnlockId] ??
+                  quests.get(barter.taskUnlockId)
+                : null;
+            return {
+                id: barter.id,
+                trader: trader ?? {
+                    id: barter.traderId,
+                    name: "Unknown trader",
+                    normalizedName: barter.traderId,
+                },
+                minTraderLevel: barter.minTraderLevel,
+                taskUnlock: barter.taskUnlockId
+                    ? {
+                          id: barter.taskUnlockId,
+                          name: unlock?.name ?? "Quest unlock",
+                          wikiLink: unlock?.wikiLink,
+                      }
+                    : null,
+                requiredItems: barter.requiredItems.map((entry) => ({
+                    item: itemById[entry.itemId] ?? {
+                        id: entry.itemId,
+                        name: "Unknown item",
+                        normalizedName: entry.itemId,
+                    },
+                    count: entry.count,
+                    isTool: entry.isTool,
+                })),
+                offeredCount: barter.offeredCount,
+                buyLimit: barter.buyLimit,
+            };
+        });
+    }, [itemById, itemUsage, questAvailabilityQuests]);
+
+    const crafts = useMemo<ItemCraftRecipe[]>(() => {
+        const stationsById = new Map((stations ?? []).map((station) => [station.id, station]));
+        const quests = new Map(questAvailabilityQuests.map((quest) => [quest.id, quest]));
+        return (itemUsage?.crafts ?? []).map((craft) => {
+            const station = stationsById.get(craft.stationId);
+            const unlock = craft.taskUnlockId
+                ? itemUsage?.taskUnlocksById?.[craft.taskUnlockId] ??
+                  quests.get(craft.taskUnlockId)
+                : null;
+            const toAmount = (entry: (typeof craft.requiredItems)[number]) => ({
+                item: itemById[entry.itemId] ?? {
+                    id: entry.itemId,
+                    name: "Quest item",
+                    normalizedName: entry.itemId,
+                },
+                count: entry.count,
+                isTool: entry.isTool,
+            });
+            return {
+                id: craft.id,
+                station: station
+                    ? {
+                          id: station.id,
+                          name: station.name,
+                          normalizedName: station.normalizedName,
+                          imageLink: station.imageLink,
+                      }
+                    : {
+                          id: craft.stationId,
+                          name: "Unknown station",
+                          normalizedName: craft.stationId,
+                      },
+                level: craft.level,
+                duration: craft.duration,
+                taskUnlock: craft.taskUnlockId
+                    ? {
+                          id: craft.taskUnlockId,
+                          name: unlock?.name ?? "Quest unlock",
+                          wikiLink: unlock?.wikiLink,
+                      }
+                    : null,
+                requiredItems: craft.requiredItems.map(toAmount),
+                requiredQuestItems: craft.requiredQuestItems.map(toAmount),
+                gameEditions: craft.gameEditions,
+                productCount: craft.productCount,
+            };
+        });
+    }, [itemById, itemUsage, questAvailabilityQuests, stations]);
 
     const hasQuestRequirements =
         (questItemState?.relatedQuests.length ?? 0) > 0 || questAnyOfGroupState.length > 0;
@@ -310,8 +451,12 @@ export function ItemDetailModal({
     const showUsage =
         stationRequirements.length > 0 ||
         hasQuestRequirements ||
-        (selectedItem.traderOffers?.length ?? 0) > 0 ||
-        (selectedItem.crafts?.length ?? 0) > 0 ||
+        traderOffers.length > 0 ||
+        crafts.length > 0 ||
+        isUsageLoading ||
+        usageRequestError !== null ||
+        itemUsage?.bartersError != null ||
+        itemUsage?.craftsError != null ||
         showPriceHistory;
 
     return (
@@ -378,8 +523,11 @@ export function ItemDetailModal({
                                     questItemState={questItemState}
                                     anyOfGroups={questAnyOfGroupState}
                                     itemDetailsById={itemDetailsById}
-                                    traderOffers={selectedItem.traderOffers ?? []}
-                                    crafts={selectedItem.crafts ?? []}
+                                    traderOffers={traderOffers}
+                                    crafts={crafts}
+                                    acquisitionLoading={isUsageLoading}
+                                    barterError={itemUsage?.bartersError ?? usageRequestError}
+                                    craftError={itemUsage?.craftsError ?? usageRequestError}
                                     completedQuests={completedQuests}
                                     traderLoyaltyLevels={questTraderLoyaltyLevels}
                                     gameEdition={gameEdition}

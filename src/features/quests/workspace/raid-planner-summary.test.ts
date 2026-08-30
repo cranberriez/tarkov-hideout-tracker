@@ -19,7 +19,7 @@ const key = {
     iconLink: "https://assets.tarkov.dev/key-1-icon.webp",
 };
 
-function quest(id: string, type: string, requiredKeys?: typeof key[][]) {
+function quest(id: string, type: string, requiredKeyIds?: string[][]) {
     return {
         id,
         name: id,
@@ -29,7 +29,7 @@ function quest(id: string, type: string, requiredKeys?: typeof key[][]) {
             type,
             description: `${type} objective`,
             optional: false,
-            requiredKeys,
+            requiredKeyIds,
         }],
     } as FullQuest;
 }
@@ -47,8 +47,8 @@ test("raid planner keeps only active quests regardless of other workspace status
 
 test("map summary groups unique quests by objective type and deduplicates required keys", () => {
     const summary = buildRaidPlannerMapSummary([
-        quest("visit", "visit", [[key]]),
-        quest("plant", "plantItem", [[key]]),
+        quest("visit", "visit", [[key.id]]),
+        quest("plant", "plantItem", [[key.id]]),
     ], "customs");
 
     assert.equal(summary.questCount, 2);
@@ -56,9 +56,7 @@ test("map summary groups unique quests by objective type and deduplicates requir
         { category: "location", questCount: 1, keyedQuestCount: 1 },
         { category: "plant", questCount: 1, keyedQuestCount: 1 },
     ]);
-    assert.deepEqual(summary.requiredKeys.map((entry) => entry.id), ["key-1"]);
-    assert.equal(summary.requiredKeys[0].shortName, "Dorm 206");
-    assert.equal(summary.requiredKeys[0].iconLink, key.iconLink);
+    assert.deepEqual(summary.requiredKeyIds, ["key-1"]);
 });
 
 test("kill list includes every shooting objective with a compact description", () => {
@@ -93,24 +91,23 @@ test("kill list includes every shooting objective with a compact description", (
 
 test("marker key previews deduplicate keys across coincident objectives", () => {
     const keyedQuest = {
-        ...quest("keyed", "visit", [[key]]),
+        ...quest("keyed", "visit", [[key.id]]),
         objectives: [{
             id: "first",
             type: "visit",
             description: "First door",
             optional: false,
-            requiredKeys: [[key]],
+            requiredKeyIds: [[key.id]],
         }, {
             id: "second",
             type: "locate",
             description: "Second door",
             optional: false,
-            requiredKeys: [[key]],
+            requiredKeyIds: [[key.id]],
         }],
     } as FullQuest;
 
     const index = buildRaidPlannerObjectiveKeyIndex([keyedQuest]);
     const keys = getRaidPlannerMarkerKeys(["first", "second"], index);
-    assert.deepEqual(keys.map((entry) => entry.id), ["key-1"]);
-    assert.equal(keys[0].shortName, "Dorm 206");
+    assert.deepEqual(keys, ["key-1"]);
 });

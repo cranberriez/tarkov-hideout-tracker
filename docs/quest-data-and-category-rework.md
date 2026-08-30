@@ -7,15 +7,12 @@ future quest work.
 ## Current Data Source
 
 Quest data comes exclusively from Tarkov.dev's JSON API. The server-side facade in
-`src/server/services/tarkovData.ts` always exports the JSON quest implementation,
-regardless of `TARKOV_DATA_SOURCE`. That variable only selects providers for the
-remaining non-quest services. The quest adapter requests these datasets:
+`src/server/services/tarkovData.ts` exports the JSON quest implementation, and
+`TARKOV_DATA_SOURCE` is no longer consulted. The quest adapter requests these datasets:
 
 ```text
 https://json.tarkov.dev/regular/tasks
 https://json.tarkov.dev/regular/tasks_en
-https://json.tarkov.dev/regular/items
-https://json.tarkov.dev/regular/items_en
 https://json.tarkov.dev/regular/traders
 https://json.tarkov.dev/regular/traders_en
 https://json.tarkov.dev/regular/maps
@@ -221,8 +218,7 @@ This keeps display grouping separate from availability rules.
   shape.
 - Normalize `traderRequirements` without changing their upstream meaning.
 - Add helpers that distinguish `level` from `reputation`.
-- Keep the GraphQL provider compatible by returning the same normalized shape,
-  using an empty list for fields unavailable from GraphQL.
+- Keep the normalized JSON response shape stable for current consumers.
 - Add mapping tests using small saved fixtures rather than the complete live
   dataset.
 

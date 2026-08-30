@@ -32,6 +32,9 @@ interface ItemDetailUsageTabsProps {
     itemDetailsById: Record<string, ItemDetails>;
     traderOffers: ItemTraderOffer[];
     crafts: ItemCraftRecipe[];
+    acquisitionLoading: boolean;
+    barterError: string | null;
+    craftError: string | null;
     completedQuests: Record<string, boolean>;
     traderLoyaltyLevels: Record<string, number>;
     gameEdition: GameEdition | null;
@@ -51,6 +54,9 @@ export function ItemDetailUsageTabs({
     itemDetailsById,
     traderOffers,
     crafts,
+    acquisitionLoading,
+    barterError,
+    craftError,
     completedQuests,
     traderLoyaltyLevels,
     gameEdition,
@@ -62,11 +68,16 @@ export function ItemDetailUsageTabs({
     const availableTabs: UsageTab[] = [
         ...(hideoutCount > 0 ? (["hideout"] as const) : []),
         ...(questCount > 0 ? (["quests"] as const) : []),
-        ...(traderOffers.length > 0 ? (["traders"] as const) : []),
-        ...(crafts.length > 0 ? (["crafting"] as const) : []),
+        ...(traderOffers.length > 0 || acquisitionLoading || barterError
+            ? (["traders"] as const)
+            : []),
+        ...(crafts.length > 0 || acquisitionLoading || craftError
+            ? (["crafting"] as const)
+            : []),
         ...(showPriceHistory ? (["prices"] as const) : []),
     ];
     const [activeTab, setActiveTab] = useState<UsageTab>(availableTabs[0] ?? "hideout");
+    const selectedTab = availableTabs.includes(activeTab) ? activeTab : availableTabs[0];
 
     if (availableTabs.length === 0) return null;
 
@@ -75,7 +86,7 @@ export function ItemDetailUsageTabs({
             <div className="flex h-10 items-stretch overflow-x-auto border-b border-border-color" role="tablist">
                 {hideoutCount > 0 && (
                     <TabButton
-                        active={activeTab === "hideout"}
+                        active={selectedTab === "hideout"}
                         onClick={() => setActiveTab("hideout")}
                         label="Hideout"
                         count={hideoutCount}
@@ -84,34 +95,34 @@ export function ItemDetailUsageTabs({
                 )}
                 {questCount > 0 && (
                     <TabButton
-                        active={activeTab === "quests"}
+                        active={selectedTab === "quests"}
                         onClick={() => setActiveTab("quests")}
                         label="Quests"
                         count={questCount}
                         icon={<ClipboardList size={13} />}
                     />
                 )}
-                {traderOffers.length > 0 && (
+                {(traderOffers.length > 0 || acquisitionLoading || barterError) && (
                     <TabButton
-                        active={activeTab === "traders"}
+                        active={selectedTab === "traders"}
                         onClick={() => setActiveTab("traders")}
                         label="Traders"
-                        count={traderOffers.length}
+                        count={acquisitionLoading ? undefined : traderOffers.length}
                         icon={<ShoppingCart size={13} />}
                     />
                 )}
-                {crafts.length > 0 && (
+                {(crafts.length > 0 || acquisitionLoading || craftError) && (
                     <TabButton
-                        active={activeTab === "crafting"}
+                        active={selectedTab === "crafting"}
                         onClick={() => setActiveTab("crafting")}
                         label="Crafting"
-                        count={crafts.length}
+                        count={acquisitionLoading ? undefined : crafts.length}
                         icon={<Wrench size={13} />}
                     />
                 )}
                 {showPriceHistory && (
                     <TabButton
-                        active={activeTab === "prices"}
+                        active={selectedTab === "prices"}
                         onClick={() => setActiveTab("prices")}
                         label="History"
                         icon={<ChartNoAxesCombined size={13} />}
@@ -120,7 +131,7 @@ export function ItemDetailUsageTabs({
             </div>
 
             <div role="tabpanel">
-                {activeTab === "hideout" && hideoutCount > 0 && (
+                {selectedTab === "hideout" && hideoutCount > 0 && (
                     <ItemDetailHideoutRequirements
                         selectedItemImageLink={selectedItemImageLink}
                         stationRequirements={stationRequirements}
@@ -128,7 +139,7 @@ export function ItemDetailUsageTabs({
                         hiddenStations={hiddenStations}
                     />
                 )}
-                {activeTab === "quests" && questCount > 0 && (
+                {selectedTab === "quests" && questCount > 0 && (
                     <ItemDetailQuestRequirements
                         selectedItemId={selectedItemId}
                         selectedItemImageLink={selectedItemImageLink}
@@ -137,27 +148,54 @@ export function ItemDetailUsageTabs({
                         itemDetailsById={itemDetailsById}
                     />
                 )}
-                {activeTab === "traders" && traderOffers.length > 0 && (
-                    <ItemDetailAcquisition
-                        offers={traderOffers}
-                        completedQuests={completedQuests}
-                        traderLoyaltyLevels={traderLoyaltyLevels}
-                    />
+                {selectedTab === "traders" && (
+                    <AcquisitionState loading={acquisitionLoading} error={barterError} empty={traderOffers.length === 0}>
+                        <ItemDetailAcquisition
+                            offers={traderOffers}
+                            completedQuests={completedQuests}
+                            traderLoyaltyLevels={traderLoyaltyLevels}
+                        />
+                    </AcquisitionState>
                 )}
-                {activeTab === "crafting" && crafts.length > 0 && (
-                    <ItemDetailCrafting
-                        recipes={crafts}
-                        completedQuests={completedQuests}
-                        stationLevels={stationLevels}
-                        gameEdition={gameEdition}
-                    />
+                {selectedTab === "crafting" && (
+                    <AcquisitionState loading={acquisitionLoading} error={craftError} empty={crafts.length === 0}>
+                        <ItemDetailCrafting
+                            recipes={crafts}
+                            completedQuests={completedQuests}
+                            stationLevels={stationLevels}
+                            gameEdition={gameEdition}
+                        />
+                    </AcquisitionState>
                 )}
-                {activeTab === "prices" && showPriceHistory && (
+                {selectedTab === "prices" && showPriceHistory && (
                     <ItemDetailPriceHistory itemId={selectedItemId} mode={gameMode} />
                 )}
             </div>
         </section>
     );
+}
+
+function AcquisitionState({
+    loading,
+    error,
+    empty,
+    children,
+}: {
+    loading: boolean;
+    error: string | null;
+    empty: boolean;
+    children: ReactNode;
+}) {
+    if (loading) {
+        return <p className="px-4 py-6 text-sm text-muted-foreground">Loading acquisition data…</p>;
+    }
+    if (error) {
+        return <p className="px-4 py-6 text-sm text-amber-200">{error}</p>;
+    }
+    if (empty) {
+        return <p className="px-4 py-6 text-sm text-muted-foreground">No matching records.</p>;
+    }
+    return children;
 }
 
 function TabButton({

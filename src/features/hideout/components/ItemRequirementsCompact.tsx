@@ -7,6 +7,7 @@ import { formatNumber } from "@/lib/utils/format-number";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
 import { formatCompactRoubles, getFleaPrice, hasFleaMarketData } from "@/lib/utils/market-price";
+import { useDataContext } from "@/app/(data)/_dataContext";
 
 export function CompactItemRequirements({
     nextLevelData,
@@ -15,22 +16,23 @@ export function CompactItemRequirements({
     pooledFirByItem,
 }: BaseItemRequirementsProps) {
     const itemCounts = useUserStore((state) => state.itemCounts);
+    const { itemById } = useDataContext();
     return (
         <div className="flex flex-wrap gap-2">
             {nextLevelData.itemRequirements
                 .filter((req) => {
+                    const item = itemById[req.itemId];
+                    if (!item) return false;
                     if (!hideMoney) return true;
-                    const norm = req.item.normalizedName;
+                    const norm = item.normalizedName;
                     return norm !== "roubles" && norm !== "dollars" && norm !== "euros";
                 })
                 .map((req) => {
-                    const quantity = req.count ?? req.quantity ?? 1;
-                    const norm = req.item.normalizedName;
+                    const item = itemById[req.itemId];
+                    if (!item) return null;
+                    const norm = item.normalizedName;
                     const isCurrency = norm === "roubles" || norm === "dollars" || norm === "euros";
-                    const isFir = req.attributes.some(
-                        (a) => a.name === "found_in_raid" && a.value === "true"
-                    );
-                    const marketPrice = req.item.marketPrice;
+                    const marketPrice = item.marketPrice;
                     const fleaPrice = getFleaPrice(marketPrice);
                     const priceLabel = marketPrice && !hasFleaMarketData(marketPrice)
                           ? "No flea"
@@ -38,32 +40,32 @@ export function CompactItemRequirements({
                             ? `${formatCompactRoubles(fleaPrice)} ₽`
                             : null;
 
-                    const owned = itemCounts[req.item.id] ?? { have: 0, haveFir: 0 };
-                    const globalFirRemaining = pooledFirByItem[req.item.id] ?? 0;
+                    const owned = itemCounts[req.itemId] ?? { have: 0, haveFir: 0 };
+                    const globalFirRemaining = pooledFirByItem[req.itemId] ?? 0;
                     const firSurplus = Math.max(0, owned.haveFir - globalFirRemaining);
                     const needs = isCurrency
                         ? computeNeeds({
-                              totalRequired: quantity,
+                              totalRequired: req.count,
                               requiredFir: 0,
                               haveNonFir: 0,
                               haveFir: 0,
                           })
-                        : isFir
+                        : req.isFir
                         ? computeNeeds({
-                              totalRequired: quantity,
-                              requiredFir: quantity,
+                              totalRequired: req.count,
+                              requiredFir: req.count,
                               haveNonFir: 0,
                               haveFir: owned.haveFir,
                           })
                         : computeNeeds({
-                              totalRequired: quantity,
+                              totalRequired: req.count,
                               requiredFir: 0,
                               haveNonFir: owned.have + firSurplus,
                               haveFir: 0,
                           });
 
                     const isCompleted = !isCurrency
-                        ? isFir
+                        ? req.isFir
                             ? needs.isSatisfied
                             : needs.isSatisfied && !needs.usesFirForNonFir
                         : false;
@@ -71,26 +73,26 @@ export function CompactItemRequirements({
                     return (
                         <div
                             key={req.id}
-                            onClick={() => onClickItem(req.item)}
+                            onClick={() => onClickItem(item)}
                             className={`relative w-16 h-16 bg-black/40 border group cursor-pointer transition-all ${
-                                isFir ? "border-orange-500" : "border-white/10"
+                                req.isFir ? "border-orange-500" : "border-white/10"
                             } ${isCompleted ? "opacity-50 grayscale" : "hover:border-white/30"}`}
-                            title={`${formatNumber(quantity)} ${req.item.name}${
-                                isFir ? " (Found In Raid)" : ""
+                            title={`${formatNumber(req.count)} ${item.name}${
+                                req.isFir ? " (Found In Raid)" : ""
                             }${priceLabel ? ` - ${priceLabel}` : ""}${
                                 isCompleted ? " (Completed)" : ""
                             }`}
                         >
-                            {req.item.iconLink && (
+                            {item.iconLink && (
                                 <Image
-                                    src={req.item.iconLink}
-                                    alt={req.item.name}
+                                    src={item.iconLink}
+                                    alt={item.name}
                                     fill
                                     className="object-contain p-1"
                                     unoptimized
                                 />
                             )}
-                            {isFir && (
+                            {req.isFir && (
                                 <div
                                     className="absolute -top-1.5 -right-1.5 bg-black rounded-full z-10 text-orange-500"
                                     title="Found In Raid"
@@ -106,11 +108,11 @@ export function CompactItemRequirements({
                             <div className="absolute bottom-0 right-0 bg-black/40 px-1 text-[10px] font-mono text-gray-300 border-t border-l border-white/10 text-right leading-tight">
                                 {isCurrency ? (
                                     <div
-                                        className={isFir ? "text-orange-300" : "text-tarkov-green"}
+                                        className={req.isFir ? "text-orange-300" : "text-tarkov-green"}
                                     >
-                                        {formatNumber(quantity)}
+                                        {formatNumber(req.count)}
                                     </div>
-                                ) : isFir ? (
+                                ) : req.isFir ? (
                                     <div className="text-orange-300">
                                         {formatNumber(needs.haveFirReserved)} /{" "}
                                         {formatNumber(needs.requiredFir)}

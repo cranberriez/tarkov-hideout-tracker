@@ -4,6 +4,8 @@ import { requiresFoundInRaid } from "@/lib/cfg/foundInRaid";
 import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { wikiData } from "@/lib/data/wiki-data";
 import { redis, writeRedisAfterResponse } from "@/server/redis";
+import { getGlobalItemList, getGlobalSkillList } from "@/server/services/itemsJson";
+import { resolveItemReferences } from "@/server/services/itemReferences";
 import {
     fetchTarkovJsonDataset,
     type TarkovJsonGameMode,
@@ -16,7 +18,6 @@ import {
 import type {
     HideoutStationsPayload,
     ItemRequirement,
-    RequirementAttribute,
     Station,
     TimedResponse,
 } from "@/types";
@@ -24,15 +25,6 @@ import type {
 function buildRedisKeys(gameMode: TarkovJsonGameMode) {
     const bodyKey = `hideout:stations:v${CACHE_VERSIONS.hideoutStations}:${gameMode}`;
     return { bodyKey, metaKey: `${bodyKey}:meta` };
-}
-
-interface JsonItem {
-    id: string;
-    name: string;
-    shortName?: string;
-    normalizedName: string;
-    iconLink?: string;
-    gridImageLink?: string;
 }
 
 interface JsonTrader {
@@ -67,19 +59,6 @@ interface JsonHideoutStation {
     levels?: JsonHideoutLevel[];
 }
 
-interface JsonItemsData {
-    items: Record<string, JsonItem>;
-    skills?: Array<{ id: string; name: string; imageLink?: string }>;
-}
-
-function mapAttributes(attributes: JsonHideoutRequirement["attributes"]): RequirementAttribute[] {
-    return Object.entries(attributes ?? {}).map(([name, value]) => ({
-        type: "functional",
-        name: name === "foundInRaid" ? "found_in_raid" : name,
-        value: String(value),
-    }));
-}
-
 export async function getJsonHideoutStations(
     gameMode: TarkovJsonGameMode = "regular",
 ): Promise<TimedResponse<HideoutStationsPayload>> {
@@ -99,22 +78,23 @@ export async function getJsonHideoutStations(
     }
 
     try {
-        const [hideoutDataset, itemsDataset, tradersDataset] = await Promise.all([
+        const [hideoutDataset, catalogResponse, skillsDataset, tradersDataset] = await Promise.all([
             fetchTarkovJsonDataset<Record<string, JsonHideoutStation>>("hideout", gameMode),
-            fetchTarkovJsonDataset<JsonItemsData>("items", gameMode),
+            getGlobalItemList(gameMode),
+            getGlobalSkillList(gameMode),
             fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders", gameMode),
         ]);
 
         const rawStations = Object.values(hideoutDataset.data);
-        if (rawStations.length === 0 || Object.keys(itemsDataset.data.items ?? {}).length === 0) {
+        if (rawStations.length === 0 || catalogResponse.data.items.length === 0) {
             throw new Error("Tarkov JSON hideout response contained no stations or items");
         }
 
         const stationsById = hideoutDataset.data;
         const tradersById = tradersDataset.data;
-        const itemsById = itemsDataset.data.items;
+        const itemsById = new Map(catalogResponse.data.items.map((item) => [item.id, item]));
         const skillsByName = new Map(
-            (itemsDataset.data.skills ?? []).map((skill) => [skill.id, skill]),
+            skillsDataset.data.skills.map((skill) => [skill.id, skill]),
         );
 
         const stations: Station[] = rawStations.map((station) => {
@@ -132,59 +112,40 @@ export async function getJsonHideoutStations(
                         (entry) => entry.level === level.level,
                     );
 
-                    let itemRequirements: ItemRequirement[] = (level.itemRequirements ?? []).map(
+                    let itemRequirements: ItemRequirement[] = resolveItemReferences(
+                        level.itemRequirements ?? [],
+                        itemsById,
                         (requirement) => {
-                            const item = itemsById[requirement.item];
-                            if (!item) {
-                                throw new Error(
-                                    `Tarkov JSON hideout item ${requirement.item} was not found`,
-                                );
-                            }
-
-                            const attributes = mapAttributes(requirement.attributes);
-                            const wikiRequirement = wikiLevel?.requirements.find(
-                                (entry) =>
-                                    entry.type === "item" &&
-                                    entry.name === item.normalizedName,
+                            console.warn(
+                                `Skipping Tarkov JSON hideout requirement ${requirement.id}: item ${requirement.item} was not found in the ${gameMode} catalog`,
                             );
-                            const quantity = wikiRequirement?.quantity ?? requirement.count ?? 0;
-                            const isFir =
-                                wikiRequirement?.foundInRaid ??
+                        },
+                    ).map(({ requirement, item }) => {
+                        const wikiRequirement = wikiLevel?.requirements.find(
+                            (entry) =>
+                                entry.type === "item" && entry.name === item.normalizedName,
+                        );
+                        const quantity = wikiRequirement?.quantity ?? requirement.count ?? 0;
+                        const isFir =
+                            requirement.attributes?.foundInRaid === true ||
+                            requirement.attributes?.foundInRaid === "true" ||
+                            (wikiRequirement?.foundInRaid ??
                                 (requiresFoundInRaid as Record<
                                     string,
                                     Record<number, string[]>
                                 >)[station.normalizedName]?.[level.level]?.includes(
                                     item.normalizedName,
                                 ) ??
-                                false;
+                                false);
 
-                            if (
-                                isFir &&
-                                !attributes.some((attribute) => attribute.name === "found_in_raid")
-                            ) {
-                                attributes.push({
-                                    type: "functional",
-                                    name: "found_in_raid",
-                                    value: "true",
-                                });
-                            }
-
-                            return {
-                                id: requirement.id,
-                                item: {
-                                    id: item.id,
-                                    name: itemsDataset.translate(item.name),
-                                    normalizedName: item.normalizedName,
-                                    shortName: itemsDataset.translate(item.shortName),
-                                    iconLink: item.iconLink,
-                                    gridImageLink: item.gridImageLink,
-                                },
-                                count: quantity,
-                                quantity,
-                                attributes,
-                            };
-                        },
-                    );
+                        return {
+                            id: requirement.id,
+                            itemId: item.id,
+                            count: quantity,
+                            isFir,
+                            isTool: requirement.attributes?.tool === true,
+                        };
+                    });
 
                     if (wikiLevel) {
                         const allowedItems = new Set(
@@ -193,7 +154,7 @@ export async function getJsonHideoutStations(
                                 .map((entry) => entry.name),
                         );
                         itemRequirements = itemRequirements.filter((requirement) =>
-                            allowedItems.has(requirement.item.normalizedName),
+                            allowedItems.has(itemsById.get(requirement.itemId)?.normalizedName ?? ""),
                         );
                     }
 
@@ -215,9 +176,9 @@ export async function getJsonHideoutStations(
                         skillRequirements: (level.skillRequirements ?? []).map((requirement) => {
                             const skill = skillsByName.get(requirement.skill);
                             return {
-                                name: itemsDataset.translate(requirement.skill),
+                                name: skill?.name ?? requirement.skill,
                                 skill: {
-                                    name: itemsDataset.translate(skill?.name ?? requirement.skill),
+                                    name: skill?.name ?? requirement.skill,
                                     imageLink: skill?.imageLink,
                                 },
                                 level: requirement.level,
@@ -246,7 +207,11 @@ export async function getJsonHideoutStations(
         const updatedAt = Date.now();
         const localeResults = [
             hideoutDataset.locale,
-            itemsDataset.locale,
+            ...(skillsDataset.diagnostics?.localePaths ?? []).map((resolvedPath) => ({
+                resolvedPath,
+                usedRegularFallback:
+                    skillsDataset.diagnostics?.usedRegularLocaleFallback ?? false,
+            })),
             tradersDataset.locale,
         ];
         const body: TimedResponse<HideoutStationsPayload> = {

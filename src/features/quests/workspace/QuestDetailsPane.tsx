@@ -705,8 +705,8 @@ interface ObjectivePresentation {
 }
 
 function getRegularItemKey(objective: FullQuestObjective) {
-    if (!("items" in objective) || !Array.isArray(objective.items) || objective.items.length === 0) return null;
-    return objective.items.map((item) => item.id).sort().join(":");
+    if (!("itemIds" in objective) || objective.itemIds.length === 0) return null;
+    return [...objective.itemIds].sort().join(":");
 }
 
 function getQuestItemKey(objective: FullQuestObjective) {

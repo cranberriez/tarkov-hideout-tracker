@@ -15,22 +15,23 @@ import {
 } from "lucide-react";
 import type {
     FullQuestObjective,
-    QuestItem,
+    ItemDetails,
     QuestObjectiveItemType,
     QuestObjectiveShootType,
 } from "@/types";
+import { useDataContext } from "@/app/(data)/_dataContext";
 
 function isItemObjective(o: FullQuestObjective): o is QuestObjectiveItemType {
     return (
         (o.type === "giveItem" || o.type === "findItem" || o.type === "plantItem") &&
-        "items" in o
+        "itemIds" in o
     );
 }
 
 export function isQuestItemDemandObjective(o: FullQuestObjective): o is QuestObjectiveItemType {
     return (
         (o.type === "giveItem" || o.type === "plantItem") &&
-        "items" in o
+        "itemIds" in o
     );
 }
 
@@ -38,14 +39,17 @@ function isShootObjective(o: FullQuestObjective): o is QuestObjectiveShootType {
     return o.type === "shoot" && "target" in o;
 }
 
-function getRequiredKeyGroups(objective: FullQuestObjective): QuestItem[][] {
-    return (objective.requiredKeys ?? [])
-        .map((group) => group.filter((key) => key?.id && key.name))
+function getRequiredKeyGroups(
+    objective: FullQuestObjective,
+    itemById: Readonly<Record<string, ItemDetails>>,
+): ItemDetails[][] {
+    return (objective.requiredKeyIds ?? [])
+        .map((group) => group.map((id) => itemById[id]).filter(Boolean))
         .filter((group) => group.length > 0);
 }
 
 export function hasRequiredKeys(objective: FullQuestObjective) {
-    return getRequiredKeyGroups(objective).length > 0;
+    return (objective.requiredKeyIds ?? []).some((group) => group.length > 0);
 }
 
 function ObjectiveIcon({ type, size = 13 }: { type: string; size?: number }) {
@@ -74,7 +78,7 @@ function ObjectiveIcon({ type, size = 13 }: { type: string; size?: number }) {
     }
 }
 
-function RequiredKeysList({ groups, large = false }: { groups: QuestItem[][]; large?: boolean }) {
+function RequiredKeysList({ groups, large = false }: { groups: ItemDetails[][]; large?: boolean }) {
     if (groups.length === 0) return null;
 
     return (
@@ -127,18 +131,22 @@ const COMPACT_ITEM_PREVIEW_LIMIT = 15;
 
 export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", showItems = true, objectiveCompletion }: ObjectiveRowProps) {
     const [showAllItems, setShowAllItems] = useState(false);
+    const { itemById } = useDataContext();
     const item = isItemObjective(objective) ? objective : null;
     const shoot = isShootObjective(objective) ? objective : null;
-    const hasItemChoices = !!item && item.items.length > 1;
+    const standardItems = item?.itemIds.map((id) => itemById[id]).filter(Boolean) ?? [];
+    const questSpecificItems = item?.questSpecificItems ?? [];
+    const allObjectiveItems = [...standardItems, ...questSpecificItems];
+    const hasItemChoices = !!item && allObjectiveItems.length > 1;
     const isPartialItemList = !!item?.isPartial;
     const compactItems = item
-        ? (isPartialItemList ? item.items.slice(0, COMPACT_ITEM_PREVIEW_LIMIT) : item.items)
+        ? (isPartialItemList ? standardItems.slice(0, COMPACT_ITEM_PREVIEW_LIMIT) : standardItems)
         : [];
-    const requiredKeyGroups = getRequiredKeyGroups(objective);
+    const requiredKeyGroups = getRequiredKeyGroups(objective, itemById);
     const questItem = (objective.type === "pickupQuestItem" || objective.type === "findQuestItem") && "questItem" in objective
         ? objective.questItem
         : null;
-    const rowItems = item?.items ?? (questItem ? [questItem] : []);
+    const rowItems = item ? allObjectiveItems : (questItem ? [questItem] : []);
     const visibleRowItems = showAllItems ? rowItems : rowItems.slice(0, WORKSPACE_ITEM_PREVIEW_LIMIT);
     const hiddenRowItemCount = Math.max(0, rowItems.length - WORKSPACE_ITEM_PREVIEW_LIMIT);
 
@@ -190,7 +198,7 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
                     </div>
                 )}
                 <RequiredKeysList groups={requiredKeyGroups} large={itemDisplay === "rows"} />
-                {itemDisplay === "compact" && item && item.items.length > 0 && (
+                {itemDisplay === "compact" && item && allObjectiveItems.length > 0 && (
                     <div
                         className={
                             hasItemChoices
@@ -217,7 +225,7 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
                                 )}
                             </div>
                         )}
-                        {(objective.type === "giveItem" || objective.type === "plantItem") && (
+                        {(objective.type === "giveItem" || objective.type === "plantItem") && standardItems.length > 0 && (
                             <div className="flex flex-wrap gap-1.5">
                                 {compactItems.map((itm) => (
                                     <div
@@ -284,7 +292,8 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
                                         {item?.foundInRaid && <span className="shrink-0 text-[10px] font-semibold uppercase text-orange-400">FiR</span>}
                                     </>
                                 );
-                                return onItemClick ? (
+                                const isQuestSpecific = "source" in rowItem && rowItem.source === "questSpecific";
+                                return onItemClick && !isQuestSpecific ? (
                                     <button key={rowItem.id} type="button" onClick={(event) => { event.stopPropagation(); onItemClick(rowItem.id); }} className="flex w-full items-center gap-3.5 border-b border-white/7 px-3.5 py-2.5 text-left transition-colors last:border-b-0 hover:bg-white/4">
                                         {content}
                                     </button>

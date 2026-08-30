@@ -126,3 +126,29 @@ export async function writeRedisAfterResponse(
         await write();
     }
 }
+
+/** Schedules ordered Redis writes, useful when a cache value must be chunked. */
+export async function writeRedisSequenceAfterResponse(
+    batches: Record<string, unknown>[],
+    label: string,
+): Promise<void> {
+    if (!isCacheEnabled) return;
+
+    const write = async () => {
+        for (const batch of batches) {
+            const result = await redis.mset(batch);
+            if (result !== "OK") {
+                throw new Error(`Redis rejected an ordered ${label} write`);
+            }
+        }
+    };
+
+    try {
+        after(write);
+    } catch (error) {
+        console.warn(
+            `Could not schedule the ${label} Redis writes after the response; writing immediately (${errorMessage(error)})`,
+        );
+        await write();
+    }
+}

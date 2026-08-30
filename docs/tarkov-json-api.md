@@ -1,161 +1,99 @@
-# Tarkov JSON API Provider
+# Tarkov JSON API Runtime
 
-The application loads quest and item data exclusively from `https://json.tarkov.dev`. Station and trader data can still use either the original GraphQL services or the JSON API adapters while that legacy provider switch remains in place. The remaining provider is selected server-side with `TARKOV_DATA_SOURCE`:
+All runtime Tarkov.dev data comes from `https://json.tarkov.dev`. The application
+does not select a provider at runtime: `TARKOV_DATA_SOURCE` is not consulted for
+station, item, quest, trader, barter, or craft services. The
+`src/server/services/tarkovData.ts` module is retained only as a stable server
+import facade and reports JSON as the configured provider.
 
-- `json` (default) uses `https://json.tarkov.dev`.
-- `graphql` uses `https://api.tarkov.dev/graphql`.
+All upstream requests send
+`TarkovHideoutTracker/1.0 (+https://tarkovhideout.com)` so Tarkov.dev can attribute
+traffic to the application.
 
-The selection facade is `src/server/services/tarkovData.ts`. Its quest exports always resolve to `src/server/services/questsJson.ts`, and its item exports always resolve to `src/server/services/itemsJson.ts`, regardless of `TARKOV_DATA_SOURCE`. The original GraphQL quest and item implementations remain only as legacy code and must not be wired back into runtime consumers.
+## Datasets and modes
 
-All requests to the Tarkov.dev JSON and GraphQL APIs send the shared user agent `TarkovHideoutTracker/1.0 (+https://tarkovhideout.com)`. Keep this identity on new upstream request paths so Tarkov.dev can attribute traffic to tarkovhideout.com.
-
-## JSON API Shape
-
-The JSON API publishes a base dataset and an English locale dictionary for each translatable endpoint:
-
-```text
-/regular/hideout     /regular/hideout_en
-/regular/items       /regular/items_en
-/regular/tasks       /regular/tasks_en
-/regular/traders     /regular/traders_en
-/regular/maps        /regular/maps_en
-```
-
-PVE uses the equivalent `/pve/*` datasets and KORD uses `/pvp-season/*`. Base records refer to related entities by ID and contain translation keys. The adapters hydrate those references and translate them into the existing application types.
-
-## Compatibility and Caching
-
-JSON and GraphQL providers expose the same `TimedResponse` payloads and use the existing versioned Redis keys. No client component, Zustand field, persisted storage key, or persistence behavior changes when the provider changes.
-
-Every JSON adapter validates both cached and upstream data. Progression Redis keys are separated by `regular`, `pve`, or `pvp-season`:
-
-- Empty or malformed Redis bodies are ignored rather than treated as fresh.
-- Redis connection failures are treated as misses and never prevent an upstream fetch.
-- Missing or empty upstream datasets throw before `redis.mset`.
-- Upstream requests time out after 30 seconds.
-- A valid stale Redis body is returned when an upstream refresh fails.
-- An invalid upstream response never overwrites a valid Redis body.
-- Validated Redis writes are scheduled with Next.js `after()` and do not delay the response.
-
-The JSON client fetches base and `_en` locale payloads together. If a PVE or KORD
-mode-specific locale payload is unavailable, the client falls back to the matching
-`/regular/*_en` dictionary while retaining the requested mode's base records. A
-missing base dataset still fails, as does a missing regular locale fallback.
-Concurrent requests for the same URL share one in-flight promise to avoid duplicate
-downloads of the large item dataset during a cold render.
-
-Newly normalized JSON responses record additive diagnostics with the resolved
-locale dictionary paths and whether the regular-English fallback was used. These
-fields do not alter normalized records or persisted user state, and older cached
-responses without diagnostics remain compatible.
-
-## Task Progression Fields
-
-The `/regular/tasks` dataset is the primary source for the full quest shape. The
-adapter keeps upstream task IDs unchanged and hydrates related trader, map, item,
-and prerequisite references into `FullQuest`. `taskRequirements[].task` remains an
-ID reference to another task; it is the authoritative edge used by quest
-availability, manual sync, completion cascades, and relationship display.
-The adapter keeps level-0 tasks: Tarkov 1.1 now uses `minPlayerLevel: 0` for some
-normal PMC quest lines, so that value is display/availability data rather than a
-safe server-side exclusion signal.
-
-Full objectives preserve normalized map geometry in `locations`: zone positions,
-outlines, top/bottom heights, and quest-item `possibleLocations`. Map IDs are
-hydrated through the existing localized map context. Missing or malformed optional
-points are omitted without creating synthetic coordinates. The Raid Planner uses
-zone locations today; possible quest-item spawns are retained for a follow-up UI.
-Trader requirements are preserved with their upstream `requirementType`:
-
-- `level` is a trader loyalty-level gate and is displayed/evaluated as LL.
-- `reputation` is a standing gate and is displayed separately. It is preserved
-  but not evaluated until the user profile has a dedicated reputation value.
-- A gate can refer to a trader other than the issuing trader; that cross-trader
-  requirement remains part of availability and display.
-- Legacy GraphQL fixtures may use `loyaltyLevel`; the shared gate helper treats it
-  as the compatibility spelling for `level`.
-
-The JSON adapter also preserves `otherRequirements` as typed raw gates. Known
-records can include `id`, `type`, `compareMethod`, and `value`, with type-specific
-fields such as `traders` or `variableId`; additional upstream properties are
-retained. Recognized trader-tier completion `globalVariable` IDs are mapped by
-`quest-trader-completion-gates.ts`: a gate such as Prapor LL1 `>= 3` remains
-locked until three quests assigned to Prapor's LL1 tier are marked complete.
-These known counters receive a readable task-count display and locked reason.
-Unknown `globalVariable` and `dialogue` gates remain preserved and non-blocking.
-
-Tarkov.dev does not expose the in-game trader-tab assignment consistently. The
-reviewed ID-keyed overlay in `src/lib/data/quest-trader-tab-overrides.json` supplies
-that display/counting classification without changing the normalized provider
-payload or cache shape. Numeric values take precedence for LL grouping and
-trader-tier completion counts; `essential` quests are excluded from LL counters.
-Provider `traderRequirements` continue to control availability independently.
-
-Reviewed faction corrections are kept in the separate ID-keyed overlay
-`src/lib/data/quest-faction-overrides.json`. This currently corrects Oil Run and
-Debtor to BEAR when the provider reports `Any`, without changing cached payloads or
-persisted quest progress. The correction is applied before quest availability
-and quest item demand are derived.
-
-Validated quests removed from the live game are listed by ID in
-`src/lib/data/removed-quests.json`. They are excluded before quest item demand,
-availability metadata, and tracked market-item lists are derived. The review flag
-`SHOW_REMOVED_QUESTS` in `src/features/quests/quest-feature-flags.ts` is disabled
-by default. Enabling it retains removed quests on the quest page with
-`removed: true`; it does not restore them to item-demand or market-price inputs.
-
-## Series Candidates and Curated Organization
-
-Series organization is derived after fetching JSON/GraphQL data. The curated
-manifest is `src/lib/data/quest-series.json`; `src/lib/utils/quest-organization.ts`
-validates its quest IDs, membership, order values, and issuing-trader ownership,
-then applies Series-first precedence before assigning non-series quests to LL1–LL4.
-The manifest is keyed by stable quest IDs and is intentionally separate from the
-persisted user store.
-
-Series entries can mark a reviewed line as `essential` and/or
-`lightkeeperRequired`. These derived flags power Essential-series grouping and
-correct incomplete provider progression metadata. In KORD (`pvp-season`), quests
-issued by Lightkeeper and all Lightkeeper-required quests are removed before quest
-and item indexes are built.
-
-Use the maintenance command below to review candidates from a downloaded task
-snapshot:
-
-```bash
-npm run quest-series-candidates -- path/to/tasks.json > quest-series-candidates.json
-```
-
-`scripts/generate-quest-series-candidates.mjs` accepts raw task records/arrays,
-mapped quest arrays, and serialized fetch-cache `body` wrappers. It writes no
-files; it prints deterministic JSON containing numbered-name groups, same-trader
-prerequisite components of length two or more, repeated-prefix groups, and review
-flags for duplicate names, branches, faction variants, and cross-trader chains.
-Candidate detection is maintenance-only. Review the report and commit only a
-curated ID manifest; production code must not infer series membership from names.
-
-## Cache and Persistence Compatibility
-
-Changing the normalized `FullQuest` shape requires bumping
-`CACHE_VERSIONS.questsFull` in `src/lib/cfg/cacheVersions.ts` so Redis cannot serve
-an older payload under the new shape. The current progression data is intentionally
-frozen (`PROGRESSION_DATA_FROZEN`) and quest pages use `revalidate = false` during
-the Tarkov 1.1 transition; verify a cold fetch before removing that freeze. A
-manifest-only organization change does not add persisted fields or change the
-provider payload shape.
-
-The JSON migration must not change the Zustand localStorage key
-(`tarkov-hideout-user-state`), its version (14), persisted field names, or any
-quest-ID maps. Existing completion, failure, hand-in, ignored, and pinned records
-must continue to be looked up by the upstream `quest.id`, even when quest names,
-categories, or series labels change.
-
-## Switching Station and Trader Providers
-
-Set the server-only environment variable and redeploy:
+The JSON API publishes base records and English locale dictionaries for
+translatable domains:
 
 ```text
-TARKOV_DATA_SOURCE=json
+/{mode}/hideout     /{mode}/hideout_en
+/{mode}/items       /{mode}/items_en
+/{mode}/tasks       /{mode}/tasks_en
+/{mode}/traders     /{mode}/traders_en
+/{mode}/maps        /{mode}/maps_en
+/{mode}/barters
+/{mode}/crafts
 ```
 
-`graphql` affects only the remaining station and trader services. Quest and item data stay on the JSON API. After changing providers, invoke the authenticated `/api/revalidate` route for the relevant tags if an immediate refresh is required.
+`mode` is `regular` for PVP, `pve` for PVE, and `pvp-season` for KORD. Every
+normalized cache key includes this mode.
+
+The JSON client fetches base and locale payloads together. If a PVE or KORD locale
+is unavailable, it may use the matching regular English dictionary while keeping
+the requested mode's base records. A missing base dataset or missing regular
+locale fallback is an error. Concurrent requests for the same URL share one
+in-flight promise.
+
+## Domain ownership
+
+- `itemsJson.ts` owns the standard `/items` catalog and its compact market data.
+- `hideoutJson.ts` owns station structure and ID-based item requirements.
+- `questsJson.ts` owns tasks and the task-only quest-specific item distinction.
+- `tradersJson.ts` owns the compact trader list.
+- `itemAcquisitionJson.ts` owns normalized barter and craft indexes.
+
+The global catalog is not built by scanning hideout or quest references. It does
+not embed stations, quest content, barters, or crafts. Relationships between
+domains use IDs and are joined only by consumers.
+
+## Standard and quest-specific items
+
+Standard task references—including hand-ins, find/plant objectives, required
+keys, build targets, `containsAll`, and `useAny`—are retained as catalog item IDs.
+Task-owned pickup/find records from `tasks.questItems` are normalized separately
+as compact `QuestSpecificItem` presentation.
+
+Quest-specific items are not inventory objects. They do not enter the global
+catalog, checklist demand, search, Quick Add, market pricing, acquisition lookup,
+or the generic item modal.
+
+## Quest progression fields
+
+The tasks adapter preserves upstream quest IDs, level-0 quests, prerequisite task
+IDs, fail conditions, trader requirements, prestige requirements, full objective
+types, map geometry, and task-owned quest-item locations. Stable quest IDs remain
+the keys for completion, failure, ignore, pin, and hand-in player state.
+
+Trader requirements preserve their upstream requirement type. Loyalty-level
+gates and reputation gates remain distinct; cross-trader requirements are not
+collapsed. Typed `otherRequirements` are retained, with known trader-tier global
+variables interpreted by `quest-trader-completion-gates.ts` and unknown gates kept
+non-blocking.
+
+Reviewed overlays remain separate from provider payloads:
+
+- `quest-trader-tab-overrides.json` supplies trader-tab organization;
+- `quest-faction-overrides.json` corrects reviewed faction assignments;
+- `removed-quests.json` excludes validated removed quests from active demand;
+- `quest-series.json` supplies reviewed series membership and ordering.
+
+These overlays do not change persisted player data.
+
+## Validation, fallback, and diagnostics
+
+Adapters validate cached and upstream bodies. Redis failures are non-fatal, empty
+upstream results are never written, and a valid stale body can be returned after
+an upstream failure. Upstream requests time out after 30 seconds. Successful
+responses include additive diagnostics for JSON provider status, resolved locale
+paths, regular-locale fallback, and stale fallback.
+
+Large catalog, barter, and craft source caches use Redis without
+`unstable_cache`. Station and quest responses also have small Next.js wrappers.
+See `caching-architecture.md` for exact keys, versions, and invalidation behavior.
+
+## Persistence boundary
+
+Provider normalization must not change the Zustand storage key, store version,
+profile structure, persisted field names, or stable station, requirement, item,
+and quest IDs. Server response shapes and versioned Redis keys may change when
+their cache versions are bumped.

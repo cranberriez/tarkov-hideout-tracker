@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
-import {
-    getCachedHideoutRequiredItems,
-    getCachedHideoutStations,
-} from "@/server/services/tarkovData";
+import { getCachedHideoutStations } from "@/server/services/tarkovData";
+import { getGlobalItemList } from "@/server/services/itemsJson";
 import { DataProvider, type DataContextValue } from "@/app/(data)/_dataContext";
 import { QuickAddModal } from "@/features/quick-add/QuickAddModal";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
@@ -21,7 +19,7 @@ export default async function DataLayout({ children }: DataLayoutProps) {
     const gameMode = await getActiveTarkovJsonGameMode();
     const [stationsResult, itemsResult] = await Promise.allSettled([
         getCachedHideoutStations(gameMode),
-        getCachedHideoutRequiredItems(gameMode),
+        getGlobalItemList(gameMode),
     ]);
 
     const modeLabel = gameMode === "pvp-season" ? "KORD" : gameMode.toUpperCase();
@@ -29,20 +27,9 @@ export default async function DataLayout({ children }: DataLayoutProps) {
         stationsResult.status === "fulfilled" ? stationsResult.value : null;
     const itemsResponse = itemsResult.status === "fulfilled" ? itemsResult.value : null;
     const items = itemsResponse?.data.items ?? null;
-    const itemById = new Map((items ?? []).map((item) => [item.id, item]));
-    const stations =
-        stationsResponse?.data.stations.map((station) => ({
-            ...station,
-            levels: station.levels.map((level) => ({
-                ...level,
-                itemRequirements: level.itemRequirements.map((requirement) => ({
-                    ...requirement,
-                    item: itemById.get(requirement.item.id) ?? requirement.item,
-                })),
-            })),
-        })) ?? null;
+    const stations = stationsResponse?.data.stations ?? null;
 
-    const value: DataContextValue = {
+    const value: Omit<DataContextValue, "itemById"> = {
         stations,
         stationsUpdatedAt: stationsResponse?.updatedAt ?? null,
         stationsError:
@@ -54,7 +41,7 @@ export default async function DataLayout({ children }: DataLayoutProps) {
         itemsUpdatedAt: itemsResponse?.updatedAt ?? null,
         itemsError:
             itemsResult.status === "rejected"
-                ? `Hideout item data for ${modeLabel} could not be loaded.`
+                ? `Item catalog data for ${modeLabel} could not be loaded.`
                 : null,
         itemsDiagnostics: itemsResponse?.diagnostics ?? null,
     };

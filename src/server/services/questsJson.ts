@@ -22,7 +22,7 @@ import type {
     FullQuestsPayload,
     Quest,
     QuestFailCondition,
-    QuestItem,
+    QuestSpecificItem,
     QuestMap,
     QuestObjectiveItemType,
     QuestPrestige,
@@ -49,12 +49,6 @@ interface JsonItem {
     shortName?: string;
     iconLink?: string;
     gridImageLink?: string;
-}
-
-interface JsonItemCategory {
-    id: string;
-    name: string;
-    normalizedName: string;
 }
 
 interface JsonTrader {
@@ -176,58 +170,56 @@ interface JsonTasksData {
     prestige?: JsonPrestige[];
 }
 
-interface JsonItemsData {
-    items: Record<string, JsonItem>;
-    itemCategories?: Record<string, JsonItemCategory>;
-}
-
 interface JsonMapsData {
     maps: Record<string, JsonMap>;
 }
 
 interface MappingContext {
     tasks: Record<string, JsonTask>;
-    items: Record<string, JsonItem>;
     questItems: Record<string, JsonItem>;
-    categories: Record<string, JsonItemCategory>;
     traders: Record<string, JsonTrader>;
     maps: Record<string, JsonMap>;
     hideout: Record<string, { id: string; name: string; normalizedName: string }>;
     prestige: Record<string, JsonPrestige>;
     translateTask: (key: string | null | undefined) => string;
-    translateItem: (key: string | null | undefined) => string;
     translateTrader: (key: string | null | undefined) => string;
     translateMap: (key: string | null | undefined) => string;
     translateHideout: (key: string | null | undefined) => string;
 }
 
-function toQuestItem(id: string, context: MappingContext): QuestItem | null {
-    const item = context.items[id] ?? context.questItems[id];
+function toStandardItemIds(ids: string[] | undefined, context: MappingContext): string[] {
+    return (ids ?? []).filter((id) => !context.questItems[id]);
+}
+
+function toQuestSpecificItem(id: string, context: MappingContext): QuestSpecificItem | null {
+    const item = context.questItems[id];
     if (!item) return null;
-    const translate = context.items[id] ? context.translateItem : context.translateTask;
     return {
+        source: "questSpecific",
         id: item.id,
-        name: translate(item.name),
+        name: context.translateTask(item.name),
         normalizedName: item.normalizedName,
-        shortName: item.shortName ? translate(item.shortName) : undefined,
+        shortName: item.shortName ? context.translateTask(item.shortName) : undefined,
         iconLink: item.iconLink,
         gridImageLink: item.gridImageLink,
     };
 }
 
-function toQuestItems(ids: string[] | undefined, context: MappingContext): QuestItem[] {
+function toQuestSpecificItems(ids: string[] | undefined, context: MappingContext) {
     return (ids ?? [])
-        .map((id) => toQuestItem(id, context))
-        .filter((item): item is QuestItem => item !== null);
+        .map((id) => toQuestSpecificItem(id, context))
+        .filter((item): item is QuestSpecificItem => item !== null);
 }
 
 function toRequiredKeyGroups(
     ids: JsonObjective["requiredKeys"],
     context: MappingContext,
-): QuestItem[][] | undefined {
+): string[][] | undefined {
     if (!ids?.length) return undefined;
     const groups = Array.isArray(ids[0]) ? (ids as string[][]) : [ids as string[]];
-    const mapped = groups.map((group) => toQuestItems(group, context)).filter((group) => group.length);
+    const mapped = groups
+        .map((group) => toStandardItemIds(group, context))
+        .filter((group) => group.length);
     return mapped.length ? mapped : undefined;
 }
 
@@ -246,7 +238,7 @@ function mapObjective(objective: JsonObjective, context: MappingContext): FullQu
     const maps = (objective.maps ?? [])
         .map((id) => toQuestMap(id, context))
         .filter((map): map is QuestMap => map !== null);
-    const requiredKeys = toRequiredKeyGroups(objective.requiredKeys, context);
+    const requiredKeyIds = toRequiredKeyGroups(objective.requiredKeys, context);
     const locations = normalizeQuestObjectiveLocations(
         objective,
         (mapId) => toQuestMap(mapId, context),
@@ -257,13 +249,14 @@ function mapObjective(objective: JsonObjective, context: MappingContext): FullQu
         description: context.translateTask(objective.description),
         optional: objective.optional ?? false,
         maps,
-        requiredKeys,
+        requiredKeyIds,
         locations,
     };
 
     if (["giveItem", "findItem", "plantItem"].includes(objective.type)) {
-        const allItems = toQuestItems(objective.items, context);
-        const totalItemCount = allItems.length;
+        const itemIds = toStandardItemIds(objective.items, context);
+        const questSpecificItems = toQuestSpecificItems(objective.items, context);
+        const totalItemCount = itemIds.length;
         const isPartial = totalItemCount > 15;
         return {
             ...base,
@@ -273,7 +266,8 @@ function mapObjective(objective: JsonObjective, context: MappingContext): FullQu
             // Keep the full set for the selected-quest expandable item table.
             // Demand classification still uses isPartial/totalItemCount and does
             // not treat broad any-of groups as exact checklist requirements.
-            items: allItems,
+            itemIds,
+            questSpecificItems: questSpecificItems.length ? questSpecificItems : undefined,
             totalItemCount,
             isPartial,
         };
@@ -308,21 +302,13 @@ function mapObjective(objective: JsonObjective, context: MappingContext): FullQu
     }
 
     if ((objective.type === "buildWeapon" || objective.type === "buildItem") && objective.item) {
-        const item = toQuestItem(objective.item, context);
-        if (item) {
+        if (!context.questItems[objective.item]) {
             return {
                 ...base,
                 type: "buildItem",
-                item,
-                containsAll: toQuestItems(objective.containsAll, context),
-                containsCategory: (objective.containsCategory ?? [])
-                    .map((id) => context.categories[id])
-                    .filter(Boolean)
-                    .map((category) => ({
-                        id: category.id,
-                        name: context.translateItem(category.name),
-                        normalizedName: category.normalizedName,
-                    })),
+                itemId: objective.item,
+                containsAllItemIds: toStandardItemIds(objective.containsAll, context),
+                containsCategoryIds: objective.containsCategory ?? [],
                 attributes: objective.buildAttributes ?? [],
             };
         }
@@ -347,7 +333,7 @@ function mapObjective(objective: JsonObjective, context: MappingContext): FullQu
 
     if (["findQuestItem", "giveQuestItem", "pickupQuestItem"].includes(objective.type)) {
         const questItem = objective.questItem
-            ? toQuestItem(objective.questItem, context)
+            ? toQuestSpecificItem(objective.questItem, context)
             : null;
         if (questItem) {
             return {
@@ -412,7 +398,7 @@ function mapObjective(objective: JsonObjective, context: MappingContext): FullQu
         return {
             ...base,
             type: "useItem",
-            useAny: toQuestItems(objective.useAny, context),
+            useAnyItemIds: toStandardItemIds(objective.useAny, context),
             compareMethod: objective.compareMethod ?? ">=",
             count: objective.count ?? 1,
             zoneNames: (objective.zones ?? []).map((zone) =>
@@ -466,10 +452,9 @@ function mapStandingRewards(
 }
 
 async function fetchAndMapFullQuests(gameMode: TarkovJsonGameMode): Promise<FullQuest[]> {
-    const [tasksDataset, itemsDataset, tradersDataset, mapsDataset, hideoutDataset] =
+    const [tasksDataset, tradersDataset, mapsDataset, hideoutDataset] =
         await Promise.all([
             fetchTarkovJsonDataset<JsonTasksData>("tasks", gameMode),
-            fetchTarkovJsonDataset<JsonItemsData>("items", gameMode),
             fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders", gameMode),
             fetchTarkovJsonDataset<JsonMapsData>("maps", gameMode),
             fetchTarkovJsonDataset<
@@ -478,15 +463,13 @@ async function fetchAndMapFullQuests(gameMode: TarkovJsonGameMode): Promise<Full
         ]);
 
     const rawTasks = Object.values(tasksDataset.data.tasks ?? {});
-    if (rawTasks.length === 0 || Object.keys(itemsDataset.data.items ?? {}).length === 0) {
-        throw new Error("Tarkov JSON task response contained no tasks or items");
+    if (rawTasks.length === 0) {
+        throw new Error("Tarkov JSON task response contained no tasks");
     }
 
     const context: MappingContext = {
         tasks: tasksDataset.data.tasks,
-        items: itemsDataset.data.items,
         questItems: tasksDataset.data.questItems ?? {},
-        categories: itemsDataset.data.itemCategories ?? {},
         traders: tradersDataset.data,
         maps: mapsDataset.data.maps ?? {},
         hideout: hideoutDataset.data,
@@ -494,7 +477,6 @@ async function fetchAndMapFullQuests(gameMode: TarkovJsonGameMode): Promise<Full
             (tasksDataset.data.prestige ?? []).map((entry) => [entry.id, entry]),
         ),
         translateTask: tasksDataset.translate,
-        translateItem: itemsDataset.translate,
         translateTrader: tradersDataset.translate,
         translateMap: mapsDataset.translate,
         translateHideout: hideoutDataset.translate,
@@ -633,7 +615,7 @@ export async function getJsonQuestData(
         const isGiveItemObjective = (
             objective: FullQuestObjective,
         ): objective is QuestObjectiveItemType =>
-            objective.type === "giveItem" && "items" in objective && "foundInRaid" in objective;
+            objective.type === "giveItem" && "itemIds" in objective && "foundInRaid" in objective;
         const quests: Quest[] = full.data.quests
             .filter((quest) => quest.objectives.some(isGiveItemObjective))
             .map((quest) => ({
@@ -662,7 +644,8 @@ export async function getJsonQuestData(
                         optional: objective.optional,
                         count: objective.count ?? 0,
                         foundInRaid: objective.foundInRaid,
-                        items: objective.items,
+                        itemIds: objective.itemIds,
+                        questSpecificItems: objective.questSpecificItems,
                     })),
             }));
         if (quests.length === 0) throw new Error("Tarkov JSON mapping produced no item quests");

@@ -23,10 +23,10 @@ Docs are grouped by purpose:
   Independent PVP, PVE, and KORD character profiles, legacy-state retention, cookies, and mode-aware server data.
 
 - **[data-and-price-context-architecture.md](data-and-price-context-architecture.md)** - Current architecture
-  How `DataContext` delivers station data and tracked item records with embedded flea/trader pricing.
+  How `DataContext` delivers ID-based stations and the compact global item catalog with market pricing.
 
 - **[api-routes.md](api-routes.md)** - Current architecture
-  The only public route (cron endpoint) and the internal server services that replace old public API routes.
+  Maintenance, price-history, and lazy item-usage routes plus their backing server services.
 
 - **[caching-architecture.md](caching-architecture.md)** - Current architecture
   Redis keys, Next.js `unstable_cache` wrappers, cache invalidation strategy, and how to add a new cached data source.
@@ -67,16 +67,16 @@ Docs are grouped by purpose:
 ## External APIs & Integrations
 
 - **[tarkov-json-api.md](tarkov-json-api.md)** - Current architecture
-  Reversible JSON/GraphQL provider selection, JSON record hydration, translations, and cache-safety behavior.
+  JSON-only runtime datasets, translation behavior, mode isolation, and cache-safety behavior.
 
-- **[graphql-queries.md](graphql-queries.md)** - Current architecture
-  Tarkov.dev GraphQL queries used for hideout station structure, item metadata, and flea prices.
+- **[graphql-queries.md](graphql-queries.md)** - Historical reference
+  Retired Tarkov.dev GraphQL queries retained for implementation history.
 
 - **[hideoutQL.md](hideoutQL.md)** - Notes
   Minimal reference GraphQL query for hideout stations.
 
-- **[tasks-graphql.md](tasks-graphql.md)** - Current architecture
-  Live schema findings for the `tasks` and `traders` queries - full field reference, objective type breakdown, and service implementation notes.
+- **[tasks-graphql.md](tasks-graphql.md)** - Historical reference
+  Retired task/trader GraphQL schema findings retained for implementation history.
 
 - **[tarkov-market-protection.md](tarkov-market-protection.md)** - Historical note
   Old Tarkov Market integration context. Current price data comes from Tarkov.dev GraphQL.

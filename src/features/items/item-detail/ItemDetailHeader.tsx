@@ -23,12 +23,10 @@ export function ItemDetailHeader({
 }: ItemDetailHeaderProps) {
     const imageLink =
         item.image512pxLink ?? item.gridImageLink ?? item.iconLink ?? item.baseImageLink;
-    const categories = (
-        item.categories?.length ? item.categories : item.category ? [item.category] : []
-    ).filter((category) => category.normalizedName !== "item");
-    const categoryLabels = categories
-        .map((category) => category.name.replace(/\s+item$/i, ""))
-        .filter((label, index, labels) => label && labels.indexOf(label) === index);
+    const categoryLabel =
+        item.category?.normalizedName !== "item"
+            ? item.category?.name.replace(/\s+item$/i, "")
+            : null;
 
     return (
         <div className="flex min-w-0 flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -45,16 +43,11 @@ export function ItemDetailHeader({
                     )}
                 </div>
                 <div className="min-w-0 flex-1">
-                    {categoryLabels.length > 0 && (
+                    {categoryLabel && (
                         <div className="mb-1.5 flex flex-wrap gap-1.5">
-                            {categoryLabels.slice(-2).map((label) => (
-                                <span
-                                    key={label}
-                                    className="text-[10px] font-semibold uppercase tracking-[0.16em] text-tarkov-green-dim"
-                                >
-                                    {label}
-                                </span>
-                            ))}
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-tarkov-green-dim">
+                                {categoryLabel}
+                            </span>
                         </div>
                     )}
                     <h2 className="text-xl font-semibold leading-tight text-foreground">
