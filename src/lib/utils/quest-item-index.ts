@@ -92,13 +92,7 @@ export interface QuestAnyOfGroupEntry {
     itemScope: QuestItemObjectiveScope;
     isPartial: boolean;
     totalItemCount: number;
-    items: Array<{
-        id: string;
-        name: string;
-        normalizedName: string;
-        iconLink?: string;
-        gridImageLink?: string;
-    }>;
+    itemIds: string[];
 }
 
 export type DerivedQuestItemStatus = "available" | "future" | "completed" | "ignored";
@@ -154,7 +148,7 @@ export interface DerivedQuestAnyOfGroup {
     itemScope: QuestItemObjectiveScope;
     isPartial: boolean;
     totalItemCount: number;
-    items: QuestAnyOfGroupEntry["items"];
+    itemIds: QuestAnyOfGroupEntry["itemIds"];
     status: DerivedQuestItemStatus;
     isPinned: boolean;
     isPinnedOverride: boolean;
@@ -426,13 +420,7 @@ export function buildQuestAnyOfGroups(quests: QuestItemSource[]): QuestAnyOfGrou
                 itemScope,
                 isPartial,
                 totalItemCount,
-                items: items.map((item) => ({
-                    id: item.id,
-                    name: item.name,
-                    normalizedName: item.normalizedName,
-                    iconLink: item.iconLink,
-                    gridImageLink: item.gridImageLink,
-                })),
+                itemIds: items.map((item) => item.id),
             });
         }
     }
@@ -892,7 +880,7 @@ export function deriveQuestAnyOfGroups(
             }
 
             const questLike: QuestItemLink = {
-                itemId: group.items[0]?.id ?? group.groupId,
+                itemId: group.itemIds[0] ?? group.groupId,
                 questId: group.questId,
                 questName: group.questName,
                 questNormalizedName: group.questNormalizedName,
@@ -946,7 +934,7 @@ export function deriveQuestAnyOfGroups(
                 itemScope: group.itemScope,
                 isPartial: group.isPartial,
                 totalItemCount: group.totalItemCount,
-                items: group.items,
+                itemIds: group.itemIds,
                 status,
                 isPinned,
                 isPinnedOverride,

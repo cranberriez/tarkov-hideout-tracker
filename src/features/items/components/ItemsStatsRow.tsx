@@ -112,9 +112,9 @@ export function ItemsStatsRow({
     const groupedQuestDeductionsByItemId = useMemo(() => {
         const deductions = new Map<string, { count: number; firCount: number }>();
         for (const group of activeQuestGroups) {
-            for (const item of group.items) {
-                const existing = deductions.get(item.id) ?? { count: 0, firCount: 0 };
-                deductions.set(item.id, {
+            for (const itemId of group.itemIds) {
+                const existing = deductions.get(itemId) ?? { count: 0, firCount: 0 };
+                deductions.set(itemId, {
                     count: existing.count + group.requiredCount,
                     firCount: existing.firCount + group.requiredFirCount,
                 });

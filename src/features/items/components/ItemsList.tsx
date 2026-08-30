@@ -149,9 +149,9 @@ export function ItemsList({
     const groupedQuestDeductionsByItemId = useMemo(() => {
         const deductions = new Map<string, { count: number; firCount: number }>();
         for (const group of activeQuestGroups) {
-            for (const item of group.items) {
-                const existing = deductions.get(item.id) ?? { count: 0, firCount: 0 };
-                deductions.set(item.id, {
+            for (const itemId of group.itemIds) {
+                const existing = deductions.get(itemId) ?? { count: 0, firCount: 0 };
+                deductions.set(itemId, {
                     count: existing.count + group.requiredCount,
                     firCount: existing.firCount + group.requiredFirCount,
                 });
@@ -206,21 +206,8 @@ export function ItemsList({
                 };
             }
         }
-        for (const group of questAnyOfGroups) {
-            for (const item of group.items) {
-                if (!details[item.id]) {
-                    details[item.id] = {
-                        id: item.id,
-                        name: item.name,
-                        normalizedName: item.normalizedName,
-                        iconLink: item.iconLink,
-                        gridImageLink: item.gridImageLink,
-                    };
-                }
-            }
-        }
         return details;
-    }, [itemsById, questAnyOfGroups, questItemIndex]);
+    }, [itemsById, questItemIndex]);
 
     const pooledHideoutItems = useMemo(() => {
         if (!stations) return [];
@@ -420,6 +407,9 @@ export function ItemsList({
                             <ItemAnyOfGroupCard
                                 key={entry.key}
                                 group={entry.group}
+                                items={entry.group.itemIds
+                                    .map((itemId) => allItemDetails[itemId])
+                                    .filter((item): item is ItemDetails => !!item)}
                                 expanded={!!expandedGroupIds[entry.group.groupId]}
                                 size={itemsSize}
                                 onToggleExpanded={() =>

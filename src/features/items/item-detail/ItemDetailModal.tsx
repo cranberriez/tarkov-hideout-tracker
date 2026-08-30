@@ -15,6 +15,7 @@ import { ItemDetailUsageTabs } from "./ItemDetailUsageTabs";
 import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
 import { deriveQuestAnyOfGroups, deriveQuestItemState } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
+import { useDataContext } from "@/app/(data)/_dataContext";
 
 export interface ItemDetailModalProps {
     item: ItemDetails | null;
@@ -41,7 +42,11 @@ export function ItemDetailModal({
     questAnyOfGroups = [],
     questAvailabilityQuests = [],
 }: ItemDetailModalProps) {
-    const selectedItem = item;
+    const { items: catalogItems } = useDataContext();
+    const selectedItem = useMemo(() => {
+        if (!item) return null;
+        return catalogItems?.find((catalogItem) => catalogItem.id === item.id) ?? item;
+    }, [catalogItems, item]);
     const selectedItemId = selectedItem?.id ?? "";
     const selectedNormalizedName = selectedItem?.normalizedName ?? "";
 
@@ -240,7 +245,7 @@ export function ItemDetailModal({
             includeCompleted: true,
             showKappa: questShowKappa,
             showLightkeeper: questShowLightkeeper,
-        }).filter((group) => group.items.some((groupItem) => groupItem.id === selectedItem.id));
+        }).filter((group) => group.itemIds.includes(selectedItem.id));
     }, [
         selectedItem,
         questAnyOfGroups,
@@ -261,6 +266,26 @@ export function ItemDetailModal({
         questShowKappa,
         questShowLightkeeper,
     ]);
+
+    const itemDetailsById = useMemo(() => {
+        const details: Record<string, ItemDetails> = {};
+        for (const catalogItem of catalogItems ?? []) {
+            details[catalogItem.id] = catalogItem;
+        }
+        for (const entry of questItemIndex) {
+            details[entry.itemId] ??= {
+                id: entry.itemId,
+                name: entry.name,
+                normalizedName: entry.normalizedName,
+                iconLink: entry.iconLink,
+                gridImageLink: entry.gridImageLink,
+            };
+        }
+        if (selectedItem) {
+            details[selectedItem.id] = selectedItem;
+        }
+        return details;
+    }, [catalogItems, questItemIndex, selectedItem]);
 
     const hasQuestRequirements =
         (questItemState?.relatedQuests.length ?? 0) > 0 || questAnyOfGroupState.length > 0;
@@ -338,6 +363,7 @@ export function ItemDetailModal({
                                     hiddenStations={hiddenStations}
                                     questItemState={questItemState}
                                     anyOfGroups={questAnyOfGroupState}
+                                    itemDetailsById={itemDetailsById}
                                 />
                             )}
                         </div>

@@ -11,6 +11,7 @@ import {
     type StationRequirementEntry,
 } from "./ItemDetailHideoutRequirements";
 import { ItemDetailQuestRequirements } from "./ItemDetailQuestRequirements";
+import type { ItemDetails } from "@/types";
 
 type UsageTab = "hideout" | "quests";
 
@@ -23,6 +24,7 @@ interface ItemDetailUsageTabsProps {
     hiddenStations: Record<string, boolean>;
     questItemState: DerivedQuestItemState | null;
     anyOfGroups: DerivedQuestAnyOfGroup[];
+    itemDetailsById: Record<string, ItemDetails>;
 }
 
 export function ItemDetailUsageTabs({
@@ -34,6 +36,7 @@ export function ItemDetailUsageTabs({
     hiddenStations,
     questItemState,
     anyOfGroups,
+    itemDetailsById,
 }: ItemDetailUsageTabsProps) {
     const hideoutCount = stationRequirements.reduce((count, [, reqs]) => count + reqs.length, 0);
     const questCount = (questItemState?.relatedQuestCount ?? 0) + anyOfGroups.length;
@@ -82,6 +85,7 @@ export function ItemDetailUsageTabs({
                         selectedItemImageLink={selectedItemImageLink}
                         questItemState={questItemState}
                         anyOfGroups={anyOfGroups}
+                        itemDetailsById={itemDetailsById}
                     />
                 )}
             </div>

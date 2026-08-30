@@ -94,7 +94,7 @@ Supported quest visibility modes:
 | `"allFuture"` | All future quest hand-in demand allowed by active filters                                                 |
 | `"custom"`    | Custom lookahead by prerequisite depth and player level                                                   |
 
-Any-of quest objective groups are rendered as `ItemAnyOfGroupCard` entries and deducted from individual item totals so grouped alternatives are not double-counted.
+Any-of quest objective groups carry only preview item IDs. `ItemsList` resolves those IDs through the shared tracked-item catalog before rendering or opening an item modal, and grouped alternatives are deducted from individual item totals so they are not double-counted.
 
 ---
 
@@ -141,13 +141,12 @@ Prices come from `ItemDetails.marketPrice`, normalized from the same mode-specif
 
 `ItemsClientPage` builds `allSearchableItems` by merging:
 
-- hideout-required items from `DataContext.items`
+- full tracked items from `DataContext.items` (hideout and quest objectives, including any-of groups)
 - quest-only items from `questItemIndex`
-- items that appear only in quest any-of groups
 
 That merged array is passed to `ItemSearchModal` as `itemPool`, so search is not limited to hideout-required items.
 
-When an item is selected, `ItemDetailModal` receives station state, requirement state, quest item index, and quest availability metadata. Its compact header combines need counts with hideout/quest usage totals, while the connected inventory/market column is composed from optional item data. The Hideout tab condenses station levels and counts into grid rows. The Quests tab uses quest-card styling, keeps completed hand-ins visible after incomplete ones, and exposes direct quest and wiki links. Tabs without relevant data are omitted; the tab structure is intended to accept future trader-purchase and crafting modules when those fields are added to the client item shape.
+When an item is selected, `ItemDetailModal` resolves its ID against the shared tracked-item catalog before composing the modal, then receives station state, requirement state, quest item index, and quest availability metadata. This keeps group-item clicks attached to the full compact `ItemDetails` record (including market and category data) instead of a quest-objective fallback. Its compact header combines need counts with hideout/quest usage totals, while the connected inventory/market column is composed from optional item data. The Hideout tab condenses station levels and counts into grid rows. The Quests tab uses quest-card styling, keeps completed hand-ins visible after incomplete ones, and exposes direct quest and wiki links. Tabs without relevant data are omitted; the tab structure is intended to accept future trader-purchase and crafting modules when those fields are added to the client item shape.
 
 ---
 

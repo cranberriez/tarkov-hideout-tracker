@@ -11,10 +11,11 @@ import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 
 const MAX_PREVIEW_ITEMS = 3;
 
-type AnyOfGroupItem = DerivedQuestAnyOfGroup["items"][number];
+type AnyOfGroupItem = ItemDetails;
 
 interface ItemAnyOfGroupCardProps {
     group: DerivedQuestAnyOfGroup;
+    items: ItemDetails[];
     expanded: boolean;
     size: ItemSize;
     onToggleExpanded: () => void;
@@ -39,16 +40,6 @@ interface GroupItemsGridProps {
     items: AnyOfGroupItem[];
     isFirRequired: boolean;
     onClickItem: (item: ItemDetails) => void;
-}
-
-function toItemDetails(item: AnyOfGroupItem): ItemDetails {
-    return {
-        id: item.id,
-        name: item.name,
-        normalizedName: item.normalizedName,
-        iconLink: item.iconLink,
-        gridImageLink: item.gridImageLink,
-    };
 }
 
 function ItemImage({ item, className }: { item: AnyOfGroupItem; className: string }) {
@@ -177,7 +168,7 @@ function GroupItemsGrid({ items, isFirRequired, onClickItem }: GroupItemsGridPro
                 <button
                     key={item.id}
                     type="button"
-                    onClick={() => onClickItem(toItemDetails(item))}
+                    onClick={() => onClickItem(item)}
                     className="flex items-center gap-3 rounded-md border border-white/10 bg-black/20 p-2 text-left transition-colors hover:border-blue-400"
                 >
                     <div
@@ -200,12 +191,13 @@ function GroupItemsGrid({ items, isFirRequired, onClickItem }: GroupItemsGridPro
 
 export function ItemAnyOfGroupCard({
     group,
+    items,
     expanded,
     size,
     onToggleExpanded,
     onClickItem,
 }: ItemAnyOfGroupCardProps) {
-    const previewItems = useMemo(() => group.items.slice(0, MAX_PREVIEW_ITEMS), [group.items]);
+    const previewItems = useMemo(() => items.slice(0, MAX_PREVIEW_ITEMS), [items]);
     const [previewIndex, setPreviewIndex] = useState(0);
     const isIconMode = size === "Icon";
     const isFirRequired = group.requiredFirCount > 0;
@@ -258,13 +250,13 @@ export function ItemAnyOfGroupCard({
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="text-xs text-gray-400 text-pretty">
                             {group.isPartial
-                                ? `Showing ${group.items.length} of ${group.totalItemCount} qualifying items.`
+                                ? `Showing ${items.length} of ${group.totalItemCount} qualifying items.`
                                 : "Any one of these items will satisfy the quest objective."}
                         </div>
                     </div>
 
                     <GroupItemsGrid
-                        items={group.items}
+                        items={items}
                         isFirRequired={isFirRequired}
                         onClickItem={onClickItem}
                     />

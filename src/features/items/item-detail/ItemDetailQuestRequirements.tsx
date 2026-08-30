@@ -9,12 +9,14 @@ import type {
 } from "@/lib/utils/quest-item-index";
 import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";
+import type { ItemDetails } from "@/types";
 
 interface ItemDetailQuestRequirementsProps {
     selectedItemId: string;
     selectedItemImageLink?: string;
     questItemState: DerivedQuestItemState | null;
     anyOfGroups: DerivedQuestAnyOfGroup[];
+    itemDetailsById: Record<string, ItemDetails>;
 }
 
 export function ItemDetailQuestRequirements({
@@ -22,6 +24,7 @@ export function ItemDetailQuestRequirements({
     selectedItemImageLink,
     questItemState,
     anyOfGroups,
+    itemDetailsById,
 }: ItemDetailQuestRequirementsProps) {
     const totalQuests = (questItemState?.relatedQuestCount ?? 0) + anyOfGroups.length;
     if (totalQuests === 0) return null;
@@ -47,6 +50,7 @@ export function ItemDetailQuestRequirements({
                     key={group.groupId}
                     group={group}
                     selectedItemId={selectedItemId}
+                    itemDetailsById={itemDetailsById}
                 />
             ))}
         </div>
@@ -116,16 +120,21 @@ function QuestRow({
 function AnyOfGroupRow({
     group,
     selectedItemId,
+    itemDetailsById,
 }: {
     group: DerivedQuestAnyOfGroup;
     selectedItemId: string;
+    itemDetailsById: Record<string, ItemDetails>;
 }) {
     const isCompleted = group.status === "completed";
-    const selectedItem = group.items.find((item) => item.id === selectedItemId);
-    const otherItems = group.items.filter((item) => item.id !== selectedItemId);
+    const groupItems = group.itemIds
+        .map((itemId) => itemDetailsById[itemId])
+        .filter((item): item is ItemDetails => !!item);
+    const selectedItem = groupItems.find((item) => item.id === selectedItemId);
+    const otherItems = groupItems.filter((item) => item.id !== selectedItemId);
     const previewItems = selectedItem
         ? [selectedItem, ...otherItems.slice(0, 5)]
-        : group.items.slice(0, 6);
+        : groupItems.slice(0, 6);
     const hiddenItemCount = Math.max(group.totalItemCount - previewItems.length, 0);
 
     return (

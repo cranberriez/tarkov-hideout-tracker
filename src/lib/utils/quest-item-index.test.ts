@@ -125,8 +125,8 @@ test("buildQuestAnyOfGroups marks broad any item objectives as partial previews"
 
     assert.equal(group?.isPartial, true);
     assert.equal(group?.totalItemCount, 24);
-    assert.equal(group?.items.length, 15);
-    assert.deepEqual(group?.items.map((item) => item.id), [
+    assert.equal(group?.itemIds.length, 15);
+    assert.deepEqual(group?.itemIds, [
         "item-1",
         "item-2",
         "item-3",
@@ -168,7 +168,7 @@ test("buildQuestAnyOfGroups keeps small any-of objectives complete", () => {
 
     assert.equal(group?.isPartial, false);
     assert.equal(group?.totalItemCount, 3);
-    assert.equal(group?.items.length, 3);
+    assert.deepEqual(group?.itemIds, ["item-1", "item-2", "item-3"]);
 });
 
 test("deriveQuestItemState keeps quests future when their active-only prerequisite is not available", () => {
