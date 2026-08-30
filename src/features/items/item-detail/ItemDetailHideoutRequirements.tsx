@@ -24,8 +24,6 @@ interface ItemDetailHideoutRequirementsProps {
     hiddenStations: Record<string, boolean>;
 }
 
-const HIDEOUT_LEVEL_COUNT = 6;
-
 export function ItemDetailHideoutRequirements({
     selectedItemImageLink,
     stationRequirements,
@@ -34,7 +32,11 @@ export function ItemDetailHideoutRequirements({
 }: ItemDetailHideoutRequirementsProps) {
     if (stationRequirements.length === 0) return null;
 
-    const levels = Array.from({ length: HIDEOUT_LEVEL_COUNT }, (_, index) => index + 1);
+    const maxStationLevel = Math.max(
+        ...stationRequirements.map(([, reqs]) => reqs[0]?.stationMaxLevel ?? 0),
+    );
+    const levels = Array.from({ length: maxStationLevel }, (_, index) => index + 1);
+    const isRoomyLayout = maxStationLevel <= 3;
 
     return (
         <div className="overflow-x-auto">
@@ -43,7 +45,7 @@ export function ItemDetailHideoutRequirements({
                 aria-label="Hideout station item requirements"
                 className="grid w-full"
                 style={{
-                    gridTemplateColumns: `minmax(148px, 1.5fr) repeat(${HIDEOUT_LEVEL_COUNT}, minmax(76px, 1fr))`,
+                    gridTemplateColumns: `minmax(156px, 240px) repeat(${Math.max(maxStationLevel - 1, 0)}, minmax(76px, 1fr)) minmax(80px, 1.05fr)`,
                 }}
             >
                 <div
@@ -58,7 +60,7 @@ export function ItemDetailHideoutRequirements({
                             key={level}
                             role="columnheader"
                             className={`p-2 text-left ${
-                                level % 2 === 0 ? "bg-white/[0.035]" : ""
+                                level % 2 !== 0 ? "bg-white/[0.035]" : ""
                             }`}
                         >
                             Level {level}
@@ -90,7 +92,11 @@ export function ItemDetailHideoutRequirements({
                                 role="cell"
                                 className="flex min-w-0 items-center gap-2.5 p-2"
                             >
-                                <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-md bg-white/5">
+                                <span
+                                    className={`relative shrink-0 overflow-hidden rounded-md bg-white/5 ${
+                                        isRoomyLayout ? "h-10 w-10" : "h-8 w-8"
+                                    }`}
+                                >
                                     <Image
                                         src={
                                             station.stationImageLink ??
@@ -104,7 +110,9 @@ export function ItemDetailHideoutRequirements({
                                 </span>
                                 <div className="min-w-0">
                                     <div
-                                        className={`truncate text-sm font-medium ${
+                                        className={`truncate font-medium ${
+                                            isRoomyLayout ? "text-base" : "text-sm"
+                                        } ${
                                             isComplete
                                                 ? "text-muted-foreground"
                                                 : "text-foreground"
@@ -112,7 +120,11 @@ export function ItemDetailHideoutRequirements({
                                     >
                                         {stationName}
                                     </div>
-                                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                    <div
+                                        className={`flex items-center gap-1.5 text-muted-foreground ${
+                                            isRoomyLayout ? "text-xs" : "text-[10px]"
+                                        }`}
+                                    >
                                         <span>Current {currentLevel}</span>
                                         {isHidden && (
                                             <span className="flex items-center gap-0.5 text-red-300">
@@ -128,7 +140,7 @@ export function ItemDetailHideoutRequirements({
                                     key={level}
                                     role="cell"
                                     className={`flex min-h-11 min-w-0 flex-col items-start justify-center p-2 ${
-                                        level % 2 === 0 ? "bg-white/[0.035]" : ""
+                                        level % 2 !== 0 ? "bg-white/[0.035]" : ""
                                     }`}
                                 >
                                     {(requirementsByLevel.get(level) ?? []).map((requirement) => (
@@ -136,6 +148,7 @@ export function ItemDetailHideoutRequirements({
                                             key={requirement.requirementId}
                                             requirement={requirement}
                                             itemImageLink={selectedItemImageLink}
+                                            isRoomy={isRoomyLayout}
                                         />
                                     ))}
                                 </div>
@@ -151,19 +164,27 @@ export function ItemDetailHideoutRequirements({
 function RequirementCell({
     requirement,
     itemImageLink,
+    isRoomy,
 }: {
     requirement: StationRequirementEntry;
     itemImageLink?: string;
+    isRoomy: boolean;
 }) {
     return (
         <div
-            className={`flex h-11 items-center justify-start gap-1.5 text-sm ${
+            className={`flex items-center justify-start ${
+                isRoomy ? "h-13 gap-2 text-base" : "h-11 gap-1.5 text-sm"
+            } ${
                 requirement.isCompleted
                     ? "text-muted-foreground"
                     : "text-foreground"
             }`}
         >
-            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white/[0.035]">
+            <span
+                className={`relative flex shrink-0 items-center justify-center rounded-md bg-white/[0.035] ${
+                    isRoomy ? "h-12 w-12" : "h-10 w-10"
+                }`}
+            >
                 {itemImageLink ? (
                     <Image
                         src={itemImageLink}
