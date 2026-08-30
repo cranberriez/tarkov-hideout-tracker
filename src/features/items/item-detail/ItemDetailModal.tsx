@@ -24,6 +24,7 @@ import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { isCompleteItemUsagePayload } from "@/lib/utils/item-usage";
+import { summarizeItemDetailDemand } from "./item-detail-summary";
 
 const itemUsageCache = new Map<string, ItemUsagePayload>();
 
@@ -206,27 +207,6 @@ export function ItemDetailModal({
         itemUsage === null &&
         usageRequestError === null;
 
-    const { totalCount, totalFir } = useMemo(() => {
-        let nextTotalCount = 0;
-        let nextTotalFir = 0;
-
-        stationRequirements.forEach(([, reqs]) => {
-            reqs.forEach((req) => {
-                const isManuallyCompleted = completedRequirements[req.requirementId];
-                if (req.isCompleted || isManuallyCompleted) {
-                    return;
-                }
-
-                nextTotalCount += req.count;
-                if (req.isFir) {
-                    nextTotalFir += req.count;
-                }
-            });
-        });
-
-        return { totalCount: nextTotalCount, totalFir: nextTotalFir };
-    }, [stationRequirements, completedRequirements]);
-
     const isRouble = selectedNormalizedName === "roubles";
     const isDollar = selectedNormalizedName === "dollars";
     const isEuro = selectedNormalizedName === "euros";
@@ -234,19 +214,6 @@ export function ItemDetailModal({
 
     const relativeUpdatedAt = formatRelativeUpdatedAt(marketPrice?.updatedAt ?? null);
     const owned = itemCounts[selectedItemId] ?? { have: 0, haveFir: 0 };
-
-    const needsBreakdown = useMemo(() => {
-        if (totalCount === 0) {
-            return null;
-        }
-
-        return computeNeeds({
-            totalRequired: totalCount,
-            requiredFir: totalFir,
-            haveNonFir: owned.have,
-            haveFir: owned.haveFir,
-        });
-    }, [totalCount, totalFir, owned.have, owned.haveFir]);
 
     const questItemState = useMemo(() => {
         if (!selectedItem) return null;
@@ -341,6 +308,35 @@ export function ItemDetailModal({
         () => questRewardIndex.find((entry) => entry.itemId === selectedItemId)?.quests ?? [],
         [questRewardIndex, selectedItemId],
     );
+
+    const demandSummary = useMemo(
+        () =>
+            summarizeItemDetailDemand({
+                stationRequirements,
+                completedRequirements,
+                questItemState,
+                anyOfGroups: questAnyOfGroupState,
+            }),
+        [
+            stationRequirements,
+            completedRequirements,
+            questItemState,
+            questAnyOfGroupState,
+        ],
+    );
+
+    const needsBreakdown = useMemo(() => {
+        if (demandSummary.totalRequiredCount === 0) {
+            return null;
+        }
+
+        return computeNeeds({
+            totalRequired: demandSummary.totalRequiredCount,
+            requiredFir: demandSummary.totalRequiredFirCount,
+            haveNonFir: owned.have,
+            haveFir: owned.haveFir,
+        });
+    }, [demandSummary, owned.have, owned.haveFir]);
 
     const itemDetailsById = useMemo(() => {
         const details: Record<string, ItemDetails> = {};
@@ -448,10 +444,6 @@ export function ItemDetailModal({
         (questItemState?.relatedQuests.length ?? 0) > 0 ||
         questAnyOfGroupState.length > 0 ||
         questRewards.length > 0;
-    const hideoutUseCount = stationRequirements.reduce((count, [, reqs]) => count + reqs.length, 0);
-    const questUseCount =
-        (questItemState?.relatedQuestCount ?? 0) + questAnyOfGroupState.length + questRewards.length;
-
     if (!selectedItem) {
         return null;
     }
@@ -484,11 +476,10 @@ export function ItemDetailModal({
                 <header className="relative border-b border-border-color bg-gradient-to-br from-card via-card to-background py-3 pl-3 pr-12 sm:py-4 sm:pl-4 sm:pr-14">
                     <ItemDetailHeader
                         item={selectedItem}
-                        totalCount={totalCount}
-                        owned={owned}
+                        totalRequiredCount={demandSummary.totalRequiredCount}
                         needsBreakdown={needsBreakdown}
-                        hideoutUseCount={hideoutUseCount}
-                        questUseCount={questUseCount}
+                        hideoutRequiredCount={demandSummary.hideoutRequiredCount}
+                        questRequiredCount={demandSummary.questRequiredCount}
                     />
                     <button
                         type="button"

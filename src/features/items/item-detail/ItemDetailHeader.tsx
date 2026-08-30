@@ -6,20 +6,18 @@ import { ExternalLink, PackageOpen } from "lucide-react";
 
 interface ItemDetailHeaderProps {
     item: ItemDetails;
-    totalCount: number;
-    owned: { have: number; haveFir: number };
+    totalRequiredCount: number;
     needsBreakdown: NeedBreakdown | null;
-    hideoutUseCount: number;
-    questUseCount: number;
+    hideoutRequiredCount: number;
+    questRequiredCount: number;
 }
 
 export function ItemDetailHeader({
     item,
-    totalCount,
-    owned,
+    totalRequiredCount,
     needsBreakdown,
-    hideoutUseCount,
-    questUseCount,
+    hideoutRequiredCount,
+    questRequiredCount,
 }: ItemDetailHeaderProps) {
     const imageLink =
         item.image512pxLink ?? item.gridImageLink ?? item.iconLink ?? item.baseImageLink;
@@ -53,9 +51,6 @@ export function ItemDetailHeader({
                     <h2 className="text-xl font-semibold leading-tight text-foreground">
                         {item.name}
                     </h2>
-                    {item.shortName && item.shortName !== item.name && (
-                        <p className="mt-1 text-xs text-muted-foreground">{item.shortName}</p>
-                    )}
                     <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                         {item.wikiLink && (
                             <a
@@ -80,34 +75,24 @@ export function ItemDetailHeader({
                     </div>
                 </div>
             </div>
-            {(totalCount > 0 || hideoutUseCount > 0 || questUseCount > 0) && (
+            {totalRequiredCount > 0 && (
                 <div className="grid w-full auto-cols-fr grid-flow-col overflow-hidden rounded-lg border border-border-color bg-black/20 lg:w-auto lg:min-w-[500px]">
-                    <SummaryValue label="Required" value={totalCount} />
+                    <SummaryValue label="Required" value={totalRequiredCount} />
                     <SummaryValue
                         label="Need"
                         value={needsBreakdown?.neededNonFir ?? 0}
-                        detail={`${owned.have} owned`}
                         accent="green"
                     />
                     <SummaryValue
                         label="Need FiR"
                         value={needsBreakdown?.neededFir ?? 0}
-                        detail={`${owned.haveFir} owned`}
                         accent="orange"
                     />
-                    {hideoutUseCount > 0 && (
-                        <SummaryValue
-                            label="Hideout"
-                            value={hideoutUseCount}
-                            detail={`upgrade${hideoutUseCount === 1 ? "" : "s"}`}
-                        />
+                    {hideoutRequiredCount > 0 && (
+                        <SummaryValue label="Hideout" value={hideoutRequiredCount} />
                     )}
-                    {questUseCount > 0 && (
-                        <SummaryValue
-                            label="Quests"
-                            value={questUseCount}
-                            detail={`hand-in${questUseCount === 1 ? "" : "s"}`}
-                        />
+                    {questRequiredCount > 0 && (
+                        <SummaryValue label="Quests" value={questRequiredCount} />
                     )}
                 </div>
             )}
@@ -118,12 +103,10 @@ export function ItemDetailHeader({
 function SummaryValue({
     label,
     value,
-    detail,
     accent,
 }: {
     label: string;
     value: number;
-    detail?: string;
     accent?: "green" | "orange";
 }) {
     return (
@@ -142,7 +125,6 @@ function SummaryValue({
             >
                 {value}
             </div>
-            {detail && <div className="mt-0.5 text-[10px] text-muted-foreground">{detail}</div>}
         </div>
     );
 }
