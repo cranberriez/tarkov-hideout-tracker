@@ -3,23 +3,15 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { FullQuest } from "@/types";
+import type { QuestDataIndex } from "../quest-data-index";
 import {
     useUserStore,
     type QuestSortMode,
     type QuestWorkspaceLockedFilterSettings,
 } from "@/lib/stores/useUserStore";
-import { buildQuestMapGroups, questMatchesSelectedMapGroups } from "../quest-map-groups";
-import {
-    questMatchesTraderRequirementProfile,
-} from "@/lib/utils/quest-trader-gates";
 import {
     getAvailableObjectiveCategories,
-    buildNextTaskCountGateByGroup,
     getQuestMapKeys,
-    getQuestObjectiveCategories,
-    getQuestWorkspaceStatus,
-    isUpcomingLockedQuest,
-    questMatchesLockedFilters,
     type QuestObjectiveCategory,
     type QuestWorkspaceStatus,
     type QuestWorkspaceStatusInfo,
@@ -32,6 +24,7 @@ import {
     buildQuestBranchLines,
     type QuestBranchLine,
 } from "./quest-branch-graph";
+import { selectWorkspaceQuests } from "./quest-workspace-selector";
 
 export type QuestWorkspaceMode = "details" | "visualizer" | "planner";
 export type QuestListMode = "quests" | "history";
@@ -39,10 +32,11 @@ export type QuestFilterSection = "traders" | "maps" | "status" | "filters" | nul
 
 interface QuestWorkspaceContextValue {
     quests: FullQuest[];
+    questDataIndex: QuestDataIndex;
     questsById: Map<string, FullQuest>;
     filteredQuests: FullQuest[];
     traders: FullQuest["trader"][];
-    maps: ReturnType<typeof buildQuestMapGroups>;
+    maps: QuestDataIndex["maps"];
     objectiveCategories: QuestObjectiveCategory[];
     statusByQuestId: Map<string, QuestWorkspaceStatusInfo>;
     markerByQuestId: Map<string, QuestMarkerStyle>;
@@ -106,7 +100,7 @@ function toggleSetValue<T>(current: Set<T>, value: T) {
     return next;
 }
 
-export function QuestWorkspaceProvider({ quests, initialQuestId = null, children }: { quests: FullQuest[]; initialQuestId?: string | null; children: ReactNode }) {
+export function QuestWorkspaceProvider({ quests, questDataIndex, initialQuestId = null, children }: { quests: FullQuest[]; questDataIndex: QuestDataIndex; initialQuestId?: string | null; children: ReactNode }) {
     const [selectedQuestId, setSelectedQuestId] = useState<string | null>(initialQuestId);
     const [openFilter, setOpenFilter] = useState<QuestFilterSection>(null);
     const [searchQuery, setSearchQuery] = useState("");
@@ -180,48 +174,9 @@ export function QuestWorkspaceProvider({ quests, initialQuestId = null, children
     const filterByTraderRequirements = store.filterByTraderRequirements;
     const previousCompletedQuests = useRef(profile.completedQuests);
 
-    const questsById = useMemo(() => new Map(quests.map((quest) => [quest.id, quest])), [quests]);
-    const statusByQuestId = useMemo(
-        () => new Map(quests.map((quest) => [quest.id, getQuestWorkspaceStatus(quest, profile, questsById)])),
-        [profile, quests, questsById],
-    );
-    const nextTaskCountGateByGroup = useMemo(
-        () => buildNextTaskCountGateByGroup(statusByQuestId.values()),
-        [statusByQuestId],
-    );
-    const upcomingLockedQuestIds = useMemo(
-        () => new Set(
-            quests
-                .filter((quest) => {
-                    const status = statusByQuestId.get(quest.id);
-                    return status && isUpcomingLockedQuest(
-                        status,
-                        store.lockedFilters,
-                        nextTaskCountGateByGroup,
-                    );
-                })
-                .map((quest) => quest.id),
-        ),
-        [nextTaskCountGateByGroup, quests, statusByQuestId, store.lockedFilters],
-    );
-    const traders = useMemo(() => {
-        const unique = new Map<string, FullQuest["trader"]>();
-        quests.forEach((quest) => unique.set(quest.trader.id, quest.trader));
-        return [...unique.values()].sort((a, b) => a.name.localeCompare(b.name));
-    }, [quests]);
-    const maps = useMemo(() => buildQuestMapGroups(quests), [quests]);
+    const { questsById, maps } = questDataIndex;
+    const traders = questDataIndex.traders;
     const objectiveCategories = useMemo(() => getAvailableObjectiveCategories(quests), [quests]);
-    const markerByQuestId = useMemo(
-        () => createQuestMarkerStyles(
-            plannerMapKey
-                ? quests.filter((quest) =>
-                      statusByQuestId.get(quest.id)?.status === "active" &&
-                      getQuestMapKeys(quest).has(plannerMapKey),
-                  )
-                : [],
-        ),
-        [plannerMapKey, quests, statusByQuestId],
-    );
     const branchLines = useMemo(() => buildQuestBranchLines(quests), [quests]);
     const branchLineByQuestId = useMemo(() => {
         const result = new Map<string, QuestBranchLine>();
@@ -241,41 +196,35 @@ export function QuestWorkspaceProvider({ quests, initialQuestId = null, children
         }
         return result;
     }, [branchLines]);
-    const normalizedSearch = searchQuery.trim().toLowerCase();
     const onlyActiveSelected = selectedStatuses.size === 1 && selectedStatuses.has("active");
-    const filteredQuests = useMemo(() => quests.filter((quest) => {
-        if (!store.showHiddenQuests && store.hiddenQuests[quest.id]) return false;
-        if (selectedTraderIds.size > 0 && !selectedTraderIds.has(quest.trader.id)) return false;
-        if (
-            filterByTraderRequirements &&
-            !questMatchesTraderRequirementProfile(quest, profile)
-        ) return false;
-        if (selectedMapKeys.size > 0 && !questMatchesSelectedMapGroups(quest, selectedMapKeys)) return false;
-        const status = statusByQuestId.get(quest.id);
-        if (
-            status &&
-            !selectedStatuses.has(status.status) &&
-            !(onlyActiveSelected && status.status === "completed" && retainedCompletedQuestIds.has(quest.id))
-        ) return false;
-        if (
-            status?.status === "locked" &&
-            selectedStatuses.has("locked") &&
-            !questMatchesLockedFilters(
-                status,
-                store.lockedFilters,
-                nextTaskCountGateByGroup,
-            )
-        ) return false;
-        if (selectedObjectiveCategories.size > 0) {
-            const categories = getQuestObjectiveCategories(quest);
-            if (![...selectedObjectiveCategories].some((category) => categories.has(category))) return false;
-        }
-        if (normalizedSearch) {
-            const haystack = `${quest.name} ${quest.trader.name} ${quest.map?.name ?? ""} ${quest.objectives.map((objective) => objective.description).join(" ")}`.toLowerCase();
-            if (!haystack.includes(normalizedSearch)) return false;
-        }
-        return true;
-    }), [filterByTraderRequirements, nextTaskCountGateByGroup, normalizedSearch, onlyActiveSelected, profile, quests, retainedCompletedQuestIds, selectedMapKeys, selectedObjectiveCategories, selectedStatuses, selectedTraderIds, statusByQuestId, store.hiddenQuests, store.lockedFilters, store.showHiddenQuests]);
+    const selection = useMemo(() => selectWorkspaceQuests(quests, questsById, profile, {
+        selectedTraderIds,
+        filterByTraderRequirements,
+        selectedMapKeys,
+        selectedStatuses,
+        lockedFilters: store.lockedFilters,
+        selectedObjectiveCategories,
+        hiddenQuests: store.hiddenQuests,
+        showHiddenQuests: store.showHiddenQuests,
+        retainedCompletedQuestIds,
+        searchQuery,
+    }), [filterByTraderRequirements, profile, quests, questsById, retainedCompletedQuestIds, searchQuery, selectedMapKeys, selectedObjectiveCategories, selectedStatuses, selectedTraderIds, store.hiddenQuests, store.lockedFilters, store.showHiddenQuests]);
+    const { statusByQuestId, upcomingLockedQuestIds } = selection;
+    const filteredQuests = useMemo(
+        () => selection.filteredQuestIds.flatMap((questId) => questsById.get(questId) ?? []),
+        [questsById, selection.filteredQuestIds],
+    );
+    const markerByQuestId = useMemo(
+        () => createQuestMarkerStyles(
+            plannerMapKey
+                ? quests.filter((quest) =>
+                      statusByQuestId.get(quest.id)?.status === "active" &&
+                      getQuestMapKeys(quest).has(plannerMapKey),
+                  )
+                : [],
+        ),
+        [plannerMapKey, quests, statusByQuestId],
+    );
 
     useEffect(() => {
         const previous = previousCompletedQuests.current;
@@ -316,6 +265,7 @@ export function QuestWorkspaceProvider({ quests, initialQuestId = null, children
     return (
         <QuestWorkspaceContext.Provider value={{
             quests,
+            questDataIndex,
             questsById,
             filteredQuests,
             traders,

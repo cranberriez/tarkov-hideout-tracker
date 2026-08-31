@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { FullQuest, ItemDetails } from "@/types";
 import type { QuestAnyOfGroupEntry, QuestItemIndexEntry, QuestRewardIndexEntry } from "@/lib/utils/quest-item-index";
@@ -12,6 +12,7 @@ import { QuestsProvider } from "./QuestsContext";
 import { QuestCascadeConfirmDialog } from "./components/QuestCascadeConfirmDialog";
 import { QuestWorkspaceProvider } from "./workspace/QuestWorkspaceContext";
 import { QuestWorkspace } from "./workspace/QuestWorkspace";
+import { buildQuestDataIndex } from "./quest-data-index";
 
 interface QuestsClientPageProps {
     quests: FullQuest[];
@@ -25,6 +26,7 @@ interface QuestsClientPageProps {
 
 export function QuestsClientPage({ quests, updatedAt, questItemIndex, questRewardIndex, questAnyOfGroups, questAvailabilityQuests, initialQuestId = null }: QuestsClientPageProps) {
     void updatedAt;
+    const questDataIndex = useMemo(() => buildQuestDataIndex(quests), [quests]);
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const { stations, itemById } = useDataContext();
     const { stationLevels, hiddenStations, completedRequirements } = useUserStore(
@@ -35,8 +37,8 @@ export function QuestsClientPage({ quests, updatedAt, questItemIndex, questRewar
         : null;
 
     return (
-        <QuestsProvider quests={quests} onItemClick={setSelectedItemId}>
-            <QuestWorkspaceProvider quests={quests} initialQuestId={initialQuestId}>
+        <QuestsProvider quests={quests} questDataIndex={questDataIndex} onItemClick={setSelectedItemId}>
+            <QuestWorkspaceProvider quests={quests} questDataIndex={questDataIndex} initialQuestId={initialQuestId}>
                 <QuestWorkspace quests={quests} />
             </QuestWorkspaceProvider>
             <ItemDetailModal item={selectedItem} isOpen={!!selectedItem} onClose={() => setSelectedItemId(null)} stations={stations ?? []} stationLevels={stationLevels} hiddenStations={hiddenStations} completedRequirements={completedRequirements} questItemIndex={questItemIndex} questRewardIndex={questRewardIndex} questAnyOfGroups={questAnyOfGroups} questAvailabilityQuests={questAvailabilityQuests} />

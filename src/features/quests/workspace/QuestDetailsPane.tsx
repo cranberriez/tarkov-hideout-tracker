@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { CSSProperties } from "react";
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { AlertTriangle, Bug, CheckCircle2, ChevronLeft, ChevronRight, Circle, Eye, EyeOff, ExternalLink, Flag, GitBranch, GripVertical, Map as MapIcon, MapPinned, PackageOpen, Pin, RotateCcw, X, XCircle } from "lucide-react";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import type { MapOverlayMarker } from "@/features/maps/map-types";
@@ -14,25 +14,25 @@ import {
     countCompletedTraderTierQuests,
     formatTraderTierCompletionGate,
     getQuestTraderTabLoyaltyLevel,
-    getTraderTierCompletionGate,
 } from "@/lib/utils/quest-trader-completion-gates";
-import { isEssentialQuest } from "@/lib/utils/quest-series";
 import {
     buildMultipleChoiceQuestGroups,
     getQuestFailConditionText,
     questCanFail,
 } from "@/lib/utils/quest-failures";
-import { formatQuestUnlockTiming, formatTaskRequirementStatus } from "@/lib/utils/quest-relations";
-import type { FullQuest, FullQuestObjective, QuestOtherRequirement, QuestTraderStandingReward } from "@/types";
+import { formatTaskRequirementStatus } from "@/lib/utils/quest-relations";
+import type { FullQuest, QuestTraderStandingReward } from "@/types";
 import { ObjectiveRow } from "../components/quest-card/QuestObjectiveRows";
-import { formatQuestMapSummary } from "../quest-map-groups";
 import { useQuestsContext } from "../QuestsContext";
+import { getPositionedObjectiveMaps } from "./quest-detail-markers";
 import {
-    buildQuestDetailMarkers,
-    createQuestDetailObjectiveStyles,
-    getPositionedObjectiveMaps,
-    getQuestDetailMaps,
-} from "./quest-detail-markers";
+    buildQuestDetailsModel,
+    compareRequirementValue,
+    formatOtherRequirementDetails,
+    humanize,
+    isTaskRequirementSatisfied,
+} from "./quest-details-model";
+import { useQuestDetailsController } from "./useQuestDetailsController";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 const LazyMapViewer = dynamic(
@@ -44,23 +44,6 @@ const LazyMapViewer = dynamic(
 );
 
 export function QuestDetailsPane() {
-    const [showDebug, setShowDebug] = useState(false);
-    const [isDesktopMapOpen, setIsDesktopMapOpen] = useState(true);
-    const [condensedQuestId, setCondensedQuestId] = useState<string | null>(null);
-    const [compactMapQuestId, setCompactMapQuestId] = useState<string | null>(null);
-    const [mapWidthPercent, setMapWidthPercent] = useState(46);
-    const [isResizingMap, setIsResizingMap] = useState(false);
-    const [objectiveFloorNames, setObjectiveFloorNames] = useState<ReadonlyMap<string, string[]>>(new Map());
-    const [hoveredObjectiveId, setHoveredObjectiveId] = useState<string | null>(null);
-    const [mapTarget, setMapTarget] = useState<{
-        questId: string;
-        mapKey: string;
-        objectiveId: string | null;
-        requestKey: number;
-    } | null>(null);
-    const mapSectionRef = useRef<HTMLElement>(null);
-    const detailScrollRef = useRef<HTMLDivElement>(null);
-    const detailSplitRef = useRef<HTMLDivElement>(null);
     const { itemById } = useDataContext();
     const {
         quests,
@@ -73,8 +56,6 @@ export function QuestDetailsPane() {
         retainQuestAfterCompletion,
         openQuestVisualizer,
     } = useQuestWorkspace();
-    const isHeaderCondensed = condensedQuestId === quest?.id;
-    const isCompactMapOpen = compactMapQuestId === quest?.id;
     const { leadsToByQuestId, onItemClick, requestToggleQuestCompletion, requestFailQuest, requestResetQuestStatus } = useQuestsContext();
     const pinned = useUserStore((state) => quest ? !!state.pinnedQuests[quest.id] : false);
     const hidden = useUserStore((state) => quest ? !!state.ignoredQuests[quest.id] : false);
@@ -99,37 +80,20 @@ export function QuestDetailsPane() {
         ),
         [completedQuestObjectives, quest],
     );
-    const questMapData = useMemo(
-        () => quest ? buildQuestDetailMapData(quest, completedObjectiveIds) : null,
-        [completedObjectiveIds, quest],
-    );
     const multipleChoiceGroups = useMemo(
         () => buildMultipleChoiceQuestGroups(quests),
         [quests],
     );
-    const deferredMapData = useDeferredValue(questMapData);
-    const handleObjectiveFloorsChange = useCallback((floors: ReadonlyMap<string, string[]>) => {
-        setObjectiveFloorNames(floors);
-    }, []);
-
-    useEffect(() => {
-        detailScrollRef.current?.scrollTo({ top: 0 });
-    }, [quest?.id]);
-
-    useEffect(() => {
-        const desktop = window.matchMedia("(min-width: 1024px)");
-        const clearDesktopCondensedHeader = () => {
-            if (desktop.matches) setCondensedQuestId(null);
-        };
-        clearDesktopCondensedHeader();
-        desktop.addEventListener("change", clearDesktopCondensedHeader);
-        return () => desktop.removeEventListener("change", clearDesktopCondensedHeader);
-    }, []);
-
-    useEffect(() => {
-        document.body.classList.toggle("quest-objective-map-active", isCompactMapOpen);
-        return () => document.body.classList.remove("quest-objective-map-active");
-    }, [isCompactMapOpen]);
+    const questDetailsModel = useMemo(() => quest ? buildQuestDetailsModel({
+        quest,
+        questsById,
+        leadsToQuestIds: leadsToByQuestId.get(quest.id) ?? [],
+        maps,
+        branchLines: branchLinesByQuestId.get(quest.id) ?? [],
+        multipleChoiceQuestIds: multipleChoiceGroups.get(quest.id) ?? [],
+        completedObjectiveIds,
+    }) : null, [branchLinesByQuestId, completedObjectiveIds, leadsToByQuestId, maps, multipleChoiceGroups, quest, questsById]);
+    const controller = useQuestDetailsController(quest?.id ?? null, questDetailsModel?.mapData ?? null);
 
     if (!quest) {
         return (
@@ -143,100 +107,37 @@ export function QuestDetailsPane() {
     }
 
     const status = statusByQuestId.get(quest.id)!;
-    const visualizerLines = [...(branchLinesByQuestId.get(quest.id) ?? [])].sort(
-        (left, right) => Number(left.kind === "special") - Number(right.kind === "special"),
-    );
-    const multipleChoiceQuests = (multipleChoiceGroups.get(quest.id) ?? [])
-        .flatMap((questId) => questsById.get(questId) ?? []);
-    const essential = isEssentialQuest(quest.id);
+    const {
+        essential,
+        traderImage,
+        locationLabel,
+        hasHeaderMetadata,
+        hasRequirements,
+        hasFailureDetails,
+        detailColumnCount,
+        leadsTo,
+        traderTierCompletionGates,
+        unknownOtherRequirements,
+        objectivePresentation,
+        visualizerLines,
+        multipleChoiceQuests,
+        mapData: questMapData,
+    } = questDetailsModel!;
+    const {
+        showDebug, setShowDebug, isDesktopMapOpen, setIsDesktopMapOpen,
+        isHeaderCondensed, isCompactMapOpen, closeCompactMap,
+        mapWidthPercent, setMapWidthPercent, isResizingMap, setIsResizingMap,
+        objectiveFloorNames, handleObjectiveFloorsChange,
+        hoveredObjectiveId, setHoveredObjectiveId,
+        mapSectionRef, detailScrollRef, detailSplitRef,
+        detailMaps, selectedDetailMapKey, selectedDetailMap, detailMarkers,
+        panelSelectedMap, panelMarkers, isMapUpdatePending,
+        focusedObjectiveId, focusRequestKey, showObjectiveOnMap,
+        selectDetailMap, openCompactMap, resizeMapFromPointer, handleDetailScroll,
+    } = controller;
     const traderTabLabel = essential
         ? "Essential"
         : `LL${getQuestTraderTabLoyaltyLevel(quest)}`;
-    const traderImage = quest.trader.image4xLink ?? quest.trader.imageLink;
-    const leadsTo = (leadsToByQuestId.get(quest.id) ?? []).flatMap((id) => {
-        const nextQuest = questsById.get(id);
-        if (!nextQuest) return [];
-        const requirement = nextQuest.taskRequirements.find((entry) => entry.task.id === quest.id);
-        return [{ quest: nextQuest, timing: formatQuestUnlockTiming(requirement?.status ?? []) }];
-    });
-    const objectivePresentation = buildObjectivePresentation(quest.objectives);
-    const traderTierCompletionGates = quest.otherRequirements
-        .map(getTraderTierCompletionGate)
-        .filter((gate): gate is NonNullable<typeof gate> => gate !== null);
-    const unknownOtherRequirements = quest.otherRequirements.filter(
-        (requirement) => !getTraderTierCompletionGate(requirement),
-    );
-    const hasRequirements = (quest.minPlayerLevel ?? 0) > 0 ||
-        (!!quest.factionName && quest.factionName !== "Any") ||
-        !!quest.requiredPrestige ||
-        quest.traderRequirements.length > 0 ||
-        quest.otherRequirements.length > 0 ||
-        quest.taskRequirements.length > 0;
-    const hasHeaderMetadata = !!quest.requiredPrestige ||
-        !!quest.kappaRequired ||
-        !!quest.lightkeeperRequired;
-    const hasFailureDetails = (quest.failureTraderStandingRewards?.length ?? 0) > 0 ||
-        (quest.failConditions?.length ?? 0) > 0;
-    const detailColumnCount = Number(hasRequirements) + Number(leadsTo.length > 0) + Number(hasFailureDetails);
-    const locationLabel = formatQuestMapSummary(quest, maps);
-    const detailMaps = questMapData?.maps ?? [];
-    const selectedDetailMapKey = mapTarget?.questId === quest.id &&
-        detailMaps.some((map) => map.key === mapTarget.mapKey)
-        ? mapTarget.mapKey
-        : detailMaps[0]?.key ?? null;
-    const selectedDetailMap = detailMaps.find((map) => map.key === selectedDetailMapKey) ?? null;
-    const detailMarkersByMap: Map<string, MapOverlayMarker[]> =
-        questMapData?.markersByMap ?? new Map<string, MapOverlayMarker[]>();
-    const detailMarkers = selectedDetailMapKey
-        ? detailMarkersByMap.get(selectedDetailMapKey) ?? []
-        : [];
-    const panelMapData = deferredMapData ?? questMapData;
-    const panelMapKey = panelMapData && mapTarget?.questId === panelMapData.questId &&
-        panelMapData.maps.some((map) => map.key === mapTarget.mapKey)
-        ? mapTarget.mapKey
-        : panelMapData?.maps[0]?.key ?? null;
-    const panelSelectedMap = panelMapData?.maps.find((map) => map.key === panelMapKey) ?? null;
-    const panelMarkers = panelMapKey
-        ? panelMapData?.markersByMap.get(panelMapKey) ?? []
-        : [];
-    const isMapUpdatePending = !!panelMapData && panelMapData.questId !== quest.id;
-    const focusedObjectiveId = mapTarget?.questId === quest.id &&
-        mapTarget.mapKey === selectedDetailMapKey
-        ? mapTarget.objectiveId
-        : null;
-    const focusRequestKey = focusedObjectiveId ? mapTarget?.requestKey ?? null : null;
-
-    const showObjectiveOnMap = (mapKey: string, objectiveId: string) => {
-        setMapTarget((current) => ({
-            questId: quest.id,
-            mapKey,
-            objectiveId,
-            requestKey: (current?.requestKey ?? 0) + 1,
-        }));
-        setIsDesktopMapOpen(true);
-        if (!window.matchMedia("(min-width: 1700px)").matches) setCompactMapQuestId(quest.id);
-    };
-
-    const selectDetailMap = (mapKey: string) => {
-        setMapTarget((current) => ({
-            questId: quest.id,
-            mapKey,
-            objectiveId: null,
-            requestKey: (current?.requestKey ?? 0) + 1,
-        }));
-    };
-
-    const openCompactMap = () => {
-        setIsDesktopMapOpen(true);
-        setCompactMapQuestId(quest.id);
-    };
-
-    const resizeMapFromPointer = (clientX: number) => {
-        const bounds = detailSplitRef.current?.getBoundingClientRect();
-        if (!bounds || bounds.width === 0) return;
-        const nextWidth = ((bounds.right - clientX) / bounds.width) * 100;
-        setMapWidthPercent(Math.min(65, Math.max(28, nextWidth)));
-    };
 
     return (
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#0b0c0e]">
@@ -250,15 +151,7 @@ export function QuestDetailsPane() {
             >
             <div
                 ref={detailScrollRef}
-                onScroll={(event) => {
-                    if (window.matchMedia("(min-width: 1024px)").matches) return;
-                    const scrollTop = event.currentTarget.scrollTop;
-                    setCondensedQuestId((current) => {
-                        if (scrollTop > 38) return quest.id;
-                        if (scrollTop < 8) return null;
-                        return current === quest.id ? current : null;
-                    });
-                }}
+                onScroll={(event) => handleDetailScroll(event.currentTarget.scrollTop)}
                 className={cn(
                     "min-h-0 min-w-0 overflow-y-auto pt-[212px] [overflow-anchor:none] lg:pt-0",
                     isCompactMapOpen && "hidden min-[1700px]:block",
@@ -529,7 +422,7 @@ export function QuestDetailsPane() {
                                     ? selectedDetailMapKey
                                     : objectiveMaps[0]?.key;
                                 const objectiveMarkers = cueMapKey
-                                    ? (detailMarkersByMap.get(cueMapKey) ?? []).filter((marker) =>
+                                    ? (questMapData.markersByMap.get(cueMapKey) ?? []).filter((marker) =>
                                           marker.objectiveIds?.includes(objective.id),
                                       )
                                     : [];
@@ -741,7 +634,7 @@ export function QuestDetailsPane() {
                             )}
                             <button
                                 type="button"
-                                onClick={() => setCompactMapQuestId(null)}
+                                onClick={closeCompactMap}
                                 className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center border border-red-400/35 bg-red-400/10 text-red-300 transition-colors hover:border-red-300/70 hover:bg-red-400/20 hover:text-red-100 min-[1700px]:hidden"
                                 aria-label="Close objective map"
                                 title="Close objective map"
@@ -798,19 +691,6 @@ export function QuestDetailsPane() {
             </button>
         </div>
     );
-}
-
-function buildQuestDetailMapData(quest: FullQuest, completedObjectiveIds: ReadonlySet<string>) {
-    const maps = getQuestDetailMaps(quest, completedObjectiveIds);
-    const styles = createQuestDetailObjectiveStyles(quest);
-    return {
-        questId: quest.id,
-        maps,
-        styles,
-        markersByMap: new Map(
-            maps.map((map) => [map.key, buildQuestDetailMarkers(quest, map.key, styles, completedObjectiveIds)]),
-        ),
-    };
 }
 
 function MapLoadingPlaceholder({ label }: { label: string }) {
@@ -872,63 +752,6 @@ function RequirementRow({
     );
 }
 
-interface ObjectivePresentation {
-    objective: FullQuestObjective;
-    showItems: boolean;
-}
-
-function getRegularItemKey(objective: FullQuestObjective) {
-    if (!("itemIds" in objective) || objective.itemIds.length === 0) return null;
-    return [...objective.itemIds].sort().join(":");
-}
-
-function getQuestItemKey(objective: FullQuestObjective) {
-    if ((objective.type !== "pickupQuestItem" && objective.type !== "findQuestItem") || !("questItem" in objective)) return null;
-    return objective.questItem.id;
-}
-
-function buildObjectivePresentation(objectives: FullQuestObjective[]): ObjectivePresentation[] {
-    const deferredFindByGiveIndex = new Map<number, number>();
-    const deferredFindIndices = new Set<number>();
-
-    objectives.forEach((objective, findIndex) => {
-        if (objective.type !== "findItem") return;
-        const itemKey = getRegularItemKey(objective);
-        if (!itemKey) return;
-        const giveIndex = objectives.findIndex((candidate, candidateIndex) =>
-            candidateIndex > findIndex && candidate.type === "giveItem" && getRegularItemKey(candidate) === itemKey
-        );
-        if (giveIndex >= 0 && !deferredFindByGiveIndex.has(giveIndex)) {
-            deferredFindByGiveIndex.set(giveIndex, findIndex);
-            deferredFindIndices.add(findIndex);
-        }
-    });
-
-    const questItemGroups = new Map<string, number[]>();
-    objectives.forEach((objective, index) => {
-        const itemKey = getQuestItemKey(objective);
-        if (itemKey) questItemGroups.set(itemKey, [...(questItemGroups.get(itemKey) ?? []), index]);
-    });
-    const deferredQuestItemIndices = new Set([...questItemGroups.values()].flatMap((indices) => indices.slice(0, -1)));
-
-    const result: ObjectivePresentation[] = [];
-    objectives.forEach((objective, index) => {
-        if (deferredFindIndices.has(index) || deferredQuestItemIndices.has(index)) return;
-
-        const findIndex = deferredFindByGiveIndex.get(index);
-        if (findIndex != null) result.push({ objective: objectives[findIndex], showItems: false });
-
-        const questItemKey = getQuestItemKey(objective);
-        const questItemGroup = questItemKey ? questItemGroups.get(questItemKey) ?? [] : [];
-        if (questItemGroup.length > 1 && questItemGroup.at(-1) === index) {
-            questItemGroup.slice(0, -1).forEach((groupIndex) => result.push({ objective: objectives[groupIndex], showItems: false }));
-        }
-
-        result.push({ objective, showItems: true });
-    });
-    return result;
-}
-
 function QuestDebugPanel({ quest, onClose }: { quest: FullQuest; onClose: () => void }) {
     return (
         <aside className="fixed bottom-16 right-5 z-50 flex max-h-[70vh] w-[min(680px,calc(100vw-2.5rem))] flex-col overflow-hidden border border-white/15 bg-[#101215] shadow-2xl">
@@ -953,48 +776,10 @@ function DebugJson({ label, value }: { label: string; value: unknown }) {
     );
 }
 
-function formatOtherRequirementDetails(requirement: QuestOtherRequirement) {
-    const knownKeys = new Set(["id", "type", "requirementType"]);
-    const details = Object.entries(requirement).filter(([key, value]) => !knownKeys.has(key) && value != null).map(([key, value]) => `${humanize(key)}: ${formatUnknownValue(value)}`);
-    return details.join(" · ");
-}
-
-function compareRequirementValue(current: number, method: string, required: number) {
-    switch (method.trim()) {
-        case ">": return current > required;
-        case "<": return current < required;
-        case "<=": return current <= required;
-        case "=":
-        case "==":
-        case "===": return current === required;
-        case "!=":
-        case "!==": return current !== required;
-        default: return current >= required;
-    }
-}
-
-function isTaskRequirementSatisfied(statuses: string[], completed: boolean, failed: boolean) {
-    const normalized = statuses.map((status) => status.trim().toLowerCase());
-    if (normalized.some((status) => status === "success" || status === "complete" || status === "completed")) return completed;
-    if (normalized.some((status) => status === "fail" || status === "failed")) return failed;
-    if (normalized.includes("active")) return completed || failed;
-    return completed;
-}
-
 function StandingRewards({ label, rewards }: { label: string; rewards: QuestTraderStandingReward[] }) {
     return <section><SectionLabel>{label}</SectionLabel><div className="space-y-2">{rewards.map((reward, index) => <div key={`${reward.trader.id}-${index}`} className="flex items-center justify-between border border-white/8 px-3 py-2.5 text-sm"><span className="text-gray-400">{reward.trader.name}</span><span className={reward.standing >= 0 ? "text-tarkov-green" : "text-red-300"}>{formatStanding(reward.standing)}</span></div>)}</div></section>;
 }
 
 function formatStanding(value: number) {
     return `${value > 0 ? "+" : ""}${value.toLocaleString("en-US", { maximumFractionDigits: 3 })}`;
-}
-
-function humanize(value: string) {
-    return value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").replace(/^./, (character) => character.toUpperCase());
-}
-
-function formatUnknownValue(value: unknown): string {
-    if (Array.isArray(value)) return value.map(formatUnknownValue).join(", ");
-    if (typeof value === "object" && value !== null) return Object.entries(value).map(([key, nested]) => `${humanize(key)} ${formatUnknownValue(nested)}`).join(", ");
-    return String(value);
 }

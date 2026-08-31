@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type InputHTMLAttributes } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { useQuestsContext } from "../QuestsContext";
 import {
     AlertCircle,
@@ -10,7 +9,6 @@ import {
     CheckCircle2,
     ChevronDown,
     ChevronUp,
-    FileSearch,
     FolderOpen,
     Info,
     TriangleAlert,
@@ -21,38 +19,19 @@ import type { FullQuest } from "@/types";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import {
-    ENABLE_QUEST_LOG_FILE_DEDUPE,
-    IMPORT_GAME_MODES,
-    QUEST_LOG_IMPORT_SEEN_FILES_KEY,
-    applyQuestImportSelection,
-    buildQuestImportBuckets,
-    createQuestLogFileFingerprint,
-    filterIncompleteQuestImportRows,
-    readQuestLogProcessedFileModes,
-    setAllQuestImportSelections,
-    toParsedRaidMode,
     type ImportGameMode,
     type QuestImportBuckets,
     type QuestImportRow,
-    writeQuestLogProcessedFileModes,
 } from "@/lib/utils/quest-log-import";
 import {
-    filterQuestLogFiles,
-    getPreWipeQuestLogFileNames,
     type ParsedQuestEvent,
     type QuestLogParseResult,
-    parseQuestLogFiles,
-    selectionLooksLikeEftLogsFolder,
 } from "@/lib/utils/quest-log-parser";
 import {
     buildQuestAvailabilityMap,
     isQuestAvailableForProfile,
 } from "@/lib/utils/quest-availability";
-import {
-    NETWORK_PROVIDER_PART_1_ID,
-    getSensitiveBackfillQuest,
-    getSensitiveBackfillQuestName,
-} from "@/lib/utils/sensitive-quest-backfill";
+import { NETWORK_PROVIDER_PART_1_ID, getSensitiveBackfillQuest, getSensitiveBackfillQuestName } from "@/lib/utils/sensitive-quest-backfill";
 import {
     Dialog,
     DialogContent,
@@ -61,6 +40,8 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { QuestListByTrader } from "./QuestListByTrader";
+import { getSelectionKey, type AutoCompleteSelectionMap, type ImportSummary } from "./quest-log-import-model";
+import { useQuestLogImportController } from "./useQuestLogImportController";
 
 interface QuestLogImportDialogProps {
     open: boolean;
@@ -68,51 +49,7 @@ interface QuestLogImportDialogProps {
     quests: FullQuest[];
 }
 
-type DirectoryInputAttributes = InputHTMLAttributes<HTMLInputElement> & {
-    webkitdirectory?: string;
-    directory?: string;
-};
-
-interface ParsedImportView {
-    result: QuestLogParseResult;
-    buckets: QuestImportBuckets;
-}
-
-type AutoCompleteSelectionMap = Record<string, boolean>;
-type DialogStep = "select" | "review";
-interface ImportSummary {
-    mode: ImportGameMode;
-    importedCount: number;
-    prerequisiteCount: number;
-}
-
 export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImportDialogProps) {
-    const router = useRouter();
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const [isParsing, setIsParsing] = useState(false);
-    const [parsedView, setParsedView] = useState<ParsedImportView | null>(null);
-    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-    const [selectedFileNames, setSelectedFileNames] = useState<string[]>([]);
-    const [error, setError] = useState<string | null>(null);
-    const [showInfo, setShowInfo] = useState(false);
-    const [importNotice, setImportNotice] = useState<string | null>(null);
-    const [cacheNotice, setCacheNotice] = useState<string | null>(null);
-    const [preWipeIgnoredFileNames, setPreWipeIgnoredFileNames] = useState<string[]>([]);
-    const [pendingSeenFileFingerprints, setPendingSeenFileFingerprints] = useState<string[]>([]);
-    const [autoCompleteSelections, setAutoCompleteSelections] = useState<AutoCompleteSelectionMap>(
-        {},
-    );
-    const [step, setStep] = useState<DialogStep>("select");
-    const [reviewMode, setReviewMode] = useState<ImportGameMode | null>(null);
-    const [didConfirmImport, setDidConfirmImport] = useState(false);
-    const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
-    const [allowedSensitiveBackfillQuestIds, setAllowedSensitiveBackfillQuestIds] = useState<
-        string[]
-    >([]);
-    const [deniedSensitiveBackfillQuestIds, setDeniedSensitiveBackfillQuestIds] = useState<
-        string[]
-    >([]);
-
     const { questsById } = useQuestsContext();
     const gameMode = useUserStore((state) => state.gameMode);
     const profiles = useUserStore((state) => state.profiles);
@@ -143,358 +80,47 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
         return result;
     }, [profiles, quests]);
 
-    const directoryInputProps: DirectoryInputAttributes = {
-        id: "quest-log-folder-upload",
-        name: "quest-log-folder-upload",
-        type: "file",
-        multiple: true,
-        webkitdirectory: "",
-        directory: "",
-        onChange: (event) => {
-            const fileList = Array.from(event.target.files ?? []);
-            void handleFilesSelected(fileList);
-            event.target.value = "";
-        },
-    };
-
-    async function handleFilesSelected(files: File[]) {
-        setSelectedFiles(files);
-        setSelectedFileNames(files.map((file) => file.name));
-        setError(null);
-        setImportNotice(null);
-        setCacheNotice(null);
-        setPreWipeIgnoredFileNames([]);
-        setPendingSeenFileFingerprints([]);
-        setStep("select");
-        setReviewMode(null);
-        setDidConfirmImport(false);
-        setImportSummary(null);
-        setAllowedSensitiveBackfillQuestIds([]);
-        setDeniedSensitiveBackfillQuestIds([]);
-
-        if (files.length === 0) {
-            setParsedView(null);
-            setAutoCompleteSelections({});
-            return;
-        }
-
-        void parseSelectedFiles(files);
-    }
-
-    async function parseSelectedFiles(files: File[], options: { ignoreSeenFiles?: boolean } = {}) {
-        setIsParsing(true);
-        try {
-            if (!selectionLooksLikeEftLogsFolder(files)) {
-                setParsedView(null);
-                setAutoCompleteSelections({});
-                setCacheNotice(null);
-                setPreWipeIgnoredFileNames([]);
-                setPendingSeenFileFingerprints([]);
-                setError(
-                    "That selection does not look like an EFT logs folder. Try ~\\Battlestate Games\\EFT\\Logs or one of its log_* subfolders.",
-                );
-                return;
-            }
-
-            const { matched } = filterQuestLogFiles(files);
-            let filesToParse = matched;
-            const newFingerprints: string[] = [];
-            const preWipeFileNamesFromPath = getPreWipeQuestLogFileNames(matched);
-            let processedFileModes = new Map<string, Set<ImportGameMode>>();
-
-            if (ENABLE_QUEST_LOG_FILE_DEDUPE) {
-                processedFileModes = readQuestLogProcessedFileModes();
-                filesToParse = matched.filter((file) => {
-                    const fingerprint = createQuestLogFileFingerprint(file);
-                    const processedModes = processedFileModes.get(fingerprint);
-                    const hasUnprocessedMode =
-                        options.ignoreSeenFiles ||
-                        !processedModes ||
-                        !processedModes.has(gameMode);
-                    if (hasUnprocessedMode) {
-                        newFingerprints.push(fingerprint);
-                    }
-                    return hasUnprocessedMode;
-                });
-            } else {
-                newFingerprints.push(...matched.map((file) => createQuestLogFileFingerprint(file)));
-            }
-
-            if (matched.length > 0 && filesToParse.length === 0) {
-                setParsedView(null);
-                setAutoCompleteSelections({});
-                setPendingSeenFileFingerprints([]);
-                setPreWipeIgnoredFileNames(preWipeFileNamesFromPath);
-                setCacheNotice(`No unprocessed ${gameMode} quest logs found in these files.`);
-                return;
-            }
-
-            const fileInputs = await Promise.all(
-                filesToParse.map(async (file) => {
-                    return {
-                        name: file.name,
-                        webkitRelativePath: file.webkitRelativePath,
-                        text: await file.text(),
-                        excludedRaidModes: IMPORT_GAME_MODES.filter(
-                            (mode) => mode !== gameMode,
-                        ).map(toParsedRaidMode),
-                    };
-                }),
-            );
-
-            const result = parseQuestLogFiles(fileInputs, quests);
-            const buckets = buildQuestImportBuckets(result);
-            setParsedView({ result, buckets });
-            setCacheNotice(null);
-            setPreWipeIgnoredFileNames(result.preWipeIgnoredFiles ?? []);
-            setPendingSeenFileFingerprints(
-                Array.from(new Set(newFingerprints)).sort((left, right) =>
-                    left.localeCompare(right),
-                ),
-            );
-            setAutoCompleteSelections({
-                ...setAllQuestImportSelections(buckets.pvp, false),
-                ...setAllQuestImportSelections(buckets.pve, false),
-                ...setAllQuestImportSelections(buckets.kord, false),
-            });
-
-            if (result.totals.filesParsed === 0) {
-                setError("No push-notifications log files were found in that selection.");
-            }
-        } catch {
-            setParsedView(null);
-            setAutoCompleteSelections({});
-            setPreWipeIgnoredFileNames([]);
-            setPendingSeenFileFingerprints([]);
-            setError(
-                "The selected logs could not be read. Try choosing the EFT logs folder again.",
-            );
-        } finally {
-            setIsParsing(false);
-        }
-    }
-
-    function handleChooseFolder() {
-        fileInputRef.current?.click();
-    }
-
-    function handleClear() {
-        setParsedView(null);
-        setSelectedFiles([]);
-        setSelectedFileNames([]);
-        setAutoCompleteSelections({});
-        setError(null);
-        setImportNotice(null);
-        setCacheNotice(null);
-        setPreWipeIgnoredFileNames([]);
-        setPendingSeenFileFingerprints([]);
-        setShowInfo(false);
-        setStep("select");
-        setReviewMode(null);
-        setDidConfirmImport(false);
-        setImportSummary(null);
-        setAllowedSensitiveBackfillQuestIds([]);
-        setDeniedSensitiveBackfillQuestIds([]);
-    }
-
-    function handleClearCache() {
-        if (typeof window !== "undefined") {
-            window.localStorage.removeItem(QUEST_LOG_IMPORT_SEEN_FILES_KEY);
-        }
-        setCacheNotice(null);
-    }
-
-    function handleIgnoreCacheForSelectedFiles() {
-        if (selectedFiles.length === 0) {
-            return;
-        }
-
-        setCacheNotice(null);
-        void parseSelectedFiles(selectedFiles, { ignoreSeenFiles: true });
-    }
-
-    function handleToggleAutoComplete(mode: ImportGameMode, questId: string) {
-        setAllowedSensitiveBackfillQuestIds([]);
-        setDeniedSensitiveBackfillQuestIds([]);
-        const key = getSelectionKey(mode, questId);
-        setAutoCompleteSelections((current) => ({
-            ...current,
-            [key]: !current[key],
-        }));
-    }
-
-    function handleSetAllForMode(mode: ImportGameMode, rows: QuestImportRow[], nextValue: boolean) {
-        setAllowedSensitiveBackfillQuestIds([]);
-        setDeniedSensitiveBackfillQuestIds([]);
-        const nextSectionSelections = setAllQuestImportSelections(rows, nextValue);
-        setAutoCompleteSelections((current) => {
-            const next = { ...current };
-            for (const [questId, value] of Object.entries(nextSectionSelections)) {
-                next[getSelectionKey(mode, questId)] = value;
-            }
-            return next;
-        });
-    }
-
-    function handleReviewMode(mode: ImportGameMode) {
-        const rows = parsedView ? getModeRows(parsedView.buckets, mode) : [];
-        if (rows.length === 0) {
-            setImportNotice(`No ${mode} quests are available to import.`);
-            return;
-        }
-
-        setImportNotice(null);
-        setReviewMode(mode);
-        setDidConfirmImport(false);
-        setImportSummary(null);
-        setStep("review");
-    }
-
-    function handleImportMode(mode: ImportGameMode) {
-        const rows = parsedView ? getModeRows(parsedView.buckets, mode) : [];
-        if (rows.length === 0) {
-            setImportNotice(`No ${mode} quests are available to import.`);
-            return;
-        }
-
-        const state = useUserStore.getState();
-        const targetProfile = state.profiles[mode];
-        const result = applyQuestImportSelection({
-            mode,
-            rows,
-            autoCompleteSelections: Object.fromEntries(
-                rows.map((row) => [
-                    row.questId,
-                    autoCompleteSelections[getSelectionKey(mode, row.questId)] ?? false,
-                ]),
-            ),
-            completedQuests: targetProfile.completedQuests,
-            questsWithItems: targetProfile.questsWithItems,
-            questsById,
-            allowedSensitiveBackfillQuestIds,
-            deniedSensitiveBackfillQuestIds,
-        });
-
-        if (result.blockedSensitiveQuestIds.length > 0) {
-            setImportNotice("Sensitive prerequisite backfill must be allowed before importing.");
-            return;
-        }
-
-        if (state.gameMode !== result.nextGameMode) {
-            state.setGameMode(result.nextGameMode);
-        }
-        const targetState = useUserStore.getState();
-        const completedQuestIds = Object.keys(result.nextCompletedQuests).filter(
-            (questId) => result.nextCompletedQuests[questId] && !targetState.completedQuests[questId],
-        );
-        const uncompletedQuestIds = Object.keys(targetState.completedQuests).filter(
-            (questId) => targetState.completedQuests[questId] && !result.nextCompletedQuests[questId],
-        );
-        targetState.applyQuestCompletionChange({
-            complete: completedQuestIds,
-            uncomplete: uncompletedQuestIds,
-        });
-        useUserStore.getState().applyProfilePatch({
-            questsWithItems: result.nextQuestsWithItems,
-        });
-        router.refresh();
-
-        if (ENABLE_QUEST_LOG_FILE_DEDUPE && pendingSeenFileFingerprints.length > 0) {
-            const processedFiles = readQuestLogProcessedFileModes();
-            for (const fingerprint of pendingSeenFileFingerprints) {
-                const processedModes = processedFiles.get(fingerprint) ?? new Set<ImportGameMode>();
-                processedModes.add(mode);
-                processedFiles.set(fingerprint, processedModes);
-            }
-            writeQuestLogProcessedFileModes(processedFiles);
-            setPendingSeenFileFingerprints([]);
-        }
-
-        const prerequisiteCount = result.prerequisiteQuestIds.length;
-        setDidConfirmImport(true);
-        setImportSummary({
-            mode,
-            importedCount: result.importedQuestIds.length,
-            prerequisiteCount,
-        });
-        setImportNotice(
-            prerequisiteCount > 0
-                ? `Imported ${result.importedQuestIds.length} ${mode} quests and auto-completed ${prerequisiteCount} prerequisite quests.`
-                : `Imported ${result.importedQuestIds.length} ${mode} quests.`,
-        );
-    }
-
+    const controller = useQuestLogImportController({
+        quests,
+        questsById,
+        gameMode,
+        profiles,
+        availableQuestIdsByMode,
+    });
+    const { state, modeModels, reviewModel, fileInputRef, directoryInputProps, commands } = controller;
+    const {
+        parsedView,
+        selectedFileNames,
+        error,
+        showInfo,
+        importNotice,
+        cacheNotice,
+        preWipeIgnoredFileNames,
+        autoCompleteSelections,
+        reviewMode,
+        importSummary,
+        allowedSensitiveBackfillQuestIds,
+        deniedSensitiveBackfillQuestIds,
+    } = state;
+    const isParsing = state.status === "parsing";
+    const didConfirmImport = state.status === "success";
+    const step = state.status === "review" || state.status === "applying" || state.status === "success" ? "review" : "select";
     const hasResults = !!parsedView;
     const hasPreWipeIgnoredFiles = preWipeIgnoredFileNames.length > 0;
-    const filteredPvpRows = parsedView
-        ? filterIncompleteQuestImportRows({
-              rows: parsedView.buckets.pvp,
-              completedQuests: profiles.PVP.completedQuests,
-              availableQuestIds: availableQuestIdsByMode.PVP,
-          })
-        : [];
-    const filteredPveRows = parsedView
-        ? filterIncompleteQuestImportRows({
-              rows: parsedView.buckets.pve,
-              completedQuests: profiles.PVE.completedQuests,
-              availableQuestIds: availableQuestIdsByMode.PVE,
-          })
-        : [];
-    const filteredKordRows = parsedView
-        ? filterIncompleteQuestImportRows({
-              rows: parsedView.buckets.kord,
-              completedQuests: profiles.KORD.completedQuests,
-              availableQuestIds: availableQuestIdsByMode.KORD,
-          })
-        : [];
-    const hasAnyImportableRows =
-        filteredPvpRows.length > 0 || filteredPveRows.length > 0 || filteredKordRows.length > 0;
-    const reviewRows =
-        reviewMode === "PVP"
-            ? filteredPvpRows
-            : reviewMode === "PVE"
-              ? filteredPveRows
-              : reviewMode === "KORD"
-                ? filteredKordRows
-                : [];
-    const reviewPreview =
-        reviewMode && parsedView
-            ? applyQuestImportSelection({
-                  mode: reviewMode,
-                  rows: reviewRows,
-                  autoCompleteSelections: Object.fromEntries(
-                      reviewRows.map((row) => [
-                          row.questId,
-                          autoCompleteSelections[getSelectionKey(reviewMode, row.questId)] ?? false,
-                      ]),
-                  ),
-                  completedQuests: profiles[reviewMode].completedQuests,
-                  questsWithItems: profiles[reviewMode].questsWithItems,
-                  questsById,
-                  allowedSensitiveBackfillQuestIds,
-                  deniedSensitiveBackfillQuestIds,
-              })
-            : null;
-    const reviewImportedRows = reviewRows.filter((row) =>
-        reviewPreview?.importedQuestIds.includes(row.questId),
-    );
-    const reviewPrerequisiteQuests = (reviewPreview?.prerequisiteQuestIds ?? [])
-        .map((questId) => questsById.get(questId))
-        .filter((quest): quest is FullQuest => !!quest);
-    const reviewBlockedSensitiveQuestIds = reviewPreview?.blockedSensitiveQuestIds ?? [];
-    const reviewSensitiveDecisionQuestIds = Array.from(
-        new Set([
-            ...reviewBlockedSensitiveQuestIds,
-            ...allowedSensitiveBackfillQuestIds,
-            ...deniedSensitiveBackfillQuestIds,
-        ]),
-    ).sort((left, right) => left.localeCompare(right));
-    const showSourceSummary =
-        isParsing || step === "review" || hasResults || selectedFileNames.length > 0;
+    const filteredPvpRows = modeModels.find((model) => model.mode === "PVP")?.rows ?? [];
+    const filteredPveRows = modeModels.find((model) => model.mode === "PVE")?.rows ?? [];
+    const filteredKordRows = modeModels.find((model) => model.mode === "KORD")?.rows ?? [];
+    const hasAnyImportableRows = modeModels.some((model) => model.rows.length > 0);
+    const reviewPreview = reviewModel;
+    const reviewImportedRows = reviewModel?.importedRows ?? [];
+    const reviewPrerequisiteQuests = reviewModel?.prerequisiteQuests ?? [];
+    const reviewBlockedSensitiveQuestIds = reviewModel?.blockedSensitiveQuestIds ?? [];
+    const reviewSensitiveDecisionQuestIds = reviewModel?.sensitiveDecisionQuestIds ?? [];
+    const showSourceSummary = isParsing || step === "review" || hasResults || selectedFileNames.length > 0;
     const showSelectFooter = step === "select" && hasResults && hasAnyImportableRows;
     const showReviewFooter = step === "review" && !!reviewMode && !!reviewPreview;
     const canClearSelection = isParsing || hasResults || selectedFileNames.length > 0;
-    const showSuccessBanner = step === "review" && didConfirmImport;
+    const showSuccessBanner = didConfirmImport;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -539,7 +165,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                     <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                                         <button
                                             type="button"
-                                            onClick={handleChooseFolder}
+                                            onClick={commands.chooseFolder}
                                             aria-controls="quest-log-folder-upload"
                                             className={cn(
                                                 "inline-flex items-center gap-2 rounded-sm border px-3 py-2 text-sm transition-colors",
@@ -555,7 +181,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={handleClear}
+                                            onClick={commands.clear}
                                             disabled={!canClearSelection}
                                             aria-label="Clear selected folder"
                                             className="inline-flex size-10 items-center justify-center rounded-sm border border-white/10 bg-white/5 text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
@@ -619,7 +245,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         </p>
                                         <button
                                             type="button"
-                                            onClick={handleChooseFolder}
+                                            onClick={commands.chooseFolder}
                                             className="rounded-sm border border-tarkov-green/30 bg-tarkov-green/10 px-3 py-2 text-sm font-semibold text-tarkov-green transition-colors hover:border-tarkov-green/60"
                                         >
                                             Choose Logs Folder
@@ -631,14 +257,14 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                             <div>{cacheNotice}</div>
                                             <button
                                                 type="button"
-                                                onClick={handleClearCache}
+                                                onClick={commands.clearCache}
                                                 className="text-xs text-amber-200 underline underline-offset-2 transition-colors hover:text-white"
                                             >
                                                 Clear cache
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={handleIgnoreCacheForSelectedFiles}
+                                                onClick={commands.ignoreCache}
                                                 className="rounded-sm border border-amber-300/30 bg-amber-300/10 px-2 py-1 text-xs font-semibold text-amber-100 transition-colors hover:border-amber-200/60 hover:bg-amber-300/20 hover:text-white"
                                             >
                                                 Ignore for these files
@@ -654,14 +280,14 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                     <div>{cacheNotice}</div>
                                     <button
                                         type="button"
-                                        onClick={handleClearCache}
+                                        onClick={commands.clearCache}
                                         className="text-xs text-amber-200 underline underline-offset-2 transition-colors hover:text-white"
                                     >
                                         Clear cache
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={handleIgnoreCacheForSelectedFiles}
+                                        onClick={commands.ignoreCache}
                                         className="rounded-sm border border-amber-300/30 bg-amber-300/10 px-2 py-1 text-xs font-semibold text-amber-100 transition-colors hover:border-amber-200/60 hover:bg-amber-300/20 hover:text-white"
                                     >
                                         Ignore for these files
@@ -689,12 +315,12 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         rows={filteredPvpRows}
                                         completedQuests={profiles.PVP.completedQuests}
                                         autoCompleteSelections={autoCompleteSelections}
-                                        onToggleAutoComplete={handleToggleAutoComplete}
+                                        onToggleAutoComplete={commands.toggleAutoComplete}
                                         onEnableAll={() =>
-                                            handleSetAllForMode("PVP", filteredPvpRows, true)
+                                            commands.setAllForMode("PVP", filteredPvpRows, true)
                                         }
                                         onDisableAll={() =>
-                                            handleSetAllForMode("PVP", filteredPvpRows, false)
+                                            commands.setAllForMode("PVP", filteredPvpRows, false)
                                         }
                                     />
                                 )}
@@ -706,12 +332,12 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         rows={filteredPveRows}
                                         completedQuests={profiles.PVE.completedQuests}
                                         autoCompleteSelections={autoCompleteSelections}
-                                        onToggleAutoComplete={handleToggleAutoComplete}
+                                        onToggleAutoComplete={commands.toggleAutoComplete}
                                         onEnableAll={() =>
-                                            handleSetAllForMode("PVE", filteredPveRows, true)
+                                            commands.setAllForMode("PVE", filteredPveRows, true)
                                         }
                                         onDisableAll={() =>
-                                            handleSetAllForMode("PVE", filteredPveRows, false)
+                                            commands.setAllForMode("PVE", filteredPveRows, false)
                                         }
                                     />
                                 )}
@@ -723,12 +349,12 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         rows={filteredKordRows}
                                         completedQuests={profiles.KORD.completedQuests}
                                         autoCompleteSelections={autoCompleteSelections}
-                                        onToggleAutoComplete={handleToggleAutoComplete}
+                                        onToggleAutoComplete={commands.toggleAutoComplete}
                                         onEnableAll={() =>
-                                            handleSetAllForMode("KORD", filteredKordRows, true)
+                                            commands.setAllForMode("KORD", filteredKordRows, true)
                                         }
                                         onDisableAll={() =>
-                                            handleSetAllForMode("KORD", filteredKordRows, false)
+                                            commands.setAllForMode("KORD", filteredKordRows, false)
                                         }
                                     />
                                 )}
@@ -754,26 +380,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         getQuestName={(questId) =>
                                             getSensitiveBackfillQuestName(questId, questsById)
                                         }
-                                        onAllowSensitiveBackfill={(questId) => {
-                                            setAllowedSensitiveBackfillQuestIds((current) =>
-                                                Array.from(new Set([...current, questId])),
-                                            );
-                                            setDeniedSensitiveBackfillQuestIds((current) =>
-                                                current.filter(
-                                                    (deniedQuestId) => deniedQuestId !== questId,
-                                                ),
-                                            );
-                                        }}
-                                        onDenySensitiveBackfill={(questId) => {
-                                            setAllowedSensitiveBackfillQuestIds((current) =>
-                                                current.filter(
-                                                    (allowedQuestId) => allowedQuestId !== questId,
-                                                ),
-                                            );
-                                            setDeniedSensitiveBackfillQuestIds((current) =>
-                                                Array.from(new Set([...current, questId])),
-                                            );
-                                        }}
+                                        onAllowSensitiveBackfill={commands.allowSensitiveQuest}
+                                        onDenySensitiveBackfill={commands.denySensitiveQuest}
                                     />
 
                                     {!didConfirmImport && showInfo && (
@@ -792,7 +400,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                                     <button
                                         type="button"
-                                        onClick={handleClear}
+                                        onClick={commands.clear}
                                         className="inline-flex items-center gap-2 rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
                                     >
                                         <ArrowLeft size={14} />
@@ -807,7 +415,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                             {filteredPvpRows.length > 0 && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleReviewMode("PVP")}
+                                                    onClick={() => commands.reviewMode("PVP")}
                                                     className="rounded-sm border border-white/10 bg-gradient-to-b from-[#3b1c1f] to-[#241315] px-3 py-2 text-sm font-semibold text-gray-100 transition-colors hover:border-white/20 hover:from-[#472124] hover:to-[#2d1719] hover:text-white"
                                                 >
                                                     Import PVP Quests
@@ -816,7 +424,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                             {filteredPveRows.length > 0 && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleReviewMode("PVE")}
+                                                    onClick={() => commands.reviewMode("PVE")}
                                                     className="rounded-sm border border-white/10 bg-gradient-to-b from-[#142737] to-[#0f1b28] px-3 py-2 text-sm font-semibold text-gray-100 transition-colors hover:border-white/20 hover:from-[#1a3145] hover:to-[#122231] hover:text-white"
                                                 >
                                                     Import PVE Quests
@@ -825,7 +433,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                             {filteredKordRows.length > 0 && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleReviewMode("KORD")}
+                                                    onClick={() => commands.reviewMode("KORD")}
                                                     className="rounded-sm border border-white/10 bg-gradient-to-b from-[#34301a] to-[#211f13] px-3 py-2 text-sm font-semibold text-gray-100 transition-colors hover:border-white/20 hover:from-[#403b20] hover:to-[#292617] hover:text-white"
                                                 >
                                                     Import KORD Seasonal Quests
@@ -843,13 +451,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                     ) : (
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                setStep("select");
-                                                setDidConfirmImport(false);
-                                                setImportSummary(null);
-                                                setAllowedSensitiveBackfillQuestIds([]);
-                                                setDeniedSensitiveBackfillQuestIds([]);
-                                            }}
+                                            onClick={commands.cancelReview}
                                             className="inline-flex items-center gap-2 rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
                                         >
                                             <ArrowLeft size={14} />
@@ -861,7 +463,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         {!didConfirmImport && (
                                             <button
                                                 type="button"
-                                                onClick={() => setShowInfo((current) => !current)}
+                                                onClick={commands.toggleInfo}
                                                 className="inline-flex items-center gap-1 rounded-sm border border-white/10 bg-white/5 px-2.5 py-2 text-xs text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
                                             >
                                                 <Info size={13} />
@@ -884,7 +486,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         ) : (
                                             <button
                                                 type="button"
-                                                onClick={() => handleImportMode(reviewMode)}
+                                                onClick={() => commands.applyImport(reviewMode)}
                                                 disabled={reviewBlockedSensitiveQuestIds.length > 0}
                                                 className={cn(
                                                     "rounded-sm px-3 py-2 text-sm font-semibold transition-colors",
@@ -1248,7 +850,7 @@ function InfoPanel({
     unknownModeGroups,
 }: {
     result: QuestLogParseResult;
-    unknownModeGroups: ReturnType<typeof buildQuestImportBuckets>["unknownMode"];
+    unknownModeGroups: QuestImportBuckets["unknownMode"];
 }) {
     return (
         <section className="rounded-lg border border-white/10 bg-black/20">
@@ -1433,16 +1035,6 @@ function RawEventsSection({ events }: { events: ParsedQuestEvent[] }) {
             )}
         </section>
     );
-}
-
-function getSelectionKey(mode: ImportGameMode, questId: string) {
-    return `${mode}:${questId}`;
-}
-
-function getModeRows(buckets: QuestImportBuckets, mode: ImportGameMode) {
-    if (mode === "PVP") return buckets.pvp;
-    if (mode === "PVE") return buckets.pve;
-    return buckets.kord;
 }
 
 function formatTimestamp(timestamp: Date | null) {

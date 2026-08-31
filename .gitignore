@@ -41,8 +41,9 @@ yarn-error.log*
 next-env.d.ts
 docs/notes.txt
 
-# codex
+# codex and my random notes and shit
 .codex-analysis/
+plans/
 
 # Large data sources for comparisons
 src/lib/data/quests-full.json

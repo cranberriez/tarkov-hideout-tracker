@@ -9,30 +9,24 @@ import {
     type QuestVisibilityMode,
 } from "@/lib/stores/useUserStore";
 import type { FullQuest } from "@/types";
-import { hasFirGiveItemObjectives, hasGiveItemObjectives } from "@/lib/utils/quest-item-index";
-import { compareQuestTradersByOrder } from "@/lib/cfg/questTraderOrder";
+import type { QuestDataIndex } from "./quest-data-index";
 import {
     getSyncCandidatesForTrader as getSyncCandidatesForTraderFromProfile,
-    isQuestAvailableForProfile,
     matchesFactionVisibility,
     syncTraderProgress,
     type FactionFilter,
     type QuestSyncProfile,
     type QuestSyncResult,
 } from "./quest-sync";
-import {
-    buildQuestMapGroups,
-    getQuestMapGroupKey,
-    questMatchesSelectedMapGroups,
-} from "./quest-map-groups";
+import { getQuestMapGroupKey } from "./quest-map-groups";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { collectCompleteCascade, collectUncompleteCascade } from "./quest-cascade";
 import {
-    buildQuestFailureMap,
     getAutoFailedQuestIds,
     isQuestDisabledByCompletedFailedRequirement,
     questCanFail,
 } from "@/lib/utils/quest-failures";
+import { selectLegacyQuests } from "./quest-legacy-selector";
 
 interface LastQuestSyncAction extends QuestSyncResult {
     traderName: string;
@@ -127,23 +121,6 @@ export function useQuestsContext() {
     return ctx;
 }
 
-function getTransitivePrereqs(rootIds: Set<string>, questsById: Map<string, FullQuest>): Set<string> {
-    const result = new Set(rootIds);
-    const queue = [...rootIds];
-    while (queue.length > 0) {
-        const id = queue.pop()!;
-        const quest = questsById.get(id);
-        if (!quest) continue;
-        for (const req of quest.taskRequirements) {
-            if (!result.has(req.task.id)) {
-                result.add(req.task.id);
-                queue.push(req.task.id);
-            }
-        }
-    }
-    return result;
-}
-
 function buildSyncProfile(state: ReturnType<typeof useUserStore.getState>): QuestSyncProfile {
     return {
         playerLevel: state.playerLevel,
@@ -169,11 +146,13 @@ function restoreRecordValues(
 
 export function QuestsProvider({
     quests,
+    questDataIndex,
     children,
     onItemClick,
     onQuestClick,
 }: {
     quests: FullQuest[];
+    questDataIndex: QuestDataIndex;
     children: ReactNode;
     onItemClick?: (itemId: string) => void;
     onQuestClick?: (questId: string) => void;
@@ -286,153 +265,67 @@ export function QuestsProvider({
         [completedQuests, failedQuests, faction, playerLevel, prestigeLevel, questTraderLoyaltyLevels],
     );
 
-    const questsById = useMemo(() => new Map(quests.map((q) => [q.id, q])), [quests]);
-
-    const kappaQuestIds = useMemo(
-        () => getTransitivePrereqs(new Set(quests.filter((q) => q.kappaRequired).map((q) => q.id)), questsById),
-        [quests, questsById],
-    );
-
-    const lightkeeperQuestIds = useMemo(
-        () => getTransitivePrereqs(new Set(quests.filter((q) => q.lightkeeperRequired).map((q) => q.id)), questsById),
-        [quests, questsById],
-    );
-
-    const leadsToByQuestId = useMemo(() => {
-        const map = new Map<string, string[]>();
-        for (const quest of quests) {
-            for (const req of quest.taskRequirements) {
-                const arr = map.get(req.task.id) ?? [];
-                arr.push(quest.id);
-                map.set(req.task.id, arr);
-            }
-        }
-        return map;
-    }, [quests]);
-
-    const failureMap = useMemo(() => buildQuestFailureMap(quests), [quests]);
-
-    const activeDepthQuestIds = useMemo(() => {
-        if (visibilityMode !== "activeDepth") return null;
-
-        const maxDepth = Math.max(0, Math.floor(activeDepth));
-        const result = new Set<string>();
-        const queue: { questId: string; depth: number }[] = [];
-
-        for (const quest of quests) {
-            if (!isQuestAvailableForProfile(quest, syncProfile, questsById)) continue;
-            result.add(quest.id);
-            queue.push({ questId: quest.id, depth: 0 });
-        }
-
-        while (queue.length > 0) {
-            const current = queue.shift()!;
-            if (current.depth >= maxDepth) continue;
-
-            for (const nextQuestId of leadsToByQuestId.get(current.questId) ?? []) {
-                if (result.has(nextQuestId)) continue;
-                result.add(nextQuestId);
-                queue.push({ questId: nextQuestId, depth: current.depth + 1 });
-            }
-        }
-
-        return result;
-    }, [activeDepth, leadsToByQuestId, quests, questsById, syncProfile, visibilityMode]);
+    const { questsById, leadsToByQuestId, failureMap, traders } = questDataIndex;
 
     const isQuestDisabled = (questId: string) => {
         const quest = questsById.get(questId);
         return quest ? isQuestDisabledByCompletedFailedRequirement(quest, completedQuests) : false;
     };
 
-    const traders = useMemo(() => {
-        const map = new Map<string, FullQuest["trader"]>();
-        for (const q of quests) {
-            if (!map.has(q.trader.id)) map.set(q.trader.id, q.trader);
-        }
-        return [...map.values()].sort((a, b) => compareQuestTradersByOrder(a.name, b.name));
-    }, [quests]);
-
     const allMaps = useMemo(
-        () => buildQuestMapGroups(quests).map((group) => [group.key, group.name] as [string, string]),
-        [quests],
+        () => questDataIndex.maps.map((group) => [group.key, group.name] as [string, string]),
+        [questDataIndex.maps],
     );
 
-    const filteredQuests = useMemo(() => {
-        return quests.filter((quest) => {
-            const normalizedSearch = searchQuery.trim().toLowerCase();
-            if (
-                normalizedSearch &&
-                !quest.name.toLowerCase().includes(normalizedSearch) &&
-                !quest.trader.name.toLowerCase().includes(normalizedSearch) &&
-                !(quest.map?.name.toLowerCase().includes(normalizedSearch) ?? false)
-            ) {
-                return false;
-            }
-
-            const resolved =
-                completedQuests[quest.id] ||
-                failedQuests[quest.id] ||
-                isQuestDisabledByCompletedFailedRequirement(quest, completedQuests);
-
-            if (hideCompleted && resolved) return false;
-            if (!showIgnored && ignoredQuests[quest.id]) return false;
-            if (
-                visibilityMode === "hideLocked" &&
-                !isQuestAvailableForProfile(quest, syncProfile, questsById)
-            )
-                return false;
-            if (visibilityMode === "activeDepth" && !activeDepthQuestIds?.has(quest.id)) return false;
-            if (showPinnedOnly && !pinnedQuests[quest.id]) return false;
-            if (showHandInOnly && !hasGiveItemObjectives(quest)) return false;
-            if (showFirHandInOnly && !hasFirGiveItemObjectives(quest)) return false;
-            if (selectedTraders.size > 0 && !selectedTraders.has(quest.trader.id)) return false;
-            if (!matchesFactionVisibility(quest.factionName, faction)) return false;
-
-            if (showKappa || showLightkeeper) {
-                if (!((showKappa && kappaQuestIds.has(quest.id)) || (showLightkeeper && lightkeeperQuestIds.has(quest.id))))
-                    return false;
-            }
-
-            if (!questMatchesSelectedMapGroups(quest, selectedMaps)) {
-                return false;
-            }
-
-            return true;
-        });
-    }, [
-        quests,
-        searchQuery,
-        hideCompleted,
-        completedQuests,
-        failedQuests,
-        showIgnored,
-        ignoredQuests,
-        visibilityMode,
-        activeDepthQuestIds,
+    const legacySelection = useMemo(() => selectLegacyQuests(
+        questDataIndex,
+        {
+            ...syncProfile,
+            ignoredQuests,
+            pinnedQuests,
+        },
+        {
+            searchQuery,
+            selectedTraderIds: selectedTraders,
+            selectedMapKeys: selectedMaps,
+            showKappa,
+            showLightkeeper,
+            hideCompleted,
+            visibilityMode,
+            activeDepth,
+            showHandInOnly,
+            showFirHandInOnly,
+            showPinnedOnly,
+            showIgnored,
+        },
+    ), [
+        questDataIndex,
         syncProfile,
-        questsById,
-        showPinnedOnly,
+        ignoredQuests,
         pinnedQuests,
-        showHandInOnly,
-        showFirHandInOnly,
+        searchQuery,
         selectedTraders,
-        faction,
+        selectedMaps,
         showKappa,
         showLightkeeper,
+        hideCompleted,
+        visibilityMode,
+        activeDepth,
+        showHandInOnly,
+        showFirHandInOnly,
+        showPinnedOnly,
+        showIgnored,
+    ]);
+    const filteredQuests = useMemo(
+        () => legacySelection.filteredQuestIds.flatMap((questId) => questsById.get(questId) ?? []),
+        [legacySelection.filteredQuestIds, questsById],
+    );
+    const {
         kappaQuestIds,
         lightkeeperQuestIds,
-        selectedMaps,
-    ]);
-
-    const completedCount = useMemo(
-        () => quests.filter((q) => !q.removed && completedQuests[q.id]).length,
-        [quests, completedQuests],
-    );
-
-    const failedCount = useMemo(
-        () => quests.filter((q) => !q.removed && failedQuests[q.id]).length,
-        [quests, failedQuests],
-    );
+        completedCount,
+        failedCount,
+    } = legacySelection;
 
     const toggleTrader = (id: string) => {
         const next = new Set(questSelectedTraders);
