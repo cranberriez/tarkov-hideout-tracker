@@ -415,10 +415,16 @@ above a consolidated Requirements section; the current normalized quest shape
 supplies `wikiLink` only. The header lists deduplicated locations derived from the
 quest and its objectives. Unrestricted and complete-map sets display as `ANY`;
 sets missing only one or two maps display as `Any Map, EXCEPT (...)`; smaller
-sets list their allowed maps. Quest status sits beside the completion, pin, and
-hide/show actions; XP and faction are omitted from the header metadata. Kappa-required and
-Lightkeeper-required markers remain in the header metadata; the duplicate player-level
-badge is omitted because level remains visible in Requirements. Requirements, Unlocks,
+sets list their allowed maps. The issuing trader's LL or Essential label sits
+beside the trader name. Quest status sits beside explicitly labeled completion,
+failure, pin, hide/show, quest-line, and wiki actions; the tighter action padding
+keeps that row compact. XP and faction are omitted from the header metadata.
+Prestige, Kappa-required, and Lightkeeper-required metadata is rendered as plain
+text instead of badges; the duplicate player-level badge is omitted because level
+remains visible in Requirements. Scrolling the left detail column condenses the
+header to the quest name and actions, adds 64px of scroll compensation above the
+detail content, and selecting another quest restores the expanded header.
+Requirements, Unlocks,
 and Failure Conditions appear together in a responsive row before Objectives. Empty groups
 are omitted, and the visible groups expand across one, two, or three columns without divider
 lines. Requirements use a compact vertical list with status symbols and text. The list includes player level,
@@ -478,9 +484,16 @@ short raid-oriented description, while the full upstream wording remains availab
 as hover text.
 
 Quest detail panes reuse the shared `MapViewer` for objectives with precise
-positions. On wide layouts the quest header spans the full pane, while the section
-beneath it splits into independently scrolling details and a separate,
-always-visible right map column. A numbered, color-coded cue
+positions. At 1700px and wider the quest header spans the full pane, while the
+section beneath it splits into independently scrolling details and a resizable
+right map column. The highlighted divider accepts pointer dragging and keyboard
+left/right arrows. A square caret in the map top bar hides the map without losing
+the selected map or width; its matching restore control appears at the top-right
+of the details column, in the same compact 44px row used by the single-line
+multiple-choice warning. Below 1700px, the details use the full pane and the map
+starts hidden. The header's **Show map** action, or an objective's **Show on map**
+action, replaces the detail area with the map; its red close action restores the
+details. A numbered, color-coded cue
 beside each mapped objective matches its map markers. Objectives that share the
 same rounded world position also share one marker, with their descriptions and IDs
 combined. All locations for one objective reuse that objective group's symbol;

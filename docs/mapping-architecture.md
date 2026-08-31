@@ -52,10 +52,13 @@ are represented by one marker; their objective descriptions, objective IDs, and
 distinct outlines are merged into that marker.
 
 Quest details render only objectives with precise positioned locations. Mapped
-objectives receive a numbered, color-coded cue that matches their markers. The
-detail viewer stays in a separate right-hand column, shows every positioned
-objective for one map at a time, provides compact tabs when a quest spans maps,
-and refits to an objective when the user chooses **Show on map**. Coincident
+objectives receive a numbered, color-coded cue that matches their markers. At
+1700px and wider the detail viewer stays in a resizable, collapsible right-hand
+column. Its restore control moves into the top-right of the details column while
+the map is hidden. Below that breakpoint it starts hidden and replaces the textual
+detail area when opened from the header's **Show map** action or **Show on map**. It shows every
+positioned objective for one map at a time, provides compact tabs when a quest
+spans maps, and refits to an objective when the user chooses **Show on map**. Coincident
 positions are collapsed across the whole quest, so several objectives performed
 at the same spot share one marker and tooltip. A symbol belongs to the connected
 objective/location group rather than to an individual point, so every possible
