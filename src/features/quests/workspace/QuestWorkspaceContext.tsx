@@ -106,8 +106,8 @@ function toggleSetValue<T>(current: Set<T>, value: T) {
     return next;
 }
 
-export function QuestWorkspaceProvider({ quests, children }: { quests: FullQuest[]; children: ReactNode }) {
-    const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
+export function QuestWorkspaceProvider({ quests, initialQuestId = null, children }: { quests: FullQuest[]; initialQuestId?: string | null; children: ReactNode }) {
+    const [selectedQuestId, setSelectedQuestId] = useState<string | null>(initialQuestId);
     const [openFilter, setOpenFilter] = useState<QuestFilterSection>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [mode, setMode] = useState<QuestWorkspaceMode>("details");

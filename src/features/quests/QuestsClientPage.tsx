@@ -20,9 +20,10 @@ interface QuestsClientPageProps {
     questRewardIndex: QuestRewardIndexEntry[];
     questAnyOfGroups: QuestAnyOfGroupEntry[];
     questAvailabilityQuests: QuestAvailabilityQuest[];
+    initialQuestId?: string | null;
 }
 
-export function QuestsClientPage({ quests, updatedAt, questItemIndex, questRewardIndex, questAnyOfGroups, questAvailabilityQuests }: QuestsClientPageProps) {
+export function QuestsClientPage({ quests, updatedAt, questItemIndex, questRewardIndex, questAnyOfGroups, questAvailabilityQuests, initialQuestId = null }: QuestsClientPageProps) {
     void updatedAt;
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const { stations, itemById } = useDataContext();
@@ -35,7 +36,7 @@ export function QuestsClientPage({ quests, updatedAt, questItemIndex, questRewar
 
     return (
         <QuestsProvider quests={quests} onItemClick={setSelectedItemId}>
-            <QuestWorkspaceProvider quests={quests}>
+            <QuestWorkspaceProvider quests={quests} initialQuestId={initialQuestId}>
                 <QuestWorkspace quests={quests} />
             </QuestWorkspaceProvider>
             <ItemDetailModal item={selectedItem} isOpen={!!selectedItem} onClose={() => setSelectedItemId(null)} stations={stations ?? []} stationLevels={stationLevels} hiddenStations={hiddenStations} completedRequirements={completedRequirements} questItemIndex={questItemIndex} questRewardIndex={questRewardIndex} questAnyOfGroups={questAnyOfGroups} questAvailabilityQuests={questAvailabilityQuests} />

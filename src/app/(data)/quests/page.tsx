@@ -12,18 +12,31 @@ import {
 } from "@/lib/utils/removed-quests";
 import { applyQuestFactionOverrides } from "@/lib/utils/quest-faction-overrides";
 import { prepareQuestSeriesForGameMode } from "@/lib/utils/quest-series";
+import {
+    DEV_QUEST_FIXTURES,
+    DEV_QUEST_ID,
+    DEV_QUEST_QUERY,
+} from "@/features/quests/dev-quest-fixture";
 
 export const revalidate = false; // Frozen during the Tarkov 1.1 transition
 
-export default async function QuestsPage() {
+interface QuestsPageProps {
+    searchParams: Promise<{ q?: string | string[] }>;
+}
+
+export default async function QuestsPage({ searchParams }: QuestsPageProps) {
+    const queryValue = (await searchParams).q;
+    const query = Array.isArray(queryValue) ? queryValue[0] : queryValue;
+    const showDevQuest = process.env.NODE_ENV === "development" && query === DEV_QUEST_QUERY;
     const gameMode = await getActiveTarkovJsonGameMode();
     const questsResponse = await getCachedFullQuestData(gameMode);
     const normalizedQuests = prepareQuestSeriesForGameMode(
         applyQuestFactionOverrides(questsResponse.data.quests),
         gameMode,
     );
+    const displayQuests = prepareQuestsForDisplay(normalizedQuests, SHOW_REMOVED_QUESTS);
     const quests = orderQuestsByPrerequisites(
-        prepareQuestsForDisplay(normalizedQuests, SHOW_REMOVED_QUESTS),
+        showDevQuest ? [...displayQuests, ...DEV_QUEST_FIXTURES] : displayQuests,
     );
     const progressionQuests = orderQuestsByPrerequisites(
         excludeRemovedQuests(normalizedQuests),
@@ -42,6 +55,7 @@ export default async function QuestsPage() {
                 questRewardIndex={questRewardIndex}
                 questAnyOfGroups={questAnyOfGroups}
                 questAvailabilityQuests={questAvailabilityQuests}
+                initialQuestId={showDevQuest ? DEV_QUEST_ID : null}
             />
         </Suspense>
     );

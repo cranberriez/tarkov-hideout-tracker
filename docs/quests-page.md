@@ -393,6 +393,16 @@ Run this when changing manual sync behavior before `npm run lint` and `npm run b
 
 ## Workspace Quest Details
 
+### Development fixture
+
+In a local development server, `/quests?q=dev-test` injects and opens a synthetic
+quest details fixture. It includes representative requirements, prerequisite and
+unlock relationships, failure and multiple-choice data, standard and
+quest-specific item objectives, several objective types and maps, mapped
+locations, keys, and reward rows. Small supporting fixture quests make the
+relationship links interactive. The fixture is never added outside
+`NODE_ENV=development` and does not change the persisted store schema or keys.
+
 Selecting a quest opens a cohesive tracker detail pane. It presents Tarkov.dev's
 human-readable objective descriptions with larger interactive item rows directly
 under the relevant objective. Matching find and hand-over objectives are placed
