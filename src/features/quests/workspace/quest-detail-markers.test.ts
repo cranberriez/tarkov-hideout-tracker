@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { FullQuest } from "@/types";
+import { buildQuestDetailMapData } from "./quest-details-model";
 import {
     buildQuestDetailMarkers,
     createQuestDetailObjectiveStyles,
@@ -95,6 +96,18 @@ test("omits visited objectives before combining coincident markers", () => {
         getQuestDetailMaps(quest, completedObjectiveIds).map(({ key, locationCount }) => ({ key, locationCount })),
         [{ key: "customs", locationCount: 2 }],
     );
+});
+
+test("retains completed objective maps and styles while omitting their markers", () => {
+    const mapData = buildQuestDetailMapData(quest, new Set(["objective-1", "objective-2", "objective-3"]));
+
+    assert.deepEqual(mapData.maps.map(({ key, locationCount }) => ({ key, locationCount })), [
+        { key: "customs", locationCount: 3 },
+        { key: "woods", locationCount: 1 },
+    ]);
+    assert.equal(mapData.styles.get("objective-1")?.label, "1");
+    assert.deepEqual(mapData.markersByMap.get("customs"), []);
+    assert.deepEqual(mapData.markersByMap.get("woods"), []);
 });
 
 test("prefers daytime Factory when day and night aliases share a location", () => {

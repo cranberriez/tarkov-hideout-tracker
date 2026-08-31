@@ -3,9 +3,8 @@
 import dynamic from "next/dynamic";
 import type { CSSProperties } from "react";
 import { useMemo } from "react";
-import { AlertTriangle, Bug, CheckCircle2, ChevronLeft, ChevronRight, Circle, Eye, EyeOff, ExternalLink, Flag, GitBranch, GripVertical, Map as MapIcon, MapPinned, PackageOpen, Pin, RotateCcw, X, XCircle } from "lucide-react";
+import { AlertTriangle, Bug, CheckCircle2, ChevronLeft, ChevronRight, Circle, Eye, EyeOff, ExternalLink, Flag, GitBranch, GripVertical, Map as MapIcon, PackageOpen, Pin, RotateCcw, X, XCircle } from "lucide-react";
 import { useDataContext } from "@/app/(data)/_dataContext";
-import type { MapOverlayMarker } from "@/features/maps/map-types";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import { formatQuestTraderGate, getQuestTraderGateType } from "@/lib/utils/quest-trader-gates";
@@ -114,7 +113,6 @@ export function QuestDetailsPane() {
         hasHeaderMetadata,
         hasRequirements,
         hasFailureDetails,
-        detailColumnCount,
         leadsTo,
         traderTierCompletionGates,
         unknownOtherRequirements,
@@ -127,7 +125,7 @@ export function QuestDetailsPane() {
         showDebug, setShowDebug, isDesktopMapOpen, setIsDesktopMapOpen,
         isHeaderCondensed, isCompactMapOpen, closeCompactMap,
         mapWidthPercent, setMapWidthPercent, isResizingMap, setIsResizingMap,
-        objectiveFloorNames, handleObjectiveFloorsChange,
+        handleObjectiveFloorsChange,
         hoveredObjectiveId, setHoveredObjectiveId,
         mapSectionRef, detailScrollRef, detailSplitRef,
         detailMaps, selectedDetailMapKey, selectedDetailMap, detailMarkers,
@@ -286,12 +284,8 @@ export function QuestDetailsPane() {
             )}
             <div className="max-w-6xl px-6 py-10 sm:px-9">
                 <section>
-                    {detailColumnCount > 0 && <div className={cn(
-                        "mb-12 grid gap-8",
-                        detailColumnCount === 2 && "md:grid-cols-2",
-                        detailColumnCount === 3 && "md:grid-cols-3",
-                    )}>
-                        {hasRequirements && <section className="min-w-0">
+                    {(hasRequirements || leadsTo.length > 0 || hasFailureDetails) && <div className="mb-12 flex flex-wrap gap-x-10 gap-y-8">
+                        {hasRequirements && <section className="min-w-[16rem] flex-[1_1_18rem]">
                             <SectionLabel>Requirements</SectionLabel>
                             <div className="space-y-2.5 text-sm">
                             {(quest.minPlayerLevel ?? 0) > 0 && (
@@ -363,7 +357,7 @@ export function QuestDetailsPane() {
                             ))}
                             </div>
                         </section>}
-                        {leadsTo.length > 0 && <section className="min-w-0">
+                        {leadsTo.length > 0 && <section className="min-w-[14rem] flex-[1_1_16rem]">
                             <SectionLabel>Unlocks</SectionLabel>
                             <div className="space-y-2.5 text-sm">
                                 {leadsTo.map(({ quest: nextQuest, timing }) => (
@@ -382,7 +376,7 @@ export function QuestDetailsPane() {
                                 ))}
                             </div>
                         </section>}
-                        {hasFailureDetails && <section className="min-w-0">
+                        {hasFailureDetails && <section className="min-w-[16rem] flex-[1_1_18rem]">
                             <SectionLabel>Failure conditions</SectionLabel>
                             <div className="space-y-5">
                                 {(quest.failConditions?.length ?? 0) > 0 && <div className="space-y-2">{quest.failConditions?.map((condition) => {
@@ -390,7 +384,7 @@ export function QuestDetailsPane() {
                                         ? questsById.get(condition.task.id)
                                         : null;
                                     return (
-                                        <div key={condition.id} className="border border-red-400/12 bg-red-400/5 px-3 py-2 text-xs text-red-200/80">
+                                        <div key={condition.id} className="rounded-md bg-red-400/[0.07] px-3 py-2 text-xs text-red-200/80">
                                             {referencedQuest ? (
                                                 <button
                                                     type="button"
@@ -417,19 +411,16 @@ export function QuestDetailsPane() {
                                 const isObjectiveCompleted = completedObjectiveIds.has(objective.id);
                                 const positionedObjectiveMaps = getPositionedObjectiveMaps(objective);
                                 const canCompleteObjective = quest.objectives.length > 1 && positionedObjectiveMaps.length > 0;
-                                const objectiveMaps = isObjectiveCompleted ? [] : positionedObjectiveMaps;
-                                const cueMapKey = objectiveMaps.some((map) => map.key === selectedDetailMapKey)
+                                const cueMapKey = positionedObjectiveMaps.some((map) => map.key === selectedDetailMapKey)
                                     ? selectedDetailMapKey
-                                    : objectiveMaps[0]?.key;
+                                    : positionedObjectiveMaps[0]?.key;
                                 const objectiveMarkers = cueMapKey
                                     ? (questMapData.markersByMap.get(cueMapKey) ?? []).filter((marker) =>
                                           marker.objectiveIds?.includes(objective.id),
                                       )
                                     : [];
-                                const objectiveMarkerCues = [...new Map<string, MapOverlayMarker>(
-                                    objectiveMarkers.map((marker) => [`${marker.label}:${marker.color}`, marker]),
-                                ).values()];
-                                const positionedLocationCount = objectiveMaps.reduce(
+                                const objectiveMarkerStyle = questMapData.styles.get(objective.id);
+                                const positionedLocationCount = positionedObjectiveMaps.reduce(
                                     (count, map) => count + map.locationCount,
                                     0,
                                 );
@@ -438,59 +429,57 @@ export function QuestDetailsPane() {
                                         ? "Multiple spawns"
                                         : "Multiple locations"
                                     : null;
-                                const floorNames = objectiveFloorNames.get(objective.id) ?? [];
                                 const isFocused = focusedObjectiveId === objective.id;
                                 return (
                                     <div
                                         key={objective.id}
-                                        onMouseEnter={() => { if (objectiveMaps.length > 0) setHoveredObjectiveId(objective.id); }}
+                                        onMouseEnter={() => { if (!isObjectiveCompleted && objectiveMarkers.length > 0) setHoveredObjectiveId(objective.id); }}
                                         onMouseLeave={() => setHoveredObjectiveId(null)}
                                         className={cn(
-                                            objectiveMaps.length > 0 && "border-l-2 bg-white/[0.015] py-3 pl-4 pr-3",
-                                            isFocused && "bg-white/[0.045]",
+                                            "rounded-md bg-white/[0.035] p-3",
+                                            isFocused && "bg-white/[0.065]",
                                         )}
-                                        style={objectiveMaps.length > 0 ? { borderLeftColor: objectiveMarkers[0]?.color } : undefined}
                                     >
-                                        {objectiveMaps.length > 0 && (
-                                            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                                                <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
-                                                    <span className="flex -space-x-1">
-                                                        {objectiveMarkerCues.map((marker) => (
-                                                            <span
-                                                                key={marker.id}
-                                                                className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border bg-black/90 px-1 font-mono text-[10px]"
-                                                                style={{ color: marker.color, borderColor: marker.color }}
+                                        {positionedObjectiveMaps.length > 0 && (
+                                            <div className="mb-3 flex w-full flex-wrap items-center gap-x-3 gap-y-2">
+                                                    {objectiveMarkerStyle && <span
+                                                        className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-black/90 px-1 font-mono text-[10px]"
+                                                        style={{ color: objectiveMarkerStyle.color, boxShadow: `inset 0 0 0 1px ${objectiveMarkerStyle.color}` }}
+                                                    >
+                                                        {objectiveMarkerStyle.label}
+                                                    </span>}
+                                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                        {positionedObjectiveMaps.map((map) => (
+                                                            <button
+                                                                type="button"
+                                                                key={map.key}
+                                                                onClick={() => showObjectiveOnMap(map.key, objective.id)}
+                                                                className="inline-flex items-center gap-1.5 rounded bg-black/30 px-2 py-1 text-[10px] font-medium text-gray-400 transition-colors hover:bg-black/45 hover:text-tarkov-green"
                                                             >
-                                                                {marker.label}
-                                                            </span>
+                                                                <MapIcon size={11} />
+                                                                Show on {map.name}
+                                                                {map.locationCount > 1 && <span className="text-gray-600">×{map.locationCount}</span>}
+                                                            </button>
                                                         ))}
-                                                    </span>
-                                                    Mapped objective
-                                                    {floorNames.map((floorName) => (
-                                                        <span key={floorName} className="border border-sky-300/20 bg-sky-300/8 px-1.5 py-0.5 text-[9px] tracking-[0.14em] text-sky-200/80">
-                                                            {floorName}
-                                                        </span>
-                                                    ))}
-                                                    {multipleLocationLabel && (
-                                                        <span className="border border-amber-300/20 bg-amber-300/8 px-1.5 py-0.5 text-[9px] tracking-[0.14em] text-amber-200/80">
-                                                            {multipleLocationLabel}
-                                                        </span>
-                                                    )}
-                                                </span>
-                                                <div className="flex flex-wrap gap-1.5">
-                                                    {objectiveMaps.map((map) => (
+                                                    </div>
+                                                    {multipleLocationLabel && <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-200/80">{multipleLocationLabel}</span>}
+                                                    {canCompleteObjective && (
                                                         <button
                                                             type="button"
-                                                            key={map.key}
-                                                            onClick={() => showObjectiveOnMap(map.key, objective.id)}
-                                                            className="inline-flex items-center gap-1.5 border border-white/10 bg-black/25 px-2 py-1 text-[10px] font-medium text-gray-400 transition-colors hover:border-tarkov-green/40 hover:text-tarkov-green"
+                                                            aria-pressed={isObjectiveCompleted}
+                                                            aria-label={`${isObjectiveCompleted ? "Undo completion of" : "Complete"} objective: ${objective.description}`}
+                                                            onClick={() => toggleQuestObjectiveCompletion(quest.id, objective.id)}
+                                                            className={cn(
+                                                                "ml-auto inline-flex items-center gap-1.5 rounded px-2 py-1 text-[10px] font-semibold transition-colors",
+                                                                isObjectiveCompleted
+                                                                    ? "bg-tarkov-green/15 text-tarkov-green hover:bg-white/10 hover:text-white"
+                                                                    : "bg-black/30 text-gray-500 hover:bg-black/45 hover:text-tarkov-green",
+                                                            )}
                                                         >
-                                                            <MapPinned size={11} />
-                                                            {objectiveMaps.length > 1 ? `Show on ${map.name}` : "Show on map"}
-                                                            {map.locationCount > 1 && <span className="text-gray-600">· {map.locationCount}</span>}
+                                                            <CheckCircle2 size={12} className="text-tarkov-green" />
+                                                            {isObjectiveCompleted ? "Completed" : "Complete"}
                                                         </button>
-                                                    ))}
-                                                </div>
+                                                    )}
                                             </div>
                                         )}
                                         <ObjectiveRow
@@ -498,10 +487,6 @@ export function QuestDetailsPane() {
                                             onItemClick={onItemClick ?? undefined}
                                             itemDisplay="rows"
                                             showItems={showItems}
-                                            objectiveCompletion={canCompleteObjective ? {
-                                                completed: isObjectiveCompleted,
-                                                onToggle: () => toggleQuestObjectiveCompletion(quest.id, objective.id),
-                                            } : undefined}
                                         />
                                     </div>
                                 );
@@ -511,19 +496,22 @@ export function QuestDetailsPane() {
 
                     {(quest.experience > 0 || (quest.finishItemRewards?.length ?? 0) > 0 || (quest.finishTraderStandingRewards?.length ?? 0) > 0) && <div className="mt-12">
                         <SectionLabel>Rewards</SectionLabel>
-                        <div className="grid gap-2.5 sm:grid-cols-2 text-sm">
-                            {quest.experience > 0 && (
-                                <div className="flex items-center justify-between border border-white/8 bg-black/10 px-3 py-2.5">
-                                    <span className="text-gray-500">Experience</span>
-                                    <span className="font-mono font-semibold text-tarkov-green">{quest.experience.toLocaleString()} XP</span>
-                                </div>
-                            )}
-                            {(quest.finishTraderStandingRewards ?? []).map((reward, index) => (
-                                <div key={`${reward.trader.id}-${index}`} className="flex items-center justify-between border border-white/8 bg-black/10 px-3 py-2.5">
-                                    <span className="text-gray-500">{reward.trader.name} reputation</span>
-                                    <span className={reward.standing >= 0 ? "font-mono font-semibold text-tarkov-green" : "font-mono font-semibold text-red-300"}>{formatStanding(reward.standing)}</span>
-                                </div>
-                            ))}
+                        <div className="space-y-4 text-sm">
+                            <div className="space-y-1.5">
+                                {quest.experience > 0 && (
+                                    <p className="flex flex-wrap items-baseline gap-x-2">
+                                        <span className="text-gray-500">Experience</span>
+                                        <span className="font-mono font-semibold text-tarkov-green">{quest.experience.toLocaleString()} XP</span>
+                                    </p>
+                                )}
+                                {(quest.finishTraderStandingRewards ?? []).map((reward, index) => (
+                                    <p key={`${reward.trader.id}-${index}`} className="flex flex-wrap items-baseline gap-x-2">
+                                        <span className="text-gray-500">{reward.trader.name} reputation</span>
+                                        <span className={reward.standing >= 0 ? "font-mono font-semibold text-tarkov-green" : "font-mono font-semibold text-red-300"}>{formatStanding(reward.standing)}</span>
+                                    </p>
+                                ))}
+                            </div>
+                            {(quest.finishItemRewards?.length ?? 0) > 0 && <div className="flex flex-wrap gap-2.5">
                             {(quest.finishItemRewards ?? []).map((reward, index) => {
                                 const item = itemById[reward.itemId];
                                 const imageLink = item?.iconLink ?? item?.gridImageLink;
@@ -533,16 +521,17 @@ export function QuestDetailsPane() {
                                         type="button"
                                         onClick={() => item && onItemClick?.(item.id)}
                                         disabled={!item || !onItemClick}
-                                        className="flex min-w-0 items-center gap-3 border border-white/8 bg-black/10 px-3 py-2.5 text-left transition-colors enabled:hover:border-tarkov-green/30 enabled:hover:bg-tarkov-green/[0.04] disabled:cursor-default"
+                                        className="flex min-w-[13rem] max-w-xs flex-[1_1_14rem] items-center border border-white/10 bg-black/20 text-left transition-colors enabled:hover:border-tarkov-green/35 enabled:hover:bg-tarkov-green/[0.04] disabled:cursor-default"
                                     >
-                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden bg-white/5">
+                                        <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-white/15 bg-white/5">
                                             {imageLink ? <img src={imageLink} alt="" className="h-8 w-8 object-contain" /> : <PackageOpen size={15} className="text-gray-600" />}
                                         </span>
-                                        <span className="min-w-0 flex-1 truncate text-gray-300">{item?.name ?? "Unknown item"}</span>
-                                        <span className="shrink-0 font-mono font-semibold text-white">×{reward.count.toLocaleString()}</span>
+                                        <span className="min-w-0 flex-1 truncate px-2.5 text-xs text-gray-300">{item?.name ?? "Unknown item"}</span>
+                                        <span className="shrink-0 pr-2.5 font-mono text-xs font-semibold text-white">×{reward.count.toLocaleString()}</span>
                                     </button>
                                 );
                             })}
+                            </div>}
                         </div>
                     </div>}
                 </section>
@@ -724,10 +713,10 @@ function RequirementRow({
     title?: string;
 }) {
     const icon = satisfied === true
-        ? <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-tarkov-green" />
+        ? <CheckCircle2 size={14} className="mt-[3px] shrink-0 text-tarkov-green" />
         : satisfied === false
-          ? <XCircle size={14} className="mt-0.5 shrink-0 text-red-300" />
-          : <Circle size={14} className="mt-0.5 shrink-0 text-gray-600" />;
+          ? <XCircle size={14} className="mt-[3px] shrink-0 text-red-300" />
+          : <Circle size={14} className="mt-[3px] shrink-0 text-gray-600" />;
     return (
         <p title={title} className="flex items-start gap-2">
             {icon}
@@ -777,7 +766,7 @@ function DebugJson({ label, value }: { label: string; value: unknown }) {
 }
 
 function StandingRewards({ label, rewards }: { label: string; rewards: QuestTraderStandingReward[] }) {
-    return <section><SectionLabel>{label}</SectionLabel><div className="space-y-2">{rewards.map((reward, index) => <div key={`${reward.trader.id}-${index}`} className="flex items-center justify-between border border-white/8 px-3 py-2.5 text-sm"><span className="text-gray-400">{reward.trader.name}</span><span className={reward.standing >= 0 ? "text-tarkov-green" : "text-red-300"}>{formatStanding(reward.standing)}</span></div>)}</div></section>;
+    return <section><SectionLabel>{label}</SectionLabel><div className="space-y-1.5 text-sm">{rewards.map((reward, index) => <p key={`${reward.trader.id}-${index}`} className="flex flex-wrap items-baseline gap-x-2"><span className="text-gray-400">{reward.trader.name}</span><span className={reward.standing >= 0 ? "font-mono text-tarkov-green" : "font-mono text-red-300"}>{formatStanding(reward.standing)}</span></p>)}</div></section>;
 }
 
 function formatStanding(value: number) {

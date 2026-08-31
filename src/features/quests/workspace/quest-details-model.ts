@@ -36,7 +36,7 @@ export function buildQuestDetailMapData(
     quest: FullQuest,
     completedObjectiveIds: ReadonlySet<string>,
 ): QuestDetailMapData {
-    const maps = getQuestDetailMaps(quest, completedObjectiveIds);
+    const maps = getQuestDetailMaps(quest);
     const styles = createQuestDetailObjectiveStyles(quest);
     return {
         questId: quest.id,

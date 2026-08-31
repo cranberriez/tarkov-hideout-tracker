@@ -417,7 +417,7 @@ relationship links interactive. The fixture is never added outside
 `NODE_ENV=development` and does not change the persisted store schema or keys.
 
 Selecting a quest opens a cohesive tracker detail pane. It presents Tarkov.dev's
-human-readable objective descriptions with larger interactive item rows directly
+human-readable objective descriptions with compact, wrapping item blocks directly
 under the relevant objective. Matching find and hand-over objectives are placed
 together and show their shared items once after the hand-over objective. Repeated
 quest-item records follow the same presentation. Any item group over ten entries
@@ -439,9 +439,10 @@ section inside the details column and scrolls away naturally with the remaining
 quest content; it does not condense or overlay the details or map. Selecting
 another quest restores the details column to the top.
 Requirements, Unlocks,
-and Failure Conditions appear together in a responsive row before Objectives. Empty groups
-are omitted, and the visible groups expand across one, two, or three columns without divider
-lines. Requirements use a compact vertical list with status symbols and text. The list includes player level,
+and Failure Conditions appear together in a wrapping row before Objectives. Each group has
+a practical minimum width, so groups fill the available space and stack vertically when the
+detail pane becomes narrow. Empty groups are omitted and divider lines are not used.
+Requirements use a compact vertical list with status symbols and text. The list includes player level,
 faction, prestige, trader loyalty or reputation, trader-tier task counts, other
 upstream gates, and specific prerequisite-task outcomes. Only the underlined
 prerequisite task name is interactive; the requirement symbol and label are not
@@ -461,9 +462,14 @@ objectives when non-optional task-status failure conditions are reciprocal acros
 the entire choice group. This is derived from quest data; one-way or incomplete
 failure relationships are not labeled as multiple choice. The quest wiki link is
 part of the header action row.
-Objective item rows prefer the non-grid `iconLink` image and fall back to
-`gridImageLink` when needed. XP is omitted from Rewards; trader-standing rewards,
-when present, remain a compact vertical list.
+Objective item blocks prefer the non-grid `iconLink` image and fall back to
+`gridImageLink` when needed. Their image bounds sit flush with the block edge, and
+the square-cornered blocks wrap horizontally and vertically. Item images have a
+gray border, or an orange border for FiR requirements, and FiR text sits below the
+item name. Required-key images likewise sit against the left edge of their bordered
+item block. Optional objectives remain at full opacity and use a light-blue `OPT`
+marker. Rewards list XP and trader standing as compact inline label/value text
+first, followed by wrapping item blocks.
 
 In the single-pane compact view, the quest header is a fixed overlay above the detail
 scroller. A 212px leading spacer belongs to the scroll content, and the header
@@ -518,21 +524,24 @@ the objective map is open so neither can overlap the map. A numbered, color-code
 beside each mapped objective matches its map markers. Objectives that share the
 same rounded world position also share one marker, with their descriptions and IDs
 combined. All locations for one objective reuse that objective group's symbol;
-multi-point objectives show **Multiple spawns** or **Multiple locations** beside
-the mapped cue. **Show on map** switches the viewer to the objective's map and fits
-its known point or points; quests spanning multiple maps expose compact map tabs.
-Mapped objective rows also show resolved floor names such as **Ground**,
-**3rd Floor**, or **Bunkers**, derived from each location's XYZ position and the
-selected map's height and local-bound metadata.
+multi-point objectives show **Multiple spawns** or **Multiple locations** after
+the map actions. **Show on {map}** switches the viewer to that objective map and
+fits its known point or points; quests spanning multiple maps expose one action
+per map. Floor/layer names are not shown in the objective row.
 Factory and Night Factory aliases resolve to the daytime Factory map. Objectives
 without precise coordinates keep their normal presentation and do not receive
 synthetic locations.
 
-When a quest has multiple objectives, each positioned objective row includes a
-small **Complete** control beside its description. This profile-specific visited
+When a quest has multiple objectives, each positioned objective shows its map cue,
+floor or multi-location text, map actions, and green-check **Complete** control in
+a full-width row at the top of the objective. Map and completion actions retain a
+darker button background. Every objective uses a subtle rounded background, and
+required keys follow the mapped row as part of the objective content. It does not
+add a left rail. This profile-specific visited
 state is separate from whole-quest completion. Visited objectives remain in the
-text list with an **Undo** action, while their detail-map and Raid Planner marker
-contributions are omitted until restored.
+text list with their mapping metadata and an **Undo** action. Their detail-map and
+Raid Planner marker contributions are omitted until restored, but the map remains
+selectable from the objective action.
 
 Clicking an objective marker pins its popup. The popup header provides the same
 **Complete** action and a compact close control; an outside click also dismisses it.
