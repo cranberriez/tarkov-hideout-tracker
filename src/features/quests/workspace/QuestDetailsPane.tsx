@@ -117,6 +117,16 @@ export function QuestDetailsPane() {
     }, [quest?.id]);
 
     useEffect(() => {
+        const desktop = window.matchMedia("(min-width: 1024px)");
+        const clearDesktopCondensedHeader = () => {
+            if (desktop.matches) setCondensedQuestId(null);
+        };
+        clearDesktopCondensedHeader();
+        desktop.addEventListener("change", clearDesktopCondensedHeader);
+        return () => desktop.removeEventListener("change", clearDesktopCondensedHeader);
+    }, []);
+
+    useEffect(() => {
         document.body.classList.toggle("quest-objective-map-active", isCompactMapOpen);
         return () => document.body.classList.remove("quest-objective-map-active");
     }, [isCompactMapOpen]);
@@ -230,8 +240,32 @@ export function QuestDetailsPane() {
 
     return (
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#0b0c0e]">
+            <div
+                ref={detailSplitRef}
+                className={cn(
+                    "flex min-h-0 flex-1 flex-col overflow-hidden min-[1700px]:grid min-[1700px]:grid-cols-[minmax(0,1fr)_var(--quest-map-width)]",
+                    !isResizingMap && "min-[1700px]:transition-[grid-template-columns] min-[1700px]:duration-200",
+                )}
+                style={{ "--quest-map-width": selectedDetailMap && isDesktopMapOpen ? `${mapWidthPercent}%` : "0px" } as CSSProperties}
+            >
+            <div
+                ref={detailScrollRef}
+                onScroll={(event) => {
+                    if (window.matchMedia("(min-width: 1024px)").matches) return;
+                    const scrollTop = event.currentTarget.scrollTop;
+                    setCondensedQuestId((current) => {
+                        if (scrollTop > 38) return quest.id;
+                        if (scrollTop < 8) return null;
+                        return current === quest.id ? current : null;
+                    });
+                }}
+                className={cn(
+                    "min-h-0 min-w-0 overflow-y-auto pt-[212px] [overflow-anchor:none] lg:pt-0",
+                    isCompactMapOpen && "hidden min-[1700px]:block",
+                )}
+            >
             <header className={cn(
-                "relative z-30 shrink-0 overflow-visible border-b border-white/8 bg-[#15171a] transition-[padding,min-height] duration-200 max-lg:absolute max-lg:inset-x-0 max-lg:top-0",
+                "relative z-40 shrink-0 overflow-visible border-b border-white/8 bg-[#15171a] transition-[padding,min-height] duration-200 max-lg:absolute max-lg:inset-x-0 max-lg:top-0",
                 isHeaderCondensed ? "min-h-0 px-4 py-2.5 sm:px-6" : "min-h-48 px-5 py-5 sm:px-7 sm:py-6",
                 isCompactMapOpen && "max-lg:hidden",
             )}>
@@ -320,24 +354,6 @@ export function QuestDetailsPane() {
                     </div>
                 </div>
             </header>
-
-            <div
-                ref={detailSplitRef}
-                className={cn(
-                    "flex min-h-0 flex-1 flex-col overflow-hidden min-[1700px]:grid min-[1700px]:grid-cols-[minmax(0,1fr)_var(--quest-map-width)]",
-                    !isResizingMap && "min-[1700px]:transition-[grid-template-columns] min-[1700px]:duration-200",
-                )}
-                style={{ "--quest-map-width": isDesktopMapOpen ? `${mapWidthPercent}%` : "0px" } as CSSProperties}
-            >
-            <div
-                ref={detailScrollRef}
-                onScroll={(event) => setCondensedQuestId(event.currentTarget.scrollTop > 38 ? quest.id : null)}
-                className={cn(
-                    "min-h-0 min-w-0 overflow-y-auto pt-[212px] lg:pt-0",
-                    isHeaderCondensed && "lg:pt-16",
-                    isCompactMapOpen && "hidden min-[1700px]:block",
-                )}
-            >
             {(multipleChoiceQuests.length > 1 || (selectedDetailMap && !isDesktopMapOpen)) && (
                 <div className={cn(
                     "flex h-11 min-h-11 items-stretch border-b border-white/10",
@@ -624,7 +640,7 @@ export function QuestDetailsPane() {
                                         type="button"
                                         onClick={() => item && onItemClick?.(item.id)}
                                         disabled={!item || !onItemClick}
-                                        className="flex items-center gap-3 border border-white/8 bg-black/10 px-3 py-2.5 text-left transition-colors enabled:hover:border-tarkov-green/30 enabled:hover:bg-tarkov-green/[0.04] disabled:cursor-default"
+                                        className="flex min-w-0 items-center gap-3 border border-white/8 bg-black/10 px-3 py-2.5 text-left transition-colors enabled:hover:border-tarkov-green/30 enabled:hover:bg-tarkov-green/[0.04] disabled:cursor-default"
                                     >
                                         <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden bg-white/5">
                                             {imageLink ? <img src={imageLink} alt="" className="h-8 w-8 object-contain" /> : <PackageOpen size={15} className="text-gray-600" />}
@@ -699,8 +715,7 @@ export function QuestDetailsPane() {
                         </button>
                         <div className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2">
                             <div className="min-w-0 shrink-0">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">Objective map</p>
-                                <p className="mt-0.5 truncate text-xs text-gray-400">
+                                <p className="truncate text-xs">
                                     {detailMarkers.length} mapped location{detailMarkers.length === 1 ? "" : "s"} on {selectedDetailMap.name}
                                 </p>
                             </div>

@@ -434,9 +434,10 @@ failure, pin, hide/show, quest-line, and wiki actions; the tighter action paddin
 keeps that row compact. XP and faction are omitted from the header metadata.
 Prestige, Kappa-required, and Lightkeeper-required metadata is rendered as plain
 text instead of badges; the duplicate player-level badge is omitted because level
-remains visible in Requirements. Scrolling the left detail column condenses the
-header to the quest name and actions, adds 64px of scroll compensation above the
-detail content, and selecting another quest restores the expanded header.
+remains visible in Requirements. On desktop the expanded header is the first
+section inside the details column and scrolls away naturally with the remaining
+quest content; it does not condense or overlay the details or map. Selecting
+another quest restores the details column to the top.
 Requirements, Unlocks,
 and Failure Conditions appear together in a responsive row before Objectives. Empty groups
 are omitted, and the visible groups expand across one, two, or three columns without divider
@@ -502,9 +503,10 @@ short raid-oriented description, while the full upstream wording remains availab
 as hover text.
 
 Quest detail panes reuse the shared `MapViewer` for objectives with precise
-positions. At 1700px and wider the quest header spans the full pane, while the
-section beneath it splits into independently scrolling details and a resizable
-right map column. The highlighted divider accepts pointer dragging and keyboard
+positions. At 1700px and wider, quests with mapped objectives split into a
+scrolling details column, including its header, and a resizable right map column.
+Quests without mapping data keep the details column at the full available width.
+The highlighted divider accepts pointer dragging and keyboard
 left/right arrows. A square caret in the map top bar hides the map without losing
 the selected map or width; its matching restore control appears at the top-right
 of the details column, in the same compact 44px row used by the single-line

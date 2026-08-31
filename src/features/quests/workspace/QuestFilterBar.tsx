@@ -322,7 +322,7 @@ export function QuestTraderBar() {
     );
 
     return (
-        <div className="hidden w-full shrink-0 border-b border-white/10 bg-[#101113] lg:flex">
+        <div className="hidden w-full shrink-0 border-b border-white/8 bg-[#101113] lg:flex">
             <button
                 type="button"
                 aria-label="Show quests from all traders"
@@ -364,7 +364,7 @@ export function QuestTraderBar() {
                         <span
                             aria-hidden="true"
                             className={cn(
-                                "pointer-events-none absolute inset-0.5 z-[1] ring-1 ring-inset ring-white/15 transition-[box-shadow]",
+                                "pointer-events-none absolute inset-0.5 z-1 ring-1 ring-inset ring-transparent transition-shadow",
                                 selected && "ring-2 ring-tarkov-green",
                             )}
                         />
