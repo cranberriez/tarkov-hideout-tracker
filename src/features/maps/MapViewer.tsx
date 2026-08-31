@@ -26,6 +26,7 @@ interface MapViewerProps {
     onObjectiveFloorsChange?: (floors: ReadonlyMap<string, string[]>) => void;
     topRightContent?: ReactNode;
     compactAttribution?: boolean;
+    attributionPlacement?: "top-right" | "navigation-controls";
 }
 
 const MIN_SCALE = 1;
@@ -124,6 +125,7 @@ export function MapViewer({
     onObjectiveFloorsChange,
     topRightContent,
     compactAttribution = false,
+    attributionPlacement = "top-right",
 }: MapViewerProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const dragRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
@@ -604,7 +606,10 @@ export function MapViewer({
                 </details>
             )}
 
-            <div className="absolute bottom-3 right-3 z-20 flex items-center gap-2">
+            <div className="absolute bottom-3 right-3 z-20 flex max-w-[calc(100%-1.5rem)] items-center gap-2">
+                {attributionPlacement === "navigation-controls" && (
+                    <MapAttribution definition={definition} compact />
+                )}
                 {hasNavigationMarkers && (
                     <button
                         type="button"
@@ -630,16 +635,24 @@ export function MapViewer({
                 compactAttribution ? "right-2 top-2" : "right-3 top-3",
             )}>
                 {topRightContent}
-                <p className={cn(
-                    "shrink-0 leading-relaxed text-gray-500 backdrop-blur-sm",
-                    compactAttribution
-                        ? "bg-black/40 px-1.5 py-1 text-[7px]"
-                        : "border border-white/10 bg-black/80 px-2.5 py-2 text-[9px] shadow-xl",
-                )}>
-                    {compactAttribution ? "Map: " : "Map by "}<a href={definition.attribution.authorLink} target="_blank" rel="noreferrer" className={cn("hover:text-white", compactAttribution ? "text-gray-400" : "text-gray-300")}>{definition.attribution.author}</a>
-                    {" · "}<a href={definition.attribution.licenseLink} target="_blank" rel="noreferrer" className="text-gray-300 hover:text-white">{definition.attribution.license}</a>
-                </p>
+                {attributionPlacement === "top-right" && (
+                    <MapAttribution definition={definition} compact={compactAttribution} />
+                )}
             </div>
         </div>
+    );
+}
+
+function MapAttribution({ definition, compact }: { definition: MapRenderDefinition; compact: boolean }) {
+    return (
+        <p className={cn(
+            "shrink-0 leading-relaxed text-gray-500 backdrop-blur-sm",
+            compact
+                ? "bg-black/40 px-1.5 py-1 text-[7px]"
+                : "border border-white/10 bg-black/80 px-2.5 py-2 text-[9px] shadow-xl",
+        )}>
+            {compact ? "Map: " : "Map by "}<a href={definition.attribution.authorLink} target="_blank" rel="noreferrer" className={cn("hover:text-white", compact ? "text-gray-400" : "text-gray-300")}>{definition.attribution.author}</a>
+            {" · "}<a href={definition.attribution.licenseLink} target="_blank" rel="noreferrer" className="text-gray-300 hover:text-white">{definition.attribution.license}</a>
+        </p>
     );
 }

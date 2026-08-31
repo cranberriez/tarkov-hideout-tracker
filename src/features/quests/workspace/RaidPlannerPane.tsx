@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, Crosshair, KeyRound } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crosshair, KeyRound, X } from "lucide-react";
 import Image from "next/image";
 import { MapViewer } from "@/features/maps/MapViewer";
 import type { MapViewTransform } from "@/features/maps/map-view-transform";
@@ -36,8 +36,12 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
     const toggleQuestObjectiveCompletion = useUserStore((state) => state.toggleQuestObjectiveCompletion);
     const {
         quests, maps, plannerMapKey, selectPlannerMap, clearPlannerMap, statusByQuestId,
-        markerByQuestId, highlightedQuestId, setHighlightedQuestId, setSelectedQuestId,
+        markerByQuestId, highlightedQuestId, setHighlightedQuestId, setSelectedQuestId, setMode,
     } = useQuestWorkspace();
+    const exitPlanner = () => {
+        setSelectedQuestId(null);
+        setMode("details");
+    };
     const activeQuests = getActiveRaidPlannerQuests(quests, statusByQuestId);
     const selectedMap = maps.find((map) => map.key === plannerMapKey) ?? null;
     const selectedMapKey = selectedMap?.key;
@@ -73,8 +77,15 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
 
     if (!selectedMap) {
         return (
-            <div className="min-h-0 flex-1 overflow-y-auto bg-[#0b0c0e] p-6 sm:p-10">
-                <div className="w-full">
+            <div className="flex min-h-0 flex-1 flex-col bg-[#0b0c0e]">
+                <button
+                    type="button"
+                    onClick={exitPlanner}
+                    className="flex h-12 shrink-0 items-center gap-2 border-b border-white/10 bg-[#101113] px-4 text-xs font-medium text-gray-300 transition-colors hover:text-white lg:hidden"
+                >
+                    <ChevronLeft size={16} /> Back to quests
+                </button>
+                <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-8 lg:p-10">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-tarkov-green">Raid planner</p>
                     <h1 className="mt-2 text-3xl font-semibold text-white">Where are you heading?</h1>
                     <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-500">
@@ -147,6 +158,17 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
                     setSelectedQuestId(marker.questId);
                     focusQuest(marker.questId);
                 }}
+                topRightContent={(
+                    <button
+                        type="button"
+                        onClick={exitPlanner}
+                        className="inline-flex items-center gap-1.5 border border-red-400/30 bg-red-950/80 px-2.5 py-1.5 text-[10px] font-semibold text-red-200 shadow-xl backdrop-blur-sm lg:hidden"
+                    >
+                        <X size={12} /> Exit
+                    </button>
+                )}
+                compactAttribution
+                attributionPlacement="navigation-controls"
             />
             <div className="absolute left-3 top-3 z-30 flex w-80 max-w-[calc(100%_-_1.5rem)] flex-col items-start gap-2">
                 <button
@@ -226,7 +248,7 @@ function RaidPlannerMapCard({
         <button
             type="button"
             onClick={onSelect}
-            className="group relative min-h-56 overflow-hidden border border-white/8 bg-[#121316] p-4 text-left transition-all hover:border-tarkov-green/40 hover:bg-[#151917]"
+            className="group relative min-h-44 overflow-hidden border border-white/8 bg-[#121316] p-3 text-left transition-all hover:border-tarkov-green/40 hover:bg-[#151917] lg:min-h-56 lg:p-4"
         >
             {artworkAvailable && (
                 <Image
@@ -241,14 +263,14 @@ function RaidPlannerMapCard({
                 />
             )}
             <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,rgba(18,19,22,1)_18%,rgba(18,19,22,.9)_52%,rgba(18,19,22,.35))]" />
-            <span className="relative flex h-full min-h-48 flex-col">
+            <span className="relative flex h-full min-h-36 flex-col pb-5 lg:min-h-48 lg:pb-0">
                 <span className="block pr-16 text-base font-semibold text-gray-100 group-hover:text-white">{mapName}</span>
                 <span className="mt-1 block text-[10px] font-medium uppercase tracking-wider text-tarkov-green/75">
                     {summary.questCount} active quest{summary.questCount === 1 ? "" : "s"}
                 </span>
 
                 {summary.objectiveGroups.length > 0 ? (
-                    <span className="mt-4 flex flex-wrap gap-1.5">
+                    <span className="mt-3 flex flex-wrap gap-1.5 lg:mt-4">
                         {summary.objectiveGroups.map((group) => (
                             <span
                                 key={group.category}
@@ -265,15 +287,15 @@ function RaidPlannerMapCard({
                         ))}
                     </span>
                 ) : (
-                    <span className="mt-4 text-xs text-gray-600">No active objectives on this map.</span>
+                    <span className="mt-3 text-xs text-gray-600 lg:mt-4">No active objectives on this map.</span>
                 )}
 
                 {summary.requiredKeyIds.length > 0 && (
-                    <span className="mt-4 block">
+                    <span className="mt-2.5 block lg:mt-4">
                         <span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300/70">
                             <KeyRound size={10} /> Required keys
                         </span>
-                        <span className="mt-2 flex flex-wrap gap-1.5">
+                        <span className="mt-1.5 flex flex-wrap gap-1.5 lg:mt-2">
                             {summary.requiredKeyIds.map((itemId) => itemById[itemId]).filter(Boolean).map((key) => (
                                 <RaidPlannerKey key={key.id} item={key} />
                             ))}
@@ -281,8 +303,8 @@ function RaidPlannerMapCard({
                     </span>
                 )}
 
-                <span className="mt-auto pt-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-gray-600 transition-colors group-hover:text-tarkov-green">
-                    Plan this map
+                <span className="absolute bottom-0 right-0 flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-gray-500 transition-colors group-hover:text-tarkov-green">
+                    Plan this map <ChevronRight size={11} />
                 </span>
             </span>
         </button>
@@ -296,7 +318,7 @@ function RaidPlannerKey({ item }: { item: ReturnType<typeof useDataContext>["ite
         <span
             title={item.name}
             aria-label={item.name}
-            className="relative h-16 w-16 shrink-0 overflow-hidden"
+            className="relative h-11 w-11 shrink-0 overflow-hidden lg:h-16 lg:w-16"
         >
             {image ? (
                 <Image
@@ -308,7 +330,7 @@ function RaidPlannerKey({ item }: { item: ReturnType<typeof useDataContext>["ite
                     className="absolute inset-0 h-full w-full object-cover"
                 />
             ) : (
-                <KeyRound size={34} className="absolute inset-0 m-auto text-gray-600" />
+                <KeyRound size={28} className="absolute inset-0 m-auto text-gray-600 lg:h-[34px] lg:w-[34px]" />
             )}
         </span>
     );

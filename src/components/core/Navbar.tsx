@@ -46,7 +46,7 @@ export function Navbar() {
     if (currentPage === "/quests" && isMainNavHidden) return null;
 
     return (
-        <nav className="border-b bg-card">
+        <nav data-main-nav className="border-b bg-card">
             <div className="container mx-auto px-4 py-3 sm:px-6 sm:py-4">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-6">
                     <div className="flex items-center justify-between gap-3">

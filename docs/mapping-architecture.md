@@ -155,11 +155,10 @@ The layer control is anchored at the bottom-left and expands upward with an
 explicit collapse caret. Zoom is capped at 7x. Every manual, remembered, focused,
 or cursor-anchored view is constrained against the scaled artwork dimensions, so
 panning can reach the map edges but cannot move the artwork completely outside
-the viewport. Attribution appears by itself in the Raid Planner's top-right
-overlay row.
-Embedded quest-detail maps use a smaller text-only attribution treatment with a
-faint background so licensing remains visible without occupying meaningful map
-space.
+the viewport. Raid Planner attribution uses a small text-only treatment with a
+faint background immediately left of the extract/transit label toggle. Embedded
+quest-detail maps use the same compact visual treatment in the top-right overlay
+row so licensing remains visible without occupying meaningful map space.
 
 The quest-detail consumer loads `MapViewer` as a client-only dynamic chunk. Its
 quest-specific marker payload is memoized, and map updates use a deferred value so
@@ -169,7 +168,9 @@ projection/render pass.
 The Raid Planner map picker spans the available planner pane and summarizes only
 profile-active quests. Each map card groups those quests by objective category,
 calls out category counts that require keys, and shows the deduplicated required
-keys as compact square grid-image tiles with full-name hover text.
+keys as compact square grid-image tiles with full-name hover text. Below the desktop
+breakpoint, the cards and key tiles are shorter and the bottom-right Plan this map cue
+uses a forward caret to make the whole-card action clearer.
 Supported cards reuse the same proxied Tarkov.dev SVG artwork as the map
 viewer; unsupported maps remain text-only. The selected-map marker set also uses
 only active quests, regardless of the workspace's completed, failed, or locked

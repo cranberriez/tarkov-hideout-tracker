@@ -226,7 +226,7 @@ export function QuestDetailsPane() {
     return (
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#0b0c0e]">
             <header className={cn(
-                "relative z-30 shrink-0 overflow-visible border-b border-white/8 bg-[#15171a] transition-[padding,min-height] duration-200",
+                "relative z-30 shrink-0 overflow-visible border-b border-white/8 bg-[#15171a] transition-[padding,min-height] duration-200 max-lg:absolute max-lg:inset-x-0 max-lg:top-0",
                 isHeaderCondensed ? "min-h-0 px-4 py-2.5 sm:px-6" : "min-h-48 px-5 py-5 sm:px-7 sm:py-6",
             )}>
                 {quest.taskImageLink && (
@@ -265,8 +265,8 @@ export function QuestDetailsPane() {
                         <button type="button" title={status.status === "completed" ? "Return this quest to an incomplete state" : "Mark this quest as completed"} onClick={() => { if (status.status !== "completed") retainQuestAfterCompletion(quest.id); requestToggleQuestCompletion(quest.id); }} className={cn(questActionButtonClass, status.status === "completed" ? "border-tarkov-green/30 bg-[#173021] text-tarkov-green hover:border-red-400/50 hover:bg-[#3a1b20] hover:text-red-200" : "border-tarkov-green/35 bg-[#173021] text-tarkov-green hover:border-tarkov-green/70 hover:bg-[#21452d]")}><CheckCircle2 size={14} />{status.status === "completed" ? "Mark incomplete" : "Mark complete"}</button>
                         {questCanFail(quest) && !status.terminal && <button type="button" title="Mark this quest as failed" onClick={() => requestFailQuest(quest.id)} className={cn(questActionButtonClass, "border-red-400/35 bg-[#32191d] text-red-300 hover:border-red-400/65 hover:bg-[#462126] hover:text-red-200")}><XCircle size={14} /> Mark failed</button>}
                         {status.terminal === "failed" && <button type="button" title="Clear the failed status" onClick={() => requestResetQuestStatus(quest.id)} className={cn(questActionButtonClass, "border-white/15 bg-[#23262b] text-gray-300 hover:border-white/30 hover:bg-[#2d3137] hover:text-white")}><RotateCcw size={14} /> Reset status</button>}
-                        <button type="button" title={pinned ? "Remove this quest from pinned quests" : "Keep this quest in pinned views"} onClick={() => togglePinnedQuest(quest.id)} className={cn(questActionButtonClass, "border-white/15 bg-[#23262b] text-gray-400 hover:border-sky-400/40 hover:bg-[#293642] hover:text-sky-200", pinned && "border-sky-400/35 bg-[#172836] text-sky-300 hover:bg-[#1d3344]")}><Pin size={14} className={pinned ? "fill-current" : ""} />{pinned ? "Unpin quest" : "Pin quest"}</button>
-                        <button type="button" title={hidden ? "Restore this quest to normal filtered views" : "Hide this quest from normal filtered views"} onClick={() => toggleIgnoredQuest(quest.id)} className={cn(questActionButtonClass, "border-white/15 bg-[#23262b] text-gray-400 hover:border-violet-400/40 hover:bg-[#352c3d] hover:text-violet-200", hidden && "border-violet-400/35 bg-[#2b2033] text-violet-300 hover:bg-[#382942]")}>{hidden ? <Eye size={14} /> : <EyeOff size={14} />}{hidden ? "Show quest" : "Hide quest"}</button>
+                        <button type="button" title={pinned ? "Remove this quest from pinned quests" : "Keep this quest in pinned views"} onClick={() => togglePinnedQuest(quest.id)} className={cn(questActionButtonClass, "hidden border-white/15 bg-[#23262b] text-gray-400 hover:border-sky-400/40 hover:bg-[#293642] hover:text-sky-200 lg:inline-flex", pinned && "border-sky-400/35 bg-[#172836] text-sky-300 hover:bg-[#1d3344]")}><Pin size={14} className={pinned ? "fill-current" : ""} />{pinned ? "Unpin quest" : "Pin quest"}</button>
+                        <button type="button" title={hidden ? "Restore this quest to normal filtered views" : "Hide this quest from normal filtered views"} onClick={() => toggleIgnoredQuest(quest.id)} className={cn(questActionButtonClass, "hidden border-white/15 bg-[#23262b] text-gray-400 hover:border-violet-400/40 hover:bg-[#352c3d] hover:text-violet-200 lg:inline-flex", hidden && "border-violet-400/35 bg-[#2b2033] text-violet-300 hover:bg-[#382942]")}>{hidden ? <Eye size={14} /> : <EyeOff size={14} />}{hidden ? "Show quest" : "Hide quest"}</button>
                         {selectedDetailMap && (
                             <button
                                 type="button"
@@ -325,10 +325,10 @@ export function QuestDetailsPane() {
             >
             <div
                 ref={detailScrollRef}
-                onScroll={(event) => setCondensedQuestId(event.currentTarget.scrollTop > 48 ? quest.id : null)}
+                onScroll={(event) => setCondensedQuestId(event.currentTarget.scrollTop > 38 ? quest.id : null)}
                 className={cn(
-                    "min-h-0 min-w-0 overflow-y-auto transition-[padding] duration-200",
-                    isHeaderCondensed && "pt-16",
+                    "min-h-0 min-w-0 overflow-y-auto pt-[212px] lg:pt-0",
+                    isHeaderCondensed && "lg:pt-16",
                     isCompactMapOpen && "hidden min-[1700px]:block",
                 )}
             >

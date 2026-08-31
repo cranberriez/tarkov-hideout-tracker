@@ -165,6 +165,19 @@ exact persisted standing input; BTR Driver and Lightkeeper have no loyalty
 controls. Quest list rows display the issuing
 trader's required loyalty level beside the trader name, with a crown for LL4.
 
+Below the desktop `lg` breakpoint, the workspace is a single-pane flow instead of
+stacked list and detail rows. The app navigation, quest list, and a compact bottom
+toolbar are shown first. Selecting a quest replaces that pane with its details and a back
+control. The workspace action bar is hidden, as are the list/detail pin and hide
+actions. The bottom toolbar provides square icon buttons for Trader, Map, Status,
+Filter / Sort, Search, and Raid Planner. Trader combines trader selection and loyalty
+settings in one panel, and the four filter categories display a marker whenever their
+settings differ from the defaults. Search opens a compact input immediately above the
+toolbar. Raid Planner takes
+over the viewport, including the app navigation. Its map picker uses the same full-width
+Back to quests treatment as compact quest details; selected maps use a compact Exit
+overlay.
+
 Failed quests are a distinct resolved workspace status. They are excluded from
 `Active`, shown separately from progression-locked quests, and can be selected with
 the `Failed` status filter. Completing a quest automatically fails any quest whose
@@ -450,6 +463,11 @@ part of the header action row.
 Objective item rows prefer the non-grid `iconLink` image and fall back to
 `gridImageLink` when needed. XP is omitted from Rewards; trader-standing rewards,
 when present, remain a compact vertical list.
+
+In the single-pane compact view, the quest header is a fixed overlay above the detail
+scroller. A 212px leading spacer belongs to the scroll content, and the header
+condenses after 38px of scrolling. Condensing does not resize the scroll viewport or
+push the scroll position back across its threshold.
 
 Raw objective metadata is not rendered as chips below each objective. A local bug
 button in the bottom-left corner opens normalized objective JSON and the normalized

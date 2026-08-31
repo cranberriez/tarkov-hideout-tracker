@@ -1,6 +1,17 @@
 "use client";
 
-import { Check, CircleDot, Crown, Settings, X } from "lucide-react";
+import {
+    Check,
+    CircleDot,
+    Compass,
+    Crown,
+    Map,
+    Search,
+    Settings,
+    SlidersHorizontal,
+    UserRound,
+    X,
+} from "lucide-react";
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
@@ -99,7 +110,7 @@ export function QuestFilterBar() {
     const statusSummary = STATUS_OPTIONS.filter((option) => selectedStatuses.has(option.id)).map((option) => option.label);
 
     return (
-        <div className="flex divide-x divide-white/8 border-b border-white/10 bg-[#101113]">
+        <div className="hidden divide-x divide-white/8 border-b border-white/10 bg-[#101113] lg:flex">
             <FilterTrigger section="maps" label="Map" summary={selectedMapNames.length === 0 ? "Any map" : selectedMapNames.length === 1 ? selectedMapNames[0] : `${selectedMapNames.length} selected`} />
             <FilterTrigger section="status" label="Status" summary={statusSummary.length === STATUS_OPTIONS.length ? "All states" : statusSummary.length ? statusSummary.join(", ") : "None"} />
             <FilterTrigger
@@ -111,6 +122,158 @@ export function QuestFilterBar() {
                       ? `${selectedObjectiveCategories.size} quest types`
                       : "Customise view"}
             />
+        </div>
+    );
+}
+
+function CompactNavButton({
+    label,
+    active = false,
+    modified = false,
+    onClick,
+    children,
+}: {
+    label: string;
+    active?: boolean;
+    modified?: boolean;
+    onClick: () => void;
+    children: React.ReactNode;
+}) {
+    return (
+        <button
+            type="button"
+            aria-label={label}
+            aria-pressed={active}
+            title={label}
+            onClick={onClick}
+            className={cn(
+                "relative flex h-full min-w-0 flex-1 cursor-pointer items-center justify-center text-gray-500 transition-colors hover:bg-white/7 hover:text-white focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-tarkov-green",
+                active && "bg-white/7 text-tarkov-green",
+            )}
+        >
+            {children}
+            {modified && (
+                <span
+                    aria-hidden="true"
+                    className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-amber-300 shadow-[0_0_5px_rgba(252,211,77,0.55)]"
+                />
+            )}
+        </button>
+    );
+}
+
+export function QuestMobileToolbar({
+    compactSearchOpen,
+    onToggleCompactSearch,
+}: {
+    compactSearchOpen: boolean;
+    onToggleCompactSearch: () => void;
+}) {
+    const {
+        selectedTraderIds,
+        selectedMapKeys,
+        selectedStatuses,
+        selectedObjectiveCategories,
+        filterByTraderRequirements,
+        showHiddenQuests,
+        groupByTrader,
+        groupByLoyaltyLevel,
+        sortMode,
+        openFilter,
+        setOpenFilter,
+        setMode,
+    } = useQuestWorkspace();
+    const traderModified = selectedTraderIds.size > 0;
+    const mapModified = selectedMapKeys.size > 0;
+    const statusModified = selectedStatuses.size !== 1 || !selectedStatuses.has("active");
+    const filtersModified =
+        !filterByTraderRequirements ||
+        showHiddenQuests ||
+        !groupByTrader ||
+        !groupByLoyaltyLevel ||
+        sortMode !== "unlockOrder" ||
+        selectedObjectiveCategories.size > 0;
+    const openSection = (section: Exclude<QuestFilterSection, null>) => {
+        if (compactSearchOpen) onToggleCompactSearch();
+        setOpenFilter(openFilter === section ? null : section);
+    };
+
+    return (
+        <nav
+            aria-label="Quest tools"
+            className="flex h-12 w-full shrink-0 items-stretch divide-x divide-white/8 border-t border-white/10 bg-[#101113] lg:hidden"
+        >
+            <CompactNavButton
+                label="Trader filters and loyalty levels"
+                active={openFilter === "traders"}
+                modified={traderModified}
+                onClick={() => openSection("traders")}
+            >
+                <UserRound className="h-[42%] w-[42%]" aria-hidden="true" />
+            </CompactNavButton>
+            <CompactNavButton
+                label="Map filters"
+                active={openFilter === "maps"}
+                modified={mapModified}
+                onClick={() => openSection("maps")}
+            >
+                <Map className="h-[42%] w-[42%]" aria-hidden="true" />
+            </CompactNavButton>
+            <CompactNavButton
+                label="Quest status filters"
+                active={openFilter === "status"}
+                modified={statusModified}
+                onClick={() => openSection("status")}
+            >
+                <CircleDot className="h-[42%] w-[42%]" aria-hidden="true" />
+            </CompactNavButton>
+            <CompactNavButton
+                label="Quest filters and sorting"
+                active={openFilter === "filters"}
+                modified={filtersModified}
+                onClick={() => openSection("filters")}
+            >
+                <SlidersHorizontal className="h-[42%] w-[42%]" aria-hidden="true" />
+            </CompactNavButton>
+            <CompactNavButton
+                label="Search quests"
+                active={compactSearchOpen}
+                onClick={onToggleCompactSearch}
+            >
+                <Search className="h-[42%] w-[42%]" aria-hidden="true" />
+            </CompactNavButton>
+            <CompactNavButton label="Open raid planner" onClick={() => setMode("planner")}>
+                <Compass className="h-[42%] w-[42%]" aria-hidden="true" />
+            </CompactNavButton>
+        </nav>
+    );
+}
+
+export function QuestCompactSearchBar({ onClose }: { onClose: () => void }) {
+    const { searchQuery, setSearchQuery, setOpenFilter } = useQuestWorkspace();
+
+    return (
+        <div className="flex h-11 w-full shrink-0 items-center gap-3 border-t border-white/10 bg-[#101113] px-3 lg:hidden">
+            <Search size={16} className="shrink-0 text-gray-500" />
+            <input
+                autoFocus
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                onFocus={() => setOpenFilter(null)}
+                placeholder="Search quests, traders, objectives…"
+                className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-gray-700"
+            />
+            <button
+                type="button"
+                aria-label="Close quest search"
+                onClick={() => {
+                    onClose();
+                    setSearchQuery("");
+                }}
+                className="flex h-8 w-8 items-center justify-center text-gray-500 transition-colors hover:text-white"
+            >
+                <X size={16} />
+            </button>
         </div>
     );
 }
@@ -154,12 +317,12 @@ export function QuestTraderBar() {
     const allSelected = selectedTraderIds.size === 0;
 
     const buttonClass = (selected: boolean) => cn(
-        "relative flex min-w-0 flex-1 aspect-square cursor-pointer items-center justify-center overflow-hidden border-r border-white/8 bg-[#101113] text-gray-500 transition-colors hover:bg-white/7 hover:text-white focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-tarkov-green",
+        "relative flex h-12 min-w-0 flex-1 cursor-pointer items-center justify-center overflow-hidden border-r border-white/8 bg-[#101113] text-gray-500 transition-colors hover:bg-white/7 hover:text-white focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-tarkov-green lg:h-auto lg:aspect-square",
         selected && "z-[1] bg-tarkov-green/10 text-tarkov-green shadow-[inset_0_-2px_0_#9cae7c]",
     );
 
     return (
-        <div className="flex w-full shrink-0 border-b border-white/10 bg-[#101113]">
+        <div className="hidden w-full shrink-0 border-b border-white/10 bg-[#101113] lg:flex">
             <button
                 type="button"
                 aria-label="Show quests from all traders"
@@ -214,7 +377,7 @@ export function QuestTraderBar() {
                 aria-expanded={openFilter === "traders"}
                 title="Trader settings"
                 onClick={() => setOpenFilter(openFilter === "traders" ? null : "traders")}
-                className={cn(buttonClass(openFilter === "traders"), "border-r-0")}
+                className={buttonClass(openFilter === "traders")}
             >
                 <Settings className="h-[42%] w-[42%]" aria-hidden="true" />
             </button>

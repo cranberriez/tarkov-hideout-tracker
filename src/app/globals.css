@@ -108,6 +108,12 @@ body.quest-workspace-active {
     overflow: hidden;
 }
 
+@media (width < 64rem) {
+    body.quest-raid-planner-active [data-main-nav] {
+        display: none;
+    }
+}
+
 @layer base {
     * {
         @apply border-border outline-ring/50;

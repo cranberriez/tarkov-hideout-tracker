@@ -27,7 +27,7 @@ export function QuestActionBar({ quests }: { quests: FullQuest[] }) {
     const [importOpen, setImportOpen] = useState(false);
     return (
         <>
-            <div className="flex min-h-14 items-center gap-2 bg-[#101113] px-3 sm:px-4">
+            <div className="hidden min-h-14 items-center gap-2 bg-[#101113] px-4 lg:flex">
                 <button
                     type="button"
                     aria-pressed={isMainNavHidden}

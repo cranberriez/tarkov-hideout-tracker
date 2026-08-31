@@ -491,7 +491,7 @@ function QuestListItem({
                             aria-label={hidden ? "Show quest" : "Hide quest"}
                             onClick={() => toggleIgnoredQuest(quest.id)}
                             className={cn(
-                                "flex h-7 w-7 items-center justify-center rounded text-gray-600 transition-colors hover:bg-violet-300/8 hover:text-violet-300",
+                                "hidden h-7 w-7 items-center justify-center rounded text-gray-600 transition-colors hover:bg-violet-300/8 hover:text-violet-300 lg:flex",
                                 hidden && "bg-violet-300/8 text-violet-300",
                             )}
                         >
@@ -502,7 +502,7 @@ function QuestListItem({
                             title={pinned ? "Unpin quest" : "Pin quest"}
                             onClick={() => togglePinnedQuest(quest.id)}
                             className={cn(
-                                "-mb-px flex h-7 w-7 items-center justify-center rounded text-gray-600 transition-colors hover:bg-sky-400/8 hover:text-sky-300",
+                                "-mb-px hidden h-7 w-7 items-center justify-center rounded text-gray-600 transition-colors hover:bg-sky-400/8 hover:text-sky-300 lg:flex",
                                 pinned && "bg-sky-400/8 text-sky-300",
                             )}
                         >
