@@ -9,7 +9,7 @@ import type {
     ItemUsagePayload,
     Station,
 } from "@/types";
-import { X } from "lucide-react";
+import { Bug, X } from "lucide-react";
 import { stationOrder } from "@/lib/cfg/stationOrder";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { formatRelativeUpdatedAt } from "@/lib/utils/format-time";
@@ -163,6 +163,7 @@ export function ItemDetailModal({
         key: string;
         message: string;
     } | null>(null);
+    const [debugItemId, setDebugItemId] = useState<string | null>(null);
     const marketPrice = selectedItem?.marketPrice;
 
     useEffect(() => {
@@ -465,85 +466,163 @@ export function ItemDetailModal({
         itemUsage?.bartersError != null ||
         itemUsage?.craftsError != null ||
         showPriceHistory;
+    const isDevelopment = process.env.NODE_ENV === "development";
+    const showDebug = debugItemId === selectedItemId;
+    const handleClose = () => {
+        setDebugItemId(null);
+        onClose();
+    };
+    const debugData = {
+        item: selectedItem,
+        inventory: {
+            owned,
+            needsBreakdown,
+            demandSummary,
+        },
+        hideout: {
+            stationRequirements,
+        },
+        quests: {
+            itemState: questItemState,
+            anyOfGroups: questAnyOfGroupState,
+            rewards: questRewards,
+        },
+        acquisition: {
+            usage: itemUsage,
+            traderOffers,
+            crafts,
+        },
+    };
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
             <DialogContent
                 showCloseButton={false}
-                className="flex max-h-[92vh] w-full flex-col gap-0 overflow-hidden border-border-color bg-background p-0 sm:max-w-4xl lg:max-w-5xl"
+                className="w-full overflow-visible border-0 bg-transparent p-0 shadow-none sm:max-w-4xl lg:max-w-5xl"
             >
                 <DialogTitle className="sr-only">{selectedItem.name}</DialogTitle>
-                <header className="relative border-b border-border-color bg-gradient-to-br from-card via-card to-background py-3 pl-3 pr-12 sm:py-4 sm:pl-4 sm:pr-14">
-                    <ItemDetailHeader
-                        item={selectedItem}
-                        totalRequiredCount={demandSummary.totalRequiredCount}
-                        needsBreakdown={needsBreakdown}
-                        hideoutRequiredCount={demandSummary.hideoutRequiredCount}
-                        questRequiredCount={demandSummary.questRequiredCount}
-                    />
+                <div className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-lg border border-border-color bg-background shadow-2xl">
+                    {showDebug && isDevelopment ? (
+                        <section className="flex min-h-[420px] min-w-0 flex-col overflow-hidden bg-[#0b0c0e]">
+                            <header className="flex items-center justify-between border-b border-border-color px-4 py-3">
+                                <div>
+                                    <p className="text-xs font-semibold text-white">Item debug data</p>
+                                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                                        Item and related modal data, excluding pricing
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleClose}
+                                    className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
+                                    aria-label="Close item details"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </header>
+                            <pre className="min-h-0 flex-1 overflow-auto p-4 text-[10px] leading-relaxed text-gray-400">
+                                {JSON.stringify(
+                                    debugData,
+                                    (key, value) => (key === "marketPrice" ? undefined : value),
+                                    2,
+                                )}
+                            </pre>
+                        </section>
+                    ) : (
+                        <>
+                            <header className="relative border-b border-border-color bg-gradient-to-br from-card via-card to-background py-3 pl-3 pr-12 sm:py-4 sm:pl-4 sm:pr-14">
+                                <ItemDetailHeader
+                                    item={selectedItem}
+                                    totalRequiredCount={demandSummary.totalRequiredCount}
+                                    needsBreakdown={needsBreakdown}
+                                    hideoutRequiredCount={demandSummary.hideoutRequiredCount}
+                                    questRequiredCount={demandSummary.questRequiredCount}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleClose}
+                                    className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:border-border-color hover:bg-black/20 hover:text-foreground sm:right-4 sm:top-4"
+                                    aria-label="Close item details"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </header>
+
+                            {(showSidebar || showUsage) && (
+                                <div className="flex-1 overflow-y-auto">
+                                    <div
+                                        className={`grid grid-cols-1 gap-0 ${
+                                            showSidebar && showUsage
+                                                ? "lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]"
+                                                : ""
+                                        }`}
+                                    >
+                                        {showSidebar && (
+                                            <ItemDetailSidebar
+                                                key={selectedItemId}
+                                                itemId={selectedItemId}
+                                                owned={owned}
+                                                marketPrice={marketPrice}
+                                                relativeUpdatedAt={relativeUpdatedAt}
+                                                isFiat={isFiat}
+                                                showMarket={showMarket}
+                                                minLevelForFlea={selectedItem.minLevelForFlea}
+                                                playerLevel={playerLevel}
+                                                onAddItemCounts={addItemCounts}
+                                            />
+                                        )}
+
+                                        {showUsage && (
+                                            <ItemDetailUsageTabs
+                                                key={`usage-${selectedItemId}`}
+                                                className=""
+                                                selectedItemId={selectedItem.id}
+                                                selectedItemImageLink={
+                                                    selectedItem.iconLink ?? selectedItem.gridImageLink
+                                                }
+                                                stationRequirements={stationRequirements}
+                                                stationLevels={stationLevels}
+                                                hiddenStations={hiddenStations}
+                                                questItemState={questItemState}
+                                                questRewards={questRewards}
+                                                anyOfGroups={questAnyOfGroupState}
+                                                itemDetailsById={itemDetailsById}
+                                                traderOffers={traderOffers}
+                                                crafts={crafts}
+                                                acquisitionLoading={isUsageLoading}
+                                                barterError={itemUsage?.bartersError ?? usageRequestError}
+                                                craftError={itemUsage?.craftsError ?? usageRequestError}
+                                                completedQuests={completedQuests}
+                                                traderLoyaltyLevels={questTraderLoyaltyLevels}
+                                                gameEdition={gameEdition}
+                                                gameMode={toTarkovJsonGameMode(gameMode)}
+                                                showPriceHistory={showPriceHistory}
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+                {isDevelopment && (
                     <button
                         type="button"
-                        onClick={onClose}
-                        className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:border-border-color hover:bg-black/20 hover:text-foreground sm:right-4 sm:top-4"
-                        aria-label="Close item details"
+                        onClick={() =>
+                            setDebugItemId((currentItemId) =>
+                                currentItemId === selectedItemId ? null : selectedItemId,
+                            )
+                        }
+                        aria-label={showDebug ? "Hide item debug data" : "Show item debug data"}
+                        aria-expanded={showDebug}
+                        className={`absolute -bottom-2.5 -right-2.5 z-[60] flex h-6 w-6 items-center justify-center rounded-full border bg-[#111316] shadow-xl transition-colors ${
+                            showDebug
+                                ? "border-tarkov-green/50 text-tarkov-green"
+                                : "border-white/15 text-gray-600 hover:border-white/30 hover:text-gray-300"
+                        }`}
                     >
-                        <X size={18} />
+                        <Bug size={11} />
                     </button>
-                </header>
-
-                {(showSidebar || showUsage) && (
-                    <div className="flex-1 overflow-y-auto">
-                        <div
-                            className={`grid grid-cols-1 gap-0 ${
-                                showSidebar && showUsage
-                                    ? "lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]"
-                                    : ""
-                            }`}
-                        >
-                            {showSidebar && (
-                                <ItemDetailSidebar
-                                    key={selectedItemId}
-                                    itemId={selectedItemId}
-                                    owned={owned}
-                                    marketPrice={marketPrice}
-                                    relativeUpdatedAt={relativeUpdatedAt}
-                                    isFiat={isFiat}
-                                    showMarket={showMarket}
-                                    minLevelForFlea={selectedItem.minLevelForFlea}
-                                    playerLevel={playerLevel}
-                                    onAddItemCounts={addItemCounts}
-                                />
-                            )}
-
-                            {showUsage && (
-                                <ItemDetailUsageTabs
-                                    key={`usage-${selectedItemId}`}
-                                    className=""
-                                    selectedItemId={selectedItem.id}
-                                    selectedItemImageLink={
-                                        selectedItem.iconLink ?? selectedItem.gridImageLink
-                                    }
-                                    stationRequirements={stationRequirements}
-                                    stationLevels={stationLevels}
-                                    hiddenStations={hiddenStations}
-                                    questItemState={questItemState}
-                                    questRewards={questRewards}
-                                    anyOfGroups={questAnyOfGroupState}
-                                    itemDetailsById={itemDetailsById}
-                                    traderOffers={traderOffers}
-                                    crafts={crafts}
-                                    acquisitionLoading={isUsageLoading}
-                                    barterError={itemUsage?.bartersError ?? usageRequestError}
-                                    craftError={itemUsage?.craftsError ?? usageRequestError}
-                                    completedQuests={completedQuests}
-                                    traderLoyaltyLevels={questTraderLoyaltyLevels}
-                                    gameEdition={gameEdition}
-                                    gameMode={toTarkovJsonGameMode(gameMode)}
-                                    showPriceHistory={showPriceHistory}
-                                />
-                            )}
-                        </div>
-                    </div>
                 )}
             </DialogContent>
         </Dialog>

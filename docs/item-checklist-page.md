@@ -112,6 +112,11 @@ modal's acquisition data is loaded separately:
   independently; successful results are cached in memory by mode and item ID.
 - **History** lazily requests `/api/items/{itemId}/price-history?mode=...`.
 
+In development, a small bug button floats just outside the modal's bottom-right
+corner. It toggles the modal between its normal presentation and formatted JSON
+for the selected item plus its inventory, hideout, quest, barter, and craft data.
+Market pricing is intentionally omitted from this debug view.
+
 The usage response contains ID-based barter/craft records for the selected item
 only. Ingredient presentation is joined through the global catalog in the modal.
 

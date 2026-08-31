@@ -470,10 +470,10 @@ scroller. A 212px leading spacer belongs to the scroll content, and the header
 condenses after 38px of scrolling. Condensing does not resize the scroll viewport or
 push the scroll position back across its threshold.
 
-Raw objective metadata is not rendered as chips below each objective. A local bug
-button in the bottom-left corner opens normalized objective JSON and the normalized
-full quest JSON for inspection. This debug drawer is display-only and does not add
-or change persisted quest preferences.
+Raw objective metadata is not rendered as chips below each objective. A small bug
+button in the top-left corner of the quest details panel opens normalized objective
+JSON and the normalized full quest JSON for inspection. This debug drawer is
+display-only and does not add or change persisted quest preferences.
 
 ## Raid Planner mapping
 
