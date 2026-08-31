@@ -116,6 +116,11 @@ export function QuestDetailsPane() {
         detailScrollRef.current?.scrollTo({ top: 0 });
     }, [quest?.id]);
 
+    useEffect(() => {
+        document.body.classList.toggle("quest-objective-map-active", isCompactMapOpen);
+        return () => document.body.classList.remove("quest-objective-map-active");
+    }, [isCompactMapOpen]);
+
     if (!quest) {
         return (
             <div className="flex min-h-[420px] border-t border-white/10 flex-1 items-center justify-center bg-[radial-gradient(circle_at_50%_45%,rgba(255,255,255,0.025),transparent_45%)] p-8 text-center">
@@ -228,6 +233,7 @@ export function QuestDetailsPane() {
             <header className={cn(
                 "relative z-30 shrink-0 overflow-visible border-b border-white/8 bg-[#15171a] transition-[padding,min-height] duration-200 max-lg:absolute max-lg:inset-x-0 max-lg:top-0",
                 isHeaderCondensed ? "min-h-0 px-4 py-2.5 sm:px-6" : "min-h-48 px-5 py-5 sm:px-7 sm:py-6",
+                isCompactMapOpen && "max-lg:hidden",
             )}>
                 {quest.taskImageLink && (
                     <div

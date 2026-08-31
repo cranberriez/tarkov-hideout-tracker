@@ -112,6 +112,10 @@ body.quest-workspace-active {
     body.quest-raid-planner-active [data-main-nav] {
         display: none;
     }
+
+    body.quest-objective-map-active [data-quest-mobile-back-bar] {
+        display: none;
+    }
 }
 
 @layer base {

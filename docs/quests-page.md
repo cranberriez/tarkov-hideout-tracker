@@ -511,7 +511,8 @@ of the details column, in the same compact 44px row used by the single-line
 multiple-choice warning. Below 1700px, the details use the full pane and the map
 starts hidden. The header's **Show map** action, or an objective's **Show on map**
 action, replaces the detail area with the map; its red close action restores the
-details. A numbered, color-coded cue
+details. On mobile, the quest detail header and compact back bar are hidden while
+the objective map is open so neither can overlap the map. A numbered, color-coded cue
 beside each mapped objective matches its map markers. Objectives that share the
 same rounded world position also share one marker, with their descriptions and IDs
 combined. All locations for one objective reuse that objective group's symbol;

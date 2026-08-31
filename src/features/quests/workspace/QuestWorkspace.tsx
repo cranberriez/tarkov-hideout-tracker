@@ -85,6 +85,7 @@ export function QuestWorkspace({ quests }: { quests: FullQuest[] }) {
                         <button
                             type="button"
                             onClick={() => setSelectedQuestId(null)}
+                            data-quest-mobile-back-bar
                             className="flex h-12 shrink-0 items-center gap-2 border-b border-white/10 bg-[#101113] px-4 text-xs font-medium text-gray-300 transition-colors hover:text-white lg:hidden"
                         >
                             <ChevronLeft size={16} /> Back to quests
