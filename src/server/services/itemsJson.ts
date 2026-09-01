@@ -81,7 +81,10 @@ async function readCachedCatalog(
 
     const rawChunks = await Promise.all(
         Array.from({ length: manifest.chunkCount }, (_, index) =>
-            redis.get<unknown>(buildChunkKey(manifestKey, manifest.slot, index)),
+            redis.get<unknown>(
+                "itemCatalog",
+                buildChunkKey(manifestKey, manifest.slot, index),
+            ),
         ),
     );
     const chunks = rawChunks.map((chunk) =>
@@ -190,6 +193,7 @@ export async function getGlobalItemList(
 ): Promise<TimedResponse<ItemsPayload>> {
     const { manifestKey, metaKey } = buildRedisKeys(gameMode);
     const [rawManifest, cachedMeta] = await redis.mget<[unknown, unknown]>(
+        "itemCatalog",
         manifestKey,
         metaKey,
     );
@@ -237,6 +241,7 @@ export async function getGlobalItemList(
             diagnostics: body.diagnostics,
         };
         await writeRedisSequenceAfterResponse(
+            "itemCatalog",
             [
                 ...chunks.map((chunk, index) => ({
                     [buildChunkKey(manifestKey, slot, index)]: chunk,

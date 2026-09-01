@@ -68,6 +68,7 @@ export async function getJsonHideoutStations(
 ): Promise<TimedResponse<HideoutStationsPayload>> {
     const { bodyKey, metaKey } = buildRedisKeys(gameMode);
     const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
+        "hideoutStations",
         bodyKey,
         metaKey,
     );
@@ -237,10 +238,14 @@ export async function getJsonHideoutStations(
                 upstreamStatus: "ok",
             },
         };
-        await writeRedisAfterResponse({
-            [bodyKey]: JSON.stringify(body),
-            [metaKey]: { updatedAt },
-        }, "hideout stations");
+        await writeRedisAfterResponse(
+            "hideoutStations",
+            {
+                [bodyKey]: JSON.stringify(body),
+                [metaKey]: { updatedAt },
+            },
+            "hideout stations",
+        );
         return body;
     } catch (error) {
         console.error("Failed to refresh hideout stations from Tarkov JSON", error);
@@ -259,6 +264,7 @@ const cachedJsonHideoutStations = unstable_cache(
 );
 
 export const getCachedJsonHideoutStations = cacheWhenEnabled(
+    "hideoutStations",
     getJsonHideoutStations,
     cachedJsonHideoutStations,
 );

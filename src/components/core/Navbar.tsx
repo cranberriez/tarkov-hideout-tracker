@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Boxes, House, Menu, Plus, ScrollText, Settings2 } from "lucide-react";
+import { Boxes, House, Menu, Plus, ScrollText, Settings2, Wrench } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
     DropdownMenu,
@@ -34,6 +34,12 @@ const links = [
     },
 ];
 
+const devLink = {
+    name: "Dev",
+    href: "/dev",
+    icon: Wrench,
+};
+
 export function Navbar() {
     const setSetupOpen = useUserStore((state) => state.setSetupOpen);
     const hasCompletedSetup = useUserStore((state) => state.hasCompletedSetup);
@@ -41,7 +47,9 @@ export function Navbar() {
     const setQuickAddOpen = useUIStore((state) => state.setQuickAddOpen);
     const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
     const currentPage = usePathname();
-    const isSecondaryRoute = currentPage === "/settings" || currentPage === "/news";
+    const isSecondaryRoute =
+        currentPage === "/settings" || currentPage === "/news" || currentPage === "/dev";
+    const visibleLinks = process.env.NODE_ENV === "development" ? [...links, devLink] : links;
 
     if (currentPage === "/quests" && isMainNavHidden) return null;
 
@@ -103,7 +111,7 @@ export function Navbar() {
                                     <Menu size={18} />
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" sideOffset={8}>
-                                    {links.map((link) => (
+                                    {visibleLinks.map((link) => (
                                         <DropdownMenuItem
                                             key={link.name}
                                             asChild
@@ -166,7 +174,7 @@ export function Navbar() {
                             <Plus size={16} />
                         </button>
 
-                        {links.map((link) => (
+                        {visibleLinks.map((link) => (
                             <Link
                                 key={link.name}
                                 href={link.href}

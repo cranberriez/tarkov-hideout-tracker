@@ -48,6 +48,7 @@ items come from task content and are display-only.
 | `/items` | Combined hideout and quest item checklist |
 | `/quests` | Quest objectives, progression, prerequisites, and planning |
 | `/news` | In-app news and updates |
+| `/dev` | Development-only cache policy and quest snapshot comparison |
 
 ## Application state
 

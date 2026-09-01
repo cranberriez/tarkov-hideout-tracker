@@ -1,6 +1,11 @@
 import { Redis } from "@upstash/redis";
 import { after } from "next/server";
-import { isCacheEnabled, namespaceRedisKey } from "./cache";
+import {
+    CACHE_DOMAINS,
+    getCachePolicy,
+    namespaceRedisKey,
+    type CacheDomain,
+} from "./cache";
 
 type RedisClient = ReturnType<typeof Redis.fromEnv>;
 
@@ -14,7 +19,12 @@ export interface RedisCacheStatus {
 
 let client: RedisClient | null = null;
 let status: RedisCacheStatus = {
-    state: isCacheEnabled ? "unchecked" : "disabled",
+    state: CACHE_DOMAINS.some((domain) => {
+        const policy = getCachePolicy(domain);
+        return policy.redisRead || policy.redisWrite;
+    })
+        ? "unchecked"
+        : "disabled",
     lastAttemptAt: null,
     lastError: null,
 };
@@ -39,7 +49,6 @@ function markUnavailable(operation: string, error: unknown) {
 }
 
 function getClient(): RedisClient | null {
-    if (!isCacheEnabled) return null;
     client ??= Redis.fromEnv();
     return client;
 }
@@ -49,8 +58,8 @@ function nullsForKeys<T extends unknown[]>(keys: string[]): T {
 }
 
 export const redis = {
-    async get<T>(key: string): Promise<T | null> {
-        if (!isCacheEnabled) return null;
+    async get<T>(domain: CacheDomain, key: string): Promise<T | null> {
+        if (!getCachePolicy(domain).redisRead) return null;
         try {
             const activeClient = getClient();
             const value = activeClient
@@ -64,8 +73,8 @@ export const redis = {
         }
     },
 
-    async mget<T extends unknown[]>(...keys: string[]): Promise<T> {
-        if (!isCacheEnabled) return nullsForKeys<T>(keys);
+    async mget<T extends unknown[]>(domain: CacheDomain, ...keys: string[]): Promise<T> {
+        if (!getCachePolicy(domain).redisRead) return nullsForKeys<T>(keys);
         try {
             const activeClient = getClient();
             const values = activeClient
@@ -79,8 +88,11 @@ export const redis = {
         }
     },
 
-    async mset(values: Record<string, unknown>): Promise<"OK" | null> {
-        if (!isCacheEnabled) return "OK";
+    async mset(
+        domain: CacheDomain,
+        values: Record<string, unknown>,
+    ): Promise<"OK" | null> {
+        if (!getCachePolicy(domain).redisWrite) return "OK";
         try {
             const activeClient = getClient();
             if (!activeClient) return null;
@@ -93,6 +105,24 @@ export const redis = {
         } catch (error) {
             markUnavailable("write", error);
             return null;
+        }
+    },
+
+    /** Read namespaced values for development diagnostics, independent of cache policy. */
+    async inspectMget<T extends unknown[]>(...keys: string[]): Promise<T> {
+        if (process.env.NODE_ENV !== "development") {
+            throw new Error("Redis cache inspection is only available in development");
+        }
+        try {
+            const activeClient = getClient();
+            const values = activeClient
+                ? await activeClient.mget<T>(...keys.map((key) => namespaceRedisKey(key)))
+                : nullsForKeys<T>(keys);
+            markAvailable();
+            return values;
+        } catch (error) {
+            markUnavailable("inspection read", error);
+            return nullsForKeys<T>(keys);
         }
     },
 };
@@ -108,13 +138,14 @@ export function getRedisCacheStatus(): RedisCacheStatus {
  * immediate best-effort write.
  */
 export async function writeRedisAfterResponse(
+    domain: CacheDomain,
     values: Record<string, unknown>,
     label: string,
 ): Promise<void> {
-    if (!isCacheEnabled) return;
+    if (!getCachePolicy(domain).redisWrite) return;
 
     const write = async () => {
-        await redis.mset(values);
+        await redis.mset(domain, values);
     };
 
     try {
@@ -129,14 +160,15 @@ export async function writeRedisAfterResponse(
 
 /** Schedules ordered Redis writes, useful when a cache value must be chunked. */
 export async function writeRedisSequenceAfterResponse(
+    domain: CacheDomain,
     batches: Record<string, unknown>[],
     label: string,
 ): Promise<void> {
-    if (!isCacheEnabled) return;
+    if (!getCachePolicy(domain).redisWrite) return;
 
     const write = async () => {
         for (const batch of batches) {
-            const result = await redis.mset(batch);
+            const result = await redis.mset(domain, batch);
             if (result !== "OK") {
                 throw new Error(`Redis rejected an ordered ${label} write`);
             }

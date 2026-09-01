@@ -27,6 +27,7 @@ export async function getJsonTraders(
 ): Promise<TimedResponse<TradersPayload>> {
     const { bodyKey, metaKey } = buildRedisKeys(gameMode);
     const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
+        "traders",
         bodyKey,
         metaKey,
     );
@@ -56,10 +57,14 @@ export async function getJsonTraders(
             updatedAt,
             diagnostics: { provider: "json", upstreamStatus: "ok" },
         };
-        await writeRedisAfterResponse({
-            [bodyKey]: JSON.stringify(body),
-            [metaKey]: { updatedAt },
-        }, "traders");
+        await writeRedisAfterResponse(
+            "traders",
+            {
+                [bodyKey]: JSON.stringify(body),
+                [metaKey]: { updatedAt },
+            },
+            "traders",
+        );
         return body;
     } catch (error) {
         console.error("Failed to refresh traders from Tarkov JSON", error);
@@ -73,4 +78,8 @@ const cachedJsonTraders = unstable_cache(getJsonTraders, ["json-traders"], {
     tags: ["traders"],
 });
 
-export const getCachedJsonTraders = cacheWhenEnabled(getJsonTraders, cachedJsonTraders);
+export const getCachedJsonTraders = cacheWhenEnabled(
+    "traders",
+    getJsonTraders,
+    cachedJsonTraders,
+);

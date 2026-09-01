@@ -567,11 +567,38 @@ async function fetchAndMapFullQuests(gameMode: TarkovJsonGameMode): Promise<Full
     });
 }
 
+export async function getCurrentJsonFullQuestData(
+    gameMode: TarkovJsonGameMode = "regular",
+): Promise<TimedResponse<FullQuestsPayload>> {
+    const quests = await fetchAndMapFullQuests(gameMode);
+    if (quests.length === 0) throw new Error("Tarkov JSON task mapping produced no quests");
+    return {
+        data: { quests },
+        updatedAt: Date.now(),
+        diagnostics: { provider: "json", upstreamStatus: "ok" },
+    };
+}
+
+export async function getStoredJsonFullQuestData(
+    gameMode: TarkovJsonGameMode = "regular",
+): Promise<TimedResponse<FullQuestsPayload> | null> {
+    const { fullBodyKey, fullMetaKey } = buildQuestRedisKeys(gameMode);
+    const [cachedBody] = await redis.inspectMget<[unknown, unknown]>(
+        fullBodyKey,
+        fullMetaKey,
+    );
+    return parseNonEmptyTimedResponse<FullQuestsPayload>(
+        cachedBody,
+        (payload) => payload.quests,
+    );
+}
+
 export async function getJsonFullQuestData(
     gameMode: TarkovJsonGameMode = "regular",
 ): Promise<TimedResponse<FullQuestsPayload>> {
     const { fullBodyKey, fullMetaKey } = buildQuestRedisKeys(gameMode);
     const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
+        "questsFull",
         fullBodyKey,
         fullMetaKey,
     );
@@ -582,18 +609,16 @@ export async function getJsonFullQuestData(
     if (cached && isProgressionCacheUsable(cachedMeta)) return cached;
 
     try {
-        const quests = await fetchAndMapFullQuests(gameMode);
-        if (quests.length === 0) throw new Error("Tarkov JSON task mapping produced no quests");
-        const updatedAt = Date.now();
-        const body: TimedResponse<FullQuestsPayload> = {
-            data: { quests },
-            updatedAt,
-            diagnostics: { provider: "json", upstreamStatus: "ok" },
-        };
-        await writeRedisAfterResponse({
-            [fullBodyKey]: JSON.stringify(body),
-            [fullMetaKey]: { updatedAt },
-        }, "full quests");
+        const body = await getCurrentJsonFullQuestData(gameMode);
+        const updatedAt = body.updatedAt;
+        await writeRedisAfterResponse(
+            "questsFull",
+            {
+                [fullBodyKey]: JSON.stringify(body),
+                [fullMetaKey]: { updatedAt },
+            },
+            "full quests",
+        );
         return body;
     } catch (error) {
         console.error("Failed to refresh full quests from Tarkov JSON", error);
@@ -610,6 +635,7 @@ export async function getJsonQuestData(
 ): Promise<TimedResponse<QuestsPayload>> {
     const { questsBodyKey, questsMetaKey } = buildQuestRedisKeys(gameMode);
     const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
+        "quests",
         questsBodyKey,
         questsMetaKey,
     );
@@ -665,10 +691,14 @@ export async function getJsonQuestData(
             updatedAt,
             diagnostics: { provider: "json", upstreamStatus: "ok" },
         };
-        await writeRedisAfterResponse({
-            [questsBodyKey]: JSON.stringify(body),
-            [questsMetaKey]: { updatedAt },
-        }, "item quests");
+        await writeRedisAfterResponse(
+            "quests",
+            {
+                [questsBodyKey]: JSON.stringify(body),
+                [questsMetaKey]: { updatedAt },
+            },
+            "item quests",
+        );
         return body;
     } catch (error) {
         console.error("Failed to refresh quests from Tarkov JSON", error);
@@ -692,11 +722,13 @@ const cachedJsonFullQuestData = unstable_cache(
 );
 
 export const getCachedJsonQuestData = cacheWhenEnabled(
+    "quests",
     getJsonQuestData,
     cachedJsonQuestData,
 );
 
 export const getCachedJsonFullQuestData = cacheWhenEnabled(
+    "questsFull",
     getJsonFullQuestData,
     cachedJsonFullQuestData,
 );

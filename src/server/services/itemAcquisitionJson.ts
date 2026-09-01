@@ -113,7 +113,11 @@ export async function getBarterIndex(
     gameMode: TarkovJsonGameMode = "regular",
 ): Promise<TimedResponse<BartersPayload>> {
     const { bodyKey, metaKey } = keys("barters", CACHE_VERSIONS.itemBarters, gameMode);
-    const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(bodyKey, metaKey);
+    const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
+        "itemBarters",
+        bodyKey,
+        metaKey,
+    );
     const cached = parseNonEmptyTimedResponse<BartersPayload>(cachedBody, (payload) =>
         Object.values(payload.bartersByItemId ?? {}).flat(),
     );
@@ -132,7 +136,9 @@ export async function getBarterIndex(
             diagnostics: { provider: "json", upstreamStatus: "ok" },
         };
         await writeRedisAfterResponse(
-            { [bodyKey]: JSON.stringify(body), [metaKey]: { updatedAt } }, "item barters",
+            "itemBarters",
+            { [bodyKey]: JSON.stringify(body), [metaKey]: { updatedAt } },
+            "item barters",
         );
         return body;
     } catch (error) {
@@ -146,7 +152,11 @@ export async function getCraftIndex(
     gameMode: TarkovJsonGameMode = "regular",
 ): Promise<TimedResponse<CraftsPayload>> {
     const { bodyKey, metaKey } = keys("crafts", CACHE_VERSIONS.itemCrafts, gameMode);
-    const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(bodyKey, metaKey);
+    const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
+        "itemCrafts",
+        bodyKey,
+        metaKey,
+    );
     const cached = parseNonEmptyTimedResponse<CraftsPayload>(cachedBody, (payload) =>
         Object.values(payload.craftsByItemId ?? {}).flat(),
     );
@@ -165,7 +175,9 @@ export async function getCraftIndex(
             diagnostics: { provider: "json", upstreamStatus: "ok" },
         };
         await writeRedisAfterResponse(
-            { [bodyKey]: JSON.stringify(body), [metaKey]: { updatedAt } }, "item crafts",
+            "itemCrafts",
+            { [bodyKey]: JSON.stringify(body), [metaKey]: { updatedAt } },
+            "item crafts",
         );
         return body;
     } catch (error) {

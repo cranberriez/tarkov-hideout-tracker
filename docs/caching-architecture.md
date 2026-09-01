@@ -11,8 +11,23 @@ and validated writes are scheduled after the response. Cache versions live in
 `src/lib/cfg/cacheVersions.ts`; change the relevant version when a cached shape
 changes and allow old keys to expire naturally.
 
-When `NODE_ENV=development` and `CACHE_ENABLED=false`, application cache helpers
-are bypassed. Development Redis keys use a `dev:` prefix when caching is enabled.
+Cache policy is resolved per dataset for three independent operations: Next.js
+cache, Redis reads, and Redis writes. Development Redis keys use a `dev:` prefix.
+Full and lightweight quest Redis writes default to disabled in development so a
+stored snapshot can be monitored without being replaced by ordinary page loads.
+
+Global environment flags override every dataset-specific flag:
+
+- `CACHE_NEXT_ENABLED`
+- `CACHE_REDIS_READ_ENABLED`
+- `CACHE_REDIS_WRITE_ENABLED`
+
+Dataset flags use `CACHE_{DATASET}_{OPERATION}_ENABLED`. Dataset names are
+`HIDEOUT_STATIONS`, `ITEM_CATALOG`, `ITEM_BARTERS`, `ITEM_CRAFTS`, `QUESTS`,
+`QUESTS_FULL`, and `TRADERS`; operation names are `NEXT`, `REDIS_READ`, and
+`REDIS_WRITE`. The item catalog, barter index, and craft index remain Redis-only,
+so their Next.js setting has no runtime consumer. The legacy development-only
+`CACHE_ENABLED=false` setting remains a master disable for backward compatibility.
 
 ## Freshness and failure behavior
 
@@ -36,7 +51,7 @@ Every source service validates cached and upstream data:
 | `items:catalog:v4:{mode}:slot:{0|1}:chunk:{n}` | Generation-tagged catalog chunks capped at 750 KiB | `itemCatalog` |
 | `items:barters:v2:{mode}` | Barters indexed by offered item ID | `itemBarters` |
 | `items:crafts:v2:{mode}` | Crafts indexed by product item ID | `itemCrafts` |
-| `hideout:stations:v8:{mode}` | Stations with ID-based item requirements | `hideoutStations` |
+| `hideout:stations:v9:{mode}` | Stations with ID-based item requirements | `hideoutStations` |
 | `quests:all:v7:{mode}` | Lightweight give-item quests with standard item IDs | `quests` |
 | `quests:full:v16:{mode}` | Full quest content with ID-based standard-item and reward references | `questsFull` |
 | `traders:all:v2:{mode}` | Compact trader list | `traders` |
@@ -62,6 +77,14 @@ The catalog is larger than Upstash's single-request limit in some modes, so it i
 written as alternating generation-tagged chunk sets. The small manifest and meta
 keys are published only after every chunk succeeds. Reads reject incomplete or
 mixed generations and retain the last complete generation as stale fallback.
+
+## Development comparison
+
+The development-only `/dev` route shows the effective policy and compares the
+stored full-quest Redis snapshot with a freshly normalized Tarkov.dev response.
+The fresh path uses upstream `no-store` requests and never reads or writes the
+application cache. The diagnostic snapshot read bypasses normal Redis-read policy
+but retains development key namespacing. The route returns 404 outside development.
 
 ## Request flow
 

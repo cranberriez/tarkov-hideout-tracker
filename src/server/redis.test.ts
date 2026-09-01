@@ -15,8 +15,8 @@ test("Redis failures degrade reads to misses and writes to no-ops", async (conte
 
     const { getRedisCacheStatus, redis } = await import("./redis");
 
-    assert.equal(await redis.get("one"), null);
-    assert.deepEqual(await redis.mget("one", "two"), [null, null]);
-    assert.equal(await redis.mset({ one: "value" }), null);
+    assert.equal(await redis.get("itemCatalog", "one"), null);
+    assert.deepEqual(await redis.mget("itemCatalog", "one", "two"), [null, null]);
+    assert.equal(await redis.mset("itemCatalog", { one: "value" }), null);
     assert.equal(getRedisCacheStatus().state, "unavailable");
 });
