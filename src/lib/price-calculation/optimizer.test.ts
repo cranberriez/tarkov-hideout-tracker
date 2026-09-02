@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { BarterRecord, CraftRecord, GlobalItem } from "@/types";
+import { getItemSellComparison } from "./prices";
 import { createAcquisitionOptimizer, evaluateBarter, evaluateCraft } from "./optimizer";
 
 function item(id: string, buy: number, sell = buy): GlobalItem {
@@ -73,6 +74,48 @@ test("manual prices override avg24hPrice", () => {
     });
 
     assert.equal(optimizer.optimize("A", 3).totalCost, 75);
+});
+
+test("compares recipe output against selling the required items", () => {
+    const craft: CraftRecord = {
+        id: "wasteful-craft",
+        productItemId: "A",
+        productCount: 1,
+        stationId: "station",
+        level: 1,
+        duration: 60,
+        requiredItems: [{ itemId: "B", count: 2 }],
+        requiredQuestItems: [],
+        gameEditions: [],
+    };
+    const items = [item("A", 100, 100), item("B", 25, 60)];
+    const evaluation = evaluateCraft(craft, {
+        itemsById: Object.fromEntries(items.map((entry) => [entry.id, entry])),
+        bartersByItemId: {},
+        craftsByItemId: {},
+    });
+
+    assert.equal(evaluation.cost, 50);
+    assert.equal(evaluation.profit, 50);
+    assert.equal(evaluation.inputSellValue, 120);
+    assert.equal(evaluation.profitVsSellingInputs, -20);
+});
+
+test("compares flea and trader sales in roubles while retaining trader currency", () => {
+    const pricedItem = item("A", 6_000);
+    pricedItem.marketPrice!.sellFor = [{
+        vendor: { name: "Peacekeeper", normalizedName: "peacekeeper" },
+        price: 53,
+        currency: "USD",
+        priceRUB: 6_622,
+    }];
+
+    const comparison = getItemSellComparison(pricedItem);
+
+    assert.equal(comparison.selectedSource, "trader");
+    assert.equal(comparison.selectedPrice, 6_622);
+    assert.equal(comparison.bestTraderOffer?.price, 53);
+    assert.equal(comparison.bestTraderOffer?.currency, "USD");
 });
 
 test("cyclic recipes terminate as unavailable", () => {

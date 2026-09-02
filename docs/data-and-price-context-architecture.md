@@ -52,9 +52,18 @@ UI:
   lastOfferCount?: number | null;
   changeLast48hPercent?: number | null;
   updatedAt?: number | null;
-  sellFor?: Array<{ vendor: VendorSummary; priceRUB: number }>;
+  sellFor?: Array<{
+    vendor: VendorSummary;
+    price?: number;
+    currency?: string;
+    priceRUB: number;
+  }>;
 }
 ```
+
+Trader offers retain both their original amount/currency and their rouble-converted
+value. Profit calculations compare offers in roubles while the UI can display the
+currency the trader actually pays.
 
 Consumers read `item.marketPrice` directly. There is no separate price context,
 daily price cron, or market-price Redis namespace. Historical prices are fetched

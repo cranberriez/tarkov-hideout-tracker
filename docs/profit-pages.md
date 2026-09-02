@@ -9,6 +9,8 @@ to use the small per-item usage route and do not receive these indexes.
 
 - Item acquisition from the flea market uses `avg24hPrice`.
 - Sale value uses the higher of `avg24hPrice` and the item's best trader-sale value.
+  Trader offers retain their original amount/currency alongside the converted
+  rouble value used for comparison.
 - A mode-scoped manual buy or sell price overrides the corresponding source value.
 - Roubles have a fixed unit value of one. Other currencies use catalog pricing or
   a manual override.
@@ -38,6 +40,19 @@ show no hourly value when their ingredient route is instantaneous. Nested craft
 time is allocated per produced item, so using one item from a craft that produces
 four adds one quarter of that craft's duration. Station-aware parallel scheduling
 is a future enhancement.
+
+Each root recipe also calculates the opportunity value of selling its required
+items individually using their best sale values. This does not replace route
+profit because the figures answer different questions: route profit assumes the
+ingredients are acquired for the recipe, while opportunity value applies when the
+player already owns them. The table labels the former explicitly as `Route profit`.
+When crafting or bartering an ingredient costs less than buying it directly, the
+ingredient line shows the route's total savings. Its isolated info tooltip compares
+the route cost with the direct flea purchase and suppresses the larger item tooltip.
+When all non-tool inputs could be sold individually for more than the recipe output,
+an info icon beside route profit instead recommends selling the ingredients and
+shows the full owned-input comparison. Reusable tools are excluded because the
+recipe returns them.
 
 ## Availability and filtering
 
@@ -69,12 +84,28 @@ is already represented by the row. Locked root recipes show a lock badge fully
 outside the right edge of the trader or station image. Source levels appear inline
 with the source name.
 
-Rows do not expand. Dark hover cards provide the item image, selected acquisition
-route, source trader or station, loyalty/level, batch count, route duration,
-catalog or manual unit price, quantity, route total, and any cheaper theoretical
-alternative. Reusable tools are clearly marked as excluded from recurring cost.
-Hover cards remain close to the pointer when they must move above a low row.
-Clicking an item's portrait opens the shared item-detail modal.
+Rows with crafted or bartered ingredient routes expose an action at the far left.
+The expanded area starts one level below the viewed recipe: every top-level
+crafted or bartered ingredient forms a separate branch, while top-level flea-only
+ingredients are omitted. Each branch then shows that ingredient's recipe inputs
+and any deeper routes. A simple border separates independent branches. Recipe
+steps link to their source recipe, including navigation between the barter and
+crafting profit pages.
+
+Dark hover cards provide the item image, selected acquisition route, source
+trader or station, loyalty/level, batch count, route duration, catalog or manual
+unit price, quantity, route total, flea-price comparison, savings, and any cheaper
+theoretical alternative. Crafted and bartered items add a recipe card to the
+right with the source trader or station and required items. Reusable tools are
+clearly marked as excluded from recurring cost. Hover cards remain close to the
+pointer when they must move above a low row. Clicking an item's portrait opens
+the shared item-detail modal; hovering a crafted or bartered requirement also
+reveals a button that opens its recipe.
+
+Output sale presentation compares the flea value with the highest trader offer.
+Close prices (within 5%, capped at 5,000 roubles) are both shown in the row; hover
+details always show both available values. Trader offers use their original
+currency while comparison and profit math use `priceRUB`.
 
 Recipe rows use TanStack's window virtualizer. The required-item count provides
 the initial row-height estimate, and rendered rows are measured so recipes with
@@ -84,4 +115,6 @@ vertical scrolling and its existing horizontal overflow behavior.
 Clicking an ingredient price edits that item's manual buy value; clicking an
 output price edits its manual sell value. The input placeholder shows the current
 catalog or override unit price. Clearing the input removes only that side of the
-item's override. Craft rows include a dedicated full-route-time column.
+item's override. Every recipe row shows total craft time beneath its profit value,
+including nested ingredient crafts, and each required-item line shows its own route
+craft time when nonzero.

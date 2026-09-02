@@ -33,7 +33,12 @@ interface JsonCatalogItem {
     high24hPrice?: number | null; low24hPrice?: number | null;
     lastLowPrice?: number | null; lastOfferCount?: number | null;
     changeLast48hPercent?: number | null; lastScan?: string | null;
-    sellToTrader?: Array<{ trader: string; priceRUB: number }>;
+    sellToTrader?: Array<{
+        trader: string;
+        price: number;
+        priceRUB: number;
+        currency: string;
+    }>;
 }
 interface JsonSkill { id: string; name: string; imageLink?: string }
 interface JsonItemsData {
@@ -142,6 +147,8 @@ function mapMarketPrice(
                     normalizedName: trader?.normalizedName ?? offer.trader,
                     imageLink: trader?.imageLink,
                 },
+                price: numberOrNullish(offer.price) ?? offer.priceRUB,
+                currency: offer.currency,
                 priceRUB: offer.priceRUB,
             }];
         }),

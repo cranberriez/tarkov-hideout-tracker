@@ -44,6 +44,8 @@ export interface GlobalItemVendorPrice {
         normalizedName: string;
         imageLink?: string | null;
     };
+    currency?: string;
+    price?: number;
     priceRUB: number;
 }
 

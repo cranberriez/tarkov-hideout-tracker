@@ -33,6 +33,8 @@ export interface RecipeEvaluation {
     theoreticalCost: number | null;
     sellValue: number | null;
     profit: number | null;
+    inputSellValue: number | null;
+    profitVsSellingInputs: number | null;
     durationSeconds: number;
     profitPerHour: number | null;
     directBuyCost: number | null;

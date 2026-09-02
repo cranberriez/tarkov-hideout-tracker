@@ -42,6 +42,23 @@ function sumPlanCost(plans: AcquisitionPlan[], field: "totalCost" | "theoretical
     return total;
 }
 
+function sumRequirementSellValue(
+    requirements: ItemAmountRef[],
+    context: PriceCalculationContext,
+) {
+    let total = 0;
+    for (const requirement of requirements) {
+        if (requirement.isTool) continue;
+        const unitSellValue = getItemSellPrice(
+            context.itemsById[requirement.itemId],
+            context.overrides,
+        );
+        if (unitSellValue === null) return null;
+        total += unitSellValue * requirement.count;
+    }
+    return total;
+}
+
 export function createAcquisitionOptimizer(context: PriceCalculationContext) {
     const maxDepth = context.maxDepth ?? 16;
     const overrides = context.overrides ?? {};
@@ -251,7 +268,8 @@ function evaluateTopLevelRecipe(
         ? (recipe as BarterRecord).offeredCount
         : (recipe as CraftRecord).productCount;
     const blocked = new Set([outputItemId]);
-    const requiredItems = aggregateRequirements(recipe.requiredItems, 1).map((requirement) => ({
+    const aggregatedRequirements = aggregateRequirements(recipe.requiredItems, 1);
+    const requiredItems = aggregatedRequirements.map((requirement) => ({
         ...optimizer.optimize(requirement.itemId, requirement.count, blocked),
         ...(requirement.isTool ? { isTool: true } : {}),
     }));
@@ -273,6 +291,12 @@ function evaluateTopLevelRecipe(
     const sellValue = unitSellPrice === null ? null : unitSellPrice * outputCount;
     const directBuyCost = unitBuyPrice === null ? null : unitBuyPrice * outputCount;
     const profit = cost === null || sellValue === null ? null : sellValue - cost;
+    const inputSellValue = hasUnpricedRequirements
+        ? null
+        : sumRequirementSellValue(aggregatedRequirements, context);
+    const profitVsSellingInputs = inputSellValue === null || sellValue === null
+        ? null
+        : sellValue - inputSellValue;
     const durationSeconds =
         (kind === "craft" ? (recipe as CraftRecord).duration : 0) +
         requiredItems.reduce(
@@ -298,6 +322,8 @@ function evaluateTopLevelRecipe(
         theoreticalCost,
         sellValue,
         profit,
+        inputSellValue,
+        profitVsSellingInputs,
         durationSeconds,
         profitPerHour,
         directBuyCost,

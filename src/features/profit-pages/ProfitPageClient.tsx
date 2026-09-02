@@ -1,13 +1,18 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { useShallow } from "zustand/react/shallow";
 import {
     ChartNoAxesCombined,
+    ChevronRight,
     CircleArrowRight,
+    CornerDownRight,
+    ExternalLink,
+    Info,
     LockKeyhole,
     Search,
     Settings2,
@@ -21,13 +26,14 @@ import {
     evaluateBarters,
     evaluateCrafts,
     getItemBuyPrice,
+    getItemSellComparison,
     getItemSellPrice,
     type AcquisitionPlan,
     type ManualPriceOverride,
     type RecipeEvaluation,
 } from "@/lib/price-calculation";
 import { formatCompactRoubles, formatRoubles } from "@/lib/utils/market-price";
-import type { BarterRecord, CraftRecord, GlobalItem, Station, Trader } from "@/types";
+import type { BarterRecord, CraftRecord, GlobalItem, GlobalItemVendorPrice, Station, Trader } from "@/types";
 import type { ProfitPageData } from "@/server/services/profitPages";
 import { useManualPriceOverrides } from "./useManualPriceOverrides";
 
@@ -37,6 +43,7 @@ type SortMode = "profit" | "profitPerHour" | "cost" | "name";
 interface ProfitPageClientProps {
     kind: ProfitPageKind;
     data: ProfitPageData;
+    initialTargetRecipeId?: string;
 }
 
 function indexByOutput<T>(records: T[], getItemId: (record: T) => string) {
@@ -45,7 +52,8 @@ function indexByOutput<T>(records: T[], getItemId: (record: T) => string) {
     return index;
 }
 
-export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
+export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPageClientProps) {
+    const router = useRouter();
     const { items, itemById, itemsError, stations } = useDataContext();
     const {
         gameMode,
@@ -72,6 +80,7 @@ export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
     const [allowCrafts, setAllowCrafts] = useState(true);
     const [allowBarters, setAllowBarters] = useState(true);
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+    const [targetRecipeId, setTargetRecipeId] = useState<string | null>(initialTargetRecipeId ?? null);
     const [sortMode, setSortMode] = useState<SortMode>(
         kind === "craft" ? "profitPerHour" : "profit",
     );
@@ -131,6 +140,7 @@ export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
         const normalizedSearch = search.trim().toLowerCase();
         return evaluations
             .filter((evaluation) => {
+                if (evaluation.id === targetRecipeId) return true;
                 const item = itemById[evaluation.outputItemId];
                 if (
                     normalizedSearch &&
@@ -161,6 +171,7 @@ export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
         sortMode,
         sourceId,
         stationLevels,
+        targetRecipeId,
         traderLoyaltyLevels,
     ]);
 
@@ -189,6 +200,25 @@ export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
         overscan: 8,
         scrollMargin,
     });
+
+    useEffect(() => {
+        if (!targetRecipeId) return;
+        const targetIndex = visibleEvaluations.findIndex((evaluation) => evaluation.id === targetRecipeId);
+        if (targetIndex < 0) return;
+        virtualizer.scrollToIndex(targetIndex, { align: "center" });
+    }, [targetRecipeId, virtualizer, visibleEvaluations]);
+
+    function goToRecipe(method: "barter" | "craft", recipeId: string) {
+        const route = method === "barter"
+            ? "/items/barter-profits"
+            : "/items/crafting-profits";
+        if (method !== kind) {
+            router.push(`${route}?recipe=${encodeURIComponent(recipeId)}`);
+            return;
+        }
+        router.replace(`${route}?recipe=${encodeURIComponent(recipeId)}`, { scroll: false });
+        setTargetRecipeId(recipeId);
+    }
 
     if (!items || itemsError || relevantError) {
         return (
@@ -259,8 +289,8 @@ export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
                         onChange={(event) => setSortMode(event.target.value as SortMode)}
                         className="h-9 rounded border border-white/10 bg-black/30 px-3 text-sm"
                     >
-                        <option value="profit">Profit</option>
-                        <option value="profitPerHour">Profit / hour</option>
+                        <option value="profit">Route profit</option>
+                        <option value="profitPerHour">Route profit / hour</option>
                         <option value="cost">Lowest cost</option>
                         <option value="name">Item name</option>
                     </select>
@@ -278,11 +308,10 @@ export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
             </section>
 
             <div className="overflow-x-auto rounded-md border border-white/10 bg-card/50">
-                <div className={`grid w-full min-w-[900px] border-b border-white/10 bg-black/30 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground ${profitGrid(kind)}`}>
-                    <span>Source</span><span>Produced item</span><span>Required items</span><span className="px-3">Cost</span><span className="px-3">Sell value</span><span className="px-3">Profit</span><span className="px-3">Profit / hour</span>
-                    {kind === "craft" && <span className="px-3">Full time</span>}
+                <div className={`grid w-full min-w-[1000px] border-b border-white/10 bg-black/30 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground ${profitGrid()}`}>
+                    <span aria-label="Actions" /><span>Source</span><span>Produced item</span><span>Required items</span><span className="px-3">Cost</span><span className="px-3">Sell value</span><span className="px-3">Route profit</span><span className="px-3">Route profit / hour</span>
                 </div>
-                <div ref={listRef} className="w-full min-w-[900px]">
+                <div ref={listRef} className="w-full min-w-[1000px]">
                     {visibleEvaluations.length > 0 ? (
                         <div
                             style={{
@@ -328,6 +357,8 @@ export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
                                             tradersById={tradersById}
                                             stationsById={stationsById}
                                             onItemOpen={setSelectedItemId}
+                                            onGoToRecipe={goToRecipe}
+                                            highlighted={evaluation.id === targetRecipeId}
                                         />
                                     </div>
                                 );
@@ -417,6 +448,8 @@ function ProfitRow({
     tradersById,
     stationsById,
     onItemOpen,
+    onGoToRecipe,
+    highlighted,
 }: {
     evaluation: RecipeEvaluation;
     itemById: Readonly<Record<string, GlobalItem>>;
@@ -430,11 +463,30 @@ function ProfitRow({
     tradersById: Readonly<Record<string, Trader>>;
     stationsById: Readonly<Record<string, Station>>;
     onItemOpen: (itemId: string) => void;
+    onGoToRecipe: (method: "barter" | "craft", recipeId: string) => void;
+    highlighted: boolean;
 }) {
+    const [expanded, setExpanded] = useState(false);
     const output = itemById[evaluation.outputItemId];
-    const routeContext = { bartersById, craftsById, tradersById, stationsById };
+    const routeContext = { itemById, bartersById, craftsById, tradersById, stationsById };
+    const hasNestedRecipe = evaluation.requiredItems.some(hasRecipeRoute);
     return (
-        <div className={`grid min-h-[72px] items-stretch ${profitGrid(evaluation.kind)}`}>
+        <div className={highlighted ? "bg-tarkov-green/[0.06] ring-1 ring-inset ring-tarkov-green/40" : undefined}>
+            <div className={`grid min-h-[72px] items-stretch ${profitGrid()}`}>
+                <div className="flex items-center justify-center border-r border-white/5 bg-black/10">
+                    {hasNestedRecipe && (
+                        <button
+                            type="button"
+                            aria-expanded={expanded}
+                            aria-label={`${expanded ? "Collapse" : "Expand"} recipe chain`}
+                            title={`${expanded ? "Collapse" : "Expand"} recipe chain`}
+                            onClick={() => setExpanded((value) => !value)}
+                            className="flex size-7 items-center justify-center rounded border border-white/10 bg-white/[0.035] text-muted-foreground transition hover:border-tarkov-green/50 hover:text-tarkov-green"
+                        >
+                            <ChevronRight className={`size-4 transition-transform ${expanded ? "rotate-90" : ""}`} />
+                        </button>
+                    )}
+                </div>
                 <SourceBlock evaluation={evaluation} source={source} available={available} />
                 <div className="min-w-0 border-r border-white/5">
                     <ItemCard
@@ -450,6 +502,15 @@ function ProfitRow({
                         onPriceChange={onPriceChange}
                         routeContext={routeContext}
                         onItemOpen={onItemOpen}
+                        recipePreview={{
+                            kind: evaluation.kind,
+                            sourceId: evaluation.id,
+                            outputItemId: evaluation.outputItemId,
+                            outputCount: evaluation.outputCount,
+                            batches: 1,
+                            requiredItems: evaluation.requiredItems,
+                            durationSeconds: evaluation.craft?.duration ?? 0,
+                        }}
                         detail={evaluation.barter
                             ? `Barter with ${sourceName ?? "unknown trader"} at LL${evaluation.barter.minTraderLevel}`
                             : `Craft at ${sourceName ?? "unknown station"} level ${evaluation.craft?.level ?? "?"} · ${formatDuration(evaluation.craft?.duration ?? 0)}`}
@@ -470,29 +531,284 @@ function ProfitRow({
                             routeContext={routeContext}
                             compactLine
                             onItemOpen={onItemOpen}
+                            onGoToRecipe={onGoToRecipe}
                         />
                     ))}
                 </div>
                 <Cell label="Cost">{formatRoundedRoubles(evaluation.cost)}</Cell>
-                <Cell label="Sell value">{formatRoundedRoubles(evaluation.sellValue)}</Cell>
-                <Cell label="Profit" value={evaluation.profit}>
+                <SellValueCell
+                    item={output}
+                    count={evaluation.outputCount}
+                    sellValue={evaluation.sellValue}
+                    overrides={overrides}
+                />
+                <Cell
+                    label="Route profit"
+                    value={evaluation.profit}
+                    detail={`Total time ${evaluation.durationSeconds > 0 ? formatDuration(evaluation.durationSeconds) : "-"}`}
+                    infoTitle="Sell the ingredients instead"
+                    info={evaluation.profitVsSellingInputs !== null && evaluation.profitVsSellingInputs < 0 && evaluation.inputSellValue !== null && evaluation.sellValue !== null ? <>
+                        <span className="block">Selling all non-tool ingredients individually would return <strong className="text-white">{formatRoundedRoubles(evaluation.inputSellValue)}</strong>.</span>
+                        <span className="mt-1 block">The {evaluation.kind === "barter" ? "barter" : "craft"} output sells for <strong className="text-white">{formatRoundedRoubles(evaluation.sellValue)}</strong>.</span>
+                        <span className="mt-2 block border-t border-white/10 pt-2 text-amber-200">If you already own the ingredients, selling them separately is worth <strong>{formatRoundedRoubles(-evaluation.profitVsSellingInputs)}</strong> more.</span>
+                    </> : undefined}
+                >
                     {formatSignedRoubles(evaluation.profit)}
                 </Cell>
-                <Cell label="Profit / hour" value={evaluation.profitPerHour}>
+                <Cell label="Route profit / hour" value={evaluation.profitPerHour}>
                     {formatSignedRoubles(evaluation.profitPerHour)}
                 </Cell>
-                {evaluation.kind === "craft" && (
-                    <Cell label="Full time">{formatDuration(evaluation.durationSeconds)}</Cell>
-                )}
+            </div>
+            {expanded && hasNestedRecipe && (
+                <RecipeChain
+                    evaluation={evaluation}
+                    itemById={itemById}
+                    routeContext={routeContext}
+                    onGoToRecipe={onGoToRecipe}
+                />
+            )}
         </div>
     );
 }
 
 interface RouteContext {
+    itemById: Readonly<Record<string, GlobalItem>>;
     bartersById: Readonly<Record<string, BarterRecord>>;
     craftsById: Readonly<Record<string, CraftRecord>>;
     tradersById: Readonly<Record<string, Trader>>;
     stationsById: Readonly<Record<string, Station>>;
+}
+
+interface RecipePreviewData {
+    kind: "barter" | "craft";
+    sourceId: string;
+    outputItemId: string;
+    outputCount: number;
+    batches: number;
+    requiredItems: AcquisitionPlan[];
+    durationSeconds: number;
+}
+
+function getPlanRecipePreview(
+    plan: AcquisitionPlan | undefined,
+    context: RouteContext,
+): RecipePreviewData | undefined {
+    if (!plan?.sourceId || (plan.method !== "barter" && plan.method !== "craft")) return undefined;
+    if (plan.method === "barter") {
+        const barter = context.bartersById[plan.sourceId];
+        if (!barter) return undefined;
+        return {
+            kind: "barter",
+            sourceId: barter.id,
+            outputItemId: barter.offeredItemId,
+            outputCount: barter.offeredCount,
+            batches: plan.batches,
+            requiredItems: plan.children,
+            durationSeconds: plan.durationSeconds,
+        };
+    }
+    const craft = context.craftsById[plan.sourceId];
+    if (!craft) return undefined;
+    return {
+        kind: "craft",
+        sourceId: craft.id,
+        outputItemId: craft.productItemId,
+        outputCount: craft.productCount,
+        batches: plan.batches,
+        requiredItems: plan.children,
+        durationSeconds: craft.duration,
+    };
+}
+
+function RecipePreviewCard({
+    preview,
+    itemById,
+    routeContext,
+}: {
+    preview: RecipePreviewData;
+    itemById: Readonly<Record<string, GlobalItem>>;
+    routeContext: RouteContext;
+}) {
+    const barter = preview.kind === "barter" ? routeContext.bartersById[preview.sourceId] : undefined;
+    const craft = preview.kind === "craft" ? routeContext.craftsById[preview.sourceId] : undefined;
+    const source = barter
+        ? routeContext.tradersById[barter.traderId]
+        : craft
+            ? routeContext.stationsById[craft.stationId]
+            : undefined;
+    const output = itemById[preview.outputItemId];
+
+    return (
+        <span className="block min-w-0 flex-1 overflow-hidden rounded-md border border-white/15 bg-[#05070a] shadow-[0_18px_55px_rgba(0,0,0,0.8)]">
+            <span className="flex items-center gap-2 border-b border-white/10 bg-white/[0.035] px-3 py-2">
+                <span className={`flex size-7 shrink-0 items-center justify-center rounded border ${preview.kind === "craft" ? "border-orange-400/25 bg-orange-400/10 text-orange-300" : "border-sky-400/25 bg-sky-400/10 text-sky-300"}`}>
+                    {preview.kind === "craft" ? <Wrench className="size-4" /> : <CircleArrowRight className="size-4" />}
+                </span>
+                {source?.imageLink && <Image src={source.imageLink} alt="" width={30} height={30} className="size-8 rounded object-contain" unoptimized />}
+                <span className="min-w-0">
+                    <span className="block truncate text-[11px] font-semibold text-white">
+                        {source?.name ?? (preview.kind === "craft" ? "Unknown station" : "Unknown trader")}
+                        {barter ? ` · LL${barter.minTraderLevel}` : craft ? ` · Level ${craft.level}` : ""}
+                    </span>
+                    <span className="block truncate text-[10px] text-muted-foreground">
+                        {preview.kind === "craft" ? `Crafts ${output?.name ?? "item"}` : `Barters for ${output?.name ?? "item"}`}
+                        {preview.batches > 1 ? ` · ${preview.batches} batches` : ""}
+                    </span>
+                </span>
+            </span>
+            <span className="block p-2">
+                <span className="mb-1 block text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Required items</span>
+                {preview.requiredItems.map((requirement, index) => {
+                    const item = itemById[requirement.itemId];
+                    return (
+                        <span key={`${requirement.itemId}:${requirement.isTool === true}:${index}`} className="flex h-9 items-center gap-2 border-t border-white/5 first:border-t-0">
+                            {item?.iconLink ? <Image src={item.iconLink} alt="" width={30} height={30} className="size-8 shrink-0 object-contain" unoptimized /> : <span className="size-8 shrink-0" />}
+                            <span className="min-w-0 flex-1 truncate text-[10px] text-foreground">{item?.name ?? "Unknown item"}</span>
+                            <span className="font-mono text-[9px] text-muted-foreground">×{formatQuantity(requirement.quantity)}</span>
+                            <span className={`rounded px-1 py-0.5 text-[8px] font-bold uppercase ${routeChipClasses(requirement.method)}`}>{requirement.method}</span>
+                        </span>
+                    );
+                })}
+                {preview.kind === "craft" && preview.durationSeconds > 0 && (
+                    <span className="mt-1 block border-t border-white/10 pt-1 text-right font-mono text-[9px] text-orange-300">{formatDuration(preview.durationSeconds)}</span>
+                )}
+            </span>
+        </span>
+    );
+}
+
+function hasRecipeRoute(plan: AcquisitionPlan): boolean {
+    return plan.method === "barter" || plan.method === "craft" || plan.children.some(hasRecipeRoute);
+}
+
+function RecipeChain({
+    evaluation,
+    itemById,
+    routeContext,
+    onGoToRecipe,
+}: {
+    evaluation: RecipeEvaluation;
+    itemById: Readonly<Record<string, GlobalItem>>;
+    routeContext: RouteContext;
+    onGoToRecipe: (method: "barter" | "craft", recipeId: string) => void;
+}) {
+    const recipeBranches = evaluation.requiredItems.filter(
+        (plan) => plan.method === "barter" || plan.method === "craft",
+    );
+
+    return (
+        <div className="border-t border-white/10 bg-black/15">
+            {recipeBranches.map((plan, index) => (
+                <div key={`${plan.itemId}:${plan.isTool === true}:${index}`} className="border-t border-white/10 first:border-t-0">
+                    <RecipeChainNode
+                        plan={plan}
+                        depth={0}
+                        root
+                        itemById={itemById}
+                        routeContext={routeContext}
+                        onGoToRecipe={onGoToRecipe}
+                    />
+                    {plan.children.map((child, childIndex) => (
+                        <RecipeChainNode
+                            key={`${child.itemId}:${child.isTool === true}:${childIndex}`}
+                            plan={child}
+                            depth={1}
+                            itemById={itemById}
+                            routeContext={routeContext}
+                            onGoToRecipe={onGoToRecipe}
+                        />
+                    ))}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function RecipeChainNode({
+    plan,
+    depth,
+    itemById,
+    routeContext,
+    onGoToRecipe,
+    root = false,
+}: {
+    plan: AcquisitionPlan;
+    depth: number;
+    itemById: Readonly<Record<string, GlobalItem>>;
+    routeContext: RouteContext;
+    onGoToRecipe: (method: "barter" | "craft", recipeId: string) => void;
+    root?: boolean;
+}) {
+    const item = itemById[plan.itemId];
+    const preview = getPlanRecipePreview(plan, routeContext);
+    const source = preview?.kind === "barter"
+        ? routeContext.tradersById[routeContext.bartersById[preview.sourceId]?.traderId]
+        : preview?.kind === "craft"
+            ? routeContext.stationsById[routeContext.craftsById[preview.sourceId]?.stationId]
+            : undefined;
+
+    return (
+        <div>
+            <div
+                className={`group/chain flex min-h-10 items-center gap-2 pr-3 hover:bg-white/[0.025] ${root ? "min-h-12 bg-white/[0.02]" : ""}`}
+                style={{ paddingLeft: `${12 + Math.min(depth, 8) * 24}px` }}
+            >
+                {!root && <CornerDownRight className="size-3.5 shrink-0 text-white/25" />}
+                {item?.iconLink ? <Image src={item.iconLink} alt="" width={32} height={32} className="size-8 shrink-0 object-contain" unoptimized /> : <span className="size-8 shrink-0" />}
+                <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[11px] font-medium text-foreground">{item?.name ?? "Unknown item"}</span>
+                    <span className="block truncate text-[9px] text-muted-foreground">
+                        {source ? `${source.name} · ` : ""}{describeChainRoute(plan, routeContext)}
+                    </span>
+                </span>
+                {plan.isTool && <span className="rounded bg-sky-400 px-1 py-0.5 text-[7px] font-black uppercase text-black">tool</span>}
+                <span className="font-mono text-[10px] text-muted-foreground">×{formatQuantity(plan.quantity)}</span>
+                <span className={`rounded px-1.5 py-0.5 text-[8px] font-bold uppercase ${routeChipClasses(plan.method)}`}>{plan.method}</span>
+                <span className="w-20 text-right font-mono text-[10px] text-foreground">{plan.isTool ? "Excluded" : formatRoundedRoubles(plan.totalCost)}</span>
+                {plan.durationSeconds > 0 && (
+                    <span className="w-16 text-right font-mono text-[10px] text-orange-300">{formatDuration(plan.durationSeconds)}</span>
+                )}
+                {preview && plan.sourceId && (plan.method === "barter" || plan.method === "craft") && (
+                    <button
+                        type="button"
+                        title={`Go to ${plan.method} recipe`}
+                        onClick={() => onGoToRecipe(plan.method as "barter" | "craft", plan.sourceId as string)}
+                        className="flex size-6 items-center justify-center rounded text-muted-foreground opacity-0 transition hover:bg-white/10 hover:text-tarkov-green group-hover/chain:opacity-100 focus:opacity-100"
+                    >
+                        <ExternalLink className="size-3.5" />
+                    </button>
+                )}
+            </div>
+            {!root && plan.children.length > 0 && (
+                <div>
+                    {plan.children.map((child, index) => (
+                        <RecipeChainNode
+                            key={`${child.itemId}:${child.isTool === true}:${index}`}
+                            plan={child}
+                            depth={depth + 1}
+                            itemById={itemById}
+                            routeContext={routeContext}
+                            onGoToRecipe={onGoToRecipe}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function describeChainRoute(plan: AcquisitionPlan, context: RouteContext) {
+    if (plan.method === "flea") return "Flea market";
+    if (plan.method === "unavailable") return "No priced route";
+    if (plan.method === "barter" && plan.sourceId) {
+        const barter = context.bartersById[plan.sourceId];
+        return `Barter LL${barter?.minTraderLevel ?? "?"}${plan.batches > 1 ? ` · ${plan.batches} batches` : ""}`;
+    }
+    if (plan.method === "craft" && plan.sourceId) {
+        const craft = context.craftsById[plan.sourceId];
+        return `Craft level ${craft?.level ?? "?"}${plan.batches > 1 ? ` · ${plan.batches} batches` : ""}`;
+    }
+    return "Acquisition route";
 }
 
 function SourceBlock({ evaluation, source, available }: { evaluation: RecipeEvaluation; source?: Trader | Station; available: boolean }) {
@@ -517,11 +833,106 @@ function SourceBlock({ evaluation, source, available }: { evaluation: RecipeEval
     );
 }
 
-function Cell({ label, value, children }: { label: string; value?: number | null; children: React.ReactNode }) {
+function Cell({ label, value, children, detail, info, infoTitle }: {
+    label: string;
+    value?: number | null;
+    children: React.ReactNode;
+    detail?: string;
+    info?: React.ReactNode;
+    infoTitle?: string;
+}) {
     const color = value == null ? "text-foreground" : value > 0 ? "text-tarkov-green" : value < 0 ? "text-red-300" : "text-foreground";
     return (
-        <div className="flex items-center border-l border-white/5 px-3">
-            <span className={`whitespace-nowrap font-mono text-sm font-semibold ${color}`} title={label}>{children}</span>
+        <div className="flex flex-col items-start justify-center border-l border-white/5 px-3">
+            <span className="flex items-center gap-1">
+                <span className={`whitespace-nowrap font-mono text-sm font-semibold ${color}`} title={label}>{children}</span>
+                {info && <InfoHint title={infoTitle ?? "Price comparison"} tone="warning">{info}</InfoHint>}
+            </span>
+            {detail && <span className="mt-0.5 whitespace-nowrap font-mono text-[9px] text-muted-foreground">{detail}</span>}
+        </div>
+    );
+}
+
+function InfoHint({ title, children, tone = "neutral", onShow }: {
+    title: string;
+    children: React.ReactNode;
+    tone?: "neutral" | "warning";
+    onShow?: () => void;
+}) {
+    const [position, setPosition] = useState<{ left: number; top?: number; bottom?: number; width: number } | null>(null);
+    const triggerRef = useRef<HTMLSpanElement>(null);
+
+    function show(event?: React.SyntheticEvent) {
+        event?.stopPropagation();
+        onShow?.();
+        const rect = triggerRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const width = Math.min(288, window.innerWidth - 16);
+        const left = Math.max(8, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - 8));
+        const placeAbove = rect.top > 170;
+        setPosition({
+            left,
+            width,
+            ...(placeAbove
+                ? { bottom: window.innerHeight - rect.top + 8 }
+                : { top: rect.bottom + 8 }),
+        });
+    }
+
+    return <>
+        <span
+            ref={triggerRef}
+            data-isolated-hover="true"
+            tabIndex={0}
+            aria-label={title}
+            onMouseEnter={show}
+            onMouseMove={(event) => event.stopPropagation()}
+            onMouseLeave={() => setPosition(null)}
+            onFocus={show}
+            onBlur={() => setPosition(null)}
+            className={`flex size-3.5 shrink-0 cursor-help items-center justify-center outline-none transition ${tone === "warning" ? "text-amber-300/90 hover:text-amber-200 focus:text-amber-200" : "text-muted-foreground hover:text-foreground focus:text-foreground"}`}
+        >
+            <Info className="size-3" />
+        </span>
+        {position && createPortal(
+            <span
+                role="tooltip"
+                className="pointer-events-none fixed z-[120] block rounded-md border border-white/15 bg-[#05070a] p-3 text-left shadow-[0_18px_55px_rgba(0,0,0,0.8)]"
+                style={position}
+            >
+                <span className={`block text-[10px] font-bold uppercase tracking-wide ${tone === "warning" ? "text-amber-300" : "text-tarkov-green"}`}>{title}</span>
+                <span className="mt-1.5 block text-[11px] leading-relaxed text-foreground/80">{children}</span>
+            </span>,
+            document.body,
+        )}
+    </>;
+}
+
+function SellValueCell({ item, count, sellValue, overrides }: {
+    item?: GlobalItem;
+    count: number;
+    sellValue: number | null;
+    overrides: Record<string, ManualPriceOverride>;
+}) {
+    const comparison = getItemSellComparison(item, overrides);
+    const trader = comparison.bestTraderOffer;
+    return (
+        <div className="flex min-w-0 flex-col items-start justify-center border-l border-white/5 px-3">
+            <span className="whitespace-nowrap font-mono text-sm font-semibold text-foreground">{formatRoundedRoubles(sellValue)}</span>
+            {comparison.selectedSource === "manual" ? (
+                <span className="mt-0.5 text-[8px] uppercase tracking-wide text-amber-300">Manual price</span>
+            ) : comparison.pricesAreClose && comparison.fleaPrice !== null && trader ? (
+                <span className="mt-0.5 block max-w-full space-y-0.5 text-[8px] leading-tight text-muted-foreground">
+                    <span className="block truncate">Flea {formatCompactPrice(comparison.fleaPrice * count)}</span>
+                    <span className="block truncate">{trader.vendor.name} {formatTraderOffer(trader, count, true)}</span>
+                </span>
+            ) : (
+                <span className="mt-0.5 max-w-full truncate text-[8px] text-muted-foreground">
+                    {comparison.selectedSource === "trader" && trader
+                        ? `${trader.vendor.name} · ${formatTraderOffer(trader, count, false)}`
+                        : comparison.selectedSource === "flea" ? "Flea market" : "No sale price"}
+                </span>
+            )}
         </div>
     );
 }
@@ -542,6 +953,8 @@ function ItemCard({
     fillColumn = false,
     compactLine = false,
     onItemOpen,
+    onGoToRecipe,
+    recipePreview,
 }: {
     item?: GlobalItem;
     count: number;
@@ -558,6 +971,8 @@ function ItemCard({
     fillColumn?: boolean;
     compactLine?: boolean;
     onItemOpen: (itemId: string) => void;
+    onGoToRecipe?: (method: "barter" | "craft", recipeId: string) => void;
+    recipePreview?: RecipePreviewData;
 }) {
     const [hoverPosition, setHoverPosition] = useState<{
         left: number;
@@ -572,11 +987,36 @@ function ItemCard({
             : getItemSellPrice(item, overrides)
         : null;
     const hasOverride = Boolean(item && overrides[item.id]?.[priceKind] !== undefined);
+    const sellComparison = priceKind === "sell" ? getItemSellComparison(item, overrides) : null;
     const routeLabel = plan?.isTool ? "Reusable tool" : method === "flea" ? "Flea market" : method === "barter" ? "Barter" : method === "craft" ? "Craft" : "Unavailable";
+    const resolvedRecipePreview = recipePreview ?? getPlanRecipePreview(plan, routeContext);
+    const canGoToRecipe = Boolean(
+        compactLine &&
+        onGoToRecipe &&
+        plan?.sourceId &&
+        (plan.method === "barter" || plan.method === "craft"),
+    );
+    const routeSavingsPerUnit = plan && method !== "flea" && directUnitPrice !== null && unitRoutePrice !== null
+        ? directUnitPrice - unitRoutePrice
+        : null;
+    const routeSavingsTotal = routeSavingsPerUnit === null ? null : routeSavingsPerUnit * count;
+    const ingredientSellValue = plan && !plan.isTool && item
+        ? (() => {
+            const unitSellValue = getItemSellPrice(item, overrides);
+            return unitSellValue === null ? null : unitSellValue * count;
+        })()
+        : null;
+    const ingredientSellPremium = ingredientSellValue !== null && plan?.totalCost !== null && plan?.totalCost !== undefined
+        ? ingredientSellValue - plan.totalCost
+        : null;
 
     function updateHoverPosition(event: React.MouseEvent<HTMLSpanElement>) {
+        if ((event.target as HTMLElement).closest("[data-isolated-hover='true']")) {
+            setHoverPosition(null);
+            return;
+        }
         const gap = 12;
-        const hoverWidth = 320;
+        const hoverWidth = Math.min(resolvedRecipePreview ? 660 : 320, window.innerWidth - 16);
         const preferredLeft = event.clientX + gap + hoverWidth <= window.innerWidth - 8
             ? event.clientX + gap
             : event.clientX - hoverWidth - gap;
@@ -593,7 +1033,7 @@ function ItemCard({
 
     return (
         <span
-            className={`relative flex shrink-0 items-center px-1 ${compactLine ? "h-9 w-full gap-1.5 hover:bg-white/[0.025]" : `h-full min-h-[72px] gap-1.5 ${fillColumn ? "w-full" : "w-40"} ${emphasized ? "bg-tarkov-green/[0.07]" : "bg-black/10"}`}`}
+            className={`group/item relative flex shrink-0 items-center px-1 ${compactLine ? "h-9 w-full gap-1.5 hover:bg-white/[0.025]" : `h-full min-h-[72px] gap-1.5 ${fillColumn ? "w-full" : "w-40"} ${emphasized ? "bg-tarkov-green/[0.07]" : "bg-black/10"}`}`}
             onMouseEnter={updateHoverPosition}
             onMouseMove={updateHoverPosition}
             onMouseLeave={() => setHoverPosition(null)}
@@ -616,6 +1056,42 @@ function ItemCard({
                 <span className="shrink-0 font-mono text-[10px]">
                     {plan?.isTool ? <span className="text-sky-200">cost excluded</span> : <InlineItemPrice item={item} kind={priceKind} totalPrice={totalPrice} displayPrice={unitRoutePrice} overrides={overrides} onPriceChange={onPriceChange} />}
                 </span>
+                {(routeSavingsTotal ?? 0) > 0 || (plan?.durationSeconds ?? 0) > 0 || canGoToRecipe ? (
+                    <span className="ml-auto flex shrink-0 items-center gap-1.5">
+                        {(routeSavingsTotal ?? 0) > 0 && directUnitPrice !== null && plan && plan.totalCost !== null && (
+                            <span className="flex items-center gap-0.5 whitespace-nowrap text-[9px] text-amber-300">
+                                {method === "craft" ? "Craft" : "Barter"} saves {formatCompactPrice(routeSavingsTotal)}
+                                <InfoHint
+                                    title={`${method === "craft" ? "Crafting" : "Bartering"} saves ${formatRoundedRoubles(routeSavingsTotal)}`}
+                                    onShow={() => setHoverPosition(null)}
+                                >
+                                    <span className="block">{method === "craft" ? "Crafting" : "Bartering for"} {formatQuantity(count)} × {item?.name ?? "this item"} costs <strong className="text-white">{formatRoundedRoubles(plan.totalCost)}</strong>.</span>
+                                    <span className="mt-1 block">Buying the same quantity on the flea market costs <strong className="text-white">{formatRoundedRoubles(directUnitPrice * count)}</strong>.</span>
+                                    <span className="mt-2 block border-t border-white/10 pt-2 text-tarkov-green">This cheaper ingredient route saves <strong>{formatRoundedRoubles(routeSavingsTotal)}</strong> and makes the final recipe less expensive. It does not mean you should skip the final recipe.</span>
+                                </InfoHint>
+                            </span>
+                        )}
+                        {(plan?.durationSeconds ?? 0) > 0 && (
+                            <span className="font-mono text-[9px] text-orange-300">{formatDuration(plan?.durationSeconds ?? 0)}</span>
+                        )}
+                        {canGoToRecipe && plan?.sourceId && (plan.method === "barter" || plan.method === "craft") && (
+                            <button
+                                type="button"
+                                title={`Go to ${plan.method} recipe`}
+                                aria-label={`Go to ${plan.method} recipe for ${item?.name ?? "item"}`}
+                                onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    setHoverPosition(null);
+                                    onGoToRecipe?.(plan.method as "barter" | "craft", plan.sourceId as string);
+                                }}
+                                className="flex size-6 shrink-0 items-center justify-center rounded border border-white/10 bg-black/70 text-muted-foreground opacity-0 transition hover:border-tarkov-green/50 hover:text-tarkov-green group-hover/item:opacity-100 focus:opacity-100"
+                            >
+                                <ExternalLink className="size-3.5" />
+                            </button>
+                        )}
+                    </span>
+                ) : null}
             </> : <>
                 <button
                     type="button"
@@ -643,14 +1119,16 @@ function ItemCard({
                 </span>
             </>}
             {hoverPosition && createPortal(<span
-                className="pointer-events-none fixed z-[100] w-80 rounded-md border border-white/15 bg-[#05070a] p-3 text-left shadow-[0_18px_55px_rgba(0,0,0,0.8)]"
+                className="pointer-events-none fixed z-[100] flex max-w-[calc(100vw-16px)] items-stretch gap-2 text-left"
                 style={{
                     left: hoverPosition.left,
+                    width: resolvedRecipePreview ? Math.min(660, window.innerWidth - 16) : 320,
                     ...(hoverPosition.placeAbove
                         ? { bottom: hoverPosition.verticalOffset }
                         : { top: hoverPosition.verticalOffset }),
                 }}
             >
+                <span className="block w-80 max-w-full shrink-0 rounded-md border border-white/15 bg-[#05070a] p-3 shadow-[0_18px_55px_rgba(0,0,0,0.8)]">
                 <span className="flex items-center gap-3">
                     <span className="relative flex size-16 shrink-0 items-center justify-center bg-white/[0.035]">
                         {showRouteIcon && <RouteIcon method={method} />}
@@ -664,8 +1142,26 @@ function ItemCard({
                 </span>
                 {routeDetail && <span className="mt-3 block border-t border-white/10 pt-2 text-[11px] leading-relaxed text-foreground/80">{routeDetail}</span>}
                 <span className="mt-2 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 rounded bg-white/[0.035] p-2 font-mono text-[10px]">
-                    <span className="text-muted-foreground">Current {priceKind} price</span><span className={hasOverride ? "text-amber-300" : "text-foreground"}>{formatRoundedRoubles(directUnitPrice)}{hasOverride ? " · manual" : ""}</span>
-                    <span className="text-muted-foreground">Selected route / unit</span><span className="text-sky-200">{formatRoundedRoubles(unitRoutePrice)}</span>
+                    {priceKind === "sell" && sellComparison ? <>
+                        <span className="text-muted-foreground">Flea sale / unit</span><span className="text-foreground">{formatRoundedRoubles(sellComparison.fleaPrice)}</span>
+                        <span className="text-muted-foreground">Best trader / unit</span>
+                        <span className="text-right text-foreground">
+                            {sellComparison.bestTraderOffer
+                                ? <>{sellComparison.bestTraderOffer.vendor.name} · {formatTraderOffer(sellComparison.bestTraderOffer, 1, true)}</>
+                                : "-"}
+                        </span>
+                        {sellComparison.manualPrice !== null && <><span className="text-muted-foreground">Manual sale / unit</span><span className="text-amber-300">{formatRoundedRoubles(sellComparison.manualPrice)}</span></>}
+                    </> : <>
+                        <span className="text-muted-foreground">Flea purchase / unit</span><span className={hasOverride ? "text-amber-300" : "text-foreground"}>{formatRoundedRoubles(directUnitPrice)}{hasOverride ? " · manual" : ""}</span>
+                    </>}
+                    {plan && <><span className="text-muted-foreground">{method === "flea" ? "Selected route / unit" : `${routeLabel} / unit`}</span><span className="text-sky-200">{formatRoundedRoubles(unitRoutePrice)}</span></>}
+                    {routeSavingsPerUnit !== null && <><span className="text-muted-foreground">Savings / unit</span><span className={routeSavingsPerUnit > 0 ? "text-tarkov-green" : "text-red-300"}>{formatSignedRoubles(routeSavingsPerUnit)}</span></>}
+                    {plan && ingredientSellValue !== null && <>
+                        <span className="text-muted-foreground">Best sale value / total</span><span className="text-amber-200">{formatRoundedRoubles(ingredientSellValue)}</span>
+                    </>}
+                    {plan && ingredientSellPremium !== null && ingredientSellPremium > 0 && <>
+                        <span className="text-muted-foreground">Sale value above route cost</span><span className="text-amber-300">+{formatRoundedRoubles(ingredientSellPremium)}</span>
+                    </>}
                     <span className="text-muted-foreground">Quantity</span><span className="text-foreground">× {formatQuantity(count)}</span>
                     <span className="border-t border-white/10 pt-1 text-muted-foreground">Total</span><span className="border-t border-white/10 pt-1 font-semibold text-tarkov-green">{plan?.isTool ? "Excluded" : formatRoundedRoubles(totalPrice)}</span>
                 </span>
@@ -676,6 +1172,14 @@ function ItemCard({
                 {plan?.isTool && <span className="mt-2 block text-[10px] text-sky-200">Reusable tool price is not included in the craft cost.</span>}
                 {plan?.theoreticalMethod !== undefined && plan.theoreticalMethod !== method && (
                     <span className="mt-2 block text-[10px] text-violet-300">Cheapest theoretical route: {plan.theoreticalMethod} · {formatRoundedRoubles(plan.theoreticalCost)}</span>
+                )}
+                </span>
+                {resolvedRecipePreview && (
+                    <RecipePreviewCard
+                        preview={resolvedRecipePreview}
+                        itemById={routeContext.itemById}
+                        routeContext={routeContext}
+                    />
                 )}
             </span>, document.body)}
         </span>
@@ -757,10 +1261,8 @@ function getRecipeSourceId(evaluation: RecipeEvaluation) {
     return evaluation.barter?.traderId ?? evaluation.craft?.stationId ?? "";
 }
 
-function profitGrid(kind: ProfitPageKind) {
-    return kind === "craft"
-        ? "grid-cols-[125px_170px_minmax(300px,1fr)_110px_110px_110px_120px_90px]"
-        : "grid-cols-[125px_170px_minmax(300px,1fr)_110px_110px_110px_120px]";
+function profitGrid() {
+    return "grid-cols-[40px_125px_170px_minmax(300px,1fr)_110px_150px_120px_120px]";
 }
 
 function estimateProfitRowHeight(evaluation?: RecipeEvaluation) {
@@ -840,6 +1342,24 @@ function formatRoundedRoubles(value: number | null) {
 
 function formatCompactPrice(value: number | null) {
     return value === null ? "-" : `${formatCompactRoubles(Math.round(value))} ₽`;
+}
+
+function formatTraderOffer(
+    offer: GlobalItemVendorPrice,
+    count: number,
+    includeRoubleComparison: boolean,
+) {
+    const amount = (offer.price ?? offer.priceRUB) * count;
+    const formattedAmount = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(amount);
+    const original = offer.currency === "USD"
+        ? `$${formattedAmount}`
+        : offer.currency === "EUR"
+            ? `€${formattedAmount}`
+            : offer.currency === "RUB" || !offer.currency
+                ? `${formattedAmount} ₽`
+                : `${formattedAmount} ${offer.currency}`;
+    if (!includeRoubleComparison || offer.currency === "RUB" || !offer.currency) return original;
+    return `${original} (${formatCompactPrice(offer.priceRUB * count)})`;
 }
 
 function formatQuantity(value: number) {

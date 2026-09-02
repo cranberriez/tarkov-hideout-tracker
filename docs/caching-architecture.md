@@ -47,8 +47,8 @@ Every source service validates cached and upstream data:
 
 | Key | Content | Version field |
 |---|---|---|
-| `items:catalog:v4:{mode}` | Validated manifest for the chunked global standard-item catalog | `itemCatalog` |
-| `items:catalog:v4:{mode}:slot:{0|1}:chunk:{n}` | Generation-tagged catalog chunks capped at 750 KiB | `itemCatalog` |
+| `items:catalog:v5:{mode}` | Validated manifest for the chunked global standard-item catalog | `itemCatalog` |
+| `items:catalog:v5:{mode}:slot:{0|1}:chunk:{n}` | Generation-tagged catalog chunks capped at 750 KiB | `itemCatalog` |
 | `items:barters:v2:{mode}` | Barters indexed by offered item ID | `itemBarters` |
 | `items:crafts:v2:{mode}` | Crafts indexed by product item ID | `itemCrafts` |
 | `hideout:stations:v9:{mode}` | Stations with ID-based item requirements | `hideoutStations` |

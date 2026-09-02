@@ -1,4 +1,4 @@
-import type { GlobalItem } from "@/types";
+import type { GlobalItem, GlobalItemVendorPrice } from "@/types";
 import type { ManualPriceOverrides } from "./types";
 
 function validPrice(value: number | null | undefined) {
@@ -22,16 +22,51 @@ export function getItemSellPrice(
     item: GlobalItem | undefined,
     overrides: ManualPriceOverrides = {},
 ): number | null {
-    if (!item) return null;
-    const manual = validPrice(overrides[item.id]?.sell);
-    if (manual !== null) return manual;
-    if (item.normalizedName === "roubles") return 1;
+    return getItemSellComparison(item, overrides).selectedPrice;
+}
 
-    const candidates = [
-        validPrice(item.marketPrice?.avg24hPrice),
-        ...(item.marketPrice?.sellFor ?? []).map((offer) => validPrice(offer.priceRUB)),
-    ].filter((price): price is number => price !== null);
-    return candidates.length > 0 ? Math.max(...candidates) : null;
+export interface ItemSellComparison {
+    fleaPrice: number | null;
+    bestTraderOffer: GlobalItemVendorPrice | null;
+    manualPrice: number | null;
+    selectedPrice: number | null;
+    selectedSource: "manual" | "flea" | "trader" | "unavailable";
+    pricesAreClose: boolean;
+}
+
+export function getItemSellComparison(
+    item: GlobalItem | undefined,
+    overrides: ManualPriceOverrides = {},
+): ItemSellComparison {
+    const unavailable: ItemSellComparison = {
+        fleaPrice: null,
+        bestTraderOffer: null,
+        manualPrice: null,
+        selectedPrice: null,
+        selectedSource: "unavailable",
+        pricesAreClose: false,
+    };
+    if (!item) return unavailable;
+    const manual = validPrice(overrides[item.id]?.sell);
+    const fleaPrice = item.normalizedName === "roubles"
+        ? 1
+        : validPrice(item.marketPrice?.avg24hPrice);
+    const bestTraderOffer = [...(item.marketPrice?.sellFor ?? [])]
+        .filter((offer) => validPrice(offer.priceRUB) !== null)
+        .sort((left, right) => right.priceRUB - left.priceRUB)[0] ?? null;
+    const traderPrice = bestTraderOffer ? validPrice(bestTraderOffer.priceRUB) : null;
+    const pricesAreClose = fleaPrice !== null && traderPrice !== null
+        ? Math.abs(fleaPrice - traderPrice) <= Math.min(Math.max(fleaPrice, traderPrice) * 0.05, 5_000)
+        : false;
+
+    if (manual !== null) {
+        return { fleaPrice, bestTraderOffer, manualPrice: manual, selectedPrice: manual, selectedSource: "manual", pricesAreClose };
+    }
+    if (fleaPrice === null && traderPrice === null) return unavailable;
+    if (traderPrice !== null && (fleaPrice === null || traderPrice > fleaPrice)) {
+        return { fleaPrice, bestTraderOffer, manualPrice: null, selectedPrice: traderPrice, selectedSource: "trader", pricesAreClose };
+    }
+    return { fleaPrice, bestTraderOffer, manualPrice: null, selectedPrice: fleaPrice, selectedSource: "flea", pricesAreClose };
 }
 
 export function practicalSavingsThreshold(directBuyCost: number) {
