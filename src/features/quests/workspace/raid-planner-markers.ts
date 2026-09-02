@@ -4,13 +4,6 @@ import { getQuestMapGroupKey } from "../quest-map-groups";
 
 export interface QuestMarkerStyle {
     color: string;
-    label: string;
-}
-
-function getMarkerLabel(index: number) {
-    if (index < 26) return String.fromCharCode(97 + index);
-    if (index < 52) return String.fromCharCode(65 + index - 26);
-    return `${String.fromCharCode(97 + ((index - 52) % 26))}${Math.floor((index - 52) / 26) + 1}`;
 }
 
 function hashQuestId(value: string) {
@@ -28,7 +21,6 @@ export function createQuestMarkerStyles(quests: FullQuest[]) {
         const hash = hashQuestId(quest.id);
         styles.set(quest.id, {
             color: `hsl(${(hash % 360 + index * 137.508) % 360} 72% 58%)`,
-            label: getMarkerLabel(index),
         });
     });
     return styles;
@@ -80,12 +72,13 @@ export function buildRaidPlannerMarkers(
                     kind: "quest",
                     position: location.position,
                     outlines: location.outline.length > 0 ? [location.outline] : [],
-                    label: style.label,
+                    label: objective.type,
                     title: quest.name,
                     descriptions: [objective.description],
                     color: style.color,
                     questId: quest.id,
                     objectiveIds: [objective.id],
+                    objectiveType: objective.type,
                 };
                 markerByPosition.set(positionKey, marker);
             });

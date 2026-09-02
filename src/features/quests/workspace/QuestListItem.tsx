@@ -38,14 +38,11 @@ export function QuestListItem({
         questsById,
         statusByQuestId,
         upcomingLockedQuestIds,
-        markerByQuestId,
         branchLineByQuestId,
-        mode,
         retainQuestAfterCompletion,
     } = useQuestWorkspace();
     const quest = questsById.get(questId)!;
     const status = statusByQuestId.get(questId)!;
-    const marker = markerByQuestId.get(questId);
     const branchLine = branchLineByQuestId.get(questId);
     const pinned = useUserStore((state) => !!state.pinnedQuests[questId]);
     const hidden = useUserStore((state) => !!state.ignoredQuests[questId]);
@@ -99,14 +96,6 @@ export function QuestListItem({
                     </span>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#111214]/80" />
-                {mode === "planner" && marker && (
-                    <span
-                        className="absolute left-2 top-2 flex min-h-6 min-w-6 items-center justify-center rounded-full border border-black/50 bg-black/80 px-1.5 font-mono text-[11px] font-bold"
-                        style={{ color: marker.color }}
-                    >
-                        {marker.label}
-                    </span>
-                )}
             </div>
 
             <div className="min-w-0 px-3 py-2.5">

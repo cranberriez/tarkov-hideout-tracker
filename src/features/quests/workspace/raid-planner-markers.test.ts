@@ -45,7 +45,7 @@ test("possible quest-item spawns reuse one quest symbol at every known spawn", (
     const styles = createQuestMarkerStyles([quest]);
     const markers = buildRaidPlannerMarkers([quest], "customs", styles);
     assert.equal(markers.length, 3);
-    assert.deepEqual(new Set(markers.map((marker) => marker.label)).size, 1);
+    assert.deepEqual(new Set(markers.map((marker) => marker.objectiveType)), new Set(["visit"]));
     assert.deepEqual(new Set(markers.map((marker) => marker.color)).size, 1);
 });
 

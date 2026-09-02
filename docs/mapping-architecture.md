@@ -46,13 +46,16 @@ The browser receives only the selected compact render definition and selected SV
 Each normalized objective can carry `locations`, with a hydrated map identity, optional 3D position, optional outline, optional top/bottom heights, and a source of `zone` or `possibleLocation`. Invalid optional points are omitted; positions are never fabricated from outlines.
 
 The Raid Planner renders positioned `zone` and quest-item `possibleLocation`
-records. Every possible spawn for a quest item uses the quest's shared symbol.
+records. Every possible spawn for a quest item uses the quest's shared color and
+objective-type icon.
 Locations within the same quest whose coordinates match to the nearest centimeter
 are represented by one marker; their objective descriptions, objective IDs, and
-distinct outlines are merged into that marker.
+distinct outlines are merged into that marker. A mixed-type merged marker uses
+the first objective's type icon in quest order.
 
 Quest details render only objectives with precise positioned locations. Mapped
-objectives receive a numbered, color-coded cue that matches their markers. At
+objectives receive a solid color cue with a black objective-type icon that matches
+their markers. At
 1700px and wider the detail viewer stays in a resizable, collapsible right-hand
 column. Its map-icon restore control moves into the top-right of the quest header while
 the map is hidden. Below that breakpoint it starts hidden and replaces the textual
@@ -60,9 +63,9 @@ detail area when opened from the header's **Show map** action or **Show on map**
 positioned objective for one map at a time, provides compact tabs when a quest
 spans maps, and refits to an objective when the user chooses **Show on map**. Coincident
 positions are collapsed across the whole quest, so several objectives performed
-at the same spot share one marker and tooltip. A symbol belongs to the connected
+at the same spot share one marker and tooltip. A color belongs to the connected
 objective/location group rather than to an individual point, so every possible
-spawn for one objective reuses the same symbol. Objective rows label these as
+spawn for one objective reuses the same color and objective-type icon. Objective rows label these as
 **Multiple spawns** for possible-location data or **Multiple locations** for other
 multi-point geometry. Factory and Night Factory share the daytime Factory group
 and artwork. Objectives without coordinates remain unchanged and do not receive
@@ -139,7 +142,8 @@ selected map without adding separate point markers. Persistent labels default to
 off and can be shown with the control beside the zoom buttons. Hovering or
 keyboard-focusing a zone reveals its plain colored, dark-shadowed label regardless
 of the toggle. Scav extracts and boss data are not sent to this view.
-Hovering a Raid Planner marker shows its objective tooltip without changing or
+Quest markers are solid quest colors with black objective-type icons and contain
+no letter or number text. Hovering a Raid Planner marker shows its objective tooltip without changing or
 scrolling the quest list; clicking the marker selects, highlights, and scrolls to
 its quest. When one or more objectives represented by a marker require keys, the
 tooltip deduplicates and displays those keys using the same compact icon and short-

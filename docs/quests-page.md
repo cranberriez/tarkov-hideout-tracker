@@ -493,7 +493,8 @@ The Raid Planner uses real objective zone geometry from the normalized JSON ques
 payload. It loads only the selected map's compact SVG definition, projects the
 world `x/z` plane using the configured rotation/transform, and renders one marker
 per positioned zone plus polygon outlines when present. Every location belonging
-to the same quest shares its list symbol and color. Hovering a marker only shows
+to the same quest shares its color, while each marker displays its objective-type
+icon. Hovering a marker only shows
 its tooltip; keyed objectives add compact required-key tiles to that preview.
 Clicking a marker selects and scrolls to the corresponding quest row.
 
@@ -505,7 +506,7 @@ re-entering the planner returns to its previously selected map.
 Only profile-active quests contribute Raid Planner markers and map-card summaries;
 locked, completed, and failed quests are excluded regardless of the workspace
 status filter. Quests without positioned geometry do not receive synthetic
-markers. Possible quest-item spawns repeat one shared quest symbol at every known
+markers. Possible quest-item spawns repeat one shared quest color and objective-type icon at every known
 position. Duplicate positions inside one quest are collapsed into one marker and
 their objective information is combined in its tooltip.
 
@@ -525,10 +526,10 @@ top-right of the quest header. Below 1700px, the details use the full pane and t
 starts hidden. The header's **Show map** action, or an objective's **Show on map**
 action, replaces the detail area with the map; its red close action restores the
 details. On mobile, the quest detail header and compact back bar are hidden while
-the objective map is open so neither can overlap the map. A numbered, color-coded cue
-beside each mapped objective matches its map markers. Objectives that share the
+the objective map is open so neither can overlap the map. A solid color cue with a
+black objective-type icon beside each mapped objective matches its map markers. Objectives that share the
 same rounded world position also share one marker, with their descriptions and IDs
-combined. All locations for one objective reuse that objective group's symbol;
+combined. All locations for one objective reuse that objective group's color and icon;
 multi-point objectives show **Multiple spawns** or **Multiple locations** after
 the map actions. **Show on {map}** switches the viewer to that objective map and
 fits its known point or points; quests spanning multiple maps expose one action

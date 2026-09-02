@@ -8,7 +8,6 @@ export interface PositionedObjectiveMap extends QuestMapGroup {
 
 export interface ObjectiveMarkerStyle {
     color: string;
-    label: string;
 }
 
 function isLocationOnMap(location: QuestMapLocation, mapKey: string) {
@@ -129,7 +128,6 @@ export function createQuestDetailObjectiveStyles(quest: FullQuest) {
         if (!style) {
             const index = styleByRoot.size;
             style = {
-                label: String(index + 1),
                 color: `hsl(${(78 + index * 137.508) % 360} 72% 58%)`,
             };
             styleByRoot.set(root, style);
@@ -175,12 +173,13 @@ export function buildQuestDetailMarkers(
                 kind: "quest",
                 position: location.position,
                 outlines: location.outline.length > 0 ? [location.outline] : [],
-                label: style.label,
+                label: objective.type,
                 title: quest.name,
                 descriptions: [objective.description],
                 color: style.color,
                 questId: quest.id,
                 objectiveIds: [objective.id],
+                objectiveType: objective.type,
             });
         }
     }

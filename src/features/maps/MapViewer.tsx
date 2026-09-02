@@ -8,6 +8,7 @@ import { getProjectedMapAspectRatio, worldToMapPoint } from "./map-projection";
 import { orderMapFloorsTopToBottom, resolveMapFloors } from "./map-floor-resolution";
 import type { MapOverlayMarker, MapRenderDefinition } from "./map-types";
 import { constrainMapView, zoomViewAroundPoint, type MapViewTransform } from "./map-view-transform";
+import { getQuestObjectiveTypeLabel, QuestObjectiveIcon } from "@/features/quests/components/QuestObjectiveIcon";
 
 interface MapViewerProps {
     mapKey: string;
@@ -539,7 +540,7 @@ export function MapViewer({
                     >
                         <button
                             type="button"
-                            aria-label={`${marker.label}: ${marker.title}: ${marker.descriptions.join("; ")}`}
+                            aria-label={`${getQuestObjectiveTypeLabel(marker.objectiveType ?? "")}: ${marker.title}: ${marker.descriptions.join("; ")}`}
                             aria-expanded={isPinned}
                             onMouseEnter={() => { setHoveredMarkerId(marker.id); onMarkerFocus?.(marker); }}
                             onMouseLeave={() => { setHoveredMarkerId(null); onMarkerFocus?.(null); }}
@@ -556,10 +557,10 @@ export function MapViewer({
                                 });
                                 onMarkerSelect?.(marker);
                             }}
-                            className="flex h-7 min-w-7 items-center justify-center rounded-full border-2 bg-black/90 px-1.5 font-mono text-[11px] font-bold shadow-xl outline-none"
-                            style={{ color: marker.color, borderColor: marker.color }}
+                            className="flex h-7 w-7 items-center justify-center rounded-full border border-black/70 shadow-xl outline-none"
+                            style={{ backgroundColor: marker.color }}
                         >
-                            {marker.label}
+                            <QuestObjectiveIcon type={marker.objectiveType ?? ""} size={15} className="text-black" />
                         </button>
                         <MarkerPopup
                             marker={marker}

@@ -56,4 +56,5 @@ export interface MapOverlayMarker {
     color?: string;
     questId?: string;
     objectiveIds?: string[];
+    objectiveType?: string;
 }

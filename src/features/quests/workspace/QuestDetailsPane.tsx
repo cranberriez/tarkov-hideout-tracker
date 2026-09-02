@@ -21,6 +21,7 @@ import {
 } from "@/lib/utils/quest-failures";
 import { formatTaskRequirementStatus } from "@/lib/utils/quest-relations";
 import type { FullQuest, QuestTraderStandingReward } from "@/types";
+import { QuestObjectiveIcon } from "../components/QuestObjectiveIcon";
 import { ObjectiveRow } from "../components/quest-card/QuestObjectiveRows";
 import { useQuestsContext } from "../QuestsContext";
 import { getPositionedObjectiveMaps } from "./quest-detail-markers";
@@ -820,10 +821,10 @@ function QuestObjectiveDisplay({
                 <div className="mb-3 flex w-full flex-wrap items-center gap-x-3 gap-y-2">
                     {markerStyle && (
                         <span
-                            className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-black/90 px-1 font-mono text-[10px]"
-                            style={{ color: markerStyle.color, boxShadow: `inset 0 0 0 1px ${markerStyle.color}` }}
+                            className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-black/70"
+                            style={{ backgroundColor: markerStyle.color }}
                         >
-                            {markerStyle.label}
+                            <QuestObjectiveIcon type={objective.type} size={11} className="text-black" />
                         </span>
                     )}
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">

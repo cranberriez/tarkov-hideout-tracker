@@ -58,7 +58,7 @@ test("groups positioned objective locations by map", () => {
 test("collapses coincident positions across objectives into one marker", () => {
     const markers = buildQuestDetailMarkers(quest, "customs");
     assert.equal(markers.length, 3);
-    assert.deepEqual(markers.map((marker) => marker.label), ["1", "1", "2"]);
+    assert.deepEqual(markers.map((marker) => marker.objectiveType), ["visit", "visit", "visit"]);
     assert.deepEqual(markers.map((marker) => marker.objectiveIds), [
         ["objective-1", "objective-2"],
         ["objective-1"],
@@ -72,11 +72,11 @@ test("reuses one symbol across every location in an objective component", () => 
     assert.equal(styles.get("objective-1"), styles.get("objective-2"));
     assert.notEqual(styles.get("objective-1"), styles.get("objective-3"));
     assert.deepEqual(
-        buildQuestDetailMarkers(quest, "customs", styles).map(({ label, color }) => ({ label, color })),
+        buildQuestDetailMarkers(quest, "customs", styles).map(({ objectiveType, color }) => ({ objectiveType, color })),
         [
-            { label: styles.get("objective-1")?.label, color: styles.get("objective-1")?.color },
-            { label: styles.get("objective-1")?.label, color: styles.get("objective-1")?.color },
-            { label: styles.get("objective-3")?.label, color: styles.get("objective-3")?.color },
+            { objectiveType: "visit", color: styles.get("objective-1")?.color },
+            { objectiveType: "visit", color: styles.get("objective-1")?.color },
+            { objectiveType: "visit", color: styles.get("objective-3")?.color },
         ],
     );
 });
@@ -105,7 +105,7 @@ test("retains completed objective maps and styles while omitting their markers",
         { key: "customs", locationCount: 3 },
         { key: "woods", locationCount: 1 },
     ]);
-    assert.equal(mapData.styles.get("objective-1")?.label, "1");
+    assert.ok(mapData.styles.get("objective-1")?.color);
     assert.deepEqual(mapData.markersByMap.get("customs"), []);
     assert.deepEqual(mapData.markersByMap.get("woods"), []);
 });

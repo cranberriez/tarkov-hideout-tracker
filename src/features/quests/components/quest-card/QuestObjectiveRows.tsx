@@ -3,15 +3,8 @@
 import { useState } from "react";
 import {
     ChevronDown,
-    ChevronRight,
     ChevronUp,
-    Crosshair,
-    DoorOpen,
-    Hammer,
-    MapPin,
     Package,
-    Search,
-    Zap,
 } from "lucide-react";
 import type {
     FullQuestObjective,
@@ -20,6 +13,7 @@ import type {
     QuestObjectiveShootType,
 } from "@/types";
 import { useDataContext } from "@/app/(data)/_dataContext";
+import { QuestObjectiveIcon } from "../QuestObjectiveIcon";
 
 function isItemObjective(o: FullQuestObjective): o is QuestObjectiveItemType {
     return (
@@ -50,32 +44,6 @@ function getRequiredKeyGroups(
 
 export function hasRequiredKeys(objective: FullQuestObjective) {
     return (objective.requiredKeyIds ?? []).some((group) => group.length > 0);
-}
-
-function ObjectiveIcon({ type, size = 13 }: { type: string; size?: number }) {
-    const cls = "mt-[3px] shrink-0";
-    switch (type) {
-        case "giveItem":
-        case "plantItem":
-            return <Package size={size} className={`${cls} text-tarkov-green/60`} />;
-        case "findItem":
-            return <Search size={size} className={`${cls} text-blue-400/60`} />;
-        case "shoot":
-            return <Crosshair size={size} className={`${cls} text-red-400/60`} />;
-        case "extract":
-            return <DoorOpen size={size} className={`${cls} text-yellow-400/60`} />;
-        case "visit":
-        case "mark":
-        case "locate":
-            return <MapPin size={size} className={`${cls} text-purple-400/60`} />;
-        case "buildItem":
-            return <Hammer size={size} className={`${cls} text-orange-400/60`} />;
-        case "skill":
-        case "playerLevel":
-            return <Zap size={size} className={`${cls} text-cyan-400/60`} />;
-        default:
-            return <ChevronRight size={size} className={`${cls} text-gray-600`} />;
-    }
 }
 
 function RequiredKeysList({ groups, large = false }: { groups: ItemDetails[][]; large?: boolean }) {
@@ -153,7 +121,7 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
     return (
         <div className="flex items-start gap-2">
             <div className="flex items-start gap-1">
-                <ObjectiveIcon type={objective.type} size={itemDisplay === "rows" ? 15 : 13} />
+                <QuestObjectiveIcon type={objective.type} size={itemDisplay === "rows" ? 15 : 13} className="mt-[3px]" />
                 {objective?.count &&
                     (objective.type === "shoot" ||
                         objective.type === "skill" ||
