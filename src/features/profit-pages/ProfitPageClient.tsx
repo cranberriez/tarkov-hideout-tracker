@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { useShallow } from "zustand/react/shallow";
 import {
     ChartNoAxesCombined,
@@ -163,6 +165,31 @@ export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
     ]);
 
     const relevantError = kind === "barter" ? data.bartersError : data.craftsError;
+    const hasProfitData = Boolean(items && !itemsError && !relevantError);
+    const listRef = useRef<HTMLDivElement>(null);
+    const [scrollMargin, setScrollMargin] = useState(0);
+
+    useLayoutEffect(() => {
+        if (!hasProfitData) return;
+
+        const updateScrollMargin = () => {
+            if (!listRef.current) return;
+            setScrollMargin(listRef.current.getBoundingClientRect().top + window.scrollY);
+        };
+
+        updateScrollMargin();
+        window.addEventListener("resize", updateScrollMargin);
+        return () => window.removeEventListener("resize", updateScrollMargin);
+    }, [hasProfitData, kind]);
+
+    const virtualizer = useWindowVirtualizer({
+        count: visibleEvaluations.length,
+        estimateSize: (index) => estimateProfitRowHeight(visibleEvaluations[index]),
+        getItemKey: (index) => visibleEvaluations[index]?.id ?? index,
+        overscan: 8,
+        scrollMargin,
+    });
+
     if (!items || itemsError || relevantError) {
         return (
             <main className="container mx-auto px-6 py-8">
@@ -255,36 +282,58 @@ export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
                     <span>Source</span><span>Produced item</span><span>Required items</span><span className="px-3">Cost</span><span className="px-3">Sell value</span><span className="px-3">Profit</span><span className="px-3">Profit / hour</span>
                     {kind === "craft" && <span className="px-3">Full time</span>}
                 </div>
-                <div className="w-full min-w-[900px] divide-y divide-white/10">
-                    {visibleEvaluations.map((evaluation) => (
-                        <ProfitRow
-                            key={evaluation.id}
-                            evaluation={evaluation}
-                            itemById={itemById}
-                            sourceName={
-                                kind === "barter"
-                                    ? tradersById[evaluation.barter?.traderId ?? ""]?.name
-                                    : stationsById[evaluation.craft?.stationId ?? ""]?.name
-                            }
-                            available={isRecipeAvailable(
-                                evaluation,
-                                stationLevels,
-                                traderLoyaltyLevels,
-                                completedQuests,
-                            )}
-                            source={kind === "barter"
-                                ? tradersById[evaluation.barter?.traderId ?? ""]
-                                : stationsById[evaluation.craft?.stationId ?? ""]}
-                            overrides={overrides}
-                            onPriceChange={setItemOverride}
-                            bartersById={bartersById}
-                            craftsById={craftsById}
-                            tradersById={tradersById}
-                            stationsById={stationsById}
-                            onItemOpen={setSelectedItemId}
-                        />
-                    ))}
-                    {visibleEvaluations.length === 0 && (
+                <div ref={listRef} className="w-full min-w-[900px]">
+                    {visibleEvaluations.length > 0 ? (
+                        <div
+                            style={{
+                                height: `${virtualizer.getTotalSize()}px`,
+                                position: "relative",
+                                width: "100%",
+                            }}
+                        >
+                            {virtualizer.getVirtualItems().map((virtualRow) => {
+                                const evaluation = visibleEvaluations[virtualRow.index];
+                                const translateY =
+                                    virtualRow.start - virtualizer.options.scrollMargin;
+
+                                return (
+                                    <div
+                                        key={virtualRow.key}
+                                        data-index={virtualRow.index}
+                                        ref={virtualizer.measureElement}
+                                        className="absolute left-0 top-0 w-full border-b border-white/10"
+                                        style={{ transform: `translateY(${translateY}px)` }}
+                                    >
+                                        <ProfitRow
+                                            evaluation={evaluation}
+                                            itemById={itemById}
+                                            sourceName={
+                                                kind === "barter"
+                                                    ? tradersById[evaluation.barter?.traderId ?? ""]?.name
+                                                    : stationsById[evaluation.craft?.stationId ?? ""]?.name
+                                            }
+                                            available={isRecipeAvailable(
+                                                evaluation,
+                                                stationLevels,
+                                                traderLoyaltyLevels,
+                                                completedQuests,
+                                            )}
+                                            source={kind === "barter"
+                                                ? tradersById[evaluation.barter?.traderId ?? ""]
+                                                : stationsById[evaluation.craft?.stationId ?? ""]}
+                                            overrides={overrides}
+                                            onPriceChange={setItemOverride}
+                                            bartersById={bartersById}
+                                            craftsById={craftsById}
+                                            tradersById={tradersById}
+                                            stationsById={stationsById}
+                                            onItemOpen={setSelectedItemId}
+                                        />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
                         <div className="px-4 py-14 text-center text-sm text-muted-foreground">
                             No recipes match these filters.
                         </div>
@@ -510,7 +559,11 @@ function ItemCard({
     compactLine?: boolean;
     onItemOpen: (itemId: string) => void;
 }) {
-    const [hoverPosition, setHoverPosition] = useState<{ left: number; top: number } | null>(null);
+    const [hoverPosition, setHoverPosition] = useState<{
+        left: number;
+        placeAbove: boolean;
+        verticalOffset: number;
+    } | null>(null);
     const routeDetail = detail ?? (plan ? describeRoute(plan, routeContext) : null);
     const unitRoutePrice = totalPrice === null || count <= 0 ? null : totalPrice / count;
     const directUnitPrice = item
@@ -520,19 +573,29 @@ function ItemCard({
         : null;
     const hasOverride = Boolean(item && overrides[item.id]?.[priceKind] !== undefined);
     const routeLabel = plan?.isTool ? "Reusable tool" : method === "flea" ? "Flea market" : method === "barter" ? "Barter" : method === "craft" ? "Craft" : "Unavailable";
+
+    function updateHoverPosition(event: React.MouseEvent<HTMLSpanElement>) {
+        const gap = 12;
+        const hoverWidth = 320;
+        const preferredLeft = event.clientX + gap + hoverWidth <= window.innerWidth - 8
+            ? event.clientX + gap
+            : event.clientX - hoverWidth - gap;
+        const placeAbove = event.clientY > window.innerHeight / 2;
+
+        setHoverPosition({
+            left: Math.max(8, Math.min(preferredLeft, window.innerWidth - hoverWidth - 8)),
+            placeAbove,
+            verticalOffset: placeAbove
+                ? window.innerHeight - event.clientY + gap
+                : event.clientY + gap,
+        });
+    }
+
     return (
         <span
             className={`relative flex shrink-0 items-center px-1 ${compactLine ? "h-9 w-full gap-1.5 hover:bg-white/[0.025]" : `h-full min-h-[72px] gap-1.5 ${fillColumn ? "w-full" : "w-40"} ${emphasized ? "bg-tarkov-green/[0.07]" : "bg-black/10"}`}`}
-            onMouseEnter={(event) => {
-                const rect = event.currentTarget.getBoundingClientRect();
-                const left = Math.max(8, Math.min(rect.left, window.innerWidth - 336));
-                const hoverHeight = 240;
-                const pointerGap = 12;
-                const top = event.clientY + pointerGap + hoverHeight <= window.innerHeight
-                    ? event.clientY + pointerGap
-                    : Math.max(8, event.clientY - hoverHeight - pointerGap);
-                setHoverPosition({ left, top });
-            }}
+            onMouseEnter={updateHoverPosition}
+            onMouseMove={updateHoverPosition}
             onMouseLeave={() => setHoverPosition(null)}
         >
             {compactLine ? <>
@@ -579,9 +642,14 @@ function ItemCard({
                     </span>
                 </span>
             </>}
-            {hoverPosition && <span
+            {hoverPosition && createPortal(<span
                 className="pointer-events-none fixed z-[100] w-80 rounded-md border border-white/15 bg-[#05070a] p-3 text-left shadow-[0_18px_55px_rgba(0,0,0,0.8)]"
-                style={{ left: hoverPosition.left, top: hoverPosition.top }}
+                style={{
+                    left: hoverPosition.left,
+                    ...(hoverPosition.placeAbove
+                        ? { bottom: hoverPosition.verticalOffset }
+                        : { top: hoverPosition.verticalOffset }),
+                }}
             >
                 <span className="flex items-center gap-3">
                     <span className="relative flex size-16 shrink-0 items-center justify-center bg-white/[0.035]">
@@ -609,7 +677,7 @@ function ItemCard({
                 {plan?.theoreticalMethod !== undefined && plan.theoreticalMethod !== method && (
                     <span className="mt-2 block text-[10px] text-violet-300">Cheapest theoretical route: {plan.theoreticalMethod} · {formatRoundedRoubles(plan.theoreticalCost)}</span>
                 )}
-            </span>}
+            </span>, document.body)}
         </span>
     );
 }
@@ -693,6 +761,11 @@ function profitGrid(kind: ProfitPageKind) {
     return kind === "craft"
         ? "grid-cols-[125px_170px_minmax(300px,1fr)_110px_110px_110px_120px_90px]"
         : "grid-cols-[125px_170px_minmax(300px,1fr)_110px_110px_110px_120px]";
+}
+
+function estimateProfitRowHeight(evaluation?: RecipeEvaluation) {
+    if (!evaluation) return 72;
+    return Math.max(72, evaluation.requiredItems.length * 36 + 4) + 1;
 }
 
 function describeRoute(plan: AcquisitionPlan, context: RouteContext) {

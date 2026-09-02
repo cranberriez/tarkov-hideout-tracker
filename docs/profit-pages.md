@@ -76,6 +76,11 @@ alternative. Reusable tools are clearly marked as excluded from recurring cost.
 Hover cards remain close to the pointer when they must move above a low row.
 Clicking an item's portrait opens the shared item-detail modal.
 
+Recipe rows use TanStack's window virtualizer. The required-item count provides
+the initial row-height estimate, and rendered rows are measured so recipes with
+many ingredients retain their full dynamic height. The table keeps document-level
+vertical scrolling and its existing horizontal overflow behavior.
+
 Clicking an ingredient price edits that item's manual buy value; clicking an
 output price edits its manual sell value. The input placeholder shows the current
 catalog or override unit price. Clearing the input removes only that side of the
