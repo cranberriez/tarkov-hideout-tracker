@@ -33,6 +33,7 @@ interface MapViewerProps {
 
 const MIN_SCALE = 1;
 const MAX_SCALE = 7;
+const MAP_SVG_RENDER_VERSION = "2";
 
 function getNavigationLabelTransform(percentX: number, scale: number) {
     const translateX = percentX < 12 ? "0%" : percentX > 88 ? "-100%" : "-50%";
@@ -262,6 +263,7 @@ export function MapViewer({
     const layerImageUrl = useMemo(() => {
         if (!definition) return "";
         const params = new URLSearchParams();
+        params.set("v", MAP_SVG_RENDER_VERSION);
         visibleFloors.forEach((floor) => params.append("layer", floor.id));
         return `${definition.svgPath}?${params.toString()}`;
     }, [definition, visibleFloors]);

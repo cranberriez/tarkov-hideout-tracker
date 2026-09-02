@@ -111,7 +111,8 @@ to be composed at once. Ground is always included and is not selectable. Optiona
 layers use their configured default visibility and can be toggled independently.
 Upper floors render above a fully opaque Ground layer. Numerically below-ground
 layers render above a much more transparent Ground layer so their paths remain
-legible. Hovering or focusing a mapped objective temporarily switches the optional
+legible. Selected optional floor groups are raised to the front of their SVG parent
+so source-file paint order cannot obscure the active artwork. Hovering or focusing a mapped objective temporarily switches the optional
 artwork to its resolved layer, then restores the manual selection. Markers and
 outlines remain visible regardless of artwork-layer selection.
 
