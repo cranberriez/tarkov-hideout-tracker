@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { DataLoadError } from "@/components/core/DataLoadError";
+import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import {
     evaluateBarters,
@@ -49,21 +50,26 @@ export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
         stationLevels,
         completedQuests,
         traderLoyaltyLevels,
+        hiddenStations,
+        completedRequirements,
     } = useUserStore(
         useShallow((state) => ({
             gameMode: state.gameMode,
             stationLevels: state.stationLevels,
             completedQuests: state.completedQuests,
             traderLoyaltyLevels: state.questTraderLoyaltyLevels,
+            hiddenStations: state.hiddenStations,
+            completedRequirements: state.completedRequirements,
         })),
     );
     const { overrides, setItemOverride } = useManualPriceOverrides(gameMode);
     const [search, setSearch] = useState("");
     const [sourceId, setSourceId] = useState("all");
-    const [availableOnly, setAvailableOnly] = useState(false);
+    const [availableOnly, setAvailableOnly] = useState(true);
     const [profitableOnly, setProfitableOnly] = useState(false);
     const [allowCrafts, setAllowCrafts] = useState(true);
     const [allowBarters, setAllowBarters] = useState(true);
+    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [sortMode, setSortMode] = useState<SortMode>(
         kind === "craft" ? "profitPerHour" : "profit",
     );
@@ -275,6 +281,7 @@ export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
                             craftsById={craftsById}
                             tradersById={tradersById}
                             stationsById={stationsById}
+                            onItemOpen={setSelectedItemId}
                         />
                     ))}
                     {visibleEvaluations.length === 0 && (
@@ -284,6 +291,15 @@ export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
                     )}
                 </div>
             </div>
+            <ItemDetailModal
+                item={selectedItemId ? itemById[selectedItemId] ?? null : null}
+                isOpen={selectedItemId !== null}
+                onClose={() => setSelectedItemId(null)}
+                stations={stations}
+                stationLevels={stationLevels}
+                hiddenStations={hiddenStations}
+                completedRequirements={completedRequirements}
+            />
         </main>
     );
 }
@@ -351,6 +367,7 @@ function ProfitRow({
     craftsById,
     tradersById,
     stationsById,
+    onItemOpen,
 }: {
     evaluation: RecipeEvaluation;
     itemById: Readonly<Record<string, GlobalItem>>;
@@ -363,6 +380,7 @@ function ProfitRow({
     craftsById: Readonly<Record<string, CraftRecord>>;
     tradersById: Readonly<Record<string, Trader>>;
     stationsById: Readonly<Record<string, Station>>;
+    onItemOpen: (itemId: string) => void;
 }) {
     const output = itemById[evaluation.outputItemId];
     const routeContext = { bartersById, craftsById, tradersById, stationsById };
@@ -382,6 +400,7 @@ function ProfitRow({
                         overrides={overrides}
                         onPriceChange={onPriceChange}
                         routeContext={routeContext}
+                        onItemOpen={onItemOpen}
                         detail={evaluation.barter
                             ? `Barter with ${sourceName ?? "unknown trader"} at LL${evaluation.barter.minTraderLevel}`
                             : `Craft at ${sourceName ?? "unknown station"} level ${evaluation.craft?.level ?? "?"} · ${formatDuration(evaluation.craft?.duration ?? 0)}`}
@@ -401,6 +420,7 @@ function ProfitRow({
                             onPriceChange={onPriceChange}
                             routeContext={routeContext}
                             compactLine
+                            onItemOpen={onItemOpen}
                         />
                     ))}
                 </div>
@@ -472,6 +492,7 @@ function ItemCard({
     showRouteIcon = true,
     fillColumn = false,
     compactLine = false,
+    onItemOpen,
 }: {
     item?: GlobalItem;
     count: number;
@@ -487,6 +508,7 @@ function ItemCard({
     showRouteIcon?: boolean;
     fillColumn?: boolean;
     compactLine?: boolean;
+    onItemOpen: (itemId: string) => void;
 }) {
     const [hoverPosition, setHoverPosition] = useState<{ left: number; top: number } | null>(null);
     const routeDetail = detail ?? (plan ? describeRoute(plan, routeContext) : null);
@@ -504,16 +526,26 @@ function ItemCard({
             onMouseEnter={(event) => {
                 const rect = event.currentTarget.getBoundingClientRect();
                 const left = Math.max(8, Math.min(rect.left, window.innerWidth - 336));
-                const top = rect.bottom + 310 < window.innerHeight ? rect.bottom + 6 : Math.max(8, rect.top - 292);
+                const hoverHeight = 240;
+                const pointerGap = 12;
+                const top = event.clientY + pointerGap + hoverHeight <= window.innerHeight
+                    ? event.clientY + pointerGap
+                    : Math.max(8, event.clientY - hoverHeight - pointerGap);
                 setHoverPosition({ left, top });
             }}
             onMouseLeave={() => setHoverPosition(null)}
         >
             {compactLine ? <>
                 {showRouteIcon && <RouteIcon method={method} inline />}
-                <span className="relative flex size-8 shrink-0 items-center justify-center bg-white/[0.025]">
+                <button
+                    type="button"
+                    aria-label={`Open ${item?.name ?? "item"} details`}
+                    disabled={!item}
+                    onClick={(event) => { event.stopPropagation(); setHoverPosition(null); if (item) onItemOpen(item.id); }}
+                    className="relative flex size-8 shrink-0 cursor-pointer items-center justify-center bg-white/[0.025] transition hover:bg-white/10 disabled:cursor-default"
+                >
                     {item?.iconLink ? <Image src={item.iconLink} alt="" width={32} height={32} className="size-8 object-contain" unoptimized /> : <span className="size-8" />}
-                </span>
+                </button>
                 <span className="min-w-0 truncate text-[11px] font-medium text-foreground" title={item?.name}>{item?.name ?? "Unknown item"}</span>
                 {plan?.isTool && <span className="shrink-0 rounded-[3px] bg-sky-400 px-1 py-0.5 text-[7px] font-black uppercase text-black">tool</span>}
                 <span className="shrink-0 text-[10px] text-muted-foreground">—</span>
@@ -522,7 +554,13 @@ function ItemCard({
                     {plan?.isTool ? <span className="text-sky-200">cost excluded</span> : <InlineItemPrice item={item} kind={priceKind} totalPrice={totalPrice} displayPrice={unitRoutePrice} overrides={overrides} onPriceChange={onPriceChange} />}
                 </span>
             </> : <>
-                <span className="relative flex size-12 shrink-0 items-center justify-center bg-white/[0.025]">
+                <button
+                    type="button"
+                    aria-label={`Open ${item?.name ?? "item"} details`}
+                    disabled={!item}
+                    onClick={(event) => { event.stopPropagation(); setHoverPosition(null); if (item) onItemOpen(item.id); }}
+                    className="relative flex size-12 shrink-0 cursor-pointer items-center justify-center bg-white/[0.025] transition hover:bg-white/10 disabled:cursor-default"
+                >
                     {showRouteIcon && <RouteIcon method={method} />}
                     {plan?.isTool && (
                         <span className="absolute -right-0.5 -top-0.5 z-10 rounded-[3px] bg-sky-400 px-1 py-0.5 text-[7px] font-black uppercase text-black shadow">tool</span>
@@ -530,7 +568,7 @@ function ItemCard({
                     {item?.iconLink ? (
                         <Image src={item.iconLink} alt="" width={48} height={48} className="size-12 object-contain" unoptimized />
                     ) : <span className="size-12" />}
-                </span>
+                </button>
                 <span className="flex min-w-0 flex-1 flex-col items-start justify-center gap-0.5">
                     <span className="w-full truncate text-[11px] font-medium leading-tight text-foreground" title={item?.name}>
                         {item?.shortName ?? item?.name ?? "Unknown item"}

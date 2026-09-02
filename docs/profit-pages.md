@@ -51,7 +51,8 @@ Both pages support output search, source filtering, availability filtering,
 profit filtering, and relevant profit/cost sorts. Craft source filters are based
 on hideout station; barter source filters are based on trader.
 
-Availability and profit-only filters live in the page options menu. The same menu
+Availability and profit-only filters live in the page options menu. Availability
+filtering is enabled by default. The same menu
 can disable craft or barter routes for recipe ingredients independently. These
 route switches do not remove the root recipes from their respective pages; they
 only constrain how the calculator may obtain each required item.
@@ -72,6 +73,8 @@ Rows do not expand. Dark hover cards provide the item image, selected acquisitio
 route, source trader or station, loyalty/level, batch count, route duration,
 catalog or manual unit price, quantity, route total, and any cheaper theoretical
 alternative. Reusable tools are clearly marked as excluded from recurring cost.
+Hover cards remain close to the pointer when they must move above a low row.
+Clicking an item's portrait opens the shared item-detail modal.
 
 Clicking an ingredient price edits that item's manual buy value; clicking an
 output price edits its manual sell value. The input placeholder shows the current
