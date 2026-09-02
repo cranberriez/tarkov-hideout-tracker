@@ -47,6 +47,13 @@ items come from task content and are display-only.
 | `/hideout` | Station upgrades and next-level requirements |
 | `/items` | Combined hideout and quest item checklist |
 | `/quests` | Quest objectives, progression, prerequisites, and planning |
+| `/items/inventory` | Inventory (placeholder) |
+| `/items/kappa-checklist` | Kappa checklist (placeholder) |
+| `/items/keys` | Keys (placeholder) |
+| `/items/barter-profits` | Barter profit tools (placeholder) |
+| `/items/crafting-profits` | Crafting profit tools (placeholder) |
+| `/hideout/station-goals` | Hideout station goals (placeholder) |
+| `/hideout/bitcoin-farm` | Bitcoin farm tools (placeholder) |
 | `/news` | In-app news and updates |
 | `/dev` | Development-only cache policy and quest snapshot comparison |
 

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Boxes, House, Menu, Plus, ScrollText, Settings2, Wrench } from "lucide-react";
+import { ChevronDown, Menu, Plus, Settings2 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
     DropdownMenu,
@@ -14,31 +14,8 @@ import {
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
+import { devNavItem, navMenus, type NavItem, type NavMenu } from "./nav-config";
 import { PlayerProfileMenu } from "./PlayerProfileMenu";
-
-const links = [
-    {
-        name: "Items",
-        href: "/items",
-        icon: Boxes,
-    },
-    {
-        name: "Hideout",
-        href: "/hideout",
-        icon: House,
-    },
-    {
-        name: "Quests",
-        href: "/quests",
-        icon: ScrollText,
-    },
-];
-
-const devLink = {
-    name: "Dev",
-    href: "/dev",
-    icon: Wrench,
-};
 
 export function Navbar() {
     const setSetupOpen = useUserStore((state) => state.setSetupOpen);
@@ -49,7 +26,8 @@ export function Navbar() {
     const currentPage = usePathname();
     const isSecondaryRoute =
         currentPage === "/settings" || currentPage === "/news" || currentPage === "/dev";
-    const visibleLinks = process.env.NODE_ENV === "development" ? [...links, devLink] : links;
+    const visibleMenus =
+        process.env.NODE_ENV === "development" ? [...navMenus, devNavItem] : navMenus;
 
     if (currentPage === "/quests" && isMainNavHidden) return null;
 
@@ -111,23 +89,13 @@ export function Navbar() {
                                     <Menu size={18} />
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" sideOffset={8}>
-                                    {visibleLinks.map((link) => (
-                                        <DropdownMenuItem
-                                            key={link.name}
-                                            asChild
-                                            className={cn(
-                                                currentPage === link.href &&
-                                                    "bg-accent text-accent-foreground",
-                                            )}
-                                        >
-                                            <Link
-                                                href={link.href}
-                                                className="flex w-full items-center gap-2"
-                                            >
-                                                <link.icon size={16} />
-                                                {link.name}
-                                            </Link>
-                                        </DropdownMenuItem>
+                                    {visibleMenus.map((menu, index) => (
+                                        <MobileNavSection
+                                            key={menu.name}
+                                            menu={menu}
+                                            currentPage={currentPage}
+                                            separated={index > 0}
+                                        />
                                     ))}
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
@@ -174,20 +142,12 @@ export function Navbar() {
                             <Plus size={16} />
                         </button>
 
-                        {visibleLinks.map((link) => (
-                            <Link
-                                key={link.name}
-                                href={link.href}
-                                className={cn(
-                                    "flex items-center gap-2 rounded px-3 py-2 transition-colors",
-                                    currentPage === link.href
-                                        ? "bg-foreground/80 text-card"
-                                        : "hover:text-white",
-                                )}
-                            >
-                                <link.icon size={16} />
-                                {link.name}
-                            </Link>
+                        {visibleMenus.map((menu) => (
+                            <DesktopNavMenu
+                                key={menu.name}
+                                menu={menu}
+                                currentPage={currentPage}
+                            />
                         ))}
 
                         <PlayerProfileMenu />
@@ -241,6 +201,110 @@ export function Navbar() {
                 </div>
             </div>
         </nav>
+    );
+}
+
+function isNavItemActive(currentPage: string, item: NavItem) {
+    return currentPage === item.href || currentPage.startsWith(`${item.href}/`);
+}
+
+function NavItemIcon({ item, size = 16 }: { item: NavItem; size?: number }) {
+    const Icon = item.icon;
+    return Icon ? <Icon size={size} /> : null;
+}
+
+function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: string }) {
+    const visibleChildren = menu.children?.filter((item) => !item.disabled) ?? [];
+    const hasChildren = visibleChildren.length > 0;
+    const isActive = isNavItemActive(currentPage, menu);
+
+    return (
+        <div className="group/nav-menu relative">
+            <Link
+                href={menu.href}
+                aria-haspopup={hasChildren ? "menu" : undefined}
+                className={cn(
+                    "flex items-center gap-2 rounded px-3 py-2 transition-colors",
+                    isActive ? "bg-foreground/80 text-card" : "hover:text-white",
+                )}
+            >
+                <NavItemIcon item={menu} />
+                {menu.name}
+                {hasChildren && <ChevronDown size={14} className="opacity-60" />}
+            </Link>
+
+            {hasChildren && (
+                <div
+                    role="menu"
+                    aria-label={`${menu.name} pages`}
+                    className="pointer-events-none invisible absolute left-0 top-full z-50 w-56 pt-2 opacity-0 transition-[opacity,visibility] duration-150 group-hover/nav-menu:pointer-events-auto group-hover/nav-menu:visible group-hover/nav-menu:opacity-100 group-focus-within/nav-menu:pointer-events-auto group-focus-within/nav-menu:visible group-focus-within/nav-menu:opacity-100"
+                >
+                    <div className="rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
+                        {visibleChildren.map((item) => (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                role="menuitem"
+                                className={cn(
+                                    "flex items-center gap-2 rounded-sm px-2 py-2 text-sm outline-hidden transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+                                    currentPage === item.href &&
+                                        "bg-accent text-accent-foreground",
+                                )}
+                            >
+                                <NavItemIcon item={item} />
+                                {item.name}
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function MobileNavSection({
+    menu,
+    currentPage,
+    separated,
+}: {
+    menu: NavMenu;
+    currentPage: string;
+    separated: boolean;
+}) {
+    const visibleChildren = menu.children?.filter((item) => !item.disabled) ?? [];
+
+    return (
+        <>
+            {separated && <DropdownMenuSeparator />}
+            <DropdownMenuItem
+                asChild
+                className={cn(
+                    "font-semibold",
+                    isNavItemActive(currentPage, menu) &&
+                        "bg-accent text-accent-foreground",
+                )}
+            >
+                <Link href={menu.href} className="flex w-full items-center gap-2">
+                    <NavItemIcon item={menu} />
+                    {menu.name}
+                </Link>
+            </DropdownMenuItem>
+            {visibleChildren.map((item) => (
+                <DropdownMenuItem
+                    key={item.href}
+                    asChild
+                    className={cn(
+                        "pl-6",
+                        currentPage === item.href && "bg-accent text-accent-foreground",
+                    )}
+                >
+                    <Link href={item.href} className="flex w-full items-center gap-2">
+                        <NavItemIcon item={item} />
+                        {item.name}
+                    </Link>
+                </DropdownMenuItem>
+            ))}
+        </>
     );
 }
 
