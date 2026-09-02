@@ -35,7 +35,6 @@ export const navMenus: NavMenu[] = [
                 name: "Kappa Checklist",
                 href: "/items/kappa-checklist",
                 icon: ListChecks,
-                disabled: true,
             },
             { name: "Keys", href: "/items/keys", icon: KeyRound, disabled: true },
             {

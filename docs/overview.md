@@ -48,7 +48,7 @@ items come from task content and are display-only.
 | `/items` | Combined hideout and quest item checklist |
 | `/quests` | Quest objectives, progression, prerequisites, and planning |
 | `/items/inventory` | Inventory (placeholder) |
-| `/items/kappa-checklist` | Kappa checklist (placeholder) |
+| `/items/kappa-checklist` | Collector quest item checklist with profile-specific completion tracking |
 | `/items/keys` | Keys (placeholder) |
 | `/items/barter-profits` | Barter profit tools (placeholder) |
 | `/items/crafting-profits` | Crafting profit tools (placeholder) |
@@ -65,6 +65,10 @@ Persisted in localStorage through `useUserStore`:
 - standard-item inventory counts;
 - quest completion, failure, ignore, pin, and hand-in state;
 - filters, preferences, setup state, and three game-mode profiles.
+
+Persisted separately through `useKappaStore`:
+
+- Collector checklist completion per game mode and the All/Need view preference.
 
 Server-fetched data:
 

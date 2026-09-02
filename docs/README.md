@@ -47,6 +47,9 @@ Docs are grouped by purpose:
 - **[item-checklist-page.md](item-checklist-page.md)** - Feature spec
   Behavior and data requirements for the pooled item checklist page.
 
+- **[kappa-checklist-page.md](kappa-checklist-page.md)** - Feature spec
+  Collector item checklist, interaction behavior, and its independent persisted state.
+
 - **[quests-page.md](quests-page.md)** - Feature spec
   Quests page - quest item requirements, trader/map views, prerequisite ordering, manual sync, and caching.
 

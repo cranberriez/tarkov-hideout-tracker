@@ -1,6 +1,6 @@
 # State Management
 
-Client-side state lives in two Zustand stores. Server-fetched data (stations, items, market prices) is **not** stored in Zustand — it is passed down via React context from server components in the `(data)` route group. See `data-and-price-context-architecture.md`.
+Client-side state lives in three Zustand stores. Server-fetched data (stations, items, market prices) is **not** stored in Zustand — it is passed down via React context from server components in the `(data)` route group. See `data-and-price-context-architecture.md`.
 
 ---
 
@@ -206,6 +206,36 @@ interface PendingItem {
 
 ---
 
+## `useKappaStore` — Kappa Checklist Progress & Preference
+
+**File:** `src/lib/stores/useKappaStore.ts`
+**Persisted:** Yes — localStorage key `tarkov-kappa-checklist-state`, version 1.
+
+This intentionally small store keeps Kappa checklist state out of the larger
+profile store while still treating it as user-owned data. Completed item IDs are
+separated by PVP, PVE, and KORD. The `all` / `need` view preference is shared.
+
+Do not change its storage key or persisted field names without a versioned
+migration.
+
+### State Shape
+
+```ts
+completedItemsByMode: Partial<Record<GameMode, Record<string, boolean>>>;
+viewMode: "all" | "need";
+```
+
+### Key Actions
+
+| Action | Effect |
+|---|---|
+| `setViewMode(mode)` | Select the All or Need view |
+| `toggleCompletedItem(gameMode, itemId)` | Toggle one collected item in the selected profile |
+| `resetCompletedItems()` | Clear completion progress while preserving the view preference |
+| `resetAll()` | Clear completion progress and restore the All view |
+
+---
+
 ## React Contexts — Server-Fetched Data
 
 Data from external APIs is **not** in Zustand. It is fetched server-side and distributed through `DataContext`:
@@ -235,6 +265,7 @@ Each `GlobalItem` entry may contain `marketPrice`, sourced from the same active-
 | Station/level/requirement progress | `useUserStore` (localStorage)                                                                        |
 | Inventory item counts              | `useUserStore` (localStorage)                                                                        |
 | View filters and preferences       | `useUserStore` (localStorage)                                                                        |
+| Kappa item progress and view       | `useKappaStore` (localStorage)                                                                       |
 | Game edition / mode setup          | `useUserStore` (localStorage)                                                                        |
 | Quick Add modal + staged items     | `useUIStore` (in-memory)                                                                             |
 | Hideout stations + global item catalog | `DataContext` (server → context); each standard item carries active-mode market data              |

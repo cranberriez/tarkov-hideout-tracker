@@ -6,6 +6,10 @@ import {
     USER_STORE_STORAGE_KEY,
     useUserStore,
 } from "@/lib/stores/useUserStore";
+import {
+    KAPPA_STORE_STORAGE_KEY,
+    useKappaStore,
+} from "@/lib/stores/useKappaStore";
 import { QUEST_LOG_IMPORT_SEEN_FILES_KEY } from "@/lib/utils/quest-log-import";
 import {
     Dialog,
@@ -25,6 +29,8 @@ export function StorageResetCard() {
     const resetItemData = useUserStore((state) => state.resetItemData);
     const resetQuestData = useUserStore((state) => state.resetQuestData);
     const resetAll = useUserStore((state) => state.resetAll);
+    const resetKappaItems = useKappaStore((state) => state.resetCompletedItems);
+    const resetKappaAll = useKappaStore((state) => state.resetAll);
     const storageSignal = useUserStore(
         useShallow((state) => ({
             stationLevels: state.stationLevels,
@@ -85,6 +91,12 @@ export function StorageResetCard() {
             editionBonusesAppliedFor: state.editionBonusesAppliedFor,
         })),
     );
+    const kappaStorageSignal = useKappaStore(
+        useShallow((state) => ({
+            completedItemsByMode: state.completedItemsByMode,
+            viewMode: state.viewMode,
+        })),
+    );
 
     const [pendingReset, setPendingReset] = useState<ResetAction>(null);
     const isHydrated = useSyncExternalStore(
@@ -95,13 +107,15 @@ export function StorageResetCard() {
 
     const storageUsage = useMemo(() => {
         void storageSignal;
+        void kappaStorageSignal;
 
         if (!isHydrated || typeof window === "undefined") {
             return { usedBytes: 0, usedKilobytes: "0.0", percent: 0 };
         }
 
-        const raw = window.localStorage.getItem(USER_STORE_STORAGE_KEY) ?? "";
-        const usedBytes = new TextEncoder().encode(raw).length;
+        const userStoreRaw = window.localStorage.getItem(USER_STORE_STORAGE_KEY) ?? "";
+        const kappaStoreRaw = window.localStorage.getItem(KAPPA_STORE_STORAGE_KEY) ?? "";
+        const usedBytes = new TextEncoder().encode(userStoreRaw + kappaStoreRaw).length;
         const percent = Math.min((usedBytes / LOCAL_STORAGE_QUOTA_BYTES) * 100, 100);
 
         return {
@@ -109,13 +123,14 @@ export function StorageResetCard() {
             usedKilobytes: (usedBytes / 1024).toFixed(1),
             percent,
         };
-    }, [isHydrated, storageSignal]);
+    }, [isHydrated, kappaStorageSignal, storageSignal]);
 
     function confirmReset(action: Exclude<ResetAction, null>) {
         if (action === "hideout") {
             resetHideoutData();
         } else if (action === "items") {
             resetItemData();
+            resetKappaItems();
         } else if (action === "quests") {
             resetQuestData();
             if (typeof window !== "undefined") {
@@ -123,6 +138,7 @@ export function StorageResetCard() {
             }
         } else {
             resetAll();
+            resetKappaAll();
         }
 
         setPendingReset(null);
@@ -141,7 +157,7 @@ export function StorageResetCard() {
                 return {
                     title: "Delete all item data?",
                     description:
-                        "Deletes tracked item counts only. Settings stay the same.",
+                        "Deletes tracked item counts and Kappa checklist progress. Settings stay the same.",
                     confirmLabel: "Delete item data",
                 };
             case "quests":
@@ -173,7 +189,7 @@ export function StorageResetCard() {
         {
             key: "items" as const,
             label: "Delete all item data",
-            description: "Removes item counts.",
+            description: "Removes item counts and Kappa checklist progress.",
             tone: "border-red-500/15 bg-red-500/[0.07] text-red-100 hover:bg-red-500/[0.11]",
         },
         {
