@@ -8,6 +8,15 @@ The app supports three independent character profiles:
 | PVE | `pve` |
 | KORD | `pvp-season` |
 
+The navigation profile control is split into character and profile halves. Hovering
+either half temporarily opens its full panel; selecting a half pins that panel until
+Close is selected or the user selects outside it. Character settings contain level,
+prestige, faction, and quest goals. Profile switching lives in a separate
+PVE/PVP/KORD list whose rows summarize level, faction, prestige, completed quests,
+and earned hideout upgrades for the character stored in each mode. Earned hideout
+upgrades exclude the standard level-1 Stash baseline and levels granted by the
+profile's edition.
+
 `useUserStore.gameMode` identifies the active profile. `profiles` stores a complete
 `PlayerProfileState` for each mode. The familiar flat progress fields remain the
 active profile projection so existing components can use focused selectors. Every
