@@ -25,6 +25,7 @@ interface MapViewerProps {
     renderMarkerDetails?: (marker: MapOverlayMarker) => ReactNode;
     onObjectiveFloorsChange?: (floors: ReadonlyMap<string, string[]>) => void;
     topRightContent?: ReactNode;
+    bottomRightContent?: ReactNode;
     compactAttribution?: boolean;
     attributionPlacement?: "top-right" | "navigation-controls";
 }
@@ -124,11 +125,19 @@ export function MapViewer({
     renderMarkerDetails,
     onObjectiveFloorsChange,
     topRightContent,
+    bottomRightContent,
     compactAttribution = false,
     attributionPlacement = "top-right",
 }: MapViewerProps) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const dragRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
+    const dragRef = useRef<{
+        pointerId: number;
+        x: number;
+        y: number;
+        view: MapViewTransform;
+    } | null>(null);
+    const dragFrameRef = useRef<number | null>(null);
+    const pendingDragViewRef = useRef<MapViewTransform | null>(null);
     const [mapRequest, setMapRequest] = useState<{
         mapKey: string;
         state: "ready" | "unsupported" | "error";
@@ -195,6 +204,10 @@ export function MapViewer({
         });
         observer.observe(element);
         return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => () => {
+        if (dragFrameRef.current !== null) cancelAnimationFrame(dragFrameRef.current);
     }, []);
 
     const projectedMarkers = useMemo(() => {
@@ -331,10 +344,32 @@ export function MapViewer({
         onViewChange?.(null);
     }, [fittedView, focusRequestKey, onViewChange, viewKey]);
 
-    const updateView = (value: MapViewTransform) => {
+    const updateView = (value: MapViewTransform, remember = true) => {
         const constrainedValue = constrainMapView(value, stageSize, containerSize);
         setManualView({ key: viewKey, value: constrainedValue, focusRequestKey: focusRequestKey ?? null });
-        onViewChange?.(constrainedValue);
+        if (remember) onViewChange?.(constrainedValue);
+        return constrainedValue;
+    };
+
+    const renderPendingDragView = () => {
+        dragFrameRef.current = null;
+        const pendingView = pendingDragViewRef.current;
+        if (!pendingView) return;
+        pendingDragViewRef.current = null;
+        updateView(pendingView, false);
+    };
+
+    const finishDrag = () => {
+        const drag = dragRef.current;
+        if (!drag) return;
+        if (dragFrameRef.current !== null) {
+            cancelAnimationFrame(dragFrameRef.current);
+            dragFrameRef.current = null;
+        }
+        pendingDragViewRef.current = null;
+        updateView(drag.view, false);
+        onViewChange?.(drag.view);
+        dragRef.current = null;
     };
 
     const zoomBy = (factor: number, focalPoint = { x: 0, y: 0 }) => {
@@ -363,7 +398,7 @@ export function MapViewer({
     return (
         <div
             ref={containerRef}
-            className="relative h-full min-h-72 touch-none overflow-hidden bg-[#08090a]"
+            className="relative h-full min-h-72 touch-none select-none overflow-hidden bg-[#08090a]"
             onWheel={(event) => {
                 event.preventDefault();
                 const bounds = event.currentTarget.getBoundingClientRect();
@@ -377,22 +412,39 @@ export function MapViewer({
                 if (target.closest("[data-marker-popup]")) return;
                 setPinnedMarkerPopup(null);
                 if (target.closest("button, summary, a")) return;
-                dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+                event.preventDefault();
+                dragRef.current = {
+                    pointerId: event.pointerId,
+                    x: event.clientX,
+                    y: event.clientY,
+                    view,
+                };
                 event.currentTarget.setPointerCapture(event.pointerId);
             }}
             onPointerMove={(event) => {
                 const drag = dragRef.current;
                 if (!drag || drag.pointerId !== event.pointerId) return;
-                const dx = event.clientX - drag.x;
-                const dy = event.clientY - drag.y;
-                dragRef.current = { ...drag, x: event.clientX, y: event.clientY };
-                updateView({ ...view, x: view.x + dx, y: view.y + dy });
+                const nextView = constrainMapView({
+                    ...drag.view,
+                    x: drag.view.x + event.clientX - drag.x,
+                    y: drag.view.y + event.clientY - drag.y,
+                }, stageSize, containerSize);
+                dragRef.current = {
+                    ...drag,
+                    x: event.clientX,
+                    y: event.clientY,
+                    view: nextView,
+                };
+                pendingDragViewRef.current = nextView;
+                if (dragFrameRef.current === null) {
+                    dragFrameRef.current = requestAnimationFrame(renderPendingDragView);
+                }
             }}
-            onPointerUp={() => { dragRef.current = null; }}
-            onPointerCancel={() => { dragRef.current = null; }}
+            onPointerUp={finishDrag}
+            onPointerCancel={finishDrag}
         >
             <div
-                className="absolute left-1/2 top-1/2"
+                className="absolute left-1/2 top-1/2 will-change-transform"
                 style={{
                     width: stageSize.width,
                     height: stageSize.height,
@@ -629,6 +681,7 @@ export function MapViewer({
                     <button type="button" aria-label="Fit map markers" onClick={fitMarkers} className="border-x border-white/10 p-2 text-gray-300 hover:text-white"><LocateFixed size={15} /></button>
                     <button type="button" aria-label="Zoom in" onClick={() => zoomBy(1.25)} className="p-2 text-gray-300 hover:text-white"><Plus size={15} /></button>
                 </div>
+                {bottomRightContent}
             </div>
             <div className={cn(
                 "absolute z-30 flex max-w-[calc(100%-6rem)] items-start gap-2",

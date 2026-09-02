@@ -60,11 +60,11 @@ export function QuestWorkspace({ quests }: { quests: FullQuest[] }) {
                       : "h-[calc(100dvh-4rem)] sm:h-[calc(100dvh-4.75rem)]",
             )}
         >
-            <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-1 overflow-hidden bg-[#0b0c0e] lg:grid-cols-[clamp(380px,34vw,560px)_minmax(0,1fr)]">
+            <div data-quest-workspace-grid className="grid min-h-0 flex-1 grid-cols-1 grid-rows-1 overflow-hidden bg-[#0b0c0e] lg:grid-cols-[clamp(380px,34vw,560px)_minmax(0,1fr)]">
                 <section className={cn(
                     "min-h-0 min-w-0 flex-col border-white/10 lg:flex lg:border-r",
                     mode === "details" && !selectedQuestId ? "flex" : "hidden",
-                )}>
+                )} data-quest-list-pane>
                     <QuestFilterBar />
                     <QuestTraderBar />
                     <QuestListPane />

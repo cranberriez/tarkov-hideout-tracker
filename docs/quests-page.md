@@ -178,6 +178,12 @@ over the viewport, including the app navigation. Its map picker uses the same fu
 Back to quests treatment as compact quest details; selected maps use a compact Exit
 overlay.
 
+On desktop, selected Raid Planner maps provide a bottom-right full-screen control
+beside the zoom group. Full-screen mode temporarily hides the app navigation, quest
+list, and workspace action bar while leaving the Hide Nav preference unchanged.
+The control is omitted below the desktop breakpoint, where the selected map already
+fills the viewport and uses the compact Exit overlay.
+
 Failed quests are a distinct resolved workspace status. They are excluded from
 `Active`, shown separately from progression-locked quests, and can be selected with
 the `Failed` status filter. Completing a quest automatically fails any quest whose

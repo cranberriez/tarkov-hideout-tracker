@@ -108,6 +108,22 @@ body.quest-workspace-active {
     overflow: hidden;
 }
 
+@media (width >= 64rem) {
+    body.quest-raid-planner-fullscreen [data-main-nav],
+    body.quest-raid-planner-fullscreen [data-quest-list-pane],
+    body.quest-raid-planner-fullscreen [data-quest-action-bar] {
+        display: none;
+    }
+
+    body.quest-raid-planner-fullscreen [data-quest-workspace] {
+        height: 100dvh;
+    }
+
+    body.quest-raid-planner-fullscreen [data-quest-workspace-grid] {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 @media (width < 64rem) {
     body.quest-raid-planner-active [data-main-nav] {
         display: none;

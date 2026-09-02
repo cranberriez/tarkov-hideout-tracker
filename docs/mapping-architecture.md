@@ -128,7 +128,8 @@ those floors cannot be toggled until the artwork metadata supplies group IDs.
 fit-to-markers, objective-focused fitting, zone outlines, marker selection/focus, responsive sizing, and
 visible map attribution. Its layer summary lists currently visible floors,
 provides independent optional-layer toggles and per-floor marker counts, and adds the resolved
-floor name to marker tooltips. Marker coordinates and size remain fixed on hover/focus.
+floor name to marker tooltips. The map surface and marker text are not selectable, so
+dragging cannot be interrupted by accidental text selection. Marker coordinates and size remain fixed on hover/focus.
 Clicking a quest marker pins its detail popup. Eligible mapped objectives expose a
 compact **Complete** action beside a close button in the popup header. Completing
 the objective preserves that popup as a snapshot even after its marker is filtered;
@@ -146,6 +147,9 @@ name tiles as the planner menu. Quest-list hover/focus can still highlight the c
 The Raid Planner keeps each map's pan and zoom
 in session memory, so opening a marker's quest details and returning to the
 planner restores the same view without adding persistent user-store fields.
+Live drag updates stay local to the map and are capped to animation frames; the
+remembered workspace view is updated only when the drag ends to avoid re-rendering
+the quest list for every pointer event.
 Below the selected-map back button, a red-tinted **Kill List** control expands to
 a vertical summary of every shooting objective from the map's active quests.
 Descriptions are compacted for raid planning, with the original objective retained
@@ -159,6 +163,11 @@ be brought comfortably into view. Raid Planner attribution uses a small text-onl
 faint background immediately left of the extract/transit label toggle. Embedded
 quest-detail maps use the same compact visual treatment in the top-right overlay
 row so licensing remains visible without occupying meaningful map space.
+On desktop, a control immediately to the right of the zoom group expands the Raid
+Planner map across the workspace. This temporary mode hides the quest list, app
+navigation, and workspace action bar without changing the independent Hide Nav state.
+Compact layouts omit the control because their selected-map view already occupies
+the viewport and provides an Exit action.
 
 The quest-detail consumer loads `MapViewer` as a client-only dynamic chunk. Its
 quest-specific marker payload is memoized, and map updates use a deferred value so

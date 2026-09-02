@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Crosshair, KeyRound, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, Crosshair, KeyRound, Maximize2, Minimize2, X } from "lucide-react";
 import Image from "next/image";
 import { MapViewer } from "@/features/maps/MapViewer";
 import type { MapViewTransform } from "@/features/maps/map-view-transform";
@@ -28,6 +28,7 @@ interface RaidPlannerPaneProps {
 export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPaneProps) {
     const { itemById } = useDataContext();
     const [isKillListOpen, setIsKillListOpen] = useState(false);
+    const [isFullScreen, setIsFullScreen] = useState(false);
     const [navigationMarkers, setNavigationMarkers] = useState<{
         mapKey: string;
         markers: MapOverlayMarker[];
@@ -39,17 +40,45 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
         markerByQuestId, highlightedQuestId, setHighlightedQuestId, setSelectedQuestId, setMode,
     } = useQuestWorkspace();
     const exitPlanner = () => {
+        setIsFullScreen(false);
         setSelectedQuestId(null);
         setMode("details");
     };
-    const activeQuests = getActiveRaidPlannerQuests(quests, statusByQuestId);
-    const selectedMap = maps.find((map) => map.key === plannerMapKey) ?? null;
+    const activeQuests = useMemo(
+        () => getActiveRaidPlannerQuests(quests, statusByQuestId),
+        [quests, statusByQuestId],
+    );
+    const selectedMap = useMemo(
+        () => maps.find((map) => map.key === plannerMapKey) ?? null,
+        [maps, plannerMapKey],
+    );
     const selectedMapKey = selectedMap?.key;
-    const plannerQuests = selectedMap
+    const plannerQuests = useMemo(() => selectedMap
         ? activeQuests.filter((quest) =>
-              getQuestMapGroupsForQuest(quest).some((map) => map.key === selectedMap.key),
-          )
-        : [];
+            getQuestMapGroupsForQuest(quest).some((map) => map.key === selectedMap.key),
+        )
+        : [], [activeQuests, selectedMap]);
+    const markers = useMemo(() => selectedMap ? [
+        ...buildRaidPlannerMarkers(plannerQuests, selectedMap.key, markerByQuestId, completedQuestObjectives),
+        ...(navigationMarkers?.mapKey === selectedMap.key ? navigationMarkers.markers : []),
+    ] : [], [completedQuestObjectives, markerByQuestId, navigationMarkers, plannerQuests, selectedMap]);
+    const killObjectives = useMemo(
+        () => buildRaidPlannerKillList(plannerQuests),
+        [plannerQuests],
+    );
+    const objectiveKeyIndex = useMemo(
+        () => buildRaidPlannerObjectiveKeyIndex(plannerQuests),
+        [plannerQuests],
+    );
+    const completableQuestIds = useMemo(
+        () => new Set(plannerQuests.filter((quest) => quest.objectives.length > 1).map((quest) => quest.id)),
+        [plannerQuests],
+    );
+
+    useEffect(() => {
+        document.body.classList.toggle("quest-raid-planner-fullscreen", isFullScreen);
+        return () => document.body.classList.remove("quest-raid-planner-fullscreen");
+    }, [isFullScreen]);
 
     useEffect(() => {
         if (!selectedMapKey) return;
@@ -111,16 +140,6 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
         );
     }
 
-    const markers = [
-        ...buildRaidPlannerMarkers(plannerQuests, selectedMap.key, markerByQuestId, completedQuestObjectives),
-        ...(navigationMarkers?.mapKey === selectedMap.key ? navigationMarkers.markers : []),
-    ];
-    const killObjectives = buildRaidPlannerKillList(plannerQuests);
-    const objectiveKeyIndex = buildRaidPlannerObjectiveKeyIndex(plannerQuests);
-    const completableQuestIds = new Set(
-        plannerQuests.filter((quest) => quest.objectives.length > 1).map((quest) => quest.id),
-    );
-
     return (
         <div className="relative min-h-0 flex-1 overflow-hidden bg-[#111316]">
             <MapViewer
@@ -167,6 +186,18 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
                         <X size={12} /> Exit
                     </button>
                 )}
+                bottomRightContent={(
+                    <button
+                        type="button"
+                        aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
+                        aria-pressed={isFullScreen}
+                        onClick={() => setIsFullScreen((fullScreen) => !fullScreen)}
+                        className="hidden border border-white/10 bg-black/80 p-2 text-gray-300 shadow-xl backdrop-blur-sm transition-colors hover:text-white lg:flex"
+                        title={isFullScreen ? "Exit full screen" : "Full screen"}
+                    >
+                        {isFullScreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+                    </button>
+                )}
                 compactAttribution
                 attributionPlacement="navigation-controls"
             />
@@ -174,6 +205,7 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
                 <button
                     type="button"
                     onClick={() => {
+                        setIsFullScreen(false);
                         setIsKillListOpen(false);
                         clearPlannerMap();
                     }}
