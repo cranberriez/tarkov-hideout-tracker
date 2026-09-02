@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import type { CSSProperties } from "react";
 import { useMemo } from "react";
-import { AlertTriangle, Bug, CheckCircle2, ChevronLeft, ChevronRight, Circle, Eye, EyeOff, ExternalLink, Flag, GitBranch, GripVertical, Map as MapIcon, PackageOpen, Pin, RotateCcw, X, XCircle } from "lucide-react";
+import { AlertTriangle, Bug, CheckCircle2, ChevronRight, Circle, Eye, EyeOff, ExternalLink, Flag, GitBranch, GripVertical, Map as MapIcon, PackageOpen, Pin, RotateCcw, X, XCircle } from "lucide-react";
 import { useDataContext } from "@/app/(data)/_dataContext";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
@@ -173,6 +173,7 @@ export function QuestDetailsPane() {
                 hidden={hidden}
                 isCondensed={isHeaderCondensed}
                 isCompactMapOpen={isCompactMapOpen}
+                isDesktopMapOpen={isDesktopMapOpen}
                 hasObjectiveMap={!!selectedDetailMap}
                 visualizerLines={visualizerLines}
                 onToggleCompletion={() => {
@@ -184,15 +185,12 @@ export function QuestDetailsPane() {
                 onTogglePinned={() => togglePinnedQuest(quest.id)}
                 onToggleHidden={() => toggleIgnoredQuest(quest.id)}
                 onShowMap={openCompactMap}
+                onShowDesktopMap={() => setIsDesktopMapOpen(true)}
                 onOpenVisualizer={(lineId) => openQuestVisualizer(lineId, quest.id)}
             />
-            {(multipleChoiceQuests.length > 1 || (selectedDetailMap && !isDesktopMapOpen)) && (
-                <div className={cn(
-                    "flex h-11 min-h-11 items-stretch border-b border-white/10",
-                    multipleChoiceQuests.length <= 1 && "hidden min-[1700px]:flex",
-                    multipleChoiceQuests.length > 1 && "border-amber-300/25 bg-amber-300/10 text-amber-100",
-                )}>
-                    {multipleChoiceQuests.length > 1 && <div className="flex min-w-0 flex-1 items-center gap-3 px-5 sm:px-7">
+            {multipleChoiceQuests.length > 1 && (
+                <div className="flex h-11 min-h-11 items-stretch border-b border-amber-300/25 bg-amber-300/10 text-amber-100">
+                    <div className="flex min-w-0 flex-1 items-center gap-3 px-5 sm:px-7">
                     <AlertTriangle size={16} className="shrink-0 text-amber-300" />
                     <p className="shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-300">Multiple choice quest</p>
                     <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden text-xs">
@@ -209,18 +207,7 @@ export function QuestDetailsPane() {
                             </button>
                         ))}
                     </div>
-                    </div>}
-                    {selectedDetailMap && !isDesktopMapOpen && (
-                        <button
-                            type="button"
-                            onClick={() => setIsDesktopMapOpen(true)}
-                            className="ml-auto hidden aspect-square h-11 shrink-0 items-center justify-center border-l border-white/10 bg-[#101113] text-gray-500 transition-colors hover:bg-white/5 hover:text-white min-[1700px]:flex"
-                            aria-label="Show objective map"
-                            title="Show objective map"
-                        >
-                            <ChevronLeft size={17} />
-                        </button>
-                    )}
+                    </div>
                 </div>
             )}
             <div className="max-w-6xl px-6 py-10 sm:px-9">
@@ -503,6 +490,7 @@ function QuestDetailsHeader({
     hidden,
     isCondensed,
     isCompactMapOpen,
+    isDesktopMapOpen,
     hasObjectiveMap,
     visualizerLines,
     onToggleCompletion,
@@ -511,6 +499,7 @@ function QuestDetailsHeader({
     onTogglePinned,
     onToggleHidden,
     onShowMap,
+    onShowDesktopMap,
     onOpenVisualizer,
 }: {
     quest: FullQuest;
@@ -524,6 +513,7 @@ function QuestDetailsHeader({
     hidden: boolean;
     isCondensed: boolean;
     isCompactMapOpen: boolean;
+    isDesktopMapOpen: boolean;
     hasObjectiveMap: boolean;
     visualizerLines: QuestBranchLine[];
     onToggleCompletion: () => void;
@@ -532,6 +522,7 @@ function QuestDetailsHeader({
     onTogglePinned: () => void;
     onToggleHidden: () => void;
     onShowMap: () => void;
+    onShowDesktopMap: () => void;
     onOpenVisualizer: (lineId: string) => void;
 }) {
     return (
@@ -549,6 +540,17 @@ function QuestDetailsHeader({
                 </div>
             )}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0b0c0e] via-[#0b0c0e]/88 to-transparent" />
+            {hasObjectiveMap && !isDesktopMapOpen && (
+                <button
+                    type="button"
+                    onClick={onShowDesktopMap}
+                    className="absolute right-3 top-3 z-10 hidden h-9 w-9 items-center justify-center border border-white/15 bg-[#23262b]/95 text-gray-400 shadow-lg transition-colors hover:border-tarkov-green/40 hover:bg-[#26352b] hover:text-tarkov-green min-[1700px]:flex"
+                    aria-label="Show objective map"
+                    title="Show objective map"
+                >
+                    <MapIcon size={16} />
+                </button>
+            )}
             <div className={cn("relative", !isCondensed && "max-w-4xl sm:pr-10")}>
                 <div className={cn("flex items-center gap-2.5 overflow-hidden transition-[height,margin,opacity] duration-200", isCondensed ? "h-0 opacity-0" : "mb-3 h-10 opacity-100")}>
                     {traderImage ? <img src={traderImage} alt="" className="h-9 w-9 rounded-full border border-white/10 object-cover" /> : null}

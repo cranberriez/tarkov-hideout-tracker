@@ -514,9 +514,8 @@ scrolling details column, including its header, and a resizable right map column
 Quests without mapping data keep the details column at the full available width.
 The highlighted divider accepts pointer dragging and keyboard
 left/right arrows. A square caret in the map top bar hides the map without losing
-the selected map or width; its matching restore control appears at the top-right
-of the details column, in the same compact 44px row used by the single-line
-multiple-choice warning. Below 1700px, the details use the full pane and the map
+the selected map or width; its matching map-icon restore control appears at the
+top-right of the quest header. Below 1700px, the details use the full pane and the map
 starts hidden. The header's **Show map** action, or an objective's **Show on map**
 action, replaces the detail area with the map; its red close action restores the
 details. On mobile, the quest detail header and compact back bar are hidden while

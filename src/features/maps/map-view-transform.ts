@@ -14,17 +14,21 @@ export interface MapViewSize {
     height: number;
 }
 
+const MAP_EDGE_PAN_ALLOWANCE = 0.05;
+
 export function constrainMapView(
     view: MapViewTransform,
     stage: MapViewSize,
     viewport: MapViewSize,
 ): MapViewTransform {
-    const maxX = Math.max(0, (stage.width * view.scale - viewport.width) / 2);
-    const maxY = Math.max(0, (stage.height * view.scale - viewport.height) / 2);
+    const scaledWidth = stage.width * view.scale;
+    const scaledHeight = stage.height * view.scale;
+    const maxX = Math.max(0, (scaledWidth - viewport.width) / 2) + scaledWidth * MAP_EDGE_PAN_ALLOWANCE;
+    const maxY = Math.max(0, (scaledHeight - viewport.height) / 2) + scaledHeight * MAP_EDGE_PAN_ALLOWANCE;
     return {
         ...view,
-        x: maxX === 0 ? 0 : Math.min(maxX, Math.max(-maxX, view.x)),
-        y: maxY === 0 ? 0 : Math.min(maxY, Math.max(-maxY, view.y)),
+        x: Math.min(maxX, Math.max(-maxX, view.x)),
+        y: Math.min(maxY, Math.max(-maxY, view.y)),
     };
 }
 

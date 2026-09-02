@@ -17,24 +17,24 @@ test("clamps zoom while retaining the focal point", () => {
     assert.deepEqual(after, { scale: 5, x: -10, y: 5 });
 });
 
-test("constrains panning to the scaled artwork edges", () => {
+test("constrains panning to five percent beyond the scaled artwork edges", () => {
     assert.deepEqual(
         constrainMapView(
             { scale: 2, x: 1000, y: -1000 },
             { width: 800, height: 600 },
             { width: 800, height: 600 },
         ),
-        { scale: 2, x: 400, y: -300 },
+        { scale: 2, x: 480, y: -360 },
     );
 });
 
-test("keeps fitted artwork centered when it is smaller than the viewport", () => {
+test("allows a five percent pan when fitted artwork is smaller than the viewport", () => {
     assert.deepEqual(
         constrainMapView(
             { scale: 1, x: 100, y: -100 },
             { width: 500, height: 600 },
             { width: 800, height: 600 },
         ),
-        { scale: 1, x: 0, y: 0 },
+        { scale: 1, x: 25, y: -30 },
     );
 });

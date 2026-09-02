@@ -54,7 +54,7 @@ distinct outlines are merged into that marker.
 Quest details render only objectives with precise positioned locations. Mapped
 objectives receive a numbered, color-coded cue that matches their markers. At
 1700px and wider the detail viewer stays in a resizable, collapsible right-hand
-column. Its restore control moves into the top-right of the details column while
+column. Its map-icon restore control moves into the top-right of the quest header while
 the map is hidden. Below that breakpoint it starts hidden and replaces the textual
 detail area when opened from the header's **Show map** action or **Show on map**. It shows every
 positioned objective for one map at a time, provides compact tabs when a quest
@@ -153,9 +153,9 @@ as hover text.
 
 The layer control is anchored at the bottom-left and expands upward with an
 explicit collapse caret. Zoom is capped at 7x. Every manual, remembered, focused,
-or cursor-anchored view is constrained against the scaled artwork dimensions, so
-panning can reach the map edges but cannot move the artwork completely outside
-the viewport. Raid Planner attribution uses a small text-only treatment with a
+or cursor-anchored view is constrained against the scaled artwork dimensions with
+a five-percent artwork-size allowance beyond each edge, so boundary markers can
+be brought comfortably into view. Raid Planner attribution uses a small text-only treatment with a
 faint background immediately left of the extract/transit label toggle. Embedded
 quest-detail maps use the same compact visual treatment in the top-right overlay
 row so licensing remains visible without occupying meaningful map space.
