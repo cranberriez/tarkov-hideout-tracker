@@ -271,6 +271,14 @@ Each `GlobalItem` entry may contain `marketPrice`, sourced from the same active-
 | Hideout stations + global item catalog | `DataContext` (server → context); each standard item carries active-mode market data              |
 | Quest data                         | Server props to pages that need it; `/quests` wraps it in `QuestsContext` for derived quest UI state |
 
+### Profit-page price overrides
+
+Manual buy and sell prices use the independent, mode-scoped localStorage key
+`tarkov-profit-price-overrides-v1:{PVP|PVE|KORD}`. They are intentionally not
+part of `useUserStore`: adding or clearing an override must not migrate or alter
+character progress. Overrides take precedence over `avg24hPrice` only inside
+the barter/craft calculation engine.
+
 ---
 
 ## Zustand Subscription Pattern

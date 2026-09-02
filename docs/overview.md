@@ -50,8 +50,8 @@ items come from task content and are display-only.
 | `/items/inventory` | Inventory (placeholder) |
 | `/items/kappa-checklist` | Collector quest item checklist with profile-specific completion tracking |
 | `/items/keys` | Keys (placeholder) |
-| `/items/barter-profits` | Barter profit tools (placeholder) |
-| `/items/crafting-profits` | Crafting profit tools (placeholder) |
+| `/items/barter-profits` | Recursive barter costs, availability, and profit comparison |
+| `/items/crafting-profits` | Recursive craft costs, effective duration, and profit per hour |
 | `/hideout/station-goals` | Hideout station goals (placeholder) |
 | `/hideout/bitcoin-farm` | Bitcoin farm tools (placeholder) |
 | `/news` | In-app news and updates |
@@ -76,7 +76,7 @@ Server-fetched data:
 - the complete compact standard-item catalog and current market values;
 - full or lightweight quest content with standard item IDs and inline
   quest-specific presentation;
-- barter and craft indexes, queried lazily per selected standard item.
+- barter and craft indexes, queried lazily per selected standard item or loaded when a profit page is visited.
 
 `DataContext` exposes station and catalog arrays. Its client provider memoizes
 `itemById`, which lets hideout, checklist, search, quest, and modal components join
@@ -90,6 +90,7 @@ standard item presentation without embedding copies in source records.
 /tasks   -> standard itemId refs -------------------------^
          -> quest-specific inline display only
 /barters + /crafts -> Redis indexes -> lazy per-item usage route
+                              \-----> profit pages -> client calculation graph
 ```
 
 The large catalog, barter index, and craft index use versioned Redis caches only.

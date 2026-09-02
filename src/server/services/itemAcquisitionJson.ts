@@ -3,11 +3,13 @@ import { DATA_CACHE_MAX_AGE_MS } from "@/server/cache";
 import { redis, writeRedisAfterResponse } from "@/server/redis";
 import { fetchTarkovJsonData, type TarkovJsonGameMode } from "@/server/services/tarkovJson/client";
 import { markStaleFallback, parseNonEmptyTimedResponse } from "@/server/services/tarkovJson/cache";
+import { buildItemAcquisitionTree } from "@/lib/price-calculation/acquisition-tree";
 import type {
     BarterRecord,
     BartersPayload,
     CraftRecord,
     CraftsPayload,
+    ItemAcquisitionTreePayload,
     ItemAmountRef,
     ItemUsagePayload,
     TimedResponse,
@@ -208,4 +210,19 @@ export async function getItemUsage(
         ...(barters.status === "rejected" ? { bartersError: errorText("Barter") } : {}),
         ...(crafts.status === "rejected" ? { craftsError: errorText("Craft") } : {}),
     };
+}
+
+export async function getItemAcquisitionTree(
+    itemId: string,
+    gameMode: TarkovJsonGameMode = "regular",
+): Promise<ItemAcquisitionTreePayload> {
+    const [barters, crafts] = await Promise.all([
+        getBarterIndex(gameMode),
+        getCraftIndex(gameMode),
+    ]);
+    return buildItemAcquisitionTree(
+        itemId,
+        barters.data.bartersByItemId,
+        crafts.data.craftsByItemId,
+    );
 }

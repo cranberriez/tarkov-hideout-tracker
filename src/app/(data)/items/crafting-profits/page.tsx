@@ -1,5 +1,9 @@
-import { NavPlaceholderPage } from "@/components/core/NavPlaceholderPage";
+import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
+import { getProfitPageData } from "@/server/services/profitPages";
+import { ProfitPageClient } from "@/features/profit-pages/ProfitPageClient";
 
-export default function CraftingProfitsPage() {
-    return <NavPlaceholderPage title="Crafting Profits" />;
+export default async function CraftingProfitsPage() {
+    const mode = await getActiveTarkovJsonGameMode();
+    const data = await getProfitPageData(mode);
+    return <ProfitPageClient kind="craft" data={data} />;
 }

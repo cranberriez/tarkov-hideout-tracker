@@ -47,6 +47,9 @@ Docs are grouped by purpose:
 - **[item-checklist-page.md](item-checklist-page.md)** - Feature spec
   Behavior and data requirements for the pooled item checklist page.
 
+- **[profit-pages.md](profit-pages.md)** - Feature spec
+  Recursive barter/craft costing, manual prices, availability filters, and profit-page data flow.
+
 - **[kappa-checklist-page.md](kappa-checklist-page.md)** - Feature spec
   Collector item checklist, interaction behavior, and its independent persisted state.
 

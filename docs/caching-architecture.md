@@ -73,6 +73,12 @@ in `unstable_cache`. The per-item usage route returns only matching barter/craft
 records and applies HTTP caching. Price history has a separate 15-minute Next/HTTP
 cache and no Redis entry.
 
+The barter and crafting profit routes load the existing complete barter and craft
+indexes only when those routes are visited. Recursive costs and profits are derived
+in the browser from those raw indexes, the catalog's `avg24hPrice`, and mode-scoped
+manual overrides. Computed profits are not written to Redis because they can differ
+for each player.
+
 The catalog is larger than Upstash's single-request limit in some modes, so it is
 written as alternating generation-tagged chunk sets. The small manifest and meta
 keys are published only after every chunk succeeds. Reads reject incomplete or

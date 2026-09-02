@@ -136,6 +136,14 @@ export interface ItemUsagePayload {
     presentationError?: string;
 }
 
+export interface ItemAcquisitionTreePayload {
+    rootItemId: string;
+    barters: BarterRecord[];
+    crafts: CraftRecord[];
+    itemIds: string[];
+    truncated: boolean;
+}
+
 export interface ItemAmount {
     item: {
         id: string;

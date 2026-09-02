@@ -29,6 +29,14 @@ Proxies and validates the mode-specific Tarkov.dev `/prices/{itemId}` series. It
 discards points older than December 1, 2025 before serializing the response. It
 uses a 15-minute Next.js/CDN cache and no Redis storage.
 
+### `GET /api/items/{itemId}/acquisition-tree?mode={mode}`
+
+Returns the bounded barter/craft subgraph reachable from one standard item. It is
+intended for recursive single-item calculations such as an item-modal cost view,
+without sending the complete acquisition indexes to the browser. Traversal is
+cycle-safe and capped by depth and item count; `truncated` reports whether the cap
+was reached. The response uses the same browser/CDN caching policy as item usage.
+
 ### `GET /api/revalidate?tag={tag}`
 
 Authenticated with `CRON_SECRET`. Accepted tags are `item-data`, `hideout-data`,

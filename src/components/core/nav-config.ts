@@ -41,13 +41,11 @@ export const navMenus: NavMenu[] = [
                 name: "Barter Profits",
                 href: "/items/barter-profits",
                 icon: HandCoins,
-                disabled: true,
             },
             {
                 name: "Crafting Profits",
                 href: "/items/crafting-profits",
                 icon: Factory,
-                disabled: true,
             },
         ],
     },
