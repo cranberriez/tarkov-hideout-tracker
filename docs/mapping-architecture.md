@@ -137,7 +137,7 @@ dragging cannot be interrupted by accidental text selection. Marker coordinates 
 Clicking a quest marker pins its detail popup. Eligible mapped objectives expose a
 compact **Complete** action beside a close button in the popup header. Completing
 the objective preserves that popup as a snapshot even after its marker is filtered;
-clicking elsewhere or using the close button dismisses it.
+clicking elsewhere or using the close button dismisses it and clears retained marker focus.
 The Raid Planner renders green PMC-extract zones and orange transit zones for the
 selected map without adding separate point markers. Persistent labels default to
 off and can be shown with the control beside the zoom buttons. Hovering or

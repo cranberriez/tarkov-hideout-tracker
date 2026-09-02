@@ -171,6 +171,10 @@ export function MapViewer({
         const dismissPinnedPopup = (event: PointerEvent) => {
             const target = event.target;
             if (target instanceof Element && target.closest("[data-marker-popup]")) return;
+            const activeElement = document.activeElement;
+            if (activeElement instanceof HTMLElement && activeElement.matches("[data-map-marker]")) {
+                activeElement.blur();
+            }
             setPinnedMarkerPopup(null);
         };
         document.addEventListener("pointerdown", dismissPinnedPopup, true);
@@ -542,6 +546,7 @@ export function MapViewer({
                     >
                         <button
                             type="button"
+                            data-map-marker
                             aria-label={`${getQuestObjectiveTypeLabel(marker.objectiveType ?? "")}: ${marker.title}: ${marker.descriptions.join("; ")}`}
                             aria-expanded={isPinned}
                             onMouseEnter={() => { setHoveredMarkerId(marker.id); onMarkerFocus?.(marker); }}
