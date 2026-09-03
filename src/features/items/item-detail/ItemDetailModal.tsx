@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import Image from "next/image";
 import type {
     ItemCraftRecipe,
     ItemDetails,
@@ -10,7 +11,7 @@ import type {
     ItemUsagePayload,
     Station,
 } from "@/types";
-import { ArrowLeft, Bug, X } from "lucide-react";
+import { ArrowLeft, Bug, PackageOpen, X } from "lucide-react";
 import { stationOrder } from "@/lib/cfg/stationOrder";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { formatRelativeUpdatedAt } from "@/lib/utils/format-time";
@@ -28,6 +29,13 @@ import { isCompleteItemUsagePayload } from "@/lib/utils/item-usage";
 import { summarizeItemDetailDemand } from "./item-detail-summary";
 import { evaluateBarters, evaluateCrafts } from "@/lib/price-calculation";
 import { useManualPriceOverrides } from "@/features/profit-pages/useManualPriceOverrides";
+import {
+    emptyItemNavigation,
+    popItemNavigation,
+    pushItemNavigation,
+    reconcileItemNavigation,
+    toItemNavigationEntry,
+} from "./item-detail-navigation";
 
 const itemUsageCache = new Map<string, ItemUsagePayload>();
 const acquisitionTreeCache = new Map<string, ItemAcquisitionTreePayload>();
@@ -66,22 +74,20 @@ export function ItemDetailModal({
     questAvailabilityQuests = [],
 }: ItemDetailModalProps) {
     const { items: catalogItems, itemById } = useDataContext();
-    const rootItemId = item?.id ?? "";
-    const [itemNavigation, setItemNavigation] = useState<{
-        rootItemId: string;
-        itemIds: string[];
-    }>({ rootItemId, itemIds: rootItemId ? [rootItemId] : [] });
-    const navigationItemIds =
-        itemNavigation.rootItemId === rootItemId
-            ? itemNavigation.itemIds
-            : rootItemId
-              ? [rootItemId]
-              : [];
-    const activeItemId = navigationItemIds.at(-1) ?? rootItemId;
-    const selectedItem = useMemo(() => {
-        if (!item) return null;
-        return itemById[activeItemId] ?? (activeItemId === item.id ? item : null);
-    }, [activeItemId, itemById, item]);
+    const sourceNavigationItem = item ? toItemNavigationEntry(item) : null;
+    const [storedItemNavigation, setItemNavigation] = useState(emptyItemNavigation);
+    const itemNavigation = reconcileItemNavigation(
+        storedItemNavigation,
+        sourceNavigationItem,
+        isOpen,
+    );
+    if (itemNavigation !== storedItemNavigation) {
+        setItemNavigation(itemNavigation);
+    }
+    const activeItemId = itemNavigation.entries.at(-1)?.id ?? "";
+    const selectedItem = item
+        ? itemById[activeItemId] ?? (activeItemId === item.id ? item : null)
+        : null;
     const selectedItemId = selectedItem?.id ?? "";
     const selectedNormalizedName = selectedItem?.normalizedName ?? "";
 
@@ -574,29 +580,21 @@ export function ItemDetailModal({
         showPriceHistory;
     const isDevelopment = process.env.NODE_ENV === "development";
     const showDebug = debugItemId === selectedItemId;
+    const previousItem = itemNavigation.entries.at(-2) ?? null;
     const handleClose = () => {
         setDebugItemId(null);
-        setItemNavigation({ rootItemId, itemIds: rootItemId ? [rootItemId] : [] });
+        setItemNavigation(emptyItemNavigation);
         onClose();
     };
     const handleItemClick = (itemId: string) => {
-        if (!itemById[itemId] || itemId === selectedItemId) return;
+        const nextItem = itemById[itemId];
+        if (!nextItem || itemId === selectedItemId) return;
         setDebugItemId(null);
-        setItemNavigation((current) => {
-            const itemIds = current.rootItemId === rootItemId
-                ? current.itemIds
-                : rootItemId
-                  ? [rootItemId]
-                  : [];
-            return { rootItemId, itemIds: [...itemIds, itemId] };
-        });
+        setItemNavigation(pushItemNavigation(itemNavigation, toItemNavigationEntry(nextItem)));
     };
     const handleBack = () => {
         setDebugItemId(null);
-        setItemNavigation((current) => ({
-            rootItemId,
-            itemIds: (current.rootItemId === rootItemId ? current.itemIds : [rootItemId]).slice(0, -1),
-        }));
+        setItemNavigation(popItemNavigation(itemNavigation));
     };
     const debugData = {
         item: selectedItem,
@@ -627,7 +625,34 @@ export function ItemDetailModal({
                 className="w-full overflow-visible border-0 bg-transparent p-0 shadow-none sm:max-w-4xl lg:max-w-5xl"
             >
                 <DialogTitle className="sr-only">{selectedItem.name}</DialogTitle>
-                <div className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-lg border border-border-color bg-background shadow-2xl">
+                {previousItem && (
+                    <button
+                        type="button"
+                        onClick={handleBack}
+                        className="absolute bottom-full left-0 mb-2 inline-flex h-10 items-center gap-2 rounded-md bg-background px-3 text-sm font-medium text-foreground shadow-2xl transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tarkov-green/70"
+                        aria-label="Back to previous item"
+                    >
+                        <ArrowLeft size={16} aria-hidden="true" />
+                        {previousItem.iconLink ? (
+                            <Image
+                                src={previousItem.iconLink}
+                                alt=""
+                                width={28}
+                                height={28}
+                                unoptimized
+                                className="h-7 w-7 object-contain"
+                            />
+                        ) : (
+                            <PackageOpen className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                        )}
+                        <span>Back</span>
+                    </button>
+                )}
+                <div
+                    className={`flex w-full flex-col overflow-hidden rounded-lg border border-border-color bg-background shadow-2xl ${
+                        previousItem ? "max-h-[calc(92vh-3rem)]" : "max-h-[92vh]"
+                    }`}
+                >
                     {showDebug && isDevelopment ? (
                         <section className="flex min-h-[420px] min-w-0 flex-col overflow-hidden bg-[#0b0c0e]">
                             <header className="flex items-center justify-between border-b border-border-color px-4 py-3">
@@ -664,16 +689,6 @@ export function ItemDetailModal({
                                     hideoutRequiredCount={demandSummary.hideoutRequiredCount}
                                     questRequiredCount={demandSummary.questRequiredCount}
                                 />
-                                {navigationItemIds.length > 1 && (
-                                    <button
-                                        type="button"
-                                        onClick={handleBack}
-                                        className="absolute right-12 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:border-border-color hover:bg-black/20 hover:text-foreground sm:right-14 sm:top-4"
-                                        aria-label="Back to previous item"
-                                    >
-                                        <ArrowLeft size={17} />
-                                    </button>
-                                )}
                                 <button
                                     type="button"
                                     onClick={handleClose}

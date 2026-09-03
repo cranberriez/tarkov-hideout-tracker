@@ -115,9 +115,12 @@ modal's acquisition data is loaded separately:
   using the same optimizer and mode-scoped manual prices as the full profit pages.
   Each recipe links to its exact row on the corresponding profit page.
 - Standard ingredient chips in barter and craft rows are clickable. Selecting one
-  keeps the modal open on that item's details, with a back action for the previous
-  item. Each priced, consumed ingredient is labeled **Buy**, **Craft**, or
-  **Barter** beneath its name from the optimizer's recommended practical route.
+  keeps the modal open on that item's details. The modal keeps a session history
+  for both ingredient selections and a new item opened by its parent while the
+  dialog remains open. A borderless control floats above the modal's top-left
+  corner with the previous item's icon and returns to that item. Closing the modal
+  clears this history. Each priced, consumed ingredient is labeled **Buy**,
+  **Craft**, or **Barter** beneath its name from the optimizer's recommended practical route.
   Reusable tools omit this recommendation, while quest-only ingredients remain
   informational and are not clickable.
 - **History** lazily requests `/api/items/{itemId}/price-history?mode=...`.
