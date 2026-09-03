@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import {
     isValidItemSearchQuery,
-    searchItems,
 } from "@/server/queries/searchItems";
+import { searchItemPreviews } from "@/server/db/item-search";
+import { itemDatabaseErrorResponse } from "@/server/db/route-errors";
 import {
     ITEM_SEARCH_PAGE_RESULT_LIMIT,
     ITEM_SEARCH_QUICK_RESULT_LIMIT,
@@ -34,13 +35,16 @@ export async function GET(request: NextRequest) {
             ? ITEM_SEARCH_PAGE_RESULT_LIMIT
             : ITEM_SEARCH_QUICK_RESULT_LIMIT;
 
-    const payload = await searchItems(
-        query,
-        requestedMode as TarkovJsonGameMode,
-        undefined,
-        resultLimit,
-    );
-    return NextResponse.json(payload, {
-        headers: { "Cache-Control": "private, no-store" },
-    });
+    try {
+        const payload = await searchItemPreviews(
+            query,
+            requestedMode as TarkovJsonGameMode,
+            resultLimit,
+        );
+        return NextResponse.json(payload, {
+            headers: { "Cache-Control": "private, no-store" },
+        });
+    } catch (error) {
+        return itemDatabaseErrorResponse(error, "Item search is temporarily unavailable");
+    }
 }

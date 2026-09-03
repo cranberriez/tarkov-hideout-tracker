@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import { getItemAcquisitionTreeData } from "@/server/queries/getItemAcquisitionTreeData";
+import { getItemAcquisitionView } from "@/server/db/item-views";
+import { itemDatabaseErrorResponse } from "@/server/db/route-errors";
 
 const MODES = new Set<TarkovJsonGameMode>(["regular", "pve", "pvp-season"]);
 
@@ -18,9 +19,9 @@ export async function GET(
     }
 
     try {
-        const payload = await getItemAcquisitionTreeData(
-            itemId,
+        const payload = await getItemAcquisitionView(
             requestedMode as TarkovJsonGameMode,
+            itemId,
         );
         return NextResponse.json(payload, {
             headers: {
@@ -29,10 +30,10 @@ export async function GET(
                     : "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
             },
         });
-    } catch {
-        return NextResponse.json(
-            { error: "Acquisition routes are temporarily unavailable" },
-            { status: 502 },
+    } catch (error) {
+        return itemDatabaseErrorResponse(
+            error,
+            "Acquisition routes are temporarily unavailable",
         );
     }
 }

@@ -1,8 +1,7 @@
 # Turso data ingestion
 
 This directory owns offline database generation and upload tooling. Application
-runtime access will live separately under `src/server/db/` once the stored shapes
-have been inspected and approved.
+runtime access lives separately under `src/server/db/`.
 
 The pipeline is intentionally staged:
 
@@ -99,3 +98,12 @@ npm run db:status
 The schema is in `schema.sql`. No cleanup command is provided intentionally;
 older releases remain available for inspection and rollback until retention is
 designed explicitly.
+
+## Runtime release selection
+
+The item relations, usage, acquisition-tree, search, data-status, and conversion
+APIs read from Turso. They select immutable releases through
+`src/server/db/release-config.ts`; update that mode-to-release map after uploading
+and validating a replacement release. The runtime does not currently consult
+`active_data_releases`, so `db:activate` does not change what the application
+serves until the static config is updated.

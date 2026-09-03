@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import { getItemRelationsData } from "@/server/queries/getItemRelationsData";
+import { getItemRelationsView } from "@/server/db/item-views";
+import { itemDatabaseErrorResponse } from "@/server/db/route-errors";
 
 const MODES = new Set<TarkovJsonGameMode>(["regular", "pve", "pvp-season"]);
 
@@ -17,16 +18,23 @@ export async function GET(
         return NextResponse.json({ error: "Invalid item ID" }, { status: 400 });
     }
 
-    const payload = await getItemRelationsData(
-        itemId,
-        requestedMode as TarkovJsonGameMode,
-    );
-    const isPartial = Object.values(payload.errors).some((error) => error !== null);
-    return NextResponse.json(payload, {
-        headers: {
-            "Cache-Control": isPartial
-                ? "no-store"
-                : "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
-        },
-    });
+    try {
+        const payload = await getItemRelationsView(
+            requestedMode as TarkovJsonGameMode,
+            itemId,
+        );
+        const isPartial = Object.values(payload.errors).some((error) => error !== null);
+        return NextResponse.json(payload, {
+            headers: {
+                "Cache-Control": isPartial
+                    ? "no-store"
+                    : "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
+            },
+        });
+    } catch (error) {
+        return itemDatabaseErrorResponse(
+            error,
+            "Item relations are temporarily unavailable",
+        );
+    }
 }

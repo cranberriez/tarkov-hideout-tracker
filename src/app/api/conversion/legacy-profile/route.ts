@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { TarkovDataMode } from "@/types/common";
-import { getLegacyProfileConversionData } from "@/server/queries/getLegacyProfileConversionData";
+import { getLegacyProfileConversionView } from "@/server/db/shared-api-data";
 
 const MODES = new Set<TarkovDataMode>(["regular", "pve", "pvp-season"]);
 
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    const payload = await getLegacyProfileConversionData(
+    const payload = await getLegacyProfileConversionView(
         requestedMode as TarkovDataMode,
     );
     return NextResponse.json(payload, {

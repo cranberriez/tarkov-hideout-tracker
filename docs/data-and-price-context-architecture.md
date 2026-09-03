@@ -9,10 +9,9 @@ layout does not load entity arrays.
 ```text
 Tarkov.dev JSON
   -> adapter services (raw shapes, translation, validation, caching)
-  -> TarkovDataRepository (explicit mode, keyed ID batches)
-  -> page/API queries (composition and independent failures)
-  -> contracts in src/types/contracts.ts
-  -> route client or bounded API response
+      -> TarkovDataRepository (explicit mode, keyed ID batches)
+      -> page queries -> route-scoped contracts -> server-component props
+      -> offline release generation -> Turso -> bounded API responses
 ```
 
 The current repository is selected lazily by `query-utils.ts`. Pages and features
@@ -40,11 +39,13 @@ context or client price store exists.
 
 Catalog-wide search uses `/api/items/search`. Quick Add requests at most 10
 results. The checklist search requests at most 50 results, with starts-with
-matches first and alphabetical ordering inside each priority group.
+matches first and alphabetical ordering inside each priority group. Search reads
+the compact, release-scoped Turso index rather than loading the item catalog.
 
 The shared item modal receives only an item summary and open state. Its controller
-loads the selected item's relations, direct usage, bounded recursive acquisition
-tree, and price history. Navigation between related items stays inside that
+loads the selected item's relations, direct usage, and bounded recursive
+acquisition tree from endpoint-ready Turso records. Price history stays an
+on-demand provider request. Navigation between related items stays inside that
 controller. Complete responses may be cached in memory; partial responses remain
 retryable.
 

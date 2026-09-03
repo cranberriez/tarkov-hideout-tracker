@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { TarkovDataMode } from "@/types/common";
-import { getCompletedItemsConversionData } from "@/server/queries/getCompletedItemsConversionData";
+import { getCompletedItemsConversionView } from "@/server/db/shared-api-data";
 
 const MODES = new Set<TarkovDataMode>(["regular", "pve", "pvp-season"]);
 
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    const payload = await getCompletedItemsConversionData(
+    const payload = await getCompletedItemsConversionView(
         requestedMode as TarkovDataMode,
     );
     return NextResponse.json(payload, {

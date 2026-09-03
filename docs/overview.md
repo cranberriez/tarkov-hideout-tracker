@@ -89,20 +89,22 @@ routes instead of shipping the full catalog or every relationship in the layout.
 ```text
 page -> named query -> TarkovDataRepository -> cached JSON adapters
                     -> route-scoped items/prices by referenced ID
-item search --------> bounded /api/items/search
-item modal ---------> lazy relations + usage + acquisition + history APIs
+item search --------> bounded /api/items/search -> compact Turso search index
+item modal ---------> Turso relations + usage + acquisition; provider history API
 profit pages -------> both recipe graphs + compact source presentation
 ```
 
-The large catalog, barter index, and craft index use versioned Redis caches only.
-Stations and quests additionally use small Next.js cache wrappers. All runtime
-data services use Tarkov.dev JSON and all caches are isolated by game mode.
+The large catalog, barter index, and craft index used by page queries retain their
+existing versioned Redis caches. Lazy item/search APIs read immutable,
+mode-and-release-scoped Turso records and retain their browser/CDN cache headers.
+Price history remains an on-demand Tarkov.dev request.
 
 ## Data sources
 
 | Source | What it provides |
 |---|---|
 | Tarkov.dev JSON API | Items, market values, hideout, quests, traders, barters, crafts, maps, and price history |
+| Turso | Immutable generated read models for lazy item, search, status, and conversion APIs |
 | `wiki-data.json` and `foundInRaid.ts` | Reviewed requirement and FiR overrides |
 | localStorage | Player progress and preferences |
 

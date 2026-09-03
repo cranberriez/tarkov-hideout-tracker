@@ -77,6 +77,16 @@ when comparing releases.
   runtime database access will be added separately under `src/server/db/`.
 - Generated releases store canonical entities, compact manifests/search records,
   and endpoint-ready per-item relations, usage, and acquisition payloads.
-- Uploads are immutable and mode-scoped. A release becomes readable only after its
-  counts validate and its active-release pointer is explicitly updated.
+- Uploads are immutable and mode-scoped. A release becomes eligible for reads only
+  after its counts validate and it is marked ready; runtime selection is currently
+  the explicit mode map in `src/server/db/release-config.ts`.
 - Item price history remains an on-demand provider request and is not stored in Turso.
+- Runtime Turso readers now live in `src/server/db/` and pin each game mode to an
+  immutable release through `release-config.ts`.
+- Item relations, usage, acquisition-tree, and bounded search API routes now read
+  their endpoint-ready payloads from Turso without loading the source catalogs or
+  recipe graphs. Existing response contracts and HTTP cache policies are preserved.
+- Data-status and profile-conversion API routes use release metadata, compact
+  manifests, or narrowly projected station/item entity reads from Turso.
+- Price history and server-component page queries remain on their existing data
+  paths for the next migration stage.

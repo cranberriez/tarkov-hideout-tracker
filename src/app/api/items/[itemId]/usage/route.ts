@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import { getItemUsageData } from "@/server/queries/getItemUsageData";
+import { getItemUsageView } from "@/server/db/item-views";
+import { itemDatabaseErrorResponse } from "@/server/db/route-errors";
 import { isCompleteItemUsageData } from "@/lib/utils/item-usage";
 
 const MODES = new Set<TarkovJsonGameMode>(["regular", "pve", "pvp-season"]);
@@ -18,13 +19,20 @@ export async function GET(
         return NextResponse.json({ error: "Invalid item ID" }, { status: 400 });
     }
 
-    const mode = requestedMode as TarkovJsonGameMode;
-    const response = await getItemUsageData(itemId, mode);
-    return NextResponse.json(response, {
-        headers: {
-            "Cache-Control": !isCompleteItemUsageData(response)
-                ? "no-store"
-                : "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
-        },
-    });
+    try {
+        const mode = requestedMode as TarkovJsonGameMode;
+        const response = await getItemUsageView(mode, itemId);
+        return NextResponse.json(response, {
+            headers: {
+                "Cache-Control": !isCompleteItemUsageData(response)
+                    ? "no-store"
+                    : "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
+            },
+        });
+    } catch (error) {
+        return itemDatabaseErrorResponse(
+            error,
+            "Item usage is temporarily unavailable",
+        );
+    }
 }
