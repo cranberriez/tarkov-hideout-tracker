@@ -14,6 +14,7 @@ import {
     ExternalLink,
     Info,
     LockKeyhole,
+    Pin,
     Search,
     Settings2,
     Wrench,
@@ -36,6 +37,7 @@ import { formatCompactRoubles, formatRoubles } from "@/lib/utils/market-price";
 import type { BarterRecord, CraftRecord, GlobalItem, GlobalItemVendorPrice, Station, Trader } from "@/types";
 import type { ProfitPageData } from "@/server/services/profitPages";
 import { useManualPriceOverrides } from "./useManualPriceOverrides";
+import { usePinnedCrafts } from "./usePinnedCrafts";
 
 type ProfitPageKind = "barter" | "craft";
 type SortMode = "profit" | "profitPerHour" | "cost" | "name";
@@ -73,10 +75,12 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
         })),
     );
     const { overrides, setItemOverride } = useManualPriceOverrides(gameMode);
+    const { pinnedCrafts, togglePinnedCraft } = usePinnedCrafts(gameMode);
     const [search, setSearch] = useState("");
     const [sourceId, setSourceId] = useState("all");
     const [availableOnly, setAvailableOnly] = useState(true);
     const [profitableOnly, setProfitableOnly] = useState(false);
+    const [showPinnedOnly, setShowPinnedOnly] = useState(false);
     const [allowCrafts, setAllowCrafts] = useState(true);
     const [allowBarters, setAllowBarters] = useState(true);
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -140,6 +144,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
         const normalizedSearch = search.trim().toLowerCase();
         return evaluations
             .filter((evaluation) => {
+                if (kind === "craft" && showPinnedOnly && !pinnedCrafts[evaluation.id]) return false;
                 if (evaluation.id === targetRecipeId) return true;
                 const item = itemById[evaluation.outputItemId];
                 if (
@@ -166,8 +171,11 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
         completedQuests,
         evaluations,
         itemById,
+        kind,
         profitableOnly,
+        pinnedCrafts,
         search,
+        showPinnedOnly,
         sortMode,
         sourceId,
         stationLevels,
@@ -178,6 +186,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
     const relevantError = kind === "barter" ? data.bartersError : data.craftsError;
     const hasProfitData = Boolean(items && !itemsError && !relevantError);
     const listRef = useRef<HTMLDivElement>(null);
+    const lastScrolledRecipeIdRef = useRef<string | null>(null);
     const [scrollMargin, setScrollMargin] = useState(0);
 
     useLayoutEffect(() => {
@@ -203,9 +212,11 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 
     useEffect(() => {
         if (!targetRecipeId) return;
+        if (lastScrolledRecipeIdRef.current === targetRecipeId) return;
         const targetIndex = visibleEvaluations.findIndex((evaluation) => evaluation.id === targetRecipeId);
         if (targetIndex < 0) return;
         virtualizer.scrollToIndex(targetIndex, { align: "center" });
+        lastScrolledRecipeIdRef.current = targetRecipeId;
     }, [targetRecipeId, virtualizer, visibleEvaluations]);
 
     function goToRecipe(method: "barter" | "craft", recipeId: string) {
@@ -264,7 +275,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
             </header>
 
             <section className="mb-4 rounded-md border border-white/10 bg-card/70 p-3 shadow-lg">
-                <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_220px_180px_auto]">
+                <div className={`grid gap-3 ${kind === "craft" ? "lg:grid-cols-[minmax(220px,1fr)_220px_180px_auto_auto]" : "lg:grid-cols-[minmax(220px,1fr)_220px_180px_auto]"}`}>
                     <label className="relative">
                         <Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-muted-foreground" />
                         <input
@@ -277,22 +288,22 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
                     <select
                         value={sourceId}
                         onChange={(event) => setSourceId(event.target.value)}
-                        className="h-9 rounded border border-white/10 bg-black/30 px-3 text-sm"
+                        className="h-9 rounded border border-white/10 bg-[#11151a] px-3 text-sm text-foreground"
                     >
-                        <option value="all">All {kind === "barter" ? "traders" : "stations"}</option>
+                        <option className="bg-[#11151a] text-foreground" value="all">All {kind === "barter" ? "traders" : "stations"}</option>
                         {sources.map((source) => (
-                            <option key={source.id} value={source.id}>{source.name}</option>
+                            <option className="bg-[#11151a] text-foreground" key={source.id} value={source.id}>{source.name}</option>
                         ))}
                     </select>
                     <select
                         value={sortMode}
                         onChange={(event) => setSortMode(event.target.value as SortMode)}
-                        className="h-9 rounded border border-white/10 bg-black/30 px-3 text-sm"
+                        className="h-9 rounded border border-white/10 bg-[#11151a] px-3 text-sm text-foreground"
                     >
-                        <option value="profit">Route profit</option>
-                        <option value="profitPerHour">Route profit / hour</option>
-                        <option value="cost">Lowest cost</option>
-                        <option value="name">Item name</option>
+                        <option className="bg-[#11151a] text-foreground" value="profit">Route profit</option>
+                        <option className="bg-[#11151a] text-foreground" value="profitPerHour">Route profit / hour</option>
+                        <option className="bg-[#11151a] text-foreground" value="cost">Lowest cost</option>
+                        <option className="bg-[#11151a] text-foreground" value="name">Item name</option>
                     </select>
                     <CalculationSettings
                         availableOnly={availableOnly}
@@ -304,6 +315,18 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
                         allowBarters={allowBarters}
                         onAllowBartersChange={setAllowBarters}
                     />
+                    {kind === "craft" && (
+                        <button
+                            type="button"
+                            aria-pressed={showPinnedOnly}
+                            aria-label="Show pinned crafts only"
+                            title={showPinnedOnly ? "Show all crafts" : "Show pinned crafts only"}
+                            onClick={() => setShowPinnedOnly((value) => !value)}
+                            className={`flex h-9 items-center justify-center rounded border px-3 transition ${showPinnedOnly ? "border-sky-400/40 bg-sky-400/10 text-sky-300" : "border-white/10 bg-black/20 text-muted-foreground hover:border-sky-400/30 hover:text-sky-300"}`}
+                        >
+                            <Pin className={`size-4 ${showPinnedOnly ? "fill-current" : ""}`} />
+                        </button>
+                    )}
                 </div>
             </section>
 
@@ -359,6 +382,8 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
                                             onItemOpen={setSelectedItemId}
                                             onGoToRecipe={goToRecipe}
                                             highlighted={evaluation.id === targetRecipeId}
+                                            pinned={kind === "craft" && Boolean(pinnedCrafts[evaluation.id])}
+                                            onTogglePinned={kind === "craft" ? () => togglePinnedCraft(evaluation.id) : undefined}
                                         />
                                     </div>
                                 );
@@ -366,7 +391,11 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
                         </div>
                     ) : (
                         <div className="px-4 py-14 text-center text-sm text-muted-foreground">
-                            No recipes match these filters.
+                            {kind === "craft" && showPinnedOnly
+                                ? Object.keys(pinnedCrafts).length === 0
+                                    ? "No pinned crafts yet. Pin a craft from the actions column to add it here."
+                                    : "No pinned crafts match these filters."
+                                : "No recipes match these filters."}
                         </div>
                     )}
                 </div>
@@ -450,6 +479,8 @@ function ProfitRow({
     onItemOpen,
     onGoToRecipe,
     highlighted,
+    pinned,
+    onTogglePinned,
 }: {
     evaluation: RecipeEvaluation;
     itemById: Readonly<Record<string, GlobalItem>>;
@@ -465,6 +496,8 @@ function ProfitRow({
     onItemOpen: (itemId: string) => void;
     onGoToRecipe: (method: "barter" | "craft", recipeId: string) => void;
     highlighted: boolean;
+    pinned: boolean;
+    onTogglePinned?: () => void;
 }) {
     const [expanded, setExpanded] = useState(false);
     const output = itemById[evaluation.outputItemId];
@@ -473,7 +506,19 @@ function ProfitRow({
     return (
         <div className={highlighted ? "bg-tarkov-green/[0.06] ring-1 ring-inset ring-tarkov-green/40" : undefined}>
             <div className={`grid min-h-[72px] items-stretch ${profitGrid()}`}>
-                <div className="flex items-center justify-center border-r border-white/5 bg-black/10">
+                <div className="flex flex-col items-center justify-center gap-1 border-r border-white/5 bg-black/10">
+                    {onTogglePinned && (
+                        <button
+                            type="button"
+                            aria-pressed={pinned}
+                            aria-label={pinned ? "Unpin craft" : "Pin craft"}
+                            title={pinned ? "Unpin craft" : "Pin craft"}
+                            onClick={onTogglePinned}
+                            className={`flex size-7 items-center justify-center rounded border transition ${pinned ? "border-sky-400/40 bg-sky-400/10 text-sky-300" : "border-white/10 bg-white/[0.035] text-muted-foreground hover:border-sky-400/40 hover:text-sky-300"}`}
+                        >
+                            <Pin className={`size-4 ${pinned ? "fill-current" : ""}`} />
+                        </button>
+                    )}
                     {hasNestedRecipe && (
                         <button
                             type="button"
@@ -1067,7 +1112,6 @@ function ItemCard({
                                 >
                                     <span className="block">{method === "craft" ? "Crafting" : "Bartering for"} {formatQuantity(count)} × {item?.name ?? "this item"} costs <strong className="text-white">{formatRoundedRoubles(plan.totalCost)}</strong>.</span>
                                     <span className="mt-1 block">Buying the same quantity on the flea market costs <strong className="text-white">{formatRoundedRoubles(directUnitPrice * count)}</strong>.</span>
-                                    <span className="mt-2 block border-t border-white/10 pt-2 text-tarkov-green">This cheaper ingredient route saves <strong>{formatRoundedRoubles(routeSavingsTotal)}</strong> and makes the final recipe less expensive. It does not mean you should skip the final recipe.</span>
                                 </InfoHint>
                             </span>
                         )}

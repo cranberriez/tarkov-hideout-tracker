@@ -66,6 +66,10 @@ Both pages support output search, source filtering, availability filtering,
 profit filtering, and relevant profit/cost sorts. Craft source filters are based
 on hideout station; barter source filters are based on trader.
 
+Craft rows can be pinned from the actions column. Pins are stored per game mode,
+and the pin button beside the options menu filters the table to pinned crafts.
+An empty pinned view explains when no crafts have been pinned yet.
+
 Availability and profit-only filters live in the page options menu. Availability
 filtering is enabled by default. The same menu
 can disable craft or barter routes for recipe ingredients independently. These
