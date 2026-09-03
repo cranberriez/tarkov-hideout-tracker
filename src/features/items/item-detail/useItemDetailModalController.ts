@@ -172,7 +172,7 @@ export function useItemDetailModalController({
         };
     });
     const crafts: ItemCraftRecipe[] = (itemUsage?.crafts ?? []).map((craft) => {
-        const station = itemUsage?.stationsById[craft.stationId];
+        const station = itemUsage?.stationsById?.[craft.stationId];
         const unlock = craft.taskUnlockId
             ? itemUsage?.taskUnlocksById?.[craft.taskUnlockId] ?? quests.get(craft.taskUnlockId)
             : null;
@@ -206,10 +206,6 @@ export function useItemDetailModalController({
               .filter((error): error is string => Boolean(error))
               .join(" ") || null
         : null;
-    const hasQuestRequirements =
-        (questItemState?.relatedQuests.length ?? 0) > 0 ||
-        questAnyOfGroupState.length > 0 ||
-        questRewards.length > 0;
     const showInventory = !isRouble;
     const showMarket = !isRouble && hasItemMarketData(marketPrice);
     const showPriceHistory =
@@ -217,18 +213,6 @@ export function useItemDetailModalController({
         !isFiat &&
         (marketPrice?.avg24hPrice != null || marketPrice?.lastLowPrice != null);
     const showSidebar = showInventory || showMarket;
-    const showUsage =
-        stationRequirements.length > 0 ||
-        hasQuestRequirements ||
-        traderOffers.length > 0 ||
-        crafts.length > 0 ||
-        requests.usageLoading ||
-        requests.usageError !== null ||
-        itemUsage?.bartersError != null ||
-        itemUsage?.craftsError != null ||
-        requests.relationsLoading ||
-        requests.relationsError !== null ||
-        showPriceHistory;
     const showDebug = navigation.debugItemId === selectedItemId;
     const debugData = {
         item: selectedItem,
@@ -275,7 +259,6 @@ export function useItemDetailModalController({
         showMarket,
         showPriceHistory,
         showSidebar,
-        showUsage,
         showDebug,
         debugData,
         previousItem: navigation.previousItem,

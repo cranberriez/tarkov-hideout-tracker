@@ -100,6 +100,10 @@ alphabetized results with starts-with matches first; Quick Add remains capped at
 Selecting a standard item opens `ItemDetailModal`. Its model/navigation controller
 loads route-scoped item relations and acquisition data separately:
 
+- **Hideout**, **Quests**, **Crafting**, and **History** keep stable positions in
+  the tab row. A tab stays enabled while its data is loading, shows that loading
+  state below the tab row when selected, and becomes disabled when the completed
+  request has no matching data.
 - **Hideout** and **Quests** use `/api/items/{itemId}/relations`.
 - The **Quests** tab separates quests that require the selected item from quests
   that award it. Reward sources are informational and never contribute checklist

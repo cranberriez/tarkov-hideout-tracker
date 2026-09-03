@@ -32,9 +32,19 @@ const RANGE_LABELS: Array<{ value: PriceHistoryRange; label: string }> = [
 interface ItemDetailPriceHistoryProps {
     itemId: string;
     mode: TarkovJsonGameMode;
+    onAvailabilityChange?: (hasData: boolean) => void;
 }
 
-export function ItemDetailPriceHistory({ itemId, mode }: ItemDetailPriceHistoryProps) {
+export function getCachedPriceHistoryAvailability(itemId: string, mode: TarkovJsonGameMode) {
+    const points = historyCache.get(`${mode}:${itemId}`);
+    return points ? points.length > 0 : null;
+}
+
+export function ItemDetailPriceHistory({
+    itemId,
+    mode,
+    onAvailabilityChange,
+}: ItemDetailPriceHistoryProps) {
     const cacheKey = `${mode}:${itemId}`;
     const [points, setPoints] = useState<PriceHistoryPoint[] | null>(
         () => historyCache.get(cacheKey) ?? null,
@@ -43,6 +53,10 @@ export function ItemDetailPriceHistory({ itemId, mode }: ItemDetailPriceHistoryP
     const [retry, setRetry] = useState(0);
     const [range, setRange] = useState<PriceHistoryRange>("week");
     const [hovered, setHovered] = useState<PriceHistoryPoint | null>(null);
+
+    useEffect(() => {
+        if (points !== null) onAvailabilityChange?.(points.length > 0);
+    }, [onAvailabilityChange, points]);
 
     useEffect(() => {
         const cached = historyCache.get(cacheKey);
@@ -97,10 +111,7 @@ export function ItemDetailPriceHistory({ itemId, mode }: ItemDetailPriceHistoryP
 
     if (!points) {
         return (
-            <div className="min-h-80 animate-pulse p-4">
-                <div className="h-8 w-44 rounded bg-white/5" />
-                <div className="mt-4 h-64 rounded-lg bg-white/[0.035]" />
-            </div>
+            <p className="px-4 py-6 text-sm text-muted-foreground">Loading price history…</p>
         );
     }
 

@@ -14,7 +14,10 @@ import {
 import { ItemDetailQuestRequirements } from "./ItemDetailQuestRequirements";
 import { ItemDetailAcquisition } from "./ItemDetailAcquisition";
 import { ItemDetailCrafting } from "./ItemDetailCrafting";
-import { ItemDetailPriceHistory } from "./ItemDetailPriceHistory";
+import {
+    getCachedPriceHistoryAvailability,
+    ItemDetailPriceHistory,
+} from "./ItemDetailPriceHistory";
 import type { ItemCraftRecipe, ItemTraderOffer } from "@/features/items/item-detail/item-detail-types";
 import type { ItemSummary } from "@/types/items";
 import type { GameEdition } from "@/lib/stores/useUserStore";
@@ -86,19 +89,24 @@ export function ItemDetailUsageTabs({
 }: ItemDetailUsageTabsProps) {
     const hideoutCount = stationRequirements.reduce((count, [, reqs]) => count + reqs.length, 0);
     const questCount = (questItemState?.relatedQuestCount ?? 0) + anyOfGroups.length + questRewards.length;
-    const availableTabs: UsageTab[] = [
-        ...(hideoutCount > 0 ? (["hideout"] as const) : []),
-        ...(questCount > 0 ? (["quests"] as const) : []),
+    const [activeTab, setActiveTab] = useState<UsageTab>("hideout");
+    const [hasLoadedPriceHistory, setHasLoadedPriceHistory] = useState<boolean | null>(() =>
+        getCachedPriceHistoryAvailability(selectedItemId, gameMode),
+    );
+    const hideoutEnabled = hideoutCount > 0 || relationsLoading || relationsError !== null;
+    const questsEnabled = questCount > 0 || relationsLoading || relationsError !== null;
+    const craftingEnabled = crafts.length > 0 || acquisitionLoading || craftError !== null;
+    const historyEnabled = showPriceHistory && hasLoadedPriceHistory !== false;
+    const enabledTabs: UsageTab[] = [
+        ...(hideoutEnabled ? (["hideout"] as const) : []),
+        ...(questsEnabled ? (["quests"] as const) : []),
         ...(traderOffers.length > 0 || acquisitionLoading || barterError
             ? (["traders"] as const)
             : []),
-        ...(crafts.length > 0 || acquisitionLoading || craftError
-            ? (["crafting"] as const)
-            : []),
-        ...(showPriceHistory ? (["prices"] as const) : []),
+        ...(craftingEnabled ? (["crafting"] as const) : []),
+        ...(historyEnabled ? (["prices"] as const) : []),
     ];
-    const [activeTab, setActiveTab] = useState<UsageTab>("hideout");
-    const selectedTab = availableTabs.includes(activeTab) ? activeTab : availableTabs[0];
+    const selectedTab = enabledTabs.includes(activeTab) ? activeTab : enabledTabs[0];
     const selectedItem = itemDetailsById[selectedItemId] ?? {
         id: selectedItemId,
         name: "Selected item",
@@ -106,39 +114,25 @@ export function ItemDetailUsageTabs({
         iconLink: selectedItemImageLink,
     };
 
-    if (availableTabs.length === 0) {
-        if (!relationsLoading && !relationsError) return null;
-        return (
-            <section className={`min-w-0 bg-card/45 ${className}`}>
-                <RelationState loading={relationsLoading} error={relationsError} />
-            </section>
-        );
-    }
-
     return (
         <section className={`flex min-h-0 min-w-0 flex-col bg-card/45 ${className}`}>
-            {(relationsLoading || relationsError) && (
-                <RelationState loading={relationsLoading} error={relationsError} />
-            )}
             <div className="flex h-10 items-stretch overflow-x-auto border-b border-border-color" role="tablist">
-                {hideoutCount > 0 && (
-                    <TabButton
-                        active={selectedTab === "hideout"}
-                        onClick={() => setActiveTab("hideout")}
-                        label="Hideout"
-                        count={hideoutCount}
-                        icon={<Hammer size={13} />}
-                    />
-                )}
-                {questCount > 0 && (
-                    <TabButton
-                        active={selectedTab === "quests"}
-                        onClick={() => setActiveTab("quests")}
-                        label="Quests"
-                        count={questCount}
-                        icon={<ClipboardList size={13} />}
-                    />
-                )}
+                <TabButton
+                    active={selectedTab === "hideout"}
+                    disabled={!hideoutEnabled}
+                    onClick={() => setActiveTab("hideout")}
+                    label="Hideout"
+                    count={relationsLoading ? undefined : hideoutCount}
+                    icon={<Hammer size={13} />}
+                />
+                <TabButton
+                    active={selectedTab === "quests"}
+                    disabled={!questsEnabled}
+                    onClick={() => setActiveTab("quests")}
+                    label="Quests"
+                    count={relationsLoading ? undefined : questCount}
+                    icon={<ClipboardList size={13} />}
+                />
                 {(traderOffers.length > 0 || acquisitionLoading || barterError) && (
                     <TabButton
                         active={selectedTab === "traders"}
@@ -148,44 +142,64 @@ export function ItemDetailUsageTabs({
                         icon={<ShoppingCart size={13} />}
                     />
                 )}
-                {(crafts.length > 0 || acquisitionLoading || craftError) && (
-                    <TabButton
-                        active={selectedTab === "crafting"}
-                        onClick={() => setActiveTab("crafting")}
-                        label="Crafting"
-                        count={acquisitionLoading ? undefined : crafts.length}
-                        icon={<Wrench size={13} />}
-                    />
-                )}
-                {showPriceHistory && (
-                    <TabButton
-                        active={selectedTab === "prices"}
-                        onClick={() => setActiveTab("prices")}
-                        label="History"
-                        icon={<ChartNoAxesCombined size={13} />}
-                    />
-                )}
+                <TabButton
+                    active={selectedTab === "crafting"}
+                    disabled={!craftingEnabled}
+                    onClick={() => setActiveTab("crafting")}
+                    label="Crafting"
+                    count={acquisitionLoading ? undefined : crafts.length}
+                    icon={<Wrench size={13} />}
+                />
+                <TabButton
+                    active={selectedTab === "prices"}
+                    disabled={!historyEnabled}
+                    onClick={() => setActiveTab("prices")}
+                    label="History"
+                    icon={<ChartNoAxesCombined size={13} />}
+                />
             </div>
 
             <div role="tabpanel" className="flex min-h-0 flex-1 flex-col">
-                {selectedTab === "hideout" && hideoutCount > 0 && (
-                    <ItemDetailHideoutRequirements
-                        selectedItemImageLink={selectedItemImageLink}
-                        stationRequirements={stationRequirements}
-                        stationLevels={stationLevels}
-                        hiddenStations={hiddenStations}
-                    />
+                {selectedTab === "hideout" && (
+                    <>
+                        {(relationsLoading || relationsError) && (
+                            <RelationState
+                                loading={relationsLoading}
+                                error={relationsError}
+                                loadingMessage="Loading hideout data…"
+                            />
+                        )}
+                        {hideoutCount > 0 && (
+                            <ItemDetailHideoutRequirements
+                                selectedItemImageLink={selectedItemImageLink}
+                                stationRequirements={stationRequirements}
+                                stationLevels={stationLevels}
+                                hiddenStations={hiddenStations}
+                            />
+                        )}
+                    </>
                 )}
-                {selectedTab === "quests" && questCount > 0 && (
-                    <ItemDetailQuestRequirements
-                        selectedItemId={selectedItemId}
-                        selectedItemImageLink={selectedItemImageLink}
-                        questItemState={questItemState}
-                        questRewards={questRewards}
-                        anyOfGroups={anyOfGroups}
-                        itemDetailsById={itemDetailsById}
-                        completedQuests={completedQuests}
-                    />
+                {selectedTab === "quests" && (
+                    <>
+                        {(relationsLoading || relationsError) && (
+                            <RelationState
+                                loading={relationsLoading}
+                                error={relationsError}
+                                loadingMessage="Loading quest data…"
+                            />
+                        )}
+                        {questCount > 0 && (
+                            <ItemDetailQuestRequirements
+                                selectedItemId={selectedItemId}
+                                selectedItemImageLink={selectedItemImageLink}
+                                questItemState={questItemState}
+                                questRewards={questRewards}
+                                anyOfGroups={anyOfGroups}
+                                itemDetailsById={itemDetailsById}
+                                completedQuests={completedQuests}
+                            />
+                        )}
+                    </>
                 )}
                 {selectedTab === "traders" && (
                     <AcquisitionState
@@ -226,8 +240,12 @@ export function ItemDetailUsageTabs({
                         />
                     </AcquisitionState>
                 )}
-                {selectedTab === "prices" && showPriceHistory && (
-                    <ItemDetailPriceHistory itemId={selectedItemId} mode={gameMode} />
+                {selectedTab === "prices" && historyEnabled && (
+                    <ItemDetailPriceHistory
+                        itemId={selectedItemId}
+                        mode={gameMode}
+                        onAvailabilityChange={setHasLoadedPriceHistory}
+                    />
                 )}
             </div>
         </section>
@@ -273,26 +291,36 @@ function AcquisitionState({
     );
 }
 
-function RelationState({ loading, error }: { loading: boolean; error: string | null }) {
+function RelationState({
+    loading,
+    error,
+    loadingMessage,
+}: {
+    loading: boolean;
+    error: string | null;
+    loadingMessage: string;
+}) {
     return (
         <p
             className={`border-b border-border-color px-4 py-2 text-xs ${
                 error ? "text-amber-200" : "text-muted-foreground"
             }`}
         >
-            {error ?? (loading ? "Loading hideout and quest relations…" : null)}
+            {error ?? (loading ? loadingMessage : null)}
         </p>
     );
 }
 
 function TabButton({
     active,
+    disabled = false,
     onClick,
     label,
     count,
     icon,
 }: {
     active: boolean;
+    disabled?: boolean;
     onClick: () => void;
     label: string;
     count?: number;
@@ -303,11 +331,14 @@ function TabButton({
             type="button"
             role="tab"
             aria-selected={active}
+            disabled={disabled}
             onClick={onClick}
             className={`relative flex min-w-28 items-center justify-center gap-2 border-r border-border-color px-4 text-xs transition-colors ${
                 active
                     ? "bg-white/[0.04] text-foreground after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-tarkov-green"
-                    : "text-muted-foreground hover:bg-white/[0.02] hover:text-foreground"
+                    : disabled
+                      ? "cursor-not-allowed text-muted-foreground/35"
+                      : "text-muted-foreground hover:bg-white/[0.02] hover:text-foreground"
             }`}
         >
             {icon}

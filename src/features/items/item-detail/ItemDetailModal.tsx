@@ -74,59 +74,55 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
                                 </button>
                             </header>
 
-                            {(vm.showSidebar || vm.showUsage) && (
-                                <div className="flex-1 overflow-y-auto">
-                                    <div className={`grid grid-cols-1 gap-0 ${vm.showSidebar && vm.showUsage ? "lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]" : ""}`}>
-                                        {vm.showSidebar && (
-                                            <ItemDetailSidebar
-                                                key={vm.selectedItemId}
-                                                itemId={vm.selectedItemId}
-                                                owned={vm.owned}
-                                                marketPrice={vm.marketPrice}
-                                                relativeUpdatedAt={vm.relativeUpdatedAt}
-                                                isFiat={vm.isFiat}
-                                                showMarket={vm.showMarket}
-                                                minLevelForFlea={selectedItem.minLevelForFlea}
-                                                playerLevel={vm.playerLevel}
-                                                onAddItemCounts={vm.addItemCounts}
-                                            />
-                                        )}
-                                        {vm.showUsage && (
-                                            <ItemDetailUsageTabs
-                                                key={`usage-${vm.selectedItemId}`}
-                                                className=""
-                                                selectedItemId={selectedItem.id}
-                                                selectedItemImageLink={selectedItem.iconLink ?? selectedItem.gridImageLink}
-                                                stationRequirements={vm.stationRequirements}
-                                                stationLevels={vm.stationLevels}
-                                                hiddenStations={vm.hiddenStations}
-                                                questItemState={vm.questItemState}
-                                                questRewards={vm.questRewards}
-                                                anyOfGroups={vm.questAnyOfGroupState}
-                                                itemDetailsById={vm.itemDetailsById}
-                                                traderOffers={vm.traderOffers}
-                                                crafts={vm.crafts}
-                                                relationsLoading={vm.relationsLoading}
-                                                relationsError={vm.relationsError}
-                                                acquisitionLoading={vm.usageLoading}
-                                                barterError={vm.barterError}
-                                                craftError={vm.craftError}
-                                                acquisitionWarning={vm.usagePresentationError}
-                                                completedQuests={vm.completedQuests}
-                                                traderLoyaltyLevels={vm.traderLoyaltyLevels}
-                                                gameEdition={vm.gameEdition}
-                                                gameMode={vm.tarkovMode}
-                                                showPriceHistory={vm.showPriceHistory}
-                                                barterEvaluationsById={vm.barterEvaluationsById}
-                                                craftEvaluationsById={vm.craftEvaluationsById}
-                                                profitLoading={vm.profitLoading}
-                                                profitError={vm.profitError}
-                                                onItemClick={vm.openItem}
-                                            />
-                                        )}
-                                    </div>
+                            <div className="flex-1 overflow-y-auto">
+                                <div className={`grid grid-cols-1 gap-0 ${vm.showSidebar ? "lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]" : ""}`}>
+                                    {vm.showSidebar && (
+                                        <ItemDetailSidebar
+                                            key={vm.selectedItemId}
+                                            itemId={vm.selectedItemId}
+                                            owned={vm.owned}
+                                            marketPrice={vm.marketPrice}
+                                            relativeUpdatedAt={vm.relativeUpdatedAt}
+                                            isFiat={vm.isFiat}
+                                            showMarket={vm.showMarket}
+                                            minLevelForFlea={selectedItem.minLevelForFlea}
+                                            playerLevel={vm.playerLevel}
+                                            onAddItemCounts={vm.addItemCounts}
+                                        />
+                                    )}
+                                    <ItemDetailUsageTabs
+                                        key={`usage-${vm.selectedItemId}`}
+                                        className=""
+                                        selectedItemId={selectedItem.id}
+                                        selectedItemImageLink={selectedItem.iconLink ?? selectedItem.gridImageLink}
+                                        stationRequirements={vm.stationRequirements}
+                                        stationLevels={vm.stationLevels}
+                                        hiddenStations={vm.hiddenStations}
+                                        questItemState={vm.questItemState}
+                                        questRewards={vm.questRewards}
+                                        anyOfGroups={vm.questAnyOfGroupState}
+                                        itemDetailsById={vm.itemDetailsById}
+                                        traderOffers={vm.traderOffers}
+                                        crafts={vm.crafts}
+                                        relationsLoading={vm.relationsLoading}
+                                        relationsError={vm.relationsError}
+                                        acquisitionLoading={vm.usageLoading}
+                                        barterError={vm.barterError}
+                                        craftError={vm.craftError}
+                                        acquisitionWarning={vm.usagePresentationError}
+                                        completedQuests={vm.completedQuests}
+                                        traderLoyaltyLevels={vm.traderLoyaltyLevels}
+                                        gameEdition={vm.gameEdition}
+                                        gameMode={vm.tarkovMode}
+                                        showPriceHistory={vm.showPriceHistory}
+                                        barterEvaluationsById={vm.barterEvaluationsById}
+                                        craftEvaluationsById={vm.craftEvaluationsById}
+                                        profitLoading={vm.profitLoading}
+                                        profitError={vm.profitError}
+                                        onItemClick={vm.openItem}
+                                    />
                                 </div>
-                            )}
+                            </div>
                         </>
                     )}
                 </div>
