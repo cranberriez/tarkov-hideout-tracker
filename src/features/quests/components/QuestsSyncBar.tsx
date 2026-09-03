@@ -1,6 +1,6 @@
 "use client";
 
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import { Upload } from "lucide-react";
 import { useState } from "react";
 import { QuestSyncDialog } from "./QuestSyncDialog";

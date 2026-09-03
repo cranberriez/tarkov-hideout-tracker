@@ -1,8 +1,7 @@
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
+import type { QuestSortMode } from "@/lib/stores/useUserStore";
 import { getTraderTierCompletionGate } from "../../lib/utils/quest-trader-completion-gates";
 import { getQuestMapGroupsForQuest } from "./quest-map-groups";
-
-export type QuestSortMode = "unlockOrder" | "default" | "level" | "xp" | "unlockImpact";
 
 function compareByDefaultOrder(
     a: FullQuest,

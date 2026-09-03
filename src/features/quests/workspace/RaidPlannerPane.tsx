@@ -5,10 +5,11 @@ import { ChevronLeft, ChevronRight, Crosshair, KeyRound, Maximize2, Minimize2, X
 import Image from "next/image";
 import { MapViewer } from "@/features/maps/MapViewer";
 import type { MapViewTransform } from "@/features/maps/map-view-transform";
-import type { MapOverlayMarker } from "@/features/maps/map-types";
+import type { MapOverlayMarker } from "@/types/maps";
+import type { ItemSummary } from "@/types/items";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { useDataContext } from "@/app/(data)/_dataContext";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
+import { useQuestsContext } from "../QuestsContext";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 import { buildRaidPlannerMarkers } from "./raid-planner-markers";
 import { OBJECTIVE_CATEGORY_SHORT_LABELS } from "./quest-workspace-utils";
@@ -26,7 +27,7 @@ interface RaidPlannerPaneProps {
 }
 
 export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPaneProps) {
-    const { itemById } = useDataContext();
+    const { itemById } = useQuestsContext();
     const [isKillListOpen, setIsKillListOpen] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [navigationMarkers, setNavigationMarkers] = useState<{
@@ -271,7 +272,7 @@ function RaidPlannerMapCard({
     mapKey: string;
     mapName: string;
     summary: ReturnType<typeof buildRaidPlannerMapSummary>;
-    itemById: ReturnType<typeof useDataContext>["itemById"];
+    itemById: Readonly<Record<string, ItemSummary>>;
     onSelect: () => void;
 }) {
     const [artworkAvailable, setArtworkAvailable] = useState(true);
@@ -343,7 +344,7 @@ function RaidPlannerMapCard({
     );
 }
 
-function RaidPlannerKey({ item }: { item: ReturnType<typeof useDataContext>["itemById"][string] }) {
+function RaidPlannerKey({ item }: { item: ItemSummary }) {
     const image = item.gridImageLink ?? item.iconLink;
 
     return (

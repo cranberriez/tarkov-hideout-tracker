@@ -1,18 +1,18 @@
-import type { TimedResponse } from "@/types";
+import type { DataResult } from "@/types/common";
 import { DATA_CACHE_MAX_AGE_MS } from "../../cache";
 import { PROGRESSION_DATA_FROZEN } from "../../../lib/cfg/cacheVersions";
 
 export function parseNonEmptyTimedResponse<TPayload>(
     cachedBody: unknown,
     selectEntries: (payload: TPayload) => unknown[] | undefined,
-): TimedResponse<TPayload> | null {
+): DataResult<TPayload> | null {
     if (!cachedBody) return null;
 
     try {
         const parsed =
             typeof cachedBody === "string"
-                ? (JSON.parse(cachedBody) as TimedResponse<TPayload>)
-                : (cachedBody as TimedResponse<TPayload>);
+                ? (JSON.parse(cachedBody) as DataResult<TPayload>)
+                : (cachedBody as DataResult<TPayload>);
         const entries = parsed?.data ? selectEntries(parsed.data) : undefined;
         return Array.isArray(entries) && entries.length > 0 ? parsed : null;
     } catch (error) {
@@ -22,8 +22,8 @@ export function parseNonEmptyTimedResponse<TPayload>(
 }
 
 export function markStaleFallback<TPayload>(
-    response: TimedResponse<TPayload>,
-): TimedResponse<TPayload> {
+    response: DataResult<TPayload>,
+): DataResult<TPayload> {
     return {
         ...response,
         diagnostics: {

@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { useDataContext } from "@/app/(data)/_dataContext";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Plus, X, Search } from "lucide-react";
 import Image from "next/image";
-import type { ItemDetails } from "@/types";
+import type { ItemSummary } from "@/types/items";
+import { toTarkovJsonGameMode } from "@/lib/game-mode";
+import { ITEM_SEARCH_MAX_QUERY_LENGTH } from "@/types/contracts";
+import { useItemSearchController } from "@/features/items/useItemSearchController";
 
 export function QuickAddModal() {
     const { 
@@ -17,36 +19,18 @@ export function QuickAddModal() {
         setPendingQuickAddItems, 
         clearPendingQuickAddItems 
     } = useUIStore();
-    const { items } = useDataContext();
     const { addItemCounts } = useUserStore();
+    const gameMode = useUserStore((state) => state.gameMode);
 
     // State for the new item row
     const [isSearching, setIsSearching] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
-    const searchResults = useMemo(() => {
-        if (!searchQuery || !items) return [];
-        
-        const normalizedQuery = searchQuery.toLowerCase().replace(/\s+/g, "-");
-        const strippedQuery = searchQuery.toLowerCase().replace(/[-\s]/g, "");
-        const results: ItemDetails[] = [];
-        
-        const allItems = items;
-        
-        for (const item of allItems) {
-            if (results.length >= 10) break;
-            
-            const nameMatch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-            const normalizedMatch = item.normalizedName.includes(normalizedQuery);
-            const strippedMatch = item.normalizedName.replace(/-/g, "").includes(strippedQuery);
-            
-            if (nameMatch || normalizedMatch || strippedMatch) {
-                results.push(item);
-            }
-        }
-        
-        return results;
-    }, [searchQuery, items]);
+    const search = useItemSearchController({
+        enabled: isQuickAddOpen && isSearching,
+        mode: toTarkovJsonGameMode(gameMode),
+        query: searchQuery,
+    });
 
     const resetSearchState = () => {
         setIsSearching(false);
@@ -60,7 +44,7 @@ export function QuickAddModal() {
         setQuickAddOpen(open);
     };
 
-    const handleAddItem = (item: ItemDetails) => {
+    const handleAddItem = (item: ItemSummary) => {
         setPendingQuickAddItems([
             ...pendingQuickAddItems,
             {
@@ -189,6 +173,7 @@ export function QuickAddModal() {
                                         type="text" 
                                         placeholder="Search item name..." 
                                         value={searchQuery}
+                                        maxLength={ITEM_SEARCH_MAX_QUERY_LENGTH}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground/50"
                                         onKeyDown={(e) => {
@@ -212,13 +197,16 @@ export function QuickAddModal() {
                                 {/* Search Results */}
                                 {searchQuery && (
                                     <div className="bg-card border border-border-color rounded-md shadow-xl max-h-48 overflow-y-auto absolute w-full z-50 left-0 top-full mt-1">
-                                        {!items && (
-                                            <div className="p-3 text-center text-xs text-red-400">Error: Item data not loaded.</div>
+                                        {search.isLoading && (
+                                            <div className="p-3 text-center text-xs text-muted-foreground">Searching items…</div>
                                         )}
-                                        {items && searchResults.length === 0 && (
+                                        {search.error && (
+                                            <div className="p-3 text-center text-xs text-red-400">{search.error}</div>
+                                        )}
+                                        {search.hasNoResults && (
                                             <div className="p-3 text-center text-xs text-muted-foreground">No items found.</div>
                                         )}
-                                        {searchResults.map((item) => (
+                                        {search.items.map((item) => (
                                             <button
                                                 key={item.id}
                                                 onClick={() => handleAddItem(item)}

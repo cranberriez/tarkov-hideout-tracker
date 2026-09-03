@@ -1,4 +1,4 @@
-import type { FullQuest } from "../../types/types.ts";
+import type { FullQuest } from "@/types/quests";
 
 export type ParsedRaidMode = "pvp" | "pve" | "kord" | "unknown";
 export type ParsedQuestEventType = "started" | "completed";

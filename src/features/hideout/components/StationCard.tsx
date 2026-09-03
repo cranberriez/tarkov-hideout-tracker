@@ -3,19 +3,27 @@
 import { useState } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
-import type { Station, ItemDetails } from "@/types";
+import type { Station } from "@/types/hideout";
+import type { ItemSummary } from "@/types/items";
 import { StationCardHeader } from "./StationCardHeader";
 import { StationRequirementsSection } from "./StationRequirementsSection";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
-import { useDataContext } from "@/app/(data)/_dataContext";
 
 interface StationCardProps {
     station: Station;
+    stations: Station[];
+    itemById: Readonly<Record<string, ItemSummary>>;
     isLocked?: boolean;
     pooledFirByItem: Record<string, number>;
 }
 
-export function StationCard({ station, isLocked = false, pooledFirByItem }: StationCardProps) {
+export function StationCard({
+    station,
+    stations,
+    itemById,
+    isLocked = false,
+    pooledFirByItem,
+}: StationCardProps) {
     const {
         stationLevels,
         setStationLevel,
@@ -31,9 +39,7 @@ export function StationCard({ station, isLocked = false, pooledFirByItem }: Stat
         addItemCounts,
     } = useUserStore();
 
-    const { stations, itemById } = useDataContext();
-
-    const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
+    const [selectedItem, setSelectedItem] = useState<ItemSummary | null>(null);
 
     const currentLevel = stationLevels[station.id] ?? 0;
     const maxLevel = station.levels.length;
@@ -46,7 +52,7 @@ export function StationCard({ station, isLocked = false, pooledFirByItem }: Stat
     const computeUpgradeStatus = (): "ready" | "missing" | "illegal" => {
         let isIllegal = false;
 
-        if (currentLevelData && stations) {
+        if (currentLevelData) {
             for (const req of currentLevelData.stationLevelRequirements ?? []) {
                 const reqStation = stations.find(
                     (s) => s.normalizedName === req.station.normalizedName
@@ -65,17 +71,15 @@ export function StationCard({ station, isLocked = false, pooledFirByItem }: Stat
         if (!nextLevelData) return "missing";
 
         let stationReqMissing = false;
-        if (stations) {
-            for (const req of nextLevelData.stationLevelRequirements ?? []) {
-                const reqStation = stations.find(
-                    (s) => s.normalizedName === req.station.normalizedName
-                );
-                if (!reqStation) continue;
-                const reqStationLevel = stationLevels[reqStation.id] ?? 0;
-                if (reqStationLevel < req.level) {
-                    stationReqMissing = true;
-                    break;
-                }
+        for (const req of nextLevelData.stationLevelRequirements ?? []) {
+            const reqStation = stations.find(
+                (s) => s.normalizedName === req.station.normalizedName
+            );
+            if (!reqStation) continue;
+            const reqStationLevel = stationLevels[reqStation.id] ?? 0;
+            if (reqStationLevel < req.level) {
+                stationReqMissing = true;
+                break;
             }
         }
 
@@ -225,6 +229,7 @@ export function StationCard({ station, isLocked = false, pooledFirByItem }: Stat
                     hideoutCompactMode={hideoutCompactMode}
                     onClickItem={setSelectedItem}
                     pooledFirByItem={pooledFirByItem}
+                    itemById={itemById}
                     upgradeStatus={upgradeStatus}
                 />
             )}
@@ -234,10 +239,6 @@ export function StationCard({ station, isLocked = false, pooledFirByItem }: Stat
                     item={selectedItem}
                     isOpen={!!selectedItem}
                     onClose={() => setSelectedItem(null)}
-                    stations={stations}
-                    stationLevels={stationLevels}
-                    hiddenStations={hiddenStations}
-                    completedRequirements={completedRequirements}
                 />
             )}
         </div>

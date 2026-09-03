@@ -1,11 +1,11 @@
 "use client";
 
-import type { ItemDetails } from "@/types";
+import type { ItemSummary } from "@/types/items";
 import type { NeedBreakdown } from "@/lib/utils/item-needs";
 import { ExternalLink, PackageOpen } from "lucide-react";
 
 interface ItemDetailHeaderProps {
-    item: ItemDetails;
+    item: ItemSummary;
     totalRequiredCount: number;
     needsBreakdown: NeedBreakdown | null;
     hideoutRequiredCount: number;

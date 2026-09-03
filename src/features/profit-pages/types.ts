@@ -1,18 +1,15 @@
 import type { ManualPriceOverride } from "@/lib/price-calculation";
-import type {
-  BarterRecord,
-  CraftRecord,
-  GlobalItem,
-  Station,
-  Trader,
-} from "@/types";
+import type { BarterRecord, CraftRecord } from "@/types/recipes";
+import type { ItemSummary } from "@/types/items";
+import type { Station } from "@/types/hideout";
+import type { Trader } from "@/types/traders";
 
 export type ProfitPageKind = "barter" | "craft";
 export type SortMode = "profit" | "profitPerHour" | "cost" | "name";
 export type RouteMethod = "flea" | "barter" | "craft" | "unavailable";
 
 export interface RouteContext {
-  itemById: Readonly<Record<string, GlobalItem>>;
+  itemById: Readonly<Record<string, ItemSummary>>;
   bartersById: Readonly<Record<string, BarterRecord>>;
   craftsById: Readonly<Record<string, CraftRecord>>;
   tradersById: Readonly<Record<string, Trader>>;

@@ -11,7 +11,9 @@ import {
     markStaleFallback,
     parseNonEmptyTimedResponse,
 } from "@/server/services/tarkovJson/cache";
-import type { TimedResponse, Trader, TradersPayload } from "@/types";
+import type { DataResult } from "@/types/common";
+import type { Trader } from "@/types/traders";
+import type { TradersPayload } from "@/types/contracts";
 
 function buildRedisKeys(gameMode: TarkovJsonGameMode) {
     const bodyKey = `traders:all:v${CACHE_VERSIONS.traders}:${gameMode}`;
@@ -24,7 +26,7 @@ interface JsonTrader extends Trader {
 
 export async function getJsonTraders(
     gameMode: TarkovJsonGameMode = "regular",
-): Promise<TimedResponse<TradersPayload>> {
+): Promise<DataResult<TradersPayload>> {
     const { bodyKey, metaKey } = buildRedisKeys(gameMode);
     const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
         "traders",
@@ -52,7 +54,7 @@ export async function getJsonTraders(
         if (traders.length === 0) throw new Error("Tarkov JSON response contained no traders");
 
         const updatedAt = Date.now();
-        const body: TimedResponse<TradersPayload> = {
+        const body: DataResult<TradersPayload> = {
             data: { traders },
             updatedAt,
             diagnostics: { provider: "json", upstreamStatus: "ok" },

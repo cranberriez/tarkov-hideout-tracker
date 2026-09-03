@@ -6,14 +6,10 @@ import {
     ChevronUp,
     Package,
 } from "lucide-react";
-import type {
-    FullQuestObjective,
-    ItemDetails,
-    QuestObjectiveItemType,
-    QuestObjectiveShootType,
-} from "@/types";
-import { useDataContext } from "@/app/(data)/_dataContext";
+import type { FullQuestObjective, QuestObjectiveItemType, QuestObjectiveShootType } from "@/types/quests";
+import type { ItemSummary } from "@/types/items";
 import { QuestObjectiveIcon } from "../QuestObjectiveIcon";
+import { useQuestsContext } from "../../QuestsContext";
 
 function isItemObjective(o: FullQuestObjective): o is QuestObjectiveItemType {
     return (
@@ -35,8 +31,8 @@ function isShootObjective(o: FullQuestObjective): o is QuestObjectiveShootType {
 
 function getRequiredKeyGroups(
     objective: FullQuestObjective,
-    itemById: Readonly<Record<string, ItemDetails>>,
-): ItemDetails[][] {
+    itemById: Readonly<Record<string, ItemSummary>>,
+): ItemSummary[][] {
     return (objective.requiredKeyIds ?? [])
         .map((group) => group.map((id) => itemById[id]).filter(Boolean))
         .filter((group) => group.length > 0);
@@ -46,7 +42,7 @@ export function hasRequiredKeys(objective: FullQuestObjective) {
     return (objective.requiredKeyIds ?? []).some((group) => group.length > 0);
 }
 
-function RequiredKeysList({ groups, large = false }: { groups: ItemDetails[][]; large?: boolean }) {
+function RequiredKeysList({ groups, large = false }: { groups: ItemSummary[][]; large?: boolean }) {
     if (groups.length === 0) return null;
 
     return (
@@ -99,7 +95,7 @@ const COMPACT_ITEM_PREVIEW_LIMIT = 15;
 
 export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", showItems = true, objectiveCompletion }: ObjectiveRowProps) {
     const [showAllItems, setShowAllItems] = useState(false);
-    const { itemById } = useDataContext();
+    const { itemById } = useQuestsContext();
     const item = isItemObjective(objective) ? objective : null;
     const shoot = isShootObjective(objective) ? objective : null;
     const standardItems = item?.itemIds.map((id) => itemById[id]).filter(Boolean) ?? [];

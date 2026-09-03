@@ -1,4 +1,4 @@
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import removedQuestData from "../data/removed-quests.json";
 
 const removedQuestIds = new Set<string>(removedQuestData.questIds);

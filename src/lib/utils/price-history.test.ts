@@ -5,8 +5,8 @@ import {
     downsamplePriceHistory,
     filterPriceHistory,
     filterPriceHistoryOutliers,
-    type PriceHistoryPoint,
 } from "./price-history";
+import type { PriceHistoryPoint } from "@/types/prices";
 
 const DAY = 24 * 60 * 60 * 1000;
 

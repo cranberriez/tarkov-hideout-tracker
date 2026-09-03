@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import { getItemAcquisitionTree } from "@/server/services/itemAcquisitionJson";
+import { getItemAcquisitionTreeData } from "@/server/queries/getItemAcquisitionTreeData";
 
 const MODES = new Set<TarkovJsonGameMode>(["regular", "pve", "pvp-season"]);
 
@@ -18,7 +18,7 @@ export async function GET(
     }
 
     try {
-        const payload = await getItemAcquisitionTree(
+        const payload = await getItemAcquisitionTreeData(
             itemId,
             requestedMode as TarkovJsonGameMode,
         );

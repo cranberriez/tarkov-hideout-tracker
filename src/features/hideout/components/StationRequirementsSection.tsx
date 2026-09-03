@@ -1,4 +1,5 @@
-import type { Station, ItemDetails } from "@/types";
+import type { Station } from "@/types/hideout";
+import type { ItemSummary } from "@/types/items";
 import { NonItemRequirements } from "./NonItemRequirements";
 import { CompactItemRequirements } from "./ItemRequirementsCompact";
 import { ExpandedItemRequirements } from "./ItemRequirementsExpanded";
@@ -14,8 +15,9 @@ export interface StationRequirementsSectionProps {
     toggleRequirement: (requirementId: string) => void;
     hideMoney: boolean;
     hideoutCompactMode: boolean;
-    onClickItem: (item: ItemDetails) => void;
+    onClickItem: (item: ItemSummary) => void;
     pooledFirByItem: Record<string, number>;
+    itemById: Readonly<Record<string, ItemSummary>>;
     upgradeStatus: "ready" | "missing" | "illegal";
 }
 
@@ -31,6 +33,7 @@ export function StationRequirementsSection({
     hideoutCompactMode,
     onClickItem,
     pooledFirByItem,
+    itemById,
     upgradeStatus,
 }: StationRequirementsSectionProps) {
     const formatTimeLength = (time: number) => {
@@ -87,6 +90,7 @@ export function StationRequirementsSection({
                             toggleRequirement={toggleRequirement}
                             onClickItem={onClickItem}
                             pooledFirByItem={pooledFirByItem}
+                            itemById={itemById}
                         />
                     ) : (
                         // Expanded List View
@@ -97,6 +101,7 @@ export function StationRequirementsSection({
                             toggleRequirement={toggleRequirement}
                             onClickItem={onClickItem}
                             pooledFirByItem={pooledFirByItem}
+                            itemById={itemById}
                         />
                     )}
                 </>

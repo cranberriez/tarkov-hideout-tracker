@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { FullQuest, TimedResponse } from "@/types";
+import type { FullQuest } from "@/types/quests";
+import type { DataResult } from "@/types/common";
 import { compareFullQuestData } from "./questCacheComparison";
 
-function response(quests: FullQuest[]): TimedResponse<{ quests: FullQuest[] }> {
+function response(quests: FullQuest[]): DataResult<{ quests: FullQuest[] }> {
     return { data: { quests }, updatedAt: 1 };
 }
 

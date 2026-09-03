@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { TARKOV_API_HEADERS } from "@/server/services/tarkovApi";
-import { normalizePriceHistory } from "@/server/services/priceHistory";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
+import { getItemPriceHistoryData } from "@/server/queries/getItemPriceHistoryData";
 
 export const revalidate = 900;
 
 const MODES = new Set<TarkovJsonGameMode>(["regular", "pve", "pvp-season"]);
-
-interface UpstreamPriceResponse {
-    data?: unknown;
-}
 
 export async function GET(
     request: NextRequest,
@@ -24,38 +19,25 @@ export async function GET(
         return NextResponse.json({ error: "Invalid item ID" }, { status: 400 });
     }
 
-    const mode = requestedMode as TarkovJsonGameMode;
-    let upstream: Response;
     try {
-        upstream = await fetch(
-            `https://json.tarkov.dev/${mode}/prices/${encodeURIComponent(itemId)}`,
-            {
-                headers: TARKOV_API_HEADERS,
-                next: { revalidate },
-            },
+        const payload = await getItemPriceHistoryData(
+            itemId,
+            requestedMode as TarkovJsonGameMode,
         );
-    } catch {
-        return NextResponse.json(
-            { error: "Price history is temporarily unavailable" },
-            { status: 502 },
-        );
-    }
-    if (!upstream.ok) {
-        return NextResponse.json(
-            { error: "Price history is temporarily unavailable" },
-            { status: upstream.status === 404 ? 404 : 502 },
-        );
-    }
-
-    const body = (await upstream.json()) as UpstreamPriceResponse;
-    const points = normalizePriceHistory(body.data);
-
-    return NextResponse.json(
-        { data: points, fetchedAt: Date.now() },
-        {
+        return NextResponse.json(payload, {
             headers: {
                 "Cache-Control": "public, max-age=300, s-maxage=900, stale-while-revalidate=3600",
             },
-        },
-    );
+        });
+    } catch (error) {
+        return NextResponse.json(
+            { error: "Price history is temporarily unavailable" },
+            {
+                status:
+                    error instanceof Error && /status\s+404\b/.test(error.message)
+                        ? 404
+                        : 502,
+            },
+        );
+    }
 }

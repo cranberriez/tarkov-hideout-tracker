@@ -1,4 +1,4 @@
-import type { Station, StationLevel } from "@/types";
+import type { Station, StationLevel } from "@/types/hideout";
 
 export type SetupStation = Pick<Station, "id" | "name" | "normalizedName"> & {
     levels: Array<Pick<StationLevel, "level">>;

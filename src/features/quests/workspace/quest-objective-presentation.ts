@@ -1,4 +1,4 @@
-import type { FullQuestObjective } from "@/types";
+import type { FullQuestObjective } from "@/types/quests";
 
 export interface ObjectivePresentation {
     objective: FullQuestObjective;

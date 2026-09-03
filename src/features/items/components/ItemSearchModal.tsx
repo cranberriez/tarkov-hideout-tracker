@@ -1,22 +1,28 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import type { ItemDetails } from "@/types";
+import type { ItemSummary } from "@/types/items";
 import { Search, X } from "lucide-react";
-import { useDataContext } from "@/app/(data)/_dataContext";
+import { useUserStore } from "@/lib/stores/useUserStore";
+import { toTarkovJsonGameMode } from "@/lib/game-mode";
+import { ITEM_SEARCH_MAX_QUERY_LENGTH } from "@/types/contracts";
+import { useItemSearchController } from "@/features/items/useItemSearchController";
 
 interface ItemSearchModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onSelect: (item: ItemDetails) => void;
-	itemPool?: ItemDetails[];
+	onSelect: (item: ItemSummary) => void;
 }
 
-export function ItemSearchModal({ isOpen, onClose, onSelect, itemPool }: ItemSearchModalProps) {
-	const { items } = useDataContext();
-	const searchItems = itemPool ?? items;
+export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalProps) {
 	const [query, setQuery] = useState("");
+	const gameMode = useUserStore((state) => state.gameMode);
+	const search = useItemSearchController({
+		enabled: isOpen,
+		mode: toTarkovJsonGameMode(gameMode),
+		query,
+	});
 
 	// Focus input on open
 	useEffect(() => {
@@ -36,33 +42,10 @@ export function ItemSearchModal({ isOpen, onClose, onSelect, itemPool }: ItemSea
 		onClose();
 	};
 
-	const handleSelect = (item: ItemDetails) => {
+	const handleSelect = (item: ItemSummary) => {
 		setQuery("");
 		onSelect(item);
 	};
-
-	const filteredItems = useMemo(() => {
-		if (!searchItems || !query) return [];
-
-		const lowerQuery = query.toLowerCase();
-
-		return searchItems
-			.filter((item) => item.name.toLowerCase().includes(lowerQuery))
-			.sort((a, b) => {
-				// Prioritize exact matches or starts with
-				const aName = a.name.toLowerCase();
-				const bName = b.name.toLowerCase();
-
-				const aStarts = aName.startsWith(lowerQuery);
-				const bStarts = bName.startsWith(lowerQuery);
-
-				if (aStarts && !bStarts) return -1;
-				if (!aStarts && bStarts) return 1;
-
-				return aName.localeCompare(bName);
-			})
-			.slice(0, 50); // Limit results for performance
-	}, [searchItems, query]);
 
 	if (!isOpen) return null;
 
@@ -80,6 +63,7 @@ export function ItemSearchModal({ isOpen, onClose, onSelect, itemPool }: ItemSea
 						type="text"
 						value={query}
 						onChange={(e) => setQuery(e.target.value)}
+						maxLength={ITEM_SEARCH_MAX_QUERY_LENGTH}
 						placeholder="Search items..."
 						className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-500 text-lg"
 						autoComplete="off"
@@ -90,9 +74,9 @@ export function ItemSearchModal({ isOpen, onClose, onSelect, itemPool }: ItemSea
 				</div>
 
 				<div className="overflow-y-auto">
-					{filteredItems.length > 0 ? (
+					{search.items.length > 0 ? (
 						<div className="divide-y divide-white/5">
-							{filteredItems.map((item) => (
+							{search.items.map((item) => (
 								<button
 									key={item.id}
 									onClick={() => handleSelect(item)}
@@ -116,9 +100,13 @@ export function ItemSearchModal({ isOpen, onClose, onSelect, itemPool }: ItemSea
 								</button>
 							))}
 						</div>
-					) : query ? (
+					) : search.isLoading ? (
+						<div className="p-8 text-center text-gray-500">Searching items…</div>
+					) : search.error ? (
+						<div className="p-8 text-center text-red-400">{search.error}</div>
+					) : search.hasNoResults ? (
 						<div className="p-8 text-center text-gray-500">
-							No items found matching {query}
+							No items found matching {query.trim()}
 						</div>
 					) : (
 						<div className="p-8 text-center text-gray-500">Type to search items...</div>

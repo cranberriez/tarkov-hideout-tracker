@@ -1,10 +1,10 @@
-import type { MarketPrice } from "@/types";
+import type { CurrentPrice } from "@/types/prices";
 
-export function getFleaPrice(marketPrice: MarketPrice | null | undefined): number | null {
+export function getFleaPrice(marketPrice: CurrentPrice | null | undefined): number | null {
     return marketPrice?.avg24hPrice ?? marketPrice?.lastLowPrice ?? marketPrice?.price ?? null;
 }
 
-export function hasFleaMarketData(marketPrice: MarketPrice | null | undefined): boolean {
+export function hasFleaMarketData(marketPrice: CurrentPrice | null | undefined): boolean {
     if (!marketPrice) return false;
     return (
         marketPrice.avg24hPrice != null ||

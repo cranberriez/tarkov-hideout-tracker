@@ -3,10 +3,13 @@
 import { useMemo } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { CompletedItemsConversionModal } from "@/features/items/components/CompletedItemsConversionModal";
-import { useDataContext } from "@/app/(data)/_dataContext";
+import type { Station } from "@/types/hideout";
 
-export function HideoutConversionGate() {
-    const { stations } = useDataContext();
+interface HideoutConversionGateProps {
+    stations: Station[];
+}
+
+export function HideoutConversionGate({ stations }: HideoutConversionGateProps) {
     const {
         stationLevels,
         completedRequirements,
@@ -15,8 +18,6 @@ export function HideoutConversionGate() {
     } = useUserStore();
 
     const hasConvertible = useMemo(() => {
-        if (!stations) return false;
-
         return stations.some((station) => {
             const currentLevel = stationLevels[station.id] ?? 0;
 

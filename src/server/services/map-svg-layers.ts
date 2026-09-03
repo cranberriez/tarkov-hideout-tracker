@@ -1,4 +1,4 @@
-import type { MapFloorDefinition } from "@/features/maps/map-types";
+import type { MapFloorDefinition } from "@/types/maps";
 
 function cssAttributeSelector(value: string) {
     return `[id="${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"]`;

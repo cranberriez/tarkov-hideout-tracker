@@ -3,7 +3,7 @@ import test from "node:test";
 
 import type { PlayerProfileState } from "../../../lib/stores/useUserStore.ts";
 import type { ImportGameMode, QuestImportRow } from "../../../lib/utils/quest-log-import.ts";
-import type { FullQuest } from "../../../types/types.ts";
+import type { FullQuest } from "@/types/quests";
 import {
     buildCompletionMessage,
     buildModeImportViewModels,

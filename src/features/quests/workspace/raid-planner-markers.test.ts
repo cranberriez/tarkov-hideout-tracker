@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import { buildRaidPlannerMarkers, createQuestMarkerStyles } from "./raid-planner-markers";
 
 const map = { id: "customs-id", name: "Customs", normalizedName: "customs" };

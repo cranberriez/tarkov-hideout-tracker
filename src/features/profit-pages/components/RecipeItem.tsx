@@ -9,7 +9,7 @@ import {
   type AcquisitionPlan,
   type ManualPriceOverride,
 } from "@/lib/price-calculation";
-import type { GlobalItem } from "@/types";
+import type { ItemSummary } from "@/types/items";
 import type {
   GoToRecipeHandler,
   PriceChangeHandler,
@@ -51,7 +51,7 @@ export function RecipeItem({
   onGoToRecipe,
   recipePreview,
 }: {
-  item?: GlobalItem;
+  item?: ItemSummary;
   count: number;
   method: RouteMethod;
   totalPrice: number | null;

@@ -16,28 +16,13 @@ import {
     parseNonEmptyTimedResponse,
 } from "@/server/services/tarkovJson/cache";
 import { normalizeQuestObjectiveLocations } from "@/server/services/quest-objective-locations";
-import type {
-    FullQuest,
-    FullQuestObjective,
-    FullQuestsPayload,
-    Quest,
-    QuestFailCondition,
-    QuestSpecificItem,
-    QuestMap,
-    QuestItemReward,
-    QuestObjectiveItemType,
-    QuestPrestige,
-    QuestsPayload,
-    QuestTraderStandingReward,
-    TimedResponse,
-} from "@/types";
+import type { FullQuest, FullQuestObjective, QuestFailCondition, QuestSpecificItem, QuestMap, QuestItemReward, QuestPrestige, QuestTraderStandingReward } from "@/types/quests";
+import type { FullQuestsPayload } from "@/types/contracts";
+import type { DataResult } from "@/types/common";
 
 function buildQuestRedisKeys(gameMode: TarkovJsonGameMode) {
-    const questsBodyKey = `quests:all:v${CACHE_VERSIONS.quests}:${gameMode}`;
     const fullBodyKey = `quests:full:v${CACHE_VERSIONS.questsFull}:${gameMode}`;
     return {
-        questsBodyKey,
-        questsMetaKey: `${questsBodyKey}:meta`,
         fullBodyKey,
         fullMetaKey: `${fullBodyKey}:meta`,
     };
@@ -569,7 +554,7 @@ async function fetchAndMapFullQuests(gameMode: TarkovJsonGameMode): Promise<Full
 
 export async function getCurrentJsonFullQuestData(
     gameMode: TarkovJsonGameMode = "regular",
-): Promise<TimedResponse<FullQuestsPayload>> {
+): Promise<DataResult<FullQuestsPayload>> {
     const quests = await fetchAndMapFullQuests(gameMode);
     if (quests.length === 0) throw new Error("Tarkov JSON task mapping produced no quests");
     return {
@@ -581,7 +566,7 @@ export async function getCurrentJsonFullQuestData(
 
 export async function getStoredJsonFullQuestData(
     gameMode: TarkovJsonGameMode = "regular",
-): Promise<TimedResponse<FullQuestsPayload> | null> {
+): Promise<DataResult<FullQuestsPayload> | null> {
     const { fullBodyKey, fullMetaKey } = buildQuestRedisKeys(gameMode);
     const [cachedBody] = await redis.inspectMget<[unknown, unknown]>(
         fullBodyKey,
@@ -595,7 +580,7 @@ export async function getStoredJsonFullQuestData(
 
 export async function getJsonFullQuestData(
     gameMode: TarkovJsonGameMode = "regular",
-): Promise<TimedResponse<FullQuestsPayload>> {
+): Promise<DataResult<FullQuestsPayload>> {
     const { fullBodyKey, fullMetaKey } = buildQuestRedisKeys(gameMode);
     const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
         "questsFull",
@@ -630,101 +615,10 @@ export async function getJsonFullQuestData(
     }
 }
 
-export async function getJsonQuestData(
-    gameMode: TarkovJsonGameMode = "regular",
-): Promise<TimedResponse<QuestsPayload>> {
-    const { questsBodyKey, questsMetaKey } = buildQuestRedisKeys(gameMode);
-    const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
-        "quests",
-        questsBodyKey,
-        questsMetaKey,
-    );
-    const cached = parseNonEmptyTimedResponse<QuestsPayload>(
-        cachedBody,
-        (payload) => payload.quests,
-    );
-    if (cached && isProgressionCacheUsable(cachedMeta)) return cached;
-
-    try {
-        const full = await getJsonFullQuestData(gameMode);
-        const isGiveItemObjective = (
-            objective: FullQuestObjective,
-        ): objective is QuestObjectiveItemType =>
-            objective.type === "giveItem" && "itemIds" in objective && "foundInRaid" in objective;
-        const quests: Quest[] = full.data.quests
-            .filter((quest) => quest.objectives.some(isGiveItemObjective))
-            .map((quest) => ({
-                id: quest.id,
-                name: quest.name,
-                normalizedName: quest.normalizedName,
-                wikiLink: quest.wikiLink,
-                minPlayerLevel: quest.minPlayerLevel,
-                kappaRequired: quest.kappaRequired,
-                lightkeeperRequired: quest.lightkeeperRequired,
-                factionName: quest.factionName,
-                experience: quest.experience,
-                trader: {
-                    id: quest.trader.id,
-                    name: quest.trader.name,
-                    normalizedName: quest.trader.normalizedName,
-                },
-                taskRequirements: quest.taskRequirements,
-                failConditions: quest.failConditions,
-                objectives: quest.objectives
-                    .filter(isGiveItemObjective)
-                    .map((objective) => ({
-                        id: objective.id,
-                        type: "giveItem" as const,
-                        description: objective.description,
-                        optional: objective.optional,
-                        count: objective.count ?? 0,
-                        foundInRaid: objective.foundInRaid,
-                        itemIds: objective.itemIds,
-                        questSpecificItems: objective.questSpecificItems,
-                    })),
-            }));
-        if (quests.length === 0) throw new Error("Tarkov JSON mapping produced no item quests");
-
-        const updatedAt = Date.now();
-        const body: TimedResponse<QuestsPayload> = {
-            data: { quests },
-            updatedAt,
-            diagnostics: { provider: "json", upstreamStatus: "ok" },
-        };
-        await writeRedisAfterResponse(
-            "quests",
-            {
-                [questsBodyKey]: JSON.stringify(body),
-                [questsMetaKey]: { updatedAt },
-            },
-            "item quests",
-        );
-        return body;
-    } catch (error) {
-        console.error("Failed to refresh quests from Tarkov JSON", error);
-        if (cached) {
-            console.log("Using stale quest cache due to JSON upstream error");
-            return markStaleFallback(cached);
-        }
-        throw error;
-    }
-}
-
-const cachedJsonQuestData = unstable_cache(getJsonQuestData, ["json-quests"], {
-    revalidate: DATA_CACHE_REVALIDATE_SECONDS,
-    tags: ["quests"],
-});
-
 const cachedJsonFullQuestData = unstable_cache(
     getJsonFullQuestData,
     ["json-quests-full"],
     { revalidate: DATA_CACHE_REVALIDATE_SECONDS, tags: ["quests"] },
-);
-
-export const getCachedJsonQuestData = cacheWhenEnabled(
-    "quests",
-    getJsonQuestData,
-    cachedJsonQuestData,
 );
 
 export const getCachedJsonFullQuestData = cacheWhenEnabled(

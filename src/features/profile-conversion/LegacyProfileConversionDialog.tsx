@@ -1,16 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArchiveRestore, Check, ShieldCheck } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useDataContext } from "@/app/(data)/_dataContext";
+import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { GAME_MODES, type GameMode, type PlayerProfileState, useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
-import type { Station } from "@/types";
+import type {
+    LegacyConversionStation,
+    LegacyProfileConversionData,
+} from "@/types/contracts";
 
 type DialogStep = "select" | "replace";
+
+const EMPTY_STATIONS: LegacyConversionStation[] = [];
 
 interface ProfileStats {
     playerLevel: number;
@@ -19,7 +24,7 @@ interface ProfileStats {
     edition: string;
     completedQuests: number;
     totalItems: number;
-    maxedStations: Station[];
+    maxedStations: LegacyConversionStation[];
     loyaltySummary: Array<{ level: number; count: number }>;
 }
 
@@ -37,7 +42,10 @@ function getNumber(value: unknown, fallback = 0) {
     return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
-function buildStats(source: Record<string, unknown>, stations: Station[]): ProfileStats {
+function buildStats(
+    source: Record<string, unknown>,
+    stations: LegacyConversionStation[],
+): ProfileStats {
     const totalItems = Object.values(asRecord(source.itemCounts)).reduce<number>(
         (total, value) => {
             const counts = asRecord(value);
@@ -46,10 +54,11 @@ function buildStats(source: Record<string, unknown>, stations: Station[]): Profi
         0,
     );
     const stationLevels = asRecord(source.stationLevels);
-    const maxedStations = stations.filter((station) => {
-        const maxLevel = Math.max(0, ...station.levels.map((level) => level.level));
-        return getNumber(stationLevels[station.id]) >= maxLevel && maxLevel > 0;
-    });
+    const maxedStations = stations.filter(
+        (station) =>
+            getNumber(stationLevels[station.id]) >= station.maxLevel &&
+            station.maxLevel > 0,
+    );
     const loyaltyLevels = Object.values(asRecord(source.questTraderLoyaltyLevels)).map(
         (value) => getNumber(value, 1),
     );
@@ -126,7 +135,6 @@ function StatsPanel({ stats }: { stats: ProfileStats }) {
 }
 
 export function LegacyProfileConversionDialog() {
-    const { stations } = useDataContext();
     const store = useUserStore(useShallow((state) => ({
         deprecatedLegacyState: state.deprecatedLegacyState,
         hasConverted: state.hasConvertedDeprecatedLegacyState,
@@ -142,11 +150,22 @@ export function LegacyProfileConversionDialog() {
     })));
     const [selectedModeOverride, setSelectedModeOverride] = useState<GameMode | null>(null);
     const [step, setStep] = useState<DialogStep>("select");
+    const [conversionRequest, setConversionRequest] = useState<{
+        mode: string;
+        payload: LegacyProfileConversionData | null;
+        error: string | null;
+    } | null>(null);
     const shouldOpenAutomatically = store.deprecatedLegacyState !== null && !store.hasConverted && !store.hasDismissed;
     const isOpen = store.deprecatedLegacyState !== null && (shouldOpenAutomatically || isOpenFromSettings);
     const selectedMode = selectedModeOverride ?? store.gameMode;
+    const requestedMode = toTarkovJsonGameMode(selectedMode);
+    const currentRequest =
+        conversionRequest?.mode === requestedMode ? conversionRequest : null;
+    const conversionData = currentRequest?.payload ?? null;
+    const requestError = currentRequest?.error ?? null;
+    const isLoading = isOpen && currentRequest === null;
     const destinationHasData = hasProfileData(store.profiles[selectedMode]);
-    const availableStations = useMemo(() => stations ?? [], [stations]);
+    const availableStations = conversionData?.stations ?? EMPTY_STATIONS;
     const oldStats = useMemo(
         () => store.deprecatedLegacyState ? buildStats(store.deprecatedLegacyState, availableStations) : null,
         [availableStations, store.deprecatedLegacyState],
@@ -155,6 +174,33 @@ export function LegacyProfileConversionDialog() {
         () => buildStats(store.profiles[selectedMode] as unknown as Record<string, unknown>, availableStations),
         [availableStations, selectedMode, store.profiles],
     );
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const controller = new AbortController();
+        fetch(
+            `/api/conversion/legacy-profile?mode=${encodeURIComponent(requestedMode)}`,
+            { signal: controller.signal },
+        )
+            .then(async (response) => {
+                if (!response.ok) throw new Error("Station details could not be loaded.");
+                return response.json() as Promise<LegacyProfileConversionData>;
+            })
+            .then((payload) =>
+                setConversionRequest({ mode: requestedMode, payload, error: null }),
+            )
+            .catch((error: unknown) => {
+                if (error instanceof DOMException && error.name === "AbortError") return;
+                setConversionRequest({
+                    mode: requestedMode,
+                    payload: null,
+                    error: "Station details could not be loaded.",
+                });
+            });
+
+        return () => controller.abort();
+    }, [isOpen, requestedMode]);
 
     if (!store.deprecatedLegacyState || !oldStats) return null;
 
@@ -187,6 +233,14 @@ export function LegacyProfileConversionDialog() {
                         </div>
                     </div>
                 </DialogHeader>
+
+                {(isLoading || requestError || conversionData?.errors.stations) && (
+                    <div className="border-b border-border-color bg-black/40 px-6 py-2 text-xs text-gray-400">
+                        {isLoading
+                            ? "Loading hideout station details…"
+                            : requestError ?? conversionData?.errors.stations}
+                    </div>
+                )}
 
                 {step === "select" ? (
                     <div className="grid max-h-[65dvh] overflow-y-auto md:grid-cols-2">

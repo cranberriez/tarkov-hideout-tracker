@@ -5,7 +5,7 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemRow } from "./ItemRow";
 import { ItemAnyOfGroupCard } from "./ItemAnyOfGroupCard";
 import { poolItems } from "@/lib/utils/item-pooling";
-import type { ItemDetails } from "@/types";
+import type { ItemSummary } from "@/types/items";
 import type {
     DerivedQuestAnyOfGroup,
     DerivedQuestItemState,
@@ -17,12 +17,14 @@ import {
     deriveQuestAnyOfGroups,
     deriveQuestItemStates,
 } from "@/lib/utils/quest-item-index";
-import { useDataContext } from "@/app/(data)/_dataContext";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { getFleaPrice } from "@/lib/utils/market-price";
+import type { Station } from "@/types/hideout";
 
 interface ItemsListProps {
-    onClickItem: (item: ItemDetails) => void;
+    stations: Station[];
+    itemById: Readonly<Record<string, ItemSummary>>;
+    onClickItem: (item: ItemSummary) => void;
     questItemIndex: QuestItemIndexEntry[];
     questAnyOfGroups: QuestAnyOfGroupEntry[];
     questAvailabilityQuests: QuestAvailabilityQuest[];
@@ -39,23 +41,24 @@ type MergedItem = {
     hideoutFirCount: number;
     questCount: number;
     questFirCount: number;
-    details?: ItemDetails;
+    details?: ItemSummary;
     questState?: DerivedQuestItemState;
 };
 
-type DisplayItem = MergedItem & { details: ItemDetails };
+type DisplayItem = MergedItem & { details: ItemSummary };
 type QuestSlice = "all" | "pinned" | "unpinned" | "none";
 type DisplayEntry =
     | { type: "item"; key: string; item: DisplayItem }
     | { type: "group"; key: string; group: DerivedQuestAnyOfGroup };
 
 export function ItemsList({
+    stations,
+    itemById,
     onClickItem,
     questItemIndex,
     questAnyOfGroups,
     questAvailabilityQuests,
 }: ItemsListProps) {
-    const { stations, items } = useDataContext();
     const [expandedGroupIds, setExpandedGroupIds] = useState<Record<string, boolean>>({});
 
     const {
@@ -127,15 +130,6 @@ export function ItemsList({
         ],
     );
 
-    const itemsById = useMemo(() => {
-        if (!items) return null;
-        const map: Record<string, ItemDetails> = {};
-        for (const item of items) {
-            map[item.id] = item;
-        }
-        return map;
-    }, [items]);
-
     const activeQuestStates = useMemo(
         () => deriveQuestItemStates(questItemIndex, deriveOptions),
         [deriveOptions, questItemIndex],
@@ -193,13 +187,9 @@ export function ItemsList({
         [activeQuestStates, groupedQuestDeductionsByItemId],
     );
 
-    const allItemDetails = useMemo(
-        () => ({ ...(itemsById ?? {}) }),
-        [itemsById],
-    );
+    const allItemDetails = itemById;
 
     const pooledHideoutItems = useMemo(() => {
-        if (!stations) return [];
         return poolItems({
             stations,
             stationLevels,
@@ -281,7 +271,7 @@ export function ItemsList({
     };
 
     const finalizeDisplayItems = (
-        itemsToDisplay: Array<MergedItem & { details?: ItemDetails; questState?: DerivedQuestItemState }>,
+        itemsToDisplay: Array<MergedItem & { details?: ItemSummary; questState?: DerivedQuestItemState }>,
     ): DisplayItem[] => {
         let finalItems = itemsToDisplay.filter((item): item is DisplayItem => !!item.details);
 
@@ -398,7 +388,7 @@ export function ItemsList({
                                 group={entry.group}
                                 items={entry.group.itemIds
                                     .map((itemId) => allItemDetails[itemId])
-                                    .filter((item): item is ItemDetails => !!item)}
+                                    .filter((item): item is ItemSummary => !!item)}
                                 expanded={!!expandedGroupIds[entry.group.groupId]}
                                 size={itemsSize}
                                 onToggleExpanded={() =>
@@ -490,10 +480,6 @@ export function ItemsList({
             </div>
         );
     };
-
-    if (!stations || !itemsById) {
-        return null;
-    }
 
     if (sourceItems.length === 0 && visibleQuestGroups.length === 0) {
         return (

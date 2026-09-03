@@ -14,7 +14,7 @@ import {
     XCircle,
     AlertTriangle,
 } from "lucide-react";
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import { cn } from "@/lib/utils";
 import { formatQuestTraderGate } from "@/lib/utils/quest-trader-gates";
 import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";

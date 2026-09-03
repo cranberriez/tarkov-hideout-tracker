@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { MapFloorDefinition } from "@/features/maps/map-types";
+import type { MapFloorDefinition } from "@/types/maps";
 import { applyMapSvgLayers } from "./map-svg-layers";
 
 const floors: MapFloorDefinition[] = [

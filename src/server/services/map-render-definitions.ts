@@ -3,7 +3,7 @@ import type {
     MapFloorDefinition,
     MapFloorExtent,
     MapRenderDefinition,
-} from "@/features/maps/map-types";
+} from "@/types/maps";
 
 type UnknownRecord = Record<string, unknown>;
 

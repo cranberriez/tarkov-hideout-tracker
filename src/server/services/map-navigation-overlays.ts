@@ -1,4 +1,4 @@
-import type { MapOverlayMarker } from "@/features/maps/map-types";
+import type { MapOverlayMarker } from "@/types/maps";
 import { getMapRenderDefinition } from "./map-render-definitions";
 
 interface NavigationPoint {

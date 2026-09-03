@@ -1,5 +1,17 @@
-import type { ItemUsagePayload } from "@/types";
+interface ItemUsageCompleteness {
+    bartersError?: string;
+    craftsError?: string;
+    itemsError?: string;
+    pricesError?: string;
+    presentationError?: string;
+}
 
-export function isCompleteItemUsagePayload(payload: ItemUsagePayload): boolean {
-    return !payload.bartersError && !payload.craftsError && !payload.presentationError;
+export function isCompleteItemUsageData(data: ItemUsageCompleteness): boolean {
+    return (
+        !data.bartersError &&
+        !data.craftsError &&
+        !data.itemsError &&
+        !data.pricesError &&
+        !data.presentationError
+    );
 }

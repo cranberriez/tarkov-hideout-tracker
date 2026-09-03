@@ -1,4 +1,4 @@
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import seriesData from "../data/quest-series.json";
 import { isEssentialQuestOverride } from "./quest-trader-tab-overrides";

@@ -1,4 +1,4 @@
-import type { FullQuest } from "../../types/types.ts";
+import type { FullQuest } from "@/types/quests";
 import type {
     ParsedQuestEventType,
     ParsedRaidMode,

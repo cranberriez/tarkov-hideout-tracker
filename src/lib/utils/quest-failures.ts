@@ -1,4 +1,4 @@
-import type { QuestFailCondition, QuestFailConditionTaskStatus, QuestPrerequisite } from "@/types";
+import type { QuestFailCondition, QuestFailConditionTaskStatus, QuestPrerequisite } from "@/types/quests";
 
 export interface QuestFailureSource {
     id: string;

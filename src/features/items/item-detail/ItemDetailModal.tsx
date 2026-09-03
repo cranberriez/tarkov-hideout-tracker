@@ -1,18 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import Image from "next/image";
+import type { ItemCraftRecipe, ItemTraderOffer } from "@/features/items/item-detail/item-detail-types";
+import type { ItemSummary } from "@/types/items";
 import type {
-    ItemCraftRecipe,
-    ItemDetails,
-    ItemAcquisitionTreePayload,
-    ItemTraderOffer,
-    ItemUsagePayload,
-    Station,
-} from "@/types";
+    ItemAcquisitionTreeData,
+    ItemRelationsPayload,
+    ItemUsageData,
+} from "@/types/contracts";
 import { ArrowLeft, Bug, PackageOpen, X } from "lucide-react";
-import { stationOrder } from "@/lib/cfg/stationOrder";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { formatRelativeUpdatedAt } from "@/lib/utils/format-time";
 import { computeNeeds } from "@/lib/utils/item-needs";
@@ -20,12 +18,9 @@ import { ItemDetailHeader } from "./ItemDetailHeader";
 import { hasItemMarketData } from "./ItemDetailMarket";
 import { ItemDetailSidebar } from "./ItemDetailSidebar";
 import { ItemDetailUsageTabs } from "./ItemDetailUsageTabs";
-import type { QuestAnyOfGroupEntry, QuestItemIndexEntry, QuestRewardIndexEntry } from "@/lib/utils/quest-item-index";
 import { deriveQuestAnyOfGroups, deriveQuestItemState } from "@/lib/utils/quest-item-index";
-import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
-import { useDataContext } from "@/app/(data)/_dataContext";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
-import { isCompleteItemUsagePayload } from "@/lib/utils/item-usage";
+import { isCompleteItemUsageData } from "@/lib/utils/item-usage";
 import { summarizeItemDetailDemand } from "./item-detail-summary";
 import { evaluateBarters, evaluateCrafts } from "@/lib/price-calculation";
 import { useManualPriceOverrides } from "@/features/profit-pages/useManualPriceOverrides";
@@ -36,9 +31,16 @@ import {
     reconcileItemNavigation,
     toItemNavigationEntry,
 } from "./item-detail-navigation";
+import {
+    buildStationRequirements,
+    getItemRelationsError,
+    hasCompleteItemRelations,
+    mergeItemDetailItems,
+} from "./item-detail-data";
 
-const itemUsageCache = new Map<string, ItemUsagePayload>();
-const acquisitionTreeCache = new Map<string, ItemAcquisitionTreePayload>();
+const itemRelationsCache = new Map<string, ItemRelationsPayload>();
+const itemUsageCache = new Map<string, ItemUsageData>();
+const acquisitionTreeCache = new Map<string, ItemAcquisitionTreeData>();
 
 function indexByOutput<T>(records: T[], getItemId: (record: T) => string) {
     const index: Record<string, T[]> = Object.create(null) as Record<string, T[]>;
@@ -47,35 +49,21 @@ function indexByOutput<T>(records: T[], getItemId: (record: T) => string) {
 }
 
 export interface ItemDetailModalProps {
-    item: ItemDetails | null;
+    item: ItemSummary | null;
     isOpen: boolean;
     onClose: () => void;
-    stations: Station[] | null;
-    stationLevels: Record<string, number>;
-    hiddenStations: Record<string, boolean>;
-    completedRequirements: Record<string, boolean>;
-    questItemIndex?: QuestItemIndexEntry[];
-    questRewardIndex?: QuestRewardIndexEntry[];
-    questAnyOfGroups?: QuestAnyOfGroupEntry[];
-    questAvailabilityQuests?: QuestAvailabilityQuest[];
 }
 
 export function ItemDetailModal({
     item,
     isOpen,
     onClose,
-    stations,
-    stationLevels,
-    hiddenStations,
-    completedRequirements,
-    questItemIndex = [],
-    questRewardIndex = [],
-    questAnyOfGroups = [],
-    questAvailabilityQuests = [],
 }: ItemDetailModalProps) {
-    const { items: catalogItems, itemById } = useDataContext();
     const sourceNavigationItem = item ? toItemNavigationEntry(item) : null;
     const [storedItemNavigation, setItemNavigation] = useState(emptyItemNavigation);
+    const [navigatedItemsById, setNavigatedItemsById] = useState<
+        Record<string, ItemSummary>
+    >({});
     const itemNavigation = reconcileItemNavigation(
         storedItemNavigation,
         sourceNavigationItem,
@@ -85,81 +73,11 @@ export function ItemDetailModal({
         setItemNavigation(itemNavigation);
     }
     const activeItemId = itemNavigation.entries.at(-1)?.id ?? "";
-    const selectedItem = item
-        ? itemById[activeItemId] ?? (activeItemId === item.id ? item : null)
-        : null;
-    const selectedItemId = selectedItem?.id ?? "";
-    const selectedNormalizedName = selectedItem?.normalizedName ?? "";
-
-    const stationRequirements = useMemo(() => {
-        if (!selectedItem || !stations) return [];
-
-        const reqs: {
-            stationName: string;
-            stationNormalizedName: string;
-            stationId: string;
-            stationImageLink?: string;
-            stationMaxLevel: number;
-            level: number;
-            count: number;
-            isFir: boolean;
-            isCompleted: boolean;
-            isStationMaxed: boolean;
-            requirementId: string;
-        }[] = [];
-
-        stations.forEach((station) => {
-            const currentLevel = stationLevels[station.id] ?? 0;
-            const maxLevel = station.levels.reduce(
-                (highestLevel, level) => Math.max(highestLevel, level.level),
-                0,
-            );
-            const isStationMaxed = currentLevel >= maxLevel;
-
-            station.levels.forEach((level) => {
-                level.itemRequirements.forEach((req) => {
-                    if (req.itemId === selectedItem.id) {
-                        reqs.push({
-                            stationName: station.name,
-                            stationNormalizedName: station.normalizedName,
-                            stationId: station.id,
-                            stationImageLink: station.imageLink,
-                            stationMaxLevel: maxLevel,
-                            level: level.level,
-                            count: req.count,
-                            isFir: req.isFir,
-                            isCompleted: currentLevel >= level.level,
-                            isStationMaxed,
-                            requirementId: req.id,
-                        });
-                    }
-                });
-            });
-        });
-
-        const grouped: Record<string, typeof reqs> = {};
-        reqs.forEach((req) => {
-            if (!grouped[req.stationName]) {
-                grouped[req.stationName] = [];
-            }
-            grouped[req.stationName].push(req);
-        });
-
-        const orderMap = new Map(stationOrder.map((name, index) => [name, index] as const));
-        const getOrder = (normalizedName: string) => orderMap.get(normalizedName) ?? 999;
-
-        return Object.entries(grouped).sort((a, b) => {
-            const reqA = a[1][0];
-            const reqB = b[1][0];
-
-            if (reqA.isStationMaxed && !reqB.isStationMaxed) return 1;
-            if (!reqA.isStationMaxed && reqB.isStationMaxed) return -1;
-
-            return getOrder(reqA.stationNormalizedName) - getOrder(reqB.stationNormalizedName);
-        });
-    }, [selectedItem, stations, stationLevels]);
 
     const {
+        stationLevels,
+        hiddenStations,
+        completedRequirements,
         completedQuests,
         failedQuests,
         ignoredQuests,
@@ -181,11 +99,23 @@ export function ItemDetailModal({
         gameMode,
     } = useUserStore();
     const { overrides } = useManualPriceOverrides(gameMode);
-    const usageKey = `${toTarkovJsonGameMode(gameMode)}:${selectedItemId}`;
-    const [usageResult, setUsageResult] = useState<{ key: string; data: ItemUsagePayload } | null>(
+    const tarkovMode = toTarkovJsonGameMode(gameMode);
+    const requestKey = `${tarkovMode}:${activeItemId}`;
+    const [relationsResult, setRelationsResult] = useState<{
+        key: string;
+        data: ItemRelationsPayload;
+    } | null>(() => {
+        const cached = itemRelationsCache.get(requestKey);
+        return cached ? { key: requestKey, data: cached } : null;
+    });
+    const [relationsErrorResult, setRelationsErrorResult] = useState<{
+        key: string;
+        message: string;
+    } | null>(null);
+    const [usageResult, setUsageResult] = useState<{ key: string; data: ItemUsageData } | null>(
         () => {
-            const cached = itemUsageCache.get(usageKey);
-            return cached ? { key: usageKey, data: cached } : null;
+            const cached = itemUsageCache.get(requestKey);
+            return cached ? { key: requestKey, data: cached } : null;
         },
     );
     const [usageErrorResult, setUsageErrorResult] = useState<{
@@ -194,97 +124,155 @@ export function ItemDetailModal({
     } | null>(null);
     const [treeResult, setTreeResult] = useState<{
         key: string;
-        data: ItemAcquisitionTreePayload;
+        data: ItemAcquisitionTreeData;
     } | null>(() => {
-        const cached = acquisitionTreeCache.get(usageKey);
-        return cached ? { key: usageKey, data: cached } : null;
+        const cached = acquisitionTreeCache.get(requestKey);
+        return cached ? { key: requestKey, data: cached } : null;
     });
     const [treeErrorResult, setTreeErrorResult] = useState<{
         key: string;
         message: string;
     } | null>(null);
     const [debugItemId, setDebugItemId] = useState<string | null>(null);
-    const marketPrice = selectedItem?.marketPrice;
 
     useEffect(() => {
-        if (!isOpen || !selectedItemId || itemUsageCache.has(usageKey)) return;
+        if (!isOpen || !activeItemId || itemRelationsCache.has(requestKey)) return;
 
         const controller = new AbortController();
-        const mode = toTarkovJsonGameMode(gameMode);
+        fetch(`/api/items/${encodeURIComponent(activeItemId)}/relations?mode=${tarkovMode}`, {
+            signal: controller.signal,
+        })
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error(`Item relations request failed (${response.status})`);
+                }
+                return (await response.json()) as ItemRelationsPayload;
+            })
+            .then((data) => {
+                if (hasCompleteItemRelations(data)) {
+                    itemRelationsCache.set(requestKey, data);
+                }
+                setRelationsErrorResult(null);
+                setRelationsResult({ key: requestKey, data });
+            })
+            .catch((error: unknown) => {
+                if (error instanceof DOMException && error.name === "AbortError") return;
+                setRelationsErrorResult({
+                    key: requestKey,
+                    message: "Hideout and quest relations could not be loaded.",
+                });
+            });
 
-        fetch(`/api/items/${encodeURIComponent(selectedItemId)}/usage?mode=${mode}`, {
+        return () => controller.abort();
+    }, [activeItemId, isOpen, requestKey, tarkovMode]);
+
+    useEffect(() => {
+        if (!isOpen || !activeItemId || itemUsageCache.has(requestKey)) return;
+
+        const controller = new AbortController();
+        fetch(`/api/items/${encodeURIComponent(activeItemId)}/usage?mode=${tarkovMode}`, {
             signal: controller.signal,
         })
             .then(async (response) => {
                 if (!response.ok) throw new Error(`Item usage request failed (${response.status})`);
-                return (await response.json()) as ItemUsagePayload;
+                return (await response.json()) as ItemUsageData;
             })
             .then((data) => {
-                if (isCompleteItemUsagePayload(data)) {
-                    itemUsageCache.set(usageKey, data);
+                if (isCompleteItemUsageData(data)) {
+                    itemUsageCache.set(requestKey, data);
                 }
                 setUsageErrorResult(null);
-                setUsageResult({ key: usageKey, data });
+                setUsageResult({ key: requestKey, data });
             })
             .catch((error: unknown) => {
                 if (error instanceof DOMException && error.name === "AbortError") return;
                 setUsageErrorResult({
-                    key: usageKey,
+                    key: requestKey,
                     message: "Trader and crafting data could not be loaded.",
                 });
             });
 
         return () => controller.abort();
-    }, [gameMode, isOpen, selectedItemId, usageKey]);
+    }, [activeItemId, isOpen, requestKey, tarkovMode]);
 
     useEffect(() => {
-        if (!isOpen || !selectedItemId || acquisitionTreeCache.has(usageKey)) return;
+        if (!isOpen || !activeItemId || acquisitionTreeCache.has(requestKey)) return;
 
         const controller = new AbortController();
-        const mode = toTarkovJsonGameMode(gameMode);
-        fetch(`/api/items/${encodeURIComponent(selectedItemId)}/acquisition-tree?mode=${mode}`, {
+        fetch(`/api/items/${encodeURIComponent(activeItemId)}/acquisition-tree?mode=${tarkovMode}`, {
             signal: controller.signal,
         })
             .then(async (response) => {
                 if (!response.ok) throw new Error(`Acquisition tree request failed (${response.status})`);
-                return (await response.json()) as ItemAcquisitionTreePayload;
+                return (await response.json()) as ItemAcquisitionTreeData;
             })
             .then((data) => {
-                acquisitionTreeCache.set(usageKey, data);
+                acquisitionTreeCache.set(requestKey, data);
                 setTreeErrorResult(null);
-                setTreeResult({ key: usageKey, data });
+                setTreeResult({ key: requestKey, data });
             })
             .catch((error: unknown) => {
                 if (error instanceof DOMException && error.name === "AbortError") return;
                 setTreeErrorResult({
-                    key: usageKey,
+                    key: requestKey,
                     message: "Profit recommendations could not be loaded.",
                 });
             });
 
         return () => controller.abort();
-    }, [gameMode, isOpen, selectedItemId, usageKey]);
+    }, [activeItemId, isOpen, requestKey, tarkovMode]);
 
+    const itemRelations =
+        itemRelationsCache.get(requestKey) ??
+        (relationsResult?.key === requestKey ? relationsResult.data : null);
+    const relationsRequestError =
+        relationsErrorResult?.key === requestKey
+            ? relationsErrorResult.message
+            : null;
+    const relationsError = getItemRelationsError(itemRelations, relationsRequestError);
+    const isRelationsLoading =
+        isOpen &&
+        activeItemId.length > 0 &&
+        itemRelations === null &&
+        relationsRequestError === null;
     const itemUsage =
-        itemUsageCache.get(usageKey) ??
-        (usageResult?.key === usageKey ? usageResult.data : null);
+        itemUsageCache.get(requestKey) ??
+        (usageResult?.key === requestKey ? usageResult.data : null);
     const usageRequestError =
-        usageErrorResult?.key === usageKey ? usageErrorResult.message : null;
+        usageErrorResult?.key === requestKey ? usageErrorResult.message : null;
     const isUsageLoading =
         isOpen &&
-        selectedItemId.length > 0 &&
+        activeItemId.length > 0 &&
         itemUsage === null &&
         usageRequestError === null;
     const acquisitionTree =
-        acquisitionTreeCache.get(usageKey) ??
-        (treeResult?.key === usageKey ? treeResult.data : null);
+        acquisitionTreeCache.get(requestKey) ??
+        (treeResult?.key === requestKey ? treeResult.data : null);
     const profitError =
-        treeErrorResult?.key === usageKey ? treeErrorResult.message : null;
+        treeErrorResult?.key === requestKey ? treeErrorResult.message : null;
     const isProfitLoading =
         isOpen &&
-        selectedItemId.length > 0 &&
+        activeItemId.length > 0 &&
         acquisitionTree === null &&
         profitError === null;
+
+    const itemDetailsById = mergeItemDetailItems(
+        item ? [item] : [],
+        Object.values(navigatedItemsById),
+        acquisitionTree?.items,
+        itemUsage?.items,
+        itemRelations?.relatedItems,
+        itemRelations?.item ? [itemRelations.item] : [],
+    );
+    const selectedItem = itemDetailsById[activeItemId] ?? null;
+    const selectedItemId = selectedItem?.id ?? activeItemId;
+    const selectedNormalizedName = selectedItem?.normalizedName ?? "";
+    const marketPrice = selectedItem?.marketPrice;
+    const stationRequirements = buildStationRequirements(itemRelations, stationLevels);
+    const questItemIndex = itemRelations?.questItemIndex ?? [];
+    const questRewardIndex = itemRelations?.questRewardIndex ?? [];
+    const questAnyOfGroups = itemRelations?.questAnyOfGroups ?? [];
+    const questAvailabilityQuests = itemRelations?.questAvailabilityQuests ?? [];
 
     const isRouble = selectedNormalizedName === "roubles";
     const isDollar = selectedNormalizedName === "dollars";
@@ -294,141 +282,58 @@ export function ItemDetailModal({
     const relativeUpdatedAt = formatRelativeUpdatedAt(marketPrice?.updatedAt ?? null);
     const owned = itemCounts[selectedItemId] ?? { have: 0, haveFir: 0 };
 
-    const questItemState = useMemo(() => {
-        if (!selectedItem) return null;
-
-        const entry = questItemIndex.find((questEntry) => questEntry.itemId === selectedItem.id);
-        if (!entry) return null;
-
-        return deriveQuestItemState(entry, {
-            completedQuests,
-            failedQuests,
-            ignoredQuests,
-            pinnedQuests,
-            playerLevel,
-            prestigeLevel,
-            faction: questFaction,
-            traderLoyaltyLevels: questTraderLoyaltyLevels,
-            quests: questAvailabilityQuests,
-            visibilityMode: itemQuestVisibilityMode,
-            customLookahead: itemQuestCustomLookahead,
-            customLevelLookahead: itemQuestCustomLevelLookahead,
-            showFutureFir: itemShowFutureFir,
-            showIgnored: itemShowIgnored,
-            includeCompleted: true,
-            showKappa: questShowKappa,
-            showLightkeeper: questShowLightkeeper,
-        });
-    }, [
-        selectedItem,
-        questItemIndex,
+    const questDerivationOptions = {
         completedQuests,
         failedQuests,
         ignoredQuests,
         pinnedQuests,
         playerLevel,
         prestigeLevel,
-        questFaction,
-        questTraderLoyaltyLevels,
-        questAvailabilityQuests,
-        itemQuestVisibilityMode,
-        itemQuestCustomLookahead,
-        itemQuestCustomLevelLookahead,
-        itemShowFutureFir,
-        itemShowIgnored,
-        questShowKappa,
-        questShowLightkeeper,
-    ]);
+        faction: questFaction,
+        traderLoyaltyLevels: questTraderLoyaltyLevels,
+        quests: questAvailabilityQuests,
+        visibilityMode: itemQuestVisibilityMode,
+        customLookahead: itemQuestCustomLookahead,
+        customLevelLookahead: itemQuestCustomLevelLookahead,
+        showFutureFir: itemShowFutureFir,
+        showIgnored: itemShowIgnored,
+        includeCompleted: true,
+        showKappa: questShowKappa,
+        showLightkeeper: questShowLightkeeper,
+    } as const;
+    const questItemEntry = selectedItem
+        ? questItemIndex.find((entry) => entry.itemId === selectedItem.id)
+        : null;
+    const questItemState = questItemEntry
+        ? deriveQuestItemState(questItemEntry, questDerivationOptions)
+        : null;
+    const questAnyOfGroupState = selectedItem
+        ? deriveQuestAnyOfGroups(questAnyOfGroups, questDerivationOptions).filter(
+              (group) => group.itemIds.includes(selectedItem.id),
+          )
+        : [];
 
-    const questAnyOfGroupState = useMemo(() => {
-        if (!selectedItem) return [];
+    const questRewards =
+        questRewardIndex.find((entry) => entry.itemId === selectedItemId)?.quests ?? [];
 
-        return deriveQuestAnyOfGroups(questAnyOfGroups, {
-            completedQuests,
-            failedQuests,
-            ignoredQuests,
-            pinnedQuests,
-            playerLevel,
-            prestigeLevel,
-            faction: questFaction,
-            traderLoyaltyLevels: questTraderLoyaltyLevels,
-            quests: questAvailabilityQuests,
-            visibilityMode: itemQuestVisibilityMode,
-            customLookahead: itemQuestCustomLookahead,
-            customLevelLookahead: itemQuestCustomLevelLookahead,
-            showFutureFir: itemShowFutureFir,
-            showIgnored: itemShowIgnored,
-            includeCompleted: true,
-            showKappa: questShowKappa,
-            showLightkeeper: questShowLightkeeper,
-        }).filter((group) => group.itemIds.includes(selectedItem.id));
-    }, [
-        selectedItem,
-        questAnyOfGroups,
-        completedQuests,
-        failedQuests,
-        ignoredQuests,
-        pinnedQuests,
-        playerLevel,
-        prestigeLevel,
-        questFaction,
-        questTraderLoyaltyLevels,
-        questAvailabilityQuests,
-        itemQuestVisibilityMode,
-        itemQuestCustomLookahead,
-        itemQuestCustomLevelLookahead,
-        itemShowFutureFir,
-        itemShowIgnored,
-        questShowKappa,
-        questShowLightkeeper,
-    ]);
+    const demandSummary = summarizeItemDetailDemand({
+        stationRequirements,
+        completedRequirements,
+        questItemState,
+        anyOfGroups: questAnyOfGroupState,
+    });
 
-    const questRewards = useMemo(
-        () => questRewardIndex.find((entry) => entry.itemId === selectedItemId)?.quests ?? [],
-        [questRewardIndex, selectedItemId],
-    );
+    const needsBreakdown =
+        demandSummary.totalRequiredCount === 0
+            ? null
+            : computeNeeds({
+                  totalRequired: demandSummary.totalRequiredCount,
+                  requiredFir: demandSummary.totalRequiredFirCount,
+                  haveNonFir: owned.have,
+                  haveFir: owned.haveFir,
+              });
 
-    const demandSummary = useMemo(
-        () =>
-            summarizeItemDetailDemand({
-                stationRequirements,
-                completedRequirements,
-                questItemState,
-                anyOfGroups: questAnyOfGroupState,
-            }),
-        [
-            stationRequirements,
-            completedRequirements,
-            questItemState,
-            questAnyOfGroupState,
-        ],
-    );
-
-    const needsBreakdown = useMemo(() => {
-        if (demandSummary.totalRequiredCount === 0) {
-            return null;
-        }
-
-        return computeNeeds({
-            totalRequired: demandSummary.totalRequiredCount,
-            requiredFir: demandSummary.totalRequiredFirCount,
-            haveNonFir: owned.have,
-            haveFir: owned.haveFir,
-        });
-    }, [demandSummary, owned.have, owned.haveFir]);
-
-    const itemDetailsById = useMemo(() => {
-        const details: Record<string, ItemDetails> = {};
-        for (const catalogItem of catalogItems ?? []) {
-            details[catalogItem.id] = catalogItem;
-        }
-        if (selectedItem) {
-            details[selectedItem.id] = selectedItem;
-        }
-        return details;
-    }, [catalogItems, selectedItem]);
-
-    const { barterEvaluationsById, craftEvaluationsById } = useMemo(() => {
+    const { barterEvaluationsById, craftEvaluationsById } = (() => {
         if (!itemUsage || !acquisitionTree) {
             return { barterEvaluationsById: {}, craftEvaluationsById: {} };
         }
@@ -441,7 +346,7 @@ export function ItemDetailModal({
             (craft) => craft.productItemId,
         );
         const context = {
-            itemsById: itemById,
+            itemsById: itemDetailsById,
             bartersByItemId,
             craftsByItemId,
             overrides,
@@ -460,9 +365,9 @@ export function ItemDetailModal({
                 ]),
             ),
         };
-    }, [acquisitionTree, itemById, itemUsage, overrides]);
+    })();
 
-    const traderOffers = useMemo<ItemTraderOffer[]>(() => {
+    const traderOffers: ItemTraderOffer[] = (() => {
         const traders = new Map(
             questAvailabilityQuests.map((quest) => [quest.trader.id, quest.trader]),
         );
@@ -490,7 +395,7 @@ export function ItemDetailModal({
                       }
                     : null,
                 requiredItems: barter.requiredItems.map((entry) => ({
-                    item: itemById[entry.itemId] ?? {
+                    item: itemDetailsById[entry.itemId] ?? {
                         id: entry.itemId,
                         name: "Unknown item",
                         normalizedName: entry.itemId,
@@ -502,19 +407,18 @@ export function ItemDetailModal({
                 buyLimit: barter.buyLimit,
             };
         });
-    }, [itemById, itemUsage, questAvailabilityQuests]);
+    })();
 
-    const crafts = useMemo<ItemCraftRecipe[]>(() => {
-        const stationsById = new Map((stations ?? []).map((station) => [station.id, station]));
+    const crafts: ItemCraftRecipe[] = (() => {
         const quests = new Map(questAvailabilityQuests.map((quest) => [quest.id, quest]));
         return (itemUsage?.crafts ?? []).map((craft) => {
-            const station = stationsById.get(craft.stationId);
+            const station = itemUsage?.stationsById[craft.stationId];
             const unlock = craft.taskUnlockId
                 ? itemUsage?.taskUnlocksById?.[craft.taskUnlockId] ??
                   quests.get(craft.taskUnlockId)
                 : null;
             const toAmount = (entry: (typeof craft.requiredItems)[number]) => ({
-                item: itemById[entry.itemId] ?? {
+                item: itemDetailsById[entry.itemId] ?? {
                     id: entry.itemId,
                     name: "Quest item",
                     normalizedName: entry.itemId,
@@ -551,7 +455,13 @@ export function ItemDetailModal({
                 productCount: craft.productCount,
             };
         });
-    }, [itemById, itemUsage, questAvailabilityQuests, stations]);
+    })();
+
+    const usagePresentationError = itemUsage
+        ? [itemUsage.itemsError, itemUsage.pricesError, itemUsage.presentationError]
+              .filter((error): error is string => Boolean(error))
+              .join(" ") || null
+        : null;
 
     const hasQuestRequirements =
         (questItemState?.relatedQuests.length ?? 0) > 0 ||
@@ -577,6 +487,8 @@ export function ItemDetailModal({
         usageRequestError !== null ||
         itemUsage?.bartersError != null ||
         itemUsage?.craftsError != null ||
+        isRelationsLoading ||
+        relationsError !== null ||
         showPriceHistory;
     const isDevelopment = process.env.NODE_ENV === "development";
     const showDebug = debugItemId === selectedItemId;
@@ -584,12 +496,14 @@ export function ItemDetailModal({
     const handleClose = () => {
         setDebugItemId(null);
         setItemNavigation(emptyItemNavigation);
+        setNavigatedItemsById({});
         onClose();
     };
     const handleItemClick = (itemId: string) => {
-        const nextItem = itemById[itemId];
+        const nextItem = itemDetailsById[itemId];
         if (!nextItem || itemId === selectedItemId) return;
         setDebugItemId(null);
+        setNavigatedItemsById((items) => ({ ...items, [nextItem.id]: nextItem }));
         setItemNavigation(pushItemNavigation(itemNavigation, toItemNavigationEntry(nextItem)));
     };
     const handleBack = () => {
@@ -607,14 +521,21 @@ export function ItemDetailModal({
             stationRequirements,
         },
         quests: {
+            relationsLoading: isRelationsLoading,
+            relationsError,
             itemState: questItemState,
             anyOfGroups: questAnyOfGroupState,
             rewards: questRewards,
         },
         acquisition: {
             usage: itemUsage,
+            usageLoading: isUsageLoading,
+            usageError: usageRequestError,
             traderOffers,
             crafts,
+            tree: acquisitionTree,
+            profitLoading: isProfitLoading,
+            profitError,
         },
     };
 
@@ -740,13 +661,16 @@ export function ItemDetailModal({
                                                 itemDetailsById={itemDetailsById}
                                                 traderOffers={traderOffers}
                                                 crafts={crafts}
+                                                relationsLoading={isRelationsLoading}
+                                                relationsError={relationsError}
                                                 acquisitionLoading={isUsageLoading}
                                                 barterError={itemUsage?.bartersError ?? usageRequestError}
                                                 craftError={itemUsage?.craftsError ?? usageRequestError}
+                                                acquisitionWarning={usagePresentationError}
                                                 completedQuests={completedQuests}
                                                 traderLoyaltyLevels={questTraderLoyaltyLevels}
                                                 gameEdition={gameEdition}
-                                                gameMode={toTarkovJsonGameMode(gameMode)}
+                                                gameMode={tarkovMode}
                                                 showPriceHistory={showPriceHistory}
                                                 barterEvaluationsById={barterEvaluationsById}
                                                 craftEvaluationsById={craftEvaluationsById}

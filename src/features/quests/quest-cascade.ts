@@ -1,4 +1,4 @@
-import type { FullQuest } from "../../types/types";
+import type { FullQuest } from "@/types/quests";
 import { getSensitiveBackfillQuest } from "../../lib/utils/sensitive-quest-backfill";
 import { statusRequiresCompletion } from "../../lib/utils/quest-failures";
 

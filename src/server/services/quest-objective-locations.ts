@@ -1,4 +1,5 @@
-import type { MapPoint3D, QuestMap, QuestMapLocation } from "@/types";
+import type { MapPoint3D } from "@/types/maps";
+import type { QuestMap, QuestMapLocation } from "@/types/quests";
 
 export interface RawQuestZoneLocation {
     map?: string;

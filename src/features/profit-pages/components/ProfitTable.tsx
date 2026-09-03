@@ -6,13 +6,10 @@ import type {
   ManualPriceOverride,
   RecipeEvaluation,
 } from "@/lib/price-calculation";
-import type {
-  BarterRecord,
-  CraftRecord,
-  GlobalItem,
-  Station,
-  Trader,
-} from "@/types";
+import type { BarterRecord, CraftRecord } from "@/types/recipes";
+import type { ItemSummary } from "@/types/items";
+import type { Station } from "@/types/hideout";
+import type { Trader } from "@/types/traders";
 import type {
   GoToRecipeHandler,
   PriceChangeHandler,
@@ -48,7 +45,7 @@ export function ProfitTable({
 }: {
   kind: ProfitPageKind;
   evaluations: RecipeEvaluation[];
-  itemById: Readonly<Record<string, GlobalItem>>;
+  itemById: Readonly<Record<string, ItemSummary>>;
   tradersById: Readonly<Record<string, Trader>>;
   stationsById: Readonly<Record<string, Station>>;
   bartersById: Readonly<Record<string, BarterRecord>>;

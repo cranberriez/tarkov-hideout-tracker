@@ -3,13 +3,14 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useShallow } from "zustand/react/shallow";
-import { useDataContext } from "@/app/(data)/_dataContext";
 import { DataLoadError } from "@/components/core/DataLoadError";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { evaluateBarters, evaluateCrafts } from "@/lib/price-calculation";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import type { ProfitPageData } from "@/server/services/profitPages";
-import type { BarterRecord, CraftRecord, Station, Trader } from "@/types";
+import type { ProfitPageData } from "@/types/contracts";
+import type { BarterRecord, CraftRecord } from "@/types/recipes";
+import type { Station } from "@/types/hideout";
+import type { Trader } from "@/types/traders";
 import { ProfitPageControls } from "./components/ProfitPageControls";
 import { ProfitPageHeader } from "./components/ProfitPageHeader";
 import { ProfitTable } from "./components/ProfitTable";
@@ -35,22 +36,23 @@ export function ProfitPageClient({
   initialTargetRecipeId,
 }: ProfitPageClientProps) {
   const router = useRouter();
-  const { items, itemById, itemsError, stations } = useDataContext();
+  const items = data.items;
+  const itemsError = data.errors.items ?? data.errors.prices;
+  const itemById = useMemo(
+    () => Object.fromEntries((items ?? []).map((item) => [item.id, item])),
+    [items],
+  );
   const {
     gameMode,
     stationLevels,
     completedQuests,
     traderLoyaltyLevels,
-    hiddenStations,
-    completedRequirements,
   } = useUserStore(
     useShallow((state) => ({
       gameMode: state.gameMode,
       stationLevels: state.stationLevels,
       completedQuests: state.completedQuests,
       traderLoyaltyLevels: state.questTraderLoyaltyLevels,
-      hiddenStations: state.hiddenStations,
-      completedRequirements: state.completedRequirements,
     })),
   );
   const { overrides, setItemOverride } = useManualPriceOverrides(gameMode);
@@ -111,9 +113,9 @@ export function ProfitPageClient({
   const stationsById = useMemo(
     () =>
       Object.fromEntries(
-        (stations ?? []).map((station) => [station.id, station]),
+        data.stations.map((station) => [station.id, station]),
       ) as Record<string, Station>,
-    [stations],
+    [data.stations],
   );
   const bartersById = useMemo(
     () =>
@@ -191,7 +193,7 @@ export function ProfitPageClient({
     traderLoyaltyLevels,
   ]);
   const relevantError =
-    kind === "barter" ? data.bartersError : data.craftsError;
+    kind === "barter" ? data.errors.barters : data.errors.crafts;
   if (!items || itemsError || relevantError)
     return (
       <main className="container mx-auto px-6 py-8">
@@ -272,10 +274,6 @@ export function ProfitPageClient({
         item={selectedItemId ? (itemById[selectedItemId] ?? null) : null}
         isOpen={selectedItemId !== null}
         onClose={() => setSelectedItemId(null)}
-        stations={stations}
-        stationLevels={stationLevels}
-        hiddenStations={hiddenStations}
-        completedRequirements={completedRequirements}
       />
     </main>
   );

@@ -1,13 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import type { FullQuest, QuestMap } from "@/types";
+import type { FullQuest, QuestMap } from "@/types/quests";
 import {
     buildQuestUnlockImpactMap,
     sortQuestsForMapView,
     sortQuestsForQuestView,
-    type QuestSortMode,
 } from "./quest-sorting";
+import type { QuestSortMode } from "@/lib/stores/useUserStore";
 
 const customs: QuestMap = { id: "customs", name: "Customs", normalizedName: "customs" };
 const shoreline: QuestMap = { id: "shoreline", name: "Shoreline", normalizedName: "shoreline" };

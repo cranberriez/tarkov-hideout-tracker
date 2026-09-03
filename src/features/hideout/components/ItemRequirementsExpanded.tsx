@@ -7,16 +7,15 @@ import { formatNumber } from "@/lib/utils/format-number";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
 import { formatCompactRoubles, getFleaPrice, hasFleaMarketData } from "@/lib/utils/market-price";
-import { useDataContext } from "@/app/(data)/_dataContext";
 
 export function ExpandedItemRequirements({
     nextLevelData,
     hideMoney,
     onClickItem,
     pooledFirByItem,
+    itemById,
 }: BaseItemRequirementsProps) {
     const itemCounts = useUserStore((state) => state.itemCounts);
-    const { itemById } = useDataContext();
     return (
         <div className="flex flex-col gap-1.5">
             {nextLevelData.itemRequirements

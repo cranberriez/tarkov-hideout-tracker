@@ -1,4 +1,4 @@
-import type { FullQuest, FullQuestObjective } from "@/types";
+import type { FullQuest, FullQuestObjective } from "@/types/quests";
 import type { QuestObjectiveCategory, QuestWorkspaceStatusInfo } from "./quest-workspace-utils";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { getObjectiveCategory } from "./quest-workspace-utils";

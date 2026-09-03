@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, ExternalLink } from "lucide-react";
-import type { FullQuest, QuestTraderStandingReward } from "@/types";
+import type { FullQuest, QuestTraderStandingReward } from "@/types/quests";
 import { ObjectiveRow } from "./QuestObjectiveRows";
 import { QuestRelationChip } from "./QuestRelationChip";
 import { QuestActionButton } from "./QuestCardHeader";

@@ -1,4 +1,8 @@
-import type { MapPoint3D } from "@/types";
+export interface MapPoint3D {
+    x: number;
+    y: number;
+    z: number;
+}
 
 export interface MapFloorExtent {
     height: [number, number];

@@ -1,4 +1,4 @@
-import type { FullQuest } from "../../types/types";
+import type { FullQuest } from "@/types/quests";
 import { statusRequiresCompletion } from "./quest-failures";
 
 export interface SensitiveBackfillQuest {

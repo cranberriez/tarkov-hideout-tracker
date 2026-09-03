@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import type { CSSProperties } from "react";
 import { useMemo } from "react";
 import { AlertTriangle, Bug, CheckCircle2, ChevronRight, Circle, Eye, EyeOff, ExternalLink, Flag, GitBranch, GripVertical, Map as MapIcon, PackageOpen, Pin, RotateCcw, X, XCircle } from "lucide-react";
-import { useDataContext } from "@/app/(data)/_dataContext";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import { formatQuestTraderGate, getQuestTraderGateType } from "@/lib/utils/quest-trader-gates";
@@ -20,7 +19,7 @@ import {
     questCanFail,
 } from "@/lib/utils/quest-failures";
 import { formatTaskRequirementStatus } from "@/lib/utils/quest-relations";
-import type { FullQuest, QuestTraderStandingReward } from "@/types";
+import type { FullQuest, QuestTraderStandingReward } from "@/types/quests";
 import { QuestObjectiveIcon } from "../components/QuestObjectiveIcon";
 import { ObjectiveRow } from "../components/quest-card/QuestObjectiveRows";
 import { useQuestsContext } from "../QuestsContext";
@@ -50,7 +49,6 @@ const LazyMapViewer = dynamic(
 );
 
 export function QuestDetailsPane() {
-    const { itemById } = useDataContext();
     const {
         quests,
         selectedQuest: quest,
@@ -62,7 +60,7 @@ export function QuestDetailsPane() {
         retainQuestAfterCompletion,
         openQuestVisualizer,
     } = useQuestWorkspace();
-    const { leadsToByQuestId, onItemClick, requestToggleQuestCompletion, requestFailQuest, requestResetQuestStatus } = useQuestsContext();
+    const { itemById, leadsToByQuestId, onItemClick, requestToggleQuestCompletion, requestFailQuest, requestResetQuestStatus } = useQuestsContext();
     const pinned = useUserStore((state) => quest ? !!state.pinnedQuests[quest.id] : false);
     const hidden = useUserStore((state) => quest ? !!state.ignoredQuests[quest.id] : false);
     const completedQuestObjectives = useUserStore((state) => state.completedQuestObjectives);

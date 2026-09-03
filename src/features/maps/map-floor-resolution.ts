@@ -1,5 +1,5 @@
-import type { MapPoint3D } from "@/types";
-import type { MapFloorDefinition, MapRenderDefinition } from "./map-types";
+import type { MapPoint3D } from "@/types/maps";
+import type { MapFloorDefinition, MapRenderDefinition } from "@/types/maps";
 
 export interface MapFloorMatch {
     floor: MapFloorDefinition;

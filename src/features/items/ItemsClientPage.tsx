@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { ItemDetails } from "@/types";
+import type { ItemSummary } from "@/types/items";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsList } from "@/features/items/components/ItemsList";
 import { ItemsControls } from "@/features/items/components/ItemsControls";
@@ -9,39 +9,27 @@ import { ItemsStatsRow } from "@/features/items/components/ItemsStatsRow";
 import { ItemSearchModal } from "@/features/items/components/ItemSearchModal";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
-import { useDataContext } from "@/app/(data)/_dataContext";
-import type { QuestAnyOfGroupEntry, QuestItemIndexEntry, QuestRewardIndexEntry } from "@/lib/utils/quest-item-index";
-import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { DataLoadError } from "@/components/core/DataLoadError";
+import type { ItemChecklistPageData } from "@/types/contracts";
 
 interface ItemsClientPageProps {
-    questItemIndex: QuestItemIndexEntry[];
-    questRewardIndex: QuestRewardIndexEntry[];
-    questAnyOfGroups: QuestAnyOfGroupEntry[];
-    questAvailabilityQuests: QuestAvailabilityQuest[];
+    data: ItemChecklistPageData;
 }
 
-export function ItemsClientPage({
-    questItemIndex,
-    questRewardIndex,
-    questAnyOfGroups,
-    questAvailabilityQuests,
-}: ItemsClientPageProps) {
+export function ItemsClientPage({ data }: ItemsClientPageProps) {
     const {
         stations,
-        stationsUpdatedAt,
-        stationsError,
         items,
-        itemsUpdatedAt,
-        itemsError,
-    } = useDataContext();
+        questItemIndex,
+        questAnyOfGroups,
+        questAvailabilityQuests,
+        freshness,
+        errors,
+    } = data;
     const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
+    const [selectedItem, setSelectedItem] = useState<ItemSummary | null>(null);
 
     const {
-        stationLevels,
-        hiddenStations,
-        completedRequirements,
         gameMode,
         initializeDefaults,
     } = useUserStore();
@@ -50,24 +38,17 @@ export function ItemsClientPage({
         if (stations && stations.length > 0) {
             initializeDefaults(stations);
         }
-    }, [stations, stationsUpdatedAt, initializeDefaults]);
+    }, [stations, freshness.stationsUpdatedAt, initializeDefaults]);
 
-    useEffect(() => {
-        if (items && items.length > 0) {
-            const itemsMap: Record<string, ItemDetails> = {};
-            items.forEach((item) => {
-                itemsMap[item.id] = item;
-            });
-        }
-    }, [items, itemsUpdatedAt]);
+    const itemById = useMemo(
+        () => Object.fromEntries((items ?? []).map((item) => [item.id, item])),
+        [items],
+    );
 
     const questAvailabilityQuestList = useMemo(
         () => questAvailabilityQuests,
         [questAvailabilityQuests],
     );
-
-    // Quest-specific pickup items are intentionally absent from the standard catalog.
-    const allSearchableItems = useMemo(() => items ?? [], [items]);
 
     return (
         <main className="container mx-auto px-6 py-8">
@@ -94,16 +75,16 @@ export function ItemsClientPage({
             </div>
 
             <div className="mb-8">
-                {stationsError || itemsError || !stations || !items ? (
+                {errors.stations || errors.items || !stations || !items ? (
                     <DataLoadError
                         title="Hideout item data is unavailable"
                         messages={[
-                            ...(stationsError ? [stationsError] : []),
-                            ...(itemsError ? [itemsError] : []),
-                            ...(!stations && !stationsError
+                            ...(errors.stations ? [errors.stations] : []),
+                            ...(errors.items ? [errors.items] : []),
+                            ...(!stations && !errors.stations
                                 ? ["Hideout station data could not be loaded."]
                                 : []),
-                            ...(!items && !itemsError
+                            ...(!items && !errors.items
                                 ? ["Hideout item data could not be loaded."]
                                 : []),
                         ]}
@@ -111,11 +92,15 @@ export function ItemsClientPage({
                 ) : (
                     <ItemsControls onOpenSearch={() => setIsSearchOpen(true)}>
                         <ItemsStatsRow
+                            stations={stations}
+                            items={items}
                             questItemIndex={questItemIndex}
                             questAnyOfGroups={questAnyOfGroups}
                             questAvailabilityQuests={questAvailabilityQuestList}
                         />
                         <ItemsList
+                            stations={stations}
+                            itemById={itemById}
                             onClickItem={setSelectedItem}
                             questItemIndex={questItemIndex}
                             questAnyOfGroups={questAnyOfGroups}
@@ -125,7 +110,10 @@ export function ItemsClientPage({
                 )}
             </div>
 
-            <DataLastUpdated />
+            <DataLastUpdated
+                stationsUpdatedAt={freshness.stationsUpdatedAt}
+                itemsUpdatedAt={freshness.itemsUpdatedAt}
+            />
 
             <ItemSearchModal
                 isOpen={isSearchOpen}
@@ -134,7 +122,6 @@ export function ItemsClientPage({
                     setSelectedItem(item);
                     setIsSearchOpen(false);
                 }}
-                itemPool={allSearchableItems}
             />
 
             {selectedItem && (
@@ -142,14 +129,6 @@ export function ItemsClientPage({
                     item={selectedItem}
                     isOpen={!!selectedItem}
                     onClose={() => setSelectedItem(null)}
-                    stations={stations ?? []}
-                    stationLevels={stationLevels}
-                    hiddenStations={hiddenStations}
-                    completedRequirements={completedRequirements}
-                    questItemIndex={questItemIndex}
-                    questRewardIndex={questRewardIndex}
-                    questAnyOfGroups={questAnyOfGroups}
-                    questAvailabilityQuests={questAvailabilityQuestList}
                 />
             )}
         </main>

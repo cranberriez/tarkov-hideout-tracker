@@ -1,4 +1,5 @@
-import type { GlobalItem, GlobalItemVendorPrice } from "@/types";
+import type { ItemSummary } from "@/types/items";
+import type { VendorPrice } from "@/types/prices";
 import type { ManualPriceOverrides } from "./types";
 
 function validPrice(value: number | null | undefined) {
@@ -8,7 +9,7 @@ function validPrice(value: number | null | undefined) {
 }
 
 export function getItemBuyPrice(
-    item: GlobalItem | undefined,
+    item: ItemSummary | undefined,
     overrides: ManualPriceOverrides = {},
 ): number | null {
     if (!item) return null;
@@ -19,7 +20,7 @@ export function getItemBuyPrice(
 }
 
 export function getItemSellPrice(
-    item: GlobalItem | undefined,
+    item: ItemSummary | undefined,
     overrides: ManualPriceOverrides = {},
 ): number | null {
     return getItemSellComparison(item, overrides).selectedPrice;
@@ -27,7 +28,7 @@ export function getItemSellPrice(
 
 export interface ItemSellComparison {
     fleaPrice: number | null;
-    bestTraderOffer: GlobalItemVendorPrice | null;
+    bestTraderOffer: VendorPrice | null;
     manualPrice: number | null;
     selectedPrice: number | null;
     selectedSource: "manual" | "flea" | "trader" | "unavailable";
@@ -35,7 +36,7 @@ export interface ItemSellComparison {
 }
 
 export function getItemSellComparison(
-    item: GlobalItem | undefined,
+    item: ItemSummary | undefined,
     overrides: ManualPriceOverrides = {},
 ): ItemSellComparison {
     const unavailable: ItemSellComparison = {

@@ -1,4 +1,4 @@
-import type { FullQuest, QuestMap } from "@/types";
+import type { FullQuest, QuestMap } from "@/types/quests";
 
 export const DEV_QUEST_QUERY = "dev-test";
 export const DEV_QUEST_ID = "dev-test-quest";

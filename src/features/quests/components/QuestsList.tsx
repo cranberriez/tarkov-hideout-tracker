@@ -22,7 +22,7 @@ import {
 } from "../quest-deep-link";
 import { cn } from "@/lib/utils";
 import { getQuestRelationTiming } from "@/lib/utils/quest-relations";
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import { QUEST_SCROLL_TO_TRADER_EVENT } from "./QuestsSidebar";
 
 interface QuestGroupHeaderProps {

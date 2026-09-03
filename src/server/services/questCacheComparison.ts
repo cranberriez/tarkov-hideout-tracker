@@ -1,4 +1,5 @@
-import type { FullQuest, TimedResponse } from "@/types";
+import type { FullQuest } from "@/types/quests";
+import type { DataResult } from "@/types/common";
 import {
     canonicalizeSemanticJson,
     semanticJsonEqual,
@@ -33,8 +34,8 @@ function changedTopLevelFields(before: FullQuest, after: FullQuest): string[] {
 }
 
 export function compareFullQuestData(
-    stored: TimedResponse<{ quests: FullQuest[] }>,
-    current: TimedResponse<{ quests: FullQuest[] }>,
+    stored: DataResult<{ quests: FullQuest[] }>,
+    current: DataResult<{ quests: FullQuest[] }>,
 ): QuestCacheComparison {
     const storedById = new Map(stored.data.quests.map((quest) => [quest.id, quest]));
     const currentById = new Map(current.data.quests.map((quest) => [quest.id, quest]));

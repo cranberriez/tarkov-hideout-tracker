@@ -1,29 +1,23 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isCompleteItemUsagePayload } from "./item-usage";
+import { isCompleteItemUsageData } from "./item-usage";
 
 test("only fully successful item usage responses are cacheable", () => {
-    assert.equal(isCompleteItemUsagePayload({ barters: [], crafts: [] }), true);
+    assert.equal(isCompleteItemUsageData({}), true);
     assert.equal(
-        isCompleteItemUsagePayload({
-            barters: [],
-            crafts: [],
+        isCompleteItemUsageData({
             bartersError: "temporarily unavailable",
         }),
         false,
     );
     assert.equal(
-        isCompleteItemUsagePayload({
-            barters: [],
-            crafts: [],
+        isCompleteItemUsageData({
             craftsError: "temporarily unavailable",
         }),
         false,
     );
     assert.equal(
-        isCompleteItemUsagePayload({
-            barters: [],
-            crafts: [],
+        isCompleteItemUsageData({
             presentationError: "temporarily unavailable",
         }),
         false,

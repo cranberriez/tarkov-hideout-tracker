@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { QuestTraderRequirement } from "../../types/types";
+import type { QuestTraderRequirement } from "@/types/quests";
 import {
     deriveQuestTraderGate,
     formatQuestTraderGate,

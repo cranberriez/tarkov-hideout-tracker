@@ -1,4 +1,4 @@
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import { getQuestTraderTabLoyaltyLevel } from "./quest-trader-completion-gates";
 import { isQuestTraderLoyaltyRequirement } from "./quest-trader-gates";
 import { getQuestLoyaltyLevelOverride } from "./quest-trader-tab-overrides";

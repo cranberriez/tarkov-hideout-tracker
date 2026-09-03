@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { GlobalItem } from "@/types";
+import type { ItemSummary } from "@/types/items";
 import {
     ITEM_CATALOG_MANIFEST_SCHEMA,
     parseItemCatalogChunk,
@@ -11,7 +11,7 @@ import {
 const generation = "1788100000000-deadbeef";
 
 test("catalog chunks remain inside the UTF-8 byte budget and reconstruct exactly", () => {
-    const items: GlobalItem[] = Array.from({ length: 12 }, (_, index) => ({
+    const items: ItemSummary[] = Array.from({ length: 12 }, (_, index) => ({
         id: `item-${index}`,
         name: `Батарея ${index}`,
         normalizedName: `battery-${index}`,

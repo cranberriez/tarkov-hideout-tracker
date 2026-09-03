@@ -4,18 +4,11 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { BadgeCheck, Check } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
-import { useDataContext } from "@/app/(data)/_dataContext";
 import { DataLoadError } from "@/components/core/DataLoadError";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
-import type {
-    QuestAnyOfGroupEntry,
-    QuestItemIndexEntry,
-    QuestRewardIndexEntry,
-} from "@/lib/utils/quest-item-index";
-import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { useKappaStore, type KappaViewMode } from "@/lib/stores/useKappaStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import type { GlobalItem, ItemDetails } from "@/types";
+import type { ItemSummary } from "@/types/items";
 
 interface KappaChecklistClientPageProps {
     collectorQuest: {
@@ -24,11 +17,13 @@ interface KappaChecklistClientPageProps {
         traderImageLink?: string | null;
         traderImage4xLink?: string | null;
     } | null;
-    collectorItemIds: string[];
-    questItemIndex: QuestItemIndexEntry[];
-    questRewardIndex: QuestRewardIndexEntry[];
-    questAnyOfGroups: QuestAnyOfGroupEntry[];
-    questAvailabilityQuests: QuestAvailabilityQuest[];
+    collectorItems: ItemSummary[];
+    unresolvedItemIds: string[];
+    errors: {
+        quests: string | null;
+        items: string | null;
+        prices: string | null;
+    };
 }
 
 const VIEW_OPTIONS: Array<{ value: KappaViewMode; label: string }> = [
@@ -38,22 +33,12 @@ const VIEW_OPTIONS: Array<{ value: KappaViewMode; label: string }> = [
 
 export function KappaChecklistClientPage({
     collectorQuest,
-    collectorItemIds,
-    questItemIndex,
-    questRewardIndex,
-    questAnyOfGroups,
-    questAvailabilityQuests,
+    collectorItems,
+    unresolvedItemIds,
+    errors,
 }: KappaChecklistClientPageProps) {
-    const { stations, stationsError, items, itemsError, itemById } = useDataContext();
-    const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
-    const { stationLevels, hiddenStations, completedRequirements, gameMode } = useUserStore(
-        useShallow((state) => ({
-            stationLevels: state.stationLevels,
-            hiddenStations: state.hiddenStations,
-            completedRequirements: state.completedRequirements,
-            gameMode: state.gameMode,
-        })),
-    );
+    const [selectedItem, setSelectedItem] = useState<ItemSummary | null>(null);
+    const gameMode = useUserStore((state) => state.gameMode);
     const { completedItemsByMode, viewMode, setViewMode, toggleCompletedItem } =
         useKappaStore(
             useShallow((state) => ({
@@ -68,36 +53,35 @@ export function KappaChecklistClientPage({
         [completedItemsByMode, gameMode],
     );
 
-    const collectorItems = useMemo(
+    const sortedCollectorItems = useMemo(
         () =>
-            collectorItemIds
-                .map((itemId) => itemById[itemId])
-                .filter((item): item is GlobalItem => item !== undefined)
-                .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
-        [collectorItemIds, itemById],
+            [...collectorItems].sort((a, b) =>
+                a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+            ),
+        [collectorItems],
     );
     const visibleItems = useMemo(
         () =>
             viewMode === "need"
-                ? collectorItems.filter((item) => !completedItems[item.id])
-                : collectorItems,
-        [collectorItems, completedItems, viewMode],
+                ? sortedCollectorItems.filter((item) => !completedItems[item.id])
+                : sortedCollectorItems,
+        [sortedCollectorItems, completedItems, viewMode],
     );
-    const completedCount = collectorItems.reduce(
+    const completedCount = sortedCollectorItems.reduce(
         (count, item) => count + (completedItems[item.id] ? 1 : 0),
         0,
     );
 
     const errorMessages = [
-        ...(stationsError ? [stationsError] : []),
-        ...(itemsError ? [itemsError] : []),
+        ...(errors.quests ? [errors.quests] : []),
+        ...(errors.items ? [errors.items] : []),
         ...(!collectorQuest
             ? ["The Collector quest could not be found for this game mode."]
             : []),
-        ...(collectorQuest && collectorItemIds.length === 0
+        ...(collectorQuest && collectorItems.length === 0 && unresolvedItemIds.length === 0
             ? ["The Collector quest does not currently include any required items."]
             : []),
-        ...(collectorItemIds.length > 0 && collectorItems.length === 0
+        ...(unresolvedItemIds.length > 0 && collectorItems.length === 0
             ? ["Collector items could not be matched to the item catalog."]
             : []),
     ];
@@ -110,7 +94,7 @@ export function KappaChecklistClientPage({
                         KAPPA REQUIRED ITEMS
                     </h1>
                     <p className="mt-1 text-sm text-gray-400">
-                        {completedCount} of {collectorItems.length} collected
+                        {completedCount} of {sortedCollectorItems.length} collected
                     </p>
                 </div>
 
@@ -161,18 +145,10 @@ export function KappaChecklistClientPage({
                 </div>
             </div>
 
-            {errorMessages.length > 0 || !stations || !items ? (
+            {errorMessages.length > 0 ? (
                 <DataLoadError
                     title="Kappa checklist data is unavailable"
-                    messages={[
-                        ...errorMessages,
-                        ...(!stations && !stationsError
-                            ? ["Hideout station data could not be loaded."]
-                            : []),
-                        ...(!items && !itemsError
-                            ? ["Item catalog data could not be loaded."]
-                            : []),
-                    ]}
+                    messages={errorMessages}
                 />
             ) : visibleItems.length === 0 ? (
                 <div className="rounded-lg border border-tarkov-green/20 bg-tarkov-green/5 px-5 py-10 text-center text-sm text-gray-300">
@@ -244,14 +220,6 @@ export function KappaChecklistClientPage({
                     item={selectedItem}
                     isOpen
                     onClose={() => setSelectedItem(null)}
-                    stations={stations}
-                    stationLevels={stationLevels}
-                    hiddenStations={hiddenStations}
-                    completedRequirements={completedRequirements}
-                    questItemIndex={questItemIndex}
-                    questRewardIndex={questRewardIndex}
-                    questAnyOfGroups={questAnyOfGroups}
-                    questAvailabilityQuests={questAvailabilityQuests}
                 />
             )}
         </main>

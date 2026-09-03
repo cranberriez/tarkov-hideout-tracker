@@ -1,9 +1,15 @@
 import { formatUpdatedAt } from "@/lib/utils/format-time";
 import { useMemo } from "react";
-import { useDataContext } from "@/app/(data)/_dataContext";
 
-export function DataLastUpdated() {
-	const { stationsUpdatedAt, itemsUpdatedAt } = useDataContext();
+interface DataLastUpdatedProps {
+	stationsUpdatedAt?: number | null;
+	itemsUpdatedAt?: number | null;
+}
+
+export function DataLastUpdated({
+	stationsUpdatedAt = null,
+	itemsUpdatedAt = null,
+}: DataLastUpdatedProps) {
 
 	const formatted = useMemo(
 		() => ({

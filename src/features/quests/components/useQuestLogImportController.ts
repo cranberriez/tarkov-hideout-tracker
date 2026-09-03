@@ -24,7 +24,7 @@ import {
     parseQuestLogFiles,
     selectionLooksLikeEftLogsFolder,
 } from "@/lib/utils/quest-log-parser";
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import {
     buildCompletionMessage,
     buildModeImportViewModels,

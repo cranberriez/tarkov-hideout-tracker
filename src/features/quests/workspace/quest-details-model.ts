@@ -1,4 +1,4 @@
-import type { MapOverlayMarker } from "../../maps/map-types";
+import type { MapOverlayMarker } from "@/types/maps";
 import {
     getTraderTierCompletionGate,
     type TraderTierCompletionGate,

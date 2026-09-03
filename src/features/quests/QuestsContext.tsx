@@ -8,7 +8,8 @@ import {
     type QuestViewMode,
     type QuestVisibilityMode,
 } from "@/lib/stores/useUserStore";
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
+import type { ItemSummary } from "@/types/items";
 import type { QuestDataIndex } from "./quest-data-index";
 import {
     getSyncCandidatesForTrader as getSyncCandidatesForTraderFromProfile,
@@ -34,6 +35,7 @@ interface LastQuestSyncAction extends QuestSyncResult {
 
 interface QuestsContextValue {
     quests: FullQuest[];
+    itemById: Readonly<Record<string, ItemSummary>>;
 
     selectedTraders: Set<string>;
     faction: FactionFilter | null;
@@ -147,12 +149,14 @@ function restoreRecordValues(
 export function QuestsProvider({
     quests,
     questDataIndex,
+    itemById,
     children,
     onItemClick,
     onQuestClick,
 }: {
     quests: FullQuest[];
     questDataIndex: QuestDataIndex;
+    itemById: Readonly<Record<string, ItemSummary>>;
     children: ReactNode;
     onItemClick?: (itemId: string) => void;
     onQuestClick?: (questId: string) => void;
@@ -550,6 +554,7 @@ export function QuestsProvider({
         <QuestsContext.Provider
             value={{
                 quests,
+                itemById,
                 selectedTraders,
                 faction,
                 showKappa,

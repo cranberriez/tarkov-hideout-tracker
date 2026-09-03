@@ -2,7 +2,7 @@
 
 import { useMemo, type ReactNode } from "react";
 import { compareQuestTradersByOrder } from "@/lib/cfg/questTraderOrder";
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 
 interface QuestListByTraderProps {
     questIds: string[];

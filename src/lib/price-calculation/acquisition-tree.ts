@@ -1,15 +1,19 @@
-import type {
-    BarterRecord,
-    CraftRecord,
-    ItemAcquisitionTreePayload,
-} from "@/types";
+import type { BarterRecord, CraftRecord } from "@/types/recipes";
+
+export interface ItemAcquisitionTree {
+    rootItemId: string;
+    barters: BarterRecord[];
+    crafts: CraftRecord[];
+    itemIds: string[];
+    truncated: boolean;
+}
 
 export function buildItemAcquisitionTree(
     itemId: string,
     bartersByItemId: Readonly<Record<string, BarterRecord[]>>,
     craftsByItemId: Readonly<Record<string, CraftRecord[]>>,
     options: { maxDepth?: number; maxItems?: number } = {},
-): ItemAcquisitionTreePayload {
+): ItemAcquisitionTree {
     const maxDepth = options.maxDepth ?? 16;
     const maxItems = options.maxItems ?? 500;
     const visited = new Set<string>();

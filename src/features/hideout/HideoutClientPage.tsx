@@ -1,15 +1,23 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { HideoutControls } from "@/features/hideout/components/HideoutControls";
 import { HideoutConversionGate } from "@/features/hideout/components/HideoutConversionGate";
 import { HideoutList } from "@/features/hideout/components/HideoutList";
-import { useDataContext } from "@/app/(data)/_dataContext";
 import { DataLoadError } from "@/components/core/DataLoadError";
+import type { HideoutPageData } from "@/types/contracts";
 
-export function HideoutClientPage() {
-    const { stations, stationsUpdatedAt, stationsError } = useDataContext();
+interface HideoutClientPageProps {
+    data: HideoutPageData;
+}
+
+export function HideoutClientPage({ data }: HideoutClientPageProps) {
+    const { stations, items, freshness, errors } = data;
+    const itemById = useMemo(
+        () => Object.fromEntries((items ?? []).map((item) => [item.id, item])),
+        [items],
+    );
     const { initializeDefaults, hasSeenHideoutLevelWarning, setHasSeenHideoutLevelWarning } =
         useUserStore();
 
@@ -17,7 +25,7 @@ export function HideoutClientPage() {
         if (stations && stations.length > 0) {
             initializeDefaults(stations);
         }
-    }, [stations, stationsUpdatedAt, initializeDefaults]);
+    }, [stations, freshness.stationsUpdatedAt, initializeDefaults]);
 
     return (
         <main className="container mx-auto px-6 py-8">
@@ -30,7 +38,7 @@ export function HideoutClientPage() {
                 </div>
                 <div className="flex flex-col w-full md:w-auto">
                     <HideoutControls />
-                    <HideoutConversionGate />
+                    {stations && <HideoutConversionGate stations={stations} />}
                 </div>
             </div>
 
@@ -51,13 +59,23 @@ export function HideoutClientPage() {
                 </div>
             )}
 
-            {stationsError || !stations ? (
+            {errors.stations || errors.items || !stations || !items ? (
                 <DataLoadError
-                    title="Hideout stations are unavailable"
-                    messages={[stationsError ?? "Hideout station data could not be loaded."]}
+                    title="Hideout data is unavailable"
+                    messages={[
+                        errors.stations,
+                        errors.items,
+                        !stations ? "Hideout station data could not be loaded." : null,
+                        !items ? "Hideout item data could not be loaded." : null,
+                    ].filter((message): message is string => Boolean(message))}
                 />
             ) : (
-                <HideoutList />
+                <HideoutList
+                    stations={stations}
+                    itemById={itemById}
+                    stationsUpdatedAt={freshness.stationsUpdatedAt}
+                    itemsUpdatedAt={freshness.itemsUpdatedAt}
+                />
             )}
         </main>
     );

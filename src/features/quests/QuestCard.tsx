@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { AlertTriangle } from "lucide-react";
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { useDataContext } from "@/app/(data)/_dataContext";
 import { cn } from "@/lib/utils";
 import { formatQuestTraderGate } from "@/lib/utils/quest-trader-gates";
 import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";
@@ -61,8 +60,8 @@ export function QuestCard({
 }: QuestCardProps) {
     const [expanded, setExpanded] = useState(false);
     const [debugOpen, setDebugOpen] = useState(false);
-    const { itemById } = useDataContext();
     const {
+        itemById,
         syncProfile,
         questsById,
         failureMap,

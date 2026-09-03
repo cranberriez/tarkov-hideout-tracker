@@ -1,4 +1,4 @@
-import type { ItemDetails } from "@/types";
+import type { ItemSummary } from "@/types/items";
 
 export interface ItemNavigationEntry {
     id: string;
@@ -15,7 +15,7 @@ export const emptyItemNavigation: ItemNavigationState = {
     entries: [],
 };
 
-export function toItemNavigationEntry(item: ItemDetails): ItemNavigationEntry {
+export function toItemNavigationEntry(item: ItemSummary): ItemNavigationEntry {
     return {
         id: item.id,
         iconLink: item.iconLink ?? item.gridImageLink,

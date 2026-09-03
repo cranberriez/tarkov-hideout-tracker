@@ -4,22 +4,22 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import type { ItemSize } from "@/lib/stores/useUserStore";
-import type { ItemDetails } from "@/types";
+import type { ItemSummary } from "@/types/items";
 import type { DerivedQuestAnyOfGroup } from "@/lib/utils/quest-item-index";
 import { cn } from "@/lib/utils";
 import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 
 const MAX_PREVIEW_ITEMS = 3;
 
-type AnyOfGroupItem = ItemDetails;
+type AnyOfGroupItem = ItemSummary;
 
 interface ItemAnyOfGroupCardProps {
     group: DerivedQuestAnyOfGroup;
-    items: ItemDetails[];
+    items: ItemSummary[];
     expanded: boolean;
     size: ItemSize;
     onToggleExpanded: () => void;
-    onClickItem: (item: ItemDetails) => void;
+    onClickItem: (item: ItemSummary) => void;
 }
 
 interface ItemPreviewStackProps {
@@ -39,7 +39,7 @@ interface GroupHeaderProps {
 interface GroupItemsGridProps {
     items: AnyOfGroupItem[];
     isFirRequired: boolean;
-    onClickItem: (item: ItemDetails) => void;
+    onClickItem: (item: ItemSummary) => void;
 }
 
 function ItemImage({ item, className }: { item: AnyOfGroupItem; className: string }) {

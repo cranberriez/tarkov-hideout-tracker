@@ -14,15 +14,11 @@ import {
     serializeItemCatalogChunks,
     type ItemCatalogManifest,
 } from "@/server/services/itemCatalogCache";
-import type {
-    GlobalItem,
-    GlobalItemMarketPrice,
-    GlobalSkill,
-    ItemCategory,
-    ItemsPayload,
-    SkillsPayload,
-    TimedResponse,
-} from "@/types";
+import type { ItemSummary, ItemCategory } from "@/types/items";
+import type { CurrentPrice } from "@/types/prices";
+import type { GlobalSkill } from "@/types/hideout";
+import type { ItemsPayload, SkillsPayload } from "@/types/contracts";
+import type { DataResult } from "@/types/common";
 
 interface JsonItemCategory { id: string; name: string; normalizedName: string }
 interface JsonCatalogItem {
@@ -49,7 +45,6 @@ interface JsonItemsData {
 interface JsonTrader {
     id: string; name: string; normalizedName: string; imageLink?: string | null;
 }
-
 const itemDatasetRequests = new Map<TarkovJsonGameMode, Promise<TarkovJsonDataset<JsonItemsData>>>();
 
 async function getItemsDataset(gameMode: TarkovJsonGameMode) {
@@ -79,7 +74,7 @@ async function readCachedCatalog(
     rawManifest: unknown,
 ): Promise<{
     manifest: ItemCatalogManifest;
-    response: TimedResponse<ItemsPayload>;
+    response: DataResult<ItemsPayload>;
 } | null> {
     const manifest = parseItemCatalogManifest(rawManifest);
     if (!manifest) return null;
@@ -108,7 +103,6 @@ async function readCachedCatalog(
         },
     };
 }
-
 function isFresh(meta: unknown) {
     try {
         const value = typeof meta === "string" ? JSON.parse(meta) : meta;
@@ -127,7 +121,7 @@ function mapMarketPrice(
     item: JsonCatalogItem,
     traders: Record<string, JsonTrader>,
     translateTrader: (key: string | null | undefined) => string,
-): GlobalItemMarketPrice {
+): CurrentPrice {
     const lastScan = item.lastScan ? Date.parse(item.lastScan) : Number.NaN;
     return {
         avg24hPrice: numberOrNullish(item.avg24hPrice),
@@ -161,7 +155,7 @@ function mapItem(
     traders: Record<string, JsonTrader>,
     translateItem: (key: string | null | undefined) => string,
     translateTrader: (key: string | null | undefined) => string,
-): GlobalItem | null {
+): ItemSummary | null {
     if (!item || typeof item.id !== "string" || !item.id || typeof item.name !== "string") return null;
     let category: ItemCategory | undefined;
     for (const categoryId of item.categories ?? []) {
@@ -197,7 +191,7 @@ function mapItem(
 /** Complete mode-specific standard item catalog. Deliberately not wrapped in unstable_cache. */
 export async function getGlobalItemList(
     gameMode: TarkovJsonGameMode = "regular",
-): Promise<TimedResponse<ItemsPayload>> {
+): Promise<DataResult<ItemsPayload>> {
     const { manifestKey, metaKey } = buildRedisKeys(gameMode);
     const [rawManifest, cachedMeta] = await redis.mget<[unknown, unknown]>(
         "itemCatalog",
@@ -225,7 +219,7 @@ export async function getGlobalItemList(
         });
         if (sourceItems.length === 0 || items.length === 0) throw new Error("Global item mapping produced no items");
         const updatedAt = Date.now();
-        const body: TimedResponse<ItemsPayload> = {
+        const body: DataResult<ItemsPayload> = {
             data: { items }, updatedAt,
             diagnostics: {
                 provider: "json",
@@ -271,7 +265,7 @@ export async function getGlobalItemList(
 /** Skills share the `/items` source but remain a compact hideout-only projection. */
 export async function getGlobalSkillList(
     gameMode: TarkovJsonGameMode = "regular",
-): Promise<TimedResponse<SkillsPayload>> {
+): Promise<DataResult<SkillsPayload>> {
     const dataset = await getItemsDataset(gameMode);
     const skills: GlobalSkill[] = (dataset.data.skills ?? []).flatMap((skill) =>
         typeof skill.id === "string" && skill.id
@@ -290,5 +284,3 @@ export async function getGlobalSkillList(
         },
     };
 }
-
-export const getJsonGlobalItemList = getGlobalItemList;

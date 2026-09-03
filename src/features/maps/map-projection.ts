@@ -1,5 +1,5 @@
-import type { MapPoint3D } from "@/types";
-import type { MapRenderDefinition, ProjectedMapPoint } from "./map-types";
+import type { MapPoint3D } from "@/types/maps";
+import type { MapRenderDefinition, ProjectedMapPoint } from "@/types/maps";
 
 function rotateHorizontalPoint(x: number, z: number, degrees: number) {
     const radians = degrees * Math.PI / 180;

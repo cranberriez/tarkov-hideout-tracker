@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import type { MarketPrice } from "@/types";
+import type { CurrentPrice } from "@/types/prices";
 import { ItemDetailInventory } from "./ItemDetailInventory";
 import { ItemDetailMarket } from "./ItemDetailMarket";
 
 interface ItemDetailSidebarProps {
     itemId: string;
     owned: { have: number; haveFir: number };
-    marketPrice: MarketPrice | null | undefined;
+    marketPrice: CurrentPrice | null | undefined;
     relativeUpdatedAt: string | null;
     isFiat: boolean;
     showMarket: boolean;

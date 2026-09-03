@@ -1,5 +1,5 @@
-import type { MapOverlayMarker } from "@/features/maps/map-types";
-import type { FullQuest, FullQuestObjective, QuestMapLocation } from "@/types";
+import type { MapOverlayMarker } from "@/types/maps";
+import type { FullQuest, FullQuestObjective, QuestMapLocation } from "@/types/quests";
 import { getQuestMapGroup, getQuestMapGroupKey, type QuestMapGroup } from "../quest-map-groups";
 
 export interface PositionedObjectiveMap extends QuestMapGroup {

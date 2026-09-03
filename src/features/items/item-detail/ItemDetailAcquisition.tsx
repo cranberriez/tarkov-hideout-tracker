@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Check, LockKeyhole, ShoppingCart } from "lucide-react";
-import type { ItemAmount, ItemDetails, ItemTraderOffer } from "@/types";
+import type { ItemAmount, ItemTraderOffer } from "@/features/items/item-detail/item-detail-types";
+import type { ItemSummary } from "@/types/items";
 import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
 import { ItemDetailRecipeFlow } from "./ItemDetailRecipeFlow";
@@ -16,7 +17,7 @@ interface ItemDetailAcquisitionProps {
     evaluationsById: Readonly<Record<string, RecipeEvaluation>>;
     profitLoading: boolean;
     profitError: string | null;
-    outputItem: ItemDetails;
+    outputItem: ItemSummary;
     onItemClick: (itemId: string) => void;
 }
 

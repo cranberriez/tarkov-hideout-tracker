@@ -1,9 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { useDataContext } from "@/app/(data)/_dataContext";
+import type { CompletedItemsConversionData } from "@/types/contracts";
+
+const EMPTY_STATIONS: CompletedItemsConversionData["stations"] = [];
+const EMPTY_ITEMS: CompletedItemsConversionData["items"] = [];
 
 interface CompletedItemsConversionModalProps {
     isOpen: boolean;
@@ -11,17 +15,58 @@ interface CompletedItemsConversionModalProps {
 }
 
 export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItemsConversionModalProps) {
-    const { stations, itemById } = useDataContext();
-    const { stationLevels, completedRequirements, addItemCounts } = useUserStore();
+    const { gameMode, stationLevels, completedRequirements, addItemCounts } = useUserStore();
+    const requestedMode = toTarkovJsonGameMode(gameMode);
+    const [conversionRequest, setConversionRequest] = useState<{
+        mode: string;
+        payload: CompletedItemsConversionData | null;
+        error: string | null;
+    } | null>(null);
+    const currentRequest =
+        conversionRequest?.mode === requestedMode ? conversionRequest : null;
+    const data = currentRequest?.payload ?? null;
+    const requestError = currentRequest?.error ?? null;
+    const isLoading = isOpen && currentRequest === null;
+    const itemNameWarning =
+        data?.errors.items ??
+        (data && data.unresolvedItemIds.length > 0
+            ? "Some item names are unavailable."
+            : null);
+    const stations = data?.stations ?? EMPTY_STATIONS;
+    const items = data?.items ?? EMPTY_ITEMS;
+    const itemById = useMemo(
+        () => Object.fromEntries(items.map((item) => [item.id, item])),
+        [items],
+    );
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const controller = new AbortController();
+        fetch(
+            `/api/conversion/completed-items?mode=${encodeURIComponent(requestedMode)}`,
+            { signal: controller.signal },
+        )
+            .then(async (response) => {
+                if (!response.ok) throw new Error("Conversion data could not be loaded.");
+                return response.json() as Promise<CompletedItemsConversionData>;
+            })
+            .then((payload) =>
+                setConversionRequest({ mode: requestedMode, payload, error: null }),
+            )
+            .catch((error: unknown) => {
+                if (error instanceof DOMException && error.name === "AbortError") return;
+                setConversionRequest({
+                    mode: requestedMode,
+                    payload: null,
+                    error: "Conversion data could not be loaded.",
+                });
+            });
+
+        return () => controller.abort();
+    }, [isOpen, requestedMode]);
 
     const conversions = useMemo(() => {
-        if (!stations) return [] as {
-            itemId: string;
-            itemName: string;
-            total: number;
-            totalFir: number;
-        }[];
-
         const map = new Map<
             string,
             {
@@ -95,15 +140,27 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
                     </p>
                 </div>
 
-                {conversions.length === 0 ? (
+                {isLoading ? (
+                    <div className="text-xs text-gray-500">Loading conversion data…</div>
+                ) : requestError || data?.errors.stations ? (
+                    <div className="text-xs text-red-300">
+                        {requestError ?? data?.errors.stations}
+                    </div>
+                ) : conversions.length === 0 ? (
                     <div className="text-xs text-gray-500">
                         There are currently no eligible completed hideout requirements to convert. Once you
                         mark future-level requirements as completed, they will appear here so you can turn
                         them into item counts.
                     </div>
                 ) : (
-                    <div className="max-h-64 overflow-y-auto border border-border-color rounded-sm mb-4">
-                        <table className="w-full text-xs">
+                    <div>
+                        {itemNameWarning && (
+                            <div className="mb-2 text-xs text-amber-300">
+                                {itemNameWarning} Item IDs are shown where names are unavailable.
+                            </div>
+                        )}
+                        <div className="max-h-64 overflow-y-auto border border-border-color rounded-sm mb-4">
+                            <table className="w-full text-xs">
                             <thead className="bg-black/40 text-gray-400 border-b border-border-color">
                                 <tr>
                                     <th className="text-left px-3 py-2 font-medium">Item</th>
@@ -129,7 +186,8 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
                                     </tr>
                                 )})}
                             </tbody>
-                        </table>
+                            </table>
+                        </div>
                     </div>
                 )}
 

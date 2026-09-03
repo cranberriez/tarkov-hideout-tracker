@@ -1,4 +1,4 @@
-import type { Station } from "@/types";
+import type { Station } from "@/types/hideout";
 import Image from "next/image";
 import { Lock, LockOpen } from "lucide-react";
 

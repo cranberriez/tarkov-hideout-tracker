@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Lock, Eye, EyeOff } from "lucide-react";
-import type { Station } from "@/types";
+import type { Station } from "@/types/hideout";
 
 export interface StationCardHeaderProps {
     station: Station;

@@ -1,5 +1,5 @@
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
-import { getProfitPageData } from "@/server/services/profitPages";
+import { getProfitPageData } from "@/server/queries/getProfitPageData";
 import { ProfitPageClient } from "./ProfitPageClient";
 import type { ProfitPageKind } from "./types";
 

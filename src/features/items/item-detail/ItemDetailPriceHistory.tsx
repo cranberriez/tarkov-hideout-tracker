@@ -16,9 +16,9 @@ import {
     downsamplePriceHistory,
     filterPriceHistory,
     filterPriceHistoryOutliers,
-    type PriceHistoryPoint,
     type PriceHistoryRange,
 } from "@/lib/utils/price-history";
+import type { PriceHistoryPoint } from "@/types/prices";
 
 const historyCache = new Map<string, PriceHistoryPoint[]>();
 const RANGE_LABELS: Array<{ value: PriceHistoryRange; label: string }> = [

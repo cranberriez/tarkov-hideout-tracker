@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import type { QuestDataIndex } from "../quest-data-index";
 import {
     useUserStore,

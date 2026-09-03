@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { BarterRecord, CraftRecord, GlobalItem } from "@/types";
+import type { BarterRecord, CraftRecord } from "@/types/recipes";
+import type { ItemSummary } from "@/types/items";
 import { getItemSellComparison } from "./prices";
 import { createAcquisitionOptimizer, evaluateBarter, evaluateCraft } from "./optimizer";
 
-function item(id: string, buy: number, sell = buy): GlobalItem {
+function item(id: string, buy: number, sell = buy): ItemSummary {
     return {
         id,
         name: id,

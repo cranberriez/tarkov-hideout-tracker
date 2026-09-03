@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import type { FullQuest, QuestMap } from "@/types";
+import type { FullQuest, QuestMap } from "@/types/quests";
 import {
     formatQuestMapSummary,
     getQuestMapGroupsForQuest,

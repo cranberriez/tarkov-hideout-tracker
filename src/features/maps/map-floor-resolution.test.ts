@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { MapRenderDefinition } from "./map-types";
+import type { MapRenderDefinition } from "@/types/maps";
 import { orderMapFloorsTopToBottom, resolveMapFloors } from "./map-floor-resolution";
 
 const definition = {

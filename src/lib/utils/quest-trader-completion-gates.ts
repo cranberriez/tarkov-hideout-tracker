@@ -1,4 +1,4 @@
-import type { QuestOtherRequirement } from "@/types";
+import type { QuestOtherRequirement } from "@/types/quests";
 import {
     getQuestIssuingTraderLoyaltyLevel,
     type QuestTraderLoyaltyLevel,

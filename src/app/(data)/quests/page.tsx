@@ -1,17 +1,9 @@
 import { Suspense } from "react";
-import { orderQuestsByPrerequisites } from "@/server/services/quests";
-import { getCachedFullQuestData } from "@/server/services/tarkovData";
-import { buildQuestAnyOfGroups, buildQuestItemIndex, buildQuestRewardIndex } from "@/lib/utils/quest-item-index";
-import { toQuestAvailabilityQuest } from "@/lib/utils/quest-availability";
+import { DataLoadError } from "@/components/core/DataLoadError";
 import { QuestsClientPage } from "@/features/quests/QuestsClientPage";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
 import { SHOW_REMOVED_QUESTS } from "@/features/quests/quest-feature-flags";
-import {
-    excludeRemovedQuests,
-    prepareQuestsForDisplay,
-} from "@/lib/utils/removed-quests";
-import { applyQuestFactionOverrides } from "@/lib/utils/quest-faction-overrides";
-import { prepareQuestSeriesForGameMode } from "@/lib/utils/quest-series";
+import { getQuestWorkspacePageData } from "@/server/queries/getQuestWorkspacePageData";
 import {
     DEV_QUEST_FIXTURES,
     DEV_QUEST_ID,
@@ -29,32 +21,32 @@ export default async function QuestsPage({ searchParams }: QuestsPageProps) {
     const query = Array.isArray(queryValue) ? queryValue[0] : queryValue;
     const showDevQuest = process.env.NODE_ENV === "development" && query === DEV_QUEST_QUERY;
     const gameMode = await getActiveTarkovJsonGameMode();
-    const questsResponse = await getCachedFullQuestData(gameMode);
-    const normalizedQuests = prepareQuestSeriesForGameMode(
-        applyQuestFactionOverrides(questsResponse.data.quests),
-        gameMode,
-    );
-    const displayQuests = prepareQuestsForDisplay(normalizedQuests, SHOW_REMOVED_QUESTS);
-    const quests = orderQuestsByPrerequisites(
-        showDevQuest ? [...displayQuests, ...DEV_QUEST_FIXTURES] : displayQuests,
-    );
-    const progressionQuests = orderQuestsByPrerequisites(
-        excludeRemovedQuests(normalizedQuests),
-    );
-    const questItemIndex = buildQuestItemIndex(progressionQuests);
-    const questRewardIndex = buildQuestRewardIndex(progressionQuests);
-    const questAnyOfGroups = buildQuestAnyOfGroups(progressionQuests);
-    const questAvailabilityQuests = progressionQuests.map(toQuestAvailabilityQuest);
+    const data = await getQuestWorkspacePageData(gameMode, undefined, {
+        showRemovedQuests: SHOW_REMOVED_QUESTS,
+        displayQuestAdditions: showDevQuest ? DEV_QUEST_FIXTURES : [],
+    });
+
+    if (!data.quests) {
+        return (
+            <main className="container mx-auto px-6 py-8">
+                <DataLoadError
+                    title="Quest workspace data is unavailable"
+                    messages={[data.errors.quests ?? "Quest workspace data could not be loaded."]}
+                />
+            </main>
+        );
+    }
 
     return (
         <Suspense fallback={null}>
             <QuestsClientPage
-                quests={quests}
-                updatedAt={questsResponse.updatedAt}
-                questItemIndex={questItemIndex}
-                questRewardIndex={questRewardIndex}
-                questAnyOfGroups={questAnyOfGroups}
-                questAvailabilityQuests={questAvailabilityQuests}
+                quests={data.quests}
+                items={data.items}
+                updatedAt={data.freshness.questsUpdatedAt}
+                questItemIndex={data.questItemIndex}
+                questRewardIndex={data.questRewardIndex}
+                questAnyOfGroups={data.questAnyOfGroups}
+                questAvailabilityQuests={data.questAvailabilityQuests}
                 initialQuestId={showDevQuest ? DEV_QUEST_ID : null}
             />
         </Suspense>

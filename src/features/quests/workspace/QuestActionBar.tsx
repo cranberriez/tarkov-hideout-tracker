@@ -2,7 +2,7 @@
 
 import { Compass, GitBranch, History, PanelTopClose, PanelTopOpen, Search, SlidersHorizontal, Upload, X } from "lucide-react";
 import { useState } from "react";
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
 import { QuestSyncDialog } from "../components/QuestSyncDialog";

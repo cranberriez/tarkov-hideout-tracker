@@ -3,17 +3,9 @@ import { DATA_CACHE_MAX_AGE_MS } from "@/server/cache";
 import { redis, writeRedisAfterResponse } from "@/server/redis";
 import { fetchTarkovJsonData, type TarkovJsonGameMode } from "@/server/services/tarkovJson/client";
 import { markStaleFallback, parseNonEmptyTimedResponse } from "@/server/services/tarkovJson/cache";
-import { buildItemAcquisitionTree } from "@/lib/price-calculation/acquisition-tree";
-import type {
-    BarterRecord,
-    BartersPayload,
-    CraftRecord,
-    CraftsPayload,
-    ItemAcquisitionTreePayload,
-    ItemAmountRef,
-    ItemUsagePayload,
-    TimedResponse,
-} from "@/types";
+import type { BarterRecord, CraftRecord, ItemAmountRef } from "@/types/recipes";
+import type { BartersPayload, CraftsPayload } from "@/types/contracts";
+import type { DataResult } from "@/types/common";
 
 interface JsonContainedItem {
     item?: unknown;
@@ -29,7 +21,6 @@ interface JsonCraft {
     taskUnlock?: unknown; requiredItems?: unknown; requiredQuestItems?: unknown;
     gameEditions?: unknown; productItem?: JsonContainedItem;
 }
-
 function isFresh(meta: unknown) {
     try {
         const value = typeof meta === "string" ? JSON.parse(meta) : meta;
@@ -113,7 +104,7 @@ function keys(domain: "barters" | "crafts", version: number, mode: TarkovJsonGam
 
 export async function getBarterIndex(
     gameMode: TarkovJsonGameMode = "regular",
-): Promise<TimedResponse<BartersPayload>> {
+): Promise<DataResult<BartersPayload>> {
     const { bodyKey, metaKey } = keys("barters", CACHE_VERSIONS.itemBarters, gameMode);
     const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
         "itemBarters",
@@ -132,7 +123,7 @@ export async function getBarterIndex(
         });
         if (barters.length === 0) throw new Error("Tarkov JSON barter mapping produced no records");
         const updatedAt = Date.now();
-        const body: TimedResponse<BartersPayload> = {
+        const body: DataResult<BartersPayload> = {
             data: { bartersByItemId: indexBy(barters, (record) => record.offeredItemId) },
             updatedAt,
             diagnostics: { provider: "json", upstreamStatus: "ok" },
@@ -152,7 +143,7 @@ export async function getBarterIndex(
 
 export async function getCraftIndex(
     gameMode: TarkovJsonGameMode = "regular",
-): Promise<TimedResponse<CraftsPayload>> {
+): Promise<DataResult<CraftsPayload>> {
     const { bodyKey, metaKey } = keys("crafts", CACHE_VERSIONS.itemCrafts, gameMode);
     const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
         "itemCrafts",
@@ -171,7 +162,7 @@ export async function getCraftIndex(
         });
         if (crafts.length === 0) throw new Error("Tarkov JSON craft mapping produced no records");
         const updatedAt = Date.now();
-        const body: TimedResponse<CraftsPayload> = {
+        const body: DataResult<CraftsPayload> = {
             data: { craftsByItemId: indexBy(crafts, (record) => record.productItemId) },
             updatedAt,
             diagnostics: { provider: "json", upstreamStatus: "ok" },
@@ -187,42 +178,4 @@ export async function getCraftIndex(
         if (cached) return markStaleFallback(cached);
         throw error;
     }
-}
-
-function errorText(domain: string) {
-    return `${domain} data is temporarily unavailable`;
-}
-
-/** Keeps the two optional acquisition domains independent for modal rendering. */
-export async function getItemUsage(
-    itemId: string,
-    gameMode: TarkovJsonGameMode = "regular",
-): Promise<ItemUsagePayload> {
-    const [barters, crafts] = await Promise.allSettled([
-        getBarterIndex(gameMode),
-        getCraftIndex(gameMode),
-    ]);
-    return {
-        barters: barters.status === "fulfilled"
-            ? (barters.value.data.bartersByItemId[itemId] ?? []) : [],
-        crafts: crafts.status === "fulfilled"
-            ? (crafts.value.data.craftsByItemId[itemId] ?? []) : [],
-        ...(barters.status === "rejected" ? { bartersError: errorText("Barter") } : {}),
-        ...(crafts.status === "rejected" ? { craftsError: errorText("Craft") } : {}),
-    };
-}
-
-export async function getItemAcquisitionTree(
-    itemId: string,
-    gameMode: TarkovJsonGameMode = "regular",
-): Promise<ItemAcquisitionTreePayload> {
-    const [barters, crafts] = await Promise.all([
-        getBarterIndex(gameMode),
-        getCraftIndex(gameMode),
-    ]);
-    return buildItemAcquisitionTree(
-        itemId,
-        barters.data.bartersByItemId,
-        crafts.data.craftsByItemId,
-    );
 }

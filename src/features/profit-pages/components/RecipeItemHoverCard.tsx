@@ -6,7 +6,7 @@ import {
   type AcquisitionPlan,
   type ManualPriceOverride,
 } from "@/lib/price-calculation";
-import type { GlobalItem } from "@/types";
+import type { ItemSummary } from "@/types/items";
 import type { RecipePreviewData, RouteContext, RouteMethod } from "../types";
 import {
   formatDuration,
@@ -39,7 +39,7 @@ export function RecipeItemHoverCard({
   showRouteIcon,
 }: {
   position: ItemHoverPosition;
-  item?: GlobalItem;
+  item?: ItemSummary;
   count: number;
   method: RouteMethod;
   totalPrice: number | null;

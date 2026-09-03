@@ -1,4 +1,4 @@
-import type { FullQuest } from "../../types/types";
+import type { FullQuest } from "@/types/quests";
 import {
     buildQuestAvailabilityMap,
     isQuestAvailableForProfile as isQuestAvailableForProfileFromHelper,

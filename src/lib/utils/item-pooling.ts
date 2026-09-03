@@ -1,4 +1,4 @@
-import type { Station } from "@/types";
+import type { Station } from "@/types/hideout";
 
 export interface PooledItem {
     id: string;

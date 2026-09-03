@@ -15,7 +15,8 @@ import { ItemDetailQuestRequirements } from "./ItemDetailQuestRequirements";
 import { ItemDetailAcquisition } from "./ItemDetailAcquisition";
 import { ItemDetailCrafting } from "./ItemDetailCrafting";
 import { ItemDetailPriceHistory } from "./ItemDetailPriceHistory";
-import type { ItemCraftRecipe, ItemDetails, ItemTraderOffer } from "@/types";
+import type { ItemCraftRecipe, ItemTraderOffer } from "@/features/items/item-detail/item-detail-types";
+import type { ItemSummary } from "@/types/items";
 import type { GameEdition } from "@/lib/stores/useUserStore";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import type { RecipeEvaluation } from "@/lib/price-calculation";
@@ -32,12 +33,15 @@ interface ItemDetailUsageTabsProps {
     questItemState: DerivedQuestItemState | null;
     questRewards: QuestRewardLink[];
     anyOfGroups: DerivedQuestAnyOfGroup[];
-    itemDetailsById: Record<string, ItemDetails>;
+    itemDetailsById: Record<string, ItemSummary>;
     traderOffers: ItemTraderOffer[];
     crafts: ItemCraftRecipe[];
+    relationsLoading: boolean;
+    relationsError: string | null;
     acquisitionLoading: boolean;
     barterError: string | null;
     craftError: string | null;
+    acquisitionWarning: string | null;
     completedQuests: Record<string, boolean>;
     traderLoyaltyLevels: Record<string, number>;
     gameEdition: GameEdition | null;
@@ -63,9 +67,12 @@ export function ItemDetailUsageTabs({
     itemDetailsById,
     traderOffers,
     crafts,
+    relationsLoading,
+    relationsError,
     acquisitionLoading,
     barterError,
     craftError,
+    acquisitionWarning,
     completedQuests,
     traderLoyaltyLevels,
     gameEdition,
@@ -90,7 +97,7 @@ export function ItemDetailUsageTabs({
             : []),
         ...(showPriceHistory ? (["prices"] as const) : []),
     ];
-    const [activeTab, setActiveTab] = useState<UsageTab>(availableTabs[0] ?? "hideout");
+    const [activeTab, setActiveTab] = useState<UsageTab>("hideout");
     const selectedTab = availableTabs.includes(activeTab) ? activeTab : availableTabs[0];
     const selectedItem = itemDetailsById[selectedItemId] ?? {
         id: selectedItemId,
@@ -99,10 +106,20 @@ export function ItemDetailUsageTabs({
         iconLink: selectedItemImageLink,
     };
 
-    if (availableTabs.length === 0) return null;
+    if (availableTabs.length === 0) {
+        if (!relationsLoading && !relationsError) return null;
+        return (
+            <section className={`min-w-0 bg-card/45 ${className}`}>
+                <RelationState loading={relationsLoading} error={relationsError} />
+            </section>
+        );
+    }
 
     return (
         <section className={`flex min-h-0 min-w-0 flex-col bg-card/45 ${className}`}>
+            {(relationsLoading || relationsError) && (
+                <RelationState loading={relationsLoading} error={relationsError} />
+            )}
             <div className="flex h-10 items-stretch overflow-x-auto border-b border-border-color" role="tablist">
                 {hideoutCount > 0 && (
                     <TabButton
@@ -171,7 +188,12 @@ export function ItemDetailUsageTabs({
                     />
                 )}
                 {selectedTab === "traders" && (
-                    <AcquisitionState loading={acquisitionLoading} error={barterError} empty={traderOffers.length === 0}>
+                    <AcquisitionState
+                        loading={acquisitionLoading}
+                        error={barterError}
+                        warning={acquisitionWarning}
+                        empty={traderOffers.length === 0}
+                    >
                         <ItemDetailAcquisition
                             offers={traderOffers}
                             completedQuests={completedQuests}
@@ -185,7 +207,12 @@ export function ItemDetailUsageTabs({
                     </AcquisitionState>
                 )}
                 {selectedTab === "crafting" && (
-                    <AcquisitionState loading={acquisitionLoading} error={craftError} empty={crafts.length === 0}>
+                    <AcquisitionState
+                        loading={acquisitionLoading}
+                        error={craftError}
+                        warning={acquisitionWarning}
+                        empty={crafts.length === 0}
+                    >
                         <ItemDetailCrafting
                             recipes={crafts}
                             completedQuests={completedQuests}
@@ -210,11 +237,13 @@ export function ItemDetailUsageTabs({
 function AcquisitionState({
     loading,
     error,
+    warning,
     empty,
     children,
 }: {
     loading: boolean;
     error: string | null;
+    warning: string | null;
     empty: boolean;
     children: ReactNode;
 }) {
@@ -225,9 +254,35 @@ function AcquisitionState({
         return <p className="px-4 py-6 text-sm text-amber-200">{error}</p>;
     }
     if (empty) {
-        return <p className="px-4 py-6 text-sm text-muted-foreground">No matching records.</p>;
+        return (
+            <div>
+                {warning && <p className="px-4 pt-4 text-sm text-amber-200">{warning}</p>}
+                <p className="px-4 py-6 text-sm text-muted-foreground">No matching records.</p>
+            </div>
+        );
     }
-    return children;
+    return (
+        <div>
+            {warning && (
+                <p className="border-b border-border-color px-4 py-2 text-xs text-amber-200">
+                    {warning}
+                </p>
+            )}
+            {children}
+        </div>
+    );
+}
+
+function RelationState({ loading, error }: { loading: boolean; error: string | null }) {
+    return (
+        <p
+            className={`border-b border-border-color px-4 py-2 text-xs ${
+                error ? "text-amber-200" : "text-muted-foreground"
+            }`}
+        >
+            {error ?? (loading ? "Loading hideout and quest relations…" : null)}
+        </p>
+    );
 }
 
 function TabButton({

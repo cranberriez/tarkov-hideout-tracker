@@ -1,4 +1,4 @@
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 
 export const NO_QUEST_MAP_GROUP_KEY = "__no-map";
 

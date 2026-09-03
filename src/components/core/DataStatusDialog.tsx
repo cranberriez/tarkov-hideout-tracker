@@ -1,7 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Activity, CheckCircle2, CircleAlert, Database, Languages } from "lucide-react";
-import { useDataContext } from "@/app/(data)/_dataContext";
 import {
     Dialog,
     DialogContent,
@@ -10,16 +10,17 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { formatRelativeUpdatedAt, formatUpdatedAt } from "@/lib/utils/format-time";
-import type { RedisCacheState } from "@/server/redis";
+import type { DataStatusPayload } from "@/types/contracts";
 
 export interface DataStatusConfig {
     provider: "json" | "graphql";
     configuredProvider: "json" | "graphql";
     activeDataset: "regular" | "pve" | "pvp-season";
     cacheEnabled: boolean;
-    redisState: RedisCacheState;
+    redisState: "available" | "unavailable" | "disabled" | "unchecked";
     progressionDataFrozen: boolean;
 }
 
@@ -67,20 +68,52 @@ function freshness(timestamp: number | null) {
 }
 
 export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
-    const {
-        stations,
-        stationsUpdatedAt,
-        stationsError,
-        stationsDiagnostics,
-        items,
-        itemsUpdatedAt,
-        itemsError,
-        itemsDiagnostics,
-    } = useDataContext();
     const gameMode = useUserStore((state) => state.gameMode);
-    const stationFreshness = freshness(stationsUpdatedAt);
-    const itemFreshness = freshness(itemsUpdatedAt);
-    const diagnostics = stationsDiagnostics ?? itemsDiagnostics;
+    const [isOpen, setIsOpen] = useState(false);
+    const requestedMode = toTarkovJsonGameMode(gameMode);
+    const [statusRequest, setStatusRequest] = useState<{
+        mode: string;
+        payload: DataStatusPayload | null;
+        error: string | null;
+    } | null>(null);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const controller = new AbortController();
+        fetch(
+            `/api/data/status?mode=${encodeURIComponent(requestedMode)}`,
+            { signal: controller.signal },
+        )
+            .then(async (response) => {
+                if (!response.ok) throw new Error("Data status could not be loaded.");
+                return response.json() as Promise<DataStatusPayload>;
+            })
+            .then((payload) =>
+                setStatusRequest({ mode: requestedMode, payload, error: null }),
+            )
+            .catch((error: unknown) => {
+                if (error instanceof DOMException && error.name === "AbortError") return;
+                setStatusRequest({
+                    mode: requestedMode,
+                    payload: null,
+                    error: "Data status could not be loaded.",
+                });
+            });
+
+        return () => controller.abort();
+    }, [isOpen, requestedMode]);
+
+    const currentRequest =
+        statusRequest?.mode === requestedMode ? statusRequest : null;
+    const status = currentRequest?.payload ?? null;
+    const requestError = currentRequest?.error ?? null;
+    const isLoading = isOpen && currentRequest === null;
+    const stations = status?.stations ?? null;
+    const items = status?.items ?? null;
+    const stationFreshness = freshness(stations?.updatedAt ?? null);
+    const itemFreshness = freshness(items?.updatedAt ?? null);
+    const diagnostics = stations?.diagnostics ?? items?.diagnostics;
     const localePaths = diagnostics?.localePaths ?? [];
     const localizationValue = diagnostics
         ? diagnostics.usedRegularLocaleFallback
@@ -94,9 +127,12 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
             ? `Loaded dictionaries: ${localePaths.join(", ")}`
             : "The exact dictionary path was not recorded."
         : "This cached response predates locale diagnostics, so the exact dictionary used is unknown.";
-    const hasCoreError = Boolean(stationsError || itemsError || !stations || !items);
-    const providerError = stationsError ?? itemsError;
-    const isUsingStaleFallback = [stationsDiagnostics, itemsDiagnostics].some(
+    const hasCoreError = Boolean(
+        requestError ||
+            (status && (!stations?.available || !items?.available)),
+    );
+    const providerError = requestError ?? stations?.error ?? items?.error;
+    const isUsingStaleFallback = [stations?.diagnostics, items?.diagnostics].some(
         (entry) => entry?.upstreamStatus === "stale-fallback",
     );
     const redisStatus =
@@ -109,7 +145,7 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                 : { value: "Not checked", state: "neutral" as const };
 
     return (
-        <Dialog>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <span className="inline-flex items-baseline font-mono text-[10px] uppercase tracking-widest text-gray-500">
                 <span aria-hidden="true">[&nbsp;</span>
                 <DialogTrigger asChild>
@@ -140,13 +176,21 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                         ) : (
                             <CheckCircle2 aria-hidden="true" className="size-4 text-emerald-400" />
                         )}
-                        {hasCoreError ? "Some data is unavailable" : "Core data is available"}
+                        {isLoading
+                            ? "Checking core data"
+                            : hasCoreError
+                              ? "Some data is unavailable"
+                              : status
+                                ? "Core data is available"
+                                : "Core data status is unavailable"}
                     </div>
 
                     <StatusRow
                         label="API provider"
                         value={
-                            hasCoreError
+                            isLoading
+                                ? "Checking connection"
+                                : hasCoreError
                                 ? "Connection failed"
                                 : isUsingStaleFallback
                                   ? "Using cached data"
@@ -162,7 +206,15 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                                   ? `${config.activeDataset} requires the JSON provider.`
                                   : `Configured provider: ${config.configuredProvider}.`)
                         }
-                        state={hasCoreError ? "error" : isUsingStaleFallback ? "warning" : "ok"}
+                        state={
+                            isLoading
+                                ? "neutral"
+                                : hasCoreError
+                                  ? "error"
+                                  : isUsingStaleFallback
+                                    ? "warning"
+                                    : "ok"
+                        }
                     />
                     <StatusRow
                         label="Active dataset"
@@ -206,15 +258,35 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                     </div>
                     <StatusRow
                         label="Hideout stations"
-                        value={stationsError ? "Error" : stationFreshness.value}
-                        detail={stationsError ?? stationFreshness.detail}
-                        state={stationsError || !stations ? "error" : "ok"}
+                        value={
+                            isLoading
+                                ? "Checking"
+                                : stations?.error
+                                  ? "Error"
+                                  : stationFreshness.value
+                        }
+                        detail={stations?.error ?? stationFreshness.detail}
+                        state={
+                            isLoading
+                                ? "neutral"
+                                : stations?.available
+                                  ? "ok"
+                                  : "error"
+                        }
                     />
                     <StatusRow
                         label="Hideout items"
-                        value={itemsError ? "Error" : itemFreshness.value}
-                        detail={itemsError ?? itemFreshness.detail}
-                        state={itemsError || !items ? "error" : "ok"}
+                        value={
+                            isLoading
+                                ? "Checking"
+                                : items?.error
+                                  ? "Error"
+                                  : itemFreshness.value
+                        }
+                        detail={items?.error ?? itemFreshness.detail}
+                        state={
+                            isLoading ? "neutral" : items?.available ? "ok" : "error"
+                        }
                     />
                     <div className="ml-4 mt-4 flex items-start gap-2 pb-4 pt-0.5 text-[11px] leading-5 text-gray-500">
                         <Languages aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />

@@ -2,7 +2,7 @@ import type {
   AcquisitionPlan,
   RecipeEvaluation,
 } from "@/lib/price-calculation";
-import type { GlobalItem } from "@/types";
+import type { ItemSummary } from "@/types/items";
 import type { RecipePreviewData, RouteContext, SortMode } from "../types";
 import { formatDuration } from "./formatters";
 
@@ -57,7 +57,7 @@ export function compareEvaluations(
   left: RecipeEvaluation,
   right: RecipeEvaluation,
   sortMode: SortMode,
-  itemsById: Readonly<Record<string, GlobalItem>>,
+  itemsById: Readonly<Record<string, ItemSummary>>,
 ) {
   if (sortMode === "name") {
     return (

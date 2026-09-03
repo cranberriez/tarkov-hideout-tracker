@@ -1,4 +1,4 @@
-import type { QuestOtherRequirement } from "@/types";
+import type { QuestOtherRequirement } from "@/types/quests";
 
 export interface RawQuestOtherRequirement {
     id?: string | null;

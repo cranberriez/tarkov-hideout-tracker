@@ -1,6 +1,6 @@
 import { CornerDownRight, Package } from "lucide-react";
 import type { ReactNode } from "react";
-import type { ItemDetails } from "@/types";
+import type { ItemSummary } from "@/types/items";
 import { ItemQuantityBadge } from "./ItemDetailItemChip";
 
 export function ItemDetailRecipeFlow({
@@ -9,7 +9,7 @@ export function ItemDetailRecipeFlow({
     outputCount,
 }: {
     children: ReactNode;
-    outputItem: Pick<ItemDetails, "name" | "iconLink" | "gridImageLink">;
+    outputItem: Pick<ItemSummary, "name" | "iconLink" | "gridImageLink">;
     outputCount: number;
 }) {
     const outputImageLink = outputItem.iconLink ?? outputItem.gridImageLink;

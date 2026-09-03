@@ -6,7 +6,7 @@ import {
   getItemSellPrice,
   type ManualPriceOverride,
 } from "@/lib/price-calculation";
-import type { GlobalItem } from "@/types";
+import type { ItemSummary } from "@/types/items";
 import type { PriceChangeHandler } from "../types";
 import { formatCompactPrice } from "../utils/formatters";
 
@@ -18,7 +18,7 @@ export function InlineItemPrice({
   overrides,
   onPriceChange,
 }: {
-  item?: GlobalItem;
+  item?: ItemSummary;
   kind: "buy" | "sell";
   totalPrice: number | null;
   displayPrice?: number | null;

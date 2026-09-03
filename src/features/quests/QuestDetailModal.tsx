@@ -3,7 +3,7 @@
 import type { MouseEvent } from "react";
 import { X } from "lucide-react";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import { QuestCard, type QuestRef } from "./QuestCard";
 import { useQuestsContext } from "./QuestsContext";
 import { dispatchQuestNavigation } from "./quest-deep-link";

@@ -1,4 +1,5 @@
-import type { BarterRecord, CraftRecord, GlobalItem } from "@/types";
+import type { BarterRecord, CraftRecord } from "@/types/recipes";
+import type { ItemSummary } from "@/types/items";
 
 export interface ManualPriceOverride {
     buy?: number;
@@ -44,7 +45,7 @@ export interface RecipeEvaluation {
 }
 
 export interface PriceCalculationContext {
-    itemsById: Readonly<Record<string, GlobalItem>>;
+    itemsById: Readonly<Record<string, ItemSummary>>;
     bartersByItemId: Readonly<Record<string, BarterRecord[]>>;
     craftsByItemId: Readonly<Record<string, CraftRecord[]>>;
     overrides?: ManualPriceOverrides;

@@ -10,7 +10,7 @@ import type {
 } from "@/lib/utils/quest-item-index";
 import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";
-import type { ItemDetails } from "@/types";
+import type { ItemSummary } from "@/types/items";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
 
 interface ItemDetailQuestRequirementsProps {
@@ -19,7 +19,7 @@ interface ItemDetailQuestRequirementsProps {
     questItemState: DerivedQuestItemState | null;
     questRewards: QuestRewardLink[];
     anyOfGroups: DerivedQuestAnyOfGroup[];
-    itemDetailsById: Record<string, ItemDetails>;
+    itemDetailsById: Record<string, ItemSummary>;
     completedQuests: Record<string, boolean>;
 }
 
@@ -169,12 +169,12 @@ function AnyOfGroupRow({
 }: {
     group: DerivedQuestAnyOfGroup;
     selectedItemId: string;
-    itemDetailsById: Record<string, ItemDetails>;
+    itemDetailsById: Record<string, ItemSummary>;
 }) {
     const isCompleted = group.status === "completed";
     const groupItems = group.itemIds
         .map((itemId) => itemDetailsById[itemId])
-        .filter((item): item is ItemDetails => !!item);
+        .filter((item): item is ItemSummary => !!item);
     const selectedItem = groupItems.find((item) => item.id === selectedItemId);
     const otherItems = groupItems.filter((item) => item.id !== selectedItemId);
     const previewItems = selectedItem

@@ -1,5 +1,5 @@
 import { formatCompactRoubles, formatRoubles } from "@/lib/utils/market-price";
-import type { GlobalItemVendorPrice } from "@/types";
+import type { VendorPrice } from "@/types/prices";
 
 export function formatSignedRoubles(value: number | null) {
   if (value === null) return "-";
@@ -15,7 +15,7 @@ export function formatCompactPrice(value: number | null) {
 }
 
 export function formatTraderOffer(
-  offer: GlobalItemVendorPrice,
+  offer: VendorPrice,
   count: number,
   includeRoubleComparison: boolean,
 ) {

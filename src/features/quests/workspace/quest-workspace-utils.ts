@@ -1,4 +1,4 @@
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import type {
     QuestObjectiveCategory,
     QuestWorkspaceLockedFilterSettings,

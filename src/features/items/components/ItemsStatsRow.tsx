@@ -2,15 +2,18 @@
 
 import { useMemo } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { useDataContext } from "@/app/(data)/_dataContext";
 import { poolItems } from "@/lib/utils/item-pooling";
 import { getFleaPrice } from "@/lib/utils/market-price";
 import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
 import { deriveQuestAnyOfGroups, deriveQuestItemStates } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
-import type { MarketPrice } from "@/types";
+import type { CurrentPrice } from "@/types/prices";
+import type { Station } from "@/types/hideout";
+import type { ItemSummary } from "@/types/items";
 
 interface ItemsStatsRowProps {
+    stations: Station[];
+    items: ItemSummary[];
     questItemIndex: QuestItemIndexEntry[];
     questAnyOfGroups: QuestAnyOfGroupEntry[];
     questAvailabilityQuests: QuestAvailabilityQuest[];
@@ -19,7 +22,7 @@ interface ItemsStatsRowProps {
 type MergedStatItem = {
     id: string;
     normalizedName?: string;
-    marketPrice?: MarketPrice | null;
+    marketPrice?: CurrentPrice | null;
     hideoutCount: number;
     hideoutFirCount: number;
     questCount: number;
@@ -27,11 +30,12 @@ type MergedStatItem = {
 };
 
 export function ItemsStatsRow({
+    stations,
+    items,
     questItemIndex,
     questAnyOfGroups,
     questAvailabilityQuests,
 }: ItemsStatsRowProps) {
-    const { stations, items } = useDataContext();
     const {
         stationLevels,
         hiddenStations,
@@ -124,9 +128,7 @@ export function ItemsStatsRow({
     }, [activeQuestGroups]);
 
     const mergedPool = useMemo(() => {
-        if (!stations) return [];
-
-        const detailsByItemId = new Map((items ?? []).map((item) => [item.id, item]));
+        const detailsByItemId = new Map(items.map((item) => [item.id, item]));
 
         const hideoutItems = poolItems({
             stations,

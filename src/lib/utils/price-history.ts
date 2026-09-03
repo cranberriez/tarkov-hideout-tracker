@@ -1,9 +1,4 @@
-export interface PriceHistoryPoint {
-    price: number;
-    priceMin: number;
-    offerCount: number | null;
-    timestamp: number;
-}
+import type { PriceHistoryPoint } from "@/types/prices";
 
 export type PriceHistoryRange = "day" | "threeDays" | "week" | "month" | "all";
 

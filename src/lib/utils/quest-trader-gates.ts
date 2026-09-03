@@ -1,4 +1,4 @@
-import type { FullQuest, QuestTraderRequirement } from "@/types";
+import type { FullQuest, QuestTraderRequirement } from "@/types/quests";
 import { getQuestLoyaltyLevelOverride } from "./quest-trader-tab-overrides";
 
 export type QuestTraderGateType = "level" | "reputation" | "unknown";

@@ -1,4 +1,5 @@
-import type { DataResponseDiagnostics, GlobalItem } from "@/types";
+import type { DataDiagnostics } from "@/types/common";
+import type { ItemSummary } from "@/types/items";
 
 export const ITEM_CATALOG_CHUNK_MAX_BYTES = 750 * 1024;
 export const ITEM_CATALOG_MANIFEST_SCHEMA = 1;
@@ -10,12 +11,12 @@ export interface ItemCatalogManifest {
     chunkCount: number;
     itemCount: number;
     updatedAt: number;
-    diagnostics?: DataResponseDiagnostics;
+    diagnostics?: DataDiagnostics;
 }
 
 interface ItemCatalogChunk {
     generation: string;
-    items: GlobalItem[];
+    items: ItemSummary[];
 }
 
 const encoder = new TextEncoder();
@@ -25,7 +26,7 @@ function byteLength(value: string) {
 }
 
 export function serializeItemCatalogChunks(
-    items: GlobalItem[],
+    items: ItemSummary[],
     generation: string,
     maxBytes = ITEM_CATALOG_CHUNK_MAX_BYTES,
 ): string[] {
@@ -83,7 +84,7 @@ export function parseItemCatalogManifest(value: unknown): ItemCatalogManifest | 
 export function parseItemCatalogChunk(
     value: unknown,
     expectedGeneration: string,
-): GlobalItem[] | null {
+): ItemSummary[] | null {
     try {
         const parsed = typeof value === "string" ? JSON.parse(value) : value;
         if (!parsed || typeof parsed !== "object") return null;

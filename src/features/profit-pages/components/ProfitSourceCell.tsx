@@ -1,7 +1,8 @@
 import Image from "next/image";
 import { LockKeyhole } from "lucide-react";
 import type { RecipeEvaluation } from "@/lib/price-calculation";
-import type { Station, Trader } from "@/types";
+import type { Station } from "@/types/hideout";
+import type { Trader } from "@/types/traders";
 
 export function ProfitSourceCell({
   evaluation,

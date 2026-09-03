@@ -1,12 +1,12 @@
 "use client";
 
-import type { MarketPrice } from "@/types";
+import type { CurrentPrice } from "@/types/prices";
 import { ArrowDownRight, ArrowUpRight, Check, Clock3, Store, X } from "lucide-react";
 import { formatRoubles, hasFleaMarketData } from "@/lib/utils/market-price";
 import { ItemDetailSection } from "./ItemDetailSection";
 
 interface ItemDetailMarketProps {
-    marketPrice: MarketPrice;
+    marketPrice: CurrentPrice;
     relativeUpdatedAt: string | null;
     valuationCount: number;
     isFiat: boolean;
@@ -14,7 +14,7 @@ interface ItemDetailMarketProps {
     playerLevel: number;
 }
 
-export function hasItemMarketData(marketPrice: MarketPrice | null | undefined) {
+export function hasItemMarketData(marketPrice: CurrentPrice | null | undefined) {
     return Boolean(
         marketPrice &&
             (hasFleaMarketData(marketPrice) ||

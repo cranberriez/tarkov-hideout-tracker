@@ -2,7 +2,7 @@ import {
   getItemSellComparison,
   type ManualPriceOverride,
 } from "@/lib/price-calculation";
-import type { GlobalItem } from "@/types";
+import type { ItemSummary } from "@/types/items";
 import {
   formatCompactPrice,
   formatRoundedRoubles,
@@ -63,7 +63,7 @@ export function SellValueCell({
   sellValue,
   overrides,
 }: {
-  item?: GlobalItem;
+  item?: ItemSummary;
   count: number;
   sellValue: number | null;
   overrides: Record<string, ManualPriceOverride>;

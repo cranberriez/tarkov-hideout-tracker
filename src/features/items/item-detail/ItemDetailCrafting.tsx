@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Check, Clock3, Hammer, LockKeyhole } from "lucide-react";
-import type { ItemAmount, ItemCraftRecipe, ItemDetails } from "@/types";
+import type { ItemAmount, ItemCraftRecipe } from "@/features/items/item-detail/item-detail-types";
+import type { ItemSummary } from "@/types/items";
 import type { GameEdition } from "@/lib/stores/useUserStore";
 import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
@@ -18,7 +19,7 @@ interface ItemDetailCraftingProps {
     evaluationsById: Readonly<Record<string, RecipeEvaluation>>;
     profitLoading: boolean;
     profitError: string | null;
-    outputItem: ItemDetails;
+    outputItem: ItemSummary;
     onItemClick: (itemId: string) => void;
 }
 

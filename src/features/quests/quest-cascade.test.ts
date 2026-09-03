@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import type { FullQuest } from "../../types/types";
+import type { FullQuest } from "@/types/quests";
 import { collectCompleteCascade, collectUncompleteCascade } from "./quest-cascade";
 import { NETWORK_PROVIDER_PART_1_ID } from "../../lib/utils/sensitive-quest-backfill";
 

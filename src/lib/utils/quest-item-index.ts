@@ -1,12 +1,5 @@
 import type { ItemQuestVisibilityMode } from "@/lib/stores/useUserStore";
-import type {
-    FullQuest,
-    FullQuestObjective,
-    QuestItemObjectiveScope,
-    Quest,
-    QuestObjectiveItemType,
-    QuestPrerequisite,
-} from "@/types";
+import type { FullQuest, FullQuestObjective, QuestItemObjectiveScope, Quest, QuestObjectiveItemType, QuestPrerequisite } from "@/types/quests";
 import {
     buildQuestAvailabilityMap,
     isQuestAvailableForProfile,

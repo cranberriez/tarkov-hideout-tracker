@@ -15,7 +15,7 @@ import {
     Trash2,
     Upload,
 } from "lucide-react";
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { FullQuestObjective, QuestSpecificItem } from "@/types";
+import type { FullQuestObjective, QuestSpecificItem } from "@/types/quests";
 import { buildObjectivePresentation } from "./quest-objective-presentation";
 
 function regularObjective(id: string, type: "findItem" | "giveItem", itemIds: string[]): FullQuestObjective {

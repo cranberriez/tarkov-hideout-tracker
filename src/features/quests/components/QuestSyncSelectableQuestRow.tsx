@@ -1,6 +1,6 @@
 "use client";
 
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import { formatQuestTraderGate } from "@/lib/utils/quest-trader-gates";
 import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";
 

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 import { buildQuestListModel, buildSortedQuestListModel } from "./quest-list-model";
 import type { QuestWorkspaceStatusInfo } from "./quest-workspace-utils";
 

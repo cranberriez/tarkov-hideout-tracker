@@ -1,12 +1,4 @@
-import type {
-    FullQuest,
-    Quest,
-    QuestPrerequisite,
-    QuestTraderRequirement,
-    QuestPrestige,
-    QuestFailCondition,
-    QuestOtherRequirement,
-} from "@/types";
+import type { FullQuest, Quest, QuestPrerequisite, QuestTraderRequirement, QuestPrestige, QuestFailCondition, QuestOtherRequirement } from "@/types/quests";
 import {
     isQuestDisabledByCompletedFailedRequirement,
     statusIncludesComplete,

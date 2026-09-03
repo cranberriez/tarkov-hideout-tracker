@@ -10,7 +10,7 @@ import {
     isQuestAvailableForProfile,
     toQuestAvailabilityQuest,
 } from "./quest-availability";
-import type { FullQuest } from "@/types";
+import type { FullQuest } from "@/types/quests";
 
 const OIL_RUN_ID = "59c124d686f774189b3c843f";
 const DEBTOR_ID = "639dbaf17c898a131e1cffff";

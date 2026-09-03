@@ -1,4 +1,4 @@
-import type { BarterRecord, CraftRecord, ItemAmountRef } from "@/types";
+import type { BarterRecord, CraftRecord, ItemAmountRef } from "@/types/recipes";
 import { getItemBuyPrice, getItemSellPrice, practicalSavingsThreshold } from "./prices";
 import type {
     AcquisitionMethod,

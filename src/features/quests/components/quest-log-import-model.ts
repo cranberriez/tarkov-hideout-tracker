@@ -6,7 +6,7 @@ import {
     type QuestImportBuckets,
     type QuestImportRow,
 } from "../../../lib/utils/quest-log-import";
-import type { FullQuest } from "../../../types/types";
+import type { FullQuest } from "@/types/quests";
 
 export interface ParsedImportView {
     result: import("../../../lib/utils/quest-log-parser").QuestLogParseResult;

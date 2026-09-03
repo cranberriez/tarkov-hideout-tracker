@@ -1,6 +1,6 @@
 "use client";
 
-import { ItemDetails } from "@/types";
+import type { ItemSummary } from "@/types/items";
 import { Bolt, BookOpen } from "lucide-react";
 import { formatNumber } from "@/lib/utils/format-number";
 import type { ItemSize } from "@/lib/stores/useUserStore";
@@ -9,7 +9,7 @@ import { computeNeeds } from "@/lib/utils/item-needs";
 import { formatRoubles, getFleaPrice, hasFleaMarketData } from "@/lib/utils/market-price";
 
 interface ItemRowProps {
-    item: ItemDetails;
+    item: ItemSummary;
     count: number;
     firCount?: number;
     size: ItemSize;

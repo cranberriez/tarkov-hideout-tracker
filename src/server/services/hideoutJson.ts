@@ -19,12 +19,9 @@ import {
     markStaleFallback,
     parseNonEmptyTimedResponse,
 } from "@/server/services/tarkovJson/cache";
-import type {
-    HideoutStationsPayload,
-    ItemRequirement,
-    Station,
-    TimedResponse,
-} from "@/types";
+import type { HideoutStationsPayload } from "@/types/contracts";
+import type { ItemRequirement, Station } from "@/types/hideout";
+import type { DataResult } from "@/types/common";
 
 function buildRedisKeys(gameMode: TarkovJsonGameMode) {
     const bodyKey = `hideout:stations:v${CACHE_VERSIONS.hideoutStations}:${gameMode}`;
@@ -65,7 +62,7 @@ interface JsonHideoutStation {
 
 export async function getJsonHideoutStations(
     gameMode: TarkovJsonGameMode = "regular",
-): Promise<TimedResponse<HideoutStationsPayload>> {
+): Promise<DataResult<HideoutStationsPayload>> {
     const { bodyKey, metaKey } = buildRedisKeys(gameMode);
     const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
         "hideoutStations",
@@ -226,7 +223,7 @@ export async function getJsonHideoutStations(
             })),
             tradersDataset.locale,
         ];
-        const body: TimedResponse<HideoutStationsPayload> = {
+        const body: DataResult<HideoutStationsPayload> = {
             data: { stations },
             updatedAt,
             diagnostics: {

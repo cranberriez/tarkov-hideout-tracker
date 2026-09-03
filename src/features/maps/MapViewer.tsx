@@ -6,7 +6,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { getProjectedMapAspectRatio, worldToMapPoint } from "./map-projection";
 import { orderMapFloorsTopToBottom, resolveMapFloors } from "./map-floor-resolution";
-import type { MapOverlayMarker, MapRenderDefinition } from "./map-types";
+import type { MapOverlayMarker, MapRenderDefinition } from "@/types/maps";
 import { constrainMapView, zoomViewAroundPoint, type MapViewTransform } from "./map-view-transform";
 import { getQuestObjectiveTypeLabel, QuestObjectiveIcon } from "@/features/quests/components/QuestObjectiveIcon";
 

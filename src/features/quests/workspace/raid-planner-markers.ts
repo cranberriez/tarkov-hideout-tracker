@@ -1,5 +1,5 @@
-import type { FullQuest, QuestMapLocation } from "@/types";
-import type { MapOverlayMarker } from "@/features/maps/map-types";
+import type { FullQuest, QuestMapLocation } from "@/types/quests";
+import type { MapOverlayMarker } from "@/types/maps";
 import { getQuestMapGroupKey } from "../quest-map-groups";
 
 export interface QuestMarkerStyle {

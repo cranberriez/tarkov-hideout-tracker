@@ -1,4 +1,4 @@
-import type { PriceHistoryPoint } from "@/lib/utils/price-history";
+import type { PriceHistoryPoint } from "@/types/prices";
 
 export const PRICE_HISTORY_CUTOFF_TIMESTAMP = Date.UTC(2025, 11, 1);
 

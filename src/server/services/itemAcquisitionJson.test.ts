@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { BarterRecord, CraftRecord } from "@/types";
+import type { BarterRecord, CraftRecord } from "@/types/recipes";
 import { buildItemAcquisitionTree } from "../../lib/price-calculation/acquisition-tree";
 
 test("buildItemAcquisitionTree returns only the reachable cycle-safe subgraph", () => {

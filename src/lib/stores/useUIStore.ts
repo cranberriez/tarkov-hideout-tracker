@@ -1,9 +1,9 @@
 import { create } from "zustand";
-import type { ItemDetails } from "@/types";
+import type { ItemSummary } from "@/types/items";
 
 export interface PendingItem {
     tempId: string;
-    item: ItemDetails;
+    item: ItemSummary;
     nonFir: number;
     fir: number;
 }
