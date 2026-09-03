@@ -106,3 +106,40 @@ test("removed global data boundaries stay deleted", () => {
         [],
     );
 });
+
+test("pages enter Tarkov data through queries rather than the concrete repository", () => {
+    const violations = sourceFiles(path.join(sourceRoot, "app"))
+        .filter((file) => /(?:^|[\\/])page\.tsx$/.test(file))
+        .filter((file) =>
+            moduleImports(readFileSync(file, "utf8")).some(
+                (specifier) =>
+                    specifier === "@/server/repositories/tarkov-data/current-repository",
+            ),
+        )
+        .map(relativePath);
+
+    assert.deepEqual(violations, []);
+});
+
+test("queries do not bypass repositories by importing provider services", () => {
+    const violations = sourceFiles(path.join(sourceRoot, "server", "queries"))
+        .filter((file) =>
+            moduleImports(readFileSync(file, "utf8")).some((specifier) =>
+                specifier.startsWith("@/server/services/"),
+            ),
+        )
+        .map(relativePath);
+
+    assert.deepEqual(violations, []);
+});
+
+test("normal layouts do not inspect Redis infrastructure", () => {
+    const violations = sourceFiles(path.join(sourceRoot, "app"))
+        .filter((file) => /(?:^|[\\/])layout\.tsx$/.test(file))
+        .filter((file) =>
+            moduleImports(readFileSync(file, "utf8")).includes("@/server/redis"),
+        )
+        .map(relativePath);
+
+    assert.deepEqual(violations, []);
+});

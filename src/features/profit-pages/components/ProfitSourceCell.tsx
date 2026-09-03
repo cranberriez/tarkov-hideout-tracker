@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { LockKeyhole } from "lucide-react";
 import type { RecipeEvaluation } from "@/lib/price-calculation";
-import type { Station } from "@/types/hideout";
+import type { ProfitStationSource } from "../types";
 import type { Trader } from "@/types/traders";
 
 export function ProfitSourceCell({
@@ -10,7 +10,7 @@ export function ProfitSourceCell({
   available,
 }: {
   evaluation: RecipeEvaluation;
-  source?: Trader | Station;
+  source?: Trader | ProfitStationSource;
   available: boolean;
 }) {
   return (

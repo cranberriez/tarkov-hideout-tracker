@@ -131,6 +131,28 @@ test("item checklist remains usable with station data when quests fail", async (
     assert.equal(data.items?.[0].marketPrice?.price, 100);
 });
 
+test("item checklist excludes reward-only items and reward indexes from its route contract", async () => {
+    const requestedIds: string[][] = [];
+    const repository = createRepository({
+        stations: async () => result([station]),
+        quests: async () => result([quest]),
+        items: async (_mode, ids) => {
+            requestedIds.push([...ids]);
+            return result(
+                Object.fromEntries(
+                    ids.map((id) => [id, { id, name: id, normalizedName: id }]),
+                ),
+            );
+        },
+        prices: async () => result({}),
+    });
+
+    const data = await getItemChecklistPageData("regular", repository);
+
+    assert.deepEqual(requestedIds, [["item-a"]]);
+    assert.equal("questRewardIndex" in data, false);
+});
+
 test("quest workspace requests only standard IDs referenced by delivered quests", async () => {
     const requestedIds: string[][] = [];
     const repository = createRepository({
@@ -150,6 +172,10 @@ test("quest workspace requests only standard IDs referenced by delivered quests"
     assert.deepEqual(data.itemIds, ["item-b", "item-c", "item-a"]);
     assert.equal(data.quests?.[0].id, "quest-1");
     assert.equal(data.errors.quests, null);
+    assert.equal("questItemIndex" in data, false);
+    assert.equal("questRewardIndex" in data, false);
+    assert.equal("questAnyOfGroups" in data, false);
+    assert.equal("questAvailabilityQuests" in data, false);
 });
 
 test("profit keeps the craft graph when barter and trader domains fail", async () => {
@@ -188,6 +214,7 @@ test("profit keeps the craft graph when barter and trader domains fail", async (
     assert.equal(data.barters.length, 0);
     assert.equal(data.crafts.length, 1);
     assert.deepEqual(data.stations.map((entry) => entry.id), ["workbench"]);
+    assert.equal("levels" in data.stations[0], false);
     assert.equal(data.errors.barters, "Barter data could not be loaded.");
     assert.equal(data.errors.crafts, null);
 });

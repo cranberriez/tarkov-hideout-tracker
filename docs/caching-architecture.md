@@ -95,21 +95,17 @@ but retains development key namespacing. The route returns 404 outside developme
 ## Request flow
 
 ```text
-(data)/layout.tsx
-  -> cached stations (Redis + Next)
-  -> global item catalog (Redis only)
-  -> DataContext(items)
-       -> client builds itemById
-
-/items and /quests
-  -> cached full quests (Redis + Next)
-  -> client joins standard item IDs through itemById
+server page
+  -> named page query
+  -> TarkovDataRepository
+  -> only the cached domains and referenced IDs needed by that route
+  -> route contract from src/types/contracts.ts
 
 item modal opens
-  -> /api/items/{itemId}/usage?mode=...
-       -> barter index (Redis only)
-       -> craft index (Redis only)
-       -> matching records only
+  -> bounded relations, usage, acquisition-tree, and price-history APIs
+
+item search opens
+  -> bounded /api/items/search request (10 Quick Add, 50 checklist)
 ```
 
 ## Tags and invalidation

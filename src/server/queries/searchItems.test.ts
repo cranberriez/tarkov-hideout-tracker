@@ -4,6 +4,7 @@ import type { TarkovDataRepository } from "@/server/repositories/tarkov-data/typ
 import type { DataResult, TarkovDataMode } from "@/types/common";
 import type { ItemSummary } from "@/types/items";
 import { ITEM_SEARCH_MAX_QUERY_LENGTH } from "../../types/contracts";
+import { ITEM_SEARCH_PAGE_RESULT_LIMIT } from "../../types/contracts";
 import {
     ITEM_SEARCH_RESULT_LIMIT,
     searchItems,
@@ -74,4 +75,32 @@ test("item search returns at most the fixed result limit and rejects invalid que
         RangeError,
     );
     assert.deepEqual(calls, ["pvp-season"]);
+});
+
+test("item checklist search returns 50 alphabetized results with starts-with matches first", async () => {
+    const calls: TarkovDataMode[] = [];
+    const catalog = [
+        { id: "contains", name: "A Match Inside", normalizedName: "a-match-inside" },
+        { id: "starts-z", name: "Match Z", normalizedName: "match-z" },
+        { id: "starts-a", name: "Match A", normalizedName: "match-a" },
+        ...Array.from({ length: 60 }, (_, index) => ({
+            id: `extra-${index}`,
+            name: `Extra Match ${String(index).padStart(2, "0")}`,
+            normalizedName: `extra-match-${index}`,
+        })),
+    ];
+    const repository = createRepository(catalog, calls);
+
+    const payload = await searchItems(
+        "match",
+        "regular",
+        repository,
+        ITEM_SEARCH_PAGE_RESULT_LIMIT,
+    );
+
+    assert.equal(payload.items.length, 50);
+    assert.deepEqual(payload.items.slice(0, 2).map((item) => item.id), [
+        "starts-a",
+        "starts-z",
+    ]);
 });

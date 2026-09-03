@@ -48,6 +48,9 @@ export function StationCard({
     const currentLevelData = station.levels.find((l) => l.level === currentLevel);
     const isMaxed = currentLevel >= maxLevel;
     const isHidden = hiddenStations[station.id] || isMaxed;
+    const hasUnresolvedNextLevelItem =
+        nextLevelData?.itemRequirements.some((requirement) => !itemById[requirement.itemId]) ??
+        false;
 
     const computeUpgradeStatus = (): "ready" | "missing" | "illegal" => {
         let isIllegal = false;
@@ -87,7 +90,10 @@ export function StationCard({
         if (nextLevelData && !itemsMissing) {
             for (const req of nextLevelData.itemRequirements) {
                 const item = itemById[req.itemId];
-                if (!item) continue;
+                if (!item) {
+                    itemsMissing = true;
+                    break;
+                }
                 const norm = item.normalizedName;
                 const isCurrency = norm === "roubles" || norm === "dollars" || norm === "euros";
 
@@ -130,15 +136,14 @@ export function StationCard({
     const upgradeStatus = computeUpgradeStatus();
 
     const handleLevelUp = () => {
-        if (isMaxed) return;
+        if (isMaxed || hasUnresolvedNextLevelItem) return;
         const targetLevel = currentLevel + 1;
         const levelData = station.levels.find((l) => l.level === targetLevel);
         if (!levelData) return;
 
         for (const req of levelData.itemRequirements) {
             const item = itemById[req.itemId];
-            if (!item) continue;
-            const norm = item.normalizedName;
+            const norm = item?.normalizedName ?? "";
             const isCurrency = norm === "roubles" || norm === "dollars" || norm === "euros";
 
             let haveDelta = 0;
@@ -168,8 +173,7 @@ export function StationCard({
         if (levelData) {
             for (const req of levelData.itemRequirements) {
                 const item = itemById[req.itemId];
-                if (!item) continue;
-                const norm = item.normalizedName;
+                const norm = item?.normalizedName ?? "";
                 const isCurrency = norm === "roubles" || norm === "dollars" || norm === "euros";
 
                 let haveDelta = 0;
@@ -213,6 +217,7 @@ export function StationCard({
                 onLevelDown={handleLevelDown}
                 onLevelUp={handleLevelUp}
                 upgradeStatus={upgradeStatus}
+                hasUnresolvedItemData={hasUnresolvedNextLevelItem}
             />
 
             {/* Content */}

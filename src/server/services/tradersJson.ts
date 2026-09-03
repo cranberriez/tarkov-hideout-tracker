@@ -20,8 +20,12 @@ function buildRedisKeys(gameMode: TarkovJsonGameMode) {
     return { bodyKey, metaKey: `${bodyKey}:meta` };
 }
 
-interface JsonTrader extends Trader {
+interface JsonTrader {
+    id: string;
     name: string;
+    normalizedName: string;
+    imageLink?: string | null;
+    image4xLink?: string | null;
 }
 
 export async function getJsonTraders(

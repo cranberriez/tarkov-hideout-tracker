@@ -24,7 +24,9 @@ export async function GET(
         );
         return NextResponse.json(payload, {
             headers: {
-                "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
+                "Cache-Control": Object.values(payload.errors).some(Boolean)
+                    ? "private, no-store"
+                    : "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
             },
         });
     } catch {

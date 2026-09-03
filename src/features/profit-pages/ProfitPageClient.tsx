@@ -9,12 +9,11 @@ import { evaluateBarters, evaluateCrafts } from "@/lib/price-calculation";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ProfitPageData } from "@/types/contracts";
 import type { BarterRecord, CraftRecord } from "@/types/recipes";
-import type { Station } from "@/types/hideout";
 import type { Trader } from "@/types/traders";
 import { ProfitPageControls } from "./components/ProfitPageControls";
 import { ProfitPageHeader } from "./components/ProfitPageHeader";
 import { ProfitTable } from "./components/ProfitTable";
-import type { ProfitPageKind, SortMode } from "./types";
+import type { ProfitPageKind, ProfitStationSource, SortMode } from "./types";
 import {
   compareEvaluations,
   getRecipeSourceId,
@@ -114,7 +113,7 @@ export function ProfitPageClient({
     () =>
       Object.fromEntries(
         data.stations.map((station) => [station.id, station]),
-      ) as Record<string, Station>,
+      ) as Record<string, ProfitStationSource>,
     [data.stations],
   );
   const bartersById = useMemo(
@@ -136,7 +135,7 @@ export function ProfitPageClient({
       kind === "barter"
         ? data.barters.map((entry) => entry.traderId)
         : data.crafts.map((entry) => entry.stationId);
-    const map: Readonly<Record<string, Trader | Station>> =
+    const map: Readonly<Record<string, Trader | ProfitStationSource>> =
       kind === "barter" ? tradersById : stationsById;
     return [...new Set(ids)]
       .map((id) => ({ id, name: map[id]?.name ?? id }))
@@ -192,16 +191,17 @@ export function ProfitPageClient({
     targetRecipeId,
     traderLoyaltyLevels,
   ]);
-  const relevantError =
-    kind === "barter" ? data.errors.barters : data.errors.crafts;
-  if (!items || itemsError || relevantError)
+  const recipeErrors = [data.errors.barters, data.errors.crafts].filter(
+    (message): message is string => Boolean(message),
+  );
+  if (!items || itemsError || recipeErrors.length > 0)
     return (
       <main className="container mx-auto px-6 py-8">
         <DataLoadError
           title={`${kind === "barter" ? "Barter" : "Craft"} profit data is unavailable`}
           messages={[
             itemsError,
-            relevantError,
+            ...recipeErrors,
             !items ? "Item prices could not be loaded." : null,
           ].filter((message): message is string => Boolean(message))}
         />

@@ -13,7 +13,7 @@ interface HideoutClientPageProps {
 }
 
 export function HideoutClientPage({ data }: HideoutClientPageProps) {
-    const { stations, items, freshness, errors } = data;
+    const { stations, items, unresolvedItemIds, freshness, errors } = data;
     const itemById = useMemo(
         () => Object.fromEntries((items ?? []).map((item) => [item.id, item])),
         [items],
@@ -70,12 +70,25 @@ export function HideoutClientPage({ data }: HideoutClientPageProps) {
                     ].filter((message): message is string => Boolean(message))}
                 />
             ) : (
-                <HideoutList
-                    stations={stations}
-                    itemById={itemById}
-                    stationsUpdatedAt={freshness.stationsUpdatedAt}
-                    itemsUpdatedAt={freshness.itemsUpdatedAt}
-                />
+                <>
+                    {unresolvedItemIds.length > 0 && (
+                        <div
+                            role="alert"
+                            className="mb-4 rounded border border-amber-400/30 bg-amber-950/30 px-4 py-3 text-sm text-amber-100"
+                        >
+                            {unresolvedItemIds.length} hideout item
+                            {unresolvedItemIds.length === 1 ? " is" : "s are"} missing from
+                            the catalog. Affected station upgrades are disabled until the data
+                            source is complete.
+                        </div>
+                    )}
+                    <HideoutList
+                        stations={stations}
+                        itemById={itemById}
+                        stationsUpdatedAt={freshness.stationsUpdatedAt}
+                        itemsUpdatedAt={freshness.itemsUpdatedAt}
+                    />
+                </>
             )}
         </main>
     );

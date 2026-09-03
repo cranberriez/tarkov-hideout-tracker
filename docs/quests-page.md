@@ -8,7 +8,7 @@ The `/quests` route displays Tarkov.dev quest data in a full-height split worksp
 
 | File                                                    | Role                                                                                                                          |
 | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `src/app/(data)/quests/page.tsx`                        | Server component; fetches full quest data, builds quest item and availability metadata, passes props to `QuestsClientPage`    |
+| `src/app/(data)/quests/page.tsx`                        | Server component; calls the quest-workspace query and passes its route contract to `QuestsClientPage`                         |
 | `src/features/quests/QuestsClientPage.tsx`              | Client shell; manages selected item modal state, renders search/filter chrome, wraps content in `QuestsProvider`              |
 | `src/features/quests/QuestsContext.tsx`                 | React context + provider; reads store filters, owns local search text, computes derived quest maps and filtered quest lists   |
 | `src/features/quests/QuestCard.tsx`                     | Individual legacy quest card; badges, objectives, item thumbnails, prerequisite/unlock chips, pin/ignore/complete actions |
@@ -23,8 +23,8 @@ The `/quests` route displays Tarkov.dev quest data in a full-height split worksp
 | `src/features/quests/quest-map-groups.ts`               | Map-group normalization for filters and By Map grouping                                                                       |
 | `src/features/quests/quest-sorting.ts`                  | Sort utilities for quest views and unlock-impact counts                                                                       |
 | `src/features/quests/components/quest-ui.tsx`           | Shared UI primitives                                                                                                          |
-| `src/server/services/questsJson.ts`                     | JSON-only `getCachedJsonFullQuestData()` implementation                                                                       |
-| `src/server/services/quests.ts`                         | Shared `orderQuestsByPrerequisites()` utility                                                                                   |
+| `src/server/queries/getQuestWorkspacePageData.ts`       | Composes display quests with only their referenced item summaries and prices                                                   |
+| `src/lib/utils/quest-ordering.ts`                       | Shared `orderQuestsByPrerequisites()` utility                                                                                   |
 | `src/lib/utils/quest-item-index.ts`                     | Builds and derives quest item hand-in metadata                                                                                |
 | `src/lib/utils/quest-availability.ts`                   | Converts full quests to the lighter availability shape and checks profile availability                                        |
 
@@ -34,24 +34,23 @@ The `/quests` route displays Tarkov.dev quest data in a full-height split worksp
 
 ```text
 /quests page (server component)
-  -> getCachedFullQuestData()
-  -> orderQuestsByPrerequisites(quests)
-  -> buildQuestItemIndex(quests)
-  -> quests.map(toQuestAvailabilityQuest)
-  -> <QuestsClientPage
-       quests={ordered}
-       questItemIndex={...}
-       questAvailabilityQuests={...}
-     />
+  -> getQuestWorkspacePageData(mode)
+  -> repository quest read
+  -> display preparation + prerequisite order
+  -> request only item IDs referenced by delivered quests
+  -> <QuestsClientPage quests={...} items={...} />
       -> <QuestsProvider onItemClick={setSelectedItemId}>
           -> QuestsContent renders QuestsList
           -> Quest item clicks open ItemDetailModal
 ```
 
-Quest data is not part of the shared `(data)/layout.tsx` context. Pages that need quest data fetch it server-side. `getCachedFullQuestData()` is exported by `tarkovData.ts` and resolves to the JSON implementation. The quests page derives `traders` and `allMaps` from the loaded full quest data; it does not currently need `getCachedTraders()`.
+Quest data is not part of the shared `(data)/layout.tsx`. The named page query
+uses the repository contract and the quests page derives trader/map presentation
+from the delivered full quests. Item-detail indexes are not serialized with the
+page because the modal loads relations lazily.
 
 Completion item rewards are retained as ID/count references on `FullQuest`. The
-quest details pane resolves those IDs through `DataContext.itemById` and shows
+quest details pane resolves those IDs through the route's local item index and shows
 items, experience, and trader reputation together in the bottom Rewards section.
 Reward item clicks open the standard item detail modal.
 
@@ -59,7 +58,7 @@ Reward item clicks open the standard item detail modal.
 
 ## Quest Ordering
 
-`orderQuestsByPrerequisites()` in `src/server/services/quests.ts` supplies the
+`orderQuestsByPrerequisites()` in `src/lib/utils/quest-ordering.ts` supplies the
 server's stable manifest order. The workspace then applies the selected view sort
 from `src/features/quests/quest-sorting.ts`.
 
@@ -359,7 +358,10 @@ All quest views support these sort modes:
 
 Quest cards show sort-specific metadata for XP and Unlock Impact sorts. Level sort does not add a separate chip because the card already displays quest level.
 
-Quest item modals resolve the selected item from `DataContext.items` and read its embedded `marketPrice`. Tracked quest-only hand-in items therefore use the same Tarkov.dev `/items` record as hideout items.
+Quest cards resolve the selected item from the route's referenced item summaries.
+The item modal then loads its own relations and acquisition data lazily. Tracked
+standard hand-in items therefore use the same Tarkov.dev `/items` identity as
+hideout items.
 
 ---
 

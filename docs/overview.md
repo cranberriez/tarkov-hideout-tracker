@@ -78,19 +78,20 @@ Server-fetched data:
   quest-specific presentation;
 - barter and craft indexes, queried lazily per selected standard item or loaded when a profit page is visited.
 
-`DataContext` exposes station and catalog arrays. Its client provider memoizes
-`itemById`, which lets hideout, checklist, search, quest, and modal components join
-standard item presentation without embedding copies in source records.
+Server pages call named query modules in `src/server/queries/`. Each query requests
+only the repository domains and IDs needed by that route and returns a contract from
+`src/types/contracts.ts`. Clients build local ID indexes from those route-scoped
+arrays. Search and item-detail relationships are fetched lazily through bounded API
+routes instead of shipping the full catalog or every relationship in the layout.
 
 ## Item data flow
 
 ```text
-/items   -> compact global catalog -> DataContext.items -> client itemById
-/hideout -> station itemId refs --------------------------^
-/tasks   -> standard itemId refs -------------------------^
-         -> quest-specific inline display only
-/barters + /crafts -> Redis indexes -> lazy per-item usage route
-                              \-----> profit pages -> client calculation graph
+page -> named query -> TarkovDataRepository -> cached JSON adapters
+                    -> route-scoped items/prices by referenced ID
+item search --------> bounded /api/items/search
+item modal ---------> lazy relations + usage + acquisition + history APIs
+profit pages -------> both recipe graphs + compact source presentation
 ```
 
 The large catalog, barter index, and craft index use versioned Redis caches only.

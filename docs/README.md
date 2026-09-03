@@ -23,7 +23,7 @@ Docs are grouped by purpose:
   Independent PVP, PVE, and KORD character profiles, legacy-state retention, cookies, and mode-aware server data.
 
 - **[data-and-price-context-architecture.md](data-and-price-context-architecture.md)** - Current architecture
-  How `DataContext` delivers ID-based stations and the compact global item catalog with market pricing.
+  How repositories, page queries, route-scoped contracts, and lazy item APIs deliver data and prices.
 
 - **[api-routes.md](api-routes.md)** - Current architecture
   Maintenance, price-history, and lazy item-usage routes plus their backing server services.

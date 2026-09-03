@@ -90,23 +90,33 @@ export function ItemsClientPage({ data }: ItemsClientPageProps) {
                         ]}
                     />
                 ) : (
-                    <ItemsControls onOpenSearch={() => setIsSearchOpen(true)}>
-                        <ItemsStatsRow
-                            stations={stations}
-                            items={items}
-                            questItemIndex={questItemIndex}
-                            questAnyOfGroups={questAnyOfGroups}
-                            questAvailabilityQuests={questAvailabilityQuestList}
-                        />
-                        <ItemsList
-                            stations={stations}
-                            itemById={itemById}
-                            onClickItem={setSelectedItem}
-                            questItemIndex={questItemIndex}
-                            questAnyOfGroups={questAnyOfGroups}
-                            questAvailabilityQuests={questAvailabilityQuestList}
-                        />
-                    </ItemsControls>
+                    <>
+                        {errors.quests && (
+                            <div className="mb-4">
+                                <DataLoadError
+                                    title="Quest checklist data is unavailable"
+                                    messages={[errors.quests]}
+                                />
+                            </div>
+                        )}
+                        <ItemsControls onOpenSearch={() => setIsSearchOpen(true)}>
+                            <ItemsStatsRow
+                                stations={stations}
+                                items={items}
+                                questItemIndex={questItemIndex}
+                                questAnyOfGroups={questAnyOfGroups}
+                                questAvailabilityQuests={questAvailabilityQuestList}
+                            />
+                            <ItemsList
+                                stations={stations}
+                                itemById={itemById}
+                                onClickItem={setSelectedItem}
+                                questItemIndex={questItemIndex}
+                                questAnyOfGroups={questAnyOfGroups}
+                                questAvailabilityQuests={questAvailabilityQuestList}
+                            />
+                        </ItemsControls>
+                    </>
                 )}
             </div>
 

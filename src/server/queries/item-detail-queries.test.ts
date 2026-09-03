@@ -407,6 +407,46 @@ test("acquisition graph fetches priced summaries for every graph reference", asy
     assert.deepEqual(data.unresolvedItemIds, ["missing-quest-input"]);
     assert.deepEqual(data.barters.map((record) => record.id), ["barter-root", "barter-a"]);
     assert.deepEqual(data.crafts.map((record) => record.id), ["craft-root"]);
+    assert.deepEqual(data.errors, {
+        barters: null,
+        crafts: null,
+        items: null,
+        prices: null,
+    });
+});
+
+test("acquisition graph keeps barter routes when craft loading fails", async () => {
+    const repository = createRepository({
+        barters: async () =>
+            result(
+                [
+                    {
+                        id: "barter-root",
+                        offeredItemId: "root-item",
+                        offeredCount: 1,
+                        traderId: "trader-a",
+                        minTraderLevel: 1,
+                        requiredItems: [{ itemId: "input-a", count: 1 }],
+                    },
+                ],
+                10,
+            ),
+        crafts: async () => {
+            throw new Error("crafts unavailable");
+        },
+        items: async (_mode, ids) =>
+            result(Object.fromEntries(ids.map((id) => [id, item(id)])), 20),
+        prices: async () => result({}, 30),
+    });
+
+    const data = await getItemAcquisitionTreeData("root-item", "regular", repository);
+
+    assert.deepEqual(data.barters.map((record) => record.id), ["barter-root"]);
+    assert.deepEqual(data.crafts, []);
+    assert.equal(data.errors.barters, null);
+    assert.equal(data.errors.crafts, "Craft data is temporarily unavailable");
+    assert.equal(data.freshness.bartersUpdatedAt, 10);
+    assert.equal(data.freshness.craftsUpdatedAt, null);
 });
 
 test("relations return only matching hideout and quest data with prerequisite availability", async () => {

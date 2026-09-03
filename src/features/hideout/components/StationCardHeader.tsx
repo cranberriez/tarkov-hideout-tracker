@@ -14,6 +14,7 @@ export interface StationCardHeaderProps {
     onLevelDown: () => void;
     onLevelUp: () => void;
     upgradeStatus: "ready" | "missing" | "illegal";
+    hasUnresolvedItemData: boolean;
 }
 
 export function StationCardHeader({
@@ -28,6 +29,7 @@ export function StationCardHeader({
     onLevelDown,
     onLevelUp,
     upgradeStatus,
+    hasUnresolvedItemData,
 }: StationCardHeaderProps) {
     const iconBorderClass =
         upgradeStatus === "ready"
@@ -117,9 +119,13 @@ export function StationCardHeader({
                     <div className="w-px h-3 bg-white/10"></div>
                     <button
                         onClick={onLevelUp}
-                        disabled={isMaxed}
+                        disabled={isMaxed || hasUnresolvedItemData}
                         className={`px-2 py-1 ${plusButtonColor} hover:bg-white/5 disabled:opacity-30 transition-colors font-mono text-xs`}
-                        title="Level Up"
+                        title={
+                            hasUnresolvedItemData
+                                ? "Level up unavailable while required item data is missing"
+                                : "Level Up"
+                        }
                     >
                         +
                     </button>

@@ -1,103 +1,67 @@
-# Data & Item Pricing Architecture
+# Data and Price Delivery Architecture
 
-The shared data layout loads hideout stations and the complete compact standard
-item catalog for the active game mode. Both arrays are exposed through
-`DataContext`; the browser derives the item lookup locally so no `Map` or repeated
-item records are serialized by the server.
+Server data is delivered through explicit repositories, named queries, and
+route-scoped contracts. There is no global data React context and the `(data)`
+layout does not load entity arrays.
 
-## Data flow
+## Layers
 
 ```text
-Tarkov.dev JSON /{mode}/items + /{mode}/items_en
-  -> getGlobalItemList(mode)
-  -> compact GlobalItem[]
-  -> (data)/layout.tsx
-  -> DataContext
-       items: GlobalItem[]
-       itemById: Record<itemId, GlobalItem> (memoized on the client)
-
-Tarkov.dev JSON /{mode}/hideout
-  -> stations with { itemId, count, isFir, isTool } requirements
-  -> components join itemById only when rendering
+Tarkov.dev JSON
+  -> adapter services (raw shapes, translation, validation, caching)
+  -> TarkovDataRepository (explicit mode, keyed ID batches)
+  -> page/API queries (composition and independent failures)
+  -> contracts in src/types/contracts.ts
+  -> route client or bounded API response
 ```
 
-The active profile selects `regular`, `pve`, or `pvp-season`. Changing profiles
-updates the mode cookie and refreshes server-rendered data. Catalog, stations,
-quests, barters, and crafts are mode-isolated.
+The current repository is selected lazily by `query-utils.ts`. Pages and features
+must not import it directly. Queries must not import concrete provider services.
 
-## Global catalog
+## Route-scoped reads
 
-`getGlobalItemList()` is the only owner of standard `/items` records. It maps each
-record once into the allowlisted `GlobalItem` shape and does not import quest,
-hideout, barter, or craft data. The catalog therefore includes standard items
-whether or not they are currently required.
+- `/hideout` requests stations, the unique item IDs referenced by them, and prices
+  for those IDs.
+- `/items` requests stations and quests independently, derives checklist demand,
+  and requests only demand item summaries and prices. Quest rewards are not part
+  of checklist demand and are not included solely for the modal.
+- `/quests` requests full display quests and only the item summaries referenced by
+  those delivered quests. Item-detail indexes are not serialized with the page.
+- Profit pages request both recipe graphs, their referenced items/prices, and
+  compact trader/station source presentation. Full station levels and requirements
+  are not sent.
+- Kappa requests the mode-specific Collector quest and only its hand-in item IDs.
 
-Quest-specific pickup/find records from `tasks.questItems` are not catalog items.
-They remain compact inline `QuestSpecificItem` presentation and never enter item
-search, inventory counts, Quick Add, market data, acquisition lookups, or the
-generic item modal.
+Clients may memoize a local `itemById` record from their route's `ItemSummary[]`.
+Each summary may contain its mode-specific `marketPrice`; no separate price
+context or client price store exists.
 
-## Item pricing
+## Lazy reads
 
-Current flea and trader-sale values come from the same mode-specific `/items`
-record as item metadata. `GlobalItem.marketPrice` retains only fields used by the
-UI:
+Catalog-wide search uses `/api/items/search`. Quick Add requests at most 10
+results. The checklist search requests at most 50 results, with starts-with
+matches first and alphabetical ordering inside each priority group.
 
-```ts
-{
-  avg24hPrice?: number | null;
-  high24hPrice?: number | null;
-  low24hPrice?: number | null;
-  lastLowPrice?: number | null;
-  lastOfferCount?: number | null;
-  changeLast48hPercent?: number | null;
-  updatedAt?: number | null;
-  sellFor?: Array<{
-    vendor: VendorSummary;
-    price?: number;
-    currency?: string;
-    priceRUB: number;
-  }>;
-}
-```
+The shared item modal receives only an item summary and open state. Its controller
+loads the selected item's relations, direct usage, bounded recursive acquisition
+tree, and price history. Navigation between related items stays inside that
+controller. Complete responses may be cached in memory; partial responses remain
+retryable.
 
-Trader offers retain both their original amount/currency and their rouble-converted
-value. Profit calculations compare offers in roubles while the UI can display the
-currency the trader actually pays.
+## Partial failures and missing IDs
 
-Consumers read `item.marketPrice` directly. There is no separate price context,
-daily price cron, or market-price Redis namespace. Historical prices are fetched
-only when the modal's History tab needs `/api/items/{itemId}/price-history`.
+Repository batch methods return records keyed by ID, deduplicate requests, and
+omit missing records. Query contracts report missing IDs in
+`unresolvedItemIds`—consumers must not interpret absence as satisfaction.
 
-## Acquisition data
+Barter and craft sources settle independently in queries. The item modal can show
+the successful domain with an explicit warning. Profit pages require both graphs
+because recursive costs may cross domains, so either recipe error blocks profit
+figures. Missing Kappa items remain in the checklist denominator.
 
-Barters and crafts are not embedded in catalog items. Their normalized, ID-based
-indexes are cached independently in Redis. Opening a standard item's modal lazily
-requests `/api/items/{itemId}/usage?mode=...`; the response contains only barters
-offering that item, crafts producing it, and their matched trader/task-unlock
-presentation. Ingredient presentation is joined through `itemById` in the browser.
+## Persistence boundary
 
-Barter and craft failures are independent and optional. A failure in either
-domain does not prevent the catalog, station data, quest data, inventory, prices,
-or the other acquisition domain from rendering.
-
-## DataContext contract
-
-`src/app/(data)/_dataContext.tsx` exposes:
-
-```ts
-interface DataContextValue {
-  stations: Station[] | null;
-  stationsUpdatedAt: number | null;
-  stationsError: string | null;
-  stationsDiagnostics: DataResponseDiagnostics | null;
-  items: GlobalItem[] | null;
-  itemById: Readonly<Record<string, GlobalItem>>;
-  itemsUpdatedAt: number | null;
-  itemsError: string | null;
-  itemsDiagnostics: DataResponseDiagnostics | null;
-}
-```
-
-`items` is serialized from the server; `itemById` is memoized by `DataProvider`.
-Station and quest structures store standard-item IDs rather than item copies.
+This delivery architecture does not change player-owned Zustand data. The
+`useUserStore` and `useKappaStore` storage keys, versions, persisted fields, and
+migration behavior remain unchanged. `useUIStore` is ephemeral and is not part of
+the persisted-state freeze.

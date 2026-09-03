@@ -1,6 +1,6 @@
 # Data architecture rework notes
 
-- Baseline: `src/lib/stores/useUserStore.ts` and `src/lib/stores/useKappaStore.ts` are frozen and must remain unchanged.
+- Baseline: persisted `src/lib/stores/useUserStore.ts` and `src/lib/stores/useKappaStore.ts` are frozen and must remain unchanged. The non-persisted `useUIStore.ts` is explicitly exempt because its values reset on reload and are not user data.
 - Baseline: `(data)/layout.tsx` owns global station/catalog loading through `_dataContext.tsx`.
 - Baseline: normal page reads still enter through `src/server/services/tarkovData.ts`; map, development, and revalidation routes are explicit exceptions.
 - Baseline validation: lint passes with 39 existing warnings. The source checkout build is blocked by its active `.next/trace`; the isolated worktree needs local dependencies before build validation.
@@ -32,3 +32,40 @@
 - Conversion: `LegacyProfileConversionDialog.tsx` and `CompletedItemsConversionModal.tsx` use lazy repository-backed API reads; `_dataContext.tsx` and `src/server/services/tarkovData.ts` were removed.
 - Item search: `ItemSearchModal.tsx` and `QuickAddModal.tsx` use the bounded `/api/items/search` endpoint through `useItemSearchController.ts`.
 - Boundaries: `eslint.config.mjs` and `src/architecture/data-import-boundaries.test.ts` enforce the repository, client/server, canonical-type, and deletion rules.
+
+## Post-review completion
+
+- Missing hideout catalog references now remain visible, warn the user, and disable
+  affected upgrades. Level-down refunds continue by stable item ID.
+- Items shows quest-domain failures while retaining usable hideout demand.
+- Profit pages require both recipe graphs before evaluating recursive costs.
+- Quest workspace contracts no longer serialize four unused derived indexes;
+  Items no longer fetch reward-only summaries; profit station sources are compact.
+- Checklist search restores 50 results with starts-with priority and alphabetical
+  ordering, while Quick Add remains capped at 10.
+- Acquisition-tree recipe domains settle independently and partial responses stay
+  uncached. Kappa partial item misses remain in the denominator and are visible.
+- Normal layouts no longer inspect Redis. Boundary tests cover page-to-query,
+  query-to-repository, and layout-to-cache rules.
+- Raw trader and price-history provider shapes are owned by adapter services.
+- `ItemDetailModal.tsx` is presentation-only; request, navigation, and model
+  responsibilities live in dedicated controllers.
+- Repository batch projection has direct duplicate, missing, and unrequested-ID
+  tests. Kappa's cross-boundary contract is owned by `src/types/contracts.ts`.
+
+## Payload audit
+
+Payload checks are defined structurally because production entity counts change
+with Tarkov.dev data. The enforced before/after reductions are:
+
+| Route | Removed from the serialized route payload |
+|---|---|
+| `/quests` | `questItemIndex`, `questRewardIndex`, `questAnyOfGroups`, `questAvailabilityQuests` |
+| `/items` | `questRewardIndex` and reward-only item summaries/prices |
+| profit routes | station levels, requirements, skills, and trader requirements; only compact source identity remains |
+| shared layout | all station/catalog entity arrays and direct Redis status inspection |
+
+`page-data-queries.test.ts` verifies route-scoped requested IDs and compact source
+records. These shape assertions are stable across upstream catalog growth, unlike a
+single byte count; capture compressed RSC transfer sizes in deployment telemetry
+when comparing releases.

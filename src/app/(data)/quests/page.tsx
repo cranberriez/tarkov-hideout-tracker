@@ -42,11 +42,6 @@ export default async function QuestsPage({ searchParams }: QuestsPageProps) {
             <QuestsClientPage
                 quests={data.quests}
                 items={data.items}
-                updatedAt={data.freshness.questsUpdatedAt}
-                questItemIndex={data.questItemIndex}
-                questRewardIndex={data.questRewardIndex}
-                questAnyOfGroups={data.questAnyOfGroups}
-                questAvailabilityQuests={data.questAvailabilityQuests}
                 initialQuestId={showDevQuest ? DEV_QUEST_ID : null}
             />
         </Suspense>

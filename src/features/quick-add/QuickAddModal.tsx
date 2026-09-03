@@ -8,7 +8,10 @@ import { Plus, X, Search } from "lucide-react";
 import Image from "next/image";
 import type { ItemSummary } from "@/types/items";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
-import { ITEM_SEARCH_MAX_QUERY_LENGTH } from "@/types/contracts";
+import {
+    ITEM_SEARCH_MAX_QUERY_LENGTH,
+    ITEM_SEARCH_QUICK_RESULT_LIMIT,
+} from "@/types/contracts";
 import { useItemSearchController } from "@/features/items/useItemSearchController";
 
 export function QuickAddModal() {
@@ -30,6 +33,7 @@ export function QuickAddModal() {
         enabled: isQuickAddOpen && isSearching,
         mode: toTarkovJsonGameMode(gameMode),
         query: searchQuery,
+        resultLimit: ITEM_SEARCH_QUICK_RESULT_LIMIT,
     });
 
     const resetSearchState = () => {

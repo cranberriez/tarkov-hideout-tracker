@@ -2,9 +2,9 @@
 
 All runtime Tarkov.dev data comes from `https://json.tarkov.dev`. The application
 does not select a provider at runtime: `TARKOV_DATA_SOURCE` is not consulted for
-station, item, quest, trader, barter, or craft services. The
-`src/server/services/tarkovData.ts` module is retained only as a stable server
-import facade and reports JSON as the configured provider.
+station, item, quest, trader, barter, or craft services. Page and API queries use
+the `TarkovDataRepository` contract; the current repository delegates raw JSON
+provider handling to adapters in `src/server/services/`.
 
 All upstream requests send
 `TarkovHideoutTracker/1.0 (+https://tarkovhideout.com)` so Tarkov.dev can attribute

@@ -22,16 +22,18 @@ export async function getItemAcquisitionTreeData(
     repository?: TarkovDataRepository,
 ): Promise<ItemAcquisitionTreeData> {
     const dataRepository = repository ?? (await getDefaultRepository());
-    const [bartersResult, craftsResult] = await Promise.all([
+    const [bartersResult, craftsResult] = await Promise.allSettled([
         dataRepository.recipes.getBarters(mode),
         dataRepository.recipes.getCrafts(mode),
     ]);
+    const barters = bartersResult.status === "fulfilled" ? bartersResult.value.data : [];
+    const crafts = craftsResult.status === "fulfilled" ? craftsResult.value.data : [];
     const bartersByItemId = indexRecipesByItem<BarterRecord>(
-        bartersResult.data,
+        barters,
         (barter) => barter.offeredItemId,
     );
     const craftsByItemId = indexRecipesByItem<CraftRecord>(
-        craftsResult.data,
+        crafts,
         (craft) => craft.productItemId,
     );
     const tree = buildItemAcquisitionTree(
@@ -43,11 +45,15 @@ export async function getItemAcquisitionTreeData(
         ...tree.itemIds,
         ...getRecipeGraphItemIds(tree.barters, tree.crafts),
     ]);
-    const [itemsResult, pricesResult] = await Promise.all([
+    const [itemsResult, pricesResult] = await Promise.allSettled([
         dataRepository.items.getByIds(mode, itemIds),
         dataRepository.prices.getCurrent(mode, itemIds),
     ]);
-    const merged = mergePricedItems(itemIds, itemsResult.data, pricesResult.data);
+    const itemRecords = itemsResult.status === "fulfilled" ? itemsResult.value.data : null;
+    const priceRecords = pricesResult.status === "fulfilled" ? pricesResult.value.data : {};
+    const merged = itemRecords
+        ? mergePricedItems(itemIds, itemRecords, priceRecords)
+        : { items: [], unresolvedItemIds: [...itemIds] };
 
     return {
         ...tree,
@@ -55,10 +61,32 @@ export async function getItemAcquisitionTreeData(
         items: merged.items,
         unresolvedItemIds: merged.unresolvedItemIds,
         freshness: {
-            bartersUpdatedAt: bartersResult.updatedAt,
-            craftsUpdatedAt: craftsResult.updatedAt,
-            itemsUpdatedAt: itemsResult.updatedAt,
-            pricesUpdatedAt: pricesResult.updatedAt,
+            bartersUpdatedAt:
+                bartersResult.status === "fulfilled" ? bartersResult.value.updatedAt : null,
+            craftsUpdatedAt:
+                craftsResult.status === "fulfilled" ? craftsResult.value.updatedAt : null,
+            itemsUpdatedAt:
+                itemsResult.status === "fulfilled" ? itemsResult.value.updatedAt : null,
+            pricesUpdatedAt:
+                pricesResult.status === "fulfilled" ? pricesResult.value.updatedAt : null,
+        },
+        errors: {
+            barters:
+                bartersResult.status === "rejected"
+                    ? "Barter data is temporarily unavailable"
+                    : null,
+            crafts:
+                craftsResult.status === "rejected"
+                    ? "Craft data is temporarily unavailable"
+                    : null,
+            items:
+                itemsResult.status === "rejected"
+                    ? "Recipe item data is temporarily unavailable"
+                    : null,
+            prices:
+                pricesResult.status === "rejected"
+                    ? "Recipe price data is temporarily unavailable"
+                    : null,
         },
     };
 }

@@ -5,14 +5,14 @@ required by the Collector quest for the active game mode.
 
 ## Data flow
 
-The server page loads the same normalized full quest data used by `/items`, finds
-the quest whose normalized name is `collector`, and collects the standard item IDs
-from its `giveItem` objectives. The client joins those IDs through
-`DataContext.itemById`, then sorts the resulting items alphabetically by display
-name. Collector item requirements are never copied into a static application list.
+The server query requests the mode-specific Collector quest by ID, collects the
+standard item IDs from its `giveItem` objectives, and requests only those item
+summaries and prices. The client sorts the delivered items alphabetically.
+Collector item requirements are never copied into a static application list.
 
-The page also builds the normal quest indexes so selecting an item can open the
-shared `ItemDetailModal` with its complete hideout and quest usage.
+Selecting an item opens the shared `ItemDetailModal`, which loads that item's
+hideout and quest relationships lazily. Missing catalog IDs remain in the total
+checklist denominator and produce a visible warning while matched items stay usable.
 
 ## Interaction
 

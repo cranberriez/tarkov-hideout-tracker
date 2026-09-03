@@ -20,7 +20,6 @@ export interface DataStatusConfig {
     configuredProvider: "json" | "graphql";
     activeDataset: "regular" | "pve" | "pvp-season";
     cacheEnabled: boolean;
-    redisState: "available" | "unavailable" | "disabled" | "unchecked";
     progressionDataFrozen: boolean;
 }
 
@@ -135,15 +134,6 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
     const isUsingStaleFallback = [stations?.diagnostics, items?.diagnostics].some(
         (entry) => entry?.upstreamStatus === "stale-fallback",
     );
-    const redisStatus =
-        config.redisState === "available"
-            ? { value: "Available", state: "ok" as const }
-            : config.redisState === "unavailable"
-              ? { value: "Unavailable", state: "warning" as const }
-              : config.redisState === "disabled"
-                ? { value: "Disabled", state: "neutral" as const }
-                : { value: "Not checked", state: "neutral" as const };
-
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <span className="inline-flex items-baseline font-mono text-[10px] uppercase tracking-widest text-gray-500">
@@ -232,16 +222,6 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                                   : "Development requests go directly to the upstream provider."
                         }
                         state={config.cacheEnabled ? "ok" : "warning"}
-                    />
-                    <StatusRow
-                        label="Redis fallback"
-                        value={redisStatus.value}
-                        detail={
-                            config.redisState === "unavailable"
-                                ? "Requests continue through the application cache and upstream provider."
-                                : "Redis is optional and is retried on later cache operations."
-                        }
-                        state={redisStatus.state}
                     />
                     <StatusRow
                         label="Localization"

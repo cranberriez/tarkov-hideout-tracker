@@ -16,14 +16,16 @@ export function useItemSearchController({
     enabled,
     mode,
     query,
+    resultLimit,
 }: {
     enabled: boolean;
     mode: TarkovJsonGameMode;
     query: string;
+    resultLimit: number;
 }) {
     const [state, setState] = useState<SearchState>(null);
     const trimmedQuery = query.trim();
-    const requestKey = enabled && trimmedQuery ? `${mode}:${trimmedQuery}` : null;
+    const requestKey = enabled && trimmedQuery ? `${mode}:${resultLimit}:${trimmedQuery}` : null;
 
     useEffect(() => {
         if (!enabled || !trimmedQuery) {
@@ -31,9 +33,13 @@ export function useItemSearchController({
         }
 
         const controller = new AbortController();
-        const activeRequestKey = `${mode}:${trimmedQuery}`;
+        const activeRequestKey = `${mode}:${resultLimit}:${trimmedQuery}`;
         const timer = window.setTimeout(() => {
-            const params = new URLSearchParams({ mode, q: trimmedQuery });
+            const params = new URLSearchParams({
+                mode,
+                q: trimmedQuery,
+                limit: String(resultLimit),
+            });
             fetch(`/api/items/search?${params}`, { signal: controller.signal })
                 .then(async (response) => {
                     if (!response.ok) {
@@ -67,7 +73,7 @@ export function useItemSearchController({
             window.clearTimeout(timer);
             controller.abort();
         };
-    }, [enabled, mode, trimmedQuery]);
+    }, [enabled, mode, resultLimit, trimmedQuery]);
 
     const isSettled = requestKey !== null && state?.requestKey === requestKey;
     const items = isSettled && state?.status === "success" ? state.items : [];

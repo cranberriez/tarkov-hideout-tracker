@@ -3,8 +3,6 @@
 import { useMemo, useState } from "react";
 import type { FullQuest } from "@/types/quests";
 import type { ItemSummary } from "@/types/items";
-import type { QuestAnyOfGroupEntry, QuestItemIndexEntry, QuestRewardIndexEntry } from "@/lib/utils/quest-item-index";
-import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { QuestsProvider } from "./QuestsContext";
 import { QuestCascadeConfirmDialog } from "./components/QuestCascadeConfirmDialog";
@@ -15,11 +13,6 @@ import { buildQuestDataIndex } from "./quest-data-index";
 interface QuestsClientPageProps {
     quests: FullQuest[];
     items: ItemSummary[] | null;
-    updatedAt: number | null;
-    questItemIndex: QuestItemIndexEntry[];
-    questRewardIndex: QuestRewardIndexEntry[];
-    questAnyOfGroups: QuestAnyOfGroupEntry[];
-    questAvailabilityQuests: QuestAvailabilityQuest[];
     initialQuestId?: string | null;
 }
 

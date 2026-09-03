@@ -48,7 +48,14 @@ export async function getProfitPageData(
           })
         : [];
     const stations = stationsValue
-        ? stationsValue.data.filter((station) => stationIds.has(station.id))
+        ? stationsValue.data
+              .filter((station) => stationIds.has(station.id))
+              .map(({ id, name, normalizedName, imageLink }) => ({
+                  id,
+                  name,
+                  normalizedName,
+                  imageLink,
+              }))
         : [];
 
     return {

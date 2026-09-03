@@ -11,25 +11,20 @@ The Hideout page shows all stations and the items required to upgrade each stati
 
 ## Data Needed
 
-From the Tarkov.dev API (see `graphql-queries.md` for exact queries):
+From the route-scoped `getHideoutPageData` query:
 
--   **Stations** via `hideoutStations(lang: EN)`
+-   **Stations** from the active-mode Tarkov.dev JSON dataset
     -   `id`
     -   `name`
     -   `levels[]`
         -   `level` (numeric level index)
         -   `itemRequirements[]`
             -   `id`
-            -   `item`
-                -   `id`
-                -   `name`
-                -   `iconLink`
-                -   `gridImageLink`
-            -   `count` / `quantity`
-            -   `attributes[]`
-                -   `type`
-                -   `name`
-                -   `value`
+            -   `itemId`
+            -   `count`
+            -   `isFir`
+            -   `isTool`
+-   **Item summaries and prices** only for unique IDs referenced by the stations
 
 Local / client state:
 
@@ -58,6 +53,11 @@ Local / client state:
     -   App updates the station's current level in state.
     -   Next-level requirements update automatically.
     -   Pooled item counts on the Item Checklist page should recompute based on the new progress.
+    -   If a required item ID is missing from the delivered catalog projection, the
+        affected upgrade is disabled and a visible warning is shown. Missing
+        presentation must never be interpreted as a satisfied requirement.
+    -   Level-down refunds operate by stable item ID, so a temporary presentation
+        miss does not silently discard the refund.
 
 -   **Hiding / Showing a Station**
     -   Each station row has a control to toggle **hidden**.

@@ -7,13 +7,17 @@ import type { Trader } from "@/types/traders";
 export type ProfitPageKind = "barter" | "craft";
 export type SortMode = "profit" | "profitPerHour" | "cost" | "name";
 export type RouteMethod = "flea" | "barter" | "craft" | "unavailable";
+export type ProfitStationSource = Pick<
+  Station,
+  "id" | "name" | "normalizedName" | "imageLink"
+>;
 
 export interface RouteContext {
   itemById: Readonly<Record<string, ItemSummary>>;
   bartersById: Readonly<Record<string, BarterRecord>>;
   craftsById: Readonly<Record<string, CraftRecord>>;
   tradersById: Readonly<Record<string, Trader>>;
-  stationsById: Readonly<Record<string, Station>>;
+  stationsById: Readonly<Record<string, ProfitStationSource>>;
 }
 
 export interface RecipePreviewData {

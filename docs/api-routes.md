@@ -43,74 +43,32 @@ Authenticated with `CRON_SECRET`. Accepted tags are `item-data`, `hideout-data`,
 and `quests`. This invalidates matching Next.js tag entries; it does not remove
 versioned Redis bodies. See `caching-architecture.md` for the current mappings.
 
-## Server services
+## Repository and query boundaries
 
-### `getGlobalItemList(mode)`
+`src/server/repositories/tarkov-data/types.ts` defines the explicit-mode
+`TarkovDataRepository`. The production implementation in `current-repository.ts`
+projects cached provider datasets into keyed batch results and omits missing IDs.
+Raw JSON shapes, translation, price-history fetching, normalization, and cache
+mechanics remain owned by adapter services in `src/server/services/`.
 
-**File:** `src/server/services/itemsJson.ts`
+Page composition lives in `src/server/queries/`. Hideout, Items, Quests, Kappa,
+and Profit pages call only their named query. Queries request route-scoped IDs,
+settle independently optional domains, and return contracts owned by
+`src/types/contracts.ts`. Profit calculations require both barter and craft graphs;
+a partial recipe failure is reported instead of producing incomplete figures.
 
-Loads and normalizes the complete standard-item catalog from `/items`, including
-the compact current market shape. It uses the mode-specific
-`items:catalog:v{itemCatalog}:{mode}` manifest plus bounded Redis chunks and is
-deliberately not wrapped in `unstable_cache`.
+Item relations, usage, acquisition trees, history, conversions, search, and data
+status follow the same query boundary behind bounded HTTP routes. Barter and craft
+acquisition domains settle independently, and partial responses are not cached.
 
-```ts
-TimedResponse<{ items: GlobalItem[] }>;
-```
-
-### `getCachedHideoutStations(mode)`
-
-**Files:** `src/server/services/hideoutJson.ts`, `src/server/services/tarkovData.ts`
-
-Loads JSON hideout stations and preserves item requirements as
-`{ id, itemId, count, isFir, isTool }`. Standard item presentation is not embedded
-in stations. The service uses Redis plus the small `hideout-data` Next wrapper.
-
-```ts
-TimedResponse<{ stations: Station[] }>;
-```
-
-### `getCachedQuestData(mode)` / `getCachedFullQuestData(mode)`
-
-**Files:** `src/server/services/questsJson.ts`, `src/server/services/tarkovData.ts`
-
-Load lightweight hand-in quests or full quest content from JSON tasks. Standard
-items are stored as IDs; task-owned quest-specific items retain only compact
-inline presentation. Both responses use Redis and the `quests` Next tag.
-
-```ts
-TimedResponse<{ quests: Quest[] }>;
-TimedResponse<{ quests: FullQuest[] }>;
-```
-
-### `getBarterIndex(mode)` / `getCraftIndex(mode)` / `getItemUsage(itemId, mode)`
-
-**File:** `src/server/services/itemAcquisitionJson.ts`
-
-Normalize `/barters` and `/crafts` into ID-based records indexed by offered or
-produced item ID. The complete indexes are Redis-only. `getItemUsage()` composes
-the small per-item response while keeping domain failures independent.
-
-### `getCachedTraders(mode)`
-
-**Files:** `src/server/services/tradersJson.ts`, `src/server/services/tarkovData.ts`
-
-Loads the compact JSON trader list. The quests UI generally derives its trader
-presentation from full quest data, but this service remains available to server
-consumers.
-
-### `orderQuestsByPrerequisites(quests)`
-
-**File:** `src/server/services/quests.ts`
-
-Sorts quests by prerequisite depth, minimum level, and name.
+Quest prerequisite ordering is the provider-independent utility
+`src/lib/utils/quest-ordering.ts`.
 
 ## Runtime provider
 
-All runtime station, item, quest, trader, barter, and craft services use the
-Tarkov.dev JSON API. `tarkovData.ts` remains a stable import facade for several
-services, not a provider selector. `TARKOV_DATA_SOURCE` does not select a GraphQL
-runtime implementation.
+All runtime station, item, quest, trader, barter, and craft adapters use the
+Tarkov.dev JSON API. `TARKOV_DATA_SOURCE` does not select a GraphQL runtime
+implementation.
 
 ## Redis client and environment
 

@@ -6,9 +6,10 @@ future quest work.
 
 ## Current Data Source
 
-Quest data comes exclusively from Tarkov.dev's JSON API. The server-side facade in
-`src/server/services/tarkovData.ts` exports the JSON quest implementation, and
-`TARKOV_DATA_SOURCE` is no longer consulted. The quest adapter requests these datasets:
+Quest data comes exclusively from Tarkov.dev's JSON API. Page and API queries read
+through `TarkovDataRepository`; the current implementation delegates normalization
+to `src/server/services/questsJson.ts`. `TARKOV_DATA_SOURCE` is no longer consulted.
+The quest adapter requests these datasets:
 
 ```text
 https://json.tarkov.dev/regular/tasks
@@ -24,7 +25,7 @@ https://json.tarkov.dev/regular/hideout_en
 `src/server/services/tarkovJson/client.ts` fetches the base record and matching
 English translation dictionary together. Base records mainly contain IDs and
 translation keys. `src/server/services/questsJson.ts` resolves those references
-and maps the result into the shared `FullQuest` type in `src/types/types.ts`.
+and maps the result into the shared `FullQuest` type in `src/types/quests.ts`.
 
 ## Current Request Flow
 

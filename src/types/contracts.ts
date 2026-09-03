@@ -64,10 +64,16 @@ export interface ItemAcquisitionTreeData {
     items: ItemSummary[];
     unresolvedItemIds: string[];
     freshness: {
-        bartersUpdatedAt: number;
-        craftsUpdatedAt: number;
-        itemsUpdatedAt: number;
-        pricesUpdatedAt: number;
+        bartersUpdatedAt: number | null;
+        craftsUpdatedAt: number | null;
+        itemsUpdatedAt: number | null;
+        pricesUpdatedAt: number | null;
+    };
+    errors: {
+        barters: string | null;
+        crafts: string | null;
+        items: string | null;
+        prices: string | null;
     };
 }
 
@@ -120,6 +126,8 @@ export interface ItemsPayload {
 }
 
 export const ITEM_SEARCH_MAX_QUERY_LENGTH = 80;
+export const ITEM_SEARCH_QUICK_RESULT_LIMIT = 10;
+export const ITEM_SEARCH_PAGE_RESULT_LIMIT = 50;
 
 export interface ItemSearchPayload {
     items: ItemSummary[];
@@ -147,6 +155,29 @@ export interface LegacyProfileConversionData {
     stations: LegacyConversionStation[];
     freshness: { stationsUpdatedAt: number | null };
     errors: { stations: string | null };
+}
+
+export interface KappaCollectorPresentation {
+    id: string;
+    name: string;
+    traderImageLink?: string | null;
+    traderImage4xLink?: string | null;
+}
+
+export interface KappaChecklistPageData {
+    collectorQuest: KappaCollectorPresentation | null;
+    items: ItemSummary[];
+    unresolvedItemIds: string[];
+    freshness: {
+        questsUpdatedAt: number | null;
+        itemsUpdatedAt: number | null;
+        pricesUpdatedAt: number | null;
+    };
+    errors: {
+        quests: string | null;
+        items: string | null;
+        prices: string | null;
+    };
 }
 
 export interface CompletedItemsConversionStation {
@@ -207,7 +238,6 @@ export interface ItemChecklistPageData {
     itemIds: string[];
     unresolvedItemIds: string[];
     questItemIndex: QuestItemIndexEntry[];
-    questRewardIndex: QuestRewardIndexEntry[];
     questAnyOfGroups: QuestAnyOfGroupEntry[];
     questAvailabilityQuests: QuestAvailabilityQuest[];
     freshness: {
@@ -229,10 +259,6 @@ export interface QuestWorkspacePageData {
     items: ItemSummary[] | null;
     itemIds: string[];
     unresolvedItemIds: string[];
-    questItemIndex: QuestItemIndexEntry[];
-    questRewardIndex: QuestRewardIndexEntry[];
-    questAnyOfGroups: QuestAnyOfGroupEntry[];
-    questAvailabilityQuests: QuestAvailabilityQuest[];
     freshness: {
         questsUpdatedAt: number | null;
         itemsUpdatedAt: number | null;
@@ -252,7 +278,7 @@ export interface ProfitPageData {
     itemIds: string[];
     unresolvedItemIds: string[];
     traders: Trader[];
-    stations: Station[];
+    stations: Array<Pick<Station, "id" | "name" | "normalizedName" | "imageLink">>;
     freshness: {
         bartersUpdatedAt: number | null;
         craftsUpdatedAt: number | null;

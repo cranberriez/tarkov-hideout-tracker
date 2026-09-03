@@ -2,7 +2,6 @@ import { toQuestAvailabilityQuest } from "../../lib/utils/quest-availability";
 import {
     buildQuestAnyOfGroups,
     buildQuestItemIndex,
-    buildQuestRewardIndex,
 } from "../../lib/utils/quest-item-index";
 import { orderQuestsByPrerequisites } from "../../lib/utils/quest-ordering";
 import { prepareQuestDataForMode } from "../../lib/utils/quest-preparation";
@@ -36,13 +35,11 @@ export async function getItemChecklistPageData(
               )
             : [];
     const questItemIndex = buildQuestItemIndex(quests);
-    const questRewardIndex = buildQuestRewardIndex(quests);
     const questAnyOfGroups = buildQuestAnyOfGroups(quests);
     const questAvailabilityQuests = quests.map(toQuestAvailabilityQuest);
     const itemIds = dedupeIds([
         ...getStationItemIds(stations ?? []),
         ...questItemIndex.map((entry) => entry.itemId),
-        ...questRewardIndex.map((entry) => entry.itemId),
         ...questAnyOfGroups.flatMap((group) => group.itemIds),
     ]);
 
@@ -53,7 +50,6 @@ export async function getItemChecklistPageData(
             itemIds,
             unresolvedItemIds: [],
             questItemIndex,
-            questRewardIndex,
             questAnyOfGroups,
             questAvailabilityQuests,
             freshness: {
@@ -87,7 +83,6 @@ export async function getItemChecklistPageData(
         itemIds,
         unresolvedItemIds: merged.unresolvedItemIds,
         questItemIndex,
-        questRewardIndex,
         questAnyOfGroups,
         questAvailabilityQuests,
         freshness: {

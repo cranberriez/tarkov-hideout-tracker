@@ -1,36 +1,13 @@
 import type { TarkovDataRepository } from "@/server/repositories/tarkov-data/types";
 import type { TarkovDataMode } from "@/types/common";
-import type { ItemSummary } from "@/types/items";
 import type { FullQuest } from "@/types/quests";
+import type { KappaChecklistPageData } from "@/types/contracts";
 
 export const COLLECTOR_QUEST_ID_BY_MODE: Record<TarkovDataMode, string> = {
     regular: "5c51aac186f77432ea65c552",
     pve: "5c51aac186f77432ea65c552",
     "pvp-season": "5c51aac186f77432ea65c552",
 };
-
-export interface KappaCollectorPresentation {
-    id: string;
-    name: string;
-    traderImageLink?: string | null;
-    traderImage4xLink?: string | null;
-}
-
-export interface KappaChecklistPageData {
-    collectorQuest: KappaCollectorPresentation | null;
-    items: ItemSummary[];
-    unresolvedItemIds: string[];
-    freshness: {
-        questsUpdatedAt: number | null;
-        itemsUpdatedAt: number | null;
-        pricesUpdatedAt: number | null;
-    };
-    errors: {
-        quests: string | null;
-        items: string | null;
-        prices: string | null;
-    };
-}
 
 function getCollectorRequiredItemIds(collector: Pick<FullQuest, "objectives">): string[] {
     const itemIds = new Set<string>();

@@ -1,15 +1,6 @@
-import { toQuestAvailabilityQuest } from "../../lib/utils/quest-availability";
-import {
-    buildQuestAnyOfGroups,
-    buildQuestItemIndex,
-    buildQuestRewardIndex,
-} from "../../lib/utils/quest-item-index";
 import { orderQuestsByPrerequisites } from "../../lib/utils/quest-ordering";
 import { prepareQuestDataForMode } from "../../lib/utils/quest-preparation";
-import {
-    excludeRemovedQuests,
-    prepareQuestsForDisplay,
-} from "../../lib/utils/removed-quests";
+import { prepareQuestsForDisplay } from "../../lib/utils/removed-quests";
 import type { TarkovDataRepository } from "@/server/repositories/tarkov-data/types";
 import type { TarkovDataMode } from "@/types/common";
 import type { QuestWorkspacePageData } from "@/types/contracts";
@@ -41,10 +32,6 @@ export async function getQuestWorkspacePageData(
             items: null,
             itemIds: [],
             unresolvedItemIds: [],
-            questItemIndex: [],
-            questRewardIndex: [],
-            questAnyOfGroups: [],
-            questAvailabilityQuests: [],
             freshness: {
                 questsUpdatedAt: null,
                 itemsUpdatedAt: null,
@@ -59,9 +46,6 @@ export async function getQuestWorkspacePageData(
     }
 
     const preparedQuests = prepareQuestDataForMode(questsResult.value.data, mode);
-    const progressionQuests = orderQuestsByPrerequisites(
-        excludeRemovedQuests(preparedQuests),
-    );
     const displayQuests = orderQuestsByPrerequisites([
         ...prepareQuestsForDisplay(
             preparedQuests,
@@ -69,10 +53,6 @@ export async function getQuestWorkspacePageData(
         ),
         ...(options.displayQuestAdditions ?? []),
     ]);
-    const questItemIndex = buildQuestItemIndex(progressionQuests);
-    const questRewardIndex = buildQuestRewardIndex(progressionQuests);
-    const questAnyOfGroups = buildQuestAnyOfGroups(progressionQuests);
-    const questAvailabilityQuests = progressionQuests.map(toQuestAvailabilityQuest);
     const itemIds = getQuestReferencedItemIds(displayQuests);
     const [itemsResult, pricesResult] = await Promise.allSettled([
         dataRepository.items.getByIds(mode, itemIds),
@@ -89,10 +69,6 @@ export async function getQuestWorkspacePageData(
         items: merged.items,
         itemIds,
         unresolvedItemIds: merged.unresolvedItemIds,
-        questItemIndex,
-        questRewardIndex,
-        questAnyOfGroups,
-        questAvailabilityQuests,
         freshness: {
             questsUpdatedAt: questsResult.value.updatedAt,
             itemsUpdatedAt:

@@ -4,6 +4,10 @@ import {
     isValidItemSearchQuery,
     searchItems,
 } from "@/server/queries/searchItems";
+import {
+    ITEM_SEARCH_PAGE_RESULT_LIMIT,
+    ITEM_SEARCH_QUICK_RESULT_LIMIT,
+} from "@/types/contracts";
 
 const MODES = new Set<TarkovJsonGameMode>(["regular", "pve", "pvp-season"]);
 
@@ -24,7 +28,18 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    const payload = await searchItems(query, requestedMode as TarkovJsonGameMode);
+    const requestedLimit = Number(request.nextUrl.searchParams.get("limit"));
+    const resultLimit =
+        requestedLimit === ITEM_SEARCH_PAGE_RESULT_LIMIT
+            ? ITEM_SEARCH_PAGE_RESULT_LIMIT
+            : ITEM_SEARCH_QUICK_RESULT_LIMIT;
+
+    const payload = await searchItems(
+        query,
+        requestedMode as TarkovJsonGameMode,
+        undefined,
+        resultLimit,
+    );
     return NextResponse.json(payload, {
         headers: { "Cache-Control": "private, no-store" },
     });

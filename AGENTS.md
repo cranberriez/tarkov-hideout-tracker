@@ -41,22 +41,23 @@ Copy `.sample.env` to `.env`. Required variables:
 ### Data Flow
 
 ```
-Tarkov.dev JSON /items ──► server/services/ ──► Redis (1h) ──► (data)/layout.tsx
-                                                                      └── DataContext
-                                                                          (stations + tracked items with prices)
+Tarkov.dev JSON -> adapter services -> TarkovDataRepository -> named page/API queries
+                                                       -> route-scoped contracts
 ```
 
-All pages under `src/app/(data)/` are inside this route group and receive station/item/price data automatically through server-side context. The root `/` redirects to `/hideout`.
-
-Quest data is **not** in the shared layout — each page that needs it fetches it independently server-side (see Quest Services below).
+The `(data)` layout does not load entity arrays. Pages request only the domains and
+IDs they need through `src/server/queries/`; search and item relations are lazy API
+reads. The root `/` redirects to `/hideout`.
 
 ### Server Services (`src/server/services/`)
 
 Each service wraps a two-layer cache: **Redis** (survives deploy) + **Next.js `unstable_cache`** (in-process, short TTL). See `docs/caching-architecture.md`, `docs/api-routes.md`, and `src/lib/cfg/cacheVersions.ts` before changing cache keys, cache invalidation, or server data flow. Bust Redis caches by changing the relevant cache version; do not manually delete keys as part of code changes.
 
-#### Quest Services (`src/server/services/quests.ts`)
+### Repository and queries
 
-Quest services expose both lightweight and full quest data. Use `docs/api-routes.md`, `docs/quests-page.md`, `docs/item-checklist-page.md`, and the service implementation for exact current return shapes and page usage before changing quest data flow.
+`src/server/repositories/tarkov-data/types.ts` defines the provider-independent
+repository. Page composition belongs in `src/server/queries/`; pages must not import
+the concrete repository and queries must not import adapter services.
 
 ### State Management
 
@@ -66,9 +67,8 @@ Quest services expose both lightweight and full quest data. Use `docs/api-routes
 
 - `isQuickAddOpen`, `pendingQuickAddItems`.
 
-**React Contexts** (server data, read-only on client):
-
-- `DataContext` (`src/app/(data)/_dataContext.tsx`) → `stations`, `items`, timestamps. Shape: `{ stations: Station[] | null, stationsUpdatedAt, items: ItemDetails[] | null, itemsUpdatedAt }`. `items` is the compact set of hideout- and quest-tracked items; each standard item may carry `marketPrice` from the active mode's JSON `/items` record.
+**Route contracts** (server data, read-only on client) are owned by
+`src/types/contracts.ts`. Clients may derive local ID maps from route-scoped arrays.
 - `QuestsContext` (`src/features/quests/QuestsContext.tsx`) → all quest filter state, computed quest lists, sync helpers. Available only inside `<QuestsProvider>`. Includes `onItemClick: ((itemId: string) => void) | null` for triggering item modal from quest components.
 
 ### FiR (Found In Raid)
@@ -83,7 +83,7 @@ Items marked FiR have `attributes` containing `{ name: "found_in_raid", value: "
 
 ## Quest System
 
-### Types (`src/types/types.ts`)
+### Types (`src/types/quests.ts`)
 
 | Type                 | Key fields                                                                                                                                                          |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -98,7 +98,7 @@ Items marked FiR have `attributes` containing `{ name: "found_in_raid", value: "
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `src/lib/utils/quest-item-index.ts`   | `buildQuestItemIndex(quests)` — builds a per-item map of which quests need it; `deriveQuestItemState(entry, options)` — computes availability/pin/ignore status per item; `deriveQuestItemStates(index, options)` — full list; `hasGiveItemObjectives(quest)`, `hasFirGiveItemObjectives(quest)` |
 | `src/lib/utils/quest-availability.ts` | `isQuestAvailableForProfile(quest, profile, questsById)` — checks level, faction, loyalty, prerequisites; `toQuestAvailabilityQuest(fullQuest)` — converts FullQuest to the lighter `QuestAvailabilityQuest` shape used by availability checks; `buildQuestAvailabilityMap(quests)`              |
-| `src/server/services/quests.ts`       | `orderQuestsByPrerequisites(quests)` — topological sort; `getCachedQuestData()`, `getCachedFullQuestData()`                                                                                                                                                                                      |
+| `src/lib/utils/quest-ordering.ts`     | `orderQuestsByPrerequisites(quests)` — topological sort                                                                                                                                                                                        |
 
 ### `DerivedQuestItemQuest` (from quest-item-index.ts)
 
@@ -138,11 +138,9 @@ A quest is available when: not completed, faction matches, minPlayerLevel ≤ pl
 
 ### Quest Page Server Component (`src/app/(data)/quests/page.tsx`)
 
-Calls `getCachedFullQuestData()`, sorts with `orderQuestsByPrerequisites()`, then builds and passes to `QuestsClientPage`:
-
-- `quests: FullQuest[]`
-- `questItemIndex: QuestItemIndexEntry[]` (built via `buildQuestItemIndex`)
-- `questAvailabilityQuests: QuestAvailabilityQuest[]` (built via `quests.map(toQuestAvailabilityQuest)`)
+Calls `getQuestWorkspacePageData()`, which returns display quests and only their
+referenced item summaries/prices. Unused modal indexes are not serialized; the
+item modal loads relations lazily.
 
 ---
 
@@ -150,17 +148,18 @@ Calls `getCachedFullQuestData()`, sorts with `orderQuestsByPrerequisites()`, the
 
 ### Item Types
 
-`ItemDetails` (`src/types/types.ts`): `{ id, name, normalizedName, iconLink?, gridImageLink?, link?, wikiLink?, category? }` — this is the minimal shape. Items from DataContext have all fields; items synthesized from quest objectives only have id/name/normalizedName/iconLink/gridImageLink.
+`ItemSummary` lives in `src/types/items.ts` and may carry the active-mode
+`marketPrice`. Quest-specific items remain separate display-only records.
 
 ### Items Page Feature Files (`src/features/items/`)
 
 | File                              | Purpose                                                                                                                                                                                                                                                                                                                                                          |
 | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ItemsClientPage.tsx`             | Top-level client component. Builds `allSearchableItems` (merged pool of DataContext hideout items + quest-only items from questItemIndex) and passes as `itemPool` to `ItemSearchModal`.                                                                                                                                                                         |
+| `ItemsClientPage.tsx`             | Top-level client component. Presents route query errors, demand, search, and selected-item state.                                                                                                                                                                         |
 | `components/ItemsList.tsx`        | Main item checklist. Merges hideout items (from `poolItems()`) with quest items (from `deriveQuestItemStates()`). Builds `allItemDetails` internally — a Record of ItemDetails that includes synthesized entries for quest-only items. Has `itemSourceFilter` for hideout/quest/all.                                                                             |
-| `components/ItemSearchModal.tsx`  | Search dialog. Accepts optional `itemPool?: ItemDetails[]` prop — if provided, uses it instead of DataContext items. Without `itemPool` it only searches hideout items; with it, searches anything passed in.                                                                                                                                                    |
+| `components/ItemSearchModal.tsx`  | Search dialog backed by the bounded catalog search API (up to 50 results).                                                                                                                                                    |
 | `components/ItemsControls.tsx`    | Filter bar above the list.                                                                                                                                                                                                                                                                                                                                       |
-| `item-detail/ItemDetailModal.tsx` | Full item detail modal. Props: `item`, `isOpen`, `onClose`, `stations`, `stationLevels`, `hiddenStations`, `completedRequirements`, `questItemIndex?`, `questAvailabilityQuests?`. Quest Hand-Ins section shows `relatedQuests` from `deriveQuestItemState` with pin/ignore/complete buttons (`useUserStore` toggles) and a `Link` to `/quests#quest-{questId}`. |
+| `item-detail/ItemDetailModal.tsx` | Presentation-only item detail modal. Its model, request, and navigation controllers lazily load relations, usage, acquisition, and history. |
 
 ### Items Page Server Component (`src/app/(data)/items/page.tsx`)
 
@@ -168,9 +167,10 @@ Fetches quest data server-side, sorts it, builds quest item metadata, and passes
 
 ### Item Search Scope
 
-- DataContext `items` = hideout-required items only (from `getCachedHideoutRequiredItems()`)
-- `ItemSearchModal` with `itemPool` from `ItemsClientPage` = hideout items + quest-only items (merged, deduped)
-- Quest items synthesized from `questItemIndex` have only: id, name, normalizedName, iconLink, gridImageLink
+- `/api/items/search` searches the complete standard active-mode catalog.
+- Checklist search returns up to 50 starts-with-prioritized alphabetical results.
+- Quick Add uses the same endpoint with a 10-result limit.
+- Quest-specific items are excluded.
 
 ---
 
@@ -179,18 +179,18 @@ Fetches quest data server-side, sorts it, builds quest item metadata, and passes
 | Task                                     | Files                                                                                                                                                                                        |
 | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Add a new page                           | `src/app/(data)/<page>/page.tsx` + `src/components/core/Navbar.tsx`                                                                                                                          |
-| Add new cached server data               | New file in `src/server/services/`, call from `src/app/(data)/layout.tsx`                                                                                                                    |
+| Add new cached server data               | Adapter in `src/server/services/`, repository method, named query, and contract                                                                                                             |
 | Add a new user preference                | `src/lib/stores/useUserStore.ts` (state + action + reset)                                                                                                                                    |
 | Change FiR config                        | `src/lib/data/hideout-data.json` or `src/lib/cfg/foundInRaid.ts`                                                                                                                             |
 | Change station render order              | `src/lib/cfg/stationOrder.ts`                                                                                                                                                                |
-| Add a new type                           | `src/types/types.ts`                                                                                                                                                                         |
+| Add a new type                           | The owning domain file in `src/types/`; cross-boundary payloads belong in `src/types/contracts.ts`                                                                                           |
 | Bust a Redis cache                       | Bump the version in `src/lib/cfg/cacheVersions.ts`                                                                                                                                           |
 | Wire a new modal                         | Add open state to `useUIStore`, add component to `src/features/`                                                                                                                             |
 | Add quest filter/toggle                  | `src/lib/stores/useUserStore.ts` + `src/features/quests/QuestsContext.tsx` + `QuestsFilterBar.tsx` or `QuestsSidebar.tsx`                                                                    |
 | Change quest sort/availability logic     | `src/lib/utils/quest-availability.ts`                                                                                                                                                        |
 | Change quest-item demand logic           | `src/lib/utils/quest-item-index.ts`                                                                                                                                                          |
-| Open item modal from a new location      | Manage `selectedItem: ItemDetails \| null` state in caller, render `<ItemDetailModal>` with stations from DataContext + stationLevels/hiddenStations/completedRequirements from useUserStore |
-| Broaden item search to non-hideout items | Pass `itemPool` prop to `ItemSearchModal` with a merged array                                                                                                                                |
+| Open item modal from a new location      | Manage `selectedItem: ItemSummary \| null` and render `<ItemDetailModal item={...}>`; its controller loads relationships lazily                                                            |
+| Change item search behavior              | `src/server/queries/searchItems.ts`, the search API route, and `useItemSearchController.ts`                                                                                                  |
 
 ## Docs
 
@@ -198,7 +198,7 @@ Detailed architecture docs are in `docs/`. `docs/README.md` is the index and sho
 
 - `docs/state-management.md` — authoritative store shapes
 - `docs/caching-architecture.md` — Redis key naming, invalidation
-- `docs/data-and-price-context-architecture.md` — DataContext and embedded item-pricing pattern
+- `docs/data-and-price-context-architecture.md` — repository, query, route-contract, and lazy item-data delivery
 - `docs/quests-page.md` — quests feature spec
 - `docs/item-checklist-page.md` — current items page architecture, item demand, and source filtering behavior
 - `docs/item-source-filtering.md` / `docs/quest-completion-filtering.md` — historical plans; verify against current source before using

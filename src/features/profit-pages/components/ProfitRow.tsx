@@ -8,7 +8,7 @@ import type {
 } from "@/lib/price-calculation";
 import type { BarterRecord, CraftRecord } from "@/types/recipes";
 import type { ItemSummary } from "@/types/items";
-import type { Station } from "@/types/hideout";
+import type { ProfitStationSource } from "../types";
 import type { Trader } from "@/types/traders";
 import type {
   GoToRecipeHandler,
@@ -48,13 +48,13 @@ export function ProfitRow({
   itemById: Readonly<Record<string, ItemSummary>>;
   sourceName?: string;
   available: boolean;
-  source?: Trader | Station;
+  source?: Trader | ProfitStationSource;
   overrides: Record<string, ManualPriceOverride>;
   onPriceChange: PriceChangeHandler;
   bartersById: Readonly<Record<string, BarterRecord>>;
   craftsById: Readonly<Record<string, CraftRecord>>;
   tradersById: Readonly<Record<string, Trader>>;
-  stationsById: Readonly<Record<string, Station>>;
+  stationsById: Readonly<Record<string, ProfitStationSource>>;
   onItemOpen: (itemId: string) => void;
   onGoToRecipe: GoToRecipeHandler;
   highlighted: boolean;

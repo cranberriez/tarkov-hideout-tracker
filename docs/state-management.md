@@ -236,25 +236,17 @@ viewMode: "all" | "need";
 
 ---
 
-## React Contexts — Server-Fetched Data
+## Server-fetched data
 
-Data from external APIs is **not** in Zustand. It is fetched server-side and distributed through `DataContext`:
+External data is **not** stored in Zustand. Server pages call named modules in
+`src/server/queries/` and pass route-scoped contracts from
+`src/types/contracts.ts` to their client feature. Clients may derive an `itemById`
+record from the items delivered for that route. The shared data layout does not
+load or retain stations, catalog items, or prices.
 
-### `DataContext` (`src/app/(data)/_dataContext.tsx`)
-
-Provided by `(data)/layout.tsx`. Contains:
-
-```ts
-stations: Station[] | null;
-stationsUpdatedAt: number | null;
-items: GlobalItem[] | null;
-itemById: Readonly<Record<string, GlobalItem>>; // derived client-side
-itemsUpdatedAt: number | null;
-```
-
-Usage: `const { stations, items, itemById } = useDataContext();`
-
-Each `GlobalItem` entry may contain `marketPrice`, sourced from the same active-mode `/items` record. There is no separate client price context.
+Item search and item-detail relationships are requested lazily from bounded API
+routes. A standard `ItemSummary` may carry the active mode's `marketPrice`; there
+is no separate client price store or context.
 
 ---
 
@@ -268,7 +260,7 @@ Each `GlobalItem` entry may contain `marketPrice`, sourced from the same active-
 | Kappa item progress and view       | `useKappaStore` (localStorage)                                                                       |
 | Game edition / mode setup          | `useUserStore` (localStorage)                                                                        |
 | Quick Add modal + staged items     | `useUIStore` (in-memory)                                                                             |
-| Hideout stations + global item catalog | `DataContext` (server → context); each standard item carries active-mode market data              |
+| Route stations + referenced item summaries | Named server query → route contract; each standard item may carry active-mode market data |
 | Quest data                         | Server props to pages that need it; `/quests` wraps it in `QuestsContext` for derived quest UI state |
 
 ### Profit-page price overrides

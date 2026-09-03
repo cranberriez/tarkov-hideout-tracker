@@ -9,7 +9,12 @@ to use the small per-item usage route and do not receive these indexes.
 
 Both routes render the shared server component in
 `src/features/profit-pages/ProfitPage.tsx`. It resolves the active mode, loads the
-profit-page data, and passes the result across the client boundary. The client
+route-scoped data through `getProfitPageData`, and passes the result across the
+client boundary. Both recipe graphs settle independently at the query boundary,
+but the client requires both before calculating because recursive acquisition can
+cross from barter to craft or craft to barter. A failure in either graph blocks
+figures instead of displaying incomplete costs. Only compact station/trader source
+presentation is serialized; full station levels and requirements are omitted. The client
 orchestrator in `ProfitPageClient.tsx` owns profile-backed state, evaluation,
 filters, and modal navigation. Focused presentation components live in the
 feature's `components/` directory, while pure formatting, filtering, recipe, and

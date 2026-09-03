@@ -9,8 +9,9 @@ derives totals from the active player profile.
 
 | File | Role |
 |---|---|
-| `src/app/(data)/items/page.tsx` | Loads full quests and builds quest indexes, any-of groups, and availability metadata |
-| `src/features/items/ItemsClientPage.tsx` | Client shell, catalog-backed search pool, and selected-item state |
+| `src/app/(data)/items/page.tsx` | Calls the route-scoped checklist query and delivers its contract |
+| `src/server/queries/getItemChecklistPageData.ts` | Composes stations, quest demand metadata, and referenced item summaries/prices |
+| `src/features/items/ItemsClientPage.tsx` | Client shell, error presentation, and selected-item state |
 | `src/features/items/components/ItemsList.tsx` | Merges hideout and quest demand |
 | `src/features/items/components/ItemsStatsRow.tsx` | Visible demand summaries |
 | `src/features/items/components/ItemsControls.tsx` | Source, visibility, and display controls |
@@ -22,28 +23,23 @@ derives totals from the active player profile.
 ## Data flow
 
 ```text
-(data)/layout.tsx
-  -> getCachedHideoutStations(mode)
-  -> getGlobalItemList(mode)
-  -> DataContext { stations, items, itemById }
-
 /items page
-  -> getCachedFullQuestData(mode)
-  -> orderQuestsByPrerequisites(quests)
-  -> buildQuestItemIndex(quests)
-  -> buildQuestAnyOfGroups(quests)
-  -> build availability metadata
+  -> getItemChecklistPageData(mode)
+  -> repository station + quest reads settle independently
+  -> build quest item/any-of/availability metadata
+  -> request only hideout- and quest-demand item IDs plus prices
   -> ItemsClientPage
 
 ItemsList
   -> pool hideout itemId requirements from player station progress
   -> derive quest itemId demand from player quest progress
-  -> join each standard item through DataContext.itemById
+  -> join each standard item through the route's local itemById index
 ```
 
-`DataContext.items` is the complete compact standard-item catalog for the active
-mode, not a filtered tracked-item set. Missing standard catalog references are
-skipped rather than replaced with task-owned quest-item presentation.
+The route sends only item summaries referenced by hideout or quest demand. A quest
+failure is displayed while valid hideout demand remains usable. Missing standard
+catalog references are reported explicitly rather than replaced with task-owned
+quest-item presentation.
 
 ## Hideout demand
 
@@ -91,19 +87,20 @@ isQuest: boolean;
 
 `itemSourceFilter` selects all, hideout-only, or quest-only demand. Other filters
 cover FiR demand, cheap non-FiR items, pinned quests, categories, and item-card
-size. Prices come from `GlobalItem.marketPrice`; no separate client price map is
+size. Prices come from `ItemSummary.marketPrice`; no separate client price map is
 needed.
 
 ## Search and item modal
 
-Search uses `DataContext.items`, so every standard catalog item is searchable even
-when it has no current hideout or quest demand. Quest-specific items are excluded.
+Search uses `/api/items/search`, so every standard catalog item is searchable even
+when it has no current hideout or quest demand. Checklist search returns up to 50
+alphabetized results with starts-with matches first; Quick Add remains capped at
+10. Quest-specific items are excluded.
 
-Selecting a standard item opens `ItemDetailModal`, which resolves the canonical
-record through `itemById`. Hideout and quest usage remain client-derived. The
-modal's acquisition data is loaded separately:
+Selecting a standard item opens `ItemDetailModal`. Its model/navigation controller
+loads route-scoped item relations and acquisition data separately:
 
-- **Hideout** and **Quests** use the already loaded station/quest references.
+- **Hideout** and **Quests** use `/api/items/{itemId}/relations`.
 - The **Quests** tab separates quests that require the selected item from quests
   that award it. Reward sources are informational and never contribute checklist
   demand or inventory counts.

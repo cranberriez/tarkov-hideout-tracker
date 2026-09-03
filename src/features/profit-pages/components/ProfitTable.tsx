@@ -8,7 +8,7 @@ import type {
 } from "@/lib/price-calculation";
 import type { BarterRecord, CraftRecord } from "@/types/recipes";
 import type { ItemSummary } from "@/types/items";
-import type { Station } from "@/types/hideout";
+import type { ProfitStationSource } from "../types";
 import type { Trader } from "@/types/traders";
 import type {
   GoToRecipeHandler,
@@ -47,7 +47,7 @@ export function ProfitTable({
   evaluations: RecipeEvaluation[];
   itemById: Readonly<Record<string, ItemSummary>>;
   tradersById: Readonly<Record<string, Trader>>;
-  stationsById: Readonly<Record<string, Station>>;
+  stationsById: Readonly<Record<string, ProfitStationSource>>;
   bartersById: Readonly<Record<string, BarterRecord>>;
   craftsById: Readonly<Record<string, CraftRecord>>;
   stationLevels: Record<string, number>;

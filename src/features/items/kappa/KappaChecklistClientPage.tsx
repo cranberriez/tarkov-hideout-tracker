@@ -9,21 +9,11 @@ import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
 import { useKappaStore, type KappaViewMode } from "@/lib/stores/useKappaStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ItemSummary } from "@/types/items";
+import type { KappaChecklistPageData } from "@/types/contracts";
 
-interface KappaChecklistClientPageProps {
-    collectorQuest: {
-        id: string;
-        name: string;
-        traderImageLink?: string | null;
-        traderImage4xLink?: string | null;
-    } | null;
+interface KappaChecklistClientPageProps
+    extends Pick<KappaChecklistPageData, "collectorQuest" | "unresolvedItemIds" | "errors"> {
     collectorItems: ItemSummary[];
-    unresolvedItemIds: string[];
-    errors: {
-        quests: string | null;
-        items: string | null;
-        prices: string | null;
-    };
 }
 
 const VIEW_OPTIONS: Array<{ value: KappaViewMode; label: string }> = [
@@ -71,6 +61,7 @@ export function KappaChecklistClientPage({
         (count, item) => count + (completedItems[item.id] ? 1 : 0),
         0,
     );
+    const collectorItemCount = sortedCollectorItems.length + unresolvedItemIds.length;
 
     const errorMessages = [
         ...(errors.quests ? [errors.quests] : []),
@@ -81,10 +72,15 @@ export function KappaChecklistClientPage({
         ...(collectorQuest && collectorItems.length === 0 && unresolvedItemIds.length === 0
             ? ["The Collector quest does not currently include any required items."]
             : []),
-        ...(unresolvedItemIds.length > 0 && collectorItems.length === 0
-            ? ["Collector items could not be matched to the item catalog."]
-            : []),
     ];
+    const catalogWarning =
+        unresolvedItemIds.length > 0
+            ? `${unresolvedItemIds.length} Collector item${
+                  unresolvedItemIds.length === 1 ? " could" : "s could"
+              } not be matched to the item catalog. The checklist total still includes ${
+                  unresolvedItemIds.length === 1 ? "it" : "them"
+              }.`
+            : null;
 
     return (
         <main className="container mx-auto px-6 py-8">
@@ -94,7 +90,7 @@ export function KappaChecklistClientPage({
                         KAPPA REQUIRED ITEMS
                     </h1>
                     <p className="mt-1 text-sm text-gray-400">
-                        {completedCount} of {sortedCollectorItems.length} collected
+                        {completedCount} of {collectorItemCount} collected
                     </p>
                 </div>
 
@@ -150,9 +146,21 @@ export function KappaChecklistClientPage({
                     title="Kappa checklist data is unavailable"
                     messages={errorMessages}
                 />
-            ) : visibleItems.length === 0 ? (
+            ) : (
+                <>
+                    {catalogWarning && (
+                        <div
+                            role="alert"
+                            className="mb-4 rounded border border-amber-400/30 bg-amber-950/30 px-4 py-3 text-sm text-amber-100"
+                        >
+                            {catalogWarning}
+                        </div>
+                    )}
+                    {visibleItems.length === 0 ? (
                 <div className="rounded-lg border border-tarkov-green/20 bg-tarkov-green/5 px-5 py-10 text-center text-sm text-gray-300">
-                    You have collected every Kappa item.
+                    {unresolvedItemIds.length > 0
+                        ? "No matched Collector items are available to display."
+                        : "You have collected every Kappa item."}
                 </div>
             ) : (
                 <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10">
@@ -208,6 +216,8 @@ export function KappaChecklistClientPage({
                         );
                     })}
                 </ul>
+                    )}
+                </>
             )}
 
             <p className="mt-6 flex items-center gap-2 text-sm text-orange-300/90">

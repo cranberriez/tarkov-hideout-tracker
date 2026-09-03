@@ -6,7 +6,10 @@ import type { ItemSummary } from "@/types/items";
 import { Search, X } from "lucide-react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
-import { ITEM_SEARCH_MAX_QUERY_LENGTH } from "@/types/contracts";
+import {
+	ITEM_SEARCH_MAX_QUERY_LENGTH,
+	ITEM_SEARCH_PAGE_RESULT_LIMIT,
+} from "@/types/contracts";
 import { useItemSearchController } from "@/features/items/useItemSearchController";
 
 interface ItemSearchModalProps {
@@ -22,6 +25,7 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
 		enabled: isOpen,
 		mode: toTarkovJsonGameMode(gameMode),
 		query,
+		resultLimit: ITEM_SEARCH_PAGE_RESULT_LIMIT,
 	});
 
 	// Focus input on open
