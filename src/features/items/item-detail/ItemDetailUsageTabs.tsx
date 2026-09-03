@@ -18,6 +18,7 @@ import { ItemDetailPriceHistory } from "./ItemDetailPriceHistory";
 import type { ItemCraftRecipe, ItemDetails, ItemTraderOffer } from "@/types";
 import type { GameEdition } from "@/lib/stores/useUserStore";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
+import type { RecipeEvaluation } from "@/lib/price-calculation";
 
 type UsageTab = "hideout" | "quests" | "traders" | "crafting" | "prices";
 
@@ -42,6 +43,11 @@ interface ItemDetailUsageTabsProps {
     gameEdition: GameEdition | null;
     gameMode: TarkovJsonGameMode;
     showPriceHistory: boolean;
+    barterEvaluationsById: Readonly<Record<string, RecipeEvaluation>>;
+    craftEvaluationsById: Readonly<Record<string, RecipeEvaluation>>;
+    profitLoading: boolean;
+    profitError: string | null;
+    onItemClick: (itemId: string) => void;
 }
 
 export function ItemDetailUsageTabs({
@@ -65,6 +71,11 @@ export function ItemDetailUsageTabs({
     gameEdition,
     gameMode,
     showPriceHistory,
+    barterEvaluationsById,
+    craftEvaluationsById,
+    profitLoading,
+    profitError,
+    onItemClick,
 }: ItemDetailUsageTabsProps) {
     const hideoutCount = stationRequirements.reduce((count, [, reqs]) => count + reqs.length, 0);
     const questCount = (questItemState?.relatedQuestCount ?? 0) + anyOfGroups.length + questRewards.length;
@@ -159,6 +170,10 @@ export function ItemDetailUsageTabs({
                             offers={traderOffers}
                             completedQuests={completedQuests}
                             traderLoyaltyLevels={traderLoyaltyLevels}
+                            evaluationsById={barterEvaluationsById}
+                            profitLoading={profitLoading}
+                            profitError={profitError}
+                            onItemClick={onItemClick}
                         />
                     </AcquisitionState>
                 )}
@@ -169,6 +184,10 @@ export function ItemDetailUsageTabs({
                             completedQuests={completedQuests}
                             stationLevels={stationLevels}
                             gameEdition={gameEdition}
+                            evaluationsById={craftEvaluationsById}
+                            profitLoading={profitLoading}
+                            profitError={profitError}
+                            onItemClick={onItemClick}
                         />
                     </AcquisitionState>
                 )}

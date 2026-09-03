@@ -5,11 +5,12 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type {
     ItemCraftRecipe,
     ItemDetails,
+    ItemAcquisitionTreePayload,
     ItemTraderOffer,
     ItemUsagePayload,
     Station,
 } from "@/types";
-import { Bug, X } from "lucide-react";
+import { ArrowLeft, Bug, X } from "lucide-react";
 import { stationOrder } from "@/lib/cfg/stationOrder";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { formatRelativeUpdatedAt } from "@/lib/utils/format-time";
@@ -25,8 +26,17 @@ import { useDataContext } from "@/app/(data)/_dataContext";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { isCompleteItemUsagePayload } from "@/lib/utils/item-usage";
 import { summarizeItemDetailDemand } from "./item-detail-summary";
+import { evaluateBarters, evaluateCrafts } from "@/lib/price-calculation";
+import { useManualPriceOverrides } from "@/features/profit-pages/useManualPriceOverrides";
 
 const itemUsageCache = new Map<string, ItemUsagePayload>();
+const acquisitionTreeCache = new Map<string, ItemAcquisitionTreePayload>();
+
+function indexByOutput<T>(records: T[], getItemId: (record: T) => string) {
+    const index: Record<string, T[]> = Object.create(null) as Record<string, T[]>;
+    for (const record of records) (index[getItemId(record)] ??= []).push(record);
+    return index;
+}
 
 export interface ItemDetailModalProps {
     item: ItemDetails | null;
@@ -56,10 +66,22 @@ export function ItemDetailModal({
     questAvailabilityQuests = [],
 }: ItemDetailModalProps) {
     const { items: catalogItems, itemById } = useDataContext();
+    const rootItemId = item?.id ?? "";
+    const [itemNavigation, setItemNavigation] = useState<{
+        rootItemId: string;
+        itemIds: string[];
+    }>({ rootItemId, itemIds: rootItemId ? [rootItemId] : [] });
+    const navigationItemIds =
+        itemNavigation.rootItemId === rootItemId
+            ? itemNavigation.itemIds
+            : rootItemId
+              ? [rootItemId]
+              : [];
+    const activeItemId = navigationItemIds.at(-1) ?? rootItemId;
     const selectedItem = useMemo(() => {
         if (!item) return null;
-        return itemById[item.id] ?? item;
-    }, [itemById, item]);
+        return itemById[activeItemId] ?? (activeItemId === item.id ? item : null);
+    }, [activeItemId, itemById, item]);
     const selectedItemId = selectedItem?.id ?? "";
     const selectedNormalizedName = selectedItem?.normalizedName ?? "";
 
@@ -152,6 +174,7 @@ export function ItemDetailModal({
         gameEdition,
         gameMode,
     } = useUserStore();
+    const { overrides } = useManualPriceOverrides(gameMode);
     const usageKey = `${toTarkovJsonGameMode(gameMode)}:${selectedItemId}`;
     const [usageResult, setUsageResult] = useState<{ key: string; data: ItemUsagePayload } | null>(
         () => {
@@ -160,6 +183,17 @@ export function ItemDetailModal({
         },
     );
     const [usageErrorResult, setUsageErrorResult] = useState<{
+        key: string;
+        message: string;
+    } | null>(null);
+    const [treeResult, setTreeResult] = useState<{
+        key: string;
+        data: ItemAcquisitionTreePayload;
+    } | null>(() => {
+        const cached = acquisitionTreeCache.get(usageKey);
+        return cached ? { key: usageKey, data: cached } : null;
+    });
+    const [treeErrorResult, setTreeErrorResult] = useState<{
         key: string;
         message: string;
     } | null>(null);
@@ -197,6 +231,34 @@ export function ItemDetailModal({
         return () => controller.abort();
     }, [gameMode, isOpen, selectedItemId, usageKey]);
 
+    useEffect(() => {
+        if (!isOpen || !selectedItemId || acquisitionTreeCache.has(usageKey)) return;
+
+        const controller = new AbortController();
+        const mode = toTarkovJsonGameMode(gameMode);
+        fetch(`/api/items/${encodeURIComponent(selectedItemId)}/acquisition-tree?mode=${mode}`, {
+            signal: controller.signal,
+        })
+            .then(async (response) => {
+                if (!response.ok) throw new Error(`Acquisition tree request failed (${response.status})`);
+                return (await response.json()) as ItemAcquisitionTreePayload;
+            })
+            .then((data) => {
+                acquisitionTreeCache.set(usageKey, data);
+                setTreeErrorResult(null);
+                setTreeResult({ key: usageKey, data });
+            })
+            .catch((error: unknown) => {
+                if (error instanceof DOMException && error.name === "AbortError") return;
+                setTreeErrorResult({
+                    key: usageKey,
+                    message: "Profit recommendations could not be loaded.",
+                });
+            });
+
+        return () => controller.abort();
+    }, [gameMode, isOpen, selectedItemId, usageKey]);
+
     const itemUsage =
         itemUsageCache.get(usageKey) ??
         (usageResult?.key === usageKey ? usageResult.data : null);
@@ -207,6 +269,16 @@ export function ItemDetailModal({
         selectedItemId.length > 0 &&
         itemUsage === null &&
         usageRequestError === null;
+    const acquisitionTree =
+        acquisitionTreeCache.get(usageKey) ??
+        (treeResult?.key === usageKey ? treeResult.data : null);
+    const profitError =
+        treeErrorResult?.key === usageKey ? treeErrorResult.message : null;
+    const isProfitLoading =
+        isOpen &&
+        selectedItemId.length > 0 &&
+        acquisitionTree === null &&
+        profitError === null;
 
     const isRouble = selectedNormalizedName === "roubles";
     const isDollar = selectedNormalizedName === "dollars";
@@ -350,6 +422,40 @@ export function ItemDetailModal({
         return details;
     }, [catalogItems, selectedItem]);
 
+    const { barterEvaluationsById, craftEvaluationsById } = useMemo(() => {
+        if (!itemUsage || !acquisitionTree) {
+            return { barterEvaluationsById: {}, craftEvaluationsById: {} };
+        }
+        const bartersByItemId = indexByOutput(
+            acquisitionTree.barters,
+            (barter) => barter.offeredItemId,
+        );
+        const craftsByItemId = indexByOutput(
+            acquisitionTree.crafts,
+            (craft) => craft.productItemId,
+        );
+        const context = {
+            itemsById: itemById,
+            bartersByItemId,
+            craftsByItemId,
+            overrides,
+        };
+        return {
+            barterEvaluationsById: Object.fromEntries(
+                evaluateBarters(itemUsage.barters, context).map((evaluation) => [
+                    evaluation.id,
+                    evaluation,
+                ]),
+            ),
+            craftEvaluationsById: Object.fromEntries(
+                evaluateCrafts(itemUsage.crafts, context).map((evaluation) => [
+                    evaluation.id,
+                    evaluation,
+                ]),
+            ),
+        };
+    }, [acquisitionTree, itemById, itemUsage, overrides]);
+
     const traderOffers = useMemo<ItemTraderOffer[]>(() => {
         const traders = new Map(
             questAvailabilityQuests.map((quest) => [quest.trader.id, quest.trader]),
@@ -470,7 +576,27 @@ export function ItemDetailModal({
     const showDebug = debugItemId === selectedItemId;
     const handleClose = () => {
         setDebugItemId(null);
+        setItemNavigation({ rootItemId, itemIds: rootItemId ? [rootItemId] : [] });
         onClose();
+    };
+    const handleItemClick = (itemId: string) => {
+        if (!itemById[itemId] || itemId === selectedItemId) return;
+        setDebugItemId(null);
+        setItemNavigation((current) => {
+            const itemIds = current.rootItemId === rootItemId
+                ? current.itemIds
+                : rootItemId
+                  ? [rootItemId]
+                  : [];
+            return { rootItemId, itemIds: [...itemIds, itemId] };
+        });
+    };
+    const handleBack = () => {
+        setDebugItemId(null);
+        setItemNavigation((current) => ({
+            rootItemId,
+            itemIds: (current.rootItemId === rootItemId ? current.itemIds : [rootItemId]).slice(0, -1),
+        }));
     };
     const debugData = {
         item: selectedItem,
@@ -530,7 +656,7 @@ export function ItemDetailModal({
                         </section>
                     ) : (
                         <>
-                            <header className="relative border-b border-border-color bg-gradient-to-br from-card via-card to-background py-3 pl-3 pr-12 sm:py-4 sm:pl-4 sm:pr-14">
+                            <header className="relative border-b border-border-color bg-gradient-to-br from-card via-card to-background py-3 pl-3 pr-20 sm:py-4 sm:pl-4 sm:pr-24">
                                 <ItemDetailHeader
                                     item={selectedItem}
                                     totalRequiredCount={demandSummary.totalRequiredCount}
@@ -538,6 +664,16 @@ export function ItemDetailModal({
                                     hideoutRequiredCount={demandSummary.hideoutRequiredCount}
                                     questRequiredCount={demandSummary.questRequiredCount}
                                 />
+                                {navigationItemIds.length > 1 && (
+                                    <button
+                                        type="button"
+                                        onClick={handleBack}
+                                        className="absolute right-12 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:border-border-color hover:bg-black/20 hover:text-foreground sm:right-14 sm:top-4"
+                                        aria-label="Back to previous item"
+                                    >
+                                        <ArrowLeft size={17} />
+                                    </button>
+                                )}
                                 <button
                                     type="button"
                                     onClick={handleClose}
@@ -597,6 +733,11 @@ export function ItemDetailModal({
                                                 gameEdition={gameEdition}
                                                 gameMode={toTarkovJsonGameMode(gameMode)}
                                                 showPriceHistory={showPriceHistory}
+                                                barterEvaluationsById={barterEvaluationsById}
+                                                craftEvaluationsById={craftEvaluationsById}
+                                                profitLoading={isProfitLoading}
+                                                profitError={profitError}
+                                                onItemClick={handleItemClick}
                                             />
                                         )}
                                     </div>

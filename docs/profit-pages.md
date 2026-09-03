@@ -106,6 +106,10 @@ pointer when they must move above a low row. Clicking an item's portrait opens
 the shared item-detail modal; hovering a crafted or bartered requirement also
 reveals a button that opens its recipe.
 
+The modal's Trader and Crafting tabs reuse this calculation engine for compact
+recipe profit summaries and Buy/Craft/Barter ingredient recommendations. Their
+full-detail buttons deep-link back to the exact recipe on these pages.
+
 Output sale presentation compares the flea value with the highest trader offer.
 Close prices (within 5%, capped at 5,000 roubles) are both shown in the row; hover
 details always show both available values. Trader offers use their original

@@ -5,17 +5,27 @@ import { Check, LockKeyhole, ShoppingCart } from "lucide-react";
 import type { ItemAmount, ItemTraderOffer } from "@/types";
 import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
+import { ItemDetailRecipeProfit } from "./ItemDetailRecipeProfit";
+import type { AcquisitionPlan, RecipeEvaluation } from "@/lib/price-calculation";
 
 interface ItemDetailAcquisitionProps {
     offers: ItemTraderOffer[];
     completedQuests: Record<string, boolean>;
     traderLoyaltyLevels: Record<string, number>;
+    evaluationsById: Readonly<Record<string, RecipeEvaluation>>;
+    profitLoading: boolean;
+    profitError: string | null;
+    onItemClick: (itemId: string) => void;
 }
 
 export function ItemDetailAcquisition({
     offers,
     completedQuests,
     traderLoyaltyLevels,
+    evaluationsById,
+    profitLoading,
+    profitError,
+    onItemClick,
 }: ItemDetailAcquisitionProps) {
     const sorted = [...offers].sort((a, b) => {
         const aAvailable = isOfferAvailable(a, completedQuests, traderLoyaltyLevels);
@@ -26,6 +36,7 @@ export function ItemDetailAcquisition({
     return (
         <div className="divide-y divide-border-color">
             {sorted.map((offer) => {
+                const evaluation = evaluationsById[offer.id];
                 const currentLoyalty = traderLoyaltyLevels[offer.trader.id] ?? 1;
                 const loyaltyMet = currentLoyalty >= offer.minTraderLevel;
                 const questMet = !offer.taskUnlock || completedQuests[offer.taskUnlock.id] === true;
@@ -77,10 +88,23 @@ export function ItemDetailAcquisition({
 
                         <div className="mt-2.5 flex flex-wrap gap-2">
                             {offer.requiredItems.map((entry) => (
-                                <CostItem key={entry.item.id} entry={entry} />
+                                <CostItem
+                                    key={entry.item.id}
+                                    entry={entry}
+                                    plan={evaluation?.requiredItems.find(
+                                        (candidate) => candidate.itemId === entry.item.id,
+                                    )}
+                                    onItemClick={onItemClick}
+                                />
                             ))}
                         </div>
-
+                        <ItemDetailRecipeProfit
+                            evaluation={evaluation}
+                            recipeId={offer.id}
+                            kind="barter"
+                            loading={profitLoading}
+                            error={profitError}
+                        />
                     </div>
                 );
             })}
@@ -99,7 +123,15 @@ function isOfferAvailable(
     );
 }
 
-function CostItem({ entry }: { entry: ItemAmount }) {
+function CostItem({
+    entry,
+    plan,
+    onItemClick,
+}: {
+    entry: ItemAmount;
+    plan?: AcquisitionPlan;
+    onItemClick: (itemId: string) => void;
+}) {
     const currencySymbol =
         entry.item.normalizedName === "roubles"
             ? "₽"
@@ -111,12 +143,38 @@ function CostItem({ entry }: { entry: ItemAmount }) {
     return (
         <ItemDetailItemChip
             item={entry.item}
+            onClick={() => onItemClick(entry.item.id)}
             quantityLabel={
                 currencySymbol
                     ? `${currencySymbol}${entry.count.toLocaleString()}`
                     : `×${entry.count}`
             }
+            badges={plan && <RecommendationBadge plan={plan} />}
         />
+    );
+}
+
+function RecommendationBadge({ plan }: { plan: AcquisitionPlan }) {
+    const label =
+        plan.method === "flea"
+            ? "Buy"
+            : plan.method === "craft"
+              ? "Craft"
+              : plan.method === "barter"
+                ? "Barter"
+                : "Unpriced";
+    const classes =
+        plan.method === "craft"
+            ? "bg-orange-400/10 text-orange-200"
+            : plan.method === "barter"
+              ? "bg-sky-400/10 text-sky-200"
+              : plan.method === "flea"
+                ? "bg-tarkov-green/10 text-tarkov-green"
+                : "bg-white/5 text-muted-foreground";
+    return (
+        <span className={`shrink-0 rounded px-1 py-0.5 text-[8px] font-bold uppercase ${classes}`}>
+            {label}
+        </span>
     );
 }
 

@@ -6,12 +6,18 @@ import type { ItemAmount, ItemCraftRecipe } from "@/types";
 import type { GameEdition } from "@/lib/stores/useUserStore";
 import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
+import { ItemDetailRecipeProfit } from "./ItemDetailRecipeProfit";
+import type { AcquisitionPlan, RecipeEvaluation } from "@/lib/price-calculation";
 
 interface ItemDetailCraftingProps {
     recipes: ItemCraftRecipe[];
     completedQuests: Record<string, boolean>;
     stationLevels: Record<string, number>;
     gameEdition: GameEdition | null;
+    evaluationsById: Readonly<Record<string, RecipeEvaluation>>;
+    profitLoading: boolean;
+    profitError: string | null;
+    onItemClick: (itemId: string) => void;
 }
 
 export function ItemDetailCrafting({
@@ -19,6 +25,10 @@ export function ItemDetailCrafting({
     completedQuests,
     stationLevels,
     gameEdition,
+    evaluationsById,
+    profitLoading,
+    profitError,
+    onItemClick,
 }: ItemDetailCraftingProps) {
     const sorted = [...recipes].sort((a, b) =>
         Number(isCraftAvailable(b, completedQuests, stationLevels, gameEdition)) -
@@ -28,6 +38,7 @@ export function ItemDetailCrafting({
     return (
         <div className="divide-y divide-border-color">
             {sorted.map((recipe) => {
+                const evaluation = evaluationsById[recipe.id];
                 const currentLevel = stationLevels[recipe.station.id] ?? 0;
                 const stationMet = currentLevel >= recipe.level;
                 const questMet = !recipe.taskUnlock || completedQuests[recipe.taskUnlock.id] === true;
@@ -71,16 +82,31 @@ export function ItemDetailCrafting({
 
                         <div className="mt-2.5 flex flex-wrap gap-2">
                             {recipe.requiredItems.map((entry, index) => (
-                                <Ingredient key={`${entry.item.id}-${index}`} entry={entry} />
+                                <Ingredient
+                                    key={`${entry.item.id}-${index}`}
+                                    entry={entry}
+                                    plan={evaluation?.requiredItems.find(
+                                        (candidate) => candidate.itemId === entry.item.id,
+                                    )}
+                                    onItemClick={onItemClick}
+                                />
                             ))}
                             {recipe.requiredQuestItems.map((entry, index) => (
                                 <Ingredient
                                     key={`quest-${entry.item.id}-${index}`}
                                     entry={entry}
                                     questItem
+                                    onItemClick={onItemClick}
                                 />
                             ))}
                         </div>
+                        <ItemDetailRecipeProfit
+                            evaluation={evaluation}
+                            recipeId={recipe.id}
+                            kind="craft"
+                            loading={profitLoading}
+                            error={profitError}
+                        />
                     </div>
                 );
             })}
@@ -128,10 +154,21 @@ function formatDuration(seconds: number) {
     return `${Math.max(minutes, 1)}m`;
 }
 
-function Ingredient({ entry, questItem = false }: { entry: ItemAmount; questItem?: boolean }) {
+function Ingredient({
+    entry,
+    plan,
+    questItem = false,
+    onItemClick,
+}: {
+    entry: ItemAmount;
+    plan?: AcquisitionPlan;
+    questItem?: boolean;
+    onItemClick: (itemId: string) => void;
+}) {
     return (
         <ItemDetailItemChip
             item={entry.item}
+            onClick={questItem ? undefined : () => onItemClick(entry.item.id)}
             quantityLabel={`×${entry.count}`}
             badges={
                 <>
@@ -139,9 +176,34 @@ function Ingredient({ entry, questItem = false }: { entry: ItemAmount; questItem
                     {questItem && (
                         <span className="text-[9px] uppercase text-violet-200">quest item</span>
                     )}
+                    {plan && <RecommendationBadge plan={plan} />}
                 </>
             }
         />
+    );
+}
+
+function RecommendationBadge({ plan }: { plan: AcquisitionPlan }) {
+    const label =
+        plan.method === "flea"
+            ? "Buy"
+            : plan.method === "craft"
+              ? "Craft"
+              : plan.method === "barter"
+                ? "Barter"
+                : "Unpriced";
+    const classes =
+        plan.method === "craft"
+            ? "bg-orange-400/10 text-orange-200"
+            : plan.method === "barter"
+              ? "bg-sky-400/10 text-sky-200"
+              : plan.method === "flea"
+                ? "bg-tarkov-green/10 text-tarkov-green"
+                : "bg-white/5 text-muted-foreground";
+    return (
+        <span className={`shrink-0 rounded px-1 py-0.5 text-[8px] font-bold uppercase ${classes}`}>
+            {label}
+        </span>
     );
 }
 

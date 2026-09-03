@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 interface ItemDetailItemChipProps {
     item: {
+        id?: string;
         name: string;
         iconLink?: string;
         gridImageLink?: string;
@@ -9,6 +10,7 @@ interface ItemDetailItemChipProps {
     quantityLabel?: string;
     badges?: ReactNode;
     className?: string;
+    onClick?: () => void;
 }
 
 export function ItemDetailItemChip({
@@ -16,12 +18,11 @@ export function ItemDetailItemChip({
     quantityLabel,
     badges,
     className = "",
+    onClick,
 }: ItemDetailItemChipProps) {
     const imageLink = item.iconLink ?? item.gridImageLink;
-    return (
-        <span
-            className={`flex min-h-11 max-w-52 items-center gap-2 rounded-[4px] bg-white/[0.035] px-2 py-1.5 text-xs ${className}`}
-        >
+    const content = (
+        <>
             {imageLink && (
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center">
                     <img src={imageLink} alt="" className="h-8 w-8 object-contain" />
@@ -34,6 +35,27 @@ export function ItemDetailItemChip({
                 </span>
             )}
             {badges}
+        </>
+    );
+
+    if (onClick) {
+        return (
+            <button
+                type="button"
+                onClick={onClick}
+                className={`flex min-h-11 max-w-52 items-center gap-2 rounded-[4px] bg-white/[0.035] px-2 py-1.5 text-left text-xs transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-tarkov-green ${className}`}
+                aria-label={`Open details for ${item.name}`}
+            >
+                {content}
+            </button>
+        );
+    }
+
+    return (
+        <span
+            className={`flex min-h-11 max-w-52 items-center gap-2 rounded-[4px] bg-white/[0.035] px-2 py-1.5 text-xs ${className}`}
+        >
+            {content}
         </span>
     );
 }
