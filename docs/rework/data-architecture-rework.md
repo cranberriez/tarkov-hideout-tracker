@@ -69,3 +69,14 @@ with Tarkov.dev data. The enforced before/after reductions are:
 records. These shape assertions are stable across upstream catalog growth, unlike a
 single byte count; capture compressed RSC transfer sizes in deployment telemetry
 when comparing releases.
+
+## Turso ingestion staging
+
+- Turso was selected for the next repository implementation.
+- Offline generation and upload tooling lives in the root `db-scripts/` directory;
+  runtime database access will be added separately under `src/server/db/`.
+- Generated releases store canonical entities, compact manifests/search records,
+  and endpoint-ready per-item relations, usage, and acquisition payloads.
+- Uploads are immutable and mode-scoped. A release becomes readable only after its
+  counts validate and its active-release pointer is explicitly updated.
+- Item price history remains an on-demand provider request and is not stored in Turso.
