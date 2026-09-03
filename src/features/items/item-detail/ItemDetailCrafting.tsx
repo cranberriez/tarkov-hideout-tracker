@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { Check, Clock3, Hammer, LockKeyhole } from "lucide-react";
-import type { ItemAmount, ItemCraftRecipe } from "@/types";
+import type { ItemAmount, ItemCraftRecipe, ItemDetails } from "@/types";
 import type { GameEdition } from "@/lib/stores/useUserStore";
 import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
+import { ItemDetailRecipeFlow } from "./ItemDetailRecipeFlow";
 import { ItemDetailRecipeProfit } from "./ItemDetailRecipeProfit";
 import type { AcquisitionPlan, RecipeEvaluation } from "@/lib/price-calculation";
 
@@ -17,6 +18,7 @@ interface ItemDetailCraftingProps {
     evaluationsById: Readonly<Record<string, RecipeEvaluation>>;
     profitLoading: boolean;
     profitError: string | null;
+    outputItem: ItemDetails;
     onItemClick: (itemId: string) => void;
 }
 
@@ -28,6 +30,7 @@ export function ItemDetailCrafting({
     evaluationsById,
     profitLoading,
     profitError,
+    outputItem,
     onItemClick,
 }: ItemDetailCraftingProps) {
     const sorted = [...recipes].sort((a, b) =>
@@ -46,41 +49,53 @@ export function ItemDetailCrafting({
                 const available = stationMet && questMet && editionMet;
                 return (
                     <div key={recipe.id} className="bg-black/10 px-3 py-3">
-                        <div className="flex items-center gap-2.5">
-                            {recipe.station.imageLink ? (
-                                <img
-                                    src={recipe.station.imageLink}
-                                    alt=""
-                                    className="h-8 w-8 rounded-md object-contain"
-                                />
-                            ) : (
-                                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white/5">
-                                    <Hammer size={14} />
-                                </span>
-                            )}
-                            <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <span className="text-sm font-medium text-foreground">
-                                        {recipe.station.name} level {recipe.level}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <div className="flex min-w-48 flex-1 items-center gap-2.5">
+                                {recipe.station.imageLink ? (
+                                    <img
+                                        src={recipe.station.imageLink}
+                                        alt=""
+                                        className="h-8 w-8 rounded-md object-contain"
+                                    />
+                                ) : (
+                                    <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white/5">
+                                        <Hammer size={14} />
                                     </span>
-                                    <AvailabilityBadge available={available} />
-                                    {!available && (
-                                        <LockedReasons
-                                            recipe={recipe}
-                                            stationMet={stationMet}
-                                            questMet={questMet}
-                                            editionMet={editionMet}
-                                            currentLevel={currentLevel}
-                                        />
-                                    )}
-                                </div>
-                                <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-                                    <Clock3 size={10} /> {formatDuration(recipe.duration)} · Produces ×{recipe.productCount}
+                                )}
+                                <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="text-sm font-medium text-foreground">
+                                            {recipe.station.name} level {recipe.level}
+                                        </span>
+                                        <AvailabilityBadge available={available} />
+                                        {!available && (
+                                            <LockedReasons
+                                                recipe={recipe}
+                                                stationMet={stationMet}
+                                                questMet={questMet}
+                                                editionMet={editionMet}
+                                                currentLevel={currentLevel}
+                                            />
+                                        )}
+                                    </div>
+                                    <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                                        <Clock3 size={10} /> {formatDuration(recipe.duration)}
+                                    </div>
                                 </div>
                             </div>
+                            <ItemDetailRecipeProfit
+                                evaluation={evaluation}
+                                recipeId={recipe.id}
+                                kind="craft"
+                                loading={profitLoading}
+                                error={profitError}
+                            />
                         </div>
 
-                        <div className="mt-2.5 flex flex-wrap gap-2">
+                        <ItemDetailRecipeFlow
+                            outputItem={outputItem}
+                            outputCount={recipe.productCount}
+                        >
                             {recipe.requiredItems.map((entry, index) => (
                                 <Ingredient
                                     key={`${entry.item.id}-${index}`}
@@ -99,14 +114,7 @@ export function ItemDetailCrafting({
                                     onItemClick={onItemClick}
                                 />
                             ))}
-                        </div>
-                        <ItemDetailRecipeProfit
-                            evaluation={evaluation}
-                            recipeId={recipe.id}
-                            kind="craft"
-                            loading={profitLoading}
-                            error={profitError}
-                        />
+                        </ItemDetailRecipeFlow>
                     </div>
                 );
             })}
@@ -169,19 +177,27 @@ function Ingredient({
         <ItemDetailItemChip
             item={entry.item}
             onClick={questItem ? undefined : () => onItemClick(entry.item.id)}
-            quantityLabel={`×${entry.count}`}
+            quantityLabel={`${entry.count}`}
+            quantityOverlay
             secondary={
-                !entry.isTool && plan ? <RecommendationBadge plan={plan} /> : undefined
+                entry.isTool ? <ToolBadge /> : plan ? <RecommendationBadge plan={plan} /> : undefined
             }
             badges={
                 <>
-                    {entry.isTool && <span className="text-[9px] uppercase text-blue-200">tool</span>}
                     {questItem && (
                         <span className="text-[9px] uppercase text-violet-200">quest item</span>
                     )}
                 </>
             }
         />
+    );
+}
+
+function ToolBadge() {
+    return (
+        <span className="shrink-0 rounded bg-sky-400/10 px-1 py-0.5 text-[9px] font-bold uppercase text-sky-200">
+            Tool
+        </span>
     );
 }
 
@@ -203,7 +219,7 @@ function RecommendationBadge({ plan }: { plan: AcquisitionPlan }) {
                 ? "bg-tarkov-green/10 text-tarkov-green"
                 : "bg-white/5 text-muted-foreground";
     return (
-        <span className={`shrink-0 rounded px-1 py-0.5 text-[8px] font-bold uppercase ${classes}`}>
+        <span className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-bold uppercase ${classes}`}>
             {label}
         </span>
     );

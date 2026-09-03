@@ -92,6 +92,12 @@ export function ItemDetailUsageTabs({
     ];
     const [activeTab, setActiveTab] = useState<UsageTab>(availableTabs[0] ?? "hideout");
     const selectedTab = availableTabs.includes(activeTab) ? activeTab : availableTabs[0];
+    const selectedItem = itemDetailsById[selectedItemId] ?? {
+        id: selectedItemId,
+        name: "Selected item",
+        normalizedName: selectedItemId,
+        iconLink: selectedItemImageLink,
+    };
 
     if (availableTabs.length === 0) return null;
 
@@ -173,6 +179,7 @@ export function ItemDetailUsageTabs({
                             evaluationsById={barterEvaluationsById}
                             profitLoading={profitLoading}
                             profitError={profitError}
+                            outputItem={selectedItem}
                             onItemClick={onItemClick}
                         />
                     </AcquisitionState>
@@ -187,6 +194,7 @@ export function ItemDetailUsageTabs({
                             evaluationsById={craftEvaluationsById}
                             profitLoading={profitLoading}
                             profitError={profitError}
+                            outputItem={selectedItem}
                             onItemClick={onItemClick}
                         />
                     </AcquisitionState>

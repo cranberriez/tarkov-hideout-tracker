@@ -8,6 +8,7 @@ interface ItemDetailItemChipProps {
         gridImageLink?: string;
     };
     quantityLabel?: string;
+    quantityOverlay?: boolean;
     badges?: ReactNode;
     secondary?: ReactNode;
     className?: string;
@@ -17,6 +18,7 @@ interface ItemDetailItemChipProps {
 export function ItemDetailItemChip({
     item,
     quantityLabel,
+    quantityOverlay = false,
     badges,
     secondary,
     className = "",
@@ -26,15 +28,18 @@ export function ItemDetailItemChip({
     const content = (
         <>
             {imageLink && (
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center">
-                    <img src={imageLink} alt="" className="h-8 w-8 object-contain" />
+                <span className="relative flex h-11 w-11 shrink-0 items-center justify-center">
+                    <img src={imageLink} alt="" className="h-11 w-11 object-contain" />
+                    {quantityOverlay && quantityLabel && (
+                        <ItemQuantityBadge label={quantityLabel} />
+                    )}
                 </span>
             )}
             <span className="flex min-w-0 flex-1 flex-col">
                 <span className="flex min-w-0 items-center gap-2">
-                    <span className="min-w-0 flex-1 truncate text-muted-foreground">{item.name}</span>
-                    {quantityLabel && (
-                        <span className="shrink-0 font-mono font-semibold text-foreground">
+                    <span className="min-w-0 flex-1 truncate text-foreground/80">{item.name}</span>
+                    {quantityLabel && !quantityOverlay && (
+                        <span className="shrink-0 font-mono text-xs font-semibold text-foreground">
                             {quantityLabel}
                         </span>
                     )}
@@ -50,7 +55,7 @@ export function ItemDetailItemChip({
             <button
                 type="button"
                 onClick={onClick}
-                className={`flex min-h-11 max-w-52 items-center gap-2 rounded-[4px] bg-white/[0.035] px-2 py-1.5 text-left text-xs transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-tarkov-green ${className}`}
+                className={`flex min-h-12 max-w-52 items-center gap-1.5 rounded-[4px] bg-white/[0.035] px-1.5 py-1 text-left text-[13px] transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-tarkov-green ${className}`}
                 aria-label={`Open details for ${item.name}`}
             >
                 {content}
@@ -60,9 +65,17 @@ export function ItemDetailItemChip({
 
     return (
         <span
-            className={`flex min-h-11 max-w-52 items-center gap-2 rounded-[4px] bg-white/[0.035] px-2 py-1.5 text-xs ${className}`}
+            className={`flex min-h-12 max-w-52 items-center gap-1.5 rounded-[4px] bg-white/[0.035] px-1.5 py-1 text-[13px] ${className}`}
         >
             {content}
+        </span>
+    );
+}
+
+export function ItemQuantityBadge({ label }: { label: string }) {
+    return (
+        <span className="absolute -bottom-1 -right-1 inline-flex min-w-5 items-center justify-center rounded bg-background px-1.5 py-0.5 font-mono text-xs font-bold leading-none text-foreground shadow-sm ring-1 ring-white/15">
+            {label}
         </span>
     );
 }

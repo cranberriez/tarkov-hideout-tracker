@@ -19,12 +19,14 @@ export function ItemDetailRecipeProfit({
     const route = kind === "barter" ? "/items/barter-profits" : "/items/crafting-profits";
 
     return (
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div className="grid grid-cols-2 gap-x-5 gap-y-1 sm:grid-cols-4">
+        <div className="flex w-full flex-wrap items-end gap-x-4 gap-y-2 sm:ml-auto sm:w-auto sm:flex-nowrap sm:justify-end">
+            <div className="flex flex-wrap items-end gap-x-4 gap-y-2 sm:flex-nowrap">
                 {loading ? (
-                    <span className="col-span-2 text-[11px] text-muted-foreground">Calculating profit and ingredient routes…</span>
+                    <span className="text-[11px] text-muted-foreground">
+                        Calculating profit and ingredient routes…
+                    </span>
                 ) : error ? (
-                    <span className="col-span-2 text-[11px] text-amber-200">{error}</span>
+                    <span className="text-[11px] text-amber-200">{error}</span>
                 ) : evaluation ? (
                     <>
                         <Metric label="Cost" value={formatPrice(evaluation.cost)} />
@@ -43,15 +45,17 @@ export function ItemDetailRecipeProfit({
                         )}
                     </>
                 ) : (
-                    <span className="col-span-2 text-[11px] text-muted-foreground">Profit data is unavailable.</span>
+                    <span className="text-[11px] text-muted-foreground">
+                        Profit data is unavailable.
+                    </span>
                 )}
             </div>
 
             <Link
                 href={`${route}?recipe=${encodeURIComponent(recipeId)}`}
-                className="inline-flex shrink-0 items-center gap-1.5 self-start rounded border border-white/10 bg-white/[0.035] px-2.5 py-1.5 text-[10px] font-semibold text-foreground transition-colors hover:border-tarkov-green/40 hover:text-tarkov-green sm:self-auto"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded border border-white/10 bg-white/[0.035] px-2.5 py-1.5 text-[11px] font-semibold text-foreground transition-colors hover:border-tarkov-green/40 hover:text-tarkov-green"
             >
-                Full profit details
+                Profit breakdown
                 <ExternalLink size={11} />
             </Link>
         </div>
@@ -68,9 +72,13 @@ function Metric({
     tone?: string;
 }) {
     return (
-        <span className="flex min-w-0 flex-col">
-            <span className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</span>
-            <span className={`font-mono text-[11px] font-semibold ${tone}`}>{value}</span>
+        <span className="flex min-w-0 flex-col whitespace-nowrap">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-foreground/70">
+                {label}
+            </span>
+            <span className={`flex items-center gap-1 font-mono text-xs font-semibold ${tone}`}>
+                {value}
+            </span>
         </span>
     );
 }
