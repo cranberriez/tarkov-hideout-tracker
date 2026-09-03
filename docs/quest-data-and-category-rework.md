@@ -1,5 +1,9 @@
 # Quest Data and Category Rework
 
+> Historical plan: its Redis/provider runtime path has been replaced by immutable
+> Turso releases. Use `data-and-price-context-architecture.md` for current data
+> delivery; retain this document only for quest-category design context.
+
 This document records how quest data enters the application and proposes a new
 five-category quest organization. It is intended to be a short reference for
 future quest work.

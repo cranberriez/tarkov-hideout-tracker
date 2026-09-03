@@ -28,30 +28,33 @@ Verify UI behavior by running the dev server when necessary.
 
 Copy `.sample.env` to `.env`. Required variables:
 
-| Variable                                         | Purpose                                                      |
-| ------------------------------------------------ | ------------------------------------------------------------ |
-| `UPSTASH_REDIS_REST_URL` / `KV_REST_API_URL`     | Upstash Redis endpoint                                       |
-| `UPSTASH_REDIS_REST_TOKEN` / `KV_REST_API_TOKEN` | Upstash Redis auth token                                     |
-| `CRON_SECRET`                                    | Bearer token required by the cache-revalidation endpoint     |
+| Variable             | Purpose                   |
+| -------------------- | ------------------------- |
+| `TURSO_DATABASE_URL` | Turso/libSQL database URL |
+| `TURSO_AUTH_TOKEN`   | Turso authentication      |
 
 ## Architecture
 
-**Stack:** Next.js 16 (App Router) · React 19 · TypeScript 5 · Tailwind CSS 4 · Zustand · Radix UI · Upstash Redis · Vercel
+**Stack:** Next.js 16 (App Router) · React 19 · TypeScript 5 · Tailwind CSS 4 · Zustand · Radix UI · Turso · Vercel
 
 ### Data Flow
 
 ```
-Tarkov.dev JSON -> adapter services -> TarkovDataRepository -> named page/API queries
-                                                       -> route-scoped contracts
+Tarkov.dev JSON -> offline release generation -> TursoTarkovDataRepository
+                                              -> named page/API queries
+                                              -> route-scoped contracts
 ```
 
 The `(data)` layout does not load entity arrays. Pages request only the domains and
 IDs they need through `src/server/queries/`; search and item relations are lazy API
 reads. The root `/` redirects to `/hideout`.
 
-### Server Services (`src/server/services/`)
+### Runtime data (`src/server/db/`)
 
-Each service wraps a two-layer cache: **Redis** (survives deploy) + **Next.js `unstable_cache`** (in-process, short TTL). See `docs/caching-architecture.md`, `docs/api-routes.md`, and `src/lib/cfg/cacheVersions.ts` before changing cache keys, cache invalidation, or server data flow. Bust Redis caches by changing the relevant cache version; do not manually delete keys as part of code changes.
+Runtime normalized data comes from immutable Turso releases pinned in
+`src/server/db/release-config.ts`. See `docs/caching-architecture.md` and
+`docs/api-routes.md` before changing release selection or server data flow. Price
+history is the only live provider data request.
 
 ### Repository and queries
 
@@ -184,7 +187,7 @@ Fetches quest data server-side, sorts it, builds quest item metadata, and passes
 | Change FiR config                        | `src/lib/data/hideout-data.json` or `src/lib/cfg/foundInRaid.ts`                                                                                                                             |
 | Change station render order              | `src/lib/cfg/stationOrder.ts`                                                                                                                                                                |
 | Add a new type                           | The owning domain file in `src/types/`; cross-boundary payloads belong in `src/types/contracts.ts`                                                                                           |
-| Bust a Redis cache                       | Bump the version in `src/lib/cfg/cacheVersions.ts`                                                                                                                                           |
+| Publish refreshed normalized data        | Generate, validate, upload, and select a new immutable Turso release                                                                                                                        |
 | Wire a new modal                         | Add open state to `useUIStore`, add component to `src/features/`                                                                                                                             |
 | Add quest filter/toggle                  | `src/lib/stores/useUserStore.ts` + `src/features/quests/QuestsContext.tsx` + `QuestsFilterBar.tsx` or `QuestsSidebar.tsx`                                                                    |
 | Change quest sort/availability logic     | `src/lib/utils/quest-availability.ts`                                                                                                                                                        |
@@ -197,7 +200,7 @@ Fetches quest data server-side, sorts it, builds quest item metadata, and passes
 Detailed architecture docs are in `docs/`. `docs/README.md` is the index and should be checked first. Key references:
 
 - `docs/state-management.md` — authoritative store shapes
-- `docs/caching-architecture.md` — Redis key naming, invalidation
+- `docs/caching-architecture.md` — Turso release reads and HTTP/price-history caching
 - `docs/data-and-price-context-architecture.md` — repository, query, route-contract, and lazy item-data delivery
 - `docs/quests-page.md` — quests feature spec
 - `docs/item-checklist-page.md` — current items page architecture, item demand, and source filtering behavior

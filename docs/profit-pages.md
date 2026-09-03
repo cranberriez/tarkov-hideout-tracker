@@ -2,8 +2,8 @@
 
 `/items/barter-profits` and `/items/crafting-profits` share a client-side price
 calculation engine. Visiting either route loads the complete normalized barter and
-craft indexes from their existing 24-hour Redis caches. Other item pages continue
-to use the small per-item usage route and do not receive these indexes.
+craft graphs from the selected immutable Turso release. Other item pages continue
+to use the small per-item usage route and do not receive these graphs.
 
 ## Implementation layout
 

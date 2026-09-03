@@ -23,7 +23,6 @@ function parseArguments(argv) {
         releaseId: createReleaseId(),
         outputRoot: defaultOutputRoot,
         force: false,
-        fresh: false,
     };
     for (let index = 0; index < argv.length; index += 1) {
         const argument = argv[index];
@@ -31,7 +30,6 @@ function parseArguments(argv) {
         else if (argument === "--release") options.releaseId = assertSafeReleaseId(argv[++index]);
         else if (argument === "--output") options.outputRoot = path.resolve(argv[++index]);
         else if (argument === "--force") options.force = true;
-        else if (argument === "--fresh") options.fresh = true;
         else throw new Error(`Unknown argument: ${argument}`);
     }
     return options;
@@ -363,11 +361,6 @@ async function writeModeSnapshot(releaseDirectory, releaseId, mode, modules) {
 async function main() {
     await loadLocalEnv(projectRoot);
     const options = parseArguments(process.argv.slice(2));
-    // Snapshot generation may reuse valid Redis reads, but it must never mutate
-    // the application's runtime caches from an offline maintenance command.
-    process.env.CACHE_NEXT_ENABLED = "false";
-    process.env.CACHE_REDIS_WRITE_ENABLED = "false";
-    if (options.fresh) process.env.CACHE_REDIS_READ_ENABLED = "false";
     const releaseDirectory = await prepareReleaseDirectory(
         options.outputRoot,
         options.releaseId,

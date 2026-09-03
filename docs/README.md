@@ -26,13 +26,13 @@ Docs are grouped by purpose:
   How repositories, page queries, route-scoped contracts, and lazy item APIs deliver data and prices.
 
 - **[api-routes.md](api-routes.md)** - Current architecture
-  Maintenance, price-history, and lazy item-usage routes plus their backing server services.
+  Price-history and Turso-backed lazy item routes plus their server boundaries.
 
 - **[caching-architecture.md](caching-architecture.md)** - Current architecture
-  Redis keys, Next.js `unstable_cache` wrappers, cache invalidation strategy, and how to add a new cached data source.
+  Immutable Turso releases, targeted reads, HTTP caching, and price-history caching.
 
 - **[dev-panel.md](dev-panel.md)** - Development tooling
-  Development-only cache policy inspection and quest snapshot comparison.
+  Development-only Turso release and stored-record inspection.
 
 - **[mapping-architecture.md](mapping-architecture.md)** - Current architecture
   Quest objective geometry, compact SVG map manifests, projection, and the Raid Planner map viewer.
@@ -56,8 +56,8 @@ Docs are grouped by purpose:
 - **[quests-page.md](quests-page.md)** - Feature spec
   Quests page - quest item requirements, trader/map views, prerequisite ordering, manual sync, and caching.
 
-- **[quest-data-and-category-rework.md](quest-data-and-category-rework.md)** - Current data flow and implementation plan
-  How quest data enters the app and the planned LL1-LL4 plus Series Quests organization.
+- **[quest-data-and-category-rework.md](quest-data-and-category-rework.md)** - Historical plan
+  Earlier quest-source/cache rework and the planned LL1-LL4 plus Series Quests organization; verify against current Turso code.
 
 - **[quick-add-feature.md](quick-add-feature.md)** - Feature spec
   Quick Add modal - post-raid item input, fuzzy search, FiR/non-FiR counts.
@@ -75,8 +75,8 @@ Docs are grouped by purpose:
 
 ## External APIs & Integrations
 
-- **[tarkov-json-api.md](tarkov-json-api.md)** - Current architecture
-  JSON-only runtime datasets, translation behavior, mode isolation, and cache-safety behavior.
+- **[tarkov-json-api.md](tarkov-json-api.md)** - Offline ingestion reference
+  Source JSON translation used when generating immutable Turso releases.
 
 - **[graphql-queries.md](graphql-queries.md)** - Historical reference
   Retired Tarkov.dev GraphQL queries retained for implementation history.

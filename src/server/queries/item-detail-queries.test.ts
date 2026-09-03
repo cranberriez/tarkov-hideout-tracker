@@ -34,7 +34,7 @@ function createRepository(overrides: RepositoryOverrides): TarkovDataRepository 
         throw new Error("Unexpected repository call");
     };
     return {
-        items: { getCatalog: forbidden, getByIds: overrides.items ?? forbidden },
+        items: { getByIds: overrides.items ?? forbidden },
         hideout: { getStations: overrides.stations ?? forbidden },
         quests: {
             getAll: overrides.quests ?? forbidden,

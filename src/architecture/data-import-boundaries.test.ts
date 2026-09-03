@@ -39,11 +39,7 @@ test("normal application modules do not import concrete Tarkov data services", (
 
     for (const file of files) {
         const relative = relativePath(file);
-        if (
-            relative.startsWith("src/app/dev/") ||
-            relative.startsWith("src/app/api/maps/") ||
-            relative === "src/app/api/revalidate/route.ts"
-        ) {
+        if (relative.startsWith("src/app/api/maps/")) {
             continue;
         }
 
@@ -99,6 +95,10 @@ test("removed global data boundaries stay deleted", () => {
         "src/lib/utils/quest-pooling.ts",
         "src/app/(data)/_dataContext.tsx",
         "src/server/services/tarkovData.ts",
+        "src/server/repositories/tarkov-data/current-repository.ts",
+        "src/server/redis.ts",
+        "src/server/cache.ts",
+        "src/app/api/revalidate/route.ts",
     ];
 
     assert.deepEqual(
@@ -113,7 +113,7 @@ test("pages enter Tarkov data through queries rather than the concrete repositor
         .filter((file) =>
             moduleImports(readFileSync(file, "utf8")).some(
                 (specifier) =>
-                    specifier === "@/server/repositories/tarkov-data/current-repository",
+                    specifier === "@/server/repositories/tarkov-data/turso-repository",
             ),
         )
         .map(relativePath);
@@ -133,13 +133,27 @@ test("queries do not bypass repositories by importing provider services", () => 
     assert.deepEqual(violations, []);
 });
 
-test("normal layouts do not inspect Redis infrastructure", () => {
-    const violations = sourceFiles(path.join(sourceRoot, "app"))
-        .filter((file) => /(?:^|[\\/])layout\.tsx$/.test(file))
-        .filter((file) =>
-            moduleImports(readFileSync(file, "utf8")).includes("@/server/redis"),
-        )
-        .map(relativePath);
+test("the runtime repository uses Turso and only delegates price history", () => {
+    const repositoryPath = path.join(
+        sourceRoot,
+        "server",
+        "repositories",
+        "tarkov-data",
+        "turso-repository.ts",
+    );
+    const repositoryImports = moduleImports(readFileSync(repositoryPath, "utf8"));
+    const serviceImports = repositoryImports.filter((specifier) =>
+        specifier.startsWith("@/server/services/"),
+    );
+    assert.deepEqual(serviceImports, ["@/server/services/priceHistory"]);
 
-    assert.deepEqual(violations, []);
+    const queryUtils = readFileSync(
+        path.join(sourceRoot, "server", "queries", "query-utils.ts"),
+        "utf8",
+    );
+    assert.ok(
+        moduleImports(queryUtils).includes(
+            "@/server/repositories/tarkov-data/turso-repository",
+        ),
+    );
 });

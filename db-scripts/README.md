@@ -23,9 +23,8 @@ TURSO_DATABASE_URL=libsql://your-database.turso.io
 TURSO_AUTH_TOKEN=your-token
 ```
 
-The generator also uses the existing Tarkov/Redis environment configuration
-because it reuses the current normalized services. The uploader reads only the
-generated snapshot and Turso credentials.
+The generator reads and normalizes the source datasets directly. The uploader
+reads only the generated snapshot and Turso credentials.
 
 For local upload testing, `TURSO_DATABASE_URL=file:db-scripts/local.db` works
 without an auth token.
@@ -42,13 +41,6 @@ Generate selected modes or choose a release ID:
 
 ```bash
 npm run db:generate -- --modes regular,pve --release 2026-09-03
-```
-
-Generation may read valid application Redis caches, but it never writes to them.
-Pass `--fresh` to bypass Redis reads and normalize directly from Tarkov.dev:
-
-```bash
-npm run db:generate -- --fresh
 ```
 
 Generated files are written to `db-scripts/.generated/<release-id>/` and are
@@ -93,7 +85,7 @@ npm run db:status
 - `item_search`: compact item previews and normalized searchable names.
 - `data_manifests`: compact IDs/previews for catalog-style reads.
 - `data_releases`: immutable release metadata and validation counts.
-- `active_data_releases`: the small pointer runtime readers will eventually use.
+- `active_data_releases`: an operational pointer maintained by `db:activate`.
 
 The schema is in `schema.sql`. No cleanup command is provided intentionally;
 older releases remain available for inspection and rollback until retention is

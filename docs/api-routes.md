@@ -38,12 +38,6 @@ without sending the complete acquisition indexes to the browser. Traversal is
 cycle-safe and capped by depth and item count; `truncated` reports whether the cap
 was reached. The response uses the same browser/CDN caching policy as item usage.
 
-### `GET /api/revalidate?tag={tag}`
-
-Authenticated with `CRON_SECRET`. Accepted tags are `item-data`, `hideout-data`,
-and `quests`. This invalidates matching Next.js tag entries; it does not remove
-versioned Redis bodies. See `caching-architecture.md` for the current mappings.
-
 ### Other Turso-backed routes
 
 - `GET /api/items/search` searches the release's compact `item_search` table and
@@ -56,10 +50,10 @@ versioned Redis bodies. See `caching-architecture.md` for the current mappings.
 ## Repository, query, and database boundaries
 
 `src/server/repositories/tarkov-data/types.ts` defines the explicit-mode
-`TarkovDataRepository`. The production implementation in `current-repository.ts`
-projects cached provider datasets into keyed batch results and omits missing IDs.
-Raw JSON shapes, translation, price-history fetching, normalization, and cache
-mechanics remain owned by adapter services in `src/server/services/`.
+`TarkovDataRepository`. The production implementation in `turso-repository.ts`
+reads compact manifests and release-scoped entity rows, returns keyed ID batches,
+and omits missing IDs. Raw JSON translation and normalization remain offline
+generation concerns. Runtime provider access is isolated to price history.
 
 Page composition lives in `src/server/queries/`. Hideout, Items, Quests, Kappa,
 and Profit pages call only their named query. Queries request route-scoped IDs,
@@ -67,25 +61,22 @@ settle independently optional domains, and return contracts owned by
 `src/types/contracts.ts`. Profit calculations require both barter and craft graphs;
 a partial recipe failure is reported instead of producing incomplete figures.
 
-Server-component page composition continues through repository-backed named
-queries. The bounded item relations, usage, acquisition, search, conversion, and
-status APIs instead read release-scoped Turso records through `src/server/db/`.
-Price history remains repository/provider-backed and is never stored in Turso.
+Server-component page composition and bounded item relations, usage, acquisition,
+search, conversion, and status APIs all read release-scoped Turso records through
+`src/server/db/`. Price history remains provider-backed and is never stored in
+Turso.
 
 Quest prerequisite ordering is the provider-independent utility
 `src/lib/utils/quest-ordering.ts`.
 
 ## Runtime provider
 
-Page queries still use the Tarkov.dev JSON adapters. The Turso-backed API routes
-serve records produced from those normalized adapters by the offline ingestion
-pipeline. `TARKOV_DATA_SOURCE` does not select a GraphQL runtime implementation.
+Page queries use Turso. Tarkov.dev JSON adapters are offline ingestion inputs and
+are not imported by normal runtime data paths. The sole runtime data-provider read
+is the item price-history request.
 
-## Redis client and environment
+## Runtime environment
 
-`src/server/redis.ts` owns the singleton Upstash client. Configuration uses
-`UPSTASH_REDIS_REST_URL` / `KV_REST_API_URL` and
-`UPSTASH_REDIS_REST_TOKEN` / `KV_REST_API_TOKEN`. `CRON_SECRET` guards the manual
-revalidation route. Runtime Turso reads use `TURSO_DATABASE_URL` and
-`TURSO_AUTH_TOKEN`; their immutable release IDs are pinned in
-`src/server/db/release-config.ts`.
+Runtime Turso reads use `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`; immutable
+release IDs are pinned in `src/server/db/release-config.ts`. Redis and manual
+cache-revalidation configuration are no longer used.

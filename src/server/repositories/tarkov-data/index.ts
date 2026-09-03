@@ -1,2 +1,2 @@
-export { currentTarkovDataRepository } from "./current-repository";
+export { tursoTarkovDataRepository } from "./turso-repository";
 export type { TarkovDataRepository } from "./types";

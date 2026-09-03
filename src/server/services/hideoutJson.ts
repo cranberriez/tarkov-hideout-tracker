@@ -1,9 +1,5 @@
-import { unstable_cache } from "next/cache";
-import { cacheWhenEnabled, DATA_CACHE_REVALIDATE_SECONDS } from "@/server/cache";
 import { requiresFoundInRaid } from "@/lib/cfg/foundInRaid";
-import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
 import { wikiData } from "@/lib/data/wiki-data";
-import { redis, writeRedisAfterResponse } from "@/server/redis";
 import { getGlobalItemList, getGlobalSkillList } from "@/server/services/itemsJson";
 import { resolveItemReferences } from "@/server/services/itemReferences";
 import {
@@ -14,19 +10,9 @@ import {
     fetchTarkovJsonDataset,
     type TarkovJsonGameMode,
 } from "@/server/services/tarkovJson/client";
-import {
-    isProgressionCacheUsable,
-    markStaleFallback,
-    parseNonEmptyTimedResponse,
-} from "@/server/services/tarkovJson/cache";
 import type { HideoutStationsPayload } from "@/types/contracts";
 import type { ItemRequirement, Station } from "@/types/hideout";
 import type { DataResult } from "@/types/common";
-
-function buildRedisKeys(gameMode: TarkovJsonGameMode) {
-    const bodyKey = `hideout:stations:v${CACHE_VERSIONS.hideoutStations}:${gameMode}`;
-    return { bodyKey, metaKey: `${bodyKey}:meta` };
-}
 
 interface JsonTrader {
     id: string;
@@ -63,22 +49,6 @@ interface JsonHideoutStation {
 export async function getJsonHideoutStations(
     gameMode: TarkovJsonGameMode = "regular",
 ): Promise<DataResult<HideoutStationsPayload>> {
-    const { bodyKey, metaKey } = buildRedisKeys(gameMode);
-    const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
-        "hideoutStations",
-        bodyKey,
-        metaKey,
-    );
-    const cached = parseNonEmptyTimedResponse<HideoutStationsPayload>(
-        cachedBody,
-        (payload) => payload.stations,
-    );
-
-    if (cached && isProgressionCacheUsable(cachedMeta)) {
-        console.log("Using cached hideout stations");
-        return cached;
-    }
-
     try {
         const [hideoutDataset, catalogResponse, skillsDataset, tradersDataset] = await Promise.all([
             fetchTarkovJsonDataset<Record<string, JsonHideoutStation>>("hideout", gameMode),
@@ -235,33 +205,9 @@ export async function getJsonHideoutStations(
                 upstreamStatus: "ok",
             },
         };
-        await writeRedisAfterResponse(
-            "hideoutStations",
-            {
-                [bodyKey]: JSON.stringify(body),
-                [metaKey]: { updatedAt },
-            },
-            "hideout stations",
-        );
         return body;
     } catch (error) {
-        console.error("Failed to refresh hideout stations from Tarkov JSON", error);
-        if (cached) {
-            console.log("Using stale cached stations due to JSON upstream error");
-            return markStaleFallback(cached);
-        }
+        console.error("Failed to load hideout stations from Tarkov JSON", error);
         throw error;
     }
 }
-
-const cachedJsonHideoutStations = unstable_cache(
-    getJsonHideoutStations,
-    ["json-hideout-stations"],
-    { revalidate: DATA_CACHE_REVALIDATE_SECONDS, tags: ["hideout-data"] },
-);
-
-export const getCachedJsonHideoutStations = cacheWhenEnabled(
-    "hideoutStations",
-    getJsonHideoutStations,
-    cachedJsonHideoutStations,
-);

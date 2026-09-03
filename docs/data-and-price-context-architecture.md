@@ -7,14 +7,15 @@ layout does not load entity arrays.
 ## Layers
 
 ```text
-Tarkov.dev JSON
-  -> adapter services (raw shapes, translation, validation, caching)
-      -> TarkovDataRepository (explicit mode, keyed ID batches)
-      -> page queries -> route-scoped contracts -> server-component props
-      -> offline release generation -> Turso -> bounded API responses
+Tarkov.dev JSON -> offline adapters -> immutable Turso release
+                                      -> TursoTarkovDataRepository
+                                      -> page queries -> route-scoped contracts
+                                      -> bounded API responses
+
+Tarkov.dev price history -> on-demand price-history route
 ```
 
-The current repository is selected lazily by `query-utils.ts`. Pages and features
+The Turso repository is selected lazily by `query-utils.ts`. Pages and features
 must not import it directly. Queries must not import concrete provider services.
 
 ## Route-scoped reads

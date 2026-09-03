@@ -8,7 +8,6 @@ import type { Trader } from "@/types/traders";
 
 export interface TarkovDataRepository {
     items: {
-        getCatalog(mode: TarkovDataMode): Promise<DataResult<ItemSummary[]>>;
         getByIds(
             mode: TarkovDataMode,
             ids: readonly string[],

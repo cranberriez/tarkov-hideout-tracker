@@ -675,11 +675,8 @@ API quirks to keep in mind:
 
 ---
 
-## Caching
+## Data storage
 
-| Layer                    | Key                                      | Freshness                   |
-| ------------------------ | ---------------------------------------- | --------------------------- |
-| Redis                    | `quests:full:v16:{mode}` + matching `:meta` key | 24h service freshness check |
-| Next.js `unstable_cache` | `["quests-full"]`                        | `revalidate: 43200`         |
-
-To invalidate quest data for application code, bump the relevant version in `src/lib/cfg/cacheVersions.ts`. See `caching-architecture.md`.
+Full quest records are stored per mode and immutable release in Turso. The quest
+page loads them through the named page query and Turso repository. Updating quest
+data requires generating, uploading, validating, and selecting a new release.

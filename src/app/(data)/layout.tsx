@@ -2,8 +2,7 @@ import type { ReactNode } from "react";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
 import { LegacyProfileConversionDialog } from "@/features/profile-conversion/LegacyProfileConversionDialog";
 import { RouteAwareFooter } from "@/components/core/RouteAwareFooter";
-import { isCacheEnabled } from "@/server/cache";
-import { PROGRESSION_DATA_FROZEN } from "@/lib/cfg/cacheVersions";
+import { getActiveDataReleaseId } from "@/server/db/release-config";
 
 interface DataLayoutProps {
     children: ReactNode;
@@ -17,11 +16,8 @@ export default async function DataLayout({ children }: DataLayoutProps) {
             {children}
             <RouteAwareFooter
                 statusConfig={{
-                    provider: "json",
-                    configuredProvider: "json",
                     activeDataset: gameMode,
-                    cacheEnabled: isCacheEnabled,
-                    progressionDataFrozen: PROGRESSION_DATA_FROZEN,
+                    releaseId: getActiveDataReleaseId(gameMode),
                 }}
             />
             <LegacyProfileConversionDialog />

@@ -63,7 +63,6 @@ test("Kappa requests only the configured Collector and its give-item records in 
             itemByIds: [] as Array<[TarkovDataMode, readonly string[]]>,
             currentPrices: [] as Array<[TarkovDataMode, readonly string[]]>,
             questAll: 0,
-            itemCatalog: 0,
             hideout: 0,
             traders: 0,
             barters: 0,
@@ -81,7 +80,6 @@ test("Kappa requests only the configured Collector and its give-item records in 
         };
         type ForbiddenCall =
             | "questAll"
-            | "itemCatalog"
             | "hideout"
             | "traders"
             | "barters"
@@ -93,7 +91,6 @@ test("Kappa requests only the configured Collector and its give-item records in 
         };
         const repository: TarkovDataRepository = {
             items: {
-                getCatalog: forbidden("itemCatalog"),
                 async getByIds(requestMode, ids) {
                     calls.itemByIds.push([requestMode, [...ids]]);
                     return result(items, 20);
@@ -131,7 +128,6 @@ test("Kappa requests only the configured Collector and its give-item records in 
         assert.deepEqual(calls.itemByIds, [[mode, expectedItemIds]]);
         assert.deepEqual(calls.currentPrices, [[mode, expectedItemIds]]);
         assert.equal(calls.questAll, 0);
-        assert.equal(calls.itemCatalog, 0);
         assert.equal(calls.hideout, 0);
         assert.equal(calls.traders, 0);
         assert.equal(calls.barters, 0);
@@ -161,7 +157,6 @@ test("Kappa keeps item results when prices fail and reports quest failures expli
     };
     const baseRepository: TarkovDataRepository = {
         items: {
-            getCatalog: neverCalled,
             async getByIds() {
                 return result(
                     { "item-b": { id: "item-b", name: "B", normalizedName: "b" } },

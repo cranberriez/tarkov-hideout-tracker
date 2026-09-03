@@ -59,5 +59,5 @@ quests and all quests marked as Lightkeeper progression before building their
 display and demand metadata. Curated essential series can supply that progression
 flag when the upstream seasonal payload is incomplete.
 
-Progression and price Redis keys include the game-mode suffix. This prevents
-records returned by `regular`, `pve`, and `pvp-season` from sharing a cache entry.
+Every Turso row is keyed by game mode and immutable release ID. This prevents
+`regular`, `pve`, and `pvp-season` data from mixing.

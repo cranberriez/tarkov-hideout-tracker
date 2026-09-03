@@ -4,7 +4,6 @@ import type { TarkovDataRepository } from "@/server/repositories/tarkov-data/typ
 import type { DataResult } from "@/types/common";
 import type { Station } from "@/types/hideout";
 import { getCompletedItemsConversionData } from "./getCompletedItemsConversionData";
-import { getDataStatus } from "./getDataStatus";
 import { getLegacyProfileConversionData } from "./getLegacyProfileConversionData";
 
 function result<T>(data: T, updatedAt = 1): DataResult<T> {
@@ -52,7 +51,6 @@ const station: Station = {
 };
 
 function repository(overrides: {
-    catalog?: TarkovDataRepository["items"]["getCatalog"];
     items?: TarkovDataRepository["items"]["getByIds"];
     stations?: TarkovDataRepository["hideout"]["getStations"];
 }): TarkovDataRepository {
@@ -61,7 +59,6 @@ function repository(overrides: {
     };
     return {
         items: {
-            getCatalog: overrides.catalog ?? forbidden,
             getByIds: overrides.items ?? forbidden,
         },
         hideout: { getStations: overrides.stations ?? forbidden },
@@ -87,7 +84,6 @@ test("legacy conversion returns compact station summaries only", async () => {
     assert.equal(data.freshness.stationsUpdatedAt, 10);
     assert.equal(data.errors.stations, null);
 });
-
 test("completed-item conversion requests only unique station item IDs", async () => {
     const requestedIds: string[][] = [];
     const data = await getCompletedItemsConversionData(
@@ -147,32 +143,4 @@ test("completed-item conversion retains requirements when item names fail", asyn
     assert.deepEqual(data.unresolvedItemIds, ["item-a"]);
     assert.equal(data.errors.stations, null);
     assert.equal(data.errors.items, "Hideout item names could not be loaded.");
-});
-
-test("data status returns metadata only and keeps domain failures separate", async () => {
-    const data = await getDataStatus(
-        "regular",
-        repository({
-            stations: async () => result([station], 10),
-            catalog: async () => { throw new Error("offline"); },
-        }),
-    );
-
-    assert.deepEqual(data.stations, {
-        available: true,
-        updatedAt: 10,
-        diagnostics: {
-            provider: "json",
-            localePaths: ["pve/en"],
-            usedRegularLocaleFallback: false,
-        },
-        error: null,
-    });
-    assert.deepEqual(data.items, {
-        available: false,
-        updatedAt: null,
-        diagnostics: null,
-        error: "Item catalog data could not be loaded.",
-    });
-    assert.deepEqual(Object.keys(data).sort(), ["items", "stations"]);
 });

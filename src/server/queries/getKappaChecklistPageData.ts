@@ -2,6 +2,7 @@ import type { TarkovDataRepository } from "@/server/repositories/tarkov-data/typ
 import type { TarkovDataMode } from "@/types/common";
 import type { FullQuest } from "@/types/quests";
 import type { KappaChecklistPageData } from "@/types/contracts";
+import { getDefaultRepository } from "./query-utils";
 
 export const COLLECTOR_QUEST_ID_BY_MODE: Record<TarkovDataMode, string> = {
     regular: "5c51aac186f77432ea65c552",
@@ -17,13 +18,6 @@ function getCollectorRequiredItemIds(collector: Pick<FullQuest, "objectives">): 
     }
 
     return [...itemIds];
-}
-
-async function getDefaultRepository() {
-    const { currentTarkovDataRepository } = await import(
-        "@/server/repositories/tarkov-data/current-repository"
-    );
-    return currentTarkovDataRepository;
 }
 
 export async function getKappaChecklistPageData(

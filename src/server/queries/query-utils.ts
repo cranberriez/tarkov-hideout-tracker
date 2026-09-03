@@ -6,10 +6,10 @@ import type { FullQuest } from "@/types/quests";
 import type { BarterRecord, CraftRecord } from "@/types/recipes";
 
 export async function getDefaultRepository(): Promise<TarkovDataRepository> {
-    const { currentTarkovDataRepository } = await import(
-        "@/server/repositories/tarkov-data/current-repository"
+    const { tursoTarkovDataRepository } = await import(
+        "@/server/repositories/tarkov-data/turso-repository"
     );
-    return currentTarkovDataRepository;
+    return tursoTarkovDataRepository;
 }
 
 export function dedupeIds(ids: Iterable<string>): string[] {

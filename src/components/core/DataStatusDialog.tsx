@@ -16,11 +16,8 @@ import { formatRelativeUpdatedAt, formatUpdatedAt } from "@/lib/utils/format-tim
 import type { DataStatusPayload } from "@/types/contracts";
 
 export interface DataStatusConfig {
-    provider: "json" | "graphql";
-    configuredProvider: "json" | "graphql";
     activeDataset: "regular" | "pve" | "pvp-season";
-    cacheEnabled: boolean;
-    progressionDataFrozen: boolean;
+    releaseId: string;
 }
 
 interface StatusRowProps {
@@ -112,28 +109,11 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
     const items = status?.items ?? null;
     const stationFreshness = freshness(stations?.updatedAt ?? null);
     const itemFreshness = freshness(items?.updatedAt ?? null);
-    const diagnostics = stations?.diagnostics ?? items?.diagnostics;
-    const localePaths = diagnostics?.localePaths ?? [];
-    const localizationValue = diagnostics
-        ? diagnostics.usedRegularLocaleFallback
-            ? "Regular English fallback"
-            : "Mode-specific English"
-        : config.provider === "json"
-          ? "English fallback enabled"
-          : "Provided by GraphQL";
-    const localizationDetail = diagnostics
-        ? localePaths.length > 0
-            ? `Loaded dictionaries: ${localePaths.join(", ")}`
-            : "The exact dictionary path was not recorded."
-        : "This cached response predates locale diagnostics, so the exact dictionary used is unknown.";
     const hasCoreError = Boolean(
         requestError ||
             (status && (!stations?.available || !items?.available)),
     );
     const providerError = requestError ?? stations?.error ?? items?.error;
-    const isUsingStaleFallback = [stations?.diagnostics, items?.diagnostics].some(
-        (entry) => entry?.upstreamStatus === "stale-fallback",
-    );
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <span className="inline-flex items-baseline font-mono text-[10px] uppercase tracking-widest text-gray-500">
@@ -155,7 +135,7 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                         Data status
                     </DialogTitle>
                     <DialogDescription>
-                        Current provider, cache, localization, and dataset freshness.
+                        Current database release and dataset freshness.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -182,28 +162,18 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                                 ? "Checking connection"
                                 : hasCoreError
                                 ? "Connection failed"
-                                : isUsingStaleFallback
-                                  ? "Using cached data"
-                                : config.provider === "json"
-                                  ? "Tarkov.dev JSON"
-                                  : "Tarkov.dev GraphQL"
+                                : "Turso"
                         }
                         detail={
                             providerError ??
-                            (isUsingStaleFallback
-                                ? "The latest provider refresh failed; this is the last validated dataset."
-                                : config.provider !== config.configuredProvider
-                                  ? `${config.activeDataset} requires the JSON provider.`
-                                  : `Configured provider: ${config.configuredProvider}.`)
+                            `Immutable release ${config.releaseId}.`
                         }
                         state={
                             isLoading
                                 ? "neutral"
                                 : hasCoreError
                                   ? "error"
-                                  : isUsingStaleFallback
-                                    ? "warning"
-                                    : "ok"
+                                  : "ok"
                         }
                     />
                     <StatusRow
@@ -213,23 +183,15 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                     />
                     <StatusRow
                         label="Cache"
-                        value={config.cacheEnabled ? "Enabled" : "Disabled"}
-                        detail={
-                            config.cacheEnabled && config.progressionDataFrozen
-                                ? "Progression data is pinned to the last known-good cache."
-                                : config.cacheEnabled
-                                  ? "Application caching is active; Redis is a best-effort fallback."
-                                  : "Development requests go directly to the upstream provider."
-                        }
-                        state={config.cacheEnabled ? "ok" : "warning"}
+                        value="Next.js / CDN"
+                        detail="Targeted database responses use route-level caching; Redis is not in the runtime data path."
+                        state="ok"
                     />
                     <StatusRow
                         label="Localization"
-                        value={localizationValue}
-                        detail={localizationDetail}
-                        state={
-                            diagnostics?.usedRegularLocaleFallback ? "warning" : "ok"
-                        }
+                        value="Stored release labels"
+                        detail="Mode-specific normalized labels were captured when this release was generated."
+                        state="ok"
                     />
 
                     <div className="mt-5 flex items-center gap-2 pt-1 text-xs font-semibold uppercase tracking-wider text-gray-300">

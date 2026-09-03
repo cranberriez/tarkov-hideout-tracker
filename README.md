@@ -38,13 +38,9 @@ To set up the project locally, you will need a few prerequisites.
 
 ### 1. Storage
 
-The hosted project runs on Vercel and uses a linked Vercel/Upstash Redis storage
-database for cached server data.
-
-For local development, copy the linked storage environment variables from Vercel
-or provide equivalent Upstash Redis REST credentials. The Redis client currently
-expects REST-style variables, so a local Redis connection string may require code
-tweaks if you are not using Vercel/Upstash.
+The hosted project runs on Vercel and reads normalized game data from Turso.
+For local development, use the Turso database credentials for the selected
+immutable releases.
 
 ### 2. Environment Variables
 
@@ -54,17 +50,14 @@ Copy the `.sample.env` file to `.env` and fill in your details:
 cp .sample.env .env
 ```
 
-Typical variables:
+Required variables:
 
 ```env
-KV_REST_API_URL="..."
-KV_REST_API_TOKEN="..."
-CRON_SECRET="your_secret_here"
+TURSO_DATABASE_URL="libsql://your-database.turso.io"
+TURSO_AUTH_TOKEN="your-turso-auth-token"
 ```
 
-Depending on how storage is linked, Vercel/Upstash may provide `KV_*` variables
-or `UPSTASH_REDIS_REST_*` variables. Use whichever pair your environment
-provides. `CRON_SECRET` is only needed for the protected manual cache-revalidation endpoint.
+The runtime release IDs are selected in `src/server/db/release-config.ts`.
 
 ### 3. Run the Development Server
 

@@ -1,7 +1,3 @@
-import { unstable_cache } from "next/cache";
-import { cacheWhenEnabled, DATA_CACHE_REVALIDATE_SECONDS } from "@/server/cache";
-import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
-import { redis, writeRedisAfterResponse } from "@/server/redis";
 import {
     fetchTarkovJsonDataset,
     type TarkovJsonGameMode,
@@ -10,23 +6,10 @@ import {
     mapQuestOtherRequirements,
     type RawQuestOtherRequirement,
 } from "@/server/services/quest-requirements";
-import {
-    isProgressionCacheUsable,
-    markStaleFallback,
-    parseNonEmptyTimedResponse,
-} from "@/server/services/tarkovJson/cache";
 import { normalizeQuestObjectiveLocations } from "@/server/services/quest-objective-locations";
 import type { FullQuest, FullQuestObjective, QuestFailCondition, QuestSpecificItem, QuestMap, QuestItemReward, QuestPrestige, QuestTraderStandingReward } from "@/types/quests";
 import type { FullQuestsPayload } from "@/types/contracts";
 import type { DataResult } from "@/types/common";
-
-function buildQuestRedisKeys(gameMode: TarkovJsonGameMode) {
-    const fullBodyKey = `quests:full:v${CACHE_VERSIONS.questsFull}:${gameMode}`;
-    return {
-        fullBodyKey,
-        fullMetaKey: `${fullBodyKey}:meta`,
-    };
-}
 
 interface JsonItem {
     id: string;
@@ -563,66 +546,3 @@ export async function getCurrentJsonFullQuestData(
         diagnostics: { provider: "json", upstreamStatus: "ok" },
     };
 }
-
-export async function getStoredJsonFullQuestData(
-    gameMode: TarkovJsonGameMode = "regular",
-): Promise<DataResult<FullQuestsPayload> | null> {
-    const { fullBodyKey, fullMetaKey } = buildQuestRedisKeys(gameMode);
-    const [cachedBody] = await redis.inspectMget<[unknown, unknown]>(
-        fullBodyKey,
-        fullMetaKey,
-    );
-    return parseNonEmptyTimedResponse<FullQuestsPayload>(
-        cachedBody,
-        (payload) => payload.quests,
-    );
-}
-
-export async function getJsonFullQuestData(
-    gameMode: TarkovJsonGameMode = "regular",
-): Promise<DataResult<FullQuestsPayload>> {
-    const { fullBodyKey, fullMetaKey } = buildQuestRedisKeys(gameMode);
-    const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
-        "questsFull",
-        fullBodyKey,
-        fullMetaKey,
-    );
-    const cached = parseNonEmptyTimedResponse<FullQuestsPayload>(
-        cachedBody,
-        (payload) => payload.quests,
-    );
-    if (cached && isProgressionCacheUsable(cachedMeta)) return cached;
-
-    try {
-        const body = await getCurrentJsonFullQuestData(gameMode);
-        const updatedAt = body.updatedAt;
-        await writeRedisAfterResponse(
-            "questsFull",
-            {
-                [fullBodyKey]: JSON.stringify(body),
-                [fullMetaKey]: { updatedAt },
-            },
-            "full quests",
-        );
-        return body;
-    } catch (error) {
-        console.error("Failed to refresh full quests from Tarkov JSON", error);
-        if (cached) {
-            console.log("Using stale full quest cache due to JSON upstream error");
-            return markStaleFallback(cached);
-        }
-        throw error;
-    }
-}
-
-const cachedJsonFullQuestData = unstable_cache(
-    getJsonFullQuestData,
-    ["json-quests-full"],
-    { revalidate: DATA_CACHE_REVALIDATE_SECONDS, tags: ["quests"] },
-);
-
-export const getCachedJsonFullQuestData = cacheWhenEnabled(
-    "questsFull",
-    getJsonFullQuestData,
-    cachedJsonFullQuestData,
-);

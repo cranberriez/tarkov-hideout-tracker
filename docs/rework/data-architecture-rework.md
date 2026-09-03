@@ -8,9 +8,9 @@
 - Types: `src/types/types.ts` and the unused `src/lib/utils/quest-pooling.ts` were removed; shared map contracts moved out of `src/features/maps/map-types.ts`.
 - Types: item, price, and recipe duplicates were consolidated; item-detail-only presentation types now live in `src/features/items/item-detail/item-detail-types.ts`.
 - Types validation: TypeScript and lint pass; lint retains the same 39 baseline warnings.
-- Repository: `src/server/repositories/tarkov-data/` now owns the explicit-mode `TarkovDataRepository` contract and current cached-service implementation.
-- Repository: ID batches return keyed records, omit missing IDs, and keep full-cache projection private to the current implementation.
-- Repository: current price reads project from the catalog; price history keeps its 15-minute, no-Redis policy.
+- Repository: `src/server/repositories/tarkov-data/` owns the explicit-mode `TarkovDataRepository` contract and Turso implementation.
+- Repository: ID batches query release-scoped entity rows, return keyed records, and omit missing IDs.
+- Repository: current price reads use stored price entities; price history alone keeps its 15-minute provider policy.
 - Kappa: `src/server/queries/getKappaChecklistPageData.ts` uses the mode-keyed Collector ID and requests only that quest, its give-item IDs, and current prices.
 - Kappa: the route no longer loads or prepares the full quest list. Fake-repository coverage verifies the narrow calls for regular, PVE, and KORD modes.
 - Kappa: quest/item/price failures are explicit; the checklist still renders matched items when current prices are unavailable.
@@ -18,7 +18,7 @@
 - Quests: reviewed faction/series preparation is shared in `src/lib/utils/quest-preparation.ts`; prerequisite ordering moved to `src/lib/utils/quest-ordering.ts`.
 - Queries: `src/server/services/quests.ts` and `src/server/services/profitPages.ts` were removed after their consumers moved.
 - Query validation: five fake-repository query cases pass, including route-scoped IDs and partial recipe failures.
-- Revalidation: `src/app/api/revalidate/route.ts` now maps the public `quests` tag to both internal quest and trader tags; `item-data` explicitly maps to no Next.js tags because the catalog is Redis-only.
+- Revalidation: the former Redis/Next source-cache revalidation route was removed after runtime reads moved to immutable Turso releases.
 - Route delivery: `src/app/(data)/hideout/page.tsx` and `items/page.tsx` now call only their named queries and pass route contracts into client features.
 - Route delivery: Hideout and Items components now receive stations and item summaries explicitly; `DataLastUpdated.tsx` receives timestamps as props.
 - Route delivery: the unused item-map effect was removed from `src/features/items/ItemsClientPage.tsx`.
@@ -45,13 +45,13 @@
   ordering, while Quick Add remains capped at 10.
 - Acquisition-tree recipe domains settle independently and partial responses stay
   uncached. Kappa partial item misses remain in the denominator and are visible.
-- Normal layouts no longer inspect Redis. Boundary tests cover page-to-query,
+- Normal layouts no longer inspect a runtime cache. Boundary tests cover page-to-query,
   query-to-repository, and layout-to-cache rules.
 - Raw trader and price-history provider shapes are owned by adapter services.
 - `ItemDetailModal.tsx` is presentation-only; request, navigation, and model
   responsibilities live in dedicated controllers.
-- Repository batch projection has direct duplicate, missing, and unrequested-ID
-  tests. Kappa's cross-boundary contract is owned by `src/types/contracts.ts`.
+- Repository ID batches deduplicate requests and omit missing records. Kappa's
+  cross-boundary contract is owned by `src/types/contracts.ts`.
 
 ## Payload audit
 
@@ -72,9 +72,9 @@ when comparing releases.
 
 ## Turso ingestion staging
 
-- Turso was selected for the next repository implementation.
+- Turso is the production repository implementation.
 - Offline generation and upload tooling lives in the root `db-scripts/` directory;
-  runtime database access will be added separately under `src/server/db/`.
+  runtime database access lives separately under `src/server/db/`.
 - Generated releases store canonical entities, compact manifests/search records,
   and endpoint-ready per-item relations, usage, and acquisition payloads.
 - Uploads are immutable and mode-scoped. A release becomes eligible for reads only
@@ -88,5 +88,7 @@ when comparing releases.
   recipe graphs. Existing response contracts and HTTP cache policies are preserved.
 - Data-status and profile-conversion API routes use release metadata, compact
   manifests, or narrowly projected station/item entity reads from Turso.
-- Price history and server-component page queries remain on their existing data
-  paths for the next migration stage.
+- Server-component page queries now use the Turso repository. The former
+  `current-repository` full-dataset projection and Redis cache layer were removed.
+- Price history is the only normalized runtime data request still sent to
+  Tarkov.dev; it is intentionally excluded from database releases.

@@ -73,7 +73,7 @@ function createRepository(
         throw new Error("Unexpected repository call");
     };
     return {
-        items: { getCatalog: forbidden, getByIds: overrides.items ?? forbidden },
+        items: { getByIds: overrides.items ?? forbidden },
         hideout: { getStations: overrides.stations ?? forbidden },
         quests: { getAll: overrides.quests ?? forbidden, getByIds: forbidden },
         traders: { getAll: forbidden, getByIds: overrides.traders ?? forbidden },

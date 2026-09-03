@@ -55,7 +55,7 @@ items come from task content and are display-only.
 | `/hideout/station-goals` | Hideout station goals (placeholder) |
 | `/hideout/bitcoin-farm` | Bitcoin farm tools (placeholder) |
 | `/news` | In-app news and updates |
-| `/dev` | Development-only cache policy and quest snapshot comparison |
+| `/dev` | Development-only Turso release and record-count inspector |
 
 ## Application state
 
@@ -87,24 +87,24 @@ routes instead of shipping the full catalog or every relationship in the layout.
 ## Item data flow
 
 ```text
-page -> named query -> TarkovDataRepository -> cached JSON adapters
+page -> named query -> TursoTarkovDataRepository -> manifests/entity rows
                     -> route-scoped items/prices by referenced ID
 item search --------> bounded /api/items/search -> compact Turso search index
 item modal ---------> Turso relations + usage + acquisition; provider history API
 profit pages -------> both recipe graphs + compact source presentation
 ```
 
-The large catalog, barter index, and craft index used by page queries retain their
-existing versioned Redis caches. Lazy item/search APIs read immutable,
-mode-and-release-scoped Turso records and retain their browser/CDN cache headers.
-Price history remains an on-demand Tarkov.dev request.
+Page queries and lazy item/search APIs read immutable, mode-and-release-scoped
+Turso records and retain their browser/CDN cache headers. Compact manifests serve
+catalog-like lists; ID reads query only the requested entity rows. Price history
+remains an on-demand Tarkov.dev request.
 
 ## Data sources
 
 | Source | What it provides |
 |---|---|
-| Tarkov.dev JSON API | Items, market values, hideout, quests, traders, barters, crafts, maps, and price history |
-| Turso | Immutable generated read models for lazy item, search, status, and conversion APIs |
+| Tarkov.dev JSON API | Offline release-generation input and live item price history |
+| Turso | Immutable entities, manifests, search records, and endpoint-ready item read models |
 | `wiki-data.json` and `foundInRaid.ts` | Reviewed requirement and FiR overrides |
 | localStorage | Player progress and preferences |
 
@@ -113,6 +113,6 @@ See `state-management.md`, `data-and-price-context-architecture.md`, and
 
 ## Deployment
 
-The app is deployed on Vercel. Normalized source datasets refresh on a shared
-24-hour production freshness window; price history uses a separate 15-minute
-cache.
+The app is deployed on Vercel. Normalized datasets change only when a newly
+generated Turso release is uploaded and selected; price history uses a separate
+15-minute cache.
