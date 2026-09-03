@@ -85,6 +85,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
     const [allowBarters, setAllowBarters] = useState(true);
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [targetRecipeId, setTargetRecipeId] = useState<string | null>(initialTargetRecipeId ?? null);
+    const [scrollRequestId, setScrollRequestId] = useState(0);
     const [sortMode, setSortMode] = useState<SortMode>(
         kind === "craft" ? "profitPerHour" : "profit",
     );
@@ -212,12 +213,13 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 
     useEffect(() => {
         if (!targetRecipeId) return;
+        if (scrollMargin <= 0) return;
         if (lastScrolledRecipeIdRef.current === targetRecipeId) return;
         const targetIndex = visibleEvaluations.findIndex((evaluation) => evaluation.id === targetRecipeId);
         if (targetIndex < 0) return;
         virtualizer.scrollToIndex(targetIndex, { align: "center" });
         lastScrolledRecipeIdRef.current = targetRecipeId;
-    }, [targetRecipeId, virtualizer, visibleEvaluations]);
+    }, [scrollMargin, scrollRequestId, targetRecipeId, virtualizer, visibleEvaluations]);
 
     function goToRecipe(method: "barter" | "craft", recipeId: string) {
         const route = method === "barter"
@@ -227,8 +229,10 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
             router.push(`${route}?recipe=${encodeURIComponent(recipeId)}`);
             return;
         }
-        router.replace(`${route}?recipe=${encodeURIComponent(recipeId)}`, { scroll: false });
+        window.history.replaceState(null, "", `${route}?recipe=${encodeURIComponent(recipeId)}`);
+        lastScrolledRecipeIdRef.current = null;
         setTargetRecipeId(recipeId);
+        setScrollRequestId((value) => value + 1);
     }
 
     if (!items || itemsError || relevantError) {
@@ -282,28 +286,28 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
                             placeholder="Search output item"
-                            className="h-9 w-full rounded border border-white/10 bg-black/30 pl-9 pr-3 text-sm outline-none focus:border-tarkov-green/60"
+                            className="h-9 w-full rounded border border-white/10 bg-[#0b0c0e] pl-9 pr-3 text-sm outline-none focus:border-tarkov-green/60"
                         />
                     </label>
                     <select
                         value={sourceId}
                         onChange={(event) => setSourceId(event.target.value)}
-                        className="h-9 rounded border border-white/10 bg-[#11151a] px-3 text-sm text-foreground"
+                        className="h-9 rounded border border-white/10 bg-[#0b0c0e] px-3 text-sm text-foreground [color-scheme:dark]"
                     >
-                        <option className="bg-[#11151a] text-foreground" value="all">All {kind === "barter" ? "traders" : "stations"}</option>
+                        <option className="bg-[#0b0c0e] text-foreground" value="all">All {kind === "barter" ? "traders" : "stations"}</option>
                         {sources.map((source) => (
-                            <option className="bg-[#11151a] text-foreground" key={source.id} value={source.id}>{source.name}</option>
+                            <option className="bg-[#0b0c0e] text-foreground" key={source.id} value={source.id}>{source.name}</option>
                         ))}
                     </select>
                     <select
                         value={sortMode}
                         onChange={(event) => setSortMode(event.target.value as SortMode)}
-                        className="h-9 rounded border border-white/10 bg-[#11151a] px-3 text-sm text-foreground"
+                        className="h-9 rounded border border-white/10 bg-[#0b0c0e] px-3 text-sm text-foreground [color-scheme:dark]"
                     >
-                        <option className="bg-[#11151a] text-foreground" value="profit">Route profit</option>
-                        <option className="bg-[#11151a] text-foreground" value="profitPerHour">Route profit / hour</option>
-                        <option className="bg-[#11151a] text-foreground" value="cost">Lowest cost</option>
-                        <option className="bg-[#11151a] text-foreground" value="name">Item name</option>
+                        <option className="bg-[#0b0c0e] text-foreground" value="profit">Profit</option>
+                        <option className="bg-[#0b0c0e] text-foreground" value="profitPerHour">Profit / hour</option>
+                        <option className="bg-[#0b0c0e] text-foreground" value="cost">Lowest cost</option>
+                        <option className="bg-[#0b0c0e] text-foreground" value="name">Item name</option>
                     </select>
                     <CalculationSettings
                         availableOnly={availableOnly}
@@ -322,7 +326,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
                             aria-label="Show pinned crafts only"
                             title={showPinnedOnly ? "Show all crafts" : "Show pinned crafts only"}
                             onClick={() => setShowPinnedOnly((value) => !value)}
-                            className={`flex h-9 items-center justify-center rounded border px-3 transition ${showPinnedOnly ? "border-sky-400/40 bg-sky-400/10 text-sky-300" : "border-white/10 bg-black/20 text-muted-foreground hover:border-sky-400/30 hover:text-sky-300"}`}
+                            className={`flex h-9 items-center justify-center rounded border bg-[#0b0c0e] px-3 transition ${showPinnedOnly ? "border-sky-400/40 text-sky-300" : "border-white/10 text-muted-foreground hover:border-sky-400/30 hover:text-sky-300"}`}
                         >
                             <Pin className={`size-4 ${showPinnedOnly ? "fill-current" : ""}`} />
                         </button>
@@ -332,7 +336,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 
             <div className="overflow-x-auto rounded-md border border-white/10 bg-card/50">
                 <div className={`grid w-full min-w-[1000px] border-b border-white/10 bg-black/30 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground ${profitGrid()}`}>
-                    <span aria-label="Actions" /><span>Source</span><span>Produced item</span><span>Required items</span><span className="px-3">Cost</span><span className="px-3">Sell value</span><span className="px-3">Route profit</span><span className="px-3">Route profit / hour</span>
+                    <span aria-label="Actions" /><span className="pl-3">Source</span><span className="pl-3">Output</span><span className="pl-3">Required items</span><span className="px-3">Cost</span><span className="px-3">Sell value</span><span className="px-3">Profit</span><span className="px-3">Profit / hour</span>
                 </div>
                 <div ref={listRef} className="w-full min-w-[1000px]">
                     {visibleEvaluations.length > 0 ? (
@@ -443,11 +447,11 @@ function CalculationSettings({
 }) {
     return (
         <details className="group/settings relative">
-            <summary className="flex h-9 cursor-pointer list-none items-center justify-center gap-2 rounded border border-white/10 bg-black/20 px-3 text-xs font-semibold text-muted-foreground hover:border-white/20 hover:text-foreground">
+            <summary className="flex h-9 cursor-pointer list-none items-center justify-center gap-2 rounded border border-white/10 bg-[#0b0c0e] px-3 text-xs font-semibold text-muted-foreground hover:border-white/20 hover:text-foreground">
                 <Settings2 className="size-4" />
                 Options
             </summary>
-            <div className="absolute right-0 top-11 z-50 w-72 rounded-md border border-white/15 bg-[#080a0d] p-3 shadow-2xl">
+            <div className="absolute right-0 top-11 z-50 w-72 rounded-md border border-white/15 bg-[#0b0c0e] p-3 shadow-2xl">
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">List filters</p>
                 <Toggle checked={availableOnly} onChange={onAvailableOnlyChange} label="Available to me" />
                 <Toggle checked={profitableOnly} onChange={onProfitableOnlyChange} label="Profitable recipes only" />
@@ -461,7 +465,7 @@ function CalculationSettings({
 }
 
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (value: boolean) => void; label: string }) {
-    return <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-foreground hover:bg-white/5"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="accent-lime-400" />{label}</label>;
+    return <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-foreground hover:bg-white/5"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="accent-tarkov-green" />{label}</label>;
 }
 
 function ProfitRow({
@@ -588,7 +592,7 @@ function ProfitRow({
                     overrides={overrides}
                 />
                 <Cell
-                    label="Route profit"
+                    label="Profit"
                     value={evaluation.profit}
                     detail={`Total time ${evaluation.durationSeconds > 0 ? formatDuration(evaluation.durationSeconds) : "-"}`}
                     infoTitle="Sell the ingredients instead"
@@ -600,7 +604,7 @@ function ProfitRow({
                 >
                     {formatSignedRoubles(evaluation.profit)}
                 </Cell>
-                <Cell label="Route profit / hour" value={evaluation.profitPerHour}>
+                <Cell label="Profit / hour" value={evaluation.profitPerHour}>
                     {formatSignedRoubles(evaluation.profitPerHour)}
                 </Cell>
             </div>
