@@ -1,14 +1,9 @@
-import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
-import { getProfitPageData } from "@/server/services/profitPages";
-import { ProfitPageClient } from "@/features/profit-pages/ProfitPageClient";
+import { ProfitPage } from "@/features/profit-pages/ProfitPage";
 
 export default async function CraftingProfitsPage({
-    searchParams,
+  searchParams,
 }: {
-    searchParams: Promise<{ recipe?: string }>;
+  searchParams: Promise<{ recipe?: string }>;
 }) {
-    const { recipe } = await searchParams;
-    const mode = await getActiveTarkovJsonGameMode();
-    const data = await getProfitPageData(mode);
-    return <ProfitPageClient kind="craft" data={data} initialTargetRecipeId={recipe} />;
+  return <ProfitPage kind="craft" searchParams={searchParams} />;
 }

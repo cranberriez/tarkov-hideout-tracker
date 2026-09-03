@@ -5,6 +5,16 @@ calculation engine. Visiting either route loads the complete normalized barter a
 craft indexes from their existing 24-hour Redis caches. Other item pages continue
 to use the small per-item usage route and do not receive these indexes.
 
+## Implementation layout
+
+Both routes render the shared server component in
+`src/features/profit-pages/ProfitPage.tsx`. It resolves the active mode, loads the
+profit-page data, and passes the result across the client boundary. The client
+orchestrator in `ProfitPageClient.tsx` owns profile-backed state, evaluation,
+filters, and modal navigation. Focused presentation components live in the
+feature's `components/` directory, while pure formatting, filtering, recipe, and
+route helpers live in `utils/`.
+
 ## Pricing
 
 - Item acquisition from the flea market uses `avg24hPrice`.
