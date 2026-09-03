@@ -19,7 +19,7 @@ export function ItemDetailRecipeProfit({
     const route = kind === "barter" ? "/items/barter-profits" : "/items/crafting-profits";
 
     return (
-        <div className="mt-3 flex flex-col gap-2 border-t border-white/[0.07] pt-2.5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div className="grid grid-cols-2 gap-x-5 gap-y-1 sm:grid-cols-4">
                 {loading ? (
                     <span className="col-span-2 text-[11px] text-muted-foreground">Calculating profit and ingredient routes…</span>
@@ -27,10 +27,10 @@ export function ItemDetailRecipeProfit({
                     <span className="col-span-2 text-[11px] text-amber-200">{error}</span>
                 ) : evaluation ? (
                     <>
-                        <Metric label="Route cost" value={formatPrice(evaluation.cost)} />
+                        <Metric label="Cost" value={formatPrice(evaluation.cost)} />
                         <Metric label="Sell value" value={formatPrice(evaluation.sellValue)} />
                         <Metric
-                            label="Route profit"
+                            label="Profit"
                             value={formatSignedPrice(evaluation.profit)}
                             tone={profitTone(evaluation.profit)}
                         />

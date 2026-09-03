@@ -149,7 +149,7 @@ function CostItem({
                     ? `${currencySymbol}${entry.count.toLocaleString()}`
                     : `×${entry.count}`
             }
-            badges={plan && <RecommendationBadge plan={plan} />}
+            secondary={!entry.isTool && plan ? <RecommendationBadge plan={plan} /> : undefined}
         />
     );
 }

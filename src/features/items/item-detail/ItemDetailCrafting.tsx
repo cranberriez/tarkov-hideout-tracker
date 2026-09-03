@@ -170,13 +170,15 @@ function Ingredient({
             item={entry.item}
             onClick={questItem ? undefined : () => onItemClick(entry.item.id)}
             quantityLabel={`×${entry.count}`}
+            secondary={
+                !entry.isTool && plan ? <RecommendationBadge plan={plan} /> : undefined
+            }
             badges={
                 <>
                     {entry.isTool && <span className="text-[9px] uppercase text-blue-200">tool</span>}
                     {questItem && (
                         <span className="text-[9px] uppercase text-violet-200">quest item</span>
                     )}
-                    {plan && <RecommendationBadge plan={plan} />}
                 </>
             }
         />

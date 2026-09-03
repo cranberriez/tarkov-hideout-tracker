@@ -9,6 +9,7 @@ interface ItemDetailItemChipProps {
     };
     quantityLabel?: string;
     badges?: ReactNode;
+    secondary?: ReactNode;
     className?: string;
     onClick?: () => void;
 }
@@ -17,6 +18,7 @@ export function ItemDetailItemChip({
     item,
     quantityLabel,
     badges,
+    secondary,
     className = "",
     onClick,
 }: ItemDetailItemChipProps) {
@@ -28,12 +30,17 @@ export function ItemDetailItemChip({
                     <img src={imageLink} alt="" className="h-8 w-8 object-contain" />
                 </span>
             )}
-            <span className="min-w-0 max-w-36 truncate text-muted-foreground">{item.name}</span>
-            {quantityLabel && (
-                <span className="shrink-0 font-mono font-semibold text-foreground">
-                    {quantityLabel}
+            <span className="flex min-w-0 flex-1 flex-col">
+                <span className="flex min-w-0 items-center gap-2">
+                    <span className="min-w-0 flex-1 truncate text-muted-foreground">{item.name}</span>
+                    {quantityLabel && (
+                        <span className="shrink-0 font-mono font-semibold text-foreground">
+                            {quantityLabel}
+                        </span>
+                    )}
                 </span>
-            )}
+                {secondary && <span className="mt-0.5 flex items-center">{secondary}</span>}
+            </span>
             {badges}
         </>
     );

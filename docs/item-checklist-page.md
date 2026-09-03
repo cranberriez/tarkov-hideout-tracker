@@ -111,13 +111,14 @@ modal's acquisition data is loaded separately:
   `/api/items/{itemId}/usage?mode=...`. Barter and craft errors render
   independently; successful results are cached in memory by mode and item ID.
 - Barter and craft rows also load the selected item's recursive acquisition tree.
-  They show route cost, output sale value, route profit, and craft profit per hour
+  They show cost, output sale value, profit, and craft profit per hour
   using the same optimizer and mode-scoped manual prices as the full profit pages.
   Each recipe links to its exact row on the corresponding profit page.
 - Standard ingredient chips in barter and craft rows are clickable. Selecting one
   keeps the modal open on that item's details, with a back action for the previous
-  item. Each priced ingredient is labeled **Buy**, **Craft**, or **Barter** from
-  the optimizer's recommended practical route; quest-only ingredients remain
+  item. Each priced, consumed ingredient is labeled **Buy**, **Craft**, or
+  **Barter** beneath its name from the optimizer's recommended practical route.
+  Reusable tools omit this recommendation, while quest-only ingredients remain
   informational and are not clickable.
 - **History** lazily requests `/api/items/{itemId}/price-history?mode=...`.
 
