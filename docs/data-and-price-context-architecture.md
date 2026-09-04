@@ -13,6 +13,7 @@ Tarkov.dev JSON -> offline adapters -> immutable Turso release
                                       -> bounded API responses
 
 Tarkov.dev price history -> manual/scheduled refresh -> mutable price tables
+                         -> on-demand History tab -> two-hour Next.js data cache
 ```
 
 The Turso repository is selected lazily by `query-utils.ts`. Pages and features
@@ -47,9 +48,11 @@ The shared item modal receives only an item summary and open state. Its controll
 loads the selected item's relations, direct usage, and bounded recursive
 acquisition tree from endpoint-ready Turso records. Stored item views remain
 price-free; server reads hydrate their item IDs from the mutable price table. The
-history tab reads the newest ten stored points. Navigation between related items
-stays inside that controller. Complete responses may be cached in memory; partial
-responses remain retryable.
+history tab requests Tarkov.dev only when selected. That provider request is
+cached by Next.js for two hours and is separate from the stored Turso points used
+to hydrate current prices. Navigation between related items stays inside that
+controller. Complete responses may be cached in memory; partial responses remain
+retryable.
 
 ## Partial failures and missing IDs
 

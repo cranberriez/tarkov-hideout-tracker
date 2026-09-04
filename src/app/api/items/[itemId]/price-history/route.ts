@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import { getItemPriceHistoryData } from "@/server/queries/getItemPriceHistoryData";
+import {
+    fetchCachedJsonPriceHistory,
+    PRICE_HISTORY_REVALIDATE_SECONDS,
+} from "@/server/prices/live-price-history";
 
-export const revalidate = 300;
+export const revalidate = 7200;
 
 const MODES = new Set<TarkovJsonGameMode>(["regular", "pve", "pvp-season"]);
 
@@ -20,13 +23,13 @@ export async function GET(
     }
 
     try {
-        const payload = await getItemPriceHistoryData(
-            itemId,
+        const data = await fetchCachedJsonPriceHistory(
             requestedMode as TarkovJsonGameMode,
+            itemId,
         );
-        return NextResponse.json(payload, {
+        return NextResponse.json({ data, fetchedAt: Date.now() }, {
             headers: {
-                "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=300",
+                "Cache-Control": `public, max-age=300, s-maxage=${PRICE_HISTORY_REVALIDATE_SECONDS}, stale-while-revalidate=300`,
             },
         });
     } catch (error) {

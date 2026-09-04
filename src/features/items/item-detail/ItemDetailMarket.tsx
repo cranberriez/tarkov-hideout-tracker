@@ -54,12 +54,6 @@ export function ItemDetailMarket({
         marketPrice.high24hPrice != null
             ? { label: "24h high", value: formatRoubles(marketPrice.high24hPrice) }
             : null,
-        marketPrice.lastOfferCount != null
-            ? {
-                  label: "Offers",
-                  value: new Intl.NumberFormat("en-US").format(marketPrice.lastOfferCount),
-              }
-            : null,
     ].filter((detail): detail is { label: string; value: string } => Boolean(detail));
 
     return (
@@ -94,9 +88,14 @@ export function ItemDetailMarket({
         >
             {fleaPrice != null && (
                 <div className="flex items-end justify-between gap-3">
-                    <div>
-                        <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                            {isFiat ? "Rouble cost" : "24h average"}
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-4 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                            <span>{isFiat ? "Rouble cost" : "24h average"}</span>
+                            {!isFiat && marketPrice.lastOfferCount != null && (
+                                <span className="text-right">
+                                    {new Intl.NumberFormat("en-US").format(marketPrice.lastOfferCount)} offers
+                                </span>
+                            )}
                         </div>
                         <div className="mt-1 font-mono text-2xl font-semibold text-foreground">
                             {formatRoubles(fleaPrice)}

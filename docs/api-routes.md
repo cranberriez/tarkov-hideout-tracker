@@ -26,9 +26,11 @@ later modal open can restore the full labels.
 
 ### `GET /api/items/{itemId}/price-history?mode={mode}`
 
-Returns the newest stored price points for the mode/item. Refresh workers validate
-the mode-specific Tarkov.dev `/prices/{itemId}` series and retain ten points. The
-read route never contacts Tarkov.dev and uses a five-minute browser/CDN policy.
+Lazily requests the mode-specific Tarkov.dev `/prices/{itemId}` series when the
+modal's History tab is selected. The upstream fetch uses the Next.js data cache
+with a two-hour revalidation interval; the route does not read the stored Turso
+price points used to derive current prices. Its CDN response is cached for two
+hours, with a five-minute browser policy.
 
 ### Price refresh routes
 
@@ -62,7 +64,7 @@ was reached. The response uses the same browser/CDN caching policy as item usage
 reads compact manifests and release-scoped entity rows, returns keyed ID batches,
 and omits missing IDs. Raw JSON translation and normalization remain offline
 generation concerns. Runtime provider access is isolated to protected price-refresh
-jobs.
+jobs and the lazily loaded, two-hour-cached item history endpoint.
 
 Page composition lives in `src/server/queries/`. Hideout, Items, Quests, Kappa,
 and Profit pages call only their named query. Queries request route-scoped IDs,
@@ -81,8 +83,9 @@ Quest prerequisite ordering is the provider-independent utility
 ## Runtime provider
 
 Page queries use Turso. Tarkov.dev JSON adapters are offline ingestion inputs and
-are not imported by normal runtime data paths. The sole runtime data-provider
-reads are protected manual/scheduled price refreshes.
+are not imported by normal runtime data paths. Runtime data-provider reads are
+limited to protected manual/scheduled current-price refreshes and the item modal's
+two-hour-cached, on-demand price history.
 
 ## Runtime environment
 

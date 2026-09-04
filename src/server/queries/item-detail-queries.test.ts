@@ -4,12 +4,11 @@ import type { TarkovDataRepository } from "@/server/repositories/tarkov-data/typ
 import type { DataResult, TarkovDataMode } from "@/types/common";
 import type { Station } from "@/types/hideout";
 import type { ItemSummary } from "@/types/items";
-import type { CurrentPrice, PriceHistoryPoint } from "@/types/prices";
+import type { CurrentPrice } from "@/types/prices";
 import type { FullQuest } from "@/types/quests";
 import type { BarterRecord, CraftRecord } from "@/types/recipes";
 import type { Trader } from "@/types/traders";
 import { getItemAcquisitionTreeData } from "./getItemAcquisitionTreeData";
-import { getItemPriceHistoryData } from "./getItemPriceHistoryData";
 import { getItemRelationsData } from "./getItemRelationsData";
 import { getItemUsageData } from "./getItemUsageData";
 
@@ -571,22 +570,4 @@ test("relations expose missing selected items and independent partial errors", a
     assert.equal(data.errors.quests, "Quest relation data could not be loaded.");
     assert.deepEqual(data.hideoutRequirements, []);
     assert.deepEqual(data.questAvailabilityQuests, []);
-});
-
-test("price history uses the repository with the exact item and mode", async () => {
-    const calls: Array<[TarkovDataMode, string]> = [];
-    const points: PriceHistoryPoint[] = [
-        { price: 100, priceMin: 90, offerCount: 4, timestamp: 123 },
-    ];
-    const repository = createRepository({
-        history: async (mode, itemId) => {
-            calls.push([mode, itemId]);
-            return result(points, 456);
-        },
-    });
-
-    const data = await getItemPriceHistoryData("target-item", "pvp-season", repository);
-
-    assert.deepEqual(calls, [["pvp-season", "target-item"]]);
-    assert.deepEqual(data, { data: points, fetchedAt: 456 });
 });

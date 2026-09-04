@@ -20,7 +20,14 @@ import {
 } from "@/lib/utils/price-history";
 import type { PriceHistoryPoint } from "@/types/prices";
 
-const historyCache = new Map<string, PriceHistoryPoint[]>();
+const HISTORY_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
+
+interface CachedPriceHistory {
+    points: PriceHistoryPoint[];
+    cachedAt: number;
+}
+
+const historyCache = new Map<string, CachedPriceHistory>();
 const RANGE_LABELS: Array<{ value: PriceHistoryRange; label: string }> = [
     { value: "day", label: "1D" },
     { value: "threeDays", label: "3D" },
@@ -36,8 +43,16 @@ interface ItemDetailPriceHistoryProps {
 }
 
 export function getCachedPriceHistoryAvailability(itemId: string, mode: TarkovJsonGameMode) {
-    const points = historyCache.get(`${mode}:${itemId}`);
-    return points ? points.length > 0 : null;
+    const cached = getFreshCachedHistory(`${mode}:${itemId}`);
+    return cached ? cached.points.length > 0 : null;
+}
+
+function getFreshCachedHistory(cacheKey: string) {
+    const cached = historyCache.get(cacheKey);
+    if (!cached) return null;
+    if (Date.now() - cached.cachedAt < HISTORY_CACHE_TTL_MS) return cached;
+    historyCache.delete(cacheKey);
+    return null;
 }
 
 export function ItemDetailPriceHistory({
@@ -47,7 +62,7 @@ export function ItemDetailPriceHistory({
 }: ItemDetailPriceHistoryProps) {
     const cacheKey = `${mode}:${itemId}`;
     const [points, setPoints] = useState<PriceHistoryPoint[] | null>(
-        () => historyCache.get(cacheKey) ?? null,
+        () => getFreshCachedHistory(cacheKey)?.points ?? null,
     );
     const [error, setError] = useState<string | null>(null);
     const [retry, setRetry] = useState(0);
@@ -59,7 +74,7 @@ export function ItemDetailPriceHistory({
     }, [onAvailabilityChange, points]);
 
     useEffect(() => {
-        const cached = historyCache.get(cacheKey);
+        const cached = getFreshCachedHistory(cacheKey);
         if (cached) {
             return;
         }
@@ -73,7 +88,7 @@ export function ItemDetailPriceHistory({
             })
             .then((response) => {
                 const data = Array.isArray(response.data) ? response.data : [];
-                historyCache.set(cacheKey, data);
+                historyCache.set(cacheKey, { points: data, cachedAt: Date.now() });
                 setPoints(data);
             })
             .catch((reason: unknown) => {

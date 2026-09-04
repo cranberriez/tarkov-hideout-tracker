@@ -95,14 +95,13 @@ export function ItemDetailUsageTabs({
     );
     const hideoutEnabled = hideoutCount > 0 || relationsLoading || relationsError !== null;
     const questsEnabled = questCount > 0 || relationsLoading || relationsError !== null;
+    const tradersEnabled = traderOffers.length > 0 || acquisitionLoading || barterError !== null;
     const craftingEnabled = crafts.length > 0 || acquisitionLoading || craftError !== null;
     const historyEnabled = showPriceHistory && hasLoadedPriceHistory !== false;
     const enabledTabs: UsageTab[] = [
         ...(hideoutEnabled ? (["hideout"] as const) : []),
         ...(questsEnabled ? (["quests"] as const) : []),
-        ...(traderOffers.length > 0 || acquisitionLoading || barterError
-            ? (["traders"] as const)
-            : []),
+        ...(tradersEnabled ? (["traders"] as const) : []),
         ...(craftingEnabled ? (["crafting"] as const) : []),
         ...(historyEnabled ? (["prices"] as const) : []),
     ];
@@ -133,15 +132,14 @@ export function ItemDetailUsageTabs({
                     count={relationsLoading ? undefined : questCount}
                     icon={<ClipboardList size={13} />}
                 />
-                {(traderOffers.length > 0 || acquisitionLoading || barterError) && (
-                    <TabButton
-                        active={selectedTab === "traders"}
-                        onClick={() => setActiveTab("traders")}
-                        label="Traders"
-                        count={acquisitionLoading ? undefined : traderOffers.length}
-                        icon={<ShoppingCart size={13} />}
-                    />
-                )}
+                <TabButton
+                    active={selectedTab === "traders"}
+                    disabled={!tradersEnabled}
+                    onClick={() => setActiveTab("traders")}
+                    label="Traders"
+                    count={acquisitionLoading ? undefined : traderOffers.length}
+                    icon={<ShoppingCart size={13} />}
+                />
                 <TabButton
                     active={selectedTab === "crafting"}
                     disabled={!craftingEnabled}

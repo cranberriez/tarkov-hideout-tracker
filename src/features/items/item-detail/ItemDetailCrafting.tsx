@@ -10,6 +10,7 @@ import { ItemDetailItemChip } from "./ItemDetailItemChip";
 import { ItemDetailRecipeFlow } from "./ItemDetailRecipeFlow";
 import { ItemDetailRecipeProfit } from "./ItemDetailRecipeProfit";
 import type { AcquisitionPlan, RecipeEvaluation } from "@/lib/price-calculation";
+import { formatCompactRoubles } from "@/lib/utils/market-price";
 
 interface ItemDetailCraftingProps {
     recipes: ItemCraftRecipe[];
@@ -220,8 +221,20 @@ function RecommendationBadge({ plan }: { plan: AcquisitionPlan }) {
                 ? "bg-tarkov-green/10 text-tarkov-green"
                 : "bg-white/5 text-muted-foreground";
     return (
-        <span className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-bold uppercase ${classes}`}>
-            {label}
+        <span className="flex items-center gap-1.5">
+            <span className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-bold uppercase ${classes}`}>
+                {label}
+            </span>
+            {plan.totalCost !== null && (
+                <span className="flex shrink-0 items-baseline gap-1 leading-none">
+                    <span className="font-mono text-[10px] font-semibold text-foreground/80">
+                        {formatCompactRoubles(Math.round(plan.totalCost))} ₽
+                    </span>
+                    <span className="text-[7px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                        Total
+                    </span>
+                </span>
+            )}
         </span>
     );
 }

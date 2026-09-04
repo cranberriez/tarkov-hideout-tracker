@@ -111,6 +111,8 @@ loads route-scoped item relations and acquisition data separately:
 - **Traders** and **Crafting** lazily request
   `/api/items/{itemId}/usage?mode=...`. Barter and craft errors render
   independently; successful results are cached in memory by mode and item ID.
+  Both tabs keep stable positions while loading and become disabled when their
+  completed request contains no matching records.
 - Barter and craft rows also load the selected item's recursive acquisition tree.
   They show cost, output sale value, profit, and craft profit per hour
   using the same optimizer and mode-scoped manual prices as the full profit pages.
@@ -123,8 +125,12 @@ loads route-scoped item relations and acquisition data separately:
   clears this history. Each priced, consumed ingredient is labeled **Buy**,
   **Craft**, or **Barter** beneath its name from the optimizer's recommended practical route.
   Reusable tools omit this recommendation, while quest-only ingredients remain
-  informational and are not clickable.
-- **History** lazily requests `/api/items/{itemId}/price-history?mode=...`.
+  informational and are not clickable. When an ingredient's selected acquisition
+  route has complete pricing, its route total appears beside the recommendation;
+  unpriced routes omit the total.
+- **History** lazily requests `/api/items/{itemId}/price-history?mode=...` only
+  when selected. The route reads Tarkov.dev through a two-hour Next.js data cache,
+  independently of the stored current-price pipeline.
 
 In development, a small bug button floats just outside the modal's bottom-right
 corner. It toggles the modal between its normal presentation and formatted JSON
