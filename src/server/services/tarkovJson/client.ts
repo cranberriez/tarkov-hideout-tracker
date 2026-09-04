@@ -4,7 +4,9 @@ import type { TarkovJsonGameMode } from "@/lib/game-mode";
 export type { TarkovJsonGameMode } from "@/lib/game-mode";
 
 const TARKOV_JSON_BASE_URL = "https://json.tarkov.dev";
-const TARKOV_JSON_REQUEST_TIMEOUT_MS = 30_000;
+const DEFAULT_TARKOV_JSON_REQUEST_TIMEOUT_MS = 120_000;
+const TARKOV_JSON_REQUEST_MAX_ATTEMPTS = 3;
+const TARKOV_JSON_RETRY_DELAY_MS = 250;
 
 export type TarkovJsonEndpoint =
     | "barters"
@@ -36,25 +38,76 @@ export interface TarkovJsonDataset<T> {
 
 const inFlightRequests = new Map<string, Promise<unknown>>();
 
+function getRequestTimeoutMs(): number {
+    const configured = Number(process.env.TARKOV_JSON_REQUEST_TIMEOUT_MS);
+    return Number.isFinite(configured) && configured > 0
+        ? configured
+        : DEFAULT_TARKOV_JSON_REQUEST_TIMEOUT_MS;
+}
+
+function isRetryableStatus(status: number): boolean {
+    return status === 408 || status === 429 || status >= 500;
+}
+
+function isRetryableError(error: unknown): boolean {
+    return (
+        (error instanceof DOMException && error.name === "TimeoutError") ||
+        error instanceof TypeError
+    );
+}
+
+async function waitBeforeRetry(attempt: number): Promise<void> {
+    await new Promise((resolve) =>
+        setTimeout(resolve, TARKOV_JSON_RETRY_DELAY_MS * 2 ** (attempt - 1)),
+    );
+}
+
 async function fetchJson<T>(path: string): Promise<T> {
     const url = `${TARKOV_JSON_BASE_URL}/${path}`;
     const existing = inFlightRequests.get(url) as Promise<T> | undefined;
     if (existing) return existing;
 
     const request = (async () => {
-        const response = await fetch(url, {
-            headers: TARKOV_API_HEADERS,
-            cache: "no-store",
-            signal: AbortSignal.timeout(TARKOV_JSON_REQUEST_TIMEOUT_MS),
-        });
-        if (!response.ok) {
-            const details = await response.text().catch(() => "");
-            throw new Error(
-                `Tarkov JSON request failed for ${path}: ${response.status} ${response.statusText} - ${details.slice(0, 300)}`,
-            );
-        }
+        for (let attempt = 1; attempt <= TARKOV_JSON_REQUEST_MAX_ATTEMPTS; attempt += 1) {
+            try {
+                const response = await fetch(url, {
+                    headers: TARKOV_API_HEADERS,
+                    cache: "no-store",
+                    signal: AbortSignal.timeout(getRequestTimeoutMs()),
+                });
+                if (!response.ok) {
+                    const details = await response.text().catch(() => "");
+                    const error = new Error(
+                        `Tarkov JSON request failed for ${path}: ${response.status} ${response.statusText} - ${details.slice(0, 300)}`,
+                    );
+                    if (
+                        !isRetryableStatus(response.status) ||
+                        attempt === TARKOV_JSON_REQUEST_MAX_ATTEMPTS
+                    ) {
+                        throw error;
+                    }
+                    await waitBeforeRetry(attempt);
+                    continue;
+                }
 
-        return (await response.json()) as T;
+                return (await response.json()) as T;
+            } catch (error) {
+                if (
+                    !isRetryableError(error) ||
+                    attempt === TARKOV_JSON_REQUEST_MAX_ATTEMPTS
+                ) {
+                    if (isRetryableError(error)) {
+                        throw new Error(
+                            `Tarkov JSON request failed for ${path} after ${attempt} attempts`,
+                            { cause: error },
+                        );
+                    }
+                    throw error;
+                }
+                await waitBeforeRetry(attempt);
+            }
+        }
+        throw new Error(`Tarkov JSON request failed for ${path}`);
     })();
 
     inFlightRequests.set(url, request);

@@ -116,3 +116,25 @@ test("fetchTarkovJsonDataset still rejects when locale fallback also fails", asy
         /regular\/items_en: 404 Not Found/,
     );
 });
+
+test("fetchTarkovJsonDataset retries transient upstream failures", async (context) => {
+    let baseAttempts = 0;
+    context.mock.method(globalThis, "fetch", async (input) => {
+        if (String(input).endsWith("_en")) {
+            return Response.json({ data: { token: "Translated" } });
+        }
+        baseAttempts += 1;
+        if (baseAttempts === 1) {
+            return new Response('{"error":"temporarily unavailable"}', {
+                status: 503,
+                statusText: "Service Unavailable",
+            });
+        }
+        return Response.json({ data: { entry: { name: "token" } } });
+    });
+
+    const dataset = await fetchTarkovJsonDataset<{ entry: { name: string } }>("hideout");
+
+    assert.equal(baseAttempts, 2);
+    assert.equal(dataset.data.entry.name, "token");
+});

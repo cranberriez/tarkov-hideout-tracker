@@ -29,7 +29,10 @@ endpoint-ready item relations, usage, and acquisition views.
 
 The adapters read the source directly during generation. They do not use or write
 an application cache. Empty and malformed source responses fail generation rather
-than producing a ready database release.
+than producing a ready database release. Source requests allow up to two minutes
+per attempt and retry transient timeouts, connection failures, rate limits, and
+server errors. Set `TARKOV_JSON_REQUEST_TIMEOUT_MS` to a positive millisecond value
+to override the per-attempt timeout for unusually slow connections.
 
 ## Price refresh exception
 
