@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { createPortal } from "react-dom";
 import Image from "next/image";
 import { ExternalLink } from "lucide-react";
 import {
@@ -31,10 +29,7 @@ import {
 } from "../utils/recipes";
 import { InfoHint } from "./InfoHint";
 import { InlineItemPrice } from "./InlineItemPrice";
-import {
-  RecipeItemHoverCard,
-  type ItemHoverPosition,
-} from "./RecipeItemHoverCard";
+import { useRecipeItemHover } from "./RecipeItemHoverProvider";
 import { RouteIcon } from "./RouteIcon";
 import { RouteSelector } from "./RouteSelector";
 
@@ -57,6 +52,7 @@ export function RecipeItem({
   onGoToRecipe,
   recipePreview,
   onRouteChange,
+  baseRouteKey,
 }: {
   item?: ItemSummary;
   count: number;
@@ -76,10 +72,9 @@ export function RecipeItem({
   onGoToRecipe?: GoToRecipeHandler;
   recipePreview?: RecipePreviewData;
   onRouteChange?: (routeKey: string) => void;
+  baseRouteKey?: string;
 }) {
-  const [hoverPosition, setHoverPosition] = useState<ItemHoverPosition | null>(
-    null,
-  );
+  const hover = useRecipeItemHover();
   const routeDetail =
     detail ?? (plan ? describeRoute(plan, routeContext) : null);
   const unitRoutePrice =
@@ -119,8 +114,9 @@ export function RecipeItem({
       ? cheapestDirectTotal - unitRoutePrice * count
       : null;
   function updateHoverPosition(event: React.MouseEvent<HTMLSpanElement>) {
+    hover.cancelClose();
     if ((event.target as HTMLElement).closest("[data-isolated-hover='true']")) {
-      setHoverPosition(null);
+      hover.close();
       return;
     }
     const gap = 12;
@@ -133,28 +129,46 @@ export function RecipeItem({
         ? event.clientX + gap
         : event.clientX - hoverWidth - gap;
     const placeAbove = event.clientY > window.innerHeight / 2;
-    setHoverPosition({
-      left: Math.max(
-        8,
-        Math.min(preferredLeft, window.innerWidth - hoverWidth - 8),
-      ),
-      placeAbove,
-      verticalOffset: placeAbove
-        ? window.innerHeight - event.clientY + gap
-        : event.clientY + gap,
+    hover.show({
+      position: {
+        left: Math.max(
+          8,
+          Math.min(preferredLeft, window.innerWidth - hoverWidth - 8),
+        ),
+        placeAbove,
+        verticalOffset: placeAbove
+          ? window.innerHeight - event.clientY + gap
+          : event.clientY + gap,
+      },
+      item,
+      count,
+      method,
+      totalPrice,
+      priceKind,
+      plan,
+      overrides,
+      routeContext,
+      routeDetail,
+      recipePreview: resolvedRecipePreview,
+      theoreticalRecipePreview,
+      theoreticalSavings:
+        plan?.totalCost != null && plan.theoreticalCost != null
+          ? plan.totalCost - plan.theoreticalCost
+          : null,
+      showRouteIcon,
     });
   }
   const openItem = (event: React.MouseEvent) => {
     event.stopPropagation();
-    setHoverPosition(null);
+    hover.close();
     if (item) onItemOpen(item.id);
   };
   return (
     <span
-      className={`group/item relative flex shrink-0 items-center px-1 ${compactLine ? "h-9 w-full gap-1.5 hover:bg-white/[0.025]" : `h-full min-h-[72px] gap-1.5 ${fillColumn ? "w-full" : "w-40"} ${emphasized ? "bg-tarkov-green/[0.07]" : "bg-black/10"}`}`}
+      className={`group/item relative flex shrink-0 items-center ${compactLine ? "h-9 w-full gap-1.5 pr-1 after:absolute after:bottom-0 after:left-8 after:right-0 after:border-b after:border-white/5 last:after:hidden hover:bg-white/[0.025]" : `h-full min-h-[72px] gap-1.5 px-1 ${fillColumn ? "w-full" : "w-40"} ${emphasized ? "bg-tarkov-green/[0.07]" : "bg-black/10"}`}`}
       onMouseEnter={updateHoverPosition}
       onMouseMove={updateHoverPosition}
-      onMouseLeave={() => setHoverPosition(null)}
+      onMouseLeave={hover.scheduleClose}
     >
       {compactLine ? (
         <>
@@ -167,16 +181,21 @@ export function RecipeItem({
               item={item}
               routeContext={routeContext}
               onSelect={onRouteChange}
+              onOpen={hover.close}
+              changedFromBase={
+                baseRouteKey !== undefined &&
+                baseRouteKey !== acquisitionRouteKey(plan)
+              }
             />
           ) : (
-            showRouteIcon && <RouteIcon method={method} inline />
+            showRouteIcon && <RouteIcon method={method} rowRail />
           )}
           <button
             type="button"
             aria-label={`Open ${item?.name ?? "item"} details`}
             disabled={!item}
             onClick={openItem}
-            className="relative flex size-8 shrink-0 cursor-pointer items-center justify-center bg-white/[0.025] transition hover:bg-white/10 disabled:cursor-default"
+            className="relative ml-0.5 flex size-8 shrink-0 cursor-pointer items-center justify-center bg-white/[0.025] transition hover:bg-white/10 disabled:cursor-default"
           >
             {item?.iconLink ? (
               <Image
@@ -233,7 +252,7 @@ export function RecipeItem({
                     {formatCompactPrice(routeSavingsTotal)}
                     <InfoHint
                       title={`${method === "craft" ? "Crafting" : "Bartering"} saves ${formatRoundedRoubles(routeSavingsTotal)}`}
-                      onShow={() => setHoverPosition(null)}
+                      onShow={hover.close}
                     >
                       <span className="block">
                         {method === "craft" ? "Crafting" : "Bartering for"}{" "}
@@ -269,7 +288,7 @@ export function RecipeItem({
                     onClick={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
-                      setHoverPosition(null);
+                      hover.close();
                       onGoToRecipe?.(
                         plan.method as "barter" | "craft",
                         plan.sourceId as string,
@@ -338,30 +357,6 @@ export function RecipeItem({
           </span>
         </>
       )}
-      {hoverPosition &&
-        createPortal(
-          <RecipeItemHoverCard
-            position={hoverPosition}
-            item={item}
-            count={count}
-            method={method}
-            totalPrice={totalPrice}
-            priceKind={priceKind}
-            plan={plan}
-            overrides={overrides}
-            routeContext={routeContext}
-            routeDetail={routeDetail}
-            recipePreview={resolvedRecipePreview}
-            theoreticalRecipePreview={theoreticalRecipePreview}
-            theoreticalSavings={
-              plan?.totalCost != null && plan.theoreticalCost != null
-                ? plan.totalCost - plan.theoreticalCost
-                : null
-            }
-            showRouteIcon={showRouteIcon}
-          />,
-          document.body,
-        )}
     </span>
   );
 }

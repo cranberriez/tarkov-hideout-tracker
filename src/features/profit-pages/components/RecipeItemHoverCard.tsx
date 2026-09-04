@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { X } from "lucide-react";
 import {
   getItemBuyPrice,
   getItemSellComparison,
@@ -24,6 +25,23 @@ export interface ItemHoverPosition {
   verticalOffset: number;
 }
 
+export interface RecipeItemHoverData {
+  position: ItemHoverPosition;
+  item?: ItemSummary;
+  count: number;
+  method: RouteMethod;
+  totalPrice: number | null;
+  priceKind: "buy" | "sell";
+  plan?: AcquisitionPlan;
+  overrides: Record<string, ManualPriceOverride>;
+  routeContext: RouteContext;
+  routeDetail: string | null;
+  recipePreview?: RecipePreviewData;
+  theoreticalRecipePreview?: RecipePreviewData;
+  theoreticalSavings?: number | null;
+  showRouteIcon: boolean;
+}
+
 export function RecipeItemHoverCard({
   position,
   item,
@@ -39,21 +57,11 @@ export function RecipeItemHoverCard({
   theoreticalRecipePreview,
   theoreticalSavings,
   showRouteIcon,
-}: {
-  position: ItemHoverPosition;
-  item?: ItemSummary;
-  count: number;
-  method: RouteMethod;
-  totalPrice: number | null;
-  priceKind: "buy" | "sell";
-  plan?: AcquisitionPlan;
-  overrides: Record<string, ManualPriceOverride>;
-  routeContext: RouteContext;
-  routeDetail: string | null;
-  recipePreview?: RecipePreviewData;
-  theoreticalRecipePreview?: RecipePreviewData;
-  theoreticalSavings?: number | null;
-  showRouteIcon: boolean;
+  onClose,
+  onKeepOpen,
+}: RecipeItemHoverData & {
+  onClose: () => void;
+  onKeepOpen: () => void;
 }) {
   const unitRoutePrice =
     totalPrice === null || count <= 0 ? null : totalPrice / count;
@@ -118,7 +126,22 @@ export function RecipeItemHoverCard({
           : { top: position.verticalOffset }),
       }}
     >
-      <span className="block w-80 max-w-full shrink-0 rounded-md border border-white/15 bg-[#05070a] p-3 shadow-[0_18px_55px_rgba(0,0,0,0.8)]">
+      <span className="relative block w-80 max-w-full shrink-0 rounded-md border border-white/15 bg-[#05070a] p-3 shadow-[0_18px_55px_rgba(0,0,0,0.8)]">
+        <button
+          type="button"
+          aria-label="Close item details"
+          title="Close"
+          onMouseEnter={onKeepOpen}
+          onMouseLeave={onClose}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onClose();
+          }}
+          className="pointer-events-auto absolute right-1.5 top-1.5 z-10 flex size-5 items-center justify-center rounded text-white/25 transition hover:bg-white/[0.06] hover:text-white/65 focus:outline-none focus:ring-1 focus:ring-white/30"
+        >
+          <X className="size-3" />
+        </button>
         <span className="flex items-center gap-3">
           <span className="relative flex size-16 shrink-0 items-center justify-center bg-white/[0.035]">
             {showRouteIcon && <RouteIcon method={method} />}

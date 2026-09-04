@@ -21,6 +21,7 @@ import {
   formatSignedRoubles,
 } from "../utils/formatters";
 import {
+  acquisitionRouteKey,
   hasRecipeRoute,
   profitGrid,
   withRequiredItemRoute,
@@ -160,7 +161,7 @@ export function ProfitRow({
             }
           />
         </div>
-        <div className="flex min-w-0 flex-col justify-center py-0.5">
+        <div className="flex min-w-0 flex-col justify-center">
           {evaluation.requiredItems.map((plan, index) => (
             <RecipeItem
               key={`${plan.itemId}:${plan.isTool === true}`}
@@ -177,6 +178,9 @@ export function ProfitRow({
               onItemOpen={onItemOpen}
               onGoToRecipe={onGoToRecipe}
               onRouteChange={(routeKey) => onRouteChange(index, routeKey)}
+              baseRouteKey={acquisitionRouteKey(
+                baseEvaluation.requiredItems[index],
+              )}
             />
           ))}
         </div>

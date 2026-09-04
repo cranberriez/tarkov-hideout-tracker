@@ -25,11 +25,15 @@ export function RouteSelector({
   item,
   routeContext,
   onSelect,
+  onOpen,
+  changedFromBase = false,
 }: {
   plan: AcquisitionPlan;
   item?: ItemSummary;
   routeContext: RouteContext;
   onSelect: (routeKey: string) => void;
+  onOpen?: () => void;
+  changedFromBase?: boolean;
 }) {
   const [position, setPosition] = useState<{ left: number; top: number } | null>(
     null,
@@ -73,23 +77,42 @@ export function RouteSelector({
           if (position) return setPosition(null);
           const rect = buttonRef.current?.getBoundingClientRect();
           if (!rect) return;
+          onOpen?.();
           setPosition({
             left: Math.min(rect.right + 6, window.innerWidth - 330),
             top: Math.min(rect.top, window.innerHeight - routes.length * 42 - 16),
           });
         }}
-        className="relative z-10 shrink-0 rounded outline-none ring-tarkov-green/60 hover:ring-1 focus:ring-1"
+        className="relative z-10 h-full w-8 shrink-0 self-stretch outline-none ring-inset ring-white/30 hover:brightness-110 hover:ring-1 focus:ring-1 focus:ring-tarkov-green"
       >
-        <RouteIcon method={plan.method} inline />
+        <RouteIcon
+          method={plan.method}
+          rowRail
+          switchable
+          changedFromBase={changedFromBase}
+        />
       </button>
       {position &&
         createPortal(
-          <span
-            data-route-selector
-            className="fixed z-[130] block max-h-[calc(100vh-16px)] w-[320px] overflow-y-auto rounded-md border border-white/15 bg-[#05070a] p-1 shadow-[0_18px_55px_rgba(0,0,0,0.8)]"
-            style={{ left: Math.max(8, position.left), top: Math.max(8, position.top) }}
-          >
-            {routes.map((route) => {
+          <>
+            <button
+              type="button"
+              data-isolated-hover="true"
+              aria-label="Close acquisition route picker"
+              className="fixed inset-0 z-[129] cursor-default bg-transparent"
+              onMouseDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setPosition(null);
+              }}
+            />
+            <span
+              data-route-selector
+              data-isolated-hover="true"
+              className="fixed z-[130] block max-h-[calc(100vh-16px)] w-[320px] overflow-y-auto rounded-md border border-white/15 bg-[#05070a] p-1 shadow-[0_18px_55px_rgba(0,0,0,0.8)]"
+              style={{ left: Math.max(8, position.left), top: Math.max(8, position.top) }}
+            >
+              {routes.map((route) => {
               const key = acquisitionRouteKey(route);
               const selected = key === acquisitionRouteKey(plan);
               const sourceName =
@@ -149,8 +172,9 @@ export function RouteSelector({
                   </span>
                 </button>
               );
-            })}
-          </span>,
+              })}
+            </span>
+          </>,
           document.body,
         )}
     </>

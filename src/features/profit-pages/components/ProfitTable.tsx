@@ -21,6 +21,7 @@ import {
   profitGrid,
 } from "../utils/recipes";
 import { ProfitRow } from "./ProfitRow";
+import { RecipeItemHoverProvider } from "./RecipeItemHoverProvider";
 
 export function ProfitTable({
   kind,
@@ -106,6 +107,7 @@ export function ProfitTable({
         lastScrollRequestRef.current = requestKey;
   }, [evaluations, scrollMargin, scrollRequestId, targetRecipeId, virtualizer]);
   return (
+    <RecipeItemHoverProvider>
     <div className="overflow-x-auto rounded-md border border-white/10 bg-card/50">
       <div
         className={`grid w-full min-w-[1000px] border-b border-white/10 bg-black/30 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground ${profitGrid()}`}
@@ -198,5 +200,6 @@ export function ProfitTable({
         )}
       </div>
     </div>
+    </RecipeItemHoverProvider>
   );
 }

@@ -142,7 +142,10 @@ theoretical alternative. Crafted and bartered items add a recipe card to the
 right with the source trader or station and required items. Trader purchase
 routes show the trader, loyalty level, native currency price, converted rouble
 value, and available unlock/limit metadata, but never show a recipe card or
-navigation action. Reusable tools are
+navigation action. The profit table owns one shared hover overlay; entering a new
+item replaces its current reference immediately instead of mounting another
+portal. A short close grace period only allows reaching the subdued close button.
+Reusable tools are
 clearly marked as excluded from recurring cost. Hover cards remain close to the
 pointer when they must move above a low row. Clicking an item's portrait opens
 the shared item-detail modal; hovering a crafted or bartered requirement also
