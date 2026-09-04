@@ -49,14 +49,14 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
                             <header className="flex items-center justify-between border-b border-border-color px-4 py-3">
                                 <div>
                                     <p className="text-xs font-semibold text-white">Item debug data</p>
-                                    <p className="mt-0.5 text-[10px] text-muted-foreground">Item and related modal data, excluding pricing</p>
+                                    <p className="mt-0.5 text-[10px] text-muted-foreground">Item and related modal data</p>
                                 </div>
                                 <button type="button" onClick={vm.close} className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground" aria-label="Close item details">
                                     <X size={18} />
                                 </button>
                             </header>
                             <pre className="min-h-0 flex-1 overflow-auto p-4 text-[10px] leading-relaxed text-gray-400">
-                                {JSON.stringify(vm.debugData, (key, value) => key === "marketPrice" ? undefined : value, 2)}
+                                {JSON.stringify(vm.debugData, null, 2)}
                             </pre>
                         </section>
                     ) : (

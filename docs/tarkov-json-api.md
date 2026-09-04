@@ -32,7 +32,7 @@ than producing a ready database release.
 
 Full item price history is intentionally excluded from snapshots. The
 `/api/items/{itemId}/price-history` route fetches the selected series on demand and
-keeps its independent 15-minute Next.js/HTTP cache.
+keeps its independent 2-hour Next.js/HTTP cache.
 
 See `db-scripts/README.md`, `data-and-price-context-architecture.md`, and
 `caching-architecture.md` for the release and runtime read paths.

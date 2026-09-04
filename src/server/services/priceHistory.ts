@@ -3,7 +3,7 @@ import type { DataResult } from "@/types/common";
 import type { TarkovJsonGameMode } from "@/server/services/tarkovJson/client";
 import { TARKOV_API_HEADERS } from "./tarkovApi";
 
-const PRICE_HISTORY_REVALIDATE_SECONDS = 900;
+const PRICE_HISTORY_REVALIDATE_SECONDS = 7200;
 
 export const PRICE_HISTORY_CUTOFF_TIMESTAMP = Date.UTC(2025, 11, 1);
 

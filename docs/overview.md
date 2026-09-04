@@ -115,4 +115,4 @@ See `state-management.md`, `data-and-price-context-architecture.md`, and
 
 The app is deployed on Vercel. Normalized datasets change only when a newly
 generated Turso release is uploaded and selected; price history uses a separate
-15-minute cache.
+2-hour cache.

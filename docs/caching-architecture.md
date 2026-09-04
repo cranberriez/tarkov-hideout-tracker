@@ -33,7 +33,7 @@ Turso is the persistent normalized data store. There is no Redis layer.
 - Immutable release IDs make database records safe to cache by URL and mode.
 - API routes set HTTP cache headers appropriate to their payloads.
 - Next.js and the deployment CDN may cache rendered pages and route responses.
-- Price history retains its separate 15-minute Next.js/HTTP cache because it is
+- Price history retains its separate 2-hour Next.js/HTTP cache because it is
   the sole live Tarkov.dev data read.
 
 Updating data is an explicit release operation: generate, validate, upload,

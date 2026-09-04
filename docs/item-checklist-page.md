@@ -129,7 +129,7 @@ loads route-scoped item relations and acquisition data separately:
 In development, a small bug button floats just outside the modal's bottom-right
 corner. It toggles the modal between its normal presentation and formatted JSON
 for the selected item plus its inventory, hideout, quest, barter, and craft data.
-Market pricing is intentionally omitted from this debug view.
+The debug view includes the complete modal data, including market pricing.
 
 The usage response contains ID-based barter/craft records for the selected item
 only. Ingredient presentation is joined through the global catalog in the modal.

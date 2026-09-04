@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { getItemPriceHistoryData } from "@/server/queries/getItemPriceHistoryData";
 
-export const revalidate = 900;
+export const revalidate = 7200;
 
 const MODES = new Set<TarkovJsonGameMode>(["regular", "pve", "pvp-season"]);
 
@@ -26,7 +26,7 @@ export async function GET(
         );
         return NextResponse.json(payload, {
             headers: {
-                "Cache-Control": "public, max-age=300, s-maxage=900, stale-while-revalidate=3600",
+                "Cache-Control": "public, max-age=300, s-maxage=7200, stale-while-revalidate=3600",
             },
         });
     } catch (error) {
