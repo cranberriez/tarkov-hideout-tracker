@@ -1,4 +1,4 @@
-import { formatCompactRoubles, formatRoubles } from "@/lib/utils/market-price";
+import { formatCompactRoubles, formatRoubles } from "../../../lib/utils/market-price";
 import type { VendorPrice } from "@/types/prices";
 
 export function formatSignedRoubles(value: number | null) {

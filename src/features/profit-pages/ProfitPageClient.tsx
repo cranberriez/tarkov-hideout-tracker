@@ -78,6 +78,8 @@ export function ProfitPageClient({
       overrides,
       allowCrafts,
       allowBarters,
+      traderLoyaltyLevels,
+      completedQuests,
     });
     return kind === "barter"
       ? calculator.evaluateBarters()
@@ -85,11 +87,13 @@ export function ProfitPageClient({
   }, [
     allowBarters,
     allowCrafts,
+    completedQuests,
     data.barters,
     data.crafts,
     itemById,
     kind,
     overrides,
+    traderLoyaltyLevels,
   ]);
   const tradersById = useMemo(
     () =>

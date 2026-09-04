@@ -120,7 +120,7 @@ function RecipeChainNode({
         <span
           className={`rounded px-1.5 py-0.5 text-[8px] font-bold uppercase ${routeChipClasses(plan.method)}`}
         >
-          {plan.method}
+          {plan.method === "trader" ? "Trader" : plan.method}
         </span>
         <span className="w-20 text-right font-mono text-[10px] text-foreground">
           {plan.isTool ? "Excluded" : formatRoundedRoubles(plan.totalCost)}

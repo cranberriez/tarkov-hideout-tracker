@@ -132,6 +132,12 @@ export function describeRoute(plan: AcquisitionPlan, context: RouteContext) {
     return `Reusable tool acquired via ${plan.method}; its value is not included in recurring craft cost.`;
   if (plan.method === "flea")
     return "Buy from the flea market using the 24-hour average price.";
+  if (plan.method === "trader" && plan.traderOffer) {
+    const offer = plan.traderOffer;
+    const trader = context.tradersById[offer.traderId];
+    const nativePrice = `${offer.price.toLocaleString()} ${offer.currency}`;
+    return `Buy from ${trader?.name ?? "unknown trader"} at LL${offer.minTraderLevel} · ${nativePrice} (${Math.round(offer.priceRUB).toLocaleString()} ₽)${offer.taskUnlockId ? " · quest unlock required" : ""}${offer.buyLimit != null ? ` · limit ${offer.buyLimit}` : ""}.`;
+  }
   if (plan.method === "barter" && plan.sourceId) {
     const barter = context.bartersById[plan.sourceId];
     const trader = barter ? context.tradersById[barter.traderId] : undefined;
@@ -155,6 +161,9 @@ export function describeChainRoute(
   context: RouteContext,
 ) {
   if (plan.method === "flea") return "Flea market";
+  if (plan.method === "trader" && plan.traderOffer) {
+    return `Trader LL${plan.traderOffer.minTraderLevel}`;
+  }
   if (plan.method === "unavailable") return "No priced route";
   if (plan.method === "barter" && plan.sourceId) {
     const barter = context.bartersById[plan.sourceId];

@@ -20,16 +20,17 @@ export async function getProfitPageData(
     const barters = bartersResult.status === "fulfilled" ? bartersResult.value.data : [];
     const crafts = craftsResult.status === "fulfilled" ? craftsResult.value.data : [];
     const itemIds = getRecipeGraphItemIds(barters, crafts);
-    const traderIds = dedupeIds(barters.map((barter) => barter.traderId));
+    const barterTraderIds = dedupeIds(barters.map((barter) => barter.traderId));
     const stationIds = new Set(crafts.map((craft) => craft.stationId));
 
     const [itemsResult, pricesResult, tradersResult, stationsResult] =
         await Promise.allSettled([
             dataRepository.items.getByIds(mode, itemIds),
             dataRepository.prices.getCurrent(mode, itemIds),
-            traderIds.length > 0
-                ? dataRepository.traders.getByIds(mode, traderIds)
-                : Promise.resolve(null),
+            // The catalog is small. Loading it beside items avoids a follow-up read
+            // after buyFromTrader offer IDs are known, then we serialize only the
+            // traders referenced by the recipe graph.
+            dataRepository.traders.getAll(mode),
             stationIds.size > 0
                 ? dataRepository.hideout.getStations(mode)
                 : Promise.resolve(null),
@@ -41,11 +42,14 @@ export async function getProfitPageData(
         : { items: null, unresolvedItemIds: [...itemIds] };
     const tradersValue = tradersResult.status === "fulfilled" ? tradersResult.value : null;
     const stationsValue = stationsResult.status === "fulfilled" ? stationsResult.value : null;
+    const traderIds = new Set([
+        ...barterTraderIds,
+        ...(merged.items ?? []).flatMap((item) =>
+            (item.buyFromTrader ?? []).map((offer) => offer.traderId),
+        ),
+    ]);
     const traders = tradersValue
-        ? traderIds.flatMap((traderId) => {
-              const trader = tradersValue.data[traderId];
-              return trader ? [trader] : [];
-          })
+        ? tradersValue.data.filter((trader) => traderIds.has(trader.id))
         : [];
     const stations = stationsValue
         ? stationsValue.data

@@ -61,23 +61,31 @@ export function RecipeItemHoverCard({
   const hasOverride = Boolean(
     item && overrides[item.id]?.[priceKind] !== undefined,
   );
+  const selectedDirectHasOverride = hasOverride && plan?.directBuyMethod !== "trader";
   const sellComparison =
     priceKind === "sell" ? getItemSellComparison(item, overrides) : null;
   const routeLabel = plan?.isTool
     ? "Reusable tool"
     : method === "flea"
       ? "Flea market"
+      : method === "trader"
+        ? "Trader"
       : method === "barter"
         ? "Barter"
         : method === "craft"
           ? "Craft"
           : "Unavailable";
+  const directRouteUnitPrice =
+    plan?.directBuyCost != null && count > 0
+      ? plan.directBuyCost / count
+      : directUnitPrice;
   const routeSavingsPerUnit =
     plan &&
     method !== "flea" &&
-    directUnitPrice !== null &&
+    method !== "trader" &&
+    directRouteUnitPrice !== null &&
     unitRoutePrice !== null
-      ? directUnitPrice - unitRoutePrice
+      ? directRouteUnitPrice - unitRoutePrice
       : null;
   const ingredientSellValue =
     plan && !plan.isTool && item
@@ -181,14 +189,40 @@ export function RecipeItemHoverCard({
           ) : (
             <>
               <span className="text-muted-foreground">
-                Flea purchase / unit
+                {plan?.directBuyMethod === "trader"
+                  ? "Cheapest direct (trader) / unit"
+                  : "Flea/manual purchase / unit"}
               </span>
               <span
-                className={hasOverride ? "text-amber-300" : "text-foreground"}
+                className={selectedDirectHasOverride ? "text-amber-300" : "text-foreground"}
               >
-                {formatRoundedRoubles(directUnitPrice)}
-                {hasOverride ? " · manual" : ""}
+                {formatRoundedRoubles(directRouteUnitPrice)}
+                {selectedDirectHasOverride ? " · manual" : ""}
               </span>
+            </>
+          )}
+          {plan?.method === "trader" && plan.traderOffer && (
+            <>
+              <span className="text-muted-foreground">Native trader price</span>
+              <span className="text-purple-200">
+                {plan.traderOffer.price.toLocaleString()} {plan.traderOffer.currency}
+              </span>
+              <span className="text-muted-foreground">Trader / loyalty</span>
+              <span className="text-right text-foreground">
+                {routeContext.tradersById[plan.traderOffer.traderId]?.name ?? "Unknown trader"} · LL{plan.traderOffer.minTraderLevel}
+              </span>
+              {plan.traderOffer.taskUnlockId && (
+                <>
+                  <span className="text-muted-foreground">Quest unlock</span>
+                  <span className="text-right text-amber-200">Required</span>
+                </>
+              )}
+              {plan.traderOffer.buyLimit != null && (
+                <>
+                  <span className="text-muted-foreground">Buy limit</span>
+                  <span className="text-right text-foreground">{plan.traderOffer.buyLimit}</span>
+                </>
+              )}
             </>
           )}
           {plan && (

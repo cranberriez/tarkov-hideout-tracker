@@ -22,6 +22,157 @@ function item(id: string, buy: number, sell = buy): ItemSummary {
     };
 }
 
+function traderItem(
+    id: string,
+    offers: NonNullable<ItemSummary["buyFromTrader"]>,
+    fleaPrice?: number,
+): ItemSummary {
+    return {
+        id,
+        name: id,
+        normalizedName: id.toLowerCase(),
+        buyFromTrader: offers,
+        ...(fleaPrice === undefined ? {} : { marketPrice: { avg24hPrice: fleaPrice } }),
+    };
+}
+
+function traderOffer(overrides: Partial<NonNullable<ItemSummary["buyFromTrader"]>[number]> = {}) {
+    return {
+        traderId: "prapor",
+        price: 100,
+        priceRUB: 100,
+        currency: "RUB",
+        currencyItemId: "roubles",
+        minTraderLevel: 1,
+        ...overrides,
+    };
+}
+
+test("uses a trader-only direct acquisition and retains native offer data", () => {
+    const offer = traderOffer({ price: 53, priceRUB: 6_625, currency: "USD", currencyItemId: "dollars" });
+    const calculator = createRecipeCalculator({
+        itemsById: { A: traderItem("A", [offer]) },
+        barters: [],
+        crafts: [],
+    });
+
+    const plan = calculator.evaluateNode("A", 2);
+    assert.equal(plan.method, "trader");
+    assert.equal(plan.totalCost, 13_250);
+    assert.equal(plan.durationSeconds, 0);
+    assert.deepEqual(plan.children, []);
+    assert.equal(plan.traderOffer?.price, 53);
+    assert.equal(plan.traderOffer?.currency, "USD");
+});
+
+test("chooses the genuinely cheapest flea or trader direct route", () => {
+    const cheapTrader = createRecipeCalculator({
+        itemsById: { A: traderItem("A", [traderOffer({ priceRUB: 80 })], 100) },
+        barters: [], crafts: [],
+    }).evaluateNode("A");
+    const cheapFlea = createRecipeCalculator({
+        itemsById: { A: traderItem("A", [traderOffer({ priceRUB: 120 })], 100) },
+        barters: [], crafts: [],
+    }).evaluateNode("A");
+
+    assert.equal(cheapTrader.method, "trader");
+    assert.equal(cheapTrader.directBuyCost, 80);
+    assert.equal(cheapFlea.method, "flea");
+    assert.equal(cheapFlea.directBuyCost, 100);
+    assert.equal(cheapFlea.alternatives[0]?.method, "trader");
+    assert.equal(cheapFlea.alternatives[0]?.traderOffer?.priceRUB, 120);
+});
+
+test("applies the practical threshold only between recursive and cheapest direct routes", () => {
+    const barter: BarterRecord = {
+        id: "barter-a", offeredItemId: "A", offeredCount: 1, traderId: "mechanic",
+        minTraderLevel: 1, requiredItems: [{ itemId: "B", count: 1 }],
+    };
+    const craft: CraftRecord = {
+        id: "craft-a", productItemId: "A", productCount: 1, stationId: "workbench", level: 1,
+        duration: 60, requiredItems: [{ itemId: "C", count: 1 }], requiredQuestItems: [], gameEditions: [],
+    };
+    const items = {
+        A: traderItem("A", [traderOffer({ priceRUB: 90 })], 100),
+        B: item("B", 87),
+        C: item("C", 70),
+    };
+    const calculator = createRecipeCalculator({ itemsById: items, barters: [barter], crafts: [craft] });
+    const plan = calculator.evaluateNode("A");
+
+    assert.equal(plan.method, "craft");
+    assert.equal(plan.directBuyCost, 90);
+    assert.equal(plan.theoreticalMethod, "craft");
+    assert.deepEqual(plan.alternatives.map((entry) => entry.method), ["barter", "trader", "flea"]);
+    const evaluation = calculator.evaluateCraft(craft);
+    assert.equal(evaluation.directBuyCost, 90);
+    assert.equal(evaluation.directBuyMethod, "trader");
+
+    const nearBarter = createRecipeCalculator({
+        itemsById: { ...items, C: item("C", 89) },
+        barters: [barter], crafts: [craft],
+    }).evaluateNode("A");
+    assert.equal(nearBarter.method, "trader");
+    assert.equal(nearBarter.theoreticalMethod, "barter");
+});
+
+test("keeps multiple trader offers distinct and retains trader alternatives", () => {
+    const plan = createRecipeCalculator({
+        itemsById: {
+            A: traderItem("A", [
+                traderOffer({ price: 90, priceRUB: 90 }),
+                traderOffer({ price: 80, priceRUB: 80 }),
+            ]),
+        },
+        barters: [], crafts: [],
+    }).evaluateNode("A");
+
+    assert.equal(plan.method, "trader");
+    assert.equal(plan.traderOffer?.price, 80);
+    assert.equal(plan.alternatives.length, 1);
+    assert.equal(plan.alternatives[0]?.traderOffer?.price, 90);
+    assert.notEqual(plan.sourceId, plan.alternatives[0]?.sourceId);
+});
+
+test("enforces trader loyalty and quest unlocks and supports disabling trader purchases", () => {
+    const locked = traderItem("A", [
+        traderOffer({ priceRUB: 50, minTraderLevel: 2 }),
+        traderOffer({ priceRUB: 40, taskUnlockId: "quest-a" }),
+    ], 100);
+    const defaultPlan = createRecipeCalculator({ itemsById: { A: locked }, barters: [], crafts: [] }).evaluateNode("A");
+    const unlockedPlan = createRecipeCalculator({
+        itemsById: { A: locked }, barters: [], crafts: [],
+        traderLoyaltyLevels: { prapor: 2 }, completedQuests: { "quest-a": true },
+    }).evaluateNode("A");
+    const disabledPlan = createRecipeCalculator({
+        itemsById: { A: locked }, barters: [], crafts: [],
+        traderLoyaltyLevels: { prapor: 4 }, completedQuests: { "quest-a": true },
+        allowTraderPurchases: false,
+    }).evaluateNode("A");
+
+    assert.equal(defaultPlan.method, "flea");
+    assert.equal(unlockedPlan.method, "trader");
+    assert.equal(unlockedPlan.traderOffer?.taskUnlockId, "quest-a");
+    assert.equal(disabledPlan.method, "flea");
+});
+
+test("ignores malformed trader prices", () => {
+    const plan = createRecipeCalculator({
+        itemsById: {
+            A: traderItem("A", [
+                traderOffer({ price: Number.NaN, priceRUB: 1 }),
+                traderOffer({ price: 1, priceRUB: Number.POSITIVE_INFINITY }),
+                traderOffer({ price: -1, priceRUB: -1 }),
+                traderOffer({ price: 0, priceRUB: 0 }),
+            ], 100),
+        },
+        barters: [], crafts: [],
+    }).evaluateNode("A");
+
+    assert.equal(plan.method, "flea");
+    assert.deepEqual(plan.alternatives, []);
+});
+
 test("combines flea, barter, and craft routes while preserving theoretical savings", () => {
     const barter: BarterRecord = {
         id: "barter-b",

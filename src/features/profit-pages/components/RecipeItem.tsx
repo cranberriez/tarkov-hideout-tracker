@@ -77,6 +77,8 @@ export function RecipeItem({
   const unitRoutePrice =
     totalPrice === null || count <= 0 ? null : totalPrice / count;
   const directUnitPrice = item ? getItemBuyPrice(item, overrides) : null;
+  const cheapestDirectTotal = plan?.directBuyCost ??
+    (directUnitPrice === null ? null : directUnitPrice * count);
   const resolvedRecipePreview =
     recipePreview ?? getPlanRecipePreview(plan, routeContext);
   const canGoToRecipe = Boolean(
@@ -87,10 +89,10 @@ export function RecipeItem({
   );
   const routeSavingsTotal =
     plan &&
-    method !== "flea" &&
-    directUnitPrice !== null &&
+    (method === "barter" || method === "craft") &&
+    cheapestDirectTotal !== null &&
     unitRoutePrice !== null
-      ? (directUnitPrice - unitRoutePrice) * count
+      ? cheapestDirectTotal - unitRoutePrice * count
       : null;
   function updateHoverPosition(event: React.MouseEvent<HTMLSpanElement>) {
     if ((event.target as HTMLElement).closest("[data-isolated-hover='true']")) {
@@ -187,7 +189,7 @@ export function RecipeItem({
           canGoToRecipe ? (
             <span className="ml-auto flex shrink-0 items-center gap-1.5">
               {(routeSavingsTotal ?? 0) > 0 &&
-                directUnitPrice !== null &&
+                cheapestDirectTotal !== null &&
                 plan?.totalCost !== null && (
                   <span className="flex items-center gap-0.5 whitespace-nowrap text-[9px] text-amber-300">
                     {method === "craft" ? "Craft" : "Barter"} saves{" "}
@@ -206,9 +208,9 @@ export function RecipeItem({
                         .
                       </span>
                       <span className="mt-1 block">
-                        Buying the same quantity on the flea market costs{" "}
+                        The cheapest eligible direct purchase for the same quantity costs{" "}
                         <strong className="text-white">
-                          {formatRoundedRoubles(directUnitPrice * count)}
+                          {formatRoundedRoubles(cheapestDirectTotal)}
                         </strong>
                         .
                       </span>

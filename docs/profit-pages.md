@@ -43,15 +43,21 @@ evaluations and do not select routes themselves.
 
 ## Recursive routes
 
-Each ingredient can be bought, crafted, or bartered. Recipes are evaluated in
-batches, so a requirement of three items from a two-item craft runs two batches.
+Each ingredient can be bought on the flea market, purchased directly from a
+trader, crafted, or bartered. Trader purchases are direct leaf routes sourced
+from the canonical `ItemSummary.buyFromTrader` offers; they are not converted
+into barter records. Recipes are evaluated in batches, so a requirement of three
+items from a two-item craft runs two batches.
 The engine combines different acquisition methods within one recipe and protects
 against circular recipe graphs and excessive depth.
 
-The theoretically cheapest route is retained. For the recommended route, a flea
-purchase wins when a recursive alternative saves no more than the smaller of 5%
-of direct purchase cost or 5,000 roubles. This avoids recommending long chains for
-negligible savings while still showing the theoretical result.
+The theoretically cheapest route is retained. Flea/manual and trader purchases
+remain separate direct candidates, and the cheaper eligible direct candidate is
+always preferred over a more expensive direct candidate. The smaller of 5% of
+that cheapest direct cost or 5,000 roubles is used only to decide whether a
+barter or craft saves enough to justify a recursive route. This avoids
+recommending long chains for negligible savings while still showing the
+theoretical result.
 
 Each selected acquisition plan also retains compact cost, duration, batch, method,
 and source summaries for its other priced candidates. Alternate summaries do not
@@ -75,7 +81,8 @@ ingredients are acquired for the recipe, while opportunity value applies when th
 player already owns them. The table labels the former explicitly as `Route profit`.
 When crafting or bartering an ingredient costs less than buying it directly, the
 ingredient line shows the route's total savings. Its isolated info tooltip compares
-the route cost with the direct flea purchase and suppresses the larger item tooltip.
+the route cost with the cheapest eligible direct purchase and suppresses the
+larger item tooltip.
 When all non-tool inputs could be sold individually for more than the recipe output,
 an info icon beside route profit instead recommends selling the ingredients and
 shows the full owned-input comparison. Reusable tools are excluded because the
@@ -84,10 +91,14 @@ recipe returns them.
 ## Availability and filtering
 
 Barter availability currently checks the active profile's trader loyalty and
-required quest completion. Craft availability checks station level and required
-quest completion. The page models retain station IDs, trader IDs, levels, quest
-unlock IDs, edition restrictions, and buy limits for future filters and detail
-views.
+required quest completion. Direct trader purchases use the same profile rules:
+the active loyalty level must meet the offer's `minTraderLevel`, and an offer with
+`taskUnlockId` is eligible only after that quest is completed. Craft availability
+checks station level and required quest completion. Trader `buyLimit` is retained
+for presentation but does not constrain optimizer quantities in this iteration,
+matching existing barter behavior. `restockAmount` is also presentation-only and
+never treated as availability because immutable releases cannot represent live
+global stock.
 
 Both pages support output search, source filtering, availability filtering,
 profit filtering, and relevant profit/cost sorts. Craft source filters are based
@@ -109,32 +120,36 @@ Produced items appear first in their own column, followed by a flexible-width
 required-items column. Each requirement occupies one compact line containing its
 acquisition badge, image, full name, quantity, and unit route price; recipes with
 many ingredients grow vertically instead of scrolling sideways. The solid badge
-uses a green market chart for flea, blue circled arrow for barter, or orange
-wrench for crafting. Output items omit this badge because their production source
+uses a green market chart for flea, a purple user icon for direct trader
+purchases, a blue circled arrow for barter, or an orange wrench for crafting.
+Output items omit this badge because their production source
 is already represented by the row. Locked root recipes show a lock badge fully
 outside the right edge of the trader or station image. Source levels appear inline
 with the source name.
 
 Rows with crafted or bartered ingredient routes expose an action at the far left.
 The expanded area starts one level below the viewed recipe: every top-level
-crafted or bartered ingredient forms a separate branch, while top-level flea-only
-ingredients are omitted. Each branch then shows that ingredient's recipe inputs
+crafted or bartered ingredient forms a separate branch, while top-level direct
+flea and trader purchases are omitted. Each branch then shows that ingredient's recipe inputs
 and any deeper routes. A simple border separates independent branches. Recipe
 steps link to their source recipe, including navigation between the barter and
 crafting profit pages.
 
 Dark hover cards provide the item image, selected acquisition route, source
 trader or station, loyalty/level, batch count, route duration, catalog or manual
-unit price, quantity, route total, flea-price comparison, savings, and any cheaper
+unit price, quantity, route total, cheapest-direct comparison, savings, and any cheaper
 theoretical alternative. Crafted and bartered items add a recipe card to the
-right with the source trader or station and required items. Reusable tools are
+right with the source trader or station and required items. Trader purchase
+routes show the trader, loyalty level, native currency price, converted rouble
+value, and available unlock/limit metadata, but never show a recipe card or
+navigation action. Reusable tools are
 clearly marked as excluded from recurring cost. Hover cards remain close to the
 pointer when they must move above a low row. Clicking an item's portrait opens
 the shared item-detail modal; hovering a crafted or bartered requirement also
 reveals a button that opens its recipe.
 
 The modal's Trader and Crafting tabs reuse this calculation engine for compact
-recipe profit summaries and Buy/Craft/Barter ingredient recommendations. Their
+recipe profit summaries and Buy/Trader/Craft/Barter ingredient recommendations. Their
 full-detail buttons deep-link back to the exact recipe on these pages.
 
 Output sale presentation compares the flea value with the highest trader offer.

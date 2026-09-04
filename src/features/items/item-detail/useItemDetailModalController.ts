@@ -114,9 +114,17 @@ export function useItemDetailModalController({
                       barters: acquisitionTree.barters,
                       crafts: acquisitionTree.crafts,
                       overrides,
+                      traderLoyaltyLevels: store.questTraderLoyaltyLevels,
+                      completedQuests: store.completedQuests,
                   })
                 : null,
-        [acquisitionTree, itemDetailsById, overrides],
+        [
+            acquisitionTree,
+            itemDetailsById,
+            overrides,
+            store.completedQuests,
+            store.questTraderLoyaltyLevels,
+        ],
     );
     const { barterEvaluationsById, craftEvaluationsById } = useMemo(() => {
         if (!itemUsage || !recipeCalculator) {

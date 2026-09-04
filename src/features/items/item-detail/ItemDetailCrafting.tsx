@@ -207,6 +207,8 @@ function RecommendationBadge({ plan }: { plan: AcquisitionPlan }) {
     const label =
         plan.method === "flea"
             ? "Buy"
+            : plan.method === "trader"
+              ? "Trader"
             : plan.method === "craft"
               ? "Craft"
               : plan.method === "barter"
@@ -215,6 +217,8 @@ function RecommendationBadge({ plan }: { plan: AcquisitionPlan }) {
     const classes =
         plan.method === "craft"
             ? "bg-orange-400/10 text-orange-200"
+            : plan.method === "trader"
+              ? "bg-purple-400/10 text-purple-200"
             : plan.method === "barter"
               ? "bg-sky-400/10 text-sky-200"
               : plan.method === "flea"

@@ -6,7 +6,7 @@ import type { Trader } from "@/types/traders";
 
 export type ProfitPageKind = "barter" | "craft";
 export type SortMode = "profit" | "profitPerHour" | "cost" | "name";
-export type RouteMethod = "flea" | "barter" | "craft" | "unavailable";
+export type RouteMethod = "flea" | "trader" | "barter" | "craft" | "unavailable";
 export type ProfitStationSource = Pick<
   Station,
   "id" | "name" | "normalizedName" | "imageLink"

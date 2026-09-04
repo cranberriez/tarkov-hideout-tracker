@@ -380,7 +380,22 @@ test("acquisition graph fetches priced summaries for every graph reference", asy
                 Object.fromEntries(
                     ids
                         .filter((id) => id !== "missing-quest-input")
-                        .map((id) => [id, item(id)]),
+                        .map((id) => [
+                            id,
+                            id === "input-b"
+                                ? {
+                                      ...item(id),
+                                      buyFromTrader: [{
+                                          traderId: "trader-a",
+                                          price: 53,
+                                          priceRUB: 6_625,
+                                          currency: "USD",
+                                          currencyItemId: "dollars",
+                                          minTraderLevel: 2,
+                                      }],
+                                  }
+                                : item(id),
+                        ]),
                 ),
                 30,
             );
@@ -406,6 +421,10 @@ test("acquisition graph fetches priced summaries for every graph reference", asy
     assert.deepEqual(data.unresolvedItemIds, ["missing-quest-input"]);
     assert.deepEqual(data.barters.map((record) => record.id), ["barter-root", "barter-a"]);
     assert.deepEqual(data.crafts.map((record) => record.id), ["craft-root"]);
+    assert.equal(
+        data.items.find((entry) => entry.id === "input-b")?.buyFromTrader?.[0]?.currency,
+        "USD",
+    );
     assert.deepEqual(data.errors, {
         barters: null,
         crafts: null,

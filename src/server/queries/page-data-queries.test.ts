@@ -66,7 +66,7 @@ function createRepository(
         prices: TarkovDataRepository["prices"]["getCurrent"];
         barters: TarkovDataRepository["recipes"]["getBarters"];
         crafts: TarkovDataRepository["recipes"]["getCrafts"];
-        traders: TarkovDataRepository["traders"]["getByIds"];
+        traders: TarkovDataRepository["traders"]["getAll"];
     }>,
 ): TarkovDataRepository {
     const forbidden = async (): Promise<never> => {
@@ -76,7 +76,7 @@ function createRepository(
         items: { getByIds: overrides.items ?? forbidden },
         hideout: { getStations: overrides.stations ?? forbidden },
         quests: { getAll: overrides.quests ?? forbidden, getByIds: forbidden },
-        traders: { getAll: forbidden, getByIds: overrides.traders ?? forbidden },
+        traders: { getAll: overrides.traders ?? forbidden, getByIds: forbidden },
         recipes: {
             getBarters: overrides.barters ?? forbidden,
             getCrafts: overrides.crafts ?? forbidden,
@@ -217,4 +217,42 @@ test("profit keeps the craft graph when barter and trader domains fail", async (
     assert.equal("levels" in data.stations[0], false);
     assert.equal(data.errors.barters, "Barter data could not be loaded.");
     assert.equal(data.errors.crafts, null);
+});
+
+test("profit trader payload includes cash-only traders referenced by graph items", async () => {
+    const cashOffer = {
+        traderId: "cash-trader",
+        price: 53,
+        priceRUB: 6_625,
+        currency: "USD",
+        currencyItemId: "dollars",
+        minTraderLevel: 2,
+    };
+    const repository = createRepository({
+        barters: async () => result([]),
+        crafts: async () => result([{
+            id: "craft-1", productItemId: "item-a", productCount: 1,
+            stationId: "workbench", level: 1, duration: 10,
+            requiredItems: [{ itemId: "item-b", count: 1 }],
+            requiredQuestItems: [], gameEditions: [],
+        }]),
+        items: async () => result({
+            "item-a": { id: "item-a", name: "A", normalizedName: "a" },
+            "item-b": {
+                id: "item-b", name: "B", normalizedName: "b",
+                buyFromTrader: [cashOffer],
+            },
+        }),
+        prices: async () => result({}),
+        traders: async () => result([
+            { id: "cash-trader", name: "Cash Trader", normalizedName: "cash trader" },
+            { id: "unused", name: "Unused", normalizedName: "unused" },
+        ]),
+        stations: async () => result([station]),
+    });
+
+    const data = await getProfitPageData("regular", repository);
+
+    assert.deepEqual(data.traders.map((trader) => trader.id), ["cash-trader"]);
+    assert.equal(data.items?.find((entry) => entry.id === "item-b")?.buyFromTrader?.[0]?.price, 53);
 });

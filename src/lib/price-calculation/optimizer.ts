@@ -1,4 +1,5 @@
 import type { BarterRecord, CraftRecord, ItemAmountRef } from "@/types/recipes";
+import type { TraderPurchaseOffer } from "@/types/items";
 import { getItemBuyPrice, getItemSellPrice, practicalSavingsThreshold } from "./prices";
 import type {
     AcquisitionAlternative,
@@ -11,6 +12,7 @@ import type {
 interface Candidate {
     method: AcquisitionAlternative["method"];
     sourceId?: string;
+    traderOffer?: TraderPurchaseOffer;
     batches: number;
     totalCost: number;
     theoreticalCost: number;
@@ -85,6 +87,8 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
                 totalCost: 0,
                 theoreticalCost: 0,
                 theoreticalMethod: "flea",
+                directBuyCost: 0,
+                directBuyMethod: "flea",
                 durationSeconds: 0,
                 children: [],
                 alternatives: [],
@@ -97,17 +101,7 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
 
         const nextBlocked = new Set(blocked).add(itemId);
         const candidates: Candidate[] = [];
-        const unitBuyPrice = getItemBuyPrice(context.itemsById[itemId], overrides);
-        if (unitBuyPrice !== null) {
-            candidates.push({
-                method: "flea",
-                batches: 1,
-                totalCost: unitBuyPrice * normalizedQuantity,
-                theoreticalCost: unitBuyPrice * normalizedQuantity,
-                durationSeconds: 0,
-                children: [],
-            });
-        }
+        candidates.push(...getDirectCandidates(itemId, normalizedQuantity, context, overrides));
 
         if (context.allowBarters !== false) {
             for (const barter of context.bartersByItemId[itemId] ?? []) {
@@ -140,10 +134,14 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
             (left, right) => left.theoreticalCost - right.theoreticalCost,
         )[0];
         let recommended = [...candidates].sort((left, right) => left.totalCost - right.totalCost)[0];
-        const flea = candidates.find((candidate) => candidate.method === "flea");
-        if (flea && recommended.method !== "flea") {
-            const savings = flea.totalCost - recommended.totalCost;
-            if (savings <= practicalSavingsThreshold(flea.totalCost)) recommended = flea;
+        const cheapestDirect = candidates
+            .filter(isDirectCandidate)
+            .sort((left, right) => left.totalCost - right.totalCost)[0];
+        if (cheapestDirect && !isDirectCandidate(recommended)) {
+            const savings = cheapestDirect.totalCost - recommended.totalCost;
+            if (savings <= practicalSavingsThreshold(cheapestDirect.totalCost)) {
+                recommended = cheapestDirect;
+            }
         }
 
         const plan: AcquisitionPlan = {
@@ -151,10 +149,15 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
             quantity: normalizedQuantity,
             method: recommended.method,
             sourceId: recommended.sourceId,
+            traderOffer: recommended.traderOffer,
             batches: recommended.batches,
             totalCost: recommended.totalCost,
             theoreticalCost: theoretical.theoreticalCost,
             theoreticalMethod: theoretical.method,
+            directBuyCost: cheapestDirect?.totalCost ?? null,
+            directBuyMethod: cheapestDirect?.method === "flea" || cheapestDirect?.method === "trader"
+                ? cheapestDirect.method
+                : null,
             durationSeconds: recommended.durationSeconds,
             children: recommended.children,
             alternatives: candidates
@@ -217,10 +220,83 @@ function isSameCandidate(left: Candidate, right: Candidate) {
     return left.method === right.method && left.sourceId === right.sourceId;
 }
 
+function isDirectCandidate(candidate: Candidate) {
+    return candidate.method === "flea" || candidate.method === "trader";
+}
+
+function isEligibleTraderOffer(
+    offer: TraderPurchaseOffer,
+    context: PriceCalculationContext,
+) {
+    return (
+        (context.traderLoyaltyLevels?.[offer.traderId] ?? 1) >= offer.minTraderLevel &&
+        (!offer.taskUnlockId || context.completedQuests?.[offer.taskUnlockId] === true)
+    );
+}
+
+function traderCandidateId(itemId: string, offer: TraderPurchaseOffer, index: number) {
+    return [
+        "trader",
+        itemId,
+        index,
+        offer.traderId,
+        offer.minTraderLevel,
+        offer.taskUnlockId ?? "",
+        offer.currencyItemId,
+        offer.price,
+        offer.priceRUB,
+    ].join(":");
+}
+
+function getDirectCandidates(
+    itemId: string,
+    quantity: number,
+    context: PriceCalculationContext,
+    overrides: NonNullable<PriceCalculationContext["overrides"]>,
+): Candidate[] {
+    const candidates: Candidate[] = [];
+    const unitBuyPrice = getItemBuyPrice(context.itemsById[itemId], overrides);
+    if (unitBuyPrice !== null && Number.isFinite(unitBuyPrice) && unitBuyPrice >= 0) {
+        candidates.push({
+            method: "flea",
+            batches: 1,
+            totalCost: unitBuyPrice * quantity,
+            theoreticalCost: unitBuyPrice * quantity,
+            durationSeconds: 0,
+            children: [],
+        });
+    }
+    if (context.allowTraderPurchases !== false) {
+        for (const [index, offer] of (context.itemsById[itemId]?.buyFromTrader ?? []).entries()) {
+            if (
+                !Number.isFinite(offer.price) ||
+                offer.price <= 0 ||
+                !Number.isFinite(offer.priceRUB) ||
+                offer.priceRUB <= 0 ||
+                !isEligibleTraderOffer(offer, context)
+            ) continue;
+            const totalCost = offer.priceRUB * quantity;
+            if (!Number.isFinite(totalCost)) continue;
+            candidates.push({
+                method: "trader",
+                sourceId: traderCandidateId(itemId, offer, index),
+                traderOffer: offer,
+                batches: 1,
+                totalCost,
+                theoreticalCost: totalCost,
+                durationSeconds: 0,
+                children: [],
+            });
+        }
+    }
+    return candidates;
+}
+
 function toAcquisitionAlternative(candidate: Candidate): AcquisitionAlternative {
     return {
         method: candidate.method,
         sourceId: candidate.sourceId,
+        traderOffer: candidate.traderOffer,
         batches: candidate.batches,
         totalCost: candidate.totalCost,
         theoreticalCost: candidate.theoreticalCost,
@@ -237,6 +313,8 @@ function unavailablePlan(itemId: string, quantity: number): AcquisitionPlan {
         totalCost: null,
         theoreticalCost: null,
         theoreticalMethod: "unavailable",
+        directBuyCost: null,
+        directBuyMethod: null,
         durationSeconds: 0,
         children: [],
         alternatives: [],
@@ -272,6 +350,9 @@ export function createRecipeCalculator(input: RecipeCalculatorInput) {
         maxDepth: input.maxDepth,
         allowBarters: input.allowBarters,
         allowCrafts: input.allowCrafts,
+        allowTraderPurchases: input.allowTraderPurchases,
+        traderLoyaltyLevels: input.traderLoyaltyLevels,
+        completedQuests: input.completedQuests,
     };
     const optimizer = createAcquisitionOptimizer(context);
 
@@ -365,12 +446,14 @@ function evaluateTopLevelRecipe(
         context.itemsById[outputItemId],
         context.overrides,
     );
-    const unitBuyPrice = getItemBuyPrice(
-        context.itemsById[outputItemId],
-        context.overrides,
-    );
     const sellValue = unitSellPrice === null ? null : unitSellPrice * outputCount;
-    const directBuyCost = unitBuyPrice === null ? null : unitBuyPrice * outputCount;
+    const cheapestDirect = getDirectCandidates(
+        outputItemId,
+        outputCount,
+        context,
+        context.overrides ?? {},
+    ).sort((left, right) => left.totalCost - right.totalCost)[0];
+    const directBuyCost = cheapestDirect?.totalCost ?? null;
     const profit = cost === null || sellValue === null ? null : sellValue - cost;
     const inputSellValue = hasUnpricedRequirements
         ? null
@@ -408,6 +491,10 @@ function evaluateTopLevelRecipe(
         durationSeconds,
         profitPerHour,
         directBuyCost,
+        directBuyMethod:
+            cheapestDirect?.method === "flea" || cheapestDirect?.method === "trader"
+                ? cheapestDirect.method
+                : null,
         isPracticallyWorthwhile: meaningfulSavings,
         ...(kind === "barter"
             ? { barter: recipe as BarterRecord }

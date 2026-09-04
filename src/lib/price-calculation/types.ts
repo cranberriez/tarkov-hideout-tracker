@@ -1,5 +1,5 @@
 import type { BarterRecord, CraftRecord } from "@/types/recipes";
-import type { ItemSummary } from "@/types/items";
+import type { ItemSummary, TraderPurchaseOffer } from "@/types/items";
 
 export interface ManualPriceOverride {
     buy?: number;
@@ -8,11 +8,12 @@ export interface ManualPriceOverride {
 
 export type ManualPriceOverrides = Record<string, ManualPriceOverride>;
 
-export type AcquisitionMethod = "flea" | "barter" | "craft" | "unavailable";
+export type AcquisitionMethod = "flea" | "trader" | "barter" | "craft" | "unavailable";
 
 export interface AcquisitionAlternative {
     method: Exclude<AcquisitionMethod, "unavailable">;
     sourceId?: string;
+    traderOffer?: TraderPurchaseOffer;
     batches: number;
     totalCost: number;
     theoreticalCost: number;
@@ -25,10 +26,13 @@ export interface AcquisitionPlan {
     isTool?: boolean;
     method: AcquisitionMethod;
     sourceId?: string;
+    traderOffer?: TraderPurchaseOffer;
     batches: number;
     totalCost: number | null;
     theoreticalCost: number | null;
     theoreticalMethod: AcquisitionMethod;
+    directBuyCost: number | null;
+    directBuyMethod: "flea" | "trader" | null;
     durationSeconds: number;
     children: AcquisitionPlan[];
     alternatives: AcquisitionAlternative[];
@@ -49,6 +53,7 @@ export interface RecipeEvaluation {
     durationSeconds: number;
     profitPerHour: number | null;
     directBuyCost: number | null;
+    directBuyMethod: "flea" | "trader" | null;
     isPracticallyWorthwhile: boolean | null;
     barter?: BarterRecord;
     craft?: CraftRecord;
@@ -62,6 +67,9 @@ export interface PriceCalculationContext {
     maxDepth?: number;
     allowBarters?: boolean;
     allowCrafts?: boolean;
+    allowTraderPurchases?: boolean;
+    traderLoyaltyLevels?: Readonly<Record<string, number>>;
+    completedQuests?: Readonly<Record<string, boolean>>;
 }
 
 export interface RecipeCalculatorInput {
@@ -72,4 +80,7 @@ export interface RecipeCalculatorInput {
     maxDepth?: number;
     allowBarters?: boolean;
     allowCrafts?: boolean;
+    allowTraderPurchases?: boolean;
+    traderLoyaltyLevels?: Readonly<Record<string, number>>;
+    completedQuests?: Readonly<Record<string, boolean>>;
 }

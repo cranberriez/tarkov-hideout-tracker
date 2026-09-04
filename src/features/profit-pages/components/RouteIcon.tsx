@@ -1,4 +1,4 @@
-import { ChartNoAxesCombined, CircleArrowRight, Wrench } from "lucide-react";
+import { ChartNoAxesCombined, CircleArrowRight, UserRound, Wrench } from "lucide-react";
 import type { RouteMethod } from "../types";
 
 export function RouteIcon({
@@ -19,6 +19,12 @@ export function RouteIcon({
     return (
       <span title="Craft recommended" className={`${classes} bg-orange-400`}>
         <Wrench className="size-3.5 stroke-[3]" />
+      </span>
+    );
+  if (method === "trader")
+    return (
+      <span title="Trader purchase recommended" className={`${classes} bg-purple-400`}>
+        <UserRound className="size-3.5 stroke-[3]" />
       </span>
     );
   if (method === "flea")
@@ -43,6 +49,7 @@ export function RouteIcon({
 export function routeChipClasses(method: RouteMethod) {
   if (method === "barter") return "bg-sky-400 text-black";
   if (method === "craft") return "bg-orange-400 text-black";
+  if (method === "trader") return "bg-purple-400 text-black";
   if (method === "flea") return "bg-emerald-400 text-black";
   return "bg-gray-500 text-black";
 }
