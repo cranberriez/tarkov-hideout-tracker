@@ -60,8 +60,8 @@ recommending long chains for negligible savings while still showing the
 theoretical result.
 
 Each selected acquisition plan also retains compact cost, duration, batch, method,
-and source summaries for its other priced candidates. Alternate summaries do not
-duplicate their recursively expanded child trees.
+source, and recursively expanded child-route summaries for its other priced
+candidates so a row can preview and temporarily select any available route.
 
 Zero-input production and recipes that require quest-only items are reported with
 an unknown cost. They are not treated as free recursive ingredient sources because
@@ -162,9 +162,22 @@ the initial row-height estimate, and rendered rows are measured so recipes with
 many ingredients retain their full dynamic height. The table keeps document-level
 vertical scrolling and its existing horizontal overflow behavior.
 
-Clicking an ingredient price edits that item's manual buy value; clicking an
-output price edits its manual sell value. The input placeholder shows the current
-catalog or override unit price. Clearing the input removes only that side of the
-item's override. Every recipe row shows total craft time beneath its profit value,
-including nested ingredient crafts, and each required-item line shows its own route
-craft time when nonzero.
+Only a flea-market ingredient price is editable; craft, barter, and trader route
+prices are derived from their route and render as read-only values. Clicking an
+output price still edits its manual sell value. The input placeholder shows the
+current catalog or override unit price, and clearing it removes only that side of
+the item's override.
+
+The acquisition badge on each required-item line opens a compact route picker for
+the available Flea, Trader, Craft, and Barter candidates. Trader appears only when
+an eligible purchase offer exists. A selection is local to that recipe row and is
+not persisted. It updates displayed cost, profit, profit/hour, route duration, and
+the expanded chain without changing the row's current sorted position.
+
+Every recipe row shows total craft time beneath its profit value, including nested
+ingredient crafts, and each required-item line shows its own route craft time when
+nonzero. Recipe hover breakdowns show every required item's selected-route cost
+and a footer with craft time on the left and total cost on the right. When the
+cheapest theoretical candidate is a different craft or barter, its breakdown may
+replace the selected-route preview on the right under an `Alternate route` savings
+chip.

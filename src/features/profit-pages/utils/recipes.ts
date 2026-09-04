@@ -1,7 +1,9 @@
 import type {
+  AcquisitionAlternative,
   AcquisitionPlan,
   RecipeEvaluation,
 } from "@/lib/price-calculation";
+import { practicalSavingsThreshold } from "../../../lib/price-calculation/prices";
 import type { ItemSummary } from "@/types/items";
 import type { RecipePreviewData, RouteContext, SortMode } from "../types";
 import { formatDuration } from "./formatters";
@@ -93,6 +95,119 @@ export function hasRecipeRoute(plan: AcquisitionPlan): boolean {
     plan.method === "craft" ||
     plan.children.some(hasRecipeRoute)
   );
+}
+
+function planCandidate(plan: AcquisitionPlan): AcquisitionAlternative | null {
+  if (plan.method === "unavailable" || plan.totalCost === null) return null;
+  return {
+    method: plan.method,
+    sourceId: plan.sourceId,
+    traderOffer: plan.traderOffer,
+    batches: plan.batches,
+    totalCost: plan.totalCost,
+    theoreticalCost: plan.selectedRouteTheoreticalCost ?? plan.totalCost,
+    durationSeconds: plan.durationSeconds,
+    children: plan.children,
+  };
+}
+
+export function acquisitionRouteKey(
+  route: { method: string; sourceId?: string },
+) {
+  return `${route.method}:${route.sourceId ?? "direct"}`;
+}
+
+export function getAcquisitionRoutes(plan: AcquisitionPlan) {
+  const current = planCandidate(plan);
+  return [...(current ? [current] : []), ...plan.alternatives].sort(
+    (left, right) => left.totalCost - right.totalCost,
+  );
+}
+
+export function selectAcquisitionRoute(
+  plan: AcquisitionPlan,
+  routeKey: string,
+): AcquisitionPlan {
+  const candidates = getAcquisitionRoutes(plan);
+  const selected = candidates.find(
+    (candidate) => acquisitionRouteKey(candidate) === routeKey,
+  );
+  if (!selected || acquisitionRouteKey(plan) === routeKey) return plan;
+  const direct = candidates
+    .filter(
+      (candidate) =>
+        candidate.method === "flea" || candidate.method === "trader",
+    )
+    .sort((left, right) => left.totalCost - right.totalCost)[0];
+  return {
+    ...plan,
+    method: selected.method,
+    sourceId: selected.sourceId,
+    traderOffer: selected.traderOffer,
+    batches: selected.batches,
+    totalCost: selected.totalCost,
+    selectedRouteTheoreticalCost: selected.theoreticalCost,
+    durationSeconds: selected.durationSeconds,
+    children: selected.children,
+    directBuyCost: direct?.totalCost ?? null,
+    directBuyMethod:
+      direct?.method === "flea" || direct?.method === "trader"
+        ? direct.method
+        : null,
+    alternatives: candidates.filter(
+      (candidate) => acquisitionRouteKey(candidate) !== routeKey,
+    ),
+  };
+}
+
+export function withRequiredItemRoute(
+  evaluation: RecipeEvaluation,
+  requirementIndex: number,
+  routeKey: string,
+): RecipeEvaluation {
+  const requiredItems = evaluation.requiredItems.map((plan, index) =>
+    index === requirementIndex ? selectAcquisitionRoute(plan, routeKey) : plan,
+  );
+  let cost = 0;
+  for (const plan of requiredItems) {
+    if (plan.isTool) continue;
+    if (plan.totalCost === null) {
+      cost = Number.NaN;
+      break;
+    }
+    cost += plan.totalCost;
+  }
+  const resolvedCost = Number.isNaN(cost) ? null : cost;
+  const profit =
+    resolvedCost === null || evaluation.sellValue === null
+      ? null
+      : evaluation.sellValue - resolvedCost;
+  const durationSeconds =
+    (evaluation.kind === "craft" ? (evaluation.craft?.duration ?? 0) : 0) +
+    requiredItems.reduce(
+      (total, plan) => total + (plan.isTool ? 0 : plan.durationSeconds),
+      0,
+    );
+  const profitPerHour =
+    profit === null || durationSeconds <= 0
+      ? null
+      : profit / (durationSeconds / 3_600);
+  const savings =
+    evaluation.directBuyCost === null || resolvedCost === null
+      ? null
+      : evaluation.directBuyCost - resolvedCost;
+  return {
+    ...evaluation,
+    requiredItems,
+    cost: resolvedCost,
+    profit,
+    durationSeconds,
+    profitPerHour,
+    isPracticallyWorthwhile:
+      savings === null || evaluation.directBuyCost === null
+        ? null
+        : savings > practicalSavingsThreshold(evaluation.directBuyCost),
+  };
 }
 
 export function getPlanRecipePreview(

@@ -36,6 +36,8 @@ export function RecipeItemHoverCard({
   routeContext,
   routeDetail,
   recipePreview,
+  theoreticalRecipePreview,
+  theoreticalSavings,
   showRouteIcon,
 }: {
   position: ItemHoverPosition;
@@ -49,6 +51,8 @@ export function RecipeItemHoverCard({
   routeContext: RouteContext;
   routeDetail: string | null;
   recipePreview?: RecipePreviewData;
+  theoreticalRecipePreview?: RecipePreviewData;
+  theoreticalSavings?: number | null;
   showRouteIcon: boolean;
 }) {
   const unitRoutePrice =
@@ -105,7 +109,10 @@ export function RecipeItemHoverCard({
       className="pointer-events-none fixed z-[100] flex max-w-[calc(100vw-16px)] items-stretch gap-2 text-left"
       style={{
         left: position.left,
-        width: recipePreview ? Math.min(660, window.innerWidth - 16) : 320,
+        width:
+          recipePreview || theoreticalRecipePreview
+            ? Math.min(660, window.innerWidth - 16)
+            : 320,
         ...(position.placeAbove
           ? { bottom: position.verticalOffset }
           : { top: position.verticalOffset }),
@@ -309,12 +316,27 @@ export function RecipeItemHoverCard({
             </span>
           )}
       </span>
-      {recipePreview && (
+      {recipePreview &&
+        (!theoreticalRecipePreview ||
+          theoreticalRecipePreview.sourceId === recipePreview.sourceId) && (
         <RecipePreviewCard
           preview={recipePreview}
           routeContext={routeContext}
         />
       )}
+      {theoreticalRecipePreview &&
+        (!recipePreview ||
+          theoreticalRecipePreview.sourceId !== recipePreview.sourceId) && (
+          <span className="relative block min-w-0 flex-1 pt-4">
+            <span className="absolute left-2 top-0 z-10 rounded-full border border-violet-300/30 bg-violet-400 px-2 py-0.5 text-[8px] font-black uppercase tracking-wide text-black shadow-lg">
+              Alternate route · ~{formatRoundedRoubles(theoreticalSavings ?? null)} cheaper
+            </span>
+            <RecipePreviewCard
+              preview={theoreticalRecipePreview}
+              routeContext={routeContext}
+            />
+          </span>
+        )}
     </span>
   );
 }

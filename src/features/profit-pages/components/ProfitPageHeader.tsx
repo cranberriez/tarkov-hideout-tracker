@@ -25,8 +25,8 @@ export function ProfitPageHeader({
           {kind === "barter" ? "BARTER PROFITS" : "CRAFTING PROFITS"}
         </h1>
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-          Ingredient costs follow the cheapest practical mix of flea purchases,
-          crafts, and barters. Manual prices override market data for this{" "}
+          Ingredient costs follow the cheapest practical mix of flea and trader
+          purchases, crafts, and barters. Manual prices override market data for this{" "}
           {gameMode} profile.
         </p>
       </div>

@@ -62,6 +62,9 @@ export function ProfitPageClient({
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
   const [allowCrafts, setAllowCrafts] = useState(true);
   const [allowBarters, setAllowBarters] = useState(true);
+  const [ingredientRouteSelections, setIngredientRouteSelections] = useState<
+    Record<string, Record<number, string>>
+  >({});
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [targetRecipeId, setTargetRecipeId] = useState<string | null>(
     initialTargetRecipeId ?? null,
@@ -262,6 +265,16 @@ export function ProfitPageClient({
         pinnedCrafts={pinnedCrafts}
         onTogglePinnedCraft={togglePinnedCraft}
         showPinnedOnly={showPinnedOnly}
+        ingredientRouteSelections={ingredientRouteSelections}
+        onIngredientRouteChange={(recipeId, index, routeKey) =>
+          setIngredientRouteSelections((current) => ({
+            ...current,
+            [recipeId]: {
+              ...current[recipeId],
+              [index]: routeKey,
+            },
+          }))
+        }
       />
       <ItemDetailModal
         item={selectedItemId ? (itemById[selectedItemId] ?? null) : null}

@@ -42,6 +42,8 @@ export function ProfitTable({
   pinnedCrafts,
   onTogglePinnedCraft,
   showPinnedOnly,
+  ingredientRouteSelections,
+  onIngredientRouteChange,
 }: {
   kind: ProfitPageKind;
   evaluations: RecipeEvaluation[];
@@ -62,6 +64,12 @@ export function ProfitTable({
   pinnedCrafts: Record<string, boolean>;
   onTogglePinnedCraft: (recipeId: string) => void;
   showPinnedOnly: boolean;
+  ingredientRouteSelections: Record<string, Record<number, string>>;
+  onIngredientRouteChange: (
+    recipeId: string,
+    requirementIndex: number,
+    routeKey: string,
+  ) => void;
 }) {
   const listRef = useRef<HTMLDivElement>(null);
     const lastScrollRequestRef = useRef<string | null>(null);
@@ -167,6 +175,12 @@ export function ProfitTable({
                       kind === "craft"
                         ? () => onTogglePinnedCraft(evaluation.id)
                         : undefined
+                    }
+                    routeSelections={
+                      ingredientRouteSelections[evaluation.id] ?? {}
+                    }
+                    onRouteChange={(index, routeKey) =>
+                      onIngredientRouteChange(evaluation.id, index, routeKey)
                     }
                   />
                 </div>

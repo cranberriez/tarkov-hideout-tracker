@@ -23,7 +23,12 @@ import {
   formatQuantity,
   formatRoundedRoubles,
 } from "../utils/formatters";
-import { describeRoute, getPlanRecipePreview } from "../utils/recipes";
+import {
+  acquisitionRouteKey,
+  describeRoute,
+  getPlanRecipePreview,
+  selectAcquisitionRoute,
+} from "../utils/recipes";
 import { InfoHint } from "./InfoHint";
 import { InlineItemPrice } from "./InlineItemPrice";
 import {
@@ -31,6 +36,7 @@ import {
   type ItemHoverPosition,
 } from "./RecipeItemHoverCard";
 import { RouteIcon } from "./RouteIcon";
+import { RouteSelector } from "./RouteSelector";
 
 export function RecipeItem({
   item,
@@ -50,6 +56,7 @@ export function RecipeItem({
   onItemOpen,
   onGoToRecipe,
   recipePreview,
+  onRouteChange,
 }: {
   item?: ItemSummary;
   count: number;
@@ -68,6 +75,7 @@ export function RecipeItem({
   onItemOpen: (itemId: string) => void;
   onGoToRecipe?: GoToRecipeHandler;
   recipePreview?: RecipePreviewData;
+  onRouteChange?: (routeKey: string) => void;
 }) {
   const [hoverPosition, setHoverPosition] = useState<ItemHoverPosition | null>(
     null,
@@ -81,6 +89,22 @@ export function RecipeItem({
     (directUnitPrice === null ? null : directUnitPrice * count);
   const resolvedRecipePreview =
     recipePreview ?? getPlanRecipePreview(plan, routeContext);
+  const theoreticalAlternative = plan?.alternatives.find(
+    (alternative) =>
+      alternative.method === plan.theoreticalMethod &&
+      alternative.theoreticalCost === plan.theoreticalCost,
+  );
+  const theoreticalPlan =
+    plan && theoreticalAlternative
+      ? selectAcquisitionRoute(
+          plan,
+          acquisitionRouteKey(theoreticalAlternative),
+        )
+      : undefined;
+  const theoreticalRecipePreview = getPlanRecipePreview(
+    theoreticalPlan,
+    routeContext,
+  );
   const canGoToRecipe = Boolean(
     compactLine &&
       onGoToRecipe &&
@@ -101,7 +125,7 @@ export function RecipeItem({
     }
     const gap = 12;
     const hoverWidth = Math.min(
-      resolvedRecipePreview ? 660 : 320,
+      resolvedRecipePreview || theoreticalRecipePreview ? 660 : 320,
       window.innerWidth - 16,
     );
     const preferredLeft =
@@ -134,7 +158,19 @@ export function RecipeItem({
     >
       {compactLine ? (
         <>
-          {showRouteIcon && <RouteIcon method={method} inline />}
+          {showRouteIcon &&
+          plan &&
+          onRouteChange &&
+          plan.alternatives.length > 0 ? (
+            <RouteSelector
+              plan={plan}
+              item={item}
+              routeContext={routeContext}
+              onSelect={onRouteChange}
+            />
+          ) : (
+            showRouteIcon && <RouteIcon method={method} inline />
+          )}
           <button
             type="button"
             aria-label={`Open ${item?.name ?? "item"} details`}
@@ -181,6 +217,7 @@ export function RecipeItem({
                 displayPrice={unitRoutePrice}
                 overrides={overrides}
                 onPriceChange={onPriceChange}
+                editable={method === "flea"}
               />
             )}
           </span>
@@ -294,6 +331,7 @@ export function RecipeItem({
                   totalPrice={totalPrice}
                   overrides={overrides}
                   onPriceChange={onPriceChange}
+                  editable={priceKind === "sell" || method === "flea"}
                 />
               )}
             </span>
@@ -314,6 +352,12 @@ export function RecipeItem({
             routeContext={routeContext}
             routeDetail={routeDetail}
             recipePreview={resolvedRecipePreview}
+            theoreticalRecipePreview={theoreticalRecipePreview}
+            theoreticalSavings={
+              plan?.totalCost != null && plan.theoreticalCost != null
+                ? plan.totalCost - plan.theoreticalCost
+                : null
+            }
             showRouteIcon={showRouteIcon}
           />,
           document.body,

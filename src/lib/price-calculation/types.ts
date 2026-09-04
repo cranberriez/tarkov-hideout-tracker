@@ -18,6 +18,7 @@ export interface AcquisitionAlternative {
     totalCost: number;
     theoreticalCost: number;
     durationSeconds: number;
+    children: AcquisitionPlan[];
 }
 
 export interface AcquisitionPlan {
@@ -29,6 +30,7 @@ export interface AcquisitionPlan {
     traderOffer?: TraderPurchaseOffer;
     batches: number;
     totalCost: number | null;
+    selectedRouteTheoreticalCost?: number;
     theoreticalCost: number | null;
     theoreticalMethod: AcquisitionMethod;
     directBuyCost: number | null;

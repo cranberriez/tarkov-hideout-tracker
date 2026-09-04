@@ -85,6 +85,7 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
                 method: "flea",
                 batches: 0,
                 totalCost: 0,
+                selectedRouteTheoreticalCost: 0,
                 theoreticalCost: 0,
                 theoreticalMethod: "flea",
                 directBuyCost: 0,
@@ -152,6 +153,7 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
             traderOffer: recommended.traderOffer,
             batches: recommended.batches,
             totalCost: recommended.totalCost,
+            selectedRouteTheoreticalCost: recommended.theoreticalCost,
             theoreticalCost: theoretical.theoreticalCost,
             theoreticalMethod: theoretical.method,
             directBuyCost: cheapestDirect?.totalCost ?? null,
@@ -301,6 +303,7 @@ function toAcquisitionAlternative(candidate: Candidate): AcquisitionAlternative 
         totalCost: candidate.totalCost,
         theoreticalCost: candidate.theoreticalCost,
         durationSeconds: candidate.durationSeconds,
+        children: candidate.children,
     };
 }
 

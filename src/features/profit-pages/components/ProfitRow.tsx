@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronRight, Pin } from "lucide-react";
 import type {
   ManualPriceOverride,
@@ -20,14 +20,18 @@ import {
   formatRoundedRoubles,
   formatSignedRoubles,
 } from "../utils/formatters";
-import { hasRecipeRoute, profitGrid } from "../utils/recipes";
+import {
+  hasRecipeRoute,
+  profitGrid,
+  withRequiredItemRoute,
+} from "../utils/recipes";
 import { ProfitCell, SellValueCell } from "./ProfitCells";
 import { ProfitSourceCell } from "./ProfitSourceCell";
 import { RecipeChain } from "./RecipeChain";
 import { RecipeItem } from "./RecipeItem";
 
 export function ProfitRow({
-  evaluation,
+  evaluation: baseEvaluation,
   itemById,
   sourceName,
   available,
@@ -43,6 +47,8 @@ export function ProfitRow({
   highlighted,
   pinned,
   onTogglePinned,
+  routeSelections,
+  onRouteChange,
 }: {
   evaluation: RecipeEvaluation;
   itemById: Readonly<Record<string, ItemSummary>>;
@@ -60,8 +66,19 @@ export function ProfitRow({
   highlighted: boolean;
   pinned: boolean;
   onTogglePinned?: () => void;
+  routeSelections: Record<number, string>;
+  onRouteChange: (requirementIndex: number, routeKey: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const evaluation = useMemo(
+    () =>
+      Object.entries(routeSelections).reduce(
+        (current, [index, routeKey]) =>
+          withRequiredItemRoute(current, Number(index), routeKey),
+        baseEvaluation,
+      ),
+    [baseEvaluation, routeSelections],
+  );
   const output = itemById[evaluation.outputItemId];
   const routeContext: RouteContext = {
     itemById,
@@ -144,7 +161,7 @@ export function ProfitRow({
           />
         </div>
         <div className="flex min-w-0 flex-col justify-center py-0.5">
-          {evaluation.requiredItems.map((plan) => (
+          {evaluation.requiredItems.map((plan, index) => (
             <RecipeItem
               key={`${plan.itemId}:${plan.isTool === true}`}
               item={itemById[plan.itemId]}
@@ -159,6 +176,7 @@ export function ProfitRow({
               compactLine
               onItemOpen={onItemOpen}
               onGoToRecipe={onGoToRecipe}
+              onRouteChange={(routeKey) => onRouteChange(index, routeKey)}
             />
           ))}
         </div>

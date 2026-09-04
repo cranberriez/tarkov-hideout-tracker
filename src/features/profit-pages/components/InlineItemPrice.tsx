@@ -17,6 +17,7 @@ export function InlineItemPrice({
   displayPrice,
   overrides,
   onPriceChange,
+  editable = true,
 }: {
   item?: ItemSummary;
   kind: "buy" | "sell";
@@ -24,6 +25,7 @@ export function InlineItemPrice({
   displayPrice?: number | null;
   overrides: Record<string, ManualPriceOverride>;
   onPriceChange: PriceChangeHandler;
+  editable?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   if (!item) return <span>-</span>;
@@ -65,6 +67,14 @@ export function InlineItemPrice({
         onBlur={(event) => commit(event.currentTarget.value)}
         className="h-5 w-16 rounded border border-tarkov-green/50 bg-black px-1 text-[10px] text-foreground outline-none"
       />
+    );
+  if (!editable)
+    return (
+      <span className="truncate text-tarkov-green">
+        {formatCompactPrice(
+          displayPrice === undefined ? totalPrice : displayPrice,
+        )}
+      </span>
     );
   return (
     <button
