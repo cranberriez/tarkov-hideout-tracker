@@ -12,6 +12,19 @@ export interface ItemCategory {
     normalizedName: string;
 }
 
+/** A direct currency purchase offered by an in-game trader. */
+export interface TraderPurchaseOffer {
+    traderId: string;
+    price: number;
+    priceRUB: number;
+    currency: string;
+    currencyItemId: string;
+    minTraderLevel: number;
+    taskUnlockId?: string;
+    restockAmount?: number | null;
+    buyLimit?: number | null;
+}
+
 /** A standard item from the mode-specific Tarkov JSON item catalog. */
 export interface ItemSummary extends ItemIdentity {
     shortName?: string;
@@ -24,5 +37,6 @@ export interface ItemSummary extends ItemIdentity {
     minLevelForFlea?: number | null;
     onFleaMarket?: boolean;
     category?: ItemCategory;
+    buyFromTrader?: TraderPurchaseOffer[];
     marketPrice?: CurrentPrice | null;
 }

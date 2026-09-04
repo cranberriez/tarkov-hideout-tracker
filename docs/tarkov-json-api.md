@@ -21,8 +21,11 @@ authoritative.
 ## Generated domains
 
 The generator normalizes items and current prices, hideout stations, quests,
-traders, skills, barters, and crafts. It also composes compact manifests, item
-search rows, and endpoint-ready item relations, usage, and acquisition views.
+traders, skills, barters, and crafts. Item entities retain `buyFromTrader` direct
+currency offers (trader, currency, price, loyalty level, quest unlock, restock,
+and buy limit); `sellToTrader` remains part of the separately stored current-price
+payload. The generator also composes compact manifests, item search rows, and
+endpoint-ready item relations, usage, and acquisition views.
 
 The adapters read the source directly during generation. They do not use or write
 an application cache. Empty and malformed source responses fail generation rather

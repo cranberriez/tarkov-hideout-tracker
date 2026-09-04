@@ -3,7 +3,11 @@ import {
     type TarkovJsonDataset,
     type TarkovJsonGameMode,
 } from "@/server/services/tarkovJson/client";
-import type { ItemSummary, ItemCategory } from "@/types/items";
+import type {
+    ItemSummary,
+    ItemCategory,
+    TraderPurchaseOffer,
+} from "@/types/items";
 import type { CurrentPrice } from "@/types/prices";
 import type { GlobalSkill } from "@/types/hideout";
 import type { ItemsPayload, SkillsPayload } from "@/types/contracts";
@@ -20,6 +24,17 @@ interface JsonCatalogItem {
     lastLowPrice?: number | null; lastOfferCount?: number | null;
     changeLast48hPercent?: number | null; lastScan?: string | null;
     types?: string[];
+    buyFromTrader?: Array<{
+        trader?: unknown;
+        price?: unknown;
+        priceRUB?: unknown;
+        currency?: unknown;
+        currencyItem?: unknown;
+        minTraderLevel?: unknown;
+        taskUnlock?: unknown;
+        restockAmount?: unknown;
+        buyLimit?: unknown;
+    }>;
     sellToTrader?: Array<{
         trader: string;
         price: number;
@@ -54,6 +69,35 @@ async function getItemsDataset(gameMode: TarkovJsonGameMode) {
 function numberOrNullish(value: unknown): number | null | undefined {
     if (value === null) return null;
     return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function mapTraderPurchaseOffer(
+    value: NonNullable<JsonCatalogItem["buyFromTrader"]>[number],
+): TraderPurchaseOffer | null {
+    if (
+        typeof value.trader !== "string" || !value.trader ||
+        typeof value.price !== "number" || !Number.isFinite(value.price) ||
+        typeof value.priceRUB !== "number" || !Number.isFinite(value.priceRUB) ||
+        typeof value.currency !== "string" || !value.currency ||
+        typeof value.currencyItem !== "string" || !value.currencyItem ||
+        typeof value.minTraderLevel !== "number" || !Number.isFinite(value.minTraderLevel)
+    ) {
+        return null;
+    }
+
+    return {
+        traderId: value.trader,
+        price: value.price,
+        priceRUB: value.priceRUB,
+        currency: value.currency,
+        currencyItemId: value.currencyItem,
+        minTraderLevel: value.minTraderLevel,
+        ...(typeof value.taskUnlock === "string" && value.taskUnlock
+            ? { taskUnlockId: value.taskUnlock }
+            : {}),
+        restockAmount: numberOrNullish(value.restockAmount),
+        buyLimit: numberOrNullish(value.buyLimit),
+    };
 }
 
 function mapMarketPrice(
@@ -124,6 +168,10 @@ function mapItem(
         // generic parents. Keep only the leaf; repeating every parent on every
         // item materially inflates all catalog cache and RSC payloads.
         category,
+        buyFromTrader: (item.buyFromTrader ?? []).flatMap((offer) => {
+            const mapped = mapTraderPurchaseOffer(offer);
+            return mapped ? [mapped] : [];
+        }),
         marketPrice: mapMarketPrice(item, traders, translateTrader),
     };
 }

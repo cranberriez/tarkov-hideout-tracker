@@ -47,8 +47,10 @@ the compact, release-scoped Turso index rather than loading the item catalog.
 The shared item modal receives only an item summary and open state. Its controller
 loads the selected item's relations, direct usage, and bounded recursive
 acquisition tree from endpoint-ready Turso records. Stored item views remain
-price-free; server reads hydrate their item IDs from the mutable price table. The
-history tab requests Tarkov.dev only when selected. That provider request is
+free of flea and trader-sale valuations; direct `buyFromTrader` offers remain on
+the immutable item records and views. Server reads hydrate item IDs from the
+mutable price table. The history tab requests Tarkov.dev only when selected. That
+provider request is
 cached by Next.js for two hours and is separate from the stored Turso points used
 to hydrate current prices. Navigation between related items stays inside that
 controller. Complete responses may be cached in memory; partial responses remain
