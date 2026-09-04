@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useShallow } from "zustand/react/shallow";
 import { DataLoadError } from "@/components/core/DataLoadError";
 import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
-import { evaluateBarters, evaluateCrafts } from "@/lib/price-calculation";
+import { createRecipeCalculator } from "@/lib/price-calculation";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ProfitPageData } from "@/types/contracts";
 import type { BarterRecord, CraftRecord } from "@/types/recipes";
@@ -17,7 +17,6 @@ import type { ProfitPageKind, ProfitStationSource, SortMode } from "./types";
 import {
   compareEvaluations,
   getRecipeSourceId,
-  indexByOutput,
   isRecipeAvailable,
 } from "./utils/recipes";
 import { useManualPriceOverrides } from "./useManualPriceOverrides";
@@ -71,31 +70,21 @@ export function ProfitPageClient({
   const [sortMode, setSortMode] = useState<SortMode>(
     kind === "craft" ? "profitPerHour" : "profit",
   );
-  const bartersByItemId = useMemo(
-    () => indexByOutput(data.barters, (barter) => barter.offeredItemId),
-    [data.barters],
-  );
-  const craftsByItemId = useMemo(
-    () => indexByOutput(data.crafts, (craft) => craft.productItemId),
-    [data.crafts],
-  );
   const evaluations = useMemo(() => {
-    const context = {
+    const calculator = createRecipeCalculator({
       itemsById: itemById,
-      bartersByItemId,
-      craftsByItemId,
+      barters: data.barters,
+      crafts: data.crafts,
       overrides,
       allowCrafts,
       allowBarters,
-    };
+    });
     return kind === "barter"
-      ? evaluateBarters(data.barters, context)
-      : evaluateCrafts(data.crafts, context);
+      ? calculator.evaluateBarters()
+      : calculator.evaluateCrafts();
   }, [
     allowBarters,
     allowCrafts,
-    bartersByItemId,
-    craftsByItemId,
     data.barters,
     data.crafts,
     itemById,

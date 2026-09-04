@@ -3,7 +3,12 @@ import test from "node:test";
 import type { BarterRecord, CraftRecord } from "@/types/recipes";
 import type { ItemSummary } from "@/types/items";
 import { getItemSellComparison } from "./prices";
-import { createAcquisitionOptimizer, evaluateBarter, evaluateCraft } from "./optimizer";
+import {
+    createAcquisitionOptimizer,
+    createRecipeCalculator,
+    evaluateBarter,
+    evaluateCraft,
+} from "./optimizer";
 
 function item(id: string, buy: number, sell = buy): ItemSummary {
     return {
@@ -220,4 +225,44 @@ test("allocates nested craft time across every produced item", () => {
     assert.equal(craftEvaluation.durationSeconds, 3_700);
     assert.equal(barterEvaluation.durationSeconds, 100);
     assert.equal(barterEvaluation.profitPerHour, 68_400);
+});
+
+test("reuses a stored recipe graph with different live price contexts", () => {
+    const barter: BarterRecord = {
+        id: "barter-a",
+        offeredItemId: "A",
+        offeredCount: 1,
+        traderId: "t",
+        minTraderLevel: 1,
+        requiredItems: [{ itemId: "B", count: 1 }],
+    };
+    const graph = { barters: [barter], crafts: [] as CraftRecord[] };
+    const items = {
+        A: item("A", 100),
+        B: item("B", 40),
+    };
+
+    const marketCalculator = createRecipeCalculator({
+        ...graph,
+        itemsById: items,
+    });
+    const refreshedCalculator = createRecipeCalculator({
+        ...graph,
+        itemsById: items,
+        overrides: { A: { buy: 42 } },
+    });
+
+    const marketPlan = marketCalculator.evaluateNode("A");
+    const refreshedPlan = refreshedCalculator.evaluateNode("A");
+
+    assert.equal(marketPlan.method, "barter");
+    assert.deepEqual(
+        marketPlan.alternatives.map((alternative) => alternative.method),
+        ["flea"],
+    );
+    assert.equal(refreshedPlan.method, "flea");
+    assert.deepEqual(
+        refreshedPlan.alternatives.map((alternative) => alternative.method),
+        ["barter"],
+    );
 });

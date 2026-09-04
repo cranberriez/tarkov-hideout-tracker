@@ -10,6 +10,15 @@ export type ManualPriceOverrides = Record<string, ManualPriceOverride>;
 
 export type AcquisitionMethod = "flea" | "barter" | "craft" | "unavailable";
 
+export interface AcquisitionAlternative {
+    method: Exclude<AcquisitionMethod, "unavailable">;
+    sourceId?: string;
+    batches: number;
+    totalCost: number;
+    theoreticalCost: number;
+    durationSeconds: number;
+}
+
 export interface AcquisitionPlan {
     itemId: string;
     quantity: number;
@@ -22,6 +31,7 @@ export interface AcquisitionPlan {
     theoreticalMethod: AcquisitionMethod;
     durationSeconds: number;
     children: AcquisitionPlan[];
+    alternatives: AcquisitionAlternative[];
 }
 
 export interface RecipeEvaluation {
@@ -48,6 +58,16 @@ export interface PriceCalculationContext {
     itemsById: Readonly<Record<string, ItemSummary>>;
     bartersByItemId: Readonly<Record<string, BarterRecord[]>>;
     craftsByItemId: Readonly<Record<string, CraftRecord[]>>;
+    overrides?: ManualPriceOverrides;
+    maxDepth?: number;
+    allowBarters?: boolean;
+    allowCrafts?: boolean;
+}
+
+export interface RecipeCalculatorInput {
+    itemsById: Readonly<Record<string, ItemSummary>>;
+    barters: readonly BarterRecord[];
+    crafts: readonly CraftRecord[];
     overrides?: ManualPriceOverrides;
     maxDepth?: number;
     allowBarters?: boolean;

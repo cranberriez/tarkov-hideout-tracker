@@ -14,6 +14,10 @@ The pipeline is intentionally staged:
 
 Price history is intentionally never generated or uploaded.
 
+Item read models are generated in small bounded batches. Their acquisition views
+store price-independent reachable recipe graphs; current prices are hydrated only
+when those views are read at runtime.
+
 Mutable endpoint prices are maintained separately. See `docs/price-refresh.md`.
 
 ## Configuration

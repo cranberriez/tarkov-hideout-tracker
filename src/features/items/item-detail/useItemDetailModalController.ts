@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import type { ItemCraftRecipe, ItemTraderOffer } from "./item-detail-types";
 import type { ItemSummary } from "@/types/items";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -7,19 +8,13 @@ import { formatRelativeUpdatedAt } from "@/lib/utils/format-time";
 import { computeNeeds } from "@/lib/utils/item-needs";
 import { deriveQuestAnyOfGroups, deriveQuestItemState } from "@/lib/utils/quest-item-index";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
-import { evaluateBarters, evaluateCrafts } from "@/lib/price-calculation";
+import { createRecipeCalculator } from "@/lib/price-calculation";
 import { useManualPriceOverrides } from "@/features/profit-pages/useManualPriceOverrides";
 import { hasItemMarketData } from "./ItemDetailMarket";
 import { summarizeItemDetailDemand } from "./item-detail-summary";
 import { buildStationRequirements, mergeItemDetailItems } from "./item-detail-data";
 import { useItemDetailNavigationController } from "./useItemDetailNavigationController";
 import { useItemDetailRequestController } from "./useItemDetailRequestController";
-
-function indexByOutput<T>(records: T[], getItemId: (record: T) => string) {
-    const index: Record<string, T[]> = Object.create(null) as Record<string, T[]>;
-    for (const record of records) (index[getItemId(record)] ??= []).push(record);
-    return index;
-}
 
 export function useItemDetailModalController({
     item,
@@ -39,13 +34,17 @@ export function useItemDetailModalController({
     const itemRelations = requests.relations;
     const itemUsage = requests.usage;
     const acquisitionTree = requests.tree;
-    const itemDetailsById = mergeItemDetailItems(
-        item ? [item] : [],
-        Object.values(navigatedItemsById),
-        acquisitionTree?.items,
-        itemUsage?.items,
-        itemRelations?.relatedItems,
-        itemRelations?.item ? [itemRelations.item] : [],
+    const itemDetailsById = useMemo(
+        () =>
+            mergeItemDetailItems(
+                item ? [item] : [],
+                Object.values(navigatedItemsById),
+                acquisitionTree?.items,
+                itemUsage?.items,
+                itemRelations?.relatedItems,
+                itemRelations?.item ? [itemRelations.item] : [],
+            ),
+        [acquisitionTree, item, itemRelations, itemUsage, navigatedItemsById],
     );
     const selectedItem = itemDetailsById[activeItemId] ?? null;
     const selectedItemId = selectedItem?.id ?? activeItemId;
@@ -107,37 +106,37 @@ export function useItemDetailModalController({
                   haveNonFir: owned.have,
                   haveFir: owned.haveFir,
               });
-    const { barterEvaluationsById, craftEvaluationsById } = (() => {
-        if (!itemUsage || !acquisitionTree) {
+    const recipeCalculator = useMemo(
+        () =>
+            acquisitionTree
+                ? createRecipeCalculator({
+                      itemsById: itemDetailsById,
+                      barters: acquisitionTree.barters,
+                      crafts: acquisitionTree.crafts,
+                      overrides,
+                  })
+                : null,
+        [acquisitionTree, itemDetailsById, overrides],
+    );
+    const { barterEvaluationsById, craftEvaluationsById } = useMemo(() => {
+        if (!itemUsage || !recipeCalculator) {
             return { barterEvaluationsById: {}, craftEvaluationsById: {} };
         }
-        const context = {
-            itemsById: itemDetailsById,
-            bartersByItemId: indexByOutput(
-                acquisitionTree.barters,
-                (barter) => barter.offeredItemId,
-            ),
-            craftsByItemId: indexByOutput(
-                acquisitionTree.crafts,
-                (craft) => craft.productItemId,
-            ),
-            overrides,
-        };
         return {
             barterEvaluationsById: Object.fromEntries(
-                evaluateBarters(itemUsage.barters, context).map((evaluation) => [
+                recipeCalculator.evaluateBarters(itemUsage.barters).map((evaluation) => [
                     evaluation.id,
                     evaluation,
                 ]),
             ),
             craftEvaluationsById: Object.fromEntries(
-                evaluateCrafts(itemUsage.crafts, context).map((evaluation) => [
+                recipeCalculator.evaluateCrafts(itemUsage.crafts).map((evaluation) => [
                     evaluation.id,
                     evaluation,
                 ]),
             ),
         };
-    })();
+    }, [itemUsage, recipeCalculator]);
     const traders = new Map(
         questAvailabilityQuests.map((quest) => [quest.trader.id, quest.trader]),
     );

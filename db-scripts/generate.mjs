@@ -16,6 +16,7 @@ import { loadLocalEnv, parseModes } from "./lib/config.mjs";
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDirectory, "..");
 const defaultOutputRoot = path.join(scriptDirectory, ".generated");
+const ITEM_VIEW_BATCH_SIZE = 12;
 
 function parseArguments(argv) {
     const options = {
@@ -339,29 +340,39 @@ async function writeModeSnapshot(releaseDirectory, releaseId, mode, modules) {
     }
 
     process.stdout.write(`Generating ${data.items.length} item read models for ${mode}…\n`);
-    for (let index = 0; index < data.items.length; index += 1) {
-        const item = data.items[index];
-        const [relations, usage, acquisition] = await Promise.all([
-            modules.relationsQuery.getItemRelationsData(item.id, mode, repository),
-            modules.usageQuery.getItemUsageData(item.id, mode, repository),
-            modules.acquisitionQuery.getItemAcquisitionTreeData(item.id, mode, repository),
-        ]);
-        for (const [viewType, payload] of [
-            ["relations", relations],
-            ["usage", usage],
-            ["acquisition", acquisition],
-        ]) {
-            await writeLine(stream, {
-                type: "itemView",
-                itemId: item.id,
-                viewType,
-                updatedAt: Date.now(),
-                payload: withoutViewPrices(viewType, payload),
-            });
-            counts.itemView += 1;
+    for (let start = 0; start < data.items.length; start += ITEM_VIEW_BATCH_SIZE) {
+        const itemViews = await Promise.all(
+            data.items.slice(start, start + ITEM_VIEW_BATCH_SIZE).map(async (item) => {
+                const [relations, usage, acquisition] = await Promise.all([
+                    modules.relationsQuery.getItemRelationsData(item.id, mode, repository),
+                    modules.usageQuery.getItemUsageData(item.id, mode, repository),
+                    modules.acquisitionQuery.getItemAcquisitionTreeData(item.id, mode, repository),
+                ]);
+                return {
+                    itemId: item.id,
+                    views: [
+                        ["relations", relations],
+                        ["usage", usage],
+                        ["acquisition", acquisition],
+                    ],
+                };
+            }),
+        );
+        for (const itemView of itemViews) {
+            for (const [viewType, payload] of itemView.views) {
+                await writeLine(stream, {
+                    type: "itemView",
+                    itemId: itemView.itemId,
+                    viewType,
+                    updatedAt: Date.now(),
+                    payload: withoutViewPrices(viewType, payload),
+                });
+                counts.itemView += 1;
+            }
         }
-        if ((index + 1) % 100 === 0 || index + 1 === data.items.length) {
-            process.stdout.write(`  ${mode}: ${index + 1}/${data.items.length}\n`);
+        const completed = Math.min(start + ITEM_VIEW_BATCH_SIZE, data.items.length);
+        if (completed % 100 < ITEM_VIEW_BATCH_SIZE || completed === data.items.length) {
+            process.stdout.write(`  ${mode}: ${completed}/${data.items.length}\n`);
         }
     }
 

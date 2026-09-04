@@ -20,6 +20,13 @@ filters, and modal navigation. Focused presentation components live in the
 feature's `components/` directory, while pure formatting, filtering, recipe, and
 route helpers live in `utils/`.
 
+The immutable recipe records and per-item acquisition views contain graph topology,
+not priced route selections. Runtime reads hydrate their referenced items from the
+mutable current-price store. `createRecipeCalculator` builds indexes over that
+already-loaded graph and owns one memoized optimizer for all root recipes in a
+calculation pass. Profit rows and item-modal recipe components receive completed
+evaluations and do not select routes themselves.
+
 ## Pricing
 
 - Item acquisition from the flea market uses the mutable endpoint-derived `price`,
@@ -45,6 +52,10 @@ The theoretically cheapest route is retained. For the recommended route, a flea
 purchase wins when a recursive alternative saves no more than the smaller of 5%
 of direct purchase cost or 5,000 roubles. This avoids recommending long chains for
 negligible savings while still showing the theoretical result.
+
+Each selected acquisition plan also retains compact cost, duration, batch, method,
+and source summaries for its other priced candidates. Alternate summaries do not
+duplicate their recursively expanded child trees.
 
 Zero-input production and recipes that require quest-only items are reported with
 an unknown cost. They are not treated as free recursive ingredient sources because

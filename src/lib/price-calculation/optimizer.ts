@@ -1,14 +1,15 @@
 import type { BarterRecord, CraftRecord, ItemAmountRef } from "@/types/recipes";
 import { getItemBuyPrice, getItemSellPrice, practicalSavingsThreshold } from "./prices";
 import type {
-    AcquisitionMethod,
+    AcquisitionAlternative,
     AcquisitionPlan,
     PriceCalculationContext,
+    RecipeCalculatorInput,
     RecipeEvaluation,
 } from "./types";
 
 interface Candidate {
-    method: AcquisitionMethod;
+    method: AcquisitionAlternative["method"];
     sourceId?: string;
     batches: number;
     totalCost: number;
@@ -86,6 +87,7 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
                 theoreticalMethod: "flea",
                 durationSeconds: 0,
                 children: [],
+                alternatives: [],
             };
         }
 
@@ -155,6 +157,10 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
             theoreticalMethod: theoretical.method,
             durationSeconds: recommended.durationSeconds,
             children: recommended.children,
+            alternatives: candidates
+                .filter((candidate) => !isSameCandidate(candidate, recommended))
+                .sort((left, right) => left.totalCost - right.totalCost)
+                .map(toAcquisitionAlternative),
         };
         memo.set(memoKey, plan);
         return plan;
@@ -207,6 +213,21 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
     return { optimize };
 }
 
+function isSameCandidate(left: Candidate, right: Candidate) {
+    return left.method === right.method && left.sourceId === right.sourceId;
+}
+
+function toAcquisitionAlternative(candidate: Candidate): AcquisitionAlternative {
+    return {
+        method: candidate.method,
+        sourceId: candidate.sourceId,
+        batches: candidate.batches,
+        totalCost: candidate.totalCost,
+        theoreticalCost: candidate.theoreticalCost,
+        durationSeconds: candidate.durationSeconds,
+    };
+}
+
 function unavailablePlan(itemId: string, quantity: number): AcquisitionPlan {
     return {
         itemId,
@@ -218,6 +239,66 @@ function unavailablePlan(itemId: string, quantity: number): AcquisitionPlan {
         theoreticalMethod: "unavailable",
         durationSeconds: 0,
         children: [],
+        alternatives: [],
+    };
+}
+
+function indexRecipesByOutput<T>(
+    records: readonly T[],
+    getItemId: (record: T) => string,
+): Record<string, T[]> {
+    const result: Record<string, T[]> = Object.create(null) as Record<string, T[]>;
+    for (const record of records) (result[getItemId(record)] ??= []).push(record);
+    return result;
+}
+
+/**
+ * Creates one pricing calculator over an already-loaded acquisition graph.
+ * The graph remains price-independent; this instance owns the current price
+ * context and shares one recursive memoization cache across every evaluation.
+ */
+export function createRecipeCalculator(input: RecipeCalculatorInput) {
+    const context: PriceCalculationContext = {
+        itemsById: input.itemsById,
+        bartersByItemId: indexRecipesByOutput(
+            input.barters,
+            (barter) => barter.offeredItemId,
+        ),
+        craftsByItemId: indexRecipesByOutput(
+            input.crafts,
+            (craft) => craft.productItemId,
+        ),
+        overrides: input.overrides,
+        maxDepth: input.maxDepth,
+        allowBarters: input.allowBarters,
+        allowCrafts: input.allowCrafts,
+    };
+    const optimizer = createAcquisitionOptimizer(context);
+
+    return {
+        evaluateNode: optimizer.optimize,
+        evaluateRecipe(
+            kind: "barter" | "craft",
+            recipe: BarterRecord | CraftRecord,
+        ) {
+            return evaluateTopLevelRecipe(kind, recipe, context, optimizer);
+        },
+        evaluateBarter(barter: BarterRecord) {
+            return evaluateTopLevelRecipe("barter", barter, context, optimizer);
+        },
+        evaluateCraft(craft: CraftRecord) {
+            return evaluateTopLevelRecipe("craft", craft, context, optimizer);
+        },
+        evaluateBarters(barters: readonly BarterRecord[] = input.barters) {
+            return barters.map((barter) =>
+                evaluateTopLevelRecipe("barter", barter, context, optimizer),
+            );
+        },
+        evaluateCrafts(crafts: readonly CraftRecord[] = input.crafts) {
+            return crafts.map((craft) =>
+                evaluateTopLevelRecipe("craft", craft, context, optimizer),
+            );
+        },
     };
 }
 
