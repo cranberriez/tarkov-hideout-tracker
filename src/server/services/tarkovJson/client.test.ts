@@ -138,3 +138,22 @@ test("fetchTarkovJsonDataset retries transient upstream failures", async (contex
     assert.equal(baseAttempts, 2);
     assert.equal(dataset.data.entry.name, "token");
 });
+
+test("fetchTarkovJsonDataset retries request timeouts", async (context) => {
+    let baseAttempts = 0;
+    context.mock.method(globalThis, "fetch", async (input) => {
+        if (String(input).endsWith("_en")) {
+            return Response.json({ data: { token: "Translated" } });
+        }
+        baseAttempts += 1;
+        if (baseAttempts === 1) {
+            throw new DOMException("The operation was aborted due to timeout", "TimeoutError");
+        }
+        return Response.json({ data: { entry: { name: "token" } } });
+    });
+
+    const dataset = await fetchTarkovJsonDataset<{ entry: { name: string } }>("hideout");
+
+    assert.equal(baseAttempts, 2);
+    assert.equal(dataset.data.entry.name, "token");
+});

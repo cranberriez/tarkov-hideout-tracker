@@ -6,9 +6,9 @@ import { TursoConfigurationError } from "./errors";
  * after a new release has been generated, uploaded, and validated.
  */
 export const ACTIVE_DATA_RELEASE_IDS = {
-    regular: "20260903T212640Z",
-    pve: "20260903T212640Z",
-    "pvp-season": "20260903T212640Z",
+    regular: "20260904T211847Z",
+    pve: "20260904T211847Z",
+    "pvp-season": "20260904T211847Z",
 } as const satisfies Record<TarkovJsonGameMode, string>;
 
 export function getActiveDataReleaseId(mode: TarkovJsonGameMode): string {
