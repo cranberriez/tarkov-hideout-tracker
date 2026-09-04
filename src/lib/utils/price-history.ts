@@ -1,5 +1,54 @@
 import type { PriceHistoryPoint } from "@/types/prices";
 
+export const STORED_PRICE_POINT_LIMIT = 10;
+export const EFFECTIVE_PRICE_POINT_LIMIT = 5;
+
+export function deriveEffectivePrice(
+    points: readonly PriceHistoryPoint[],
+    limit = EFFECTIVE_PRICE_POINT_LIMIT,
+): {
+    effectivePrice: number | null;
+    sampleCount: number;
+    totalOfferCount: number;
+} {
+    const recent = [...points]
+        .filter(
+            (point) =>
+                Number.isFinite(point.price) &&
+                point.price >= 0 &&
+                Number.isFinite(point.timestamp),
+        )
+        .sort((left, right) => right.timestamp - left.timestamp)
+        .slice(0, limit);
+    const weighted = recent.filter(
+        (point): point is PriceHistoryPoint & { offerCount: number } =>
+            typeof point.offerCount === "number" &&
+            Number.isFinite(point.offerCount) &&
+            point.offerCount > 0,
+    );
+    const totalOfferCount = weighted.reduce(
+        (total, point) => total + point.offerCount,
+        0,
+    );
+    if (totalOfferCount > 0) {
+        return {
+            effectivePrice: Math.round(
+                weighted.reduce(
+                    (total, point) => total + point.price * point.offerCount,
+                    0,
+                ) / totalOfferCount,
+            ),
+            sampleCount: weighted.length,
+            totalOfferCount,
+        };
+    }
+    return {
+        effectivePrice: recent[0]?.price ?? null,
+        sampleCount: recent.length > 0 ? 1 : 0,
+        totalOfferCount: 0,
+    };
+}
+
 export type PriceHistoryRange = "day" | "threeDays" | "week" | "month" | "all";
 
 const RANGE_MS: Record<Exclude<PriceHistoryRange, "all">, number> = {

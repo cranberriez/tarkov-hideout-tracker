@@ -133,7 +133,7 @@ test("queries do not bypass repositories by importing provider services", () => 
     assert.deepEqual(violations, []);
 });
 
-test("the runtime repository uses Turso and only delegates price history", () => {
+test("the runtime repository uses Turso for current and stored historical prices", () => {
     const repositoryPath = path.join(
         sourceRoot,
         "server",
@@ -145,7 +145,7 @@ test("the runtime repository uses Turso and only delegates price history", () =>
     const serviceImports = repositoryImports.filter((specifier) =>
         specifier.startsWith("@/server/services/"),
     );
-    assert.deepEqual(serviceImports, ["@/server/services/priceHistory"]);
+    assert.deepEqual(serviceImports, []);
 
     const queryUtils = readFileSync(
         path.join(sourceRoot, "server", "queries", "query-utils.ts"),

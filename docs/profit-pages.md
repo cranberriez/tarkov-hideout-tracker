@@ -22,8 +22,9 @@ route helpers live in `utils/`.
 
 ## Pricing
 
-- Item acquisition from the flea market uses `avg24hPrice`.
-- Sale value uses the higher of `avg24hPrice` and the item's best trader-sale value.
+- Item acquisition from the flea market uses the mutable endpoint-derived `price`,
+  falling back to release `avg24hPrice` until a stored refresh exists.
+- Sale value uses the higher of that flea price and the item's best trader-sale value.
   Trader offers retain their original amount/currency alongside the converted
   rouble value used for comparison.
 - A mode-scoped manual buy or sell price overrides the corresponding source value.

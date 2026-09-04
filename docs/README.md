@@ -31,6 +31,9 @@ Docs are grouped by purpose:
 - **[caching-architecture.md](caching-architecture.md)** - Current architecture
   Immutable Turso releases, targeted reads, HTTP caching, and price-history caching.
 
+- **[price-refresh.md](price-refresh.md)** - Current architecture
+  Mutable current-price storage, bounded history, ETag refreshes, and schedules.
+
 - **[dev-panel.md](dev-panel.md)** - Development tooling
   Development-only Turso release and stored-record inspection.
 

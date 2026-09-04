@@ -1,35 +1,13 @@
 import "server-only";
 
-import type { DataResult } from "@/types/common";
 import type { ItemSummary } from "@/types/items";
-import type { CurrentPrice } from "@/types/prices";
 import type { FullQuest } from "@/types/quests";
 import type { Trader } from "@/types/traders";
 import type { Station } from "@/types/hideout";
 import type { BarterRecord, CraftRecord } from "@/types/recipes";
 import type { TarkovDataRepository } from "./types";
 import { getEntitiesByIds, getEntityList } from "@/server/db/entity-data";
-import { getJsonPriceHistory } from "@/server/services/priceHistory";
-
-async function getCurrentPrices(
-    mode: Parameters<TarkovDataRepository["prices"]["getCurrent"]>[0],
-    itemIds: readonly string[],
-): Promise<DataResult<Record<string, CurrentPrice>>> {
-    const result = await getEntitiesByIds<CurrentPrice | null>(
-        mode,
-        "price",
-        "items",
-        itemIds,
-    );
-    return {
-        data: Object.fromEntries(
-            Object.entries(result.data).flatMap(([itemId, price]) =>
-                price ? [[itemId, price]] : [],
-            ),
-        ),
-        updatedAt: result.updatedAt,
-    };
-}
+import { getCurrentPriceData, getStoredPriceHistoryData } from "@/server/db/price-data";
 
 export const tursoTarkovDataRepository: TarkovDataRepository = {
     items: {
@@ -57,7 +35,7 @@ export const tursoTarkovDataRepository: TarkovDataRepository = {
             getEntityList<CraftRecord>(mode, "craft", "crafts"),
     },
     prices: {
-        getCurrent: getCurrentPrices,
-        getHistory: getJsonPriceHistory,
+        getCurrent: getCurrentPriceData,
+        getHistory: getStoredPriceHistoryData,
     },
 };

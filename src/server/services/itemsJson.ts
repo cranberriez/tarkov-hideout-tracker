@@ -8,6 +8,7 @@ import type { CurrentPrice } from "@/types/prices";
 import type { GlobalSkill } from "@/types/hideout";
 import type { ItemsPayload, SkillsPayload } from "@/types/contracts";
 import type { DataResult } from "@/types/common";
+import { isOnFleaMarket } from "@/lib/utils/flea-eligibility";
 
 interface JsonItemCategory { id: string; name: string; normalizedName: string }
 interface JsonCatalogItem {
@@ -18,6 +19,7 @@ interface JsonCatalogItem {
     high24hPrice?: number | null; low24hPrice?: number | null;
     lastLowPrice?: number | null; lastOfferCount?: number | null;
     changeLast48hPercent?: number | null; lastScan?: string | null;
+    types?: string[];
     sellToTrader?: Array<{
         trader: string;
         price: number;
@@ -117,6 +119,7 @@ function mapItem(
         link: item.link,
         wikiLink: item.wikiLink,
         minLevelForFlea: numberOrNullish(item.minLevelForFlea),
+        onFleaMarket: isOnFleaMarket(item.types ?? []),
         // Tarkov.dev orders the category path from the most specific leaf to
         // generic parents. Keep only the leaf; repeating every parent on every
         // item materially inflates all catalog cache and RSC payloads.
@@ -134,6 +137,9 @@ export async function getGlobalItemList(
         fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders", gameMode),
     ]);
     const sourceItems = Object.values(itemsDataset.data.items ?? {});
+    if (sourceItems.some((item) => !Array.isArray(item.types))) {
+        throw new Error("Tarkov JSON item dataset omitted flea eligibility types");
+    }
     const items = sourceItems.flatMap((item) => {
         const mapped = mapItem(
             item,

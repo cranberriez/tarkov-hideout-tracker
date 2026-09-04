@@ -16,7 +16,7 @@ export function getItemBuyPrice(
     const manual = validPrice(overrides[item.id]?.buy);
     if (manual !== null) return manual;
     if (item.normalizedName === "roubles") return 1;
-    return validPrice(item.marketPrice?.avg24hPrice);
+    return validPrice(item.marketPrice?.price ?? item.marketPrice?.avg24hPrice);
 }
 
 export function getItemSellPrice(
@@ -51,7 +51,7 @@ export function getItemSellComparison(
     const manual = validPrice(overrides[item.id]?.sell);
     const fleaPrice = item.normalizedName === "roubles"
         ? 1
-        : validPrice(item.marketPrice?.avg24hPrice);
+        : validPrice(item.marketPrice?.price ?? item.marketPrice?.avg24hPrice);
     const bestTraderOffer = [...(item.marketPrice?.sellFor ?? [])]
         .filter((offer) => validPrice(offer.priceRUB) !== null)
         .sort((left, right) => right.priceRUB - left.priceRUB)[0] ?? null;

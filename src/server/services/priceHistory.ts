@@ -1,9 +1,8 @@
 import type { PriceHistoryPoint } from "@/types/prices";
-import type { DataResult } from "@/types/common";
 import type { TarkovJsonGameMode } from "@/server/services/tarkovJson/client";
 import { TARKOV_API_HEADERS } from "./tarkovApi";
 
-const PRICE_HISTORY_REVALIDATE_SECONDS = 7200;
+const PRICE_HISTORY_REQUEST_TIMEOUT_MS = 30_000;
 
 export const PRICE_HISTORY_CUTOFF_TIMESTAMP = Date.UTC(2025, 11, 1);
 
@@ -48,25 +47,36 @@ interface UpstreamPriceResponse {
     data?: unknown;
 }
 
-export async function getJsonPriceHistory(
+export type PriceHistoryFetchResult =
+    | { status: "not-modified"; etag: string | null }
+    | { status: "updated"; etag: string | null; data: PriceHistoryPoint[] };
+
+export async function fetchJsonPriceHistory(
     mode: TarkovJsonGameMode,
     itemId: string,
-): Promise<DataResult<PriceHistoryPoint[]>> {
+    etag?: string | null,
+): Promise<PriceHistoryFetchResult> {
+    const headers = new Headers(TARKOV_API_HEADERS);
+    if (etag) headers.set("If-None-Match", etag);
     const response = await fetch(
         `https://json.tarkov.dev/${mode}/prices/${encodeURIComponent(itemId)}`,
         {
-            headers: TARKOV_API_HEADERS,
-            next: { revalidate: PRICE_HISTORY_REVALIDATE_SECONDS },
+            headers,
+            cache: "no-store",
+            signal: AbortSignal.timeout(PRICE_HISTORY_REQUEST_TIMEOUT_MS),
         },
     );
+    const responseEtag = response.headers.get("etag") ?? etag ?? null;
+    if (response.status === 304) {
+        return { status: "not-modified", etag: responseEtag };
+    }
     if (!response.ok) {
         throw new Error(`Price history request failed with status ${response.status}`);
     }
-
     const body = (await response.json()) as UpstreamPriceResponse;
     return {
+        status: "updated",
+        etag: responseEtag,
         data: normalizePriceHistory(body.data),
-        updatedAt: Date.now(),
-        diagnostics: { provider: "json", upstreamStatus: "ok" },
     };
 }

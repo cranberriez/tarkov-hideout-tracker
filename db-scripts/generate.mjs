@@ -39,6 +39,27 @@ function pickDefined(value) {
     return Object.fromEntries(Object.entries(value).filter(([, field]) => field !== undefined));
 }
 
+function withoutMarketPrice(item) {
+    if (!item || typeof item !== "object") return item;
+    const priceFreeItem = { ...item };
+    delete priceFreeItem.marketPrice;
+    return priceFreeItem;
+}
+
+function withoutViewPrices(viewType, payload) {
+    if (viewType === "relations") {
+        return {
+            ...payload,
+            item: payload.item ? withoutMarketPrice(payload.item) : null,
+            relatedItems: payload.relatedItems.map(withoutMarketPrice),
+        };
+    }
+    return {
+        ...payload,
+        items: payload.items.map(withoutMarketPrice),
+    };
+}
+
 function itemPreview(item) {
     return pickDefined({
         id: item.id,
@@ -245,7 +266,7 @@ async function writeModeSnapshot(releaseDirectory, releaseId, mode, modules) {
     const counts = { entity: 0, itemView: 0, itemSearch: 0, manifest: 0 };
 
     const entityGroups = [
-        ["item", data.items, data.freshness.items],
+        ["item", data.items.map(withoutMarketPrice), data.freshness.items],
         ["station", data.stations, data.freshness.stations],
         ["quest", data.quests, data.freshness.quests],
         ["trader", data.traders, data.freshness.traders],
@@ -335,7 +356,7 @@ async function writeModeSnapshot(releaseDirectory, releaseId, mode, modules) {
                 itemId: item.id,
                 viewType,
                 updatedAt: Date.now(),
-                payload,
+                payload: withoutViewPrices(viewType, payload),
             });
             counts.itemView += 1;
         }

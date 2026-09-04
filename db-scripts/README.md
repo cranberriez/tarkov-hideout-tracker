@@ -14,6 +14,8 @@ The pipeline is intentionally staged:
 
 Price history is intentionally never generated or uploaded.
 
+Mutable endpoint prices are maintained separately. See `docs/price-refresh.md`.
+
 ## Configuration
 
 Set these values in `.env.local`, `.env`, or the process environment:
@@ -74,6 +76,14 @@ Inspect uploaded and active releases:
 
 ```bash
 npm run db:status
+```
+
+Initialize and manually refresh mutable price storage:
+
+```bash
+npm run db:prices:init
+npm run db:prices:refresh -- --modes pvp-season
+npm run db:prices:refresh -- --modes regular,pve
 ```
 
 ## Stored read models

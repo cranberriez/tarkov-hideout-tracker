@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
     calculatePriceHistoryInsights,
+    deriveEffectivePrice,
     downsamplePriceHistory,
     filterPriceHistory,
     filterPriceHistoryOutliers,
@@ -25,6 +26,31 @@ test("filters ranges relative to the newest upstream point", () => {
     assert.equal(filterPriceHistory(points, "week").length, 8);
     assert.equal(filterPriceHistory(points, "month").length, 31);
     assert.equal(filterPriceHistory(points, "all").length, 40);
+});
+
+test("derives a recent offer-weighted effective price", () => {
+    const points = [
+        { ...point(1, 100), offerCount: 1 },
+        { ...point(2, 200), offerCount: 3 },
+        { ...point(3, 1_000), offerCount: 0 },
+    ];
+    assert.deepEqual(deriveEffectivePrice(points), {
+        effectivePrice: 175,
+        sampleCount: 2,
+        totalOfferCount: 4,
+    });
+});
+
+test("falls back to the newest point when offer counts are unavailable", () => {
+    const points = [
+        { ...point(1, 100), offerCount: null },
+        { ...point(2, 200), offerCount: null },
+    ];
+    assert.deepEqual(deriveEffectivePrice(points), {
+        effectivePrice: 200,
+        sampleCount: 1,
+        totalOfferCount: 0,
+    });
 });
 
 test("downsamples long histories into representative bucket averages", () => {

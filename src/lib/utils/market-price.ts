@@ -1,12 +1,13 @@
 import type { CurrentPrice } from "@/types/prices";
 
 export function getFleaPrice(marketPrice: CurrentPrice | null | undefined): number | null {
-    return marketPrice?.avg24hPrice ?? marketPrice?.lastLowPrice ?? marketPrice?.price ?? null;
+    return marketPrice?.price ?? marketPrice?.avg24hPrice ?? marketPrice?.lastLowPrice ?? null;
 }
 
 export function hasFleaMarketData(marketPrice: CurrentPrice | null | undefined): boolean {
     if (!marketPrice) return false;
     return (
+        marketPrice.price != null ||
         marketPrice.avg24hPrice != null ||
         marketPrice.high24hPrice != null ||
         marketPrice.low24hPrice != null ||

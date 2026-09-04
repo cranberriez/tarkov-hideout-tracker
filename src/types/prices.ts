@@ -30,3 +30,15 @@ export interface PriceHistoryPoint {
     offerCount: number | null;
     timestamp: number;
 }
+
+export interface StoredCurrentPrice {
+    itemId: string;
+    effectivePrice: number;
+    latestPrice: number;
+    latestPriceMin: number;
+    latestOfferCount: number | null;
+    latestPointTimestamp: number;
+    sampleCount: number;
+    totalOfferCount: number;
+    lastCheckedAt: number;
+}

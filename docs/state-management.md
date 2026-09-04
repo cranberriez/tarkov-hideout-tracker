@@ -268,7 +268,7 @@ is no separate client price store or context.
 Manual buy and sell prices use the independent, mode-scoped localStorage key
 `tarkov-profit-price-overrides-v1:{PVP|PVE|KORD}`. They are intentionally not
 part of `useUserStore`: adding or clearing an override must not migrate or alter
-character progress. Overrides take precedence over `avg24hPrice` only inside
+character progress. Overrides take precedence over the derived flea price only inside
 the barter/craft calculation engine.
 
 ---

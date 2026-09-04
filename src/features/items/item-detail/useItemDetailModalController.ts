@@ -211,7 +211,9 @@ export function useItemDetailModalController({
     const showPriceHistory =
         !isRouble &&
         !isFiat &&
-        (marketPrice?.avg24hPrice != null || marketPrice?.lastLowPrice != null);
+        (marketPrice?.price != null ||
+            marketPrice?.avg24hPrice != null ||
+            marketPrice?.lastLowPrice != null);
     const showSidebar = showInventory || showMarket;
     const showDebug = navigation.debugItemId === selectedItemId;
     const debugData = {

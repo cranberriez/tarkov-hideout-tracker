@@ -12,6 +12,8 @@
     "db:upload": "node db-scripts/upload.mjs",
     "db:activate": "node db-scripts/activate.mjs",
     "db:status": "node db-scripts/status.mjs",
+    "db:prices:init": "node db-scripts/init-price-storage.mjs",
+    "db:prices:refresh": "node db-scripts/refresh-prices.mjs",
     "pull-map-overlays": "node scripts/pull-map-overlays.mjs",
     "quest-series-candidates": "node scripts/generate-quest-series-candidates.mjs",
     "quest-data-compare": "node scripts/compare-quest-data.mjs"

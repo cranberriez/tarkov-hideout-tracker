@@ -2,7 +2,7 @@
 
 import type { CurrentPrice } from "@/types/prices";
 import { ArrowDownRight, ArrowUpRight, Check, Clock3, Store, X } from "lucide-react";
-import { formatRoubles, hasFleaMarketData } from "@/lib/utils/market-price";
+import { formatRoubles, getFleaPrice, hasFleaMarketData } from "@/lib/utils/market-price";
 import { ItemDetailSection } from "./ItemDetailSection";
 
 interface ItemDetailMarketProps {
@@ -35,13 +35,16 @@ export function ItemDetailMarket({
 
     const hasFleaData = hasFleaMarketData(marketPrice);
     const canSellOnFlea = minLevelForFlea != null && playerLevel >= minLevelForFlea;
-    const fleaPrice = marketPrice.avg24hPrice ?? marketPrice.lastLowPrice ?? marketPrice.price;
+    const fleaPrice = getFleaPrice(marketPrice);
     const traderValuationCount = Math.max(1, Math.floor(valuationCount));
     const topTraderValuations = (marketPrice.sellFor ?? [])
         .filter((offer) => offer.priceRUB > 0 && offer.vendor.normalizedName !== "flea-market")
         .sort((a, b) => b.priceRUB - a.priceRUB)
         .slice(0, 3);
     const details = [
+        marketPrice.price != null && marketPrice.avg24hPrice != null
+            ? { label: "Catalog 24h average", value: formatRoubles(marketPrice.avg24hPrice) }
+            : null,
         marketPrice.lastLowPrice != null
             ? { label: "Last low", value: formatRoubles(marketPrice.lastLowPrice) }
             : null,

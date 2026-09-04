@@ -12,7 +12,7 @@ Tarkov.dev JSON -> offline adapters -> immutable Turso release
                                       -> page queries -> route-scoped contracts
                                       -> bounded API responses
 
-Tarkov.dev price history -> on-demand price-history route
+Tarkov.dev price history -> manual/scheduled refresh -> mutable price tables
 ```
 
 The Turso repository is selected lazily by `query-utils.ts`. Pages and features
@@ -45,10 +45,11 @@ the compact, release-scoped Turso index rather than loading the item catalog.
 
 The shared item modal receives only an item summary and open state. Its controller
 loads the selected item's relations, direct usage, and bounded recursive
-acquisition tree from endpoint-ready Turso records. Price history stays an
-on-demand provider request. Navigation between related items stays inside that
-controller. Complete responses may be cached in memory; partial responses remain
-retryable.
+acquisition tree from endpoint-ready Turso records. Stored item views remain
+price-free; server reads hydrate their item IDs from the mutable price table. The
+history tab reads the newest ten stored points. Navigation between related items
+stays inside that controller. Complete responses may be cached in memory; partial
+responses remain retryable.
 
 ## Partial failures and missing IDs
 

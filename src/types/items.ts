@@ -22,6 +22,7 @@ export interface ItemSummary extends ItemIdentity {
     link?: string;
     wikiLink?: string;
     minLevelForFlea?: number | null;
+    onFleaMarket?: boolean;
     category?: ItemCategory;
     marketPrice?: CurrentPrice | null;
 }

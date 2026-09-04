@@ -16,7 +16,7 @@ server page
 
 item modal opens
   -> precomputed Turso item_views rows for relations, usage, and acquisition
-  -> live price-history request only when the history tab is opened
+  -> mutable current prices and bounded stored price points
 
 item search opens
   -> bounded Turso item_search query (10 Quick Add, 50 checklist)
@@ -33,8 +33,10 @@ Turso is the persistent normalized data store. There is no Redis layer.
 - Immutable release IDs make database records safe to cache by URL and mode.
 - API routes set HTTP cache headers appropriate to their payloads.
 - Next.js and the deployment CDN may cache rendered pages and route responses.
-- Price history retains its separate 2-hour Next.js/HTTP cache because it is
-  the sole live Tarkov.dev data read.
+- Current flea prices are refreshed separately from immutable releases. Runtime
+  provider reads happen only in the manual/scheduled refresh command.
+- Item-detail routes use a shorter cache because their static views are hydrated
+  with mutable prices before being returned.
 
 Updating data is an explicit release operation: generate, validate, upload,
 inspect, then change the static release mapping. No runtime cache invalidation or
@@ -45,3 +47,5 @@ Redis version bump is required.
 The development-only `/dev` page displays the configured Turso releases, their
 timestamps, readiness, source freshness, and stored record counts. It does not
 contact Tarkov.dev or Redis.
+
+See `price-refresh.md` for mutable pricing storage and automation.

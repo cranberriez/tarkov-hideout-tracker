@@ -28,11 +28,12 @@ The adapters read the source directly during generation. They do not use or writ
 an application cache. Empty and malformed source responses fail generation rather
 than producing a ready database release.
 
-## Runtime exception
+## Price refresh exception
 
-Full item price history is intentionally excluded from snapshots. The
-`/api/items/{itemId}/price-history` route fetches the selected series on demand and
-keeps its independent 2-hour Next.js/HTTP cache.
+Full item price history is intentionally excluded from snapshots. Protected
+manual/scheduled refresh jobs conditionally fetch `/prices/{itemId}` with ETags,
+retain the newest ten points, and materialize an effective current price. User
+requests read Turso and never trigger the upstream provider.
 
 See `db-scripts/README.md`, `data-and-price-context-architecture.md`, and
 `caching-architecture.md` for the release and runtime read paths.

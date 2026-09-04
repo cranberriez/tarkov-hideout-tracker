@@ -96,14 +96,14 @@ profit pages -------> both recipe graphs + compact source presentation
 
 Page queries and lazy item/search APIs read immutable, mode-and-release-scoped
 Turso records and retain their browser/CDN cache headers. Compact manifests serve
-catalog-like lists; ID reads query only the requested entity rows. Price history
-remains an on-demand Tarkov.dev request.
+catalog-like lists; ID reads query only the requested entity rows. Protected
+refresh jobs store bounded price history and a derived current price in Turso.
 
 ## Data sources
 
 | Source | What it provides |
 |---|---|
-| Tarkov.dev JSON API | Offline release-generation input and live item price history |
+| Tarkov.dev JSON API | Offline release-generation input and scheduled price refreshes |
 | Turso | Immutable entities, manifests, search records, and endpoint-ready item read models |
 | `wiki-data.json` and `foundInRaid.ts` | Reviewed requirement and FiR overrides |
 | localStorage | Player progress and preferences |
@@ -114,5 +114,5 @@ See `state-management.md`, `data-and-price-context-architecture.md`, and
 ## Deployment
 
 The app is deployed on Vercel. Normalized datasets change only when a newly
-generated Turso release is uploaded and selected; price history uses a separate
-2-hour cache.
+generated Turso release is uploaded and selected. Mutable price refreshes run on
+their own seasonal and mature-mode schedules.

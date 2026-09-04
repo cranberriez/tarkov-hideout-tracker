@@ -18,7 +18,7 @@ and task-unlock presentation records needed to render the modal from any page.
 The stored payload retains independent barter/craft errors from generation. A
 partial response is not cached by either the HTTP layer or the modal's in-memory
 cache. Complete responses use browser/CDN caching (`max-age=300`,
-`s-maxage=3600`, `stale-while-revalidate=86400`).
+`s-maxage=900`, `stale-while-revalidate=300`).
 
 Trader/task presentation is also optional. If that lookup fails, the response
 uses fallback labels, includes `presentationError`, and remains uncached so a
@@ -26,9 +26,17 @@ later modal open can restore the full labels.
 
 ### `GET /api/items/{itemId}/price-history?mode={mode}`
 
-Proxies and validates the mode-specific Tarkov.dev `/prices/{itemId}` series. It
-discards points older than December 1, 2025 before serializing the response. It
-uses a 2-hour Next.js/CDN cache and no Redis storage.
+Returns the newest stored price points for the mode/item. Refresh workers validate
+the mode-specific Tarkov.dev `/prices/{itemId}` series and retain ten points. The
+read route never contacts Tarkov.dev and uses a five-minute browser/CDN policy.
+
+### Price refresh routes
+
+- `GET /api/cron/prices/seasonal` refreshes `pvp-season`.
+- `GET /api/cron/prices/daily` refreshes `regular` and `pve`.
+
+Both require the Vercel `CRON_SECRET` bearer token. They use per-mode database
+locks, ETags, bounded concurrency, and retain previous good values on failures.
 
 ### `GET /api/items/{itemId}/acquisition-tree?mode={mode}`
 
@@ -53,7 +61,8 @@ was reached. The response uses the same browser/CDN caching policy as item usage
 `TarkovDataRepository`. The production implementation in `turso-repository.ts`
 reads compact manifests and release-scoped entity rows, returns keyed ID batches,
 and omits missing IDs. Raw JSON translation and normalization remain offline
-generation concerns. Runtime provider access is isolated to price history.
+generation concerns. Runtime provider access is isolated to protected price-refresh
+jobs.
 
 Page composition lives in `src/server/queries/`. Hideout, Items, Quests, Kappa,
 and Profit pages call only their named query. Queries request route-scoped IDs,
@@ -63,8 +72,8 @@ a partial recipe failure is reported instead of producing incomplete figures.
 
 Server-component page composition and bounded item relations, usage, acquisition,
 search, conversion, and status APIs all read release-scoped Turso records through
-`src/server/db/`. Price history remains provider-backed and is never stored in
-Turso.
+`src/server/db/`. Current prices and their bounded point history live in mutable
+Turso tables outside immutable releases.
 
 Quest prerequisite ordering is the provider-independent utility
 `src/lib/utils/quest-ordering.ts`.
@@ -72,8 +81,8 @@ Quest prerequisite ordering is the provider-independent utility
 ## Runtime provider
 
 Page queries use Turso. Tarkov.dev JSON adapters are offline ingestion inputs and
-are not imported by normal runtime data paths. The sole runtime data-provider read
-is the item price-history request.
+are not imported by normal runtime data paths. The sole runtime data-provider
+reads are protected manual/scheduled price refreshes.
 
 ## Runtime environment
 

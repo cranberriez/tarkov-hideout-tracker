@@ -9,6 +9,8 @@ import { getTursoClient } from "./client";
 import { TursoRecordNotFoundError } from "./errors";
 import { getActiveDataReleaseId } from "./release-config";
 import { parseStoredJson } from "./stored-json";
+import { getCurrentPriceData } from "./price-data";
+import type { ItemSummary } from "@/types/items";
 
 interface ItemViewPayloads {
     relations: ItemRelationsPayload;
@@ -48,10 +50,48 @@ export async function getItemView<ViewType extends ItemViewType>(
         );
     }
 
-    return parseStoredJson<ItemViewPayloads[ViewType]>(
+    const payload = parseStoredJson<ItemViewPayloads[ViewType]>(
         row.payload_json,
         `${viewType} view for ${itemId}`,
     );
+    const items = viewType === "relations"
+        ? [
+              ...((payload as ItemRelationsPayload).item
+                  ? [(payload as ItemRelationsPayload).item as ItemSummary]
+                  : []),
+              ...(payload as ItemRelationsPayload).relatedItems,
+          ]
+        : (payload as ItemUsageData | ItemAcquisitionTreeData).items;
+    const priceResult = await getCurrentPriceData(
+        mode,
+        items.map((item) => item.id),
+        database,
+    );
+    const hydrate = (item: ItemSummary): ItemSummary => ({
+        ...item,
+        marketPrice: priceResult.data[item.id] ?? null,
+    });
+    if (viewType === "relations") {
+        const relations = payload as ItemRelationsPayload;
+        return {
+            ...relations,
+            item: relations.item ? hydrate(relations.item) : null,
+            relatedItems: relations.relatedItems.map(hydrate),
+            freshness: {
+                ...relations.freshness,
+                pricesUpdatedAt: priceResult.updatedAt,
+            },
+        } as ItemViewPayloads[ViewType];
+    }
+    const recipePayload = payload as ItemUsageData | ItemAcquisitionTreeData;
+    return {
+        ...recipePayload,
+        items: recipePayload.items.map(hydrate),
+        freshness: {
+            ...recipePayload.freshness,
+            pricesUpdatedAt: priceResult.updatedAt,
+        },
+    } as ItemViewPayloads[ViewType];
 }
 
 export function getItemRelationsView(mode: TarkovJsonGameMode, itemId: string) {
