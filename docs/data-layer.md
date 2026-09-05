@@ -71,7 +71,7 @@ full-domain composition on every modal open.
 | API / owner | Result and cache policy |
 |---|---|
 | [relations](<../src/app/api/items/[itemId]/relations/route.ts>) | Hideout requirements, quest demand/rewards and availability closure; complete responses use browser 300s, CDN 900s, stale-while-revalidate 300s |
-| [usage](<../src/app/api/items/[itemId]/usage/route.ts>) | Barters offering / crafts producing one item, referenced items and source labels; same complete-response policy |
+| [usage](<../src/app/api/items/[itemId]/usage/route.ts>) | Direct trader purchases and barters offering / crafts producing one item, referenced items and source labels; same complete-response policy |
 | [acquisition-tree](<../src/app/api/items/[itemId]/acquisition-tree/route.ts>) | Cycle-safe graph bounded by depth/item count with `truncated`; same complete-response policy |
 | [price-history](<../src/app/api/items/[itemId]/price-history/route.ts>) | On-demand provider history; browser 300s, CDN and upstream Next.js fetch cache 7200s |
 | [search](../src/app/api/items/search/route.ts) | `q` up to 80 characters; 10 results by default or 50 with `limit=50`; `private, no-store` |

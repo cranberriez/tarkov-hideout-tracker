@@ -253,6 +253,63 @@ test("usage requests only records referenced by the selected item's recipes", as
     );
 });
 
+test("usage includes direct purchase presentation when the item has no recipes", async () => {
+    const calls = {
+        items: [] as string[][],
+        traders: [] as string[][],
+        quests: [] as string[][],
+    };
+    const repository = createRepository({
+        barters: async () => result([]),
+        crafts: async () => result([]),
+        items: async (_mode, ids) => {
+            calls.items.push([...ids]);
+            return result({
+                "root-item": {
+                    ...item("root-item"),
+                    buyFromTrader: [
+                        {
+                            traderId: "trader-buy",
+                            price: 125,
+                            priceRUB: 15_000,
+                            currency: "dollars",
+                            currencyItemId: "dollars",
+                            minTraderLevel: 2,
+                            taskUnlockId: "unlock-buy",
+                            buyLimit: 4,
+                        },
+                    ],
+                },
+            });
+        },
+        prices: async () => result({}),
+        tradersById: async (_mode, ids) => {
+            calls.traders.push([...ids]);
+            return result({
+                "trader-buy": {
+                    id: "trader-buy",
+                    name: "Trader Buy",
+                    normalizedName: "trader-buy",
+                },
+            });
+        },
+        questsById: async (_mode, ids) => {
+            calls.quests.push([...ids]);
+            return result({ "unlock-buy": fullQuest("unlock-buy") });
+        },
+    });
+
+    const data = await getItemUsageData("root-item", "regular", repository);
+
+    assert.deepEqual(calls.items, [["root-item"]]);
+    assert.deepEqual(calls.traders, [["trader-buy"]]);
+    assert.deepEqual(calls.quests, [["unlock-buy"]]);
+    assert.deepEqual(data.itemIds, ["root-item"]);
+    assert.equal(data.items[0]?.buyFromTrader?.[0]?.price, 125);
+    assert.equal(data.tradersById["trader-buy"]?.name, "Trader Buy");
+    assert.equal(data.taskUnlocksById["unlock-buy"]?.name, "unlock-buy");
+});
+
 test("usage keeps barter data when craft loading fails", async () => {
     const repository = createRepository({
         barters: async () =>

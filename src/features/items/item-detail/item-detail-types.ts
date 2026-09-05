@@ -12,7 +12,7 @@ export interface ItemUnlockQuest {
     wikiLink?: string | null;
 }
 
-export interface ItemTraderOffer {
+interface ItemTraderOfferBase {
     id: string;
     trader: {
         id: string;
@@ -22,10 +22,24 @@ export interface ItemTraderOffer {
     };
     minTraderLevel: number;
     taskUnlock?: ItemUnlockQuest | null;
-    requiredItems: ItemAmount[];
     offeredCount: number;
     buyLimit?: number | null;
 }
+
+export interface ItemBarterOffer extends ItemTraderOfferBase {
+    kind: "barter";
+    requiredItems: ItemAmount[];
+}
+
+export interface ItemPurchaseOffer extends ItemTraderOfferBase {
+    kind: "buy";
+    price: number;
+    priceRUB: number;
+    currency: string;
+    requiredItems: [];
+}
+
+export type ItemTraderOffer = ItemBarterOffer | ItemPurchaseOffer;
 
 export interface ItemCraftRecipe {
     id: string;

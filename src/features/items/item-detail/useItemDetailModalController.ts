@@ -157,6 +157,7 @@ export function useItemDetailModalController({
             : null;
         return {
             id: barter.id,
+            kind: "barter" as const,
             trader: trader ?? {
                 id: barter.traderId,
                 name: "Unknown trader",
@@ -179,6 +180,38 @@ export function useItemDetailModalController({
             buyLimit: barter.buyLimit,
         };
     });
+    const selectedItemPurchaseOffers: ItemTraderOffer[] = (selectedItem?.buyFromTrader ?? []).map(
+        (offer, index) => {
+            const trader = itemUsage?.tradersById?.[offer.traderId] ?? traders.get(offer.traderId);
+            const unlock = offer.taskUnlockId
+                ? itemUsage?.taskUnlocksById?.[offer.taskUnlockId] ?? quests.get(offer.taskUnlockId)
+                : null;
+            return {
+                id: `buy-${selectedItemId}-${offer.traderId}-${index}`,
+                kind: "buy" as const,
+                trader: trader ?? {
+                    id: offer.traderId,
+                    name: "Unknown trader",
+                    normalizedName: offer.traderId,
+                },
+                minTraderLevel: offer.minTraderLevel,
+                taskUnlock: offer.taskUnlockId
+                    ? {
+                          id: offer.taskUnlockId,
+                          name: unlock?.name ?? "Quest unlock",
+                          wikiLink: unlock?.wikiLink,
+                      }
+                    : null,
+                offeredCount: 1,
+                buyLimit: offer.buyLimit,
+                price: offer.price,
+                priceRUB: offer.priceRUB,
+                currency: offer.currency,
+                requiredItems: [],
+            };
+        },
+    );
+    traderOffers.push(...selectedItemPurchaseOffers);
     const crafts: ItemCraftRecipe[] = (itemUsage?.crafts ?? []).map((craft) => {
         const station = itemUsage?.stationsById?.[craft.stationId];
         const unlock = craft.taskUnlockId

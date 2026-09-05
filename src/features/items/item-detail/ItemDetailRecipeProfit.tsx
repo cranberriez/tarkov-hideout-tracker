@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import type { RecipeEvaluation } from "@/lib/price-calculation";
 import { formatCompactRoubles } from "@/lib/utils/market-price";
-import { InfoHint } from "@/features/profit-pages/components/InfoHint";
 
 export function ItemDetailRecipeProfit({
     evaluation,
@@ -31,7 +30,6 @@ export function ItemDetailRecipeProfit({
                 ) : evaluation ? (
                     <>
                         <Metric label="Cost" value={formatPrice(evaluation.cost)} />
-                        <Metric label={`Sell value${evaluation.sellSourceLabel ? ` · ${evaluation.sellSourceLabel}` : ""}`} value={formatPrice(evaluation.sellValue)} warning={evaluation.sellValueIsEstimate} />
                         <Metric
                             label="Profit"
                             value={formatSignedPrice(evaluation.profit)}
@@ -67,21 +65,18 @@ function Metric({
     label,
     value,
     tone = "text-foreground",
-    warning = false,
 }: {
     label: string;
     value: string;
     tone?: string;
-    warning?: boolean;
 }) {
     return (
         <span className="flex min-w-0 flex-col whitespace-nowrap">
             <span className="text-[10px] font-medium uppercase tracking-wide text-foreground/70">
                 {label}
             </span>
-            <span className={`flex items-center gap-1 font-mono text-xs font-semibold ${warning ? "text-amber-300" : tone}`}>
+            <span className={`flex items-center gap-1 font-mono text-xs font-semibold ${tone}`}>
                 {value}
-                {warning && <InfoHint title="Value unstable" tone="warning" compact />}
             </span>
         </span>
     );

@@ -21,10 +21,9 @@ export async function getItemUsageData(
     const allCrafts = craftsResult.status === "fulfilled" ? craftsResult.value.data : [];
     const barters = allBarters.filter((barter) => barter.offeredItemId === itemId);
     const crafts = allCrafts.filter((craft) => craft.productItemId === itemId);
-    const itemIds = getRecipeGraphItemIds(barters, crafts);
-    const traderIds = dedupeIds(barters.map((barter) => barter.traderId));
+    const itemIds = dedupeIds([itemId, ...getRecipeGraphItemIds(barters, crafts)]);
     const stationIds = dedupeIds(crafts.map((craft) => craft.stationId));
-    const taskUnlockIds = dedupeIds([
+    const recipeTaskUnlockIds = dedupeIds([
         ...barters.flatMap((barter) =>
             barter.taskUnlockId ? [barter.taskUnlockId] : [],
         ),
@@ -33,21 +32,34 @@ export async function getItemUsageData(
         ),
     ]);
 
-    const [itemsResult, pricesResult, tradersResult, taskUnlocksResult, stationsResult] =
+    const [itemsResult, pricesResult, stationsResult] =
         await Promise.allSettled([
             dataRepository.items.getByIds(mode, itemIds),
             dataRepository.prices.getCurrent(mode, itemIds),
-            traderIds.length > 0
-                ? dataRepository.traders.getByIds(mode, traderIds)
-                : Promise.resolve(null),
-            taskUnlockIds.length > 0
-                ? dataRepository.quests.getByIds(mode, taskUnlockIds)
-                : Promise.resolve(null),
             stationIds.length > 0
                 ? dataRepository.hideout.getStations(mode)
                 : Promise.resolve(null),
         ]);
     const itemRecords = itemsResult.status === "fulfilled" ? itemsResult.value.data : null;
+    const purchaseOffers = itemRecords?.[itemId]?.buyFromTrader ?? [];
+    const traderIds = dedupeIds([
+        ...barters.map((barter) => barter.traderId),
+        ...purchaseOffers.map((offer) => offer.traderId),
+    ]);
+    const taskUnlockIds = dedupeIds([
+        ...recipeTaskUnlockIds,
+        ...purchaseOffers.flatMap((offer) =>
+            offer.taskUnlockId ? [offer.taskUnlockId] : [],
+        ),
+    ]);
+    const [tradersResult, taskUnlocksResult] = await Promise.allSettled([
+        traderIds.length > 0
+            ? dataRepository.traders.getByIds(mode, traderIds)
+            : Promise.resolve(null),
+        taskUnlockIds.length > 0
+            ? dataRepository.quests.getByIds(mode, taskUnlockIds)
+            : Promise.resolve(null),
+    ]);
     const priceRecords = pricesResult.status === "fulfilled" ? pricesResult.value.data : {};
     const merged = itemRecords
         ? mergePricedItems(itemIds, itemRecords, priceRecords)

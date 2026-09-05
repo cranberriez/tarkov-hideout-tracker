@@ -246,14 +246,11 @@ function RecommendationBadge({ plan }: { plan: AcquisitionPlan }) {
 function AvailabilityBadge({ available }: { available: boolean }) {
     return (
         <span
-            className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] ${
-                available
-                    ? "bg-tarkov-green/10 text-tarkov-green"
-                    : "bg-amber-400/10 text-amber-200"
-            }`}
+            className={available ? "text-tarkov-green" : "text-red-400"}
+            title={available ? "Available" : "Locked"}
+            aria-label={available ? "Available" : "Locked"}
         >
-            {available ? <Check size={10} /> : <LockKeyhole size={10} />}
-            {available ? "Available" : "Locked"}
+            {available ? <Check size={14} aria-hidden="true" /> : <LockKeyhole size={14} aria-hidden="true" />}
         </span>
     );
 }
@@ -276,7 +273,7 @@ function LockedReasons({
             {!stationMet && (
                 <>
                     <span>
-                        Needs level {recipe.level} (current {currentLevel})
+                        Current level {currentLevel}
                     </span>
                     {(!questMet || !editionMet) && (
                         <span className="text-muted-foreground">·</span>

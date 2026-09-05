@@ -46,12 +46,6 @@ export function ItemDetailAcquisition({
                 const loyaltyMet = currentLoyalty >= offer.minTraderLevel;
                 const questMet = !offer.taskUnlock || completedQuests[offer.taskUnlock.id] === true;
                 const available = loyaltyMet && questMet;
-                const isCurrencyPurchase =
-                    offer.requiredItems.length > 0 &&
-                    offer.requiredItems.every((entry) =>
-                        ["roubles", "dollars", "euros"].includes(entry.item.normalizedName),
-                    );
-
                 return (
                     <div key={offer.id} className="bg-black/10 px-3 py-3">
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -73,7 +67,7 @@ export function ItemDetailAcquisition({
                                             {offer.trader.name}
                                         </span>
                                         <span className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                                            {isCurrencyPurchase ? "Purchase" : "Barter"}
+                                            {offer.kind === "buy" ? "Buy" : "Barter"}
                                         </span>
                                         <AvailabilityBadge available={available} />
                                         {!available && (
@@ -91,30 +85,36 @@ export function ItemDetailAcquisition({
                                     </div>
                                 </div>
                             </div>
-                            <ItemDetailRecipeProfit
-                                evaluation={evaluation}
-                                recipeId={offer.id}
-                                kind="barter"
-                                loading={profitLoading}
-                                error={profitError}
-                            />
+                            {offer.kind === "buy" ? (
+                                <DirectPurchaseSummary offer={offer} outputItem={outputItem} />
+                            ) : (
+                                <ItemDetailRecipeProfit
+                                    evaluation={evaluation}
+                                    recipeId={offer.id}
+                                    kind="barter"
+                                    loading={profitLoading}
+                                    error={profitError}
+                                />
+                            )}
                         </div>
 
-                        <ItemDetailRecipeFlow
-                            outputItem={outputItem}
-                            outputCount={offer.offeredCount}
-                        >
-                            {offer.requiredItems.map((entry) => (
-                                <CostItem
-                                    key={entry.item.id}
-                                    entry={entry}
-                                    plan={evaluation?.requiredItems.find(
-                                        (candidate) => candidate.itemId === entry.item.id,
-                                    )}
-                                    onItemClick={onItemClick}
-                                />
-                            ))}
-                        </ItemDetailRecipeFlow>
+                        {offer.kind === "barter" && (
+                            <ItemDetailRecipeFlow
+                                outputItem={outputItem}
+                                outputCount={offer.offeredCount}
+                            >
+                                {offer.requiredItems.map((entry) => (
+                                    <CostItem
+                                        key={entry.item.id}
+                                        entry={entry}
+                                        plan={evaluation?.requiredItems.find(
+                                            (candidate) => candidate.itemId === entry.item.id,
+                                        )}
+                                        onItemClick={onItemClick}
+                                    />
+                                ))}
+                            </ItemDetailRecipeFlow>
+                        )}
                     </div>
                 );
             })}
@@ -215,17 +215,48 @@ function RecommendationBadge({ plan }: { plan: AcquisitionPlan }) {
     );
 }
 
+function DirectPurchaseSummary({
+    offer,
+    outputItem,
+}: {
+    offer: Extract<ItemTraderOffer, { kind: "buy" }>;
+    outputItem: ItemSummary;
+}) {
+    const outputImageLink = outputItem.iconLink ?? outputItem.gridImageLink;
+    const currency = offer.currency.toLowerCase();
+    const currencySymbol =
+        currency === "roubles" || currency === "rub"
+            ? "₽"
+            : currency === "dollars" || currency === "usd"
+              ? "$"
+              : currency === "euros" || currency === "eur"
+                ? "€"
+                : offer.currency;
+    return (
+        <div className="ml-auto flex items-center gap-5">
+            <span className="font-mono text-base text-foreground">
+                {currencySymbol === "₽"
+                    ? `${formatCompactRoubles(offer.price)} ₽`
+                    : `${currencySymbol}${offer.price.toLocaleString()}`}
+            </span>
+            <span className="flex items-center gap-2">
+                <span className="font-mono text-base font-semibold text-white">1 ×</span>
+                {outputImageLink && (
+                    <img src={outputImageLink} alt="" className="h-10 w-10 object-contain" />
+                )}
+            </span>
+        </div>
+    );
+}
+
 function AvailabilityBadge({ available }: { available: boolean }) {
     return (
         <span
-            className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] ${
-                available
-                    ? "bg-tarkov-green/10 text-tarkov-green"
-                    : "bg-amber-400/10 text-amber-200"
-            }`}
+            className={available ? "text-tarkov-green" : "text-red-400"}
+            title={available ? "Available" : "Locked"}
+            aria-label={available ? "Available" : "Locked"}
         >
-            {available ? <Check size={10} /> : <LockKeyhole size={10} />}
-            {available ? "Available" : "Locked"}
+            {available ? <Check size={14} aria-hidden="true" /> : <LockKeyhole size={14} aria-hidden="true" />}
         </span>
     );
 }
