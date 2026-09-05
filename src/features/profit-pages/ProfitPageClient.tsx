@@ -62,6 +62,7 @@ export function ProfitPageClient({
   const { pinnedCrafts, togglePinnedCraft } = usePinnedCrafts(gameMode);
   const [search, setSearch] = useState("");
   const [sourceId, setSourceId] = useState("all");
+  const [stationSourceIds, setStationSourceIds] = useState<string[]>([]);
   const [availableOnly, setAvailableOnly] = useState(true);
   const [profitableOnly, setProfitableOnly] = useState(false);
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
@@ -139,9 +140,25 @@ export function ProfitPageClient({
     const map: Readonly<Record<string, Trader | ProfitStationSource>> =
       kind === "barter" ? tradersById : stationsById;
     return [...new Set(ids)]
-      .map((id) => ({ id, name: map[id]?.name ?? id }))
+      .map((id) => ({
+        id,
+        name: map[id]?.name ?? id,
+        ...(kind === "craft"
+          ? {
+              imageLink: stationsById[id]?.imageLink,
+              level: stationLevels[id] ?? 0,
+            }
+          : {}),
+      }))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [data.barters, data.crafts, kind, stationsById, tradersById]);
+  }, [
+    data.barters,
+    data.crafts,
+    kind,
+    stationLevels,
+    stationsById,
+    tradersById,
+  ]);
   const visibleEvaluations = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
     return evaluations
@@ -156,7 +173,13 @@ export function ProfitPageClient({
           !item?.shortName?.toLowerCase().includes(normalizedSearch)
         )
           return false;
-        if (sourceId !== "all" && getRecipeSourceId(evaluation) !== sourceId)
+        const recipeSourceId = getRecipeSourceId(evaluation);
+        if (
+          kind === "craft"
+            ? stationSourceIds.length > 0 &&
+              !stationSourceIds.includes(recipeSourceId)
+            : sourceId !== "all" && recipeSourceId !== sourceId
+        )
           return false;
         if (
           profitableOnly &&
@@ -191,6 +214,7 @@ export function ProfitPageClient({
     sortDirection,
     sortKey,
     sourceId,
+    stationSourceIds,
     stationLevels,
     targetRecipeId,
     traderLoyaltyLevels,
@@ -239,6 +263,8 @@ export function ProfitPageClient({
         onSearchChange={setSearch}
         sourceId={sourceId}
         onSourceIdChange={setSourceId}
+        stationSourceIds={stationSourceIds}
+        onStationSourceIdsChange={setStationSourceIds}
         sources={sources}
         availableOnly={availableOnly}
         onAvailableOnlyChange={setAvailableOnly}

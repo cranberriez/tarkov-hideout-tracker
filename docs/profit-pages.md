@@ -104,7 +104,12 @@ Both pages support output search, source filtering, availability filtering, and
 profit filtering. Clicking the Cost, Sell value, Profit, or Profit / hour table
 header sorts by that metric; clicking the active header reverses its direction.
 Profit / hour descending is the default on both pages. Craft source filters are
-based on hideout station; barter source filters are based on trader.
+based on hideout station; barter source filters are based on trader. The crafting
+station dropdown shows each station's icon and the active profile's current level.
+Unbuilt stations omit the level and cannot be selected while `Available to me` is
+enabled; disabling that filter makes them selectable for browsing. Station entries
+use checkboxes so multiple stations can be included at once; choosing `All stations`
+clears the station-specific filter.
 
 Craft rows can be pinned from the actions column. Pins are stored per game mode,
 and the pin button beside the options menu filters the table to pinned crafts.
