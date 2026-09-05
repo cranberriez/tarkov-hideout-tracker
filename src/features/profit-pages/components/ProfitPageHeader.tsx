@@ -19,7 +19,7 @@ export function ProfitPageHeader({
     <header className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-tarkov-green">
-          Average 24-hour market prices
+          Flea estimates and trader values
         </p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">
           {kind === "barter" ? "BARTER PROFITS" : "CRAFTING PROFITS"}
@@ -30,8 +30,9 @@ export function ProfitPageHeader({
           {gameMode} profile.
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
         <Stat label="Recipes" value={evaluations.length.toLocaleString()} />
+        <Stat label="Unpriced" value={evaluations.filter(entry => entry.profit === null).length.toLocaleString()} />
         <Stat
           label="Profitable"
           value={evaluations
@@ -39,7 +40,7 @@ export function ProfitPageHeader({
             .length.toLocaleString()}
         />
         <Stat
-          label="Positive value"
+          label="Priced positive value"
           value={formatRoundedRoubles(totalProfit)}
         />
       </div>

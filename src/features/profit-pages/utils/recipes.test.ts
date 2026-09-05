@@ -173,6 +173,7 @@ test("row-local ingredient routes recalculate totals without mutating the base e
     cost: 200,
     theoreticalCost: 120,
     sellValue: 500,
+    sellValueIsEstimate: true,
     profit: 300,
     inputSellValue: 200,
     profitVsSellingInputs: 300,
@@ -203,6 +204,8 @@ test("row-local ingredient routes recalculate totals without mutating the base e
   assert.equal(evaluation.requiredItems[0].method, "flea");
   assert.equal(switched.requiredItems[0].method, "craft");
   assert.equal(switched.cost, 120);
+  assert.equal(switched.sellValue, 500);
+  assert.equal(switched.sellValueIsEstimate, true);
   assert.equal(switched.profit, 380);
   assert.equal(switched.durationSeconds, 4_200);
   assert.equal(switched.profitPerHour, 380 / (4_200 / 3_600));

@@ -1,12 +1,26 @@
 import type { CurrentPrice } from "@/types/prices";
 
 export function getFleaPrice(marketPrice: CurrentPrice | null | undefined): number | null {
-    return marketPrice?.price ?? marketPrice?.avg24hPrice ?? marketPrice?.lastLowPrice ?? null;
+    if (marketPrice?.fleaStability === "unavailable") return null;
+    return getFleaPriceEstimate(marketPrice);
+}
+
+export function getFleaPriceEstimate(marketPrice: CurrentPrice | null | undefined): number | null {
+    const assessed = marketPrice?.fleaStability && marketPrice.fleaStability !== "reference";
+    const value = assessed ? marketPrice.price : marketPrice?.price ?? marketPrice?.avg24hPrice ?? marketPrice?.lastLowPrice;
+    return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
+}
+
+export function fleaPriceStatusLabel(marketPrice: CurrentPrice | null | undefined): string | null {
+    if (marketPrice?.fleaStability === "unavailable") return "Flea unavailable";
+    if (marketPrice?.fleaStability === "unstable") return "Value unstable";
+    return null;
 }
 
 export function hasFleaMarketData(marketPrice: CurrentPrice | null | undefined): boolean {
     if (!marketPrice) return false;
     return (
+        marketPrice.fleaStability != null && marketPrice.fleaStability !== "reference" ||
         marketPrice.price != null ||
         marketPrice.avg24hPrice != null ||
         marketPrice.high24hPrice != null ||

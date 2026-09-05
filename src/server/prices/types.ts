@@ -13,7 +13,7 @@ export type PriceRefreshOutcome =
           etag: string | null;
           checkedAt: number;
           points: PriceHistoryPoint[];
-          effectivePrice: number;
+          effectivePrice: number | null;
           sampleCount: number;
           totalOfferCount: number;
       }

@@ -80,13 +80,13 @@ CREATE TABLE IF NOT EXISTS data_manifests (
 CREATE TABLE IF NOT EXISTS item_prices (
     mode TEXT NOT NULL CHECK (mode IN ('regular', 'pve', 'pvp-season')),
     item_id TEXT NOT NULL,
-    effective_price INTEGER,
+    effective_price INTEGER, -- robust minimum estimate; NULL for explicit no-offer history
     latest_price INTEGER,
     latest_price_min INTEGER,
     latest_offer_count INTEGER,
     latest_point_timestamp INTEGER,
     sample_count INTEGER NOT NULL DEFAULT 0,
-    total_offer_count INTEGER NOT NULL DEFAULT 0,
+    total_offer_count INTEGER NOT NULL DEFAULT 0, -- legacy name; latest depth, not a snapshot sum
     etag TEXT,
     last_checked_at INTEGER NOT NULL,
     last_changed_at INTEGER,

@@ -236,7 +236,8 @@ export function RecipeItem({
                 displayPrice={unitRoutePrice}
                 overrides={overrides}
                 onPriceChange={onPriceChange}
-                editable={method === "flea"}
+                onWarningShow={hover.close}
+                editable={method === "flea" || method === "unavailable"}
               />
             )}
           </span>
@@ -350,7 +351,8 @@ export function RecipeItem({
                   totalPrice={totalPrice}
                   overrides={overrides}
                   onPriceChange={onPriceChange}
-                  editable={priceKind === "sell" || method === "flea"}
+                  onWarningShow={hover.close}
+                  editable={priceKind === "sell" || method === "flea" || method === "unavailable"}
                 />
               )}
             </span>

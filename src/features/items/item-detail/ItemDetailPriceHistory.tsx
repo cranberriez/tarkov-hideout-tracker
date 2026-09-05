@@ -148,7 +148,7 @@ export function ItemDetailPriceHistory({
                         {formatRoubles(displayPoint.price)}
                     </div>
                     <div className="mt-0.5 text-[11px] text-muted-foreground">
-                        {new Date(displayPoint.timestamp).toLocaleString()} · minimum {formatRoubles(displayPoint.priceMin)}
+                        Aggregate reference · {new Date(displayPoint.timestamp).toLocaleString()} · minimum {formatRoubles(displayPoint.priceMin)} · {displayPoint.offerCount ?? "unknown"} offers
                     </div>
                 </div>
                 <div className="flex rounded-sm border border-border-color bg-black/15 p-0.5">
@@ -198,7 +198,7 @@ export function ItemDetailPriceHistory({
                 />
             </div>
             <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground/70">
-                Time-pattern comparisons use the latest 30 days and your device timezone. They describe correlation, not a guaranteed buying window.
+                Chart and comparisons show aggregate references with high outliers filtered, not the flea acquisition estimate. Time-pattern comparisons use the latest 30 days and your device timezone. They describe correlation, not a guaranteed buying window.
             </p>
         </div>
     );

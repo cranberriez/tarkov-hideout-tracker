@@ -1,51 +1,81 @@
-import type { PriceHistoryPoint } from "@/types/prices";
+import type { FleaPriceReason, FleaStability, PriceHistoryPoint } from "@/types/prices";
 
 export const STORED_PRICE_POINT_LIMIT = 10;
 export const EFFECTIVE_PRICE_POINT_LIMIT = 5;
+const HOUR = 60 * 60 * 1000;
+
+function median(values: number[]): number {
+    const sorted = [...values].sort((a, b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+function ratio(a: number, b: number) { return Math.max(a, b) / Math.min(a, b); }
 
 export function deriveEffectivePrice(
     points: readonly PriceHistoryPoint[],
     limit = EFFECTIVE_PRICE_POINT_LIMIT,
+    now?: number,
 ): {
     effectivePrice: number | null;
     sampleCount: number;
+    /** Legacy storage field: latest snapshot depth, never summed across snapshots. */
     totalOfferCount: number;
+    stability: FleaStability;
+    reasons: FleaPriceReason[];
 } {
-    const recent = [...points]
-        .filter(
-            (point) =>
-                Number.isFinite(point.price) &&
-                point.price >= 0 &&
-                Number.isFinite(point.timestamp),
-        )
-        .sort((left, right) => right.timestamp - left.timestamp)
-        .slice(0, limit);
-    const weighted = recent.filter(
-        (point): point is PriceHistoryPoint & { offerCount: number } =>
-            typeof point.offerCount === "number" &&
-            Number.isFinite(point.offerCount) &&
-            point.offerCount > 0,
-    );
-    const totalOfferCount = weighted.reduce(
-        (total, point) => total + point.offerCount,
-        0,
-    );
-    if (totalOfferCount > 0) {
-        return {
-            effectivePrice: Math.round(
-                weighted.reduce(
-                    (total, point) => total + point.price * point.offerCount,
-                    0,
-                ) / totalOfferCount,
-            ),
-            sampleCount: weighted.length,
-            totalOfferCount,
-        };
+    const observations = [...new Map(points.filter(point =>
+        Number.isFinite(point.timestamp) && point.timestamp > 0 &&
+        Number.isFinite(point.price) && point.price >= 0 &&
+        Number.isFinite(point.priceMin) && point.priceMin >= 0 &&
+        (point.offerCount === null || (Number.isInteger(point.offerCount) && point.offerCount >= 0)),
+    ).map(point => [point.timestamp, point])).values()]
+        .sort((a, b) => a.timestamp - b.timestamp).slice(-STORED_PRICE_POINT_LIMIT);
+    const valid = observations.filter(point => point.priceMin > 0 && point.price > 0 && point.offerCount !== 0);
+    const recent = valid.slice(-Math.max(1, limit));
+    const latest = observations.at(-1);
+    const reasons: FleaPriceReason[] = [];
+    // Primary estimate: each observation contributes one minimum, never offer weight.
+    let effectivePrice = recent.length ? Math.round(median(recent.map(p => p.priceMin))) : null;
+    let unconfirmedJump = false;
+    if (valid.length > 1) {
+        // Find the contiguous newest price regime, then compare it with the prior
+        // window. This retains a baseline through multiple single-listing spikes.
+        const tail: PriceHistoryPoint[] = [valid[valid.length - 1]];
+        for (let i = valid.length - 2; i >= 0; i--) {
+            if (ratio(valid[i].priceMin, median(tail.map(p => p.priceMin))) > 1.25) break;
+            tail.unshift(valid[i]);
+        }
+        const prior = valid.slice(0, valid.length - tail.length).slice(-limit);
+        if (prior.length) {
+            const baseline = median(prior.map(p => p.priceMin));
+            const candidate = median(tail.map(p => p.priceMin));
+            if (ratio(candidate, baseline) >= 2) {
+                const deep = tail.every(p => p.offerCount !== null && p.offerCount >= 3);
+                const confirmed = tail.length >= (deep ? 3 : 5) &&
+                    tail[tail.length - 1].timestamp - tail[0].timestamp >= (deep ? 2 : 8) * HOUR;
+                // A lone old high listing must not anchor a now-cheaper market.
+                unconfirmedJump = !confirmed && (candidate > baseline || prior.length >= 3);
+                if (unconfirmedJump) effectivePrice = Math.round(baseline);
+                else if (confirmed) effectivePrice = Math.round(candidate);
+            }
+        }
     }
+    if (recent.length < 3 || (recent.at(-1)!.timestamp - recent[0].timestamp < 2 * HOUR)) reasons.push("insufficient-history");
+    if (latest?.offerCount === 0) reasons.push("no-offers");
+    if (recent.some(p => p.offerCount === null)) reasons.push("unknown-depth");
+    if (latest?.offerCount != null && latest.offerCount < 3 ||
+        recent.filter(p => p.offerCount !== null && p.offerCount >= 3).length < 3) reasons.push("sparse-offers");
+    if (recent.slice(-3).some(p => p.price / p.priceMin >= 2)) reasons.push("divergent-reference");
+    if (unconfirmedJump) reasons.push("price-jump");
+    if (recent.length && Math.max(...recent.map(p => p.priceMin)) / Math.min(...recent.map(p => p.priceMin)) >= 2) reasons.push("volatile-minimum");
+    if (now !== undefined && latest && now - latest.timestamp > 72 * HOUR) reasons.push("stale");
     return {
-        effectivePrice: recent[0]?.price ?? null,
-        sampleCount: recent.length > 0 ? 1 : 0,
-        totalOfferCount: 0,
+        effectivePrice,
+        sampleCount: recent.length,
+        totalOfferCount: latest?.offerCount ?? 0,
+        stability: effectivePrice === null || latest?.offerCount === 0 ? "unavailable" : reasons.length ? "unstable" : "stable",
+        reasons,
     };
 }
 

@@ -101,9 +101,64 @@ existing fallback when changing storage or delivery.
 items with conditional ETags, bounded concurrency, and per-mode database locks.
 [price-store.ts](../src/server/prices/price-store.ts) owns `item_prices`, the ten
 newest stored points per mode/item in `item_price_points`, refresh locks, and run
-records. The effective price uses the five newest valid points weighted by offer
-count, or the newest point when no positive offer count exists. Failures retain
-previous good values; an invalid response must not replace good price data.
+records. [price-history.ts](../src/lib/utils/price-history.ts) derives a rounded
+median of the five newest positive minimums, using at most ten timestamp-deduplicated
+points. Snapshot depth never weights prices or accumulates confidence. The legacy
+`total_offer_count` column now receives only the latest snapshot's depth (zero for
+unknown); readers recompute it and do not interpret old sums as liquidity.
+
+The newest contiguous minimum cluster (within 1.25x its running median) is compared
+with the preceding five-point median. A move of at least 2x retains that prior
+estimate until three depth-at-least-three observations span two hours, or five
+thin observations span eight hours. A lone earlier high listing cannot hold a
+cheaper market up: downward retention requires at least three prior observations.
+Confirmed movement updates the estimate; persistent thin listings still cannot
+earn stable status. No absolute or trader-based price cap is applied.
+
+Stability requires at least three valid observations spanning two hours, at least
+three recent depths of three or more, and latest depth of at least three. Unknown
+depth, a latest zero depth, any of the last three aggregate/minimum ratios at least
+2x, a recent five-minimum range at least 2x, an unconfirmed jump, or a latest point
+older than 72 hours makes the flea input unreliable. These are conservative
+heuristics, not a probability of sale. Zero-depth points are not priced offers.
+A valid latest zero-depth snapshot reports unavailable flea pricing; an entirely
+zero-depth history stores a null estimate in the existing nullable column and
+does not revive release flea values.
+Malformed/empty required responses fail refresh and retain previous good rows and
+ETags; numeric strings are normalized, but blanks, booleans, negative/fractional
+depth and missing required fields are rejected at the adapter boundary.
+
+[current-prices.ts](../src/server/db/current-prices.ts) recomputes the same model
+using one additional batch read bounded to ten points per requested ID. This
+corrects previously stored weighted prices immediately, even when the next refresh
+returns 304. No schema migration or player-state changes are needed. Missing price
+tables, missing points, or unusable mutable records preserve release fallback;
+operational database failures still surface as errors.
+
+[CurrentPrice](../src/types/prices.ts) adds `referencePrice` (latest upstream
+aggregate), `fleaStability` (`stable`, `unstable`, `unavailable`, or release
+`reference`), `fleaPriceReasons`, and `fleaSampleCount`. `price` is the inspectable
+minimum estimate, `avg24hPrice` remains the separate catalog average,
+`lastLowPrice`/`lastOfferCount` describe the latest snapshot, and `updatedAt` is its
+observation time, not the last successful HTTP check. Release fields retain their
+original semantics. [market-price.ts](../src/lib/utils/market-price.ts) exposes the
+estimate separately from availability: unstable estimates remain usable for
+acquisition costs, flea sale values and profit calculations. Only unavailable
+flea data returns null, without falling through to a catalog value or zero.
+Legacy release references remain usable as flea estimates when recent mutable
+history is absent; the internal source marker does not add a release-status banner.
+
+Item lists and hideout requirements retain numeric estimates for unstable items.
+The modal shows **Flea estimate**, latest minimum, latest aggregate, catalog
+24h average, known offer depth and freshness. Unknown depth is omitted from the
+headline. Unstable flea prices use yellow text with a small warning icon whose
+hover/focus overlay says **Value unstable**. Profit rows apply this only to the
+output item's selected flea sale estimate, without row-wide warnings. History
+charts remain filtered aggregate references and are labeled accordingly; they do
+not control acquisition pricing. The shared [profit rules](profits.md) use the
+same estimate consistently in modal and full-page calculations. HTTP cache
+durations and mode keys remain unchanged; existing cached item views can retain
+older semantics until expiry.
 
 The item modal's History tab calls [live-price-history.ts](../src/server/prices/live-price-history.ts)
 only when requested, with a two-hour Next.js fetch-cache interval. This is separate

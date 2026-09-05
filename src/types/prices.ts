@@ -11,7 +11,12 @@ export interface VendorPrice {
 }
 
 export interface CurrentPrice {
+    /** Robust minimum estimate; unstable estimates remain usable in calculations. */
     price?: number | null;
+    referencePrice?: number | null;
+    fleaStability?: FleaStability;
+    fleaPriceReasons?: FleaPriceReason[];
+    fleaSampleCount?: number;
     avg24hPrice?: number | null;
     high24hPrice?: number | null;
     low24hPrice?: number | null;
@@ -31,9 +36,13 @@ export interface PriceHistoryPoint {
     timestamp: number;
 }
 
+export type FleaStability = "stable" | "unstable" | "unavailable" | "reference";
+export type FleaPriceReason = "insufficient-history" | "sparse-offers" | "unknown-depth" |
+    "divergent-reference" | "price-jump" | "volatile-minimum" | "no-offers" | "stale";
+
 export interface StoredCurrentPrice {
     itemId: string;
-    effectivePrice: number;
+    effectivePrice: number | null;
     latestPrice: number;
     latestPriceMin: number;
     latestOfferCount: number | null;
@@ -41,4 +50,6 @@ export interface StoredCurrentPrice {
     sampleCount: number;
     totalOfferCount: number;
     lastCheckedAt: number;
+    stability: FleaStability;
+    reasons: FleaPriceReason[];
 }

@@ -68,7 +68,7 @@ function updatedStatements(
         args: [
             mode,
             outcome.itemId,
-            integer(outcome.effectivePrice),
+            outcome.effectivePrice === null ? null : integer(outcome.effectivePrice),
             integer(latest.price),
             integer(latest.priceMin),
             latest.offerCount === null ? null : integer(latest.offerCount),

@@ -13,34 +13,36 @@ interface UpstreamPricePoint {
     timestamp?: unknown;
 }
 
-export function normalizePriceHistory(data: unknown): PriceHistoryPoint[] {
-    if (!Array.isArray(data)) return [];
+function numeric(value: unknown): number {
+    return typeof value === "number" || (typeof value === "string" && value.trim() !== "")
+        ? Number(value) : NaN;
+}
 
-    return data
-        .filter(
-            (point): point is UpstreamPricePoint =>
-                typeof point === "object" && point !== null,
-        )
-        .map((point) => ({
-            price: Number(point.price),
-            priceMin: Number(point.priceMin),
-            offerCount:
-                point.offerCount === null || point.offerCount === undefined
-                    ? null
-                    : Number(point.offerCount),
-            timestamp: Number(point.timestamp),
-        }))
-        .filter(
-            (point) =>
-                Number.isFinite(point.price) &&
-                point.price >= 0 &&
-                Number.isFinite(point.priceMin) &&
-                point.priceMin >= 0 &&
-                Number.isFinite(point.timestamp) &&
-                point.timestamp >= PRICE_HISTORY_CUTOFF_TIMESTAMP &&
-                (point.offerCount === null || Number.isFinite(point.offerCount)),
-        )
-        .sort((left, right) => left.timestamp - right.timestamp);
+export function normalizePriceHistory(data: unknown, strict = false): PriceHistoryPoint[] {
+    if (!Array.isArray(data)) {
+        if (strict) throw new Error("Invalid price history response");
+        return [];
+    }
+    const points = new Map<number, PriceHistoryPoint>();
+    for (const raw of data) {
+        const point: UpstreamPricePoint = typeof raw === "object" && raw !== null ? raw : {};
+        const normalized = {
+            price: numeric(point.price), priceMin: numeric(point.priceMin),
+            timestamp: numeric(point.timestamp),
+            offerCount: point.offerCount == null ? null : numeric(point.offerCount),
+        };
+        const valid = Number.isFinite(normalized.price) && normalized.price >= 0 &&
+            Number.isFinite(normalized.priceMin) && normalized.priceMin >= 0 &&
+            Number.isFinite(normalized.timestamp) && normalized.timestamp > 0 &&
+            (normalized.offerCount === null || (Number.isInteger(normalized.offerCount) && normalized.offerCount >= 0)) &&
+            (normalized.offerCount === 0 || (normalized.price > 0 && normalized.priceMin > 0));
+        if (!valid) {
+            if (strict) throw new Error("Invalid price history point");
+            continue;
+        }
+        if (normalized.timestamp >= PRICE_HISTORY_CUTOFF_TIMESTAMP) points.set(normalized.timestamp, normalized);
+    }
+    return [...points.values()].sort((a, b) => a.timestamp - b.timestamp);
 }
 
 interface UpstreamPriceResponse {
@@ -77,6 +79,6 @@ export async function fetchJsonPriceHistory(
     return {
         status: "updated",
         etag: responseEtag,
-        data: normalizePriceHistory(body.data),
+        data: normalizePriceHistory(body.data, true),
     };
 }

@@ -2,6 +2,7 @@ import type { TarkovDataMode } from "@/types/common";
 import { deriveEffectivePrice, STORED_PRICE_POINT_LIMIT } from "../../lib/utils/price-history";
 import {
     fetchJsonPriceHistory,
+    normalizePriceHistory,
     type PriceHistoryFetchResult,
 } from "../services/priceHistory";
 import type {
@@ -115,10 +116,13 @@ export async function refreshPriceMode({
                                 checkedAt,
                             };
                         }
-                        const points = response.data.slice(-STORED_PRICE_POINT_LIMIT);
+                        const points = normalizePriceHistory(response.data, true).slice(-STORED_PRICE_POINT_LIMIT);
                         const derived = deriveEffectivePrice(points);
-                        if (points.length === 0 || derived.effectivePrice === null) {
+                        if (points.length === 0 || (derived.effectivePrice === null && points.at(-1)?.offerCount !== 0)) {
                             throw new Error("Price endpoint returned no usable points");
+                        }
+                        if (points[points.length - 1].timestamp < (syncStates[itemId]?.latestPointTimestamp ?? 0)) {
+                            throw new Error("Price endpoint returned older observations than current storage");
                         }
                         return {
                             status: "updated",

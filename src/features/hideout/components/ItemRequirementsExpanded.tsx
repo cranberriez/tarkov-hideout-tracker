@@ -6,7 +6,7 @@ import { CircleCheckBig, Check } from "lucide-react";
 import { formatNumber } from "@/lib/utils/format-number";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
-import { formatCompactRoubles, getFleaPrice, hasFleaMarketData } from "@/lib/utils/market-price";
+import { formatCompactRoubles, getFleaPrice, hasFleaMarketData, fleaPriceStatusLabel } from "@/lib/utils/market-price";
 
 export function ExpandedItemRequirements({
     nextLevelData,
@@ -33,7 +33,7 @@ export function ExpandedItemRequirements({
                     const isCurrency = norm === "roubles" || norm === "dollars" || norm === "euros";
                     const marketPrice = item.marketPrice;
                     const fleaPrice = getFleaPrice(marketPrice);
-                    const priceLabel = marketPrice && !hasFleaMarketData(marketPrice)
+                    const priceLabel = marketPrice?.fleaStability === "unavailable" ? fleaPriceStatusLabel(marketPrice) : marketPrice && !hasFleaMarketData(marketPrice)
                           ? "No flea"
                           : fleaPrice != null
                             ? `${formatCompactRoubles(fleaPrice)} ₽`

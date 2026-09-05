@@ -2,18 +2,20 @@
 
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Info } from "lucide-react";
+import { Info, TriangleAlert } from "lucide-react";
 
 export function InfoHint({
   title,
   children,
   tone = "neutral",
   onShow,
+  compact = false,
 }: {
   title: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   tone?: "neutral" | "warning";
   onShow?: () => void;
+  compact?: boolean;
 }) {
   const [position, setPosition] = useState<{
     left: number;
@@ -27,7 +29,7 @@ export function InfoHint({
     onShow?.();
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const width = Math.min(288, window.innerWidth - 16);
+    const width = Math.min(compact ? 128 : 288, window.innerWidth - 16);
     const left = Math.max(
       8,
       Math.min(
@@ -58,23 +60,23 @@ export function InfoHint({
         onBlur={() => setPosition(null)}
         className={`flex size-3.5 shrink-0 cursor-help items-center justify-center outline-none transition ${tone === "warning" ? "text-amber-300/90 hover:text-amber-200 focus:text-amber-200" : "text-muted-foreground hover:text-foreground focus:text-foreground"}`}
       >
-        <Info className="size-3" />
+        {compact && tone === "warning" ? <TriangleAlert className="size-3" /> : <Info className="size-3" />}
       </span>
       {position &&
         createPortal(
           <span
             role="tooltip"
-            className="pointer-events-none fixed z-[120] block rounded-md border border-white/15 bg-[#05070a] p-3 text-left shadow-[0_18px_55px_rgba(0,0,0,0.8)]"
+            className={`pointer-events-none fixed z-[120] block rounded-md border border-white/15 bg-[#05070a] ${compact ? "px-2 py-1.5" : "p-3"} text-left shadow-[0_18px_55px_rgba(0,0,0,0.8)]`}
             style={position}
           >
             <span
-              className={`block text-[10px] font-bold uppercase tracking-wide ${tone === "warning" ? "text-amber-300" : "text-tarkov-green"}`}
+              className={`block ${compact ? "text-[11px]" : "text-[10px] font-bold uppercase tracking-wide"} ${tone === "warning" ? "text-amber-300" : "text-tarkov-green"}`}
             >
               {title}
             </span>
-            <span className="mt-1.5 block text-[11px] leading-relaxed text-foreground/80">
+            {children && <span className="mt-1.5 block text-[11px] leading-relaxed text-foreground/80">
               {children}
-            </span>
+            </span>}
           </span>,
           document.body,
         )}

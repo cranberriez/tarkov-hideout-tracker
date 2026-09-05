@@ -6,7 +6,7 @@ import { formatNumber } from "@/lib/utils/format-number";
 import type { ItemSize } from "@/lib/stores/useUserStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
-import { formatRoubles, getFleaPrice, hasFleaMarketData } from "@/lib/utils/market-price";
+import { formatRoubles, getFleaPrice, hasFleaMarketData, fleaPriceStatusLabel } from "@/lib/utils/market-price";
 
 interface ItemRowProps {
     item: ItemSummary;
@@ -282,7 +282,7 @@ export function ItemRow({
                                 <span className="text-gray-500">No flea</span>
                             )}
                             {!loading && marketPrice && hasFleaData && (
-                                <>{formatRoubles(estimatedTotal)}</>
+                                <>{marketPrice.fleaStability === "unavailable" ? fleaPriceStatusLabel(marketPrice) : formatRoubles(estimatedTotal)}</>
                             )}
                         </div>
                     </div>

@@ -70,7 +70,7 @@ test("refreshes eligible items, keeps ten points, and reports partial failures",
     assert.ok(updated);
     assert.equal(updated.points.length, 10);
     assert.equal(updated.points[0].price, 101);
-    assert.equal(updated.effectivePrice, 108);
+    assert.equal(updated.effectivePrice, 98);
     assert.equal(store.completed?.status, "partial");
 });
 
@@ -84,4 +84,17 @@ test("skips when another refresh holds the mode lock", async () => {
     });
     assert.equal(summary.status, "skipped");
     assert.equal(store.outcomes.length, 0);
+});
+
+test("invalid updated histories produce failures rather than replacement prices", async () => {
+    const store = new MemoryStore();
+    const result = await refreshPriceMode({
+        mode: "pve", releaseId: "release-a", store,
+        fetchHistory: async (_mode, id) => ({ status: "updated", etag: "invalid", data:
+            id === "item-a" ? [] : [{ timestamp: PRICE_HISTORY_CUTOFF_TIMESTAMP, price: 100, priceMin: id === "item-b" ? NaN : 0, offerCount: 1 }],
+        }),
+    });
+    assert.equal(result.changedCount, 0);
+    assert.equal(result.failedCount, 3);
+    assert.ok(store.outcomes.every(outcome => outcome.status === "failed"));
 });

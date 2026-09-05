@@ -41,6 +41,9 @@ export interface AcquisitionPlan {
 }
 
 export interface RecipeEvaluation {
+    /** The selected sale value uses an unstable flea estimate. */
+    sellValueIsEstimate?: boolean;
+    sellSourceLabel?: string;
     id: string;
     kind: "barter" | "craft";
     outputItemId: string;

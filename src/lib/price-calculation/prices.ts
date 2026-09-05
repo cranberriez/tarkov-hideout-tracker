@@ -1,6 +1,7 @@
 import type { ItemSummary } from "@/types/items";
 import type { VendorPrice } from "@/types/prices";
 import type { ManualPriceOverrides } from "./types";
+import { getFleaPrice } from "../utils/market-price";
 
 function validPrice(value: number | null | undefined) {
     return typeof value === "number" && Number.isFinite(value) && value >= 0
@@ -16,7 +17,7 @@ export function getItemBuyPrice(
     const manual = validPrice(overrides[item.id]?.buy);
     if (manual !== null) return manual;
     if (item.normalizedName === "roubles") return 1;
-    return validPrice(item.marketPrice?.price ?? item.marketPrice?.avg24hPrice);
+    return getFleaPrice(item.marketPrice);
 }
 
 export function getItemSellPrice(
@@ -27,6 +28,7 @@ export function getItemSellPrice(
 }
 
 export interface ItemSellComparison {
+    isEstimate: boolean;
     fleaPrice: number | null;
     bestTraderOffer: VendorPrice | null;
     manualPrice: number | null;
@@ -40,6 +42,7 @@ export function getItemSellComparison(
     overrides: ManualPriceOverrides = {},
 ): ItemSellComparison {
     const unavailable: ItemSellComparison = {
+        isEstimate: false,
         fleaPrice: null,
         bestTraderOffer: null,
         manualPrice: null,
@@ -51,7 +54,7 @@ export function getItemSellComparison(
     const manual = validPrice(overrides[item.id]?.sell);
     const fleaPrice = item.normalizedName === "roubles"
         ? 1
-        : validPrice(item.marketPrice?.price ?? item.marketPrice?.avg24hPrice);
+        : getFleaPrice(item.marketPrice);
     const bestTraderOffer = [...(item.marketPrice?.sellFor ?? [])]
         .filter((offer) => validPrice(offer.priceRUB) !== null)
         .sort((left, right) => right.priceRUB - left.priceRUB)[0] ?? null;
@@ -61,13 +64,13 @@ export function getItemSellComparison(
         : false;
 
     if (manual !== null) {
-        return { fleaPrice, bestTraderOffer, manualPrice: manual, selectedPrice: manual, selectedSource: "manual", pricesAreClose };
+        return { fleaPrice, bestTraderOffer, manualPrice: manual, selectedPrice: manual, selectedSource: "manual", pricesAreClose, isEstimate: false };
     }
     if (fleaPrice === null && traderPrice === null) return unavailable;
     if (traderPrice !== null && (fleaPrice === null || traderPrice > fleaPrice)) {
-        return { fleaPrice, bestTraderOffer, manualPrice: null, selectedPrice: traderPrice, selectedSource: "trader", pricesAreClose };
+        return { fleaPrice, bestTraderOffer, manualPrice: null, selectedPrice: traderPrice, selectedSource: "trader", pricesAreClose, isEstimate: false };
     }
-    return { fleaPrice, bestTraderOffer, manualPrice: null, selectedPrice: fleaPrice, selectedSource: "flea", pricesAreClose };
+    return { fleaPrice, bestTraderOffer, manualPrice: null, selectedPrice: fleaPrice, selectedSource: "flea", pricesAreClose, isEstimate: item.marketPrice?.fleaStability === "unstable" };
 }
 
 export function practicalSavingsThreshold(directBuyCost: number) {

@@ -253,7 +253,7 @@ export function describeRoute(plan: AcquisitionPlan, context: RouteContext) {
   if (plan.isTool)
     return `Reusable tool acquired via ${plan.method}; its value is not included in recurring craft cost.`;
   if (plan.method === "flea")
-    return "Buy from the flea market using the 24-hour average price.";
+    return "Buy from the flea market using a minimum estimate, catalog estimate, or manual buy price.";
   if (plan.method === "trader" && plan.traderOffer) {
     const offer = plan.traderOffer;
     const trader = context.tradersById[offer.traderId];

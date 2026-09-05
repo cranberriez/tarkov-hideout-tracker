@@ -4,11 +4,13 @@ import { useState } from "react";
 import {
   getItemBuyPrice,
   getItemSellPrice,
+  getItemSellComparison,
   type ManualPriceOverride,
 } from "@/lib/price-calculation";
 import type { ItemSummary } from "@/types/items";
 import type { PriceChangeHandler } from "../types";
 import { formatCompactPrice } from "../utils/formatters";
+import { InfoHint } from "./InfoHint";
 
 export function InlineItemPrice({
   item,
@@ -18,6 +20,7 @@ export function InlineItemPrice({
   overrides,
   onPriceChange,
   editable = true,
+  onWarningShow,
 }: {
   item?: ItemSummary;
   kind: "buy" | "sell";
@@ -26,6 +29,7 @@ export function InlineItemPrice({
   overrides: Record<string, ManualPriceOverride>;
   onPriceChange: PriceChangeHandler;
   editable?: boolean;
+  onWarningShow?: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   if (!item) return <span>-</span>;
@@ -35,6 +39,9 @@ export function InlineItemPrice({
       ? getItemBuyPrice(item, overrides)
       : getItemSellPrice(item, overrides);
   const currentOverride = overrides[itemId] ?? {};
+  const warning = kind === "sell" && getItemSellComparison(item, overrides).isEstimate;
+  const color = warning ? "text-amber-300" : "text-tarkov-green";
+  const formattedPrice = formatCompactPrice(displayPrice === undefined ? totalPrice : displayPrice);
   function commit(raw: string) {
     const parsed = raw.trim() === "" ? undefined : Number(raw);
     onPriceChange(itemId, {
@@ -68,28 +75,23 @@ export function InlineItemPrice({
         className="h-5 w-16 rounded border border-tarkov-green/50 bg-black px-1 text-[10px] text-foreground outline-none"
       />
     );
-  if (!editable)
-    return (
-      <span className="truncate text-tarkov-green">
-        {formatCompactPrice(
-          displayPrice === undefined ? totalPrice : displayPrice,
-        )}
-      </span>
-    );
   return (
-    <button
-      type="button"
-      title={`Edit ${kind} price`}
-      onClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        setEditing(true);
-      }}
-      className="truncate text-tarkov-green hover:underline"
-    >
-      {formatCompactPrice(
-        displayPrice === undefined ? totalPrice : displayPrice,
-      )}
-    </button>
+    <span className="inline-flex items-center gap-1">
+      {editable ? (
+        <button
+          type="button"
+          title={`Edit ${kind} price`}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setEditing(true);
+          }}
+          className={`truncate ${color} hover:underline`}
+        >
+          {formattedPrice}
+        </button>
+      ) : <span className={`truncate ${color}`}>{formattedPrice}</span>}
+      {warning && <InfoHint title="Value unstable" tone="warning" compact onShow={onWarningShow} />}
+    </span>
   );
 }

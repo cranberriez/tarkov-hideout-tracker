@@ -2,7 +2,8 @@
 
 import type { CurrentPrice } from "@/types/prices";
 import { ArrowDownRight, ArrowUpRight, Check, Clock3, Store, X } from "lucide-react";
-import { formatRoubles, getFleaPrice, hasFleaMarketData } from "@/lib/utils/market-price";
+import { formatRoubles, getFleaPriceEstimate, hasFleaMarketData } from "@/lib/utils/market-price";
+import { InfoHint } from "@/features/profit-pages/components/InfoHint";
 import { ItemDetailSection } from "./ItemDetailSection";
 
 interface ItemDetailMarketProps {
@@ -35,18 +36,22 @@ export function ItemDetailMarket({
 
     const hasFleaData = hasFleaMarketData(marketPrice);
     const canSellOnFlea = minLevelForFlea != null && playerLevel >= minLevelForFlea;
-    const fleaPrice = getFleaPrice(marketPrice);
+    const fleaPrice = getFleaPriceEstimate(marketPrice);
+    const unstable = !isFiat && marketPrice.fleaStability === "unstable";
     const traderValuationCount = Math.max(1, Math.floor(valuationCount));
     const topTraderValuations = (marketPrice.sellFor ?? [])
         .filter((offer) => offer.priceRUB > 0 && offer.vendor.normalizedName !== "flea-market")
         .sort((a, b) => b.priceRUB - a.priceRUB)
         .slice(0, 3);
     const details = [
-        marketPrice.price != null && marketPrice.avg24hPrice != null
+        marketPrice.referencePrice != null
+            ? { label: "Latest aggregate", value: formatRoubles(marketPrice.referencePrice) }
+            : null,
+        marketPrice.avg24hPrice != null
             ? { label: "Catalog 24h average", value: formatRoubles(marketPrice.avg24hPrice) }
             : null,
         marketPrice.lastLowPrice != null
-            ? { label: "Last low", value: formatRoubles(marketPrice.lastLowPrice) }
+            ? { label: "Latest minimum", value: formatRoubles(marketPrice.lastLowPrice) }
             : null,
         marketPrice.low24hPrice != null
             ? { label: "24h low", value: formatRoubles(marketPrice.low24hPrice) }
@@ -90,21 +95,26 @@ export function ItemDetailMarket({
                 <div className="flex items-end justify-between gap-3">
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-4 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                            <span>{isFiat ? "Rouble cost" : "24h average"}</span>
+                            <span>{isFiat ? "Rouble cost" : "Flea estimate"}</span>
                             {!isFiat && marketPrice.lastOfferCount != null && (
                                 <span className="text-right">
-                                    {new Intl.NumberFormat("en-US").format(marketPrice.lastOfferCount)} offers
+                                    {`${new Intl.NumberFormat("en-US").format(marketPrice.lastOfferCount)} offers`}
                                 </span>
                             )}
                         </div>
-                        <div className="mt-1 font-mono text-2xl font-semibold text-foreground">
+                        <div className={`mt-1 flex items-center gap-1.5 font-mono text-2xl font-semibold ${unstable ? "text-amber-300" : "text-foreground"}`}>
                             {formatRoubles(fleaPrice)}
+                            {unstable && <InfoHint title="Value unstable" tone="warning" compact />}
                         </div>
                     </div>
                     {marketPrice.changeLast48hPercent != null && (
                         <PriceChange value={marketPrice.changeLast48hPercent} />
                     )}
                 </div>
+            )}
+
+            {!isFiat && marketPrice.fleaStability === "unavailable" && (
+                <div className="mt-2 text-xs text-muted-foreground">Flea unavailable{marketPrice.lastOfferCount != null ? ` · ${marketPrice.lastOfferCount} offers` : ""}</div>
             )}
 
             {details.length > 0 && !isFiat && (

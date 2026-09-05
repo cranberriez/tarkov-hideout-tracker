@@ -1,6 +1,6 @@
 import type { BarterRecord, CraftRecord, ItemAmountRef } from "@/types/recipes";
 import type { TraderPurchaseOffer } from "@/types/items";
-import { getItemBuyPrice, getItemSellPrice, practicalSavingsThreshold } from "./prices";
+import { getItemBuyPrice, getItemSellPrice, getItemSellComparison, practicalSavingsThreshold } from "./prices";
 import type {
     AcquisitionAlternative,
     AcquisitionPlan,
@@ -479,7 +479,13 @@ function evaluateTopLevelRecipe(
             ? null
             : savings > practicalSavingsThreshold(directBuyCost);
 
+    const sale = getItemSellComparison(context.itemsById[outputItemId], context.overrides);
+    const sellSourceLabel = sale.selectedSource === "trader" ? sale.bestTraderOffer?.vendor.name :
+        sale.selectedSource === "manual" ? "Manual price" : sale.selectedSource === "flea" ? "Flea market" : "No sale price";
+
     return {
+        sellValueIsEstimate: sale.isEstimate,
+        sellSourceLabel,
         id: recipe.id,
         kind,
         outputItemId,

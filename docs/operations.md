@@ -109,6 +109,58 @@ invocation, so inspect duration/run records when diagnosing schedule failures.
 Current-price retention and on-demand modal history are separate paths in
 [data layer](data-layer.md).
 
+### Flea stability evidence and validation
+
+On September 5, 2026, read-only inspection of the configured release
+`20260904T211847Z` and mutable storage covered 10,750 current rows and 106,017
+stored observations. No production refresh or release publication was performed.
+The sampling unit is an observed listing snapshot, not a transaction.
+
+| Data mode | Current rows | Latest depth median / p90 | Latest aggregate/minimum p95 / p99 | Stored points with depth 1–2 |
+|---|---:|---:|---:|---:|
+| regular | 3,541 | 3 / 21 | 1.63 / 2.52 | 46.9% |
+| pve | 3,695 | 6 / 40 | 2.03 / 3.75 | 33.5% |
+| pvp-season | 3,514 | 4 / 26 | 1.65 / 2.69 | 35.5% |
+
+Reviewed sugar, bolts, Iskra and Salewa, base/default AK-74N, both M1A presets,
+Red keycards, graphics cards, LEDX and T-7 goggles in every mode. Sugar's ten
+minimums ranged 49–64k regular, 62–92.4k PVE and 38.9–52k KORD, with depths
+23–375 across modes. Red keycards ranged roughly 780k–1.11m with depths 5–58.
+T-7s legitimately remained 10–30m: PVE had depths 3–10, while KORD's six
+observations repeated 18m at depth one. High absolute value is not an anomaly;
+repetition of one listing is not proof of liquidity.
+
+Stored aggregate/minimum ratios at least 2x occurred in 2.6%, 5.9% and 2.8% of
+regular/PVE/KORD observations. Adjacent minimum ratios at p90 were 1.85x, 2.00x
+and 1.69x. Thus 2x divergence/jump signals target substantial moves while the
+median tolerates ordinary commodity variation. The 1.25x confirmation cluster,
+three-observation/two-hour deep confirmation, five-observation/eight-hour thin
+confirmation, and 72-hour stale cutoff are conservative policy choices aligned
+with approximately two-hour provider observations and daily regular/PVE refresh.
+They are not statistically calibrated transaction-confidence thresholds.
+
+Sustained observed regimes were also reviewed: regular SMW car key settled from
+about 20–23k to 10k for three observations at depth 7–8 over 3.83 hours; PVE
+default Kedr moved from 14.5–20k through thin spikes to 49–49.6k at depth 3–4 over
+3.83 hours. KORD's SPRM rail returned from 24–25k single offers to three 9,995
+observations at depth 3–4 over 3.83 hours. These support accepting sustained
+regimes while flagging transition windows; they cannot establish completed sales.
+There were no zero/null-depth stored points; eight empty current rows had null
+depth. Zero, null and malformed cases therefore use synthetic regression coverage.
+
+At inspection time the conservative model classified 1,251 regular, 1,455 PVE and
+1,499 KORD items as stable. This classification is advisory: thin/stale/volatile
+items retain rough minimum estimates for costs and profits, with a compact warning
+on selected unstable flea sales. Only unavailable inputs leave calculations unpriced. Ten points cannot preserve a historical anchor indefinitely, and stable
+listings still do not prove throughput or guarantee fill quantity. Reassess using
+future observed distributions rather than adding category-specific hard caps.
+
+Additional focused coverage:
+
+```bash
+node --test --import jiti/register src/lib/utils/flea-price.test.ts src/lib/utils/price-history.test.ts src/server/services/priceHistory.test.ts src/server/db/price-data.test.ts src/features/items/item-detail/ItemDetailMarket.test.ts
+```
+
 ## Diagnostics and content maintenance
 
 | Symptom or task | Start here |

@@ -48,6 +48,40 @@ function traderOffer(overrides: Partial<NonNullable<ItemSummary["buyFromTrader"]
     };
 }
 
+test("unstable flea estimates consistently price acquisition, sales, profit and profit/hour", () => {
+    const unstable: ItemSummary = { ...item("A", 925_926), marketPrice: {
+        price: 120_000, referencePrice: 973_333, fleaStability: "unstable",
+        sellFor: [{ vendor: { name: "Mechanic", normalizedName: "mechanic" }, priceRUB: 50_000 }],
+    } };
+    const craft: CraftRecord = { id: "c", productItemId: "A", productCount: 1, stationId: "workbench", level: 1, duration: 1800, requiredItems: [{ itemId: "B", count: 1 }], requiredQuestItems: [], gameEditions: [] };
+    const input = { itemsById: { A: unstable, B: item("B", 100, 80) }, crafts: [craft], barters: [] };
+    const evaluation = createRecipeCalculator(input).evaluateCraft(craft);
+    assert.equal(evaluation.sellValue, 120_000);
+    assert.equal(evaluation.profit, 119_900);
+    assert.equal(evaluation.profitPerHour, 239_800);
+    assert.equal(evaluation.sellSourceLabel, "Flea market");
+    assert.equal(evaluation.sellValueIsEstimate, true);
+    assert.equal(createRecipeCalculator({ ...input, crafts: [] }).evaluateNode("A").totalCost, 120_000);
+    const manual = createRecipeCalculator({ ...input, overrides: { A: { buy: 110_000, sell: 130_000 } } });
+    assert.equal(manual.evaluateCraft(craft).profit, 129_900);
+    assert.equal(manual.evaluateCraft(craft).profitPerHour, 259_800);
+    assert.equal(manual.evaluateCraft(craft).sellValueIsEstimate, false);
+    assert.equal(manual.evaluateCraft(craft).sellSourceLabel, "Manual price");
+    const roughInput = createRecipeCalculator({ ...input, itemsById: { A: item("A", 500), B: { ...unstable, id: "B" } } }).evaluateCraft(craft);
+    assert.equal(roughInput.cost, 120_000);
+    assert.equal(roughInput.profit, -119_500);
+    assert.equal(roughInput.profitPerHour, -239_000);
+    assert.equal(roughInput.profitVsSellingInputs, -119_500);
+    assert.equal(roughInput.sellValueIsEstimate, false);
+    const higherTrader = { ...unstable, marketPrice: { ...unstable.marketPrice, sellFor: [{ vendor: { name: "Trader", normalizedName: "trader" }, priceRUB: 150_000 }] } };
+    assert.equal(getItemSellComparison(higherTrader).selectedSource, "trader");
+    assert.equal(getItemSellComparison(higherTrader).isEstimate, false);
+    assert.equal(getItemSellComparison(unstable, { A: { sell: 0 } }).isEstimate, false);
+    const unavailable = createRecipeCalculator({ ...input, itemsById: { ...input.itemsById, A: { ...unstable, marketPrice: { price: null, fleaStability: "unavailable" } } } }).evaluateCraft(craft);
+    assert.equal(unavailable.sellValue, null);
+    assert.equal(unavailable.profitPerHour, null);
+});
+
 test("uses a trader-only direct acquisition and retains native offer data", () => {
     const offer = traderOffer({ price: 53, priceRUB: 6_625, currency: "USD", currencyItemId: "dollars" });
     const calculator = createRecipeCalculator({

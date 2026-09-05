@@ -34,9 +34,14 @@ export async function getCurrentPriceData(
             if (!legacy && !current) return [];
             return [[itemId, {
                 ...(legacy ?? {}),
+                fleaStability: "reference",
                 ...(current
                     ? {
                           price: current.effectivePrice,
+                          referencePrice: current.latestPrice,
+                          fleaStability: current.stability,
+                          fleaPriceReasons: current.reasons,
+                          fleaSampleCount: current.sampleCount,
                           lastLowPrice: current.latestPriceMin,
                           lastOfferCount: current.latestOfferCount,
                           changeLast48hPercent: undefined,

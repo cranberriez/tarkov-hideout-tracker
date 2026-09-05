@@ -18,9 +18,17 @@ acquisition routes; [prices.ts](../src/lib/price-calculation/prices.ts) resolves
 buy/sell inputs. Rows and item-modal recipe views consume completed evaluations
 rather than selecting routes independently.
 
-- Flea purchase uses mutable effective price, with release reference pricing as
-  fallback. Sale value compares flea and best trader sale; mode-scoped manual
-  buy/sell overrides replace the corresponding input. Roubles have unit value one.
+- Flea purchase and flea sale estimates share the robust minimum and stability
+  model in [data layer](data-layer.md). Unstable mutable flea values remain usable
+  rough estimates; instability alone never selects a lower trader value. Unavailable
+  flea values remain null without reviving a catalog aggregate. Release
+  reference pricing remains usable when mutable storage/points are absent or
+  unusable. These estimates do not prove that any quantity can sell at that price.
+- Sale value compares usable flea and best trader sale, explicitly naming the
+  selected source. Trader purchases remain separately gated routes, never caps
+  on flea values. Mode-scoped manual buy/sell overrides replace the corresponding
+  input, including unstable or unavailable flea inputs; zero manual prices remain
+  valid. Roubles have unit value one. Browser persistence is unchanged.
 - Direct trader purchases are leaf routes from `ItemSummary.buyFromTrader`,
   separate from barter records. Loyalty and task unlocks gate eligibility.
 - Crafts and barters may recursively supply ingredients. Batch quantities round
@@ -32,6 +40,17 @@ rather than selecting routes independently.
   cheapest direct cost or 5,000 roubles) to justify its added steps.
 - Zero-input production and quest-only ingredients have unknown cost; they cannot
   act as free recursive sources. Missing pricing remains explicit.
+- When unavailable flea inputs leave no usable route or sale source, costs, sale
+  values and dependent profit figures remain null. Unstable estimates continue to
+  price both recipe inputs and outputs. `sellValueIsEstimate` marks a selected
+  unstable flea sale; `sellSourceLabel` names the selected source. Manual sales
+  and selected trader sales do not carry the instability warning.
+- Output sale text turns yellow with a small warning icon; hover or keyboard
+  focus shows **Value unstable** in a compact overlay. There is no row-wide warning.
+  Modal recipe summaries use the same selected-sale flag. Sale value, profit and
+  profit/hour all use the same estimate, including after ingredient-route changes.
+  Route profit and owned-input opportunity value remain distinct. Header totals
+  count unpriced rows explicitly; positive value sums priced rows only.
 - Hourly profit includes sequential nested craft time allocated per produced item;
   root crafts include their own duration. Instantaneous barter paths have no hourly
   value. Station-aware parallel scheduling and flea fees are not modeled.

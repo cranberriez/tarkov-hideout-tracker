@@ -7,6 +7,16 @@ import {
 } from "./priceHistory";
 import { TARKOV_API_USER_AGENT } from "./tarkovApi";
 
+test("rejects missing, blank, boolean, negative and fractional provider fields", () => {
+    const valid = { price: 1200, priceMin: 1000, offerCount: 5, timestamp: PRICE_HISTORY_CUTOFF_TIMESTAMP };
+    for (const patch of [{ price: null }, { priceMin: "" }, { priceMin: false }, { timestamp: null }, { offerCount: -1 }, { offerCount: 1.5 }]) {
+        assert.throws(() => normalizePriceHistory([valid, { ...valid, ...patch }], true), /Invalid/);
+    }
+    assert.throws(() => normalizePriceHistory({}, true), /Invalid/);
+    assert.equal(normalizePriceHistory([valid, valid], true).length, 1);
+    assert.equal(normalizePriceHistory([{ ...valid, offerCount: 0, price: 0, priceMin: 0 }], true)[0].offerCount, 0);
+});
+
 test("normalizes price history and excludes points before December 2025", () => {
     const points = normalizePriceHistory([
         {
