@@ -18,7 +18,9 @@ Item read models are generated in small bounded batches. Their acquisition views
 store price-independent reachable recipe graphs; current prices are hydrated only
 when those views are read at runtime.
 
-Mutable endpoint prices are maintained separately. See `docs/price-refresh.md`.
+Mutable endpoint prices are maintained separately. See
+[price storage and delivery](../docs/data-layer.md) and
+[refresh operations](../docs/operations.md).
 
 ## Configuration
 
@@ -101,7 +103,7 @@ npm run db:prices:refresh -- --modes regular,pve
 - `data_releases`: immutable release metadata and validation counts.
 - `active_data_releases`: an operational pointer maintained by `db:activate`.
 
-The schema is in `schema.sql`. No cleanup command is provided intentionally;
+The schema is in [schema.sql](schema.sql). No cleanup command is provided intentionally;
 older releases remain available for inspection and rollback until retention is
 designed explicitly.
 
@@ -109,7 +111,7 @@ designed explicitly.
 
 The item relations, usage, acquisition-tree, search, data-status, and conversion
 APIs read from Turso. They select immutable releases through
-`src/server/db/release-config.ts`; update that mode-to-release map after uploading
+[release-config.ts](../src/server/db/release-config.ts); update that mode-to-release map after uploading
 and validating a replacement release. The runtime does not currently consult
 `active_data_releases`, so `db:activate` does not change what the application
 serves until the static config is updated.
