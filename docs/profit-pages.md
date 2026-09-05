@@ -121,9 +121,11 @@ only constrain how the calculator may obtain each required item.
 Produced items appear first in their own column, followed by a flexible-width
 required-items column. Each requirement occupies one compact line containing its
 acquisition badge, image, full name, quantity, and unit route price; recipes with
-many ingredients grow vertically instead of scrolling sideways. The solid badge
-uses a green market chart for flea, a purple user icon for direct trader
-purchases, a blue circled arrow for barter, or an orange wrench for crafting.
+many ingredients grow vertically instead of scrolling sideways. Acquisition icons
+use a green market chart for flea, a purple user icon for direct trader
+purchases, a blue circled arrow for barter, or an orange wrench for crafting,
+all without filled backgrounds. Switchable icons add a white dropdown arrow, and
+changing the recommended route adds a colored dashed border.
 Output items omit this badge because their production source
 is already represented by the row. Locked root recipes show a lock badge fully
 outside the right edge of the trader or station image. Source levels appear inline
