@@ -13,7 +13,12 @@ import type { Trader } from "@/types/traders";
 import { ProfitPageControls } from "./components/ProfitPageControls";
 import { ProfitPageHeader } from "./components/ProfitPageHeader";
 import { ProfitTable } from "./components/ProfitTable";
-import type { ProfitPageKind, ProfitStationSource, SortMode } from "./types";
+import type {
+  ProfitPageKind,
+  ProfitStationSource,
+  SortDirection,
+  SortKey,
+} from "./types";
 import {
   compareEvaluations,
   getRecipeSourceId,
@@ -70,9 +75,9 @@ export function ProfitPageClient({
     initialTargetRecipeId ?? null,
   );
   const [scrollRequestId, setScrollRequestId] = useState(0);
-  const [sortMode, setSortMode] = useState<SortMode>(
-    kind === "craft" ? "profitPerHour" : "profit",
-  );
+  const [sortKey, setSortKey] = useState<SortKey>("profitPerHour");
+  const [sortDirection, setSortDirection] =
+    useState<SortDirection>("descending");
   const evaluations = useMemo(() => {
     const calculator = createRecipeCalculator({
       itemsById: itemById,
@@ -170,7 +175,9 @@ export function ProfitPageClient({
           return false;
         return true;
       })
-      .sort((a, b) => compareEvaluations(a, b, sortMode, itemById));
+      .sort((a, b) =>
+        compareEvaluations(a, b, sortKey, sortDirection, itemById),
+      );
   }, [
     availableOnly,
     completedQuests,
@@ -181,7 +188,8 @@ export function ProfitPageClient({
     pinnedCrafts,
     search,
     showPinnedOnly,
-    sortMode,
+    sortDirection,
+    sortKey,
     sourceId,
     stationLevels,
     targetRecipeId,
@@ -232,8 +240,6 @@ export function ProfitPageClient({
         sourceId={sourceId}
         onSourceIdChange={setSourceId}
         sources={sources}
-        sortMode={sortMode}
-        onSortModeChange={setSortMode}
         availableOnly={availableOnly}
         onAvailableOnlyChange={setAvailableOnly}
         profitableOnly={profitableOnly}
@@ -266,6 +272,20 @@ export function ProfitPageClient({
         onTogglePinnedCraft={togglePinnedCraft}
         showPinnedOnly={showPinnedOnly}
         ingredientRouteSelections={ingredientRouteSelections}
+        sortKey={sortKey}
+        sortDirection={sortDirection}
+        onSortChange={(nextSortKey) => {
+          if (nextSortKey === sortKey) {
+            setSortDirection((current) =>
+              current === "ascending" ? "descending" : "ascending",
+            );
+            return;
+          }
+          setSortKey(nextSortKey);
+          setSortDirection(
+            nextSortKey === "cost" ? "ascending" : "descending",
+          );
+        }}
         onIngredientRouteChange={(recipeId, index, routeKey) =>
           setIngredientRouteSelections((current) => ({
             ...current,

@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import type {
   ManualPriceOverride,
   RecipeEvaluation,
@@ -14,6 +15,8 @@ import type {
   GoToRecipeHandler,
   PriceChangeHandler,
   ProfitPageKind,
+  SortDirection,
+  SortKey,
 } from "../types";
 import {
   estimateProfitRowHeight,
@@ -44,6 +47,9 @@ export function ProfitTable({
   onTogglePinnedCraft,
   showPinnedOnly,
   ingredientRouteSelections,
+  sortKey,
+  sortDirection,
+  onSortChange,
   onIngredientRouteChange,
 }: {
   kind: ProfitPageKind;
@@ -66,6 +72,9 @@ export function ProfitTable({
   onTogglePinnedCraft: (recipeId: string) => void;
   showPinnedOnly: boolean;
   ingredientRouteSelections: Record<string, Record<number, string>>;
+  sortKey: SortKey;
+  sortDirection: SortDirection;
+  onSortChange: (sortKey: SortKey) => void;
   onIngredientRouteChange: (
     recipeId: string,
     requirementIndex: number,
@@ -73,7 +82,7 @@ export function ProfitTable({
   ) => void;
 }) {
   const listRef = useRef<HTMLDivElement>(null);
-    const lastScrollRequestRef = useRef<string | null>(null);
+  const lastScrollRequestRef = useRef<string | null>(null);
   const [scrollMargin, setScrollMargin] = useState(0);
   useLayoutEffect(() => {
     const updateScrollMargin = () => {
@@ -116,10 +125,34 @@ export function ProfitTable({
         <span className="pl-3">Source</span>
         <span className="pl-3">Output</span>
         <span className="pl-3">Required items</span>
-        <span className="px-3">Cost</span>
-        <span className="px-3">Sell value</span>
-        <span className="px-3">Profit</span>
-        <span className="px-3">Profit / hour</span>
+        <SortableHeader
+          label="Cost"
+          sortKey="cost"
+          activeSortKey={sortKey}
+          direction={sortDirection}
+          onSortChange={onSortChange}
+        />
+        <SortableHeader
+          label="Sell value"
+          sortKey="sellValue"
+          activeSortKey={sortKey}
+          direction={sortDirection}
+          onSortChange={onSortChange}
+        />
+        <SortableHeader
+          label="Profit"
+          sortKey="profit"
+          activeSortKey={sortKey}
+          direction={sortDirection}
+          onSortChange={onSortChange}
+        />
+        <SortableHeader
+          label="Profit / hour"
+          sortKey="profitPerHour"
+          activeSortKey={sortKey}
+          direction={sortDirection}
+          onSortChange={onSortChange}
+        />
       </div>
       <div ref={listRef} className="w-full min-w-[1000px]">
         {evaluations.length > 0 ? (
@@ -201,5 +234,51 @@ export function ProfitTable({
       </div>
     </div>
     </RecipeItemHoverProvider>
+  );
+}
+
+function SortableHeader({
+  label,
+  sortKey,
+  activeSortKey,
+  direction,
+  onSortChange,
+}: {
+  label: string;
+  sortKey: SortKey;
+  activeSortKey: SortKey;
+  direction: SortDirection;
+  onSortChange: (sortKey: SortKey) => void;
+}) {
+  const active = sortKey === activeSortKey;
+  const nextDirection = active
+    ? direction === "descending"
+      ? "ascending"
+      : "descending"
+    : sortKey === "cost"
+      ? "ascending"
+      : "descending";
+  const SortIcon = !active
+    ? ArrowUpDown
+    : direction === "ascending"
+      ? ArrowUp
+      : ArrowDown;
+  return (
+    <span
+      role="columnheader"
+      aria-sort={active ? direction : "none"}
+      className="px-1"
+    >
+      <button
+        type="button"
+        onClick={() => onSortChange(sortKey)}
+        aria-label={`Sort by ${label} ${nextDirection}`}
+        title={`Sort by ${label} ${nextDirection}`}
+        className={`flex h-full w-full items-center gap-1 rounded px-2 text-left transition hover:bg-white/[0.06] hover:text-foreground ${active ? "text-tarkov-green" : "text-muted-foreground"}`}
+      >
+        <span>{label}</span>
+        <SortIcon className={`size-3.5 ${active ? "opacity-100" : "opacity-45"}`} />
+      </button>
+    </span>
   );
 }

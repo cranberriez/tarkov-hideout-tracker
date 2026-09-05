@@ -1,13 +1,89 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { AcquisitionPlan } from "@/lib/price-calculation";
+import type {
+  AcquisitionPlan,
+  RecipeEvaluation,
+} from "@/lib/price-calculation";
 import {
   acquisitionRouteKey,
+  compareEvaluations,
   describeRoute,
   getPlanRecipePreview,
   hasRecipeRoute,
   withRequiredItemRoute,
 } from "./recipes";
+
+function evaluation(
+  id: string,
+  values: Partial<
+    Pick<RecipeEvaluation, "cost" | "sellValue" | "profit" | "profitPerHour">
+  >,
+): RecipeEvaluation {
+  return {
+    id,
+    kind: "craft",
+    outputItemId: id,
+    outputCount: 1,
+    requiredItems: [],
+    cost: null,
+    theoreticalCost: null,
+    sellValue: null,
+    profit: null,
+    inputSellValue: null,
+    profitVsSellingInputs: null,
+    durationSeconds: 0,
+    profitPerHour: null,
+    directBuyCost: null,
+    directBuyMethod: null,
+    isPracticallyWorthwhile: null,
+    ...values,
+  };
+}
+
+test("profit table metrics sort in either direction with unknown values last", () => {
+  const low = evaluation("low", {
+    cost: 100,
+    sellValue: 200,
+    profit: 50,
+    profitPerHour: 25,
+  });
+  const high = evaluation("high", {
+    cost: 300,
+    sellValue: 600,
+    profit: 250,
+    profitPerHour: 125,
+  });
+  const unknown = evaluation("unknown", {});
+  const itemsById = {
+    low: { id: "low", name: "Low", normalizedName: "low" },
+    high: { id: "high", name: "High", normalizedName: "high" },
+    unknown: { id: "unknown", name: "Unknown", normalizedName: "unknown" },
+  };
+
+  for (const sortKey of [
+    "cost",
+    "sellValue",
+    "profit",
+    "profitPerHour",
+  ] as const) {
+    assert.deepEqual(
+      [high, unknown, low]
+        .sort((left, right) =>
+          compareEvaluations(left, right, sortKey, "ascending", itemsById),
+        )
+        .map(({ id }) => id),
+      ["low", "high", "unknown"],
+    );
+    assert.deepEqual(
+      [low, unknown, high]
+        .sort((left, right) =>
+          compareEvaluations(left, right, sortKey, "descending", itemsById),
+        )
+        .map(({ id }) => id),
+      ["high", "low", "unknown"],
+    );
+  }
+});
 
 test("trader routes are described as purchases and never expose recipe navigation", () => {
   const plan: AcquisitionPlan = {

@@ -5,7 +5,12 @@ import type {
 } from "@/lib/price-calculation";
 import { practicalSavingsThreshold } from "../../../lib/price-calculation/prices";
 import type { ItemSummary } from "@/types/items";
-import type { RecipePreviewData, RouteContext, SortMode } from "../types";
+import type {
+  RecipePreviewData,
+  RouteContext,
+  SortDirection,
+  SortKey,
+} from "../types";
 import { formatDuration } from "./formatters";
 
 export function indexByOutput<T>(
@@ -58,35 +63,37 @@ export function isRecipeAvailable(
 export function compareEvaluations(
   left: RecipeEvaluation,
   right: RecipeEvaluation,
-  sortMode: SortMode,
+  sortKey: SortKey,
+  sortDirection: SortDirection,
   itemsById: Readonly<Record<string, ItemSummary>>,
 ) {
-  if (sortMode === "name") {
-    return (
-      itemsById[left.outputItemId]?.name ?? left.outputItemId
-    ).localeCompare(itemsById[right.outputItemId]?.name ?? right.outputItemId);
-  }
   const leftValue =
-    sortMode === "cost"
+    sortKey === "cost"
       ? left.cost
-      : sortMode === "profitPerHour"
+      : sortKey === "sellValue"
+        ? left.sellValue
+        : sortKey === "profitPerHour"
         ? left.profitPerHour
         : left.profit;
   const rightValue =
-    sortMode === "cost"
+    sortKey === "cost"
       ? right.cost
-      : sortMode === "profitPerHour"
+      : sortKey === "sellValue"
+        ? right.sellValue
+        : sortKey === "profitPerHour"
         ? right.profitPerHour
         : right.profit;
-  if (sortMode === "cost")
-    return (
-      (leftValue ?? Number.POSITIVE_INFINITY) -
-      (rightValue ?? Number.POSITIVE_INFINITY)
-    );
-  return (
-    (rightValue ?? Number.NEGATIVE_INFINITY) -
-    (leftValue ?? Number.NEGATIVE_INFINITY)
-  );
+  if (leftValue === null && rightValue !== null) return 1;
+  if (leftValue !== null && rightValue === null) return -1;
+  if (leftValue !== null && rightValue !== null && leftValue !== rightValue) {
+    return sortDirection === "ascending"
+      ? leftValue - rightValue
+      : rightValue - leftValue;
+  }
+  const nameComparison = (
+    itemsById[left.outputItemId]?.name ?? left.outputItemId
+  ).localeCompare(itemsById[right.outputItemId]?.name ?? right.outputItemId);
+  return nameComparison || left.id.localeCompare(right.id);
 }
 
 export function hasRecipeRoute(plan: AcquisitionPlan): boolean {

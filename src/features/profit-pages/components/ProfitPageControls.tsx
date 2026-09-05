@@ -1,5 +1,5 @@
 import { Pin, Search } from "lucide-react";
-import type { ProfitPageKind, SortMode } from "../types";
+import type { ProfitPageKind } from "../types";
 import { CalculationSettings } from "./CalculationSettings";
 
 interface SourceOption {
@@ -14,8 +14,6 @@ export function ProfitPageControls({
   sourceId,
   onSourceIdChange,
   sources,
-  sortMode,
-  onSortModeChange,
   availableOnly,
   onAvailableOnlyChange,
   profitableOnly,
@@ -33,8 +31,6 @@ export function ProfitPageControls({
   sourceId: string;
   onSourceIdChange: (value: string) => void;
   sources: SourceOption[];
-  sortMode: SortMode;
-  onSortModeChange: (value: SortMode) => void;
   availableOnly: boolean;
   onAvailableOnlyChange: (value: boolean) => void;
   profitableOnly: boolean;
@@ -49,7 +45,7 @@ export function ProfitPageControls({
   return (
     <section className="mb-4 rounded-md border border-white/10 bg-card/70 p-3 shadow-lg">
       <div
-        className={`grid gap-3 ${kind === "craft" ? "lg:grid-cols-[minmax(220px,1fr)_220px_180px_auto_auto]" : "lg:grid-cols-[minmax(220px,1fr)_220px_180px_auto]"}`}
+        className={`grid gap-3 ${kind === "craft" ? "lg:grid-cols-[minmax(220px,1fr)_220px_auto_auto]" : "lg:grid-cols-[minmax(220px,1fr)_220px_auto]"}`}
       >
         <label className="relative">
           <Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-muted-foreground" />
@@ -77,27 +73,6 @@ export function ProfitPageControls({
               {source.name}
             </option>
           ))}
-        </select>
-        <select
-          value={sortMode}
-          onChange={(event) => onSortModeChange(event.target.value as SortMode)}
-          className="h-9 rounded border border-white/10 bg-[#0b0c0e] px-3 text-sm text-foreground [color-scheme:dark]"
-        >
-          <option className="bg-[#0b0c0e] text-foreground" value="profit">
-            Profit
-          </option>
-          <option
-            className="bg-[#0b0c0e] text-foreground"
-            value="profitPerHour"
-          >
-            Profit / hour
-          </option>
-          <option className="bg-[#0b0c0e] text-foreground" value="cost">
-            Lowest cost
-          </option>
-          <option className="bg-[#0b0c0e] text-foreground" value="name">
-            Item name
-          </option>
         </select>
         <CalculationSettings
           availableOnly={availableOnly}

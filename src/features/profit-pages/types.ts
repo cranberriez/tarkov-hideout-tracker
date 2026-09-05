@@ -5,7 +5,8 @@ import type { Station } from "@/types/hideout";
 import type { Trader } from "@/types/traders";
 
 export type ProfitPageKind = "barter" | "craft";
-export type SortMode = "profit" | "profitPerHour" | "cost" | "name";
+export type SortKey = "cost" | "sellValue" | "profit" | "profitPerHour";
+export type SortDirection = "ascending" | "descending";
 export type RouteMethod = "flea" | "trader" | "barter" | "craft" | "unavailable";
 export type ProfitStationSource = Pick<
   Station,
