@@ -149,16 +149,16 @@ Legacy release references remain usable as flea estimates when recent mutable
 history is absent; the internal source marker does not add a release-status banner.
 
 Item lists and hideout requirements retain numeric estimates for unstable items.
-The modal shows **Flea estimate**, latest minimum, latest aggregate, catalog
-24h average, known offer depth and freshness. Unknown depth is omitted from the
-headline. Unstable flea prices use yellow text with a small warning icon whose
-hover/focus overlay says **Value unstable**. Profit rows apply this only to the
-output item's selected flea sale estimate, without row-wide warnings. History
-charts remain filtered aggregate references and are labeled accordingly; they do
-not control acquisition pricing. The shared [profit rules](profits.md) use the
-same estimate consistently in modal and full-page calculations. HTTP cache
-durations and mode keys remain unchanged; existing cached item views can retain
-older semantics until expiry.
+The modal shows **Flea estimate**, the 24-hour low and high, known offer depth,
+and freshness. Latest aggregate, catalog 24-hour average, and latest minimum are
+omitted from the summary. Unknown depth is omitted from the headline. Unstable
+flea prices use yellow text with a small warning icon whose hover/focus overlay
+says **Value unstable**. Profit rows apply this only to the output item's selected
+flea sale estimate, without row-wide warnings. History charts remain filtered
+aggregate references and are labeled accordingly; they do not control acquisition
+pricing. The shared [profit rules](profits.md) use the same estimate consistently
+in modal and full-page calculations. HTTP cache durations and mode keys remain
+unchanged; existing cached item views can retain older semantics until expiry.
 
 The item modal's History tab calls [live-price-history.ts](../src/server/prices/live-price-history.ts)
 only when requested, with a two-hour Next.js fetch-cache interval. This is separate

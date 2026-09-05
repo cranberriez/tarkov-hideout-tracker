@@ -88,8 +88,11 @@ the selected standard item. Its [modal controller](../src/features/items/item-de
 and [navigation controller](../src/features/items/item-detail/useItemDetailNavigationController.ts)
 own lazy relations, usage, acquisition, history, and in-dialog navigation. Related
 item navigation stays in the dialog; closing it clears session history. Loading,
-empty, partial, and failed domains stay distinguishable. Only complete responses
-enter the in-memory cache. Recipe calculations reuse the [profit engine](profits.md).
+empty, partial, and failed domains stay distinguishable. The usage tab bar remains
+fixed while its content panel scrolls independently with a 700px maximum height;
+the wider desktop modal does not scroll the sidebar and tabs as one region. Only
+complete responses enter the in-memory cache. Recipe calculations reuse the
+[profit engine](profits.md).
 
 For changes here, run [page query tests](../src/server/queries/page-data-queries.test.ts),
 [item detail tests](../src/features/items/item-detail/), and

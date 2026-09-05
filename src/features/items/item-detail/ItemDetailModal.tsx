@@ -74,8 +74,8 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
                                 </button>
                             </header>
 
-                            <div className="flex-1 overflow-y-auto">
-                                <div className={`grid grid-cols-1 gap-0 ${vm.showSidebar ? "lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]" : ""}`}>
+                            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:overflow-hidden">
+                                <div className={`grid min-h-0 grid-cols-1 gap-0 lg:flex-1 ${vm.showSidebar ? "lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]" : ""}`}>
                                     {vm.showSidebar && (
                                         <ItemDetailSidebar
                                             key={vm.selectedItemId}

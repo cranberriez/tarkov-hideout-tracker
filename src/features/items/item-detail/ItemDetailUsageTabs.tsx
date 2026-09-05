@@ -115,7 +115,7 @@ export function ItemDetailUsageTabs({
 
     return (
         <section className={`flex min-h-0 min-w-0 flex-col bg-card/45 ${className}`}>
-            <div className="flex h-10 items-stretch overflow-x-auto border-b border-border-color" role="tablist">
+            <div className="flex h-10 shrink-0 items-stretch overflow-x-auto border-b border-border-color" role="tablist">
                 <TabButton
                     active={selectedTab === "hideout"}
                     disabled={!hideoutEnabled}
@@ -157,7 +157,7 @@ export function ItemDetailUsageTabs({
                 />
             </div>
 
-            <div role="tabpanel" className="flex min-h-0 flex-1 flex-col">
+            <div role="tabpanel" className="flex min-h-0 max-h-[700px] flex-1 flex-col overflow-y-auto">
                 {selectedTab === "hideout" && (
                     <>
                         {(relationsLoading || relationsError) && (

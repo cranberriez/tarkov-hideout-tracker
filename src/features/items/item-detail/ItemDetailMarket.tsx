@@ -44,15 +44,6 @@ export function ItemDetailMarket({
         .sort((a, b) => b.priceRUB - a.priceRUB)
         .slice(0, 3);
     const details = [
-        marketPrice.referencePrice != null
-            ? { label: "Latest aggregate", value: formatRoubles(marketPrice.referencePrice) }
-            : null,
-        marketPrice.avg24hPrice != null
-            ? { label: "Catalog 24h average", value: formatRoubles(marketPrice.avg24hPrice) }
-            : null,
-        marketPrice.lastLowPrice != null
-            ? { label: "Latest minimum", value: formatRoubles(marketPrice.lastLowPrice) }
-            : null,
         marketPrice.low24hPrice != null
             ? { label: "24h low", value: formatRoubles(marketPrice.low24hPrice) }
             : null,
@@ -92,7 +83,7 @@ export function ItemDetailMarket({
             }
         >
             {fleaPrice != null && (
-                <div className="flex items-end justify-between gap-3">
+                <div className="flex items-end justify-between gap-3 rounded-md border border-border-color bg-black/25 px-2.5 py-2">
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-4 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                             <span>{isFiat ? "Rouble cost" : "Flea estimate"}</span>
@@ -118,9 +109,9 @@ export function ItemDetailMarket({
             )}
 
             {details.length > 0 && !isFiat && (
-                <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border-color bg-border-color">
+                <div className="mt-4 grid grid-cols-2">
                     {details.map((detail) => (
-                        <div key={detail.label} className="bg-black/25 px-3 py-2.5">
+                        <div key={detail.label} className="px-3 py-2.5">
                             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
                                 {detail.label}
                             </div>
