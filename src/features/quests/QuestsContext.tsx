@@ -129,6 +129,7 @@ function buildSyncProfile(state: ReturnType<typeof useUserStore.getState>): Ques
         prestigeLevel: state.prestigeLevel,
         faction: state.questFaction,
         traderLoyaltyLevels: state.questTraderLoyaltyLevels,
+        fenceReputation: state.questFenceReputation,
         completedQuests: state.completedQuests,
         failedQuests: state.failedQuests,
     };
@@ -170,6 +171,7 @@ export function QuestsProvider({
         playerLevel,
         prestigeLevel,
         questTraderLoyaltyLevels,
+        questFenceReputation,
         viewMode,
         sortMode,
         questSelectedTraders,
@@ -213,6 +215,7 @@ export function QuestsProvider({
             playerLevel: state.playerLevel,
             prestigeLevel: state.prestigeLevel,
             questTraderLoyaltyLevels: state.questTraderLoyaltyLevels,
+            questFenceReputation: state.questFenceReputation,
             viewMode: state.questViewMode,
             sortMode: state.questSortMode,
             questSelectedTraders: state.questSelectedTraders,
@@ -263,10 +266,11 @@ export function QuestsProvider({
             prestigeLevel,
             faction,
             traderLoyaltyLevels: questTraderLoyaltyLevels,
+            fenceReputation: questFenceReputation,
             completedQuests,
             failedQuests,
         }),
-        [completedQuests, failedQuests, faction, playerLevel, prestigeLevel, questTraderLoyaltyLevels],
+        [completedQuests, failedQuests, faction, playerLevel, prestigeLevel, questFenceReputation, questTraderLoyaltyLevels],
     );
 
     const { questsById, leadsToByQuestId, failureMap, traders } = questDataIndex;

@@ -5,6 +5,10 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { CompletedItemsConversionData } from "@/types/contracts";
+import {
+    buildCompletedItemConversions,
+    removeConvertedRequirements,
+} from "./completed-items-conversion";
 
 const EMPTY_STATIONS: CompletedItemsConversionData["stations"] = [];
 const EMPTY_ITEMS: CompletedItemsConversionData["items"] = [];
@@ -34,10 +38,6 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
             : null);
     const stations = data?.stations ?? EMPTY_STATIONS;
     const items = data?.items ?? EMPTY_ITEMS;
-    const itemById = useMemo(
-        () => Object.fromEntries(items.map((item) => [item.id, item])),
-        [items],
-    );
 
     useEffect(() => {
         if (!isOpen) return;
@@ -66,48 +66,15 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
         return () => controller.abort();
     }, [isOpen, requestedMode]);
 
-    const conversions = useMemo(() => {
-        const map = new Map<
-            string,
-            {
-                itemId: string;
-                itemName: string;
-                total: number;
-                totalFir: number;
-            }
-        >();
-
-        stations.forEach((station) => {
-            const currentLevel = stationLevels[station.id] ?? 0;
-
-            station.levels.forEach((level) => {
-                // Ignore requirements for levels that are already reached or surpassed
-                if (currentLevel >= level.level) return;
-
-                level.itemRequirements.forEach((req) => {
-                    if (!completedRequirements[req.id]) return;
-
-                    if (req.count <= 0) return;
-
-                    const existing = map.get(req.itemId) ?? {
-                        itemId: req.itemId,
-                        itemName: itemById[req.itemId]?.name ?? req.itemId,
-                        total: 0,
-                        totalFir: 0,
-                    };
-
-                    existing.total += req.count;
-                    if (req.isFir) {
-                        existing.totalFir += req.count;
-                    }
-
-                    map.set(req.itemId, existing);
-                });
-            });
-        });
-
-        return Array.from(map.values()).sort((a, b) => a.itemName.localeCompare(b.itemName));
-    }, [stations, stationLevels, completedRequirements, itemById]);
+    const { conversions, convertedRequirementIds } = useMemo(
+        () => buildCompletedItemConversions(
+            stations,
+            items,
+            stationLevels,
+            completedRequirements,
+        ),
+        [stations, items, stationLevels, completedRequirements],
+    );
 
     const handleApply = () => {
         conversions.forEach(({ itemId, total, totalFir }) => {
@@ -115,7 +82,13 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
             addItemCounts(itemId, nonFir, totalFir);
         });
 
-        useUserStore.getState().applyProfilePatch({ completedRequirements: {} });
+        const currentCompletedRequirements = useUserStore.getState().completedRequirements;
+        useUserStore.getState().applyProfilePatch({
+            completedRequirements: removeConvertedRequirements(
+                currentCompletedRequirements,
+                convertedRequirementIds,
+            ),
+        });
 
         onClose();
     };

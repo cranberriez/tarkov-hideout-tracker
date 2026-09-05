@@ -65,6 +65,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                 prestigeLevel: profile.prestigeLevel,
                 faction: profile.questFaction,
                 traderLoyaltyLevels: profile.questTraderLoyaltyLevels,
+                fenceReputation: profile.questFenceReputation,
                 completedQuests: profile.completedQuests,
             };
 

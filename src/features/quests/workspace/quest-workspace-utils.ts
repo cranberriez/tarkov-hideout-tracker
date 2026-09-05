@@ -16,6 +16,7 @@ import {
     getTraderTierCompletionGate,
 } from "../../../lib/utils/quest-trader-completion-gates";
 import { QUEST_SERIES_MANIFEST } from "../../../lib/utils/quest-series";
+import { isQuestAvailableForProfile } from "../../../lib/utils/quest-availability";
 
 export type { QuestObjectiveCategory, QuestWorkspaceStatus } from "@/lib/stores/useUserStore";
 
@@ -80,12 +81,19 @@ const OBJECTIVE_CATEGORY_ORDER = Object.keys(OBJECTIVE_CATEGORY_LABELS) as Quest
 function isTaskRequirementMet(
     requirement: FullQuest["taskRequirements"][number],
     profile: QuestWorkspaceProfile,
+    questsById: ReadonlyMap<string, FullQuest>,
 ) {
     const statuses = requirement.status.map((status) => status.trim().toLowerCase());
     const prerequisiteComplete = !!profile.completedQuests[requirement.task.id];
     const prerequisiteFailed = !!profile.failedQuests[requirement.task.id];
     if (statuses.includes("complete") && (prerequisiteComplete || prerequisiteFailed)) return true;
     if (statuses.includes("failed") && prerequisiteFailed) return true;
+    if (statuses.includes("active")) {
+        if (prerequisiteComplete || prerequisiteFailed) return true;
+        const prerequisite = questsById.get(requirement.task.id);
+        if (!prerequisite) return false;
+        return isQuestAvailableForProfile(prerequisite, profile, questsById);
+    }
     return false;
 }
 
@@ -204,7 +212,7 @@ function getMissingPrerequisiteQuestIds(
         visiting.add(current.id);
 
         for (const requirement of current.taskRequirements) {
-            if (isTaskRequirementMet(requirement, profile)) continue;
+            if (isTaskRequirementMet(requirement, profile, questsById)) continue;
             missingIds.add(requirement.task.id);
             const prerequisite = questsById.get(requirement.task.id);
             if (prerequisite) visit(prerequisite);

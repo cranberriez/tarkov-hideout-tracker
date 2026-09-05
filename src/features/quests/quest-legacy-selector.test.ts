@@ -36,6 +36,7 @@ function makeProfile(overrides: Partial<LegacyQuestProfileSnapshot> = {}): Legac
         prestigeLevel: 0,
         faction: null,
         traderLoyaltyLevels: {},
+        fenceReputation: 0,
         completedQuests: {},
         failedQuests: {},
         ignoredQuests: {},

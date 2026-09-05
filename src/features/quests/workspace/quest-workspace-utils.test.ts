@@ -164,6 +164,56 @@ test("marks a maximum-Fence-reputation quest locked at the default standing", ()
     );
 });
 
+test("treats an available active-status prerequisite as satisfied", () => {
+    const prerequisite: FullQuest = {
+        ...compensationForDamage,
+        id: "available-prerequisite",
+        name: "Available prerequisite",
+        normalizedName: "available-prerequisite",
+        traderRequirements: [],
+    };
+    const dependent: FullQuest = {
+        ...prerequisite,
+        id: "dependent",
+        name: "Dependent",
+        normalizedName: "dependent",
+        taskRequirements: [{
+            task: { id: prerequisite.id, name: prerequisite.name },
+            status: ["active"],
+        }],
+    };
+    const questsById = new Map([prerequisite, dependent].map((quest) => [quest.id, quest]));
+
+    assert.equal(getQuestWorkspaceStatus(dependent, makeProfile(0), questsById).status, "active");
+});
+
+test("keeps an active-status prerequisite locked when that quest is unavailable", () => {
+    const prerequisite: FullQuest = {
+        ...compensationForDamage,
+        id: "locked-prerequisite",
+        name: "Locked prerequisite",
+        normalizedName: "locked-prerequisite",
+        minPlayerLevel: 40,
+        traderRequirements: [],
+    };
+    const dependent: FullQuest = {
+        ...prerequisite,
+        id: "dependent-on-locked",
+        name: "Dependent on locked",
+        normalizedName: "dependent-on-locked",
+        minPlayerLevel: 1,
+        taskRequirements: [{
+            task: { id: prerequisite.id, name: prerequisite.name },
+            status: ["active"],
+        }],
+    };
+    const questsById = new Map([prerequisite, dependent].map((quest) => [quest.id, quest]));
+    const status = getQuestWorkspaceStatus(dependent, makeProfile(0), questsById);
+
+    assert.equal(status.status, "locked");
+    assert.equal(status.reasons.some((reason) => reason.kind === "quest"), true);
+});
+
 test("reports failed quests as resolved failed status instead of locked", () => {
     const questsById = new Map([[compensationForDamage.id, compensationForDamage]]);
     const status = getQuestWorkspaceStatus(

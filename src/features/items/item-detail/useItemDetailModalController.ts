@@ -68,6 +68,7 @@ export function useItemDetailModalController({
         prestigeLevel: store.prestigeLevel,
         faction: store.questFaction,
         traderLoyaltyLevels: store.questTraderLoyaltyLevels,
+        fenceReputation: store.questFenceReputation,
         quests: questAvailabilityQuests,
         visibilityMode: store.itemQuestVisibilityMode,
         customLookahead: store.itemQuestCustomLookahead,

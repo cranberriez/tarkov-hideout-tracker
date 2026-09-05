@@ -4,7 +4,7 @@ import {
     statusIncludesComplete,
     statusIncludesFailed,
 } from "./quest-failures";
-import { isQuestTraderLoyaltyRequirement } from "./quest-trader-gates";
+import { questTraderRequirementMatchesProfile } from "./quest-trader-gates";
 import {
     compareTraderTierCompletionCount,
     countCompletedTraderTierQuests,
@@ -18,6 +18,7 @@ export interface QuestAvailabilityProfile {
     prestigeLevel: number;
     faction: QuestFactionFilter | null;
     traderLoyaltyLevels: Record<string, number>;
+    fenceReputation: number;
     completedQuests: Record<string, boolean>;
     failedQuests?: Record<string, boolean>;
 }
@@ -100,47 +101,13 @@ export function matchesFactionVisibility(
     return questFaction !== "USEC";
 }
 
-function compareTraderLoyalty(
-    currentLevel: number,
-    compareMethod: string,
-    requiredLevel: number,
-) {
-    switch (compareMethod.trim()) {
-        case ">":
-            return currentLevel > requiredLevel;
-        case "<":
-            return currentLevel < requiredLevel;
-        case "<=":
-            return currentLevel <= requiredLevel;
-        case "=":
-        case "==":
-        case "===":
-            return currentLevel === requiredLevel;
-        case "!=":
-        case "!==":
-            return currentLevel !== requiredLevel;
-        case ">=":
-        default:
-            // Current Tarkov data uses >=. Keep that behavior for an
-            // unrecognized comparator rather than silently opening a gate.
-            return currentLevel >= requiredLevel;
-    }
-}
-
-function traderLoyaltyRequirementsSatisfied(
+function traderRequirementsSatisfied(
     quest: QuestAvailabilityQuest,
     profile: QuestAvailabilityProfile,
 ) {
-    return (quest.traderRequirements ?? [])
-        .filter(isQuestTraderLoyaltyRequirement)
-        .every((requirement) => {
-            const traderLoyalty = profile.traderLoyaltyLevels[requirement.trader.id] ?? 1;
-            return compareTraderLoyalty(
-                traderLoyalty,
-                requirement.compareMethod,
-                requirement.value,
-            );
-        });
+    return (quest.traderRequirements ?? []).every((requirement) =>
+        questTraderRequirementMatchesProfile(requirement, profile),
+    );
 }
 
 function traderTierCompletionRequirementsSatisfied(
@@ -210,7 +177,7 @@ export function isQuestAvailableForProfile(
     if ((quest.minPlayerLevel ?? 0) > profile.playerLevel) return false;
     if ((quest.requiredPrestige?.prestigeLevel ?? 0) > profile.prestigeLevel) return false;
 
-    if (!traderLoyaltyRequirementsSatisfied(quest, profile)) return false;
+    if (!traderRequirementsSatisfied(quest, profile)) return false;
     if (!traderTierCompletionRequirementsSatisfied(quest, profile, questsById)) return false;
     if (visiting.has(quest.id)) return false;
 

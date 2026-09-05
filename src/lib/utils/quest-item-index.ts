@@ -170,6 +170,7 @@ export interface QuestItemDeriveOptions {
     prestigeLevel: number;
     faction: QuestAvailabilityProfile["faction"];
     traderLoyaltyLevels: Record<string, number>;
+    fenceReputation: number;
     quests: QuestAvailabilityQuest[];
     visibilityMode?: ItemQuestVisibilityMode;
     customLookahead?: number;
@@ -617,6 +618,7 @@ function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestIte
         prestigeLevel: options.prestigeLevel,
         faction: options.faction,
         traderLoyaltyLevels: options.traderLoyaltyLevels,
+        fenceReputation: options.fenceReputation,
     };
 
     const availableQuestIds = new Set(

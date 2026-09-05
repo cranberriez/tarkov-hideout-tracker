@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import type { GameMode } from "@/lib/game-mode";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { EditionSelection } from "./EditionSelection";
 import { GameModeSelection } from "./GameModeSelection";
@@ -10,6 +12,7 @@ import { QuickHideoutLevels } from "./QuickHideoutLevels";
 import { STATIC_STATIONS, type SetupStation } from "@/lib/data/static-stations";
 
 export function SetupModal() {
+    const router = useRouter();
     const {
         gameEdition,
         gameMode,
@@ -48,6 +51,12 @@ export function SetupModal() {
         window.location.reload();
     };
 
+    const handleGameModeSelect = (mode: GameMode) => {
+        if (mode === gameMode) return;
+        setGameMode(mode);
+        router.refresh();
+    };
+
     const canFinish = gameEdition !== null;
 
     return (
@@ -80,7 +89,7 @@ export function SetupModal() {
                 <div className="p-6 max-h-[65vh] overflow-y-auto bg-black/40">
                     {activeView === "settings" ? (
                         <div className="space-y-8">
-                            <GameModeSelection selected={gameMode} onSelect={setGameMode} />
+                            <GameModeSelection selected={gameMode} onSelect={handleGameModeSelect} />
                             <EditionSelection selected={gameEdition} onSelect={setGameEdition} />
                         </div>
                     ) : (

@@ -63,6 +63,7 @@ test("makes corrected quests available to BEAR profiles and unavailable to USEC 
         playerLevel: 99,
         prestigeLevel: 0,
         traderLoyaltyLevels: {},
+        fenceReputation: 0,
         completedQuests: {},
     };
 

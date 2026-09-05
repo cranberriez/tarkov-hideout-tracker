@@ -47,6 +47,7 @@ function makeProfile(overrides: Partial<QuestSyncProfile> = {}): QuestSyncProfil
         prestigeLevel: overrides.prestigeLevel ?? 0,
         faction: overrides.faction ?? "USEC",
         traderLoyaltyLevels: overrides.traderLoyaltyLevels ?? { prapor: 3, therapist: 1 },
+        fenceReputation: overrides.fenceReputation ?? 0,
         completedQuests: overrides.completedQuests ?? {},
         failedQuests: overrides.failedQuests ?? {},
     };

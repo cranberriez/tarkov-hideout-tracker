@@ -33,6 +33,7 @@ function makeProfile(overrides: Partial<QuestAvailabilityProfile> = {}): QuestAv
         prestigeLevel: overrides.prestigeLevel ?? 0,
         faction: overrides.faction ?? "USEC",
         traderLoyaltyLevels: overrides.traderLoyaltyLevels ?? { skier: 4 },
+        fenceReputation: overrides.fenceReputation ?? 0,
         completedQuests: overrides.completedQuests ?? {},
         failedQuests: overrides.failedQuests ?? {},
     };
@@ -254,6 +255,33 @@ test("reputation gates do not act as loyalty-level gates", () => {
             makeProfile({ traderLoyaltyLevels: { skier: 1 } }),
             questsById,
         ),
+        true,
+    );
+});
+
+test("Fence reputation gates use the profile's exact standing", () => {
+    const quest = makeQuest({
+        id: "fence-reputation-gate",
+        traderRequirements: [{
+            ...makeTraderRequirement("fence", "reputation", -1),
+            compareMethod: "<=",
+            trader: {
+                id: "fence",
+                name: "Fence",
+                normalizedName: "fence",
+                imageLink: null,
+                image4xLink: null,
+            },
+        }],
+    });
+    const questsById = buildQuestAvailabilityMap([quest]);
+
+    assert.equal(
+        isQuestAvailableForProfile(quest, makeProfile({ fenceReputation: 0 }), questsById),
+        false,
+    );
+    assert.equal(
+        isQuestAvailableForProfile(quest, makeProfile({ fenceReputation: -1 }), questsById),
         true,
     );
 });
