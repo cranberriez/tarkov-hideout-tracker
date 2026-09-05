@@ -144,7 +144,7 @@ export function RecipeItemHoverCard({
         </button>
         <span className="flex items-center gap-3">
           <span className="relative flex size-16 shrink-0 items-center justify-center bg-white/[0.035]">
-            {showRouteIcon && <RouteIcon method={method} />}
+            {showRouteIcon && <RouteIcon method={method} filled />}
             {item?.iconLink && (
               <Image
                 src={item.iconLink}

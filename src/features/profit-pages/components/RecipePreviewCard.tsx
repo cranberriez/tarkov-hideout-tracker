@@ -1,12 +1,11 @@
 import Image from "next/image";
-import { CircleArrowRight, Wrench } from "lucide-react";
 import type { RecipePreviewData, RouteContext } from "../types";
 import {
   formatDuration,
   formatQuantity,
   formatRoundedRoubles,
 } from "../utils/formatters";
-import { routeChipClasses } from "./RouteIcon";
+import { RouteIcon, routeChipClasses } from "./RouteIcon";
 
 export function RecipePreviewCard({
   preview,
@@ -39,15 +38,7 @@ export function RecipePreviewCard({
   return (
     <span className="block min-w-0 flex-1 overflow-hidden rounded-md border border-white/15 bg-[#05070a] shadow-[0_18px_55px_rgba(0,0,0,0.8)]">
       <span className="flex items-center gap-2 border-b border-white/10 bg-white/[0.035] px-3 py-2">
-        <span
-          className={`flex size-7 shrink-0 items-center justify-center rounded border ${preview.kind === "craft" ? "border-orange-400/25 bg-orange-400/10 text-orange-300" : "border-sky-400/25 bg-sky-400/10 text-sky-300"}`}
-        >
-          {preview.kind === "craft" ? (
-            <Wrench className="size-4" />
-          ) : (
-            <CircleArrowRight className="size-4" />
-          )}
-        </span>
+        <RouteIcon method={preview.kind} preview filled />
         {source?.imageLink && (
           <Image
             src={source.imageLink}
