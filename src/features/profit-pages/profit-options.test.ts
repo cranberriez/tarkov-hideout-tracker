@@ -48,6 +48,7 @@ test("reads never overwrite saved modes and every option survives page remounts"
     },
   };
   const saved = {
+    craftingSkillLevel: 0,
     availableOnly: false,
     profitableOnly: true,
     useTraderSaleForLockedOutputs: false,
@@ -92,4 +93,19 @@ test("storage failures retain edits in memory without affecting another mode", (
   }));
   readOnly.setOption("allowCrafts", false);
   assert.equal(readOnly.getSnapshot().allowCrafts, false);
+});
+
+
+test("crafting skill defaults safely and persists independently by mode", () => {
+  assert.equal(parseProfitOptions('{"allowCrafts":false}').craftingSkillLevel, 0);
+  for (const [value, expected] of [[-1, 0], [52, 51], [25.9, 25], ["50", 0], [null, 0]] as const) {
+    assert.equal(parseProfitOptions(JSON.stringify({ craftingSkillLevel: value })).craftingSkillLevel, expected);
+  }
+  const values = new Map<string, string>();
+  const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); } };
+  const pvp = createProfitOptionsStore("PVP", () => storage);
+  pvp.setOption("craftingSkillLevel", 51);
+  assert.equal(createProfitOptionsStore("PVP", () => storage).getSnapshot().craftingSkillLevel, 51);
+  assert.equal(createProfitOptionsStore("PVE", () => storage).getSnapshot().craftingSkillLevel, 0);
+  assert.equal(createProfitOptionsStore("KORD", () => storage).getSnapshot().craftingSkillLevel, 0);
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { craftingDuration } from "@/lib/price-calculation/crafting-skill";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useShallow } from "zustand/react/shallow";
@@ -69,6 +70,10 @@ export function ProfitPageClient({
   const [sourceId, setSourceId] = useState("all");
   const [stationSourceIds, setStationSourceIds] = useState<string[]>([]);
   const {
+    craftingSkillLevel,
+    craftingSkillForced,
+    craftingSkillNote,
+    setCraftingSkillLevel,
     availableOnly,
     setAvailableOnly,
     lockFilters,
@@ -96,6 +101,7 @@ export function ProfitPageClient({
     useState<SortDirection>("descending");
   const evaluations = useMemo(() => {
     const calculator = createRecipeCalculator({
+      craftingSkillLevel,
       playerLevel,
       stationLevels,
       useTraderSaleForLockedOutputs,
@@ -112,6 +118,7 @@ export function ProfitPageClient({
       ? calculator.evaluateBarters()
       : calculator.evaluateCrafts();
   }, [
+    craftingSkillLevel,
     playerLevel,
     stationLevels,
     useTraderSaleForLockedOutputs,
@@ -149,9 +156,9 @@ export function ProfitPageClient({
   const craftsById = useMemo(
     () =>
       Object.fromEntries(
-        data.crafts.map((craft) => [craft.id, craft]),
+        data.crafts.map((craft) => [craft.id, { ...craft, duration: craftingDuration(craft, craftingSkillLevel) }]),
       ) as Record<string, CraftRecord>,
-    [data.crafts],
+    [data.crafts, craftingSkillLevel],
   );
   const sources = useMemo(() => {
     const ids =
@@ -293,6 +300,11 @@ export function ProfitPageClient({
           </p>
         )}
         <ProfitPageControls
+          key={gameMode}
+          craftingSkillForced={craftingSkillForced}
+          craftingSkillNote={craftingSkillNote}
+          craftingSkillLevel={craftingSkillLevel}
+          onCraftingSkillLevelChange={setCraftingSkillLevel}
           kind={kind}
           search={search}
           onSearchChange={setSearch}

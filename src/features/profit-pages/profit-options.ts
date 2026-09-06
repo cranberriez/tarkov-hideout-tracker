@@ -1,6 +1,8 @@
+import { normalizeCraftingSkillLevel } from "../../lib/price-calculation/crafting-skill";
 import type { GameMode } from "@/lib/game-mode";
 
 export interface ProfitOptions {
+  craftingSkillLevel: number;
   availableOnly: boolean;
   profitableOnly: boolean;
   useTraderSaleForLockedOutputs: boolean;
@@ -15,6 +17,7 @@ export interface ProfitOptions {
 }
 
 export const DEFAULT_PROFIT_OPTIONS: ProfitOptions = {
+  craftingSkillLevel: 0,
   availableOnly: true,
   profitableOnly: false,
   useTraderSaleForLockedOutputs: true,
@@ -54,6 +57,7 @@ export function parseProfitOptions(raw: string | null): ProfitOptions {
   ] as const) {
     if (typeof value[key] === "boolean") options[key] = value[key];
   }
+  options.craftingSkillLevel = normalizeCraftingSkillLevel(value.craftingSkillLevel);
   const filters = record(value.lockFilters);
   for (const key of ["flea", "quest", "vendor", "station"] as const) {
     if (typeof filters[key] === "boolean") options.lockFilters[key] = filters[key];

@@ -1,3 +1,4 @@
+import { withRequiredItemRoute } from "../../features/profit-pages/utils/recipes";
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { BarterRecord, CraftRecord } from "@/types/recipes";
@@ -450,4 +451,29 @@ test("reuses a stored recipe graph with different live price contexts", () => {
         refreshedPlan.alternatives.map((alternative) => alternative.method),
         ["barter"],
     );
+});
+
+
+test("crafting skill reduces root and nested times, caps Elite, and exempts Bitcoin Farm", () => {
+    const nested: CraftRecord = { id: "nested", productItemId: "B", productCount: 2, stationId: "workbench", level: 1, duration: 3600, requiredItems: [{ itemId: "C", count: 1 }], requiredQuestItems: [], gameEditions: [] };
+    const root: CraftRecord = { ...nested, id: "root", productItemId: "A", productCount: 1, duration: 1800, requiredItems: [{ itemId: "B", count: 1 }] };
+    const input = { itemsById: { A: item("A", 10000), B: item("B", 5000), C: item("C", 100) }, crafts: [root, nested], barters: [] };
+    const base = createRecipeCalculator(input).evaluateCraft(root);
+    assert.equal(base.durationSeconds, 3600);
+    for (const [craftingSkillLevel, multiplier] of [[0, 1], [1, 0.9925], [25, 0.8125], [50, 0.625], [51, 0.625]]) {
+        const calculator = createRecipeCalculator({ ...input, craftingSkillLevel });
+        const evaluation = calculator.evaluateCraft(root);
+        assert.equal(evaluation.durationSeconds, 3600 * multiplier);
+        assert.equal(evaluation.craft?.duration, 1800 * multiplier);
+        const switched = withRequiredItemRoute(evaluation, 0, "flea:direct");
+        assert.equal(switched.durationSeconds, 1800 * multiplier);
+        assert.equal(switched.profitPerHour, switched.profit! / (multiplier / 2));
+        assert.equal(evaluation.cost, base.cost);
+        assert.equal(evaluation.profit, base.profit);
+        assert.equal(evaluation.profitPerHour, base.profit! / multiplier);
+        const bitcoin = { ...root, stationId: "5d494a445b56502f18c98a10" };
+        assert.equal(calculator.evaluateCraft(bitcoin).craft?.duration, 1800);
+    }
+    assert.equal(root.duration, 1800);
+    assert.equal(nested.duration, 3600);
 });

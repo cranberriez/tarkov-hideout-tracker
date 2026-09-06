@@ -1,3 +1,4 @@
+import { CraftingSettings } from "./CraftingSettings";
 import Image from "next/image";
 import { ChevronDown, Pin, Search, Wrench } from "lucide-react";
 import {
@@ -20,6 +21,10 @@ import type { ProfitLockOptionsProps } from "../types";
 
 export function ProfitPageControls({
   kind,
+  craftingSkillLevel,
+  craftingSkillForced,
+  craftingSkillNote,
+  onCraftingSkillLevelChange,
   search,
   onSearchChange,
   sourceId,
@@ -43,6 +48,10 @@ export function ProfitPageControls({
   onShowPinnedOnlyChange,
 }: {
   kind: ProfitPageKind;
+  craftingSkillLevel: number;
+  craftingSkillForced: boolean;
+  craftingSkillNote?: string;
+  onCraftingSkillLevelChange: (value: number) => void;
   search: string;
   onSearchChange: (value: string) => void;
   sourceId: string;
@@ -64,7 +73,7 @@ export function ProfitPageControls({
   return (
     <section className="mb-4 rounded-md border border-white/10 bg-card/70 p-3 shadow-lg">
       <div
-        className={`grid gap-3 ${kind === "craft" ? "lg:grid-cols-[minmax(220px,1fr)_220px_auto_auto]" : "lg:grid-cols-[minmax(220px,1fr)_220px_auto]"}`}
+        className={`grid gap-3 ${kind === "craft" ? "lg:grid-cols-[minmax(220px,1fr)_220px_auto_auto_auto]" : "lg:grid-cols-[minmax(220px,1fr)_220px_auto]"}`}
       >
         <label className="relative">
           <Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-muted-foreground" />
@@ -102,6 +111,7 @@ export function ProfitPageControls({
             ))}
           </select>
         )}
+        {kind === "craft" && <CraftingSettings forced={craftingSkillForced} note={craftingSkillNote} level={craftingSkillLevel} onLevelChange={onCraftingSkillLevelChange} />}
         <CalculationSettings
           lockFilters={lockFilters}
           onLockFiltersChange={onLockFiltersChange}

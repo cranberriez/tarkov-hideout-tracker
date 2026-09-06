@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
+import { getSeasonalCraftingSettings } from "@/lib/cfg/seasonal";
 import type { GameMode } from "@/lib/game-mode";
 import {
   createProfitOptionsStore,
@@ -44,8 +45,13 @@ export function useProfitOptions(gameMode: GameMode) {
     window.dispatchEvent(new Event(CHANGE_EVENT));
   }
 
+  const seasonalCrafting = getSeasonalCraftingSettings(gameMode, options.craftingSkillLevel);
   return {
     ...options,
+    ...seasonalCrafting,
+    setCraftingSkillLevel: (value: number) => {
+      if (!seasonalCrafting.craftingSkillForced) setOption("craftingSkillLevel", value);
+    },
     setAvailableOnly: (value: boolean) => setOption("availableOnly", value),
     setProfitableOnly: (value: boolean) => setOption("profitableOnly", value),
     setUseTraderSaleForLockedOutputs: (value: boolean) =>

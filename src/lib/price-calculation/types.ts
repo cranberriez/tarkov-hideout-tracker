@@ -80,6 +80,7 @@ export interface RecipeEvaluation {
     directBuyMethod: "flea" | "trader" | null;
     isPracticallyWorthwhile: boolean | null;
     barter?: BarterRecord;
+    /** Evaluation copy with skill-adjusted duration; source records remain unchanged. */
     craft?: CraftRecord;
 }
 
@@ -88,6 +89,7 @@ export interface PriceCalculationContext {
     bartersByItemId: Readonly<Record<string, BarterRecord[]>>;
     craftsByItemId: Readonly<Record<string, CraftRecord[]>>;
     overrides?: ManualPriceOverrides;
+    craftingSkillLevel?: number;
     playerLevel?: number;
     /** Omission preserves station-agnostic calculations. Missing entries mean level zero. */
     stationLevels?: Readonly<Record<string, number>>;
@@ -106,6 +108,7 @@ export interface RecipeCalculatorInput {
     barters: readonly BarterRecord[];
     crafts: readonly CraftRecord[];
     overrides?: ManualPriceOverrides;
+    craftingSkillLevel?: number;
     playerLevel?: number;
     /** Omission preserves station-agnostic calculations. Missing entries mean level zero. */
     stationLevels?: Readonly<Record<string, number>>;

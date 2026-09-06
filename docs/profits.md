@@ -57,7 +57,24 @@ rather than selecting routes independently.
   count unpriced rows explicitly; positive value sums priced rows only.
 - Hourly profit includes sequential nested craft time allocated per produced item;
   root crafts include their own duration. Instantaneous barter paths have no hourly
-  value. Station-aware parallel scheduling and flea fees are not modeled.
+  value. The Skills panel has a crafting level text input (0-50), validates
+  after 500 ms or on blur, and clamps numeric values to that range. Invalid or
+  empty text restores the saved level. An Elite toggle stores 51 and disables
+  the input at an effective level of 50. Turning Elite off leaves level 50.
+  [Seasonal configuration](../src/lib/cfg/seasonal.ts) forces Elite for Season 1
+  KORD Breach. The shared profit-options hook applies the rule to both profit
+  pages and item details, and disables the Elite toggle with a short season note.
+  Change `forceEliteCrafting` in that file to lift the override. Saved skill
+  preferences remain untouched and apply again when the override is removed.
+  The panel shows the time reduction inline and a short concurrent-crafts note
+  only for Elite. Missing saved levels default
+  to zero. Each level cuts craft time by 0.75%, capped at 37.5% for both 50 and
+  Elite. The shared engine applies this to root and nested crafts, including
+  cyclic production except Bitcoin Farm. Adjusted durations also appear in
+  previews, manual route changes, and item details. Elite allows two different
+  crafts per zone (including Scav Case); the panel explains this benefit, while
+  profit/hour remains per recipe. Station-aware parallel scheduling and flea
+  fees are not modeled.
 - Route profit assumes acquisition of inputs. Owned-input opportunity value compares
   selling the ingredients individually with selling the recipe output; preserve
   that distinction in labels and calculations.

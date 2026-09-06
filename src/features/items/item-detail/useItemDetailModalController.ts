@@ -1,5 +1,7 @@
 "use client";
 
+import { craftingDuration } from "@/lib/price-calculation/crafting-skill";
+import { useProfitOptions } from "@/features/profit-pages/useProfitOptions";
 import { useMemo } from "react";
 import type { ItemCraftRecipe, ItemTraderOffer } from "./item-detail-types";
 import type { ItemSummary } from "@/types/items";
@@ -29,6 +31,7 @@ export function useItemDetailModalController({
     const { activeItemId, navigatedItemsById } = navigation;
     const store = useUserStore();
     const { overrides } = useManualPriceOverrides(store.gameMode);
+    const { craftingSkillLevel } = useProfitOptions(store.gameMode);
     const tarkovMode = toTarkovJsonGameMode(store.gameMode);
     const requests = useItemDetailRequestController({ activeItemId, isOpen, mode: tarkovMode });
     const itemRelations = requests.relations;
@@ -115,6 +118,7 @@ export function useItemDetailModalController({
                       barters: acquisitionTree.barters,
                       crafts: acquisitionTree.crafts,
                       overrides,
+                      craftingSkillLevel,
                       traderLoyaltyLevels: store.questTraderLoyaltyLevels,
                       completedQuests: store.completedQuests,
                       playerLevel: store.playerLevel,
@@ -123,6 +127,7 @@ export function useItemDetailModalController({
                 : null,
         [
             acquisitionTree,
+            craftingSkillLevel,
             itemDetailsById,
             overrides,
             store.completedQuests,
@@ -236,7 +241,7 @@ export function useItemDetailModalController({
                 ? { ...station }
                 : { id: craft.stationId, name: "Unknown station", normalizedName: craft.stationId },
             level: craft.level,
-            duration: craft.duration,
+            duration: craftingDuration(craft, craftingSkillLevel),
             taskUnlock: craft.taskUnlockId
                 ? { id: craft.taskUnlockId, name: unlock?.name ?? "Quest unlock", wikiLink: unlock?.wikiLink }
                 : null,

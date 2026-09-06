@@ -1,3 +1,4 @@
+import { craftingDuration } from "./crafting-skill";
 import { getFleaLockReasons, getRecipeLockReasons, getTraderLockReasons } from "./availability";
 import { getFleaPrice } from "../utils/market-price";
 import type { BarterRecord, CraftRecord, ItemAmountRef } from "@/types/recipes";
@@ -255,7 +256,7 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
             theoreticalCost,
             durationSeconds:
                 (kind === "craft"
-                    ? (recipe as CraftRecord).duration * (quantity / outputCount)
+                    ? craftingDuration(recipe as CraftRecord, context.craftingSkillLevel) * (quantity / outputCount)
                     : 0) +
                 children.reduce(
                     (total, child) => total + (child.isTool ? 0 : child.durationSeconds),
@@ -404,6 +405,7 @@ export function createRecipeCalculator(input: RecipeCalculatorInput) {
             input.crafts,
             (craft) => craft.productItemId,
         ),
+        craftingSkillLevel: input.craftingSkillLevel,
         playerLevel: input.playerLevel,
         stationLevels: input.stationLevels,
         useTraderSaleForLockedOutputs: input.useTraderSaleForLockedOutputs,
@@ -527,7 +529,7 @@ function evaluateTopLevelRecipe(
         ? null
         : sellValue - inputSellValue;
     const durationSeconds =
-        (kind === "craft" ? (recipe as CraftRecord).duration : 0) +
+        (kind === "craft" ? craftingDuration(recipe as CraftRecord, context.craftingSkillLevel) : 0) +
         requiredItems.reduce(
             (total, plan) => total + (plan.isTool ? 0 : plan.durationSeconds),
             0,
@@ -571,6 +573,6 @@ function evaluateTopLevelRecipe(
         isPracticallyWorthwhile: meaningfulSavings,
         ...(kind === "barter"
             ? { barter: recipe as BarterRecord }
-            : { craft: recipe as CraftRecord }),
+            : { craft: { ...recipe as CraftRecord, duration: craftingDuration(recipe as CraftRecord, context.craftingSkillLevel) } }),
     };
 }
