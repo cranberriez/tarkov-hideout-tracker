@@ -22,7 +22,7 @@ import type { ItemCraftRecipe, ItemTraderOffer } from "@/features/items/item-det
 import type { ItemSummary } from "@/types/items";
 import type { GameEdition } from "@/lib/stores/useUserStore";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import type { RecipeEvaluation } from "@/lib/price-calculation";
+import type { ManualPriceOverrides, RecipeEvaluation } from "@/lib/price-calculation";
 
 type UsageTab = "hideout" | "quests" | "traders" | "crafting" | "prices";
 
@@ -52,6 +52,7 @@ interface ItemDetailUsageTabsProps {
     showPriceHistory: boolean;
     barterEvaluationsById: Readonly<Record<string, RecipeEvaluation>>;
     craftEvaluationsById: Readonly<Record<string, RecipeEvaluation>>;
+    overrides?: ManualPriceOverrides;
     profitLoading: boolean;
     profitError: string | null;
     onItemClick: (itemId: string) => void;
@@ -83,6 +84,7 @@ export function ItemDetailUsageTabs({
     showPriceHistory,
     barterEvaluationsById,
     craftEvaluationsById,
+    overrides = {},
     profitLoading,
     profitError,
     onItemClick,
@@ -210,6 +212,7 @@ export function ItemDetailUsageTabs({
                             offers={traderOffers}
                             completedQuests={completedQuests}
                             traderLoyaltyLevels={traderLoyaltyLevels}
+                            overrides={overrides}
                             evaluationsById={barterEvaluationsById}
                             profitLoading={profitLoading}
                             profitError={profitError}
@@ -230,6 +233,7 @@ export function ItemDetailUsageTabs({
                             completedQuests={completedQuests}
                             stationLevels={stationLevels}
                             gameEdition={gameEdition}
+                            overrides={overrides}
                             evaluationsById={craftEvaluationsById}
                             profitLoading={profitLoading}
                             profitError={profitError}

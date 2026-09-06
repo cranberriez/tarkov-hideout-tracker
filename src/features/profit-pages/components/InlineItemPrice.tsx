@@ -9,7 +9,7 @@ import {
   type ManualPriceOverride,
 } from "@/lib/price-calculation";
 import type { ItemSummary } from "@/types/items";
-import type { PriceChangeHandler } from "../types";
+import type { PriceChangeHandler, RouteMethod } from "../types";
 import { formatCompactPrice } from "../utils/formatters";
 import { InfoHint } from "./InfoHint";
 
@@ -23,6 +23,7 @@ export function InlineItemPrice({
   editable = true,
   onWarningShow,
   sellValueIsEstimate,
+  buyMethod,
 }: {
   item?: ItemSummary;
   kind: "buy" | "sell";
@@ -33,6 +34,7 @@ export function InlineItemPrice({
   editable?: boolean;
   onWarningShow?: () => void;
   sellValueIsEstimate?: boolean;
+  buyMethod?: RouteMethod;
 }) {
   const pricingContext = useProfitPricingContext();
   const [editing, setEditing] = useState(false);
@@ -43,7 +45,12 @@ export function InlineItemPrice({
       ? getItemBuyPrice(item, overrides, pricingContext)
       : getItemSellPrice(item, overrides, pricingContext);
   const currentOverride = overrides[itemId] ?? {};
-  const warning = kind === "sell" && (sellValueIsEstimate ?? getItemSellComparison(item, overrides, pricingContext).isEstimate);
+  const manualBuy = currentOverride.buy;
+  const hasManualBuy = typeof manualBuy === "number" && Number.isFinite(manualBuy) && manualBuy >= 0;
+  const warning = kind === "sell"
+    ? (sellValueIsEstimate ?? getItemSellComparison(item, overrides, pricingContext).isEstimate)
+    : buyMethod === "flea" && !hasManualBuy && currentUnitPrice !== null && totalPrice !== null &&
+      item.normalizedName !== "roubles" && item.marketPrice?.fleaStability === "unstable";
   const color = warning ? "text-amber-300" : "text-tarkov-green";
   const formattedPrice = formatCompactPrice(displayPrice === undefined ? totalPrice : displayPrice);
   function commit(raw: string) {
@@ -95,7 +102,9 @@ export function InlineItemPrice({
           {formattedPrice}
         </button>
       ) : <span className={`truncate ${color}`}>{formattedPrice}</span>}
-      {warning && <InfoHint title="Value unstable" tone="warning" compact onShow={onWarningShow} />}
+      {warning && (kind === "buy"
+        ? <span className="whitespace-nowrap text-[10px] font-normal text-amber-300">(value unstable)</span>
+        : <InfoHint title="Value unstable" tone="warning" compact onShow={onWarningShow} />)}
     </span>
   );
 }

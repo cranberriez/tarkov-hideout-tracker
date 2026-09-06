@@ -9,7 +9,7 @@ import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
 import { ItemDetailRecipeFlow } from "./ItemDetailRecipeFlow";
 import { ItemDetailRecipeProfit } from "./ItemDetailRecipeProfit";
-import type { AcquisitionPlan, RecipeEvaluation } from "@/lib/price-calculation";
+import type { AcquisitionPlan, ManualPriceOverrides, RecipeEvaluation } from "@/lib/price-calculation";
 import { formatCompactRoubles } from "@/lib/utils/market-price";
 
 interface ItemDetailCraftingProps {
@@ -18,6 +18,7 @@ interface ItemDetailCraftingProps {
     stationLevels: Record<string, number>;
     gameEdition: GameEdition | null;
     evaluationsById: Readonly<Record<string, RecipeEvaluation>>;
+    overrides?: ManualPriceOverrides;
     profitLoading: boolean;
     profitError: string | null;
     outputItem: ItemSummary;
@@ -30,6 +31,7 @@ export function ItemDetailCrafting({
     stationLevels,
     gameEdition,
     evaluationsById,
+    overrides = {},
     profitLoading,
     profitError,
     outputItem,
@@ -102,6 +104,7 @@ export function ItemDetailCrafting({
                                 <Ingredient
                                     key={`${entry.item.id}-${index}`}
                                     entry={entry}
+                                    manualBuy={overrides[entry.item.id]?.buy}
                                     plan={evaluation?.requiredItems.find(
                                         (candidate) => candidate.itemId === entry.item.id,
                                     )}
@@ -166,11 +169,13 @@ function formatDuration(seconds: number) {
 
 function Ingredient({
     entry,
+    manualBuy,
     plan,
     questItem = false,
     onItemClick,
 }: {
     entry: ItemAmount;
+    manualBuy?: number;
     plan?: AcquisitionPlan;
     questItem?: boolean;
     onItemClick: (itemId: string) => void;
@@ -182,7 +187,16 @@ function Ingredient({
             quantityLabel={`${entry.count}`}
             quantityOverlay
             secondary={
-                entry.isTool ? <ToolBadge /> : plan ? <RecommendationBadge plan={plan} /> : undefined
+                entry.isTool ? <ToolBadge /> : plan ? (
+                    <RecommendationBadge
+                        plan={plan}
+                        unstable={
+                            entry.item.marketPrice?.fleaStability === "unstable" &&
+                            entry.item.normalizedName !== "roubles" &&
+                            !(typeof manualBuy === "number" && Number.isFinite(manualBuy) && manualBuy >= 0)
+                        }
+                    />
+                ) : undefined
             }
             badges={
                 <>
@@ -203,7 +217,7 @@ function ToolBadge() {
     );
 }
 
-function RecommendationBadge({ plan }: { plan: AcquisitionPlan }) {
+function RecommendationBadge({ plan, unstable }: { plan: AcquisitionPlan; unstable: boolean }) {
     const label =
         plan.method === "flea"
             ? "Buy"
@@ -225,10 +239,13 @@ function RecommendationBadge({ plan }: { plan: AcquisitionPlan }) {
                 ? "bg-tarkov-green/10 text-tarkov-green"
                 : "bg-white/5 text-muted-foreground";
     return (
-        <span className="flex items-center gap-1.5">
+        <span className="flex flex-wrap items-center gap-1.5">
             <span className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-bold uppercase ${classes}`}>
                 {label}
             </span>
+            {unstable && plan.method === "flea" && plan.totalCost !== null && (
+                <span className="text-[10px] font-normal text-amber-300">(value unstable)</span>
+            )}
             {plan.totalCost !== null && (
                 <span className="flex shrink-0 items-baseline gap-1 leading-none">
                     <span className="font-mono text-[10px] font-semibold text-foreground/80">

@@ -241,6 +241,7 @@ export function RecipeItem({
               <InlineItemPrice
                 item={item}
                 kind={priceKind}
+                buyMethod={method}
                 totalPrice={totalPrice}
                 displayPrice={unitRoutePrice}
                 overrides={overrides}
@@ -357,6 +358,7 @@ export function RecipeItem({
                 <InlineItemPrice
                   item={item}
                   kind={priceKind}
+                  buyMethod={method}
                   sellValueIsEstimate={sellValueIsEstimate}
                   totalPrice={totalPrice}
                   overrides={overrides}

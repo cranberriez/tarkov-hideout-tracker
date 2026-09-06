@@ -51,7 +51,10 @@ rather than selecting routes independently.
   and selected trader sales do not carry the instability warning.
 - Output sale text turns yellow with a small warning icon; hover or keyboard
   focus shows **Value unstable** in a compact overlay. There is no row-wide warning.
-  Modal recipe summaries use the same selected-sale flag. Sale value, profit and
+  Ingredient flea purchases show small **(value unstable)** text beside their
+  prices on profit pages and in modal crafting/barter ingredients; manual buy
+  overrides and non-flea routes do not carry this warning. The item modal market
+  estimate uses small **value unstable** text without an icon or popup. Sale value, profit and
   profit/hour all use the same estimate, including after ingredient-route changes.
   Route profit and owned-input opportunity value remain distinct. Header totals
   count unpriced rows explicitly; positive value sums priced rows only.

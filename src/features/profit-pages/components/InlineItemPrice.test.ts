@@ -28,3 +28,24 @@ test("unstable output sale uses yellow price and an isolated warning icon, with 
         assert.doesNotMatch(renderToStaticMarkup(createElement(InlineItemPrice, variation)), /Value unstable/);
     }
 });
+
+
+test("ingredient warning follows unstable flea purchases and respects manual overrides", () => {
+    const item: ItemSummary = { id: "input", name: "Input", normalizedName: "input", marketPrice: { price: 120_000, fleaStability: "unstable" } };
+    const props = { item, kind: "buy" as const, buyMethod: "flea" as const, totalPrice: 120_000, overrides: {}, onPriceChange: () => {} };
+    const markup = renderToStaticMarkup(createElement(InlineItemPrice, props));
+    assert.match(markup, /\(value unstable\)/);
+    assert.doesNotMatch(markup, /aria-label="Value unstable"|role="tooltip"/);
+    for (const variation of [
+        { ...props, buyMethod: "trader" as const },
+        { ...props, buyMethod: "craft" as const },
+        { ...props, buyMethod: "barter" as const },
+        { ...props, buyMethod: "unavailable" as const },
+        { ...props, totalPrice: null },
+        { ...props, overrides: { input: { buy: 0 } } },
+        { ...props, overrides: { input: { buy: 130_000 } } },
+        { ...props, item: { ...item, marketPrice: { price: 120_000, fleaStability: "stable" as const } } },
+    ]) {
+        assert.doesNotMatch(renderToStaticMarkup(createElement(InlineItemPrice, variation)), /value unstable/);
+    }
+});

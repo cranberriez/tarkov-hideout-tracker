@@ -117,6 +117,7 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
                                         showPriceHistory={vm.showPriceHistory}
                                         barterEvaluationsById={vm.barterEvaluationsById}
                                         craftEvaluationsById={vm.craftEvaluationsById}
+                                        overrides={vm.overrides}
                                         profitLoading={vm.profitLoading}
                                         profitError={vm.profitError}
                                         onItemClick={vm.openItem}

@@ -3,7 +3,6 @@
 import type { CurrentPrice } from "@/types/prices";
 import { ArrowDownRight, ArrowUpRight, Check, Clock3, Store, X } from "lucide-react";
 import { formatRoubles, getFleaPriceEstimate, hasFleaMarketData } from "@/lib/utils/market-price";
-import { InfoHint } from "@/features/profit-pages/components/InfoHint";
 import { ItemDetailSection } from "./ItemDetailSection";
 
 interface ItemDetailMarketProps {
@@ -95,7 +94,7 @@ export function ItemDetailMarket({
                         </div>
                         <div className={`mt-1 flex items-center gap-1.5 font-mono text-2xl font-semibold ${unstable ? "text-amber-300" : "text-foreground"}`}>
                             {formatRoubles(fleaPrice)}
-                            {unstable && <InfoHint title="Value unstable" tone="warning" compact />}
+                            {unstable && <span className="text-[10px] font-normal">value unstable</span>}
                         </div>
                     </div>
                     {marketPrice.changeLast48hPercent != null && (

@@ -290,6 +290,7 @@ export function useItemDetailModalController({
     };
 
     return {
+        overrides,
         selectedItem,
         selectedItemId,
         marketPrice,
