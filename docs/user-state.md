@@ -37,7 +37,10 @@ Use existing actions rather than writing one side of that projection directly.
 
 Mode changes save/load the corresponding profile and synchronize the cookie.
 [ActiveGameModeSync](../src/components/core/ActiveGameModeSync.tsx) repairs the
-client/server selection after hydration; [active-game-mode.ts](../src/server/active-game-mode.ts)
+client/server selection after hydration using the store's current snapshot (the
+initial render can still contain the server-default mode after hydration finishes).
+This avoids alternating mode-cookie writes and refresh loops on missing routes.
+[active-game-mode.ts](../src/server/active-game-mode.ts)
 reads it for server queries. Dataset mapping is owned by [data layer](data-layer.md).
 
 The store's migration chain preserves older state and retained legacy-profile

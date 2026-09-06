@@ -22,7 +22,10 @@ export function ActiveGameModeSync() {
         }
 
         if (useUserStore.persist.hasHydrated()) {
-            syncServerMode(gameMode);
+            // Hydration can finish before this effect runs while the render still
+            // holds the server's default PVP snapshot. Read the hydrated owner,
+            // otherwise PVP/KORD cookie writes can repeatedly refresh a 404.
+            syncServerMode(useUserStore.getState().gameMode);
             return;
         }
 
