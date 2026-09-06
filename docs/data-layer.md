@@ -156,11 +156,16 @@ history is absent; the internal source marker does not add a release-status bann
 
 Item lists and hideout requirements retain numeric estimates for unstable items.
 The modal shows **Flea estimate**, the 24-hour low and high, known offer depth,
-and freshness. Latest aggregate, catalog 24-hour average, and latest minimum are
-omitted from the summary. Unknown depth is omitted from the headline. Unstable
-flea prices use yellow text with a small warning icon whose hover/focus overlay
-says **Value unstable**. Profit rows apply this only to the output item's selected
-flea sale estimate, without row-wide warnings. History charts remain filtered
+and freshness. Unstable flea prices use yellow text and small **value unstable**
+text without a popup. Beneath them, a compact comparison shows the estimate,
+latest minimum, and latest upstream aggregate (labeled **Reported price**) on a
+shared zero-based bar scale, omitting invalid or missing values. Short labels
+reflect the supplied stability reasons; the latest comparison is context, not a
+reconstruction of the historical observations that triggered those reasons.
+The recent observation count appears when known. No extra history request is made.
+Stable items omit this diagnostic block. Profit output rows retain their selected
+flea-sale warning icon; ingredient flea purchases use small text, excluding manual
+buy overrides and non-flea routes. History charts remain filtered
 aggregate references and are labeled accordingly; they do not control acquisition
 pricing. The shared [profit rules](profits.md) use the same estimate consistently
 in modal and full-page calculations. HTTP cache durations and mode keys remain

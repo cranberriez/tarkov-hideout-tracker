@@ -4,6 +4,7 @@ import type { CurrentPrice } from "@/types/prices";
 import { ArrowDownRight, ArrowUpRight, Check, Clock3, Store, X } from "lucide-react";
 import { formatRoubles, getFleaPriceEstimate, hasFleaMarketData } from "@/lib/utils/market-price";
 import { ItemDetailSection } from "./ItemDetailSection";
+import { ItemDetailPriceStability } from "./ItemDetailPriceStability";
 
 interface ItemDetailMarketProps {
     marketPrice: CurrentPrice;
@@ -102,6 +103,8 @@ export function ItemDetailMarket({
                     )}
                 </div>
             )}
+
+            {unstable && <ItemDetailPriceStability marketPrice={marketPrice} />}
 
             {!isFiat && marketPrice.fleaStability === "unavailable" && (
                 <div className="mt-2 text-xs text-muted-foreground">Flea unavailable{marketPrice.lastOfferCount != null ? ` · ${marketPrice.lastOfferCount} offers` : ""}</div>

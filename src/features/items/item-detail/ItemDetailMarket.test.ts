@@ -50,3 +50,22 @@ test("stable and unstable market UI shows distinct price semantics and raw conte
     const empty = renderToStaticMarkup(createElement(ItemDetailMarket, { ...props, marketPrice: {} }));
     assert.equal(empty, "");
 });
+
+
+test("unstable market shows compact evidence without inventing missing observations", () => {
+    const props = { relativeUpdatedAt: null, valuationCount: 1, isFiat: false, playerLevel: 15, minLevelForFlea: 15 };
+    const marketPrice = { price: 100_000, lastLowPrice: 100_000, referencePrice: 400_000, fleaStability: "unstable" as const, fleaPriceReasons: ["sparse-offers", "divergent-reference"] as const, fleaSampleCount: 2 };
+    const render = (price: import("@/types/prices").CurrentPrice) => renderToStaticMarkup(createElement(ItemDetailMarket, { ...props, marketPrice: price }));
+    const markup = render({ ...marketPrice, fleaPriceReasons: [...marketPrice.fleaPriceReasons] });
+    assert.match(markup, /Thin offers/);
+    assert.match(markup, /Recent prices disagree/);
+    assert.match(markup, /width:25%/);
+    assert.match(markup, /width:100%/);
+    assert.match(markup, /2 recent observations/);
+    assert.doesNotMatch(markup, /role="tooltip"/);
+    const missing = render({ price: 100, fleaStability: "unstable", fleaPriceReasons: ["unknown-depth"], lastLowPrice: NaN, referencePrice: -1 });
+    assert.match(missing, /Offer count unknown/);
+    assert.doesNotMatch(missing, /Price comparison|NaN|observations/);
+    const stable = render({ ...marketPrice, fleaPriceReasons: [], fleaStability: "stable" });
+    assert.doesNotMatch(stable, /Price stability details|Reported price/);
+});
