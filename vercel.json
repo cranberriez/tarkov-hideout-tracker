@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/cron/prices/seasonal",
-      "schedule": "0 */2 * * *"
+      "schedule": "15 0 * * *"
     },
     {
       "path": "/api/cron/prices/daily",
