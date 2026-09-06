@@ -14,6 +14,7 @@ account for existing users' data.
 | `tarkov-kappa-checklist-state` | [useKappaStore](../src/lib/stores/useKappaStore.ts), Zustand persist **v1**; `completedItemsByMode` and shared `viewMode` |
 | `tarkov-profit-price-overrides-v1:{mode}` | [useManualPriceOverrides](../src/features/profit-pages/useManualPriceOverrides.ts); independent buy/sell overrides |
 | `tarkov-profit-pinned-crafts-v1:{mode}` | [usePinnedCrafts](../src/features/profit-pages/usePinnedCrafts.ts); independent craft pins |
+| `tarkov-profit-options-v1:{mode}` | [useProfitOptions](../src/features/profit-pages/useProfitOptions.ts); options-menu preferences shared by crafts and barters within each mode |
 | `tarkov-hideout:quest-log-import:seen-files:v1` | [quest-log-import.ts](../src/lib/utils/quest-log-import.ts) and [import controller](../src/features/quests/components/useQuestLogImportController.ts); processed-file metadata, not per-profile storage |
 | `tarkov-active-game-mode` cookie | [game-mode.ts](../src/lib/game-mode.ts); active profile selection for server reads |
 
@@ -67,7 +68,8 @@ actions with resets of other owners. Its current behavior is:
 Section resets preserve unrelated settings/profiles except the explicitly
 all-mode Kappa reset above. Despite its label, Delete ALL data does **not** remove
 the separate profit overrides, craft pins, or import seen-files key. Do not broaden
-that action implicitly. The Settings usage meter counts the two Zustand payloads,
+that action implicitly. Profit options also remain independent of these resets.
+The Settings usage meter counts the two Zustand payloads,
 not every localStorage key.
 
 ## Ephemeral and server state

@@ -36,6 +36,24 @@ export async function getProfitPageData(
                 : Promise.resolve(null),
         ]);
     const itemRecords = itemsResult.status === "fulfilled" ? itemsResult.value.data : null;
+    // Unlock requirements come from the recipes/offers; only resolve their labels
+    // by known ID. Never scan quest rewards to infer acquisition eligibility.
+    const taskUnlockIds = dedupeIds([
+        ...barters.flatMap((recipe) => recipe.taskUnlockId ? [recipe.taskUnlockId] : []),
+        ...crafts.flatMap((recipe) => recipe.taskUnlockId ? [recipe.taskUnlockId] : []),
+        ...Object.values(itemRecords ?? {}).flatMap((item) =>
+            (item.buyFromTrader ?? []).flatMap((offer) => offer.taskUnlockId ? [offer.taskUnlockId] : []),
+        ),
+    ]);
+    const [taskUnlocksResult] = await Promise.allSettled([
+        taskUnlockIds.length ? dataRepository.quests.getByIds(mode, taskUnlockIds) : Promise.resolve(null),
+    ]);
+    const taskUnlocksValue = taskUnlocksResult.status === "fulfilled" ? taskUnlocksResult.value : null;
+    const taskUnlocksById = Object.fromEntries(taskUnlockIds.flatMap((id) => {
+        const quest = taskUnlocksValue?.data[id];
+        return quest ? [[id, { id, name: quest.name, wikiLink: quest.wikiLink }]] : [];
+    }));
+    const unresolvedTaskUnlockIds = taskUnlockIds.filter((id) => !taskUnlocksById[id]);
     const priceRecords = pricesResult.status === "fulfilled" ? pricesResult.value.data : {};
     const merged = itemRecords
         ? mergePricedItems(itemIds, itemRecords, priceRecords)
@@ -70,6 +88,8 @@ export async function getProfitPageData(
         unresolvedItemIds: merged.unresolvedItemIds,
         traders,
         stations,
+        taskUnlocksById,
+        unresolvedTaskUnlockIds,
         freshness: {
             bartersUpdatedAt:
                 bartersResult.status === "fulfilled"
@@ -83,8 +103,12 @@ export async function getProfitPageData(
                 pricesResult.status === "fulfilled" ? pricesResult.value.updatedAt : null,
             tradersUpdatedAt: tradersValue?.updatedAt ?? null,
             stationsUpdatedAt: stationsValue?.updatedAt ?? null,
+            taskUnlocksUpdatedAt: taskUnlocksValue?.updatedAt ?? null,
         },
         errors: {
+            taskUnlocks: taskUnlocksResult.status === "rejected"
+                ? "Quest names could not be loaded. Unlock requirements still apply."
+                : unresolvedTaskUnlockIds.length ? "Some quest names are unavailable. Unlock requirements still apply." : null,
             barters:
                 bartersResult.status === "rejected"
                     ? "Barter data could not be loaded."

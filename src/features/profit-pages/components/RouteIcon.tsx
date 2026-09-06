@@ -1,4 +1,5 @@
 import {
+  LockKeyhole,
   ChartNoAxesCombined,
   ChevronDown,
   CircleArrowRight,
@@ -11,6 +12,7 @@ function routeIconClasses(
   method: Exclude<RouteMethod, "unavailable">,
   changedFromBase: boolean,
   filled: boolean,
+  automaticFallback: boolean,
 ) {
   const styles = {
     barter: {
@@ -37,7 +39,12 @@ function routeIconClasses(
 
   if (filled) return `${styles.background} text-black`;
 
-  return `bg-transparent ${styles.color} ${changedFromBase ? `border-[3px] border-dashed ${styles.border}` : ""}`;
+  const border = changedFromBase
+    ? `border-2 border-solid ${styles.border}`
+    : automaticFallback
+      ? `border-2 border-dashed ${styles.border}`
+      : "";
+  return `bg-transparent ${styles.color} ${border}`;
 }
 
 export function RouteIcon({
@@ -48,6 +55,8 @@ export function RouteIcon({
   filled = false,
   switchable = false,
   changedFromBase = false,
+  automaticFallback = false,
+  title,
 }: {
   method: RouteMethod;
   inline?: boolean;
@@ -56,6 +65,8 @@ export function RouteIcon({
   filled?: boolean;
   switchable?: boolean;
   changedFromBase?: boolean;
+  automaticFallback?: boolean;
+  title?: string;
 }) {
   const classes = `${rowRail ? "relative h-full w-8 shrink-0 self-stretch rounded-none" : preview ? "relative size-7 shrink-0 rounded shadow-md" : inline ? "relative size-[18px] shrink-0 rounded-[3px] shadow-md" : "absolute -left-1 -top-1 z-10 size-[18px] rounded-[3px] shadow-md"} flex items-center justify-center`;
   const iconClasses = preview ? "size-4 stroke-[3]" : "size-3.5 stroke-[3]";
@@ -66,8 +77,8 @@ export function RouteIcon({
   if (method === "barter")
     return (
       <span
-        title={`Barter recommended${changedTitle}`}
-        className={`${classes} ${routeIconClasses("barter", changedFromBase, filled)}`}
+        title={title ?? `Barter recommended${changedTitle}`}
+        className={`${classes} ${routeIconClasses("barter", changedFromBase, filled, automaticFallback)}`}
       >
         <CircleArrowRight className={iconClasses} />
         {caret}
@@ -76,8 +87,8 @@ export function RouteIcon({
   if (method === "craft")
     return (
       <span
-        title={`Craft recommended${changedTitle}`}
-        className={`${classes} ${routeIconClasses("craft", changedFromBase, filled)}`}
+        title={title ?? `Craft recommended${changedTitle}`}
+        className={`${classes} ${routeIconClasses("craft", changedFromBase, filled, automaticFallback)}`}
       >
         <Wrench className={iconClasses} />
         {caret}
@@ -86,8 +97,8 @@ export function RouteIcon({
   if (method === "trader")
     return (
       <span
-        title={`Trader purchase recommended${changedTitle}`}
-        className={`${classes} ${routeIconClasses("trader", changedFromBase, filled)}`}
+        title={title ?? `Trader purchase recommended${changedTitle}`}
+        className={`${classes} ${routeIconClasses("trader", changedFromBase, filled, automaticFallback)}`}
       >
         <UserRound className={iconClasses} />
         {caret}
@@ -96,8 +107,8 @@ export function RouteIcon({
   if (method === "flea")
     return (
       <span
-        title={`Flea market recommended${changedTitle}`}
-        className={`${classes} ${routeIconClasses("flea", changedFromBase, filled)}`}
+        title={title ?? `Flea market recommended${changedTitle}`}
+        className={`${classes} ${routeIconClasses("flea", changedFromBase, filled, automaticFallback)}`}
       >
         <ChartNoAxesCombined className={iconClasses} />
         {caret}
@@ -105,10 +116,10 @@ export function RouteIcon({
     );
   return (
     <span
-      title="No priced route"
-      className={`${classes} bg-gray-400 text-[11px] font-black`}
+      title={title ?? "No priced route"}
+      className={`${classes} bg-red-950/60 text-red-300 `}
     >
-      ?
+      <LockKeyhole aria-label="Locked" className={iconClasses} />
       {caret}
     </span>
   );
@@ -119,5 +130,5 @@ export function routeChipClasses(method: RouteMethod) {
   if (method === "craft") return "bg-orange-400 text-black";
   if (method === "trader") return "bg-purple-400 text-black";
   if (method === "flea") return "bg-emerald-400 text-black";
-  return "bg-gray-500 text-black";
+  return "bg-red-950/60 text-red-300";
 }

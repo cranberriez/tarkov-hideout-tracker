@@ -21,7 +21,24 @@ export interface AcquisitionAlternative {
     children: AcquisitionPlan[];
 }
 
+export interface LockReason {
+    kind: "flea" | "quest" | "vendor" | "station" | "unavailable";
+    message: string;
+    questId?: string;
+}
+
+export interface LockedAcquisitionAlternative {
+    /** Display-only price; never makes a locked route eligible. */
+    estimatedUnitPrice?: number;
+    method: Exclude<AcquisitionMethod, "unavailable">;
+    sourceId?: string;
+    traderOffer?: TraderPurchaseOffer;
+    lockReasons: LockReason[];
+}
+
 export interface AcquisitionPlan {
+    lockedAlternatives?: LockedAcquisitionAlternative[];
+    lockReasons?: LockReason[];
     itemId: string;
     quantity: number;
     isTool?: boolean;
@@ -41,6 +58,8 @@ export interface AcquisitionPlan {
 }
 
 export interface RecipeEvaluation {
+    lockReasons: LockReason[];
+    outputLockReasons: LockReason[];
     /** The selected sale value uses an unstable flea estimate. */
     sellValueIsEstimate?: boolean;
     sellSourceLabel?: string;
@@ -69,6 +88,11 @@ export interface PriceCalculationContext {
     bartersByItemId: Readonly<Record<string, BarterRecord[]>>;
     craftsByItemId: Readonly<Record<string, CraftRecord[]>>;
     overrides?: ManualPriceOverrides;
+    playerLevel?: number;
+    /** Omission preserves station-agnostic calculations. Missing entries mean level zero. */
+    stationLevels?: Readonly<Record<string, number>>;
+    /** Defaults to true; applies to outputs, never input opportunity values. */
+    useTraderSaleForLockedOutputs?: boolean;
     maxDepth?: number;
     allowBarters?: boolean;
     allowCrafts?: boolean;
@@ -82,6 +106,11 @@ export interface RecipeCalculatorInput {
     barters: readonly BarterRecord[];
     crafts: readonly CraftRecord[];
     overrides?: ManualPriceOverrides;
+    playerLevel?: number;
+    /** Omission preserves station-agnostic calculations. Missing entries mean level zero. */
+    stationLevels?: Readonly<Record<string, number>>;
+    /** Defaults to true; applies to outputs, never input opportunity values. */
+    useTraderSaleForLockedOutputs?: boolean;
     maxDepth?: number;
     allowBarters?: boolean;
     allowCrafts?: boolean;

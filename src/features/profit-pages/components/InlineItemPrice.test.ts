@@ -19,6 +19,7 @@ test("unstable output sale uses yellow price and an isolated warning icon, with 
     assert.match(markup, /data-isolated-hover="true"/);
     assert.doesNotMatch(markup, /role="tooltip"|excluded|>Value unstable</);
     for (const variation of [
+        { ...props, sellValueIsEstimate: false },
         { ...props, kind: "buy" as const },
         { ...props, overrides: { sass: { sell: 130_000 } } },
         { ...props, item: { ...item, marketPrice: { ...item.marketPrice, fleaStability: "stable" as const } } },

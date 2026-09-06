@@ -16,6 +16,8 @@ interface SourceOption {
   level?: number;
 }
 
+import type { ProfitLockOptionsProps } from "../types";
+
 export function ProfitPageControls({
   kind,
   search,
@@ -27,6 +29,10 @@ export function ProfitPageControls({
   sources,
   availableOnly,
   onAvailableOnlyChange,
+  lockFilters,
+  onLockFiltersChange,
+  useTraderSaleForLockedOutputs,
+  onUseTraderSaleForLockedOutputsChange,
   profitableOnly,
   onProfitableOnlyChange,
   allowCrafts,
@@ -54,7 +60,7 @@ export function ProfitPageControls({
   onAllowBartersChange: (value: boolean) => void;
   showPinnedOnly: boolean;
   onShowPinnedOnlyChange: (value: boolean) => void;
-}) {
+} & ProfitLockOptionsProps) {
   return (
     <section className="mb-4 rounded-md border border-white/10 bg-card/70 p-3 shadow-lg">
       <div
@@ -97,6 +103,10 @@ export function ProfitPageControls({
           </select>
         )}
         <CalculationSettings
+          lockFilters={lockFilters}
+          onLockFiltersChange={onLockFiltersChange}
+          useTraderSaleForLockedOutputs={useTraderSaleForLockedOutputs}
+          onUseTraderSaleForLockedOutputsChange={onUseTraderSaleForLockedOutputsChange}
           availableOnly={availableOnly}
           onAvailableOnlyChange={onAvailableOnlyChange}
           profitableOnly={profitableOnly}

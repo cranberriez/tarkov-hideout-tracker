@@ -58,6 +58,12 @@ local indexes from the delivered arrays. Profit calculations need both recipe
 graphs, so either recipe-domain failure blocks figures. Other independent domains
 can remain usable with explicit errors.
 
+Profit pages resolve recipe and direct-offer `taskUnlockId` references through a
+single known-ID quest batch for names, serializing only `id`, `name`, and
+`wikiLink` in `taskUnlocksById`. This does not discover requirements by scanning
+quests. `unresolvedTaskUnlockIds` and the nonblocking `errors.taskUnlocks` keep
+missing/failed presentation distinct from recipe and price availability.
+
 ## Lazy API reads and exceptions
 
 Item routes validate standard item IDs and require a supported data `mode`.

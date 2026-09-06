@@ -12,6 +12,7 @@ import type { BarterRecord, CraftRecord } from "@/types/recipes";
 import type { Trader } from "@/types/traders";
 import { ProfitPageControls } from "./components/ProfitPageControls";
 import { ProfitPageHeader } from "./components/ProfitPageHeader";
+import { ProfitPricingContext } from "./components/ProfitPricingContext";
 import { ProfitTable } from "./components/ProfitTable";
 import type {
   ProfitPageKind,
@@ -23,9 +24,11 @@ import {
   compareEvaluations,
   getRecipeSourceId,
   isRecipeAvailable,
+  passesLockFilters,
 } from "./utils/recipes";
 import { useManualPriceOverrides } from "./useManualPriceOverrides";
 import { usePinnedCrafts } from "./usePinnedCrafts";
+import { useProfitOptions } from "./useProfitOptions";
 
 interface ProfitPageClientProps {
   kind: ProfitPageKind;
@@ -46,12 +49,14 @@ export function ProfitPageClient({
     [items],
   );
   const {
+    playerLevel,
     gameMode,
     stationLevels,
     completedQuests,
     traderLoyaltyLevels,
   } = useUserStore(
     useShallow((state) => ({
+      playerLevel: state.playerLevel,
       gameMode: state.gameMode,
       stationLevels: state.stationLevels,
       completedQuests: state.completedQuests,
@@ -63,11 +68,21 @@ export function ProfitPageClient({
   const [search, setSearch] = useState("");
   const [sourceId, setSourceId] = useState("all");
   const [stationSourceIds, setStationSourceIds] = useState<string[]>([]);
-  const [availableOnly, setAvailableOnly] = useState(true);
-  const [profitableOnly, setProfitableOnly] = useState(false);
+  const {
+    availableOnly,
+    setAvailableOnly,
+    lockFilters,
+    setLockFilters,
+    useTraderSaleForLockedOutputs,
+    setUseTraderSaleForLockedOutputs,
+    profitableOnly,
+    setProfitableOnly,
+    allowCrafts,
+    setAllowCrafts,
+    allowBarters,
+    setAllowBarters,
+  } = useProfitOptions(gameMode);
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
-  const [allowCrafts, setAllowCrafts] = useState(true);
-  const [allowBarters, setAllowBarters] = useState(true);
   const [ingredientRouteSelections, setIngredientRouteSelections] = useState<
     Record<string, Record<number, string>>
   >({});
@@ -81,6 +96,9 @@ export function ProfitPageClient({
     useState<SortDirection>("descending");
   const evaluations = useMemo(() => {
     const calculator = createRecipeCalculator({
+      playerLevel,
+      stationLevels,
+      useTraderSaleForLockedOutputs,
       itemsById: itemById,
       barters: data.barters,
       crafts: data.crafts,
@@ -94,6 +112,9 @@ export function ProfitPageClient({
       ? calculator.evaluateBarters()
       : calculator.evaluateCrafts();
   }, [
+    playerLevel,
+    stationLevels,
+    useTraderSaleForLockedOutputs,
     allowBarters,
     allowCrafts,
     completedQuests,
@@ -166,6 +187,7 @@ export function ProfitPageClient({
         if (kind === "craft" && showPinnedOnly && !pinnedCrafts[evaluation.id])
           return false;
         if (evaluation.id === targetRecipeId) return true;
+        if (!passesLockFilters(evaluation, availableOnly, lockFilters)) return false;
         const item = itemById[evaluation.outputItemId];
         if (
           normalizedSearch &&
@@ -203,6 +225,7 @@ export function ProfitPageClient({
       );
   }, [
     availableOnly,
+    lockFilters,
     completedQuests,
     evaluations,
     itemById,
@@ -251,82 +274,99 @@ export function ProfitPageClient({
     setScrollRequestId((value) => value + 1);
   }
   return (
-    <main className="container mx-auto px-4 py-8 sm:px-6">
-      <ProfitPageHeader
-        kind={kind}
-        gameMode={gameMode}
-        evaluations={visibleEvaluations}
-      />
-      <ProfitPageControls
-        kind={kind}
-        search={search}
-        onSearchChange={setSearch}
-        sourceId={sourceId}
-        onSourceIdChange={setSourceId}
-        stationSourceIds={stationSourceIds}
-        onStationSourceIdsChange={setStationSourceIds}
-        sources={sources}
-        availableOnly={availableOnly}
-        onAvailableOnlyChange={setAvailableOnly}
-        profitableOnly={profitableOnly}
-        onProfitableOnlyChange={setProfitableOnly}
-        allowCrafts={allowCrafts}
-        onAllowCraftsChange={setAllowCrafts}
-        allowBarters={allowBarters}
-        onAllowBartersChange={setAllowBarters}
-        showPinnedOnly={showPinnedOnly}
-        onShowPinnedOnlyChange={setShowPinnedOnly}
-      />
-      <ProfitTable
-        kind={kind}
-        evaluations={visibleEvaluations}
-        itemById={itemById}
-        tradersById={tradersById}
-        stationsById={stationsById}
-        bartersById={bartersById}
-        craftsById={craftsById}
-        stationLevels={stationLevels}
-        traderLoyaltyLevels={traderLoyaltyLevels}
-        completedQuests={completedQuests}
-        overrides={overrides}
-        onPriceChange={setItemOverride}
-        onItemOpen={setSelectedItemId}
-        onGoToRecipe={goToRecipe}
-        targetRecipeId={targetRecipeId}
-        scrollRequestId={scrollRequestId}
-        pinnedCrafts={pinnedCrafts}
-        onTogglePinnedCraft={togglePinnedCraft}
-        showPinnedOnly={showPinnedOnly}
-        ingredientRouteSelections={ingredientRouteSelections}
-        sortKey={sortKey}
-        sortDirection={sortDirection}
-        onSortChange={(nextSortKey) => {
-          if (nextSortKey === sortKey) {
-            setSortDirection((current) =>
-              current === "ascending" ? "descending" : "ascending",
+    <ProfitPricingContext.Provider
+      value={{
+        playerLevel,
+        useTraderSaleForLockedOutputs,
+        taskUnlocksById: data.taskUnlocksById,
+      }}
+    >
+      <main className="container mx-auto px-4 py-8 sm:px-6">
+        <ProfitPageHeader
+          kind={kind}
+          gameMode={gameMode}
+          evaluations={visibleEvaluations}
+        />
+        {data.errors.taskUnlocks && (
+          <p role="status" className="mb-4 text-xs text-amber-300">
+            Quest unlock details are partially unavailable: {data.errors.taskUnlocks}
+          </p>
+        )}
+        <ProfitPageControls
+          kind={kind}
+          search={search}
+          onSearchChange={setSearch}
+          sourceId={sourceId}
+          onSourceIdChange={setSourceId}
+          stationSourceIds={stationSourceIds}
+          onStationSourceIdsChange={setStationSourceIds}
+          sources={sources}
+          lockFilters={lockFilters}
+          onLockFiltersChange={setLockFilters}
+          useTraderSaleForLockedOutputs={useTraderSaleForLockedOutputs}
+          onUseTraderSaleForLockedOutputsChange={setUseTraderSaleForLockedOutputs}
+          availableOnly={availableOnly}
+          onAvailableOnlyChange={setAvailableOnly}
+          profitableOnly={profitableOnly}
+          onProfitableOnlyChange={setProfitableOnly}
+          allowCrafts={allowCrafts}
+          onAllowCraftsChange={setAllowCrafts}
+          allowBarters={allowBarters}
+          onAllowBartersChange={setAllowBarters}
+          showPinnedOnly={showPinnedOnly}
+          onShowPinnedOnlyChange={setShowPinnedOnly}
+        />
+        <ProfitTable
+          kind={kind}
+          evaluations={visibleEvaluations}
+          itemById={itemById}
+          tradersById={tradersById}
+          stationsById={stationsById}
+          bartersById={bartersById}
+          craftsById={craftsById}
+          stationLevels={stationLevels}
+          traderLoyaltyLevels={traderLoyaltyLevels}
+          completedQuests={completedQuests}
+          overrides={overrides}
+          onPriceChange={setItemOverride}
+          onItemOpen={setSelectedItemId}
+          onGoToRecipe={goToRecipe}
+          targetRecipeId={targetRecipeId}
+          scrollRequestId={scrollRequestId}
+          pinnedCrafts={pinnedCrafts}
+          onTogglePinnedCraft={togglePinnedCraft}
+          showPinnedOnly={showPinnedOnly}
+          ingredientRouteSelections={ingredientRouteSelections}
+          sortKey={sortKey}
+          sortDirection={sortDirection}
+          onSortChange={(nextSortKey) => {
+            if (nextSortKey === sortKey) {
+              setSortDirection((current) =>
+                current === "ascending" ? "descending" : "ascending",
+              );
+              return;
+            }
+            setSortKey(nextSortKey);
+            setSortDirection(
+              nextSortKey === "cost" ? "ascending" : "descending",
             );
-            return;
+          }}
+          onIngredientRouteChange={(recipeId, index, routeKey) =>
+            setIngredientRouteSelections((current) => ({
+              ...current,
+              [recipeId]: {
+                ...current[recipeId],
+                [index]: routeKey,
+              },
+            }))
           }
-          setSortKey(nextSortKey);
-          setSortDirection(
-            nextSortKey === "cost" ? "ascending" : "descending",
-          );
-        }}
-        onIngredientRouteChange={(recipeId, index, routeKey) =>
-          setIngredientRouteSelections((current) => ({
-            ...current,
-            [recipeId]: {
-              ...current[recipeId],
-              [index]: routeKey,
-            },
-          }))
-        }
-      />
-      <ItemDetailModal
-        item={selectedItemId ? (itemById[selectedItemId] ?? null) : null}
-        isOpen={selectedItemId !== null}
-        onClose={() => setSelectedItemId(null)}
-      />
-    </main>
+        />
+        <ItemDetailModal
+          item={selectedItemId ? (itemById[selectedItemId] ?? null) : null}
+          isOpen={selectedItemId !== null}
+          onClose={() => setSelectedItemId(null)}
+        />
+      </main>
+    </ProfitPricingContext.Provider>
   );
 }

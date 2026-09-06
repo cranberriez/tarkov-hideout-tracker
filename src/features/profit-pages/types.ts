@@ -4,6 +4,19 @@ import type { ItemSummary } from "@/types/items";
 import type { Station } from "@/types/hideout";
 import type { Trader } from "@/types/traders";
 
+export interface ProfitLockFilters {
+  flea: boolean;
+  quest: boolean;
+  vendor: boolean;
+  station: boolean;
+}
+export interface ProfitLockOptionsProps {
+  lockFilters: ProfitLockFilters;
+  onLockFiltersChange: (value: ProfitLockFilters) => void;
+  useTraderSaleForLockedOutputs: boolean;
+  onUseTraderSaleForLockedOutputsChange: (value: boolean) => void;
+}
+
 export type ProfitPageKind = "barter" | "craft";
 export type SortKey = "cost" | "sellValue" | "profit" | "profitPerHour";
 export type SortDirection = "ascending" | "descending";

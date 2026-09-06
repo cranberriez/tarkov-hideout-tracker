@@ -5,13 +5,39 @@ import type {
   RecipeEvaluation,
 } from "@/lib/price-calculation";
 import {
+  passesLockFilters,
   acquisitionRouteKey,
   compareEvaluations,
   describeRoute,
   getPlanRecipePreview,
   hasRecipeRoute,
+  hasCheaperLockedRoute,
   withRequiredItemRoute,
 } from "./recipes";
+
+test("fallback indicator requires a cheaper priced locked route, with practical recipe savings", () => {
+  const plan: AcquisitionPlan = {
+    itemId: "input", quantity: 2, method: "trader", batches: 1,
+    totalCost: 200, theoreticalCost: 200, theoreticalMethod: "trader",
+    directBuyCost: 200, directBuyMethod: "trader", durationSeconds: 0,
+    children: [], alternatives: [],
+  };
+  assert.equal(hasCheaperLockedRoute(plan), false);
+  for (const estimate of [undefined, NaN, -1, 100, 120]) {
+    assert.equal(hasCheaperLockedRoute({ ...plan, lockedAlternatives: [
+      { method: "flea", estimatedUnitPrice: estimate, lockReasons: [] },
+    ] }), false);
+  }
+  const locked = (method: "flea" | "craft", estimatedUnitPrice: number) => ({
+    ...plan, lockedAlternatives: [{ method, estimatedUnitPrice, lockReasons: [] }],
+  });
+  assert.equal(hasCheaperLockedRoute(locked("flea", 99)), true);
+  assert.equal(hasCheaperLockedRoute(locked("craft", 95)), false);
+  assert.equal(hasCheaperLockedRoute(locked("craft", 94)), true);
+  assert.equal(hasCheaperLockedRoute(locked("flea", 0)), true);
+  assert.equal(hasCheaperLockedRoute({ ...locked("flea", 0), totalCost: null }), false);
+  assert.equal(hasCheaperLockedRoute({ ...locked("flea", 0), method: "unavailable" }), false);
+});
 
 function evaluation(
   id: string,
@@ -214,3 +240,26 @@ test("row-local ingredient routes recalculate totals without mutating the base e
     ["trader", "flea"],
   );
 });
+
+ test("lock filters independently include recipe, output and unavailable input reasons", () => {
+ const row = evaluation("locked", {});
+ const filters = { flea: false, quest: false, vendor: false, station: false };
+ assert.equal(passesLockFilters(row, true, filters), true);
+ for (const kind of ["flea", "quest", "vendor", "station"] as const) {
+   row.lockReasons = [{ kind, message: "Locked" }];
+   assert.equal(passesLockFilters(row, false, filters), true);
+   assert.equal(passesLockFilters(row, true, filters), false);
+   assert.equal(passesLockFilters(row, false, { ...filters, [kind]: true }), false);
+ }
+ row.lockReasons = [];
+ row.outputLockReasons = [{ kind: "flea", message: "No flea sale" }];
+ assert.equal(passesLockFilters(row, true, filters), false);
+ assert.equal(passesLockFilters(row, false, { ...filters, flea: true }), false);
+ row.outputLockReasons = [];
+ row.requiredItems = [{ method: "unavailable", children: [] } as unknown as AcquisitionPlan];
+ assert.equal(passesLockFilters(row, true, filters), false);
+ assert.equal(passesLockFilters(row, false, filters), true);
+ row.requiredItems = [{ method: "unavailable", children: [], lockReasons: [{ kind: "flea", message: "Cannot buy ingredient" }] } as unknown as AcquisitionPlan];
+ assert.equal(passesLockFilters(row, false, { ...filters, flea: true }), true);
+ assert.equal(passesLockFilters(row, true, filters), false);
+ });

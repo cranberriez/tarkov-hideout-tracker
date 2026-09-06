@@ -1,3 +1,4 @@
+import { useProfitPricingContext } from "./ProfitPricingContext";
 import Image from "next/image";
 import { X } from "lucide-react";
 import {
@@ -63,19 +64,20 @@ export function RecipeItemHoverCard({
   onClose: () => void;
   onKeepOpen: () => void;
 }) {
+  const pricingContext = useProfitPricingContext();
   const unitRoutePrice =
     totalPrice === null || count <= 0 ? null : totalPrice / count;
   const directUnitPrice = item
     ? priceKind === "buy"
-      ? getItemBuyPrice(item, overrides)
-      : getItemSellPrice(item, overrides)
+      ? getItemBuyPrice(item, overrides, pricingContext)
+      : getItemSellPrice(item, overrides, pricingContext)
     : null;
   const hasOverride = Boolean(
     item && overrides[item.id]?.[priceKind] !== undefined,
   );
   const selectedDirectHasOverride = hasOverride && plan?.directBuyMethod !== "trader";
   const sellComparison =
-    priceKind === "sell" ? getItemSellComparison(item, overrides) : null;
+    priceKind === "sell" ? getItemSellComparison(item, overrides, pricingContext) : null;
   const routeLabel = plan?.isTool
     ? "Reusable tool"
     : method === "flea"
@@ -102,7 +104,7 @@ export function RecipeItemHoverCard({
   const ingredientSellValue =
     plan && !plan.isTool && item
       ? (() => {
-          const price = getItemSellPrice(item, overrides);
+          const price = getItemSellPrice(item, overrides, { ...pricingContext, useTraderSaleForLockedOutputs: true });
           return price === null ? null : price * count;
         })()
       : null;

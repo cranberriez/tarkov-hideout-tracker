@@ -1,5 +1,6 @@
 "use client";
 
+import { useProfitPricingContext } from "./ProfitPricingContext";
 import { useState } from "react";
 import {
   getItemBuyPrice,
@@ -21,6 +22,7 @@ export function InlineItemPrice({
   onPriceChange,
   editable = true,
   onWarningShow,
+  sellValueIsEstimate,
 }: {
   item?: ItemSummary;
   kind: "buy" | "sell";
@@ -30,16 +32,18 @@ export function InlineItemPrice({
   onPriceChange: PriceChangeHandler;
   editable?: boolean;
   onWarningShow?: () => void;
+  sellValueIsEstimate?: boolean;
 }) {
+  const pricingContext = useProfitPricingContext();
   const [editing, setEditing] = useState(false);
   if (!item) return <span>-</span>;
   const itemId = item.id;
   const currentUnitPrice =
     kind === "buy"
-      ? getItemBuyPrice(item, overrides)
-      : getItemSellPrice(item, overrides);
+      ? getItemBuyPrice(item, overrides, pricingContext)
+      : getItemSellPrice(item, overrides, pricingContext);
   const currentOverride = overrides[itemId] ?? {};
-  const warning = kind === "sell" && getItemSellComparison(item, overrides).isEstimate;
+  const warning = kind === "sell" && (sellValueIsEstimate ?? getItemSellComparison(item, overrides, pricingContext).isEstimate);
   const color = warning ? "text-amber-300" : "text-tarkov-green";
   const formattedPrice = formatCompactPrice(displayPrice === undefined ? totalPrice : displayPrice);
   function commit(raw: string) {

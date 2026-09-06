@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, LockKeyhole } from "lucide-react";
 import type { RecipeEvaluation } from "@/lib/price-calculation";
 import { formatCompactRoubles } from "@/lib/utils/market-price";
+import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 
 export function ItemDetailRecipeProfit({
     evaluation,
@@ -29,6 +30,18 @@ export function ItemDetailRecipeProfit({
                     <span className="text-[11px] text-amber-200">{error}</span>
                 ) : evaluation ? (
                     <>
+                        {((evaluation.lockReasons?.length ?? 0) > 0 || (evaluation.outputLockReasons?.length ?? 0) > 0) && (
+                            <span className="rounded bg-red-950/40 px-2 py-1 text-[11px] text-red-300">
+                                {[...(evaluation.lockReasons ?? []), ...(evaluation.outputLockReasons ?? [])].map((reason, index) => (
+                                    <span key={`${reason.kind}:${index}`} className="flex items-center gap-1">
+                                        <LockKeyhole size={11} aria-hidden />
+                                        {reason.questId ? (
+                                            <Link href={getQuestDeepLinkHref(reason.questId)} className="underline">{reason.message}</Link>
+                                        ) : reason.message}
+                                    </span>
+                                ))}
+                            </span>
+                        )}
                         <Metric label="Cost" value={formatPrice(evaluation.cost)} />
                         <Metric
                             label="Profit"

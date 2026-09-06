@@ -1,3 +1,4 @@
+import { LockReasons } from "./LockReasons";
 import Image from "next/image";
 import { LockKeyhole } from "lucide-react";
 import type { RecipeEvaluation } from "@/lib/price-calculation";
@@ -51,6 +52,7 @@ export function ProfitSourceCell({
           </strong>
         )}
       </span>
+      <LockReasons reasons={evaluation.lockReasons ?? []} showIcon={false} />
     </span>
   );
 }

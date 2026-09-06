@@ -1,7 +1,11 @@
+import { getFleaLockReasons, getRecipeLockReasons, getTraderLockReasons } from "./availability";
+import { getFleaPrice } from "../utils/market-price";
 import type { BarterRecord, CraftRecord, ItemAmountRef } from "@/types/recipes";
 import type { TraderPurchaseOffer } from "@/types/items";
 import { getItemBuyPrice, getItemSellPrice, getItemSellComparison, practicalSavingsThreshold } from "./prices";
 import type {
+    LockReason,
+    LockedAcquisitionAlternative,
     AcquisitionAlternative,
     AcquisitionPlan,
     PriceCalculationContext,
@@ -18,6 +22,17 @@ interface Candidate {
     theoreticalCost: number;
     durationSeconds: number;
     children: AcquisitionPlan[];
+}
+
+/** Preserve first-seen order while bounding diagnostics shared by nested routes. */
+function uniqueLockReasons(reasons: LockReason[]): LockReason[] {
+    const seen = new Set<string>();
+    return reasons.filter((reason) => {
+        const key = JSON.stringify([reason.kind, reason.message, reason.questId]);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
 }
 
 function aggregateRequirements(requirements: ItemAmountRef[], multiplier: number) {
@@ -55,6 +70,7 @@ function sumRequirementSellValue(
         const unitSellValue = getItemSellPrice(
             context.itemsById[requirement.itemId],
             context.overrides,
+            { playerLevel: context.playerLevel },
         );
         if (unitSellValue === null) return null;
         total += unitSellValue * requirement.count;
@@ -72,9 +88,10 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
         quantity = 1,
         blocked = new Set<string>(),
         depth = 0,
+        estimateLockedRecipes = true,
     ): AcquisitionPlan {
         const normalizedQuantity = Math.max(0, quantity);
-        const memoKey = `${itemId}:${normalizedQuantity}:${[...blocked].sort().join(",")}`;
+        const memoKey = `${estimateLockedRecipes}:${depth}:${itemId}:${normalizedQuantity}:${[...blocked].sort().join(",")}`;
         const cached = memo.get(memoKey);
         if (cached) return cached;
 
@@ -102,7 +119,8 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
 
         const nextBlocked = new Set(blocked).add(itemId);
         const candidates: Candidate[] = [];
-        candidates.push(...getDirectCandidates(itemId, normalizedQuantity, context, overrides));
+        const lockedAlternatives: LockedAcquisitionAlternative[] = [];
+        candidates.push(...getDirectCandidates(itemId, normalizedQuantity, context, overrides, lockedAlternatives));
 
         if (context.allowBarters !== false) {
             for (const barter of context.bartersByItemId[itemId] ?? []) {
@@ -112,6 +130,8 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
                     normalizedQuantity,
                     nextBlocked,
                     depth,
+                    lockedAlternatives,
+                    estimateLockedRecipes,
                 );
                 if (candidate) candidates.push(candidate);
             }
@@ -124,12 +144,14 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
                     normalizedQuantity,
                     nextBlocked,
                     depth,
+                    lockedAlternatives,
+                    estimateLockedRecipes,
                 );
                 if (candidate) candidates.push(candidate);
             }
         }
 
-        if (candidates.length === 0) return unavailablePlan(itemId, normalizedQuantity);
+        if (candidates.length === 0) return unavailablePlan(itemId, normalizedQuantity, lockedAlternatives);
 
         const theoretical = [...candidates].sort(
             (left, right) => left.theoreticalCost - right.theoreticalCost,
@@ -148,6 +170,7 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
         const plan: AcquisitionPlan = {
             itemId,
             quantity: normalizedQuantity,
+            lockedAlternatives,
             method: recommended.method,
             sourceId: recommended.sourceId,
             traderOffer: recommended.traderOffer,
@@ -177,26 +200,53 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
         quantity: number,
         blocked: Set<string>,
         depth: number,
+        lockedAlternatives: LockedAcquisitionAlternative[],
+        estimateLockedRecipes: boolean,
     ): Candidate | null {
+        const lockReasons = getRecipeLockReasons(recipe, context);
+        const recipeLocked = lockReasons.length > 0;
+        const reject = (message?: string, estimatedUnitPrice?: number) => {
+            if (message) lockReasons.push({ kind: "unavailable", message });
+            lockedAlternatives.push({ method: kind, sourceId: recipe.id, lockReasons: uniqueLockReasons(lockReasons),
+                ...(estimatedUnitPrice !== undefined && Number.isFinite(estimatedUnitPrice) && estimatedUnitPrice >= 0 ? { estimatedUnitPrice } : {}) });
+            return null;
+        };
+        if (recipeLocked && !estimateLockedRecipes) return reject();
         const outputCount = kind === "barter"
             ? (recipe as BarterRecord).offeredCount
             : (recipe as CraftRecord).productCount;
-        if (!(outputCount > 0)) return null;
+        if (!(outputCount > 0)) return reject("Invalid recipe output quantity");
         // Passive/zero-input production has operational costs outside this
         // dataset and must not become a free recursive ingredient source.
-        if (recipe.requiredItems.length === 0) return null;
+        if (recipe.requiredItems.length === 0) return reject("Production input costs unavailable");
         if (kind === "craft" && (recipe as CraftRecord).requiredQuestItems.length > 0) {
-            return null;
+            return reject("Quest item input costs unavailable");
         }
         const batches = Math.ceil(quantity / outputCount);
         const requirements = aggregateRequirements(recipe.requiredItems, batches);
         const children = requirements.map((requirement) => ({
-            ...optimize(requirement.itemId, requirement.count, blocked, depth + 1),
+            // A hypothetical recipe prices only eligible ingredient routes; do not
+            // recursively expand estimates for their locked alternatives.
+            ...optimize(requirement.itemId, requirement.count, blocked, depth + 1, estimateLockedRecipes && !recipeLocked),
             ...(requirement.isTool ? { isTool: true } : {}),
         }));
+        // Tools must be obtainable to execute a nested craft, even though their
+        // acquisition cost is excluded from recurring production costs.
+        const unavailableTools = kind === "craft"
+            ? children.filter((child) => child.isTool && child.method === "unavailable")
+            : [];
+        if (unavailableTools.length) {
+            lockReasons.push(...unavailableTools.flatMap((tool) => tool.lockReasons ?? []));
+            return reject("Required reusable tool has no accessible acquisition route");
+        }
         const totalCost = sumPlanCost(children, "totalCost");
         const theoreticalCost = sumPlanCost(children, "theoreticalCost");
-        if (totalCost === null || theoreticalCost === null) return null;
+        if (totalCost === null || theoreticalCost === null) {
+            lockReasons.push(...children.filter((child) => !child.isTool && child.totalCost === null)
+                .flatMap((child) => child.lockReasons ?? []));
+            return reject("Recipe ingredients have no accessible priced route");
+        }
+        if (recipeLocked) return reject(undefined, totalCost / quantity);
         return {
             method: kind,
             sourceId: recipe.id,
@@ -226,16 +276,6 @@ function isDirectCandidate(candidate: Candidate) {
     return candidate.method === "flea" || candidate.method === "trader";
 }
 
-function isEligibleTraderOffer(
-    offer: TraderPurchaseOffer,
-    context: PriceCalculationContext,
-) {
-    return (
-        (context.traderLoyaltyLevels?.[offer.traderId] ?? 1) >= offer.minTraderLevel &&
-        (!offer.taskUnlockId || context.completedQuests?.[offer.taskUnlockId] === true)
-    );
-}
-
 function traderCandidateId(itemId: string, offer: TraderPurchaseOffer, index: number) {
     return [
         "trader",
@@ -255,9 +295,10 @@ function getDirectCandidates(
     quantity: number,
     context: PriceCalculationContext,
     overrides: NonNullable<PriceCalculationContext["overrides"]>,
+    lockedAlternatives: LockedAcquisitionAlternative[] = [],
 ): Candidate[] {
     const candidates: Candidate[] = [];
-    const unitBuyPrice = getItemBuyPrice(context.itemsById[itemId], overrides);
+    const unitBuyPrice = getItemBuyPrice(context.itemsById[itemId], overrides, context);
     if (unitBuyPrice !== null && Number.isFinite(unitBuyPrice) && unitBuyPrice >= 0) {
         candidates.push({
             method: "flea",
@@ -268,14 +309,26 @@ function getDirectCandidates(
             children: [],
         });
     }
+    if (unitBuyPrice === null) {
+        const lockReasons = getFleaLockReasons(context.itemsById[itemId], context.playerLevel);
+        const estimate = getFleaPrice(context.itemsById[itemId]?.marketPrice);
+        lockedAlternatives.push({ method: "flea", lockReasons: lockReasons.length ? lockReasons : [{ kind: "unavailable", message: "Flea purchase price unavailable" }],
+            ...(estimate !== null && Number.isFinite(estimate) && estimate >= 0 ? { estimatedUnitPrice: estimate } : {}) });
+    }
     if (context.allowTraderPurchases !== false) {
         for (const [index, offer] of (context.itemsById[itemId]?.buyFromTrader ?? []).entries()) {
+            const lockReasons = getTraderLockReasons(offer, context);
+            const sourceId = traderCandidateId(itemId, offer, index);
+            if (lockReasons.length) {
+                lockedAlternatives.push({ method: "trader", sourceId, traderOffer: offer, lockReasons,
+                    estimatedUnitPrice: Number.isFinite(offer.price) && offer.price > 0 && Number.isFinite(offer.priceRUB) && offer.priceRUB > 0 ? offer.priceRUB : undefined });
+                continue;
+            }
             if (
                 !Number.isFinite(offer.price) ||
                 offer.price <= 0 ||
                 !Number.isFinite(offer.priceRUB) ||
-                offer.priceRUB <= 0 ||
-                !isEligibleTraderOffer(offer, context)
+                offer.priceRUB <= 0
             ) continue;
             const totalCost = offer.priceRUB * quantity;
             if (!Number.isFinite(totalCost)) continue;
@@ -307,10 +360,12 @@ function toAcquisitionAlternative(candidate: Candidate): AcquisitionAlternative 
     };
 }
 
-function unavailablePlan(itemId: string, quantity: number): AcquisitionPlan {
+function unavailablePlan(itemId: string, quantity: number, lockedAlternatives: LockedAcquisitionAlternative[] = []): AcquisitionPlan {
     return {
         itemId,
         quantity,
+        lockedAlternatives,
+        lockReasons: uniqueLockReasons([...lockedAlternatives.flatMap((route) => route.lockReasons), { kind: "unavailable", message: "No accessible priced acquisition route" }]),
         method: "unavailable",
         batches: 0,
         totalCost: null,
@@ -349,6 +404,9 @@ export function createRecipeCalculator(input: RecipeCalculatorInput) {
             input.crafts,
             (craft) => craft.productItemId,
         ),
+        playerLevel: input.playerLevel,
+        stationLevels: input.stationLevels,
+        useTraderSaleForLockedOutputs: input.useTraderSaleForLockedOutputs,
         overrides: input.overrides,
         maxDepth: input.maxDepth,
         allowBarters: input.allowBarters,
@@ -438,9 +496,12 @@ function evaluateTopLevelRecipe(
         ...optimizer.optimize(requirement.itemId, requirement.count, blocked),
         ...(requirement.isTool ? { isTool: true } : {}),
     }));
-    const hasUnpricedRequirements =
-        recipe.requiredItems.length === 0 ||
-        (kind === "craft" && (recipe as CraftRecord).requiredQuestItems.length > 0);
+    const lockReasons = getRecipeLockReasons(recipe, context);
+    const hasNoInputs = recipe.requiredItems.length === 0;
+    const hasQuestInputs = kind === "craft" && (recipe as CraftRecord).requiredQuestItems.length > 0;
+    if (hasNoInputs) lockReasons.push({ kind: "unavailable", message: "Production input costs unavailable" });
+    if (hasQuestInputs) lockReasons.push({ kind: "unavailable", message: "Quest item input costs unavailable" });
+    const hasUnpricedRequirements = hasNoInputs || hasQuestInputs;
     const cost = hasUnpricedRequirements ? null : sumPlanCost(requiredItems, "totalCost");
     const theoreticalCost = hasUnpricedRequirements
         ? null
@@ -448,6 +509,7 @@ function evaluateTopLevelRecipe(
     const unitSellPrice = getItemSellPrice(
         context.itemsById[outputItemId],
         context.overrides,
+        context,
     );
     const sellValue = unitSellPrice === null ? null : unitSellPrice * outputCount;
     const cheapestDirect = getDirectCandidates(
@@ -479,11 +541,13 @@ function evaluateTopLevelRecipe(
             ? null
             : savings > practicalSavingsThreshold(directBuyCost);
 
-    const sale = getItemSellComparison(context.itemsById[outputItemId], context.overrides);
+    const sale = getItemSellComparison(context.itemsById[outputItemId], context.overrides, context);
     const sellSourceLabel = sale.selectedSource === "trader" ? sale.bestTraderOffer?.vendor.name :
         sale.selectedSource === "manual" ? "Manual price" : sale.selectedSource === "flea" ? "Flea market" : "No sale price";
 
     return {
+        lockReasons: uniqueLockReasons(lockReasons),
+        outputLockReasons: getFleaLockReasons(context.itemsById[outputItemId], context.playerLevel),
         sellValueIsEstimate: sale.isEstimate,
         sellSourceLabel,
         id: recipe.id,

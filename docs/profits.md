@@ -31,9 +31,13 @@ rather than selecting routes independently.
   valid. Roubles have unit value one. Browser persistence is unchanged.
 - Direct trader purchases are leaf routes from `ItemSummary.buyFromTrader`,
   separate from barter records. Loyalty and task unlocks gate eligibility.
+- Flea access uses the active player's level and the item's `onFleaMarket` and
+  `minLevelForFlea` metadata, with a minimum player level of 15. Locked flea
+  purchases cannot supply ingredients. Manual prices remain explicit overrides.
 - Crafts and barters may recursively supply ingredients. Batch quantities round
   up; cycle/depth guards bound traversal. Tools are reusable and excluded from
-  recurring cost and opportunity-value calculations.
+  recurring cost and opportunity-value calculations. A nested craft still requires
+  an accessible acquisition route for its tools before it can be recommended.
 - Preserve both the theoretical cheapest result and the practical recommendation.
   The cheaper eligible direct purchase wins among direct candidates. A recursive
   route must save enough under the engine's threshold (the smaller of 5% of the
@@ -63,6 +67,52 @@ rather than selecting routes independently.
 Barters and direct trader offers require active-profile loyalty and quest unlocks;
 crafts require station level and quest unlocks. `buyLimit` and `restockAmount` are
 presentation metadata, not optimizer quantity/live-stock constraints.
+
+[availability.ts](../src/lib/price-calculation/availability.ts) supplies separate
+flea, quest, trader loyalty, and station lock reasons. Recipe quest checks use
+`taskUnlockId` on the recipe or trader offer and the profile's completed quest
+IDs; they do not scan quest rewards. The page resolves only those known quest IDs
+for compact name/link presentation. Missing names remain explicit and never
+remove unlock requirements. Quest reasons show **Complete Quest:** above the
+linked quest name. These checks also apply recursively to ingredient routes. The optimizer
+selects the next usable source and retains locked alternatives for disabled menu
+entries with explanatory reason rows. If every route fails, ingredient costs and
+dependent profits remain unknown and the ingredient displays a red lock reason.
+
+Outputs that cannot be sold on the flea have a red background and lock indicator,
+even when they can be sold to a trader. The vendor fallback option uses the best
+trader sale by default; disabling it leaves locked output sales unpriced unless
+there is a manual sale override. Owned-input opportunity values always use usable
+sales, independently of the output fallback option. The master **Hide locked
+recipes** filter covers recipe locks, flea output locks, and unavailable ingredient
+routes. Separate filters hide flea-sale, quest, vendor, or station locks. These
+options persist per app mode and are shared by both profit pages, independently
+of saved progress and price overrides. The menu groups list filters, availability,
+output valuation, and ingredient sources.
+An explicitly linked recipe remains visible with its lock reasons so its profit
+breakdown can still be inspected.
+
+Source-level explanations show the current station/trader level alongside the
+existing required-level display. Source and ingredient explanations omit redundant
+lock icons; output explanations retain theirs. Locked dropdown choices retain the
+normal item/source/price layout, with a red background and a reason header that
+owns the lock icon. Display-only locked prices use known flea/trader offers or
+eligible ingredients for a hypothetical recipe; they never make a route eligible.
+Unknown route costs remain dashes. Locked estimates do not recursively expand
+other locked recipe estimates.
+
+Ingredient route controls use a solid method-colored border for a manual selection
+that differs from the recommendation. A dashed border identifies an automatic
+fallback only when a priced locked alternative would beat the selected route,
+respecting the practical savings threshold for recipes versus direct purchases.
+The initial best route is borderless; merely having alternatives (locked or usable)
+does not add a border. Unknown locked prices cannot establish a fallback. Tooltips
+report available/locked source counts and explain marked fallbacks.
+Ingredient controls have no muted background or divider lines between ingredients.
+Output tint fills the cell height while the item details stay at the top; locked
+outputs retain their red tint.
+Automatic recommendations still exclude locked sources; the existing ingredient
+source toggles control whether crafts and barters participate.
 
 [ProfitPageClient](../src/features/profit-pages/ProfitPageClient.tsx) owns filters,
 evaluation, selection, and modal navigation. [Components](../src/features/profit-pages/components/)

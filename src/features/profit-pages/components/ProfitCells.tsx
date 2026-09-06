@@ -1,3 +1,4 @@
+import { useProfitPricingContext } from "./ProfitPricingContext";
 import {
   getItemSellComparison,
   type ManualPriceOverride,
@@ -61,21 +62,24 @@ export function SellValueCell({
   item,
   count,
   sellValue,
+  sellSourceLabel,
   overrides,
 }: {
   item?: ItemSummary;
   count: number;
   sellValue: number | null;
+  sellSourceLabel?: string;
   overrides: Record<string, ManualPriceOverride>;
 }) {
-  const comparison = getItemSellComparison(item, overrides);
+  const pricingContext = useProfitPricingContext();
+  const comparison = getItemSellComparison(item, overrides, pricingContext);
   const trader = comparison.bestTraderOffer;
   return (
     <div className="flex min-w-0 flex-col items-start justify-center border-l border-white/5 px-3">
       <span className="whitespace-nowrap font-mono text-sm font-semibold text-foreground">
         {formatRoundedRoubles(sellValue)}
       </span>
-      {comparison.selectedSource === "manual" ? (
+      {sellSourceLabel ? <span className="mt-0.5 text-[8px] text-muted-foreground">{sellSourceLabel}</span> : comparison.selectedSource === "manual" ? (
         <span className="mt-0.5 text-[8px] uppercase tracking-wide text-amber-300">
           Manual price
         </span>

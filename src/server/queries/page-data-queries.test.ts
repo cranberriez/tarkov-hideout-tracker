@@ -62,6 +62,7 @@ function createRepository(
     overrides: Partial<{
         stations: TarkovDataRepository["hideout"]["getStations"];
         quests: TarkovDataRepository["quests"]["getAll"];
+        questNames: TarkovDataRepository["quests"]["getByIds"];
         items: TarkovDataRepository["items"]["getByIds"];
         prices: TarkovDataRepository["prices"]["getCurrent"];
         barters: TarkovDataRepository["recipes"]["getBarters"];
@@ -75,7 +76,7 @@ function createRepository(
     return {
         items: { getByIds: overrides.items ?? forbidden },
         hideout: { getStations: overrides.stations ?? forbidden },
-        quests: { getAll: overrides.quests ?? forbidden, getByIds: forbidden },
+        quests: { getAll: overrides.quests ?? forbidden, getByIds: overrides.questNames ?? forbidden },
         traders: { getAll: overrides.traders ?? forbidden, getByIds: forbidden },
         recipes: {
             getBarters: overrides.barters ?? forbidden,
@@ -255,4 +256,49 @@ test("profit trader payload includes cash-only traders referenced by graph items
 
     assert.deepEqual(data.traders.map((trader) => trader.id), ["cash-trader"]);
     assert.equal(data.items?.find((entry) => entry.id === "item-b")?.buyFromTrader?.[0]?.price, 53);
+});
+
+test("profit resolves only referenced unlock names and preserves requirements when names fail", async () => {
+    for (const mode of ["regular", "pve", "pvp-season"] as const) {
+        const calls: string[][] = [];
+        const recipe = {
+            id: "craft", productItemId: "item-a", productCount: 1,
+            stationId: "workbench", level: 3, duration: 10, taskUnlockId: "quest-1",
+            requiredItems: [{ itemId: "item-b", count: 1 }], requiredQuestItems: [], gameEditions: [],
+        };
+        const repository = createRepository({
+            barters: async () => result([]),
+            crafts: async () => result([recipe]),
+            items: async () => result({
+                "item-a": { id: "item-a", name: "A", normalizedName: "a" },
+                "item-b": {
+                    id: "item-b", name: "B", normalizedName: "b",
+                    buyFromTrader: ["quest-1", "missing"].map((taskUnlockId) => ({
+                        traderId: "trader", price: 1, priceRUB: 1, currency: "RUB",
+                        currencyItemId: "roubles", minTraderLevel: 1, taskUnlockId,
+                    })),
+                },
+            }),
+            prices: async () => result({}), traders: async () => result([]),
+            stations: async () => result([station]),
+            questNames: async (requestedMode, ids) => {
+                assert.equal(requestedMode, mode);
+                calls.push([...ids]);
+                return result({ "quest-1": quest }, 42);
+            },
+        });
+        const data = await getProfitPageData(mode, repository);
+        assert.deepEqual(calls, [["quest-1", "missing"]]);
+        assert.deepEqual(data.taskUnlocksById, { "quest-1": { id: "quest-1", name: "Quest", wikiLink: undefined } });
+        assert.deepEqual(data.unresolvedTaskUnlockIds, ["missing"]);
+        assert.equal(data.freshness.taskUnlocksUpdatedAt, 42);
+        assert.match(data.errors.taskUnlocks!, /Some quest names/);
+        repository.quests.getByIds = async () => { throw new Error("unavailable"); };
+        const failed = await getProfitPageData(mode, repository);
+        assert.deepEqual(failed.crafts, [recipe]);
+        assert.equal(failed.errors.crafts, null);
+        assert.equal(failed.items?.length, 2);
+        assert.deepEqual(failed.unresolvedTaskUnlockIds, ["quest-1", "missing"]);
+        assert.match(failed.errors.taskUnlocks!, /could not be loaded/);
+    }
 });

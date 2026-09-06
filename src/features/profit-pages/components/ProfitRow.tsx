@@ -138,6 +138,8 @@ export function ProfitRow({
             method={evaluation.kind}
             totalPrice={evaluation.sellValue}
             priceKind="sell"
+            lockReasons={evaluation.outputLockReasons ?? []}
+            sellValueIsEstimate={evaluation.sellValueIsEstimate ?? false}
             emphasized
             fillColumn
             showRouteIcon={false}
@@ -191,6 +193,7 @@ export function ProfitRow({
           item={output}
           count={evaluation.outputCount}
           sellValue={evaluation.sellValue}
+          sellSourceLabel={evaluation.sellSourceLabel}
           overrides={overrides}
         />
         <ProfitCell

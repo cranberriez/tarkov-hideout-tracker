@@ -279,6 +279,8 @@ export interface ProfitPageData {
     unresolvedItemIds: string[];
     traders: Trader[];
     stations: Array<Pick<Station, "id" | "name" | "normalizedName" | "imageLink">>;
+    taskUnlocksById: ItemUsageData["taskUnlocksById"];
+    unresolvedTaskUnlockIds: string[];
     freshness: {
         bartersUpdatedAt: number | null;
         craftsUpdatedAt: number | null;
@@ -286,6 +288,7 @@ export interface ProfitPageData {
         pricesUpdatedAt: number | null;
         tradersUpdatedAt: number | null;
         stationsUpdatedAt: number | null;
+        taskUnlocksUpdatedAt: number | null;
     };
     errors: {
         barters: string | null;
@@ -294,5 +297,6 @@ export interface ProfitPageData {
         prices: string | null;
         traders: string | null;
         stations: string | null;
+        taskUnlocks: string | null;
     };
 }

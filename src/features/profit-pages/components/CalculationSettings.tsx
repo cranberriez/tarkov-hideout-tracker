@@ -1,8 +1,14 @@
 import { Settings2 } from "lucide-react";
 
+import type { ProfitLockOptionsProps } from "../types";
+
 export function CalculationSettings({
   availableOnly,
   onAvailableOnlyChange,
+  lockFilters,
+  onLockFiltersChange,
+  useTraderSaleForLockedOutputs,
+  onUseTraderSaleForLockedOutputsChange,
   profitableOnly,
   onProfitableOnlyChange,
   allowCrafts,
@@ -18,29 +24,57 @@ export function CalculationSettings({
   onAllowCraftsChange: (value: boolean) => void;
   allowBarters: boolean;
   onAllowBartersChange: (value: boolean) => void;
-}) {
+} & ProfitLockOptionsProps) {
   return (
     <details className="group/settings relative">
       <summary className="flex h-9 cursor-pointer list-none items-center justify-center gap-2 rounded border border-white/10 bg-[#0b0c0e] px-3 text-xs font-semibold text-muted-foreground hover:border-white/20 hover:text-foreground">
         <Settings2 className="size-4" />
         Options
       </summary>
-      <div className="absolute right-0 top-11 z-50 w-72 rounded-md border border-white/15 bg-[#0b0c0e] p-3 shadow-2xl">
+      <div className="absolute right-0 top-11 z-50 max-h-[min(26rem,55dvh)] w-72 overflow-y-auto overscroll-contain rounded-md border border-white/15 bg-[#0b0c0e] p-3 shadow-2xl [scrollbar-width:thin] [scrollbar-color:#444_#0b0c0e]">
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           List filters
         </p>
-        <Toggle
-          checked={availableOnly}
-          onChange={onAvailableOnlyChange}
-          label="Available to me"
-        />
         <Toggle
           checked={profitableOnly}
           onChange={onProfitableOnlyChange}
           label="Profitable recipes only"
         />
         <p className="mb-2 mt-3 border-t border-white/10 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Ingredient routes
+          Availability
+        </p>
+        <Toggle
+          checked={availableOnly}
+          onChange={onAvailableOnlyChange}
+          label="Hide locked recipes"
+        />
+        <div className="ml-3 border-l border-white/10 pl-2">
+          {([
+            ["flea", "Hide no flea sale"],
+            ["quest", "Hide quest locked"],
+            ["vendor", "Hide vendor locked"],
+            ["station", "Hide station locked"],
+          ] as const).map(([key, label]) => (
+            <Toggle
+              key={key}
+              checked={lockFilters[key]}
+              onChange={(value) =>
+                onLockFiltersChange({ ...lockFilters, [key]: value })
+              }
+              label={label}
+            />
+          ))}
+        </div>
+        <p className="mb-2 mt-3 border-t border-white/10 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Output valuation
+        </p>
+        <Toggle
+          checked={useTraderSaleForLockedOutputs}
+          onChange={onUseTraderSaleForLockedOutputsChange}
+          label="Use vendor sale for locked outputs"
+        />
+        <p className="mb-2 mt-3 border-t border-white/10 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Ingredient sources
         </p>
         <Toggle
           checked={allowCrafts}
@@ -74,6 +108,7 @@ function Toggle({
     <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-foreground hover:bg-white/5">
       <input
         type="checkbox"
+        aria-label={label}
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
         className="accent-tarkov-green"

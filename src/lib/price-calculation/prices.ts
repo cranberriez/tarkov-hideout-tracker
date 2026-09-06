@@ -1,6 +1,7 @@
 import type { ItemSummary } from "@/types/items";
 import type { VendorPrice } from "@/types/prices";
-import type { ManualPriceOverrides } from "./types";
+import { getFleaLockReasons } from "./availability";
+import type { PriceCalculationContext, ManualPriceOverrides } from "./types";
 import { getFleaPrice } from "../utils/market-price";
 
 function validPrice(value: number | null | undefined) {
@@ -12,19 +13,21 @@ function validPrice(value: number | null | undefined) {
 export function getItemBuyPrice(
     item: ItemSummary | undefined,
     overrides: ManualPriceOverrides = {},
+    context: Pick<PriceCalculationContext, "playerLevel" | "useTraderSaleForLockedOutputs"> = {},
 ): number | null {
     if (!item) return null;
     const manual = validPrice(overrides[item.id]?.buy);
     if (manual !== null) return manual;
     if (item.normalizedName === "roubles") return 1;
-    return getFleaPrice(item.marketPrice);
+    return getFleaLockReasons(item, context.playerLevel).length ? null : getFleaPrice(item.marketPrice);
 }
 
 export function getItemSellPrice(
     item: ItemSummary | undefined,
     overrides: ManualPriceOverrides = {},
+    context: Pick<PriceCalculationContext, "playerLevel" | "useTraderSaleForLockedOutputs"> = {},
 ): number | null {
-    return getItemSellComparison(item, overrides).selectedPrice;
+    return getItemSellComparison(item, overrides, context).selectedPrice;
 }
 
 export interface ItemSellComparison {
@@ -40,6 +43,7 @@ export interface ItemSellComparison {
 export function getItemSellComparison(
     item: ItemSummary | undefined,
     overrides: ManualPriceOverrides = {},
+    context: Pick<PriceCalculationContext, "playerLevel" | "useTraderSaleForLockedOutputs"> = {},
 ): ItemSellComparison {
     const unavailable: ItemSellComparison = {
         isEstimate: false,
@@ -52,7 +56,8 @@ export function getItemSellComparison(
     };
     if (!item) return unavailable;
     const manual = validPrice(overrides[item.id]?.sell);
-    const fleaPrice = item.normalizedName === "roubles"
+    const locked = item.normalizedName !== "roubles" && getFleaLockReasons(item, context.playerLevel).length > 0;
+    const fleaPrice = locked ? null : item.normalizedName === "roubles"
         ? 1
         : getFleaPrice(item.marketPrice);
     const bestTraderOffer = [...(item.marketPrice?.sellFor ?? [])]
@@ -66,6 +71,7 @@ export function getItemSellComparison(
     if (manual !== null) {
         return { fleaPrice, bestTraderOffer, manualPrice: manual, selectedPrice: manual, selectedSource: "manual", pricesAreClose, isEstimate: false };
     }
+    if (locked && context.useTraderSaleForLockedOutputs === false) return { ...unavailable, bestTraderOffer };
     if (fleaPrice === null && traderPrice === null) return unavailable;
     if (traderPrice !== null && (fleaPrice === null || traderPrice > fleaPrice)) {
         return { fleaPrice, bestTraderOffer, manualPrice: null, selectedPrice: traderPrice, selectedSource: "trader", pricesAreClose, isEstimate: false };

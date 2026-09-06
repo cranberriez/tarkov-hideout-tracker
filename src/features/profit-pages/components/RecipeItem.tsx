@@ -1,9 +1,11 @@
 "use client";
 
+import { useProfitPricingContext } from "./ProfitPricingContext";
 import Image from "next/image";
 import { ExternalLink } from "lucide-react";
 import {
   getItemBuyPrice,
+  type LockReason,
   type AcquisitionPlan,
   type ManualPriceOverride,
 } from "@/lib/price-calculation";
@@ -27,6 +29,7 @@ import {
   getPlanRecipePreview,
   selectAcquisitionRoute,
 } from "../utils/recipes";
+import { LockReasons } from "./LockReasons";
 import { InfoHint } from "./InfoHint";
 import { InlineItemPrice } from "./InlineItemPrice";
 import { useRecipeItemHover } from "./RecipeItemHoverProvider";
@@ -53,6 +56,8 @@ export function RecipeItem({
   recipePreview,
   onRouteChange,
   baseRouteKey,
+  lockReasons = [],
+  sellValueIsEstimate,
 }: {
   item?: ItemSummary;
   count: number;
@@ -73,13 +78,17 @@ export function RecipeItem({
   recipePreview?: RecipePreviewData;
   onRouteChange?: (routeKey: string) => void;
   baseRouteKey?: string;
+  lockReasons?: LockReason[];
+  sellValueIsEstimate?: boolean;
 }) {
+  const pricingContext = useProfitPricingContext();
+  const reasons = method === "unavailable" ? [{ kind: "unavailable" as const, message: "No available route" }] : lockReasons;
   const hover = useRecipeItemHover();
   const routeDetail =
     detail ?? (plan ? describeRoute(plan, routeContext) : null);
   const unitRoutePrice =
     totalPrice === null || count <= 0 ? null : totalPrice / count;
-  const directUnitPrice = item ? getItemBuyPrice(item, overrides) : null;
+  const directUnitPrice = item ? getItemBuyPrice(item, overrides, pricingContext) : null;
   const cheapestDirectTotal = plan?.directBuyCost ??
     (directUnitPrice === null ? null : directUnitPrice * count);
   const resolvedRecipePreview =
@@ -164,8 +173,8 @@ export function RecipeItem({
     if (item) onItemOpen(item.id);
   };
   return (
-    <span
-      className={`group/item relative flex shrink-0 items-center ${compactLine ? "h-9 w-full gap-1.5 pr-1 after:absolute after:bottom-0 after:left-8 after:right-0 after:border-b after:border-white/5 last:after:hidden hover:bg-white/[0.025]" : `h-full min-h-[72px] gap-1.5 px-1 ${fillColumn ? "w-full" : "w-40"} ${emphasized ? "bg-tarkov-green/[0.07]" : "bg-black/10"}`}`}
+    <span className={`flex flex-col ${fillColumn ? "h-full min-h-[72px]" : ""} ${reasons.length ? "bg-red-950/50" : emphasized && fillColumn ? "bg-tarkov-green/[0.07]" : ""}`}><span
+      className={`group/item relative flex shrink-0 items-center ${compactLine ? "h-9 w-full gap-1.5 pr-1 hover:bg-white/[0.025]" : `min-h-[72px] gap-1.5 px-1 ${fillColumn ? "w-full" : "w-40"} ${fillColumn ? "" : emphasized ? "bg-tarkov-green/[0.07]" : "bg-black/10"}`}`}
       onMouseEnter={updateHoverPosition}
       onMouseMove={updateHoverPosition}
       onMouseLeave={hover.scheduleClose}
@@ -175,7 +184,7 @@ export function RecipeItem({
           {showRouteIcon &&
           plan &&
           onRouteChange &&
-          plan.alternatives.length > 0 ? (
+          (plan.alternatives.length > 0 || (plan.lockedAlternatives ?? []).length > 0) ? (
             <RouteSelector
               plan={plan}
               item={item}
@@ -195,7 +204,7 @@ export function RecipeItem({
             aria-label={`Open ${item?.name ?? "item"} details`}
             disabled={!item}
             onClick={openItem}
-            className="relative ml-0.5 flex size-8 shrink-0 cursor-pointer items-center justify-center bg-white/[0.025] transition hover:bg-white/10 disabled:cursor-default"
+            className="relative ml-0.5 flex size-8 shrink-0 cursor-pointer items-center justify-center transition hover:bg-white/10 disabled:cursor-default"
           >
             {item?.iconLink ? (
               <Image
@@ -348,6 +357,7 @@ export function RecipeItem({
                 <InlineItemPrice
                   item={item}
                   kind={priceKind}
+                  sellValueIsEstimate={sellValueIsEstimate}
                   totalPrice={totalPrice}
                   overrides={overrides}
                   onPriceChange={onPriceChange}
@@ -359,6 +369,6 @@ export function RecipeItem({
           </span>
         </>
       )}
-    </span>
+    </span><span title={method === "unavailable" ? "See route options for details" : undefined}><LockReasons reasons={reasons} showIcon={priceKind === "sell"} /></span></span>
   );
 }

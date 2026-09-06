@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import type { AcquisitionPlan } from "@/lib/price-calculation";
@@ -9,8 +9,10 @@ import type { RouteContext } from "../types";
 import {
   acquisitionRouteKey,
   getAcquisitionRoutes,
+  hasCheaperLockedRoute,
 } from "../utils/recipes";
 import { formatCompactPrice } from "../utils/formatters";
+import { LockReasons } from "./LockReasons";
 import { RouteIcon } from "./RouteIcon";
 
 const routeLabels = {
@@ -39,7 +41,19 @@ export function RouteSelector({
     null,
   );
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const descriptionId = useId();
   const routes = getAcquisitionRoutes(plan);
+  const alternativeCount = plan.alternatives.length;
+  const lockedCount = plan.lockedAlternatives?.length ?? 0;
+  const automaticFallback = !changedFromBase && hasCheaperLockedRoute(plan);
+  const routeDescription = [
+    plan.method === "unavailable" ? "No available route" :
+      `${routeLabels[plan.method]} · ${changedFromBase ? "selected manually" : "recommended"}`,
+    alternativeCount > 0 ? `${alternativeCount} alternative${alternativeCount === 1 ? "" : "s"} available` : "No other available routes",
+    ...(lockedCount > 0 ? [`${lockedCount} locked source${lockedCount === 1 ? "" : "s"}`] : []),
+    ...(automaticFallback ? ["Using this route because a cheaper source is locked"] : []),
+    "Open to compare sources",
+  ].join(". ");
 
   useEffect(() => {
     if (!position) return;
@@ -50,19 +64,26 @@ export function RouteSelector({
     const escape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setPosition(null);
     };
-    const scroll = () => setPosition(null);
+    const scroll = (event: Event) => {
+      if (event.target instanceof Element && event.target.closest("[data-route-selector]")) return;
+      setPosition(null);
+    };
+    const resize = () => setPosition(null);
     window.addEventListener("mousedown", close);
     window.addEventListener("keydown", escape);
     window.addEventListener("scroll", scroll, true);
+    window.addEventListener("resize", resize);
     return () => {
       window.removeEventListener("mousedown", close);
       window.removeEventListener("keydown", escape);
       window.removeEventListener("scroll", scroll, true);
+      window.removeEventListener("resize", resize);
     };
   }, [position]);
 
   return (
     <>
+      <span id={descriptionId} className="sr-only">{routeDescription}</span>
       <button
         ref={buttonRef}
         type="button"
@@ -70,7 +91,8 @@ export function RouteSelector({
         data-isolated-hover="true"
         aria-expanded={position !== null}
         aria-label={`Choose acquisition route for ${item?.name ?? "item"}`}
-        title="Choose acquisition route"
+        title={routeDescription}
+        aria-describedby={descriptionId}
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -80,7 +102,7 @@ export function RouteSelector({
           onOpen?.();
           setPosition({
             left: Math.min(rect.right + 6, window.innerWidth - 330),
-            top: Math.min(rect.top, window.innerHeight - routes.length * 42 - 16),
+            top: Math.max(8, Math.min(rect.top, window.innerHeight - Math.max(160, routes.length * 42 + (plan.lockedAlternatives ?? []).length * 84) - 16)),
           });
         }}
         className="relative z-10 h-full w-8 shrink-0 self-stretch outline-none ring-inset ring-white/30 hover:brightness-110 hover:ring-1 focus:ring-1 focus:ring-tarkov-green"
@@ -90,6 +112,8 @@ export function RouteSelector({
           rowRail
           switchable
           changedFromBase={changedFromBase}
+          automaticFallback={automaticFallback}
+          title={routeDescription}
         />
       </button>
       {position &&
@@ -109,10 +133,11 @@ export function RouteSelector({
             <span
               data-route-selector
               data-isolated-hover="true"
-              className="fixed z-[130] block max-h-[calc(100vh-16px)] w-[320px] overflow-y-auto rounded-md border border-white/15 bg-[#05070a] p-1 shadow-[0_18px_55px_rgba(0,0,0,0.8)]"
-              style={{ left: Math.max(8, position.left), top: Math.max(8, position.top) }}
+              className="fixed z-[130] block w-[320px] overflow-y-auto overscroll-contain rounded-md border border-white/15 bg-[#05070a] p-1 shadow-[0_18px_55px_rgba(0,0,0,0.8)]"
+              style={{ left: Math.max(8, position.left), top: position.top, maxHeight: `calc(100dvh - ${position.top + 8}px)` }}
             >
-              {routes.map((route) => {
+              {[...routes, ...(plan.lockedAlternatives ?? [])].map((route, index) => {
+              const locked = "lockReasons" in route;
               const key = acquisitionRouteKey(route);
               const selected = key === acquisitionRouteKey(plan);
               const sourceName =
@@ -127,19 +152,28 @@ export function RouteSelector({
                           routeContext.craftsById[route.sourceId]?.stationId ?? ""
                         ]?.name
                       : undefined;
+              const requiredLevel = route.method === "trader"
+                ? route.traderOffer?.minTraderLevel
+                : route.method === "barter"
+                  ? routeContext.bartersById[route.sourceId ?? ""]?.minTraderLevel
+                  : route.method === "craft"
+                    ? routeContext.craftsById[route.sourceId ?? ""]?.level
+                    : undefined;
               return (
+                <span key={`${key}:${index}`} className={`block rounded ${locked ? "my-1 bg-red-950/40" : ""}`}>
+                {locked && <LockReasons reasons={route.lockReasons} />}
                 <button
-                  key={key}
                   type="button"
+                  disabled={locked}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
                     onSelect(key);
                     setPosition(null);
                   }}
-                  className={`grid w-full grid-cols-[18px_48px_30px_minmax(0,1fr)_auto] items-center gap-2 rounded px-2 py-1 text-left transition hover:bg-white/[0.07] ${selected ? "bg-tarkov-green/10" : ""}`}
+                  className={`grid w-full grid-cols-[18px_48px_30px_minmax(0,1fr)_auto] items-center gap-2 rounded px-2 py-1 text-left transition enabled:hover:bg-white/[0.07] ${selected && !locked ? "bg-tarkov-green/10" : ""}`}
                 >
-                  <RouteIcon method={route.method} inline />
+                  <RouteIcon method={route.method} inline title={locked ? `${routeLabels[route.method]} locked` : routeLabels[route.method]} />
                   <span className="text-[9px] font-bold uppercase text-foreground">
                     {routeLabels[route.method]}
                   </span>
@@ -159,18 +193,23 @@ export function RouteSelector({
                     <span className="block truncate text-[10px] text-white">
                       {item?.name ?? "Unknown item"}
                     </span>
-                    {sourceName && (
-                      <span className="block truncate text-[8px] text-muted-foreground">
-                        {sourceName}
+                    {(sourceName || requiredLevel !== undefined) && (
+                      <span className="flex gap-1 text-[8px] text-muted-foreground">
+                        <span className="truncate">{sourceName ?? "Unknown source"}</span>
+                        {requiredLevel !== undefined && <span className="shrink-0">{route.method === "craft" ? `lvl ${requiredLevel}` : `LL${requiredLevel}`}</span>}
                       </span>
                     )}
                   </span>
-                  <span className="font-mono text-[10px] text-tarkov-green">
+                  <span
+                    className="font-mono text-[10px] text-tarkov-green"
+                    title={locked && route.estimatedUnitPrice !== undefined ? "Estimated unit price; route is locked" : undefined}
+                  >
                     {formatCompactPrice(
-                      plan.quantity > 0 ? route.totalCost / plan.quantity : null,
+                      locked ? route.estimatedUnitPrice ?? null : plan.quantity > 0 ? route.totalCost / plan.quantity : null,
                     )}
                   </span>
                 </button>
+                </span>
               );
               })}
             </span>

@@ -117,6 +117,8 @@ export function useItemDetailModalController({
                       overrides,
                       traderLoyaltyLevels: store.questTraderLoyaltyLevels,
                       completedQuests: store.completedQuests,
+                      playerLevel: store.playerLevel,
+                      stationLevels: store.stationLevels,
                   })
                 : null,
         [
@@ -125,6 +127,8 @@ export function useItemDetailModalController({
             overrides,
             store.completedQuests,
             store.questTraderLoyaltyLevels,
+            store.playerLevel,
+            store.stationLevels,
         ],
     );
     const { barterEvaluationsById, craftEvaluationsById } = useMemo(() => {

@@ -1,4 +1,5 @@
 import type {
+  LockReason,
   AcquisitionAlternative,
   AcquisitionPlan,
   RecipeEvaluation,
@@ -6,6 +7,7 @@ import type {
 import { practicalSavingsThreshold } from "../../../lib/price-calculation/prices";
 import type { ItemSummary } from "@/types/items";
 import type {
+  ProfitLockFilters,
   RecipePreviewData,
   RouteContext,
   SortDirection,
@@ -58,6 +60,18 @@ export function isRecipeAvailable(
     );
   }
   return false;
+}
+
+export function passesLockFilters(evaluation: RecipeEvaluation, availableOnly: boolean, filters: ProfitLockFilters) {
+  const inputReasons = (plan: AcquisitionPlan): LockReason[] => [
+    ...(plan.method === "unavailable" ? (plan.lockReasons?.length ? plan.lockReasons : [{ kind: "unavailable" as const, message: "No acquisition route available" }]) : []),
+    ...plan.children.flatMap(inputReasons),
+  ];
+  const reasons = [...(evaluation.lockReasons ?? []), ...(evaluation.outputLockReasons ?? [])];
+  const ingredientReasons = evaluation.requiredItems.flatMap(inputReasons);
+  if (availableOnly) return reasons.length === 0 && ingredientReasons.length === 0;
+  return !reasons.some(reason => reason.kind !== "unavailable" && filters[reason.kind]) &&
+    !ingredientReasons.some(reason => reason.kind !== "unavailable" && reason.kind !== "flea" && filters[reason.kind]);
 }
 
 export function compareEvaluations(
@@ -129,6 +143,20 @@ export function getAcquisitionRoutes(plan: AcquisitionPlan) {
   return [...(current ? [current] : []), ...plan.alternatives].sort(
     (left, right) => left.totalCost - right.totalCost,
   );
+}
+
+/** Only flag a fallback when a priced locked source would beat this route. */
+export function hasCheaperLockedRoute(plan: AcquisitionPlan): boolean {
+  if (plan.method === "unavailable" || plan.totalCost === null || plan.quantity <= 0) return false;
+  const currentCost = plan.totalCost;
+  const direct = plan.method === "flea" || plan.method === "trader";
+  return (plan.lockedAlternatives ?? []).some((route) => {
+    const estimate = route.estimatedUnitPrice;
+    if (estimate === undefined || !Number.isFinite(estimate) || estimate < 0) return false;
+    const threshold = direct && (route.method === "craft" || route.method === "barter")
+      ? practicalSavingsThreshold(currentCost) : 0;
+    return currentCost - estimate * plan.quantity > threshold;
+  });
 }
 
 export function selectAcquisitionRoute(
