@@ -25,6 +25,16 @@ their [route implementations](<../src/app/(data)/>) before extending them.
 [(data) layout](<../src/app/(data)/layout.tsx>) supplies footer release metadata
 and profile conversion UI, without loading entity arrays for descendants.
 
+[RouteLoader](../src/components/core/RouteLoader.tsx) owns the shared responsive
+tan route card and green indeterminate bar for all page loading boundaries.
+Its flex-growing frame fills the available space below the nav and above the
+footer; Quests retains its footer-free workspace and uses the same loader for
+its client Suspense boundary. The `page` prop selects Hideout, Quests, or Items
+map motifs; `title` names the destination. Subpages have their own loading files
+so Craft Profits, Barter Profits, and other destinations retain their labels
+while sharing their parent motif. Settings, News, and Dev use the Hideout motif.
+Animations respect reduced motion. The temporary `/loading` preview is removed.
+
 ## Dependency direction
 
 ```text

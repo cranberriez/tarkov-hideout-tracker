@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { RouteLoader } from "@/components/core/RouteLoader";
 import { DataLoadError } from "@/components/core/DataLoadError";
 import { QuestsClientPage } from "@/features/quests/QuestsClientPage";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
@@ -38,7 +39,7 @@ export default async function QuestsPage({ searchParams }: QuestsPageProps) {
     }
 
     return (
-        <Suspense fallback={null}>
+        <Suspense fallback={<RouteLoader page="quests" />}>
             <QuestsClientPage
                 quests={data.quests}
                 items={data.items}
