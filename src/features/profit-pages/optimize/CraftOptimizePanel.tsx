@@ -6,14 +6,7 @@ import { useMemo, useState } from "react";
 import type { RecipeCalculatorInput } from "@/lib/price-calculation/types";
 import type { ProfitStationSource } from "../types";
 import { type CraftRanking } from "./craft-plans";
-import {
-	buildContinuousSession,
-	buildCraftSession,
-	getCraftPlans,
-	recommendCraftPlans,
-	selectStationPlans,
-	toggleStationPlan,
-} from "./craft-plans";
+import { buildContinuousSession, buildCraftSession, getCraftPlans, recommendCraftPlans, selectStationPlans, toggleStationPlan } from "./craft-plans";
 import { CraftRecommendations } from "./CraftRecommendations";
 import { CraftPlanDetails } from "./CraftPlanDetails";
 
@@ -30,6 +23,7 @@ export function CraftOptimizePanel({
 	traders: Record<string, { name: string }>;
 	onItemOpen: (id: string) => void;
 }) {
+	const [compact, setCompact] = useState(false);
 	const [targetMinutes, setTargetMinutes] = useState(240);
 	const continuous = targetMinutes === 0;
 	const [ranking, setRanking] = useState<CraftRanking>("profit-hour");
@@ -77,12 +71,14 @@ export function CraftOptimizePanel({
 		selected.map((plan) => [plan.id, Math.max(0, ...session.filter((booking) => booking.planId === plan.id).map((booking) => booking.finish))]),
 	);
 	const repeated = useMemo(() => (continuous ? buildContinuousSession(selected, slots) : null), [continuous, selected, slots]);
-	const firstSession = repeated ? repeated.bookings.filter(booking => booking.round === 0) : session;
+	const firstSession = repeated ? repeated.bookings.filter((booking) => booking.round === 0) : session;
 	const continuousRates = repeated ? Object.fromEntries(selected.map((plan) => [plan.id, (plan.profit * (repeated.counts[plan.id] ?? 0)) / 24])) : undefined;
 	const cadence = Math.max(duration, targetMinutes * 60);
 	const detail = plans.find((plan) => plan.id === detailId) ?? null;
 
-	function resetChoices() { setChoices({}); }
+	function resetChoices() {
+		setChoices({});
+	}
 
 	return (
 		<section aria-label="Craft planner" className="space-y-6">
@@ -95,18 +91,38 @@ export function CraftOptimizePanel({
 					<p className="mt-1 text-sm text-muted-foreground">What to craft, based on when you play.</p>
 				</div>
 				<div className="flex flex-wrap items-center gap-2 self-center" aria-label="Planner actions">
-				<Link href="/items/crafting-profits" className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 text-xs hover:bg-white/10">Compare crafts<ArrowUpRight size={14} aria-hidden="true" /></Link>
-				<button
-					type="button"
-					aria-pressed={demo}
-					className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${demo ? "border-amber-300/40 bg-amber-300/10 text-amber-200" : "border-white/15 bg-white/[0.03] text-muted-foreground hover:bg-white/10 hover:text-foreground"}`}
-					onClick={() => {
-						setDemo((value) => !value);
-						resetChoices();
-					}}
-				>
-					<Eye size={14} aria-hidden="true" />{demo ? "Use my profile" : "Preview all unlocks"}
-				</button>
+					<div aria-label="Craft card view" className="flex gap-1">
+						{([false, true] as const).map((value) => (
+							<button
+								key={String(value)}
+								type="button"
+								aria-pressed={compact === value}
+								onClick={() => setCompact(value)}
+								className={`rounded-lg px-3 py-2 text-xs ${compact === value ? "bg-white/10 text-foreground" : "text-muted-foreground hover:bg-white/5"}`}
+							>
+								{value ? "Compact" : "Expanded"}
+							</button>
+						))}
+					</div>
+					<Link
+						href="/items/crafting-profits"
+						className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 text-xs hover:bg-white/10"
+					>
+						Compare crafts
+						<ArrowUpRight size={14} aria-hidden="true" />
+					</Link>
+					<button
+						type="button"
+						aria-pressed={demo}
+						className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${demo ? "border-amber-300/40 bg-amber-300/10 text-amber-200" : "border-white/15 bg-white/[0.03] text-muted-foreground hover:bg-white/10 hover:text-foreground"}`}
+						onClick={() => {
+							setDemo((value) => !value);
+							resetChoices();
+						}}
+					>
+						<Eye size={14} aria-hidden="true" />
+						{demo ? "Use my profile" : "Preview all unlocks"}
+					</button>
 				</div>
 			</header>
 			{demo && (
@@ -114,7 +130,7 @@ export function CraftOptimizePanel({
 					Preview · all crafts unlocked. Your profile is unchanged.
 				</p>
 			)}
-			<div className="flex flex-wrap items-center gap-4 rounded-xl border border-white/10 bg-white/[0.025] p-3 sm:p-4">
+			<div className="flex flex-wrap items-center gap-4 rounded-xl bg-white/[0.025] p-3 sm:p-4">
 				<div className="flex flex-wrap items-center gap-2" aria-label="Return time">
 					<span className="mr-1 flex items-center gap-1.5 text-sm text-muted-foreground">
 						<Clock3 size={15} aria-hidden="true" />
@@ -235,6 +251,7 @@ export function CraftOptimizePanel({
 				{continuous ? "Best estimated profit/hour · restart as soon as each chain finishes." : "Hourly estimates include waiting until your next run."}
 			</p>
 			<CraftRecommendations
+				compact={compact}
 				groups={groups}
 				stationIds={stationIds}
 				stations={stations}
@@ -263,11 +280,14 @@ export function CraftOptimizePanel({
 							slots,
 						),
 					}));
-
 				}}
 				onInspect={setDetailId}
 			/>
-            {repeated?.truncated && <p role="status" className="text-xs text-amber-200">Calculation limit reached. Hourly estimates cover only calculated batches.</p>}
+			{repeated?.truncated && (
+				<p role="status" className="text-xs text-amber-200">
+					Calculation limit reached. Hourly estimates cover only calculated batches.
+				</p>
+			)}
 			<div className="space-y-1 text-xs leading-relaxed text-muted-foreground">
 				<p>Estimates before fuel, flea fees and tool setup. Batch leftovers are not valued. Trader stock and restock limits are not modeled.</p>
 				<p>
@@ -279,6 +299,7 @@ export function CraftOptimizePanel({
 				</p>
 			</div>
 			<CraftPlanDetails
+				key={detailId}
 				plan={detail}
 				items={input.itemsById}
 				stations={stations}

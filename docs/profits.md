@@ -180,7 +180,19 @@ The Hideout navigation includes Craft Planner. Crafting Profits links to it bene
 the heading; there is no All crafts / Optimize switch. The planner header groups
 Compare crafts and Preview all unlocks as compact outlined actions; there is no
 Hideout quick link. Cards place a small image beside the name, with duration/profit
-below and a full-width input-details action. All planner choices remain local and reset on leaving the page or switching
+below and a full-width required-items action. The action shows all
+ingredients with images, quantities and individual Flea/Trader/Barter/Craft labels
+(reusable tools are labeled Owned tool and appear last with muted styling), then opens the acquisition chain. Ingredients are never hidden behind a more count.
+Flea ingredients show the evaluated purchase price per unit in both the card and
+chain, plus the total when the required quantity differs from one. These values
+use the same route cost as profit, including manual overrides; owned tools remain
+excluded. Displayed prices round to roubles without changing calculations.
+Cards and craft details prominently show the estimated sale price per output item,
+the selected sale source, and batch sale total for multi-item outputs. This uses
+the same sale value as profit (input cost plus profit), including manual sale
+overrides. The sale estimate is distinct from the labeled profit after inputs;
+it does not promise an executable market listing or include flea fees.
+All planner choices remain local and reset on leaving the page or switching
 profile mode. Existing skill preferences, seasonal Elite, profile unlocks and manual
 prices are reused without new persistence. Table filters do not constrain the planner.
 There are no additional server reads beyond the existing profit query.
@@ -188,17 +200,34 @@ There are no additional server reads beyond the existing profit query.
 The compact controls select a target return interval (default four hours), craft
 input routes, trader purchases and barters (all on by default), and ranking by profit including wait (default), time
 fit, or longest run. Return presets and a minutes input replace the return dropdown;
-ranking uses visible buttons. [Craft cards](../src/features/profit-pages/optimize/CraftRecommendations.tsx)
-show two distinct output recipes per station with a reveal-more control. Selecting
+ranking uses visible buttons. Stations use a two-column grid on wide screens, with
+stations that have available profitable crafts first and empty stations last;
+both groups retain alphabetical station order. Empty station cards stay compact.
+[Craft cards](../src/features/profit-pages/optimize/CraftRecommendations.tsx)
+show two distinct output recipes per station with a reveal-more control. Collapsed
+stations prioritize selected crafts, filling any remaining space from the ranking.
+The local Expanded/Compact view control keeps selection unchanged. Compact cards
+show only output, individual sale estimate, batch profit and all required items;
+four station columns fit wide desktop screens, with fewer columns on smaller screens. Selecting
 a card toggles that station's sale craft. Elite, including the seasonal override,
 selects two distinct crafts by default; a third pick replaces the oldest selection.
-Non-Elite selects one. Skipping a station only skips its sale crafts,
-not its use as another chain's supplier. Changing target, ranking or sourcing
+Non-Elite selects one. There is no station pause control. Deselecting individual
+cards only removes those sale crafts, not the station's use as another chain's
+supplier. Changing target, ranking or sourcing
 reselects defaults. Catalog item/station images have a missing/broken-image fallback.
-[Details](../src/features/profit-pages/optimize/CraftPlanDetails.tsx) show the chain's
-steps, quantities, stations, relative times and an always-visible shopping list labeled with flea or trader sources.
-Barter exchanges list their inputs, outputs and trader in dependency order; crafted
-exchange ingredients retain their station jobs. Source controls are local checkboxes.
+[Details](../src/features/profit-pages/optimize/CraftPlanDetails.tsx) show the output
+above a connected ingredient tree, preserving the selected acquisition plan's
+parent/child relationships and labeling each input's purchase, barter or craft
+source using muted method colors and icons. Connected item rows keep quantities
+aligned at the right; tools appear last within each branch and do not expand into
+production chains. Display ordering preserves the original acquisition paths.
+The wider craft viewer puts the acquisition chain beside a shopping list labeled
+with flea or trader sources. Each non-tool branch shows its estimated acquisition
+cost per unit and total. Clicking a crafted or bartered input focuses its own
+acquisition subtree; Back and the original craft link restore earlier views.
+The original craft's batch totals and shopping list remain labeled context.
+Craft timing is no longer repeated in a separate section; readiness remains in
+the header, and station/trader sources remain on the chain. Source controls are local checkboxes.
 Sales (with source and output quantity), inputs and profit appear together.
 Item details reuse the existing modal. A preview uses real catalog/prices with
 hypothetical station/trader/quest unlocks and level 60, never changing saved state.
@@ -234,7 +263,7 @@ The combined run reserves selected chains first, then places other selected jobs
 available station gaps. Shared stations can delay a craft past its standalone duration.
 Cards show the combined run's effective hourly contribution, including idle time
 until the larger of return interval or combined completion. Their details show the
-first batch's steps and sources. The planner has no Your run section, timeline,
+first batch's readiness and acquisition sources. The planner has no Your run section, timeline,
 Once/day switch, or reminder export. The calendar creation utility and unused timeline
 component are removed. Scheduling stays internal to the estimates.
 Every chain step requires manual start/collection; the return target does not suppress
@@ -252,7 +281,7 @@ repetitions. This heuristic does not pipeline multiple instances of the same cha
 or prove a global optimum. Only chains finishing within the day are started/costed.
 A 2,000-job safety bound explicitly reports limited calculations and partial estimates.
 Selected cards show completed-batch profit divided by the full 24
-hours; unselected cards show standalone profit/hour. Craft details show the first batch's timing. Source toggles and profile unlocks still
+hours; unselected cards show standalone profit/hour. Craft details show the first batch's readiness. Source toggles and profile unlocks still
 apply. Continuous adds no player-state persistence or All crafts details button.
 
 

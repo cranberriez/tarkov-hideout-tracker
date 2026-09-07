@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { RecipeCalculatorInput } from "../../../lib/price-calculation/types";
-import { buildContinuousSession, buildCraftSession, craftWindowProfitHour, getCraftPlans, placeCraftPlan, recommendCraftPlans, selectStationPlans, toggleStationPlan, type CraftPlan, type CraftStep } from "./craft-plans";
+import { buildContinuousSession, buildCraftSession, collapsedStationPlans, craftWindowProfitHour, getCraftPlans, placeCraftPlan, recommendCraftPlans, selectStationPlans, toggleStationPlan, type CraftPlan, type CraftStep } from "./craft-plans";
 import { getSeasonalCraftingSettings, SEASONAL_CONFIG } from "../../../lib/cfg/seasonal";
 
 function input(): RecipeCalculatorInput {
@@ -22,7 +22,7 @@ const step = (id: string, stationId: string, duration: number, after: string[] =
   ({ id, stationId, duration, after, recipeId: id, itemId: id, name: id, count: 1 });
 const plan = (id: string, steps: CraftStep[]): CraftPlan => ({ id, rootRecipeId: id, name: id, stationId: steps.at(-1)!.stationId,
   itemId: id, count: 1, duration: steps.reduce((sum, step) => sum + step.duration, 0), cost: 100, profit: 200,
-  steps, shopping: [], hasChain: steps.length > 1 });
+  steps, requiredItems: [], shopping: [], hasChain: steps.length > 1 });
 
 test("craft chains charge full batches and schedule full durations instead of amortized time", () => {
   const result = getCraftPlans(input(), true);
@@ -32,6 +32,11 @@ test("craft chains charge full batches and schedule full durations instead of am
   assert.equal(root.duration, 5 * 3600); // Two 90-minute batches, then two hours.
   assert.equal(root.cost, 200);
   assert.equal(root.profit, 9800);
+  assert.equal(root.requiredItems[0].itemId, "B");
+  assert.equal(root.requiredItems[0].method, "craft");
+  assert.equal(root.requiredItems[0].quantity, 3);
+  assert.equal(root.requiredItems[0].children[0].itemId, "C");
+  assert.equal(root.requiredItems[0].children[0].quantity, 2, "chain preview retains full-batch input quantities");
   assert.deepEqual(root.shopping, [{ itemId: "C", name: "C", count: 2, cost: 200 }]);
   const bookings = placeCraftPlan(root, [], 2)!;
   assert.equal(bookings[1].start, bookings[0].finish, "same recipe cannot use both Elite slots concurrently");
@@ -129,7 +134,7 @@ test("Elite defaults to two distinct sale crafts and toggles respect capacity an
   assert.deepEqual(selectStationPlans(available, choice, 2).map(plan => plan.id), choice);
   choice = toggleStationPlan(choice, "b", 2);
   assert.deepEqual(choice, ["c"]);
-  assert.deepEqual(toggleStationPlan(choice, null, 2), []);
+  assert.deepEqual(toggleStationPlan(choice, "c", 2), []);
   assert.deepEqual(selectStationPlans(available, [], 2), []);
   const skill = getSeasonalCraftingSettings(SEASONAL_CONFIG.mode, 0).craftingSkillLevel;
   const session = buildCraftSession(selectStationPlans(available, undefined, skill >= 51 ? 2 : 1), 2);
@@ -196,6 +201,11 @@ test("crafts supplying barters retain their full duration and consuming craft de
   assert.equal(root.duration, 12600);
   assert.deepEqual(root.steps.at(-1)!.after, [root.steps[0].id]);
   assert.deepEqual(root.exchanges![0].after, [root.steps[0].id]);
+  const requirement = root.requiredItems[0];
+  assert.equal(requirement.method, "barter");
+  assert.equal(requirement.children[0].method, "craft");
+  assert.equal(requirement.children[0].children[0].method, "flea");
+  assert.equal(requirement.children[0].children[0].itemId, "D", "acquisition preview preserves craft inputs nested under a barter");
   assert.equal(root.shopping.reduce((sum, item) => sum + item.cost, 0), root.cost);
 });
 
@@ -240,4 +250,15 @@ test("continuous day limits exclude incomplete chains and report work limits exp
   assert.equal(result.counts.fast, 10);
   assert.equal(result.profit, 2000);
   assert.equal(buildContinuousSession([]).profit, 0);
+});
+
+test("collapsed stations retain alternate selections and fill vacant positions by rank", () => {
+  const ranked = ["best", "second", "alternate", "last"].map(id => plan(id, [step(id, "bench", 60)]));
+  const ids = (selected: CraftPlan[]) => collapsedStationPlans(ranked, selected).map(plan => plan.id);
+  assert.deepEqual(ids([ranked[2], ranked[3]]), ["alternate", "last"]);
+  assert.deepEqual(ids([ranked[2]]), ["alternate", "best"]);
+  assert.deepEqual(ids([]), ["best", "second"]);
+  assert.deepEqual(ids([ranked[0], ranked[2]]), ["best", "alternate"]);
+  assert.deepEqual(collapsedStationPlans([], []), []);
+  assert.deepEqual(ranked.map(plan => plan.id), ["best", "second", "alternate", "last"]);
 });

@@ -31,6 +31,7 @@ export interface CraftPlan extends ScheduleCandidate {
   itemId: string;
   count: number;
   steps: CraftStep[];
+  requiredItems: AcquisitionPlan[];
   shopping: CraftShoppingItem[];
   exchanges?: CraftExchange[];
   hasChain: boolean;
@@ -141,7 +142,7 @@ export function getCraftPlans(input: RecipeCalculatorInput, includeChains: boole
         duration: row.craft.duration, after });
       const plan: CraftPlan = { id: `${row.id}:${hasChain ? "chain" : "buy"}`, rootRecipeId: row.id,
         stationId: row.craft.stationId, itemId: row.outputItemId, name: input.itemsById[row.outputItemId]?.name ?? row.outputItemId,
-        count: row.outputCount, cost: row.cost, profit: row.profit, sellSourceLabel: row.sellSourceLabel, duration: 0, steps, shopping: [...shopping.values()], exchanges, hasChain };
+        count: row.outputCount, cost: row.cost, profit: row.profit, sellSourceLabel: row.sellSourceLabel, duration: 0, steps, requiredItems: row.requiredItems, shopping: [...shopping.values()], exchanges, hasChain };
       const bookings = placeCraftPlan(plan, [], (input.craftingSkillLevel ?? 0) >= 51 ? 2 : 1);
       if (!bookings) continue;
       plan.duration = Math.max(...bookings.map(booking => booking.finish));
@@ -180,8 +181,7 @@ export function selectStationPlans(available: CraftPlan[], choice: string[] | un
 }
 
 /** Selecting a third Elite craft replaces the oldest selection; selected cards toggle off. */
-export function toggleStationPlan(current: string[], id: string | null, slots: number) {
-  if (id === null) return [];
+export function toggleStationPlan(current: string[], id: string, slots: number) {
   if (current.includes(id)) return current.filter(value => value !== id);
   return [...current, id].slice(-(slots >= 2 ? 2 : 1));
 }
@@ -231,4 +231,10 @@ export function buildContinuousSession(plans: CraftPlan[], slots = 1, horizon = 
   bookings.sort((a, b) => a.start - b.start || a.step.stationId.localeCompare(b.step.stationId) || a.lane - b.lane);
   const profit = plans.reduce((sum, plan) => sum + plan.profit * (counts[plan.id] ?? 0), 0);
   return { bookings, counts, profit, truncated };
+}
+
+/** Keep chosen outputs visible when a station is collapsed, then fill by rank. */
+export function collapsedStationPlans(ranked: CraftPlan[], selected: CraftPlan[]): CraftPlan[] {
+  const selectedIds = new Set(selected.map(plan => plan.id));
+  return [...ranked.filter(plan => selectedIds.has(plan.id)), ...ranked.filter(plan => !selectedIds.has(plan.id))].slice(0, 2);
 }
