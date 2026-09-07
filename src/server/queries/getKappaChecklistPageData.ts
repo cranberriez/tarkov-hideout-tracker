@@ -23,6 +23,7 @@ function getCollectorRequiredItemIds(collector: Pick<FullQuest, "objectives">): 
 export async function getKappaChecklistPageData(
     mode: TarkovDataMode,
     repository?: TarkovDataRepository,
+    options: { includePrices?: boolean } = {},
 ): Promise<KappaChecklistPageData> {
     const dataRepository = repository ?? (await getDefaultRepository());
     const collectorId = COLLECTOR_QUEST_ID_BY_MODE[mode];
@@ -52,10 +53,12 @@ export async function getKappaChecklistPageData(
     const itemIds = collectorQuest ? getCollectorRequiredItemIds(collectorQuest) : [];
     const [itemsResult, pricesResult] = await Promise.allSettled([
         dataRepository.items.getByIds(mode, itemIds),
-        dataRepository.prices.getCurrent(mode, itemIds),
+        options.includePrices === false
+            ? Promise.resolve({ data: {}, updatedAt: null })
+            : dataRepository.prices.getCurrent(mode, itemIds),
     ]);
     const itemsById = itemsResult.status === "fulfilled" ? itemsResult.value.data : {};
-    const pricesById = pricesResult.status === "fulfilled" ? pricesResult.value.data : {};
+    const pricesById: Record<string, import("@/types/prices").CurrentPrice> = pricesResult.status === "fulfilled" ? pricesResult.value.data : {};
 
     const unresolvedItemIds = itemIds.filter((itemId) => !itemsById[itemId]);
     const items = itemIds.flatMap((itemId) => {

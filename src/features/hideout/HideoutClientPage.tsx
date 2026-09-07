@@ -1,5 +1,7 @@
 "use client";
 
+import { useDeferredPriceItems } from "@/features/items/DeferredPriceBoundary";
+
 import { useEffect, useMemo } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { HideoutControls } from "@/features/hideout/components/HideoutControls";
@@ -13,7 +15,8 @@ interface HideoutClientPageProps {
 }
 
 export function HideoutClientPage({ data }: HideoutClientPageProps) {
-    const { stations, items, unresolvedItemIds, freshness, errors } = data;
+    const { stations, items: initialItems, unresolvedItemIds, freshness, errors } = data;
+    const items = useDeferredPriceItems(initialItems);
     const itemById = useMemo(
         () => Object.fromEntries((items ?? []).map((item) => [item.id, item])),
         [items],

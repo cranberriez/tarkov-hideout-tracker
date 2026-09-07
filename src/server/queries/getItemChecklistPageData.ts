@@ -19,6 +19,7 @@ import {
 export async function getItemChecklistPageData(
     mode: TarkovDataMode,
     repository?: TarkovDataRepository,
+    options: { includePrices?: boolean } = {},
 ): Promise<ItemChecklistPageData> {
     const dataRepository = repository ?? (await getDefaultRepository());
     const [stationsResult, questsResult] = await Promise.allSettled([
@@ -69,7 +70,9 @@ export async function getItemChecklistPageData(
 
     const [itemsResult, pricesResult] = await Promise.allSettled([
         dataRepository.items.getByIds(mode, itemIds),
-        dataRepository.prices.getCurrent(mode, itemIds),
+        options.includePrices === false
+            ? Promise.resolve({ data: {}, updatedAt: null })
+            : dataRepository.prices.getCurrent(mode, itemIds),
     ]);
     const itemRecords = itemsResult.status === "fulfilled" ? itemsResult.value.data : null;
     const priceRecords = pricesResult.status === "fulfilled" ? pricesResult.value.data : {};

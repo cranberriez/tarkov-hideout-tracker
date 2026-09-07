@@ -39,4 +39,6 @@ export interface ItemSummary extends ItemIdentity {
     category?: ItemCategory;
     buyFromTrader?: TraderPurchaseOffer[];
     marketPrice?: CurrentPrice | null;
+    /** Ephemeral delivery state; never persisted in player progress. */
+    priceLoadState?: "pending" | "error" | "ready";
 }

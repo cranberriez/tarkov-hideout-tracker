@@ -14,7 +14,7 @@ export async function getMutableCurrentPricesByIds(
     database: Client = getTursoClient(),
 ): Promise<Record<string, StoredCurrentPrice>> {
     if (itemIds.length === 0) return {};
-    const result = await database.execute({
+    const resultPromise = database.execute({
         sql: `
             SELECT
                 item_id,
@@ -35,7 +35,7 @@ export async function getMutableCurrentPricesByIds(
     });
     // One bounded batch read also upgrades pre-algorithm rows without a refresh,
     // including ETag/304 responses. Never trust an old weighted aggregate value.
-    const history = await database.execute({
+    const historyPromise = database.execute({
         sql: `SELECT item_id, timestamp, price, price_min, offer_count FROM (
             SELECT *, ROW_NUMBER() OVER (PARTITION BY item_id ORDER BY timestamp DESC) AS rank
             FROM item_price_points WHERE mode = ?
@@ -43,6 +43,17 @@ export async function getMutableCurrentPricesByIds(
         ) WHERE rank <= 10`,
         args: [mode, JSON.stringify([...new Set(itemIds)])],
     });
+    const reads = await Promise.allSettled([resultPromise, historyPromise]);
+    // A missing optional table must not conceal an independent connection or
+    // query failure from the other concurrent read.
+    for (const read of reads) {
+        if (read.status === "rejected" && !isMissingMutablePriceStorage(read.reason)) throw read.reason;
+    }
+    const [currentRead, historyRead] = reads;
+    if (currentRead.status === "rejected") throw currentRead.reason;
+    if (historyRead.status === "rejected") throw historyRead.reason;
+    const result = currentRead.value;
+    const history = historyRead.value;
     const pointsById: Record<string, PriceHistoryPoint[]> = {};
     for (const row of history.rows) {
         if (typeof row.item_id !== "string" || row.price === null || row.price_min === null || row.timestamp === null) continue;

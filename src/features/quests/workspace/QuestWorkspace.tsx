@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
 import type { FullQuest } from "@/types/quests";
 import type { MapViewTransform } from "@/features/maps/map-view-transform";
@@ -16,9 +17,14 @@ import {
 import { QuestListPane } from "./QuestListPane";
 import { QuestActionBar } from "./QuestActionBar";
 import { QuestDetailsPane } from "./QuestDetailsPane";
-import { RaidPlannerPane } from "./RaidPlannerPane";
-import { QuestVisualizerPane } from "./QuestVisualizerPane";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
+
+function PaneLoading() {
+    return <div role="status" className="flex flex-1 items-center justify-center p-8 text-sm text-gray-400">Loading view…</div>;
+}
+
+const RaidPlannerPane = dynamic(() => import("./RaidPlannerPane").then((module) => module.RaidPlannerPane), { loading: PaneLoading });
+const QuestVisualizerPane = dynamic(() => import("./QuestVisualizerPane").then((module) => module.QuestVisualizerPane), { loading: PaneLoading });
 
 export function QuestWorkspace({ quests }: { quests: FullQuest[] }) {
     const { mode, plannerMapKey, questsById, selectedQuestId, setSelectedQuestId } = useQuestWorkspace();

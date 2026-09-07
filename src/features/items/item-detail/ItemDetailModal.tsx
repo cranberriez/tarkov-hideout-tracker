@@ -82,6 +82,7 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
                                             itemId={vm.selectedItemId}
                                             owned={vm.owned}
                                             marketPrice={vm.marketPrice}
+                                            priceLoadState={selectedItem.priceLoadState}
                                             relativeUpdatedAt={vm.relativeUpdatedAt}
                                             isFiat={vm.isFiat}
                                             showMarket={vm.showMarket}

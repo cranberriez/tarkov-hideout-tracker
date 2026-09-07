@@ -7,6 +7,7 @@ import { ItemDetailMarket } from "./ItemDetailMarket";
 
 interface ItemDetailSidebarProps {
     itemId: string;
+    priceLoadState?: "pending" | "error" | "ready";
     owned: { have: number; haveFir: number };
     marketPrice: CurrentPrice | null | undefined;
     relativeUpdatedAt: string | null;
@@ -19,6 +20,7 @@ interface ItemDetailSidebarProps {
 
 export function ItemDetailSidebar({
     itemId,
+    priceLoadState,
     owned,
     marketPrice,
     relativeUpdatedAt,
@@ -53,6 +55,7 @@ export function ItemDetailSidebar({
                 onReset={resetInventory}
                 onSave={saveInventory}
             />
+            {priceLoadState && priceLoadState !== "ready" && <p role="status" className="px-4 py-3 text-xs text-gray-400">{priceLoadState === "pending" ? "Loading item price…" : "Price could not be loaded. Use Retry prices on the page."}</p>}
             {showMarket && marketPrice && (
                 <ItemDetailMarket
                     marketPrice={marketPrice}

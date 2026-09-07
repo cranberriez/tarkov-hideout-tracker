@@ -1,5 +1,7 @@
 "use client";
 
+import { useDeferredPriceItems } from "@/features/items/DeferredPriceBoundary";
+
 import { useEffect, useMemo, useState } from "react";
 import type { ItemSummary } from "@/types/items";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -7,7 +9,7 @@ import { ItemsList } from "@/features/items/components/ItemsList";
 import { ItemsControls } from "@/features/items/components/ItemsControls";
 import { ItemsStatsRow } from "@/features/items/components/ItemsStatsRow";
 import { ItemSearchModal } from "@/features/items/components/ItemSearchModal";
-import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
+import { ItemDetailModal } from "@/features/items/item-detail/LazyItemDetailModal";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { DataLoadError } from "@/components/core/DataLoadError";
 import type { ItemChecklistPageData } from "@/types/contracts";
@@ -19,13 +21,14 @@ interface ItemsClientPageProps {
 export function ItemsClientPage({ data }: ItemsClientPageProps) {
     const {
         stations,
-        items,
+        items: initialItems,
         questItemIndex,
         questAnyOfGroups,
         questAvailabilityQuests,
         freshness,
         errors,
     } = data;
+    const items = useDeferredPriceItems(initialItems);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ItemSummary | null>(null);
 
@@ -136,7 +139,7 @@ export function ItemsClientPage({ data }: ItemsClientPageProps) {
 
             {selectedItem && (
                 <ItemDetailModal
-                    item={selectedItem}
+                    item={itemById[selectedItem.id] ?? selectedItem}
                     isOpen={!!selectedItem}
                     onClose={() => setSelectedItem(null)}
                 />

@@ -1,11 +1,13 @@
 "use client";
 
+import { useDeferredPriceItems } from "@/features/items/DeferredPriceBoundary";
+
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { BadgeCheck, Check } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { DataLoadError } from "@/components/core/DataLoadError";
-import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
+import { ItemDetailModal } from "@/features/items/item-detail/LazyItemDetailModal";
 import { useKappaStore, type KappaViewMode } from "@/lib/stores/useKappaStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ItemSummary } from "@/types/items";
@@ -20,13 +22,15 @@ const VIEW_OPTIONS: Array<{ value: KappaViewMode; label: string }> = [
     { value: "all", label: "All" },
     { value: "need", label: "Need" },
 ];
+const EMPTY_ITEMS: ItemSummary[] = [];
 
 export function KappaChecklistClientPage({
     collectorQuest,
-    collectorItems,
+    collectorItems: initialItems,
     unresolvedItemIds,
     errors,
 }: KappaChecklistClientPageProps) {
+    const collectorItems = useDeferredPriceItems(initialItems) ?? EMPTY_ITEMS;
     const [selectedItem, setSelectedItem] = useState<ItemSummary | null>(null);
     const gameMode = useUserStore((state) => state.gameMode);
     const { completedItemsByMode, viewMode, setViewMode, toggleCompletedItem } =
@@ -227,7 +231,7 @@ export function KappaChecklistClientPage({
 
             {selectedItem && (
                 <ItemDetailModal
-                    item={selectedItem}
+                    item={collectorItems.find((item) => item.id === selectedItem.id) ?? selectedItem}
                     isOpen
                     onClose={() => setSelectedItem(null)}
                 />

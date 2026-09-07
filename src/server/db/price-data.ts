@@ -7,26 +7,47 @@ import {
     isMissingMutablePriceStorage,
 } from "./current-prices";
 import { getTursoClient } from "./client";
+import { boundedReadCache, canonicalIds, mapBatches } from "./read-cache";
+import { getActiveDataReleaseId } from "./release-config";
 import { getStoredPricePoints } from "@/server/prices/price-store";
 
 export async function getCurrentPriceData(
     mode: TarkovDataMode,
     itemIds: readonly string[],
-    database: Client = getTursoClient(),
+    database?: Client,
 ): Promise<DataResult<Record<string, CurrentPrice>>> {
-    const legacyResult = await getEntitiesByIds<CurrentPrice | null>(
+    const legacyPromise = getEntitiesByIds<CurrentPrice | null>(
         mode,
         "price",
         "items",
         itemIds,
         database,
     );
-    let mutable: Record<string, StoredCurrentPrice> = {};
-    try {
-        mutable = await getMutableCurrentPricesByIds(mode, itemIds, database);
-    } catch (error) {
-        if (!isMissingMutablePriceStorage(error)) throw error;
-    }
+    const mutablePromise = (async () => {
+        try {
+            if (database) return await getMutableCurrentPricesByIds(mode, itemIds, database);
+            const releaseId = getActiveDataReleaseId(mode);
+            const batches = await mapBatches(canonicalIds(itemIds), async (batch) => {
+                try {
+                    return await boundedReadCache(
+                        ["mutable-prices", mode, releaseId, JSON.stringify(batch)],
+                        () => getMutableCurrentPricesByIds(mode, batch),
+                        300,
+                    );
+                } catch (error) {
+                    // Apply optional-storage fallback outside the cache and per
+                    // batch so it cannot hide another batch's operational error.
+                    if (!isMissingMutablePriceStorage(error)) throw error;
+                    return {} as Record<string, StoredCurrentPrice>;
+                }
+            });
+            return Object.assign({}, ...batches) as Record<string, StoredCurrentPrice>;
+        } catch (error) {
+            if (!isMissingMutablePriceStorage(error)) throw error;
+            return {} as Record<string, StoredCurrentPrice>;
+        }
+    })();
+    const [legacyResult, mutable] = await Promise.all([legacyPromise, mutablePromise]);
     const data = Object.fromEntries(
         itemIds.flatMap((itemId) => {
             const legacy = legacyResult.data[itemId];

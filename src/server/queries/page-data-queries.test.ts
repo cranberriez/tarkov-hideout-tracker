@@ -9,6 +9,7 @@ import { getHideoutPageData } from "./getHideoutPageData";
 import { getItemChecklistPageData } from "./getItemChecklistPageData";
 import { getProfitPageData } from "./getProfitPageData";
 import { getQuestWorkspacePageData } from "./getQuestWorkspacePageData";
+import { getKappaChecklistPageData, COLLECTOR_QUEST_ID_BY_MODE } from "./getKappaChecklistPageData";
 
 function result<T>(data: T, updatedAt = 1): DataResult<T> {
     return { data, updatedAt, diagnostics: { provider: "json" } };
@@ -85,6 +86,24 @@ function createRepository(
         prices: { getCurrent: overrides.prices ?? forbidden, getHistory: forbidden },
     };
 }
+
+test("unpriced page reads finish without calling prices and retain unresolved requirements", async () => {
+    let priceCalls = 0;
+    const repository = createRepository({
+        stations: async () => result([station]),
+        quests: async () => result([quest]),
+        questNames: async () => result({ [COLLECTOR_QUEST_ID_BY_MODE.regular]: quest }),
+        items: async () => result({}),
+        prices: async () => { priceCalls++; return new Promise(() => {}); },
+    });
+    for (const query of [getHideoutPageData, getItemChecklistPageData, getQuestWorkspacePageData, getKappaChecklistPageData]) {
+        const data = await query("regular", repository, { includePrices: false });
+        assert.equal(data.errors.prices, null);
+        assert.equal(data.freshness.pricesUpdatedAt, null);
+        assert.ok(data.unresolvedItemIds.includes("item-a"));
+    }
+    assert.equal(priceCalls, 0);
+});
 
 test("hideout reads only deduped station item IDs and retains summaries when prices fail", async () => {
     const itemCalls: string[][] = [];

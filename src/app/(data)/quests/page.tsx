@@ -1,3 +1,5 @@
+import { DeferredPriceBoundary } from "@/features/items/DeferredPriceBoundary";
+import { getDeferredPriceScope } from "@/server/queries/getDeferredPrices";
 import { Suspense } from "react";
 import { RouteLoader } from "@/components/core/RouteLoader";
 import { DataLoadError } from "@/components/core/DataLoadError";
@@ -23,6 +25,7 @@ export default async function QuestsPage({ searchParams }: QuestsPageProps) {
     const showDevQuest = process.env.NODE_ENV === "development" && query === DEV_QUEST_QUERY;
     const gameMode = await getActiveTarkovJsonGameMode();
     const data = await getQuestWorkspacePageData(gameMode, undefined, {
+        includePrices: false,
         showRemovedQuests: SHOW_REMOVED_QUESTS,
         displayQuestAdditions: showDevQuest ? DEV_QUEST_FIXTURES : [],
     });
@@ -40,11 +43,13 @@ export default async function QuestsPage({ searchParams }: QuestsPageProps) {
 
     return (
         <Suspense fallback={<RouteLoader page="quests" />}>
+            <DeferredPriceBoundary {...getDeferredPriceScope(gameMode)} itemIds={data.itemIds}>
             <QuestsClientPage
                 quests={data.quests}
                 items={data.items}
                 initialQuestId={showDevQuest ? DEV_QUEST_ID : null}
             />
+            </DeferredPriceBoundary>
         </Suspense>
     );
 }

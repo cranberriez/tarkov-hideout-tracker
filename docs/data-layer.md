@@ -66,6 +66,20 @@ missing/failed presentation distinct from recipe and price availability.
 
 ## Lazy API reads and exceptions
 
+Hideout, Items, Quests, and Kappa routes request their named query with
+`includePrices: false`. Their core payload retains requirements and item
+summaries while [DeferredPriceBoundary](../src/features/items/DeferredPriceBoundary.tsx)
+loads prices separately. Query defaults still include prices for other callers.
+The boundary captures mode and release, suppresses stale results after a mode
+change, and presents pending/error states separately from unavailable prices.
+Network failures offer a retry without refreshing or discarding checklist data.
+A release mismatch returns HTTP 409 and offers a page refresh to obtain the
+new release scope, instead of repeatedly retrying the old release.
+[deferred-prices.ts](../src/features/items/deferred-prices.ts) sends up to three
+128-ID requests concurrently and reuses complete results for 60 seconds in a
+bounded, non-persisted session cache. Price-dependent filters update when prices
+arrive. Profit pages still await pricing before calculating and ranking recipes.
+
 Item routes validate standard item IDs and require a supported data `mode`.
 Runtime item-view routes read precomputed [item-views.ts](../src/server/db/item-views.ts)
 records; the similarly named [relations](../src/server/queries/getItemRelationsData.ts),
@@ -76,6 +90,7 @@ full-domain composition on every modal open.
 
 | API / owner | Result and cache policy |
 |---|---|
+| [prices](../src/app/api/items/prices/route.ts) | POST with explicit mode, active release ID, and at most 200 standard item IDs; `private, no-store`; underlying database reads use the caches below |
 | [relations](<../src/app/api/items/[itemId]/relations/route.ts>) | Hideout requirements, quest demand/rewards and availability closure; complete responses use browser 300s, CDN 900s, stale-while-revalidate 300s |
 | [usage](<../src/app/api/items/[itemId]/usage/route.ts>) | Direct trader purchases and barters offering / crafts producing one item, referenced items and source labels; same complete-response policy |
 | [acquisition-tree](<../src/app/api/items/[itemId]/acquisition-tree/route.ts>) | Cycle-safe graph bounded by depth/item count with `truncated`; same complete-response policy |
@@ -94,6 +109,23 @@ directly. These bounded database/service paths are explicit exceptions to page
 repository composition, not a reason to import provider adapters into features.
 
 ## Prices, history, and freshness
+
+Runtime entity reads use [read-cache.ts](../src/server/db/read-cache.ts) and
+Next's data cache, keyed by mode, selected release, entity type, freshness key,
+and sorted/deduplicated IDs. Reads use 128-ID batches with three batches in
+flight per reader. List reads first cache an ordered ID index, then restore
+stored ordering after fetching entity batches; known-ID reads do not scan the
+catalog. Immutable entries have no time-based expiry. Serialized values over
+512 KiB bypass caching intact, keeping entries below Next's 2 MiB limit without
+truncating data. Rejected reads are not cached. Explicitly injected database
+clients bypass caching for tests and tooling.
+
+Mutable current-price batches use a 300-second revalidation interval keyed by
+mode, release, and IDs; Next may serve a stale value while refreshing it.
+Release prices, mutable current rows, and recent observations are requested
+concurrently. Missing optional tables retain release fallback, but a concurrent
+operational failure still surfaces. This data cache does not cache entire
+cookie-dependent page responses or change the existing mode cookie behavior.
 
 Immutable recipe graphs and stored item views describe relationships, not selected
 priced routes. Runtime readers hydrate item prices via

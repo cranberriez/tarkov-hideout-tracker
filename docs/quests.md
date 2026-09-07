@@ -53,6 +53,9 @@ components that remain in the feature directory.
 The planner uses profile-active quests independently of the workspace's other
 status filters. Visited positioned objectives are profile state and are filtered
 before marker grouping; whole-quest completion clears that quest's visited records.
+The workspace loads planner and visualizer component code on demand, with a
+loading indicator in the selected pane. Shared quest indexes remain available
+for complete prerequisite and filter derivation.
 Pan/zoom and temporary map expansion stay in session memory. Standard-item clicks
 use the shared [item detail controllers](architecture.md); quest-only pickups are
 informational. Persistent filter additions must follow [user-state](user-state.md).
@@ -78,7 +81,8 @@ store actions; [user-state](user-state.md) documents import metadata and reset s
 owns the mode-keyed Collector quest ID and reads only that quest, its give-item
 IDs, and their current prices. It must not fetch/prepare every quest. Missing items
 remain in the denominator; price failure must not discard available checklist
-items. Completion belongs to the independent
+items. The route requests the unpriced variant and loads prices in the background
+through the boundary described in [data layer](data-layer.md). Completion belongs to the independent
 [Kappa store](../src/lib/stores/useKappaStore.ts), not generic inventory or quest
 completion. Its reset scope is documented in [user-state](user-state.md).
 

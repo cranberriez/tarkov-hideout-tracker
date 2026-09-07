@@ -55,6 +55,7 @@ Focused TypeScript tests use Node's test runner with `jiti/register`:
 ```bash
 node --test --import jiti/register src/features/quests/quest-sync.test.ts
 node --test --import jiti/register src/server/prices/refresh-prices.test.ts src/server/prices/price-store.test.ts src/server/prices/live-price-history.test.ts
+node --test --import jiti/register src/server/db/read-cache.test.ts src/server/db/price-data.test.ts src/features/items/deferred-prices.test.ts
 node --test scripts/generate-quest-series-candidates.test.mjs scripts/pull-map-overlays.test.mjs
 ```
 

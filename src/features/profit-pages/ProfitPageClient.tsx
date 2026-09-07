@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useShallow } from "zustand/react/shallow";
 import { DataLoadError } from "@/components/core/DataLoadError";
-import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
+import { ItemDetailModal } from "@/features/items/item-detail/LazyItemDetailModal";
 import { createRecipeCalculator } from "@/lib/price-calculation";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ProfitPageData } from "@/types/contracts";

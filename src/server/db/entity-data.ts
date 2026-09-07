@@ -8,6 +8,7 @@ import {
 } from "./errors";
 import { getActiveDataReleaseId } from "./release-config";
 import { parseStoredJsonValue } from "./stored-json";
+import { boundedReadCache, canonicalIds, mapBatches } from "./read-cache";
 
 export type StoredEntityType =
     | "item"
@@ -42,8 +43,9 @@ async function queryEntities<T>(
     freshnessKey: SourceFreshnessKey,
     itemIds: readonly string[] | null,
     database: Client,
+    releaseId = getActiveDataReleaseId(mode),
+    idsOnly = false,
 ): Promise<DataResult<Array<{ id: string; payload: T }>>> {
-    const releaseId = getActiveDataReleaseId(mode);
     const idFilter = itemIds
         ? "AND entity.entity_id IN (SELECT value FROM json_each(?))"
         : "";
@@ -60,7 +62,7 @@ async function queryEntities<T>(
             SELECT
                 selected_release.source_updated_at,
                 entity.entity_id,
-                entity.payload_json
+                ${idsOnly ? "CASE WHEN entity.entity_id IS NULL THEN NULL ELSE json_quote(entity.entity_id) END" : "entity.payload_json"} AS payload_json
             FROM selected_release
             LEFT JOIN data_entities AS entity
                 ON entity.mode = selected_release.mode
@@ -109,20 +111,47 @@ async function queryEntities<T>(
     };
 }
 
+async function readRuntimeEntities<T>(
+    mode: TarkovJsonGameMode,
+    releaseId: string,
+    entityType: StoredEntityType,
+    freshnessKey: SourceFreshnessKey,
+    ids: readonly string[],
+): Promise<DataResult<Array<{ id: string; payload: T }>>> {
+    const results = await mapBatches(canonicalIds(ids), (batch) => boundedReadCache(
+        ["entities", mode, releaseId, entityType, freshnessKey, JSON.stringify(batch)],
+        () => queryEntities<T>(mode, entityType, freshnessKey, batch, getTursoClient(), releaseId),
+    ));
+    return { data: results.flatMap((result) => result.data), updatedAt: results[0].updatedAt };
+}
+
 export async function getEntityList<T>(
     mode: TarkovJsonGameMode,
     entityType: StoredEntityType,
     freshnessKey: SourceFreshnessKey,
-    database: Client = getTursoClient(),
+    database?: Client,
 ): Promise<DataResult<T[]>> {
-    const result = await queryEntities<T>(
-        mode,
-        entityType,
-        freshnessKey,
-        null,
-        database,
+    if (database) {
+        const result = await queryEntities<T>(mode, entityType, freshnessKey, null, database);
+        return { data: result.data.map((record) => record.payload), updatedAt: result.updatedAt };
+    }
+    const releaseId = getActiveDataReleaseId(mode);
+    // Discover only ordered IDs, never cache an unbounded full-domain payload.
+    const index = await boundedReadCache(
+        ["entity-list-ids", mode, releaseId, entityType, freshnessKey],
+        () => queryEntities<string>(mode, entityType, freshnessKey, null, getTursoClient(), releaseId, true),
     );
-    return { data: result.data.map((record) => record.payload), updatedAt: result.updatedAt };
+    if (!index.data.length) return { data: [], updatedAt: index.updatedAt };
+    const result = await readRuntimeEntities<T>(mode, releaseId, entityType, freshnessKey,
+        index.data.map((record) => record.id));
+    const byId = new Map(result.data.map((record) => [record.id, record.payload]));
+    return {
+        data: index.data.map(({ id }) => {
+            if (!byId.has(id)) throw new TursoDataIntegrityError(`Missing listed ${entityType}/${id}`);
+            return byId.get(id) as T;
+        }),
+        updatedAt: index.updatedAt,
+    };
 }
 
 export async function getEntitiesByIds<T>(
@@ -130,19 +159,13 @@ export async function getEntitiesByIds<T>(
     entityType: StoredEntityType,
     freshnessKey: SourceFreshnessKey,
     ids: readonly string[],
-    database: Client = getTursoClient(),
+    database?: Client,
 ): Promise<DataResult<Record<string, T>>> {
-    const result = await queryEntities<T>(
-        mode,
-        entityType,
-        freshnessKey,
-        ids,
-        database,
-    );
+    const result = database
+        ? await queryEntities<T>(mode, entityType, freshnessKey, ids, database)
+        : await readRuntimeEntities<T>(mode, getActiveDataReleaseId(mode), entityType, freshnessKey, ids);
     return {
-        data: Object.fromEntries(
-            result.data.map((record) => [record.id, record.payload]),
-        ),
+        data: Object.fromEntries(result.data.map((record) => [record.id, record.payload])),
         updatedAt: result.updatedAt,
     };
 }

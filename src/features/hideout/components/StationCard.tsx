@@ -7,7 +7,7 @@ import type { Station } from "@/types/hideout";
 import type { ItemSummary } from "@/types/items";
 import { StationCardHeader } from "./StationCardHeader";
 import { StationRequirementsSection } from "./StationRequirementsSection";
-import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
+import { ItemDetailModal } from "@/features/items/item-detail/LazyItemDetailModal";
 
 interface StationCardProps {
     station: Station;
@@ -241,7 +241,7 @@ export function StationCard({
 
             {selectedItem && (
                 <ItemDetailModal
-                    item={selectedItem}
+                    item={itemById[selectedItem.id] ?? selectedItem}
                     isOpen={!!selectedItem}
                     onClose={() => setSelectedItem(null)}
                 />

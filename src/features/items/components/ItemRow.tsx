@@ -54,7 +54,7 @@ export function ItemRow({
     onClick,
 }: ItemRowProps) {
     const { itemCounts } = useUserStore();
-    const loading = false;
+    const loading = item.priceLoadState === "pending";
     const owned = itemCounts[item.id] ?? { have: 0, haveFir: 0 };
     const marketPrice = item.marketPrice;
     const unitPrice = getFleaPrice(marketPrice);
@@ -274,9 +274,9 @@ export function ItemRow({
                             Est. Cost
                         </div>
                         <div className="text-sm font-medium text-gray-300 leading-tight">
-                            {loading && !marketPrice && <span className="text-gray-500">...</span>}
+                            {loading && !marketPrice && <span className="text-gray-500">Loading price…</span>}
                             {!loading && (marketPrice === null || marketPrice === undefined) && (
-                                <span className="text-gray-500">No data</span>
+                                <span className="text-gray-500">{item.priceLoadState === "error" ? "Price failed" : "No data"}</span>
                             )}
                             {!loading && marketPrice && !hasFleaData && (
                                 <span className="text-gray-500">No flea</span>

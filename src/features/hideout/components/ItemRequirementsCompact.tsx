@@ -33,7 +33,7 @@ export function CompactItemRequirements({
                     const isCurrency = norm === "roubles" || norm === "dollars" || norm === "euros";
                     const marketPrice = item.marketPrice;
                     const fleaPrice = getFleaPrice(marketPrice);
-                    const priceLabel = marketPrice?.fleaStability === "unavailable" ? fleaPriceStatusLabel(marketPrice) : marketPrice && !hasFleaMarketData(marketPrice)
+                    const priceLabel = item.priceLoadState === "pending" ? "Loading price…" : item.priceLoadState === "error" ? "Price failed" : marketPrice?.fleaStability === "unavailable" ? fleaPriceStatusLabel(marketPrice) : marketPrice && !hasFleaMarketData(marketPrice)
                           ? "No flea"
                           : fleaPrice != null
                             ? `${formatCompactRoubles(fleaPrice)} ₽`

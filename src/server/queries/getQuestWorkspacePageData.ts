@@ -13,6 +13,7 @@ import {
 
 export interface QuestWorkspaceQueryOptions {
     showRemovedQuests?: boolean;
+    includePrices?: boolean;
     displayQuestAdditions?: readonly FullQuest[];
 }
 
@@ -56,7 +57,9 @@ export async function getQuestWorkspacePageData(
     const itemIds = getQuestReferencedItemIds(displayQuests);
     const [itemsResult, pricesResult] = await Promise.allSettled([
         dataRepository.items.getByIds(mode, itemIds),
-        dataRepository.prices.getCurrent(mode, itemIds),
+        options.includePrices === false
+            ? Promise.resolve({ data: {}, updatedAt: null })
+            : dataRepository.prices.getCurrent(mode, itemIds),
     ]);
     const itemRecords = itemsResult.status === "fulfilled" ? itemsResult.value.data : null;
     const priceRecords = pricesResult.status === "fulfilled" ? pricesResult.value.data : {};

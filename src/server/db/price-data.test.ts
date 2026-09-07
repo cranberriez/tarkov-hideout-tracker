@@ -72,3 +72,42 @@ test("bounded history hydration isolates modes, corrects old prices, and retains
         assert.equal(getFleaPrice((await getCurrentPriceData("pvp-season", ["item-a"], db)).data["item-a"]), 900_000);
     } finally { db.close(); }
 });
+
+test("release, current rows and history reads start together and operational failures surface", async () => {
+    let started = 0;
+    let releaseReads: (() => void) | undefined;
+    const barrier = new Promise<void>((resolve) => { releaseReads = resolve; });
+    const db = {
+        execute: async (statement: { sql: string }) => {
+            started++;
+            if (started === 3) releaseReads?.();
+            await barrier;
+            if (statement.sql.includes("selected_release")) {
+                return { rows: [{ source_updated_at: 1, entity_id: null, payload_json: null }] };
+            }
+            return { rows: [] };
+        },
+    } as unknown as import("@libsql/client").Client;
+    let timedOut = false;
+    const timeout = setTimeout(() => { timedOut = true; releaseReads?.(); }, 1_000);
+    try {
+        assert.deepEqual(await getCurrentPriceData("regular", ["item-a"], db), { data: {}, updatedAt: 1 });
+        assert.equal(started, 3);
+        assert.equal(timedOut, false, "all three independent reads must start before any finish");
+    } finally { clearTimeout(timeout); }
+    const failed = {
+        execute: async (statement: { sql: string }) => {
+            if (statement.sql.includes("selected_release")) return { rows: [{ source_updated_at: 1, entity_id: null, payload_json: null }] };
+            throw new Error("connection timeout");
+        },
+    } as unknown as import("@libsql/client").Client;
+    await assert.rejects(getCurrentPriceData("regular", ["item-a"], failed), /connection timeout/);
+    const mixedFailure = {
+        execute: async (statement: { sql: string }) => {
+            if (statement.sql.includes("selected_release")) return { rows: [{ source_updated_at: 1, entity_id: null, payload_json: null }] };
+            if (statement.sql.includes("FROM item_prices")) throw new Error("no such table: item_prices");
+            throw new Error("history connection timeout");
+        },
+    } as unknown as import("@libsql/client").Client;
+    await assert.rejects(getCurrentPriceData("regular", ["item-a"], mixedFailure), /history connection timeout/);
+});
