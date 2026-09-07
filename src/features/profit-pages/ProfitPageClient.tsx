@@ -317,11 +317,7 @@ export function ProfitPageClient({
       }}
     >
       <main className="container mx-auto px-4 py-8 sm:px-6">
-        <ProfitPageHeader
-          kind={kind}
-          gameMode={gameMode}
-          evaluations={visibleEvaluations}
-        />
+        <ProfitPageHeader kind={kind} gameMode={gameMode} evaluations={visibleEvaluations} />
         {data.errors.taskUnlocks && (
           <p role="status" className="mb-4 text-xs text-amber-300">
             Quest unlock details are partially unavailable: {data.errors.taskUnlocks}

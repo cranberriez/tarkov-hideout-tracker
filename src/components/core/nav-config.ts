@@ -54,6 +54,7 @@ export const navMenus: NavMenu[] = [
         href: "/hideout",
         icon: House,
         children: [
+            { name: "Craft Planner", href: "/hideout/craft-planner", icon: Factory },
             {
                 name: "Station Goals",
                 href: "/hideout/station-goals",

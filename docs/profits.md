@@ -82,8 +82,9 @@ rather than selecting routes independently.
   Elite. The shared engine applies this to root and nested crafts. Adjusted durations also appear in
   previews, manual route changes, and item details. Elite allows two different
   crafts per zone (including Scav Case); the panel explains this benefit, while
-  profit/hour remains per recipe. Station-aware parallel scheduling and flea
-  fees are not modeled. Hideout Management reduces Superwater's base Water filter
+  profit/hour remains per recipe. The table does not model station scheduling;
+  the separate Craft Planner is described below. Flea fees are not modeled.
+  Hideout Management reduces Superwater's base Water filter
   consumption by 0.5% per level, capped at 25% for level 50 and Elite. The adjusted
   quantity and cost are shared by profit pages, recursive routes, and item details.
   Fuel costs and the skill's fuel effect are not modeled.
@@ -164,10 +165,108 @@ the corresponding profit row; standard ingredient clicks reuse item-modal naviga
 When extending calculations, update the engine and consumers together so a modal
 and a full profit page do not disagree for the same inputs.
 
+## Craft planner
+
+[Hideout / Craft Planner](../src/app/(data)/hideout/craft-planner/page.tsx) loads
+`getProfitPageData` for the active mode, just like Crafting Profits, with its own
+Hideout RouteLoader boundary. Its dedicated
+[client](../src/features/profit-pages/optimize/CraftPlannerClient.tsx) only constructs
+planner inputs; it does not mount the profit table, perform baseline/table evaluations,
+or subscribe to pins. Both recipe graphs and their bounded referenced item/price
+reads remain required. Failed graphs/prices block estimates; partial presentation
+and missing item data are reported. Item details remain lazily loaded.
+
+The Hideout navigation includes Craft Planner. Crafting Profits links to it beneath
+the heading; there is no All crafts / Optimize switch. The planner header groups
+Compare crafts and Preview all unlocks as compact outlined actions; there is no
+Hideout quick link. Cards place a small image beside the name, with duration/profit
+below and a full-width input-details action. All planner choices remain local and reset on leaving the page or switching
+profile mode. Existing skill preferences, seasonal Elite, profile unlocks and manual
+prices are reused without new persistence. Table filters do not constrain the planner.
+There are no additional server reads beyond the existing profit query.
+
+The compact controls select a target return interval (default four hours), craft
+input routes, trader purchases and barters (all on by default), and ranking by profit including wait (default), time
+fit, or longest run. Return presets and a minutes input replace the return dropdown;
+ranking uses visible buttons. [Craft cards](../src/features/profit-pages/optimize/CraftRecommendations.tsx)
+show two distinct output recipes per station with a reveal-more control. Selecting
+a card toggles that station's sale craft. Elite, including the seasonal override,
+selects two distinct crafts by default; a third pick replaces the oldest selection.
+Non-Elite selects one. Skipping a station only skips its sale crafts,
+not its use as another chain's supplier. Changing target, ranking or sourcing
+reselects defaults. Catalog item/station images have a missing/broken-image fallback.
+[Details](../src/features/profit-pages/optimize/CraftPlanDetails.tsx) show the chain's
+steps, quantities, stations, relative times and an always-visible shopping list labeled with flea or trader sources.
+Barter exchanges list their inputs, outputs and trader in dependency order; crafted
+exchange ingredients retain their station jobs. Source controls are local checkboxes.
+Sales (with source and output quantity), inputs and profit appear together.
+Item details reuse the existing modal. A preview uses real catalog/prices with
+hypothetical station/trader/quest unlocks and level 60, never changing saved state.
+
+[craft-plans.ts](../src/features/profit-pages/optimize/craft-plans.ts) evaluates direct
+flea/trader routes and, when enabled, the engine's practical crafting and barter routes. Both graphs must still load under the page contract.
+Final outputs must be flea-eligible and profitable; intermediate crafted items need
+not be sellable on the flea. Every purchased leaf must have an accessible flea or unlocked trader price,
+even with manual overrides. Locked, unpriced, quest-only and opportunity-value supply
+is excluded, including inaccessible tools. Tools are assumed owned, so their recurring
+production and costs are excluded. Eligible direct routes remain alternatives when
+a crafting route is unavailable. Barters expand rounded input batches and add no
+station time; consumers wait for all crafted barter inputs. Trader loyalty and
+quest requirements remain enforced. Trader stock/restock limits are not modeled. Traversal uses depth six and at most 200 sub-craft
+steps; excluded recipes are counted explicitly in the inline estimates note.
+
+Selected nested acquisition quantities already include rounded batches. The planner
+expands each batch into a full skill-adjusted job instead of using the engine's
+amortized per-item duration. A consumer waits for all supplier batches, independent
+suppliers can run in parallel, and equal-station jobs reserve the actual slot. Elite
+offers two slots but cannot run the same recipe concurrently. The card duration is
+the chain's standalone completion time. Time-fit ranking uses its absolute difference
+from the target, then fewer steps and higher profit; only one acquisition variant
+per output recipe appears in a station's recommendations.
+Profit ranking divides profit by the larger of standalone chain duration and return
+interval. A 30-minute craft earning 1,000 roubles with a one-hour return therefore
+earns 1,000/hour, not its active 2,000/hour. Recommendation ranking is independent
+of the current selection. Selected cards instead show their contribution per combined
+run hour, including shared-station delays and waiting for other selected chains.
+Unselected cards show their standalone estimate with wait.
+
+The combined run reserves selected chains first, then places other selected jobs in
+available station gaps. Shared stations can delay a craft past its standalone duration.
+Cards show the combined run's effective hourly contribution, including idle time
+until the larger of return interval or combined completion. Their details show the
+first batch's steps and sources. The planner has no Your run section, timeline,
+Once/day switch, or reminder export. The calendar creation utility and unused timeline
+component are removed. Scheduling stays internal to the estimates.
+Every chain step requires manual start/collection; the return target does not suppress
+intermediate handoffs or enforce morning/evening availability windows.
+The main All crafts table retains its active-time metric.
+
+Continuous (also a zero-minute return interval) selects profit/hour ranking and calculates
+24 hours of independent repetitions. Each selected chain starts again after its own
+final output finishes, without waiting for unrelated stations. Complete chains are
+placed by earliest available start, then oldest waiting request to avoid starving
+selected chains, then standalone profit/hour as the tie-breaker.
+Supplier jobs retain full batches and dependencies, including crafted barter inputs;
+shared-station reservations and Elite's distinct-recipe restriction apply across all
+repetitions. This heuristic does not pipeline multiple instances of the same chain
+or prove a global optimum. Only chains finishing within the day are started/costed.
+A 2,000-job safety bound explicitly reports limited calculations and partial estimates.
+Selected cards show completed-batch profit divided by the full 24
+hours; unselected cards show standalone profit/hour. Craft details show the first batch's timing. Source toggles and profile unlocks still
+apply. Continuous adds no player-state persistence or All crafts details button.
+
+
+Profit sums only selected final outputs minus their full acquisition costs. Intermediate
+outputs are consumed by their chain, never also counted as sales. Batch leftovers are
+not valued or shared across separate chains. Fuel, flea fees, tool setup costs, finite
+market supply and capital constraints are not modeled. Sales reuse the engine's best
+usable sale source; profit remains an estimate.
+
 ## Validation
 
 ```bash
 node --test --import jiti/register src/lib/price-calculation/optimizer.test.ts src/features/profit-pages/utils/recipes.test.ts src/server/queries/page-data-queries.test.ts
+node --test --import jiti/register src/features/profit-pages/optimize/craft-plans.test.ts
 ```
 
 Include tests for the changed route/availability/pricing rule and browser checks
