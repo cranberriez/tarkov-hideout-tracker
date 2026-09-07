@@ -96,7 +96,11 @@ state and pending items.
 the selected standard item. Page consumers enter through
 [LazyItemDetailModal](../src/features/items/item-detail/LazyItemDetailModal.tsx),
 which downloads the detail UI only when opened and shows a dismissible loading
-dialog while the code arrives. Its [modal controller](../src/features/items/item-detail/useItemDetailModalController.ts),
+card with the item image and an indeterminate bar while the code and initial
+relations/usage requests arrive. The card has an explicit compact width, then
+expands to the full dialog; request failures reveal the existing error UI and
+profit requests keep their own loading states. Motion respects reduced-motion
+preferences. Its [modal controller](../src/features/items/item-detail/useItemDetailModalController.ts),
 [request controller](../src/features/items/item-detail/useItemDetailRequestController.ts),
 and [navigation controller](../src/features/items/item-detail/useItemDetailNavigationController.ts)
 own lazy relations, usage, acquisition, history, and in-dialog navigation. Related

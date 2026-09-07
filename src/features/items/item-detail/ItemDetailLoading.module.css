@@ -1,0 +1,23 @@
+.track {
+    height: 3px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 10%);
+}
+
+.signal {
+    height: 100%;
+    width: 40%;
+    border-radius: inherit;
+    background: var(--color-tarkov-green, #9dff00);
+    animation: travel 1.2s ease-in-out infinite;
+}
+
+@keyframes travel {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(350%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .signal { animation: none; width: 100%; opacity: 0.6; }
+}

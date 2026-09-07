@@ -8,6 +8,7 @@ import { ItemDetailHeader } from "./ItemDetailHeader";
 import { ItemDetailSidebar } from "./ItemDetailSidebar";
 import { ItemDetailUsageTabs } from "./ItemDetailUsageTabs";
 import { useItemDetailModalController } from "./useItemDetailModalController";
+import { ItemDetailLoading, ITEM_DETAIL_LOADING_CLASS } from "./ItemDetailLoading";
 
 export interface ItemDetailModalProps {
     item: ItemSummary | null;
@@ -19,14 +20,20 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
     const vm = useItemDetailModalController(props);
     const { selectedItem } = vm;
     if (!selectedItem) return null;
+    // Expand after the initial detail domains settle. Errors must remain visible;
+    // acquisition/profit requests retain their own loading states in the full UI.
+    const loading = (vm.relationsLoading || vm.usageLoading) && !vm.relationsError && !vm.usageError;
 
     return (
         <Dialog open={props.isOpen} onOpenChange={(open) => !open && vm.close()}>
             <DialogContent
-                showCloseButton={false}
-                className="w-full overflow-visible border-0 bg-transparent p-0 shadow-none sm:max-w-4xl lg:max-w-5xl"
+                showCloseButton={loading}
+                aria-busy={loading}
+                aria-describedby={undefined}
+                className={loading ? ITEM_DETAIL_LOADING_CLASS : "w-full overflow-visible border-0 bg-transparent p-0 shadow-none sm:max-w-4xl lg:max-w-5xl transition-[max-width] duration-200 motion-reduce:transition-none"}
             >
                 <DialogTitle className="sr-only">{selectedItem.name}</DialogTitle>
+                {loading ? <ItemDetailLoading item={selectedItem} /> : <>
                 {vm.previousItem && (
                     <button
                         type="button"
@@ -139,6 +146,7 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
                         <Bug size={11} />
                     </button>
                 )}
+                </>}
             </DialogContent>
         </Dialog>
     );

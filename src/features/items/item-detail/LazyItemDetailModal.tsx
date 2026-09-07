@@ -1,8 +1,9 @@
 "use client";
 
 import { lazy, Suspense } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { ItemDetailModalProps } from "./ItemDetailModal";
+import { ItemDetailLoading, ITEM_DETAIL_LOADING_CLASS } from "./ItemDetailLoading";
 
 const LoadedItemDetailModal = lazy(() =>
     import("./ItemDetailModal").then((module) => ({ default: module.ItemDetailModal })),
@@ -15,11 +16,9 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
     return (
         <Suspense fallback={
             <Dialog open onOpenChange={(open) => !open && props.onClose()}>
-                <DialogContent className="p-6" aria-busy="true">
-                    <DialogTitle>{props.item.name}</DialogTitle>
-                    <DialogDescription role="status" className="mt-3">
-                        Loading item details…
-                    </DialogDescription>
+                <DialogContent className={ITEM_DETAIL_LOADING_CLASS} aria-busy="true" aria-describedby={undefined}>
+                    <DialogTitle className="sr-only">{props.item.name}</DialogTitle>
+                    <ItemDetailLoading item={props.item} />
                 </DialogContent>
             </Dialog>
         }>
