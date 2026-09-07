@@ -241,6 +241,64 @@ test("row-local ingredient routes recalculate totals without mutating the base e
   );
 });
 
+test("locked ingredient routes can be inspected without becoming automatic candidates", () => {
+  const lockedChild: AcquisitionPlan = {
+    itemId: "child",
+    quantity: 1,
+    method: "flea",
+    batches: 1,
+    totalCost: 75,
+    theoreticalCost: 75,
+    theoreticalMethod: "flea",
+    directBuyCost: 75,
+    directBuyMethod: "flea",
+    durationSeconds: 0,
+    children: [],
+    alternatives: [],
+  };
+  const plan: AcquisitionPlan = {
+    itemId: "input",
+    quantity: 2,
+    method: "flea",
+    batches: 1,
+    totalCost: 200,
+    theoreticalCost: 150,
+    theoreticalMethod: "craft",
+    directBuyCost: 200,
+    directBuyMethod: "flea",
+    durationSeconds: 0,
+    children: [],
+    alternatives: [],
+    lockedAlternatives: [{
+      method: "craft",
+      sourceId: "locked-craft",
+      estimatedUnitPrice: 75,
+      lockReasons: [{ kind: "station", message: "Requires level 2" }],
+      batches: 1,
+      durationSeconds: 600,
+      children: [lockedChild],
+    }],
+  };
+
+  const selected = withRequiredItemRoute(
+    { ...evaluation("root", { sellValue: 500 }), requiredItems: [plan] },
+    0,
+    "craft:locked-craft",
+  );
+  const selectedPlan = selected.requiredItems[0];
+
+  assert.equal(selectedPlan.method, "craft");
+  assert.equal(selectedPlan.totalCost, 150);
+  assert.equal(selectedPlan.durationSeconds, 600);
+  assert.deepEqual(selectedPlan.children, [lockedChild]);
+  assert.deepEqual(selectedPlan.lockReasons, [
+    { kind: "station", message: "Requires level 2" },
+  ]);
+  assert.equal(selected.cost, 150);
+  assert.equal(selected.profit, 350);
+  assert.deepEqual(selectedPlan.alternatives.map(acquisitionRouteKey), ["flea:direct"]);
+});
+
  test("lock filters independently include recipe, output and unavailable input reasons", () => {
  const row = evaluation("locked", {});
  const filters = { flea: false, quest: false, vendor: false, station: false };

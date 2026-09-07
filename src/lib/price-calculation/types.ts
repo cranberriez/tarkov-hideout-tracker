@@ -34,6 +34,10 @@ export interface LockedAcquisitionAlternative {
     sourceId?: string;
     traderOffer?: TraderPurchaseOffer;
     lockReasons: LockReason[];
+    /** Present when the locked route can be priced for manual inspection. */
+    batches?: number;
+    durationSeconds?: number;
+    children?: AcquisitionPlan[];
 }
 
 export interface AcquisitionPlan {

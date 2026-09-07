@@ -133,7 +133,7 @@ export function RouteSelector({
             <span
               data-route-selector
               data-isolated-hover="true"
-              className="fixed z-[130] block w-[320px] overflow-y-auto overscroll-contain rounded-md border border-white/15 bg-[#05070a] p-1 shadow-[0_18px_55px_rgba(0,0,0,0.8)]"
+              className="fixed z-130 space-y-1 block w-[320px] overflow-y-auto overscroll-contain rounded-md border border-white/15 bg-[#05070a] p-1 shadow-[0_18px_55px_rgba(0,0,0,0.8)]"
               style={{ left: Math.max(8, position.left), top: position.top, maxHeight: `calc(100dvh - ${position.top + 8}px)` }}
             >
               {[...routes, ...(plan.lockedAlternatives ?? [])].map((route, index) => {
@@ -160,18 +160,17 @@ export function RouteSelector({
                     ? routeContext.craftsById[route.sourceId ?? ""]?.level
                     : undefined;
               return (
-                <span key={`${key}:${index}`} className={`block rounded ${locked ? "my-1 bg-red-950/40" : ""}`}>
+                <span key={`${key}:${index}`} className={`block rounded ${locked ? "bg-red-950/40" : ""}`}>
                 {locked && <LockReasons reasons={route.lockReasons} />}
                 <button
                   type="button"
-                  disabled={locked}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
                     onSelect(key);
                     setPosition(null);
                   }}
-                  className={`grid w-full grid-cols-[18px_48px_30px_minmax(0,1fr)_auto] items-center gap-2 rounded px-2 py-1 text-left transition enabled:hover:bg-white/[0.07] ${selected && !locked ? "bg-tarkov-green/10" : ""}`}
+                  className={`grid w-full grid-cols-[18px_48px_30px_minmax(0,1fr)_auto] items-center gap-2 rounded px-2 py-1 text-left transition hover:bg-white/[0.07] ${selected ? locked ? "bg-red-400/10" : "bg-tarkov-green/10" : ""}`}
                 >
                   <RouteIcon method={route.method} inline title={locked ? `${routeLabels[route.method]} locked` : routeLabels[route.method]} />
                   <span className="text-[9px] font-bold uppercase text-foreground">

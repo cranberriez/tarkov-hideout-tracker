@@ -95,9 +95,12 @@ IDs; they do not scan quest rewards. The page resolves only those known quest ID
 for compact name/link presentation. Missing names remain explicit and never
 remove unlock requirements. Quest reasons show **Complete Quest:** above the
 linked quest name. These checks also apply recursively to ingredient routes. The optimizer
-selects the next usable source and retains locked alternatives for disabled menu
-entries with explanatory reason rows. If every route fails, ingredient costs and
-dependent profits remain unknown and the ingredient displays a red lock reason.
+selects the next usable source and retains locked alternatives for manual
+inspection with explanatory reason rows. Players may explicitly select a locked
+source to view its known hypothetical cost and recipe chain, but locked sources
+never become automatic recommendations or eligible recursive inputs. If every
+route fails, ingredient costs and dependent profits remain unknown and the
+ingredient displays a red lock reason.
 
 Outputs that cannot be sold on the flea have a red background and lock indicator,
 even when they can be sold to a trader. The vendor fallback option uses the best

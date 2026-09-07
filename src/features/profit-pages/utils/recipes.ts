@@ -2,6 +2,7 @@ import type {
   LockReason,
   AcquisitionAlternative,
   AcquisitionPlan,
+  LockedAcquisitionAlternative,
   RecipeEvaluation,
 } from "@/lib/price-calculation";
 import { practicalSavingsThreshold } from "../../../lib/price-calculation/prices";
@@ -119,7 +120,11 @@ export function hasRecipeRoute(plan: AcquisitionPlan): boolean {
 }
 
 function planCandidate(plan: AcquisitionPlan): AcquisitionAlternative | null {
-  if (plan.method === "unavailable" || plan.totalCost === null) return null;
+  if (
+    plan.method === "unavailable" ||
+    plan.totalCost === null ||
+    (plan.lockReasons?.length ?? 0) > 0
+  ) return null;
   return {
     method: plan.method,
     sourceId: plan.sourceId,
@@ -167,7 +172,12 @@ export function selectAcquisitionRoute(
   const selected = candidates.find(
     (candidate) => acquisitionRouteKey(candidate) === routeKey,
   );
-  if (!selected || acquisitionRouteKey(plan) === routeKey) return plan;
+  const selectedLocked = (plan.lockedAlternatives ?? []).find(
+    (candidate) => acquisitionRouteKey(candidate) === routeKey,
+  );
+  if ((!selected && !selectedLocked) || acquisitionRouteKey(plan) === routeKey) return plan;
+  if (selectedLocked) return selectLockedAcquisitionRoute(plan, selectedLocked, candidates);
+  if (!selected) return plan;
   const direct = candidates
     .filter(
       (candidate) =>
@@ -192,6 +202,29 @@ export function selectAcquisitionRoute(
     alternatives: candidates.filter(
       (candidate) => acquisitionRouteKey(candidate) !== routeKey,
     ),
+  };
+}
+
+function selectLockedAcquisitionRoute(
+  plan: AcquisitionPlan,
+  selected: LockedAcquisitionAlternative,
+  accessibleRoutes: AcquisitionAlternative[],
+): AcquisitionPlan {
+  const totalCost = selected.estimatedUnitPrice === undefined
+    ? null
+    : selected.estimatedUnitPrice * plan.quantity;
+  return {
+    ...plan,
+    method: selected.method,
+    sourceId: selected.sourceId,
+    traderOffer: selected.traderOffer,
+    lockReasons: selected.lockReasons,
+    batches: selected.batches ?? (selected.method === "craft" || selected.method === "barter" ? 0 : 1),
+    totalCost,
+    selectedRouteTheoreticalCost: totalCost ?? undefined,
+    durationSeconds: selected.durationSeconds ?? 0,
+    children: selected.children ?? [],
+    alternatives: accessibleRoutes,
   };
 }
 

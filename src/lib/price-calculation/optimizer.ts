@@ -206,10 +206,15 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
     ): Candidate | null {
         const lockReasons = getRecipeLockReasons(recipe, context);
         const recipeLocked = lockReasons.length > 0;
-        const reject = (message?: string, estimatedUnitPrice?: number) => {
+        const reject = (
+            message?: string,
+            estimatedUnitPrice?: number,
+            details?: Pick<Candidate, "batches" | "durationSeconds" | "children">,
+        ) => {
             if (message) lockReasons.push({ kind: "unavailable", message });
             lockedAlternatives.push({ method: kind, sourceId: recipe.id, lockReasons: uniqueLockReasons(lockReasons),
-                ...(estimatedUnitPrice !== undefined && Number.isFinite(estimatedUnitPrice) && estimatedUnitPrice >= 0 ? { estimatedUnitPrice } : {}) });
+                ...(estimatedUnitPrice !== undefined && Number.isFinite(estimatedUnitPrice) && estimatedUnitPrice >= 0 ? { estimatedUnitPrice } : {}),
+                ...details });
             return null;
         };
         if (recipeLocked && !estimateLockedRecipes) return reject();
@@ -247,21 +252,26 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
                 .flatMap((child) => child.lockReasons ?? []));
             return reject("Recipe ingredients have no accessible priced route");
         }
-        if (recipeLocked) return reject(undefined, totalCost / quantity);
+        const durationSeconds =
+            (kind === "craft"
+                ? craftingDuration(recipe as CraftRecord, context.craftingSkillLevel) * (quantity / outputCount)
+                : 0) +
+            children.reduce(
+                (total, child) => total + (child.isTool ? 0 : child.durationSeconds),
+                0,
+            );
+        if (recipeLocked) return reject(undefined, totalCost / quantity, {
+            batches,
+            durationSeconds,
+            children,
+        });
         return {
             method: kind,
             sourceId: recipe.id,
             batches,
             totalCost,
             theoreticalCost,
-            durationSeconds:
-                (kind === "craft"
-                    ? craftingDuration(recipe as CraftRecord, context.craftingSkillLevel) * (quantity / outputCount)
-                    : 0) +
-                children.reduce(
-                    (total, child) => total + (child.isTool ? 0 : child.durationSeconds),
-                    0,
-                ),
+            durationSeconds,
             children,
         };
     }

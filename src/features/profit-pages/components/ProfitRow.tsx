@@ -172,6 +172,7 @@ export function ProfitRow({
               method={plan.method}
               totalPrice={plan.totalCost}
               plan={plan}
+              lockReasons={plan.lockReasons}
               priceKind="buy"
               overrides={overrides}
               onPriceChange={onPriceChange}
