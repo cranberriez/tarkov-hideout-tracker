@@ -2,12 +2,22 @@ import { useEffect, useRef, useState } from "react";
 import { Settings } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { craftingTimeReduction } from "@/lib/price-calculation/crafting-skill";
+import { hideoutManagementConsumptionReduction } from "@/lib/price-calculation/craft-rules";
 
-export function CraftingSettings({ level, onLevelChange, forced, note }: {
-  level: number;
+export function CraftingSettings({
+  craftingLevel,
+  onCraftingLevelChange,
+  hideoutManagementLevel,
+  onHideoutManagementLevelChange,
+  forced,
+  note,
+}: {
+  craftingLevel: number;
+  hideoutManagementLevel: number;
   forced: boolean;
   note?: string;
-  onLevelChange: (level: number) => void;
+  onCraftingLevelChange: (level: number) => void;
+  onHideoutManagementLevelChange: (level: number) => void;
 }) {
   return (
     <Dialog>
@@ -21,17 +31,41 @@ export function CraftingSettings({ level, onLevelChange, forced, note }: {
         <DialogHeader className="pr-5">
           <DialogTitle>Skills</DialogTitle>
         </DialogHeader>
-        <CraftingSkillRow forced={forced} note={note} level={level} onLevelChange={onLevelChange} />
+        <SkillRow
+          id="crafting-skill-level"
+          label="Crafting"
+          level={craftingLevel}
+          onLevelChange={onCraftingLevelChange}
+          forced={forced}
+          note={note}
+          reduction={craftingTimeReduction}
+          reductionLabel="time"
+          eliteNote="2 crafts possible at once."
+        />
+        <SkillRow
+          id="hideout-management-skill-level"
+          label="Hideout Management"
+          level={hideoutManagementLevel}
+          onLevelChange={onHideoutManagementLevelChange}
+          reduction={hideoutManagementConsumptionReduction}
+          reductionLabel="filter use"
+          note="Applied to Water filters consumed by Superwater."
+        />
       </DialogContent>
     </Dialog>
   );
 }
 
-function CraftingSkillRow({ level, onLevelChange, forced, note }: {
+function SkillRow({ id, label, level, onLevelChange, forced = false, note, reduction, reductionLabel, eliteNote }: {
+  id: string;
+  label: string;
   level: number;
-  forced: boolean;
+  forced?: boolean;
   note?: string;
   onLevelChange: (level: number) => void;
+  reduction: (level: number) => number;
+  reductionLabel: string;
+  eliteNote?: string;
 }) {
   const elite = level === 51;
   const [draft, setDraft] = useState(String(Math.min(level, 50)));
@@ -54,10 +88,10 @@ function CraftingSkillRow({ level, onLevelChange, forced, note }: {
   return (
     <div>
       <div className="flex items-center gap-2 text-sm sm:gap-3">
-        <label htmlFor="crafting-skill-level" className="mr-auto">Crafting</label>
+        <label htmlFor={id} className="mr-auto">{label}</label>
         <input
-          id="crafting-skill-level"
-          aria-label="Crafting skill level"
+          id={id}
+          aria-label={`${label} skill level`}
           type="text"
           inputMode="numeric"
           value={draft}
@@ -74,8 +108,8 @@ function CraftingSkillRow({ level, onLevelChange, forced, note }: {
           }}
           className="h-8 w-12 rounded border border-white/15 bg-[#0b0c0e] px-2 text-center outline-none focus:border-tarkov-green/60 disabled:opacity-50"
         />
-        <span className="whitespace-nowrap text-xs text-tarkov-green" aria-label={`${Number((craftingTimeReduction(level) * 100).toFixed(2))}% craft time reduction`}>
-          -{Number((craftingTimeReduction(level) * 100).toFixed(2))}% time
+        <span className="whitespace-nowrap text-xs text-tarkov-green" aria-label={`${Number((reduction(level) * 100).toFixed(2))}% ${reductionLabel} reduction`}>
+          -{Number((reduction(level) * 100).toFixed(2))}% {reductionLabel}
         </span>
         <button
           type="button"
@@ -92,7 +126,7 @@ function CraftingSkillRow({ level, onLevelChange, forced, note }: {
         </button>
       </div>
       {note && <p className="mt-2 text-xs text-muted-foreground">{note}</p>}
-      {elite && <p className="mt-2 text-xs text-muted-foreground">2 crafts possible at once.</p>}
+      {elite && eliteNote && <p className="mt-2 text-xs text-muted-foreground">{eliteNote}</p>}
     </div>
   );
 }

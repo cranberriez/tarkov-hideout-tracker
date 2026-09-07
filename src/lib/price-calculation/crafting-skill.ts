@@ -1,4 +1,5 @@
 import type { CraftRecord } from "@/types/recipes";
+import { BITCOIN_FARM_STATION_ID } from "./craft-rules";
 
 export function normalizeCraftingSkillLevel(value: unknown): number {
     return typeof value === "number" && Number.isFinite(value)
@@ -11,6 +12,6 @@ export function craftingTimeReduction(level: number): number {
 
 export function craftingDuration(craft: Pick<CraftRecord, "stationId" | "duration">, level = 0): number {
     // Stable Bitcoin Farm ID from the station catalog; production is exempt.
-    if (craft.stationId === "5d494a445b56502f18c98a10") return craft.duration;
+    if (craft.stationId === BITCOIN_FARM_STATION_ID) return craft.duration;
     return craft.duration * (1 - craftingTimeReduction(level));
 }

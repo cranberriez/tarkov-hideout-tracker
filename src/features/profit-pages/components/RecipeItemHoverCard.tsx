@@ -353,8 +353,8 @@ export function RecipeItemHoverCard({
         (!recipePreview ||
           theoreticalRecipePreview.sourceId !== recipePreview.sourceId) && (
           <span className="relative block min-w-0 flex-1 pt-4">
-            <span className="absolute left-2 top-0 z-10 rounded-full border border-violet-300/30 bg-violet-400 px-2 py-0.5 text-[8px] font-black uppercase tracking-wide text-black shadow-lg">
-              Alternate route · ~{formatRoundedRoubles(theoreticalSavings ?? null)} cheaper
+            <span className="absolute left-0 -top-3 z-10 rounded-full border border-violet-300/30 bg-violet-400 px-2 py-0.5 text-xs font-bold tracking-wide text-black shadow-lg">
+              Alternate route ~{formatRoundedRoubles(theoreticalSavings ?? null)} cheaper
             </span>
             <RecipePreviewCard
               preview={theoreticalRecipePreview}

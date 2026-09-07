@@ -44,6 +44,9 @@ rather than selecting routes independently.
   cheapest direct cost or 5,000 roubles) to justify its added steps.
 - Zero-input production and quest-only ingredients have unknown cost; they cannot
   act as free recursive sources. Missing pricing remains explicit.
+- Passive Bitcoin Farm production and the Water Collector's same-item bottled-water
+  refill are excluded from the normalized craft graph and therefore do not appear
+  as craft rows or recursive acquisition routes.
 - When unavailable flea inputs leave no usable route or sale source, costs, sale
   values and dependent profit figures remain null. Unstable estimates continue to
   price both recipe inputs and outputs. `sellValueIsEstimate` marks a selected
@@ -60,10 +63,10 @@ rather than selecting routes independently.
   count unpriced rows explicitly; positive value sums priced rows only.
 - Hourly profit includes sequential nested craft time allocated per produced item;
   root crafts include their own duration. Instantaneous barter paths have no hourly
-  value. The Skills panel has a crafting level text input (0-50), validates
+  value. The Skills panel has Crafting and Hideout Management level text inputs (0-50), validates
   after 500 ms or on blur, and clamps numeric values to that range. Invalid or
-  empty text restores the saved level. An Elite toggle stores 51 and disables
-  the input at an effective level of 50. Turning Elite off leaves level 50.
+  empty text restores the saved level. Each Elite toggle stores 51 and disables
+  its input at an effective level of 50. Turning Elite off leaves level 50.
   [Seasonal configuration](../src/lib/cfg/seasonal.ts) forces Elite for Season 1
   KORD Breach. The shared profit-options hook applies the rule to both profit
   pages and item details, and disables the Elite toggle with a short season note.
@@ -72,12 +75,14 @@ rather than selecting routes independently.
   The panel shows the time reduction inline and a short concurrent-crafts note
   only for Elite. Missing saved levels default
   to zero. Each level cuts craft time by 0.75%, capped at 37.5% for both 50 and
-  Elite. The shared engine applies this to root and nested crafts, including
-  cyclic production except Bitcoin Farm. Adjusted durations also appear in
+  Elite. The shared engine applies this to root and nested crafts. Adjusted durations also appear in
   previews, manual route changes, and item details. Elite allows two different
   crafts per zone (including Scav Case); the panel explains this benefit, while
   profit/hour remains per recipe. Station-aware parallel scheduling and flea
-  fees are not modeled.
+  fees are not modeled. Hideout Management reduces Superwater's base Water filter
+  consumption by 0.5% per level, capped at 25% for level 50 and Elite. The adjusted
+  quantity and cost are shared by profit pages, recursive routes, and item details.
+  Fuel costs and the skill's fuel effect are not modeled.
 - Route profit assumes acquisition of inputs. Owned-input opportunity value compares
   selling the ingredients individually with selling the recipe output; preserve
   that distinction in labels and calculations.

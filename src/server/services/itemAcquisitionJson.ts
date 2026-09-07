@@ -2,6 +2,7 @@ import { fetchTarkovJsonData, type TarkovJsonGameMode } from "@/server/services/
 import type { BarterRecord, CraftRecord, ItemAmountRef } from "@/types/recipes";
 import type { BartersPayload, CraftsPayload } from "@/types/contracts";
 import type { DataResult } from "@/types/common";
+import { isTrackedCraft } from "@/lib/price-calculation/craft-rules";
 
 interface JsonContainedItem {
     item?: unknown;
@@ -108,7 +109,7 @@ export async function getCraftIndex(
     const raw = await fetchTarkovJsonData<JsonCraft[]>("crafts", gameMode);
     const crafts = raw.flatMap((value) => {
         const record = mapCraft(value);
-        return record ? [record] : [];
+        return record && isTrackedCraft(record) ? [record] : [];
     });
     if (crafts.length === 0) {
         throw new Error("Tarkov JSON craft mapping produced no records");

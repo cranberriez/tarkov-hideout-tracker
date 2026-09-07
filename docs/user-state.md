@@ -71,9 +71,10 @@ actions with resets of other owners. Its current behavior is:
 Section resets preserve unrelated settings/profiles except the explicitly
 all-mode Kappa reset above. Despite its label, Delete ALL data does **not** remove
 the separate profit overrides, craft pins, or import seen-files key. Do not broaden
-that action implicitly. Profit options also remain independent of these resets. The crafting skill option
-defaults to zero for older payloads and is normalized to an integer from 0 to 51;
-existing saved preferences are retained without changing the storage key.
+that action implicitly. Profit options also remain independent of these resets.
+The Crafting and Hideout Management skill options default to zero for older
+payloads and are normalized to integers from 0 to 51; existing saved preferences
+are retained without changing the storage key.
 The Settings usage meter counts the two Zustand payloads,
 not every localStorage key.
 

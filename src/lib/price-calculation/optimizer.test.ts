@@ -5,6 +5,13 @@ import type { BarterRecord, CraftRecord } from "@/types/recipes";
 import type { ItemSummary } from "@/types/items";
 import { getItemSellComparison } from "./prices";
 import {
+    BITCOIN_FARM_STATION_ID,
+    PHYSICAL_BITCOIN_ITEM_ID,
+    PURIFIED_WATER_ITEM_ID,
+    WATER_COLLECTOR_STATION_ID,
+    WATER_FILTER_ITEM_ID,
+} from "./craft-rules";
+import {
     createAcquisitionOptimizer,
     createRecipeCalculator,
     evaluateBarter,
@@ -476,4 +483,41 @@ test("crafting skill reduces root and nested times, caps Elite, and exempts Bitc
     }
     assert.equal(root.duration, 1800);
     assert.equal(nested.duration, 3600);
+});
+
+test("calculator excludes passive Bitcoin production and prices skill-adjusted Superwater filters", () => {
+    const bitcoin: CraftRecord = {
+        id: "bitcoin",
+        productItemId: PHYSICAL_BITCOIN_ITEM_ID,
+        productCount: 1,
+        stationId: BITCOIN_FARM_STATION_ID,
+        level: 1,
+        duration: 300_000,
+        requiredItems: [],
+        requiredQuestItems: [],
+        gameEditions: [],
+    };
+    const superwater: CraftRecord = {
+        ...bitcoin,
+        id: "superwater",
+        productItemId: PURIFIED_WATER_ITEM_ID,
+        stationId: WATER_COLLECTOR_STATION_ID,
+        requiredItems: [{ itemId: WATER_FILTER_ITEM_ID, count: 0.66 }],
+    };
+    const calculator = createRecipeCalculator({
+        itemsById: {
+            [PHYSICAL_BITCOIN_ITEM_ID]: item(PHYSICAL_BITCOIN_ITEM_ID, 1_000),
+            [PURIFIED_WATER_ITEM_ID]: item(PURIFIED_WATER_ITEM_ID, 1_000),
+            [WATER_FILTER_ITEM_ID]: item(WATER_FILTER_ITEM_ID, 100),
+        },
+        crafts: [bitcoin, superwater],
+        barters: [],
+        hideoutManagementSkillLevel: 50,
+    });
+
+    const evaluations = calculator.evaluateCrafts();
+    assert.deepEqual(evaluations.map((evaluation) => evaluation.id), ["superwater"]);
+    assert.equal(evaluations[0].requiredItems[0].quantity, 0.495);
+    assert.equal(evaluations[0].cost, 49.5);
+    assert.equal(calculator.evaluateNode(PHYSICAL_BITCOIN_ITEM_ID).method, "flea");
 });

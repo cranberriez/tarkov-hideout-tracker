@@ -1,6 +1,7 @@
 "use client";
 
 import { craftingDuration } from "@/lib/price-calculation/crafting-skill";
+import { isTrackedCraft } from "@/lib/price-calculation/craft-rules";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useShallow } from "zustand/react/shallow";
@@ -44,6 +45,7 @@ export function ProfitPageClient({
 }: ProfitPageClientProps) {
   const router = useRouter();
   const items = data.items;
+  const crafts = useMemo(() => data.crafts.filter(isTrackedCraft), [data.crafts]);
   const itemsError = data.errors.items ?? data.errors.prices;
   const itemById = useMemo(
     () => Object.fromEntries((items ?? []).map((item) => [item.id, item])),
@@ -71,9 +73,11 @@ export function ProfitPageClient({
   const [stationSourceIds, setStationSourceIds] = useState<string[]>([]);
   const {
     craftingSkillLevel,
+    hideoutManagementSkillLevel,
     craftingSkillForced,
     craftingSkillNote,
     setCraftingSkillLevel,
+    setHideoutManagementSkillLevel,
     availableOnly,
     setAvailableOnly,
     lockFilters,
@@ -102,12 +106,13 @@ export function ProfitPageClient({
   const evaluations = useMemo(() => {
     const calculator = createRecipeCalculator({
       craftingSkillLevel,
+      hideoutManagementSkillLevel,
       playerLevel,
       stationLevels,
       useTraderSaleForLockedOutputs,
       itemsById: itemById,
       barters: data.barters,
-      crafts: data.crafts,
+      crafts,
       overrides,
       allowCrafts,
       allowBarters,
@@ -119,6 +124,7 @@ export function ProfitPageClient({
       : calculator.evaluateCrafts();
   }, [
     craftingSkillLevel,
+    hideoutManagementSkillLevel,
     playerLevel,
     stationLevels,
     useTraderSaleForLockedOutputs,
@@ -126,7 +132,7 @@ export function ProfitPageClient({
     allowCrafts,
     completedQuests,
     data.barters,
-    data.crafts,
+    crafts,
     itemById,
     kind,
     overrides,
@@ -156,15 +162,15 @@ export function ProfitPageClient({
   const craftsById = useMemo(
     () =>
       Object.fromEntries(
-        data.crafts.map((craft) => [craft.id, { ...craft, duration: craftingDuration(craft, craftingSkillLevel) }]),
+        crafts.map((craft) => [craft.id, { ...craft, duration: craftingDuration(craft, craftingSkillLevel) }]),
       ) as Record<string, CraftRecord>,
-    [data.crafts, craftingSkillLevel],
+    [crafts, craftingSkillLevel],
   );
   const sources = useMemo(() => {
     const ids =
       kind === "barter"
         ? data.barters.map((entry) => entry.traderId)
-        : data.crafts.map((entry) => entry.stationId);
+        : crafts.map((entry) => entry.stationId);
     const map: Readonly<Record<string, Trader | ProfitStationSource>> =
       kind === "barter" ? tradersById : stationsById;
     return [...new Set(ids)]
@@ -181,7 +187,7 @@ export function ProfitPageClient({
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [
     data.barters,
-    data.crafts,
+    crafts,
     kind,
     stationLevels,
     stationsById,
@@ -305,6 +311,8 @@ export function ProfitPageClient({
           craftingSkillNote={craftingSkillNote}
           craftingSkillLevel={craftingSkillLevel}
           onCraftingSkillLevelChange={setCraftingSkillLevel}
+          hideoutManagementSkillLevel={hideoutManagementSkillLevel}
+          onHideoutManagementSkillLevelChange={setHideoutManagementSkillLevel}
           kind={kind}
           search={search}
           onSearchChange={setSearch}

@@ -1,6 +1,7 @@
 "use client";
 
 import { craftingDuration } from "@/lib/price-calculation/crafting-skill";
+import { craftRequiredItems, isTrackedCraft } from "@/lib/price-calculation/craft-rules";
 import { useProfitOptions } from "@/features/profit-pages/useProfitOptions";
 import { useMemo } from "react";
 import type { ItemCraftRecipe, ItemTraderOffer } from "./item-detail-types";
@@ -31,7 +32,7 @@ export function useItemDetailModalController({
     const { activeItemId, navigatedItemsById } = navigation;
     const store = useUserStore();
     const { overrides } = useManualPriceOverrides(store.gameMode);
-    const { craftingSkillLevel } = useProfitOptions(store.gameMode);
+    const { craftingSkillLevel, hideoutManagementSkillLevel } = useProfitOptions(store.gameMode);
     const tarkovMode = toTarkovJsonGameMode(store.gameMode);
     const requests = useItemDetailRequestController({ activeItemId, isOpen, mode: tarkovMode });
     const itemRelations = requests.relations;
@@ -119,6 +120,7 @@ export function useItemDetailModalController({
                       crafts: acquisitionTree.crafts,
                       overrides,
                       craftingSkillLevel,
+                      hideoutManagementSkillLevel,
                       traderLoyaltyLevels: store.questTraderLoyaltyLevels,
                       completedQuests: store.completedQuests,
                       playerLevel: store.playerLevel,
@@ -128,6 +130,7 @@ export function useItemDetailModalController({
         [
             acquisitionTree,
             craftingSkillLevel,
+            hideoutManagementSkillLevel,
             itemDetailsById,
             overrides,
             store.completedQuests,
@@ -221,7 +224,7 @@ export function useItemDetailModalController({
         },
     );
     traderOffers.push(...selectedItemPurchaseOffers);
-    const crafts: ItemCraftRecipe[] = (itemUsage?.crafts ?? []).map((craft) => {
+    const crafts: ItemCraftRecipe[] = (itemUsage?.crafts ?? []).filter(isTrackedCraft).map((craft) => {
         const station = itemUsage?.stationsById?.[craft.stationId];
         const unlock = craft.taskUnlockId
             ? itemUsage?.taskUnlocksById?.[craft.taskUnlockId] ?? quests.get(craft.taskUnlockId)
@@ -245,7 +248,7 @@ export function useItemDetailModalController({
             taskUnlock: craft.taskUnlockId
                 ? { id: craft.taskUnlockId, name: unlock?.name ?? "Quest unlock", wikiLink: unlock?.wikiLink }
                 : null,
-            requiredItems: craft.requiredItems.map(toAmount),
+            requiredItems: craftRequiredItems(craft, hideoutManagementSkillLevel).map(toAmount),
             requiredQuestItems: craft.requiredQuestItems.map(toAmount),
             gameEditions: craft.gameEditions,
             productCount: craft.productCount,

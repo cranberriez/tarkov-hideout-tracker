@@ -15,6 +15,9 @@ adapters: [items](../src/server/services/itemsJson.ts),
 [traders](../src/server/services/tradersJson.ts), and
 [recipes](../src/server/services/itemAcquisitionJson.ts).
 They translate and normalize raw records into [canonical domain types](../src/types/).
+Recipe normalization omits passive Bitcoin Farm production and the Water
+Collector's same-item bottled-water refill because neither is a repeatable craft
+acquisition route. Publishing this policy requires a newly generated release.
 Seasonal English translations can fall back to regular English labels while
 seasonal IDs and structure remain authoritative. Malformed or empty required
 datasets must fail generation rather than produce a ready release.

@@ -94,6 +94,7 @@ export interface PriceCalculationContext {
     craftsByItemId: Readonly<Record<string, CraftRecord[]>>;
     overrides?: ManualPriceOverrides;
     craftingSkillLevel?: number;
+    hideoutManagementSkillLevel?: number;
     playerLevel?: number;
     /** Omission preserves station-agnostic calculations. Missing entries mean level zero. */
     stationLevels?: Readonly<Record<string, number>>;
@@ -113,6 +114,7 @@ export interface RecipeCalculatorInput {
     crafts: readonly CraftRecord[];
     overrides?: ManualPriceOverrides;
     craftingSkillLevel?: number;
+    hideoutManagementSkillLevel?: number;
     playerLevel?: number;
     /** Omission preserves station-agnostic calculations. Missing entries mean level zero. */
     stationLevels?: Readonly<Record<string, number>>;

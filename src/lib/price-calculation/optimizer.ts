@@ -1,4 +1,5 @@
 import { craftingDuration } from "./crafting-skill";
+import { craftRequiredItems, isTrackedCraft } from "./craft-rules";
 import { getFleaLockReasons, getRecipeLockReasons, getTraderLockReasons } from "./availability";
 import { getFleaPrice } from "../utils/market-price";
 import type { BarterRecord, CraftRecord, ItemAmountRef } from "@/types/recipes";
@@ -229,7 +230,10 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
             return reject("Quest item input costs unavailable");
         }
         const batches = Math.ceil(quantity / outputCount);
-        const requirements = aggregateRequirements(recipe.requiredItems, batches);
+        const recipeRequirements = kind === "craft"
+            ? craftRequiredItems(recipe as CraftRecord, context.hideoutManagementSkillLevel)
+            : recipe.requiredItems;
+        const requirements = aggregateRequirements(recipeRequirements, batches);
         const children = requirements.map((requirement) => ({
             // A hypothetical recipe prices only eligible ingredient routes; do not
             // recursively expand estimates for their locked alternatives.
@@ -405,6 +409,7 @@ function indexRecipesByOutput<T>(
  * context and shares one recursive memoization cache across every evaluation.
  */
 export function createRecipeCalculator(input: RecipeCalculatorInput) {
+    const trackedCrafts = input.crafts.filter(isTrackedCraft);
     const context: PriceCalculationContext = {
         itemsById: input.itemsById,
         bartersByItemId: indexRecipesByOutput(
@@ -412,10 +417,11 @@ export function createRecipeCalculator(input: RecipeCalculatorInput) {
             (barter) => barter.offeredItemId,
         ),
         craftsByItemId: indexRecipesByOutput(
-            input.crafts,
+            trackedCrafts,
             (craft) => craft.productItemId,
         ),
         craftingSkillLevel: input.craftingSkillLevel,
+        hideoutManagementSkillLevel: input.hideoutManagementSkillLevel,
         playerLevel: input.playerLevel,
         stationLevels: input.stationLevels,
         useTraderSaleForLockedOutputs: input.useTraderSaleForLockedOutputs,
@@ -448,8 +454,8 @@ export function createRecipeCalculator(input: RecipeCalculatorInput) {
                 evaluateTopLevelRecipe("barter", barter, context, optimizer),
             );
         },
-        evaluateCrafts(crafts: readonly CraftRecord[] = input.crafts) {
-            return crafts.map((craft) =>
+        evaluateCrafts(crafts: readonly CraftRecord[] = trackedCrafts) {
+            return crafts.filter(isTrackedCraft).map((craft) =>
                 evaluateTopLevelRecipe("craft", craft, context, optimizer),
             );
         },
@@ -485,7 +491,7 @@ export function evaluateCrafts(
     context: PriceCalculationContext,
 ) {
     const optimizer = createAcquisitionOptimizer(context);
-    return crafts.map((craft) =>
+    return crafts.filter(isTrackedCraft).map((craft) =>
         evaluateTopLevelRecipe("craft", craft, context, optimizer),
     );
 }
@@ -503,7 +509,10 @@ function evaluateTopLevelRecipe(
         ? (recipe as BarterRecord).offeredCount
         : (recipe as CraftRecord).productCount;
     const blocked = new Set([outputItemId]);
-    const aggregatedRequirements = aggregateRequirements(recipe.requiredItems, 1);
+    const recipeRequirements = kind === "craft"
+        ? craftRequiredItems(recipe as CraftRecord, context.hideoutManagementSkillLevel)
+        : recipe.requiredItems;
+    const aggregatedRequirements = aggregateRequirements(recipeRequirements, 1);
     const requiredItems = aggregatedRequirements.map((requirement) => ({
         ...optimizer.optimize(requirement.itemId, requirement.count, blocked),
         ...(requirement.isTool ? { isTool: true } : {}),

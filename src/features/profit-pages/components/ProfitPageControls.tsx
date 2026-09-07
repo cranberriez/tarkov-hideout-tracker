@@ -25,6 +25,8 @@ export function ProfitPageControls({
   craftingSkillForced,
   craftingSkillNote,
   onCraftingSkillLevelChange,
+  hideoutManagementSkillLevel,
+  onHideoutManagementSkillLevelChange,
   search,
   onSearchChange,
   sourceId,
@@ -52,6 +54,8 @@ export function ProfitPageControls({
   craftingSkillForced: boolean;
   craftingSkillNote?: string;
   onCraftingSkillLevelChange: (value: number) => void;
+  hideoutManagementSkillLevel: number;
+  onHideoutManagementSkillLevelChange: (value: number) => void;
   search: string;
   onSearchChange: (value: string) => void;
   sourceId: string;
@@ -111,7 +115,16 @@ export function ProfitPageControls({
             ))}
           </select>
         )}
-        {kind === "craft" && <CraftingSettings forced={craftingSkillForced} note={craftingSkillNote} level={craftingSkillLevel} onLevelChange={onCraftingSkillLevelChange} />}
+        {kind === "craft" && (
+          <CraftingSettings
+            forced={craftingSkillForced}
+            note={craftingSkillNote}
+            craftingLevel={craftingSkillLevel}
+            onCraftingLevelChange={onCraftingSkillLevelChange}
+            hideoutManagementLevel={hideoutManagementSkillLevel}
+            onHideoutManagementLevelChange={onHideoutManagementSkillLevelChange}
+          />
+        )}
         <CalculationSettings
           lockFilters={lockFilters}
           onLockFiltersChange={onLockFiltersChange}

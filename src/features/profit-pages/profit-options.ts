@@ -1,8 +1,10 @@
 import { normalizeCraftingSkillLevel } from "../../lib/price-calculation/crafting-skill";
+import { normalizeHideoutManagementSkillLevel } from "../../lib/price-calculation/craft-rules";
 import type { GameMode } from "@/lib/game-mode";
 
 export interface ProfitOptions {
   craftingSkillLevel: number;
+  hideoutManagementSkillLevel: number;
   availableOnly: boolean;
   profitableOnly: boolean;
   useTraderSaleForLockedOutputs: boolean;
@@ -18,6 +20,7 @@ export interface ProfitOptions {
 
 export const DEFAULT_PROFIT_OPTIONS: ProfitOptions = {
   craftingSkillLevel: 0,
+  hideoutManagementSkillLevel: 0,
   availableOnly: true,
   profitableOnly: false,
   useTraderSaleForLockedOutputs: true,
@@ -58,6 +61,9 @@ export function parseProfitOptions(raw: string | null): ProfitOptions {
     if (typeof value[key] === "boolean") options[key] = value[key];
   }
   options.craftingSkillLevel = normalizeCraftingSkillLevel(value.craftingSkillLevel);
+  options.hideoutManagementSkillLevel = normalizeHideoutManagementSkillLevel(
+    value.hideoutManagementSkillLevel,
+  );
   const filters = record(value.lockFilters);
   for (const key of ["flea", "quest", "vendor", "station"] as const) {
     if (typeof filters[key] === "boolean") options.lockFilters[key] = filters[key];

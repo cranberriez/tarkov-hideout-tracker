@@ -49,6 +49,7 @@ test("reads never overwrite saved modes and every option survives page remounts"
   };
   const saved = {
     craftingSkillLevel: 0,
+    hideoutManagementSkillLevel: 0,
     availableOnly: false,
     profitableOnly: true,
     useTraderSaleForLockedOutputs: false,
@@ -108,4 +109,20 @@ test("crafting skill defaults safely and persists independently by mode", () => 
   assert.equal(createProfitOptionsStore("PVP", () => storage).getSnapshot().craftingSkillLevel, 51);
   assert.equal(createProfitOptionsStore("PVE", () => storage).getSnapshot().craftingSkillLevel, 0);
   assert.equal(createProfitOptionsStore("KORD", () => storage).getSnapshot().craftingSkillLevel, 0);
+});
+
+test("Hideout Management defaults safely and persists independently by mode", () => {
+  assert.equal(parseProfitOptions('{"allowCrafts":false}').hideoutManagementSkillLevel, 0);
+  for (const [value, expected] of [[-1, 0], [52, 51], [25.9, 25], ["50", 0], [null, 0]] as const) {
+    assert.equal(
+      parseProfitOptions(JSON.stringify({ hideoutManagementSkillLevel: value })).hideoutManagementSkillLevel,
+      expected,
+    );
+  }
+  const values = new Map<string, string>();
+  const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); } };
+  const pvp = createProfitOptionsStore("PVP", () => storage);
+  pvp.setOption("hideoutManagementSkillLevel", 51);
+  assert.equal(createProfitOptionsStore("PVP", () => storage).getSnapshot().hideoutManagementSkillLevel, 51);
+  assert.equal(createProfitOptionsStore("PVE", () => storage).getSnapshot().hideoutManagementSkillLevel, 0);
 });

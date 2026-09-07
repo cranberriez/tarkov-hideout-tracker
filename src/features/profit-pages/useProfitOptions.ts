@@ -2,6 +2,7 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 import { getSeasonalCraftingSettings } from "@/lib/cfg/seasonal";
+import { normalizeHideoutManagementSkillLevel } from "@/lib/price-calculation/craft-rules";
 import type { GameMode } from "@/lib/game-mode";
 import {
   createProfitOptionsStore,
@@ -52,6 +53,8 @@ export function useProfitOptions(gameMode: GameMode) {
     setCraftingSkillLevel: (value: number) => {
       if (!seasonalCrafting.craftingSkillForced) setOption("craftingSkillLevel", value);
     },
+    setHideoutManagementSkillLevel: (value: number) =>
+      setOption("hideoutManagementSkillLevel", normalizeHideoutManagementSkillLevel(value)),
     setAvailableOnly: (value: boolean) => setOption("availableOnly", value),
     setProfitableOnly: (value: boolean) => setOption("profitableOnly", value),
     setUseTraderSaleForLockedOutputs: (value: boolean) =>
