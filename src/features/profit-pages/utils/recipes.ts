@@ -315,6 +315,8 @@ export function describeRoute(plan: AcquisitionPlan, context: RouteContext) {
     return `Reusable tool acquired via ${plan.method}; its value is not included in recurring craft cost.`;
   if (plan.method === "flea")
     return "Buy from the flea market using a minimum estimate, catalog estimate, or manual buy price.";
+  if (plan.method === "sell")
+    return "Use the item's sale value as its opportunity cost because no priced acquisition route is available.";
   if (plan.method === "trader" && plan.traderOffer) {
     const offer = plan.traderOffer;
     const trader = context.tradersById[offer.traderId];
@@ -344,6 +346,7 @@ export function describeChainRoute(
   context: RouteContext,
 ) {
   if (plan.method === "flea") return "Flea market";
+  if (plan.method === "sell") return "Sell value";
   if (plan.method === "trader" && plan.traderOffer) {
     return `Trader LL${plan.traderOffer.minTraderLevel}`;
   }

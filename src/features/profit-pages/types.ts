@@ -20,7 +20,7 @@ export interface ProfitLockOptionsProps {
 export type ProfitPageKind = "barter" | "craft";
 export type SortKey = "cost" | "sellValue" | "profit" | "profitPerHour";
 export type SortDirection = "ascending" | "descending";
-export type RouteMethod = "flea" | "trader" | "barter" | "craft" | "unavailable";
+export type RouteMethod = "flea" | "trader" | "barter" | "craft" | "sell" | "unavailable";
 export type ProfitStationSource = Pick<
   Station,
   "id" | "name" | "normalizedName" | "imageLink"

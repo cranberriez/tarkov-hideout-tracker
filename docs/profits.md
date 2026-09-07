@@ -47,8 +47,12 @@ rather than selecting routes independently.
 - Passive Bitcoin Farm production and the Water Collector's same-item bottled-water
   refill are excluded from the normalized craft graph and therefore do not appear
   as craft rows or recursive acquisition routes.
-- When unavailable flea inputs leave no usable route or sale source, costs, sale
-  values and dependent profit figures remain null. Unstable estimates continue to
+- When an ingredient has no accessible priced acquisition route but does have a
+  usable sale value, its acquisition cost falls back to that opportunity value:
+  the money forgone by consuming a primarily found-in-raid item instead of selling
+  it. Profit pages and item-detail recipes label this route **(sell value)**. If
+  neither an acquisition route nor a sale source is usable, costs, sale values and
+  dependent profit figures remain null. Unstable estimates continue to
   price both recipe inputs and outputs. `sellValueIsEstimate` marks a selected
   unstable flea sale; `sellSourceLabel` names the selected source. Manual sales
   and selected trader sales do not carry the instability warning.

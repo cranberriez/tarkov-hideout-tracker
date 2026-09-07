@@ -82,6 +82,8 @@ export function RecipeItemHoverCard({
     ? "Reusable tool"
     : method === "flea"
       ? "Flea market"
+      : method === "sell"
+        ? "Sell value"
       : method === "trader"
         ? "Trader"
       : method === "barter"

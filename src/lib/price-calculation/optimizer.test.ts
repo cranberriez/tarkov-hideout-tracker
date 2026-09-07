@@ -485,6 +485,57 @@ test("crafting skill reduces root and nested times, caps Elite, and exempts Bitc
     assert.equal(nested.duration, 3600);
 });
 
+test("uses sale value as the opportunity cost when an ingredient has no accessible acquisition route", () => {
+    const foundInRaid: ItemSummary = {
+        id: "B",
+        name: "Found in raid input",
+        normalizedName: "found-in-raid-input",
+        onFleaMarket: false,
+        marketPrice: {
+            sellFor: [{ vendor: { name: "Therapist", normalizedName: "therapist" }, priceRUB: 60 }],
+        },
+    };
+    const craft: CraftRecord = {
+        id: "fir-craft",
+        productItemId: "A",
+        productCount: 1,
+        stationId: "workbench",
+        level: 1,
+        duration: 60,
+        requiredItems: [{ itemId: "B", count: 2 }],
+        requiredQuestItems: [],
+        gameEditions: [],
+    };
+    const input = { itemsById: { A: item("A", 100), B: foundInRaid }, crafts: [craft], barters: [] };
+
+    const evaluation = createRecipeCalculator(input).evaluateCraft(craft);
+    assert.equal(evaluation.requiredItems[0].method, "sell");
+    assert.equal(evaluation.requiredItems[0].totalCost, 120);
+    assert.equal(evaluation.cost, 120);
+    assert.equal(evaluation.profit, -20);
+
+    const overridden = createRecipeCalculator({ ...input, overrides: { B: { buy: 25 } } }).evaluateCraft(craft);
+    assert.equal(overridden.requiredItems[0].method, "flea");
+    assert.equal(overridden.cost, 50);
+});
+
+test("uses trader sale value when flea pricing is unavailable and no other acquisition route exists", () => {
+    const itemWithNoRoute: ItemSummary = {
+        id: "A",
+        name: "A",
+        normalizedName: "a",
+        marketPrice: {
+            price: null,
+            fleaStability: "unavailable",
+            sellFor: [{ vendor: { name: "Trader", normalizedName: "trader" }, priceRUB: 75 }],
+        },
+    };
+    const plan = createRecipeCalculator({ itemsById: { A: itemWithNoRoute }, crafts: [], barters: [] }).evaluateNode("A", 3);
+
+    assert.equal(plan.method, "sell");
+    assert.equal(plan.totalCost, 225);
+});
+
 test("calculator excludes passive Bitcoin production and prices skill-adjusted Superwater filters", () => {
     const bitcoin: CraftRecord = {
         id: "bitcoin",

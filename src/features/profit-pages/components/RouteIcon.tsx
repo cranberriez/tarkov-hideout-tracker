@@ -3,6 +3,7 @@ import {
   ChartNoAxesCombined,
   ChevronDown,
   CircleArrowRight,
+  Coins,
   UserRound,
   Wrench,
 } from "lucide-react";
@@ -34,6 +35,11 @@ function routeIconClasses(
       color: "text-emerald-400",
       background: "bg-emerald-400",
       border: "border-emerald-400",
+    },
+    sell: {
+      color: "text-yellow-300",
+      background: "bg-yellow-300",
+      border: "border-yellow-300",
     },
   }[method];
 
@@ -114,6 +120,16 @@ export function RouteIcon({
         {caret}
       </span>
     );
+  if (method === "sell")
+    return (
+      <span
+        title={title ?? `Sell value used${changedTitle}`}
+        className={`${classes} ${routeIconClasses("sell", changedFromBase, filled, automaticFallback)}`}
+      >
+        <Coins className={iconClasses} />
+        {caret}
+      </span>
+    );
   return (
     <span
       title={title ?? "No priced route"}
@@ -130,5 +146,6 @@ export function routeChipClasses(method: RouteMethod) {
   if (method === "craft") return "bg-orange-400 text-black";
   if (method === "trader") return "bg-purple-400 text-black";
   if (method === "flea") return "bg-emerald-400 text-black";
+  if (method === "sell") return "bg-yellow-300 text-black";
   return "bg-red-950/60 text-red-300";
 }

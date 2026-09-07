@@ -49,3 +49,25 @@ test("ingredient warning follows unstable flea purchases and respects manual ove
         assert.doesNotMatch(renderToStaticMarkup(createElement(InlineItemPrice, variation)), /value unstable/);
     }
 });
+
+test("ingredient opportunity costs are labeled as sell value", () => {
+    const item: ItemSummary = {
+        id: "input",
+        name: "Input",
+        normalizedName: "input",
+        onFleaMarket: false,
+        marketPrice: { sellFor: [{ vendor: { name: "Trader", normalizedName: "trader" }, priceRUB: 42 }] },
+    };
+    const markup = renderToStaticMarkup(createElement(InlineItemPrice, {
+        item,
+        kind: "buy" as const,
+        buyMethod: "sell" as const,
+        totalPrice: 84,
+        overrides: {},
+        onPriceChange: () => {},
+    }));
+
+    assert.match(markup, /84 ₽/);
+    assert.match(markup, /\(sell value\)/);
+    assert.doesNotMatch(markup, /value unstable/);
+});

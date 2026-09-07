@@ -26,7 +26,8 @@ export function ProfitPageHeader({
         </h1>
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
           Ingredient costs follow the cheapest practical mix of flea and trader
-          purchases, crafts, and barters. Manual prices override market data for this{" "}
+          purchases, crafts, and barters, with sell value used when no priced
+          acquisition route exists. Manual prices override market data for this{" "}
           {gameMode} profile.
         </p>
       </div>

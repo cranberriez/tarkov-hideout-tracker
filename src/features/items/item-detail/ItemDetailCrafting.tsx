@@ -221,6 +221,8 @@ function RecommendationBadge({ plan, unstable }: { plan: AcquisitionPlan; unstab
     const label =
         plan.method === "flea"
             ? "Buy"
+            : plan.method === "sell"
+              ? "Found"
             : plan.method === "trader"
               ? "Trader"
             : plan.method === "craft"
@@ -235,8 +237,10 @@ function RecommendationBadge({ plan, unstable }: { plan: AcquisitionPlan; unstab
               ? "bg-purple-400/10 text-purple-200"
             : plan.method === "barter"
               ? "bg-sky-400/10 text-sky-200"
-              : plan.method === "flea"
+            : plan.method === "flea"
                 ? "bg-tarkov-green/10 text-tarkov-green"
+                : plan.method === "sell"
+                  ? "bg-yellow-300/10 text-yellow-200"
                 : "bg-white/5 text-muted-foreground";
     return (
         <span className="flex flex-wrap items-center gap-1.5">
@@ -245,6 +249,9 @@ function RecommendationBadge({ plan, unstable }: { plan: AcquisitionPlan; unstab
             </span>
             {unstable && plan.method === "flea" && plan.totalCost !== null && (
                 <span className="text-[10px] font-normal text-amber-300">(value unstable)</span>
+            )}
+            {plan.method === "sell" && plan.totalCost !== null && (
+                <span className="text-[10px] font-normal text-muted-foreground">(sell value)</span>
             )}
             {plan.totalCost !== null && (
                 <span className="flex shrink-0 items-baseline gap-1 leading-none">

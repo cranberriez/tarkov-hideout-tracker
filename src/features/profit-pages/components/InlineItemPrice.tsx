@@ -51,6 +51,7 @@ export function InlineItemPrice({
     ? (sellValueIsEstimate ?? getItemSellComparison(item, overrides, pricingContext).isEstimate)
     : buyMethod === "flea" && !hasManualBuy && currentUnitPrice !== null && totalPrice !== null &&
       item.normalizedName !== "roubles" && item.marketPrice?.fleaStability === "unstable";
+  const usesSellValue = kind === "buy" && buyMethod === "sell" && totalPrice !== null;
   const color = warning ? "text-amber-300" : "text-tarkov-green";
   const formattedPrice = formatCompactPrice(displayPrice === undefined ? totalPrice : displayPrice);
   function commit(raw: string) {
@@ -105,6 +106,9 @@ export function InlineItemPrice({
       {warning && (kind === "buy"
         ? <span className="whitespace-nowrap text-[10px] font-normal text-amber-300">(value unstable)</span>
         : <InfoHint title="Value unstable" tone="warning" compact onShow={onWarningShow} />)}
+      {usesSellValue && (
+        <span className="whitespace-nowrap text-[10px] font-normal text-muted-foreground">(sell value)</span>
+      )}
     </span>
   );
 }

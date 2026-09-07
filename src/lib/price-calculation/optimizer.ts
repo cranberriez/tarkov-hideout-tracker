@@ -153,6 +153,31 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
             }
         }
 
+        // Items without an accessible acquisition route are generally supplied
+        // from raid. Consuming one still costs the value the player gives up by
+        // not selling it, so use that opportunity value instead of leaving the
+        // recipe unpriced.
+        if (candidates.length === 0) {
+            const sale = getItemSellComparison(
+                context.itemsById[itemId],
+                overrides,
+                { playerLevel: context.playerLevel },
+            );
+            if (sale.selectedPrice !== null && Number.isFinite(sale.selectedPrice) && sale.selectedPrice >= 0) {
+                const totalCost = sale.selectedPrice * normalizedQuantity;
+                if (Number.isFinite(totalCost)) {
+                    candidates.push({
+                        method: "sell",
+                        batches: 1,
+                        totalCost,
+                        theoreticalCost: totalCost,
+                        durationSeconds: 0,
+                        children: [],
+                    });
+                }
+            }
+        }
+
         if (candidates.length === 0) return unavailablePlan(itemId, normalizedQuantity, lockedAlternatives);
 
         const theoretical = [...candidates].sort(

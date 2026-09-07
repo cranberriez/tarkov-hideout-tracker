@@ -9,7 +9,7 @@ test("nested crafts with unavailable tools fall back without charging recurring 
         { itemId: "C", count: 1 }, { itemId: "tool", count: 1, isTool: true },
     ] };
     const parent = craft("parent-tool", "A", "B");
-    const tool = { ...item("tool", 5000), onFleaMarket: false, buyFromTrader: [{
+    const tool = { ...item("tool", 5000), onFleaMarket: false, marketPrice: { avg24hPrice: 5000 }, buyFromTrader: [{
         traderId: "vendor", minTraderLevel: 1, taskUnlockId: "tool-quest",
         price: 5000, priceRUB: 5000, currency: "RUB", currencyItemId: "roubles",
     }] };
@@ -40,7 +40,7 @@ const craft = (id: string, output: string, input: string): CraftRecord => ({ id,
 test("nested inaccessible recipes fall back and retain quest/station reasons through unpriced parents", () => {
     const nested = { ...craft("nested", "B", "C"), taskUnlockId: "quest" };
     const parent = craft("parent", "A", "B");
-    const input = { itemsById: { A: item("A", 1000), B: { ...item("B"), onFleaMarket: false }, C: item("C", 10) },
+    const input = { itemsById: { A: item("A", 1000), B: { ...item("B"), onFleaMarket: false, marketPrice: { avg24hPrice: 100 } }, C: item("C", 10) },
         crafts: [parent, nested], barters: [], stationLevels: { bench: 2 } };
     const locked = createRecipeCalculator(input).evaluateNode("A");
     assert.equal(locked.method, "flea");
@@ -50,7 +50,7 @@ test("nested inaccessible recipes fall back and retain quest/station reasons thr
     const station = createRecipeCalculator({ ...input, crafts: [stationParent, nested], stationLevels: { bench: 1 }, completedQuests: { quest: true } }).evaluateNode("A");
     assert.equal(station.method, "flea");
     assert.equal(station.lockedAlternatives?.find(r => r.sourceId === "parent")?.lockReasons.some(r => r.kind === "station"), true);
-    const unavailable = createRecipeCalculator({ ...input, itemsById: { ...input.itemsById, A: { ...item("A"), onFleaMarket: false } } }).evaluateNode("A");
+    const unavailable = createRecipeCalculator({ ...input, itemsById: { ...input.itemsById, A: { ...item("A"), onFleaMarket: false, marketPrice: { avg24hPrice: 100 } } } }).evaluateNode("A");
     assert.equal(unavailable.totalCost, null);
     assert.equal(unavailable.lockReasons?.some(r => r.questId === "quest"), true);
     assert.deepEqual(getRecipeLockReasons(parent, {}), []);
@@ -131,8 +131,8 @@ test("locked trader price metadata is display-only and rejects invalid estimates
     }
 });
 
-test("locked flea estimates never supply ingredients or win selection", () => {
-    const calculator = createRecipeCalculator({ itemsById: { A: { ...item("A", 123), onFleaMarket: false } }, crafts: [], barters: [] });
+test("locked flea estimates without a sale value never supply ingredients or win selection", () => {
+    const calculator = createRecipeCalculator({ itemsById: { A: { ...item("A", 123), onFleaMarket: false, marketPrice: { avg24hPrice: 123 } } }, crafts: [], barters: [] });
     const plan = calculator.evaluateNode("A", 3);
     assert.equal(plan.method, "unavailable");
     assert.equal(plan.totalCost, null);
@@ -143,7 +143,7 @@ test("locked recipe estimates use eligible ingredients and batch rounding withou
     const lockedCraft = { ...craft("locked-craft", "A", "B"), productCount: 2, taskUnlockId: "quest" };
     const lockedBarter = { id: "locked-barter", offeredItemId: "A", offeredCount: 2, traderId: "vendor", minTraderLevel: 2, requiredItems: [{ itemId: "B", count: 1 }] };
     const nested = craft("nested", "B", "C");
-    const input = { itemsById: { A: item("A", 1000), B: { ...item("B"), onFleaMarket: false }, C: item("C", 12) }, crafts: [lockedCraft, nested], barters: [lockedBarter] };
+    const input = { itemsById: { A: item("A", 1000), B: { ...item("B"), onFleaMarket: false, marketPrice: { avg24hPrice: 100 } }, C: item("C", 12) }, crafts: [lockedCraft, nested], barters: [lockedBarter] };
     const plan = createRecipeCalculator(input).evaluateNode("A", 3);
     assert.equal(plan.method, "flea");
     assert.equal(plan.totalCost, 3000);
@@ -175,7 +175,7 @@ test("propagated diagnostics deduplicate shared reasons without merging distinct
     const leaf = (id: string, output: string, quest: string) => ({ ...craft(id, output, "D"), taskUnlockId: quest });
     const parent = { ...craft("parent", "A", "B"), requiredItems: [{ itemId: "B", count: 1 }, { itemId: "C", count: 1 }] };
     const calculator = createRecipeCalculator({
-        itemsById: Object.fromEntries(["A", "B", "C", "D"].map(id => [id, { ...item(id), onFleaMarket: false }])),
+        itemsById: Object.fromEntries(["A", "B", "C", "D"].map(id => [id, { ...item(id), onFleaMarket: false, marketPrice: { avg24hPrice: 100 } }])),
         crafts: [parent, leaf("b1", "B", "q1"), leaf("b2", "B", "q1"), leaf("c1", "C", "q1"), leaf("c2", "C", "q2")], barters: [],
     });
     const plan = calculator.evaluateNode("A");

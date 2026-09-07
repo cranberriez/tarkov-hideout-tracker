@@ -20,6 +20,7 @@ const routeLabels = {
   trader: "Trader",
   barter: "Barter",
   craft: "Craft",
+  sell: "Sell value",
 } as const;
 
 export function RouteSelector({
@@ -170,7 +171,7 @@ export function RouteSelector({
                     onSelect(key);
                     setPosition(null);
                   }}
-                  className={`grid w-full grid-cols-[18px_48px_30px_minmax(0,1fr)_auto] items-center gap-2 rounded px-2 py-1 text-left transition hover:bg-white/[0.07] ${selected ? locked ? "bg-red-400/10" : "bg-tarkov-green/10" : ""}`}
+                  className={`grid w-full grid-cols-[18px_64px_30px_minmax(0,1fr)_auto] items-center gap-2 rounded px-2 py-1 text-left transition hover:bg-white/[0.07] ${selected ? locked ? "bg-red-400/10" : "bg-tarkov-green/10" : ""}`}
                 >
                   <RouteIcon method={route.method} inline title={locked ? `${routeLabels[route.method]} locked` : routeLabels[route.method]} />
                   <span className="text-[9px] font-bold uppercase text-foreground">

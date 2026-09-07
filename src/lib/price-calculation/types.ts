@@ -8,7 +8,7 @@ export interface ManualPriceOverride {
 
 export type ManualPriceOverrides = Record<string, ManualPriceOverride>;
 
-export type AcquisitionMethod = "flea" | "trader" | "barter" | "craft" | "unavailable";
+export type AcquisitionMethod = "flea" | "trader" | "barter" | "craft" | "sell" | "unavailable";
 
 export interface AcquisitionAlternative {
     method: Exclude<AcquisitionMethod, "unavailable">;
