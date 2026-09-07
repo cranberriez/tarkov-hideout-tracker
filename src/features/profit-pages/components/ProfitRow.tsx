@@ -33,6 +33,7 @@ import { RecipeItem } from "./RecipeItem";
 
 export function ProfitRow({
   evaluation: baseEvaluation,
+  baselineEvaluation,
   itemById,
   sourceName,
   available,
@@ -52,6 +53,7 @@ export function ProfitRow({
   onRouteChange,
 }: {
   evaluation: RecipeEvaluation;
+  baselineEvaluation?: RecipeEvaluation;
   itemById: Readonly<Record<string, ItemSummary>>;
   sourceName?: string;
   available: boolean;
@@ -79,6 +81,17 @@ export function ProfitRow({
         baseEvaluation,
       ),
     [baseEvaluation, routeSelections],
+  );
+  const originalEvaluation = useMemo(
+    () =>
+      baselineEvaluation
+        ? Object.entries(routeSelections).reduce(
+            (current, [index, routeKey]) =>
+              withRequiredItemRoute(current, Number(index), routeKey),
+            baselineEvaluation,
+          )
+        : undefined,
+    [baselineEvaluation, routeSelections],
   );
   const output = itemById[evaluation.outputItemId];
   const routeContext: RouteContext = {
@@ -200,6 +213,15 @@ export function ProfitRow({
         <ProfitCell
           label="Profit"
           value={evaluation.profit}
+          customized={
+            originalEvaluation !== undefined &&
+            evaluation.profit !== originalEvaluation.profit
+          }
+          originalValue={
+            originalEvaluation
+              ? formatSignedRoubles(originalEvaluation.profit)
+              : undefined
+          }
           detail={`Total time ${evaluation.durationSeconds > 0 ? formatDuration(evaluation.durationSeconds) : "-"}`}
           infoTitle="Sell the ingredients instead"
           info={
@@ -237,7 +259,19 @@ export function ProfitRow({
         >
           {formatSignedRoubles(evaluation.profit)}
         </ProfitCell>
-        <ProfitCell label="Profit / hour" value={evaluation.profitPerHour}>
+        <ProfitCell
+          label="Profit / hour"
+          value={evaluation.profitPerHour}
+          customized={
+            originalEvaluation !== undefined &&
+            evaluation.profitPerHour !== originalEvaluation.profitPerHour
+          }
+          originalValue={
+            originalEvaluation
+              ? formatSignedRoubles(originalEvaluation.profitPerHour)
+              : undefined
+          }
+        >
           {formatSignedRoubles(evaluation.profitPerHour)}
         </ProfitCell>
       </div>

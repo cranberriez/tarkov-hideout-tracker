@@ -8,6 +8,7 @@ import {
   passesLockFilters,
   acquisitionRouteKey,
   compareEvaluations,
+  compareEvaluationsByBaseline,
   describeRoute,
   getPlanRecipePreview,
   hasRecipeRoute,
@@ -238,6 +239,33 @@ test("row-local ingredient routes recalculate totals without mutating the base e
   assert.deepEqual(
     switched.requiredItems[0].alternatives.map((route) => route.method),
     ["trader", "flea"],
+  );
+});
+
+test("customized evaluations retain their baseline sort order", () => {
+  const baselineLow = evaluation("low", { profitPerHour: 25 });
+  const baselineHigh = evaluation("high", { profitPerHour: 125 });
+  const customizedLow = evaluation("low", { profitPerHour: 500 });
+  const customizedHigh = evaluation("high", { profitPerHour: 10 });
+  const itemsById = {
+    low: { id: "low", name: "Low", normalizedName: "low" },
+    high: { id: "high", name: "High", normalizedName: "high" },
+  };
+
+  assert.deepEqual(
+    [customizedLow, customizedHigh]
+      .sort((left, right) =>
+        compareEvaluationsByBaseline(
+          left,
+          right,
+          "profitPerHour",
+          "descending",
+          itemsById,
+          { low: baselineLow, high: baselineHigh },
+        ),
+      )
+      .map(({ id }) => id),
+    ["high", "low"],
   );
 });
 

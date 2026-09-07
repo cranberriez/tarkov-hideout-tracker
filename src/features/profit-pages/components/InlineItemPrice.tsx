@@ -45,6 +45,11 @@ export function InlineItemPrice({
       ? getItemBuyPrice(item, overrides, pricingContext)
       : getItemSellPrice(item, overrides, pricingContext);
   const currentOverride = overrides[itemId] ?? {};
+  const manualPrice = currentOverride[kind];
+  const hasManualPrice =
+    typeof manualPrice === "number" &&
+    Number.isFinite(manualPrice) &&
+    manualPrice >= 0;
   const manualBuy = currentOverride.buy;
   const hasManualBuy = typeof manualBuy === "number" && Number.isFinite(manualBuy) && manualBuy >= 0;
   const warning = kind === "sell"
@@ -52,7 +57,11 @@ export function InlineItemPrice({
     : buyMethod === "flea" && !hasManualBuy && currentUnitPrice !== null && totalPrice !== null &&
       item.normalizedName !== "roubles" && item.marketPrice?.fleaStability === "unstable";
   const usesSellValue = kind === "buy" && buyMethod === "sell" && totalPrice !== null;
-  const color = warning ? "text-amber-300" : "text-tarkov-green";
+  const color = hasManualPrice
+    ? "text-sky-300"
+    : warning
+      ? "text-amber-300"
+      : "text-tarkov-green";
   const formattedPrice = formatCompactPrice(displayPrice === undefined ? totalPrice : displayPrice);
   function commit(raw: string) {
     const parsed = raw.trim() === "" ? undefined : Number(raw);
@@ -84,7 +93,7 @@ export function InlineItemPrice({
           if (event.key === "Escape") setEditing(false);
         }}
         onBlur={(event) => commit(event.currentTarget.value)}
-        className="h-5 w-16 rounded border border-tarkov-green/50 bg-black px-1 text-[10px] text-foreground outline-none"
+        className={`h-5 w-16 rounded border border-tarkov-green/50 bg-black px-1 text-[10px] outline-none ${hasManualPrice ? "text-sky-300" : "text-foreground"}`}
       />
     );
   return (

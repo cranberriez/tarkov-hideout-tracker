@@ -71,3 +71,18 @@ test("ingredient opportunity costs are labeled as sell value", () => {
     assert.match(markup, /\(sell value\)/);
     assert.doesNotMatch(markup, /value unstable/);
 });
+
+test("manual buy and sell prices use the customized blue treatment", () => {
+    for (const kind of ["buy", "sell"] as const) {
+        const item: ItemSummary = { id: kind, name: kind, normalizedName: kind, marketPrice: { price: 120_000 } };
+        const markup = renderToStaticMarkup(createElement(InlineItemPrice, {
+            item,
+            kind,
+            totalPrice: 130_000,
+            overrides: { [kind]: { [kind]: 130_000 } },
+            onPriceChange: () => {},
+        }));
+
+        assert.match(markup, /text-sky-300/);
+    }
+});

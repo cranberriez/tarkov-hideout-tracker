@@ -29,6 +29,7 @@ import { RecipeItemHoverProvider } from "./RecipeItemHoverProvider";
 export function ProfitTable({
   kind,
   evaluations,
+  baselineEvaluationsById,
   itemById,
   tradersById,
   stationsById,
@@ -54,6 +55,7 @@ export function ProfitTable({
 }: {
   kind: ProfitPageKind;
   evaluations: RecipeEvaluation[];
+  baselineEvaluationsById: Readonly<Record<string, RecipeEvaluation>>;
   itemById: Readonly<Record<string, ItemSummary>>;
   tradersById: Readonly<Record<string, Trader>>;
   stationsById: Readonly<Record<string, ProfitStationSource>>;
@@ -177,6 +179,7 @@ export function ProfitTable({
                 >
                   <ProfitRow
                     evaluation={evaluation}
+                    baselineEvaluation={baselineEvaluationsById[evaluation.id]}
                     itemById={itemById}
                     sourceName={
                       kind === "barter"

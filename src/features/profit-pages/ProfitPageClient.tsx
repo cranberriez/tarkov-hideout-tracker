@@ -23,7 +23,7 @@ import type {
   SortKey,
 } from "./types";
 import {
-  compareEvaluations,
+  compareEvaluationsByBaseline,
   getRecipeSourceId,
   isRecipeAvailable,
   passesLockFilters,
@@ -103,8 +103,7 @@ export function ProfitPageClient({
   const [sortKey, setSortKey] = useState<SortKey>("profitPerHour");
   const [sortDirection, setSortDirection] =
     useState<SortDirection>("descending");
-  const evaluations = useMemo(() => {
-    const calculator = createRecipeCalculator({
+  const calculatorInput = useMemo(() => ({
       craftingSkillLevel,
       hideoutManagementSkillLevel,
       playerLevel,
@@ -113,16 +112,11 @@ export function ProfitPageClient({
       itemsById: itemById,
       barters: data.barters,
       crafts,
-      overrides,
       allowCrafts,
       allowBarters,
       traderLoyaltyLevels,
       completedQuests,
-    });
-    return kind === "barter"
-      ? calculator.evaluateBarters()
-      : calculator.evaluateCrafts();
-  }, [
+  }), [
     craftingSkillLevel,
     hideoutManagementSkillLevel,
     playerLevel,
@@ -134,10 +128,30 @@ export function ProfitPageClient({
     data.barters,
     crafts,
     itemById,
-    kind,
-    overrides,
     traderLoyaltyLevels,
   ]);
+  const baselineEvaluations = useMemo(() => {
+    const calculator = createRecipeCalculator(calculatorInput);
+    return kind === "barter"
+      ? calculator.evaluateBarters()
+      : calculator.evaluateCrafts();
+  }, [calculatorInput, kind]);
+  const baselineEvaluationsById = useMemo(
+    () =>
+      Object.fromEntries(
+        baselineEvaluations.map((evaluation) => [evaluation.id, evaluation]),
+      ),
+    [baselineEvaluations],
+  );
+  const evaluations = useMemo(() => {
+    const calculator = createRecipeCalculator({
+      ...calculatorInput,
+      overrides,
+    });
+    return kind === "barter"
+      ? calculator.evaluateBarters()
+      : calculator.evaluateCrafts();
+  }, [calculatorInput, kind, overrides]);
   const tradersById = useMemo(
     () =>
       Object.fromEntries(
@@ -234,10 +248,18 @@ export function ProfitPageClient({
         return true;
       })
       .sort((a, b) =>
-        compareEvaluations(a, b, sortKey, sortDirection, itemById),
+        compareEvaluationsByBaseline(
+          a,
+          b,
+          sortKey,
+          sortDirection,
+          itemById,
+          baselineEvaluationsById,
+        ),
       );
   }, [
     availableOnly,
+    baselineEvaluationsById,
     lockFilters,
     completedQuests,
     evaluations,
@@ -339,6 +361,7 @@ export function ProfitPageClient({
         <ProfitTable
           kind={kind}
           evaluations={visibleEvaluations}
+          baselineEvaluationsById={baselineEvaluationsById}
           itemById={itemById}
           tradersById={tradersById}
           stationsById={stationsById}

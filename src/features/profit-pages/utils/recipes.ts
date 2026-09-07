@@ -111,6 +111,23 @@ export function compareEvaluations(
   return nameComparison || left.id.localeCompare(right.id);
 }
 
+export function compareEvaluationsByBaseline(
+  left: RecipeEvaluation,
+  right: RecipeEvaluation,
+  sortKey: SortKey,
+  sortDirection: SortDirection,
+  itemsById: Readonly<Record<string, ItemSummary>>,
+  baselineById: Readonly<Record<string, RecipeEvaluation>>,
+) {
+  return compareEvaluations(
+    baselineById[left.id] ?? left,
+    baselineById[right.id] ?? right,
+    sortKey,
+    sortDirection,
+    itemsById,
+  );
+}
+
 export function hasRecipeRoute(plan: AcquisitionPlan): boolean {
   return (
     plan.method === "barter" ||

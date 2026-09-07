@@ -150,6 +150,10 @@ source toggles control whether crafts and barters participate.
 evaluation, selection, and modal navigation. [Components](../src/features/profit-pages/components/)
 render sorting, source/availability filters, recipe chains, route alternatives,
 price inputs, and recipe previews. The default metric is descending profit/hour.
+Table ordering uses the current market-price evaluation as its baseline, so manual
+buy or sell overrides recalculate a row without moving it. Editable customized
+item prices use blue text. Profit and profit/hour retain their normal signed
+green/red color and stack below the crossed-out baseline value for comparison.
 [useManualPriceOverrides](../src/features/profit-pages/useManualPriceOverrides.ts)
 and [usePinnedCrafts](../src/features/profit-pages/usePinnedCrafts.ts) persist
 independently by app mode; key and reset semantics belong to [user state](user-state.md).

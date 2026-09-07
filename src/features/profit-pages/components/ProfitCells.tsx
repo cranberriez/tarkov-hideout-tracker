@@ -18,6 +18,8 @@ export function ProfitCell({
   detail,
   info,
   infoTitle,
+  customized = false,
+  originalValue,
 }: {
   label: string;
   value?: number | null;
@@ -25,6 +27,8 @@ export function ProfitCell({
   detail?: string;
   info?: React.ReactNode;
   infoTitle?: string;
+  customized?: boolean;
+  originalValue?: React.ReactNode;
 }) {
   const color =
     value == null
@@ -38,10 +42,15 @@ export function ProfitCell({
     <div className="flex flex-col items-start justify-center border-l border-white/5 px-3">
       <span className="flex items-center gap-1">
         <span
-          className={`whitespace-nowrap font-mono text-sm font-semibold ${color}`}
-          title={label}
+          className={`flex min-w-0 flex-col items-start font-mono text-sm font-semibold leading-tight ${color}`}
+          title={customized ? `${label} uses customized pricing` : label}
         >
-          {children}
+          {customized && originalValue !== undefined && (
+            <span className="whitespace-nowrap text-muted-foreground line-through decoration-muted-foreground/80">
+              {originalValue}
+            </span>
+          )}
+          <span className="whitespace-nowrap">{children}</span>
         </span>
         {info && (
           <InfoHint title={infoTitle ?? "Price comparison"} tone="warning">
