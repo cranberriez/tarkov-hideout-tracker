@@ -4,7 +4,6 @@ import { X } from "lucide-react";
 import {
   getItemBuyPrice,
   getItemSellComparison,
-  getItemSellPrice,
   type AcquisitionPlan,
   type ManualPriceOverride,
 } from "@/lib/price-calculation";
@@ -70,14 +69,14 @@ export function RecipeItemHoverCard({
   const directUnitPrice = item
     ? priceKind === "buy"
       ? getItemBuyPrice(item, overrides, pricingContext)
-      : getItemSellPrice(item, overrides, pricingContext)
+      : getItemSellComparison(item, overrides, pricingContext, count).selectedPrice
     : null;
   const hasOverride = Boolean(
     item && overrides[item.id]?.[priceKind] !== undefined,
   );
   const selectedDirectHasOverride = hasOverride && plan?.directBuyMethod !== "trader";
   const sellComparison =
-    priceKind === "sell" ? getItemSellComparison(item, overrides, pricingContext) : null;
+    priceKind === "sell" ? getItemSellComparison(item, overrides, pricingContext, count) : null;
   const routeLabel = plan?.isTool
     ? "Reusable tool"
     : method === "flea"
@@ -106,8 +105,7 @@ export function RecipeItemHoverCard({
   const ingredientSellValue =
     plan && !plan.isTool && item
       ? (() => {
-          const price = getItemSellPrice(item, overrides, { ...pricingContext, useTraderSaleForLockedOutputs: true });
-          return price === null ? null : price * count;
+          return getItemSellComparison(item, overrides, { ...pricingContext, useTraderSaleForLockedOutputs: true }, count).netTotal;
         })()
       : null;
   const ingredientSellPremium =
@@ -181,7 +179,11 @@ export function RecipeItemHoverCard({
         )}
         <span className="mt-2 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 rounded bg-white/[0.035] p-2 font-mono text-[10px]">
           {priceKind === "sell" && sellComparison ? (
-            <>
+              <>
+                <span className="text-muted-foreground">Listing fee / batch</span>
+                <span className="text-right text-foreground">{formatRoundedRoubles(sellComparison.fee)}</span>
+                <span className="text-muted-foreground">Net proceeds / batch</span>
+                <span className="text-right text-foreground">{formatRoundedRoubles(sellComparison.netTotal)}</span>
               {
                 <>
                   <span className="text-muted-foreground">

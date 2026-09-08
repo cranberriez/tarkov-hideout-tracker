@@ -4,6 +4,8 @@ import type { ItemSummary, TraderPurchaseOffer } from "@/types/items";
 export interface ManualPriceOverride {
     buy?: number;
     sell?: number;
+    /** Older overrides infer flea when accessible, otherwise a trader sale. */
+    sellSource?: "flea" | "trader";
 }
 
 export type ManualPriceOverrides = Record<string, ManualPriceOverride>;
@@ -75,6 +77,9 @@ export interface RecipeEvaluation {
     cost: number | null;
     theoreticalCost: number | null;
     sellValue: number | null;
+    /** Gross asking value; sellValue is the proceeds after the listing fee. */
+    grossSellValue?: number | null;
+    sellFee?: number | null;
     profit: number | null;
     inputSellValue: number | null;
     profitVsSellingInputs: number | null;

@@ -135,7 +135,7 @@ export function ProfitTable({
           onSortChange={onSortChange}
         />
         <SortableHeader
-          label="Sell value"
+          label="Sale proceeds"
           sortKey="sellValue"
           activeSortKey={sortKey}
           direction={sortDirection}

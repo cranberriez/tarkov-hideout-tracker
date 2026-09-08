@@ -4,7 +4,7 @@ import { getFleaLockReasons, getRecipeLockReasons, getTraderLockReasons } from "
 import { getFleaPrice } from "../utils/market-price";
 import type { BarterRecord, CraftRecord, ItemAmountRef } from "@/types/recipes";
 import type { TraderPurchaseOffer } from "@/types/items";
-import { getItemBuyPrice, getItemSellPrice, getItemSellComparison, practicalSavingsThreshold } from "./prices";
+import { getItemBuyPrice, getItemSellComparison, practicalSavingsThreshold } from "./prices";
 import type {
     LockReason,
     LockedAcquisitionAlternative,
@@ -69,13 +69,14 @@ function sumRequirementSellValue(
     let total = 0;
     for (const requirement of requirements) {
         if (requirement.isTool) continue;
-        const unitSellValue = getItemSellPrice(
+        const sale = getItemSellComparison(
             context.itemsById[requirement.itemId],
             context.overrides,
-            { playerLevel: context.playerLevel },
+            { ...context, useTraderSaleForLockedOutputs: true },
+            requirement.count,
         );
-        if (unitSellValue === null) return null;
-        total += unitSellValue * requirement.count;
+        if (sale.netTotal === null) return null;
+        total += sale.netTotal;
     }
     return total;
 }
@@ -161,10 +162,11 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
             const sale = getItemSellComparison(
                 context.itemsById[itemId],
                 overrides,
-                { playerLevel: context.playerLevel },
+                { ...context, useTraderSaleForLockedOutputs: true },
+                normalizedQuantity,
             );
-            if (sale.selectedPrice !== null && Number.isFinite(sale.selectedPrice) && sale.selectedPrice >= 0) {
-                const totalCost = sale.selectedPrice * normalizedQuantity;
+            if (sale.netTotal !== null && Number.isFinite(sale.netTotal) && sale.netTotal >= 0) {
+                const totalCost = sale.netTotal;
                 if (Number.isFinite(totalCost)) {
                     candidates.push({
                         method: "sell",
@@ -552,12 +554,13 @@ function evaluateTopLevelRecipe(
     const theoreticalCost = hasUnpricedRequirements
         ? null
         : sumPlanCost(requiredItems, "theoreticalCost");
-    const unitSellPrice = getItemSellPrice(
+    const sale = getItemSellComparison(
         context.itemsById[outputItemId],
         context.overrides,
         context,
+        outputCount,
     );
-    const sellValue = unitSellPrice === null ? null : unitSellPrice * outputCount;
+    const sellValue = sale.netTotal;
     const cheapestDirect = getDirectCandidates(
         outputItemId,
         outputCount,
@@ -587,9 +590,8 @@ function evaluateTopLevelRecipe(
             ? null
             : savings > practicalSavingsThreshold(directBuyCost);
 
-    const sale = getItemSellComparison(context.itemsById[outputItemId], context.overrides, context);
     const sellSourceLabel = sale.selectedSource === "trader" ? sale.bestTraderOffer?.vendor.name :
-        sale.selectedSource === "manual" ? "Manual price" : sale.selectedSource === "flea" ? "Flea market" : "No sale price";
+        sale.selectedSource === "manual" ? `Manual · ${sale.saleDestination === "trader" ? "Trader" : "Flea market"}` : sale.selectedSource === "flea" ? "Flea market" : "No sale price";
 
     return {
         lockReasons: uniqueLockReasons(lockReasons),
@@ -604,6 +606,8 @@ function evaluateTopLevelRecipe(
         cost,
         theoreticalCost,
         sellValue,
+        grossSellValue: sale.grossTotal,
+        sellFee: sale.fee,
         profit,
         inputSellValue,
         profitVsSellingInputs,

@@ -149,7 +149,7 @@ export function ProfitRow({
             item={output}
             count={evaluation.outputCount}
             method={evaluation.kind}
-            totalPrice={evaluation.sellValue}
+            totalPrice={evaluation.grossSellValue === undefined ? evaluation.sellValue : evaluation.grossSellValue}
             priceKind="sell"
             lockReasons={evaluation.outputLockReasons ?? []}
             sellValueIsEstimate={evaluation.sellValueIsEstimate ?? false}

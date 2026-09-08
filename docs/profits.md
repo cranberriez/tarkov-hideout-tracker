@@ -24,7 +24,7 @@ rather than selecting routes independently.
   flea values remain null without reviving a catalog aggregate. Release
   reference pricing remains usable when mutable storage/points are absent or
   unusable. These estimates do not prove that any quantity can sell at that price.
-- Sale value compares usable flea and best trader sale, explicitly naming the
+- Sale proceeds compare flea after listing fees and best untaxed trader sale, explicitly naming the
   selected source. Trader purchases remain separately gated routes, never caps
   on flea values. Mode-scoped manual buy/sell overrides replace the corresponding
   input, including unstable or unavailable flea inputs; zero manual prices remain
@@ -83,7 +83,7 @@ rather than selecting routes independently.
   previews, manual route changes, and item details. Elite allows two different
   crafts per zone (including Scav Case); the panel explains this benefit, while
   profit/hour remains per recipe. The table does not model station scheduling;
-  the separate Craft Planner is described below. Flea fees are not modeled.
+  the persistent Craft Planner is described below. Flea fees are applied to sales.
   Hideout Management reduces Superwater's base Water filter
   consumption by 0.5% per level, capped at 25% for level 50 and Elite. The adjusted
   quantity and cost are shared by profit pages, recursive routes, and item details.
@@ -165,137 +165,89 @@ the corresponding profit row; standard ingredient clicks reuse item-modal naviga
 When extending calculations, update the engine and consumers together so a modal
 and a full profit page do not disagree for the same inputs.
 
+## Flea tax and net proceeds
+
+[calc-tax.ts](../src/lib/price-calculation/calc-tax.ts) owns the pure RUB listing
+fee calculation. It uses the supplied offer/requirement logarithmic modifiers,
+0.05 tax constants, and quantity scaling; rounding occurs once after the hideout
+reduction. Intelligence Center 3 reduces the fee by 30%, plus 0.3 percentage
+points per Hideout Management level, capped at 45% at level 50/Elite. Below
+Intelligence Center 3 there is no reduction. Bulk has no per-item discount.
+
+Base value is inferred from full-item catalog trader buybacks in roubles and
+the corresponding trader multiplier. Fixed trader estimates use their median
+to tolerate rounding. Fence/Ref are fallbacks; Ref requires a known loyalty tier.
+An absent base value never becomes a zero flea fee: use a known trader return
+or leave flea proceeds unknown. Raw market prices and price history stay gross.
+
+The sale comparison evaluates the whole output quantity and chooses by net
+proceeds. `selectedPrice` remains the gross unit asking price for editors;
+`selectedNetPrice` is net per unit. `grossTotal`, `fee`, and `netTotal` describe
+the listing. Recipe `sellValue` now means net proceeds; `grossSellValue` and
+`sellFee` retain the breakdown. Profit, profit/hour, route changes, sorting,
+and comparisons against selling the ingredients all use net proceeds. There is
+no tax on purchased inputs, trader sales, or intermediate outputs consumed in a
+craft. Manual sale overrides can name flea/trader; older overrides infer flea
+when accessible, otherwise trader. Existing saved numbers are not rewritten.
+
+Flea break-even and 10% return targets solve for an asking price after the
+nonlinear fee, including its high-price peak; unreachable targets stay unknown.
+Main profit views show proceeds/profit, with fees in tooltips or expanded details.
+Fuel, initial reusable-tool purchases, finite stock and sale execution are not
+modeled.
+
 ## Craft planner
 
-[Hideout / Craft Planner](../src/app/(data)/hideout/craft-planner/page.tsx) loads
-`getProfitPageData` for the active mode, just like Crafting Profits, with its own
-Hideout RouteLoader boundary. Its dedicated
-[client](../src/features/profit-pages/optimize/CraftPlannerClient.tsx) only constructs
-planner inputs; it does not mount the profit table, perform baseline/table evaluations,
-or subscribe to pins. Both recipe graphs and their bounded referenced item/price
-reads remain required. Failed graphs/prices block estimates; partial presentation
-and missing item data are reported. Item details remain lazily loaded.
+[CraftPlannerClient](../src/features/profit-pages/optimize/CraftPlannerClient.tsx)
+continues to load the shared bounded profit query, profile unlocks, skill settings,
+manual prices, and both recipe graphs. It mounts
+[StationBoard](../src/features/profit-pages/optimize/StationBoard.tsx), replacing
+the previous continuous scheduling panel and its temporary selections.
 
-The Hideout navigation includes Craft Planner. Crafting Profits links to it beneath
-the heading; there is no All crafts / Optimize switch. The planner header groups
-Compare crafts and Preview all unlocks as compact outlined actions; there is no
-Hideout quick link. Cards place a small image beside the name, with duration/profit
-below and a full-width required-items action. The action shows all
-ingredients with images, quantities and individual Flea/Trader/Barter/Craft labels
-(reusable tools are labeled Owned tool and appear last with muted styling), then opens the acquisition chain. Ingredients are never hidden behind a more count.
-Flea ingredients show the evaluated purchase price per unit in both the card and
-chain, plus the total when the required quantity differs from one. These values
-use the same route cost as profit, including manual overrides; owned tools remain
-excluded. Displayed prices round to roubles without changing calculations.
-Cards and craft details prominently show the estimated sale price per output item,
-the selected sale source, and batch sale total for multi-item outputs. This uses
-the same sale value as profit (input cost plus profit), including manual sale
-overrides. The sale estimate is distinct from the labeled profit after inputs;
-it does not promise an executable market listing or include flea fees.
-All planner choices remain local and reset on leaving the page or switching
-profile mode. Existing skill preferences, seasonal Elite, profile unlocks and manual
-prices are reused without new persistence. Table filters do not constrain the planner.
-There are no additional server reads beyond the existing profit query.
+The board uses horizontal station rows with output, duration, required inputs,
+gross sale price per output, net batch profit, profit/hour, pin and detail actions.
+Smaller screens wrap the rows. A station expands to a four-craft shortlist;
+players can reveal all alternatives and include unprofitable crafts. Ranking
+offers profit/hour, batch profit, long runs, and easy inputs (distinct purchase
+sources plus intermediate craft/barter steps). Profit/hour assumes prompt
+restarts and includes allocated intermediate craft time, not an automated queue.
+New users see the first station with recommendations expanded. Returning users
+see saved crafts. Done picking collapses the station to all its pinned crafts.
+Pins are unlimited reminders, not concurrent jobs; no station-slot scheduler,
+continuous-run controls, inventory deduction or automatic starts are implied.
 
-The compact controls select a target return interval (default four hours), craft
-input routes, trader purchases and barters (all on by default), and ranking by profit including wait (default), time
-fit, or longest run. Return presets and a minutes input replace the return dropdown;
-ranking uses visible buttons. Stations use a two-column grid on wide screens, with
-stations that have available profitable crafts first and empty stations last;
-both groups retain alphabetical station order. Empty station cards stay compact.
-[Craft cards](../src/features/profit-pages/optimize/CraftRecommendations.tsx)
-show two distinct output recipes per station with a reveal-more control. Collapsed
-stations prioritize selected crafts, filling any remaining space from the ranking.
-The local Expanded/Compact view control keeps selection unchanged. Compact cards
-show only output, individual sale estimate, batch profit and all required items;
-four station columns fit wide desktop screens, with fewer columns on smaller screens. Selecting
-a card toggles that station's sale craft. Elite, including the seasonal override,
-selects two distinct crafts by default; a third pick replaces the oldest selection.
-Non-Elite selects one. There is no station pause control. Deselecting individual
-cards only removes those sale crafts, not the station's use as another chain's
-supplier. Changing target, ranking or sourcing
-reselects defaults. Catalog item/station images have a missing/broken-image fallback.
-[Details](../src/features/profit-pages/optimize/CraftPlanDetails.tsx) show the output
-above a connected ingredient tree, preserving the selected acquisition plan's
-parent/child relationships and labeling each input's purchase, barter or craft
-source using muted method colors and icons. Connected item rows keep quantities
-aligned at the right; tools appear last within each branch and do not expand into
-production chains. Display ordering preserves the original acquisition paths.
-The wider craft viewer puts the acquisition chain beside a shopping list labeled
-with flea or trader sources. Each non-tool branch shows its estimated acquisition
-cost per unit and total. Clicking a crafted or bartered input focuses its own
-acquisition subtree; Back and the original craft link restore earlier views.
-The original craft's batch totals and shopping list remain labeled context.
-Craft timing is no longer repeated in a separate section; readiness remains in
-the header, and station/trader sources remain on the chain. Source controls are local checkboxes.
-Sales (with source and output quantity), inputs and profit appear together.
-Item details reuse the existing modal. A preview uses real catalog/prices with
-hypothetical station/trader/quest unlocks and level 60, never changing saved state.
+[station-board.ts](../src/features/profit-pages/optimize/station-board.ts) derives
+buy-input, barter-enabled and craft-input evaluations from the shared calculator.
+The default is direct acquisition. Available recommendations require priced,
+unlocked input routes and positive profit unless losses are explicitly included.
+Trader-only output sales remain eligible. Saved crafts remain visible even when
+locked, unpriced or losing money. Missing saved routes invalidate the estimate
+until the user chooses a new route; they never silently select another source.
 
-[craft-plans.ts](../src/features/profit-pages/optimize/craft-plans.ts) evaluates direct
-flea/trader routes and, when enabled, the engine's practical crafting and barter routes. Both graphs must still load under the page contract.
-Final outputs must be flea-eligible and profitable; intermediate crafted items need
-not be sellable on the flea. Every purchased leaf must have an accessible flea or unlocked trader price,
-even with manual overrides. Locked, unpriced, quest-only and opportunity-value supply
-is excluded, including inaccessible tools. Tools are assumed owned, so their recurring
-production and costs are excluded. Eligible direct routes remain alternatives when
-a crafting route is unavailable. Barters expand rounded input batches and add no
-station time; consumers wait for all crafted barter inputs. Trader loyalty and
-quest requirements remain enforced. Trader stock/restock limits are not modeled. Traversal uses depth six and at most 200 sub-craft
-steps; excluded recipes are counted explicitly in the inline estimates note.
+[StationCraftDetails](../src/features/profit-pages/optimize/StationCraftDetails.tsx)
+compares distinct acquisition approaches together, then displays selectable
+ingredient sources and editable costs. Recipe-specific input unit costs update
+profit immediately and persist without changing other crafts. Sale overrides
+reuse the existing item-wide mode-scoped prices, with an explicit flea/trader
+destination and a best-net-return reset. Fee details, estimated flea break-even,
+10% return target and optional acquisition steps live here. Materials required
+pool purchased leaves for one batch of each available saved craft; reusable tools
+are separate and pooled by maximum quantity, without assuming inventory access.
 
-Selected nested acquisition quantities already include rounded batches. The planner
-expands each batch into a full skill-adjusted job instead of using the engine's
-amortized per-item duration. A consumer waits for all supplier batches, independent
-suppliers can run in parallel, and equal-station jobs reserve the actual slot. Elite
-offers two slots but cannot run the same recipe concurrently. The card duration is
-the chain's standalone completion time. Time-fit ranking uses its absolute difference
-from the target, then fewer steps and higher profit; only one acquisition variant
-per output recipe appears in a station's recommendations.
-Profit ranking divides profit by the larger of standalone chain duration and return
-interval. A 30-minute craft earning 1,000 roubles with a one-hour return therefore
-earns 1,000/hour, not its active 2,000/hour. Recommendation ranking is independent
-of the current selection. Selected cards instead show their contribution per combined
-run hour, including shared-station delays and waiting for other selected chains.
-Unselected cards show their standalone estimate with wait.
-
-The combined run reserves selected chains first, then places other selected jobs in
-available station gaps. Shared stations can delay a craft past its standalone duration.
-Cards show the combined run's effective hourly contribution, including idle time
-until the larger of return interval or combined completion. Their details show the
-first batch's readiness and acquisition sources. The planner has no Your run section, timeline,
-Once/day switch, or reminder export. The calendar creation utility and unused timeline
-component are removed. Scheduling stays internal to the estimates.
-Every chain step requires manual start/collection; the return target does not suppress
-intermediate handoffs or enforce morning/evening availability windows.
-The main All crafts table retains its active-time metric.
-
-Continuous (also a zero-minute return interval) selects profit/hour ranking and calculates
-24 hours of independent repetitions. Each selected chain starts again after its own
-final output finishes, without waiting for unrelated stations. Complete chains are
-placed by earliest available start, then oldest waiting request to avoid starving
-selected chains, then standalone profit/hour as the tie-breaker.
-Supplier jobs retain full batches and dependencies, including crafted barter inputs;
-shared-station reservations and Elite's distinct-recipe restriction apply across all
-repetitions. This heuristic does not pipeline multiple instances of the same chain
-or prove a global optimum. Only chains finishing within the day are started/costed.
-A 2,000-job safety bound explicitly reports limited calculations and partial estimates.
-Selected cards show completed-batch profit divided by the full 24
-hours; unselected cards show standalone profit/hour. Craft details show the first batch's readiness. Source toggles and profile unlocks still
-apply. Continuous adds no player-state persistence or All crafts details button.
-
-
-Profit sums only selected final outputs minus their full acquisition costs. Intermediate
-outputs are consumed by their chain, never also counted as sales. Batch leftovers are
-not valued or shared across separate chains. Fuel, flea fees, tool setup costs, finite
-market supply and capital constraints are not modeled. Sales reuse the engine's best
-usable sale source; profit remains an estimate.
+The board and profit table share existing craft pins. The additional
+`tarkov-craft-board-v1:{mode}` payload stores recipe variant, ingredient route keys,
+and custom unit costs. Stable recipe/item IDs and PVP/PVE/KORD isolation are
+preserved. Changes to rankings or fresh prices do not clear selections. Unknown
+recipe IDs stay saved and can be explicitly unpinned. Existing pins/price keys
+now synchronize across mounted consumers and tabs without mount-time writes.
+There are no new server reads or changes to reset actions. Trend collection,
+selling-hour predictions and transaction logs remain outside this version.
 
 ## Validation
 
 ```bash
 node --test --import jiti/register src/lib/price-calculation/optimizer.test.ts src/features/profit-pages/utils/recipes.test.ts src/server/queries/page-data-queries.test.ts
-node --test --import jiti/register src/features/profit-pages/optimize/craft-plans.test.ts
+node --test --import jiti/register src/features/profit-pages/optimize/station-board.test.ts src/lib/price-calculation/calc-tax.test.ts
 ```
 
 Include tests for the changed route/availability/pricing rule and browser checks

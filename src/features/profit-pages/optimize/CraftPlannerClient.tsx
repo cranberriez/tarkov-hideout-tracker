@@ -9,16 +9,16 @@ import { isTrackedCraft } from "@/lib/price-calculation/craft-rules";
 import type { ProfitPageData } from "@/types/contracts";
 import { useProfitOptions } from "../useProfitOptions";
 import { useManualPriceOverrides } from "../useManualPriceOverrides";
-import { CraftOptimizePanel } from "./CraftOptimizePanel";
+import { StationBoard } from "./StationBoard";
 
-/** Planner-only owner: no table evaluations, sorting, filters, or pin subscriptions. */
+/** Loads the shared pricing inputs for the persistent station board. */
 export function CraftPlannerClient({ data }: { data: ProfitPageData }) {
   const profile = useUserStore(useShallow(state => ({
     gameMode: state.gameMode, playerLevel: state.playerLevel, stationLevels: state.stationLevels,
     completedQuests: state.completedQuests, traderLoyaltyLevels: state.questTraderLoyaltyLevels,
   })));
   const { craftingSkillLevel, hideoutManagementSkillLevel, useTraderSaleForLockedOutputs } = useProfitOptions(profile.gameMode);
-  const { overrides } = useManualPriceOverrides(profile.gameMode);
+  const { overrides, setItemOverride } = useManualPriceOverrides(profile.gameMode);
   const [itemId, setItemId] = useState<string | null>(null);
   const itemsById = useMemo(() => Object.fromEntries((data.items ?? []).map(item => [item.id, item])), [data.items]);
   const stations = useMemo(() => Object.fromEntries(data.stations.map(station => [station.id, station])), [data.stations]);
@@ -33,7 +33,7 @@ export function CraftPlannerClient({ data }: { data: ProfitPageData }) {
     {errors.length ? <DataLoadError title="Craft planner data is unavailable" messages={errors} /> : <>
       {(data.errors.stations || data.errors.traders || data.errors.taskUnlocks || data.unresolvedItemIds.length > 0) &&
         <p role="status" className="mb-4 text-xs text-amber-300">Some item, station, trader or quest details are unavailable. Recipes with missing inputs are excluded.</p>}
-      <CraftOptimizePanel key={profile.gameMode} input={input} stations={stations} traders={traders} onItemOpen={setItemId} />
+      <StationBoard key={profile.gameMode} input={input} gameMode={profile.gameMode} stations={stations} traders={traders} onItemOpen={setItemId} onPriceChange={setItemOverride} />
       <ItemDetailModal item={itemId ? itemsById[itemId] ?? null : null} isOpen={itemId !== null} onClose={() => setItemId(null)} />
     </>}
   </main>;

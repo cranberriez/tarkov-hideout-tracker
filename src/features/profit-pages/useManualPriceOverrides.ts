@@ -1,63 +1,36 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import type { GameMode } from "@/lib/game-mode";
 import type { ManualPriceOverride, ManualPriceOverrides } from "@/lib/price-calculation";
-
-const STORAGE_PREFIX = "tarkov-profit-price-overrides-v1";
-
-function isPriceOverride(value: unknown): value is ManualPriceOverride {
-    if (!value || typeof value !== "object") return false;
-    const override = value as ManualPriceOverride;
-    return (
-        (override.buy === undefined || (Number.isFinite(override.buy) && override.buy >= 0)) &&
-        (override.sell === undefined || (Number.isFinite(override.sell) && override.sell >= 0))
-    );
+import { useStoredProfitValue } from "./useStoredProfitValue";
+export function parsePriceOverrides(raw: string | null): ManualPriceOverrides {
+	try {
+		const parsed: unknown = JSON.parse(raw ?? "{}");
+		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+		return Object.fromEntries(
+			Object.entries(parsed).filter(([, value]) => {
+				if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+				const entry = value as ManualPriceOverride;
+				return (
+					[entry.buy, entry.sell].every((price) => price === undefined || (typeof price === "number" && Number.isFinite(price) && price >= 0)) &&
+					(entry.sellSource === undefined || entry.sellSource === "flea" || entry.sellSource === "trader")
+				);
+			}),
+		);
+	} catch {
+		return {};
+	}
 }
-
-function readOverrides(gameMode: GameMode): ManualPriceOverrides {
-    try {
-        const raw = window.localStorage.getItem(`${STORAGE_PREFIX}:${gameMode}`);
-        if (!raw) return {};
-        const parsed = JSON.parse(raw) as unknown;
-        if (!parsed || typeof parsed !== "object") return {};
-        return Object.fromEntries(
-            Object.entries(parsed).filter(([, value]) => isPriceOverride(value)),
-        );
-    } catch {
-        return {};
-    }
-}
-
 export function useManualPriceOverrides(gameMode: GameMode) {
-    const [overrides, setOverrides] = useState<ManualPriceOverrides>({});
-    const [loadedMode, setLoadedMode] = useState<GameMode | null>(null);
-
-    useEffect(() => {
-        setOverrides(readOverrides(gameMode));
-        setLoadedMode(gameMode);
-    }, [gameMode]);
-
-    useEffect(() => {
-        if (loadedMode !== gameMode) return;
-        try {
-            window.localStorage.setItem(
-                `${STORAGE_PREFIX}:${gameMode}`,
-                JSON.stringify(overrides),
-            );
-        } catch {
-            // Calculations still work for this visit when browser storage is unavailable.
-        }
-    }, [gameMode, loadedMode, overrides]);
-
-    function setItemOverride(itemId: string, override: ManualPriceOverride) {
-        setOverrides((current) => {
-            const next = { ...current };
-            if (override.buy === undefined && override.sell === undefined) delete next[itemId];
-            else next[itemId] = override;
-            return next;
-        });
-    }
-
-    return { overrides, setItemOverride };
+	const [raw, update] = useStoredProfitValue(`tarkov-profit-price-overrides-v1:${gameMode}`);
+	const overrides = useMemo(() => parsePriceOverrides(raw), [raw]);
+	function setItemOverride(itemId: string, override: ManualPriceOverride) {
+		update((current) => {
+			const next = parsePriceOverrides(current);
+			if (override.buy === undefined && override.sell === undefined) delete next[itemId];
+			else next[itemId] = override;
+			return JSON.stringify(next);
+		});
+	}
+	return { overrides, setItemOverride };
 }

@@ -312,6 +312,9 @@ export function ProfitPageClient({
     <ProfitPricingContext.Provider
       value={{
         playerLevel,
+        stationLevels,
+        hideoutManagementSkillLevel,
+        traderLoyaltyLevels,
         useTraderSaleForLockedOutputs,
         taskUnlocksById: data.taskUnlocksById,
       }}

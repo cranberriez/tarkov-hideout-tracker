@@ -64,22 +64,26 @@ test("unstable flea estimates consistently price acquisition, sales, profit and 
     const craft: CraftRecord = { id: "c", productItemId: "A", productCount: 1, stationId: "workbench", level: 1, duration: 1800, requiredItems: [{ itemId: "B", count: 1 }], requiredQuestItems: [], gameEditions: [] };
     const input = { itemsById: { A: unstable, B: item("B", 100, 80) }, crafts: [craft], barters: [] };
     const evaluation = createRecipeCalculator(input).evaluateCraft(craft);
-    assert.equal(evaluation.sellValue, 120_000);
-    assert.equal(evaluation.profit, 119_900);
-    assert.equal(evaluation.profitPerHour, 239_800);
+    assert.equal(evaluation.grossSellValue, 120_000);
+    assert.equal(evaluation.sellFee, 11_520);
+    assert.equal(evaluation.sellValue, 108_480);
+    assert.equal(evaluation.profit, 108_380);
+    assert.equal(evaluation.profitPerHour, 216_760);
     assert.equal(evaluation.sellSourceLabel, "Flea market");
     assert.equal(evaluation.sellValueIsEstimate, true);
     assert.equal(createRecipeCalculator({ ...input, crafts: [] }).evaluateNode("A").totalCost, 120_000);
     const manual = createRecipeCalculator({ ...input, overrides: { A: { buy: 110_000, sell: 130_000 } } });
-    assert.equal(manual.evaluateCraft(craft).profit, 129_900);
-    assert.equal(manual.evaluateCraft(craft).profitPerHour, 259_800);
+    const manualFee = manual.evaluateCraft(craft).sellFee!;
+    assert.ok(manualFee > 11_520);
+    assert.equal(manual.evaluateCraft(craft).profit, 129_900 - manualFee);
+    assert.equal(manual.evaluateCraft(craft).profitPerHour, (129_900 - manualFee) * 2);
     assert.equal(manual.evaluateCraft(craft).sellValueIsEstimate, false);
-    assert.equal(manual.evaluateCraft(craft).sellSourceLabel, "Manual price");
+    assert.equal(manual.evaluateCraft(craft).sellSourceLabel, "Manual · Flea market");
     const roughInput = createRecipeCalculator({ ...input, itemsById: { A: item("A", 500), B: { ...unstable, id: "B" } } }).evaluateCraft(craft);
     assert.equal(roughInput.cost, 120_000);
     assert.equal(roughInput.profit, -119_500);
     assert.equal(roughInput.profitPerHour, -239_000);
-    assert.equal(roughInput.profitVsSellingInputs, -119_500);
+    assert.equal(roughInput.profitVsSellingInputs, -107_980);
     assert.equal(roughInput.sellValueIsEstimate, false);
     const higherTrader = { ...unstable, marketPrice: { ...unstable.marketPrice, sellFor: [{ vendor: { name: "Trader", normalizedName: "trader" }, priceRUB: 150_000 }] } };
     assert.equal(getItemSellComparison(higherTrader).selectedSource, "trader");
@@ -417,7 +421,7 @@ test("allocates nested craft time across every produced item", () => {
     assert.equal(craftEvaluation.requiredItems[0].method, "craft");
     assert.equal(craftEvaluation.durationSeconds, 3_700);
     assert.equal(barterEvaluation.durationSeconds, 100);
-    assert.equal(barterEvaluation.profitPerHour, 68_400);
+    assert.equal(barterEvaluation.profitPerHour, 32_400); // Unknown base: use the known trader return.
 });
 
 test("reuses a stored recipe graph with different live price contexts", () => {

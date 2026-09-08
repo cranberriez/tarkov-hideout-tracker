@@ -14,6 +14,7 @@ account for existing users' data.
 | `tarkov-kappa-checklist-state` | [useKappaStore](../src/lib/stores/useKappaStore.ts), Zustand persist **v1**; `completedItemsByMode` and shared `viewMode` |
 | `tarkov-profit-price-overrides-v1:{mode}` | [useManualPriceOverrides](../src/features/profit-pages/useManualPriceOverrides.ts); independent buy/sell overrides |
 | `tarkov-profit-pinned-crafts-v1:{mode}` | [usePinnedCrafts](../src/features/profit-pages/usePinnedCrafts.ts); independent craft pins |
+| `tarkov-craft-board-v1:{mode}` | [StationBoard](../src/features/profit-pages/optimize/StationBoard.tsx); recipe acquisition variants, stable ingredient route choices and custom input costs |
 | `tarkov-profit-options-v1:{mode}` | [useProfitOptions](../src/features/profit-pages/useProfitOptions.ts); options-menu preferences and crafting skill shared by crafts and barters within each mode |
 | `tarkov-hideout:quest-log-import:seen-files:v1` | [quest-log-import.ts](../src/lib/utils/quest-log-import.ts) and [import controller](../src/features/quests/components/useQuestLogImportController.ts); processed-file metadata, not per-profile storage |
 | `tarkov-active-game-mode` cookie | [game-mode.ts](../src/lib/game-mode.ts); active profile selection for server reads |
@@ -98,3 +99,18 @@ node --test --import jiti/register src/lib/stores/useUserStore.profile.test.ts s
 For intentional persistence changes, test representative older payloads, reload,
 mode switching, and the exact affected reset action using disposable browser
 data. Never clear a contributor's saved progress to make a test pass.
+
+## Craft board persistence
+
+The station board shares the existing array of craft IDs with profit-table pins.
+Multiple pins at a station are a routine, not simultaneous jobs. Its separate
+mode-scoped board key stores recipe variants, input route keys and custom unit
+costs. Existing pins and buy/sell amounts retain their keys, schema and values;
+manual sale entries may additionally specify `sellSource` as flea or trader.
+Older entries infer flea when accessible, otherwise trader.
+
+[useStoredProfitValue](../src/features/profit-pages/useStoredProfitValue.ts)
+synchronizes pins and prices between mounted consumers/tabs using external-store
+subscriptions. It never writes on mount, avoiding hydration/mode-switch data loss.
+Storage failures fall back to memory for the visit. Existing reset scopes are
+unchanged; the independent board key is not cleared by profile section resets.

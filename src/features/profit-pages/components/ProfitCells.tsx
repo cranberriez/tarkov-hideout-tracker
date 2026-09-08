@@ -81,11 +81,11 @@ export function SellValueCell({
   overrides: Record<string, ManualPriceOverride>;
 }) {
   const pricingContext = useProfitPricingContext();
-  const comparison = getItemSellComparison(item, overrides, pricingContext);
+  const comparison = getItemSellComparison(item, overrides, pricingContext, count);
   const trader = comparison.bestTraderOffer;
   return (
     <div className="flex min-w-0 flex-col items-start justify-center border-l border-white/5 px-3">
-      <span className="whitespace-nowrap font-mono text-sm font-semibold text-foreground">
+      <span className="whitespace-nowrap font-mono text-sm font-semibold text-foreground" title={`Gross sale: ${formatRoundedRoubles(comparison.grossTotal)} · Flea fee: ${formatRoundedRoubles(comparison.fee)} · Proceeds: ${formatRoundedRoubles(comparison.netTotal)}`}>
         {formatRoundedRoubles(sellValue)}
       </span>
       {sellSourceLabel ? <span className="mt-0.5 text-[8px] text-muted-foreground">{sellSourceLabel}</span> : comparison.selectedSource === "manual" ? (

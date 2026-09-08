@@ -4,7 +4,6 @@ import { useProfitPricingContext } from "./ProfitPricingContext";
 import { useState } from "react";
 import {
   getItemBuyPrice,
-  getItemSellPrice,
   getItemSellComparison,
   type ManualPriceOverride,
 } from "@/lib/price-calculation";
@@ -43,7 +42,7 @@ export function InlineItemPrice({
   const currentUnitPrice =
     kind === "buy"
       ? getItemBuyPrice(item, overrides, pricingContext)
-      : getItemSellPrice(item, overrides, pricingContext);
+      : getItemSellComparison(item, overrides, pricingContext).selectedPrice;
   const currentOverride = overrides[itemId] ?? {};
   const manualPrice = currentOverride[kind];
   const hasManualPrice =
@@ -67,6 +66,7 @@ export function InlineItemPrice({
     const parsed = raw.trim() === "" ? undefined : Number(raw);
     onPriceChange(itemId, {
       ...currentOverride,
+      ...(kind === "sell" ? { sellSource: currentOverride.sellSource ?? getItemSellComparison(item, overrides, pricingContext).saleDestination ?? "flea" } : {}),
       [kind]:
         parsed !== undefined && Number.isFinite(parsed) && parsed >= 0
           ? parsed
