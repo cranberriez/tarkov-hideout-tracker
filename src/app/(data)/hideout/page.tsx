@@ -7,8 +7,12 @@ import { getHideoutPageData } from "@/server/queries/getHideoutPageData";
 export const revalidate = false; // Frozen during the Tarkov 1.1 transition
 
 export default async function HideoutPage() {
-    const gameMode = await getActiveTarkovJsonGameMode();
-    const data = await getHideoutPageData(gameMode, undefined, { includePrices: false });
+	const gameMode = await getActiveTarkovJsonGameMode();
+	const data = await getHideoutPageData(gameMode, undefined, { includePrices: false });
 
-    return <DeferredPriceBoundary {...getDeferredPriceScope(gameMode)} itemIds={data.itemIds}><HideoutClientPage data={data} /></DeferredPriceBoundary>;
+	return (
+		<DeferredPriceBoundary {...await getDeferredPriceScope(gameMode)} itemIds={data.itemIds}>
+			<HideoutClientPage data={data} />
+		</DeferredPriceBoundary>
+	);
 }

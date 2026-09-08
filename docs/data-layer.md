@@ -47,13 +47,13 @@ must not import provider adapter services. Batch methods deduplicate IDs, return
 keyed records, and omit missing IDs; query contracts report those omissions in
 `unresolvedItemIds` rather than treating them as satisfied requirements.
 
-| Consumer | Query owner | Required data |
-|---|---|---|
-| Hideout | [getHideoutPageData](../src/server/queries/getHideoutPageData.ts) | Stations and only their referenced item summaries/prices |
-| Items | [getItemChecklistPageData](../src/server/queries/getItemChecklistPageData.ts) | Independently settled stations/quests, demand metadata, demand items/prices |
-| Quests | [getQuestWorkspacePageData](../src/server/queries/getQuestWorkspacePageData.ts) | Prepared full quests and their referenced standard item summaries/prices |
-| Kappa | [getKappaChecklistPageData](../src/server/queries/getKappaChecklistPageData.ts) | One mode-specific Collector quest and its hand-in items/prices |
-| Profit pages | [getProfitPageData](../src/server/queries/getProfitPageData.ts) | Both recipe graphs, referenced items/prices, compact source presentation |
+| Consumer     | Query owner                                                                     | Required data                                                               |
+| ------------ | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Hideout      | [getHideoutPageData](../src/server/queries/getHideoutPageData.ts)               | Stations and only their referenced item summaries/prices                    |
+| Items        | [getItemChecklistPageData](../src/server/queries/getItemChecklistPageData.ts)   | Independently settled stations/quests, demand metadata, demand items/prices |
+| Quests       | [getQuestWorkspacePageData](../src/server/queries/getQuestWorkspacePageData.ts) | Prepared full quests and their referenced standard item summaries/prices    |
+| Kappa        | [getKappaChecklistPageData](../src/server/queries/getKappaChecklistPageData.ts) | One mode-specific Collector quest and its hand-in items/prices              |
+| Profit pages | [getProfitPageData](../src/server/queries/getProfitPageData.ts)                 | Both recipe graphs, referenced items/prices, compact source presentation    |
 
 [contracts.ts](../src/types/contracts.ts) owns these payloads and their freshness
 and error fields. Item summaries can carry `marketPrice`; consumers may build
@@ -91,18 +91,18 @@ records; the similarly named [relations](../src/server/queries/getItemRelationsD
 those views during generation. Do not replace a one-row runtime view read with
 full-domain composition on every modal open.
 
-| API / owner | Result and cache policy |
-|---|---|
-| [prices](../src/app/api/items/prices/route.ts) | POST with explicit mode, active release ID, and at most 200 standard item IDs; `private, no-store`; underlying database reads use the caches below |
-| [relations](<../src/app/api/items/[itemId]/relations/route.ts>) | Hideout requirements, quest demand/rewards and availability closure; complete responses use browser 300s, CDN 900s, stale-while-revalidate 300s |
-| [usage](<../src/app/api/items/[itemId]/usage/route.ts>) | Direct trader purchases and barters offering / crafts producing one item, referenced items and source labels; same complete-response policy |
-| [acquisition-tree](<../src/app/api/items/[itemId]/acquisition-tree/route.ts>) | Cycle-safe graph bounded by depth/item count with `truncated`; same complete-response policy |
-| [price-history](<../src/app/api/items/[itemId]/price-history/route.ts>) | On-demand provider history; browser 300s, CDN and upstream Next.js fetch cache 7200s |
-| [search](../src/app/api/items/search/route.ts) | `q` up to 80 characters; 10 results by default or 50 with `limit=50`; `private, no-store` |
-| [status](../src/app/api/data/status/route.ts) | Mode/release identity, hideout/item/quest/craft/barter release freshness, and independent mutable-price change/check timestamps; `private, no-store` |
-| [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); `private, no-store` |
-| [map APIs](../src/app/api/maps/) | Committed map metadata and allow-listed SVG service; see [maps](maps.md) |
-| [price cron APIs](../src/app/api/cron/prices/) | Protected mutable-price refresh; see [operations](operations.md) |
+| API / owner                                                                                                                                                      | Result and cache policy                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [prices](../src/app/api/items/prices/route.ts)                                                                                                                   | POST with explicit mode, active release ID, and at most 200 standard item IDs; `private, no-store`; underlying database reads use the caches below   |
+| [relations](../src/app/api/items/[itemId]/relations/route.ts)                                                                                                    | Hideout requirements, quest demand/rewards and availability closure; complete responses use browser 300s, CDN 900s, stale-while-revalidate 300s      |
+| [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and barters offering / crafts producing one item, referenced items and source labels; same complete-response policy          |
+| [acquisition-tree](../src/app/api/items/[itemId]/acquisition-tree/route.ts)                                                                                      | Cycle-safe graph bounded by depth/item count with `truncated`; same complete-response policy                                                         |
+| [price-history](../src/app/api/items/[itemId]/price-history/route.ts)                                                                                            | On-demand provider history; browser 300s, CDN and upstream Next.js fetch cache 7200s                                                                 |
+| [search](../src/app/api/items/search/route.ts)                                                                                                                   | `q` up to 80 characters; 10 results by default or 50 with `limit=50`; `private, no-store`                                                            |
+| [status](../src/app/api/data/status/route.ts)                                                                                                                    | Mode/release identity, hideout/item/quest/craft/barter release freshness, and independent mutable-price change/check timestamps; `private, no-store` |
+| [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); `private, no-store`                                       |
+| [map APIs](../src/app/api/maps/)                                                                                                                                 | Committed map metadata and allow-listed SVG service; see [maps](maps.md)                                                                             |
+| [price cron APIs](../src/app/api/cron/prices/)                                                                                                                   | Protected mutable-price refresh; see [operations](operations.md)                                                                                     |
 
 Partial item-view responses use `no-store`; clients must keep them retryable.
 Search validation is in [searchItems.ts](../src/server/queries/searchItems.ts),
@@ -114,7 +114,7 @@ repository composition, not a reason to import provider adapters into features.
 ## Prices, history, and freshness
 
 The footer status dialog includes separate quest, craft recipe, and barter recipe
-update times from the selected release’s source freshness metadata. Missing domain
+update times from the selected releaseï¿½s source freshness metadata. Missing domain
 timestamps remain explicit without hiding other available domains. It reads mode-scoped `MAX(last_changed_at)` and
 `MAX(last_checked_at)` from `item_prices` through
 [shared-api-data.ts](../src/server/db/shared-api-data.ts). Changed means a new
@@ -225,11 +225,48 @@ from the repository's stored-point history. Normal page reads do not fetch full
 provider datasets. Runtime provider reads are limited to current-price refreshes,
 on-demand history, and the map SVG path documented in [maps](maps.md).
 
-Runtime release IDs come from [release-config.ts](../src/server/db/release-config.ts).
-Database activation alone does not switch this mapping. API URLs do not expose a
-release ID, so publishing a release does not by itself promise immediate eviction
-of existing HTTP responses; respect the route policies above. There is no Redis
-cache or manual revalidation endpoint.
+Runtime release IDs come from the database's `active_data_releases` pointers via
+[release-config.ts](../src/server/db/release-config.ts), joined to ready releases.
+React memoization shares a selection within a server render; there is no
+cross-request TTL or hardcoded runtime map. Activation/rollback is observed by
+subsequent renders without redeployment. Multi-step detail/conversion/deferred
+price reads capture the selected ID; accepted deferred requests use a scoped
+repository. Missing/unready pointers fail explicitly. API URLs do not expose a
+release ID, so existing HTTP/browser responses can retain older data until their
+normal expiry. There is no Redis cache or manual revalidation endpoint.
+
+## Catalog discovery
+
+[Catalog history](../db-scripts/lib/catalog-history.mjs) owns the durable
+`item_catalog_history` table, keyed by mode and standard item ID independently of
+immutable releases. `catalog_tracking` records baseline initialization. The
+one-time baseline is ready dataset `20260904T211847Z`, classified as `pre-1.1.5`
+with an unknown date. This historical boundary never selects runtime releases.
+Initialization refuses missing/empty baselines and preserves established history.
+
+After validated upload, new IDs and release readiness commit atomically. Their
+`firstSeenAt` is the successful publication time in UTC milliseconds,
+`firstSeenPatch` is the supplied game patch (default `1.1.5.0`), and
+`firstSeenReleaseId` identifies the dataset. Baseline items have a null date;
+missing history stays unknown. These fields describe observation by this tracker,
+not a provider-confirmed introduction date. Retried uploads, disappearance,
+reappearance, and rollback never reset dates. Modes are tracked independently.
+
+[Item discovery reads](../src/server/db/item-discovery.ts) attach the metadata to
+canonical item entities, bounded search previews, and items embedded in stored
+views through bounded ID reads. Item entity cache keys include a discovery schema
+marker; history is stable after first publication. No player-state field or store
+migration is involved. [isNewItem](../src/lib/utils/new-items.ts) derives a 28-day
+window independently for each item; baseline, unknown, invalid, and future dates
+do not count as new. The metadata remains after the window expires.
+
+`db:items:check` compares the full provider catalog against durable history without
+writing anything. `db:update` initializes, generates all canonical domains,
+validates, records a content diff, uploads, and activates. It preserves existing
+price payloads/timestamps and leaves new item fallback prices null; mutable prices
+and history are not refreshed. The pipeline records its previous active release
+and refuses stale automatic activation if that pointer changes during the run.
+The [CLI guide](../db-scripts/README.md) owns arguments and rollback commands.
 
 ## Extending data
 

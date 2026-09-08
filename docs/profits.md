@@ -151,7 +151,18 @@ source toggles control whether crafts and barters participate.
 evaluation, selection, and modal navigation. [Components](../src/features/profit-pages/components/)
 render sorting, source/availability filters, recipe chains, route alternatives,
 price inputs, and recipe previews. The default metric is descending profit/hour.
-Table ordering uses the current market-price evaluation as its baseline, so manual
+At viewport widths below 1536px, both lists use compact cards with separate
+sort buttons for cost, sale proceeds, profit, and profit/hour. Each card groups
+actions, source, output, and the selected profit metric above ingredients and a
+labeled totals row. Profit/hour is highlighted when sorting by that metric;
+other sorts highlight batch profit. On phones the header wraps and totals use
+two columns. Card actions are horizontal, unboxed icon controls; source icons
+and lock badges sit beside the source name and lock explanations. Output cells
+have no green/red fill in cards; output lock reasons instead give the entire
+card a red border, while the written lock reasons remain visible.
+Wide screens retain the table and its output-cell tint. Both layouts share row controls,
+price comparisons, recipe links, and measured window virtualization.
+List ordering uses the current market-price evaluation as its baseline, so manual
 buy or sell overrides recalculate a row without moving it. Editable customized
 item prices use blue text. Profit and profit/hour retain their normal signed
 green/red color and stack below the crossed-out baseline value for comparison.

@@ -2,36 +2,57 @@ import fs from "node:fs/promises";
 import { createClient } from "@libsql/client";
 
 export function createTursoClient(config) {
-    return createClient(config);
+	return createClient(config);
 }
 
 export async function applySchema(client, schemaPath) {
-    await client.executeMultiple(await fs.readFile(schemaPath, "utf8"));
+	await client.executeMultiple(await fs.readFile(schemaPath, "utf8"));
 }
 
-export async function activateRelease(client, releaseId, modes) {
-    const activatedAt = Date.now();
-    await client.batch(
-        modes.map((mode) => ({
-            sql: `
+export async function activateRelease(client, releaseId, modes, expectedReleases = {}) {
+	const activatedAt = Date.now();
+	const transaction = await client.transaction("write");
+	try {
+		for (const mode of modes) {
+			if (expectedReleases[mode]) {
+				const active = await transaction.execute({ sql: "SELECT release_id FROM active_data_releases WHERE mode = ?", args: [mode] });
+				if (active.rows[0]?.release_id !== expectedReleases[mode] && active.rows[0]?.release_id !== releaseId) {
+					throw new Error(`${mode} active release changed during update; refusing stale activation. Regenerate or explicitly activate after review.`);
+				}
+			}
+			const result = await transaction.execute({
+				sql: "SELECT status FROM data_releases WHERE mode = ? AND release_id = ?",
+				args: [mode, releaseId],
+			});
+			if (result.rows[0]?.status !== "ready") throw new Error(`${mode}/${releaseId} is not ready`);
+		}
+		await transaction.batch(
+			modes.map((mode) => ({
+				sql: `
                 INSERT INTO active_data_releases (mode, release_id, activated_at)
                 VALUES (?, ?, ?)
                 ON CONFLICT (mode) DO UPDATE SET
                     release_id = excluded.release_id,
                     activated_at = excluded.activated_at
             `,
-            args: [mode, releaseId, activatedAt],
-        })),
-        "write",
-    );
+				args: [mode, releaseId, activatedAt],
+			})),
+		);
+		await transaction.commit();
+	} catch (error) {
+		await transaction.rollback();
+		throw error;
+	} finally {
+		transaction.close();
+	}
 }
 
 export function statementForRecord(mode, releaseId, record) {
-    const payload = JSON.stringify(record.payload);
-    switch (record.type) {
-        case "entity":
-            return {
-                sql: `
+	const payload = JSON.stringify(record.payload);
+	switch (record.type) {
+		case "entity":
+			return {
+				sql: `
                     INSERT INTO data_entities
                         (mode, release_id, entity_type, entity_id, sort_key, updated_at, payload_json)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -40,19 +61,11 @@ export function statementForRecord(mode, releaseId, record) {
                         updated_at = excluded.updated_at,
                         payload_json = excluded.payload_json
                 `,
-                args: [
-                    mode,
-                    releaseId,
-                    record.entityType,
-                    record.entityId,
-                    record.sortKey ?? null,
-                    record.updatedAt,
-                    payload,
-                ],
-            };
-        case "itemView":
-            return {
-                sql: `
+				args: [mode, releaseId, record.entityType, record.entityId, record.sortKey ?? null, record.updatedAt, payload],
+			};
+		case "itemView":
+			return {
+				sql: `
                     INSERT INTO item_views
                         (mode, release_id, item_id, view_type, updated_at, payload_json)
                     VALUES (?, ?, ?, ?, ?, ?)
@@ -60,11 +73,11 @@ export function statementForRecord(mode, releaseId, record) {
                         updated_at = excluded.updated_at,
                         payload_json = excluded.payload_json
                 `,
-                args: [mode, releaseId, record.itemId, record.viewType, record.updatedAt, payload],
-            };
-        case "itemSearch":
-            return {
-                sql: `
+				args: [mode, releaseId, record.itemId, record.viewType, record.updatedAt, payload],
+			};
+		case "itemSearch":
+			return {
+				sql: `
                     INSERT INTO item_search
                         (mode, release_id, item_id, normalized_name, compact_name, sort_name, preview_json)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -74,19 +87,11 @@ export function statementForRecord(mode, releaseId, record) {
                         sort_name = excluded.sort_name,
                         preview_json = excluded.preview_json
                 `,
-                args: [
-                    mode,
-                    releaseId,
-                    record.itemId,
-                    record.normalizedName,
-                    record.compactName,
-                    record.sortName,
-                    payload,
-                ],
-            };
-        case "manifest":
-            return {
-                sql: `
+				args: [mode, releaseId, record.itemId, record.normalizedName, record.compactName, record.sortName, payload],
+			};
+		case "manifest":
+			return {
+				sql: `
                     INSERT INTO data_manifests
                         (mode, release_id, manifest_name, updated_at, payload_json)
                     VALUES (?, ?, ?, ?, ?)
@@ -94,9 +99,9 @@ export function statementForRecord(mode, releaseId, record) {
                         updated_at = excluded.updated_at,
                         payload_json = excluded.payload_json
                 `,
-                args: [mode, releaseId, record.manifestName, record.updatedAt, payload],
-            };
-        default:
-            throw new Error(`Unsupported record type ${record.type}`);
-    }
+				args: [mode, releaseId, record.manifestName, record.updatedAt, payload],
+			};
+		default:
+			throw new Error(`Unsupported record type ${record.type}`);
+	}
 }

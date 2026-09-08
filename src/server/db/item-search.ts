@@ -1,3 +1,4 @@
+import { getItemDiscovery } from "./item-discovery";
 import type { Client } from "@libsql/client";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { normalizeName } from "@/lib/utils/normalize-name";
@@ -9,37 +10,32 @@ import { getActiveDataReleaseId } from "./release-config";
 import { parseStoredJson } from "./stored-json";
 
 function escapeLikePattern(value: string): string {
-    return value.replace(/[\\%_]/g, "\\$&");
+	return value.replace(/[\\%_]/g, "\\$&");
 }
 
 function assertItemSummary(value: ItemSummary, expectedId: unknown): ItemSummary {
-    if (
-        typeof expectedId !== "string" ||
-        value.id !== expectedId ||
-        typeof value.name !== "string" ||
-        typeof value.normalizedName !== "string"
-    ) {
-        throw new TursoDataIntegrityError("An item search preview has an invalid shape");
-    }
-    return value;
+	if (typeof expectedId !== "string" || value.id !== expectedId || typeof value.name !== "string" || typeof value.normalizedName !== "string") {
+		throw new TursoDataIntegrityError("An item search preview has an invalid shape");
+	}
+	return value;
 }
 
 export async function searchItemPreviews(
-    query: string,
-    mode: TarkovJsonGameMode,
-    resultLimit: number,
-    database: Client = getTursoClient(),
+	query: string,
+	mode: TarkovJsonGameMode,
+	resultLimit: number,
+	database: Client = getTursoClient(),
 ): Promise<ItemSearchPayload> {
-    const normalizedQuery = normalizeName(query);
-    if (!normalizedQuery) {
-        throw new RangeError("Item search query must contain searchable characters");
-    }
+	const normalizedQuery = normalizeName(query);
+	if (!normalizedQuery) {
+		throw new RangeError("Item search query must contain searchable characters");
+	}
 
-    const releaseId = getActiveDataReleaseId(mode);
-    const normalizedPattern = escapeLikePattern(normalizedQuery);
-    const compactPattern = escapeLikePattern(normalizedQuery.replace(/-/g, ""));
-    const result = await database.execute({
-        sql: `
+	const releaseId = await getActiveDataReleaseId(mode, database);
+	const normalizedPattern = escapeLikePattern(normalizedQuery);
+	const compactPattern = escapeLikePattern(normalizedQuery.replace(/-/g, ""));
+	const result = await database.execute({
+		sql: `
             SELECT search.item_id, search.preview_json
             FROM item_search AS search
             INNER JOIN data_releases AS release
@@ -61,22 +57,18 @@ export async function searchItemPreviews(
                 search.item_id
             LIMIT ?
         `,
-        args: [
-            mode,
-            releaseId,
-            normalizedPattern,
-            compactPattern,
-            normalizedPattern,
-            resultLimit,
-        ],
-    });
+		args: [mode, releaseId, normalizedPattern, compactPattern, normalizedPattern, resultLimit],
+	});
 
-    return {
-        items: result.rows.map((row) =>
-            assertItemSummary(
-                parseStoredJson<ItemSummary>(row.preview_json, "item search preview"),
-                row.item_id,
-            ),
-        ),
-    };
+	const discovery = await getItemDiscovery(
+		mode,
+		result.rows.map((row) => String(row.item_id)),
+		database,
+	);
+	return {
+		items: result.rows.map((row) => ({
+			...assertItemSummary(parseStoredJson<ItemSummary>(row.preview_json, "item search preview"), row.item_id),
+			...discovery[String(row.item_id)],
+		})),
+	};
 }

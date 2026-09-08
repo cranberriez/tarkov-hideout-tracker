@@ -5,22 +5,22 @@ import { RouteAwareFooter } from "@/components/core/RouteAwareFooter";
 import { getActiveDataReleaseId } from "@/server/db/release-config";
 
 interface DataLayoutProps {
-    children: ReactNode;
+	children: ReactNode;
 }
 
 export default async function DataLayout({ children }: DataLayoutProps) {
-    const gameMode = await getActiveTarkovJsonGameMode();
+	const gameMode = await getActiveTarkovJsonGameMode();
 
-    return (
-        <>
-            {children}
-            <RouteAwareFooter
-                statusConfig={{
-                    activeDataset: gameMode,
-                    releaseId: getActiveDataReleaseId(gameMode),
-                }}
-            />
-            <LegacyProfileConversionDialog />
-        </>
-    );
+	return (
+		<>
+			{children}
+			<RouteAwareFooter
+				statusConfig={{
+					activeDataset: gameMode,
+					releaseId: await getActiveDataReleaseId(gameMode),
+				}}
+			/>
+			<LegacyProfileConversionDialog />
+		</>
+	);
 }

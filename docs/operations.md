@@ -5,15 +5,15 @@
 Install the Node/npm versions supported by the checked-in
 [Next.js package](../package.json), then run `npm ci`. Copy
 [.sample.env](../.sample.env) to `.env` and provide credentials for the Turso
-database containing the releases selected in
-[release-config.ts](../src/server/db/release-config.ts). Do not overwrite an
+database containing ready releases and per-mode active pointers.
+[release-config.ts](../src/server/db/release-config.ts) reads those pointers. Do not overwrite an
 existing local environment file or commit credentials.
 
-| Variable | Purpose |
-|---|---|
-| `TURSO_DATABASE_URL` | Runtime and offline-tool database URL |
-| `TURSO_AUTH_TOKEN` | Remote Turso authentication; local CLI `file:` databases can omit it |
-| `CRON_SECRET` | Bearer secret for price-refresh routes; use at least 16 characters as directed by the sample environment |
+| Variable                         | Purpose                                                                                                                                            |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TURSO_DATABASE_URL`             | Runtime and offline-tool database URL                                                                                                              |
+| `TURSO_AUTH_TOKEN`               | Remote Turso authentication; local CLI `file:` databases can omit it                                                                               |
+| `CRON_SECRET`                    | Bearer secret for price-refresh routes; use at least 16 characters as directed by the sample environment                                           |
 | `TARKOV_JSON_REQUEST_TIMEOUT_MS` | Optional positive per-attempt offline source timeout override; default 120,000ms in the [JSON client](../src/server/services/tarkovJson/client.ts) |
 
 The [offline environment loader](../db-scripts/lib/config.mjs) reads process
@@ -84,13 +84,64 @@ Use a new release ID for changed content. Upload refuses conflicting content und
 an existing ID and marks a mode ready only after count validation. Generated
 snapshots are ignored by Git. Do not publish malformed/empty required domains.
 
-`db:activate` updates `active_data_releases` as an operational pointer; the app
-does **not** read that pointer. Serving the new release requires an explicit update
-to [ACTIVE_DATA_RELEASE_IDS](../src/server/db/release-config.ts) and deployment.
-Review each mode independently and keep older good releases available for rollback.
-Cache freshness and current-price hydration are specified in [data layer](data-layer.md).
-Release generation, upload, activation, and deployment are maintenance operations,
-not validation steps for unrelated UI or documentation changes.
+`db:activate` updates `active_data_releases`, which is now the runtime source of
+truth. No source edit or redeployment is needed to select a release. The resolver
+shares its result within a React server render, with no cross-request TTL; the
+next render sees activation or rollback. Existing browser/CDN item-view responses
+can remain cached for their documented lifetime. Immutable entity caches remain
+keyed by the selected release. Deferred price requests return 409 when their page
+belongs to a different active release and pin all reads to their accepted scope.
+
+Before deploying this version, initialize additive catalog history and any missing
+active pointers from the frozen pre-1.1.5 baseline:
+
+```bash
+npm run db:catalog:init
+```
+
+This requires ready baseline `20260904T211847Z` for each mode. Existing history
+and active pointers are preserved. If a baseline is unavailable, initialization
+fails rather than treating every item as new. Player progress is unaffected.
+
+For routine maintenance, one command generates all supported datasets, validates,
+reports additions/changes/removals, uploads, records new items, and activates all
+included modes after they are ready:
+
+```bash
+npm run db:update
+npm run db:update -- --modes regular,pve,pvp-season --patch 1.1.5.0
+```
+
+The default tracked patch is `1.1.5.0`; pass the next patch explicitly when it
+changes. The command includes initialization, preserves existing release price
+payloads/timestamps, assigns null price fallbacks to new items, and never refreshes
+mutable prices or price history. New trader offers and recipe data still update.
+Its ignored snapshot directory contains `changes.json` with IDs/names for added,
+changed, and removed entities, plus never-seen items. A changed active pointer
+during the update blocks automatic activation; regenerate against the new pointer
+or explicitly activate the ready release after reviewing it.
+
+Check only for new catalog items without writing anything:
+
+```bash
+npm run db:items:check
+npm run db:items:check -- --modes pvp-season
+```
+
+The check reads the full upstream item catalog and durable known IDs, rather than
+player demand or only the immediately preceding release. It does not consume new
+items or assign dates. See [catalog history](data-layer.md) for field semantics.
+
+Activate an already uploaded ready release, including rollback, without local
+snapshot files:
+
+```bash
+npm run db:activate -- --release <release-id> --modes regular,pve,pvp-season
+```
+
+Keep older good releases available for rollback. Cache freshness and price
+hydration remain specified in [data layer](data-layer.md). Publication commands
+are maintenance operations, not validation steps for unrelated changes.
 
 ## Mutable price refresh
 
@@ -117,11 +168,11 @@ On September 5, 2026, read-only inspection of the configured release
 stored observations. No production refresh or release publication was performed.
 The sampling unit is an observed listing snapshot, not a transaction.
 
-| Data mode | Current rows | Latest depth median / p90 | Latest aggregate/minimum p95 / p99 | Stored points with depth 1–2 |
-|---|---:|---:|---:|---:|
-| regular | 3,541 | 3 / 21 | 1.63 / 2.52 | 46.9% |
-| pve | 3,695 | 6 / 40 | 2.03 / 3.75 | 33.5% |
-| pvp-season | 3,514 | 4 / 26 | 1.65 / 2.69 | 35.5% |
+| Data mode  | Current rows | Latest depth median / p90 | Latest aggregate/minimum p95 / p99 | Stored points with depth 1–2 |
+| ---------- | -----------: | ------------------------: | ---------------------------------: | ---------------------------: |
+| regular    |        3,541 |                    3 / 21 |                        1.63 / 2.52 |                        46.9% |
+| pve        |        3,695 |                    6 / 40 |                        2.03 / 3.75 |                        33.5% |
+| pvp-season |        3,514 |                    4 / 26 |                        1.65 / 2.69 |                        35.5% |
 
 Reviewed sugar, bolts, Iskra and Salewa, base/default AK-74N, both M1A presets,
 Red keycards, graphics cards, LEDX and T-7 goggles in every mode. Sugar's ten
@@ -164,17 +215,17 @@ node --test --import jiti/register src/lib/utils/flea-price.test.ts src/lib/util
 
 ## Diagnostics and content maintenance
 
-| Symptom or task | Start here |
-|---|---|
-| Missing or wrong-mode game data | [release-config](../src/server/db/release-config.ts), `db:status`, [release-info](../src/server/db/release-info.ts), [database error mapping](../src/server/db/route-errors.ts) |
-| Inspect configured releases | [/dev source](../src/app/dev/page.tsx): development-only, read-only release timestamps/readiness/freshness/counts; no provider refresh |
-| Stale current prices | [price refresh runs/store](../src/server/prices/price-store.ts), active release flea eligibility, cron authorization and run duration |
-| History fails but current price works | [live-price-history](../src/server/prices/live-price-history.ts): independent upstream request/cache |
-| Search misses/ranking | [item-search](../src/server/db/item-search.ts), [search validation](../src/server/queries/searchItems.ts), [controller](../src/features/items/useItemSearchController.ts) |
-| Quest source corrections | [quests](quests.md); `npm run quest-series-candidates -- <task-snapshot.json>` emits review candidates, never automatic manifest updates |
-| Compare quest snapshots | [compare-quest-data.mjs](../scripts/compare-quest-data.mjs); inspect its arguments before running `npm run quest-data-compare` |
-| Refresh navigation overlays | `npm run pull-map-overlays`, review committed [overlay chunks](../src/lib/data/map-overlays/) and run the script's tests |
-| Hideout quantity/FiR correction | [override owners in data layer](data-layer.md), then regenerate the affected release |
+| Symptom or task                       | Start here                                                                                                                                                                      |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Missing or wrong-mode game data       | [release-config](../src/server/db/release-config.ts), `db:status`, [release-info](../src/server/db/release-info.ts), [database error mapping](../src/server/db/route-errors.ts) |
+| Inspect configured releases           | [/dev source](../src/app/dev/page.tsx): development-only, read-only release timestamps/readiness/freshness/counts; no provider refresh                                          |
+| Stale current prices                  | [price refresh runs/store](../src/server/prices/price-store.ts), active release flea eligibility, cron authorization and run duration                                           |
+| History fails but current price works | [live-price-history](../src/server/prices/live-price-history.ts): independent upstream request/cache                                                                            |
+| Search misses/ranking                 | [item-search](../src/server/db/item-search.ts), [search validation](../src/server/queries/searchItems.ts), [controller](../src/features/items/useItemSearchController.ts)       |
+| Quest source corrections              | [quests](quests.md); `npm run quest-series-candidates -- <task-snapshot.json>` emits review candidates, never automatic manifest updates                                        |
+| Compare quest snapshots               | [compare-quest-data.mjs](../scripts/compare-quest-data.mjs); inspect its arguments before running `npm run quest-data-compare`                                                  |
+| Refresh navigation overlays           | `npm run pull-map-overlays`, review committed [overlay chunks](../src/lib/data/map-overlays/) and run the script's tests                                                        |
+| Hideout quantity/FiR correction       | [override owners in data layer](data-layer.md), then regenerate the affected release                                                                                            |
 
 Use the active documentation and source implementations above for operational
 requirements.

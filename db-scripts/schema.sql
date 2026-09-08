@@ -77,6 +77,24 @@ CREATE TABLE IF NOT EXISTS data_manifests (
     FOREIGN KEY (mode, release_id) REFERENCES data_releases (mode, release_id)
 ) STRICT;
 
+-- Durable catalog discovery survives snapshot replacement and item removal.
+CREATE TABLE IF NOT EXISTS catalog_tracking (
+    mode TEXT PRIMARY KEY CHECK (mode IN ('regular', 'pve', 'pvp-season')),
+    baseline_release_id TEXT NOT NULL,
+    initialized_at INTEGER NOT NULL
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS item_catalog_history (
+    mode TEXT NOT NULL CHECK (mode IN ('regular', 'pve', 'pvp-season')),
+    item_id TEXT NOT NULL,
+    first_seen_at INTEGER,
+    first_seen_patch TEXT NOT NULL,
+    first_seen_release_id TEXT NOT NULL,
+    PRIMARY KEY (mode, item_id),
+    CHECK ((first_seen_patch = 'pre-1.1.5' AND first_seen_at IS NULL)
+        OR (first_seen_patch <> 'pre-1.1.5' AND first_seen_at > 0 AND first_seen_at IS NOT NULL))
+) STRICT;
+
 CREATE TABLE IF NOT EXISTS item_prices (
     mode TEXT NOT NULL CHECK (mode IN ('regular', 'pve', 'pvp-season')),
     item_id TEXT NOT NULL,

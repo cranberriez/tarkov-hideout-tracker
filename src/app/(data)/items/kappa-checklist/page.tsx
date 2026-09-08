@@ -7,17 +7,17 @@ import { getKappaChecklistPageData } from "@/server/queries/getKappaChecklistPag
 export const revalidate = false; // Frozen during the Tarkov 1.1 transition
 
 export default async function KappaChecklistPage() {
-    const gameMode = await getActiveTarkovJsonGameMode();
-    const pageData = await getKappaChecklistPageData(gameMode, undefined, { includePrices: false });
+	const gameMode = await getActiveTarkovJsonGameMode();
+	const pageData = await getKappaChecklistPageData(gameMode, undefined, { includePrices: false });
 
-    return (
-        <DeferredPriceBoundary {...getDeferredPriceScope(gameMode)} itemIds={pageData.items.map((item) => item.id)}>
-        <KappaChecklistClientPage
-            collectorQuest={pageData.collectorQuest}
-            collectorItems={pageData.items}
-            unresolvedItemIds={pageData.unresolvedItemIds}
-            errors={pageData.errors}
-        />
-        </DeferredPriceBoundary>
-    );
+	return (
+		<DeferredPriceBoundary {...await getDeferredPriceScope(gameMode)} itemIds={pageData.items.map((item) => item.id)}>
+			<KappaChecklistClientPage
+				collectorQuest={pageData.collectorQuest}
+				collectorItems={pageData.items}
+				unresolvedItemIds={pageData.unresolvedItemIds}
+				errors={pageData.errors}
+			/>
+		</DeferredPriceBoundary>
+	);
 }
