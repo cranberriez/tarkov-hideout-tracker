@@ -18,7 +18,7 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and Turso;
 | `/hideout/craft-planner` | Station craft recommendations using the shared profit query; see [profits](profits.md) |
 | `/settings` | [Character settings and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md) |
 | `/news` | [News page](../src/app/news/page.tsx) |
-| `/dev` | [Development-only release inspector](../src/app/dev/page.tsx); see [operations](operations.md) |
+| `/dev` | [Development-only release dashboard](../src/app/dev/page.tsx): history, shared pin/rollback and local preview; see [operations](operations.md) |
 
 Inventory, Keys, Station Goals, and Bitcoin Farm routes are placeholders. Check
 their [route implementations](<../src/app/(data)/>) before extending them.

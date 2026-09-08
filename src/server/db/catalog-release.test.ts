@@ -14,10 +14,26 @@ const jiti = createJiti(import.meta.url, {
 		"server-only": path.join(path.dirname(require.resolve("server-only")), "empty.js"),
 	},
 });
-const { getActiveDataReleaseId } = await jiti.import<typeof import("./release-config")>("./release-config.ts");
+const { getActiveDataReleaseId, validateReleaseOverride } = await jiti.import<typeof import("./release-config")>("./release-config.ts");
 const { getEntitiesByIds } = await jiti.import<typeof import("./entity-data")>("./entity-data.ts");
 const { searchItemPreviews } = await jiti.import<typeof import("./item-search")>("./item-search.ts");
 const { getItemView } = await jiti.import<typeof import("./item-views")>("./item-views.ts");
+const { getDevReleaseOverride, devReleaseCookie } = await jiti.import<typeof import("./dev-release-override")>("./dev-release-override.ts");
+
+test("development cookies are mode-scoped and ignored in production and offline contexts", async () => {
+	assert.notEqual(devReleaseCookie("regular"), devReleaseCookie("pve"));
+	assert.notEqual(devReleaseCookie("regular"), devReleaseCookie("pvp-season"));
+	const previous = process.env.NODE_ENV;
+	try {
+		Object.assign(process.env, { NODE_ENV: "production" });
+		assert.equal(await getDevReleaseOverride("regular"), null);
+		Object.assign(process.env, { NODE_ENV: "development" });
+		assert.equal(await getDevReleaseOverride("regular"), null);
+	} finally {
+		if (previous === undefined) delete process.env.NODE_ENV;
+		else Object.assign(process.env, { NODE_ENV: previous });
+	}
+});
 
 test("database pointers switch and roll back; entity, search and detail reads carry mode-specific discovery", async () => {
 	const db = createClient({ url: "file::memory:" });
@@ -45,6 +61,10 @@ test("database pointers switch and roll back; entity, search and detail reads ca
 			});
 		}
 		assert.equal(await getActiveDataReleaseId("regular", db), "old");
+		assert.equal(await validateReleaseOverride("regular", "new", db), "new");
+		assert.equal(await getActiveDataReleaseId("regular", db), "old", "local validation does not change shared selection");
+		await assert.rejects(validateReleaseOverride("pvp-season", "new", db), /not ready/);
+		await assert.rejects(validateReleaseOverride("regular", "missing", db), /not ready/);
 		await db.execute("UPDATE active_data_releases SET release_id = 'new' WHERE mode = 'regular'");
 		assert.equal(await getActiveDataReleaseId("regular", db), "new");
 		assert.equal(await getActiveDataReleaseId("pve", db), "old");
@@ -63,6 +83,7 @@ test("database pointers switch and roll back; entity, search and detail reads ca
 		assert.equal(await getActiveDataReleaseId("regular", db), "old");
 		await db.execute("UPDATE data_releases SET status = 'uploading' WHERE mode = 'regular' AND release_id = 'old'");
 		await assert.rejects(getActiveDataReleaseId("regular", db), /No ready active/);
+		await assert.rejects(validateReleaseOverride("regular", "old", db), /not ready/);
 	} finally {
 		db.close();
 	}

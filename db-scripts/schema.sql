@@ -20,6 +20,13 @@ CREATE TABLE IF NOT EXISTS active_data_releases (
     FOREIGN KEY (mode, release_id) REFERENCES data_releases (mode, release_id)
 ) STRICT;
 
+CREATE TABLE IF NOT EXISTS data_release_pins (
+    mode TEXT PRIMARY KEY CHECK (mode IN ('regular', 'pve', 'pvp-season')),
+    release_id TEXT NOT NULL,
+    pinned_at INTEGER NOT NULL,
+    FOREIGN KEY (mode, release_id) REFERENCES data_releases (mode, release_id)
+) STRICT;
+
 CREATE TABLE IF NOT EXISTS data_entities (
     mode TEXT NOT NULL,
     release_id TEXT NOT NULL,

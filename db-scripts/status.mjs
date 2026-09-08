@@ -10,8 +10,8 @@ const projectRoot = path.resolve(scriptDirectory, "..");
 await loadLocalEnv(projectRoot);
 const client = createTursoClient(getTursoConfig());
 try {
-    await applySchema(client, path.join(scriptDirectory, "schema.sql"));
-    const result = await client.execute(`
+	await applySchema(client, path.join(scriptDirectory, "schema.sql"));
+	const result = await client.execute(`
         SELECT
             releases.mode,
             releases.release_id,
@@ -19,25 +19,25 @@ try {
             releases.generated_at,
             releases.uploaded_at,
             active.release_id = releases.release_id AS is_active,
+            pins.release_id = releases.release_id AS is_pinned,
             releases.record_counts_json
         FROM data_releases AS releases
         LEFT JOIN active_data_releases AS active ON active.mode = releases.mode
+        LEFT JOIN data_release_pins AS pins ON pins.mode = releases.mode
         ORDER BY releases.generated_at DESC, releases.mode
         LIMIT 30
     `);
-    const rows = result.rows.map((row) => ({
-        mode: String(row.mode),
-        releaseId: String(row.release_id),
-        status: String(row.status),
-        active: Boolean(row.is_active),
-        generatedAt: new Date(Number(row.generated_at)).toISOString(),
-        uploadedAt: row.uploaded_at
-            ? new Date(Number(row.uploaded_at)).toISOString()
-            : null,
-        counts: JSON.parse(String(row.record_counts_json)),
-    }));
-    process.stdout.write(`${JSON.stringify(rows, null, 2)}\n`);
+	const rows = result.rows.map((row) => ({
+		mode: String(row.mode),
+		releaseId: String(row.release_id),
+		status: String(row.status),
+		active: Boolean(row.is_active),
+		pinned: Boolean(row.is_pinned),
+		generatedAt: new Date(Number(row.generated_at)).toISOString(),
+		uploadedAt: row.uploaded_at ? new Date(Number(row.uploaded_at)).toISOString() : null,
+		counts: JSON.parse(String(row.record_counts_json)),
+	}));
+	process.stdout.write(`${JSON.stringify(rows, null, 2)}\n`);
 } finally {
-    client.close();
+	client.close();
 }
-

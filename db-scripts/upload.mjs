@@ -159,13 +159,16 @@ async function main() {
 			await verifyAndMarkReady(client, manifest, modeEntry, options.patch);
 		}
 		if (options.activate) {
-			await activateRelease(
+			const activation = await activateRelease(
 				client,
 				manifest.releaseId,
 				manifest.modes.map((entry) => entry.mode),
 				Object.fromEntries(manifest.modes.filter((entry) => entry.previousReleaseId).map((entry) => [entry.mode, entry.previousReleaseId])),
+				{ automatic: true },
 			);
-			process.stdout.write(`Activated release ${manifest.releaseId}.\n`);
+			process.stdout.write(
+				`Release ${manifest.releaseId}: activated [${activation.activated.join(", ")}]; pinned modes skipped [${activation.skipped.join(", ")}].\n`,
+			);
 		} else {
 			process.stdout.write(`Release ${manifest.releaseId} is ready. Run db:activate after inspection.\n`);
 		}

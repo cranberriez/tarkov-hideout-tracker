@@ -9,43 +9,7 @@ export async function applySchema(client, schemaPath) {
 	await client.executeMultiple(await fs.readFile(schemaPath, "utf8"));
 }
 
-export async function activateRelease(client, releaseId, modes, expectedReleases = {}) {
-	const activatedAt = Date.now();
-	const transaction = await client.transaction("write");
-	try {
-		for (const mode of modes) {
-			if (expectedReleases[mode]) {
-				const active = await transaction.execute({ sql: "SELECT release_id FROM active_data_releases WHERE mode = ?", args: [mode] });
-				if (active.rows[0]?.release_id !== expectedReleases[mode] && active.rows[0]?.release_id !== releaseId) {
-					throw new Error(`${mode} active release changed during update; refusing stale activation. Regenerate or explicitly activate after review.`);
-				}
-			}
-			const result = await transaction.execute({
-				sql: "SELECT status FROM data_releases WHERE mode = ? AND release_id = ?",
-				args: [mode, releaseId],
-			});
-			if (result.rows[0]?.status !== "ready") throw new Error(`${mode}/${releaseId} is not ready`);
-		}
-		await transaction.batch(
-			modes.map((mode) => ({
-				sql: `
-                INSERT INTO active_data_releases (mode, release_id, activated_at)
-                VALUES (?, ?, ?)
-                ON CONFLICT (mode) DO UPDATE SET
-                    release_id = excluded.release_id,
-                    activated_at = excluded.activated_at
-            `,
-				args: [mode, releaseId, activatedAt],
-			})),
-		);
-		await transaction.commit();
-	} catch (error) {
-		await transaction.rollback();
-		throw error;
-	} finally {
-		transaction.close();
-	}
-}
+export { activateRelease } from "../../src/server/db/release-selection.mjs";
 
 export function statementForRecord(mode, releaseId, record) {
 	const payload = JSON.stringify(record.payload);

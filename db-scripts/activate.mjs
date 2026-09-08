@@ -43,8 +43,10 @@ try {
 		client,
 		manifest.releaseId,
 		manifest.modes.map((entry) => entry.mode),
+		{},
+		{ pin: true },
 	);
-	process.stdout.write(`Activated release ${manifest.releaseId}.\n`);
+	process.stdout.write(`Activated and pinned release ${manifest.releaseId}.\n`);
 } finally {
 	client.close();
 }

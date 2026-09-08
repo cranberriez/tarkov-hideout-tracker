@@ -2,9 +2,21 @@ import { cache } from "react";
 import type { Client } from "@libsql/client";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { TursoConfigurationError } from "./errors";
+import { getDevReleaseOverride } from "./dev-release-override";
+
+export async function validateReleaseOverride(mode: TarkovJsonGameMode, releaseId: string, db: Client): Promise<string> {
+	const result = await db.execute({
+		sql: "SELECT release_id FROM data_releases WHERE mode = ? AND release_id = ? AND status = 'ready'",
+		args: [mode, releaseId],
+	});
+	if (!result.rows.length) throw new TursoConfigurationError(`Development override ${mode}/${releaseId} is not ready. Clear it on /dev.`);
+	return releaseId;
+}
 
 async function readActiveRelease(mode: TarkovJsonGameMode, database?: Client): Promise<string> {
 	const db = database ?? (await import("./client")).getTursoClient();
+	const override = await getDevReleaseOverride(mode);
+	if (override) return validateReleaseOverride(mode, override, db);
 	const result = await db.execute({
 		sql: `SELECT active.release_id FROM active_data_releases AS active
               JOIN data_releases AS release

@@ -26,7 +26,7 @@ export async function GET(
         const isPartial = Object.values(payload.errors).some((error) => error !== null);
         return NextResponse.json(payload, {
             headers: {
-                "Cache-Control": isPartial
+                "Cache-Control": process.env.NODE_ENV === "development" || isPartial
                     ? "no-store"
                     : "public, max-age=300, s-maxage=900, stale-while-revalidate=300",
             },

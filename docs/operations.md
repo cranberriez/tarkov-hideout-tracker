@@ -104,8 +104,8 @@ and active pointers are preserved. If a baseline is unavailable, initialization
 fails rather than treating every item as new. Player progress is unaffected.
 
 For routine maintenance, one command generates all supported datasets, validates,
-reports additions/changes/removals, uploads, records new items, and activates all
-included modes after they are ready:
+reports additions/changes/removals, uploads, records new items, and activates
+unpinned included modes after they are ready:
 
 ```bash
 npm run db:update
@@ -132,7 +132,7 @@ The check reads the full upstream item catalog and durable known IDs, rather tha
 player demand or only the immediately preceding release. It does not consume new
 items or assign dates. See [catalog history](data-layer.md) for field semantics.
 
-Activate an already uploaded ready release, including rollback, without local
+Activate and pin an already uploaded ready release, including rollback, without local
 snapshot files:
 
 ```bash
@@ -142,6 +142,38 @@ npm run db:activate -- --release <release-id> --modes regular,pve,pvp-season
 Keep older good releases available for rollback. Cache freshness and price
 hydration remain specified in [data layer](data-layer.md). Publication commands
 are maintenance operations, not validation steps for unrelated changes.
+
+### Release dashboard and development override
+
+Open `/dev` under `npm run dev`. The [dashboard](../src/app/dev/page.tsx)
+lists 20 releases per page for PVP, PVE, or KORD, including upload status,
+timestamps, counts, the current shared release, and the effective local selection.
+It remains unavailable in production builds; its server actions also enforce this.
+
+**Pin shared release** activates a ready release and persistently pins that mode
+in the configured database. This changes production when production uses the same
+database. Manual `db:activate` also pins. `db:update` and `db:upload --activate`
+still publish new releases but skip pinned modes during their activation
+transaction, including pins made while an upload is running. Their output lists
+activated and skipped modes. **Resume automatic updates** removes only that mode's
+pin; the current release stays selected until a subsequent update activates one.
+Pin storage is additive and initialized by the schema tooling or the first shared
+panel mutation; existing pointers and catalog history are preserved.
+
+**Use in local dev** selects a ready release for this browser and mode without
+writing a shared pointer. **Follow shared release** clears the override. The
+HTTP-only, same-site cookie lasts 30 days and is honored only in development;
+production builds and offline tooling ignore it. It applies to page, search,
+detail, conversion, status, and deferred-price release selection. Missing/unready
+overrides fail explicitly and can be cleared from the panel. Item-view HTTP
+responses use no-store in development, and successful panel changes reload the
+page to discard client caches. Mutable prices still use current mode-scoped price
+storage; selecting an older release does not rewind price history or player data.
+
+For example, pin an older shared release to roll production back, then select the
+newer release with **Use in local dev** to reproduce and verify a fix. Pin the
+verified ready release when appropriate, or resume automatic updates before the
+next publication.
 
 ## Mutable price refresh
 
@@ -218,7 +250,7 @@ node --test --import jiti/register src/lib/utils/flea-price.test.ts src/lib/util
 | Symptom or task                       | Start here                                                                                                                                                                      |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Missing or wrong-mode game data       | [release-config](../src/server/db/release-config.ts), `db:status`, [release-info](../src/server/db/release-info.ts), [database error mapping](../src/server/db/route-errors.ts) |
-| Inspect configured releases           | [/dev source](../src/app/dev/page.tsx): development-only, read-only release timestamps/readiness/freshness/counts; no provider refresh                                          |
+| Manage releases                       | [/dev source](../src/app/dev/page.tsx): development-only release history, shared pin/rollback, resume updates, and browser-local development override |
 | Stale current prices                  | [price refresh runs/store](../src/server/prices/price-store.ts), active release flea eligibility, cron authorization and run duration                                           |
 | History fails but current price works | [live-price-history](../src/server/prices/live-price-history.ts): independent upstream request/cache                                                                            |
 | Search misses/ranking                 | [item-search](../src/server/db/item-search.ts), [search validation](../src/server/queries/searchItems.ts), [controller](../src/features/items/useItemSearchController.ts)       |

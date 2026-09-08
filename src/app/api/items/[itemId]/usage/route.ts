@@ -24,7 +24,7 @@ export async function GET(
         const response = await getItemUsageView(mode, itemId);
         return NextResponse.json(response, {
             headers: {
-                "Cache-Control": !isCompleteItemUsageData(response)
+                "Cache-Control": process.env.NODE_ENV === "development" || !isCompleteItemUsageData(response)
                     ? "no-store"
                     : "public, max-age=300, s-maxage=900, stale-while-revalidate=300",
             },

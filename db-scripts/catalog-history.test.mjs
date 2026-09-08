@@ -6,6 +6,62 @@ import { BASELINE_RELEASE_ID, initializeCatalogHistory, getKnownItemIds, catalog
 import { activateRelease, statementForRecord } from "./lib/turso.mjs";
 import { compareEntities } from "./lib/release-diff.mjs";
 import { readReleasePrices, preserveItemPrices } from "./lib/release-prices.mjs";
+import { resumeReleaseUpdates } from "../src/server/db/release-selection.mjs";
+
+test("pins survive automatic publication, including rollback during upload; resume is mode-scoped", async () => {
+	const db = createClient({ url: "file::memory:" });
+	try {
+		await db.executeMultiple(await readFile("db-scripts/schema.sql", "utf8"));
+		for (const mode of ["regular", "pve", "pvp-season"]) {
+			await release(db, mode, "old");
+			await release(db, mode, "next");
+			await release(db, mode, "broken", "uploading");
+		}
+		await activateRelease(db, "next", ["regular", "pve", "pvp-season"]);
+		await activateRelease(db, "old", ["regular", "pvp-season"], {}, { pin: true });
+		const result = await activateRelease(
+			db,
+			"next",
+			["regular", "pve", "pvp-season"],
+			{ regular: "next", pve: "next", "pvp-season": "next" },
+			{ automatic: true },
+		);
+		assert.deepEqual(result, { activated: ["pve"], skipped: ["regular", "pvp-season"] });
+		assert.equal((await db.execute("SELECT release_id FROM active_data_releases WHERE mode = 'regular'")).rows[0].release_id, "old");
+		await assert.rejects(activateRelease(db, "broken", ["regular"], {}, { pin: true }), /not ready/);
+		assert.equal((await db.execute("SELECT release_id FROM data_release_pins WHERE mode = 'regular'")).rows[0].release_id, "old");
+		await resumeReleaseUpdates(db, "regular");
+		assert.equal(
+			(await db.execute("SELECT release_id FROM active_data_releases WHERE mode = 'regular'")).rows[0].release_id,
+			"old",
+			"resume does not immediately advance the release",
+		);
+		await assert.rejects(activateRelease(db, "next", ["regular"], { regular: "next" }, { automatic: true }), /changed during update/);
+		assert.deepEqual(await activateRelease(db, "next", ["regular", "pvp-season"], { regular: "old" }, { automatic: true }), {
+			activated: ["regular"],
+			skipped: ["pvp-season"],
+		});
+		assert.equal((await db.execute("SELECT release_id FROM active_data_releases WHERE mode = 'pvp-season'")).rows[0].release_id, "old");
+	} finally {
+		db.close();
+	}
+});
+
+test("pin initialization is additive and multi-mode pin failures roll back pointers and pins", async () => {
+	const db = createClient({ url: "file::memory:" });
+	try {
+		await db.executeMultiple(await readFile("db-scripts/schema.sql", "utf8"));
+		await db.execute("DROP TABLE data_release_pins");
+		for (const mode of ["regular", "pve"]) await release(db, mode, "old");
+		await activateRelease(db, "old", ["regular", "pve"], {}, { pin: true });
+		await release(db, "regular", "next");
+		await assert.rejects(activateRelease(db, "next", ["regular", "pve"], {}, { pin: true }), /not ready/);
+		assert.ok((await db.execute("SELECT release_id FROM active_data_releases")).rows.every((row) => row.release_id === "old"));
+		assert.ok((await db.execute("SELECT release_id FROM data_release_pins")).rows.every((row) => row.release_id === "old"));
+	} finally {
+		db.close();
+	}
+});
 
 async function release(db, mode, id, status = "ready", items = ["old"]) {
 	await db.execute({

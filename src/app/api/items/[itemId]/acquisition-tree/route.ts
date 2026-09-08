@@ -25,7 +25,7 @@ export async function GET(
         );
         return NextResponse.json(payload, {
             headers: {
-                "Cache-Control": Object.values(payload.errors).some(Boolean)
+                "Cache-Control": process.env.NODE_ENV === "development" || Object.values(payload.errors).some(Boolean)
                     ? "private, no-store"
                     : "public, max-age=300, s-maxage=900, stale-while-revalidate=300",
             },

@@ -107,8 +107,8 @@ full-domain composition on every modal open.
 Partial item-view responses use `no-store`; clients must keep them retryable.
 Search validation is in [searchItems.ts](../src/server/queries/searchItems.ts),
 while ranking and bounded SQL reads belong to [item-search.ts](../src/server/db/item-search.ts).
-The development inspector reads [release-info.ts](../src/server/db/release-info.ts)
-directly. These bounded database/service paths are explicit exceptions to page
+The development dashboard reads [release-management.ts](../src/server/db/release-management.ts)
+directly, with 20 metadata rows per page and a lookahead row. These bounded database/service paths are explicit exceptions to page
 repository composition, not a reason to import provider adapters into features.
 
 ## Prices, history, and freshness
@@ -235,6 +235,21 @@ repository. Missing/unready pointers fail explicitly. API URLs do not expose a
 release ID, so existing HTTP/browser responses can retain older data until their
 normal expiry. There is no Redis cache or manual revalidation endpoint.
 
+[release-selection.mjs](../src/server/db/release-selection.mjs) is shared by the
+offline CLI and development panel. Manual selection atomically writes the active
+pointer and an additive `data_release_pins` row. Automatic upload activation checks
+pins in its write transaction and skips pinned modes; clearing a pin permits the
+next update without immediately changing the current pointer. The other modes
+retain their own choices. Unready releases cannot be selected.
+
+In development only, [dev-release-override.ts](../src/server/db/dev-release-override.ts)
+reads a per-mode HTTP-only browser cookie before resolving the shared pointer.
+The override must identify a ready release in that mode and applies consistently
+to database readers, including readers with injected clients. Production and
+offline commands ignore these cookies. Development item-view endpoints use
+no-store, and panel mutations reload client state; production HTTP cache policies
+are unchanged. See the [dashboard workflow](operations.md#release-dashboard-and-development-override).
+
 ## Catalog discovery
 
 [Catalog history](../db-scripts/lib/catalog-history.mjs) owns the durable
@@ -262,7 +277,7 @@ do not count as new. The metadata remains after the window expires.
 
 `db:items:check` compares the full provider catalog against durable history without
 writing anything. `db:update` initializes, generates all canonical domains,
-validates, records a content diff, uploads, and activates. It preserves existing
+validates, records a content diff, uploads, and activates unpinned modes. It preserves existing
 price payloads/timestamps and leaves new item fallback prices null; mutable prices
 and history are not refreshed. The pipeline records its previous active release
 and refuses stale automatic activation if that pointer changes during the run.

@@ -49,7 +49,7 @@ npm run db:update -- --modes regular,pve --patch 1.1.5.0 --release <new-release-
 
 The default is all three modes, patch `1.1.5.0`, and a timestamp release ID. It
 initializes the catalog baseline, generates, validates, writes `changes.json`,
-uploads, and activates all included modes. It preserves existing release price
+uploads, and activates included modes that are not pinned. It preserves existing release price
 payloads and timestamps, gives new items null price fallbacks, and never refreshes
 mutable prices/history. It updates trader offers as catalog content. Unchanged
 content is reported and still published as a complete validated snapshot.
@@ -125,8 +125,13 @@ To switch or roll back without local files:
 npm run db:activate -- --release <ready-release-id> --modes regular,pve,pvp-season
 ```
 
-Activation verifies all requested modes are ready and changes their pointers
-atomically. No app source edit or deployment is needed.
+Manual activation verifies all requested modes are ready and changes their pointers
+and durable pins atomically. No app source edit or deployment is needed. Automatic
+`db:update` and `db:upload --activate` skip pinned modes, including pins made during
+upload, and report the skipped modes. Use **Resume automatic updates** in the
+development-only `/dev` panel to remove a mode's pin while keeping its current
+release until the next update. The panel also offers a separate browser-local
+development override; see [operations](../docs/operations.md#release-dashboard-and-development-override).
 
 Pass `--activate` to `db:upload` only when a one-step upload and activation is
 preferred.
@@ -158,6 +163,7 @@ npm run db:prices:refresh -- --modes regular,pve
 - `data_manifests`: compact IDs/previews for catalog-style reads.
 - `data_releases`: immutable release metadata and validation counts.
 - `active_data_releases`: runtime per-mode pointers maintained by `db:activate`.
+- `data_release_pins`: per-mode manual selections protected from automatic activation.
 - `catalog_tracking`: one-time per-mode baseline initialization.
 - `item_catalog_history`: durable first-seen timestamp, tracked patch, and dataset
   release, keyed by mode/item ID. New rows and readiness commit together after
