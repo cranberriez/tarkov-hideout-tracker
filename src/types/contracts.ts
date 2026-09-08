@@ -1,4 +1,4 @@
-import type { DataDiagnostics } from "./common";
+import type { DataDiagnostics, TarkovDataMode } from "./common";
 import type { Station, GlobalSkill, ItemRequirement } from "./hideout";
 import type { ItemIdentity, ItemSummary } from "./items";
 import type { PriceHistoryPoint } from "./prices";
@@ -141,8 +141,18 @@ export interface DataStatusDomain {
 }
 
 export interface DataStatusPayload {
+    mode: TarkovDataMode;
+    releaseId: string;
     stations: DataStatusDomain;
     items: DataStatusDomain;
+    quests: DataStatusDomain;
+    crafts: DataStatusDomain;
+    barters: DataStatusDomain;
+    prices: {
+        changedAt: number | null;
+        checkedAt: number | null;
+        error: string | null;
+    };
 }
 
 export interface LegacyConversionStation {

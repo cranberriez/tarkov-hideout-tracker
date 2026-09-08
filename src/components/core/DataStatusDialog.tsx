@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, CheckCircle2, CircleAlert, Database, Languages } from "lucide-react";
+import { Activity, CheckCircle2, CircleAlert, Database } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -23,11 +23,11 @@ export interface DataStatusConfig {
 interface StatusRowProps {
     label: string;
     value: string;
-    detail?: string;
+    title?: string;
     state?: "ok" | "warning" | "error" | "neutral";
 }
 
-function StatusRow({ label, value, detail, state = "neutral" }: StatusRowProps) {
+function StatusRow({ label, value, title, state = "neutral" }: StatusRowProps) {
     const dotClass =
         state === "ok"
             ? "bg-emerald-400"
@@ -45,21 +45,18 @@ function StatusRow({ label, value, detail, state = "neutral" }: StatusRowProps) 
                     <div className="text-xs font-medium uppercase tracking-wide text-gray-400">
                         {label}
                     </div>
-                    {detail && (
-                        <div className="mt-1 pl-3 text-xs leading-5 text-gray-500">{detail}</div>
-                    )}
                 </div>
             </div>
-            <div className="shrink-0 text-right text-sm text-gray-100">{value}</div>
+            <div title={title} className="shrink-0 text-right text-sm text-gray-100">{value}</div>
         </div>
     );
 }
 
 function freshness(timestamp: number | null) {
-    if (!timestamp) return { value: "Unavailable", detail: undefined };
+    if (!timestamp) return { value: "Unavailable", title: undefined };
     return {
         value: formatRelativeUpdatedAt(timestamp) ?? "Available",
-        detail: formatUpdatedAt(timestamp) ?? undefined,
+        title: formatUpdatedAt(timestamp) ?? undefined,
     };
 }
 
@@ -85,10 +82,13 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                 if (!response.ok) throw new Error("Data status could not be loaded.");
                 return response.json() as Promise<DataStatusPayload>;
             })
-            .then((payload) =>
-                setStatusRequest({ mode: requestedMode, payload, error: null }),
-            )
+            .then((payload) => {
+                if (!controller.signal.aborted) {
+                    setStatusRequest({ mode: requestedMode, payload, error: null });
+                }
+            })
             .catch((error: unknown) => {
+                if (controller.signal.aborted) return;
                 if (error instanceof DOMException && error.name === "AbortError") return;
                 setStatusRequest({
                     mode: requestedMode,
@@ -109,11 +109,19 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
     const items = status?.items ?? null;
     const stationFreshness = freshness(stations?.updatedAt ?? null);
     const itemFreshness = freshness(items?.updatedAt ?? null);
+    const prices = status?.prices ?? null;
+    const priceError = requestError ?? prices?.error;
+    const priceFreshness = freshness(prices?.changedAt ?? null);
+    const priceCheckFreshness = freshness(prices?.checkedAt ?? null);
+    const releaseId = status?.releaseId ??
+        (config.activeDataset === requestedMode ? config.releaseId : null);
     const hasCoreError = Boolean(
         requestError ||
             (status && (!stations?.available || !items?.available)),
     );
-    const providerError = requestError ?? stations?.error ?? items?.error;
+    const hasDatasetError = hasCoreError || Boolean(
+        status && (!status.quests?.available || !status.crafts?.available || !status.barters?.available),
+    );
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <span className="inline-flex items-baseline font-mono text-[10px] uppercase tracking-widest text-gray-500">
@@ -128,27 +136,27 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                 </DialogTrigger>
                 <span aria-hidden="true">&nbsp;]</span>
             </span>
-            <DialogContent className="max-w-md overflow-hidden p-0">
+            <DialogContent className="max-h-[90dvh] max-w-md overflow-y-auto p-0">
                 <DialogHeader className="border-b border-border-color px-4 py-3.5 pr-11">
                     <DialogTitle className="flex items-center gap-2">
                         <Activity aria-hidden="true" className="size-5 text-tarkov-green" />
                         Data status
                     </DialogTitle>
-                    <DialogDescription>
-                        Current database release and dataset freshness.
+                    <DialogDescription className="sr-only">
+                        Current database release, dataset freshness, and price updates.
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="px-4 py-1">
+                <div className="px-4 pt-1 pb-3">
                     <div className="mb-1.5 flex items-center gap-2 pt-3 text-xs font-semibold uppercase tracking-wider text-gray-300">
-                        {hasCoreError ? (
+                        {hasDatasetError ? (
                             <CircleAlert aria-hidden="true" className="size-4 text-red-400" />
                         ) : (
                             <CheckCircle2 aria-hidden="true" className="size-4 text-emerald-400" />
                         )}
                         {isLoading
                             ? "Checking core data"
-                            : hasCoreError
+                            : hasDatasetError
                               ? "Some data is unavailable"
                               : status
                                 ? "Core data is available"
@@ -164,10 +172,6 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                                 ? "Connection failed"
                                 : "Turso"
                         }
-                        detail={
-                            providerError ??
-                            `Immutable release ${config.releaseId}.`
-                        }
                         state={
                             isLoading
                                 ? "neutral"
@@ -177,20 +181,22 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                         }
                     />
                     <StatusRow
+                        label="Release"
+                        value={releaseId ?? "Checking"}
+                    />
+                    <StatusRow
                         label="Active dataset"
-                        value={`${gameMode} · ${config.activeDataset}`}
+                        value={`${gameMode} · ${requestedMode}`}
                         state="ok"
                     />
                     <StatusRow
                         label="Cache"
                         value="Next.js / CDN"
-                        detail="Targeted database responses use route-level caching; Redis is not in the runtime data path."
                         state="ok"
                     />
                     <StatusRow
                         label="Localization"
                         value="Stored release labels"
-                        detail="Mode-specific normalized labels were captured when this release was generated."
                         state="ok"
                     />
 
@@ -207,7 +213,7 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                                   ? "Error"
                                   : stationFreshness.value
                         }
-                        detail={stations?.error ?? stationFreshness.detail}
+                        title={stations?.error ?? stationFreshness.title}
                         state={
                             isLoading
                                 ? "neutral"
@@ -217,7 +223,7 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                         }
                     />
                     <StatusRow
-                        label="Hideout items"
+                        label="Item catalog"
                         value={
                             isLoading
                                 ? "Checking"
@@ -225,16 +231,39 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                                   ? "Error"
                                   : itemFreshness.value
                         }
-                        detail={items?.error ?? itemFreshness.detail}
+                        title={items?.error ?? itemFreshness.title}
                         state={
                             isLoading ? "neutral" : items?.available ? "ok" : "error"
                         }
                     />
-                    <div className="ml-4 mt-4 flex items-start gap-2 pb-4 pt-0.5 text-[11px] leading-5 text-gray-500">
-                        <Languages aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
-                        Translation fallback changes labels only. The selected mode&apos;s base records
-                        and IDs remain unchanged.
-                    </div>
+                    {([
+                        ["Quests", status?.quests],
+                        ["Craft recipes", status?.crafts],
+                        ["Barter recipes", status?.barters],
+                    ] as const).map(([label, domain]) => {
+                        const updated = freshness(domain?.updatedAt ?? null);
+                        return (
+                            <StatusRow
+                                key={label}
+                                label={label}
+                                value={isLoading ? "Checking" : requestError ? "Error" : updated.value}
+                                title={requestError ?? domain?.error ?? updated.title}
+                                state={isLoading ? "neutral" : requestError || domain?.error ? "error" : domain?.available ? "ok" : "warning"}
+                            />
+                        );
+                    })}
+                    <StatusRow
+                        label="Prices last changed"
+                        value={isLoading ? "Checking" : priceError ? "Error" : priceFreshness.value}
+                        title={priceError ?? priceFreshness.title}
+                        state={isLoading ? "neutral" : priceError ? "error" : prices?.changedAt ? "ok" : "warning"}
+                    />
+                    <StatusRow
+                        label="Prices last checked"
+                        value={isLoading ? "Checking" : priceError ? "Error" : priceCheckFreshness.value}
+                        title={priceError ?? priceCheckFreshness.title}
+                        state={isLoading ? "neutral" : priceError ? "error" : "neutral"}
+                    />
                 </div>
             </DialogContent>
         </Dialog>

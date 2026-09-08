@@ -9,6 +9,7 @@ import type {
 import type { Station } from "@/types/hideout";
 import type { ItemIdentity } from "@/types/items";
 import { getTursoClient } from "./client";
+import { isMissingMutablePriceStorage } from "./current-prices";
 import { TursoDataIntegrityError, TursoRecordNotFoundError } from "./errors";
 import { getManifest } from "./manifests";
 import { getActiveDataReleaseId } from "./release-config";
@@ -236,12 +237,51 @@ export async function getCompletedItemsConversionView(
     };
 }
 
+async function getPriceStatus(
+    mode: TarkovJsonGameMode,
+    database?: Client,
+): Promise<DataStatusPayload["prices"]> {
+    try {
+        const result = await (database ?? getTursoClient()).execute({
+            sql: `SELECT MAX(last_changed_at) AS changed_at,
+                         MAX(last_checked_at) AS checked_at
+                  FROM item_prices WHERE mode = ?`,
+            args: [mode],
+        });
+        return {
+            changedAt: numberOrNull(result.rows[0]?.changed_at),
+            checkedAt: numberOrNull(result.rows[0]?.checked_at),
+            error: null,
+        };
+    } catch (error) {
+        return {
+            changedAt: null,
+            checkedAt: null,
+            error: isMissingMutablePriceStorage(error)
+                ? null
+                : "Price update status could not be loaded.",
+        };
+    }
+}
+
+function releaseDomainStatus(value: unknown, label: string): DataStatusPayload["quests"] {
+    const timestamp = numberOrNull(value);
+    const updatedAt = timestamp !== null && timestamp > 0 ? timestamp : null;
+    return {
+        available: updatedAt !== null,
+        updatedAt,
+        diagnostics: updatedAt !== null ? { provider: "json" } : null,
+        error: updatedAt === null ? `${label} update time is unavailable.` : null,
+    };
+}
+
 export async function getDataStatusView(
     mode: TarkovJsonGameMode,
     database?: Client,
 ): Promise<DataStatusPayload> {
+    const releaseId = getActiveDataReleaseId(mode);
+    const pricesPromise = getPriceStatus(mode, database);
     try {
-        const releaseId = getActiveDataReleaseId(mode);
         const result = await (database ?? getTursoClient()).execute({
             sql: `
                 SELECT source_freshness_json
@@ -268,6 +308,12 @@ export async function getDataStatusView(
         }
 
         return {
+            mode,
+            releaseId,
+            prices: await pricesPromise,
+            quests: releaseDomainStatus(freshness.quests, "Quest dataset"),
+            crafts: releaseDomainStatus(freshness.crafts, "Craft recipes"),
+            barters: releaseDomainStatus(freshness.barters, "Barter recipes"),
             stations: {
                 available: true,
                 updatedAt: stationsUpdatedAt,
@@ -283,6 +329,12 @@ export async function getDataStatusView(
         };
     } catch {
         return {
+            mode,
+            releaseId,
+            prices: await pricesPromise,
+            quests: releaseDomainStatus(null, "Quest dataset"),
+            crafts: releaseDomainStatus(null, "Craft recipes"),
+            barters: releaseDomainStatus(null, "Barter recipes"),
             stations: {
                 available: false,
                 updatedAt: null,

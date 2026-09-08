@@ -99,7 +99,7 @@ full-domain composition on every modal open.
 | [acquisition-tree](<../src/app/api/items/[itemId]/acquisition-tree/route.ts>) | Cycle-safe graph bounded by depth/item count with `truncated`; same complete-response policy |
 | [price-history](<../src/app/api/items/[itemId]/price-history/route.ts>) | On-demand provider history; browser 300s, CDN and upstream Next.js fetch cache 7200s |
 | [search](../src/app/api/items/search/route.ts) | `q` up to 80 characters; 10 results by default or 50 with `limit=50`; `private, no-store` |
-| [status](../src/app/api/data/status/route.ts) | Release freshness; `private, no-store` |
+| [status](../src/app/api/data/status/route.ts) | Mode/release identity, hideout/item/quest/craft/barter release freshness, and independent mutable-price change/check timestamps; `private, no-store` |
 | [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); `private, no-store` |
 | [map APIs](../src/app/api/maps/) | Committed map metadata and allow-listed SVG service; see [maps](maps.md) |
 | [price cron APIs](../src/app/api/cron/prices/) | Protected mutable-price refresh; see [operations](operations.md) |
@@ -112,6 +112,19 @@ directly. These bounded database/service paths are explicit exceptions to page
 repository composition, not a reason to import provider adapters into features.
 
 ## Prices, history, and freshness
+
+The footer status dialog includes separate quest, craft recipe, and barter recipe
+update times from the selected release’s source freshness metadata. Missing domain
+timestamps remain explicit without hiding other available domains. It reads mode-scoped `MAX(last_changed_at)` and
+`MAX(last_checked_at)` from `item_prices` through
+[shared-api-data.ts](../src/server/db/shared-api-data.ts). Changed means a new
+provider payload was accepted, not necessarily a numeric price movement; checks
+include unchanged responses and failed attempts. These are the latest times for
+any item in the selected mode, not a guarantee that every item was refreshed.
+Missing tables or rows show unavailable timestamps; operational price-status
+errors remain separate from core release availability. No entity arrays are
+loaded for this status read. The compact dialog shows label/value rows with relative times and local dates
+on hover, and keeps its dataset and release labels aligned with the requested mode.
 
 Runtime entity reads use [read-cache.ts](../src/server/db/read-cache.ts) and
 Next's data cache, keyed by mode, selected release, entity type, freshness key,
