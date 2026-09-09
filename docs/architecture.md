@@ -136,14 +136,15 @@ item index without catalog requests or shared-layout preloads.
 [ItemSearchModal](../src/features/items/components/ItemSearchModal.tsx) is retained
 as a catalog search palette for future site-wide placement, detached from the
 checklist. Its [useItemSearchController](../src/features/items/useItemSearchController.ts)
-debounces for 200ms and observes mode-scoped
-[search queries](../src/features/items/search-query.ts). Changing or closing a
-search detaches its observer so unused transport is aborted, while identical
-queries share one in-flight read and cached result. The palette requests up to 50
-results, Quick Add up to 10; prefix matches precede other alphabetical matches.
-Errors offer an explicit retry. The endpoint searches all standard catalog items, including those absent
-from checklist demand. Its database owner and validation are in
-[data layer](data-layer.md).
+uses the shared [compact search manifest](data-layer.md#compact-search-manifest).
+The persistent provider loads it in the background after page load and idle time;
+opening search sooner starts the same request. Names, normalized names, and short
+names are indexed once per accepted mode/revision and searched locally. The palette
+returns up to 50 results and Quick Add up to 10, with prefix matches first and
+alphabetical ties. Typing, changing the limit, and reopening a ready palette do not
+fetch search results. Initial loading and failures retain explicit loading/retry UI.
+The manifest also contains eligible quest and trader summaries for future catalog
+consumers; this checkout does not yet have a site-wide item/quest palette.
 
 [QuickAddModal](../src/features/quick-add/QuickAddModal.tsx) keeps draft rows and
 FiR/non-FiR additions locally, then commits inventory additions through store
@@ -177,4 +178,3 @@ For changes here, run [page query tests](../src/server/queries/page-data-queries
 [quest-item demand tests](../src/lib/utils/quest-item-index.test.ts) as applicable;
 [operations](operations.md) gives runnable commands. Verify changed interactions
 in the browser, including a mode switch and partial/missing-data states.
-

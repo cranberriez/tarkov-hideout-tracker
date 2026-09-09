@@ -98,3 +98,9 @@ node --test --import jiti/register src/features/quests/workspace/quest-workspace
 Run the adjacent tests for any correction, graph, marker, or import utility you
 change. Browser checks should cover the affected filter/navigation/action and
 mode isolation. See [operations](operations.md) for broader validation.
+
+Catalog search includes the prepared mode-specific quest set with removed quests
+excluded, independently of player progression and workspace filters. Seasonal
+Lightkeeper/series exclusions use the existing preparation policy. Compact
+summaries contain identity, display name, normalized name, and trader ID only;
+see [compact search delivery](data-layer.md#compact-search-manifest).

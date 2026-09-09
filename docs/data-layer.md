@@ -105,7 +105,8 @@ not retried automatically. Price-dependent filters update when prices arrive.
 Profit pages still await pricing before calculating and ranking recipes.
 
 Item routes validate standard item IDs and require a supported data `mode`.
-The browser never sends or validates database revision IDs. Each API resolves the
+Except for the compact search manifest protocol below, the browser never sends
+or validates database revision IDs. Each API resolves the
 current revision internally. Multi-step stored reads pin that revision for their
 duration; if publication retires it mid-read, the request fails transiently rather
 than mixing datasets or reporting a missing entity.
@@ -138,11 +139,7 @@ and require explicit retries. Mutable price history uses the same retention grou
 with a two-hour freshness and retention period.
 Search validation is in [searchItems.ts](../src/server/queries/searchItems.ts),
 while ranking and bounded release-specific SQL reads belong to
-[item-search.ts](../src/server/db/item-search.ts). Catalog query keys include mode,
-result limit, and canonical normalized text. Results are fresh for 60 seconds,
-retained inactive for five minutes, and capped at 20 inactive search queries.
-Transient failures use the shared retry policy; validation errors require an
-explicit retry.
+[item-search.ts](../src/server/db/item-search.ts). Current catalog clients use the compact manifest described below.
 
 The root [QueryProvider](../src/lib/query/QueryProvider.tsx) keeps one browser
 QueryClient across navigation. Its default inactive retention is 30 minutes and
@@ -346,3 +343,44 @@ price state. Check/failure timestamps still describe real refresh attempts.
 
 Update this document when contracts, source ownership, or cache behavior changes.
 
+
+## Compact search manifest
+
+[Manifest generation](../src/lib/search/build-manifest.ts) projects canonical
+standard items, eligible quests, and trader presentation into the versioned
+[compact contract](../src/types/search.ts). Generation emits `compact-search-v1`
+through the existing manifest record storage; no schema migration is needed.
+Snapshot validation compares it with canonical source records before publication.
+The stored content omits revision identity so unchanged updates remain no-ops.
+The response adds the revision selected by the server.
+
+[/api/search](../src/app/api/search/route.ts) takes an explicit mode. Its
+`identity=1` variant reads only current release identity, without a pointer TTL.
+The manifest variant requires that identity as `releaseId`, returning 409 if
+publication has moved on. [The reader](../src/server/db/search-manifest.ts) reads
+one stored record and caches compressed JSON by version, mode, and revision using
+the shared bounded Next cache. HTTP responses use `private, no-store`; this avoids
+extending the age of an old browser/CDN response. Rejected reads are not cached.
+Older ready datasets use a transitional read of the existing items/quests/traders
+summary manifests, applying the same projection and exclusions. Operational or
+malformed-data failures do not silently use another mode or revision.
+
+[Background search](../src/lib/search/useSearchManifest.tsx) starts after window
+load, browser idle scheduling, and profile hydration. Opening search earlier can
+start the same query immediately. TanStack retains the decoded index in session
+memory across navigation, with infinite freshness for a given revision. A separate
+five-minute identity query checks on an interval while visible and on stale
+focus/reconnect. A new revision loads a new manifest; the old revision is removed
+after successful replacement. The existing mode lifecycle cancels/removes the
+previous mode, including in-flight responses. Failures expose explicit retry;
+valid same-revision data can remain usable after an identity-check failure.
+No player persistence changes are involved.
+
+The compact payload intentionally excludes prices, discovery metadata, objectives,
+requirements, and recipes. Images are URLs only, requested when result rows render.
+Existing `/api/items/search` remains available for compatibility; current item
+search and Quick Add use the shared manifest without requests per keystroke.
+
+Measured against the current dataset on 2026-09-09: 5,320 items per mode and
+482/479/435 quests for regular/PVE/KORD, respectively. Minified JSON is about
+1.09 MB raw or 220 KB gzip; actual deployment content encoding may differ.

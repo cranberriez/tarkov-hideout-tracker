@@ -11,7 +11,38 @@ import {
 	payloadStatement,
 	currentRecordStatement,
 } from "./current-storage.mjs";
-import { hashFile } from "./snapshot.mjs";
+import { hashFile, validateSnapshotFiles } from "./snapshot.mjs";
+import { createJiti } from "jiti";
+
+test("snapshot validation rejects incomplete search manifests before publication", async () => {
+	const directory = await fs.mkdtemp(path.join(os.tmpdir(), "compact-search-"));
+	try {
+		const snapshot = await fixture(directory, "search-test");
+		const filename = path.join(directory, "regular.ndjson");
+		const records = (await fs.readFile(filename, "utf8")).split("\n").map(JSON.parse);
+		const entities = records.filter((record) => record.type === "entity");
+		for (const record of entities.filter((record) => record.payload)) {
+			record.payload.normalizedName = "original";
+			if (record.entityType === "quest") record.payload.trader = { id: "x", name: "Trader", normalizedName: "trader" };
+		}
+		const { buildSearchManifest } = await createJiti(import.meta.url).import("../../src/lib/search/build-manifest.ts");
+		const source = (kind) => entities.filter((record) => record.entityType === kind).map((record) => record.payload);
+		const payload = buildSearchManifest("regular", source("item"), source("quest"), source("trader"));
+		records.push({ type: "manifest", manifestName: "compact-search-v1", updatedAt: 1, payload });
+		snapshot.modes[0].recordCounts.manifest++;
+		const write = async () => {
+			await fs.writeFile(filename, records.map(JSON.stringify).join("\n"));
+			snapshot.modes[0].sha256 = await hashFile(filename);
+		};
+		await write();
+		await validateSnapshotFiles(directory, snapshot);
+		payload.quests = [];
+		await write();
+		await assert.rejects(validateSnapshotFiles(directory, snapshot), /incomplete compact search manifest/);
+	} finally {
+		await fs.rm(directory, { recursive: true, force: true });
+	}
+});
 
 test("canonical payloads deduplicate; freshness preserves availability, nested timestamps remain content", () => {
 	assert.equal(stableStringify({ b: 2, a: 1 }), stableStringify({ a: 1, b: 2 }));

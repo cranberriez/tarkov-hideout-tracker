@@ -151,18 +151,29 @@ async function loadApplicationModules() {
 		alias: { "@": path.join(projectRoot, "src") },
 	});
 	const importSource = (relativePath) => jiti.import(path.join(projectRoot, relativePath));
-	const [itemsService, hideoutService, questsService, tradersService, recipesService, relationsQuery, usageQuery, acquisitionQuery, nameUtils] =
-		await Promise.all([
-			importSource("src/server/services/itemsJson.ts"),
-			importSource("src/server/services/hideoutJson.ts"),
-			importSource("src/server/services/questsJson.ts"),
-			importSource("src/server/services/tradersJson.ts"),
-			importSource("src/server/services/itemAcquisitionJson.ts"),
-			importSource("src/server/queries/getItemRelationsData.ts"),
-			importSource("src/server/queries/getItemUsageData.ts"),
-			importSource("src/server/queries/getItemAcquisitionTreeData.ts"),
-			importSource("src/lib/utils/normalize-name.ts"),
-		]);
+	const [
+		itemsService,
+		hideoutService,
+		questsService,
+		tradersService,
+		recipesService,
+		relationsQuery,
+		usageQuery,
+		acquisitionQuery,
+		nameUtils,
+		searchManifest,
+	] = await Promise.all([
+		importSource("src/server/services/itemsJson.ts"),
+		importSource("src/server/services/hideoutJson.ts"),
+		importSource("src/server/services/questsJson.ts"),
+		importSource("src/server/services/tradersJson.ts"),
+		importSource("src/server/services/itemAcquisitionJson.ts"),
+		importSource("src/server/queries/getItemRelationsData.ts"),
+		importSource("src/server/queries/getItemUsageData.ts"),
+		importSource("src/server/queries/getItemAcquisitionTreeData.ts"),
+		importSource("src/lib/utils/normalize-name.ts"),
+		importSource("src/lib/search/build-manifest.ts"),
+	]);
 	return {
 		itemsService,
 		hideoutService,
@@ -173,6 +184,7 @@ async function loadApplicationModules() {
 		usageQuery,
 		acquisitionQuery,
 		normalizeName: nameUtils.normalizeName,
+		buildSearchManifest: searchManifest.buildSearchManifest,
 	};
 }
 
@@ -268,11 +280,27 @@ async function writeModeSnapshot(releaseDirectory, releaseId, mode, modules, pre
 	];
 	for (const [entityType, records, updatedAt] of entityGroups) {
 		for (const record of records) {
-			await writeEntity(stream, counts, entityType, record.id, record, updatedAt, record.name?.toLocaleLowerCase("en") ?? record.id);
+			await writeEntity(
+				stream,
+				counts,
+				entityType,
+				record.id,
+				record,
+				updatedAt,
+				record.name?.toLocaleLowerCase("en") ?? record.id,
+			);
 		}
 	}
 	for (const item of data.items) {
-		await writeEntity(stream, counts, "price", item.id, item.marketPrice ?? null, previousPrices?.get(item.id)?.updatedAt ?? data.freshness.items, item.id);
+		await writeEntity(
+			stream,
+			counts,
+			"price",
+			item.id,
+			item.marketPrice ?? null,
+			previousPrices?.get(item.id)?.updatedAt ?? data.freshness.items,
+			item.id,
+		);
 		const normalizedName = modules.normalizeName(item.name);
 		const preview = itemPreview(item);
 		await writeLine(stream, {
@@ -287,6 +315,7 @@ async function writeModeSnapshot(releaseDirectory, releaseId, mode, modules, pre
 	}
 
 	const manifests = {
+		"compact-search-v1": modules.buildSearchManifest(mode, data.items, data.quests, data.traders),
 		items: {
 			ids: data.items.map((item) => item.id),
 			previews: data.items.map(itemPreview),
@@ -381,7 +410,11 @@ async function main() {
 		pricesPreserved: options.preservePrices,
 		modes,
 	};
-	await fsPromises.writeFile(path.join(releaseDirectory, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+	await fsPromises.writeFile(
+		path.join(releaseDirectory, "manifest.json"),
+		`${JSON.stringify(manifest, null, 2)}\n`,
+		"utf8",
+	);
 	process.stdout.write(`Snapshot ready: ${releaseDirectory}\n`);
 }
 

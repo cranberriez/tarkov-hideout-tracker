@@ -12,7 +12,7 @@
 		"test:theme": "node --test --import jiti/register src/architecture/theme-colors.test.ts",
 		"test:contracts": "node --test --import jiti/register src/server/queries/page-data-queries.test.ts src/server/queries/shared-data-queries.test.ts src/server/queries/item-detail-queries.test.ts src/server/queries/getKappaChecklistPageData.test.ts src/server/queries/searchItems.test.ts",
 		"test:query": "node --test --experimental-test-isolation=none --import jiti/register src/lib/query/query-foundation.test.ts",
-		"test:search": "node --test --experimental-test-isolation=none --import jiti/register src/features/items/search-query.test.ts src/server/queries/searchItems.test.ts",
+		"test:search": "node --test --experimental-test-isolation=none --import jiti/register src/lib/search/manifest.test.ts src/server/db/search-manifest.test.ts src/server/queries/searchItems.test.ts",
 		"test:page-data": "node --test --experimental-test-isolation=none --import jiti/register src/lib/query/page-data.test.ts src/server/queries/prefetchPageData.test.ts",
 		"test:reusable-reads": "node --test --experimental-test-isolation=none --import jiti/register src/lib/query/reusable-reads.test.ts",
 		"db:generate": "node db-scripts/generate.mjs",

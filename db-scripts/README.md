@@ -134,3 +134,9 @@ Focused offline tests:
 node --test db-scripts/catalog-history.test.mjs db-scripts/snapshot.test.mjs db-scripts/current-storage.test.mjs
 node --test --import jiti/register src/server/db/catalog-release.test.ts src/lib/utils/new-items.test.ts src/server/services/itemsJson.test.ts
 ```
+
+New snapshots include a validated `compact-search-v1` manifest with standard item,
+quest, and trader summaries. `db:update` publishes it atomically with other records;
+no separate schema migration or upload is required. Existing ready datasets remain
+searchable through summary-manifest fallback until their next update. See
+[compact search delivery](../docs/data-layer.md#compact-search-manifest).

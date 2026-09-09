@@ -3,6 +3,9 @@ import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
+import { createJiti } from "jiti";
+
+const jiti = createJiti(import.meta.url);
 
 export const SNAPSHOT_SCHEMA_VERSION = 1;
 export const RECORD_TYPES = new Set(["entity", "itemView", "itemSearch", "manifest"]);
@@ -59,7 +62,11 @@ export async function loadSnapshotManifest(releaseDirectory) {
 	}
 	const seenModes = new Set();
 	for (const entry of manifest.modes) {
-		if (!["regular", "pve", "pvp-season"].includes(entry.mode) || seenModes.has(entry.mode) || entry.file !== `${entry.mode}.ndjson`) {
+		if (
+			!["regular", "pve", "pvp-season"].includes(entry.mode) ||
+			seenModes.has(entry.mode) ||
+			entry.file !== `${entry.mode}.ndjson`
+		) {
 			throw new Error("Snapshot contains an invalid mode, duplicate mode, or unexpected filename");
 		}
 		seenModes.add(entry.mode);
@@ -77,21 +84,50 @@ export async function validateSnapshotFiles(releaseDirectory, manifest) {
 		const actual = { entity: 0, itemView: 0, itemSearch: 0, manifest: 0 };
 		const entityCounts = {};
 		const keys = new Set();
+		const searchSources = { item: [], quest: [], trader: [] };
+		let searchManifest;
 		for await (const record of readRecords(filename)) {
 			actual[record.type] += 1;
-			const key = JSON.stringify([record.type, record.entityType, record.entityId, record.itemId, record.viewType, record.manifestName]);
+			const key = JSON.stringify([
+				record.type,
+				record.entityType,
+				record.entityId,
+				record.itemId,
+				record.viewType,
+				record.manifestName,
+			]);
 			if (keys.has(key)) throw new Error(`${modeEntry.file} contains a duplicate record`);
 			keys.add(key);
+			if (record.type === "manifest" && record.manifestName === "compact-search-v1") searchManifest = record.payload;
 			if (record.type === "entity") {
+				if (searchSources[record.entityType]) searchSources[record.entityType].push(record.payload);
 				entityCounts[record.entityType] = (entityCounts[record.entityType] ?? 0) + 1;
-				if (typeof record.entityId !== "string" || !record.entityId.trim() || (record.entityType !== "price" && record.payload?.id !== record.entityId)) {
+				if (
+					typeof record.entityId !== "string" ||
+					!record.entityId.trim() ||
+					(record.entityType !== "price" && record.payload?.id !== record.entityId)
+				) {
 					throw new Error(`${modeEntry.file} contains an invalid entity identity`);
 				}
 			}
 		}
+		// Old snapshots remain readable during rollout; newly emitted manifests must
+		// exactly represent their canonical source records before publication.
+		if (searchManifest !== undefined) {
+			const { buildSearchManifest } = await jiti.import("../../src/lib/search/build-manifest.ts");
+			const expected = buildSearchManifest(
+				modeEntry.mode,
+				searchSources.item,
+				searchSources.quest,
+				searchSources.trader,
+			);
+			if (JSON.stringify(searchManifest) !== JSON.stringify(expected))
+				throw new Error(`${modeEntry.file} has an incomplete compact search manifest`);
+		}
 		for (const recordType of Object.keys(actual)) {
 			const expected = modeEntry.recordCounts?.[recordType];
-			if (!Number.isInteger(expected) || expected <= 0) throw new Error(`${modeEntry.file} is missing required ${recordType} records`);
+			if (!Number.isInteger(expected) || expected <= 0)
+				throw new Error(`${modeEntry.file} is missing required ${recordType} records`);
 			if (actual[recordType] !== expected) {
 				throw new Error(`${modeEntry.file} contains ${actual[recordType]} ${recordType} records; expected ${expected}`);
 			}
@@ -101,7 +137,11 @@ export async function validateSnapshotFiles(releaseDirectory, manifest) {
 				throw new Error(`${modeEntry.file} has an empty or inconsistent ${domain} domain`);
 			}
 		}
-		if (entityCounts.price !== entityCounts.item || actual.itemSearch !== entityCounts.item || actual.itemView !== 3 * entityCounts.item) {
+		if (
+			entityCounts.price !== entityCounts.item ||
+			actual.itemSearch !== entityCounts.item ||
+			actual.itemView !== 3 * entityCounts.item
+		) {
 			throw new Error(`${modeEntry.file} has incomplete item prices/search/views`);
 		}
 	}
