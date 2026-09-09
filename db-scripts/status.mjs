@@ -2,7 +2,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { getTursoConfig, loadLocalEnv } from "./lib/config.mjs";
-import { applySchema, createTursoClient } from "./lib/turso.mjs";
+import { createTursoClient } from "./lib/turso.mjs";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDirectory, "..");
@@ -10,7 +10,6 @@ const projectRoot = path.resolve(scriptDirectory, "..");
 await loadLocalEnv(projectRoot);
 const client = createTursoClient(getTursoConfig());
 try {
-	await applySchema(client, path.join(scriptDirectory, "schema.sql"));
 	const result = await client.execute(`
         SELECT
             releases.mode,
@@ -19,11 +18,9 @@ try {
             releases.generated_at,
             releases.uploaded_at,
             active.release_id = releases.release_id AS is_active,
-            pins.release_id = releases.release_id AS is_pinned,
             releases.record_counts_json
         FROM data_releases AS releases
         LEFT JOIN active_data_releases AS active ON active.mode = releases.mode
-        LEFT JOIN data_release_pins AS pins ON pins.mode = releases.mode
         ORDER BY releases.generated_at DESC, releases.mode
         LIMIT 30
     `);
@@ -32,7 +29,6 @@ try {
 		releaseId: String(row.release_id),
 		status: String(row.status),
 		active: Boolean(row.is_active),
-		pinned: Boolean(row.is_pinned),
 		generatedAt: new Date(Number(row.generated_at)).toISOString(),
 		uploadedAt: row.uploaded_at ? new Date(Number(row.uploaded_at)).toISOString() : null,
 		counts: JSON.parse(String(row.record_counts_json)),

@@ -5,7 +5,7 @@ import { normalizeName } from "@/lib/utils/normalize-name";
 import type { ItemSearchPayload } from "@/types/contracts";
 import type { ItemSummary } from "@/types/items";
 import { getTursoClient } from "./client";
-import { TursoDataIntegrityError } from "./errors";
+import { TursoDataIntegrityError, TursoRecordNotFoundError } from "./errors";
 import { getActiveDataReleaseId } from "./release-config";
 import { parseStoredJson } from "./stored-json";
 
@@ -14,7 +14,12 @@ function escapeLikePattern(value: string): string {
 }
 
 function assertItemSummary(value: ItemSummary, expectedId: unknown): ItemSummary {
-	if (typeof expectedId !== "string" || value.id !== expectedId || typeof value.name !== "string" || typeof value.normalizedName !== "string") {
+	if (
+		typeof expectedId !== "string" ||
+		value.id !== expectedId ||
+		typeof value.name !== "string" ||
+		typeof value.normalizedName !== "string"
+	) {
 		throw new TursoDataIntegrityError("An item search preview has an invalid shape");
 	}
 	return value;
@@ -59,6 +64,15 @@ export async function searchItemPreviews(
         `,
 		args: [mode, releaseId, normalizedPattern, compactPattern, normalizedPattern, resultLimit],
 	});
+
+	if (!result.rows.length) {
+		const selected = await database.execute({
+			sql: "SELECT release_id FROM data_releases WHERE mode = ? AND release_id = ? AND status = 'ready'",
+			args: [mode, releaseId],
+		});
+		if (!selected.rows.length)
+			throw new TursoRecordNotFoundError(`No ready data release exists for ${mode}/${releaseId}`);
+	}
 
 	const discovery = await getItemDiscovery(
 		mode,

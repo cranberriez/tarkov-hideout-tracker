@@ -19,7 +19,9 @@ export async function getBaselineIds(client, mode, baselineReleaseId = BASELINE_
 		args: [mode, baselineReleaseId],
 	});
 	if (!result.rows.length) {
-		throw new Error(`Missing ready item baseline ${mode}/${baselineReleaseId}; refusing to classify the whole catalog as new.`);
+		throw new Error(
+			`Missing ready item baseline ${mode}/${baselineReleaseId}; refusing to classify the whole catalog as new.`,
+		);
 	}
 	return result.rows.map((row) => String(row.entity_id));
 }
@@ -57,14 +59,29 @@ export async function initializeCatalogHistory(client, modes, baselineReleaseId 
 }
 
 export async function getKnownItemIds(client, mode) {
-	const tables = await client.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'catalog_tracking'");
+	const tables = await client.execute(
+		"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'catalog_tracking'",
+	);
 	if (tables.rows.length) {
 		const initialized = await client.execute({ sql: "SELECT mode FROM catalog_tracking WHERE mode = ?", args: [mode] });
 		if (initialized.rows.length) {
-			const result = await client.execute({ sql: "SELECT item_id FROM item_catalog_history WHERE mode = ?", args: [mode] });
+			const result = await client.execute({
+				sql: "SELECT item_id FROM item_catalog_history WHERE mode = ?",
+				args: [mode],
+			});
 			if (!result.rows.length) throw new Error(`Catalog history for ${mode} is empty`);
 			return new Set(result.rows.map((row) => String(row.item_id)));
 		}
+	}
+	const currentStorage = await client.execute(
+		"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'current_records'",
+	);
+	if (currentStorage.rows.length) {
+		const result = await client.execute({
+			sql: "SELECT item_id FROM item_catalog_history WHERE mode = ?",
+			args: [mode],
+		});
+		return new Set(result.rows.map((row) => String(row.item_id)));
 	}
 	// Read-only checks can run before the additive migration.
 	return new Set(await getBaselineIds(client, mode));

@@ -8,6 +8,7 @@ import { createJiti } from "jiti";
 import { TursoPriceRefreshStore } from "../prices/price-store";
 import { refreshPriceMode } from "../prices/refresh-prices";
 import { getFleaPrice, getFleaPriceEstimate } from "../../lib/utils/market-price";
+import { insertCurrentTestRecord } from "./current-test-fixture";
 
 const require = createRequire(import.meta.url);
 const jiti = createJiti(import.meta.url, {
@@ -29,15 +30,15 @@ test("bounded history hydration isolates modes, corrects old prices, and retains
 				sql: `INSERT INTO data_releases (mode,release_id,schema_version,generated_at,snapshot_sha256,source_freshness_json,record_counts_json,status) VALUES (?,?,1,1,'hash','{"items":1}','{}','ready')`,
 				args: [mode, ACTIVE_DATA_RELEASE_IDS[mode]],
 			});
-			await db.execute({ sql: "INSERT INTO active_data_releases VALUES (?, ?, 1)", args: [mode, ACTIVE_DATA_RELEASE_IDS[mode]] });
+			await db.execute({
+				sql: "INSERT INTO active_data_releases VALUES (?, ?, 1)",
+				args: [mode, ACTIVE_DATA_RELEASE_IDS[mode]],
+			});
 			for (const [type, payload] of [
 				["price", { avg24hPrice: 900_000 }],
 				["item", { id: "item-a", onFleaMarket: true }],
 			] as const) {
-				await db.execute({
-					sql: `INSERT INTO data_entities (mode,release_id,entity_type,entity_id,updated_at,payload_json) VALUES (?,?,?,'item-a',1,?)`,
-					args: [mode, ACTIVE_DATA_RELEASE_IDS[mode], type, JSON.stringify(payload)],
-				});
+				await insertCurrentTestRecord(db, mode, "entity", "item-a", type, payload);
 			}
 		}
 		const store = new TursoPriceRefreshStore(db);
@@ -74,13 +75,19 @@ test("bounded history hydration isolates modes, corrects old prices, and retains
 		});
 		assert.equal(failed.failedCount, 1);
 		assert.deepEqual((await getCurrentPriceData("pvp-season", ["item-a"], db)).data["item-a"], before);
-		await store.writeOutcomes("pvp-season", [{ status: "not-modified", itemId: "item-a", etag: "good", checkedAt: Date.now() }]);
+		await store.writeOutcomes("pvp-season", [
+			{ status: "not-modified", itemId: "item-a", etag: "good", checkedAt: Date.now() },
+		]);
 		assert.equal((await getCurrentPriceData("pvp-season", ["item-a"], db)).data["item-a"].price, 320_000);
 		const noOffers = await refreshPriceMode({
 			mode: "pvp-season",
 			releaseId: ACTIVE_DATA_RELEASE_IDS["pvp-season"],
 			store,
-			fetchHistory: async () => ({ status: "updated", etag: "empty-market", data: [{ price: 0, priceMin: 0, offerCount: 0, timestamp: Date.now() }] }),
+			fetchHistory: async () => ({
+				status: "updated",
+				etag: "empty-market",
+				data: [{ price: 0, priceMin: 0, offerCount: 0, timestamp: Date.now() }],
+			}),
 		});
 		assert.equal(noOffers.changedCount, 1);
 		const unavailable = (await getCurrentPriceData("pvp-season", ["item-a"], db)).data["item-a"];
@@ -92,7 +99,11 @@ test("bounded history hydration isolates modes, corrects old prices, and retains
 			mode: "pvp-season",
 			releaseId: ACTIVE_DATA_RELEASE_IDS["pvp-season"],
 			store,
-			fetchHistory: async () => ({ status: "updated", etag: "old", data: [{ price: 100, priceMin: 90, offerCount: 10, timestamp: Date.now() - 60_000 }] }),
+			fetchHistory: async () => ({
+				status: "updated",
+				etag: "old",
+				data: [{ price: 100, priceMin: 90, offerCount: 10, timestamp: Date.now() - 60_000 }],
+			}),
 		});
 		assert.equal(older.failedCount, 1);
 		assert.equal((await getCurrentPriceData("pvp-season", ["item-a"], db)).data["item-a"].fleaStability, "unavailable");
@@ -140,17 +151,22 @@ test("release, current rows and history reads start together and operational fai
 	}
 	const failed = {
 		execute: async (statement: { sql: string }) => {
-			if (statement.sql.includes("selected_release")) return { rows: [{ source_updated_at: 1, entity_id: null, payload_json: null }] };
+			if (statement.sql.includes("selected_release"))
+				return { rows: [{ source_updated_at: 1, entity_id: null, payload_json: null }] };
 			throw new Error("connection timeout");
 		},
 	} as unknown as import("@libsql/client").Client;
 	await assert.rejects(getCurrentPriceData("regular", ["item-a"], failed, "test-regular"), /connection timeout/);
 	const mixedFailure = {
 		execute: async (statement: { sql: string }) => {
-			if (statement.sql.includes("selected_release")) return { rows: [{ source_updated_at: 1, entity_id: null, payload_json: null }] };
+			if (statement.sql.includes("selected_release"))
+				return { rows: [{ source_updated_at: 1, entity_id: null, payload_json: null }] };
 			if (statement.sql.includes("FROM item_prices")) throw new Error("no such table: item_prices");
 			throw new Error("history connection timeout");
 		},
 	} as unknown as import("@libsql/client").Client;
-	await assert.rejects(getCurrentPriceData("regular", ["item-a"], mixedFailure, "test-regular"), /history connection timeout/);
+	await assert.rejects(
+		getCurrentPriceData("regular", ["item-a"], mixedFailure, "test-regular"),
+		/history connection timeout/,
+	);
 });

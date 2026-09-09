@@ -3,7 +3,7 @@ import type { Client } from "@libsql/client";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import type { ItemAcquisitionTreeData, ItemRelationsPayload, ItemUsageData } from "@/types/contracts";
 import { getTursoClient } from "./client";
-import { TursoRecordNotFoundError } from "./errors";
+import { TursoDataIntegrityError, TursoRecordNotFoundError } from "./errors";
 import { getActiveDataReleaseId } from "./release-config";
 import { parseStoredJson } from "./stored-json";
 import { getCurrentPriceData } from "./price-data";
@@ -26,7 +26,7 @@ export async function getItemView<ViewType extends ItemViewType>(
 	const releaseId = await getActiveDataReleaseId(mode, database);
 	const result = await database.execute({
 		sql: `
-            SELECT view.payload_json
+            SELECT view.payload_json, release.source_freshness_json
             FROM item_views AS view
             INNER JOIN data_releases AS release
                 ON release.mode = view.mode
@@ -46,6 +46,27 @@ export async function getItemView<ViewType extends ItemViewType>(
 	}
 
 	const payload = parseStoredJson<ItemViewPayloads[ViewType]>(row.payload_json, `${viewType} view for ${itemId}`);
+	const sourceFreshness = parseStoredJson<Record<string, number>>(
+		row.source_freshness_json,
+		"Item view source freshness",
+	);
+	const freshnessDomains: Record<string, string> = {
+		itemsUpdatedAt: "items",
+		stationsUpdatedAt: "stations",
+		questsUpdatedAt: "quests",
+		taskUnlocksUpdatedAt: "quests",
+		bartersUpdatedAt: "barters",
+		craftsUpdatedAt: "crafts",
+		tradersUpdatedAt: "traders",
+	};
+	for (const [key, domain] of Object.entries(freshnessDomains)) {
+		const freshness = payload.freshness as Record<string, number | null>;
+		if (freshness[key] === undefined || freshness[key] === null) continue;
+		const updatedAt = sourceFreshness[domain];
+		if (!Number.isFinite(updatedAt) || updatedAt <= 0)
+			throw new TursoDataIntegrityError(`Item view has invalid ${domain} source freshness`);
+		freshness[key] = updatedAt;
+	}
 	const items =
 		viewType === "relations"
 			? [

@@ -29,7 +29,10 @@ async function queryEntities<T>(
 	releaseId: string,
 	idsOnly = false,
 ): Promise<DataResult<Array<{ id: string; payload: T }>>> {
-	const idFilter = itemIds ? "AND entity.entity_id IN (SELECT value FROM json_each(?))" : "";
+	const idFilter = itemIds ? "AND entity.record_id IN (SELECT value FROM json_each(?))" : "";
+	// Known-ID batches do not need SQL ordering: sorting here makes SQLite choose
+	// the domain-order index and scan the whole type instead of seeking each ID.
+	// List callers restore the separately fetched ID index after batching.
 	const result = await database.execute({
 		sql: `
             WITH selected_release AS (
@@ -39,20 +42,29 @@ async function queryEntities<T>(
                     json_extract(source_freshness_json, ?) AS source_updated_at
                 FROM data_releases
                 WHERE mode = ? AND release_id = ? AND status = 'ready'
+                    AND EXISTS (SELECT 1 FROM active_data_releases active
+                        WHERE active.mode = data_releases.mode AND active.release_id = data_releases.release_id)
             )
             SELECT
                 selected_release.source_updated_at,
-                entity.entity_id,
-                ${idsOnly ? "CASE WHEN entity.entity_id IS NULL THEN NULL ELSE json_quote(entity.entity_id) END" : "entity.payload_json"} AS payload_json
+                entity.record_id AS entity_id,
+                ${idsOnly ? "CASE WHEN entity.record_id IS NULL THEN NULL ELSE json_quote(entity.record_id) END" : "payload.payload_json"} AS payload_json
             FROM selected_release
-            LEFT JOIN data_entities AS entity
+            LEFT JOIN current_records AS entity
                 ON entity.mode = selected_release.mode
-                AND entity.release_id = selected_release.release_id
-                AND entity.entity_type = ?
+                AND entity.record_type = 'entity'
+                AND entity.variant = ?
                 ${idFilter}
-            ORDER BY entity.sort_key, entity.entity_id
+            ${idsOnly ? "" : "LEFT JOIN data_payloads AS payload ON payload.payload_hash = entity.payload_hash"}
+            ${itemIds ? "" : "ORDER BY entity.sort_key, entity.record_id"}
         `,
-		args: [`$.${freshnessKey}`, mode, releaseId, entityType, ...(itemIds ? [JSON.stringify([...new Set(itemIds)])] : [])],
+		args: [
+			`$.${freshnessKey}`,
+			mode,
+			releaseId,
+			entityType,
+			...(itemIds ? [JSON.stringify([...new Set(itemIds)])] : []),
+		],
 	});
 	const firstRow = result.rows[0];
 	if (!firstRow) {
@@ -96,8 +108,9 @@ async function readRuntimeEntities<T>(
 	ids: readonly string[],
 ): Promise<DataResult<Array<{ id: string; payload: T }>>> {
 	const results = await mapBatches(canonicalIds(ids), (batch) =>
-		boundedReadCache(["entities-with-discovery-v1", mode, releaseId, entityType, freshnessKey, JSON.stringify(batch)], () =>
-			queryEntities<T>(mode, entityType, freshnessKey, batch, getTursoClient(), releaseId),
+		boundedReadCache(
+			["entities-with-discovery-v1", mode, releaseId, entityType, freshnessKey, JSON.stringify(batch)],
+			() => queryEntities<T>(mode, entityType, freshnessKey, batch, getTursoClient(), releaseId),
 		),
 	);
 	return { data: results.flatMap((result) => result.data), updatedAt: results[0].updatedAt };

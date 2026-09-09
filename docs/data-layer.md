@@ -29,12 +29,25 @@ Hideout overrides are owned by [hideout-requirement-overrides.ts](../src/lib/uti
 fallbacks apply to regular/PVE; KORD keeps upstream seasonal quantities and FiR.
 Changes to these inputs require a new generated release to reach runtime readers.
 
-[schema.sql](../db-scripts/schema.sql) defines immutable release metadata,
-`data_entities`, compact `data_manifests`, `item_search`, and endpoint-ready
-`item_views`. [entity-data.ts](../src/server/db/entity-data.ts) performs targeted
-ID reads; [manifests.ts](../src/server/db/manifests.ts) owns compact list reads.
-All are scoped to mode and release. Publication and readiness validation are
-described in [operations](operations.md) and the [ingestion CLI guide](../db-scripts/README.md).
+[schema.sql](../db-scripts/schema.sql) stores one current dataset per mode in
+`current_records`, with canonical JSON deduplicated by hash in `data_payloads`.
+`data_entities`, `data_manifests`, `item_search`, and `item_views` are compatibility
+SQL views joining current records/payloads to the current mode revision.
+[entity-data.ts](../src/server/db/entity-data.ts) owns targeted ID reads;
+[manifests.ts](../src/server/db/manifests.ts) owns compact list reads.
+
+[current-storage.mjs](../db-scripts/lib/current-storage.mjs) compares compact content
+hashes and publishes only additions, changes, and removals in one transaction for
+all selected modes. Canonical hashes exclude record timestamps. Stored item-view
+freshness is null for unavailable domains and zero for available domains;
+[item-views.ts](../src/server/db/item-views.ts) hydrates available timestamps from
+source freshness metadata selected in the same SQL read, preserving null failures.
+Prices hydrate separately from the scoped current-price result. A content no-op
+keeps its revision and freshness metadata and writes no rows. Source freshness
+describes the published content revision, not the latest unchanged provider check.
+Removed rows and unreferenced shared payloads are deleted; historical full datasets
+are not retained. [Operations](operations.md) and the [CLI guide](../db-scripts/README.md)
+own conversion, validation, and publication commands.
 
 ## Repository and page read contracts
 
@@ -108,7 +121,7 @@ Partial item-view responses use `no-store`; clients must keep them retryable.
 Search validation is in [searchItems.ts](../src/server/queries/searchItems.ts),
 while ranking and bounded SQL reads belong to [item-search.ts](../src/server/db/item-search.ts).
 The development dashboard reads [release-management.ts](../src/server/db/release-management.ts)
-directly, with 20 metadata rows per page and a lookahead row. These bounded database/service paths are explicit exceptions to page
+directly, reading only current metadata for the selected mode. These bounded database/service paths are explicit exceptions to page
 repository composition, not a reason to import provider adapters into features.
 
 ## Prices, history, and freshness
@@ -127,6 +140,9 @@ loaded for this status read. The compact dialog shows label/value rows with rela
 on hover, and keeps its dataset and release labels aligned with the requested mode.
 
 Runtime entity reads use [read-cache.ts](../src/server/db/read-cache.ts) and
+indexed joins from `current_records` to `data_payloads`; ID-only reads omit
+payloads. Entity and price-eligibility queries avoid outer joins against the
+composite compatibility views, which can materialize the entire catalog. They use
 Next's data cache, keyed by mode, selected release, entity type, freshness key,
 and sorted/deduplicated IDs. Reads use 128-ID batches with three batches in
 flight per reader. List reads first cache an ordered ID index, then restore
@@ -225,36 +241,25 @@ from the repository's stored-point history. Normal page reads do not fetch full
 provider datasets. Runtime provider reads are limited to current-price refreshes,
 on-demand history, and the map SVG path documented in [maps](maps.md).
 
-Runtime release IDs come from the database's `active_data_releases` pointers via
-[release-config.ts](../src/server/db/release-config.ts), joined to ready releases.
-React memoization shares a selection within a server render; there is no
-cross-request TTL or hardcoded runtime map. Activation/rollback is observed by
-subsequent renders without redeployment. Multi-step detail/conversion/deferred
-price reads capture the selected ID; accepted deferred requests use a scoped
-repository. Missing/unready pointers fail explicitly. API URLs do not expose a
-release ID, so existing HTTP/browser responses can retain older data until their
+Runtime revision IDs come from `active_data_releases` through
+[release-config.ts](../src/server/db/release-config.ts), joined to ready current
+metadata. React memoization shares a selection within a render; there is no
+cross-request selection TTL or hardcoded map. Publication is observed on subsequent
+renders. Explicit multi-step reads capture the revision and fail if it disappears,
+including empty search results, rather than silently mixing current rows with an
+older selection. Existing HTTP/browser responses can retain prior data until
 normal expiry. There is no Redis cache or manual revalidation endpoint.
 
-[release-selection.mjs](../src/server/db/release-selection.mjs) is shared by the
-offline CLI and development panel. Manual selection atomically writes the active
-pointer and an additive `data_release_pins` row. Automatic upload activation checks
-pins in its write transaction and skips pinned modes; clearing a pin permits the
-next update without immediately changing the current pointer. The other modes
-retain their own choices. Unready releases cannot be selected.
-
-In development only, [dev-release-override.ts](../src/server/db/dev-release-override.ts)
-reads a per-mode HTTP-only browser cookie before resolving the shared pointer.
-The override must identify a ready release in that mode and applies consistently
-to database readers, including readers with injected clients. Production and
-offline commands ignore these cookies. Development item-view endpoints use
-no-store, and panel mutations reload client state; production HTTP cache policies
-are unchanged. See the [dashboard workflow](operations.md#release-dashboard-and-development-override).
+The database keeps only current revisions. There is no manual activation,
+historical rollback, pin, or development override. Obsolete preview cookies are
+ignored. The development-only [dashboard](../src/app/dev/page.tsx) reads current
+status, counts, and timestamps per mode; see [operations](operations.md#current-dataset-dashboard).
 
 ## Catalog discovery
 
 [Catalog history](../db-scripts/lib/catalog-history.mjs) owns the durable
 `item_catalog_history` table, keyed by mode and standard item ID independently of
-immutable releases. `catalog_tracking` records baseline initialization. The
+current datasets. `catalog_tracking` records baseline initialization. The
 one-time baseline is ready dataset `20260904T211847Z`, classified as `pre-1.1.5`
 with an unknown date. This historical boundary never selects runtime releases.
 Initialization refuses missing/empty baselines and preserves established history.
@@ -265,7 +270,7 @@ After validated upload, new IDs and release readiness commit atomically. Their
 `firstSeenReleaseId` identifies the dataset. Baseline items have a null date;
 missing history stays unknown. These fields describe observation by this tracker,
 not a provider-confirmed introduction date. Retried uploads, disappearance,
-reappearance, and rollback never reset dates. Modes are tracked independently.
+reappearance never reset dates. Modes are tracked independently.
 
 [Item discovery reads](../src/server/db/item-discovery.ts) attach the metadata to
 canonical item entities, bounded search previews, and items embedded in stored
@@ -276,12 +281,18 @@ window independently for each item; baseline, unknown, invalid, and future dates
 do not count as new. The metadata remains after the window expires.
 
 `db:items:check` compares the full provider catalog against durable history without
-writing anything. `db:update` initializes, generates all canonical domains,
-validates, records a content diff, uploads, and activates unpinned modes. It preserves existing
-price payloads/timestamps and leaves new item fallback prices null; mutable prices
-and history are not refreshed. The pipeline records its previous active release
-and refuses stale automatic activation if that pointer changes during the run.
-The [CLI guide](../db-scripts/README.md) owns arguments and rollback commands.
+writing anything. `db:update` generates and validates local snapshots, reports a
+content diff, and publishes only changed content. It preserves existing catalog
+price payloads/timestamps and leaves new item fallbacks null; mutable prices and
+history are not refreshed. A changed current revision during the run blocks stale
+publication. `--dry-run` reports planned writes without changing the database;
+`db:storage` reports read-only storage metrics. The [CLI guide](../db-scripts/README.md)
+owns command arguments and direct conversion of legacy storage with `db:compact`.
+
+[price-store.ts](../src/server/prices/price-store.ts) upserts only observations whose
+values changed and prunes points absent from the retained set. Unchanged points
+keep their `observed_at`; exact current-row no-op guards avoid rewriting identical
+price state. Check/failure timestamps still describe real refresh attempts.
 
 ## Extending data
 
@@ -293,3 +304,4 @@ The [CLI guide](../db-scripts/README.md) owns arguments and rollback commands.
 6. Run adapter, query-contract, and [import-boundary tests](../src/architecture/data-import-boundaries.test.ts), then follow [publication operations](operations.md).
 
 Update this document when contracts, source ownership, or cache behavior changes.
+

@@ -355,7 +355,7 @@ async function writeModeSnapshot(releaseDirectory, releaseId, mode, modules, pre
 	await once(stream, "finish");
 	return {
 		mode,
-		...(previousReleaseId ? { previousReleaseId } : {}),
+		...(preservePrices ? { previousReleaseId: previousReleaseId ?? null } : {}),
 		file: filename,
 		sha256: await hashFile(fullPath),
 		recordCounts: counts,

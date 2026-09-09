@@ -18,7 +18,7 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and Turso;
 | `/hideout/craft-planner` | Station craft recommendations using the shared profit query; see [profits](profits.md) |
 | `/settings` | [Player progression backups, import review, legacy tools and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md) |
 | `/news` | [News page](../src/app/news/page.tsx) |
-| `/dev` | [Development-only release dashboard](../src/app/dev/page.tsx): history, shared pin/rollback and local preview; see [operations](operations.md) |
+| `/dev` | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md) |
 
 Inventory, Keys, Station Goals, and Bitcoin Farm routes are placeholders. Check
 their [route implementations](<../src/app/(data)/>) before extending them.
@@ -60,7 +60,7 @@ belong in globals with a purpose before use in a component.
 ## Dependency direction
 
 ```text
-offline source adapters -> immutable Turso release
+offline source adapters -> current Turso dataset + shared payloads
 server page -> named query -> repository -> targeted Turso reads
                           -> route contract -> client feature
 client controller -> bounded API -> stored item view/search or explicit service
@@ -161,3 +161,4 @@ For changes here, run [page query tests](../src/server/queries/page-data-queries
 [quest-item demand tests](../src/lib/utils/quest-item-index.test.ts) as applicable;
 [operations](operations.md) gives runnable commands. Verify changed interactions
 in the browser, including a mode switch and partial/missing-data states.
+

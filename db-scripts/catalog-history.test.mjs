@@ -3,74 +3,23 @@ import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { createClient } from "@libsql/client";
 import { BASELINE_RELEASE_ID, initializeCatalogHistory, getKnownItemIds, catalogPublicationStatements, newCatalogItems } from "./lib/catalog-history.mjs";
-import { activateRelease, statementForRecord } from "./lib/turso.mjs";
+import { encodeRecord, payloadStatement, currentRecordStatement } from "./lib/current-storage.mjs";
 import { compareEntities } from "./lib/release-diff.mjs";
 import { readReleasePrices, preserveItemPrices } from "./lib/release-prices.mjs";
-import { resumeReleaseUpdates } from "../src/server/db/release-selection.mjs";
 
-test("pins survive automatic publication, including rollback during upload; resume is mode-scoped", async () => {
-	const db = createClient({ url: "file::memory:" });
-	try {
-		await db.executeMultiple(await readFile("db-scripts/schema.sql", "utf8"));
-		for (const mode of ["regular", "pve", "pvp-season"]) {
-			await release(db, mode, "old");
-			await release(db, mode, "next");
-			await release(db, mode, "broken", "uploading");
-		}
-		await activateRelease(db, "next", ["regular", "pve", "pvp-season"]);
-		await activateRelease(db, "old", ["regular", "pvp-season"], {}, { pin: true });
-		const result = await activateRelease(
-			db,
-			"next",
-			["regular", "pve", "pvp-season"],
-			{ regular: "next", pve: "next", "pvp-season": "next" },
-			{ automatic: true },
-		);
-		assert.deepEqual(result, { activated: ["pve"], skipped: ["regular", "pvp-season"] });
-		assert.equal((await db.execute("SELECT release_id FROM active_data_releases WHERE mode = 'regular'")).rows[0].release_id, "old");
-		await assert.rejects(activateRelease(db, "broken", ["regular"], {}, { pin: true }), /not ready/);
-		assert.equal((await db.execute("SELECT release_id FROM data_release_pins WHERE mode = 'regular'")).rows[0].release_id, "old");
-		await resumeReleaseUpdates(db, "regular");
-		assert.equal(
-			(await db.execute("SELECT release_id FROM active_data_releases WHERE mode = 'regular'")).rows[0].release_id,
-			"old",
-			"resume does not immediately advance the release",
-		);
-		await assert.rejects(activateRelease(db, "next", ["regular"], { regular: "next" }, { automatic: true }), /changed during update/);
-		assert.deepEqual(await activateRelease(db, "next", ["regular", "pvp-season"], { regular: "old" }, { automatic: true }), {
-			activated: ["regular"],
-			skipped: ["pvp-season"],
-		});
-		assert.equal((await db.execute("SELECT release_id FROM active_data_releases WHERE mode = 'pvp-season'")).rows[0].release_id, "old");
-	} finally {
-		db.close();
-	}
-});
-
-test("pin initialization is additive and multi-mode pin failures roll back pointers and pins", async () => {
-	const db = createClient({ url: "file::memory:" });
-	try {
-		await db.executeMultiple(await readFile("db-scripts/schema.sql", "utf8"));
-		await db.execute("DROP TABLE data_release_pins");
-		for (const mode of ["regular", "pve"]) await release(db, mode, "old");
-		await activateRelease(db, "old", ["regular", "pve"], {}, { pin: true });
-		await release(db, "regular", "next");
-		await assert.rejects(activateRelease(db, "next", ["regular", "pve"], {}, { pin: true }), /not ready/);
-		assert.ok((await db.execute("SELECT release_id FROM active_data_releases")).rows.every((row) => row.release_id === "old"));
-		assert.ok((await db.execute("SELECT release_id FROM data_release_pins")).rows.every((row) => row.release_id === "old"));
-	} finally {
-		db.close();
-	}
-});
-
+// Fixture replacement models a current revision; discovery history is independently durable.
 async function release(db, mode, id, status = "ready", items = ["old"]) {
-	await db.execute({
-		sql: "INSERT INTO data_releases VALUES (?, ?, 1, 1, 'hash', '{}', '{}', ?, NULL)",
-		args: [mode, id, status],
-	});
+	const statements = [
+		{ sql: "INSERT INTO data_releases VALUES (?, ?, 1, 1, 'hash', '{}', '{}', ?, NULL)", args: [mode, id, status] },
+		{ sql: "DELETE FROM current_records WHERE mode = ?", args: [mode] },
+		{ sql: "INSERT INTO active_data_releases VALUES (?, ?, 1) ON CONFLICT(mode) DO UPDATE SET release_id = excluded.release_id", args: [mode, id] },
+		{ sql: "DELETE FROM data_releases WHERE mode = ? AND release_id <> ?", args: [mode, id] },
+	];
 	for (const item of items) {
-		await db.execute(statementForRecord(mode, id, { type: "entity", entityType: "item", entityId: item, updatedAt: 1, payload: { id: item, name: item } }));
+		const record = encodeRecord(mode, { type: "entity", entityType: "item", entityId: item, updatedAt: 1, payload: { id: item, name: item } });
+		statements.push(payloadStatement(record), currentRecordStatement(record));
 	}
+	await db.batch(statements, "write");
 }
 
 test("baseline, first publication, retries, disappearance and mode isolation preserve history", async () => {
@@ -78,7 +27,7 @@ test("baseline, first publication, retries, disappearance and mode isolation pre
 	try {
 		await db.executeMultiple(await readFile("db-scripts/schema.sql", "utf8"));
 		for (const mode of ["regular", "pve", "pvp-season"]) await release(db, mode, BASELINE_RELEASE_ID);
-		assert.deepEqual([...(await getKnownItemIds(db, "regular"))], ["old"]);
+		assert.deepEqual([...(await getKnownItemIds(db, "regular"))], []);
 		assert.equal((await db.execute("SELECT COUNT(*) AS n FROM item_catalog_history")).rows[0].n, 0, "checking does not consume discoveries");
 		await initializeCatalogHistory(db, ["regular", "pve", "pvp-season"]);
 		await release(db, "regular", "patch", "uploading", ["old", "new"]);
@@ -102,37 +51,17 @@ test("baseline, first publication, retries, disappearance and mode isolation pre
 		await db.batch(catalogPublicationStatements("regular", "absent", "1.1.6.0", 3000), "write");
 		await release(db, "regular", "returns", "uploading", ["old", "new"]);
 		await db.batch(catalogPublicationStatements("regular", "returns", "1.1.6.0", 4000), "write");
+		assert.equal((await db.execute({ sql: "SELECT COUNT(*) AS n FROM data_releases WHERE mode = ? AND release_id = ?", args: ["regular", BASELINE_RELEASE_ID] })).rows[0].n, 0, "the old baseline revision is no longer stored");
 		await initializeCatalogHistory(db, ["regular"]);
-		const result = await db.execute("SELECT first_seen_at, first_seen_patch FROM item_catalog_history WHERE mode = 'regular' ORDER BY item_id");
+		const result = await db.execute("SELECT first_seen_at, first_seen_patch, first_seen_release_id FROM item_catalog_history WHERE mode = 'regular' ORDER BY item_id");
 		assert.deepEqual(
-			result.rows.map((row) => [row.first_seen_at, row.first_seen_patch]),
+			result.rows.map((row) => [row.first_seen_at, row.first_seen_patch, row.first_seen_release_id]),
 			[
-				[1000, "1.1.5.0"],
-				[null, "pre-1.1.5"],
+				[1000, "1.1.5.0", "patch"],
+				[null, "pre-1.1.5", BASELINE_RELEASE_ID],
 			],
 		);
 		assert.equal((await getKnownItemIds(db, "pve")).has("new"), false);
-	} finally {
-		db.close();
-	}
-});
-
-test("activation is atomic, rejects unready releases and stale update baselines, and supports rollback", async () => {
-	const db = createClient({ url: "file::memory:" });
-	try {
-		await db.executeMultiple(await readFile("db-scripts/schema.sql", "utf8"));
-		for (const mode of ["regular", "pve"]) {
-			await release(db, mode, "old");
-			await release(db, mode, "next", mode === "regular" ? "ready" : "uploading");
-		}
-		await activateRelease(db, "old", ["regular", "pve"]);
-		await assert.rejects(activateRelease(db, "next", ["regular", "pve"]), /not ready/);
-		assert.ok((await db.execute("SELECT release_id FROM active_data_releases")).rows.every((row) => row.release_id === "old"));
-		await assert.rejects(activateRelease(db, "next", ["regular"], { regular: "other" }), /changed during update/);
-		await activateRelease(db, "next", ["regular"], { regular: "old" });
-		await activateRelease(db, "next", ["regular"], { regular: "old" });
-		await activateRelease(db, "old", ["regular"]);
-		assert.equal((await db.execute("SELECT release_id FROM active_data_releases WHERE mode = 'regular'")).rows[0].release_id, "old");
 	} finally {
 		db.close();
 	}
@@ -155,10 +84,8 @@ test("full data update preserves fallback prices and does not accept new upstrea
 	try {
 		await db.executeMultiple(await readFile("db-scripts/schema.sql", "utf8"));
 		await release(db, "regular", "old");
-		await db.execute(
-			statementForRecord("regular", "old", { type: "entity", entityType: "price", entityId: "old", updatedAt: 123, payload: { avg24hPrice: 50 } }),
-		);
-		await activateRelease(db, "old", ["regular"]);
+		const price = encodeRecord("regular", { type: "entity", entityType: "price", entityId: "old", updatedAt: 123, payload: { avg24hPrice: 50 } });
+		await db.batch([payloadStatement(price), currentRecordStatement(price)], "write");
 		const stored = await readReleasePrices(db, "regular");
 		const items = [
 			{ id: "old", marketPrice: { avg24hPrice: 999 } },
@@ -170,6 +97,8 @@ test("full data update preserves fallback prices and does not accept new upstrea
 		);
 		assert.equal(stored.prices.get("old").updatedAt, 123);
 		assert.equal(items[0].marketPrice.avg24hPrice, 999);
+		await release(db, "pve", "pve-current");
+		await assert.rejects(readReleasePrices(db, "pve"), /No price snapshot/);
 	} finally {
 		db.close();
 	}

@@ -19,10 +19,14 @@ function updatedStatements(
     outcome: Extract<PriceRefreshOutcome, { status: "updated" }>,
 ): InStatement[] {
     const latest = outcome.points[outcome.points.length - 1];
+    // Keep retained observations untouched, including their observed_at value.
+    // The refresh adapter supplies a nonempty, timestamp-deduplicated bounded set.
     const statements: InStatement[] = [
         {
-            sql: "DELETE FROM item_price_points WHERE mode = ? AND item_id = ?",
-            args: [mode, outcome.itemId],
+            sql: `DELETE FROM item_price_points
+                WHERE mode = ? AND item_id = ?
+                    AND timestamp NOT IN (${outcome.points.map(() => "?").join(", ")})`,
+            args: [mode, outcome.itemId, ...outcome.points.map((point) => integer(point.timestamp))],
         },
     ];
     for (const point of outcome.points) {
@@ -31,6 +35,14 @@ function updatedStatements(
                 INSERT INTO item_price_points
                     (mode, item_id, timestamp, price, price_min, offer_count, observed_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (mode, item_id, timestamp) DO UPDATE SET
+                    price = excluded.price,
+                    price_min = excluded.price_min,
+                    offer_count = excluded.offer_count,
+                    observed_at = excluded.observed_at
+                WHERE item_price_points.price IS NOT excluded.price
+                    OR item_price_points.price_min IS NOT excluded.price_min
+                    OR item_price_points.offer_count IS NOT excluded.offer_count
             `,
             args: [
                 mode,
@@ -64,6 +76,17 @@ function updatedStatements(
                 last_changed_at = excluded.last_changed_at,
                 consecutive_failures = 0,
                 last_error = NULL
+            WHERE (item_prices.effective_price, item_prices.latest_price,
+                   item_prices.latest_price_min, item_prices.latest_offer_count,
+                   item_prices.latest_point_timestamp, item_prices.sample_count,
+                   item_prices.total_offer_count, item_prices.etag,
+                   item_prices.last_checked_at, item_prices.last_changed_at,
+                   item_prices.consecutive_failures, item_prices.last_error)
+                IS NOT (excluded.effective_price, excluded.latest_price,
+                        excluded.latest_price_min, excluded.latest_offer_count,
+                        excluded.latest_point_timestamp, excluded.sample_count,
+                        excluded.total_offer_count, excluded.etag,
+                        excluded.last_checked_at, excluded.last_changed_at, 0, NULL)
         `,
         args: [
             mode,
@@ -99,6 +122,10 @@ function outcomeStatements(
                     last_checked_at = excluded.last_checked_at,
                     consecutive_failures = 0,
                     last_error = NULL
+                WHERE item_prices.etag IS NOT COALESCE(excluded.etag, item_prices.etag)
+                    OR item_prices.last_checked_at IS NOT excluded.last_checked_at
+                    OR item_prices.consecutive_failures IS NOT 0
+                    OR item_prices.last_error IS NOT NULL
             `,
             args: [mode, outcome.itemId, outcome.etag, outcome.checkedAt],
         }];
@@ -123,36 +150,32 @@ export class TursoPriceRefreshStore implements PriceRefreshStore {
     async getEligibleItemIds(mode: TarkovDataMode, releaseId: string): Promise<string[]> {
         const result = await this.database.execute({
             sql: `
-                SELECT item.entity_id
-                FROM data_entities AS item
+                SELECT item.record_id AS entity_id,
+                    (json_extract(item_payload.payload_json, '$.onFleaMarket') = 1
+                    OR (json_type(item_payload.payload_json, '$.onFleaMarket') IS NULL
+                        AND (json_extract(price_payload.payload_json, '$.avg24hPrice') IS NOT NULL
+                            OR json_extract(price_payload.payload_json, '$.lastLowPrice') IS NOT NULL))) AS eligible
+                FROM active_data_releases AS active
                 INNER JOIN data_releases AS release
-                    ON release.mode = item.mode
-                    AND release.release_id = item.release_id
+                    ON release.mode = active.mode AND release.release_id = active.release_id
                     AND release.status = 'ready'
-                LEFT JOIN data_entities AS legacy_price
-                    ON legacy_price.mode = item.mode
-                    AND legacy_price.release_id = item.release_id
-                    AND legacy_price.entity_type = 'price'
-                    AND legacy_price.entity_id = item.entity_id
-                WHERE item.mode = ?
-                    AND item.release_id = ?
-                    AND item.entity_type = 'item'
-                    AND (
-                        json_extract(item.payload_json, '$.onFleaMarket') = 1
-                        OR (
-                            json_type(item.payload_json, '$.onFleaMarket') IS NULL
-                            AND (
-                                json_extract(legacy_price.payload_json, '$.avg24hPrice') IS NOT NULL
-                                OR json_extract(legacy_price.payload_json, '$.lastLowPrice') IS NOT NULL
-                            )
-                        )
-                    )
-                ORDER BY item.entity_id
+                LEFT JOIN current_records AS item
+                    ON item.mode = active.mode AND item.record_type = 'entity' AND item.variant = 'item'
+                LEFT JOIN data_payloads AS item_payload ON item_payload.payload_hash = item.payload_hash
+                LEFT JOIN current_records AS legacy_price
+                    ON legacy_price.mode = active.mode AND legacy_price.record_type = 'entity'
+                    AND legacy_price.variant = 'price' AND legacy_price.record_id = item.record_id
+                LEFT JOIN data_payloads AS price_payload ON price_payload.payload_hash = legacy_price.payload_hash
+                WHERE active.mode = ? AND active.release_id = ?
+                ORDER BY item.record_id
             `,
             args: [mode, releaseId],
         });
+        if (!result.rows.length) {
+            throw new Error(`No ready current data revision exists for ${mode}/${releaseId}; retry with the current revision.`);
+        }
         return result.rows.flatMap((row) =>
-            typeof row.entity_id === "string" ? [row.entity_id] : [],
+            typeof row.entity_id === "string" && Number(row.eligible) === 1 ? [row.entity_id] : [],
         );
     }
 

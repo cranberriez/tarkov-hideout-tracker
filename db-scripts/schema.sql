@@ -20,69 +20,48 @@ CREATE TABLE IF NOT EXISTS active_data_releases (
     FOREIGN KEY (mode, release_id) REFERENCES data_releases (mode, release_id)
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS data_release_pins (
-    mode TEXT PRIMARY KEY CHECK (mode IN ('regular', 'pve', 'pvp-season')),
-    release_id TEXT NOT NULL,
-    pinned_at INTEGER NOT NULL,
-    FOREIGN KEY (mode, release_id) REFERENCES data_releases (mode, release_id)
+CREATE TABLE IF NOT EXISTS data_payloads (
+    payload_hash TEXT PRIMARY KEY,
+    payload_json TEXT NOT NULL CHECK (json_valid(payload_json))
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS data_entities (
-    mode TEXT NOT NULL,
-    release_id TEXT NOT NULL,
-    entity_type TEXT NOT NULL,
-    entity_id TEXT NOT NULL,
+CREATE TABLE IF NOT EXISTS current_records (
+    mode TEXT NOT NULL CHECK (mode IN ('regular', 'pve', 'pvp-season')),
+    record_type TEXT NOT NULL CHECK (record_type IN ('entity', 'itemView', 'itemSearch', 'manifest')),
+    record_id TEXT NOT NULL,
+    variant TEXT NOT NULL,
+    payload_hash TEXT NOT NULL REFERENCES data_payloads(payload_hash),
+    content_hash TEXT NOT NULL,
     sort_key TEXT,
+    normalized_name TEXT,
+    compact_name TEXT,
     updated_at INTEGER NOT NULL,
-    payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
-    PRIMARY KEY (mode, release_id, entity_type, entity_id),
-    FOREIGN KEY (mode, release_id) REFERENCES data_releases (mode, release_id)
+    PRIMARY KEY (mode, record_type, record_id, variant)
 ) STRICT;
+CREATE INDEX IF NOT EXISTS current_records_by_type ON current_records(mode, record_type, variant, sort_key, record_id);
+CREATE INDEX IF NOT EXISTS current_records_by_name ON current_records(mode, normalized_name, sort_key) WHERE record_type = 'itemSearch';
+CREATE INDEX IF NOT EXISTS current_records_by_compact_name ON current_records(mode, compact_name, sort_key) WHERE record_type = 'itemSearch';
+CREATE INDEX IF NOT EXISTS current_records_by_payload ON current_records(payload_hash);
 
-CREATE INDEX IF NOT EXISTS data_entities_by_type
-    ON data_entities (mode, release_id, entity_type, sort_key, entity_id);
-
-CREATE TABLE IF NOT EXISTS item_views (
-    mode TEXT NOT NULL,
-    release_id TEXT NOT NULL,
-    item_id TEXT NOT NULL,
-    view_type TEXT NOT NULL CHECK (view_type IN ('relations', 'usage', 'acquisition')),
-    updated_at INTEGER NOT NULL,
-    payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
-    PRIMARY KEY (mode, release_id, item_id, view_type),
-    FOREIGN KEY (mode, release_id) REFERENCES data_releases (mode, release_id)
-) STRICT;
-
-CREATE INDEX IF NOT EXISTS item_views_by_item
-    ON item_views (mode, release_id, item_id);
-
-CREATE TABLE IF NOT EXISTS item_search (
-    mode TEXT NOT NULL,
-    release_id TEXT NOT NULL,
-    item_id TEXT NOT NULL,
-    normalized_name TEXT NOT NULL,
-    compact_name TEXT NOT NULL,
-    sort_name TEXT NOT NULL,
-    preview_json TEXT NOT NULL CHECK (json_valid(preview_json)),
-    PRIMARY KEY (mode, release_id, item_id),
-    FOREIGN KEY (mode, release_id) REFERENCES data_releases (mode, release_id)
-) STRICT;
-
-CREATE INDEX IF NOT EXISTS item_search_by_name
-    ON item_search (mode, release_id, normalized_name, sort_name);
-
-CREATE INDEX IF NOT EXISTS item_search_by_compact_name
-    ON item_search (mode, release_id, compact_name, sort_name);
-
-CREATE TABLE IF NOT EXISTS data_manifests (
-    mode TEXT NOT NULL,
-    release_id TEXT NOT NULL,
-    manifest_name TEXT NOT NULL,
-    updated_at INTEGER NOT NULL,
-    payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
-    PRIMARY KEY (mode, release_id, manifest_name),
-    FOREIGN KEY (mode, release_id) REFERENCES data_releases (mode, release_id)
-) STRICT;
+CREATE VIEW IF NOT EXISTS data_entities AS
+SELECT r.mode, a.release_id, r.variant AS entity_type, r.record_id AS entity_id,
+       r.sort_key, r.updated_at, p.payload_json
+FROM current_records r JOIN data_payloads p USING(payload_hash)
+JOIN active_data_releases a USING(mode) WHERE r.record_type = 'entity';
+CREATE VIEW IF NOT EXISTS item_views AS
+SELECT r.mode, a.release_id, r.record_id AS item_id, r.variant AS view_type,
+       r.updated_at, p.payload_json
+FROM current_records r JOIN data_payloads p USING(payload_hash)
+JOIN active_data_releases a USING(mode) WHERE r.record_type = 'itemView';
+CREATE VIEW IF NOT EXISTS item_search AS
+SELECT r.mode, a.release_id, r.record_id AS item_id, r.normalized_name,
+       r.compact_name, r.sort_key AS sort_name, p.payload_json AS preview_json
+FROM current_records r JOIN data_payloads p USING(payload_hash)
+JOIN active_data_releases a USING(mode) WHERE r.record_type = 'itemSearch';
+CREATE VIEW IF NOT EXISTS data_manifests AS
+SELECT r.mode, a.release_id, r.record_id AS manifest_name, r.updated_at, p.payload_json
+FROM current_records r JOIN data_payloads p USING(payload_hash)
+JOIN active_data_releases a USING(mode) WHERE r.record_type = 'manifest';
 
 -- Durable catalog discovery survives snapshot replacement and item removal.
 CREATE TABLE IF NOT EXISTS catalog_tracking (

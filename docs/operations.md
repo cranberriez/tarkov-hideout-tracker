@@ -71,113 +71,75 @@ check; no new UI test is needed for prose. Verify visible behavior with the dev
 server when changing interactions, including affected empty/error states and mode
 switches. Keep failures and environmental blockers explicit in the handoff.
 
-## Immutable release publication
+## Current dataset publication
 
-The [ingestion CLI guide](../db-scripts/README.md) owns full command usage and
-generated-file layout. The safe sequence is generate, locally validate, upload,
-inspect readiness/counts, then select the release for runtime.
+The [ingestion CLI guide](../db-scripts/README.md) owns command arguments and
+local snapshot layout. Convert the existing development database directly with
+`npm run db:compact` before publishing to current storage. Conversion requires
+checksum-verified local snapshots matching all three ready active datasets. It
+retains those current datasets, initializes catalog history before removing old
+baseline copies, and replaces full historical tables with shared payload storage
+and compatibility views. Player data, catalog discovery, and mutable price history
+are preserved. `npm run db:storage` reports read-only before/after storage metrics.
+
+Routine maintenance generates validated local snapshots and applies only the
+content changes:
 
 ```bash
-npm run db:generate -- --modes regular,pve,pvp-season --release <new-release-id>
-npm run db:validate -- db-scripts/.generated/<new-release-id>
-npm run db:upload -- --release-dir db-scripts/.generated/<new-release-id>
+npm run db:update -- --dry-run
+npm run db:update
+npm run db:update -- --modes regular,pve,pvp-season --patch 1.1.5.0
 npm run db:status
 ```
 
-Use a new release ID for changed content. Upload refuses conflicting content under
-an existing ID and marks a mode ready only after count validation. Generated
-snapshots are ignored by Git. Do not publish malformed/empty required domains.
-
-`db:activate` updates `active_data_releases`, which is now the runtime source of
-truth. No source edit or redeployment is needed to select a release. The resolver
-shares its result within a React server render, with no cross-request TTL; the
-next render sees activation or rollback. Existing browser/CDN item-view responses
-can remain cached for their documented lifetime. Immutable entity caches remain
-keyed by the selected release. Deferred price requests return 409 when their page
-belongs to a different active release and pin all reads to their accepted scope.
-
-Before deploying this version, initialize additive catalog history and any missing
-active pointers from the frozen pre-1.1.5 baseline:
-
-```bash
-npm run db:catalog:init
-```
-
-This requires ready baseline `20260904T211847Z` for each mode. Existing history
-and active pointers are preserved. If a baseline is unavailable, initialization
-fails rather than treating every item as new. Player progress is unaffected.
-
-For routine maintenance, one command generates all supported datasets, validates,
-reports additions/changes/removals, uploads, records new items, and activates
-unpinned included modes after they are ready:
-
-```bash
-npm run db:update
-npm run db:update -- --modes regular,pve,pvp-season --patch 1.1.5.0
-```
-
 The default tracked patch is `1.1.5.0`; pass the next patch explicitly when it
-changes. The command includes initialization, preserves existing release price
-payloads/timestamps, assigns null price fallbacks to new items, and never refreshes
-mutable prices or price history. New trader offers and recipe data still update.
-Its ignored snapshot directory contains `changes.json` with IDs/names for added,
-changed, and removed entities, plus never-seen items. A changed active pointer
-during the update blocks automatic activation; regenerate against the new pointer
-or explicitly activate the ready release after reviewing it.
+changes. Existing catalog price payloads/timestamps survive, new items receive
+null price fallbacks, and mutable prices/history are never refreshed by this
+command. Trader offers and recipes still update. The ignored snapshot directory
+contains `changes.json` with added, changed, removed, and never-seen item details.
+Dry runs create local files and report planned database writes without applying them.
 
-Check only for new catalog items without writing anything:
+[Publication](../db-scripts/lib/current-storage.mjs) compares compact content hashes,
+reuses shared JSON payloads, and commits all selected modes atomically. It deletes
+removed current records and unreferenced payloads. Unchanged content keeps its
+current revision and its source freshness metadata without writing database rows.
+A revision change during generation/publication fails explicitly; regenerate
+against the current dataset. Malformed or empty required domains cannot publish.
+
+The individual commands remain available:
+
+```bash
+npm run db:generate -- --modes regular,pve,pvp-season --release <new-release-id> --preserve-prices
+npm run db:validate -- db-scripts/.generated/<new-release-id>
+npm run db:upload -- --release-dir db-scripts/.generated/<new-release-id>
+```
+
+Upload publishes immediately after validation. There is no separate activation,
+historical release selection, pin, or rollback. Current revision IDs still scope
+runtime caches and multi-step reads. A disappearing selected revision fails rather
+than mixing datasets; deferred-price scope mismatches return 409. Existing browser
+and HTTP responses retain their documented expiry in [data layer](data-layer.md).
+Publication is maintenance work, not a validation step for unrelated changes.
+
+Read-only catalog checks compare upstream IDs with durable discovery history:
 
 ```bash
 npm run db:items:check
 npm run db:items:check -- --modes pvp-season
 ```
 
-The check reads the full upstream item catalog and durable known IDs, rather than
-player demand or only the immediately preceding release. It does not consume new
-items or assign dates. See [catalog history](data-layer.md) for field semantics.
+These checks do not consume new IDs or assign dates. See [catalog history](data-layer.md)
+for first-seen semantics. The explicit legacy `db:catalog:init` initializer requires
+baseline `20260904T211847Z` when history is not yet established; compaction runs it
+before deleting old datasets and preserves established history.
 
-Activate and pin an already uploaded ready release, including rollback, without local
-snapshot files:
+### Current dataset dashboard
 
-```bash
-npm run db:activate -- --release <release-id> --modes regular,pve,pvp-season
-```
-
-Keep older good releases available for rollback. Cache freshness and price
-hydration remain specified in [data layer](data-layer.md). Publication commands
-are maintenance operations, not validation steps for unrelated changes.
-
-### Release dashboard and development override
-
-Open `/dev` under `npm run dev`. The [dashboard](../src/app/dev/page.tsx)
-lists 20 releases per page for PVP, PVE, or KORD, including upload status,
-timestamps, counts, the current shared release, and the effective local selection.
-It remains unavailable in production builds; its server actions also enforce this.
-
-**Pin shared release** activates a ready release and persistently pins that mode
-in the configured database. This changes production when production uses the same
-database. Manual `db:activate` also pins. `db:update` and `db:upload --activate`
-still publish new releases but skip pinned modes during their activation
-transaction, including pins made while an upload is running. Their output lists
-activated and skipped modes. **Resume automatic updates** removes only that mode's
-pin; the current release stays selected until a subsequent update activates one.
-Pin storage is additive and initialized by the schema tooling or the first shared
-panel mutation; existing pointers and catalog history are preserved.
-
-**Use in local dev** selects a ready release for this browser and mode without
-writing a shared pointer. **Follow shared release** clears the override. The
-HTTP-only, same-site cookie lasts 30 days and is honored only in development;
-production builds and offline tooling ignore it. It applies to page, search,
-detail, conversion, status, and deferred-price release selection. Missing/unready
-overrides fail explicitly and can be cleared from the panel. Item-view HTTP
-responses use no-store in development, and successful panel changes reload the
-page to discard client caches. Mutable prices still use current mode-scoped price
-storage; selecting an older release does not rewind price history or player data.
-
-For example, pin an older shared release to roll production back, then select the
-newer release with **Use in local dev** to reproduce and verify a fix. Pin the
-verified ready release when appropriate, or resume automatic updates before the
-next publication.
+Open `/dev` under `npm run dev`. The [dashboard](../src/app/dev/page.tsx) is
+read-only, with PVP/PVE/KORD tabs showing the current revision, status, counts,
+and generation/upload/publication timestamps. It reports missing data and read
+errors explicitly and remains unavailable in production builds. Obsolete local
+preview cookies have no effect on runtime selection.
 
 ## Mutable price refresh
 
@@ -189,7 +151,7 @@ npm run db:prices:refresh -- --modes regular,pve
 
 Initialization creates additive price tables. Manual refresh accepts
 `--concurrency` from 1 to 32, default 12. [vercel.json](../vercel.json) schedules
-seasonal refresh every two hours and regular/PVE refresh daily at 00:15 UTC.
+both seasonal and regular/PVE refresh daily at 00:15 UTC.
 [cron.ts](../src/server/prices/cron.ts) protects the routes with `CRON_SECRET`;
 [refresh-prices.ts](../src/server/prices/refresh-prices.ts) owns locking, conditional
 requests, and per-item failure handling. Refresh runs complete within one function
@@ -254,7 +216,7 @@ node --test --import jiti/register src/lib/utils/flea-price.test.ts src/lib/util
 | Symptom or task                       | Start here                                                                                                                                                                      |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Missing or wrong-mode game data       | [release-config](../src/server/db/release-config.ts), `db:status`, [release-info](../src/server/db/release-info.ts), [database error mapping](../src/server/db/route-errors.ts) |
-| Manage releases                       | [/dev source](../src/app/dev/page.tsx): development-only release history, shared pin/rollback, resume updates, and browser-local development override |
+| Inspect current dataset               | [/dev source](../src/app/dev/page.tsx): development-only read-only current status, counts, and timestamps by mode |
 | Stale current prices                  | [price refresh runs/store](../src/server/prices/price-store.ts), active release flea eligibility, cron authorization and run duration                                           |
 | History fails but current price works | [live-price-history](../src/server/prices/live-price-history.ts): independent upstream request/cache                                                                            |
 | Search misses/ranking                 | [item-search](../src/server/db/item-search.ts), [search validation](../src/server/queries/searchItems.ts), [controller](../src/features/items/useItemSearchController.ts)       |
@@ -265,3 +227,5 @@ node --test --import jiti/register src/lib/utils/flea-price.test.ts src/lib/util
 
 Use the active documentation and source implementations above for operational
 requirements.
+
+

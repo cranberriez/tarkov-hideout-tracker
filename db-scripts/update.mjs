@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { getTursoConfig, loadLocalEnv, parseModes } from "./lib/config.mjs";
 import { createReleaseId, assertSafeReleaseId, loadSnapshotManifest, validateSnapshotFiles } from "./lib/snapshot.mjs";
 import { CURRENT_GAME_PATCH, assertGamePatch } from "./lib/catalog-history.mjs";
-import { createTursoClient } from "./lib/turso.mjs";
+import { applySchema, createTursoClient } from "./lib/turso.mjs";
 import { compareSnapshot } from "./lib/release-diff.mjs";
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
@@ -26,16 +26,27 @@ async function run(script, args) {
 async function main() {
 	let modes = parseModes(),
 		releaseId = createReleaseId(),
-		patch = CURRENT_GAME_PATCH;
+		patch = CURRENT_GAME_PATCH,
+		dryRun = false;
 	const args = process.argv.slice(2);
 	for (let index = 0; index < args.length; index++) {
 		if (args[index] === "--modes") modes = parseModes(args[++index]);
 		else if (args[index] === "--release") releaseId = assertSafeReleaseId(args[++index]);
 		else if (args[index] === "--patch") patch = assertGamePatch(args[++index]);
+		else if (args[index] === "--dry-run") dryRun = true;
 		else throw new Error(`Unknown argument: ${args[index]}`);
 	}
 	await loadLocalEnv(root);
-	await run("init-catalog.mjs", ["--modes", modes.join(",")]);
+	const setupClient = createTursoClient(getTursoConfig());
+	try {
+		const legacy = await setupClient.execute(
+			"SELECT name FROM sqlite_master WHERE type='table' AND name='data_entities'",
+		);
+		if (legacy.rows.length) throw new Error("Legacy snapshots detected; run db:compact before generating an update.");
+		if (!dryRun) await applySchema(setupClient, path.join(directory, "schema.sql"));
+	} finally {
+		setupClient.close();
+	}
 	await run("generate.mjs", ["--modes", modes.join(","), "--release", releaseId, "--preserve-prices"]);
 	const releaseDirectory = path.join(directory, ".generated", releaseId);
 	const manifest = await loadSnapshotManifest(releaseDirectory);
@@ -47,14 +58,18 @@ async function main() {
 		for (const mode of report.modes) {
 			console.log(`${mode.mode}: ${mode.newItems.length} never-seen items`);
 			for (const [domain, changes] of Object.entries(mode.changes)) {
-				console.log(`  ${domain}: +${changes.added.length} added, ~${changes.changed.length} changed, -${changes.removed.length} removed`);
+				console.log(
+					`  ${domain}: +${changes.added.length} added, ~${changes.changed.length} changed, -${changes.removed.length} removed`,
+				);
 			}
 		}
 	} finally {
 		client.close();
 	}
-	await run("upload.mjs", ["--release-dir", releaseDirectory, "--patch", patch, "--activate"]);
-	console.log(`Full data update complete. Prices preserved. Change report: ${path.join(releaseDirectory, "changes.json")}`);
+	await run("upload.mjs", ["--release-dir", releaseDirectory, "--patch", patch, ...(dryRun ? ["--dry-run"] : [])]);
+	console.log(
+		`${dryRun ? "Dry run" : "Targeted data update"} complete. Prices preserved. Change report: ${path.join(releaseDirectory, "changes.json")}`,
+	);
 }
 
 main().catch((error) => {
