@@ -19,13 +19,13 @@ export function ProfitPageHeader({
   return (
     <header className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-tarkov-green">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand">
           Flea estimates and trader values
         </p>
-        <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">
+        <h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground">
           {kind === "barter" ? "BARTER PROFITS" : "CRAFTING PROFITS"}
         </h1>
-        {kind === "craft" && <Link href="/hideout/craft-planner" className="mt-1 inline-block text-xs text-tarkov-green hover:underline">Plan your crafts →</Link>}
+        {kind === "craft" && <Link href="/hideout/craft-planner" className="mt-1 inline-block text-xs text-brand hover:underline">Plan your crafts →</Link>}
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
           Ingredient costs follow the cheapest practical mix of flea and trader
           purchases, crafts, and barters, with sell value used when no priced
@@ -53,7 +53,7 @@ export function ProfitPageHeader({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded border border-white/10 bg-black/25 px-3 py-2">
+    <div className="rounded border border-highlight/10 bg-shadow/25 px-3 py-2">
       <div className="text-muted-foreground">{label}</div>
       <div className="mt-0.5 font-mono font-semibold text-foreground">
         {value}

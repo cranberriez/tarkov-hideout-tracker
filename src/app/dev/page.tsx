@@ -35,9 +35,9 @@ export default async function DevPage({ searchParams }: { searchParams: Promise<
 	return (
 		<main className="container mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 py-8 sm:px-6">
 			<header className="space-y-2">
-				<p className="text-xs font-semibold uppercase tracking-[0.22em] text-tarkov-green">Development only</p>
+				<p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand">Development only</p>
 				<h1 className="text-3xl font-bold tracking-tight">Database releases</h1>
-				<p className="max-w-3xl text-sm leading-6 text-gray-400">
+				<p className="max-w-3xl text-sm leading-6 text-muted-foreground">
 					Manage the shared release used by apps connected to this database, and preview a different release in your local development browser.
 				</p>
 			</header>
@@ -47,14 +47,14 @@ export default async function DevPage({ searchParams }: { searchParams: Promise<
 						key={entry.value}
 						href={`/dev?mode=${entry.value}`}
 						aria-current={entry.value === mode.value ? "page" : undefined}
-						className={`rounded-md border px-5 py-2 text-sm ${entry.value === mode.value ? "border-tarkov-green bg-tarkov-green/10 text-tarkov-green" : "border-border text-gray-400"}`}
+						className={`rounded-md border px-5 py-2 text-sm ${entry.value === mode.value ? "border-brand bg-brand/10 text-brand" : "border-border text-muted-foreground"}`}
 					>
 						{entry.label}
 					</Link>
 				))}
 			</nav>
 			{error && (
-				<p role="alert" className="rounded-xl border border-red-900 bg-red-950/20 p-5 text-sm text-red-300">
+				<p role="alert" className="rounded-xl border border-danger bg-danger-surface/20 p-5 text-sm text-danger">
 					Unable to load releases: {error}
 				</p>
 			)}
@@ -64,10 +64,10 @@ export default async function DevPage({ searchParams }: { searchParams: Promise<
 						<section className="space-y-3 rounded-xl border border-border bg-card p-5">
 							<div className="flex items-center justify-between gap-3">
 								<h2 className="font-semibold">Shared release · {mode.label}</h2>
-								<span className="rounded-full bg-tarkov-green/10 px-3 py-1 text-xs text-tarkov-green">{dashboard.pinned ? "Pinned" : "Automatic"}</span>
+								<span className="rounded-full bg-brand/10 px-3 py-1 text-xs text-brand">{dashboard.pinned ? "Pinned" : "Automatic"}</span>
 							</div>
 							<p className="break-all font-mono text-sm">{dashboard.sharedReleaseId ?? "No active release"}</p>
-							<p className="text-xs leading-5 text-gray-400">
+							<p className="text-xs leading-5 text-muted-foreground">
 								{dashboard.pinned
 									? "db:update uploads new releases but keeps this release active."
 									: "db:update automatically activates new releases for this mode."}{" "}
@@ -82,14 +82,14 @@ export default async function DevPage({ searchParams }: { searchParams: Promise<
 						<section className="space-y-3 rounded-xl border border-border bg-card p-5">
 							<div className="flex items-center justify-between gap-3">
 								<h2 className="font-semibold">Local development</h2>
-								<span className="rounded-full bg-gray-500/10 px-3 py-1 text-xs text-gray-400">{dashboard.override ? "Override" : "Following shared"}</span>
+								<span className="rounded-full bg-muted/10 px-3 py-1 text-xs text-muted-foreground">{dashboard.override ? "Override" : "Following shared"}</span>
 							</div>
 							<p className="break-all font-mono text-sm">{dashboard.override ?? dashboard.effective.releaseId ?? "Unavailable"}</p>
-							<p className="text-xs leading-5 text-gray-400">
+							<p className="text-xs leading-5 text-muted-foreground">
 								Applies to this browser for 30 days, only under npm run dev. Other modes and the shared release keep their own selections.
 							</p>
 							{dashboard.effective.error && (
-								<p role="alert" className="text-xs text-red-300">
+								<p role="alert" className="text-xs text-danger">
 									{dashboard.effective.error}
 								</p>
 							)}
@@ -103,10 +103,10 @@ export default async function DevPage({ searchParams }: { searchParams: Promise<
 					<section className="overflow-hidden rounded-xl border border-border bg-card">
 						<div className="border-b border-border p-5">
 							<h2 className="font-semibold">Release history</h2>
-							<p className="mt-1 text-xs text-gray-400">Newest first. Pin a ready release to select it and prevent automatic updates.</p>
+							<p className="mt-1 text-xs text-muted-foreground">Newest first. Pin a ready release to select it and prevent automatic updates.</p>
 						</div>
 						{!dashboard.releases.length ? (
-							<p className="p-6 text-sm text-gray-400">No releases on this page.</p>
+							<p className="p-6 text-sm text-muted-foreground">No releases on this page.</p>
 						) : (
 							<ul className="divide-y divide-border">
 								{dashboard.releases.map((release) => (
@@ -114,18 +114,18 @@ export default async function DevPage({ searchParams }: { searchParams: Promise<
 										<div className="min-w-0 space-y-2">
 											<div className="flex flex-wrap items-center gap-2">
 												<span className="break-all font-mono text-sm">{release.releaseId}</span>
-												<span className={`text-xs ${release.status === "ready" ? "text-tarkov-green" : "text-amber-300"}`}>{release.status}</span>
+												<span className={`text-xs ${release.status === "ready" ? "text-brand" : "text-warning"}`}>{release.status}</span>
 												{release.releaseId === dashboard.sharedReleaseId && (
-													<span className="rounded bg-tarkov-green/10 px-2 py-1 text-xs text-tarkov-green">Current shared</span>
+													<span className="rounded bg-brand/10 px-2 py-1 text-xs text-brand">Current shared</span>
 												)}
 												{release.releaseId === dashboard.override && (
-													<span className="rounded bg-blue-400/10 px-2 py-1 text-xs text-blue-300">Local override</span>
+													<span className="rounded bg-info/10 px-2 py-1 text-xs text-info">Local override</span>
 												)}
 											</div>
-											<p className="text-xs text-gray-400">
+											<p className="text-xs text-muted-foreground">
 												Generated {timestamp(release.generatedAt)} · Uploaded {timestamp(release.uploadedAt)}
 											</p>
-											<p className="text-xs text-gray-500">
+											<p className="text-xs text-subtle-foreground">
 												Schema {release.schemaVersion} · {release.counts.entity ?? 0} entities · {release.counts.itemView ?? 0} item views ·{" "}
 												{release.counts.itemSearch ?? 0} search rows
 											</p>
@@ -153,7 +153,7 @@ export default async function DevPage({ searchParams }: { searchParams: Promise<
 							</ul>
 						)}
 					</section>
-					<nav aria-label="Release history pages" className="flex items-center justify-between text-sm text-gray-400">
+					<nav aria-label="Release history pages" className="flex items-center justify-between text-sm text-muted-foreground">
 						{page > 1 ? <Link href={`/dev?mode=${mode.value}&page=${page - 1}`}>← Newer releases</Link> : <span />}
 						<span>Page {page}</span>
 						{dashboard.hasMore ? <Link href={`/dev?mode=${mode.value}&page=${page + 1}`}>Older releases →</Link> : <span />}

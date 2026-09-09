@@ -33,17 +33,17 @@ export function StationCardHeader({
 }: StationCardHeaderProps) {
     const iconBorderClass =
         upgradeStatus === "ready"
-            ? "border-green-500/60"
+            ? "border-success/60"
             : upgradeStatus === "illegal"
-            ? "border-red-500/60"
-            : "border-white/10";
+            ? "border-danger/60"
+            : "border-highlight/10";
 
     const plusButtonColor =
         upgradeStatus === "ready"
-            ? "text-tarkov-green hover:text-green-400"
+            ? "text-success hover:text-success"
             : upgradeStatus === "illegal"
-            ? "text-red-400 hover:text-red-300"
-            : "text-gray-400 hover:text-white";
+            ? "text-danger hover:text-danger"
+            : "text-muted-foreground hover:text-foreground";
 
     return (
         <div
@@ -77,7 +77,7 @@ export function StationCardHeader({
                         />
                     )}
                     {isLocked && (
-                        <div className="absolute inset-0 bg-black/75 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-shadow/75 flex items-center justify-center">
                             <Lock size={16} />
                         </div>
                     )}
@@ -86,12 +86,12 @@ export function StationCardHeader({
                     <h3 className="font-bold text-base text-foreground leading-tight">
                         {station.name}
                     </h3>
-                    <div className="text-[10px] text-gray-500 font-mono mt-0.5">
+                    <div className="text-[10px] text-subtle-foreground font-mono mt-0.5">
                         LEVEL{" "}
-                        <span className={currentLevel > 0 ? "text-tarkov-green" : "text-gray-500"}>
+                        <span className={currentLevel > 0 ? "text-brand" : "text-subtle-foreground"}>
                             {currentLevel}
                         </span>{" "}
-                        <span className="text-gray-600">/</span> {maxLevel}
+                        <span className="text-subtle-foreground">/</span> {maxLevel}
                     </div>
                 </div>
             </div>
@@ -100,27 +100,27 @@ export function StationCardHeader({
                 {/* Visibility Toggle */}
                 <button
                     onClick={() => toggleHiddenStation(station.id)}
-                    className="p-1 text-gray-500 hover:text-white transition-colors mr-1"
+                    className="p-1 text-subtle-foreground hover:text-foreground transition-colors mr-1"
                     title={isHidden ? "Show Station" : "Hide Station"}
                 >
                     {isHidden ? <Eye size={16} /> : <EyeOff size={16} />}
                 </button>
 
                 {/* Level Controls */}
-                <div className="flex items-center bg-black/20 rounded border border-white/5">
+                <div className="flex items-center bg-shadow/20 rounded border border-highlight/5">
                     <button
                         onClick={onLevelDown}
                         disabled={currentLevel === 0}
-                        className="px-2 py-1 text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 transition-colors font-mono text-xs"
+                        className="px-2 py-1 text-muted-foreground hover:text-foreground hover:bg-highlight/5 disabled:opacity-30 transition-colors font-mono text-xs"
                         title="Level Down"
                     >
                         -
                     </button>
-                    <div className="w-px h-3 bg-white/10"></div>
+                    <div className="w-px h-3 bg-highlight/10"></div>
                     <button
                         onClick={onLevelUp}
                         disabled={isMaxed || hasUnresolvedItemData}
-                        className={`px-2 py-1 ${plusButtonColor} hover:bg-white/5 disabled:opacity-30 transition-colors font-mono text-xs`}
+                        className={`px-2 py-1 ${plusButtonColor} hover:bg-highlight/5 disabled:opacity-30 transition-colors font-mono text-xs`}
                         title={
                             hasUnresolvedItemData
                                 ? "Level up unavailable while required item data is missing"

@@ -131,10 +131,10 @@ export function QuestCard({
                   key: "status",
                   className:
                       failed || disabled
-                          ? "text-red-300 bg-red-300/10 border-red-300/20"
+                          ? "text-danger bg-danger/10 border-danger/20"
                           : ignored
-                            ? "text-gray-400 bg-black/50 border-white/10"
-                            : "text-red-300 bg-red-300/10 border-red-300/20",
+                            ? "text-muted-foreground bg-shadow/50 border-highlight/10"
+                            : "text-danger bg-danger/10 border-danger/20",
                   label: failed
                       ? "Failed"
                       : disabled
@@ -149,7 +149,7 @@ export function QuestCard({
             ? [
                   {
                       key: "kappa",
-                      className: "text-yellow-500/80 bg-yellow-500/10 border-yellow-500/20",
+                      className: "text-warning/80 bg-warning/10 border-warning/20",
                       label: "\u03ba",
                   },
               ]
@@ -158,7 +158,7 @@ export function QuestCard({
             ? [
                   {
                       key: "lightkeeper",
-                      className: "text-teal-400/80 bg-teal-400/10 border-teal-400/20",
+                      className: "text-info/80 bg-info/10 border-info/20",
                       label: "LK",
                   },
               ]
@@ -167,7 +167,7 @@ export function QuestCard({
             ? [
                   {
                       key: "mutually-exclusive",
-                      className: "text-purple-300 border-purple-500/40",
+                      className: "text-special border-special/40",
                       label: (
                           <>
                               <AlertTriangle size={11} className="mr-1" />
@@ -184,7 +184,7 @@ export function QuestCard({
             ? [
                   {
                       key: `sort-${sortMetadata.key}`,
-                      className: "text-tarkov-green/80 bg-tarkov-green/10 border-tarkov-green/20",
+                      className: "text-brand/80 bg-brand/10 border-brand/20",
                       label: sortMetadata.label,
                   },
               ]
@@ -193,7 +193,7 @@ export function QuestCard({
             ? [
                   {
                       key: "requirements",
-                      className: "text-gray-400 bg-black/40 border-white/10",
+                      className: "text-muted-foreground bg-shadow/40 border-highlight/10",
                       label: `${completedRequirementCount}/${quest.taskRequirements.length} prereqs`,
                   },
               ]
@@ -202,7 +202,7 @@ export function QuestCard({
             ? [
                   {
                       key: "level",
-                      className: "text-gray-400 bg-black/40 border-white/10",
+                      className: "text-muted-foreground bg-shadow/40 border-highlight/10",
                       label: `Level ${quest.minPlayerLevel}`,
                   },
               ]
@@ -211,7 +211,7 @@ export function QuestCard({
             ? [
                   {
                       key: "map",
-                      className: "text-gray-400 bg-black/40 border-white/10",
+                      className: "text-muted-foreground bg-shadow/40 border-highlight/10",
                       label: quest.map.name,
                   },
               ]
@@ -222,22 +222,22 @@ export function QuestCard({
                       key: "faction",
                       className:
                           quest.factionName === "USEC"
-                              ? "text-blue-400/80 bg-blue-400/10 border-blue-400/20"
-                              : "text-red-400/80 bg-red-400/10 border-red-400/20",
+                              ? "text-info/80 bg-info/10 border-info/20"
+                              : "text-danger/80 bg-danger/10 border-danger/20",
                       label: quest.factionName,
                   },
               ]
             : []),
         ...quest.traderRequirements.map((req) => ({
             key: `trader-${req.id}`,
-            className: "text-cyan-400/80 bg-cyan-400/10 border-cyan-400/20",
+            className: "text-info/80 bg-info/10 border-info/20",
             label: formatQuestTraderGate(req),
         })),
         ...(quest.requiredPrestige
             ? [
                   {
                       key: "prestige",
-                      className: "text-purple-400/80 bg-purple-400/10 border-purple-400/20",
+                      className: "text-special/80 bg-special/10 border-special/20",
                       label: `P${quest.requiredPrestige.prestigeLevel}`,
                   },
               ]
@@ -301,33 +301,33 @@ export function QuestCard({
                 "overflow-hidden border transition-colors",
                 attachedTop ? "rounded-b-md rounded-t-none" : "rounded-md",
                 quest.removed
-                    ? "border-red-500/70 bg-red-500/5 shadow-[0_0_0_1px_rgba(239,68,68,0.12)]"
+                    ? "border-danger/70 bg-danger/5 shadow-[0_0_0_1px_color-mix(in_oklab,_var(--danger)_12%,_transparent)]"
                     : highlighted
-                      ? "border-tarkov-green shadow-[0_0_0_1px_rgba(157,255,0,0.18)]"
+                      ? "border-brand shadow-[0_0_0_1px_color-mix(in_oklab,_var(--brand)_18%,_transparent)]"
                     : completed
-                      ? "border-white/5 bg-black/10"
+                      ? "border-highlight/5 bg-shadow/10"
                       : failed
-                        ? "border-red-500/20 bg-red-500/10"
+                        ? "border-danger/20 bg-danger/10"
                         : disabled
-                          ? "border-red-500/15 bg-red-500/5"
+                          ? "border-danger/15 bg-danger/5"
                           : ignored
-                            ? "border-white/8 bg-black/20"
+                            ? "border-highlight/8 bg-shadow/20"
                             : pinned
-                              ? "border-sky-500/20 bg-[linear-gradient(90deg,rgba(56,189,248,0.16)_0%,rgba(56,189,248,0.08)_30%,rgba(17,17,17,0.95)_72%)] hover:border-sky-400/30"
-                              : "border-white/10 hover:border-white/15",
+                              ? "border-info/20 bg-[linear-gradient(90deg,color-mix(in_oklab,_var(--info)_16%,_transparent)_0%,color-mix(in_oklab,_var(--info)_8%,_transparent)_30%,color-mix(in_oklab,_var(--shadow)_95%,_transparent)_72%)] hover:border-info/30"
+                              : "border-highlight/10 hover:border-highlight/15",
                 quest.removed
-                    ? "bg-red-500/5"
+                    ? "bg-danger/5"
                     : completed
-                      ? "bg-black/10"
+                      ? "bg-shadow/10"
                     : failed
-                      ? "bg-red-500/10"
+                      ? "bg-danger/10"
                       : disabled
-                        ? "bg-black/20"
+                        ? "bg-shadow/20"
                         : ignored
-                          ? "bg-black/20"
+                          ? "bg-shadow/20"
                           : pinned
-                            ? "bg-[linear-gradient(90deg,rgba(56,189,248,0.16)_0%,rgba(56,189,248,0.08)_30%,rgba(17,17,17,0.95)_72%)]"
-                            : "bg-[#111111]",
+                            ? "bg-[linear-gradient(90deg,color-mix(in_oklab,_var(--info)_16%,_transparent)_0%,color-mix(in_oklab,_var(--info)_8%,_transparent)_30%,color-mix(in_oklab,_var(--shadow)_95%,_transparent)_72%)]"
+                            : "bg-[var(--card-bg)]",
                 className,
             )}
         >
@@ -342,8 +342,8 @@ export function QuestCard({
 
             {/* Debug JSON panel */}
             {debugOpen && (
-                <div className="border-t border-yellow-500/20 bg-black/60">
-                    <pre className="text-[11px] font-mono text-gray-400 leading-relaxed overflow-x-auto max-h-96 p-3 overflow-y-auto">
+                <div className="border-t border-warning/20 bg-shadow/60">
+                    <pre className="text-[11px] font-mono text-muted-foreground leading-relaxed overflow-x-auto max-h-96 p-3 overflow-y-auto">
                         {JSON.stringify(quest, null, 2)}
                     </pre>
                 </div>

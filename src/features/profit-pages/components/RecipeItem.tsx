@@ -173,8 +173,8 @@ export function RecipeItem({
     if (item) onItemOpen(item.id);
   };
   return (
-    <span className={`flex flex-col ${fillColumn ? "h-full min-h-[72px]" : ""} ${reasons.length ? "bg-red-950/50" : emphasized && fillColumn ? "bg-tarkov-green/[0.07]" : ""}`}><span
-      className={`group/item relative flex shrink-0 items-center ${compactLine ? "h-9 w-full gap-1.5 pr-1 hover:bg-white/[0.025]" : `min-h-[72px] gap-1.5 px-1 ${fillColumn ? "w-full" : "w-40"} ${fillColumn ? "" : emphasized ? "bg-tarkov-green/[0.07]" : "bg-black/10"}`}`}
+    <span className={`flex flex-col ${fillColumn ? "h-full min-h-[72px]" : ""} ${reasons.length ? "bg-danger-surface/50" : emphasized && fillColumn ? "bg-brand/[0.07]" : ""}`}><span
+      className={`group/item relative flex shrink-0 items-center ${compactLine ? "h-9 w-full gap-1.5 pr-1 hover:bg-highlight/[0.025]" : `min-h-[72px] gap-1.5 px-1 ${fillColumn ? "w-full" : "w-40"} ${fillColumn ? "" : emphasized ? "bg-brand/[0.07]" : "bg-shadow/10"}`}`}
       onMouseEnter={updateHoverPosition}
       onMouseMove={updateHoverPosition}
       onMouseLeave={hover.scheduleClose}
@@ -204,7 +204,7 @@ export function RecipeItem({
             aria-label={`Open ${item?.name ?? "item"} details`}
             disabled={!item}
             onClick={openItem}
-            className="relative ml-0.5 flex size-8 shrink-0 cursor-pointer items-center justify-center transition hover:bg-white/10 disabled:cursor-default"
+            className="relative ml-0.5 flex size-8 shrink-0 cursor-pointer items-center justify-center transition hover:bg-highlight/10 disabled:cursor-default"
           >
             {item?.iconLink ? (
               <Image
@@ -226,7 +226,7 @@ export function RecipeItem({
             {item?.name ?? "Unknown item"}
           </span>
           {plan?.isTool && (
-            <span className="shrink-0 rounded-[3px] bg-sky-400 px-1 py-0.5 text-[7px] font-black uppercase text-black">
+            <span className="shrink-0 rounded-[3px] bg-info px-1 py-0.5 text-[7px] font-black uppercase text-inverse">
               tool
             </span>
           )}
@@ -236,7 +236,7 @@ export function RecipeItem({
           </span>
           <span className="shrink-0 font-mono text-[10px]">
             {plan?.isTool ? (
-              <span className="text-sky-200">cost excluded</span>
+              <span className="text-info">cost excluded</span>
             ) : (
               <InlineItemPrice
                 item={item}
@@ -258,7 +258,7 @@ export function RecipeItem({
               {(routeSavingsTotal ?? 0) > 0 &&
                 cheapestDirectTotal !== null &&
                 plan?.totalCost !== null && (
-                  <span className="flex items-center gap-0.5 whitespace-nowrap text-[9px] text-amber-300">
+                  <span className="flex items-center gap-0.5 whitespace-nowrap text-[9px] text-warning">
                     {method === "craft" ? "Craft" : "Barter"} saves{" "}
                     {formatCompactPrice(routeSavingsTotal)}
                     <InfoHint
@@ -269,14 +269,14 @@ export function RecipeItem({
                         {method === "craft" ? "Crafting" : "Bartering for"}{" "}
                         {formatQuantity(count)} × {item?.name ?? "this item"}{" "}
                         costs{" "}
-                        <strong className="text-white">
+                        <strong className="text-foreground">
                           {formatRoundedRoubles(plan?.totalCost ?? null)}
                         </strong>
                         .
                       </span>
                       <span className="mt-1 block">
                         The cheapest eligible direct purchase for the same quantity costs{" "}
-                        <strong className="text-white">
+                        <strong className="text-foreground">
                           {formatRoundedRoubles(cheapestDirectTotal)}
                         </strong>
                         .
@@ -285,7 +285,7 @@ export function RecipeItem({
                   </span>
                 )}
               {(plan?.durationSeconds ?? 0) > 0 && (
-                <span className="font-mono text-[9px] text-orange-300">
+                <span className="font-mono text-[9px] text-warning">
                   {formatDuration(plan?.durationSeconds ?? 0)}
                 </span>
               )}
@@ -305,7 +305,7 @@ export function RecipeItem({
                         plan.sourceId as string,
                       );
                     }}
-                    className="flex size-6 shrink-0 items-center justify-center rounded border border-white/10 bg-black/70 text-muted-foreground opacity-0 transition hover:border-tarkov-green/50 hover:text-tarkov-green group-hover/item:opacity-100 focus:opacity-100"
+                    className="flex size-6 shrink-0 items-center justify-center rounded border border-highlight/10 bg-shadow/70 text-muted-foreground opacity-0 transition hover:border-brand/50 hover:text-brand group-hover/item:opacity-100 focus:opacity-100"
                   >
                     <ExternalLink className="size-3.5" />
                   </button>
@@ -320,11 +320,11 @@ export function RecipeItem({
             aria-label={`Open ${item?.name ?? "item"} details`}
             disabled={!item}
             onClick={openItem}
-            className="relative flex size-12 shrink-0 cursor-pointer items-center justify-center bg-white/[0.025] transition hover:bg-white/10 disabled:cursor-default"
+            className="relative flex size-12 shrink-0 cursor-pointer items-center justify-center bg-highlight/[0.025] transition hover:bg-highlight/10 disabled:cursor-default"
           >
             {showRouteIcon && <RouteIcon method={method} />}
             {plan?.isTool && (
-              <span className="absolute -right-0.5 -top-0.5 z-10 rounded-[3px] bg-sky-400 px-1 py-0.5 text-[7px] font-black uppercase text-black shadow">
+              <span className="absolute -right-0.5 -top-0.5 z-10 rounded-[3px] bg-info px-1 py-0.5 text-[7px] font-black uppercase text-inverse shadow">
                 tool
               </span>
             )}
@@ -353,7 +353,7 @@ export function RecipeItem({
             </span>
             <span className="font-mono text-[10px]">
               {plan?.isTool ? (
-                <span className="text-sky-200">Cost excluded</span>
+                <span className="text-info">Cost excluded</span>
               ) : (
                 <InlineItemPrice
                   item={item}

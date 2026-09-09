@@ -55,7 +55,7 @@ export function ItemDetailItemChip({
             <button
                 type="button"
                 onClick={onClick}
-                className={`flex min-h-12 max-w-52 items-center gap-1.5 rounded-[4px] bg-white/[0.035] px-1.5 py-1 text-left text-[13px] transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-tarkov-green ${className}`}
+                className={`flex min-h-12 max-w-52 items-center gap-1.5 rounded-[4px] bg-highlight/[0.035] px-1.5 py-1 text-left text-[13px] transition-colors hover:bg-highlight/[0.08] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand ${className}`}
                 aria-label={`Open details for ${item.name}`}
             >
                 {content}
@@ -65,7 +65,7 @@ export function ItemDetailItemChip({
 
     return (
         <span
-            className={`flex min-h-12 max-w-52 items-center gap-1.5 rounded-[4px] bg-white/[0.035] px-1.5 py-1 text-[13px] ${className}`}
+            className={`flex min-h-12 max-w-52 items-center gap-1.5 rounded-[4px] bg-highlight/[0.035] px-1.5 py-1 text-[13px] ${className}`}
         >
             {content}
         </span>
@@ -74,7 +74,7 @@ export function ItemDetailItemChip({
 
 export function ItemQuantityBadge({ label }: { label: string }) {
     return (
-        <span className="absolute -bottom-1 -right-1 inline-flex min-w-5 items-center justify-center rounded bg-background px-1.5 py-0.5 font-mono text-xs font-bold leading-none text-foreground shadow-sm ring-1 ring-white/15">
+        <span className="absolute -bottom-1 -right-1 inline-flex min-w-5 items-center justify-center rounded bg-background px-1.5 py-0.5 font-mono text-xs font-bold leading-none text-foreground shadow-sm ring-1 ring-highlight/15">
             {label}
         </span>
     );

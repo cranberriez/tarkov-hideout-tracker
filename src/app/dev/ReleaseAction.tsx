@@ -30,12 +30,12 @@ export function ReleaseAction({
 			{releaseId && <input type="hidden" name="releaseId" value={releaseId} />}
 			<button
 				disabled={disabled || pending}
-				className="rounded-md border border-border px-3 py-2 text-xs font-medium transition hover:border-tarkov-green hover:bg-tarkov-green/10 disabled:cursor-not-allowed disabled:opacity-40"
+				className="rounded-md border border-border px-3 py-2 text-xs font-medium transition hover:border-brand hover:bg-brand/10 disabled:cursor-not-allowed disabled:opacity-40"
 			>
 				{pending ? "Applying…" : children}
 			</button>
 			{state.error && (
-				<p role="alert" className="max-w-sm text-xs text-red-300">
+				<p role="alert" className="max-w-sm text-xs text-danger">
 					{state.error}
 				</p>
 			)}

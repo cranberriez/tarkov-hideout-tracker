@@ -84,7 +84,7 @@ export function ProfitRow({
 	return (
 		<div
 			data-output-locked={Boolean(evaluation.outputLockReasons?.length)}
-			className={highlighted ? "bg-tarkov-green/[0.06] ring-1 ring-inset ring-tarkov-green/40" : undefined}
+			className={highlighted ? "bg-brand/[0.06] ring-1 ring-inset ring-brand/40" : undefined}
 		>
 			<div className={styles.row}>
 				<div className={styles.actions}>
@@ -95,7 +95,7 @@ export function ProfitRow({
 							aria-label={pinned ? "Unpin craft" : "Pin craft"}
 							title={pinned ? "Unpin craft" : "Pin craft"}
 							onClick={onTogglePinned}
-							className={`flex size-9 2xl:size-7 items-center justify-center rounded border transition ${pinned ? "border-sky-400/40 bg-sky-400/10 text-sky-300" : "border-white/10 bg-white/[0.035] text-muted-foreground hover:border-sky-400/40 hover:text-sky-300"}`}
+							className={`flex size-9 2xl:size-7 items-center justify-center rounded border transition ${pinned ? "border-info/40 bg-info/10 text-info" : "border-highlight/10 bg-highlight/[0.035] text-muted-foreground hover:border-info/40 hover:text-info"}`}
 						>
 							<Pin className={`size-4 ${pinned ? "fill-current" : ""}`} />
 						</button>
@@ -107,7 +107,7 @@ export function ProfitRow({
 							aria-label={`${expanded ? "Collapse" : "Expand"} recipe chain`}
 							title={`${expanded ? "Collapse" : "Expand"} recipe chain`}
 							onClick={() => setExpanded((value) => !value)}
-							className="flex size-9 2xl:size-7 items-center justify-center rounded border border-white/10 bg-white/[0.035] text-muted-foreground transition hover:border-tarkov-green/50 hover:text-tarkov-green"
+							className="flex size-9 2xl:size-7 items-center justify-center rounded border border-highlight/10 bg-highlight/[0.035] text-muted-foreground transition hover:border-brand/50 hover:text-brand"
 						>
 							<ChevronRight className={`size-4 transition-transform ${expanded ? "rotate-90" : ""}`} />
 						</button>
@@ -210,13 +210,13 @@ export function ProfitRow({
 								<>
 									<span className="block">
 										Selling all non-tool ingredients individually would return{" "}
-										<strong className="text-white">{formatRoundedRoubles(evaluation.inputSellValue)}</strong>.
+										<strong className="text-foreground">{formatRoundedRoubles(evaluation.inputSellValue)}</strong>.
 									</span>
 									<span className="mt-1 block">
 										The {evaluation.kind === "barter" ? "barter" : "craft"} output sells for{" "}
-										<strong className="text-white">{formatRoundedRoubles(evaluation.sellValue)}</strong>.
+										<strong className="text-foreground">{formatRoundedRoubles(evaluation.sellValue)}</strong>.
 									</span>
-									<span className="mt-2 block border-t border-white/10 pt-2 text-amber-200">
+									<span className="mt-2 block border-t border-highlight/10 pt-2 text-warning">
 										If you already own the ingredients, selling them separately is worth{" "}
 										<strong>{formatRoundedRoubles(-evaluation.profitVsSellingInputs)}</strong> more.
 									</span>

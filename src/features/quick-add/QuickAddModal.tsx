@@ -95,7 +95,7 @@ export function QuickAddModal() {
     return (
         <Dialog open={isQuickAddOpen} onOpenChange={handleOpenChange}>
             <DialogContent className="w-full md:max-w-2xl bg-card border-border-color p-0 overflow-hidden flex flex-col max-h-[80vh]">
-                <div className="p-4 border-b border-border-color bg-black/40">
+                <div className="p-4 border-b border-border-color bg-shadow/40">
                     <DialogTitle className="text-lg font-semibold">
                         Add Items from Raid
                     </DialogTitle>
@@ -107,7 +107,7 @@ export function QuickAddModal() {
                         <div key={pending.tempId} className="flex flex-col sm:flex-row items-center gap-3 bg-secondary/20 p-3 rounded-md border border-border-color">
                             {/* Item Info */}
                             <div className="flex items-center gap-3 flex-1 w-full sm:w-auto">
-                                <div className="relative w-10 h-10 min-w-10 bg-black/40 rounded border border-white/5 overflow-hidden">
+                                <div className="relative w-10 h-10 min-w-10 bg-shadow/40 rounded border border-highlight/5 overflow-hidden">
                                     {pending.item.iconLink && (
                                         <Image 
                                             src={pending.item.iconLink} 
@@ -132,23 +132,23 @@ export function QuickAddModal() {
                                         value={pending.nonFir || ""}
                                         onChange={(e) => updateItemCount(pending.tempId, "nonFir", e.target.value)}
                                         placeholder="0"
-                                        className="w-16 h-8 bg-black/40 border border-white/10 rounded px-2 text-sm text-right focus:outline-none focus:border-tarkov-green/50"
+                                        className="w-16 h-8 bg-shadow/40 border border-highlight/10 rounded px-2 text-sm text-right focus:outline-none focus:border-brand/50"
                                     />
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
-                                    <label className="text-[10px] text-orange-500 uppercase tracking-wider font-bold">FiR</label>
+                                    <label className="text-[10px] text-warning uppercase tracking-wider font-bold">FiR</label>
                                     <input 
                                         type="number" 
                                         min="0"
                                         value={pending.fir || ""}
                                         onChange={(e) => updateItemCount(pending.tempId, "fir", e.target.value)}
                                         placeholder="0"
-                                        className="w-16 h-8 bg-black/40 border border-white/10 rounded px-2 text-sm text-right focus:outline-none focus:border-tarkov-yellow/50"
+                                        className="w-16 h-8 bg-shadow/40 border border-highlight/10 rounded px-2 text-sm text-right focus:outline-none focus:border-warning/50"
                                     />
                                 </div>
                                 <button 
                                     onClick={() => handleRemoveItem(pending.tempId)}
-                                    className="mt-4 text-red-500/70 hover:text-red-500 transition-colors p-1.5 cursor-pointer"
+                                    className="mt-4 text-danger/70 hover:text-danger transition-colors p-1.5 cursor-pointer"
                                 >
                                     <X size={20} />
                                 </button>
@@ -161,7 +161,7 @@ export function QuickAddModal() {
                         {!isSearching ? (
                             <button 
                                 onClick={() => setIsSearching(true)}
-                                className="w-full h-12 border border-dashed border-white/20 rounded-md flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:border-white/40 transition-all hover:bg-white/5 group"
+                                className="w-full h-12 border border-dashed border-highlight/20 rounded-md flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:border-highlight/40 transition-all hover:bg-highlight/5 group"
                             >
                                 <div className="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <Plus size={14} />
@@ -170,7 +170,7 @@ export function QuickAddModal() {
                             </button>
                         ) : (
                             <div className="space-y-2">
-                                <div className="flex items-center gap-2 h-12 bg-black/40 border border-tarkov-green/50 rounded-md px-3 focus-within:ring-1 ring-tarkov-green/50">
+                                <div className="flex items-center gap-2 h-12 bg-shadow/40 border border-brand/50 rounded-md px-3 focus-within:ring-1 ring-brand/50">
                                     <Search size={16} className="text-muted-foreground" />
                                     <input 
                                         autoFocus
@@ -205,7 +205,7 @@ export function QuickAddModal() {
                                             <div className="p-3 text-center text-xs text-muted-foreground">Searching items…</div>
                                         )}
                                         {search.error && (
-                                            <div className="p-3 text-center text-xs text-red-400">{search.error}</div>
+                                            <div className="p-3 text-center text-xs text-danger">{search.error}</div>
                                         )}
                                         {search.hasNoResults && (
                                             <div className="p-3 text-center text-xs text-muted-foreground">No items found.</div>
@@ -214,9 +214,9 @@ export function QuickAddModal() {
                                             <button
                                                 key={item.id}
                                                 onClick={() => handleAddItem(item)}
-                                                className="w-full flex items-center gap-3 p-2 hover:bg-white/5 text-left transition-colors border-b border-white/5 last:border-0"
+                                                className="w-full flex items-center gap-3 p-2 hover:bg-highlight/5 text-left transition-colors border-b border-highlight/5 last:border-0"
                                             >
-                                                <div className="relative w-8 h-8 min-w-8 bg-black/40 rounded overflow-hidden">
+                                                <div className="relative w-8 h-8 min-w-8 bg-shadow/40 rounded overflow-hidden">
                                                     {item.iconLink && (
                                                         <Image 
                                                             src={item.iconLink} 
@@ -226,7 +226,7 @@ export function QuickAddModal() {
                                                         />
                                                     )}
                                                 </div>
-                                                <span className="text-sm truncate text-gray-300">{item.name}</span>
+                                                <span className="text-sm truncate text-foreground">{item.name}</span>
                                             </button>
                                         ))}
                                     </div>
@@ -236,7 +236,7 @@ export function QuickAddModal() {
                     </div>
                 </div>
 
-                <div className="p-4 border-t border-border-color bg-black/40 flex justify-end gap-3">
+                <div className="p-4 border-t border-border-color bg-shadow/40 flex justify-end gap-3">
                     <button 
                         onClick={handleCancel}
                         className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -246,7 +246,7 @@ export function QuickAddModal() {
                     <button 
                         onClick={handleSave}
                         disabled={pendingQuickAddItems.length === 0}
-                        className="px-4 py-2 bg-tarkov-green text-black text-sm font-bold rounded shadow-[0_0_10px_rgba(157,255,0,0.2)] hover:bg-tarkov-green-dim hover:shadow-[0_0_15px_rgba(157,255,0,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                        className="px-4 py-2 bg-brand text-inverse text-sm font-bold rounded shadow-[0_0_10px_color-mix(in_oklab,_var(--brand)_20%,_transparent)] hover:bg-brand-hover hover:shadow-[0_0_15px_color-mix(in_oklab,_var(--brand)_30%,_transparent)] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                     >
                         Add {pendingQuickAddItems.length} Item{pendingQuickAddItems.length !== 1 ? "s" : ""}
                     </button>

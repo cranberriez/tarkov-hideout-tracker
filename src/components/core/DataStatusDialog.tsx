@@ -30,24 +30,24 @@ interface StatusRowProps {
 function StatusRow({ label, value, title, state = "neutral" }: StatusRowProps) {
     const dotClass =
         state === "ok"
-            ? "bg-emerald-400"
+            ? "bg-success"
             : state === "warning"
-              ? "bg-amber-400"
+              ? "bg-warning"
               : state === "error"
-                ? "bg-red-400"
-                : "bg-gray-500";
+                ? "bg-danger"
+                : "bg-muted";
 
     return (
-        <div className="ml-4 flex items-start justify-between gap-4 border-b border-white/5 py-3.5 last:border-0">
+        <div className="ml-4 flex items-start justify-between gap-4 border-b border-highlight/5 py-3.5 last:border-0">
             <div className="flex min-w-0 items-start gap-2.5">
                 <span className={`mt-1.5 size-2 shrink-0 rounded-full ${dotClass}`} />
                 <div>
-                    <div className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                    <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         {label}
                     </div>
                 </div>
             </div>
-            <div title={title} className="shrink-0 text-right text-sm text-gray-100">{value}</div>
+            <div title={title} className="shrink-0 text-right text-sm text-foreground">{value}</div>
         </div>
     );
 }
@@ -124,12 +124,12 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
     );
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <span className="inline-flex items-baseline font-mono text-[10px] uppercase tracking-widest text-gray-500">
+            <span className="inline-flex items-baseline font-mono text-[10px] uppercase tracking-widest text-subtle-foreground">
                 <span aria-hidden="true">[&nbsp;</span>
                 <DialogTrigger asChild>
                     <button
                         type="button"
-                        className="text-gray-400 transition-colors hover:text-tarkov-green hover:underline focus-visible:text-tarkov-green focus-visible:underline focus-visible:outline-none"
+                        className="text-muted-foreground transition-colors hover:text-brand hover:underline focus-visible:text-brand focus-visible:underline focus-visible:outline-none"
                     >
                         Status
                     </button>
@@ -139,7 +139,7 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
             <DialogContent className="max-h-[90dvh] max-w-md overflow-y-auto p-0">
                 <DialogHeader className="border-b border-border-color px-4 py-3.5 pr-11">
                     <DialogTitle className="flex items-center gap-2">
-                        <Activity aria-hidden="true" className="size-5 text-tarkov-green" />
+                        <Activity aria-hidden="true" className="size-5 text-brand" />
                         Data status
                     </DialogTitle>
                     <DialogDescription className="sr-only">
@@ -148,11 +148,11 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                 </DialogHeader>
 
                 <div className="px-4 pt-1 pb-3">
-                    <div className="mb-1.5 flex items-center gap-2 pt-3 text-xs font-semibold uppercase tracking-wider text-gray-300">
+                    <div className="mb-1.5 flex items-center gap-2 pt-3 text-xs font-semibold uppercase tracking-wider text-foreground">
                         {hasDatasetError ? (
-                            <CircleAlert aria-hidden="true" className="size-4 text-red-400" />
+                            <CircleAlert aria-hidden="true" className="size-4 text-danger" />
                         ) : (
-                            <CheckCircle2 aria-hidden="true" className="size-4 text-emerald-400" />
+                            <CheckCircle2 aria-hidden="true" className="size-4 text-success" />
                         )}
                         {isLoading
                             ? "Checking core data"
@@ -200,8 +200,8 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                         state="ok"
                     />
 
-                    <div className="mt-5 flex items-center gap-2 pt-1 text-xs font-semibold uppercase tracking-wider text-gray-300">
-                        <Database aria-hidden="true" className="size-4 text-gray-400" />
+                    <div className="mt-5 flex items-center gap-2 pt-1 text-xs font-semibold uppercase tracking-wider text-foreground">
+                        <Database aria-hidden="true" className="size-4 text-muted-foreground" />
                         Freshness
                     </div>
                     <StatusRow

@@ -107,18 +107,18 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
 
     if (!selectedMap) {
         return (
-            <div className="flex min-h-0 flex-1 flex-col bg-[#0b0c0e]">
+            <div className="flex min-h-0 flex-1 flex-col bg-[var(--background)]">
                 <button
                     type="button"
                     onClick={exitPlanner}
-                    className="flex h-12 shrink-0 items-center gap-2 border-b border-white/10 bg-[#101113] px-4 text-xs font-medium text-gray-300 transition-colors hover:text-white lg:hidden"
+                    className="flex h-12 shrink-0 items-center gap-2 border-b border-highlight/10 bg-[var(--card-bg)] px-4 text-xs font-medium text-foreground transition-colors hover:text-foreground lg:hidden"
                 >
                     <ChevronLeft size={16} /> Back to quests
                 </button>
                 <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-8 lg:p-10">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-tarkov-green">Raid planner</p>
-                    <h1 className="mt-2 text-3xl font-semibold text-white">Where are you heading?</h1>
-                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-500">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand">Raid planner</p>
+                    <h1 className="mt-2 text-3xl font-semibold text-foreground">Where are you heading?</h1>
+                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-subtle-foreground">
                         Choose a map to review your active quest objectives, required keys, and precise locations.
                     </p>
                     <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -142,7 +142,7 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
     }
 
     return (
-        <div className="relative min-h-0 flex-1 overflow-hidden bg-[#111316]">
+        <div className="relative min-h-0 flex-1 overflow-hidden bg-[var(--card-bg)]">
             <MapViewer
                 mapKey={selectedMap.key}
                 markers={markers}
@@ -163,8 +163,8 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
                         .filter(Boolean);
                     if (requiredKeys.length === 0) return null;
                     return (
-                        <span className="mt-3 block border-t border-white/10 pt-2.5">
-                            <span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300/70">
+                        <span className="mt-3 block border-t border-highlight/10 pt-2.5">
+                            <span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-warning/70">
                                 <KeyRound size={10} /> Required keys
                             </span>
                             <span className="mt-2 flex flex-wrap gap-1.5">
@@ -182,7 +182,7 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
                     <button
                         type="button"
                         onClick={exitPlanner}
-                        className="inline-flex items-center gap-1.5 border border-red-400/30 bg-red-950/80 px-2.5 py-1.5 text-[10px] font-semibold text-red-200 shadow-xl backdrop-blur-sm lg:hidden"
+                        className="inline-flex items-center gap-1.5 border border-danger/30 bg-danger-surface/80 px-2.5 py-1.5 text-[10px] font-semibold text-danger shadow-xl backdrop-blur-sm lg:hidden"
                     >
                         <X size={12} /> Exit
                     </button>
@@ -193,7 +193,7 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
                         aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
                         aria-pressed={isFullScreen}
                         onClick={() => setIsFullScreen((fullScreen) => !fullScreen)}
-                        className="hidden border border-white/10 bg-black/80 p-2 text-gray-300 shadow-xl backdrop-blur-sm transition-colors hover:text-white lg:flex"
+                        className="hidden border border-highlight/10 bg-shadow/80 p-2 text-foreground shadow-xl backdrop-blur-sm transition-colors hover:text-foreground lg:flex"
                         title={isFullScreen ? "Exit full screen" : "Full screen"}
                     >
                         {isFullScreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
@@ -210,7 +210,7 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
                         setIsKillListOpen(false);
                         clearPlannerMap();
                     }}
-                    className="inline-flex items-center gap-2 border border-white/12 bg-black/80 px-3 py-2 text-xs font-medium text-gray-200 shadow-xl backdrop-blur-sm transition-colors hover:border-tarkov-green/40 hover:text-tarkov-green"
+                    className="inline-flex items-center gap-2 border border-highlight/12 bg-shadow/80 px-3 py-2 text-xs font-medium text-foreground shadow-xl backdrop-blur-sm transition-colors hover:border-brand/40 hover:text-brand"
                 >
                     <ChevronLeft size={14} /> {selectedMap.name}
                 </button>
@@ -219,19 +219,19 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
                     aria-expanded={isKillListOpen}
                     aria-controls="raid-planner-kill-list"
                     onClick={() => setIsKillListOpen((open) => !open)}
-                    className="inline-flex items-center gap-2 border border-red-400/25 bg-red-950/75 px-3 py-2 text-xs font-medium text-red-100 shadow-xl backdrop-blur-sm transition-colors hover:border-red-300/45 hover:bg-red-950/90"
+                    className="inline-flex items-center gap-2 border border-danger/25 bg-danger-surface/75 px-3 py-2 text-xs font-medium text-danger shadow-xl backdrop-blur-sm transition-colors hover:border-danger/45 hover:bg-danger-surface/90"
                 >
-                    <Crosshair size={14} className="text-red-300/80" />
+                    <Crosshair size={14} className="text-danger/80" />
                     Kill List
-                    <span className="text-[10px] text-red-200/50">{killObjectives.length}</span>
+                    <span className="text-[10px] text-danger/50">{killObjectives.length}</span>
                 </button>
                 {isKillListOpen && (
                     <div
                         id="raid-planner-kill-list"
-                        className="max-h-[min(60vh,32rem)] w-full overflow-y-auto border border-red-400/20 bg-[#130d0e]/95 shadow-2xl backdrop-blur-md"
+                        className="max-h-[min(60vh,32rem)] w-full overflow-y-auto border border-danger/20 bg-[var(--danger-surface)]/95 shadow-2xl backdrop-blur-md"
                     >
                         {killObjectives.length > 0 ? (
-                            <div className="divide-y divide-red-200/8">
+                            <div className="divide-y divide-danger/8">
                                 {killObjectives.map((objective) => (
                                     <div
                                         key={`${objective.questId}:${objective.objectiveId}`}
@@ -239,12 +239,12 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
                                         className={objective.optional ? "px-3 py-2.5 opacity-55" : "px-3 py-2.5"}
                                     >
                                         <div className="flex items-start gap-2">
-                                            <Crosshair size={12} className="mt-0.5 shrink-0 text-red-300/65" />
+                                            <Crosshair size={12} className="mt-0.5 shrink-0 text-danger/65" />
                                             <div className="min-w-0">
-                                                <p className="text-[10px] font-semibold leading-4 text-red-100/90">
+                                                <p className="text-[10px] font-semibold leading-4 text-danger/90">
                                                     {objective.summary}
                                                 </p>
-                                                <p className="mt-0.5 truncate text-[9px] text-gray-500">
+                                                <p className="mt-0.5 truncate text-[9px] text-subtle-foreground">
                                                     {objective.questName}{objective.optional ? " · Optional" : ""}
                                                 </p>
                                             </div>
@@ -253,7 +253,7 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
                                 ))}
                             </div>
                         ) : (
-                            <p className="px-3 py-3 text-[10px] text-gray-500">No active kill objectives on this map.</p>
+                            <p className="px-3 py-3 text-[10px] text-subtle-foreground">No active kill objectives on this map.</p>
                         )}
                     </div>
                 )}
@@ -281,7 +281,7 @@ function RaidPlannerMapCard({
         <button
             type="button"
             onClick={onSelect}
-            className="group relative min-h-44 overflow-hidden border border-white/8 bg-[#121316] p-3 text-left transition-all hover:border-tarkov-green/40 hover:bg-[#151917] lg:min-h-56 lg:p-4"
+            className="group relative min-h-44 overflow-hidden border border-highlight/8 bg-[var(--card-bg)] p-3 text-left transition-all hover:border-brand/40 hover:bg-[var(--accent)] lg:min-h-56 lg:p-4"
         >
             {artworkAvailable && (
                 <Image
@@ -295,10 +295,10 @@ function RaidPlannerMapCard({
                     className="pointer-events-none absolute -right-8 -top-8 h-44 w-56 object-contain opacity-20 grayscale transition-all duration-300 group-hover:scale-105 group-hover:opacity-30 group-hover:grayscale-0"
                 />
             )}
-            <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,rgba(18,19,22,1)_18%,rgba(18,19,22,.9)_52%,rgba(18,19,22,.35))]" />
+            <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,var(--card-bg)_18%,color-mix(in_oklab,_var(--card-bg)_90%,_transparent)_52%,color-mix(in_oklab,_var(--card-bg)_35%,_transparent))]" />
             <span className="relative flex h-full min-h-36 flex-col pb-5 lg:min-h-48 lg:pb-0">
-                <span className="block pr-16 text-base font-semibold text-gray-100 group-hover:text-white">{mapName}</span>
-                <span className="mt-1 block text-[10px] font-medium uppercase tracking-wider text-tarkov-green/75">
+                <span className="block pr-16 text-base font-semibold text-foreground group-hover:text-foreground">{mapName}</span>
+                <span className="mt-1 block text-[10px] font-medium uppercase tracking-wider text-brand/75">
                     {summary.questCount} active quest{summary.questCount === 1 ? "" : "s"}
                 </span>
 
@@ -307,12 +307,12 @@ function RaidPlannerMapCard({
                         {summary.objectiveGroups.map((group) => (
                             <span
                                 key={group.category}
-                                className="inline-flex items-center gap-1.5 border border-white/10 bg-black/35 px-2 py-1 text-[10px] text-gray-300"
+                                className="inline-flex items-center gap-1.5 border border-highlight/10 bg-shadow/35 px-2 py-1 text-[10px] text-foreground"
                             >
                                 {OBJECTIVE_CATEGORY_SHORT_LABELS[group.category]}
-                                <span className="text-gray-500">{group.questCount}</span>
+                                <span className="text-subtle-foreground">{group.questCount}</span>
                                 {group.keyedQuestCount > 0 && (
-                                    <span className="inline-flex items-center gap-0.5 text-amber-300/80" title={`${group.keyedQuestCount} quest${group.keyedQuestCount === 1 ? "" : "s"} require keys`}>
+                                    <span className="inline-flex items-center gap-0.5 text-warning/80" title={`${group.keyedQuestCount} quest${group.keyedQuestCount === 1 ? "" : "s"} require keys`}>
                                         <KeyRound size={9} /> {group.keyedQuestCount}
                                     </span>
                                 )}
@@ -320,12 +320,12 @@ function RaidPlannerMapCard({
                         ))}
                     </span>
                 ) : (
-                    <span className="mt-3 text-xs text-gray-600 lg:mt-4">No active objectives on this map.</span>
+                    <span className="mt-3 text-xs text-subtle-foreground lg:mt-4">No active objectives on this map.</span>
                 )}
 
                 {summary.requiredKeyIds.length > 0 && (
                     <span className="mt-2.5 block lg:mt-4">
-                        <span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300/70">
+                        <span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-warning/70">
                             <KeyRound size={10} /> Required keys
                         </span>
                         <span className="mt-1.5 flex flex-wrap gap-1.5 lg:mt-2">
@@ -336,7 +336,7 @@ function RaidPlannerMapCard({
                     </span>
                 )}
 
-                <span className="absolute bottom-0 right-0 flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-gray-500 transition-colors group-hover:text-tarkov-green">
+                <span className="absolute bottom-0 right-0 flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-subtle-foreground transition-colors group-hover:text-brand">
                     Plan this map <ChevronRight size={11} />
                 </span>
             </span>
@@ -363,7 +363,7 @@ function RaidPlannerKey({ item }: { item: ItemSummary }) {
                     className="absolute inset-0 h-full w-full object-cover"
                 />
             ) : (
-                <KeyRound size={28} className="absolute inset-0 m-auto text-gray-600 lg:h-[34px] lg:w-[34px]" />
+                <KeyRound size={28} className="absolute inset-0 m-auto text-subtle-foreground lg:h-[34px] lg:w-[34px]" />
             )}
         </span>
     );

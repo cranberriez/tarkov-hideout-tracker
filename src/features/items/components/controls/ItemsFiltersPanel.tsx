@@ -57,8 +57,8 @@ export function ItemsFiltersPanel({
     return (
         <aside className={cn("rounded-md border bg-muted p-4 shadow-sm", className)}>
             <div className="mb-4 flex items-center justify-between">
-                <div className="text-sm font-semibold text-white">Filters</div>
-                <Filter size={15} className="text-gray-500" />
+                <div className="text-sm font-semibold text-foreground">Filters</div>
+                <Filter size={15} className="text-subtle-foreground" />
             </div>
 
             <div className="space-y-4">
@@ -97,12 +97,12 @@ export function ItemsFiltersPanel({
                         className={cn(
                             "w-full rounded-md border px-3 py-3 text-left transition-colors",
                             itemQuestVisibilityMode === "custom"
-                                ? "border-tarkov-green/40 bg-black/20"
-                                : "border-white/10 bg-black/20 hover:border-white/20",
+                                ? "border-brand/40 bg-shadow/20"
+                                : "border-highlight/10 bg-shadow/20 hover:border-highlight/20",
                         )}
                     >
                         <div className="space-y-3">
-                            <div className="text-[10px] font-bold uppercase tracking-wide text-gray-600">
+                            <div className="text-[10px] font-bold uppercase tracking-wide text-subtle-foreground">
                                 Custom
                             </div>
                             <NumberRow
@@ -189,13 +189,13 @@ function NumberRow({
     onChange: (value: number) => void;
 }) {
     return (
-        <label className="flex items-center justify-between gap-3 px-1 py-1 text-xs text-gray-400">
+        <label className="flex items-center justify-between gap-3 px-1 py-1 text-xs text-muted-foreground">
             <span>{label}</span>
             <FilterNumberInput
                 value={value}
                 onCommit={onChange}
                 widthClassName="w-12"
-                suffix={<ChevronDown size={12} className="text-gray-600" />}
+                suffix={<ChevronDown size={12} className="text-subtle-foreground" />}
             />
         </label>
     );

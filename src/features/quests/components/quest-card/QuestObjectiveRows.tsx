@@ -47,7 +47,7 @@ function RequiredKeysList({ groups, large = false }: { groups: ItemSummary[][]; 
 
     return (
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-            <span className={large ? "text-xs font-medium uppercase text-gray-600" : "text-[10px] font-medium uppercase text-gray-600"}>
+            <span className={large ? "text-xs font-medium uppercase text-subtle-foreground" : "text-[10px] font-medium uppercase text-subtle-foreground"}>
                 Required keys
             </span>
             {groups.map((group, groupIndex) => (
@@ -56,12 +56,12 @@ function RequiredKeysList({ groups, large = false }: { groups: ItemSummary[][]; 
                     className="contents"
                 >
                     {groupIndex > 0 && (
-                        <span className="text-[10px] text-gray-600">or</span>
+                        <span className="text-[10px] text-subtle-foreground">or</span>
                     )}
                     {group.map((key) => (
                         <span
                             key={key.id}
-                            className={`inline-flex items-stretch overflow-hidden rounded border border-white/10 bg-black/35 leading-snug text-gray-200 ${large ? "min-h-7 text-xs" : "min-h-5 text-[11px]"}`}
+                            className={`inline-flex items-stretch overflow-hidden rounded border border-highlight/10 bg-shadow/35 leading-snug text-foreground ${large ? "min-h-7 text-xs" : "min-h-5 text-[11px]"}`}
                         >
                             {(key.iconLink ?? key.gridImageLink) && (
                                 <img
@@ -126,10 +126,10 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
             <div className="flex-1 min-w-0 space-y-1">
                 <div className="flex items-start justify-between gap-3">
                     <p className={objectiveCompletion?.completed
-                        ? "text-sm leading-relaxed text-gray-500 line-through decoration-white/20"
+                        ? "text-sm leading-relaxed text-subtle-foreground line-through decoration-highlight/20"
                         : itemDisplay === "rows"
-                          ? "text-sm leading-relaxed text-gray-200"
-                          : "text-xs leading-snug text-gray-300"
+                          ? "text-sm leading-relaxed text-foreground"
+                          : "text-xs leading-snug text-foreground"
                     }>{objective.description}</p>
                     {objectiveCompletion && (
                         <button
@@ -141,8 +141,8 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
                                 objectiveCompletion.onToggle();
                             }}
                             className={objectiveCompletion.completed
-                                ? "shrink-0 border border-tarkov-green/25 bg-tarkov-green/8 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-tarkov-green/75 transition-colors hover:border-white/25 hover:text-white"
-                                : "shrink-0 border border-white/12 bg-black/25 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-500 transition-colors hover:border-tarkov-green/40 hover:text-tarkov-green"
+                                ? "shrink-0 border border-success/25 bg-success/8 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-success/75 transition-colors hover:border-highlight/25 hover:text-foreground"
+                                : "shrink-0 border border-highlight/12 bg-shadow/25 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-subtle-foreground transition-colors hover:border-brand/40 hover:text-brand"
                             }
                         >
                             {objectiveCompletion.completed ? "Undo" : "Complete"}
@@ -154,7 +154,7 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
                         {shoot.bodyParts.map((part) => (
                             <span
                                 key={part}
-                                className="text-[10px] text-gray-500 border border-white/10 bg-black/30 px-1.5 py-0.5 rounded"
+                                className="text-[10px] text-subtle-foreground border border-highlight/10 bg-shadow/30 px-1.5 py-0.5 rounded"
                             >
                                 {part}
                             </span>
@@ -166,24 +166,24 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
                     <div
                         className={
                             hasItemChoices
-                                ? "space-y-2 rounded-md border border-white/12 bg-white/4 px-2.5 py-2.5"
+                                ? "space-y-2 rounded-md border border-highlight/12 bg-highlight/4 px-2.5 py-2.5"
                                 : "flex flex-wrap gap-1.5"
                         }
                     >
                         {hasItemChoices && (
-                            <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
+                            <div className="flex items-center gap-1.5 text-[11px] text-subtle-foreground">
                                 <span>
                                     {isPartialItemList
                                         ? `${item.count} of any qualifying item`
                                         : `${item.count} of any of these`}
                                 </span>
                                 {item.foundInRaid && (
-                                    <span className="rounded border border-orange-500/30 bg-orange-500/10 px-1.5 py-0.5 text-[9px] font-medium text-orange-400">
+                                    <span className="rounded border border-warning/30 bg-warning/10 px-1.5 py-0.5 text-[9px] font-medium text-warning">
                                         FiR
                                     </span>
                                 )}
                                 {isPartialItemList && (
-                                    <span className="rounded border border-blue-400/30 bg-blue-400/10 px-1.5 py-0.5 text-[9px] font-medium text-blue-300">
+                                    <span className="rounded border border-info/30 bg-info/10 px-1.5 py-0.5 text-[9px] font-medium text-info">
                                         Showing {compactItems.length} of {item.totalItemCount}
                                     </span>
                                 )}
@@ -194,7 +194,7 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
                                 {compactItems.map((itm) => (
                                     <div
                                         key={itm.id}
-                                        className={`flex items-center gap-1.5 rounded border border-white/10 bg-black/40 px-2 py-1 ${onItemClick ? "cursor-pointer hover:border-white/25 transition-colors" : ""}`}
+                                        className={`flex items-center gap-1.5 rounded border border-highlight/10 bg-shadow/40 px-2 py-1 ${onItemClick ? "cursor-pointer hover:border-highlight/25 transition-colors" : ""}`}
                                         onClick={
                                             onItemClick
                                                 ? (e) => {
@@ -206,8 +206,8 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
                                     >
                                         {(itm.iconLink ?? itm.gridImageLink) && (
                                             <span
-                                                className={`flex h-6 w-6 items-center justify-center rounded-sm bg-black/35 ${
-                                                    item.foundInRaid ? "ring-1 ring-orange-500" : ""
+                                                className={`flex h-6 w-6 items-center justify-center rounded-sm bg-shadow/35 ${
+                                                    item.foundInRaid ? "ring-1 ring-warning" : ""
                                                 }`}
                                             >
                                                 <img
@@ -217,16 +217,16 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
                                                 />
                                             </span>
                                         )}
-                                        <span className="text-[11px] text-gray-200">
+                                        <span className="text-[11px] text-foreground">
                                             {itm.name}
                                         </span>
                                         {!hasItemChoices && (
-                                            <span className="text-[11px] text-gray-500">
+                                            <span className="text-[11px] text-subtle-foreground">
                                                 x{item.count}
                                             </span>
                                         )}
                                         {!hasItemChoices && item.foundInRaid && (
-                                            <span className="text-[9px] text-orange-400 font-medium">
+                                            <span className="text-[9px] text-warning font-medium">
                                                 FiR
                                             </span>
                                         )}
@@ -239,36 +239,36 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
                 {itemDisplay === "rows" && showItems && rowItems.length > 0 && (
                     <div className="pt-2">
                         {item && hasItemChoices && (
-                            <div className="mb-2.5 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                            <div className="mb-2.5 flex flex-wrap items-center gap-2 text-xs text-subtle-foreground">
                                 <span>{item.count} of any qualifying item</span>
-                                {item.foundInRaid && <span className="text-orange-400">Found in raid</span>}
+                                {item.foundInRaid && <span className="text-warning">Found in raid</span>}
                             </div>
                         )}
                         <div className="flex flex-wrap gap-2.5">
                             {visibleRowItems.map((rowItem) => {
                                 const content = (
                                     <>
-                                        <span className={`flex h-11 w-11 shrink-0 items-center justify-center border bg-black/35 ${item?.foundInRaid ? "border-orange-500/65" : "border-white/15"}`}>
-                                            {(rowItem.iconLink ?? rowItem.gridImageLink) ? <img src={rowItem.iconLink ?? rowItem.gridImageLink ?? ""} alt="" className="h-11 w-11 object-contain" /> : <Package size={17} className="text-gray-700" />}
+                                        <span className={`flex h-11 w-11 shrink-0 items-center justify-center border bg-shadow/35 ${item?.foundInRaid ? "border-warning/65" : "border-highlight/15"}`}>
+                                            {(rowItem.iconLink ?? rowItem.gridImageLink) ? <img src={rowItem.iconLink ?? rowItem.gridImageLink ?? ""} alt="" className="h-11 w-11 object-contain" /> : <Package size={17} className="text-subtle-foreground" />}
                                         </span>
                                         <span className="flex min-w-0 flex-1 flex-col justify-center px-2.5">
-                                            <span className="truncate text-xs text-gray-100">{rowItem.name}</span>
-                                            {item?.foundInRaid && <span className="mt-0.5 text-[9px] font-semibold uppercase text-orange-400">FiR</span>}
+                                            <span className="truncate text-xs text-foreground">{rowItem.name}</span>
+                                            {item?.foundInRaid && <span className="mt-0.5 text-[9px] font-semibold uppercase text-warning">FiR</span>}
                                         </span>
-                                        {!hasItemChoices && <span className="shrink-0 pr-2.5 text-xs text-gray-500">x{item?.count ?? objective.count ?? 1}</span>}
+                                        {!hasItemChoices && <span className="shrink-0 pr-2.5 text-xs text-subtle-foreground">x{item?.count ?? objective.count ?? 1}</span>}
                                     </>
                                 );
                                 const isQuestSpecific = "source" in rowItem && rowItem.source === "questSpecific";
                                 return onItemClick && !isQuestSpecific ? (
-                                    <button key={rowItem.id} type="button" onClick={(event) => { event.stopPropagation(); onItemClick(rowItem.id); }} className="flex min-w-[13rem] max-w-xs flex-[1_1_14rem] items-center border border-white/10 bg-black/20 text-left transition-colors hover:border-white/25 hover:bg-white/4">
+                                    <button key={rowItem.id} type="button" onClick={(event) => { event.stopPropagation(); onItemClick(rowItem.id); }} className="flex min-w-[13rem] max-w-xs flex-[1_1_14rem] items-center border border-highlight/10 bg-shadow/20 text-left transition-colors hover:border-highlight/25 hover:bg-highlight/4">
                                         {content}
                                     </button>
                                 ) : (
-                                    <div key={rowItem.id} className="flex min-w-[13rem] max-w-xs flex-[1_1_14rem] items-center border border-white/10 bg-black/20">{content}</div>
+                                    <div key={rowItem.id} className="flex min-w-[13rem] max-w-xs flex-[1_1_14rem] items-center border border-highlight/10 bg-shadow/20">{content}</div>
                                 );
                             })}
                             {hiddenRowItemCount > 0 && (
-                                <button type="button" onClick={() => setShowAllItems((expanded) => !expanded)} className="flex min-h-11 min-w-[13rem] flex-[1_1_14rem] items-center justify-center gap-1.5 rounded-md bg-white/[0.035] px-3 py-2 text-xs font-medium text-gray-500 transition-colors hover:bg-white/[0.07] hover:text-gray-300">
+                                <button type="button" onClick={() => setShowAllItems((expanded) => !expanded)} className="flex min-h-11 min-w-[13rem] flex-[1_1_14rem] items-center justify-center gap-1.5 rounded-md bg-highlight/[0.035] px-3 py-2 text-xs font-medium text-subtle-foreground transition-colors hover:bg-highlight/[0.07] hover:text-foreground">
                                     {showAllItems ? <><ChevronUp size={12} />Show first {WORKSPACE_ITEM_PREVIEW_LIMIT} items</> : <><ChevronDown size={12} />+{hiddenRowItemCount} more items</>}
                                 </button>
                             )}
@@ -277,7 +277,7 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
                 )}
             </div>
             {objective.optional && (
-                <span className="mt-0.5 shrink-0 rounded bg-sky-400/12 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-sky-300/90">
+                <span className="mt-0.5 shrink-0 rounded bg-info/12 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-info/90">
                     opt
                 </span>
             )}

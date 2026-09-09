@@ -184,25 +184,25 @@ export function StorageResetCard() {
             key: "hideout" as const,
             label: "Delete all hideout data",
             description: "Removes hideout progress.",
-            tone: "border-red-500/15 bg-red-500/[0.07] text-red-100 hover:bg-red-500/[0.11]",
+            tone: "border-danger/15 bg-danger/[0.07] text-danger hover:bg-danger/[0.11]",
         },
         {
             key: "items" as const,
             label: "Delete all item data",
             description: "Active profile’s items and all profiles’ Kappa completion.",
-            tone: "border-red-500/15 bg-red-500/[0.07] text-red-100 hover:bg-red-500/[0.11]",
+            tone: "border-danger/15 bg-danger/[0.07] text-danger hover:bg-danger/[0.11]",
         },
         {
             key: "quests" as const,
             label: "Delete all quest data",
             description: "Removes quest progress and sync cache.",
-            tone: "border-red-500/15 bg-red-500/[0.07] text-red-100 hover:bg-red-500/[0.11]",
+            tone: "border-danger/15 bg-danger/[0.07] text-danger hover:bg-danger/[0.11]",
         },
         {
             key: "all" as const,
             label: "Delete ALL data",
             description: "All profiles, Kappa progress, and shared settings. Separate profit data remains.",
-            tone: "border-red-500/30 bg-red-500/10 text-red-200 hover:bg-red-500/20",
+            tone: "border-danger/30 bg-danger/10 text-danger hover:bg-danger/20",
         },
     ];
 
@@ -217,32 +217,32 @@ export function StorageResetCard() {
             <div className="bg-card border rounded-lg p-4 sm:p-5 space-y-4">
                 <div className="space-y-2">
                     <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm font-medium text-white">Saved data usage</div>
-                        <div className="text-xs text-gray-400">
+                        <div className="text-sm font-medium text-foreground">Saved data usage</div>
+                        <div className="text-xs text-muted-foreground">
                             {storageUsage.usedKilobytes} KB / {quotaMegabytes} MB
                         </div>
                     </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-white/8">
+                    <div className="h-2 overflow-hidden rounded-full bg-highlight/8">
                         <div
-                            className="h-full rounded-full bg-white/35 transition-[width]"
+                            className="h-full rounded-full bg-highlight/35 transition-[width]"
                             style={{ width: `${storageUsage.percent}%` }}
                         />
                     </div>
-                    <div className="flex items-center justify-between gap-3 text-xs text-gray-400">
+                    <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
                         <span>{percentLabel}% of saved space used</span>
                         <span>Profile & Kappa storage · estimated capacity</span>
                     </div>
                 </div>
 
-                <div className="border-t border-white/10 pt-4 space-y-3">
+                <div className="border-t border-highlight/10 pt-4 space-y-3">
                     <div className="space-y-1">
-                        <div className="text-sm font-medium text-red-200">Reset progress</div>
-                        <div className="text-xs text-gray-300/80 max-w-xl leading-5">
+                        <div className="text-sm font-medium text-danger">Reset progress</div>
+                        <div className="text-xs text-foreground/80 max-w-xl leading-5">
                             Section resets affect the active profile unless noted. Export a backup before deleting progress.
                         </div>
                     </div>
 
-                    <div className="divide-y divide-white/5">
+                    <div className="divide-y divide-highlight/5">
                         {resetButtons.map((button) => (
                             <div
                                 key={button.key}
@@ -250,10 +250,10 @@ export function StorageResetCard() {
                             >
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="space-y-1">
-                                        <div className="text-sm font-medium text-white">
+                                        <div className="text-sm font-medium text-foreground">
                                             {button.label}
                                         </div>
-                                        <div className="text-xs text-gray-400 leading-5">
+                                        <div className="text-xs text-muted-foreground leading-5">
                                             {button.description}
                                         </div>
                                     </div>
@@ -273,27 +273,27 @@ export function StorageResetCard() {
 
             <Dialog open={pendingReset !== null} onOpenChange={(open) => !open && setPendingReset(null)}>
                 <DialogContent className="max-w-md p-0 overflow-hidden">
-                    <DialogHeader className="border-b border-border-color bg-black/60 px-6 py-4">
-                        <DialogTitle className="text-sm font-semibold tracking-[0.2em] text-gray-300">
+                    <DialogHeader className="border-b border-border-color bg-shadow/60 px-6 py-4">
+                        <DialogTitle className="text-sm font-semibold tracking-[0.2em] text-foreground">
                             {resetDialogContent?.title}
                         </DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4 bg-black/40 px-6 py-5">
-                        <DialogDescription className="text-sm leading-6 text-gray-400">
+                    <div className="space-y-4 bg-shadow/40 px-6 py-5">
+                        <DialogDescription className="text-sm leading-6 text-muted-foreground">
                             {resetDialogContent?.description}
                         </DialogDescription>
                         <DialogFooter>
                             <button
                                 type="button"
                                 onClick={() => setPendingReset(null)}
-                                className="inline-flex items-center justify-center rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs sm:text-sm text-gray-300 transition-colors hover:bg-white/10"
+                                className="inline-flex items-center justify-center rounded-md border border-highlight/10 bg-highlight/5 px-3 py-2 text-xs sm:text-sm text-foreground transition-colors hover:bg-highlight/10"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="button"
                                 onClick={() => pendingReset && confirmReset(pendingReset)}
-                                className="inline-flex items-center justify-center rounded-md border border-red-500/60 bg-red-500/10 px-3 py-2 text-xs sm:text-sm text-red-400 transition-colors hover:bg-red-500/20"
+                                className="inline-flex items-center justify-center rounded-md border border-danger/60 bg-danger/10 px-3 py-2 text-xs sm:text-sm text-danger transition-colors hover:bg-danger/20"
                             >
                                 {resetDialogContent?.confirmLabel}
                             </button>

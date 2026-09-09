@@ -1,5 +1,6 @@
 import type { MapOverlayMarker } from "@/types/maps";
 import type { FullQuest, FullQuestObjective, QuestMapLocation } from "@/types/quests";
+import { getVisualizationColor } from "../../../lib/cfg/visualization-colors";
 import { getQuestMapGroup, getQuestMapGroupKey, type QuestMapGroup } from "../quest-map-groups";
 
 export interface PositionedObjectiveMap extends QuestMapGroup {
@@ -128,7 +129,7 @@ export function createQuestDetailObjectiveStyles(quest: FullQuest) {
         if (!style) {
             const index = styleByRoot.size;
             style = {
-                color: `hsl(${(78 + index * 137.508) % 360} 72% 58%)`,
+                color: getVisualizationColor(index),
             };
             styleByRoot.set(root, style);
         }

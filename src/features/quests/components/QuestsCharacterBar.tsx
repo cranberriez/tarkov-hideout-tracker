@@ -21,7 +21,7 @@ export function QuestsCharacterBar() {
     return (
         <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-1.5">
-                <span className="text-xs text-gray-500 shrink-0">Lv.</span>
+                <span className="text-xs text-subtle-foreground shrink-0">Lv.</span>
                 <input
                     type="number"
                     min={1}
@@ -30,12 +30,12 @@ export function QuestsCharacterBar() {
                     onChange={(e) =>
                         setPlayerLevel(Math.min(100, Math.max(1, Number(e.target.value))))
                     }
-                    className="w-14 bg-black/40 border border-white/10 rounded px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-tarkov-green/50 appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="w-14 bg-shadow/40 border border-highlight/10 rounded px-2 py-1 text-xs text-foreground font-mono focus:outline-none focus:border-brand/50 appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
             </div>
 
             <div className="flex items-center gap-1.5">
-                <span className="text-xs text-gray-500 shrink-0">Prestige</span>
+                <span className="text-xs text-subtle-foreground shrink-0">Prestige</span>
                 <div className="flex gap-0.5">
                     {[1, 2, 3, 4, 5, 6].map((n) => (
                         <button
@@ -43,8 +43,8 @@ export function QuestsCharacterBar() {
                             onClick={() => setPrestigeLevel(prestigeLevel === n ? 0 : n)}
                             className={`w-6 h-6 text-xs font-mono rounded transition-all flex items-center justify-center ${
                                 prestigeLevel >= n
-                                    ? "bg-purple-500/80 text-white font-bold shadow-[0_0_8px_rgba(168,85,247,0.4)]"
-                                    : "bg-black/40 border border-white/10 text-gray-500 hover:text-white hover:border-white/30"
+                                    ? "bg-special/80 text-inverse font-bold shadow-[0_0_8px_color-mix(in_oklab,_var(--special)_40%,_transparent)]"
+                                    : "bg-shadow/40 border border-highlight/10 text-subtle-foreground hover:text-foreground hover:border-highlight/30"
                             }`}
                         >
                             {n}

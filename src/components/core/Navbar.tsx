@@ -48,10 +48,10 @@ export function Navbar() {
                                     />
                                 </div>
                                 <div className="hidden min-w-0 flex-col leading-none lg:flex">
-                                    <span className="truncate text-base font-bold tracking-tight text-white sm:text-lg sm:tracking-wide">
+                                    <span className="truncate text-base font-bold tracking-tight text-foreground sm:text-lg sm:tracking-wide">
                                         TARKOV HIDEOUT
                                     </span>
-                                    <span className="text-[10px] tracking-wide text-gray-500 sm:text-xs">
+                                    <span className="text-[10px] tracking-wide text-subtle-foreground sm:text-xs">
                                         STATION MANAGER
                                     </span>
                                 </div>
@@ -65,7 +65,7 @@ export function Navbar() {
                                     "flex items-center gap-2 rounded px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors",
                                     isQuickAddOpen
                                         ? "bg-foreground/80 text-card"
-                                        : "bg-tarkov-green text-black hover:bg-tarkov-green-dim",
+                                        : "bg-brand text-inverse hover:bg-brand-hover",
                                 )}
                             >
                                 <Plus size={15} />
@@ -81,7 +81,7 @@ export function Navbar() {
                             <DropdownMenu>
                                 <DropdownMenuTrigger
                                     className={cn(
-                                        "flex items-center gap-2 rounded p-2 text-gray-400 transition-colors hover:text-white",
+                                        "flex items-center gap-2 rounded p-2 text-muted-foreground transition-colors hover:text-foreground",
                                         isSecondaryRoute && "bg-foreground/80 text-card",
                                     )}
                                     aria-label="Menu"
@@ -129,14 +129,14 @@ export function Navbar() {
                         </div>
                     </div>
 
-                    <div className="hidden flex-wrap items-center gap-3 text-sm font-medium text-gray-400 md:flex lg:gap-4">
+                    <div className="hidden flex-wrap items-center gap-3 text-sm font-medium text-muted-foreground md:flex lg:gap-4">
                         <button
                             onClick={() => setQuickAddOpen(true)}
                             className={cn(
                                 "flex items-center gap-2 rounded px-3 py-2.5 transition-colors",
                                 isQuickAddOpen
                                     ? "bg-foreground/80 text-card"
-                                    : "bg-tarkov-green text-black hover:bg-tarkov-green-dim",
+                                    : "bg-brand text-inverse hover:bg-brand-hover",
                             )}
                         >
                             <Plus size={16} />
@@ -162,7 +162,7 @@ export function Navbar() {
                                     "flex items-center gap-2 rounded p-2 transition-colors",
                                     isSecondaryRoute
                                         ? "bg-foreground/80 text-card"
-                                        : "hover:text-white",
+                                        : "hover:text-foreground",
                                 )}
                                 aria-label="Menu"
                             >
@@ -225,7 +225,7 @@ function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: str
                 aria-haspopup={hasChildren ? "menu" : undefined}
                 className={cn(
                     "flex items-center gap-2 rounded px-3 py-2 transition-colors",
-                    isActive ? "bg-foreground/80 text-card" : "hover:text-white",
+                    isActive ? "bg-foreground/80 text-card" : "hover:text-foreground",
                 )}
             >
                 <NavItemIcon item={menu} />
@@ -314,7 +314,7 @@ function SetupButton({ onClick, compact = false }: { onClick: () => void; compac
             type="button"
             onClick={onClick}
             className={cn(
-                "flex h-10 items-center justify-center gap-2 rounded border border-tarkov-green/60 bg-tarkov-green/10 font-semibold uppercase tracking-wide text-tarkov-green shadow-[0_0_18px_rgba(157,255,0,0.12)] transition-all hover:border-tarkov-green hover:bg-tarkov-green hover:text-black",
+                "flex h-10 items-center justify-center gap-2 rounded border border-brand/60 bg-brand/10 font-semibold uppercase tracking-wide text-brand shadow-[0_0_18px_color-mix(in_oklab,_var(--brand)_12%,_transparent)] transition-all hover:border-brand hover:bg-brand hover:text-inverse",
                 compact ? "px-2 text-[11px]" : "px-3 text-xs",
             )}
         >

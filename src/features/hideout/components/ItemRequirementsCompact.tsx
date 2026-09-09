@@ -73,9 +73,9 @@ export function CompactItemRequirements({
                         <div
                             key={req.id}
                             onClick={() => onClickItem(item)}
-                            className={`relative w-16 h-16 bg-black/40 border group cursor-pointer transition-all ${
-                                req.isFir ? "border-orange-500" : "border-white/10"
-                            } ${isCompleted ? "opacity-50 grayscale" : "hover:border-white/30"}`}
+                            className={`relative w-16 h-16 bg-shadow/40 border group cursor-pointer transition-all ${
+                                req.isFir ? "border-warning" : "border-highlight/10"
+                            } ${isCompleted ? "opacity-50 grayscale" : "hover:border-highlight/30"}`}
                             title={`${formatNumber(req.count)} ${item.name}${
                                 req.isFir ? " (Found In Raid)" : ""
                             }${priceLabel ? ` - ${priceLabel}` : ""}${
@@ -93,34 +93,42 @@ export function CompactItemRequirements({
                             )}
                             {req.isFir && (
                                 <div
-                                    className="absolute -top-1.5 -right-1.5 bg-black rounded-full z-10 text-orange-500"
+                                    className="absolute -top-1.5 -right-1.5 bg-shadow rounded-full z-10 text-warning"
                                     title="Found In Raid"
                                 >
-                                    <CircleCheckBig className="w-3.5 h-3.5 text-orange-500" />
+                                    <CircleCheckBig className="w-3.5 h-3.5 text-warning" />
                                 </div>
                             )}
                             {isCompleted && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                <div className="absolute inset-0 flex items-center justify-center bg-shadow/40">
                                     <Check size={16} />
                                 </div>
                             )}
-                            <div className="absolute bottom-0 right-0 bg-black/40 px-1 text-[10px] font-mono text-gray-300 border-t border-l border-white/10 text-right leading-tight">
+                            <div className="absolute bottom-0 right-0 bg-shadow/40 px-1 text-[10px] font-mono text-foreground border-t border-l border-highlight/10 text-right leading-tight">
                                 {isCurrency ? (
                                     <div
-                                        className={req.isFir ? "text-orange-300" : "text-tarkov-green"}
+                                        className={
+                                            req.isFir
+                                                ? isCompleted
+                                                    ? "text-success"
+                                                    : "text-warning"
+                                                : isCompleted
+                                                  ? "text-success"
+                                                  : "text-brand"
+                                        }
                                     >
                                         {formatNumber(req.count)}
                                     </div>
                                 ) : req.isFir ? (
-                                    <div className="text-orange-300">
+                                    <div className={isCompleted ? "text-success" : "text-warning"}>
                                         {formatNumber(needs.haveFirReserved)} /{" "}
                                         {formatNumber(needs.requiredFir)}
                                     </div>
                                 ) : (
-                                    <div className="text-tarkov-green">
+                                    <div className={isCompleted ? "text-success" : "text-brand"}>
                                         {formatNumber(needs.effectiveHave)}{" "}
                                         {owned.haveFir > 0 && (
-                                            <span className="text-orange-300">
+                                            <span className="text-warning">
                                                 {formatNumber(owned.haveFir)}
                                             </span>
                                         )}
@@ -129,7 +137,7 @@ export function CompactItemRequirements({
                                 )}
                             </div>
                             {priceLabel && !isCurrency && (
-                                <div className="absolute top-0 left-0 max-w-full bg-black/55 px-1 text-[9px] font-mono leading-4 text-gray-300">
+                                <div className="absolute top-0 left-0 max-w-full bg-shadow/55 px-1 text-[9px] font-mono leading-4 text-foreground">
                                     {priceLabel}
                                 </div>
                             )}

@@ -270,7 +270,7 @@ export function ItemsStatsRow({
     ]);
 
     return (
-        <div className="my-1 flex items-center gap-2 px-1 text-xs select-none text-gray-600">
+        <div className="my-1 flex items-center gap-2 px-1 text-xs select-none text-subtle-foreground">
             <Stat value={stats.total} label="items" />
             <Sep />
             <Stat value={stats.hideout} label="hideout" />
@@ -285,12 +285,12 @@ export function ItemsStatsRow({
 function Stat({ value, label }: { value: number; label: string }) {
     return (
         <span>
-            <span className="tabular-nums font-medium text-gray-400">{value}</span>
+            <span className="tabular-nums font-medium text-muted-foreground">{value}</span>
             <span className="ml-1">{label}</span>
         </span>
     );
 }
 
 function Sep() {
-    return <span className="text-gray-700">|</span>;
+    return <span className="text-subtle-foreground">|</span>;
 }

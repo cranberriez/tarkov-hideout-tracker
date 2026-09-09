@@ -33,7 +33,7 @@ export function StationCraftPriceField({
 					const parsed = Number(raw);
 					if (!raw || (Number.isFinite(parsed) && parsed >= 0)) onChange(raw ? parsed : undefined);
 				}}
-				className={`min-w-0 bg-transparent text-right font-mono placeholder:text-foreground ${large ? "w-24 text-base" : "w-20 text-xs"} ${value === undefined ? "text-foreground" : "text-sky-300"}`}
+				className={`min-w-0 bg-transparent text-right font-mono placeholder:text-foreground ${large ? "w-24 text-base" : "w-20 text-xs"} ${value === undefined ? "text-foreground" : "text-info"}`}
 			/>
 			<span className="text-[11px] text-muted-foreground">₽</span>
 			{value !== undefined && (

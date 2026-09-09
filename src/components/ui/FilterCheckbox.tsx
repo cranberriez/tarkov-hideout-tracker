@@ -27,14 +27,14 @@ export function FilterCheckbox({
                     onChange={(event) => onCheckedChange(event.target.checked)}
                     className="peer sr-only"
                 />
-                <span className="text-gray-600 transition-colors hover:text-tarkov-green peer-focus-visible:outline-2 peer-focus-visible:outline-tarkov-green">
+                <span className="text-subtle-foreground transition-colors hover:text-brand peer-focus-visible:outline-2 peer-focus-visible:outline-brand">
                     {checked ? (
-                        <CheckCircle size={16} className="text-tarkov-green" />
+                        <CheckCircle size={16} className="text-brand" />
                     ) : (
                         <Circle size={16} />
                     )}
                 </span>
-                <span className="text-xs font-medium text-gray-300">{label}</span>
+                <span className="text-xs font-medium text-foreground">{label}</span>
             </label>
             <div className="flex items-center gap-2">{trailing}</div>
         </div>

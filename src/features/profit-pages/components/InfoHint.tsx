@@ -58,7 +58,7 @@ export function InfoHint({
         onMouseLeave={() => setPosition(null)}
         onFocus={show}
         onBlur={() => setPosition(null)}
-        className={`flex size-3.5 shrink-0 cursor-help items-center justify-center outline-none transition ${tone === "warning" ? "text-amber-300/90 hover:text-amber-200 focus:text-amber-200" : "text-muted-foreground hover:text-foreground focus:text-foreground"}`}
+        className={`flex size-3.5 shrink-0 cursor-help items-center justify-center outline-none transition ${tone === "warning" ? "text-warning/90 hover:text-warning focus:text-warning" : "text-muted-foreground hover:text-foreground focus:text-foreground"}`}
       >
         {compact && tone === "warning" ? <TriangleAlert className="size-3" /> : <Info className="size-3" />}
       </span>
@@ -66,11 +66,11 @@ export function InfoHint({
         createPortal(
           <span
             role="tooltip"
-            className={`pointer-events-none fixed z-[120] block rounded-md border border-white/15 bg-[#05070a] ${compact ? "px-2 py-1.5" : "p-3"} text-left shadow-[0_18px_55px_rgba(0,0,0,0.8)]`}
+            className={`pointer-events-none fixed z-[120] block rounded-md border border-highlight/15 bg-[var(--background)] ${compact ? "px-2 py-1.5" : "p-3"} text-left shadow-[0_18px_55px_color-mix(in_oklab,_var(--shadow)_80%,_transparent)]`}
             style={position}
           >
             <span
-              className={`block ${compact ? "text-[11px]" : "text-[10px] font-bold uppercase tracking-wide"} ${tone === "warning" ? "text-amber-300" : "text-tarkov-green"}`}
+              className={`block ${compact ? "text-[11px]" : "text-[10px] font-bold uppercase tracking-wide"} ${tone === "warning" ? "text-warning" : "text-brand"}`}
             >
               {title}
             </span>

@@ -15,10 +15,10 @@ export function FilterBar({ className, ...props }: ComponentProps<"div">) {
 
 const buttonClass = (active: boolean) =>
     cn(
-        "flex items-center justify-center gap-2 rounded-sm border px-3 py-2 text-xs font-medium transition-all focus-visible:outline-2 focus-visible:outline-tarkov-green",
+        "flex items-center justify-center gap-2 rounded-sm border px-3 py-2 text-xs font-medium transition-all focus-visible:outline-2 focus-visible:outline-brand",
         active
-            ? "border-tarkov-green bg-tarkov-green/10 text-tarkov-green"
-            : "border-white/10 bg-black/20 text-gray-400 hover:border-white/30 hover:bg-black/40",
+            ? "border-brand bg-brand/10 text-brand"
+            : "border-highlight/10 bg-shadow/20 text-muted-foreground hover:border-highlight/30 hover:bg-shadow/40",
     );
 
 export function FilterToggle({
@@ -94,25 +94,25 @@ export function FilterSearchInput({
     return (
         <div
             className={cn(
-                "flex min-w-[140px] flex-1 items-center gap-2 rounded-sm border border-white/10 bg-black/40 px-3 focus-within:border-tarkov-green",
+                "flex min-w-[140px] flex-1 items-center gap-2 rounded-sm border border-highlight/10 bg-shadow/40 px-3 focus-within:border-brand",
                 className,
             )}
         >
-            <Search size={14} className="shrink-0 text-gray-500" aria-hidden="true" />
+            <Search size={14} className="shrink-0 text-subtle-foreground" aria-hidden="true" />
             <input
                 {...props}
                 type="search"
                 aria-label={label}
                 value={value}
                 onChange={(event) => onValueChange(event.target.value)}
-                className="min-w-0 flex-1 bg-transparent py-2 text-xs text-white outline-none placeholder:text-gray-500 [&::-webkit-search-cancel-button]:appearance-none"
+                className="min-w-0 flex-1 bg-transparent py-2 text-xs text-foreground outline-none placeholder:text-subtle-foreground [&::-webkit-search-cancel-button]:appearance-none"
             />
             {value && (
                 <button
                     type="button"
                     aria-label={`Clear ${label.toLowerCase()}`}
                     onClick={() => onValueChange("")}
-                    className="text-gray-400 hover:text-white focus-visible:outline-2 focus-visible:outline-tarkov-green"
+                    className="text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-brand"
                 >
                     <X size={14} />
                 </button>
@@ -140,7 +140,7 @@ export function FilterRadioGroup<T extends string>({
         <div
             role="radiogroup"
             aria-label={label}
-            className={cn("flex rounded-sm border border-white/10 bg-black/40 p-1", className)}
+            className={cn("flex rounded-sm border border-highlight/10 bg-shadow/40 p-1", className)}
         >
             {options.map((option) => (
                 <label
@@ -159,10 +159,10 @@ export function FilterRadioGroup<T extends string>({
                     />
                     <span
                         className={cn(
-                            "flex flex-1 items-center justify-center gap-1.5 rounded-xs px-2.5 py-1 text-xs font-medium transition-all peer-focus-visible:outline-2 peer-focus-visible:outline-tarkov-green",
+                            "flex flex-1 items-center justify-center gap-1.5 rounded-xs px-2.5 py-1 text-xs font-medium transition-all peer-focus-visible:outline-2 peer-focus-visible:outline-brand",
                             value === option.value
-                                ? "bg-tarkov-green text-black shadow-sm"
-                                : "text-gray-400 hover:bg-white/5 hover:text-white",
+                                ? "bg-brand text-inverse shadow-sm"
+                                : "text-muted-foreground hover:bg-highlight/5 hover:text-foreground",
                         )}
                     >
                         {option.icon ?? option.label}
@@ -176,7 +176,7 @@ export function FilterRadioGroup<T extends string>({
 export function FilterSection({ title, children }: { title: string; children: ReactNode }) {
     return (
         <section className="space-y-3 py-1">
-            <h3 className="text-[10px] font-bold uppercase tracking-wide text-gray-500">{title}</h3>
+            <h3 className="text-[10px] font-bold uppercase tracking-wide text-subtle-foreground">{title}</h3>
             {children}
         </section>
     );

@@ -90,10 +90,10 @@ export function KappaChecklistClientPage({
         <main className="container mx-auto px-6 py-8">
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-white">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
                         KAPPA REQUIRED ITEMS
                     </h1>
-                    <p className="mt-1 text-sm text-gray-400">
+                    <p className="mt-1 text-sm text-muted-foreground">
                         {completedCount} of {collectorItemCount} collected
                     </p>
                 </div>
@@ -103,7 +103,7 @@ export function KappaChecklistClientPage({
                         <Link
                             href={`/quests#quest-${collectorQuest.id}`}
                             aria-label="Open Collector quest"
-                            className="inline-flex h-[46px] items-center gap-2 rounded-md border border-white/10 bg-black/30 px-3 text-sm font-semibold text-gray-200 transition-colors hover:border-amber-400/40 hover:bg-amber-400/5 hover:text-white"
+                            className="inline-flex h-[46px] items-center gap-2 rounded-md border border-highlight/10 bg-shadow/30 px-3 text-sm font-semibold text-foreground transition-colors hover:border-brand/40 hover:bg-brand/5 hover:text-foreground"
                         >
                             {collectorQuest.traderImageLink ? (
                                 <img
@@ -120,7 +120,7 @@ export function KappaChecklistClientPage({
                     )}
 
                     <div
-                        className="inline-flex rounded-md border border-white/10 bg-black/30 p-1"
+                        className="inline-flex rounded-md border border-highlight/10 bg-shadow/30 p-1"
                         aria-label="Kappa item filter"
                     >
                         {VIEW_OPTIONS.map((option) => {
@@ -133,8 +133,8 @@ export function KappaChecklistClientPage({
                                     aria-pressed={active}
                                     className={`min-w-20 rounded px-4 py-2 text-sm font-semibold transition-colors ${
                                         active
-                                            ? "bg-tarkov-green text-black"
-                                            : "text-gray-400 hover:bg-white/5 hover:text-white"
+                                            ? "bg-brand text-inverse"
+                                            : "text-muted-foreground hover:bg-highlight/5 hover:text-foreground"
                                     }`}
                                 >
                                     {option.label}
@@ -155,13 +155,17 @@ export function KappaChecklistClientPage({
                     {catalogWarning && (
                         <div
                             role="alert"
-                            className="mb-4 rounded border border-amber-400/30 bg-amber-950/30 px-4 py-3 text-sm text-amber-100"
+                            className="mb-4 rounded border border-warning/30 bg-warning-surface/30 px-4 py-3 text-sm text-warning"
                         >
                             {catalogWarning}
                         </div>
                     )}
                     {visibleItems.length === 0 ? (
-                <div className="rounded-lg border border-tarkov-green/20 bg-tarkov-green/5 px-5 py-10 text-center text-sm text-gray-300">
+                <div className={`rounded-lg border px-5 py-10 text-center text-sm text-foreground ${
+                    unresolvedItemIds.length > 0
+                        ? "border-warning/20 bg-warning/5"
+                        : "border-success/20 bg-success/5"
+                }`}>
                     {unresolvedItemIds.length > 0
                         ? "No matched Collector items are available to display."
                         : "You have collected every Kappa item."}
@@ -174,13 +178,13 @@ export function KappaChecklistClientPage({
                             <li
                                 key={item.id}
                                 className={`flex min-w-0 overflow-hidden rounded-md border bg-card transition-colors ${
-                                    isCompleted ? "border-tarkov-green/40" : "border-white/10"
+                                    isCompleted ? "border-success/40" : "border-highlight/10"
                                 }`}
                             >
                                 <button
                                     type="button"
                                     onClick={() => setSelectedItem(item)}
-                                    className="group relative aspect-square min-w-0 flex-1 overflow-hidden bg-black/35 transition-colors hover:bg-black/55 focus-visible:z-10"
+                                    className="group relative aspect-square min-w-0 flex-1 overflow-hidden bg-shadow/35 transition-colors hover:bg-shadow/55 focus-visible:z-10"
                                     title={`Open ${item.name} details`}
                                     aria-label={`Open ${item.name} details`}
                                 >
@@ -197,7 +201,7 @@ export function KappaChecklistClientPage({
                                             />
                                         </span>
                                     ) : (
-                                        <span className="flex h-full items-center justify-center text-xl text-gray-600">
+                                        <span className="flex h-full items-center justify-center text-xl text-subtle-foreground">
                                             ?
                                         </span>
                                     )}
@@ -210,8 +214,8 @@ export function KappaChecklistClientPage({
                                     title={`${isCompleted ? "Mark as needed" : "Mark as collected"}: ${item.name}`}
                                     className={`flex w-10 shrink-0 items-center justify-center border-l transition-colors ${
                                         isCompleted
-                                            ? "border-tarkov-green/30 bg-tarkov-green/15 text-tarkov-green hover:bg-tarkov-green/25"
-                                            : "border-white/10 text-gray-500 hover:bg-white/5 hover:text-gray-200"
+                                            ? "border-success/30 bg-success/15 text-success hover:bg-success/25"
+                                            : "border-highlight/10 text-subtle-foreground hover:bg-highlight/5 hover:text-foreground"
                                     }`}
                                 >
                                     <Check aria-hidden="true" className="size-5" strokeWidth={2.5} />
@@ -224,7 +228,7 @@ export function KappaChecklistClientPage({
                 </>
             )}
 
-            <p className="mt-6 flex items-center gap-2 text-sm text-orange-300/90">
+            <p className="mt-6 flex items-center gap-2 text-sm text-warning/90">
                 <BadgeCheck aria-hidden="true" className="size-4 shrink-0" />
                 All Collector items must be found in raid.
             </p>

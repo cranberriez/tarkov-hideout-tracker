@@ -69,7 +69,7 @@ export function StationCraftIngredient({
 			</button>
 			<div className="min-w-0 space-y-1.5">
 				<div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-					<button type="button" className="text-left hover:text-tarkov-green" onClick={() => onItemOpen(part.itemId)}>
+					<button type="button" className="text-left hover:text-brand" onClick={() => onItemOpen(part.itemId)}>
 						{formatQuantity(part.quantity)}× {name}
 					</button>
 					{!part.isTool && part.quantity !== 1 && (
@@ -104,14 +104,14 @@ export function StationCraftIngredient({
 									aria-pressed={false}
 									title={route.durationSeconds ? `${formatDuration(route.durationSeconds)} additional time` : "Direct acquisition"}
 									onClick={() => selectRoute(routeKey)}
-									className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-white/5 hover:text-foreground"
+									className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-highlight/5 hover:text-foreground"
 								>
 									{routeLabel(route)} · {formatRoundedRoubles(part.quantity > 0 ? route.totalCost / part.quantity : null)}
 									{part.quantity !== 1 ? " / each" : ""}
 								</button>
 							);
 						})}
-						{!sources.routes.length && <span className="text-xs text-amber-300">No available acquisition route</span>}
+						{!sources.routes.length && <span className="text-xs text-warning">No available acquisition route</span>}
 					</div>
 				)}
 			</div>

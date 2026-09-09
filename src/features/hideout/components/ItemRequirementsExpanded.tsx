@@ -73,15 +73,15 @@ export function ExpandedItemRequirements({
                         <div
                             key={req.id}
                             onClick={() => onClickItem(item)}
-                            className={`flex items-center gap-3 bg-black/20 p-1 border transition-colors cursor-pointer ${
+                            className={`flex items-center gap-3 bg-shadow/20 p-1 border transition-colors cursor-pointer ${
                                 isCompleted
-                                    ? "border-green-500/30 opacity-60 bg-green-900/5"
-                                    : "border-white/5 hover:border-white/10"
+                                    ? "border-success/30 opacity-60 bg-success-surface/5"
+                                    : "border-highlight/5 hover:border-highlight/10"
                             }`}
                         >
                             <div
                                 className={`relative w-10 h-10 shrink-0 ${
-                                    req.isFir ? "ring-1 ring-orange-500" : ""
+                                    req.isFir ? "ring-1 ring-warning" : ""
                                 }`}
                             >
                                 {item.iconLink && (
@@ -96,7 +96,7 @@ export function ExpandedItemRequirements({
                                     />
                                 )}
                                 {isCompleted && (
-                                    <div className="absolute inset-0 flex items-center justify-center text-green-500">
+                                    <div className="absolute inset-0 flex items-center justify-center text-success">
                                         <Check size={24} strokeWidth={2} />
                                     </div>
                                 )}
@@ -105,32 +105,32 @@ export function ExpandedItemRequirements({
                                 <div className="flex flex-col items-start gap-0.5 min-w-0">
                                     <div
                                         className={`text-xs truncate ${
-                                            isCompleted ? "text-gray-500" : "text-gray-300"
+                                            isCompleted ? "text-subtle-foreground" : "text-foreground"
                                         }`}
                                     >
                                         <span
                                             className={`font-bold mr-2 font-mono ${
-                                                isCompleted ? "text-gray-600" : "text-gray-200"
+                                                isCompleted ? "text-subtle-foreground" : "text-foreground"
                                             }`}
                                         >
                                             {item.shortName || item.name}
                                         </span>
                                     </div>
-                                    <div className="text-[10px] font-mono text-gray-400">
+                                    <div className="text-[10px] font-mono text-muted-foreground">
                                         {isCurrency ? (
-                                            <span className="text-tarkov-green">
+                                            <span className="text-brand">
                                                 {formatNumber(req.count)}
                                             </span>
                                         ) : req.isFir ? (
-                                            <span className="text-orange-400">
+                                            <span className={isCompleted ? "text-success" : "text-warning"}>
                                                 FiR {formatNumber(needs.haveFirReserved)} /{" "}
                                                 {formatNumber(needs.requiredFir)}
                                             </span>
                                         ) : (
-                                            <span className="text-tarkov-green">
+                                            <span className={isCompleted ? "text-success" : "text-brand"}>
                                                 {formatNumber(needs.effectiveHave)}
                                                 {owned.haveFir > 0 && (
-                                                    <span className="text-orange-400">
+                                                    <span className="text-warning">
                                                         {` (${formatNumber(owned.haveFir)})`}
                                                     </span>
                                                 )}
@@ -140,12 +140,12 @@ export function ExpandedItemRequirements({
                                     </div>
                                 </div>
                                 {req.isFir && !isCompleted && (
-                                    <div className="text-orange-500" title="Found In Raid">
+                                    <div className="text-warning" title="Found In Raid">
                                         <CircleCheckBig className="w-4 h-4" />
                                     </div>
                                 )}
                                 {!isCurrency && (
-                                    <div className="ml-2 shrink-0 text-right text-[10px] font-mono text-gray-500">
+                                    <div className="ml-2 shrink-0 text-right text-[10px] font-mono text-subtle-foreground">
                                         {priceLabel}
                                     </div>
                                 )}

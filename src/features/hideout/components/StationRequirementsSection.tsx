@@ -51,21 +51,21 @@ export function StationRequirementsSection({
             {!isMaxed && nextLevelData ? (
                 <>
                     <div className="flex items-center justify-between gap-2 mb-0.5">
-                        <div className="text-[10px] text-gray-600 uppercase tracking-wider font-bold">
+                        <div className="text-[10px] text-subtle-foreground uppercase tracking-wider font-bold">
                             Next Level Requires:
                         </div>
                         <div className="ml-auto flex items-center text-right text-[10px] font-bold uppercase tracking-wider">
                             {upgradeStatus === "ready" && (
-                                <span className="text-tarkov-green">Ready to Upgrade</span>
+                                <span className="text-success">Ready to Upgrade</span>
                             )}
                             {/* {upgradeStatus === "missing" && (
                                 <span className="text-muted-foreground/50">Requirements Missing</span>
                             )} */}
                             {upgradeStatus === "illegal" && (
-                                <span className="text-red-400">Illegal State</span>
+                                <span className="text-danger">Illegal State</span>
                             )}
                             {nextLevelData.constructionTime > 0 && (
-                                <span className="px-1 py-px rounded text-gray-300 text-[12px] flex items-center gap-1">
+                                <span className="px-1 py-px rounded text-foreground text-[12px] flex items-center gap-1">
                                     <Clock size={10} />
                                     {formatTimeLength(nextLevelData.constructionTime)}
                                 </span>
@@ -106,7 +106,7 @@ export function StationRequirementsSection({
                     )}
                 </>
             ) : (
-                <div className="flex items-center justify-center h-full text-gray-600 text-xs italic py-4">
+                <div className="flex items-center justify-center h-full text-subtle-foreground text-xs italic py-4">
                     Max level reached
                 </div>
             )}

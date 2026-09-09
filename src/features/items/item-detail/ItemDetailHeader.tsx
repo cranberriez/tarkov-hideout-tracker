@@ -29,7 +29,7 @@ export function ItemDetailHeader({
     return (
         <div className="flex min-w-0 flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border-color bg-black/30 shadow-inner sm:h-20 sm:w-20">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border-color bg-shadow/30 shadow-inner sm:h-20 sm:w-20">
                     {imageLink ? (
                         <img
                             src={imageLink}
@@ -43,7 +43,7 @@ export function ItemDetailHeader({
                 <div className="min-w-0 flex-1">
                     {categoryLabel && (
                         <div className="mb-1.5 flex flex-wrap gap-1.5">
-                            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-tarkov-green-dim">
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-hover">
                                 {categoryLabel}
                             </span>
                         </div>
@@ -57,7 +57,7 @@ export function ItemDetailHeader({
                                 href={item.wikiLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-1 transition-colors hover:text-tarkov-green"
+                                className="flex items-center gap-1 transition-colors hover:text-brand"
                             >
                                 Wiki <ExternalLink size={10} />
                             </a>
@@ -67,7 +67,7 @@ export function ItemDetailHeader({
                                 href={item.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-1 transition-colors hover:text-tarkov-green"
+                                className="flex items-center gap-1 transition-colors hover:text-brand"
                             >
                                 Tarkov.dev <ExternalLink size={10} />
                             </a>
@@ -76,7 +76,7 @@ export function ItemDetailHeader({
                 </div>
             </div>
             {totalRequiredCount > 0 && (
-                <div className="grid w-full auto-cols-fr grid-flow-col overflow-hidden rounded-lg border border-border-color bg-black/20 lg:w-auto lg:min-w-[500px]">
+                <div className="grid w-full auto-cols-fr grid-flow-col overflow-hidden rounded-lg border border-border-color bg-shadow/20 lg:w-auto lg:min-w-[500px]">
                     <SummaryValue label="Required" value={totalRequiredCount} />
                     <SummaryValue
                         label="Need"
@@ -117,9 +117,9 @@ function SummaryValue({
             <div
                 className={`mt-0.5 font-mono text-base font-semibold ${
                     accent === "green"
-                        ? "text-tarkov-green"
+                        ? "text-brand"
                         : accent === "orange"
-                          ? "text-orange-400"
+                          ? "text-warning"
                           : "text-foreground"
                 }`}
             >

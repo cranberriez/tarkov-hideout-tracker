@@ -17,33 +17,33 @@ function routeIconClasses(
 ) {
   const styles = {
     barter: {
-      color: "text-sky-400",
-      background: "bg-sky-400",
-      border: "border-sky-400",
+      color: "text-acquisition-barter",
+      background: "bg-acquisition-barter",
+      border: "border-acquisition-barter",
     },
     craft: {
-      color: "text-orange-400",
-      background: "bg-orange-400",
-      border: "border-orange-400",
+      color: "text-acquisition-craft",
+      background: "bg-acquisition-craft",
+      border: "border-acquisition-craft",
     },
     trader: {
-      color: "text-purple-400",
-      background: "bg-purple-400",
-      border: "border-purple-400",
+      color: "text-acquisition-trader",
+      background: "bg-acquisition-trader",
+      border: "border-acquisition-trader",
     },
     flea: {
-      color: "text-emerald-400",
-      background: "bg-emerald-400",
-      border: "border-emerald-400",
+      color: "text-acquisition-flea",
+      background: "bg-acquisition-flea",
+      border: "border-acquisition-flea",
     },
     sell: {
-      color: "text-yellow-300",
-      background: "bg-yellow-300",
-      border: "border-yellow-300",
+      color: "text-acquisition-sell-value",
+      background: "bg-acquisition-sell-value",
+      border: "border-acquisition-sell-value",
     },
   }[method];
 
-  if (filled) return `${styles.background} text-black`;
+  if (filled) return `${styles.background} text-inverse`;
 
   const border = changedFromBase
     ? `border-2 border-solid ${styles.border}`
@@ -77,7 +77,7 @@ export function RouteIcon({
   const classes = `${rowRail ? "relative h-full w-8 shrink-0 self-stretch rounded-none" : preview ? "relative size-7 shrink-0 rounded shadow-md" : inline ? "relative size-[18px] shrink-0 rounded-[3px] shadow-md" : "absolute -left-1 -top-1 z-10 size-[18px] rounded-[3px] shadow-md"} flex items-center justify-center`;
   const iconClasses = preview ? "size-4 stroke-[3]" : "size-3.5 stroke-[3]";
   const caret = switchable ? (
-    <ChevronDown className="absolute bottom-0.5 right-0.5 size-2 stroke-[3] text-white" />
+    <ChevronDown className="absolute bottom-0.5 right-0.5 size-2 stroke-[3] text-foreground" />
   ) : null;
   const changedTitle = changedFromBase ? " · changed from recommendation" : "";
   if (method === "barter")
@@ -133,7 +133,7 @@ export function RouteIcon({
   return (
     <span
       title={title ?? "No priced route"}
-      className={`${classes} bg-red-950/60 text-red-300 `}
+      className={`${classes} bg-danger-surface/60 text-danger `}
     >
       <LockKeyhole aria-label="Locked" className={iconClasses} />
       {caret}
@@ -142,10 +142,10 @@ export function RouteIcon({
 }
 
 export function routeChipClasses(method: RouteMethod) {
-  if (method === "barter") return "bg-sky-400 text-black";
-  if (method === "craft") return "bg-orange-400 text-black";
-  if (method === "trader") return "bg-purple-400 text-black";
-  if (method === "flea") return "bg-emerald-400 text-black";
-  if (method === "sell") return "bg-yellow-300 text-black";
-  return "bg-red-950/60 text-red-300";
+  if (method === "barter") return "bg-acquisition-barter text-inverse";
+  if (method === "craft") return "bg-acquisition-craft text-inverse";
+  if (method === "trader") return "bg-acquisition-trader text-inverse";
+  if (method === "flea") return "bg-acquisition-flea text-inverse";
+  if (method === "sell") return "bg-acquisition-sell-value text-inverse";
+  return "bg-danger-surface/60 text-danger";
 }

@@ -128,7 +128,7 @@ export function RecipeItemHoverCard({
           : { top: position.verticalOffset }),
       }}
     >
-      <span className="relative block w-80 max-w-full shrink-0 rounded-md border border-white/15 bg-[#05070a] p-3 shadow-[0_18px_55px_rgba(0,0,0,0.8)]">
+      <span className="relative block w-80 max-w-full shrink-0 rounded-md border border-highlight/15 bg-[var(--background)] p-3 shadow-[0_18px_55px_color-mix(in_oklab,_var(--shadow)_80%,_transparent)]">
         <button
           type="button"
           aria-label="Close item details"
@@ -140,12 +140,12 @@ export function RecipeItemHoverCard({
             event.stopPropagation();
             onClose();
           }}
-          className="pointer-events-auto absolute right-1.5 top-1.5 z-10 flex size-5 items-center justify-center rounded text-white/25 transition hover:bg-white/[0.06] hover:text-white/65 focus:outline-none focus:ring-1 focus:ring-white/30"
+          className="pointer-events-auto absolute right-1.5 top-1.5 z-10 flex size-5 items-center justify-center rounded text-foreground/25 transition hover:bg-highlight/[0.06] hover:text-foreground/65 focus:outline-none focus:ring-1 focus:ring-highlight/30"
         >
           <X className="size-3" />
         </button>
         <span className="flex items-center gap-3">
-          <span className="relative flex size-16 shrink-0 items-center justify-center bg-white/[0.035]">
+          <span className="relative flex size-16 shrink-0 items-center justify-center bg-highlight/[0.035]">
             {showRouteIcon && <RouteIcon method={method} filled />}
             {item?.iconLink && (
               <Image
@@ -159,7 +159,7 @@ export function RecipeItemHoverCard({
             )}
           </span>
           <span className="min-w-0">
-            <span className="block text-sm font-semibold leading-tight text-white">
+            <span className="block text-sm font-semibold leading-tight text-foreground">
               {item?.name ?? "Unknown item"}
             </span>
             <span
@@ -173,11 +173,11 @@ export function RecipeItemHoverCard({
           </span>
         </span>
         {routeDetail && (
-          <span className="mt-3 block border-t border-white/10 pt-2 text-[11px] leading-relaxed text-foreground/80">
+          <span className="mt-3 block border-t border-highlight/10 pt-2 text-[11px] leading-relaxed text-foreground/80">
             {routeDetail}
           </span>
         )}
-        <span className="mt-2 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 rounded bg-white/[0.035] p-2 font-mono text-[10px]">
+        <span className="mt-2 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 rounded bg-highlight/[0.035] p-2 font-mono text-[10px]">
           {priceKind === "sell" && sellComparison ? (
               <>
                 <span className="text-muted-foreground">Listing fee / batch</span>
@@ -214,7 +214,7 @@ export function RecipeItemHoverCard({
                       <span className="text-muted-foreground">
                         Manual sale / unit
                       </span>
-                      <span className="text-amber-300">
+                      <span className="text-warning">
                         {formatRoundedRoubles(sellComparison.manualPrice)}
                       </span>
                     </>
@@ -230,7 +230,7 @@ export function RecipeItemHoverCard({
                   : "Flea/manual purchase / unit"}
               </span>
               <span
-                className={selectedDirectHasOverride ? "text-amber-300" : "text-foreground"}
+                className={selectedDirectHasOverride ? "text-warning" : "text-foreground"}
               >
                 {formatRoundedRoubles(directRouteUnitPrice)}
                 {selectedDirectHasOverride ? " · manual" : ""}
@@ -240,7 +240,7 @@ export function RecipeItemHoverCard({
           {plan?.method === "trader" && plan.traderOffer && (
             <>
               <span className="text-muted-foreground">Native trader price</span>
-              <span className="text-purple-200">
+              <span className="text-acquisition-trader">
                 {plan.traderOffer.price.toLocaleString()} {plan.traderOffer.currency}
               </span>
               <span className="text-muted-foreground">Trader / loyalty</span>
@@ -250,7 +250,7 @@ export function RecipeItemHoverCard({
               {plan.traderOffer.taskUnlockId && (
                 <>
                   <span className="text-muted-foreground">Quest unlock</span>
-                  <span className="text-right text-amber-200">Required</span>
+                  <span className="text-right text-warning">Required</span>
                 </>
               )}
               {plan.traderOffer.buyLimit != null && (
@@ -268,7 +268,7 @@ export function RecipeItemHoverCard({
                   ? "Selected route / unit"
                   : `${routeLabel} / unit`}
               </span>
-              <span className="text-sky-200">
+              <span className="text-info">
                 {formatRoundedRoubles(unitRoutePrice)}
               </span>
             </>
@@ -278,7 +278,7 @@ export function RecipeItemHoverCard({
               <span className="text-muted-foreground">Savings / unit</span>
               <span
                 className={
-                  routeSavingsPerUnit > 0 ? "text-tarkov-green" : "text-red-300"
+                  routeSavingsPerUnit > 0 ? "text-success" : "text-danger"
                 }
               >
                 {formatSignedRoubles(routeSavingsPerUnit)}
@@ -290,7 +290,7 @@ export function RecipeItemHoverCard({
               <span className="text-muted-foreground">
                 Best sale value / total
               </span>
-              <span className="text-amber-200">
+              <span className="text-acquisition-sell-value">
                 {formatRoundedRoubles(ingredientSellValue)}
               </span>
             </>
@@ -302,17 +302,17 @@ export function RecipeItemHoverCard({
                 <span className="text-muted-foreground">
                   Sale value above route cost
                 </span>
-                <span className="text-amber-300">
+                <span className="text-acquisition-sell-value">
                   +{formatRoundedRoubles(ingredientSellPremium)}
                 </span>
               </>
             )}
           <span className="text-muted-foreground">Quantity</span>
           <span className="text-foreground">× {formatQuantity(count)}</span>
-          <span className="border-t border-white/10 pt-1 text-muted-foreground">
+          <span className="border-t border-highlight/10 pt-1 text-muted-foreground">
             Total
           </span>
-          <span className="border-t border-white/10 pt-1 font-semibold text-tarkov-green">
+          <span className="border-t border-highlight/10 pt-1 font-semibold text-brand">
             {plan?.isTool ? "Excluded" : formatRoundedRoubles(totalPrice)}
           </span>
         </span>
@@ -325,7 +325,7 @@ export function RecipeItemHoverCard({
             {plan.durationSeconds > 0 && (
               <span>
                 Route time{" "}
-                <b className="font-mono text-orange-300">
+                <b className="font-mono text-warning">
                   {formatDuration(plan.durationSeconds)}
                 </b>
               </span>
@@ -333,13 +333,13 @@ export function RecipeItemHoverCard({
           </span>
         )}
         {plan?.isTool && (
-          <span className="mt-2 block text-[10px] text-sky-200">
+          <span className="mt-2 block text-[10px] text-info">
             Reusable tool price is not included in the craft cost.
           </span>
         )}
         {plan?.theoreticalMethod !== undefined &&
           plan.theoreticalMethod !== method && (
-            <span className="mt-2 block text-[10px] text-violet-300">
+            <span className="mt-2 block text-[10px] text-special">
               Cheapest theoretical route: {plan.theoreticalMethod} ·{" "}
               {formatRoundedRoubles(plan.theoreticalCost)}
             </span>
@@ -357,7 +357,7 @@ export function RecipeItemHoverCard({
         (!recipePreview ||
           theoreticalRecipePreview.sourceId !== recipePreview.sourceId) && (
           <span className="relative block min-w-0 flex-1 pt-4">
-            <span className="absolute left-0 -top-3 z-10 rounded-full border border-violet-300/30 bg-violet-400 px-2 py-0.5 text-xs font-bold tracking-wide text-black shadow-lg">
+            <span className="absolute left-0 -top-3 z-10 rounded-full border border-special/30 bg-special px-2 py-0.5 text-xs font-bold tracking-wide text-inverse shadow-lg">
               Alternate route ~{formatRoundedRoubles(theoreticalSavings ?? null)} cheaper
             </span>
             <RecipePreviewCard

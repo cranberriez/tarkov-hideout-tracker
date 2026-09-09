@@ -51,7 +51,7 @@ export function FilterNumberInput({
     return (
         <div
             className={cn(
-                "flex items-center gap-1 rounded-sm border border-white/10 bg-black/30 px-2 py-1 text-xs text-gray-400",
+                "flex items-center gap-1 rounded-sm border border-highlight/10 bg-shadow/30 px-2 py-1 text-xs text-muted-foreground",
                 disabled && "opacity-50",
             )}
         >
@@ -72,7 +72,7 @@ export function FilterNumberInput({
                 }}
                 className={cn(
                     widthClassName,
-                    "border-b border-gray-600 bg-transparent text-right font-mono text-white focus:border-tarkov-green focus:outline-none",
+                    "border-b border-border bg-transparent text-right font-mono text-foreground focus:border-brand focus:outline-none",
                 )}
             />
             {suffix}

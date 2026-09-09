@@ -57,7 +57,7 @@ export function QuestsSidebar({ collapsed = false, onToggleCollapsed }: QuestsSi
                 <button
                     type="button"
                     onClick={onToggleCollapsed}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-sm border border-white/10 bg-black/20 text-gray-400 transition-colors hover:border-white/25 hover:text-white"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-sm border border-highlight/10 bg-shadow/20 text-muted-foreground transition-colors hover:border-highlight/25 hover:text-foreground"
                     title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                     aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
@@ -77,8 +77,8 @@ export function QuestsSidebar({ collapsed = false, onToggleCollapsed }: QuestsSi
                             className={cn(
                                 "relative group flex items-center gap-1 rounded-sm border-l-2 transition-all",
                                 isSelected
-                                    ? "border-tarkov-green bg-tarkov-green/5"
-                                    : "border-transparent hover:bg-white/5",
+                                    ? "border-brand bg-brand/5"
+                                    : "border-transparent hover:bg-highlight/5",
                             )}
                         >
                             <button
@@ -87,8 +87,8 @@ export function QuestsSidebar({ collapsed = false, onToggleCollapsed }: QuestsSi
                                 className={cn(
                                     "flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left text-xs transition-colors",
                                     isSelected
-                                        ? "text-tarkov-green"
-                                        : "text-gray-400 group-hover:text-white",
+                                        ? "text-brand"
+                                        : "text-muted-foreground group-hover:text-foreground",
                                     collapsed && "justify-center px-0",
                                 )}
                             >
@@ -99,7 +99,7 @@ export function QuestsSidebar({ collapsed = false, onToggleCollapsed }: QuestsSi
                                         className="size-5 shrink-0 rounded-full object-cover"
                                     />
                                 ) : (
-                                    <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px] text-gray-500">
+                                    <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-highlight/10 text-[9px] text-subtle-foreground">
                                         {trader.name[0]}
                                     </div>
                                 )}
@@ -122,7 +122,7 @@ export function QuestsSidebar({ collapsed = false, onToggleCollapsed }: QuestsSi
                                     isSelected ? "Remove trader filter" : "Show only this trader"
                                 }
                                 className={cn(
-                                    "mr-1 inline-flex size-7 shrink-0 items-center justify-center rounded-sm text-gray-500 transition-colors hover:text-white",
+                                    "mr-1 inline-flex size-7 shrink-0 items-center justify-center rounded-sm text-subtle-foreground transition-colors hover:text-foreground",
                                     collapsed && "absolute -left-7",
                                     isSelected
                                         ? "opacity-100"
@@ -146,7 +146,7 @@ export function QuestsSidebar({ collapsed = false, onToggleCollapsed }: QuestsSi
                         {selectedMaps.size > 0 && (
                             <button
                                 onClick={clearMaps}
-                                className="ml-auto text-[10px] text-gray-600 hover:text-gray-400 transition-colors"
+                                className="ml-auto text-[10px] text-subtle-foreground hover:text-muted-foreground transition-colors"
                             >
                                 clear
                             </button>

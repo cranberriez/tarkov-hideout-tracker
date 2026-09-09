@@ -26,16 +26,16 @@ export function QuestFlagFilters({
                 active={showKappa}
                 onClick={onToggleKappa}
                 expand={expand}
-                activeClassName="border-yellow-500/70 bg-black/40 text-yellow-400"
-                inactiveClassName="border-transparent bg-black/40 text-yellow-500/80 hover:border-yellow-500/35"
+                activeClassName="border-warning/70 bg-shadow/40 text-warning"
+                inactiveClassName="border-transparent bg-shadow/40 text-warning/80 hover:border-warning/35"
             />
             <QuestFlagButton
                 label="Lightkeeper"
                 active={showLightkeeper}
                 onClick={onToggleLightkeeper}
                 expand={expand}
-                activeClassName="border-teal-400/70 bg-black/40 text-teal-300"
-                inactiveClassName="border-transparent bg-black/40 text-teal-400/80 hover:border-teal-400/35"
+                activeClassName="border-info/70 bg-shadow/40 text-info"
+                inactiveClassName="border-transparent bg-shadow/40 text-info/80 hover:border-info/35"
             />
         </div>
     );

@@ -24,8 +24,8 @@ export function ItemDetailPriceStability({ marketPrice }: { marketPrice: Current
     const reasons = [...new Set(marketPrice.fleaPriceReasons ?? [])];
 
     return (
-        <div className="mt-2 space-y-2 rounded-md bg-amber-400/[0.04] px-2.5 py-2" aria-label="Price stability details">
-            <div className="flex flex-wrap gap-x-2 gap-y-1 text-[10px] text-amber-200/90">
+        <div className="mt-2 space-y-2 rounded-md bg-warning/[0.04] px-2.5 py-2" aria-label="Price stability details">
+            <div className="flex flex-wrap gap-x-2 gap-y-1 text-[10px] text-warning/90">
                 {reasons.length ? reasons.map((reason) => (
                     <span key={reason}>{reasonLabels[reason]}</span>
                 )) : <span>Stability details unavailable</span>}
@@ -35,9 +35,9 @@ export function ItemDetailPriceStability({ marketPrice }: { marketPrice: Current
                     {prices.map(({ label, value }) => (
                         <div key={label} className="grid grid-cols-[78px_minmax(0,1fr)_56px] items-center gap-2 text-[10px]">
                             <span className="text-muted-foreground">{label}</span>
-                            <span className="h-1 overflow-hidden rounded-full bg-white/5" aria-hidden="true">
+                            <span className="h-1 overflow-hidden rounded-full bg-highlight/5" aria-hidden="true">
                                 <span
-                                    className={`block h-full rounded-full ${label === "Estimate" ? "bg-amber-300" : "bg-foreground/35"}`}
+                                    className={`block h-full rounded-full ${label === "Estimate" ? "bg-warning" : "bg-foreground/35"}`}
                                     style={{ width: `${value / maximum * 100}%` }}
                                 />
                             </span>

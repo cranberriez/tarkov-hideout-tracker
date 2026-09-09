@@ -13,8 +13,8 @@ export function EditionSelection({ selected, onSelect }: EditionSelectionProps) 
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex flex-col">
-				<h3 className="text-base font-medium text-white">Game edition</h3>
-				<p className="text-xs text-gray-500 mt-1">Sets your starting Stash and Cultist Circle levels.</p>
+				<h3 className="text-base font-medium text-foreground">Game edition</h3>
+				<p className="text-xs text-subtle-foreground mt-1">Sets your starting Stash and Cultist Circle levels.</p>
 			</div>
 			<div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
 				{EDITIONS.map((edition, index) => {
@@ -23,28 +23,11 @@ export function EditionSelection({ selected, onSelect }: EditionSelectionProps) 
 					// Layout logic: First 3 items span 2 cols (3x2=6), last 2 items span 3 cols (2x3=6)
 					const colSpan = index < 3 ? "sm:col-span-2" : "sm:col-span-3";
 
-					let baseClassName = `${colSpan} px-3 py-2 rounded-md border text-center transition-all duration-300 relative overflow-hidden group `;
-
-					if (edition === "Edge of Darkness") {
-						const activeClass = isSelected
-							? "shadow-[0_0_30px_rgba(249,115,22,0.5)] border-orange-500 bg-orange-500/20 text-orange-50 "
-							: "shadow-[0_0_15px_rgba(249,115,22,0.15)] border-orange-500/30 bg-orange-500/5 text-orange-200/80 hover:shadow-[0_0_25px_rgba(249,115,22,0.4)] hover:border-orange-500/80 hover:bg-orange-500/10 hover:text-orange-100 ";
-						baseClassName += activeClass;
-					} else if (edition === "Unheard") {
-						const activeClass = isSelected
-							? "shadow-[0_0_30px_rgba(20,184,166,0.5)] border-teal-500 bg-teal-500/20 text-teal-50 "
-							: "shadow-[0_0_15px_rgba(20,184,166,0.15)] border-teal-500/30 bg-teal-500/5 text-teal-200/80 hover:shadow-[0_0_25px_rgba(20,184,166,0.4)] hover:border-teal-500/80 hover:bg-teal-500/10 hover:text-teal-100 ";
-						baseClassName += activeClass;
-					} else {
-						if (isSelected) {
-							baseClassName +=
-								"bg-white/10 border-white text-white shadow-[0_0_15px_rgba(255,255,255,0.1)] ";
-						} else {
-							baseClassName +=
-								"bg-card border-border-color text-gray-400 hover:border-gray-500 hover:text-gray-200 hover:bg-white/5 ";
-						}
-					}
-
+					const baseClassName = `${colSpan} px-3 py-2 rounded-md border text-center transition-all duration-300 relative overflow-hidden group ${
+						isSelected
+							? "border-brand bg-brand/10 text-brand shadow-[0_0_15px_color-mix(in_oklab,var(--brand)_10%,transparent)]"
+							: "bg-card border-border text-muted-foreground hover:border-brand/50 hover:text-foreground hover:bg-highlight/5"
+					}`;
 					return (
 						<button key={edition} onClick={() => onSelect(edition)} className={baseClassName}>
 							<div className="font-bold text-sm sm:text-base relative z-10">{edition}</div>

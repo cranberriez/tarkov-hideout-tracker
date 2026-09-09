@@ -32,7 +32,7 @@ export function DeferredPriceBoundary({ mode, releaseId, itemIds, children }: {
     }, [key, mode, releaseId, idsKey, matchesMode, attempt]);
     const value = matchesMode && result?.key === key ? result.value : pending;
     return <Context.Provider value={value}>
-        {itemIds.length > 0 && value.state !== "ready" && <div role="status" className="fixed bottom-4 right-4 z-40 rounded border border-white/10 bg-card px-4 py-2 text-xs text-gray-400 shadow-lg">
+        {itemIds.length > 0 && value.state !== "ready" && <div role="status" className="fixed bottom-4 right-4 z-40 rounded border border-highlight/10 bg-card px-4 py-2 text-xs text-muted-foreground shadow-lg">
             {value.state === "pending" ? "Loading item prices…" : value.releaseChanged ? <>The data release changed. <button type="button" className="underline" onClick={() => router.refresh()}>Refresh page</button></> : <>Item prices could not be loaded. <button type="button" className="underline" onClick={() => { setResult(null); setAttempt((value) => value + 1); }}>Retry prices</button></>}
         </div>}
         {children}

@@ -2,14 +2,14 @@
     height: 3px;
     overflow: hidden;
     border-radius: 999px;
-    background: rgb(255 255 255 / 10%);
+    background: color-mix(in oklab, var(--highlight) 10%, transparent);
 }
 
 .signal {
     height: 100%;
     width: 40%;
     border-radius: inherit;
-    background: var(--color-tarkov-green, #9dff00);
+    background: var(--brand);
     animation: travel 1.2s ease-in-out infinite;
 }
 

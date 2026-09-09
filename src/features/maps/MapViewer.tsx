@@ -71,16 +71,16 @@ function MarkerPopup({
                 pinned ? "block" : "hidden group-hover:block group-focus-within:block",
             )}
         >
-            <div className="border border-white/12 bg-[#111214]/95 p-3 shadow-2xl backdrop-blur">
+            <div className="border border-highlight/12 bg-[var(--card-bg)]/95 p-3 shadow-2xl backdrop-blur">
                 <div className="flex items-start justify-between gap-3">
-                    <span className="min-w-0 flex-1 text-xs font-semibold text-white">{marker.title}</span>
+                    <span className="min-w-0 flex-1 text-xs font-semibold text-foreground">{marker.title}</span>
                     <span className="flex shrink-0 items-center gap-1">
                         {canComplete && (
                             <button
                                 type="button"
                                 disabled={completed}
                                 onClick={onComplete}
-                                className="inline-flex items-center gap-1 border border-tarkov-green/30 bg-tarkov-green/8 px-1.5 py-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-tarkov-green transition-colors hover:border-tarkov-green/60 hover:bg-tarkov-green/15 disabled:cursor-default disabled:opacity-60"
+                                className="inline-flex items-center gap-1 border border-brand/30 bg-brand/8 px-1.5 py-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-brand transition-colors hover:border-brand/60 hover:bg-brand/15 disabled:cursor-default disabled:opacity-60"
                             >
                                 <Check size={9} /> {completed ? "Completed" : "Complete"}
                             </button>
@@ -90,17 +90,17 @@ function MarkerPopup({
                                 type="button"
                                 aria-label="Close marker details"
                                 onClick={onClose}
-                                className="inline-flex h-5 w-5 items-center justify-center border border-white/10 text-gray-500 transition-colors hover:border-white/25 hover:text-white"
+                                className="inline-flex h-5 w-5 items-center justify-center border border-highlight/10 text-subtle-foreground transition-colors hover:border-highlight/25 hover:text-foreground"
                             >
                                 <X size={11} />
                             </button>
                         )}
                     </span>
                 </div>
-                <span className="mt-1 block text-[9px] font-semibold uppercase tracking-wider text-gray-500">
+                <span className="mt-1 block text-[9px] font-semibold uppercase tracking-wider text-subtle-foreground">
                     {floorNames.join(" · ")}
                 </span>
-                <span className="mt-2 block space-y-1 text-[10px] leading-relaxed text-gray-400">
+                <span className="mt-2 block space-y-1 text-[10px] leading-relaxed text-muted-foreground">
                     {marker.descriptions.map((description) => (
                         <span key={description} className="block">{description}</span>
                     ))}
@@ -385,15 +385,15 @@ export function MapViewer({
 
     if (loadState !== "ready" || !definition) {
         return (
-            <div ref={containerRef} className="flex h-full min-h-72 items-center justify-center bg-[#0b0c0e] p-8 text-center">
+            <div ref={containerRef} className="flex h-full min-h-72 items-center justify-center bg-[var(--background)] p-8 text-center">
                 <div>
-                    <p className="text-sm font-semibold text-gray-300">
+                    <p className="text-sm font-semibold text-foreground">
                         {loadState === "loading" && "Loading map…"}
                         {loadState === "unsupported" && "Map artwork unavailable"}
                         {loadState === "error" && "Map could not be loaded"}
                     </p>
                     {loadState === "unsupported" && (
-                        <p className="mt-2 max-w-sm text-xs leading-relaxed text-gray-500">
+                        <p className="mt-2 max-w-sm text-xs leading-relaxed text-subtle-foreground">
                             Quest locations are preserved, but this map does not yet have a validated SVG definition.
                         </p>
                     )}
@@ -405,7 +405,7 @@ export function MapViewer({
     return (
         <div
             ref={containerRef}
-            className="relative h-full min-h-72 touch-none select-none overflow-hidden bg-[#08090a]"
+            className="relative h-full min-h-72 touch-none select-none overflow-hidden bg-[var(--background)]"
             onWheel={(event) => {
                 event.preventDefault();
                 const bounds = event.currentTarget.getBoundingClientRect();
@@ -476,9 +476,9 @@ export function MapViewer({
                             <polygon
                                 key={`${marker.id}:outline:${outlineIndex}`}
                                 points={outline.map((point) => `${point.percentX},${point.percentY}`).join(" ")}
-                                fill={marker.color ?? "#9dbb61"}
+                                fill={marker.color ?? "var(--map-objective)"}
                                 fillOpacity="0.2"
-                                stroke={marker.color ?? "#9dbb61"}
+                                stroke={marker.color ?? "var(--map-objective)"}
                                 strokeOpacity="0.8"
                                 strokeWidth={0.25 / view.scale}
                                 vectorEffect="non-scaling-stroke"
@@ -514,7 +514,7 @@ export function MapViewer({
                             <span
                                 key={`${marker.id}:label`}
                                 aria-hidden="true"
-                                className="pointer-events-none absolute z-30 whitespace-nowrap font-sans text-[9px] font-bold uppercase tracking-wide [text-shadow:0_1px_2px_#000,0_0_3px_#000,0_0_7px_#000]"
+                                className="pointer-events-none absolute z-30 whitespace-nowrap font-sans text-[9px] font-bold uppercase tracking-wide [text-shadow:0_1px_2px_var(--shadow),0_0_3px_var(--shadow),0_0_7px_var(--shadow)]"
                                 style={{
                                     left: `${point.percentX}%`,
                                     top: `${point.percentY}%`,
@@ -534,7 +534,7 @@ export function MapViewer({
                             "group absolute z-20 flex h-7 min-w-7 items-center justify-center rounded-full hover:z-[100] focus-within:z-[100]",
                             (highlightedQuestId === marker.questId ||
                                 (!!highlightedObjectiveId && marker.objectiveIds?.includes(highlightedObjectiveId))) &&
-                                "ring-2 ring-white/70",
+                                "ring-2 ring-highlight/70",
                         )}
                         style={{
                             left: `${point.percentX}%`,
@@ -564,10 +564,10 @@ export function MapViewer({
                                 });
                                 onMarkerSelect?.(marker);
                             }}
-                            className="flex h-7 w-7 items-center justify-center rounded-full border border-black/70 shadow-xl outline-none"
+                            className="flex h-7 w-7 items-center justify-center rounded-full border border-shadow/70 shadow-xl outline-none"
                             style={{ backgroundColor: marker.color }}
                         >
-                            <QuestObjectiveIcon type={marker.objectiveType ?? ""} size={15} className="text-black" />
+                            <QuestObjectiveIcon type={marker.objectiveType ?? ""} size={15} className="text-inverse" />
                         </button>
                         <MarkerPopup
                             marker={marker}
@@ -616,18 +616,18 @@ export function MapViewer({
             </div>
 
             {definition.floors.length > 1 && (
-                <details className="group absolute bottom-3 left-3 z-30 w-52 border border-white/10 bg-black/85 text-xs shadow-xl backdrop-blur-sm">
+                <details className="group absolute bottom-3 left-3 z-30 w-52 border border-highlight/10 bg-shadow/85 text-xs shadow-xl backdrop-blur-sm">
                     <summary
-                        className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-gray-300 hover:text-white"
+                        className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-foreground hover:text-foreground"
                         title={`Visible layers: ${visibleFloors.map((floor) => floor.name).join(", ")}`}
                     >
                         <Layers3 size={14} />
                         <span className="min-w-0 flex-1 truncate">
                             {visibleFloors.length === 1 ? visibleFloors[0].name : `${visibleFloors.length} layers visible`}
                         </span>
-                        <ChevronDown size={13} className="shrink-0 text-gray-500 transition-transform group-open:rotate-180" />
+                        <ChevronDown size={13} className="shrink-0 text-subtle-foreground transition-transform group-open:rotate-180" />
                     </summary>
-                    <div className="border-t border-white/10 p-2">
+                    <div className="border-t border-highlight/10 p-2">
                         {orderedFloors.map((floor) => {
                             const isVisible = visibleFloorIds.has(floor.id);
                             const markerCount = projectedMarkers.filter(({ floors }) =>
@@ -635,10 +635,10 @@ export function MapViewer({
                             ).length;
                             if (floor.isBase) {
                                 return (
-                                    <div key={floor.id} className="flex w-full items-center gap-2 px-2 py-2 text-gray-300">
-                                        <span className="h-2 w-2 rounded-full border border-tarkov-green bg-tarkov-green" />
+                                    <div key={floor.id} className="flex w-full items-center gap-2 px-2 py-2 text-foreground">
+                                        <span className="h-2 w-2 rounded-full border border-brand bg-brand" />
                                         <span className="flex-1">{floor.name}</span>
-                                        <span className="text-[9px] uppercase tracking-wider text-gray-600">Always</span>
+                                        <span className="text-[9px] uppercase tracking-wider text-subtle-foreground">Always</span>
                                     </div>
                                 );
                             }
@@ -654,11 +654,11 @@ export function MapViewer({
                                             [floor.id]: !isVisible,
                                         },
                                     }))}
-                                    className="flex w-full items-center gap-2 px-2 py-2 text-left text-gray-400 hover:bg-white/5 hover:text-white"
+                                    className="flex w-full items-center gap-2 px-2 py-2 text-left text-muted-foreground hover:bg-highlight/5 hover:text-foreground"
                                 >
-                                    <span className={cn("h-2 w-2 rounded-full border", isVisible ? "border-tarkov-green bg-tarkov-green" : "border-gray-600")} />
+                                    <span className={cn("h-2 w-2 rounded-full border", isVisible ? "border-brand bg-brand" : "border-border")} />
                                     <span className="flex-1">{floor.name}</span>
-                                    {markerCount > 0 && <span className="text-[9px] text-gray-600">{markerCount}</span>}
+                                    {markerCount > 0 && <span className="text-[9px] text-subtle-foreground">{markerCount}</span>}
                                 </button>
                             );
                         })}
@@ -677,17 +677,17 @@ export function MapViewer({
                         aria-pressed={navigationLabelsVisible}
                         onClick={() => setNavigationLabelsVisible((visible) => !visible)}
                         className={cn(
-                            "border border-white/10 bg-black/80 p-2 shadow-xl backdrop-blur-sm hover:text-white",
-                            navigationLabelsVisible ? "text-tarkov-green" : "text-gray-500",
+                            "border border-highlight/10 bg-shadow/80 p-2 shadow-xl backdrop-blur-sm hover:text-foreground",
+                            navigationLabelsVisible ? "text-brand" : "text-subtle-foreground",
                         )}
                     >
                         {navigationLabelsVisible ? <Eye size={15} /> : <EyeOff size={15} />}
                     </button>
                 )}
-                <div className="flex border border-white/10 bg-black/80 shadow-xl backdrop-blur-sm">
-                    <button type="button" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.25)} className="p-2 text-gray-300 hover:text-white"><Minus size={15} /></button>
-                    <button type="button" aria-label="Fit map markers" onClick={fitMarkers} className="border-x border-white/10 p-2 text-gray-300 hover:text-white"><LocateFixed size={15} /></button>
-                    <button type="button" aria-label="Zoom in" onClick={() => zoomBy(1.25)} className="p-2 text-gray-300 hover:text-white"><Plus size={15} /></button>
+                <div className="flex border border-highlight/10 bg-shadow/80 shadow-xl backdrop-blur-sm">
+                    <button type="button" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.25)} className="p-2 text-foreground hover:text-foreground"><Minus size={15} /></button>
+                    <button type="button" aria-label="Fit map markers" onClick={fitMarkers} className="border-x border-highlight/10 p-2 text-foreground hover:text-foreground"><LocateFixed size={15} /></button>
+                    <button type="button" aria-label="Zoom in" onClick={() => zoomBy(1.25)} className="p-2 text-foreground hover:text-foreground"><Plus size={15} /></button>
                 </div>
                 {bottomRightContent}
             </div>
@@ -707,13 +707,13 @@ export function MapViewer({
 function MapAttribution({ definition, compact }: { definition: MapRenderDefinition; compact: boolean }) {
     return (
         <p className={cn(
-            "shrink-0 leading-relaxed text-gray-500 backdrop-blur-sm",
+            "shrink-0 leading-relaxed text-subtle-foreground backdrop-blur-sm",
             compact
-                ? "bg-black/40 px-1.5 py-1 text-[7px]"
-                : "border border-white/10 bg-black/80 px-2.5 py-2 text-[9px] shadow-xl",
+                ? "bg-shadow/40 px-1.5 py-1 text-[7px]"
+                : "border border-highlight/10 bg-shadow/80 px-2.5 py-2 text-[9px] shadow-xl",
         )}>
-            {compact ? "Map: " : "Map by "}<a href={definition.attribution.authorLink} target="_blank" rel="noreferrer" className={cn("hover:text-white", compact ? "text-gray-400" : "text-gray-300")}>{definition.attribution.author}</a>
-            {" · "}<a href={definition.attribution.licenseLink} target="_blank" rel="noreferrer" className="text-gray-300 hover:text-white">{definition.attribution.license}</a>
+            {compact ? "Map: " : "Map by "}<a href={definition.attribution.authorLink} target="_blank" rel="noreferrer" className={cn("hover:text-foreground", compact ? "text-muted-foreground" : "text-foreground")}>{definition.attribution.author}</a>
+            {" · "}<a href={definition.attribution.licenseLink} target="_blank" rel="noreferrer" className="text-foreground hover:text-foreground">{definition.attribution.license}</a>
         </p>
     );
 }

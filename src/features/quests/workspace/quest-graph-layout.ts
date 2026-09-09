@@ -328,10 +328,10 @@ function getEdgeGeometry(
 }
 
 function getEdgeColor(edge: QuestBranchEdge) {
-    if (edge.kind === "exclusive") return "#d6b66f";
-    if (edge.kind === "failure" || edge.timing === "failed") return "#ef5f5f";
-    if (edge.timing === "active") return "#69aee8";
-    return "#8aa58b";
+    if (edge.kind === "exclusive") return "var(--warning)";
+    if (edge.kind === "failure" || edge.timing === "failed") return "var(--danger)";
+    if (edge.timing === "active") return "var(--info)";
+    return "var(--success)";
 }
 
 export function buildQuestGraphLayout(

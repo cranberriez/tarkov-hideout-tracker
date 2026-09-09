@@ -37,7 +37,7 @@ export function QuestRelationChip({ questRef, direction = "requirement", onQuest
                 e.stopPropagation();
                 onQuestLinkClick?.(questRef.id, e);
             }}
-            className="flex min-h-7 items-center gap-2 rounded border border-white/10 bg-black/40 px-2.5 py-1 text-xs text-gray-400 transition-colors hover:border-white/25 hover:text-gray-300"
+            className="flex min-h-7 items-center gap-2 rounded border border-highlight/10 bg-shadow/40 px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-highlight/25 hover:text-foreground"
         >
             {questRef.prerequisiteType && (
                 <span
@@ -46,17 +46,17 @@ export function QuestRelationChip({ questRef, direction = "requirement", onQuest
                         "shrink-0 text-[11px] font-medium",
                         questRef.prerequisiteType === "complete"
                             ? prerequisiteSatisfied
-                                ? "text-tarkov-green"
-                                : "text-gray-500"
+                                ? "text-success"
+                                : "text-subtle-foreground"
                             : questRef.prerequisiteType === "failed"
                               ? prerequisiteSatisfied
-                                  ? "text-red-300"
-                                  : "text-gray-500"
+                                  ? "text-danger"
+                                  : "text-subtle-foreground"
                               : questRef.prerequisiteType === "resolved"
                                 ? prerequisiteSatisfied
-                                    ? "text-tarkov-green"
-                                    : "text-gray-500"
-                                : "text-blue-300",
+                                    ? "text-success"
+                                    : "text-subtle-foreground"
+                                : "text-info",
                     )}
                 >
                     {questRef.prerequisiteType === "complete"
@@ -75,7 +75,7 @@ export function QuestRelationChip({ questRef, direction = "requirement", onQuest
                     className="h-4 w-4 shrink-0 rounded-full object-cover"
                 />
             ) : (
-                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px]">
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-highlight/10 text-[9px]">
                     {questRef.trader.name[0]}
                 </span>
             )}

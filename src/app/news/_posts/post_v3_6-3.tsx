@@ -4,11 +4,11 @@ import { PostImage } from "@/features/news/ImagePlaceholder";
 export function Post_v3_6_3() {
     return (
         <NewsPost title="Version 3.0 Quests Update" date="June 3, 2026" version="3.0">
-            <p className="rounded-sm border border-tarkov-green-dim bg-secondary/20 p-2 text-center text-sm">
+            <p className="rounded-sm border border-brand-hover bg-secondary/20 p-2 text-center text-sm">
                 Found something weird with quests? Report bugs or request fixes on the{" "}
                 <a
                     href="https://github.com/cranberriez/tarkov-hideout-tracker/issues"
-                    className="underline hover:text-tarkov-green"
+                    className="underline hover:text-brand"
                 >
                     GitHub
                 </a>
@@ -35,20 +35,20 @@ export function Post_v3_6_3() {
             </p>
             <ul className="list-disc">
                 <li>
-                    <a href="https://ttracker.org/" className="underline hover:text-tarkov-green">
+                    <a href="https://ttracker.org/" className="underline hover:text-brand">
                         ttracker.org
                     </a>
                 </li>
                 <li>
                     <a
                         href="https://tarkovtracker.org/"
-                        className="underline hover:text-tarkov-green"
+                        className="underline hover:text-brand"
                     >
                         tarkovtracker.org
                     </a>
                 </li>
                 <li>
-                    <a href="https://kappas.pages.dev/" className="underline hover:text-tarkov-green">
+                    <a href="https://kappas.pages.dev/" className="underline hover:text-brand">
                         kappas.pages.dev
                     </a>
                 </li>
@@ -125,7 +125,7 @@ export function Post_v3_6_3() {
                 src="/images/news/v3/items-with-quests.png"
             />
 
-            <p className="border-l-2 border-yellow-500/80 bg-yellow-500/10 p-3 text-sm">
+            <p className="border-l-2 border-warning/80 bg-warning/10 p-3 text-sm">
                 Only one character profile is supported. Switching between PVP and PVE
                 is currently used for market pricing and quest visibility, but it does not create a
                 separate account or separate quest progress.

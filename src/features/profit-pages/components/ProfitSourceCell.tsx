@@ -22,7 +22,7 @@ export function ProfitSourceCell({
 				{!available && (
 					<span
 						title="Locked for the current profile"
-						className={`${styles.sourceLock} absolute -right-5 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center rounded-[3px] bg-amber-400 text-black shadow-md`}
+						className={`${styles.sourceLock} absolute -right-5 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center rounded-[3px] bg-warning text-inverse shadow-md`}
 					>
 						<LockKeyhole className="size-2.5 stroke-[3]" />
 					</span>

@@ -101,10 +101,10 @@ export function QuestDetailsPane() {
 
     if (!quest) {
         return (
-            <div className="flex min-h-[420px] border-t border-white/10 flex-1 items-center justify-center bg-[radial-gradient(circle_at_50%_45%,rgba(255,255,255,0.025),transparent_45%)] p-8 text-center">
+            <div className="flex min-h-[420px] border-t border-highlight/10 flex-1 items-center justify-center bg-[radial-gradient(circle_at_50%_45%,color-mix(in_oklab,_var(--highlight)_2.5%,_transparent),transparent_45%)] p-8 text-center">
                 <div className="max-w-xs">
-                    <Flag size={24} className="mx-auto mb-4 text-gray-800" />
-                    <p className="text-sm text-gray-600">Select a quest from the log to inspect its objectives, requirements, and progression links.</p>
+                    <Flag size={24} className="mx-auto mb-4 text-subtle-foreground" />
+                    <p className="text-sm text-subtle-foreground">Select a quest from the log to inspect its objectives, requirements, and progression links.</p>
                 </div>
             </div>
         );
@@ -143,7 +143,7 @@ export function QuestDetailsPane() {
         : `LL${getQuestTraderTabLoyaltyLevel(quest)}`;
 
     return (
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#0b0c0e]">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--background)]">
             <div
                 ref={detailSplitRef}
                 className={cn(
@@ -188,19 +188,19 @@ export function QuestDetailsPane() {
                 onOpenVisualizer={(lineId) => openQuestVisualizer(lineId, quest.id)}
             />
             {multipleChoiceQuests.length > 1 && (
-                <div className="flex h-11 min-h-11 items-stretch border-b border-amber-300/25 bg-amber-300/10 text-amber-100">
+                <div className="flex h-11 min-h-11 items-stretch border-b border-warning/25 bg-warning/10 text-warning">
                     <div className="flex min-w-0 flex-1 items-center gap-3 px-5 sm:px-7">
-                    <AlertTriangle size={16} className="shrink-0 text-amber-300" />
-                    <p className="shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-300">Multiple choice quest</p>
+                    <AlertTriangle size={16} className="shrink-0 text-warning" />
+                    <p className="shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] text-warning">Multiple choice quest</p>
                     <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden text-xs">
                         {multipleChoiceQuests.map((choiceQuest) => choiceQuest.id === quest.id ? (
-                            <span key={choiceQuest.id} className="shrink-0 font-semibold text-amber-100">{choiceQuest.name}</span>
+                            <span key={choiceQuest.id} className="shrink-0 font-semibold text-warning">{choiceQuest.name}</span>
                         ) : (
                             <button
                                 key={choiceQuest.id}
                                 type="button"
                                 onClick={() => setSelectedQuestId(choiceQuest.id)}
-                                className="shrink-0 cursor-pointer text-amber-200/70 underline decoration-amber-200/30 underline-offset-4 transition-colors hover:text-amber-100 hover:decoration-current"
+                                className="shrink-0 cursor-pointer text-warning/70 underline decoration-warning/30 underline-offset-4 transition-colors hover:text-warning hover:decoration-current"
                             >
                                 {choiceQuest.name}
                             </button>
@@ -233,13 +233,13 @@ export function QuestDetailsPane() {
                             <div className="space-y-2.5 text-sm">
                                 {leadsTo.map(({ quest: nextQuest, timing }) => (
                                     <div key={nextQuest.id}>
-                                        <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+                                        <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider text-subtle-foreground">
                                             {timing}
                                         </p>
                                         <button
                                             type="button"
                                             onClick={() => setSelectedQuestId(nextQuest.id)}
-                                            className="cursor-pointer text-left text-gray-300 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white hover:decoration-current"
+                                            className="cursor-pointer text-left text-foreground underline decoration-highlight/30 underline-offset-4 transition-colors hover:text-foreground hover:decoration-current"
                                         >
                                             {nextQuest.name}
                                         </button>
@@ -255,19 +255,19 @@ export function QuestDetailsPane() {
                                         ? questsById.get(condition.task.id)
                                         : null;
                                     return (
-                                        <div key={condition.id} className="rounded-md bg-red-400/[0.07] px-3 py-2 text-xs text-red-200/80">
+                                        <div key={condition.id} className="rounded-md bg-danger/[0.07] px-3 py-2 text-xs text-danger/80">
                                             {referencedQuest ? (
                                                 <button
                                                     type="button"
                                                     onClick={() => setSelectedQuestId(referencedQuest.id)}
-                                                    className="cursor-pointer text-left underline decoration-red-200/30 underline-offset-4 transition-colors hover:text-red-100 hover:decoration-current"
+                                                    className="cursor-pointer text-left underline decoration-danger/30 underline-offset-4 transition-colors hover:text-danger hover:decoration-current"
                                                 >
                                                     {referencedQuest.name}
                                                 </button>
                                             ) : (
                                                 <p>{getQuestFailConditionText(condition)}</p>
                                             )}
-                                            {condition.type === "taskStatus" && "status" in condition && <p className="mt-1 text-[10px] text-red-200/40">Quest status: {condition.status.join(" or ")}</p>}
+                                            {condition.type === "taskStatus" && "status" in condition && <p className="mt-1 text-[10px] text-danger/40">Quest status: {condition.status.join(" or ")}</p>}
                                         </div>
                                     );
                                 })}</div>}
@@ -295,14 +295,14 @@ export function QuestDetailsPane() {
                             <div className="space-y-1.5">
                                 {quest.experience > 0 && (
                                     <p className="flex flex-wrap items-baseline gap-x-2">
-                                        <span className="text-gray-500">Experience</span>
-                                        <span className="font-mono font-semibold text-tarkov-green">{quest.experience.toLocaleString()} XP</span>
+                                        <span className="text-subtle-foreground">Experience</span>
+                                        <span className="font-mono font-semibold text-success">{quest.experience.toLocaleString()} XP</span>
                                     </p>
                                 )}
                                 {(quest.finishTraderStandingRewards ?? []).map((reward, index) => (
                                     <p key={`${reward.trader.id}-${index}`} className="flex flex-wrap items-baseline gap-x-2">
-                                        <span className="text-gray-500">{reward.trader.name} reputation</span>
-                                        <span className={reward.standing >= 0 ? "font-mono font-semibold text-tarkov-green" : "font-mono font-semibold text-red-300"}>{formatStanding(reward.standing)}</span>
+                                        <span className="text-subtle-foreground">{reward.trader.name} reputation</span>
+                                        <span className={reward.standing >= 0 ? "font-mono font-semibold text-success" : "font-mono font-semibold text-danger"}>{formatStanding(reward.standing)}</span>
                                     </p>
                                 ))}
                             </div>
@@ -316,13 +316,13 @@ export function QuestDetailsPane() {
                                         type="button"
                                         onClick={() => item && onItemClick?.(item.id)}
                                         disabled={!item || !onItemClick}
-                                        className="flex min-w-[13rem] max-w-xs flex-[1_1_14rem] items-center border border-white/10 bg-black/20 text-left transition-colors enabled:hover:border-tarkov-green/35 enabled:hover:bg-tarkov-green/[0.04] disabled:cursor-default"
+                                        className="flex min-w-[13rem] max-w-xs flex-[1_1_14rem] items-center border border-highlight/10 bg-shadow/20 text-left transition-colors enabled:hover:border-brand/35 enabled:hover:bg-brand/[0.04] disabled:cursor-default"
                                     >
-                                        <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-white/15 bg-white/5">
-                                            {imageLink ? <img src={imageLink} alt="" className="h-8 w-8 object-contain" /> : <PackageOpen size={15} className="text-gray-600" />}
+                                        <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-highlight/15 bg-highlight/5">
+                                            {imageLink ? <img src={imageLink} alt="" className="h-8 w-8 object-contain" /> : <PackageOpen size={15} className="text-subtle-foreground" />}
                                         </span>
-                                        <span className="min-w-0 flex-1 truncate px-2.5 text-xs text-gray-300">{item?.name ?? "Unknown item"}</span>
-                                        <span className="shrink-0 pr-2.5 font-mono text-xs font-semibold text-white">×{reward.count.toLocaleString()}</span>
+                                        <span className="min-w-0 flex-1 truncate px-2.5 text-xs text-foreground">{item?.name ?? "Unknown item"}</span>
+                                        <span className="shrink-0 pr-2.5 font-mono text-xs font-semibold text-foreground">×{reward.count.toLocaleString()}</span>
                                     </button>
                                 );
                             })}
@@ -337,9 +337,9 @@ export function QuestDetailsPane() {
                 <aside
                     ref={mapSectionRef}
                     className={cn(
-                        "relative min-h-0 flex-1 flex-col bg-[#0a0b0d]",
+                        "relative min-h-0 flex-1 flex-col bg-[var(--background)]",
                         isCompactMapOpen ? "flex" : "hidden",
-                        "min-[1700px]:order-last min-[1700px]:h-auto min-[1700px]:min-h-0 min-[1700px]:border-l min-[1700px]:border-white/10",
+                        "min-[1700px]:order-last min-[1700px]:h-auto min-[1700px]:min-h-0 min-[1700px]:border-l min-[1700px]:border-highlight/10",
                         isDesktopMapOpen ? "min-[1700px]:flex" : "min-[1700px]:hidden",
                     )}
                 >
@@ -372,18 +372,18 @@ export function QuestDetailsPane() {
                             }}
                             className={cn(
                                 "absolute inset-y-0 left-0 z-30 hidden w-2 -translate-x-1/2 cursor-col-resize touch-none items-center justify-center outline-none transition-colors min-[1700px]:flex",
-                                "after:h-14 after:w-px after:bg-white/15 after:transition-all hover:bg-tarkov-green/10 hover:after:h-24 hover:after:bg-tarkov-green focus-visible:bg-tarkov-green/10 focus-visible:after:h-24 focus-visible:after:bg-tarkov-green",
-                                isResizingMap && "bg-tarkov-green/15 after:h-24 after:w-0.5 after:bg-tarkov-green",
+                                "after:h-14 after:w-px after:bg-highlight/15 after:transition-all hover:bg-brand/10 hover:after:h-24 hover:after:bg-brand focus-visible:bg-brand/10 focus-visible:after:h-24 focus-visible:after:bg-brand",
+                                isResizingMap && "bg-brand/15 after:h-24 after:w-0.5 after:bg-brand",
                             )}
                         >
-                            <GripVertical size={12} className="absolute text-gray-600" />
+                            <GripVertical size={12} className="absolute text-subtle-foreground" />
                         </div>
                     )}
-                    <div className="flex min-h-11 shrink-0 border-b border-white/10 bg-[#101113]">
+                    <div className="flex min-h-11 shrink-0 border-b border-highlight/10 bg-[var(--card-bg)]">
                         <button
                             type="button"
                             onClick={() => setIsDesktopMapOpen(false)}
-                            className="hidden aspect-square h-full min-h-11 shrink-0 items-center justify-center border-r border-white/10 text-gray-500 transition-colors hover:bg-white/5 hover:text-white min-[1700px]:flex"
+                            className="hidden aspect-square h-full min-h-11 shrink-0 items-center justify-center border-r border-highlight/10 text-subtle-foreground transition-colors hover:bg-highlight/5 hover:text-foreground min-[1700px]:flex"
                             aria-label="Hide objective map"
                             aria-expanded
                             title="Hide objective map"
@@ -407,8 +407,8 @@ export function QuestDetailsPane() {
                                             className={cn(
                                                 "border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors",
                                                 map.key === selectedDetailMapKey
-                                                    ? "border-tarkov-green/45 bg-tarkov-green/10 text-tarkov-green"
-                                                    : "border-white/10 bg-white/3 text-gray-500 hover:border-white/25 hover:text-gray-200",
+                                                    ? "border-brand/45 bg-brand/10 text-brand"
+                                                    : "border-highlight/10 bg-highlight/3 text-subtle-foreground hover:border-highlight/25 hover:text-foreground",
                                             )}
                                         >
                                             {map.name} · {map.locationCount}
@@ -419,7 +419,7 @@ export function QuestDetailsPane() {
                             <button
                                 type="button"
                                 onClick={closeCompactMap}
-                                className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center border border-red-400/35 bg-red-400/10 text-red-300 transition-colors hover:border-red-300/70 hover:bg-red-400/20 hover:text-red-100 min-[1700px]:hidden"
+                                className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center border border-danger/35 bg-danger/10 text-danger transition-colors hover:border-danger/70 hover:bg-danger/20 hover:text-danger min-[1700px]:hidden"
                                 aria-label="Close objective map"
                                 title="Close objective map"
                             >
@@ -427,7 +427,7 @@ export function QuestDetailsPane() {
                             </button>
                         </div>
                     </div>
-                    <div className="relative min-h-0 flex-1 overflow-hidden bg-[#08090a]">
+                    <div className="relative min-h-0 flex-1 overflow-hidden bg-[var(--background)]">
                         {panelSelectedMap ? (
                             <LazyMapViewer
                                 mapKey={panelSelectedMap.key}
@@ -452,8 +452,8 @@ export function QuestDetailsPane() {
                             <MapLoadingPlaceholder label="Preparing objective map…" />
                         )}
                         {isMapUpdatePending && (
-                            <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-black/35 backdrop-blur-[1px]">
-                                <span className="border border-white/10 bg-black/80 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-300 shadow-xl">
+                            <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-shadow/35 backdrop-blur-[1px]">
+                                <span className="border border-highlight/10 bg-shadow/80 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground shadow-xl">
                                     Updating map…
                                 </span>
                             </div>
@@ -469,7 +469,7 @@ export function QuestDetailsPane() {
                 onClick={() => setShowDebug((visible) => !visible)}
                 aria-label={showDebug ? "Hide quest debug data" : "Show quest debug data"}
                 aria-expanded={showDebug}
-                className={cn("absolute left-2 top-2 z-40 flex h-5 w-5 items-center justify-center rounded-full border bg-[#111316] shadow-lg transition-colors", showDebug ? "border-tarkov-green/50 text-tarkov-green" : "border-white/12 text-gray-600 hover:border-white/25 hover:text-gray-300")}
+                className={cn("absolute left-2 top-2 z-40 flex h-5 w-5 items-center justify-center rounded-full border bg-[var(--card-bg)] shadow-lg transition-colors", showDebug ? "border-brand/50 text-brand" : "border-highlight/12 text-subtle-foreground hover:border-highlight/25 hover:text-foreground")}
             >
                 <Bug size={10} />
             </button>
@@ -526,24 +526,24 @@ function QuestDetailsHeader({
 }) {
     return (
         <header className={cn(
-            "relative z-40 shrink-0 overflow-visible border-b border-white/8 bg-[#15171a] transition-[padding,min-height] duration-200 max-lg:absolute max-lg:inset-x-0 max-lg:top-0",
+            "relative z-40 shrink-0 overflow-visible border-b border-highlight/8 bg-[var(--surface-raised)] transition-[padding,min-height] duration-200 max-lg:absolute max-lg:inset-x-0 max-lg:top-0",
             isCondensed ? "min-h-0 px-4 py-2.5 sm:px-6" : "min-h-48 px-5 py-5 sm:px-7 sm:py-6",
             isCompactMapOpen && "max-lg:hidden",
         )}>
             {quest.taskImageLink && (
                 <div
                     className={cn("pointer-events-none absolute inset-y-0 right-0 transition-opacity duration-200", isCondensed && "opacity-0")}
-                    style={{ maskImage: "linear-gradient(to right, transparent 0%, black 24%, black 100%)" }}
+                    style={{ maskImage: "linear-gradient(to right, transparent 0%, var(--shadow) 24%, var(--shadow) 100%)" }}
                 >
                     <img src={quest.taskImageLink} alt="" className="h-full w-auto max-w-none object-contain object-right opacity-55" />
                 </div>
             )}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0b0c0e] via-[#0b0c0e]/88 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[var(--background)] via-[var(--background)]/88 to-transparent" />
             {hasObjectiveMap && !isDesktopMapOpen && (
                 <button
                     type="button"
                     onClick={onShowDesktopMap}
-                    className="absolute right-3 top-3 z-10 hidden h-9 w-9 items-center justify-center border border-white/15 bg-[#23262b]/95 text-gray-400 shadow-lg transition-colors hover:border-tarkov-green/40 hover:bg-[#26352b] hover:text-tarkov-green min-[1700px]:flex"
+                    className="absolute right-3 top-3 z-10 hidden h-9 w-9 items-center justify-center border border-highlight/15 bg-[var(--surface-raised)]/95 text-muted-foreground shadow-lg transition-colors hover:border-brand/40 hover:bg-[var(--accent)] hover:text-brand min-[1700px]:flex"
                     aria-label="Show objective map"
                     title="Show objective map"
                 >
@@ -552,41 +552,41 @@ function QuestDetailsHeader({
             )}
             <div className={cn("relative", !isCondensed && "max-w-4xl sm:pr-10")}>
                 <div className={cn("flex items-center gap-2.5 overflow-hidden transition-[height,margin,opacity] duration-200", isCondensed ? "h-0 opacity-0" : "mb-3 h-10 opacity-100")}>
-                    {traderImage ? <img src={traderImage} alt="" className="h-9 w-9 rounded-full border border-white/10 object-cover" /> : null}
+                    {traderImage ? <img src={traderImage} alt="" className="h-9 w-9 rounded-full border border-highlight/10 object-cover" /> : null}
                     <div>
-                        <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">
+                        <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-subtle-foreground">
                             {quest.trader.name}
-                            <span className={essential ? "text-amber-300/75" : "text-tarkov-green/70"}>{traderTabLabel}</span>
+                            <span className={essential ? "text-warning/75" : "text-brand/70"}>{traderTabLabel}</span>
                         </p>
-                        <p className="text-xs text-gray-400">{locationLabel}</p>
+                        <p className="text-xs text-muted-foreground">{locationLabel}</p>
                     </div>
                 </div>
                 <div className={cn(isCondensed && "flex flex-wrap items-center justify-between gap-2")}>
                     <div className="min-w-0">
-                        <h1 className={cn("font-semibold tracking-tight text-white transition-[font-size] duration-200", isCondensed ? "truncate text-xl" : "text-3xl sm:text-4xl")}>{quest.name}</h1>
+                        <h1 className={cn("font-semibold tracking-tight text-foreground transition-[font-size] duration-200", isCondensed ? "truncate text-xl" : "text-3xl sm:text-4xl")}>{quest.name}</h1>
                         {hasHeaderMetadata && (
-                            <div className={cn("flex flex-wrap items-center gap-x-2 overflow-hidden text-[11px] font-medium uppercase tracking-wider text-gray-500 transition-[height,margin,opacity] duration-200", isCondensed ? "h-0 opacity-0" : "mt-2 h-auto opacity-100")}>
+                            <div className={cn("flex flex-wrap items-center gap-x-2 overflow-hidden text-[11px] font-medium uppercase tracking-wider text-subtle-foreground transition-[height,margin,opacity] duration-200", isCondensed ? "h-0 opacity-0" : "mt-2 h-auto opacity-100")}>
                                 {quest.requiredPrestige && <span>Prestige {quest.requiredPrestige.prestigeLevel}</span>}
-                                {quest.requiredPrestige && (quest.kappaRequired || quest.lightkeeperRequired) && <span aria-hidden="true" className="text-gray-700">·</span>}
-                                {quest.kappaRequired && <span className="text-amber-300/75">Kappa required</span>}
-                                {quest.kappaRequired && quest.lightkeeperRequired && <span aria-hidden="true" className="text-gray-700">·</span>}
-                                {quest.lightkeeperRequired && <span className="text-cyan-300/75">Lightkeeper required</span>}
+                                {quest.requiredPrestige && (quest.kappaRequired || quest.lightkeeperRequired) && <span aria-hidden="true" className="text-subtle-foreground">·</span>}
+                                {quest.kappaRequired && <span className="text-warning/75">Kappa required</span>}
+                                {quest.kappaRequired && quest.lightkeeperRequired && <span aria-hidden="true" className="text-subtle-foreground">·</span>}
+                                {quest.lightkeeperRequired && <span className="text-info/75">Lightkeeper required</span>}
                             </div>
                         )}
                     </div>
                     <div className={cn("flex flex-wrap gap-1.5", isCondensed ? "mt-0" : "mt-4")}>
-                        <span className={cn("inline-flex items-center border px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider", isCondensed && "hidden", status.status === "locked" || status.status === "failed" ? "border-red-400/25 bg-red-400/8 text-red-300" : status.status === "completed" ? "border-tarkov-green/25 bg-tarkov-green/8 text-tarkov-green" : "border-sky-400/25 bg-sky-400/8 text-sky-300")}>{status.label}</span>
-                        <button type="button" title={status.status === "completed" ? "Return this quest to an incomplete state" : "Mark this quest as completed"} onClick={onToggleCompletion} className={cn(questActionButtonClass, status.status === "completed" ? "border-tarkov-green/30 bg-[#173021] text-tarkov-green hover:border-red-400/50 hover:bg-[#3a1b20] hover:text-red-200" : "border-tarkov-green/35 bg-[#173021] text-tarkov-green hover:border-tarkov-green/70 hover:bg-[#21452d]")}><CheckCircle2 size={14} />{status.status === "completed" ? "Mark incomplete" : "Mark complete"}</button>
-                        {questCanFail(quest) && !status.terminal && <button type="button" title="Mark this quest as failed" onClick={onFail} className={cn(questActionButtonClass, "border-red-400/35 bg-[#32191d] text-red-300 hover:border-red-400/65 hover:bg-[#462126] hover:text-red-200")}><XCircle size={14} /> Mark failed</button>}
-                        {status.terminal === "failed" && <button type="button" title="Clear the failed status" onClick={onResetStatus} className={cn(questActionButtonClass, "border-white/15 bg-[#23262b] text-gray-300 hover:border-white/30 hover:bg-[#2d3137] hover:text-white")}><RotateCcw size={14} /> Reset status</button>}
-                        <button type="button" title={pinned ? "Remove this quest from pinned quests" : "Keep this quest in pinned views"} onClick={onTogglePinned} className={cn(questActionButtonClass, "hidden border-white/15 bg-[#23262b] text-gray-400 hover:border-sky-400/40 hover:bg-[#293642] hover:text-sky-200 lg:inline-flex", pinned && "border-sky-400/35 bg-[#172836] text-sky-300 hover:bg-[#1d3344]")}><Pin size={14} className={pinned ? "fill-current" : ""} />{pinned ? "Unpin quest" : "Pin quest"}</button>
-                        <button type="button" title={hidden ? "Restore this quest to normal filtered views" : "Hide this quest from normal filtered views"} onClick={onToggleHidden} className={cn(questActionButtonClass, "hidden border-white/15 bg-[#23262b] text-gray-400 hover:border-violet-400/40 hover:bg-[#352c3d] hover:text-violet-200 lg:inline-flex", hidden && "border-violet-400/35 bg-[#2b2033] text-violet-300 hover:bg-[#382942]")}>{hidden ? <Eye size={14} /> : <EyeOff size={14} />}{hidden ? "Show quest" : "Hide quest"}</button>
-                        {hasObjectiveMap && <button type="button" title="Show the objective map" onClick={onShowMap} className={cn(questActionButtonClass, "border-white/15 bg-[#23262b] text-gray-400 hover:border-tarkov-green/40 hover:bg-[#26352b] hover:text-tarkov-green min-[1700px]:hidden")}><MapIcon size={14} /> Show map</button>}
-                        {visualizerLines.length === 1 && <button type="button" onClick={() => onOpenVisualizer(visualizerLines[0].id)} className={cn(questActionButtonClass, "border-cyan-400/25 bg-[#162a30] text-cyan-200 hover:border-cyan-300/50 hover:bg-[#1b343c]")}><GitBranch size={14} /> View quest line</button>}
+                        <span className={cn("inline-flex items-center border px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider", isCondensed && "hidden", status.status === "locked" || status.status === "failed" ? "border-danger/25 bg-danger/8 text-danger" : status.status === "completed" ? "border-success/25 bg-success/8 text-success" : "border-info/25 bg-info/8 text-info")}>{status.label}</span>
+                        <button type="button" title={status.status === "completed" ? "Return this quest to an incomplete state" : "Mark this quest as completed"} onClick={onToggleCompletion} className={cn(questActionButtonClass, status.status === "completed" ? "border-success/30 bg-[var(--success-surface)] text-success hover:border-danger/50 hover:bg-[var(--danger-surface)] hover:text-danger" : "border-brand/35 bg-[var(--success-surface)] text-brand hover:border-brand/70 hover:bg-[var(--success-surface)]")}><CheckCircle2 size={14} />{status.status === "completed" ? "Mark incomplete" : "Mark complete"}</button>
+                        {questCanFail(quest) && !status.terminal && <button type="button" title="Mark this quest as failed" onClick={onFail} className={cn(questActionButtonClass, "border-danger/35 bg-[var(--danger-surface)] text-danger hover:border-danger/65 hover:bg-[var(--danger-surface)] hover:text-danger")}><XCircle size={14} /> Mark failed</button>}
+                        {status.terminal === "failed" && <button type="button" title="Clear the failed status" onClick={onResetStatus} className={cn(questActionButtonClass, "border-highlight/15 bg-[var(--surface-raised)] text-foreground hover:border-highlight/30 hover:bg-[var(--surface-raised)] hover:text-foreground")}><RotateCcw size={14} /> Reset status</button>}
+                        <button type="button" title={pinned ? "Remove this quest from pinned quests" : "Keep this quest in pinned views"} onClick={onTogglePinned} className={cn(questActionButtonClass, "hidden border-highlight/15 bg-[var(--surface-raised)] text-muted-foreground hover:border-info/40 hover:bg-[var(--info-surface)] hover:text-info lg:inline-flex", pinned && "border-info/35 bg-[var(--info-surface)] text-info hover:bg-[var(--info-surface)]")}><Pin size={14} className={pinned ? "fill-current" : ""} />{pinned ? "Unpin quest" : "Pin quest"}</button>
+                        <button type="button" title={hidden ? "Restore this quest to normal filtered views" : "Hide this quest from normal filtered views"} onClick={onToggleHidden} className={cn(questActionButtonClass, "hidden border-highlight/15 bg-[var(--surface-raised)] text-muted-foreground hover:border-special/40 hover:bg-[var(--special-surface)] hover:text-special lg:inline-flex", hidden && "border-special/35 bg-[var(--special-surface)] text-special hover:bg-[var(--special-surface)]")}>{hidden ? <Eye size={14} /> : <EyeOff size={14} />}{hidden ? "Show quest" : "Hide quest"}</button>
+                        {hasObjectiveMap && <button type="button" title="Show the objective map" onClick={onShowMap} className={cn(questActionButtonClass, "border-highlight/15 bg-[var(--surface-raised)] text-muted-foreground hover:border-brand/40 hover:bg-[var(--accent)] hover:text-brand min-[1700px]:hidden")}><MapIcon size={14} /> Show map</button>}
+                        {visualizerLines.length === 1 && <button type="button" onClick={() => onOpenVisualizer(visualizerLines[0].id)} className={cn(questActionButtonClass, "border-info/25 bg-[var(--info-surface)] text-info hover:border-info/50 hover:bg-[var(--info-surface)]")}><GitBranch size={14} /> View quest line</button>}
                         {visualizerLines.length > 1 && (
                             <details className="group relative">
-                                <summary className={cn(questActionButtonClass, "cursor-pointer list-none border-cyan-400/25 bg-[#162a30] text-cyan-200 hover:border-cyan-300/50 hover:bg-[#1b343c] [&::-webkit-details-marker]:hidden")}><GitBranch size={14} /> View quest line</summary>
-                                <div className="absolute left-0 top-full z-[100] mt-1 min-w-56 border border-white/12 bg-[#111214] p-1 shadow-2xl">
+                                <summary className={cn(questActionButtonClass, "cursor-pointer list-none border-info/25 bg-[var(--info-surface)] text-info hover:border-info/50 hover:bg-[var(--info-surface)] [&::-webkit-details-marker]:hidden")}><GitBranch size={14} /> View quest line</summary>
+                                <div className="absolute left-0 top-full z-[100] mt-1 min-w-56 border border-highlight/12 bg-[var(--card-bg)] p-1 shadow-2xl">
                                     {visualizerLines.map((line) => (
                                         <button
                                             key={line.id}
@@ -595,16 +595,16 @@ function QuestDetailsHeader({
                                                 event.currentTarget.closest("details")?.removeAttribute("open");
                                                 onOpenVisualizer(line.id);
                                             }}
-                                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 transition-colors hover:bg-white/8 hover:text-white"
+                                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground transition-colors hover:bg-highlight/8 hover:text-foreground"
                                         >
                                             <span className="min-w-0 flex-1 truncate">{line.name}</span>
-                                            {line.kind === "special" && <span className="text-[9px] font-semibold uppercase tracking-wider text-amber-300/70">Special</span>}
+                                            {line.kind === "special" && <span className="text-[9px] font-semibold uppercase tracking-wider text-warning/70">Special</span>}
                                         </button>
                                     ))}
                                 </div>
                             </details>
                         )}
-                        {quest.wikiLink && <a href={quest.wikiLink} title="Open this quest on the Tarkov wiki" target="_blank" rel="noopener noreferrer" className={cn(questActionButtonClass, "border-white/15 bg-[#23262b] text-gray-400 hover:border-white/30 hover:bg-[#2d3137] hover:text-white")}>Open wiki <ExternalLink size={12} /></a>}
+                        {quest.wikiLink && <a href={quest.wikiLink} title="Open this quest on the Tarkov wiki" target="_blank" rel="noopener noreferrer" className={cn(questActionButtonClass, "border-highlight/15 bg-[var(--surface-raised)] text-muted-foreground hover:border-highlight/30 hover:bg-[var(--surface-raised)] hover:text-foreground")}>Open wiki <ExternalLink size={12} /></a>}
                     </div>
                 </div>
             </div>
@@ -757,7 +757,7 @@ function QuestObjectivesSection({
                     ))}
                 </div>
             ) : (
-                <p className="text-xs text-gray-600">No objectives provided.</p>
+                <p className="text-xs text-subtle-foreground">No objectives provided.</p>
             )}
         </>
     );
@@ -811,18 +811,18 @@ function QuestObjectiveDisplay({
             }}
             onMouseLeave={() => onHoverObjective(null)}
             className={cn(
-                "rounded-md bg-white/[0.035] p-3",
-                isFocused && "bg-white/[0.065]",
+                "rounded-md bg-highlight/[0.035] p-3",
+                isFocused && "bg-highlight/[0.065]",
             )}
         >
             {positionedMaps.length > 0 && (
                 <div className="mb-3 flex w-full flex-wrap items-center gap-x-3 gap-y-2">
                     {markerStyle && (
                         <span
-                            className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-black/70"
+                            className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-shadow/70"
                             style={{ backgroundColor: markerStyle.color }}
                         >
-                            <QuestObjectiveIcon type={objective.type} size={11} className="text-black" />
+                            <QuestObjectiveIcon type={objective.type} size={11} className="text-inverse" />
                         </span>
                     )}
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -831,16 +831,16 @@ function QuestObjectiveDisplay({
                                 type="button"
                                 key={map.key}
                                 onClick={() => onShowObjectiveOnMap(map.key, objective.id)}
-                                className="inline-flex items-center gap-1.5 rounded bg-black/30 px-2 py-1 text-[10px] font-medium text-gray-400 transition-colors hover:bg-black/45 hover:text-tarkov-green"
+                                className="inline-flex items-center gap-1.5 rounded bg-shadow/30 px-2 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-shadow/45 hover:text-brand"
                             >
                                 <MapIcon size={11} />
                                 Show on {map.name}
-                                {map.locationCount > 1 && <span className="text-gray-600">×{map.locationCount}</span>}
+                                {map.locationCount > 1 && <span className="text-subtle-foreground">×{map.locationCount}</span>}
                             </button>
                         ))}
                     </div>
                     {multipleLocationLabel && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-200/80">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-warning/80">
                             {multipleLocationLabel}
                         </span>
                     )}
@@ -853,11 +853,11 @@ function QuestObjectiveDisplay({
                             className={cn(
                                 "ml-auto inline-flex items-center gap-1.5 rounded px-2 py-1 text-[10px] font-semibold transition-colors",
                                 isCompleted
-                                    ? "bg-tarkov-green/15 text-tarkov-green hover:bg-white/10 hover:text-white"
-                                    : "bg-black/30 text-gray-500 hover:bg-black/45 hover:text-tarkov-green",
+                                    ? "bg-success/15 text-success hover:bg-highlight/10 hover:text-foreground"
+                                    : "bg-shadow/30 text-subtle-foreground hover:bg-shadow/45 hover:text-brand",
                             )}
                         >
-                            <CheckCircle2 size={12} className="text-tarkov-green" />
+                            <CheckCircle2 size={12} className="text-success" />
                             {isCompleted ? "Completed" : "Complete"}
                         </button>
                     )}
@@ -875,20 +875,20 @@ function QuestObjectiveDisplay({
 
 function MapLoadingPlaceholder({ label }: { label: string }) {
     return (
-        <div className="flex h-full min-h-72 items-center justify-center bg-[#0b0c0e] p-8 text-center">
+        <div className="flex h-full min-h-72 items-center justify-center bg-[var(--background)] p-8 text-center">
             <div>
-                <span className="mx-auto block h-5 w-5 animate-spin rounded-full border-2 border-white/10 border-t-tarkov-green" />
-                <p className="mt-3 text-xs font-medium text-gray-500">{label}</p>
+                <span className="mx-auto block h-5 w-5 animate-spin rounded-full border-2 border-highlight/10 border-t-brand" />
+                <p className="mt-3 text-xs font-medium text-subtle-foreground">{label}</p>
             </div>
         </div>
     );
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-    return <h2 className="mb-3.5 text-xs font-semibold uppercase tracking-[0.2em] text-gray-600">{children}</h2>;
+    return <h2 className="mb-3.5 text-xs font-semibold uppercase tracking-[0.2em] text-subtle-foreground">{children}</h2>;
 }
 
-const questActionButtonClass = "inline-flex cursor-pointer select-none items-center gap-1.5 border bg-[#23262b] px-2.5 py-1.5 text-[11px] font-semibold shadow-[0_2px_0_rgba(0,0,0,0.35)] transition-[transform,background-color,border-color,color,box-shadow] hover:-translate-y-px active:translate-y-px active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#15171a]";
+const questActionButtonClass = "inline-flex cursor-pointer select-none items-center gap-1.5 border bg-[var(--surface-raised)] px-2.5 py-1.5 text-[11px] font-semibold shadow-[0_2px_0_color-mix(in_oklab,_var(--shadow)_35%,_transparent)] transition-[transform,background-color,border-color,color,box-shadow] hover:-translate-y-px active:translate-y-px active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-highlight/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-raised)]";
 
 function RequirementRow({
     children,
@@ -904,28 +904,28 @@ function RequirementRow({
     title?: string;
 }) {
     const icon = satisfied === true
-        ? <CheckCircle2 size={14} className="mt-[3px] shrink-0 text-tarkov-green" />
+        ? <CheckCircle2 size={14} className="mt-[3px] shrink-0 text-success" />
         : satisfied === false
-          ? <XCircle size={14} className="mt-[3px] shrink-0 text-red-300" />
-          : <Circle size={14} className="mt-[3px] shrink-0 text-gray-600" />;
+          ? <XCircle size={14} className="mt-[3px] shrink-0 text-danger" />
+          : <Circle size={14} className="mt-[3px] shrink-0 text-subtle-foreground" />;
     return (
         <p title={title} className="flex items-start gap-2">
             {icon}
             <span>
-                <span className="mr-2 text-gray-600">{label}</span>
+                <span className="mr-2 text-subtle-foreground">{label}</span>
                 {onClick ? (
                     <button
                         type="button"
                         onClick={onClick}
                         className={cn(
-                            "cursor-pointer text-left underline decoration-white/30 underline-offset-4 transition-colors hover:text-white hover:decoration-current",
-                            satisfied === false ? "text-red-200/80" : "text-gray-300",
+                            "cursor-pointer text-left underline decoration-highlight/30 underline-offset-4 transition-colors hover:text-foreground hover:decoration-current",
+                            satisfied === false ? "text-danger/80" : "text-foreground",
                         )}
                     >
                         {children}
                     </button>
                 ) : (
-                    <span className={satisfied === false ? "text-red-200/80" : "text-gray-300"}>{children}</span>
+                    <span className={satisfied === false ? "text-danger/80" : "text-foreground"}>{children}</span>
                 )}
             </span>
         </p>
@@ -934,10 +934,10 @@ function RequirementRow({
 
 function QuestDebugPanel({ quest, onClose }: { quest: FullQuest; onClose: () => void }) {
     return (
-        <aside className="fixed bottom-16 right-5 z-50 flex max-h-[70vh] w-[min(680px,calc(100vw-2.5rem))] flex-col overflow-hidden border border-white/15 bg-[#101215] shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-                <div><p className="text-xs font-semibold text-white">Quest debug data</p><p className="mt-0.5 text-[10px] text-gray-600">Normalized data received by this page</p></div>
-                <button type="button" onClick={onClose} aria-label="Close quest debug data" className="text-gray-600 hover:text-white"><X size={15} /></button>
+        <aside className="fixed bottom-16 right-5 z-50 flex max-h-[70vh] w-[min(680px,calc(100vw-2.5rem))] flex-col overflow-hidden border border-highlight/15 bg-[var(--card-bg)] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-highlight/10 px-4 py-3">
+                <div><p className="text-xs font-semibold text-foreground">Quest debug data</p><p className="mt-0.5 text-[10px] text-subtle-foreground">Normalized data received by this page</p></div>
+                <button type="button" onClick={onClose} aria-label="Close quest debug data" className="text-subtle-foreground hover:text-foreground"><X size={15} /></button>
             </div>
             <div className="min-h-0 overflow-y-auto p-4">
                 <DebugJson label="Objectives" value={quest.objectives} />
@@ -949,15 +949,15 @@ function QuestDebugPanel({ quest, onClose }: { quest: FullQuest; onClose: () => 
 
 function DebugJson({ label, value }: { label: string; value: unknown }) {
     return (
-        <details className="mb-3 border border-white/8 bg-black/25" open={label === "Objectives"}>
-            <summary className="cursor-pointer px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">{label}</summary>
-            <pre className="max-h-80 overflow-auto border-t border-white/8 p-3 text-[10px] leading-relaxed text-gray-500">{JSON.stringify(value, null, 2)}</pre>
+        <details className="mb-3 border border-highlight/8 bg-shadow/25" open={label === "Objectives"}>
+            <summary className="cursor-pointer px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</summary>
+            <pre className="max-h-80 overflow-auto border-t border-highlight/8 p-3 text-[10px] leading-relaxed text-subtle-foreground">{JSON.stringify(value, null, 2)}</pre>
         </details>
     );
 }
 
 function StandingRewards({ label, rewards }: { label: string; rewards: QuestTraderStandingReward[] }) {
-    return <section><SectionLabel>{label}</SectionLabel><div className="space-y-1.5 text-sm">{rewards.map((reward, index) => <p key={`${reward.trader.id}-${index}`} className="flex flex-wrap items-baseline gap-x-2"><span className="text-gray-400">{reward.trader.name}</span><span className={reward.standing >= 0 ? "font-mono text-tarkov-green" : "font-mono text-red-300"}>{formatStanding(reward.standing)}</span></p>)}</div></section>;
+    return <section><SectionLabel>{label}</SectionLabel><div className="space-y-1.5 text-sm">{rewards.map((reward, index) => <p key={`${reward.trader.id}-${index}`} className="flex flex-wrap items-baseline gap-x-2"><span className="text-muted-foreground">{reward.trader.name}</span><span className={reward.standing >= 0 ? "font-mono text-success" : "font-mono text-danger"}>{formatStanding(reward.standing)}</span></p>)}</div></section>;
 }
 
 function formatStanding(value: number) {

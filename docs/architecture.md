@@ -36,6 +36,27 @@ so Craft Profits, Barter Profits, and other destinations retain their labels
 while sharing their parent motif. Settings, News, and Dev use the Hideout motif.
 Animations respect reduced motion. The temporary `/loading` preview is removed.
 
+## Theme and color roles
+
+[globals.css](../src/app/globals.css) owns the documented application palette and
+Tailwind color utilities. Use `brand` for navigation, selection and primary actions;
+use the independent `success` role for completed/satisfied requirements and positive
+results. They currently share a pigment, but changing `--brand` must not recolor
+success states. To try the retained Settings tan, set `--brand` to
+`var(--accent-alternate)`; its hover color derives automatically.
+
+Use the documented neutral surface/text hierarchy and `warning`, `danger`, `info`
+and `special` roles instead of named Tailwind palettes or local color literals.
+Opacity, `color-mix`, `transparent` and `currentColor` are supported variations.
+Charts and objective groups use the documented chart palette; map navigation has
+separate extract/transit aliases. The route loading illustration keeps its artwork
+colors. [Profile colors](../src/lib/cfg/profile-colors.ts) separately own the three
+PVE/PVP/seasonal identity pigments; UI derives their tints through a local CSS
+property. External item images and map artwork retain their source pixels.
+
+`npm run test:theme` checks application source for palette drift. New color roles
+belong in globals with a purpose before use in a component.
+
 ## Dependency direction
 
 ```text

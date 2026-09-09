@@ -38,17 +38,17 @@ export function QuestCompactItemStrip({ items, onItemClick }: QuestCompactItemSt
                     <img
                         src={item.iconLink ?? item.gridImageLink ?? ""}
                         alt={item.name}
-                        className={`w-8 h-8 object-contain rounded bg-black/40 transition-opacity ${
+                        className={`w-8 h-8 object-contain rounded bg-shadow/40 transition-opacity ${
                             onItemClick ? "hover:opacity-75" : ""
-                        } ${item.fir ? "ring-1 ring-orange-500" : "border border-white/10"}`}
+                        } ${item.fir ? "ring-1 ring-warning" : "border border-highlight/10"}`}
                     />
                     {item.fir && (
-                        <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-orange-500 rounded-full" />
+                        <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-warning rounded-full" />
                     )}
                 </div>
             ))}
             {items.length > COMPACT_PREVIEW_ITEM_LIMIT && (
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-subtle-foreground">
                     +{items.length - COMPACT_PREVIEW_ITEM_LIMIT}
                 </span>
             )}

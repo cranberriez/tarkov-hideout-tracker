@@ -9,8 +9,8 @@ export function PostTarkov11() {
                     hideout progression, items, and other systems this tracker relies on.
                 </p>
 
-                <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 p-4">
-                    <h3 className="mt-0 text-amber-100">Hideout items and upgrades should be accurate</h3>
+                <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
+                    <h3 className="mt-0 text-warning">Hideout items and upgrades should be accurate</h3>
                     <p>
                         Hideout item requirements and upgrade data have been updated for Tarkov 1.1.
                         Quest data is still being reviewed and may be incomplete or inaccurate for a

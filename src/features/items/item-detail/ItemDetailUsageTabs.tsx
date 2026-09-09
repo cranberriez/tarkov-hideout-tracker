@@ -271,12 +271,12 @@ function AcquisitionState({
         return <p className="px-4 py-6 text-sm text-muted-foreground">Loading acquisition data…</p>;
     }
     if (error) {
-        return <p className="px-4 py-6 text-sm text-amber-200">{error}</p>;
+        return <p className="px-4 py-6 text-sm text-warning">{error}</p>;
     }
     if (empty) {
         return (
             <div>
-                {warning && <p className="px-4 pt-4 text-sm text-amber-200">{warning}</p>}
+                {warning && <p className="px-4 pt-4 text-sm text-warning">{warning}</p>}
                 <p className="px-4 py-6 text-sm text-muted-foreground">No matching records.</p>
             </div>
         );
@@ -284,7 +284,7 @@ function AcquisitionState({
     return (
         <div>
             {warning && (
-                <p className="border-b border-border-color px-4 py-2 text-xs text-amber-200">
+                <p className="border-b border-border-color px-4 py-2 text-xs text-warning">
                     {warning}
                 </p>
             )}
@@ -305,7 +305,7 @@ function RelationState({
     return (
         <p
             className={`border-b border-border-color px-4 py-2 text-xs ${
-                error ? "text-amber-200" : "text-muted-foreground"
+                error ? "text-warning" : "text-muted-foreground"
             }`}
         >
             {error ?? (loading ? loadingMessage : null)}
@@ -337,10 +337,10 @@ function TabButton({
             onClick={onClick}
             className={`relative flex min-w-28 items-center justify-center gap-2 border-r border-border-color px-4 text-xs transition-colors ${
                 active
-                    ? "bg-white/[0.04] text-foreground after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-tarkov-green"
+                    ? "bg-highlight/[0.04] text-foreground after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-brand"
                     : disabled
                       ? "cursor-not-allowed text-muted-foreground/35"
-                      : "text-muted-foreground hover:bg-white/[0.02] hover:text-foreground"
+                      : "text-muted-foreground hover:bg-highlight/[0.02] hover:text-foreground"
             }`}
         >
             {icon}

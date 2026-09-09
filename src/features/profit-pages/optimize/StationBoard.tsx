@@ -83,7 +83,7 @@ export function StationBoard({
 							aria-pressed={ranking === option.id}
 							title={option.hint}
 							onClick={() => setRanking(option.id)}
-							className={`rounded px-3 py-1.5 text-xs transition ${ranking === option.id ? "bg-white/10 text-foreground" : "text-muted-foreground hover:bg-white/5"}`}
+							className={`rounded px-3 py-1.5 text-xs transition ${ranking === option.id ? "bg-highlight/10 text-foreground" : "text-muted-foreground hover:bg-highlight/5"}`}
 						>
 							{option.label}
 						</button>
@@ -94,7 +94,7 @@ export function StationBoard({
 					Include unprofitable crafts
 				</label>
 			</div>
-			<div className="divide-y divide-white/10">
+			<div className="divide-y divide-highlight/10">
 				{stationIds.map((stationId) => {
 					const stationRows = rows.filter((row) => row.craft?.stationId === stationId);
 					const pinned = stationRows.filter((row) => pinnedCrafts[row.id]);
@@ -115,7 +115,7 @@ export function StationBoard({
 								<CraftImage src={stations[stationId]?.imageLink ?? undefined} size={26} />
 								<h2 className="text-sm font-medium">{stations[stationId]?.name ?? stationId}</h2>
 								<span className="text-xs text-muted-foreground">Lv. {input.stationLevels?.[stationId] ?? 0}</span>
-								{!!pinned.length && <span className="text-xs text-sky-300">{pinned.length} pinned</span>}
+								{!!pinned.length && <span className="text-xs text-info">{pinned.length} pinned</span>}
 								<button
 									type="button"
 									className="ml-auto inline-flex items-center gap-1 py-1 text-xs text-muted-foreground hover:text-foreground"

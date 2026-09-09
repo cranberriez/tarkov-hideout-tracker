@@ -41,7 +41,7 @@ export function QuestListPane() {
     if (listMode === "history") return <QuestHistoryList />;
 
     return (
-        <div className="min-h-0 flex-1 overflow-y-auto scroll-smooth bg-[#0b0c0e]">
+        <div className="min-h-0 flex-1 overflow-y-auto scroll-smooth bg-[var(--background)]">
             <GroupedQuestRows
                 model={model}
                 collapsedGroupIds={collapsedGroupIds}
@@ -51,7 +51,7 @@ export function QuestListPane() {
                 onSelectQuest={setSelectedQuestId}
             />
             {model.questCount === 0 && (
-                <div className="border-b border-dashed border-white/10 px-5 py-14 text-center text-sm text-gray-600">
+                <div className="border-b border-dashed border-highlight/10 px-5 py-14 text-center text-sm text-subtle-foreground">
                     No quests match these filters.
                 </div>
             )}

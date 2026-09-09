@@ -9,6 +9,7 @@
 		"lint": "eslint",
 		"docs:check": "node scripts/check-doc-links.mjs",
 		"test:architecture": "node --test --import jiti/register src/architecture/data-import-boundaries.test.ts",
+		"test:theme": "node --test --import jiti/register src/architecture/theme-colors.test.ts",
 		"test:contracts": "node --test --import jiti/register src/server/queries/page-data-queries.test.ts src/server/queries/shared-data-queries.test.ts src/server/queries/item-detail-queries.test.ts src/server/queries/getKappaChecklistPageData.test.ts src/server/queries/searchItems.test.ts",
 		"db:generate": "node db-scripts/generate.mjs",
 		"db:validate": "node db-scripts/validate.mjs",

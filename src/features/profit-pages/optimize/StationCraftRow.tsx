@@ -32,9 +32,9 @@ export function StationCraftRow({
 	const gross = row.grossSellValue === undefined ? row.sellValue : row.grossSellValue;
 	const roi = row.cost && row.profit !== null ? (row.profit / row.cost) * 100 : null;
 	return (
-		<div className={`bg-white/2.5 ${pinned ? "bg-white/5" : ""} rounded`}>
+		<div className={`bg-highlight/2.5 ${pinned ? "bg-highlight/5" : ""} rounded`}>
 			<div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-2 py-2.5 lg:grid-cols-[minmax(170px,1.15fr)_82px_minmax(200px,2fr)_108px_124px_78px]">
-				<button type="button" onClick={() => onItemOpen(row.outputItemId)} className="flex min-w-0 items-center gap-2 text-left hover:text-tarkov-green">
+				<button type="button" onClick={() => onItemOpen(row.outputItemId)} className="flex min-w-0 items-center gap-2 text-left hover:text-brand">
 					<CraftImage item={output} size={36} />
 					<span className="min-w-0 text-xs font-medium">
 						{output?.name ?? row.outputItemId}
@@ -67,7 +67,7 @@ export function StationCraftRow({
 					className="relative pr-9 text-right text-xs lg:text-left"
 					title={`Inputs: ${formatRoundedRoubles(row.cost)} · Listing fee: ${formatRoundedRoubles(row.sellFee ?? null)} · Proceeds: ${formatRoundedRoubles(row.sellValue)}${roi === null ? "" : ` · Return on inputs: ${roi.toFixed(1)}%`}`}
 				>
-					<span className={`block font-mono font-medium ${!available ? "text-amber-300" : (row.profit ?? 0) > 0 ? "text-tarkov-green" : "text-red-300"}`}>
+					<span className={`block font-mono font-medium ${!available ? "text-warning" : (row.profit ?? 0) > 0 ? "text-success" : "text-danger"}`}>
 						{!available ? "Check details" : formatSignedRoubles(row.profit)}
 					</span>
 					<span className="text-[11px] text-muted-foreground">{available ? `${formatSignedRoubles(row.profitPerHour)} / h` : "Saved craft retained"}</span>
@@ -76,10 +76,10 @@ export function StationCraftRow({
 							title={`${placement === 1 ? "Gold" : placement === 2 ? "Silver" : "Bronze"} craft for this station`}
 							className={`absolute right-0 top-1/2 -translate-y-1/2 rounded border px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
 								placement === 1
-									? "border-amber-300/40 bg-amber-300/10 text-amber-300"
+									? "border-warning/40 bg-warning/10 text-warning"
 									: placement === 2
-										? "border-slate-300/40 bg-slate-300/10 text-slate-300"
-										: "border-orange-400/40 bg-orange-400/10 text-orange-400"
+										? "border-border/40 bg-muted/10 text-foreground"
+										: "border-warning/40 bg-warning/10 text-warning"
 							}`}
 						>
 							#{placement}
@@ -93,7 +93,7 @@ export function StationCraftRow({
 						aria-pressed={pinned}
 						title={pinned ? "Remove from board" : "Keep on board"}
 						onClick={() => onTogglePinned()}
-						className={`rounded p-2 hover:bg-white/10 ${pinned ? "text-sky-300" : "text-muted-foreground"}`}
+						className={`rounded p-2 hover:bg-highlight/10 ${pinned ? "text-info" : "text-muted-foreground"}`}
 					>
 						<Pin size={15} className={pinned ? "fill-current" : ""} />
 					</button>
@@ -103,7 +103,7 @@ export function StationCraftRow({
 						aria-expanded={open}
 						title="Prices and routes"
 						onClick={() => onToggleDetails()}
-						className={`rounded p-2 hover:bg-white/10 ${open ? "text-foreground bg-white/10" : "text-muted-foreground"}`}
+						className={`rounded p-2 hover:bg-highlight/10 ${open ? "text-foreground bg-highlight/10" : "text-muted-foreground"}`}
 					>
 						<SlidersHorizontal size={15} />
 					</button>

@@ -19,18 +19,18 @@ export function LegacyProfileConversionCard() {
 	const isOutstanding = hasLegacyData && !hasConvertedDeprecatedLegacyState;
 
 	const status = hasConvertedDeprecatedLegacyState
-		? { label: "Converted", icon: CheckCircle2, tone: "border-tarkov-green/25 bg-tarkov-green/10 text-tarkov-green" }
+		? { label: "Converted", icon: CheckCircle2, tone: "border-success/25 bg-success/10 text-success" }
 		: hasDismissedDeprecatedLegacyState && hasLegacyData
-			? { label: "Not restored", icon: Clock3, tone: "border-white/15 bg-white/5 text-gray-400" }
+			? { label: "Not restored", icon: Clock3, tone: "border-highlight/15 bg-highlight/5 text-muted-foreground" }
 			: isOutstanding
-				? { label: "Outstanding", icon: Clock3, tone: "border-amber-400/25 bg-amber-400/10 text-amber-200" }
-				: { label: "No old data", icon: CheckCircle2, tone: "border-white/10 bg-white/5 text-gray-500" };
+				? { label: "Outstanding", icon: Clock3, tone: "border-warning/25 bg-warning/10 text-warning" }
+				: { label: "No old data", icon: CheckCircle2, tone: "border-highlight/10 bg-highlight/5 text-subtle-foreground" };
 	const StatusIcon = status.icon;
 
 	return (
 		<div className="space-y-3 p-4 sm:p-5">
 			<div className="flex flex-wrap items-center gap-2">
-				<div className="text-sm font-medium text-white">Old profile data</div>
+				<div className="text-sm font-medium text-foreground">Old profile data</div>
 				<span
 					className={cn(
 						"inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px]",
@@ -41,7 +41,7 @@ export function LegacyProfileConversionCard() {
 					{status.label}
 				</span>
 			</div>
-			<div className="max-w-md text-xs leading-5 text-gray-400">
+			<div className="max-w-md text-xs leading-5 text-muted-foreground">
 				Review and copy data saved before separate PVP, PVE, and KORD profiles were introduced.
 			</div>
 
@@ -49,7 +49,7 @@ export function LegacyProfileConversionCard() {
 				type="button"
 				disabled={!hasLegacyData}
 				onClick={() => openDialog(true)}
-				className="inline-flex items-center rounded-md border border-foreground/30 bg-foreground/10 px-3 py-1.5 text-xs text-white transition-colors hover:bg-foreground/20 disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
+				className="inline-flex items-center rounded-md border border-foreground/30 bg-foreground/10 px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-foreground/20 disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
 			>
 				{hasConvertedDeprecatedLegacyState ? "Open conversion dialog again" : "Open conversion dialog"}
 			</button>

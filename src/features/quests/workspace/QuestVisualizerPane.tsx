@@ -55,7 +55,7 @@ function SeriesGraph({ line, onBack, focusedQuestId }: {
                 onWheel={handleWheel}
                 title="Drag to pan · Scroll vertically · Shift + scroll horizontally"
                 className={cn(
-                    "min-h-0 flex-1 select-none overflow-auto bg-[radial-gradient(circle_at_50%_20%,#151719,#0b0c0e_65%)]",
+                    "min-h-0 flex-1 select-none overflow-auto bg-[radial-gradient(circle_at_50%_20%,var(--surface-raised),var(--background)_65%)]",
                     isPanning ? "cursor-grabbing" : "cursor-grab",
                 )}
             >

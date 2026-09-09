@@ -28,7 +28,7 @@ export function QuickHideoutLevels({
 
     if (!stations || sortedStations.length === 0) {
         return (
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-subtle-foreground">
                 Hideout station data is not available right now.
             </div>
         );
@@ -36,7 +36,7 @@ export function QuickHideoutLevels({
 
     return (
         <div className="flex flex-col gap-4">
-            <p className="text-xs text-gray-500">Level 0 means not constructed.</p>
+            <p className="text-xs text-subtle-foreground">Level 0 means not constructed.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {sortedStations.map((station) => {
                     const currentLevel = stationLevels[station.id] ?? 0;
@@ -50,22 +50,22 @@ export function QuickHideoutLevels({
                     return (
                         <div
                             key={station.id}
-                            className="bg-black/40 border border-border-color rounded-md p-3 flex flex-col gap-2"
+                            className="bg-shadow/40 border border-border-color rounded-md p-3 flex flex-col gap-2"
                         >
                             <div className="flex items-baseline justify-between gap-2">
-                                <div className="text-sm font-medium text-white truncate">
+                                <div className="text-sm font-medium text-foreground truncate">
                                     {station.name}
                                 </div>
-                                <div className="text-[10px] text-gray-500 font-mono">
+                                <div className="text-[10px] text-subtle-foreground font-mono">
                                     LVL{" "}
                                     <span
                                         className={
-                                            currentLevel > 0 ? "text-tarkov-green" : "text-gray-500"
+                                            currentLevel > 0 ? "text-success" : "text-subtle-foreground"
                                         }
                                     >
                                         {currentLevel}
                                     </span>{" "}
-                                    <span className="text-gray-600">/ {maxLevel}</span>
+                                    <span className="text-subtle-foreground">/ {maxLevel}</span>
                                 </div>
                             </div>
                             <div className="flex flex-wrap gap-1.5">
@@ -78,8 +78,8 @@ export function QuickHideoutLevels({
                                             onClick={() => setStationLevel(station.id, level)}
                                             className={`px-2.5 py-1 text-[11px] font-mono rounded-sm border transition-all ${
                                                 isActive
-                                                    ? "bg-tarkov-green text-black border-tarkov-green shadow-sm"
-                                                    : "border-white/10 text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/30"
+                                                    ? "bg-brand text-inverse border-brand shadow-sm"
+                                                    : "border-highlight/10 text-muted-foreground hover:text-foreground hover:bg-highlight/5 hover:border-highlight/30"
                                             }`}
                                         >
                                             {level}

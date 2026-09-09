@@ -47,6 +47,12 @@ floor without overwriting the manual selection; markers remain visible across la
 and [raid-planner-markers](../src/features/quests/workspace/raid-planner-markers.ts)
 group positioned objectives. Coincident locations are merged with their objective
 IDs and distinct outlines; possible spawns retain a shared objective/quest color.
+Group colors cycle through the documented chart palette in
+[globals.css](../src/app/globals.css), referenced by
+[visualization colors](../src/lib/cfg/visualization-colors.ts). Extract/transit
+payloads carry CSS references to the separate `map-extract` and `map-transit`
+roles. The viewer resolves these roles in the application theme; upstream map
+artwork keeps its original colors.
 Filtering visited objectives precedes grouping so shared markers retain only the
 remaining objectives. Factory and Night Factory share artwork. Objectives without
 coordinates stay textual.

@@ -49,7 +49,7 @@ export function ItemDetailAcquisition({
                 const questMet = !offer.taskUnlock || completedQuests[offer.taskUnlock.id] === true;
                 const available = loyaltyMet && questMet;
                 return (
-                    <div key={offer.id} className="bg-black/10 px-3 py-3">
+                    <div key={offer.id} className="bg-shadow/10 px-3 py-3">
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                             <div className="flex min-w-48 flex-1 items-center gap-2.5">
                                 {offer.trader.imageLink ? (
@@ -59,7 +59,7 @@ export function ItemDetailAcquisition({
                                         className="h-8 w-8 rounded-full object-cover"
                                     />
                                 ) : (
-                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5">
+                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-highlight/5">
                                         <ShoppingCart size={14} />
                                     </span>
                                 )}
@@ -68,7 +68,7 @@ export function ItemDetailAcquisition({
                                         <span className="text-sm font-medium text-foreground">
                                             {offer.trader.name}
                                         </span>
-                                        <span className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                        <span className="rounded bg-highlight/5 px-1.5 py-0.5 text-[10px] text-muted-foreground">
                                             {offer.kind === "buy" ? "Buy" : "Barter"}
                                         </span>
                                         <AvailabilityBadge available={available} />
@@ -183,7 +183,7 @@ function CostItem({
 
 function ToolBadge() {
     return (
-        <span className="shrink-0 rounded bg-sky-400/10 px-1 py-0.5 text-[9px] font-bold uppercase text-sky-200">
+        <span className="shrink-0 rounded bg-info/10 px-1 py-0.5 text-[9px] font-bold uppercase text-info">
             Tool
         </span>
     );
@@ -204,23 +204,23 @@ function RecommendationBadge({ plan, unstable }: { plan: AcquisitionPlan; unstab
                 : "Unpriced";
     const classes =
         plan.method === "craft"
-            ? "bg-orange-400/10 text-orange-200"
+            ? "bg-acquisition-craft/10 text-acquisition-craft"
             : plan.method === "trader"
-              ? "bg-purple-400/10 text-purple-200"
+              ? "bg-acquisition-trader/10 text-acquisition-trader"
             : plan.method === "barter"
-              ? "bg-sky-400/10 text-sky-200"
+              ? "bg-acquisition-barter/10 text-acquisition-barter"
             : plan.method === "flea"
-                ? "bg-tarkov-green/10 text-tarkov-green"
+                ? "bg-acquisition-flea/10 text-acquisition-flea"
                 : plan.method === "sell"
-                  ? "bg-yellow-300/10 text-yellow-200"
-                : "bg-white/5 text-muted-foreground";
+                  ? "bg-acquisition-sell-value/10 text-acquisition-sell-value"
+                : "bg-highlight/5 text-muted-foreground";
     return (
         <span className="flex flex-wrap items-center gap-1.5">
             <span className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-bold uppercase ${classes}`}>
                 {label}
             </span>
             {unstable && plan.method === "flea" && plan.totalCost !== null && (
-                <span className="text-[10px] font-normal text-amber-300">(value unstable)</span>
+                <span className="text-[10px] font-normal text-warning">(value unstable)</span>
             )}
             {plan.method === "sell" && plan.totalCost !== null && (
                 <span className="text-[10px] font-normal text-muted-foreground">(sell value)</span>
@@ -264,7 +264,7 @@ function DirectPurchaseSummary({
                     : `${currencySymbol}${offer.price.toLocaleString()}`}
             </span>
             <span className="flex items-center gap-2">
-                <span className="font-mono text-base font-semibold text-white">1 ×</span>
+                <span className="font-mono text-base font-semibold text-foreground">1 ×</span>
                 {outputImageLink && (
                     <img src={outputImageLink} alt="" className="h-10 w-10 object-contain" />
                 )}
@@ -276,7 +276,7 @@ function DirectPurchaseSummary({
 function AvailabilityBadge({ available }: { available: boolean }) {
     return (
         <span
-            className={available ? "text-tarkov-green" : "text-red-400"}
+            className={available ? "text-success" : "text-danger"}
             title={available ? "Available" : "Locked"}
             aria-label={available ? "Available" : "Locked"}
         >
@@ -297,7 +297,7 @@ function LockedReasons({
     currentLoyalty: number;
 }) {
     return (
-        <span className="flex flex-wrap items-center gap-x-1 text-[10px] text-amber-200">
+        <span className="flex flex-wrap items-center gap-x-1 text-[10px] text-warning">
             {!loyaltyMet && (
                 <span>
                     Needs LL{offer.minTraderLevel} (current LL{currentLoyalty})
@@ -309,7 +309,7 @@ function LockedReasons({
                     Needs{" "}
                     <Link
                         href={getQuestDeepLinkHref(offer.taskUnlock.id)}
-                        className="underline decoration-amber-200/30 underline-offset-2 hover:text-foreground"
+                        className="underline decoration-warning/30 underline-offset-2 hover:text-foreground"
                     >
                         {offer.taskUnlock.name}
                     </Link>

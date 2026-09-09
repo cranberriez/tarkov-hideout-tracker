@@ -36,8 +36,8 @@ export function RecipePreviewCard({
     0,
   );
   return (
-    <span className="block min-w-0 flex-1 overflow-hidden rounded-md border border-white/15 bg-[#05070a] shadow-[0_18px_55px_rgba(0,0,0,0.8)]">
-      <span className="flex items-center gap-2 border-b border-white/10 bg-white/[0.035] px-3 py-2">
+    <span className="block min-w-0 flex-1 overflow-hidden rounded-md border border-highlight/15 bg-[var(--background)] shadow-[0_18px_55px_color-mix(in_oklab,_var(--shadow)_80%,_transparent)]">
+      <span className="flex items-center gap-2 border-b border-highlight/10 bg-highlight/[0.035] px-3 py-2">
         <RouteIcon method={preview.kind} preview filled />
         {source?.imageLink && (
           <Image
@@ -50,7 +50,7 @@ export function RecipePreviewCard({
           />
         )}
         <span className="min-w-0">
-          <span className="block truncate text-[11px] font-semibold text-white">
+          <span className="block truncate text-[11px] font-semibold text-foreground">
             {source?.name ??
               (preview.kind === "craft" ? "Unknown station" : "Unknown trader")}
             {barter
@@ -71,13 +71,13 @@ export function RecipePreviewCard({
         <span className="mb-1 block text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
           Required items
         </span>
-        <span className="block rounded bg-white/[0.035] px-2">
+        <span className="block rounded bg-highlight/[0.035] px-2">
           {preview.requiredItems.map((requirement, index) => {
             const item = routeContext.itemById[requirement.itemId];
             return (
               <span
                 key={`${requirement.itemId}:${requirement.isTool === true}:${index}`}
-                className="flex h-9 items-center gap-2 border-t border-white/5 first:border-t-0"
+                className="flex h-9 items-center gap-2 border-t border-highlight/5 first:border-t-0"
               >
                 {item?.iconLink ? (
                   <Image
@@ -104,7 +104,7 @@ export function RecipePreviewCard({
                     ? "Trader"
                     : requirement.method}
                 </span>
-                <span className="w-14 text-right font-mono text-[9px] text-tarkov-green">
+                <span className="w-14 text-right font-mono text-[9px] text-brand">
                   {requirement.isTool
                     ? "Excluded"
                     : formatRoundedRoubles(requirement.totalCost)}
@@ -112,13 +112,13 @@ export function RecipePreviewCard({
               </span>
             );
           })}
-          <span className="flex items-center justify-between border-t border-white/10 py-1 font-mono text-[9px]">
-            <span className="text-orange-300">
+          <span className="flex items-center justify-between border-t border-highlight/10 py-1 font-mono text-[9px]">
+            <span className="text-warning">
               {preview.kind === "craft" && preview.durationSeconds > 0
                 ? `Time ${formatDuration(preview.durationSeconds)}`
                 : ""}
             </span>
-            <span className="font-semibold text-tarkov-green">
+            <span className="font-semibold text-brand">
               Total {formatRoundedRoubles(totalCost)}
             </span>
           </span>

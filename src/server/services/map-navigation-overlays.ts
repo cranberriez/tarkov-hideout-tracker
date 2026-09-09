@@ -64,7 +64,7 @@ export async function getMapNavigationMarkers(mapKey: string): Promise<MapOverla
             label: extract.name,
             title: extract.name,
             descriptions: ["PMC extract"],
-            color: "#54d66a",
+            color: "var(--map-extract)",
         }));
     const transits: MapOverlayMarker[] = chunk.transits.map((transit) => ({
         id: `transit:${chunk.map.id}:${transit.id}`,
@@ -75,7 +75,7 @@ export async function getMapNavigationMarkers(mapKey: string): Promise<MapOverla
         label: transit.name,
         title: transit.name,
         descriptions: [`Transit to ${transit.destinationMapName}`],
-        color: "#f59e0b",
+        color: "var(--map-transit)",
     }));
 
     return [...extracts, ...transits];

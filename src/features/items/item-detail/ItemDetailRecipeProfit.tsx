@@ -26,7 +26,7 @@ export function ItemDetailRecipeProfit({
                         Calculating profit and ingredient routes…
                     </span>
                 ) : error ? (
-                    <span className="text-[11px] text-amber-200">{error}</span>
+                    <span className="text-[11px] text-warning">{error}</span>
                 ) : evaluation ? (
                     <>
                         <Metric label="Cost" value={formatPrice(evaluation.cost)} />
@@ -52,7 +52,7 @@ export function ItemDetailRecipeProfit({
 
             <Link
                 href={`${route}?recipe=${encodeURIComponent(recipeId)}`}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded border border-white/10 bg-white/[0.035] px-2.5 py-1.5 text-[11px] font-semibold text-foreground transition-colors hover:border-tarkov-green/40 hover:text-tarkov-green"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded border border-highlight/10 bg-highlight/[0.035] px-2.5 py-1.5 text-[11px] font-semibold text-foreground transition-colors hover:border-brand/40 hover:text-brand"
             >
                 Profit breakdown
                 <ExternalLink size={11} />
@@ -93,5 +93,5 @@ function formatSignedPrice(value: number | null) {
 
 function profitTone(value: number | null) {
     if (value === null || value === 0) return "text-muted-foreground";
-    return value > 0 ? "text-tarkov-green" : "text-red-300";
+    return value > 0 ? "text-success" : "text-danger";
 }

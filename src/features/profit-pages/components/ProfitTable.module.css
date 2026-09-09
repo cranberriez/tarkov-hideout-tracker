@@ -1,5 +1,5 @@
 .table {
-	border: 1px solid rgb(255 255 255 / 0.1);
+	border: 1px solid color-mix(in oklab, var(--highlight) 10%, transparent);
 	border-radius: 6px;
 	background: var(--card-bg);
 }
@@ -10,8 +10,8 @@
 }
 .header {
 	padding: 8px 0;
-	border-bottom: 1px solid rgb(255 255 255 / 0.1);
-	background: rgb(0 0 0 / 0.3);
+	border-bottom: 1px solid color-mix(in oklab, var(--highlight) 10%, transparent);
+	background: color-mix(in oklab, var(--shadow) 30%, transparent);
 	font-size: 11px;
 	font-weight: 600;
 	text-transform: uppercase;
@@ -33,8 +33,8 @@
 	align-items: center;
 	justify-content: center;
 	gap: 4px;
-	border-right: 1px solid rgb(255 255 255 / 0.05);
-	background: rgb(0 0 0 / 0.1);
+	border-right: 1px solid color-mix(in oklab, var(--highlight) 5%, transparent);
+	background: color-mix(in oklab, var(--shadow) 10%, transparent);
 }
 .source {
 	display: flex;
@@ -49,7 +49,7 @@
 	align-items: center;
 	justify-content: center;
 	gap: 2px;
-	border-right: 1px solid rgb(255 255 255 / 0.05);
+	border-right: 1px solid color-mix(in oklab, var(--highlight) 5%, transparent);
 	padding: 0 8px;
 	text-align: center;
 }
@@ -58,7 +58,7 @@
 }
 .output {
 	min-width: 0;
-	border-right: 1px solid rgb(255 255 255 / 0.05);
+	border-right: 1px solid color-mix(in oklab, var(--highlight) 5%, transparent);
 }
 .ingredients {
 	display: flex;
@@ -76,7 +76,7 @@
 }
 
 .virtualRow {
-	border-bottom: 1px solid rgb(255 255 255 / 0.1);
+	border-bottom: 1px solid color-mix(in oklab, var(--highlight) 10%, transparent);
 }
 
 @media (max-width: 1535px) {
@@ -91,7 +91,7 @@
 		gap: 8px;
 		padding: 12px;
 		margin-bottom: 12px;
-		border: 1px solid rgb(255 255 255 / 0.1);
+		border: 1px solid color-mix(in oklab, var(--highlight) 10%, transparent);
 		border-radius: 6px;
 	}
 	.columnLabel {
@@ -107,18 +107,18 @@
 	}
 	.sortControl button {
 		min-height: 44px;
-		border: 1px solid rgb(255 255 255 / 0.1);
+		border: 1px solid color-mix(in oklab, var(--highlight) 10%, transparent);
 	}
 	.sortControl button[aria-pressed="true"] {
-		background: rgb(157 171 116 / 0.12);
-		border-color: rgb(157 171 116 / 0.5);
+		background: color-mix(in oklab, var(--brand) 12%, transparent);
+		border-color: color-mix(in oklab, var(--brand) 50%, transparent);
 	}
 	.virtualRow {
 		padding-bottom: 12px;
 		border: 0;
 	}
 	.virtualRow > div {
-		border: 1px solid rgb(255 255 255 / 0.12);
+		border: 1px solid color-mix(in oklab, var(--highlight) 12%, transparent);
 		border-radius: 6px;
 		background-color: var(--card-bg);
 	}
@@ -139,7 +139,7 @@
 		background: transparent;
 	}
 	.actions button:focus-visible {
-		outline: 2px solid var(--accent-green);
+	outline: 2px solid var(--brand);
 		outline-offset: -2px;
 	}
 	.sourceCell {
@@ -171,7 +171,7 @@
 		border: 0;
 	}
 	.virtualRow > div[data-output-locked="true"] {
-		border-color: rgb(248 113 113 / 0.65);
+		border-color: color-mix(in oklab, var(--danger) 65%, transparent);
 	}
 	.headline {
 		display: flex;
@@ -181,7 +181,7 @@
 	.ingredients {
 		grid-column: 1 / -1;
 		padding: 8px 12px;
-		border-top: 1px solid rgb(255 255 255 / 0.08);
+		border-top: 1px solid color-mix(in oklab, var(--highlight) 8%, transparent);
 	}
 	.sectionLabel {
 		display: block;
@@ -193,9 +193,9 @@
 		display: grid;
 		grid-column: 1 / -1;
 		grid-template-columns: repeat(4, minmax(0, 1fr));
-		border-top: 1px solid rgb(255 255 255 / 0.08);
+		border-top: 1px solid color-mix(in oklab, var(--highlight) 8%, transparent);
 		padding: 10px 0;
-		background: rgb(0 0 0 / 0.12);
+		background: color-mix(in oklab, var(--shadow) 12%, transparent);
 	}
 	.metrics > div {
 		min-width: 0;

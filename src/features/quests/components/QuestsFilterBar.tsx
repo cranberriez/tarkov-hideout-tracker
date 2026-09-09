@@ -73,11 +73,11 @@ export function QuestsFilterBar() {
                 <DropdownMenuTrigger asChild>
                     <button
                         type="button"
-                        className="flex shrink-0 items-center gap-2 rounded-sm border border-white/10 bg-black/20 px-3 py-2 text-xs font-medium text-gray-300 transition-colors hover:border-white/30 hover:bg-black/40 hover:text-white disabled:cursor-not-allowed disabled:border-white/5 disabled:bg-black/10 disabled:text-gray-600 disabled:hover:border-white/5 disabled:hover:bg-black/10 disabled:hover:text-gray-600"
+                        className="flex shrink-0 items-center gap-2 rounded-sm border border-highlight/10 bg-shadow/20 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:border-highlight/30 hover:bg-shadow/40 hover:text-foreground disabled:cursor-not-allowed disabled:border-highlight/5 disabled:bg-shadow/10 disabled:text-subtle-foreground disabled:hover:border-highlight/5 disabled:hover:bg-shadow/10 disabled:hover:text-subtle-foreground"
                         title="Sort quests"
                     >
                         Sort: {sortLabel}
-                        <ChevronDown size={13} className="text-gray-500" />
+                        <ChevronDown size={13} className="text-subtle-foreground" />
                     </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
@@ -85,7 +85,7 @@ export function QuestsFilterBar() {
                         <DropdownMenuItem
                             key={option.value}
                             onSelect={() => setSortMode(option.value)}
-                            className={sortMode === option.value ? "text-tarkov-green" : ""}
+                            className={sortMode === option.value ? "text-brand" : ""}
                         >
                             {option.label}
                         </DropdownMenuItem>
@@ -99,14 +99,14 @@ export function QuestsFilterBar() {
                 <DropdownMenuTrigger asChild>
                     <button
                         type="button"
-                        className="flex shrink-0 items-center gap-2 rounded-sm border border-white/10 bg-black/20 px-3 py-2 text-xs font-medium text-gray-300 transition-colors hover:border-white/30 hover:bg-black/40 hover:text-white"
+                        className="flex shrink-0 items-center gap-2 rounded-sm border border-highlight/10 bg-shadow/20 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:border-highlight/30 hover:bg-shadow/40 hover:text-foreground"
                     >
                         View Settings
-                        <ChevronDown size={13} className="text-gray-500" />
+                        <ChevronDown size={13} className="text-subtle-foreground" />
                     </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="min-w-52">
-                    <DropdownMenuLabel className="px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+                    <DropdownMenuLabel className="px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-subtle-foreground">
                         Quests
                     </DropdownMenuLabel>
                     <DropdownMenuCheckboxItem
@@ -160,7 +160,7 @@ export function QuestsFilterBar() {
                         Hide Pre-Req Links
                     </DropdownMenuCheckboxItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+                    <DropdownMenuLabel className="px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-subtle-foreground">
                         Items
                     </DropdownMenuLabel>
                     <DropdownMenuCheckboxItem
@@ -234,15 +234,15 @@ function ActiveDepthInput({
     };
 
     return (
-        <div className="flex shrink-0 items-center gap-2 text-xs font-medium text-gray-300">
+        <div className="flex shrink-0 items-center gap-2 text-xs font-medium text-foreground">
             <span className="px-1">Depth</span>
-            <div className="flex overflow-hidden rounded-sm border border-white/10 bg-black/20">
+            <div className="flex overflow-hidden rounded-sm border border-highlight/10 bg-shadow/20">
                 <button
                     type="button"
                     onClick={() => step(-1)}
                     disabled={value <= 0}
                     title="Decrease depth"
-                    className="grid h-8 w-8 place-items-center text-gray-300 transition-colors hover:bg-white/8 hover:text-white disabled:cursor-not-allowed disabled:text-gray-700 disabled:hover:bg-transparent"
+                    className="grid h-8 w-8 place-items-center text-foreground transition-colors hover:bg-highlight/8 hover:text-foreground disabled:cursor-not-allowed disabled:text-subtle-foreground disabled:hover:bg-transparent"
                 >
                     <Minus size={13} />
                 </button>
@@ -263,13 +263,13 @@ function ActiveDepthInput({
                             step(-1);
                         }
                     }}
-                    className="h-8 w-11 border-x border-white/10 bg-white/5 text-center font-mono text-base font-semibold text-white outline-none transition-colors focus:bg-black/50"
+                    className="h-8 w-11 border-x border-highlight/10 bg-highlight/5 text-center font-mono text-base font-semibold text-foreground outline-none transition-colors focus:bg-shadow/50"
                 />
                 <button
                     type="button"
                     onClick={() => step(1)}
                     title="Increase depth"
-                    className="grid h-8 w-8 place-items-center text-gray-300 transition-colors hover:bg-white/8 hover:text-white"
+                    className="grid h-8 w-8 place-items-center text-foreground transition-colors hover:bg-highlight/8 hover:text-foreground"
                 >
                     <Plus size={13} />
                 </button>

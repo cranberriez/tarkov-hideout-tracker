@@ -22,16 +22,16 @@ export function DataLastUpdated({
 	const hasAnyTimestamp = !!formatted.stations || !!formatted.items;
 
 	return (
-		<div className="flex items-center mt-4 gap-2 text-xs text-gray-500">
+		<div className="flex items-center mt-4 gap-2 text-xs text-subtle-foreground">
 			{hasAnyTimestamp && (
 				<div className="flex flex-wrap items-center justify-start gap-2">
 					{formatted.stations && (
-						<span className="px-2 py-1 rounded-full border border-border-color bg-black/30 text-[10px] font-mono uppercase tracking-wide">
+						<span className="px-2 py-1 rounded-full border border-border-color bg-shadow/30 text-[10px] font-mono uppercase tracking-wide">
 							Hideout data · {formatted.stations}
 						</span>
 					)}
 					{formatted.items && (
-						<span className="px-2 py-1 rounded-full border border-border-color bg-black/30 text-[10px] font-mono uppercase tracking-wide">
+						<span className="px-2 py-1 rounded-full border border-border-color bg-shadow/30 text-[10px] font-mono uppercase tracking-wide">
 							Item data · {formatted.items}
 						</span>
 					)}

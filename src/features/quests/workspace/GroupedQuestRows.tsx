@@ -27,9 +27,9 @@ export function GroupedQuestRows({ model, collapsedGroupIds, onToggleGroup, sele
         if (entry.kind === "essential-category") {
             return (
                 <section key={entry.id}>
-                    <div className="flex h-7 items-center border-b border-white/8 bg-[#0f1012] px-3 pl-7 text-[9px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+                    <div className="flex h-7 items-center border-b border-highlight/8 bg-[var(--card-bg)] px-3 pl-7 text-[9px] font-semibold uppercase tracking-[0.16em] text-subtle-foreground">
                         <span className="min-w-0 flex-1 truncate">Essential</span>
-                        <span className="font-mono font-normal tracking-normal text-gray-600">{entry.count}</span>
+                        <span className="font-mono font-normal tracking-normal text-subtle-foreground">{entry.count}</span>
                     </div>
                     {renderEntries(entry.entries)}
                 </section>
@@ -38,11 +38,11 @@ export function GroupedQuestRows({ model, collapsedGroupIds, onToggleGroup, sele
         const condensed = collapsedGroupIds.has(entry.id);
         const questIds = condensed ? entry.activeQuestIds : entry.questIds;
         return (
-            <section key={entry.id} className="border-x border-b border-amber-300/15 bg-amber-300/[0.015]">
-                <button type="button" aria-expanded={!condensed} onClick={() => onToggleGroup(entry.id)} className="flex h-8 w-full items-center gap-2 border-y border-amber-300/18 bg-amber-300/[0.045] px-3 text-left text-[9px] font-semibold uppercase tracking-[0.15em] text-amber-200/70 transition-colors hover:bg-amber-300/[0.08] hover:text-amber-100 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-amber-200">
+            <section key={entry.id} className="border-x border-b border-warning/15 bg-warning/[0.015]">
+                <button type="button" aria-expanded={!condensed} onClick={() => onToggleGroup(entry.id)} className="flex h-8 w-full items-center gap-2 border-y border-warning/18 bg-warning/[0.045] px-3 text-left text-[9px] font-semibold uppercase tracking-[0.15em] text-warning/70 transition-colors hover:bg-warning/[0.08] hover:text-warning focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-warning">
                     {condensed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                     <span className="min-w-0 flex-1 truncate">{entry.title}</span>
-                    <span className="font-mono font-normal tracking-normal text-amber-200/40">{condensed ? `${questIds.length} active` : `${questIds.length} quests`}</span>
+                    <span className="font-mono font-normal tracking-normal text-warning/40">{condensed ? `${questIds.length} active` : `${questIds.length} quests`}</span>
                 </button>
                 {renderEntries(questIds.map((questId) => ({ kind: "quest", questId })))}
             </section>

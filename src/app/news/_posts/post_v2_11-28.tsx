@@ -8,11 +8,11 @@ export function Post_v2_11_28() {
                 Welcome to Version 2.0! This update brings significant changes to how you track your
                 hideout progress, focusing on more granular control and better inventory management.
             </p>
-            <p className="p-2 bg-secondary/20 text-center border rounded-sm border-tarkov-green-dim">
+            <p className="p-2 bg-secondary/20 text-center border rounded-sm border-brand-hover">
                 Report bugs or request features on the{" "}
                 <a
                     href="https://github.com/cranberriez/tarkov-hideout-tracker/issues"
-                    className="underline hover:text-tarkov-green"
+                    className="underline hover:text-brand"
                 >
                     GitHub
                 </a>
@@ -53,7 +53,7 @@ export function Post_v2_11_28() {
             <p>Stations can display 3 different messages to indicate their status.</p>
             <ul>
                 <li>
-                    <span className="font-mono uppercase text-tarkov-green">Ready to Upgrade </span>{" "}
+                    <span className="font-mono uppercase text-brand">Ready to Upgrade </span>{" "}
                     This station is ready to be upgraded and will consume the items shown when
                     upgrading.
                 </li>
@@ -63,7 +63,7 @@ export function Post_v2_11_28() {
                     as a Red badge with a lock icon.
                 </li>
                 <li>
-                    <span className="font-mono uppercase text-red-400">Illegal State </span> This
+                    <span className="font-mono uppercase text-danger">Illegal State </span> This
                     station&apos;s current level requires other stations at levels they are currently not
                     at.
                 </li>
@@ -97,7 +97,7 @@ export function Post_v2_11_28() {
                 you know if you can safely use your FiR items for a station upgrade or if you should
                 save them for quests.
             </p>
-            <p className="bg-white/5 p-1 pl-2 border-l border-tarkov-green-dim">
+            <p className="bg-highlight/5 p-1 pl-2 border-l border-brand-hover">
                 Found in Raid (FiR) items are only used to fulfill non-FiR requirements if no other
                 station requires the FiR version. In most cases we still display the total number of
                 FiR items you have.
@@ -143,7 +143,7 @@ export function Post_v2_11_28() {
                 Report Bugs or Request Features on the{" "}
                 <a
                     href="https://github.com/cranberriez/tarkov-hideout-tracker/issues"
-                    className="underline hover:text-tarkov-green"
+                    className="underline hover:text-brand"
                 >
                     GitHub
                 </a>

@@ -26,11 +26,11 @@ export function RecipeChain({
     (plan) => plan.method === "barter" || plan.method === "craft",
   );
   return (
-    <div className="border-t border-white/10 bg-black/15">
+    <div className="border-t border-highlight/10 bg-shadow/15">
       {recipeBranches.map((plan, index) => (
         <div
           key={`${plan.itemId}:${plan.isTool === true}:${index}`}
-          className="border-t border-white/10 first:border-t-0"
+          className="border-t border-highlight/10 first:border-t-0"
         >
           <RecipeChainNode
             plan={plan}
@@ -82,11 +82,11 @@ function RecipeChainNode({
   return (
     <div>
       <div
-        className={`group/chain flex min-h-10 items-center gap-2 pr-3 hover:bg-white/[0.025] ${root ? "min-h-12 bg-white/[0.02]" : ""}`}
+        className={`group/chain flex min-h-10 items-center gap-2 pr-3 hover:bg-highlight/[0.025] ${root ? "min-h-12 bg-highlight/[0.02]" : ""}`}
         style={{ paddingLeft: `${12 + Math.min(depth, 8) * 24}px` }}
       >
         {!root && (
-          <CornerDownRight className="size-3.5 shrink-0 text-white/25" />
+          <CornerDownRight className="size-3.5 shrink-0 text-foreground/25" />
         )}
         {item?.iconLink ? (
           <Image
@@ -110,7 +110,7 @@ function RecipeChainNode({
           </span>
         </span>
         {plan.isTool && (
-          <span className="rounded bg-sky-400 px-1 py-0.5 text-[7px] font-black uppercase text-black">
+          <span className="rounded bg-info px-1 py-0.5 text-[7px] font-black uppercase text-inverse">
             tool
           </span>
         )}
@@ -126,7 +126,7 @@ function RecipeChainNode({
           {plan.isTool ? "Excluded" : formatRoundedRoubles(plan.totalCost)}
         </span>
         {plan.durationSeconds > 0 && (
-          <span className="w-16 text-right font-mono text-[10px] text-orange-300">
+          <span className="w-16 text-right font-mono text-[10px] text-warning">
             {formatDuration(plan.durationSeconds)}
           </span>
         )}
@@ -142,7 +142,7 @@ function RecipeChainNode({
                   plan.sourceId as string,
                 )
               }
-              className="flex size-6 items-center justify-center rounded text-muted-foreground opacity-0 transition hover:bg-white/10 hover:text-tarkov-green group-hover/chain:opacity-100 focus:opacity-100"
+              className="flex size-6 items-center justify-center rounded text-muted-foreground opacity-0 transition hover:bg-highlight/10 hover:text-brand group-hover/chain:opacity-100 focus:opacity-100"
             >
               <ExternalLink className="size-3.5" />
             </button>

@@ -52,23 +52,23 @@ export function QuestListByTrader({
     }, [questIds, questsById]);
 
     if (groups.length === 0) {
-        return <div className="px-3 py-2 text-sm text-gray-500">{emptyMessage}</div>;
+        return <div className="px-3 py-2 text-sm text-subtle-foreground">{emptyMessage}</div>;
     }
 
     return (
-        <div className="divide-y divide-white/5">
+        <div className="divide-y divide-highlight/5">
             {groups.map((group) => (
                 <div key={group.trader.id} className="px-3 py-3">
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         {group.trader.imageLink && (
                             <img
                                 src={group.trader.imageLink}
                                 alt=""
-                                className="h-5 w-5 rounded-full border border-white/10"
+                                className="h-5 w-5 rounded-full border border-highlight/10"
                             />
                         )}
                         <span>{group.trader.name}</span>
-                        <span className="ml-auto text-[11px] tabular-nums text-gray-500">
+                        <span className="ml-auto text-[11px] tabular-nums text-subtle-foreground">
                             {group.quests.length}
                         </span>
                     </div>
@@ -80,8 +80,8 @@ export function QuestListByTrader({
                                     key={quest.id}
                                     className={
                                         highlighted
-                                            ? "rounded-sm border border-amber-400/30 bg-amber-500/10 px-2 py-1 text-sm text-amber-100"
-                                            : "rounded-sm border border-white/10 bg-black/20 px-2 py-1 text-sm text-gray-200"
+                                            ? "rounded-sm border border-warning/30 bg-warning/10 px-2 py-1 text-sm text-warning"
+                                            : "rounded-sm border border-highlight/10 bg-shadow/20 px-2 py-1 text-sm text-foreground"
                                     }
                                 >
                                     <span className="flex items-center gap-2">

@@ -1,97 +1,178 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Color contract: application UI uses these roles, never Tailwind's named palettes
+   or local color literals. CSS var(), currentColor, transparent, color-mix and
+   opacity variants are supported. RouteLoader artwork keeps its own colors;
+   PVE/PVP/seasonal identity colors live in src/lib/cfg/profile-colors.ts. */
 :root {
     --font-geist-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     --font-geist-mono: "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
-
-    /* Tarkov-esque Dark Theme */ /* Very dark gray/black */
-    --card-bg: oklch(0.1647 0.0042 285.94); /* Slightly lighter for cards */
-    --accent-green-dim: oklch(0.868 0.1558 144.09); /* Light green for text */
-    --accent-green: oklch(0.8003 0.1821 151.71);
-    --border-color: oklch(0.2739 0.0055 286.03);
     --radius: 0.625rem;
 
-    /* Single dark theme (no light mode) */
+    /* Surfaces: page/canvas, cards, then raised controls and popovers. Use opacity for overlays. */
     --background: oklch(0.1408 0.0044 285.82);
+    --card-bg: oklch(0.1647 0.0042 285.94);
+    --surface-raised: oklch(0.24 0.005 286);
+
+    /* Text hierarchy: primary content, supporting copy, then quiet metadata/disabled content. */
     --foreground: oklch(0.9219 0 0);
-
-    --card: oklch(0.26 0 0); /* slightly lighter than background, close to #0e0e10 */
-    --card-foreground: oklch(0.9 0 0); /* near #e5e5e5 */
-    --popover: oklch(0.26 0 0); /* same as card for consistency */
-    --popover-foreground: oklch(0.9 0 0);
-
-    /* Primary/secondary are subtle lifts above card, still neutral */
-    --primary: oklch(0.3 0 0);
-    --primary-foreground: oklch(0.92 0 0);
-    --secondary: oklch(0.24 0 0);
-    --secondary-foreground: oklch(0.92 0 0);
-
-    /* Muted/accent keep low contrast against background, relying on green accents where needed */
-    --muted: oklch(0.22 0 0);
     --muted-foreground: oklch(0.75 0 0);
-    --accent: oklch(0.28 0 0);
-    --accent-foreground: oklch(0.94 0 0);
+    --subtle-foreground: oklch(0.60 0.01 286);
 
-    --destructive: oklch(0.55 0.12 25); /* darker, less saturated red */
-    --border: oklch(0.28 0 0 / 1); /* close to #27272a */
-    --input: oklch(0.24 0 0 / 1);
-    --ring: oklch(0.5 0 0);
+    /* Neutral primitives: white overlays/borders, black scrims/shadows, dark text on bright fills. */
+    --highlight: #ffffff;
+    --shadow: #000000;
+    --inverse: var(--background);
 
-    /* Charts stay more colorful but pulled a bit darker to match theme */
-    --chart-1: oklch(0.5 0.18 260);
-    --chart-2: oklch(0.6 0.16 160);
-    --chart-3: oklch(0.6 0.16 80);
-    --chart-4: oklch(0.55 0.2 300);
-    --chart-5: oklch(0.55 0.22 20);
+    /* Brand: navigation, selection, links and primary actions. Change this to var(--accent-alternate) to trial tan; hover derives automatically. */
+    --brand: oklch(0.8003 0.1821 151.71);
+    --brand-hover: color-mix(in oklab, var(--brand) 85%, var(--highlight));
 
-    --sidebar: oklch(0.22 0 0);
-    --sidebar-foreground: oklch(0.9 0 0);
-    --sidebar-primary: oklch(0.3 0 0);
-    --sidebar-primary-foreground: oklch(0.94 0 0);
-    --sidebar-accent: oklch(0.26 0 0);
-    --sidebar-accent-foreground: oklch(0.94 0 0);
-    --sidebar-border: oklch(0.28 0 0 / 1);
-    --sidebar-ring: oklch(0.5 0 0);
+    /* Reserved alternate accent from Settings, retained for future brand experiments. */
+    --accent-alternate: #c7b99b;
+
+    /* Success: completed, satisfied, ready, positive profit. Intentionally independent of brand, even while the values match. */
+    --success: oklch(0.8003 0.1821 151.71);
+
+    /* Warning: unmet prerequisites, FiR attention, caution and partial/missing-data notices. */
+    --warning: oklch(0.828 0.16 84.429);
+
+    /* Danger: failed/error states, destructive actions and negative profit. */
+    --danger: oklch(0.704 0.191 22.216);
+
+    /* Information: active/in-progress states, pinned quests, informational links and notices. */
+    --info: oklch(0.746 0.16 232.661);
+
+    /* Special: prestige and milestone badges, exceptional/hidden quest annotations. */
+    --special: oklch(0.714 0.17 305.504);
+
+    /* Opaque status surfaces for panels/buttons; translucent variants use the base role with /opacity. */
+    --success-surface: color-mix(in oklab, var(--success) 15%, var(--card-bg));
+    --warning-surface: color-mix(in oklab, var(--warning) 15%, var(--card-bg));
+    --danger-surface: color-mix(in oklab, var(--danger) 15%, var(--card-bg));
+    --info-surface: color-mix(in oklab, var(--info) 15%, var(--card-bg));
+    --special-surface: color-mix(in oklab, var(--special) 15%, var(--card-bg));
+
+    /* Shared control outlines and neutral dividers. Highlight/opacity supports subtle separators. */
+    --border: oklch(0.28 0 0);
+    --border-color: var(--border);
+
+    /* Component-library roles reuse the same surfaces and text. Accent is the selected/hover surface, brand is its chromatic emphasis. */
+    --card: var(--card-bg);
+    --card-foreground: var(--foreground);
+    --popover: var(--surface-raised);
+    --popover-foreground: var(--foreground);
+    --primary: var(--surface-raised);
+    --primary-foreground: var(--foreground);
+    --secondary: var(--surface-raised);
+    --secondary-foreground: var(--foreground);
+    --muted: oklch(0.22 0 0);
+    --accent: color-mix(in oklab, var(--brand) 10%, var(--surface-raised));
+    --accent-foreground: var(--foreground);
+    --destructive: var(--danger);
+    --input: var(--surface-raised);
+    --ring: var(--brand);
+
+    /* Acquisition method identities: independent of brand, status and chart colors.
+       Shared by profit rows, route selectors, recipe previews and item details. */
+    --acquisition-craft: #fb923c; /* Orange: hideout crafting routes. */
+    --acquisition-barter: #38bdf8; /* Blue: trader barter exchanges. */
+    --acquisition-trader: #c084fc; /* Purple: direct trader purchases. */
+    --acquisition-flea: #34d399; /* Emerald: flea-market purchases. */
+    --acquisition-sell-value: #fde047; /* Yellow: sale/opportunity value used as ingredient cost. */
+
+    /* Visualization series: price history uses series 1; objective groups cycle through all five.
+       Labels, icons and outlines supplement these category colors. */
+    --chart-1: var(--success);
+    --chart-2: var(--info);
+    --chart-3: var(--warning);
+    --chart-4: var(--special);
+    --chart-5: var(--danger);
+
+    /* Map roles: objective fallback, extracts and transits; independent aliases allow map-only adjustments. */
+    --map-objective: var(--chart-1);
+    --map-extract: var(--success);
+    --map-transit: var(--warning);
+
+    /* Faction insignia stripes: blue/red reuse the information/danger pigments without tying their identity to brand. */
+    --faction-blue: var(--info);
+    --faction-red: var(--danger);
+
+    /* Sidebar roles reuse the shared component palette. */
+    --sidebar: var(--muted);
+    --sidebar-foreground: var(--foreground);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--foreground);
+    --sidebar-accent: var(--accent);
+    --sidebar-accent-foreground: var(--foreground);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--ring);
 }
 
 @theme inline {
+    --color-acquisition-craft: var(--acquisition-craft);
+    --color-acquisition-barter: var(--acquisition-barter);
+    --color-acquisition-trader: var(--acquisition-trader);
+    --color-acquisition-flea: var(--acquisition-flea);
+    --color-acquisition-sell-value: var(--acquisition-sell-value);
     --color-background: var(--background);
-    --color-card: var(--card-bg);
+    --color-surface-raised: var(--surface-raised);
     --color-foreground: var(--foreground);
-    --color-tarkov-green: var(--accent-green);
-    --color-tarkov-green-dim: var(--accent-green-dim);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-subtle-foreground: var(--subtle-foreground);
+    --color-highlight: var(--highlight);
+    --color-shadow: var(--shadow);
+    --color-inverse: var(--inverse);
+    --color-brand: var(--brand);
+    --color-brand-hover: var(--brand-hover);
+    --color-accent-alternate: var(--accent-alternate);
+    --color-success: var(--success);
+    --color-warning: var(--warning);
+    --color-danger: var(--danger);
+    --color-info: var(--info);
+    --color-special: var(--special);
+    --color-success-surface: var(--success-surface);
+    --color-warning-surface: var(--warning-surface);
+    --color-danger-surface: var(--danger-surface);
+    --color-info-surface: var(--info-surface);
+    --color-special-surface: var(--special-surface);
+    --color-border: var(--border);
     --color-border-color: var(--border-color);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --color-map-objective: var(--map-objective);
+    --color-map-extract: var(--map-extract);
+    --color-map-transit: var(--map-transit);
+    --color-faction-blue: var(--faction-blue);
+    --color-faction-red: var(--faction-red);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
     --font-sans: var(--font-geist-sans);
     --font-mono: var(--font-geist-mono);
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);
     --radius-lg: var(--radius);

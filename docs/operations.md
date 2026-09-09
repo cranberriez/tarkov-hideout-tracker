@@ -33,6 +33,7 @@ Run from the repository root. [package.json](../package.json) is the command own
 ```bash
 npm run docs:check
 npm run test:architecture
+npm run test:theme
 npm run test:contracts
 npm run lint
 npm run build
@@ -45,6 +46,9 @@ It ignores external URLs, does not check backticked filenames, and is not a clai
 that remote services are available. Use real Markdown links for source owners.
 
 `test:architecture` runs [import-boundary checks](../src/architecture/data-import-boundaries.test.ts).
+`test:theme` checks [color conventions](../src/architecture/theme-colors.test.ts):
+application source uses the documented global palette, with explicit loading-art
+and profile-identity exceptions.
 The existing [ESLint configuration](../eslint.config.mjs) also enforces selected
 import restrictions. `test:contracts` runs repository-injected query tests for
 bounded reads, partial failures, and Kappa's single-quest call behavior. Neither

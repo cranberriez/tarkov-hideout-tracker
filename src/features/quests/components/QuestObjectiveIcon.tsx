@@ -45,26 +45,26 @@ export function QuestObjectiveIcon({
     switch (type) {
         case "giveItem":
         case "plantItem":
-            return <Package size={size} className={cn("text-tarkov-green/60", sharedClassName)} aria-hidden="true" />;
+            return <Package size={size} className={cn("text-brand/60", sharedClassName)} aria-hidden="true" />;
         case "findItem":
         case "findQuestItem":
         case "pickupQuestItem":
-            return <Search size={size} className={cn("text-blue-400/60", sharedClassName)} aria-hidden="true" />;
+            return <Search size={size} className={cn("text-info/60", sharedClassName)} aria-hidden="true" />;
         case "shoot":
-            return <Crosshair size={size} className={cn("text-red-400/60", sharedClassName)} aria-hidden="true" />;
+            return <Crosshair size={size} className={cn("text-danger/60", sharedClassName)} aria-hidden="true" />;
         case "extract":
-            return <DoorOpen size={size} className={cn("text-yellow-400/60", sharedClassName)} aria-hidden="true" />;
+            return <DoorOpen size={size} className={cn("text-warning/60", sharedClassName)} aria-hidden="true" />;
         case "visit":
         case "mark":
         case "locate":
-            return <MapPin size={size} className={cn("text-purple-400/60", sharedClassName)} aria-hidden="true" />;
+            return <MapPin size={size} className={cn("text-special/60", sharedClassName)} aria-hidden="true" />;
         case "buildItem":
-            return <Hammer size={size} className={cn("text-orange-400/60", sharedClassName)} aria-hidden="true" />;
+            return <Hammer size={size} className={cn("text-warning/60", sharedClassName)} aria-hidden="true" />;
         case "useItem":
         case "skill":
         case "playerLevel":
-            return <Zap size={size} className={cn("text-cyan-400/60", sharedClassName)} aria-hidden="true" />;
+            return <Zap size={size} className={cn("text-info/60", sharedClassName)} aria-hidden="true" />;
         default:
-            return <ChevronRight size={size} className={cn("text-gray-600", sharedClassName)} aria-hidden="true" />;
+            return <ChevronRight size={size} className={cn("text-subtle-foreground", sharedClassName)} aria-hidden="true" />;
     }
 }

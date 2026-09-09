@@ -10,9 +10,9 @@ test("planner navigation markers include only PMC extracts and transits", async 
     const transits = markers.filter((marker) => marker.kind === "transit");
     assert.ok(extracts.length > 0);
     assert.ok(transits.length > 0);
-    assert.ok(extracts.every((marker) => marker.color === "#54d66a"));
+    assert.ok(extracts.every((marker) => marker.color === "var(--map-extract)"));
     assert.ok(extracts.every((marker) => marker.descriptions.includes("PMC extract")));
-    assert.ok(transits.every((marker) => marker.color === "#f59e0b"));
+    assert.ok(transits.every((marker) => marker.color === "var(--map-transit)"));
     assert.ok(markers.every((marker) => marker.label.length > 0));
 });
 

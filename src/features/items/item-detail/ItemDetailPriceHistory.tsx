@@ -116,7 +116,7 @@ export function ItemDetailPriceHistory({
                         setError(null);
                         setRetry((value) => value + 1);
                     }}
-                    className="flex items-center gap-2 rounded-md border border-border-color px-3 py-2 text-xs text-foreground hover:bg-white/5"
+                    className="flex items-center gap-2 rounded-md border border-border-color px-3 py-2 text-xs text-foreground hover:bg-highlight/5"
                 >
                     <RefreshCw size={12} /> Try again
                 </button>
@@ -151,7 +151,7 @@ export function ItemDetailPriceHistory({
                         Aggregate reference · {new Date(displayPoint.timestamp).toLocaleString()} · minimum {formatRoubles(displayPoint.priceMin)} · {displayPoint.offerCount ?? "unknown"} offers
                     </div>
                 </div>
-                <div className="flex rounded-sm border border-border-color bg-black/15 p-0.5">
+                <div className="flex rounded-sm border border-border-color bg-shadow/15 p-0.5">
                     {RANGE_LABELS.map((option) => (
                         <button
                             key={option.value}
@@ -162,7 +162,7 @@ export function ItemDetailPriceHistory({
                             }}
                             className={`rounded px-2.5 py-1.5 text-[11px] transition-colors ${
                                 range === option.value
-                                    ? "bg-white/10 text-foreground"
+                                    ? "bg-highlight/10 text-foreground"
                                     : "text-muted-foreground hover:text-foreground"
                             }`}
                         >
@@ -256,7 +256,7 @@ function PriceChart({
     };
 
     return (
-        <div className="mt-3 overflow-hidden rounded-lg border border-border-color bg-black/15">
+        <div className="mt-3 overflow-hidden rounded-lg border border-border-color bg-shadow/15">
             <svg
                 viewBox={`0 0 ${width} ${height}`}
                 className="block h-auto w-full touch-none"
@@ -270,8 +270,8 @@ function PriceChart({
             >
                 <defs>
                     <linearGradient id="price-history-area" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="rgb(144 182 97)" stopOpacity="0.25" />
-                        <stop offset="100%" stopColor="rgb(144 182 97)" stopOpacity="0" />
+                        <stop offset="0%" stopColor="var(--chart-1)" stopOpacity="0.25" />
+                        <stop offset="100%" stopColor="var(--chart-1)" stopOpacity="0" />
                     </linearGradient>
                 </defs>
                 {[0.2, 0.4, 0.6, 0.8].map((ratio) => (
@@ -282,14 +282,14 @@ function PriceChart({
                         y1={height * ratio}
                         y2={height * ratio}
                         stroke="currentColor"
-                        className="text-white/[0.055]"
+                        className="text-foreground/[0.055]"
                     />
                 ))}
                 <path d={area} fill="url(#price-history-area)" />
                 <path
                     d={path}
                     fill="none"
-                    stroke="rgb(144 182 97)"
+                    stroke="var(--chart-1)"
                     strokeWidth="2.5"
                     vectorEffect="non-scaling-stroke"
                 />
@@ -303,15 +303,15 @@ function PriceChart({
                             stroke="currentColor"
                             strokeWidth="1"
                             strokeDasharray="4 4"
-                            className="text-white/30"
+                            className="text-foreground/30"
                             vectorEffect="non-scaling-stroke"
                         />
                         <circle
                             cx={x(activePoint.timestamp)}
                             cy={y(activePoint.price)}
                             r="4"
-                            fill="rgb(144 182 97)"
-                            stroke="rgb(10 10 10)"
+                            fill="var(--chart-1)"
+                            stroke="var(--shadow)"
                             strokeWidth="2"
                             vectorEffect="non-scaling-stroke"
                         />
@@ -345,7 +345,7 @@ function RangeInsight({
 }) {
     const Icon = trend === "up" ? ArrowUpRight : trend === "down" ? ArrowDownRight : ArrowRight;
     return (
-        <div className="rounded-md border border-border-color bg-black/10 p-2.5">
+        <div className="rounded-md border border-border-color bg-shadow/10 p-2.5">
             <div>
                 <div className="text-[10px] text-muted-foreground">Direction</div>
                 <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs font-medium text-foreground">
@@ -371,12 +371,12 @@ function ComparisonInsight({
     rows: Array<{ label: string; value: string; icon?: LucideIcon }>;
 }) {
     return (
-        <div className="overflow-hidden rounded-md border border-border-color bg-black/10">
+        <div className="overflow-hidden rounded-md border border-border-color bg-shadow/10">
             <div className="p-2.5">
                 <div className="text-[10px] text-muted-foreground">{label}</div>
                 <div className="mt-1 text-xs font-medium leading-tight text-foreground">{summary}</div>
             </div>
-            <div className="divide-y divide-border-color/60 border-t border-border-color/60 bg-white/[0.025]">
+            <div className="divide-y divide-border-color/60 border-t border-border-color/60 bg-highlight/[0.025]">
                 {rows.map((row) => (
                     <div key={row.label} className="flex items-center justify-between gap-2 px-2.5 py-1.5">
                         <span

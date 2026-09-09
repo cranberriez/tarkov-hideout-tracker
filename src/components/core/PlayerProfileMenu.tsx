@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition, type CSSProperties } from "react";
 import { Check, LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useShallow } from "zustand/react/shallow";
@@ -15,32 +15,15 @@ import {
     countCompletedHideoutUpgrades,
     countCompletedQuests,
 } from "@/lib/utils/profile-summary";
+import { PROFILE_BASE_COLORS } from "@/lib/cfg/profile-colors";
 
 const PRESTIGE_LEVELS = [1, 2, 3, 4, 5, 6];
 const PROFILE_ORDER: GameMode[] = ["PVE", "PVP", "KORD"];
 type Faction = "USEC" | "BEAR" | null;
 type OpenPanel = "character" | "profiles";
 
-const PROFILE_COLORS: Record<
-    GameMode,
-    { trigger: string; rowGradient: string; activeRow: string }
-> = {
-    PVE: {
-        trigger: "before:bg-[radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.24)_0%,transparent_60%)]",
-        rowGradient: "before:bg-[radial-gradient(circle_at_right,rgba(96,165,250,0.18)_0%,transparent_72%)] hover:border-blue-400/30",
-        activeRow: "border-blue-400/40 before:opacity-50",
-    },
-    PVP: {
-        trigger: "before:bg-[radial-gradient(circle_at_bottom_right,rgba(239,68,68,0.24)_0%,transparent_60%)]",
-        rowGradient: "before:bg-[radial-gradient(circle_at_right,rgba(239,68,68,0.18)_0%,transparent_72%)] hover:border-red-400/30",
-        activeRow: "border-red-400/40 before:opacity-50",
-    },
-    KORD: {
-        trigger: "before:bg-[radial-gradient(circle_at_bottom_right,rgba(251,191,36,0.24)_0%,transparent_60%)]",
-        rowGradient: "before:bg-[radial-gradient(circle_at_right,rgba(251,191,36,0.18)_0%,transparent_72%)] hover:border-amber-400/30",
-        activeRow: "border-amber-400/40 before:opacity-50",
-    },
-};
+const profileColorStyle = (mode: GameMode) =>
+    ({ "--profile-color": PROFILE_BASE_COLORS[mode] }) as CSSProperties;
 
 export function PlayerProfileMenu() {
     const [hoveredPanel, setHoveredPanel] = useState<OpenPanel | null>(null);
@@ -113,8 +96,6 @@ export function PlayerProfileMenu() {
         activeElement?.blur();
     }
 
-    const colors = PROFILE_COLORS[gameMode];
-
     return (
         <div
             ref={rootRef}
@@ -129,10 +110,10 @@ export function PlayerProfileMenu() {
             }}
         >
             <div
+                style={profileColorStyle(gameMode)}
                 className={cn(
-                    "relative flex h-10 overflow-hidden rounded border border-white/10 bg-black/35 text-gray-300 transition-colors before:pointer-events-none before:absolute before:inset-0",
-                    colors.trigger,
-                    activePanel && "border-tarkov-green/50 text-white",
+                    "relative flex h-10 overflow-hidden rounded border border-highlight/10 bg-shadow/35 text-foreground transition-colors before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_bottom_right,color-mix(in_srgb,var(--profile-color)_24%,transparent)_0%,transparent_60%)]",
+                    activePanel && "border-brand/50 text-foreground",
                 )}
                 role="group"
                 aria-label="Character and profile"
@@ -147,8 +128,8 @@ export function PlayerProfileMenu() {
                     }}
                     onClick={() => pinPanel("character")}
                     className={cn(
-                        "relative z-10 flex items-center gap-2 px-2.5 transition-colors hover:bg-white/[0.05] focus-visible:bg-white/[0.05] focus-visible:outline-none",
-                        activePanel === "character" && "bg-white/[0.05]",
+                        "relative z-10 flex items-center gap-2 px-2.5 transition-colors hover:bg-highlight/[0.05] focus-visible:bg-highlight/[0.05] focus-visible:outline-none",
+                        activePanel === "character" && "bg-highlight/[0.05]",
                     )}
                     aria-haspopup="dialog"
                     aria-expanded={activePanel === "character"}
@@ -158,13 +139,13 @@ export function PlayerProfileMenu() {
                     <FactionShield faction={faction} size={16} className="shrink-0" />
                     <span className="font-mono text-sm font-semibold leading-none">{playerLevel}</span>
                     {prestigeLevel > 0 && (
-                        <span className="rounded-sm bg-purple-500/20 px-1.5 py-0.5 font-mono text-xs font-bold text-purple-300">
+                        <span className="rounded-sm bg-special/20 px-1.5 py-0.5 font-mono text-xs font-bold text-special">
                             {prestigeLevel}
                         </span>
                     )}
                 </button>
 
-                <div className="relative z-10 my-1.5 w-px bg-white/15" aria-hidden="true" />
+                <div className="relative z-10 my-1.5 w-px bg-foreground/15" aria-hidden="true" />
 
                 <button
                     type="button"
@@ -176,15 +157,15 @@ export function PlayerProfileMenu() {
                     }}
                     onClick={() => pinPanel("profiles")}
                     className={cn(
-                        "relative z-10 flex min-w-14 items-center justify-center px-2.5 transition-colors hover:bg-white/[0.05] focus-visible:bg-white/[0.05] focus-visible:outline-none",
-                        activePanel === "profiles" && "bg-white/[0.05]",
+                        "relative z-10 flex min-w-14 items-center justify-center px-2.5 transition-colors hover:bg-highlight/[0.05] focus-visible:bg-highlight/[0.05] focus-visible:outline-none",
+                        activePanel === "profiles" && "bg-highlight/[0.05]",
                     )}
                     aria-haspopup="dialog"
                     aria-expanded={activePanel === "profiles"}
                     aria-controls="profile-selection-panel"
                     aria-label={`Profile, ${gameMode}`}
                 >
-                    <span className="px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-gray-200">
+                    <span className="px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-foreground">
                         {gameMode}
                     </span>
                 </button>
@@ -197,14 +178,14 @@ export function PlayerProfileMenu() {
                             ? "character-customizer-panel"
                             : "profile-selection-panel"
                     }
-                    className="fixed left-4 right-4 top-[3.25rem] z-50 w-auto overflow-hidden rounded-md border border-white/10 bg-[#0d0d0d] p-3 text-sm shadow-2xl shadow-black/50 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:w-[min(20rem,calc(100vw-2rem))]"
+                    className="fixed left-4 right-4 top-[3.25rem] z-50 w-auto overflow-hidden rounded-md border border-highlight/10 bg-card p-3 text-sm shadow-2xl shadow-shadow/50 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:w-[min(20rem,calc(100vw-2rem))]"
                     role="dialog"
                     aria-modal="false"
                     aria-label={activePanel === "character" ? "Character customizer" : "Profiles"}
                 >
                     <div className="relative z-10 mb-3 flex items-start justify-between gap-3">
                         <div>
-                            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-subtle-foreground">
                                 {activePanel === "character" ? (
                                     <>
                                         <FactionShield faction={faction} size={16} />
@@ -214,7 +195,7 @@ export function PlayerProfileMenu() {
                                     "Profiles"
                                 )}
                             </div>
-                            <div className="mt-1 text-base font-semibold text-white">
+                            <div className="mt-1 text-base font-semibold text-foreground">
                                 {activePanel === "character"
                                     ? `Level ${playerLevel}${prestigeLevel > 0 ? ` · Prestige ${prestigeLevel}` : ""}`
                                     : "Select a character profile"}
@@ -224,7 +205,7 @@ export function PlayerProfileMenu() {
                         <button
                             type="button"
                             onClick={(event) => closePinnedPanel(event.currentTarget)}
-                            className="rounded-sm px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-gray-500 transition-colors hover:bg-white/5 hover:text-white"
+                            className="rounded-sm px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-subtle-foreground transition-colors hover:bg-highlight/5 hover:text-foreground"
                         >
                             Close
                         </button>
@@ -255,9 +236,9 @@ export function PlayerProfileMenu() {
             )}
 
             {isSwitching && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm">
-                    <div className="flex items-center gap-3 rounded-md border border-white/10 bg-[#111] px-5 py-4 text-sm font-medium text-white shadow-2xl">
-                        <LoaderCircle className="animate-spin text-tarkov-green" size={18} />
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-shadow/75 backdrop-blur-sm">
+                    <div className="flex items-center gap-3 rounded-md border border-highlight/10 bg-surface-raised px-5 py-4 text-sm font-medium text-foreground shadow-2xl">
+                        <LoaderCircle className="animate-spin text-brand" size={18} />
                         Loading {gameMode} character…
                     </div>
                 </div>
@@ -292,7 +273,7 @@ function CharacterCustomizer({
     return (
         <div className="relative z-10 space-y-4">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-                <label htmlFor="player-profile-level" className="text-xs font-medium text-gray-400">
+                <label htmlFor="player-profile-level" className="text-xs font-medium text-muted-foreground">
                     Character Level
                 </label>
                 <input
@@ -304,7 +285,7 @@ function CharacterCustomizer({
                     onChange={(event) =>
                         setPlayerLevel(Math.min(100, Math.max(1, Number(event.target.value) || 1)))
                     }
-                    className="h-8 w-16 rounded border border-white/10 bg-black/40 px-2 text-right font-mono text-xs text-white outline-none transition-colors focus:border-tarkov-green/50"
+                    className="h-8 w-16 rounded border border-highlight/10 bg-shadow/40 px-2 text-right font-mono text-xs text-foreground outline-none transition-colors focus:border-brand/50"
                 />
             </div>
 
@@ -318,8 +299,8 @@ function CharacterCustomizer({
                             className={cn(
                                 "flex h-8 items-center justify-center rounded-sm border text-xs font-bold transition-all",
                                 prestigeLevel >= level
-                                    ? "border-purple-400/40 bg-purple-500/80 text-white shadow-[0_0_8px_rgba(168,85,247,0.35)]"
-                                    : "border-white/10 bg-black/30 text-gray-500 hover:border-white/25 hover:text-white",
+                                    ? "border-special/40 bg-special/80 text-inverse shadow-lg shadow-special/35"
+                                    : "border-highlight/10 bg-shadow/30 text-subtle-foreground hover:border-highlight/25 hover:text-foreground",
                             )}
                         >
                             {level}
@@ -373,7 +354,6 @@ function ProfileList({
         <div className="relative z-10 grid gap-2">
             {PROFILE_ORDER.map((mode) => {
                 const profile = profiles[mode];
-                const colors = PROFILE_COLORS[mode];
                 const active = mode === activeMode;
                 const faction = profile.questFaction ?? "No faction";
                 const completedQuests = countCompletedQuests(profile);
@@ -383,23 +363,23 @@ function ProfileList({
                     <button
                         key={mode}
                         type="button"
+                        style={profileColorStyle(mode)}
                         onClick={() => onSelect(mode)}
                         disabled={isSwitching}
                         className={cn(
-                            "relative flex w-full items-center gap-3 overflow-hidden rounded border border-white/10 bg-black/25 p-3 text-left transition-colors before:pointer-events-none before:absolute before:inset-0 before:opacity-0 before:transition-opacity before:duration-200 hover:before:opacity-100 disabled:cursor-wait disabled:opacity-60",
-                            colors.rowGradient,
-                            active && colors.activeRow,
+                            "relative flex w-full items-center gap-3 overflow-hidden rounded border border-highlight/10 bg-shadow/25 p-3 text-left transition-colors before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_right,color-mix(in_srgb,var(--profile-color)_18%,transparent)_0%,transparent_72%)] before:opacity-0 before:transition-opacity before:duration-200 hover:border-[color-mix(in_srgb,var(--profile-color)_30%,transparent)] hover:before:opacity-100 disabled:cursor-wait disabled:opacity-60",
+                            active && "border-[color-mix(in_srgb,var(--profile-color)_40%,transparent)] before:opacity-50",
                         )}
                     >
-                        <span className="relative z-10 inline-flex w-12 shrink-0 items-center justify-center px-2 py-1 text-[11px] font-bold tracking-wide text-gray-200">
+                        <span className="relative z-10 inline-flex w-12 shrink-0 items-center justify-center px-2 py-1 text-[11px] font-bold tracking-wide text-foreground">
                             {mode}
                         </span>
                         <span className="relative z-10 min-w-0 flex-1">
-                            <span className="flex items-center gap-2 font-semibold text-gray-100">
+                            <span className="flex items-center gap-2 font-semibold text-foreground">
                                 {faction} · Level {profile.playerLevel}
-                                {active && <Check size={14} className="shrink-0 text-tarkov-green" />}
+                                {active && <Check size={14} className="shrink-0 text-success" />}
                             </span>
-                            <span className="mt-0.5 block truncate text-[11px] text-gray-500">
+                            <span className="mt-0.5 block truncate text-[11px] text-subtle-foreground">
                                 {profile.prestigeLevel > 0
                                     ? `Prestige ${profile.prestigeLevel} · `
                                     : ""}
@@ -425,9 +405,9 @@ function FactionShield({
     const gradientId = useId().replace(/:/g, "");
     const coordinates = { x1: "50%", y1: "0%", x2: "50%", y2: "100%" };
     const bearStops = [
-        ["0%", "#f8fafc"],
-        ["50%", "#3b82f6"],
-        ["100%", "#ef4444"],
+        ["0%", "var(--foreground)"],
+        ["50%", "var(--faction-blue)"],
+        ["100%", "var(--faction-red)"],
     ];
 
     return (
@@ -443,13 +423,13 @@ function FactionShield({
                 <defs>
                     {faction === "USEC" ? (
                         <radialGradient id={gradientId} cx="30%" cy="28%" r="85%">
-                            <stop offset="0%" stopColor="#1e3a8a" />
-                            <stop offset="24%" stopColor="#1e3a8a" />
-                            <stop offset="35%" stopColor="#f8fafc" />
-                            <stop offset="48%" stopColor="#b91c1c" />
-                            <stop offset="62%" stopColor="#f8fafc" />
-                            <stop offset="78%" stopColor="#b91c1c" />
-                            <stop offset="100%" stopColor="#7f1d1d" />
+                            <stop offset="0%" stopColor="var(--faction-blue)" />
+                            <stop offset="24%" stopColor="var(--faction-blue)" />
+                            <stop offset="35%" stopColor="var(--foreground)" />
+                            <stop offset="48%" stopColor="var(--faction-red)" />
+                            <stop offset="62%" stopColor="var(--foreground)" />
+                            <stop offset="78%" stopColor="var(--faction-red)" />
+                            <stop offset="100%" stopColor="var(--faction-red)" />
                         </radialGradient>
                     ) : (
                         <linearGradient id={gradientId} {...coordinates}>
@@ -462,8 +442,7 @@ function FactionShield({
             )}
             <path
                 d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
-                fill={faction ? `url(#${gradientId})` : "currentColor"}
-                className={faction ? undefined : "text-gray-500"}
+                fill={faction ? `url(#${gradientId})` : "var(--foreground)"}
             />
         </svg>
     );
@@ -472,7 +451,7 @@ function FactionShield({
 function ControlGroup({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <section className="space-y-2">
-            <div className="text-[10px] font-bold uppercase tracking-wide text-gray-600">{label}</div>
+            <div className="text-[10px] font-bold uppercase tracking-wide text-subtle-foreground">{label}</div>
             {children}
         </section>
     );
@@ -494,8 +473,8 @@ function SegmentButton({
             className={cn(
                 "inline-flex h-8 items-center justify-center rounded-sm border px-3 text-xs font-semibold transition-colors",
                 active
-                    ? "border-tarkov-green/50 bg-tarkov-green text-black"
-                    : "border-white/10 bg-black/30 text-gray-400 hover:border-white/25 hover:text-white",
+                    ? "border-brand/50 bg-brand text-inverse"
+                    : "border-highlight/10 bg-shadow/30 text-muted-foreground hover:border-highlight/25 hover:text-foreground",
             )}
         >
             {children}

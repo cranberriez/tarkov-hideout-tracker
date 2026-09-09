@@ -88,7 +88,7 @@ export function QuestCardExpandedContent({
 
             {mobileMetadataChips.length > 0 && (
                 <div className="space-y-1.5 sm:hidden">
-                    <span className="text-[10px] uppercase text-gray-600 font-bold">
+                    <span className="text-[10px] uppercase text-subtle-foreground font-bold">
                         Details
                     </span>
                     <div className="flex flex-wrap gap-1.5">
@@ -111,21 +111,21 @@ export function QuestCardExpandedContent({
                 <div className="flex flex-wrap items-center gap-1.5">
                     {disabled && (
                         <span
-                            className={`${questDetailChipBaseClass} text-red-300 bg-red-500/10 border-red-500/20`}
+                            className={`${questDetailChipBaseClass} text-danger bg-danger/10 border-danger/20`}
                         >
                             Disabled by completed branch
                         </span>
                     )}
                     {hasFailWarning && (
                         <span
-                            className={`${questDetailChipBaseClass} text-amber-300 bg-amber-500/10 border-amber-500/20`}
+                            className={`${questDetailChipBaseClass} text-warning bg-warning/10 border-warning/20`}
                         >
                             <AlertTriangle size={13} />
                             Can fail - {failWarningText ?? "check wiki"}
                         </span>
                     )}
                     {questsFailedByCompletingThisQuest.length > 0 && (
-                        <div className="flex min-h-7 flex-wrap items-center gap-1.5 rounded bg-purple-500/10 px-2.5 py-1 text-xs leading-snug text-purple-200">
+                        <div className="flex min-h-7 flex-wrap items-center gap-1.5 rounded bg-special/10 px-2.5 py-1 text-xs leading-snug text-special">
                             <AlertTriangle size={13} className="shrink-0" />
                             <span className="font-medium">
                                 Completing this quest would fail:
@@ -141,7 +141,7 @@ export function QuestCardExpandedContent({
                                             e.stopPropagation();
                                             onQuestLinkClick?.(questId, e);
                                         }}
-                                        className="rounded bg-purple-500/10 px-1.5 py-0.5 text-purple-100 transition-colors border border-purple-500/20 hover:bg-purple-500/20 hover:text-white"
+                                        className="rounded bg-special/10 px-1.5 py-0.5 text-special transition-colors border border-special/20 hover:bg-special/20 hover:text-foreground"
                                     >
                                         {failedQuest?.name ?? questId}
                                     </a>
@@ -152,7 +152,7 @@ export function QuestCardExpandedContent({
                     {failedRequirementIds.map((questId) => (
                         <span
                             key={`failed-req-${questId}`}
-                            className={`${questDetailChipBaseClass} text-red-200 bg-red-500/10 border-red-500/20`}
+                            className={`${questDetailChipBaseClass} text-danger bg-danger/10 border-danger/20`}
                         >
                             Requires {questsById.get(questId)?.name ?? questId} failed
                         </span>
@@ -163,7 +163,7 @@ export function QuestCardExpandedContent({
             {(finishTraderStandingRewards.length > 0 ||
                 failureTraderStandingRewards.length > 0) && (
                 <div className="space-y-1.5">
-                    <span className="text-[10px] uppercase tracking-wider text-gray-600 font-bold">
+                    <span className="text-[10px] uppercase tracking-wider text-subtle-foreground font-bold">
                         Trader Reputation
                     </span>
                     <div className="flex flex-wrap gap-1.5">
@@ -186,7 +186,7 @@ export function QuestCardExpandedContent({
             )}
 
             <div className="space-y-2">
-                <span className="text-[10px] uppercase tracking-wider text-gray-600 font-bold">
+                <span className="text-[10px] uppercase tracking-wider text-subtle-foreground font-bold">
                     Objectives
                 </span>
                 <div className="space-y-1.5">
@@ -202,20 +202,20 @@ export function QuestCardExpandedContent({
 
             {(hasDisplayQuestLevel(quest.minPlayerLevel) || quest.taskRequirements.length > 0) && (
                 <div className="space-y-1.5">
-                    <span className="text-[10px] uppercase tracking-wider text-gray-600 font-bold">
+                    <span className="text-[10px] uppercase tracking-wider text-subtle-foreground font-bold">
                         Requirements
                     </span>
                     <div className="flex flex-wrap gap-1.5">
                         {hasDisplayQuestLevel(quest.minPlayerLevel) && (
                             <span
-                                className={`${questDetailChipBaseClass} text-gray-400 bg-black/40 border-white/10`}
+                                className={`${questDetailChipBaseClass} text-muted-foreground bg-shadow/40 border-highlight/10`}
                             >
                                 Requires Level {quest.minPlayerLevel}
                             </span>
                         )}
                         {quest.taskRequirements.length > 0 && (
                             <span
-                                className={`${questDetailChipBaseClass} text-gray-400 bg-black/40 border-white/10`}
+                                className={`${questDetailChipBaseClass} text-muted-foreground bg-shadow/40 border-highlight/10`}
                             >
                                 {completedRequirementCount}/{quest.taskRequirements.length}{" "}
                                 prerequisite quests completed
@@ -227,7 +227,7 @@ export function QuestCardExpandedContent({
 
             {prerequisiteQuests.length > 0 && (
                 <div className="space-y-1.5">
-                    <span className="text-[10px] uppercase tracking-wider text-gray-600 font-bold">
+                    <span className="text-[10px] uppercase tracking-wider text-subtle-foreground font-bold">
                         Requires
                     </span>
                     <div className="flex flex-wrap gap-1.5">
@@ -244,7 +244,7 @@ export function QuestCardExpandedContent({
 
             {leadsToQuests.length > 0 && (
                 <div className="space-y-1.5">
-                    <span className="text-[10px] uppercase tracking-wider text-gray-600 font-bold">
+                    <span className="text-[10px] uppercase tracking-wider text-subtle-foreground font-bold">
                         Unlocks
                     </span>
                     <div className="flex flex-wrap gap-1.5">
@@ -260,13 +260,13 @@ export function QuestCardExpandedContent({
                 </div>
             )}
 
-            <div className="flex items-center justify-between pt-1 border-t border-white/5">
-                <span className="text-xs text-gray-600">
+            <div className="flex items-center justify-between pt-1 border-t border-highlight/5">
+                <span className="text-xs text-subtle-foreground">
                     {quest.experience.toLocaleString()} XP
                 </span>
                 <div className="flex items-center gap-3">
                     {quest.map && (
-                        <span className="text-xs text-gray-500">{quest.map.name}</span>
+                        <span className="text-xs text-subtle-foreground">{quest.map.name}</span>
                     )}
                     {quest.wikiLink && (
                         <a
@@ -274,7 +274,7 @@ export function QuestCardExpandedContent({
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="flex items-center gap-1 text-xs text-gray-500 hover:text-tarkov-green transition-colors"
+                            className="flex items-center gap-1 text-xs text-subtle-foreground hover:text-brand transition-colors"
                         >
                             Wiki <ExternalLink size={11} />
                         </a>
@@ -299,8 +299,8 @@ function TraderStandingRewardChip({
         <span
             className={`${questDetailChipBaseClass} ${
                 isNegative
-                    ? "text-red-200 bg-red-500/10 border-red-500/20"
-                    : "text-tarkov-green bg-tarkov-green/10 border-tarkov-green/20"
+                    ? "text-danger bg-danger/10 border-danger/20"
+                    : "text-success bg-success/10 border-success/20"
             }`}
             title={`${outcome}: ${reward.trader.name} reputation ${formatStanding(reward.standing)}`}
         >
@@ -312,14 +312,14 @@ function TraderStandingRewardChip({
                     className="h-4 w-4 rounded-full object-cover"
                 />
             ) : (
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/10 text-[9px]">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-highlight/10 text-[9px]">
                     {reward.trader.name[0]}
                 </span>
             )}
             <span className="font-medium">{reward.trader.name}</span>
             <span>{formatStanding(reward.standing)}</span>
             {outcome === "Failure" && (
-                <span className="rounded bg-black/30 px-1 py-0.5 text-[10px] uppercase leading-none text-red-200/80">
+                <span className="rounded bg-shadow/30 px-1 py-0.5 text-[10px] uppercase leading-none text-danger/80">
                     Failure
                 </span>
             )}

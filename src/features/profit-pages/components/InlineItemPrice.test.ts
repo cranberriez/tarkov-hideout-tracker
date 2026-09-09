@@ -14,7 +14,7 @@ test("unstable output sale uses yellow price and an isolated warning icon, with 
     const props = { item, kind: "sell" as const, totalPrice: 120_000, overrides: {}, onPriceChange: () => {} };
     const markup = renderToStaticMarkup(createElement(InlineItemPrice, props));
     assert.match(markup, /120k/);
-    assert.match(markup, /text-amber-300/);
+    assert.match(markup, /text-warning/);
     assert.match(markup, /aria-label="Value unstable"/);
     assert.match(markup, /data-isolated-hover="true"/);
     assert.doesNotMatch(markup, /role="tooltip"|excluded|>Value unstable</);
@@ -83,6 +83,6 @@ test("manual buy and sell prices use the customized blue treatment", () => {
             onPriceChange: () => {},
         }));
 
-        assert.match(markup, /text-sky-300/);
+        assert.match(markup, /text-info/);
     }
 });

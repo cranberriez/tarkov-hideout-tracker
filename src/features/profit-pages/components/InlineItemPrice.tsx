@@ -57,10 +57,10 @@ export function InlineItemPrice({
       item.normalizedName !== "roubles" && item.marketPrice?.fleaStability === "unstable";
   const usesSellValue = kind === "buy" && buyMethod === "sell" && totalPrice !== null;
   const color = hasManualPrice
-    ? "text-sky-300"
+    ? "text-info"
     : warning
-      ? "text-amber-300"
-      : "text-tarkov-green";
+      ? "text-warning"
+      : "text-brand";
   const formattedPrice = formatCompactPrice(displayPrice === undefined ? totalPrice : displayPrice);
   function commit(raw: string) {
     const parsed = raw.trim() === "" ? undefined : Number(raw);
@@ -93,7 +93,7 @@ export function InlineItemPrice({
           if (event.key === "Escape") setEditing(false);
         }}
         onBlur={(event) => commit(event.currentTarget.value)}
-        className={`h-5 w-16 rounded border border-tarkov-green/50 bg-black px-1 text-[10px] outline-none ${hasManualPrice ? "text-sky-300" : "text-foreground"}`}
+        className={`h-5 w-16 rounded border border-brand/50 bg-shadow px-1 text-[10px] outline-none ${hasManualPrice ? "text-info" : "text-foreground"}`}
       />
     );
   return (
@@ -113,7 +113,7 @@ export function InlineItemPrice({
         </button>
       ) : <span className={`truncate ${color}`}>{formattedPrice}</span>}
       {warning && (kind === "buy"
-        ? <span className="whitespace-nowrap text-[10px] font-normal text-amber-300">(value unstable)</span>
+        ? <span className="whitespace-nowrap text-[10px] font-normal text-warning">(value unstable)</span>
         : <InfoHint title="Value unstable" tone="warning" compact onShow={onWarningShow} />)}
       {usesSellValue && (
         <span className="whitespace-nowrap text-[10px] font-normal text-muted-foreground">(sell value)</span>

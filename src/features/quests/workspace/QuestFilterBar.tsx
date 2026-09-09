@@ -45,13 +45,13 @@ function FilterTrigger({
                 aria-expanded={open}
                 onClick={() => setOpenFilter(open ? null : section)}
                 className={cn(
-                    "flex h-14 w-full min-w-0 cursor-pointer items-center gap-2 px-3 text-left transition-colors hover:bg-white/5",
-                    open && "bg-white/7 text-white",
+                    "flex h-14 w-full min-w-0 cursor-pointer items-center gap-2 px-3 text-left transition-colors hover:bg-highlight/5",
+                    open && "bg-highlight/7 text-foreground",
                 )}
             >
                 <span className="min-w-0 flex-1">
-                    <span className="block text-[9px] font-semibold uppercase tracking-[0.18em] text-gray-600">{label}</span>
-                    <span className="block truncate text-xs font-medium text-gray-200">{summary}</span>
+                    <span className="block text-[9px] font-semibold uppercase tracking-[0.18em] text-subtle-foreground">{label}</span>
+                    <span className="block truncate text-xs font-medium text-foreground">{summary}</span>
                 </span>
             </button>
         </div>
@@ -72,21 +72,21 @@ function MenuRow({ selected, onClick, image, label, count, description }: {
             aria-pressed={selected}
             onClick={onClick}
             className={cn(
-                "flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-white/5",
-                selected && "bg-tarkov-green/8",
+                "flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-highlight/5",
+                selected && "bg-brand/8",
             )}
         >
             {image ? (
                 <img src={image} alt="" className="h-8 w-8 rounded-full object-cover grayscale-[20%]" />
             ) : (
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-gray-500"><CircleDot size={14} /></span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-highlight/5 text-subtle-foreground"><CircleDot size={14} /></span>
             )}
             <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm text-gray-200">{label}</span>
-                {description && <span className="block text-[10px] text-gray-600">{description}</span>}
+                <span className="block truncate text-sm text-foreground">{label}</span>
+                {description && <span className="block text-[10px] text-subtle-foreground">{description}</span>}
             </span>
-            {count !== undefined && <span className="font-mono text-xs text-gray-600">{count}</span>}
-            <span className={cn("flex h-4 w-4 items-center justify-center border", selected ? "border-tarkov-green bg-tarkov-green text-black" : "border-white/15")}>
+            {count !== undefined && <span className="font-mono text-xs text-subtle-foreground">{count}</span>}
+            <span className={cn("flex h-4 w-4 items-center justify-center border", selected ? "border-brand bg-brand text-inverse" : "border-highlight/15")}>
                 {selected && <Check size={11} strokeWidth={3} />}
             </span>
         </button>
@@ -110,7 +110,7 @@ export function QuestFilterBar() {
     const statusSummary = STATUS_OPTIONS.filter((option) => selectedStatuses.has(option.id)).map((option) => option.label);
 
     return (
-        <div className="hidden divide-x divide-white/8 border-b border-white/10 bg-[#101113] lg:flex">
+        <div className="hidden divide-x divide-highlight/8 border-b border-highlight/10 bg-[var(--card-bg)] lg:flex">
             <FilterTrigger section="maps" label="Map" summary={selectedMapNames.length === 0 ? "Any map" : selectedMapNames.length === 1 ? selectedMapNames[0] : `${selectedMapNames.length} selected`} />
             <FilterTrigger section="status" label="Status" summary={statusSummary.length === STATUS_OPTIONS.length ? "All states" : statusSummary.length ? statusSummary.join(", ") : "None"} />
             <FilterTrigger
@@ -147,15 +147,15 @@ function CompactNavButton({
             title={label}
             onClick={onClick}
             className={cn(
-                "relative flex h-full min-w-0 flex-1 cursor-pointer items-center justify-center text-gray-500 transition-colors hover:bg-white/7 hover:text-white focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-tarkov-green",
-                active && "bg-white/7 text-tarkov-green",
+                "relative flex h-full min-w-0 flex-1 cursor-pointer items-center justify-center text-subtle-foreground transition-colors hover:bg-highlight/7 hover:text-foreground focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand",
+                active && "bg-highlight/7 text-brand",
             )}
         >
             {children}
             {modified && (
                 <span
                     aria-hidden="true"
-                    className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-amber-300 shadow-[0_0_5px_rgba(252,211,77,0.55)]"
+                    className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-warning shadow-[0_0_5px_color-mix(in_oklab,_var(--warning)_55%,_transparent)]"
                 />
             )}
         </button>
@@ -201,7 +201,7 @@ export function QuestMobileToolbar({
     return (
         <nav
             aria-label="Quest tools"
-            className="flex h-12 w-full shrink-0 items-stretch divide-x divide-white/8 border-t border-white/10 bg-[#101113] lg:hidden"
+            className="flex h-12 w-full shrink-0 items-stretch divide-x divide-highlight/8 border-t border-highlight/10 bg-[var(--card-bg)] lg:hidden"
         >
             <CompactNavButton
                 label="Trader filters and loyalty levels"
@@ -253,15 +253,15 @@ export function QuestCompactSearchBar({ onClose }: { onClose: () => void }) {
     const { searchQuery, setSearchQuery, setOpenFilter } = useQuestWorkspace();
 
     return (
-        <div className="flex h-11 w-full shrink-0 items-center gap-3 border-t border-white/10 bg-[#101113] px-3 lg:hidden">
-            <Search size={16} className="shrink-0 text-gray-500" />
+        <div className="flex h-11 w-full shrink-0 items-center gap-3 border-t border-highlight/10 bg-[var(--card-bg)] px-3 lg:hidden">
+            <Search size={16} className="shrink-0 text-subtle-foreground" />
             <input
                 autoFocus
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 onFocus={() => setOpenFilter(null)}
                 placeholder="Search quests, traders, objectives…"
-                className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-gray-700"
+                className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-subtle-foreground"
             />
             <button
                 type="button"
@@ -270,7 +270,7 @@ export function QuestCompactSearchBar({ onClose }: { onClose: () => void }) {
                     onClose();
                     setSearchQuery("");
                 }}
-                className="flex h-8 w-8 items-center justify-center text-gray-500 transition-colors hover:text-white"
+                className="flex h-8 w-8 items-center justify-center text-subtle-foreground transition-colors hover:text-foreground"
             >
                 <X size={16} />
             </button>
@@ -317,12 +317,12 @@ export function QuestTraderBar() {
     const allSelected = selectedTraderIds.size === 0;
 
     const buttonClass = (selected: boolean) => cn(
-        "relative flex h-12 min-w-0 flex-1 cursor-pointer items-center justify-center overflow-hidden border-r border-white/8 bg-[#101113] text-gray-500 transition-colors hover:bg-white/7 hover:text-white focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-tarkov-green lg:h-auto lg:aspect-square",
-        selected && "z-[1] bg-tarkov-green/10 text-tarkov-green shadow-[inset_0_-2px_0_#9cae7c]",
+        "relative flex h-12 min-w-0 flex-1 cursor-pointer items-center justify-center overflow-hidden border-r border-highlight/8 bg-[var(--card-bg)] text-subtle-foreground transition-colors hover:bg-highlight/7 hover:text-foreground focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand lg:h-auto lg:aspect-square",
+        selected && "z-[1] bg-brand/10 text-brand shadow-[inset_0_-2px_0_var(--brand)]",
     );
 
     return (
-        <div className="hidden w-full shrink-0 border-b border-white/8 bg-[#101113] lg:flex">
+        <div className="hidden w-full shrink-0 border-b border-highlight/8 bg-[var(--card-bg)] lg:flex">
             <button
                 type="button"
                 aria-label="Show quests from all traders"
@@ -365,7 +365,7 @@ export function QuestTraderBar() {
                             aria-hidden="true"
                             className={cn(
                                 "pointer-events-none absolute inset-0.5 z-1 ring-1 ring-inset ring-transparent transition-shadow",
-                                selected && "ring-2 ring-tarkov-green",
+                                selected && "ring-2 ring-brand",
                             )}
                         />
                     </button>
@@ -433,26 +433,26 @@ function TraderSelectionRow({
     );
 
     return (
-        <div className={cn("flex min-h-14 border-b border-white/8", selected && "bg-tarkov-green/8")}>
+        <div className={cn("flex min-h-14 border-b border-highlight/8", selected && "bg-brand/8")}>
             <button
                 type="button"
                 aria-pressed={selected}
                 onClick={onSelect}
-                className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-white/5"
+                className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-highlight/5"
             >
                 {traderImage ? (
                     <img src={traderImage} alt="" className="h-8 w-8 rounded-full object-cover grayscale-[20%]" />
                 ) : (
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-gray-500"><CircleDot size={14} /></span>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-highlight/5 text-subtle-foreground"><CircleDot size={14} /></span>
                 )}
-                <span className="min-w-0 flex-1 truncate text-sm text-gray-200">{trader.name}</span>
-                <span className="font-mono text-xs text-gray-600">{count}</span>
-                <span className={cn("flex h-4 w-4 items-center justify-center border", selected ? "border-tarkov-green bg-tarkov-green text-black" : "border-white/15")}>
+                <span className="min-w-0 flex-1 truncate text-sm text-foreground">{trader.name}</span>
+                <span className="font-mono text-xs text-subtle-foreground">{count}</span>
+                <span className={cn("flex h-4 w-4 items-center justify-center border", selected ? "border-brand bg-brand text-inverse" : "border-highlight/15")}>
                     {selected && <Check size={11} strokeWidth={3} />}
                 </span>
             </button>
             {hasLoyaltyControl && (
-                <div className="flex shrink-0 items-center gap-1 border-l border-white/8 px-2">
+                <div className="flex shrink-0 items-center gap-1 border-l border-highlight/8 px-2">
                     {loyaltyLevels.map((level) => (
                         <button
                             key={level}
@@ -461,17 +461,17 @@ function TraderSelectionRow({
                             aria-label={`${trader.name} loyalty level ${level}`}
                             onClick={() => setQuestTraderLoyaltyLevel(trader.id, level)}
                             className={cn(
-                                "flex h-8 w-8 cursor-pointer items-center justify-center border transition-colors hover:border-tarkov-green/40 hover:text-white",
+                                "flex h-8 w-8 cursor-pointer items-center justify-center border transition-colors hover:border-brand/40 hover:text-foreground",
                                 currentLoyaltyLevel === level
-                                    ? "border-tarkov-green/50 bg-tarkov-green/12 text-tarkov-green"
-                                    : "border-white/10 bg-black/20 text-gray-500",
+                                    ? "border-brand/50 bg-brand/12 text-brand"
+                                    : "border-highlight/10 bg-shadow/20 text-subtle-foreground",
                             )}
                         >
                             <LoyaltyLevelMark level={level} />
                         </button>
                     ))}
                     {isFence && (
-                        <label className="ml-1 w-16 max-w-16 flex items-center gap-1.5 text-[9px] uppercase tracking-wide text-gray-600">
+                        <label className="ml-1 w-16 max-w-16 flex items-center gap-1.5 text-[9px] uppercase tracking-wide text-subtle-foreground">
                             Rep
                             <input
                                 type="number"
@@ -490,7 +490,7 @@ function TraderSelectionRow({
                                     setFenceReputationInput("0");
                                     setQuestFenceReputation(0);
                                 }}
-                                className="h-8 w-full border border-white/10 bg-black/25 px-2 font-mono text-xs text-gray-200 outline-none transition-colors focus:border-tarkov-green/50"
+                                className="h-8 w-full border border-highlight/10 bg-shadow/25 px-2 font-mono text-xs text-foreground outline-none transition-colors focus:border-brand/50"
                             />
                         </label>
                     )}
@@ -517,10 +517,10 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
     const orderedTraders = orderTraders(traders);
 
     return (
-        <div className="min-h-0 flex-1 overflow-y-auto bg-[#0b0c0e]">
-            <div className="sticky top-0 z-10 flex h-10 items-center justify-between border-b border-white/10 bg-[#101113] px-3">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">{titles[section]}</span>
-                <button type="button" onClick={() => setOpenFilter(null)} className="flex h-7 cursor-pointer items-center gap-1.5 px-2 text-xs text-gray-500 transition-colors hover:bg-white/5 hover:text-white"><X size={13} /> Done</button>
+        <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--background)]">
+            <div className="sticky top-0 z-10 flex h-10 items-center justify-between border-b border-highlight/10 bg-[var(--card-bg)] px-3">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-subtle-foreground">{titles[section]}</span>
+                <button type="button" onClick={() => setOpenFilter(null)} className="flex h-7 cursor-pointer items-center gap-1.5 px-2 text-xs text-subtle-foreground transition-colors hover:bg-highlight/5 hover:text-foreground"><X size={13} /> Done</button>
             </div>
             <div>
                 {section === "traders" && <>
@@ -535,7 +535,7 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
                         />
                     ))}
                     {gameMode === "KORD" && (
-                        <p className="border-b border-amber-300/10 bg-amber-300/[0.035] px-3 py-2.5 text-[10px] leading-relaxed text-amber-200/55">
+                        <p className="border-b border-warning/10 bg-warning/[0.035] px-3 py-2.5 text-[10px] leading-relaxed text-warning/55">
                             Lightkeeper is inaccessible in the KORD seasonal profile.
                         </p>
                     )}
@@ -602,7 +602,7 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
                                 description="Show quests restricted to the other faction"
                             />
                         </fieldset>
-                        <div className="mt-2 border-t border-white/8 px-3 py-2 text-[10px] leading-relaxed text-gray-600">A locked quest must pass every applicable reason filter. Other gates, such as loyalty, reputation, prestige, and branches, remain visible.</div>
+                        <div className="mt-2 border-t border-highlight/8 px-3 py-2 text-[10px] leading-relaxed text-subtle-foreground">A locked quest must pass every applicable reason filter. Other gates, such as loyalty, reputation, prestige, and branches, remain visible.</div>
                     </>}
                 </>}
                 {section === "filters" && <>
@@ -666,7 +666,7 @@ const SORT_OPTIONS = [
 
 function FilterSectionTitle({ children }: { children: React.ReactNode }) {
     return (
-        <div className="border-y border-white/8 bg-white/[0.025] px-3 py-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-gray-600 first:border-t-0">
+        <div className="border-y border-highlight/8 bg-highlight/[0.025] px-3 py-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-subtle-foreground first:border-t-0">
             {children}
         </div>
     );
@@ -681,15 +681,15 @@ function ToggleRow({ checked, onChange, label, description, emphasized = false }
 }) {
     return (
         <label className={cn(
-            "flex cursor-pointer items-center justify-between gap-4 px-3 py-2.5 transition-colors hover:bg-white/5",
-            emphasized && "border-y border-amber-300/20 bg-amber-300/[0.06] hover:bg-amber-300/[0.09]",
+            "flex cursor-pointer items-center justify-between gap-4 px-3 py-2.5 transition-colors hover:bg-highlight/5",
+            emphasized && "border-y border-warning/20 bg-warning/[0.06] hover:bg-warning/[0.09]",
         )}>
             <span className="min-w-0">
-                <span className={cn("block text-sm text-gray-200", emphasized && "font-semibold text-amber-200")}>{label}</span>
-                <span className="block text-[10px] text-gray-600">{description}</span>
+                <span className={cn("block text-sm text-foreground", emphasized && "font-semibold text-warning")}>{label}</span>
+                <span className="block text-[10px] text-subtle-foreground">{description}</span>
             </span>
             <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="peer sr-only" />
-            <span className="relative h-5 w-9 shrink-0 rounded-full bg-white/10 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-gray-500 after:transition-transform peer-checked:bg-tarkov-green/25 peer-checked:after:translate-x-4 peer-checked:after:bg-tarkov-green peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-tarkov-green" />
+            <span className="relative h-5 w-9 shrink-0 rounded-full bg-highlight/10 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-muted after:transition-transform peer-checked:bg-brand/25 peer-checked:after:translate-x-4 peer-checked:after:bg-brand peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-brand" />
         </label>
     );
 }
@@ -710,17 +710,17 @@ function UpcomingRuleRow({
     onValueChange?: (value: number) => void;
 }) {
     return (
-        <div className="flex items-center gap-3 border-b border-white/5 bg-black/15 py-2 pl-7 pr-3">
+        <div className="flex items-center gap-3 border-b border-highlight/5 bg-shadow/15 py-2 pl-7 pr-3">
             <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5">
                 <input
                     type="checkbox"
                     checked={checked}
                     onChange={(event) => onChange(event.target.checked)}
-                    className="h-3.5 w-3.5 accent-[#9cae7c]"
+                    className="h-3.5 w-3.5 accent-[var(--brand)]"
                 />
                 <span className="min-w-0">
-                    <span className="block text-xs text-gray-300">Show upcoming only</span>
-                    <span className="block text-[10px] leading-relaxed text-gray-600">{description}</span>
+                    <span className="block text-xs text-foreground">Show upcoming only</span>
+                    <span className="block text-[10px] leading-relaxed text-subtle-foreground">{description}</span>
                 </span>
             </label>
             {value !== undefined && onValueChange && (
@@ -735,7 +735,7 @@ function UpcomingRuleRow({
                         const next = Number(event.target.value);
                         if (Number.isFinite(next)) onValueChange(Math.max(min, Math.floor(next)));
                     }}
-                    className="h-8 w-14 border border-white/10 bg-black/25 px-2 text-center font-mono text-xs text-gray-200 outline-none transition-colors focus:border-tarkov-green/50 disabled:cursor-not-allowed disabled:opacity-35"
+                    className="h-8 w-14 border border-highlight/10 bg-shadow/25 px-2 text-center font-mono text-xs text-foreground outline-none transition-colors focus:border-brand/50 disabled:cursor-not-allowed disabled:opacity-35"
                 />
             )}
         </div>

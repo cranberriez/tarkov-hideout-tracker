@@ -65,12 +65,12 @@ export function SetupModal() {
                 showCloseButton={false}
                 className="w-full md:max-w-3xl p-0 gap-0 overflow-hidden rounded-md bg-card border border-border-color"
             >
-                <div className="px-6 py-4 flex items-center justify-between border-b border-border-color bg-black/60">
+                <div className="px-6 py-4 flex items-center justify-between border-b border-border-color bg-shadow/60">
                     <div>
-                        <DialogTitle className="text-sm font-semibold tracking-[0.2em] text-gray-300">
+                        <DialogTitle className="text-sm font-semibold tracking-[0.2em] text-foreground">
                             {hasCompletedSetup ? "EDIT SETUP" : "SET UP YOUR PROFILE"}
                         </DialogTitle>
-                        <p className="mt-1 text-xs text-gray-500">
+                        <p className="mt-1 text-xs text-subtle-foreground">
                             {activeView === "settings"
                                 ? "Choose the profile that matches your Tarkov character."
                                 : "Set each station to its current in-game level."}
@@ -79,14 +79,14 @@ export function SetupModal() {
                     <button
                         type="button"
                         onClick={() => setSetupOpen(false)}
-                        className="rounded-sm p-1 text-gray-500 transition-colors hover:bg-white/5 hover:text-white"
+                        className="rounded-sm p-1 text-subtle-foreground transition-colors hover:bg-highlight/5 hover:text-foreground"
                         aria-label="Close setup"
                     >
                         <X size={18} />
                     </button>
                 </div>
 
-                <div className="p-6 max-h-[65vh] overflow-y-auto bg-black/40">
+                <div className="p-6 max-h-[65vh] overflow-y-auto bg-shadow/40">
                     {activeView === "settings" ? (
                         <div className="space-y-8">
                             <GameModeSelection selected={gameMode} onSelect={handleGameModeSelect} />
@@ -101,13 +101,13 @@ export function SetupModal() {
                     )}
                 </div>
 
-                <div className="px-6 py-4 border-t border-border-color bg-black/70 flex items-center justify-end gap-3">
+                <div className="px-6 py-4 border-t border-border-color bg-shadow/70 flex items-center justify-end gap-3">
                     {activeView === "settings" ? (
                         <>
                             <button
                                 onClick={handleFinish}
                                 disabled={!canFinish}
-                                className="px-4 py-2 rounded-sm font-medium text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-4 py-2 rounded-sm font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-highlight/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Save Setup
                             </button>
@@ -116,8 +116,8 @@ export function SetupModal() {
                                 disabled={!canFinish}
                                 className={`px-5 py-2 rounded-sm font-semibold text-sm tracking-wide transition-all ${
                                     canFinish
-                                        ? "bg-tarkov-green text-black hover:bg-lime-300 shadow-[0_0_18px_rgba(157,255,0,0.25)]"
-                                        : "bg-black/40 text-gray-600 border border-white/10 cursor-not-allowed"
+                                        ? "bg-brand text-inverse hover:bg-brand-hover shadow-[0_0_18px_color-mix(in_oklab,_var(--brand)_25%,_transparent)]"
+                                        : "bg-shadow/40 text-subtle-foreground border border-highlight/10 cursor-not-allowed"
                                 }`}
                             >
                                 Hideout Levels &rarr;
@@ -127,13 +127,13 @@ export function SetupModal() {
                         <>
                             <button
                                 onClick={() => setActiveView("settings")}
-                                className="px-4 py-2 rounded-sm font-medium text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                                className="px-4 py-2 rounded-sm font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-highlight/5 transition-colors"
                             >
                                 &larr; Back
                             </button>
                             <button
                                 onClick={handleFinish}
-                                className="px-5 py-2 rounded-sm font-semibold text-sm tracking-wide bg-tarkov-green text-black hover:bg-tarkov-green-dim shadow-[0_0_18px_rgba(157,255,0,0.25)] transition-all"
+                                className="px-5 py-2 rounded-sm font-semibold text-sm tracking-wide bg-brand text-inverse hover:bg-brand-hover shadow-[0_0_18px_color-mix(in_oklab,_var(--brand)_25%,_transparent)] transition-all"
                             >
                                 {hasCompletedSetup ? "Save Changes" : "Complete Setup"}
                             </button>

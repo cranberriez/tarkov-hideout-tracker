@@ -106,25 +106,25 @@ function StatsPanel({ stats }: { stats: ProfileStats }) {
                     ["Completed quests", stats.completedQuests],
                     ["Items held", stats.totalItems.toLocaleString()],
                 ].map(([label, value]) => (
-                    <div key={label} className="border border-white/8 bg-white/[0.03] p-3">
-                        <div className="text-[10px] uppercase tracking-wide text-gray-600">{label}</div>
-                        <div className="mt-1 text-sm font-medium text-gray-200">{value}</div>
+                    <div key={label} className="border border-highlight/8 bg-highlight/[0.03] p-3">
+                        <div className="text-[10px] uppercase tracking-wide text-subtle-foreground">{label}</div>
+                        <div className="mt-1 text-sm font-medium text-foreground">{value}</div>
                     </div>
                 ))}
             </div>
             <div>
-                <div className="text-xs text-gray-500">Trader loyalty levels</div>
+                <div className="text-xs text-subtle-foreground">Trader loyalty levels</div>
                 <div className="mt-2 flex flex-wrap gap-2">
                     {stats.loyaltySummary.length > 0 ? stats.loyaltySummary.map(({ level, count }) => (
-                        <span key={level} className="border border-white/10 bg-black/30 px-2.5 py-1 text-xs text-gray-300">
+                        <span key={level} className="border border-highlight/10 bg-shadow/30 px-2.5 py-1 text-xs text-foreground">
                             LL{level} · {count} {count === 1 ? "trader" : "traders"}
                         </span>
-                    )) : <span className="text-xs text-gray-600">No saved trader levels</span>}
+                    )) : <span className="text-xs text-subtle-foreground">No saved trader levels</span>}
                 </div>
             </div>
             <div>
-                <div className="text-xs text-gray-500">Max-level hideout stations · {stats.maxedStations.length}</div>
-                <div className="mt-2 text-xs leading-5 text-gray-400">
+                <div className="text-xs text-subtle-foreground">Max-level hideout stations · {stats.maxedStations.length}</div>
+                <div className="mt-2 text-xs leading-5 text-muted-foreground">
                     {stats.maxedStations.length > 0
                         ? stats.maxedStations.map((station) => station.name).join(", ")
                         : "No stations were at their maximum level."}
@@ -220,14 +220,14 @@ export function LegacyProfileConversionDialog() {
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
             <DialogContent className="max-h-[90dvh] overflow-hidden p-0 md:max-w-4xl">
-                <DialogHeader className="border-b border-border-color bg-black/60 px-6 py-5">
+                <DialogHeader className="border-b border-border-color bg-shadow/60 px-6 py-5">
                     <div className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-full border border-tarkov-green/25 bg-tarkov-green/10 text-tarkov-green"><ArchiveRestore size={20} /></span>
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full border border-brand/25 bg-brand/10 text-brand"><ArchiveRestore size={20} /></span>
                         <div>
-                            <DialogTitle className="text-lg text-white">
+                            <DialogTitle className="text-lg text-foreground">
                                 {step === "replace" ? `Replace ${selectedMode} profile data?` : "Restore your old profile data"}
                             </DialogTitle>
-                            <DialogDescription className="mt-1 text-sm text-gray-400">
+                            <DialogDescription className="mt-1 text-sm text-muted-foreground">
                                 {step === "replace" ? "Review the data that will be replaced before continuing." : "We kept your data from before profiles were introduced. Choose where it belongs."}
                             </DialogDescription>
                         </div>
@@ -235,7 +235,7 @@ export function LegacyProfileConversionDialog() {
                 </DialogHeader>
 
                 {(isLoading || requestError || conversionData?.errors.stations) && (
-                    <div className="border-b border-border-color bg-black/40 px-6 py-2 text-xs text-gray-400">
+                    <div className="border-b border-border-color bg-shadow/40 px-6 py-2 text-xs text-muted-foreground">
                         {isLoading
                             ? "Loading hideout station details…"
                             : requestError ?? conversionData?.errors.stations}
@@ -244,53 +244,53 @@ export function LegacyProfileConversionDialog() {
 
                 {step === "select" ? (
                     <div className="grid max-h-[65dvh] overflow-y-auto md:grid-cols-2">
-                        <section className="space-y-5 border-b border-border-color bg-black/30 p-6 md:border-b-0 md:border-r">
-                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Your old data</div>
+                        <section className="space-y-5 border-b border-border-color bg-shadow/30 p-6 md:border-b-0 md:border-r">
+                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-subtle-foreground">Your old data</div>
                             <StatsPanel stats={oldStats} />
                         </section>
-                        <section className="space-y-5 bg-black/20 p-6">
-                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Destination profile</div>
+                        <section className="space-y-5 bg-shadow/20 p-6">
+                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-subtle-foreground">Destination profile</div>
                             <div className="space-y-2">
                                 {GAME_MODES.map((mode) => {
                                     const selected = selectedMode === mode;
                                     const hasData = hasProfileData(store.profiles[mode]);
                                     return (
                                         <button key={mode} type="button" aria-pressed={selected} onClick={() => setSelectedModeOverride(mode)}
-                                            className={cn("flex w-full items-center gap-3 border p-4 text-left transition-colors", selected ? "border-tarkov-green/50 bg-tarkov-green/10" : "border-white/10 bg-black/20 hover:bg-white/5")}
+                                            className={cn("flex w-full items-center gap-3 border p-4 text-left transition-colors", selected ? "border-brand/50 bg-brand/10" : "border-highlight/10 bg-shadow/20 hover:bg-highlight/5")}
                                         >
-                                            <span className={cn("flex h-9 w-9 items-center justify-center rounded-full border", selected ? "border-tarkov-green bg-tarkov-green text-black" : "border-white/15 text-gray-600")}>
+                                            <span className={cn("flex h-9 w-9 items-center justify-center rounded-full border", selected ? "border-brand bg-brand text-inverse" : "border-highlight/15 text-subtle-foreground")}>
                                                 {selected ? <Check size={17} strokeWidth={3} /> : <ShieldCheck size={17} />}
                                             </span>
                                             <span className="flex min-w-0 flex-1 items-center justify-between gap-3">
-                                                <span className="text-sm font-semibold text-white">{mode}</span>
-                                                {hasData && <span className="inline-flex items-center gap-1 border border-amber-400/25 bg-amber-400/10 px-2 py-1 text-[10px] uppercase tracking-wide text-amber-200"><AlertTriangle size={11} /> Has data</span>}
+                                                <span className="text-sm font-semibold text-foreground">{mode}</span>
+                                                {hasData && <span className="inline-flex items-center gap-1 border border-warning/25 bg-warning/10 px-2 py-1 text-[10px] uppercase tracking-wide text-warning"><AlertTriangle size={11} /> Has data</span>}
                                             </span>
                                         </button>
                                     );
                                 })}
                             </div>
-                            <div className="text-xs leading-5 text-gray-500">Your old snapshot will remain stored after restoration.</div>
+                            <div className="text-xs leading-5 text-subtle-foreground">Your old snapshot will remain stored after restoration.</div>
                         </section>
                     </div>
                 ) : (
                     <div className="grid max-h-[65dvh] overflow-y-auto md:grid-cols-2">
-                        <section className="space-y-5 border-b border-tarkov-green/20 bg-tarkov-green/[0.03] p-6 md:border-b-0 md:border-r">
-                            <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-tarkov-green">Old data</span><span className="text-[10px] uppercase tracking-wide text-tarkov-green/70">Will be restored</span></div>
+                        <section className="space-y-5 border-b border-brand/20 bg-brand/[0.03] p-6 md:border-b-0 md:border-r">
+                            <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">Old data</span><span className="text-[10px] uppercase tracking-wide text-brand/70">Will be restored</span></div>
                             <StatsPanel stats={oldStats} />
                         </section>
-                        <section className="space-y-5 bg-red-500/[0.03] p-6">
-                            <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-red-300">Current {selectedMode} data</span><span className="text-[10px] uppercase tracking-wide text-red-300/70">Will be replaced</span></div>
+                        <section className="space-y-5 bg-danger/[0.03] p-6">
+                            <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-danger">Current {selectedMode} data</span><span className="text-[10px] uppercase tracking-wide text-danger/70">Will be replaced</span></div>
                             <StatsPanel stats={currentStats} />
                         </section>
                     </div>
                 )}
 
-                <div className="flex flex-col-reverse gap-3 border-t border-border-color bg-black/70 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-                    <button type="button" onClick={handleCancel} className="px-4 py-2 text-sm text-gray-400 transition-colors hover:bg-white/5 hover:text-white">Cancel</button>
+                <div className="flex flex-col-reverse gap-3 border-t border-border-color bg-shadow/70 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <button type="button" onClick={handleCancel} className="px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-highlight/5 hover:text-foreground">Cancel</button>
                     <div className="flex items-center justify-end gap-2">
-                        {step === "replace" && <button type="button" onClick={() => setStep("select")} className="px-4 py-2 text-sm text-gray-400 transition-colors hover:bg-white/5 hover:text-white">Back</button>}
+                        {step === "replace" && <button type="button" onClick={() => setStep("select")} className="px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-highlight/5 hover:text-foreground">Back</button>}
                         <button type="button" onClick={step === "replace" ? completeConversion : handleContinue}
-                            className={cn("inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold transition-colors", step === "replace" ? "bg-red-500 text-white hover:bg-red-400" : "bg-tarkov-green text-black hover:bg-lime-300")}
+                            className={cn("inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold transition-colors", step === "replace" ? "bg-danger text-inverse hover:bg-danger/85" : "bg-brand text-inverse hover:bg-brand-hover")}
                         >
                             {step === "replace" ? `Replace ${selectedMode} data` : "Confirm and continue"}
                         </button>

@@ -194,7 +194,7 @@ function SortableHeader({
 				aria-pressed={active}
 				aria-label={`Sort by ${label} ${nextDirection}`}
 				title={`Sort by ${label} ${nextDirection}`}
-				className={`flex h-full w-full items-center gap-1 rounded px-2 text-left transition hover:bg-white/[0.06] hover:text-foreground ${active ? "text-tarkov-green" : "text-muted-foreground"}`}
+				className={`flex h-full w-full items-center gap-1 rounded px-2 text-left transition hover:bg-highlight/[0.06] hover:text-foreground ${active ? "text-brand" : "text-muted-foreground"}`}
 			>
 				<span>{label}</span>
 				<SortIcon className={`size-3.5 ${active ? "opacity-100" : "opacity-45"}`} />

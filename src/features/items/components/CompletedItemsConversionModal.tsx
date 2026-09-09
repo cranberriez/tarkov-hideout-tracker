@@ -98,11 +98,11 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="max-w-xl p-4">
-                <DialogTitle className="text-sm font-semibold tracking-[0.2em] text-gray-400 mb-2">
+                <DialogTitle className="text-sm font-semibold tracking-[0.2em] text-muted-foreground mb-2">
                     ITEM PROGRESS UPDATE
                 </DialogTitle>
-                <div className="text-xs text-gray-400 mb-4 space-y-2">
-                    <p className="font-medium text-gray-300">Some things have changed.</p>
+                <div className="text-xs text-muted-foreground mb-4 space-y-2">
+                    <p className="font-medium text-foreground">Some things have changed.</p>
                     <p>
                         We now track how many items you have, including how many are Found in Raid. Any hideout
                         requirements you previously marked as completed (for future levels) can be converted into
@@ -114,13 +114,13 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
                 </div>
 
                 {isLoading ? (
-                    <div className="text-xs text-gray-500">Loading conversion data…</div>
+                    <div className="text-xs text-subtle-foreground">Loading conversion data…</div>
                 ) : requestError || data?.errors.stations ? (
-                    <div className="text-xs text-red-300">
+                    <div className="text-xs text-danger">
                         {requestError ?? data?.errors.stations}
                     </div>
                 ) : conversions.length === 0 ? (
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-subtle-foreground">
                         There are currently no eligible completed hideout requirements to convert. Once you
                         mark future-level requirements as completed, they will appear here so you can turn
                         them into item counts.
@@ -128,13 +128,13 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
                 ) : (
                     <div>
                         {itemNameWarning && (
-                            <div className="mb-2 text-xs text-amber-300">
+                            <div className="mb-2 text-xs text-warning">
                                 {itemNameWarning} Item IDs are shown where names are unavailable.
                             </div>
                         )}
                         <div className="max-h-64 overflow-y-auto border border-border-color rounded-sm mb-4">
                             <table className="w-full text-xs">
-                            <thead className="bg-black/40 text-gray-400 border-b border-border-color">
+                            <thead className="bg-shadow/40 text-muted-foreground border-b border-border-color">
                                 <tr>
                                     <th className="text-left px-3 py-2 font-medium">Item</th>
                                     <th className="text-right px-3 py-2 font-medium">Add</th>
@@ -147,13 +147,13 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
 
                                     return (
                                     <tr key={itemId} className="border-t border-border-color/40">
-                                        <td className="px-3 py-1.5 text-gray-200 truncate" title={itemName}>
+                                        <td className="px-3 py-1.5 text-foreground truncate" title={itemName}>
                                             {itemName}
                                         </td>
-                                        <td className={`px-3 py-1.5 text-right ${totalNonFir > 0 ? "text-tarkov-green" : "text-gray-400"} font-mono`}>
+                                        <td className={`px-3 py-1.5 text-right ${totalNonFir > 0 ? "text-success" : "text-muted-foreground"} font-mono`}>
                                             {totalNonFir > 0 ? totalNonFir : "-"}
                                         </td>
-                                        <td className={`px-3 py-1.5 text-right ${totalFir > 0 ? "text-orange-400" : "text-gray-400"} font-mono`}>
+                                        <td className={`px-3 py-1.5 text-right ${totalFir > 0 ? "text-warning" : "text-muted-foreground"} font-mono`}>
                                             {totalFir > 0 ? totalFir : "-"}
                                         </td>
                                     </tr>
@@ -168,7 +168,7 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-3 py-1.5 text-xs rounded-sm border border-border-color text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                        className="px-3 py-1.5 text-xs rounded-sm border border-border-color text-muted-foreground hover:text-foreground hover:bg-highlight/5 transition-colors"
                     >
                         Close
                     </button>
@@ -176,7 +176,7 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
                         <button
                             type="button"
                             onClick={handleApply}
-                            className="px-4 py-1.5 text-xs rounded-sm font-semibold bg-tarkov-green text-black hover:bg-lime-300 transition-colors"
+                            className="px-4 py-1.5 text-xs rounded-sm font-semibold bg-brand text-inverse hover:bg-brand-hover transition-colors"
                         >
                             Apply Conversion
                         </button>

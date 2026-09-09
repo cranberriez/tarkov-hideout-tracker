@@ -21,11 +21,11 @@ test("stable and unstable market UI shows distinct price semantics and raw conte
     };
     const unstable = renderToStaticMarkup(createElement(ItemDetailMarket, { ...props, marketPrice: { ...marketPrice, fleaStability: "unstable" } }));
     assert.match(unstable, /value unstable/);
-    assert.match(unstable, /text-amber-300/);
+    assert.match(unstable, /text-warning/);
     assert.doesNotMatch(unstable, /excluded from automatic|Signals:/);
     assert.doesNotMatch(unstable, /role="tooltip"|aria-label="Value unstable"/);
     assert.match(unstable, /Flea estimate/);
-    assert.match(unstable, /rounded-md border border-border-color bg-black\/25 px-2\.5 py-2/);
+    assert.match(unstable, /rounded-md border border-border-color bg-shadow\/25 px-2\.5 py-2/);
     assert.doesNotMatch(unstable, /Latest aggregate/);
     assert.doesNotMatch(unstable, /Latest minimum/);
     assert.match(unstable, /2 offers/);

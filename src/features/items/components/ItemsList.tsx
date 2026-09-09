@@ -488,9 +488,9 @@ export function ItemsList({
             <div className="space-y-8">
                 {groupsToRender.length > 0 && (
                     <div>
-                        <h2 className="mb-4 border-b border-white/10 pb-2 text-xl font-bold text-tarkov-green">
+                        <h2 className="mb-4 border-b border-highlight/10 pb-2 text-xl font-bold text-brand">
                             Quest Groups{" "}
-                            <span className="ml-2 text-sm font-normal text-gray-500">
+                            <span className="ml-2 text-sm font-normal text-subtle-foreground">
                                 ({groupsToRender.length})
                             </span>
                         </h2>
@@ -499,9 +499,9 @@ export function ItemsList({
                 )}
                 {sortedCategories.map((category) => (
                     <div key={category}>
-                        <h2 className="mb-4 border-b border-white/10 pb-2 text-xl font-bold text-tarkov-green">
+                        <h2 className="mb-4 border-b border-highlight/10 pb-2 text-xl font-bold text-brand">
                             {category}{" "}
-                            <span className="ml-2 text-sm font-normal text-gray-500">
+                            <span className="ml-2 text-sm font-normal text-subtle-foreground">
                                 ({categoryGroups[category].length})
                             </span>
                         </h2>
@@ -529,7 +529,7 @@ export function ItemsList({
 
     if (!searching && sourceItems.length === 0 && visibleQuestGroups.length === 0) {
         return (
-            <div className="py-20 text-center text-gray-500">
+            <div className="py-20 text-center text-subtle-foreground">
                 <div className="mb-2 text-xl">No items needed!</div>
                 <div className="text-sm">
                     You might have maxed out your hideout, completed your visible quests, or
@@ -542,7 +542,7 @@ export function ItemsList({
     return (
         <div className="space-y-8">
             {searching && (
-                <p role="status" className="text-sm text-gray-400">
+                <p role="status" className="text-sm text-muted-foreground">
                     {matchingItems.length + matchingGroups.length} visible matches &middot;{" "}
                     {outsideMatches.items.length} outside current filters
                 </p>
@@ -550,16 +550,16 @@ export function ItemsList({
             {matchingItems.length + matchingGroups.length > 0 ? (
                 renderItems(matchingItems, matchingGroups)
             ) : (
-                <p className="py-8 text-center text-gray-400">
+                <p className="py-8 text-center text-muted-foreground">
                     No matching items in the current filtered list.
                 </p>
             )}
             {outsideMatches.items.length > 0 && (
                 <section aria-labelledby="outside-filter-results">
-                    <h2 id="outside-filter-results" className="text-xl font-bold text-tarkov-green">
+                    <h2 id="outside-filter-results" className="text-xl font-bold text-brand">
                         Outside current filters
                     </h2>
-                    <p className="mb-4 mt-1 text-sm text-gray-400">
+                    <p className="mb-4 mt-1 text-sm text-muted-foreground">
                         Matches from the full{" "}
                         {itemSourceFilter === "all" ? "hideout and quest" : itemSourceFilter}{" "}
                         checklist, including past and future requirements. Open an item for details.
@@ -570,11 +570,11 @@ export function ItemsList({
                                 key={item.id}
                                 type="button"
                                 onClick={() => onClickItem(item)}
-                                className="rounded-md border border-white/10 bg-black/20 p-3 text-left text-sm text-gray-200 hover:border-tarkov-green/50 focus-visible:outline-2 focus-visible:outline-tarkov-green"
+                                className="rounded-md border border-highlight/10 bg-shadow/20 p-3 text-left text-sm text-foreground hover:border-brand/50 focus-visible:outline-2 focus-visible:outline-brand"
                             >
                                 <span className="block font-medium">{item.name}</span>
                                 {item.shortName && (
-                                    <span className="text-xs text-gray-500">{item.shortName}</span>
+                                    <span className="text-xs text-subtle-foreground">{item.shortName}</span>
                                 )}
                             </button>
                         ))}
@@ -582,7 +582,7 @@ export function ItemsList({
                 </section>
             )}
             {outsideMatches.missingIds.length > 0 && (
-                <details className="text-sm text-amber-300">
+                <details className="text-sm text-warning">
                     <summary>
                         Search is incomplete: {outsideMatches.missingIds.length} checklist items
                         have no item data.

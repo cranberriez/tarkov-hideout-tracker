@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type CSSProperties } from "react";
 import { useQuestsContext } from "../QuestsContext";
 import {
     AlertCircle,
@@ -42,6 +42,7 @@ import {
 import { QuestListByTrader } from "./QuestListByTrader";
 import { getSelectionKey, type AutoCompleteSelectionMap, type ImportSummary } from "./quest-log-import-model";
 import { useQuestLogImportController } from "./useQuestLogImportController";
+import { PROFILE_BASE_COLORS } from "@/lib/cfg/profile-colors";
 
 interface QuestLogImportDialogProps {
     open: boolean;
@@ -127,11 +128,11 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[90dvh] max-w-6xl overflow-hidden p-0">
                 <div className="flex max-h-[90dvh] flex-col">
-                    <DialogHeader className="border-b border-white/10 px-6 py-5">
-                        <DialogTitle className="text-balance text-xl text-white">
+                    <DialogHeader className="border-b border-highlight/10 px-6 py-5">
+                        <DialogTitle className="text-balance text-xl text-foreground">
                             Quest Log Import
                         </DialogTitle>
-                        <DialogDescription className="max-w-3xl text-pretty text-sm text-gray-400">
+                        <DialogDescription className="max-w-3xl text-pretty text-sm text-muted-foreground">
                             Upload EFT push-notification logs at the end of a play session to update
                             quest completion state or quickly get back up to speed. For more
                             in-depth quest syncing, especially when starting fresh on the site, try
@@ -143,20 +144,20 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                         <input ref={fileInputRef} className="hidden" {...directoryInputProps} />
 
                         {showSourceSummary && (
-                            <section className="flex flex-col rounded-lg border border-white/10 bg-black/20 p-4">
+                            <section className="flex flex-col rounded-lg border border-highlight/10 bg-shadow/20 p-4">
                                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                     <div className="space-y-1">
-                                        <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                                            <FolderOpen size={16} className="text-tarkov-green" />
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                                            <FolderOpen size={16} className="text-brand" />
                                             Choose EFT logs folder
                                         </div>
-                                        <p className="max-w-2xl text-pretty text-sm text-gray-400">
+                                        <p className="max-w-2xl text-pretty text-sm text-muted-foreground">
                                             The importer reads {gameMode} quest notifications for
                                             your active profile. Other modes in the same files stay
                                             unprocessed for a later upload.
                                         </p>
-                                        <p className="text-xs text-gray-500">
-                                            <code className="rounded bg-white/5 px-1.5 py-0.5 text-gray-300">
+                                        <p className="text-xs text-subtle-foreground">
+                                            <code className="rounded bg-highlight/5 px-1.5 py-0.5 text-foreground">
                                                 ~\Battlestate Games\EFT\Logs
                                             </code>{" "}
                                             upload the whole logs folder or individual sub-folders.
@@ -171,8 +172,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                             className={cn(
                                                 "inline-flex items-center gap-2 rounded-sm border px-3 py-2 text-sm transition-colors",
                                                 selectedFileNames.length > 0
-                                                    ? "border-white/10 bg-white/5 text-gray-200 hover:border-white/20 hover:bg-white/10 hover:text-white"
-                                                    : "border-tarkov-green/30 bg-tarkov-green/10 font-semibold text-tarkov-green hover:border-tarkov-green/60",
+                                                    ? "border-highlight/10 bg-highlight/5 text-foreground hover:border-highlight/20 hover:bg-highlight/10 hover:text-foreground"
+                                                    : "border-brand/30 bg-brand/10 font-semibold text-brand hover:border-brand/60",
                                             )}
                                         >
                                             <Upload size={14} />
@@ -185,7 +186,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                             onClick={commands.clear}
                                             disabled={!canClearSelection}
                                             aria-label="Clear selected folder"
-                                            className="inline-flex size-10 items-center justify-center rounded-sm border border-white/10 bg-white/5 text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                                            className="inline-flex size-10 items-center justify-center rounded-sm border border-highlight/10 bg-highlight/5 text-foreground transition-colors hover:border-highlight/20 hover:bg-highlight/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                                         >
                                             <Trash2 size={15} />
                                         </button>
@@ -193,23 +194,23 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                 </div>
 
                                 {isParsing && (
-                                    <div className="mt-4 rounded-lg border border-white/10 bg-black/30 px-3 py-3">
-                                        <span className="inline-flex items-center gap-2 text-tarkov-green">
-                                            <span className="size-2 rounded-full bg-tarkov-green" />
+                                    <div className="mt-4 rounded-lg border border-highlight/10 bg-shadow/30 px-3 py-3">
+                                        <span className="inline-flex items-center gap-2 text-success">
+                                            <span className="size-2 rounded-full bg-success" />
                                             Parsing logs...
                                         </span>
                                     </div>
                                 )}
 
                                 {error && (
-                                    <div className="mt-4 inline-flex items-center gap-2 rounded-sm border border-red-400/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+                                    <div className="mt-4 inline-flex items-center gap-2 rounded-sm border border-danger/20 bg-danger/10 px-3 py-2 text-sm text-danger">
                                         <AlertCircle size={14} />
                                         {error}
                                     </div>
                                 )}
 
                                 {importNotice && !showSuccessBanner && (
-                                    <div className="mt-4 inline-flex items-center gap-2 rounded-sm border border-tarkov-green/20 bg-tarkov-green/10 px-3 py-2 text-sm text-tarkov-green">
+                                    <div className="mt-4 inline-flex items-center gap-2 rounded-sm border border-success/20 bg-success/10 px-3 py-2 text-sm text-success">
                                         <CheckCircle2 size={14} />
                                         {importNotice}
                                     </div>
@@ -227,19 +228,19 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                             !isParsing &&
                             !hasResults &&
                             selectedFileNames.length === 0 && (
-                                <section className="mt-5 rounded-lg border border-dashed border-white/10 bg-black/10 p-8 text-center">
+                                <section className="mt-5 rounded-lg border border-dashed border-highlight/10 bg-shadow/10 p-8 text-center">
                                     <div className="mx-auto flex max-w-xl flex-col items-center gap-3">
-                                        <CheckCircle2 size={24} className="text-tarkov-green/80" />
-                                        <h2 className="text-balance text-lg font-semibold text-white">
+                                        <CheckCircle2 size={24} className="text-success/80" />
+                                        <h2 className="text-balance text-lg font-semibold text-foreground">
                                             Ready to inspect and import quest notifications
                                         </h2>
-                                        <p className="text-pretty text-sm text-gray-400">
+                                        <p className="text-pretty text-sm text-muted-foreground">
                                             Choose your EFT logs folder and the importer will
                                             import {gameMode} quest notifications for your active
                                             profile. Other modes in the same files stay unprocessed.
                                         </p>
-                                        <p className="text-xs text-gray-500">
-                                            <code className="rounded bg-white/5 px-1.5 py-0.5 text-gray-300">
+                                        <p className="text-xs text-subtle-foreground">
+                                            <code className="rounded bg-highlight/5 px-1.5 py-0.5 text-foreground">
                                                 ~\Battlestate Games\EFT\Logs
                                             </code>{" "}
                                             upload the whole logs folder or individual sub-folders.
@@ -247,26 +248,26 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         <button
                                             type="button"
                                             onClick={commands.chooseFolder}
-                                            className="rounded-sm border border-tarkov-green/30 bg-tarkov-green/10 px-3 py-2 text-sm font-semibold text-tarkov-green transition-colors hover:border-tarkov-green/60"
+                                            className="rounded-sm border border-brand/30 bg-brand/10 px-3 py-2 text-sm font-semibold text-brand transition-colors hover:border-brand/60"
                                         >
                                             Choose Logs Folder
                                         </button>
                                     </div>
 
                                     {cacheNotice && (
-                                        <div className="mt-5 flex w-full flex-col items-center justify-center gap-3 rounded-sm border border-amber-400/35 bg-amber-500/12 px-4 py-3 text-center text-sm text-amber-100 sm:flex-row sm:flex-wrap">
+                                        <div className="mt-5 flex w-full flex-col items-center justify-center gap-3 rounded-sm border border-warning/35 bg-warning/12 px-4 py-3 text-center text-sm text-warning sm:flex-row sm:flex-wrap">
                                             <div>{cacheNotice}</div>
                                             <button
                                                 type="button"
                                                 onClick={commands.clearCache}
-                                                className="text-xs text-amber-200 underline underline-offset-2 transition-colors hover:text-white"
+                                                className="text-xs text-warning underline underline-offset-2 transition-colors hover:text-foreground"
                                             >
                                                 Clear cache
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={commands.ignoreCache}
-                                                className="rounded-sm border border-amber-300/30 bg-amber-300/10 px-2 py-1 text-xs font-semibold text-amber-100 transition-colors hover:border-amber-200/60 hover:bg-amber-300/20 hover:text-white"
+                                                className="rounded-sm border border-warning/30 bg-warning/10 px-2 py-1 text-xs font-semibold text-warning transition-colors hover:border-warning/60 hover:bg-warning/20 hover:text-foreground"
                                             >
                                                 Ignore for these files
                                             </button>
@@ -276,20 +277,20 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                             )}
 
                         {cacheNotice && showSourceSummary && (
-                            <div className="mt-5 rounded-sm border border-amber-400/35 bg-amber-500/12 px-4 py-3 text-sm text-amber-100">
+                            <div className="mt-5 rounded-sm border border-warning/35 bg-warning/12 px-4 py-3 text-sm text-warning">
                                 <div className="flex flex-col items-center justify-center gap-3 text-center sm:flex-row sm:flex-wrap">
                                     <div>{cacheNotice}</div>
                                     <button
                                         type="button"
                                         onClick={commands.clearCache}
-                                        className="text-xs text-amber-200 underline underline-offset-2 transition-colors hover:text-white"
+                                        className="text-xs text-warning underline underline-offset-2 transition-colors hover:text-foreground"
                                     >
                                         Clear cache
                                     </button>
                                     <button
                                         type="button"
                                         onClick={commands.ignoreCache}
-                                        className="rounded-sm border border-amber-300/30 bg-amber-300/10 px-2 py-1 text-xs font-semibold text-amber-100 transition-colors hover:border-amber-200/60 hover:bg-amber-300/20 hover:text-white"
+                                        className="rounded-sm border border-warning/30 bg-warning/10 px-2 py-1 text-xs font-semibold text-warning transition-colors hover:border-warning/60 hover:bg-warning/20 hover:text-foreground"
                                     >
                                         Ignore for these files
                                     </button>
@@ -302,7 +303,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                             hasResults &&
                             !hasAnyImportableRows &&
                             !cacheNotice && (
-                                <section className="mt-5 rounded-lg border border-white/10 bg-black/20 px-4 py-4 text-sm text-gray-300">
+                                <section className="mt-5 rounded-lg border border-highlight/10 bg-shadow/20 px-4 py-4 text-sm text-foreground">
                                     All quests in logs are already completed.
                                 </section>
                             )}
@@ -396,20 +397,20 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                     </div>
 
                     {(showSelectFooter || showReviewFooter) && (
-                        <div className="border-t border-white/10 bg-[#0d0d0f]/95 px-6 py-3 backdrop-blur">
+                        <div className="border-t border-highlight/10 bg-card/95 px-6 py-3 backdrop-blur">
                             {showSelectFooter && (
                                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                                     <button
                                         type="button"
                                         onClick={commands.clear}
-                                        className="inline-flex items-center gap-2 rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+                                        className="inline-flex items-center gap-2 rounded-sm border border-highlight/10 bg-highlight/5 px-3 py-2 text-sm text-foreground transition-colors hover:border-highlight/20 hover:bg-highlight/10 hover:text-foreground"
                                     >
                                         <ArrowLeft size={14} />
                                         Back
                                     </button>
 
                                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-                                        <span className="text-sm text-gray-400">
+                                        <span className="text-sm text-muted-foreground">
                                             Import quests from:
                                         </span>
                                         <div className="flex flex-wrap items-center gap-2">
@@ -417,7 +418,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                                 <button
                                                     type="button"
                                                     onClick={() => commands.reviewMode("PVP")}
-                                                    className="rounded-sm border border-white/10 bg-gradient-to-b from-[#3b1c1f] to-[#241315] px-3 py-2 text-sm font-semibold text-gray-100 transition-colors hover:border-white/20 hover:from-[#472124] hover:to-[#2d1719] hover:text-white"
+                                                    style={{ "--profile-color": PROFILE_BASE_COLORS.PVP } as CSSProperties}
+                                                    className="rounded-sm border border-[color-mix(in_srgb,var(--profile-color)_45%,transparent)] bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--profile-color)_22%,var(--background)),color-mix(in_srgb,var(--profile-color)_10%,var(--background)))] px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:border-[color-mix(in_srgb,var(--profile-color)_60%,transparent)] hover:bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--profile-color)_30%,var(--background)),color-mix(in_srgb,var(--profile-color)_15%,var(--background)))]"
                                                 >
                                                     Import PVP Quests
                                                 </button>
@@ -426,7 +428,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                                 <button
                                                     type="button"
                                                     onClick={() => commands.reviewMode("PVE")}
-                                                    className="rounded-sm border border-white/10 bg-gradient-to-b from-[#142737] to-[#0f1b28] px-3 py-2 text-sm font-semibold text-gray-100 transition-colors hover:border-white/20 hover:from-[#1a3145] hover:to-[#122231] hover:text-white"
+                                                    style={{ "--profile-color": PROFILE_BASE_COLORS.PVE } as CSSProperties}
+                                                    className="rounded-sm border border-[color-mix(in_srgb,var(--profile-color)_45%,transparent)] bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--profile-color)_22%,var(--background)),color-mix(in_srgb,var(--profile-color)_10%,var(--background)))] px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:border-[color-mix(in_srgb,var(--profile-color)_60%,transparent)] hover:bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--profile-color)_30%,var(--background)),color-mix(in_srgb,var(--profile-color)_15%,var(--background)))]"
                                                 >
                                                     Import PVE Quests
                                                 </button>
@@ -435,7 +438,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                                 <button
                                                     type="button"
                                                     onClick={() => commands.reviewMode("KORD")}
-                                                    className="rounded-sm border border-white/10 bg-gradient-to-b from-[#34301a] to-[#211f13] px-3 py-2 text-sm font-semibold text-gray-100 transition-colors hover:border-white/20 hover:from-[#403b20] hover:to-[#292617] hover:text-white"
+                                                    style={{ "--profile-color": PROFILE_BASE_COLORS.KORD } as CSSProperties}
+                                                    className="rounded-sm border border-[color-mix(in_srgb,var(--profile-color)_45%,transparent)] bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--profile-color)_22%,var(--background)),color-mix(in_srgb,var(--profile-color)_10%,var(--background)))] px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:border-[color-mix(in_srgb,var(--profile-color)_60%,transparent)] hover:bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--profile-color)_30%,var(--background)),color-mix(in_srgb,var(--profile-color)_15%,var(--background)))]"
                                                 >
                                                     Import KORD Seasonal Quests
                                                 </button>
@@ -453,7 +457,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                         <button
                                             type="button"
                                             onClick={commands.cancelReview}
-                                            className="inline-flex items-center gap-2 rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+                                            className="inline-flex items-center gap-2 rounded-sm border border-highlight/10 bg-highlight/5 px-3 py-2 text-sm text-foreground transition-colors hover:border-highlight/20 hover:bg-highlight/10 hover:text-foreground"
                                         >
                                             <ArrowLeft size={14} />
                                             Back
@@ -465,7 +469,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                             <button
                                                 type="button"
                                                 onClick={commands.toggleInfo}
-                                                className="inline-flex items-center gap-1 rounded-sm border border-white/10 bg-white/5 px-2.5 py-2 text-xs text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+                                                className="inline-flex items-center gap-1 rounded-sm border border-highlight/10 bg-highlight/5 px-2.5 py-2 text-xs text-foreground transition-colors hover:border-highlight/20 hover:bg-highlight/10 hover:text-foreground"
                                             >
                                                 <Info size={13} />
                                                 Info
@@ -480,7 +484,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                             <button
                                                 type="button"
                                                 onClick={() => onOpenChange(false)}
-                                                className="rounded-sm border border-tarkov-green/30 bg-tarkov-green/10 px-3 py-2 text-sm font-semibold text-tarkov-green transition-colors hover:border-tarkov-green/60"
+                                                className="rounded-sm border border-brand/30 bg-brand/10 px-3 py-2 text-sm font-semibold text-brand transition-colors hover:border-brand/60"
                                             >
                                                 Close
                                             </button>
@@ -492,8 +496,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
                                                 className={cn(
                                                     "rounded-sm px-3 py-2 text-sm font-semibold transition-colors",
                                                     reviewBlockedSensitiveQuestIds.length > 0
-                                                        ? "cursor-not-allowed border border-white/10 bg-black/30 text-gray-600"
-                                                        : "border border-tarkov-green/30 bg-tarkov-green/10 text-tarkov-green hover:border-tarkov-green/60",
+                                                        ? "cursor-not-allowed border border-highlight/10 bg-shadow/30 text-subtle-foreground"
+                                                        : "border border-brand/30 bg-brand/10 text-brand hover:border-brand/60",
                                                 )}
                                             >
                                                 Confirm Import
@@ -512,7 +516,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 
 function PreWipeCutoffNotice({ fileCount }: { fileCount: number }) {
     return (
-        <div className="mt-4 flex w-full items-center gap-2 rounded-sm border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+        <div className="mt-4 flex w-full items-center gap-2 rounded-sm border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
             <AlertCircle size={14} />
             <span>
                 Some log files are older than the latest 1.0 wipe in November 2025 and were ignored.
@@ -542,15 +546,14 @@ function ModeSection({
     onDisableAll: () => void;
 }) {
     const accentClasses =
-        mode === "PVP"
-            ? "from-red-500/25 via-red-500/8 to-transparent"
-            : mode === "PVE"
-              ? "from-sky-400/25 via-sky-400/8 to-transparent"
-              : "from-amber-400/25 via-amber-400/8 to-transparent";
+        "from-[color-mix(in_srgb,var(--profile-color)_25%,transparent)] via-[color-mix(in_srgb,var(--profile-color)_8%,transparent)] to-transparent";
 
     return (
-        <section className="rounded-lg border border-white/10 bg-black/20">
-            <div className="relative flex flex-col gap-3 overflow-hidden border-b border-white/10 px-4 py-3 lg:flex-row lg:items-center">
+        <section
+            style={{ "--profile-color": PROFILE_BASE_COLORS[mode] } as CSSProperties}
+            className="rounded-lg border border-highlight/10 bg-shadow/20"
+        >
+            <div className="relative flex flex-col gap-3 overflow-hidden border-b border-highlight/10 px-4 py-3 lg:flex-row lg:items-center">
                 <div
                     aria-hidden="true"
                     className={cn(
@@ -559,28 +562,28 @@ function ModeSection({
                     )}
                 />
                 <div className="relative">
-                    <h2 className="text-balance text-lg font-semibold text-white">{title}</h2>
+                    <h2 className="text-balance text-lg font-semibold text-foreground">{title}</h2>
                 </div>
 
                 <div className="relative flex flex-wrap items-center gap-2 lg:ml-auto lg:justify-end">
                     <button
                         type="button"
                         onClick={onEnableAll}
-                        className="rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+                        className="rounded-sm border border-highlight/10 bg-highlight/5 px-3 py-2 text-sm text-foreground transition-colors hover:border-highlight/20 hover:bg-highlight/10 hover:text-foreground"
                     >
                         Enable All
                     </button>
                     <button
                         type="button"
                         onClick={onDisableAll}
-                        className="rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+                        className="rounded-sm border border-highlight/10 bg-highlight/5 px-3 py-2 text-sm text-foreground transition-colors hover:border-highlight/20 hover:bg-highlight/10 hover:text-foreground"
                     >
                         Disable All
                     </button>
                 </div>
             </div>
 
-            <div className="divide-y divide-white/5">
+            <div className="divide-y divide-highlight/5">
                 {rows.map((row) => {
                     const selectionKey = getSelectionKey(mode, row.questId);
                     const autoCompleteEnabled = autoCompleteSelections[selectionKey] ?? false;
@@ -593,7 +596,7 @@ function ModeSection({
                             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                                 <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <div className="truncate text-base font-semibold text-white">
+                                        <div className="truncate text-base font-semibold text-foreground">
                                             {row.quest.name}
                                         </div>
                                         <QuestStateBadge
@@ -601,28 +604,28 @@ function ModeSection({
                                             hasCompleted={row.hasCompleted}
                                         />
                                         {alreadyCompleted && (
-                                            <span className="inline-flex items-center rounded-full border border-tarkov-green/20 bg-tarkov-green/10 px-2 py-1 text-[11px] font-medium uppercase text-tarkov-green">
+                                            <span className="inline-flex items-center rounded-full border border-success/20 bg-success/10 px-2 py-1 text-[11px] font-medium uppercase text-success">
                                                 Already Complete
                                             </span>
                                         )}
                                     </div>
-                                    <div className="mt-1 text-xs text-gray-500">{row.questId}</div>
-                                    <div className="mt-2 text-xs text-gray-500 tabular-nums">
+                                    <div className="mt-1 text-xs text-subtle-foreground">{row.questId}</div>
+                                    <div className="mt-2 text-xs text-subtle-foreground tabular-nums">
                                         Seen {row.occurrenceCount} · Events {row.eventCount} · Files{" "}
                                         {row.sourceFiles.length}
                                     </div>
                                 </div>
 
                                 <div className="flex flex-col items-start gap-3 lg:items-end">
-                                    <div className="text-xs text-gray-400 tabular-nums">
+                                    <div className="text-xs text-muted-foreground tabular-nums">
                                         Latest: {formatTimestamp(row.latestTimestamp)}
                                     </div>
-                                    <label className="inline-flex items-center gap-3 rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-200">
+                                    <label className="inline-flex items-center gap-3 rounded-sm border border-highlight/10 bg-highlight/5 px-3 py-2 text-sm text-foreground">
                                         <input
                                             type="checkbox"
                                             checked={autoCompleteEnabled}
                                             onChange={() => onToggleAutoComplete(mode, row.questId)}
-                                            className="size-4 accent-[var(--accent-green)]"
+                                            className="size-4 accent-brand"
                                         />
                                         Auto-complete prerequisites
                                     </label>
@@ -630,7 +633,7 @@ function ModeSection({
                             </div>
 
                             {showNetworkProviderWarning && (
-                                <div className="mt-4 rounded-sm border border-red-500/35 bg-red-500/12 px-3 py-2 text-xs font-semibold text-red-100">
+                                <div className="mt-4 rounded-sm border border-danger/35 bg-danger/12 px-3 py-2 text-xs font-semibold text-danger">
                                     WARNING: If you got Network Provider - Part 1 from the story
                                     missions, do not select it. This can auto-complete a large
                                     number of quests you may not intend to do.
@@ -678,17 +681,17 @@ function ReviewStep({
 
         return (
             <section className="mt-5">
-                <div className="rounded-lg border border-emerald-400/25 bg-emerald-500/12 px-5 py-5 text-emerald-100">
+                <div className="rounded-lg border border-success/25 bg-success/12 px-5 py-5 text-success">
                     <div className="flex items-center gap-3">
-                        <CheckCircle2 size={20} className="text-emerald-300" />
+                        <CheckCircle2 size={20} className="text-success" />
                         <div>
-                            <div className="text-base font-semibold text-white">
+                            <div className="text-base font-semibold text-foreground">
                                 Successfully imported {importedCount} quest
                                 {importedCount === 1 ? "" : "s"} and auto-completed{" "}
                                 {prerequisiteCount} quest
                                 {prerequisiteCount === 1 ? "" : "s"}.
                             </div>
-                            <div className="mt-1 text-sm text-emerald-100/80">
+                            <div className="mt-1 text-sm text-success/80">
                                 Your current {successMode} quest progress has been updated.
                             </div>
                         </div>
@@ -699,13 +702,13 @@ function ReviewStep({
     }
 
     return (
-        <section className="mt-5 rounded-lg border border-white/10 bg-black/20">
-            <div className="border-b border-white/10 px-4 py-4">
+        <section className="mt-5 rounded-lg border border-highlight/10 bg-shadow/20">
+            <div className="border-b border-highlight/10 px-4 py-4">
                 <div>
-                    <h2 className="text-balance text-lg font-semibold text-white">
+                    <h2 className="text-balance text-lg font-semibold text-foreground">
                         Review {mode} Import
                     </h2>
-                    <p className="mt-1 text-pretty text-sm text-gray-400">
+                    <p className="mt-1 text-pretty text-sm text-muted-foreground">
                         Confirm the quests detected from logs and the prerequisite quests that will
                         be auto-completed for this import pass.
                     </p>
@@ -713,7 +716,7 @@ function ReviewStep({
             </div>
 
             <div className="space-y-5 px-4 py-4">
-                <div className="flex flex-wrap items-center gap-2 text-sm text-gray-400">
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                     <MiniStat label="Quests" value={importedRows.length} />
                     <MiniStat label="Prereqs" value={prerequisiteQuests.length} />
                 </div>
@@ -730,25 +733,25 @@ function ReviewStep({
                 )}
 
                 <section className="space-y-2">
-                    <h3 className="text-sm font-semibold text-white">Quests from Logs</h3>
+                    <h3 className="text-sm font-semibold text-foreground">Quests from Logs</h3>
                     <QuestListByTrader
                         questIds={importedRows.map((row) => row.questId)}
                         questsById={questsById}
-                        itemPrefix={() => <Check size={14} className="shrink-0 text-emerald-300" />}
+                        itemPrefix={() => <Check size={14} className="shrink-0 text-success" />}
                         emptyMessage={`No ${mode} quests are queued for import.`}
                     />
                 </section>
 
                 {prerequisiteQuests.length > 0 && (
                     <section className="space-y-2">
-                        <h3 className="text-sm font-semibold text-white">
+                        <h3 className="text-sm font-semibold text-foreground">
                             Prerequisites to Auto-Complete
                         </h3>
                         <QuestListByTrader
                             questIds={prerequisiteQuests.map((quest) => quest.id)}
                             questsById={questsById}
                             itemPrefix={() => (
-                                <Check size={14} className="shrink-0 text-emerald-300" />
+                                <Check size={14} className="shrink-0 text-success" />
                             )}
                         />
                     </section>
@@ -782,16 +785,16 @@ function SensitiveBackfillGate({
     return (
         <div
             className={cn(
-                "rounded-sm px-3 py-3 text-sm text-gray-200 transition-colors",
+                "rounded-sm px-3 py-3 text-sm text-foreground transition-colors",
                 hasUnresolvedChoices
-                    ? "border border-dashed border-red-500/60"
-                    : "border border-white/10 bg-white/5",
+                    ? "border border-dashed border-danger/60"
+                    : "border border-highlight/10 bg-highlight/5",
             )}
         >
             <div
                 className={cn(
                     "font-semibold",
-                    hasUnresolvedChoices ? "text-red-400" : "text-gray-200",
+                    hasUnresolvedChoices ? "text-danger" : "text-foreground",
                 )}
             >
                 {hasUnresolvedChoices
@@ -808,19 +811,19 @@ function SensitiveBackfillGate({
                             <div className="flex items-center gap-2 font-semibold">
                                 <span>{getQuestName(questId)}</span>
                             </div>
-                            <p className="mt-1 text-xs leading-5 text-gray-400">
+                            <p className="mt-1 text-xs leading-5 text-muted-foreground">
                                 {getSensitiveBackfillQuest(questId)?.warning}
                             </p>
                         </div>
-                        <div className="inline-flex shrink-0 overflow-hidden rounded-sm border border-white/10 lg:mt-0">
+                        <div className="inline-flex shrink-0 overflow-hidden rounded-sm border border-highlight/10 lg:mt-0">
                             <button
                                 type="button"
                                 onClick={() => onDeny(questId)}
                                 className={cn(
                                     "px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors",
                                     deniedSet.has(questId)
-                                        ? "bg-white/10 text-white"
-                                        : "bg-transparent text-gray-300 hover:bg-white/5 hover:text-white",
+                                        ? "bg-highlight/10 text-foreground"
+                                        : "bg-transparent text-foreground hover:bg-highlight/5 hover:text-foreground",
                                 )}
                             >
                                 Deny
@@ -829,13 +832,13 @@ function SensitiveBackfillGate({
                                 type="button"
                                 onClick={() => onAllow(questId)}
                                 className={cn(
-                                    "inline-flex items-center gap-1 border-l border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors",
+                                    "inline-flex items-center gap-1 border-l border-highlight/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors",
                                     allowedSet.has(questId)
-                                        ? "bg-red-500/15 text-red-100"
-                                        : "bg-transparent text-gray-300 hover:bg-red-500/10 hover:text-white",
+                                        ? "bg-danger/15 text-danger"
+                                        : "bg-transparent text-foreground hover:bg-danger/10 hover:text-foreground",
                                 )}
                             >
-                                <TriangleAlert size={12} className="text-amber-300" />
+                                <TriangleAlert size={12} className="text-warning" />
                                 Allow
                             </button>
                         </div>
@@ -854,10 +857,10 @@ function InfoPanel({
     unknownModeGroups: QuestImportBuckets["unknownMode"];
 }) {
     return (
-        <section className="rounded-lg border border-white/10 bg-black/20">
-            <div className="border-b border-white/10 px-4 py-3">
-                <h2 className="text-balance text-lg font-semibold text-white">Import Details</h2>
-                <p className="mt-1 text-pretty text-sm text-gray-400">
+        <section className="rounded-lg border border-highlight/10 bg-shadow/20">
+            <div className="border-b border-highlight/10 px-4 py-3">
+                <h2 className="text-balance text-lg font-semibold text-foreground">Import Details</h2>
+                <p className="mt-1 text-pretty text-sm text-muted-foreground">
                     Parser stats and raw deduped events for debugging. Unknown-mode quests remain
                     view-only.
                 </p>
@@ -878,30 +881,30 @@ function InfoPanel({
                     <SummaryCard label="Resolved Groups" value={result.resolvedGroups.length} />
                 </section>
 
-                <section className="rounded-lg border border-white/10 bg-black/20">
-                    <div className="border-b border-white/10 px-4 py-3">
-                        <h3 className="text-sm font-semibold text-white">Unknown Mode Quests</h3>
-                        <p className="mt-1 text-sm text-gray-400">
+                <section className="rounded-lg border border-highlight/10 bg-shadow/20">
+                    <div className="border-b border-highlight/10 px-4 py-3">
+                        <h3 className="text-sm font-semibold text-foreground">Unknown Mode Quests</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
                             These were resolved to known quests but no prior mode signal was found.
                         </p>
                     </div>
 
                     {unknownModeGroups.length === 0 ? (
-                        <div className="px-4 py-5 text-sm text-gray-500">
+                        <div className="px-4 py-5 text-sm text-subtle-foreground">
                             No unknown-mode quests were detected.
                         </div>
                     ) : (
-                        <div className="divide-y divide-white/5">
+                        <div className="divide-y divide-highlight/5">
                             {unknownModeGroups.map((group) => (
                                 <div key={`${group.questId}-${group.type}`} className="px-4 py-3">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-sm font-semibold text-white">
+                                        <span className="text-sm font-semibold text-foreground">
                                             {group.quest?.name ?? group.questId}
                                         </span>
                                         <TypeBadge type={group.type} />
                                         <CountBadge label="Seen" value={group.occurrenceCount} />
                                     </div>
-                                    <div className="mt-1 text-xs text-gray-500">
+                                    <div className="mt-1 text-xs text-subtle-foreground">
                                         {group.questId} · Latest{" "}
                                         {formatTimestamp(group.latestTimestamp)}
                                     </div>
@@ -919,18 +922,18 @@ function InfoPanel({
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
     return (
-        <div className="rounded-lg border border-white/10 bg-black/20 p-4">
-            <div className="text-xs font-medium text-gray-500">{label}</div>
-            <div className="mt-2 text-2xl font-semibold tabular-nums text-white">{value}</div>
+        <div className="rounded-lg border border-highlight/10 bg-shadow/20 p-4">
+            <div className="text-xs font-medium text-subtle-foreground">{label}</div>
+            <div className="mt-2 text-2xl font-semibold tabular-nums text-foreground">{value}</div>
         </div>
     );
 }
 
 function MiniStat({ label, value }: { label: string; value: number }) {
     return (
-        <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-xs text-gray-300">
+        <span className="inline-flex items-center gap-1 rounded-full border border-highlight/10 bg-highlight/5 px-2 py-1 text-xs text-foreground">
             <span>{label}</span>
-            <span className="tabular-nums text-white">{value}</span>
+            <span className="tabular-nums text-foreground">{value}</span>
         </span>
     );
 }
@@ -950,8 +953,8 @@ function QuestStateBadge({
             className={cn(
                 "inline-flex items-center rounded-full border px-2 py-1 text-[11px] font-medium uppercase",
                 hasCompleted
-                    ? "border-tarkov-green/25 bg-tarkov-green/10 text-tarkov-green"
-                    : "border-sky-400/25 bg-sky-500/10 text-sky-200",
+                    ? "border-success/25 bg-success/10 text-success"
+                    : "border-info/25 bg-info/10 text-info",
             )}
         >
             {label}
@@ -965,8 +968,8 @@ function TypeBadge({ type }: { type: ParsedQuestEvent["type"] }) {
             className={cn(
                 "inline-flex items-center rounded-full border px-2 py-1 text-[11px] font-medium uppercase",
                 type === "completed"
-                    ? "border-tarkov-green/25 bg-tarkov-green/10 text-tarkov-green"
-                    : "border-sky-400/25 bg-sky-500/10 text-sky-200",
+                    ? "border-success/25 bg-success/10 text-success"
+                    : "border-info/25 bg-info/10 text-info",
             )}
         >
             {type}
@@ -976,30 +979,30 @@ function TypeBadge({ type }: { type: ParsedQuestEvent["type"] }) {
 
 function CountBadge({ label, value }: { label: string; value: number }) {
     return (
-        <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-gray-300">
+        <span className="inline-flex items-center gap-1 rounded-full border border-highlight/10 bg-highlight/5 px-2 py-1 text-[11px] text-foreground">
             <span>{label}</span>
-            <span className="tabular-nums text-white">{value}</span>
+            <span className="tabular-nums text-foreground">{value}</span>
         </span>
     );
 }
 
 function RawEventsSection({ events }: { events: ParsedQuestEvent[] }) {
     return (
-        <section className="rounded-lg border border-white/10 bg-black/20">
-            <div className="border-b border-white/10 px-4 py-3">
-                <h3 className="text-sm font-semibold text-white">Raw Events</h3>
-                <p className="mt-1 text-sm text-gray-400">
+        <section className="rounded-lg border border-highlight/10 bg-shadow/20">
+            <div className="border-b border-highlight/10 px-4 py-3">
+                <h3 className="text-sm font-semibold text-foreground">Raw Events</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
                     Deduped event list for spot checking timestamps, source files, IDs, and mode
                     tags.
                 </p>
             </div>
 
             {events.length === 0 ? (
-                <div className="px-4 py-6 text-sm text-gray-500">No quest events were parsed.</div>
+                <div className="px-4 py-6 text-sm text-subtle-foreground">No quest events were parsed.</div>
             ) : (
                 <div className="overflow-x-auto">
                     <table className="min-w-full text-left text-sm">
-                        <thead className="bg-white/5 text-xs uppercase text-gray-500">
+                        <thead className="bg-highlight/5 text-xs uppercase text-subtle-foreground">
                             <tr>
                                 <th className="px-4 py-3 font-medium">Timestamp</th>
                                 <th className="px-4 py-3 font-medium">Quest</th>
@@ -1009,25 +1012,25 @@ function RawEventsSection({ events }: { events: ParsedQuestEvent[] }) {
                                 <th className="px-4 py-3 font-medium">Source File</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-highlight/5">
                             {events.map((event, index) => (
                                 <tr
                                     key={`${event.questId}-${event.type}-${event.raidMode}-${index}`}
                                 >
-                                    <td className="px-4 py-3 text-gray-300 tabular-nums">
+                                    <td className="px-4 py-3 text-foreground tabular-nums">
                                         {formatTimestamp(event.timestamp)}
                                     </td>
-                                    <td className="px-4 py-3 text-gray-200">{event.questId}</td>
+                                    <td className="px-4 py-3 text-foreground">{event.questId}</td>
                                     <td className="px-4 py-3">
                                         <TypeBadge type={event.type} />
                                     </td>
-                                    <td className="px-4 py-3 text-gray-300 uppercase">
+                                    <td className="px-4 py-3 text-foreground uppercase">
                                         {event.raidMode}
                                     </td>
-                                    <td className="px-4 py-3 text-gray-300 tabular-nums">
+                                    <td className="px-4 py-3 text-foreground tabular-nums">
                                         {event.occurrenceCount}
                                     </td>
-                                    <td className="px-4 py-3 text-gray-500">{event.sourceFile}</td>
+                                    <td className="px-4 py-3 text-subtle-foreground">{event.sourceFile}</td>
                                 </tr>
                             ))}
                         </tbody>

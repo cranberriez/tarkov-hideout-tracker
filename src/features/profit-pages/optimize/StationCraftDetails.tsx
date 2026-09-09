@@ -59,7 +59,7 @@ export function StationCraftDetails({
 	function chain(parts: AcquisitionPlan[], depth = 0): React.ReactNode {
 		return parts.map((part) => (
 			<div key={`${part.itemId}:${part.sourceId}:${part.isTool}`} className="py-1" style={{ paddingLeft: Math.min(depth, 4) * 12 }}>
-				<button type="button" className="inline-flex items-center gap-2 text-left text-xs hover:text-tarkov-green" onClick={() => onItemOpen(part.itemId)}>
+				<button type="button" className="inline-flex items-center gap-2 text-left text-xs hover:text-brand" onClick={() => onItemOpen(part.itemId)}>
 					<CraftImage item={input.itemsById[part.itemId]} size={24} />
 					{formatQuantity(part.quantity)}× {input.itemsById[part.itemId]?.name ?? part.itemId}
 				</button>
@@ -75,9 +75,9 @@ export function StationCraftDetails({
 		));
 	}
 	return (
-		<div className="mb-7 space-y-6 bg-black/10 px-4 pb-4 pt-2">
+		<div className="mb-7 space-y-6 bg-shadow/10 px-4 pb-4 pt-2">
 			{row.lockReasons.length > 0 && (
-				<p role="status" className="text-xs text-amber-300">
+				<p role="status" className="text-xs text-warning">
 					{row.lockReasons.map((reason) => reason.message).join(" · ")}
 				</p>
 			)}
@@ -91,7 +91,7 @@ export function StationCraftDetails({
 							type="button"
 							aria-pressed={selected.variant === variant.id}
 							onClick={() => onChoice({ variant: variant.id, unitCosts: selected.unitCosts })}
-							className={`rounded px-3 py-2 text-left text-xs ${selected.variant === variant.id ? "bg-white/10" : "hover:bg-white/5 text-muted-foreground"}`}
+							className={`rounded px-3 py-2 text-left text-xs ${selected.variant === variant.id ? "bg-highlight/10" : "hover:bg-highlight/5 text-muted-foreground"}`}
 						>
 							<span className="block font-medium">{variant.label}</span>
 							<span className="mt-1 block text-[11px] text-muted-foreground">
@@ -189,7 +189,7 @@ export function StationCraftDetails({
 							<dt className="mt-1 text-xs text-foreground">Total</dt>
 							<dd className="mt-1 text-right font-mono text-xs text-foreground">{formatRoundedRoubles(totalCost)}</dd>
 						</dl>
-						{sale.fee === null && <p className="text-xs text-amber-300">A flea fee cannot be estimated without a usable item base value.</p>}
+						{sale.fee === null && <p className="text-xs text-warning">A flea fee cannot be estimated without a usable item base value.</p>}
 					</div>
 					<div className="space-y-2">
 						<div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -198,7 +198,7 @@ export function StationCraftDetails({
 						</div>
 						<div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
 							<span
-								className={`font-mono text-2xl font-medium ${row.profit === null ? "text-muted-foreground" : row.profit > 0 ? "text-tarkov-green" : "text-red-300"}`}
+								className={`font-mono text-2xl font-medium ${row.profit === null ? "text-muted-foreground" : row.profit > 0 ? "text-success" : "text-danger"}`}
 							>
 								{formatSignedRoubles(row.profit)}
 							</span>

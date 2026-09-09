@@ -47,7 +47,7 @@ export function ItemDetailQuestRequirements({
         <div>
             {requiredQuestCount > 0 && (
                 <section>
-                    <div className="border-b border-border-color bg-black/20 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <div className="border-b border-border-color bg-shadow/20 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                         Required for quests
                     </div>
                     <div className="divide-y divide-border-color">
@@ -62,7 +62,7 @@ export function ItemDetailQuestRequirements({
             )}
             {questRewards.length > 0 && (
                 <section className={requiredQuestCount > 0 ? "border-t border-border-color" : ""}>
-                    <div className="border-b border-border-color bg-tarkov-green/[0.04] px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-tarkov-green/80">
+                    <div className="border-b border-border-color bg-brand/[0.04] px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-brand/80">
                         Quest rewards
                     </div>
                     <div className="divide-y divide-border-color">
@@ -78,18 +78,18 @@ export function ItemDetailQuestRequirements({
 
 function QuestRewardRow({ reward, itemImageLink, completed }: { reward: QuestRewardLink; itemImageLink?: string; completed: boolean }) {
     return (
-        <div className="bg-black/10 px-3 py-2.5 hover:bg-white/[0.02]">
+        <div className="bg-shadow/10 px-3 py-2.5 hover:bg-highlight/[0.02]">
             <div className="flex min-w-0 items-center gap-2.5">
-                <Gift size={15} className="shrink-0 text-tarkov-green" />
+                <Gift size={15} className="shrink-0 text-brand" />
                 {reward.traderImageLink ? (
                     <img src={reward.traderImage4xLink ?? reward.traderImageLink} alt="" className="h-6 w-6 shrink-0 rounded-full object-cover" />
                 ) : (
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] text-muted-foreground">{reward.traderName[0]}</span>
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-highlight/10 text-[10px] text-muted-foreground">{reward.traderName[0]}</span>
                 )}
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                         <span className="truncate text-sm font-medium text-foreground">{reward.questName}</span>
-                        {completed && <span className="rounded-md bg-tarkov-green/10 px-1.5 py-0.5 text-[10px] text-tarkov-green">Completed</span>}
+                        {completed && <span className="rounded-md bg-success/10 px-1.5 py-0.5 text-[10px] text-success">Completed</span>}
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
                         {reward.traderName}{hasDisplayQuestLevel(reward.minPlayerLevel) ? ` · Level ${reward.minPlayerLevel}` : ""}
@@ -113,12 +113,12 @@ function QuestRow({
     const isCompleted = quest.status === "completed";
 
     return (
-        <div className="bg-black/10 px-3 py-2.5 hover:bg-white/[0.02]">
+        <div className="bg-shadow/10 px-3 py-2.5 hover:bg-highlight/[0.02]">
             <div className="flex min-w-0 items-center gap-2.5">
                 {isCompleted ? (
-                    <CheckCircle size={15} className="shrink-0 text-tarkov-green" />
+                    <CheckCircle size={15} className="shrink-0 text-success" />
                 ) : (
-                    <Circle size={15} className="shrink-0 text-gray-600" />
+                    <Circle size={15} className="shrink-0 text-subtle-foreground" />
                 )}
                 {quest.traderImageLink ? (
                     <img
@@ -127,7 +127,7 @@ function QuestRow({
                         className="h-6 w-6 shrink-0 rounded-full object-cover"
                     />
                 ) : (
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] text-muted-foreground">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-highlight/10 text-[10px] text-muted-foreground">
                         {quest.traderName[0]}
                     </span>
                 )}
@@ -183,12 +183,12 @@ function AnyOfGroupRow({
     const hiddenItemCount = Math.max(group.totalItemCount - previewItems.length, 0);
 
     return (
-        <div className="bg-black/10 px-3 py-2.5 hover:bg-white/[0.02]">
+        <div className="bg-shadow/10 px-3 py-2.5 hover:bg-highlight/[0.02]">
             <div className="flex min-w-0 items-center gap-2.5">
                 {isCompleted ? (
-                    <CheckCircle size={15} className="shrink-0 text-tarkov-green" />
+                    <CheckCircle size={15} className="shrink-0 text-success" />
                 ) : (
-                    <Circle size={15} className="shrink-0 text-gray-600" />
+                    <Circle size={15} className="shrink-0 text-subtle-foreground" />
                 )}
                 {group.traderImageLink ? (
                     <img
@@ -197,7 +197,7 @@ function AnyOfGroupRow({
                         className="h-6 w-6 shrink-0 rounded-full object-cover"
                     />
                 ) : (
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] text-muted-foreground">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-highlight/10 text-[10px] text-muted-foreground">
                         {group.traderName[0]}
                     </span>
                 )}
@@ -212,11 +212,11 @@ function AnyOfGroupRow({
                         >
                             {group.questName}
                         </span>
-                        <span className="rounded-md bg-violet-400/10 px-1.5 py-0.5 text-[10px] text-violet-200">
+                        <span className="rounded-md bg-special/10 px-1.5 py-0.5 text-[10px] text-special">
                             Item group
                         </span>
                         {group.requiredFirCount > 0 && (
-                            <span className="rounded-md bg-orange-400/10 px-1.5 py-0.5 text-[10px] text-orange-300">
+                            <span className="rounded-md bg-warning/10 px-1.5 py-0.5 text-[10px] text-warning">
                                 FiR
                             </span>
                         )}
@@ -237,7 +237,7 @@ function AnyOfGroupRow({
                 <QuestActions questId={group.questId} wikiLink={group.questWikiLink} />
             </div>
             <div className="mt-2 text-[11px] text-muted-foreground">
-                <span className="font-semibold text-white">Any x{group.requiredCount}: </span>
+                <span className="font-semibold text-foreground">Any x{group.requiredCount}: </span>
                 {group.objectiveLabel}
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -247,7 +247,7 @@ function AnyOfGroupRow({
                         item={item}
                         className={`text-[11px] ${
                             item.id === selectedItemId
-                                ? "ring-1 ring-tarkov-green/25"
+                                ? "ring-1 ring-brand/25"
                                 : "opacity-75"
                         }`}
                     />
@@ -264,10 +264,10 @@ function AnyOfGroupRow({
 
 function QuestStatus({ status }: { status: DerivedQuestItemQuest["status"] }) {
     const styles = {
-        available: "bg-blue-400/10 text-blue-200",
-        future: "bg-amber-400/10 text-amber-200",
-        completed: "bg-tarkov-green/10 text-tarkov-green",
-        ignored: "bg-white/5 text-muted-foreground",
+        available: "bg-info/10 text-info",
+        future: "bg-warning/10 text-warning",
+        completed: "bg-success/10 text-success",
+        ignored: "bg-highlight/5 text-muted-foreground",
     };
     return (
         <span className={`rounded-md px-1.5 py-0.5 text-[10px] capitalize ${styles[status]}`}>
@@ -287,7 +287,7 @@ function ItemRequirementCount({
 }) {
     return (
         <div className="flex min-w-[4.75rem] shrink-0 items-center justify-end gap-1.5 px-2">
-            <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-md bg-white/5">
+            <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-md bg-highlight/5">
                 {imageLink ? (
                     <img src={imageLink} alt="" className="h-6 w-6 object-contain" />
                 ) : (
@@ -300,7 +300,7 @@ function ItemRequirementCount({
                 </span>
             )}
             {firCount > 0 && (
-                <span className="whitespace-nowrap font-mono text-xs font-semibold text-orange-300">
+                <span className="whitespace-nowrap font-mono text-xs font-semibold text-warning">
                     FiR ×{firCount}
                 </span>
             )}
@@ -313,7 +313,7 @@ function QuestActions({ questId, wikiLink }: { questId: string; wikiLink?: strin
         <div className="flex shrink-0 items-center gap-3 text-[11px]">
             <Link
                 href={getQuestDeepLinkHref(questId)}
-                className="flex items-center gap-1 font-medium text-foreground transition-colors hover:text-tarkov-green"
+                className="flex items-center gap-1 font-medium text-foreground transition-colors hover:text-brand"
             >
                 View <ArrowRight size={12} />
             </Link>
@@ -322,7 +322,7 @@ function QuestActions({ questId, wikiLink }: { questId: string; wikiLink?: strin
                     href={wikiLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-muted-foreground underline decoration-white/25 underline-offset-2 transition-colors hover:text-foreground"
+                    className="flex items-center gap-1 text-muted-foreground underline decoration-highlight/25 underline-offset-2 transition-colors hover:text-foreground"
                 >
                     Wiki <ExternalLink size={10} />
                 </a>

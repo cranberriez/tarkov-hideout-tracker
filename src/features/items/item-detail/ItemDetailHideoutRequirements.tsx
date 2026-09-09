@@ -59,7 +59,7 @@ export function ItemDetailHideoutRequirements({
             >
                 <div
                     role="row"
-                    className="col-span-full grid grid-cols-subgrid border-b border-border-color bg-black/15 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                    className="col-span-full grid grid-cols-subgrid border-b border-border-color bg-shadow/15 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
                 >
                     <div role="columnheader" className="p-2">
                         Station
@@ -69,7 +69,7 @@ export function ItemDetailHideoutRequirements({
                             key={level}
                             role="columnheader"
                             className={`p-2 text-left ${
-                                level % 2 !== 0 ? "bg-white/[0.035]" : ""
+                                level % 2 !== 0 ? "bg-highlight/[0.035]" : ""
                             }`}
                         >
                             Level {level}
@@ -95,7 +95,7 @@ export function ItemDetailHideoutRequirements({
                             key={station.stationId}
                             role="row"
                             className={`col-span-full grid grid-cols-subgrid border-b border-border-color last:border-b-0 ${
-                                isComplete ? "bg-tarkov-green/[0.025]" : ""
+                                isComplete ? "bg-success/[0.025]" : ""
                             }`}
                         >
                             <div
@@ -105,7 +105,7 @@ export function ItemDetailHideoutRequirements({
                                 }`}
                             >
                                 <span
-                                    className={`relative shrink-0 overflow-hidden rounded-md bg-white/5 ${
+                                    className={`relative shrink-0 overflow-hidden rounded-md bg-highlight/5 ${
                                         isRoomyLayout ? "h-10 w-10" : "h-8 w-8"
                                     }`}
                                 >
@@ -139,7 +139,7 @@ export function ItemDetailHideoutRequirements({
                                     >
                                         <span>Current {currentLevel}</span>
                                         {isHidden && (
-                                            <span className="flex items-center gap-0.5 text-red-300">
+                                            <span className="flex items-center gap-0.5 text-danger">
                                                 <EyeOff size={9} /> Hidden
                                             </span>
                                         )}
@@ -154,7 +154,7 @@ export function ItemDetailHideoutRequirements({
                                     className={`flex min-h-14 min-w-0 flex-col items-start p-2 ${
                                         isLastStation ? "justify-start" : "justify-center"
                                     } ${
-                                        level % 2 !== 0 ? "bg-white/[0.035]" : ""
+                                        level % 2 !== 0 ? "bg-highlight/[0.035]" : ""
                                     }`}
                                 >
                                     {(requirementsByLevel.get(level) ?? []).map((requirement) => (
@@ -195,7 +195,7 @@ function RequirementCell({
             }`}
         >
             <span
-                className={`relative flex shrink-0 items-center justify-center rounded-md bg-white/[0.035] ${
+                className={`relative flex shrink-0 items-center justify-center rounded-md bg-highlight/[0.035] ${
                     isRoomy ? "h-12 w-12" : "h-10 w-10"
                 }`}
             >
@@ -211,10 +211,10 @@ function RequirementCell({
                     <PackageOpen size={15} className="text-muted-foreground" />
                 )}
                 {requirement.isFir && (
-                    <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full border border-background bg-orange-400" />
+                    <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full border border-background bg-warning" />
                 )}
                 {requirement.isCompleted && (
-                    <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-background bg-tarkov-green text-black shadow-sm">
+                    <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-background bg-success text-inverse shadow-sm">
                         <Check size={10} strokeWidth={3} />
                     </span>
                 )}

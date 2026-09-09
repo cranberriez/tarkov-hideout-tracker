@@ -60,16 +60,16 @@ export function ItemDetailMarket({
                 <div className="flex items-center gap-2">
                     {!isFiat && (minLevelForFlea != null || !hasFleaData) && (
                         minLevelForFlea != null && hasFleaData ? (
-                            <span className="flex items-center gap-1 rounded bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            <span className="flex items-center gap-1 rounded bg-highlight/[0.03] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
                                 LVL {minLevelForFlea}
                                 {canSellOnFlea ? (
-                                    <Check size={11} strokeWidth={2.5} className="text-green-400" />
+                                    <Check size={11} strokeWidth={2.5} className="text-success" />
                                 ) : (
-                                    <X size={11} strokeWidth={2.5} className="text-red-400" />
+                                    <X size={11} strokeWidth={2.5} className="text-danger" />
                                 )}
                             </span>
                         ) : (
-                            <span className="rounded bg-red-400/8 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-red-300/90">
+                            <span className="rounded bg-danger/8 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-danger/90">
                                 No flea
                             </span>
                         )
@@ -83,7 +83,7 @@ export function ItemDetailMarket({
             }
         >
             {fleaPrice != null && (
-                <div className="flex items-end justify-between gap-3 rounded-md border border-border-color bg-black/25 px-2.5 py-2">
+                <div className="flex items-end justify-between gap-3 rounded-md border border-border-color bg-shadow/25 px-2.5 py-2">
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-4 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                             <span>{isFiat ? "Rouble cost" : "Flea estimate"}</span>
@@ -93,7 +93,7 @@ export function ItemDetailMarket({
                                 </span>
                             )}
                         </div>
-                        <div className={`mt-1 flex items-center gap-1.5 font-mono text-2xl font-semibold ${unstable ? "text-amber-300" : "text-foreground"}`}>
+                        <div className={`mt-1 flex items-center gap-1.5 font-mono text-2xl font-semibold ${unstable ? "text-warning" : "text-foreground"}`}>
                             {formatRoubles(fleaPrice)}
                             {unstable && <span className="text-[10px] font-normal">value unstable</span>}
                         </div>
@@ -168,8 +168,8 @@ function PriceChange({ value }: { value: number }) {
         <span
             className={`flex items-center gap-1 rounded-md px-2 py-1 font-mono text-xs ${
                 positive
-                    ? "bg-tarkov-green/10 text-tarkov-green"
-                    : "bg-red-400/10 text-red-300"
+                    ? "bg-success/10 text-success"
+                    : "bg-danger/10 text-danger"
             }`}
         >
             <Icon size={13} />

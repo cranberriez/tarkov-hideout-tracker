@@ -26,15 +26,15 @@ export function QuestVisualizerLineIndex({
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7">
             <div className="mx-auto max-w-4xl">
                 <div className="mb-5">
-                    <h2 className="font-serif text-xl font-semibold text-gray-100">Quest visualizer</h2>
+                    <h2 className="font-serif text-xl font-semibold text-foreground">Quest visualizer</h2>
                 </div>
                 {branchLines.length === 0 ? (
-                    <div className="border border-white/8 bg-white/3 px-5 py-8 text-center text-sm text-gray-500">
+                    <div className="border border-highlight/8 bg-highlight/3 px-5 py-8 text-center text-sm text-subtle-foreground">
                         No quest series are available in the current quest data.
                     </div>
                 ) : (
                     <section>
-                        <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-600">Special questlines</h3>
+                        <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-subtle-foreground">Special questlines</h3>
                         <div className="grid gap-3 md:grid-cols-2">
                             {branchLines.map((line) => {
                                 const activeNodes = line.nodes.filter(
@@ -49,22 +49,22 @@ export function QuestVisualizerLineIndex({
                                         type="button"
                                         onClick={() => onSelect(line)}
                                         aria-label={`View ${line.name}`}
-                                        className="flex h-full flex-col items-stretch justify-start border border-white/10 bg-[#111214] p-4 text-left align-top transition-colors hover:border-tarkov-green/40 hover:bg-[#151719] focus-visible:border-tarkov-green/60 focus-visible:outline-none"
+                                        className="flex h-full flex-col items-stretch justify-start border border-highlight/10 bg-[var(--card-bg)] p-4 text-left align-top transition-colors hover:border-brand/40 hover:bg-[var(--surface-raised)] focus-visible:border-brand/60 focus-visible:outline-none"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <GitBranch size={16} className="text-tarkov-green" />
-                                            <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-100">{line.name}</h3>
-                                            <span className="border border-amber-300/20 bg-amber-300/5 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-amber-200/70">Special</span>
-                                            <span className="text-[10px] uppercase tracking-wider text-gray-600">{line.nodes.length} quests</span>
+                                            <GitBranch size={16} className="text-brand" />
+                                            <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{line.name}</h3>
+                                            <span className="border border-warning/20 bg-warning/5 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-warning/70">Special</span>
+                                            <span className="text-[10px] uppercase tracking-wider text-subtle-foreground">{line.nodes.length} quests</span>
                                         </div>
-                                        <p className="mb-2 mt-4 text-[10px] font-semibold uppercase tracking-widest text-gray-600">
+                                        <p className="mb-2 mt-4 text-[10px] font-semibold uppercase tracking-widest text-subtle-foreground">
                                             {activeNodes.length > 0 ? "Currently active" : "Start here"}
                                         </p>
                                         <div className="space-y-1.5">
                                             {entryNodes.map((node) => (
                                                 <div
                                                     key={node.quest.id}
-                                                    className="flex w-full items-center gap-2 border border-white/8 bg-white/3 px-3 py-2 text-xs text-gray-300"
+                                                    className="flex w-full items-center gap-2 border border-highlight/8 bg-highlight/3 px-3 py-2 text-xs text-foreground"
                                                 >
                                                     <QuestTraderIcon node={node} />
                                                     <span className="min-w-0 flex-1 truncate">{node.quest.name}</span>
@@ -85,9 +85,9 @@ export function QuestVisualizerLineIndex({
 function QuestTraderIcon({ node }: { node: QuestBranchNode }) {
     const image = node.quest.trader.image4xLink ?? node.quest.trader.imageLink;
     return image ? (
-        <img src={image} alt="" className="h-6 w-6 shrink-0 rounded-full border border-white/10 object-cover" />
+        <img src={image} alt="" className="h-6 w-6 shrink-0 rounded-full border border-highlight/10 object-cover" />
     ) : (
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/8 text-[10px] text-gray-500">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-highlight/8 text-[10px] text-subtle-foreground">
             {node.quest.trader.name.slice(0, 1)}
         </span>
     );
@@ -105,34 +105,34 @@ export function QuestGraphToolbar({
     onZoomChange: (zoom: number) => void;
 }) {
     return (
-        <div className="border-b border-white/8 bg-[#0e0f11] px-4 py-3">
+        <div className="border-b border-highlight/8 bg-[var(--background)] px-4 py-3">
             <div className="flex flex-wrap items-center gap-3">
-                <button type="button" onClick={onBack} className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-white">
+                <button type="button" onClick={onBack} className="inline-flex items-center gap-1.5 text-xs text-subtle-foreground hover:text-foreground">
                     <ArrowLeft size={14} /> All series
                 </button>
-                <div className="h-4 w-px bg-white/10" />
-                <h2 className="text-sm font-semibold text-gray-100">{line.name}</h2>
-                <span className="text-[10px] uppercase tracking-wider text-gray-600">{line.nodes.length} quests</span>
-                <div className="ml-auto flex flex-wrap items-center gap-3 text-[10px] text-gray-500">
-                    <span><i className="mr-1.5 inline-block h-0.5 w-5 bg-sky-400/80 align-middle" /> on accept</span>
-                    <span><i className="mr-1.5 inline-block h-0.5 w-5 bg-tarkov-green/70 align-middle" /> on complete</span>
-                    <span><i className="mr-1.5 inline-block h-0.5 w-5 bg-red-400/90 align-middle" /> on fail / fails</span>
-                    <span><i className="mr-1.5 inline-block h-0.5 w-5 border-t border-dotted border-amber-300/70 align-middle" /> exclusive</span>
-                    <div className="ml-1 flex items-center border border-white/10 bg-black/20">
+                <div className="h-4 w-px bg-highlight/10" />
+                <h2 className="text-sm font-semibold text-foreground">{line.name}</h2>
+                <span className="text-[10px] uppercase tracking-wider text-subtle-foreground">{line.nodes.length} quests</span>
+                <div className="ml-auto flex flex-wrap items-center gap-3 text-[10px] text-subtle-foreground">
+                    <span><i className="mr-1.5 inline-block h-0.5 w-5 bg-info/80 align-middle" /> on accept</span>
+                    <span><i className="mr-1.5 inline-block h-0.5 w-5 bg-success/70 align-middle" /> on complete</span>
+                    <span><i className="mr-1.5 inline-block h-0.5 w-5 bg-danger/90 align-middle" /> on fail / fails</span>
+                    <span><i className="mr-1.5 inline-block h-0.5 w-5 border-t border-dotted border-warning/70 align-middle" /> exclusive</span>
+                    <div className="ml-1 flex items-center border border-highlight/10 bg-shadow/20">
                         <button
                             type="button"
                             onClick={() => onZoomChange(zoom - QUEST_GRAPH_ZOOM_STEP)}
                             disabled={zoom <= QUEST_GRAPH_MIN_ZOOM}
                             aria-label="Zoom out"
                             title="Zoom out"
-                            className="flex h-7 w-7 items-center justify-center text-sm text-gray-300 transition-colors hover:bg-white/8 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                            className="flex h-7 w-7 items-center justify-center text-sm text-foreground transition-colors hover:bg-highlight/8 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
                         >−</button>
                         <button
                             type="button"
                             onClick={() => onZoomChange(1)}
                             aria-label="Reset zoom"
                             title="Reset zoom"
-                            className="h-7 min-w-11 border-x border-white/10 px-1 text-[9px] tabular-nums text-gray-500 transition-colors hover:bg-white/8 hover:text-white"
+                            className="h-7 min-w-11 border-x border-highlight/10 px-1 text-[9px] tabular-nums text-subtle-foreground transition-colors hover:bg-highlight/8 hover:text-foreground"
                         >{Math.round(zoom * 100)}%</button>
                         <button
                             type="button"
@@ -140,7 +140,7 @@ export function QuestGraphToolbar({
                             disabled={zoom >= QUEST_GRAPH_MAX_ZOOM}
                             aria-label="Zoom in"
                             title="Zoom in"
-                            className="flex h-7 w-7 items-center justify-center text-sm text-gray-300 transition-colors hover:bg-white/8 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                            className="flex h-7 w-7 items-center justify-center text-sm text-foreground transition-colors hover:bg-highlight/8 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
                         >+</button>
                     </div>
                 </div>
@@ -184,7 +184,7 @@ export function QuestGraphEdges({
                                 y={geometry.labelY}
                                 textAnchor="middle"
                                 fill={color}
-                                stroke="#0b0c0e"
+                                stroke="var(--background)"
                                 strokeWidth="5"
                                 paintOrder="stroke"
                                 transform={geometry.labelRotation ? `rotate(${geometry.labelRotation} ${geometry.labelX} ${geometry.labelY})` : undefined}
@@ -226,28 +226,28 @@ export function QuestGraphNode({
             onMouseMove={() => onHover(node.quest.id)}
             onMouseLeave={() => onHover(null)}
             className={cn(
-                "absolute flex h-[74px] w-[240px] cursor-pointer items-start gap-3 border bg-[#151619] px-3 pt-3 text-left shadow-lg transition-[opacity,filter,border-color,background-color] duration-150 hover:border-tarkov-green/50 hover:bg-[#191b1e] focus-visible:z-20",
+                "absolute flex h-[74px] w-[240px] cursor-pointer items-start gap-3 border bg-[var(--surface-raised)] px-3 pt-3 text-left shadow-lg transition-[opacity,filter,border-color,background-color] duration-150 hover:border-brand/50 hover:bg-[var(--surface-raised)] focus-visible:z-20",
                 activeQuestId && !isConnected ? "opacity-20 grayscale" : "z-10 opacity-100",
-                focusedQuestId === node.quest.id && "ring-2 ring-cyan-300/70 ring-offset-2 ring-offset-[#0b0c0e]",
-                status?.status === "completed" ? "border-tarkov-green/35" : status?.status === "failed" ? "border-red-400/40" : status?.status === "active" ? "border-sky-400/35" : "border-white/12",
+                focusedQuestId === node.quest.id && "ring-2 ring-info/70 ring-offset-2 ring-offset-[var(--background)]",
+                status?.status === "completed" ? "border-success/35" : status?.status === "failed" ? "border-danger/40" : status?.status === "active" ? "border-info/35" : "border-highlight/12",
             )}
             style={{ left: position.x, top: position.y }}
         >
-            {traderImage ? <img src={traderImage} alt="" className="h-9 w-9 shrink-0 rounded-full border border-white/10 object-cover" /> : <QuestTraderIcon node={node} />}
+            {traderImage ? <img src={traderImage} alt="" className="h-9 w-9 shrink-0 rounded-full border border-highlight/10 object-cover" /> : <QuestTraderIcon node={node} />}
             <span className="min-w-0 flex-1">
                 <span className="flex items-start gap-1.5">
-                    <span className="line-clamp-2 min-w-0 flex-1 text-xs font-semibold leading-4 text-gray-100">{node.quest.name}</span>
+                    <span className="line-clamp-2 min-w-0 flex-1 text-xs font-semibold leading-4 text-foreground">{node.quest.name}</span>
                     {duplicateRouteIndex !== undefined && (
-                        <span className="shrink-0 border border-amber-300/20 bg-amber-300/5 px-1 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-amber-200/65">
+                        <span className="shrink-0 border border-warning/20 bg-warning/5 px-1 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-warning/65">
                             Route {String.fromCharCode(65 + duplicateRouteIndex)}
                         </span>
                     )}
                 </span>
-                <span className="mt-1 flex items-center gap-1.5 text-[9px] uppercase tracking-wide text-gray-600">
+                <span className="mt-1 flex items-center gap-1.5 text-[9px] uppercase tracking-wide text-subtle-foreground">
                     {status?.status === "locked" && <Lock size={9} />}
                     {status?.status === "failed" && <XCircle size={9} />}
                     {status?.label ?? node.quest.trader.name}
-                    {node.canFail && <span className="text-red-300/65">· can fail</span>}
+                    {node.canFail && <span className="text-danger/65">· can fail</span>}
                 </span>
             </span>
         </button>

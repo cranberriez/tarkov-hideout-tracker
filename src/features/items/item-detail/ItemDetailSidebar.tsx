@@ -55,7 +55,7 @@ export function ItemDetailSidebar({
                 onReset={resetInventory}
                 onSave={saveInventory}
             />
-            {priceLoadState && priceLoadState !== "ready" && <p role="status" className="px-4 py-3 text-xs text-gray-400">{priceLoadState === "pending" ? "Loading item price…" : "Price could not be loaded. Use Retry prices on the page."}</p>}
+            {priceLoadState && priceLoadState !== "ready" && <p role="status" className="px-4 py-3 text-xs text-muted-foreground">{priceLoadState === "pending" ? "Loading item price…" : "Price could not be loaded. Use Retry prices on the page."}</p>}
             {showMarket && marketPrice && (
                 <ItemDetailMarket
                     marketPrice={marketPrice}

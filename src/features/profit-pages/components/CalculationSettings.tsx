@@ -60,7 +60,7 @@ export function CalculationSettings({
             onChange={onAvailableOnlyChange}
             label="Hide locked recipes"
           />
-          <div className="ml-3 border-l border-white/10 pl-2">
+          <div className="ml-3 border-l border-highlight/10 pl-2">
             {(
               [
                 ["flea", "Hide no flea sale"],

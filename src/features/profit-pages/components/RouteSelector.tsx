@@ -106,7 +106,7 @@ export function RouteSelector({
             top: Math.max(8, Math.min(rect.top, window.innerHeight - Math.max(160, routes.length * 42 + (plan.lockedAlternatives ?? []).length * 84) - 16)),
           });
         }}
-        className="relative z-10 h-full w-8 shrink-0 self-stretch outline-none ring-inset ring-white/30 hover:brightness-110 hover:ring-1 focus:ring-1 focus:ring-tarkov-green"
+        className="relative z-10 h-full w-8 shrink-0 self-stretch outline-none ring-inset ring-highlight/30 hover:brightness-110 hover:ring-1 focus:ring-1 focus:ring-brand"
       >
         <RouteIcon
           method={plan.method}
@@ -134,7 +134,7 @@ export function RouteSelector({
             <span
               data-route-selector
               data-isolated-hover="true"
-              className="fixed z-130 space-y-1 block w-[320px] overflow-y-auto overscroll-contain rounded-md border border-white/15 bg-[#05070a] p-1 shadow-[0_18px_55px_rgba(0,0,0,0.8)]"
+              className="fixed z-130 space-y-1 block w-[320px] overflow-y-auto overscroll-contain rounded-md border border-highlight/15 bg-[var(--background)] p-1 shadow-[0_18px_55px_color-mix(in_oklab,_var(--shadow)_80%,_transparent)]"
               style={{ left: Math.max(8, position.left), top: position.top, maxHeight: `calc(100dvh - ${position.top + 8}px)` }}
             >
               {[...routes, ...(plan.lockedAlternatives ?? [])].map((route, index) => {
@@ -161,7 +161,7 @@ export function RouteSelector({
                     ? routeContext.craftsById[route.sourceId ?? ""]?.level
                     : undefined;
               return (
-                <span key={`${key}:${index}`} className={`block rounded ${locked ? "bg-red-950/40" : ""}`}>
+                <span key={`${key}:${index}`} className={`block rounded ${locked ? "bg-danger-surface/40" : ""}`}>
                 {locked && <LockReasons reasons={route.lockReasons} />}
                 <button
                   type="button"
@@ -171,7 +171,7 @@ export function RouteSelector({
                     onSelect(key);
                     setPosition(null);
                   }}
-                  className={`grid w-full grid-cols-[18px_64px_30px_minmax(0,1fr)_auto] items-center gap-2 rounded px-2 py-1 text-left transition hover:bg-white/[0.07] ${selected ? locked ? "bg-red-400/10" : "bg-tarkov-green/10" : ""}`}
+                  className={`grid w-full grid-cols-[18px_64px_30px_minmax(0,1fr)_auto] items-center gap-2 rounded px-2 py-1 text-left transition hover:bg-highlight/[0.07] ${selected ? locked ? "bg-danger/10" : "bg-brand/10" : ""}`}
                 >
                   <RouteIcon method={route.method} inline title={locked ? `${routeLabels[route.method]} locked` : routeLabels[route.method]} />
                   <span className="text-[9px] font-bold uppercase text-foreground">
@@ -190,7 +190,7 @@ export function RouteSelector({
                     <span className="size-7" />
                   )}
                   <span className="min-w-0">
-                    <span className="block truncate text-[10px] text-white">
+                    <span className="block truncate text-[10px] text-foreground">
                       {item?.name ?? "Unknown item"}
                     </span>
                     {(sourceName || requiredLevel !== undefined) && (
@@ -201,7 +201,7 @@ export function RouteSelector({
                     )}
                   </span>
                   <span
-                    className="font-mono text-[10px] text-tarkov-green"
+                    className="font-mono text-[10px] text-brand"
                     title={locked && route.estimatedUnitPrice !== undefined ? "Estimated unit price; route is locked" : undefined}
                   >
                     {formatCompactPrice(

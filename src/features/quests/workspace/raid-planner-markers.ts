@@ -1,26 +1,17 @@
 import type { FullQuest, QuestMapLocation } from "@/types/quests";
 import type { MapOverlayMarker } from "@/types/maps";
+import { getVisualizationColor } from "../../../lib/cfg/visualization-colors";
 import { getQuestMapGroupKey } from "../quest-map-groups";
 
 export interface QuestMarkerStyle {
     color: string;
 }
 
-function hashQuestId(value: string) {
-    let hash = 2166136261;
-    for (let i = 0; i < value.length; i += 1) {
-        hash ^= value.charCodeAt(i);
-        hash = Math.imul(hash, 16777619);
-    }
-    return hash >>> 0;
-}
-
 export function createQuestMarkerStyles(quests: FullQuest[]) {
     const styles = new Map<string, QuestMarkerStyle>();
     quests.forEach((quest, index) => {
-        const hash = hashQuestId(quest.id);
         styles.set(quest.id, {
-            color: `hsl(${(hash % 360 + index * 137.508) % 360} 72% 58%)`,
+            color: getVisualizationColor(index),
         });
     });
     return styles;

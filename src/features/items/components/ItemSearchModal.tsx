@@ -60,8 +60,8 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
 				className="top-[15%] translate-y-0 w-full md:max-w-2xl max-h-[70vh] p-0 gap-0 overflow-hidden flex flex-col"
 			>
 				<DialogTitle className="sr-only">Item Search</DialogTitle>
-				<div className="p-4 border-b border-border-color flex items-center gap-3 bg-black/20">
-					<Search className="text-gray-400" size={20} />
+				<div className="p-4 border-b border-border-color flex items-center gap-3 bg-shadow/20">
+					<Search className="text-muted-foreground" size={20} />
 					<input
 						id="item-search-input"
 						type="text"
@@ -69,24 +69,24 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
 						onChange={(e) => setQuery(e.target.value)}
 						maxLength={ITEM_SEARCH_MAX_QUERY_LENGTH}
 						placeholder="Search items..."
-						className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-500 text-lg"
+						className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-subtle-foreground text-lg"
 						autoComplete="off"
 					/>
-					<button onClick={handleClose} className="text-gray-400 hover:text-white">
+					<button onClick={handleClose} className="text-muted-foreground hover:text-foreground">
 						<X size={20} />
 					</button>
 				</div>
 
 				<div className="overflow-y-auto">
 					{search.items.length > 0 ? (
-						<div className="divide-y divide-white/5">
+						<div className="divide-y divide-highlight/5">
 							{search.items.map((item) => (
 								<button
 									key={item.id}
 									onClick={() => handleSelect(item)}
-									className="w-full px-4 py-3 flex items-center gap-4 hover:bg-white/5 transition-colors text-left"
+									className="w-full px-4 py-3 flex items-center gap-4 hover:bg-highlight/5 transition-colors text-left"
 								>
-									<div className="w-10 h-10 bg-black/40 border border-white/5 rounded flex items-center justify-center shrink-0 overflow-hidden">
+									<div className="w-10 h-10 bg-shadow/40 border border-highlight/5 rounded flex items-center justify-center shrink-0 overflow-hidden">
 										{item.iconLink ? (
 											<img
 												src={item.iconLink}
@@ -94,26 +94,26 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
 												className="w-full h-full object-contain"
 											/>
 										) : (
-											<span className="text-xs text-gray-600">?</span>
+											<span className="text-xs text-subtle-foreground">?</span>
 										)}
 									</div>
 									<div>
-										<div className="text-gray-200 font-medium">{item.name}</div>
-										<div className="text-xs text-gray-500">{item.category?.name}</div>
+										<div className="text-foreground font-medium">{item.name}</div>
+										<div className="text-xs text-subtle-foreground">{item.category?.name}</div>
 									</div>
 								</button>
 							))}
 						</div>
 					) : search.isLoading ? (
-						<div className="p-8 text-center text-gray-500">Searching items…</div>
+						<div className="p-8 text-center text-subtle-foreground">Searching items…</div>
 					) : search.error ? (
-						<div className="p-8 text-center text-red-400">{search.error}</div>
+						<div className="p-8 text-center text-danger">{search.error}</div>
 					) : search.hasNoResults ? (
-						<div className="p-8 text-center text-gray-500">
+						<div className="p-8 text-center text-subtle-foreground">
 							No items found matching {query.trim()}
 						</div>
 					) : (
-						<div className="p-8 text-center text-gray-500">Type to search items...</div>
+						<div className="p-8 text-center text-subtle-foreground">Type to search items...</div>
 					)}
 				</div>
 			</DialogContent>

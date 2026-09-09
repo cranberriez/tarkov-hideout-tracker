@@ -32,13 +32,13 @@ export function QuestSyncProfileStep({
     return (
         <div className="space-y-5">
             <div>
-                <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-300">
+                <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
                     Step 1 · Confirm Profile
                 </h3>
             </div>
 
             <div className="grid gap-4 md:grid-cols-[120px_1fr] md:items-center">
-                <label className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <label className="text-xs font-semibold uppercase tracking-wide text-subtle-foreground">
                     Player Level
                 </label>
                 <input
@@ -49,12 +49,12 @@ export function QuestSyncProfileStep({
                     onChange={(event) =>
                         setPlayerLevel(Math.min(100, Math.max(1, Number(event.target.value) || 1)))
                     }
-                    className="w-full rounded-sm border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none transition-colors focus:border-tarkov-green/50"
+                    className="w-full rounded-sm border border-highlight/10 bg-shadow/40 px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-brand/50"
                 />
             </div>
 
             <div className="grid gap-4 md:grid-cols-[120px_1fr] md:items-center">
-                <label className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <label className="text-xs font-semibold uppercase tracking-wide text-subtle-foreground">
                     Prestige
                 </label>
                 <div className="flex flex-wrap gap-1.5">
@@ -64,8 +64,8 @@ export function QuestSyncProfileStep({
                             onClick={() => setPrestigeLevel(value)}
                             className={`rounded-sm px-3 py-2 text-sm transition-colors ${
                                 prestigeLevel === value
-                                    ? "bg-tarkov-green text-black"
-                                    : "border border-white/10 bg-black/30 text-gray-400 hover:border-white/20 hover:text-white"
+                                    ? "bg-brand text-inverse"
+                                    : "border border-highlight/10 bg-shadow/30 text-muted-foreground hover:border-highlight/20 hover:text-foreground"
                             }`}
                         >
                             {value}
@@ -75,7 +75,7 @@ export function QuestSyncProfileStep({
             </div>
 
             <div className="grid gap-4 md:grid-cols-[120px_1fr] md:items-center">
-                <label className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <label className="text-xs font-semibold uppercase tracking-wide text-subtle-foreground">
                     Faction
                 </label>
                 <div className="flex flex-wrap gap-1.5">
@@ -83,8 +83,8 @@ export function QuestSyncProfileStep({
                         onClick={() => setQuestFaction("USEC")}
                         className={`rounded-sm px-3 py-2 text-sm transition-colors ${
                             questFaction === "USEC"
-                                ? "bg-tarkov-green text-black"
-                                : "border border-white/10 bg-black/30 text-gray-400 hover:border-white/20 hover:text-white"
+                                ? "bg-brand text-inverse"
+                                : "border border-highlight/10 bg-shadow/30 text-muted-foreground hover:border-highlight/20 hover:text-foreground"
                         }`}
                     >
                         USEC
@@ -93,8 +93,8 @@ export function QuestSyncProfileStep({
                         onClick={() => setQuestFaction("BEAR")}
                         className={`rounded-sm px-3 py-2 text-sm transition-colors ${
                             questFaction === "BEAR"
-                                ? "bg-tarkov-green text-black"
-                                : "border border-white/10 bg-black/30 text-gray-400 hover:border-white/20 hover:text-white"
+                                ? "bg-brand text-inverse"
+                                : "border border-highlight/10 bg-shadow/30 text-muted-foreground hover:border-highlight/20 hover:text-foreground"
                         }`}
                     >
                         BEAR
@@ -108,8 +108,8 @@ export function QuestSyncProfileStep({
                     disabled={!canContinue}
                     className={`rounded-sm px-4 py-2 text-sm font-semibold transition-colors ${
                         canContinue
-                            ? "bg-tarkov-green text-black hover:bg-tarkov-green-dim"
-                            : "cursor-not-allowed border border-white/10 bg-black/30 text-gray-600"
+                            ? "bg-brand text-inverse hover:bg-brand-hover"
+                            : "cursor-not-allowed border border-highlight/10 bg-shadow/30 text-subtle-foreground"
                     }`}
                 >
                     Continue to Trader Sync

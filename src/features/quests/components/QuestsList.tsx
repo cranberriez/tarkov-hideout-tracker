@@ -54,7 +54,7 @@ function QuestGroupHeader({
         <button
             type="button"
             onClick={onToggle}
-            className="group mt-2 flex w-full items-center gap-3 rounded-lg border border-transparent p-2 text-left transition-colors hover:bg-white/1"
+            className="group mt-2 flex w-full items-center gap-3 rounded-lg border border-transparent p-2 text-left transition-colors hover:bg-highlight/1"
         >
             {showAvatar &&
                 (imageLink ? (
@@ -64,34 +64,34 @@ function QuestGroupHeader({
                         className="h-8 w-8 shrink-0 rounded-full object-cover"
                     />
                 ) : (
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs text-gray-400">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-highlight/10 text-xs text-muted-foreground">
                         {fallbackInitial}
                     </div>
                 ))}
             <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
-                    <span className="text-sm font-semibold uppercase tracking-wide text-white">
+                    <span className="text-sm font-semibold uppercase tracking-wide text-foreground">
                         {title}
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-subtle-foreground">
                         {completed}/{total}
                     </span>
                 </div>
-                <div className="mt-1 h-0.5 w-28 overflow-hidden rounded-full bg-white/5">
+                <div className="mt-1 h-0.5 w-28 overflow-hidden rounded-full bg-highlight/5">
                     <div
-                        className="h-full rounded-full bg-tarkov-green/50 transition-all"
+                        className="h-full rounded-full bg-success/50 transition-all"
                         style={{ width: `${pct}%` }}
                     />
                 </div>
             </div>
-            <span className="hidden shrink-0 text-xs text-gray-600 sm:inline">
+            <span className="hidden shrink-0 text-xs text-subtle-foreground sm:inline">
                 {visibleCount} showing
             </span>
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-transparent transition-colors group-hover:bg-white/6">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-transparent transition-colors group-hover:bg-highlight/6">
                 <ChevronDown
                     size={13}
                     className={cn(
-                        "shrink-0 text-gray-600 transition-[transform,color] group-hover:text-gray-400",
+                        "shrink-0 text-subtle-foreground transition-[transform,color] group-hover:text-muted-foreground",
                         collapsed && "-rotate-90",
                     )}
                 />
@@ -719,22 +719,22 @@ export function QuestsList({ questNavigationRequest }: QuestsListProps) {
 
     return (
         <>
-            <div className="flex items-center gap-3 px-1 text-xs text-gray-500">
+            <div className="flex items-center gap-3 px-1 text-xs text-subtle-foreground">
                 <span>{filteredQuests.length} quests</span>
-                <span className="text-gray-600">|</span>
+                <span className="text-subtle-foreground">|</span>
                 <span>
                     {completedCount}/{quests.length} completed
                 </span>
                 {failedCount > 0 && (
                     <>
-                        <span className="text-gray-600">|</span>
+                        <span className="text-subtle-foreground">|</span>
                         <span>{failedCount} failed</span>
                     </>
                 )}
             </div>
 
             {filteredQuests.length === 0 ? (
-                <div className="flex items-center justify-center py-16 text-sm text-gray-600">
+                <div className="flex items-center justify-center py-16 text-sm text-subtle-foreground">
                     No quests match the current filters.
                 </div>
             ) : (
@@ -767,7 +767,7 @@ export function QuestsList({ questNavigationRequest }: QuestsListProps) {
                                             transform: `translateY(${translateY}px)`,
                                             paddingBottom: "4px",
                                         }}
-                                        className="border-b border-white/5"
+                                        className="border-b border-highlight/5"
                                     >
                                         <QuestGroupHeader
                                             title={row.title}

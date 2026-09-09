@@ -1,7 +1,7 @@
 .loader { width: min(100%, 360px); margin-inline: auto; color: #b6ad91; }
 .pageName { margin-top: 38px; font-size: 14px; font-weight: 600; letter-spacing: 0.25em; text-transform: uppercase; overflow-wrap: anywhere; }
 .track { width: min(65%, 220px); height: 2px; margin: 26px auto 0; overflow: hidden; background: rgb(182 173 145 / 22%); }
-.signal { width: 45%; height: 100%; background: linear-gradient(90deg, transparent, var(--accent-green), transparent); animation: signal 2.8s ease-in-out infinite; }
+.signal { width: 45%; height: 100%; background: linear-gradient(90deg, transparent, var(--brand), transparent); animation: signal 2.8s ease-in-out infinite; }
 .mapCard { position: relative; width: min(82%, 260px); aspect-ratio: 190 / 144; margin: 12px auto 0; transform: rotate(-5deg); background: #a39b80; box-shadow: 5px 9px 20px #0005; }
 .mapCard::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent 32%, #3b362326 33%, #ffffff12 34%, transparent 35% 65%, #3b362326 66%, #ffffff12 67%, transparent 68%); }
 .mapDrawing { width: 100%; height: 100%; overflow: hidden; }

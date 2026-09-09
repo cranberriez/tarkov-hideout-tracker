@@ -38,7 +38,7 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
                     <button
                         type="button"
                         onClick={vm.back}
-                        className="absolute bottom-full left-0 mb-2 inline-flex h-10 items-center gap-2 rounded-md bg-background px-3 text-sm font-medium text-foreground shadow-2xl transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tarkov-green/70"
+                        className="absolute bottom-full left-0 mb-2 inline-flex h-10 items-center gap-2 rounded-md bg-background px-3 text-sm font-medium text-foreground shadow-2xl transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70"
                         aria-label="Back to previous item"
                     >
                         <ArrowLeft size={16} aria-hidden="true" />
@@ -52,17 +52,17 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
                 )}
                 <div className={`flex w-full flex-col overflow-hidden rounded-lg border border-border-color bg-background shadow-2xl ${vm.previousItem ? "max-h-[calc(92vh-3rem)]" : "max-h-[92vh]"}`}>
                     {vm.showDebug && vm.isDevelopment ? (
-                        <section className="flex min-h-[420px] min-w-0 flex-col overflow-hidden bg-[#0b0c0e]">
+                        <section className="flex min-h-[420px] min-w-0 flex-col overflow-hidden bg-[var(--background)]">
                             <header className="flex items-center justify-between border-b border-border-color px-4 py-3">
                                 <div>
-                                    <p className="text-xs font-semibold text-white">Item debug data</p>
+                                    <p className="text-xs font-semibold text-foreground">Item debug data</p>
                                     <p className="mt-0.5 text-[10px] text-muted-foreground">Item and related modal data</p>
                                 </div>
-                                <button type="button" onClick={vm.close} className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground" aria-label="Close item details">
+                                <button type="button" onClick={vm.close} className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-highlight/5 hover:text-foreground" aria-label="Close item details">
                                     <X size={18} />
                                 </button>
                             </header>
-                            <pre className="min-h-0 flex-1 overflow-auto p-4 text-[10px] leading-relaxed text-gray-400">
+                            <pre className="min-h-0 flex-1 overflow-auto p-4 text-[10px] leading-relaxed text-muted-foreground">
                                 {JSON.stringify(vm.debugData, null, 2)}
                             </pre>
                         </section>
@@ -76,7 +76,7 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
                                     hideoutRequiredCount={vm.demandSummary.hideoutRequiredCount}
                                     questRequiredCount={vm.demandSummary.questRequiredCount}
                                 />
-                                <button type="button" onClick={vm.close} className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:border-border-color hover:bg-black/20 hover:text-foreground sm:right-4 sm:top-4" aria-label="Close item details">
+                                <button type="button" onClick={vm.close} className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:border-border-color hover:bg-shadow/20 hover:text-foreground sm:right-4 sm:top-4" aria-label="Close item details">
                                     <X size={18} />
                                 </button>
                             </header>
@@ -141,7 +141,7 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
                         onClick={vm.toggleDebug}
                         aria-label={vm.showDebug ? "Hide item debug data" : "Show item debug data"}
                         aria-expanded={vm.showDebug}
-                        className={`absolute -bottom-2.5 -right-2.5 z-[60] flex h-6 w-6 items-center justify-center rounded-full border bg-[#111316] shadow-xl transition-colors ${vm.showDebug ? "border-tarkov-green/50 text-tarkov-green" : "border-white/15 text-gray-600 hover:border-white/30 hover:text-gray-300"}`}
+                        className={`absolute -bottom-2.5 -right-2.5 z-[60] flex h-6 w-6 items-center justify-center rounded-full border bg-[var(--card-bg)] shadow-xl transition-colors ${vm.showDebug ? "border-brand/50 text-brand" : "border-highlight/15 text-subtle-foreground hover:border-highlight/30 hover:text-foreground"}`}
                     >
                         <Bug size={11} />
                     </button>

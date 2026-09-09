@@ -44,11 +44,11 @@ export function QuestActionButton({ type, active, className, onClick }: QuestAct
           ? "Stop ignoring quest"
           : "Ignore quest";
     const activeClass = isPin
-        ? "text-sky-300 bg-sky-500/12 shadow-[0_0_18px_rgba(56,189,248,0.24)]"
-        : "text-red-300 bg-red-500/12 shadow-[0_0_18px_rgba(239,68,68,0.18)]";
+        ? "text-info bg-info/12 shadow-[0_0_18px_color-mix(in_oklab,_var(--info)_24%,_transparent)]"
+        : "text-danger bg-danger/12 shadow-[0_0_18px_color-mix(in_oklab,_var(--danger)_18%,_transparent)]";
     const inactiveClass = isPin
-        ? "text-gray-500 hover:text-sky-300 hover:bg-sky-500/8"
-        : "text-gray-500 hover:text-red-300 hover:bg-red-500/8";
+        ? "text-subtle-foreground hover:text-info hover:bg-info/8"
+        : "text-subtle-foreground hover:text-danger hover:bg-danger/8";
     const Icon = isPin ? Pin : CircleSlash;
 
     return (
@@ -156,23 +156,23 @@ export function QuestCardHeader({
                         <DropdownMenuTrigger asChild>
                             <span className="flex h-11 w-11 items-center justify-center">
                                 {completed ? (
-                                    <CheckCircle size={16} className="text-tarkov-green" />
+                                    <CheckCircle size={16} className="text-success" />
                                 ) : failed ? (
-                                    <XCircle size={16} className="text-red-300" />
+                                    <XCircle size={16} className="text-danger" />
                                 ) : (
-                                    <Circle size={16} className="text-gray-600" />
+                                    <Circle size={16} className="text-subtle-foreground" />
                                 )}
                             </span>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                             align="start"
                             sideOffset={4}
-                            className="border-border-color bg-card text-gray-200"
+                            className="border-border-color bg-card text-foreground"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <DropdownMenuItem
                                 onSelect={onToggleComplete}
-                                className="text-tarkov-green focus:text-tarkov-green"
+                                className="text-brand focus:text-brand"
                                 disabled={completed}
                             >
                                 <CheckCircle size={15} />
@@ -180,7 +180,7 @@ export function QuestCardHeader({
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 onSelect={onFailQuest}
-                                className="text-red-300 focus:text-red-300"
+                                className="text-danger focus:text-danger"
                                 disabled={failed}
                             >
                                 <XCircle size={15} />
@@ -189,7 +189,7 @@ export function QuestCardHeader({
                             {(completed || failed) && (
                                 <DropdownMenuItem
                                     onSelect={onResetQuestStatus}
-                                    className="text-gray-300 focus:text-gray-100"
+                                    className="text-foreground focus:text-foreground"
                                 >
                                     <RotateCcw size={15} />
                                     Unfinished
@@ -201,7 +201,7 @@ export function QuestCardHeader({
                     <>
                         <Circle
                             size={16}
-                            className={`absolute transition-opacity duration-200 text-gray-600 ${
+                            className={`absolute transition-opacity duration-200 text-subtle-foreground ${
                                 completed ? "opacity-0" : "opacity-100 group-hover:opacity-0"
                             }`}
                         />
@@ -209,8 +209,8 @@ export function QuestCardHeader({
                             size={16}
                             className={`absolute transition-all duration-200 ${
                                 completed
-                                    ? "opacity-100 text-tarkov-green"
-                                    : "opacity-0 group-hover:opacity-100 text-gray-500"
+                                    ? "opacity-100 text-success"
+                                    : "opacity-0 group-hover:opacity-100 text-subtle-foreground"
                             }`}
                         />
                     </>
@@ -225,7 +225,7 @@ export function QuestCardHeader({
                 />
             ) : (
                 <div
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] text-gray-400"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-highlight/10 text-[10px] text-muted-foreground"
                 >
                     {quest.trader.name[0]}
                 </div>
@@ -235,10 +235,10 @@ export function QuestCardHeader({
                 <span
                     className={`min-w-0 text-sm font-medium leading-tight line-clamp-2 sm:truncate ${
                         completed
-                            ? "text-gray-600 line-through"
+                            ? "text-subtle-foreground line-through"
                             : failed || disabled
-                              ? "text-gray-400"
-                              : "text-white"
+                              ? "text-muted-foreground"
+                              : "text-foreground"
                     }`}
                 >
                     {quest.name}
@@ -246,7 +246,7 @@ export function QuestCardHeader({
                 {questHasRequiredKeys && (
                     <KeyRound
                         size={14}
-                        className="shrink-0 text-yellow-300/75"
+                        className="shrink-0 text-warning/75"
                         role="img"
                         aria-label="Requires key"
                     />
@@ -255,10 +255,10 @@ export function QuestCardHeader({
                     <span
                         className={`${questMetaChipBaseClass} hidden shrink-0 sm:inline-flex ${
                             failed || disabled
-                                ? "text-red-300 bg-red-300/10 border-red-300/20"
+                                ? "text-danger bg-danger/10 border-danger/20"
                                 : ignored
-                                  ? "text-gray-400 bg-black/50 border-white/10"
-                                  : "border-transparent bg-transparent px-0 text-red-300"
+                                  ? "text-muted-foreground bg-shadow/50 border-highlight/10"
+                                  : "border-transparent bg-transparent px-0 text-danger"
                         }`}
                     >
                         {failed ? (
@@ -276,7 +276,7 @@ export function QuestCardHeader({
 
             {sortMetadata && (
                 <span
-                    className={`${questMetaChipBaseClass} hidden shrink-0 text-tarkov-green/80 bg-tarkov-green/10 border-tarkov-green/20 sm:inline-flex`}
+                    className={`${questMetaChipBaseClass} hidden shrink-0 text-brand/80 bg-brand/10 border-brand/20 sm:inline-flex`}
                     title={sortMetadata.title}
                 >
                     {sortMetadata.label}
@@ -286,7 +286,7 @@ export function QuestCardHeader({
             <div className="hidden shrink-0 items-center gap-1 sm:flex">
                 {quest.taskRequirements.length > 0 && (
                     <span
-                        className={`${questMetaChipBaseClass} hidden text-gray-400 bg-black/40 border-white/10 md:inline-flex`}
+                        className={`${questMetaChipBaseClass} hidden text-muted-foreground bg-shadow/40 border-highlight/10 md:inline-flex`}
                         title={`${completedRequirementCount}/${quest.taskRequirements.length} prerequisite quests completed`}
                     >
                         {completedRequirementCount}/{quest.taskRequirements.length} reqs
@@ -294,7 +294,7 @@ export function QuestCardHeader({
                 )}
                 {hasFailWarning && (
                     <span
-                        className={`${questMetaChipBaseClass} text-amber-300 bg-amber-500/10 border-amber-500/20`}
+                        className={`${questMetaChipBaseClass} text-warning bg-warning/10 border-warning/20`}
                         title="This quest has non-branch fail conditions. Check the wiki before attempting it."
                     >
                         <AlertTriangle size={11} className="mr-1" />
@@ -303,7 +303,7 @@ export function QuestCardHeader({
                 )}
                 {hasMutuallyExclusiveBranch && (
                     <span
-                        className={`${questMetaChipBaseClass} text-purple-300 border-purple-500/40`}
+                        className={`${questMetaChipBaseClass} text-special border-special/40`}
                         title="Mutually exclusive quest branch"
                     >
                         <AlertTriangle size={11} className="mr-1" />
@@ -312,21 +312,21 @@ export function QuestCardHeader({
                 )}
                 {hasDisplayQuestLevel(quest.minPlayerLevel) && (
                     <span
-                        className={`${questMetaChipBaseClass} hidden text-gray-400 bg-black/40 border-white/10 sm:inline-flex`}
+                        className={`${questMetaChipBaseClass} hidden text-muted-foreground bg-shadow/40 border-highlight/10 sm:inline-flex`}
                     >
                         Lv.{quest.minPlayerLevel}
                     </span>
                 )}
                 {quest.map && (
                     <span
-                        className={`${questMetaChipBaseClass} hidden text-gray-400 bg-black/40 border-white/10 sm:inline-flex`}
+                        className={`${questMetaChipBaseClass} hidden text-muted-foreground bg-shadow/40 border-highlight/10 sm:inline-flex`}
                     >
                         {quest.map.name}
                     </span>
                 )}
                 {quest.kappaRequired && (
                     <span
-                        className={`${questMetaChipBaseClass} text-yellow-500/80 bg-yellow-500/10 border-yellow-500/20`}
+                        className={`${questMetaChipBaseClass} text-warning/80 bg-warning/10 border-warning/20`}
                         title="Required for Kappa"
                     >
                         {"\u03ba"}
@@ -334,7 +334,7 @@ export function QuestCardHeader({
                 )}
                 {quest.lightkeeperRequired && (
                     <span
-                        className={`${questMetaChipBaseClass} text-teal-400/80 bg-teal-400/10 border-teal-400/20`}
+                        className={`${questMetaChipBaseClass} text-info/80 bg-info/10 border-info/20`}
                         title="Required for Lightkeeper"
                     >
                         LK
@@ -344,8 +344,8 @@ export function QuestCardHeader({
                     <span
                         className={`${questMetaChipBaseClass} ${
                             quest.factionName === "USEC"
-                                ? "text-blue-400/80 bg-blue-400/10 border-blue-400/20"
-                                : "text-red-400/80 bg-red-400/10 border-red-400/20"
+                                ? "text-info/80 bg-info/10 border-info/20"
+                                : "text-danger/80 bg-danger/10 border-danger/20"
                         }`}
                     >
                         {quest.factionName}
@@ -354,7 +354,7 @@ export function QuestCardHeader({
                 {quest.traderRequirements.map((req) => (
                     <span
                         key={req.id}
-                        className={`${questMetaChipBaseClass} text-cyan-400/80 bg-cyan-400/10 border-cyan-400/20`}
+                        className={`${questMetaChipBaseClass} text-info/80 bg-info/10 border-info/20`}
                         title={formatQuestTraderGate(req)}
                     >
                         {formatQuestTraderGate(req)}
@@ -362,7 +362,7 @@ export function QuestCardHeader({
                 ))}
                 {quest.requiredPrestige && (
                     <span
-                        className={`${questMetaChipBaseClass} text-purple-400/80 bg-purple-400/10 border-purple-400/20`}
+                        className={`${questMetaChipBaseClass} text-special/80 bg-special/10 border-special/20`}
                         title={`Requires prestige ${quest.requiredPrestige.prestigeLevel}`}
                     >
                         P{quest.requiredPrestige.prestigeLevel}
@@ -378,7 +378,7 @@ export function QuestCardHeader({
                     }}
                     aria-label={debugOpen ? "Hide raw quest data" : "Show raw quest data"}
                     className={`hidden shrink-0 transition-colors sm:inline-flex ${
-                        debugOpen ? "text-yellow-500" : "text-gray-700 hover:text-gray-500"
+                        debugOpen ? "text-warning" : "text-subtle-foreground hover:text-subtle-foreground"
                     }`}
                     title="Toggle raw JSON"
                 >
@@ -410,13 +410,13 @@ export function QuestCardHeader({
                     <ChevronDown
                         size={14}
                         aria-label="Collapse quest details"
-                        className="shrink-0 text-gray-500"
+                        className="shrink-0 text-subtle-foreground"
                     />
                 ) : (
                     <ChevronRight
                         size={14}
                         aria-label="Expand quest details"
-                        className="shrink-0 text-gray-500"
+                        className="shrink-0 text-subtle-foreground"
                     />
                 ))}
             </div>

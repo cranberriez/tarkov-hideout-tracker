@@ -133,10 +133,10 @@ function SkillRow({
             clearTimeout(timer.current);
             if (!elite) validate(draft);
           }}
-          className="h-8 w-12 rounded border border-white/15 bg-[#0b0c0e] px-2 text-center outline-none focus:border-tarkov-green/60 disabled:opacity-50"
+          className="h-8 w-12 rounded border border-highlight/15 bg-[var(--background)] px-2 text-center outline-none focus:border-brand/60 disabled:opacity-50"
         />
         <span
-          className="whitespace-nowrap text-xs text-tarkov-green"
+          className="whitespace-nowrap text-xs text-brand"
           aria-label={`${Number((reduction(level) * 100).toFixed(2))}% ${reductionLabel} reduction`}
         >
           -{Number((reduction(level) * 100).toFixed(2))}% {reductionLabel}
@@ -150,7 +150,7 @@ function SkillRow({
             clearTimeout(timer.current);
             onLevelChange(elite ? 50 : 51);
           }}
-          className={`h-8 rounded border px-2.5 text-xs transition ${elite ? "border-tarkov-green/60 bg-tarkov-green/10 text-tarkov-green" : "border-white/15 text-muted-foreground hover:border-white/30"}`}
+          className={`h-8 rounded border px-2.5 text-xs transition ${elite ? "border-brand/60 bg-brand/10 text-brand" : "border-highlight/15 text-muted-foreground hover:border-highlight/30"}`}
         >
           Elite
         </button>

@@ -8,8 +8,8 @@ import { comparisonRows, profileStatus } from "./progress-backup";
 import { useProgressBackupController } from "./useProgressBackupController";
 
 const button =
-	"inline-flex items-center justify-center gap-2 rounded-md border border-white/15 bg-white/5 px-3 py-2 text-xs font-medium text-gray-200 transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-tarkov-green disabled:cursor-not-allowed disabled:opacity-40";
-const primary = `${button} border-tarkov-green/30 bg-tarkov-green/10 text-tarkov-green hover:bg-tarkov-green/20`;
+	"inline-flex items-center justify-center gap-2 rounded-md border border-highlight/15 bg-highlight/5 px-3 py-2 text-xs font-medium text-foreground transition hover:bg-highlight/10 focus-visible:outline-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40";
+const primary = `${button} border-brand/30 bg-brand/10 text-brand hover:bg-brand/20`;
 function summary(value: unknown): string {
 	if (value === null) return "Not set";
 	if (typeof value === "boolean") return value ? "Yes" : "No";
@@ -27,15 +27,15 @@ export function PlayerProgressCard() {
 	const [dragging, setDragging] = useState(false);
 	return (
 		<>
-			<section className="overflow-hidden rounded-lg border border-[#c7b99b]/25 bg-card">
-				<div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 px-5 py-4">
+			<section className="overflow-hidden rounded-lg border border-[var(--brand)]/25 bg-card">
+				<div className="flex flex-wrap items-center justify-between gap-4 border-b border-highlight/10 px-5 py-4">
 					<div className="flex items-center gap-3">
-						<div className="rounded-md border border-[#c7b99b]/20 bg-[#c7b99b]/10 p-2.5 text-[#c7b99b]">
+						<div className="rounded-md border border-[var(--brand)]/20 bg-[var(--brand)]/10 p-2.5 text-[var(--brand)]">
 							<ShieldCheck size={21} />
 						</div>
 						<div>
-							<h2 className="text-sm font-semibold text-white">Player progress</h2>
-							<p className="mt-1 text-xs text-gray-400">Your characters. One portable backup.</p>
+							<h2 className="text-sm font-semibold text-foreground">Player progress</h2>
+							<p className="mt-1 text-xs text-muted-foreground">Your characters. One portable backup.</p>
 						</div>
 					</div>
 					<div className="flex gap-2">
@@ -50,7 +50,7 @@ export function PlayerProgressCard() {
 					</div>
 				</div>
 				<div className="space-y-4 px-5 py-4">
-					<p className="max-w-2xl text-xs leading-5 text-gray-400">
+					<p className="max-w-2xl text-xs leading-5 text-muted-foreground">
 						Back up or transfer stored items, hideout upgrades, quests, Kappa completion, character details, and skills.
 						Review each profile before importing.
 					</p>
@@ -58,15 +58,15 @@ export function PlayerProgressCard() {
 						{GAME_MODES.map((mode) => (
 							<div
 								key={mode}
-								className="flex flex-col gap-1 rounded-md border border-white/8 bg-black/15 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+								className="flex flex-col gap-1 rounded-md border border-highlight/8 bg-shadow/15 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
 							>
-								<span className="text-xs font-semibold tracking-wider text-[#c7b99b]">{mode}</span>
-								<span className="text-[10px] text-gray-500">Separate profile</span>
+								<span className="text-xs font-semibold tracking-wider text-[var(--brand)]">{mode}</span>
+								<span className="text-[10px] text-subtle-foreground">Separate profile</span>
 							</div>
 						))}
 					</div>
 					{c.status && (
-						<p role="status" className="text-xs text-tarkov-green">
+						<p role="status" className="text-xs text-success">
 							{c.status}
 						</p>
 					)}
@@ -86,7 +86,7 @@ export function PlayerProgressCard() {
 					<DialogDescription className="sr-only">Choose a backup and review the profiles to import.</DialogDescription>
 					<div className="min-h-0 space-y-3 overflow-y-auto p-4">
 						<label
-							className={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed text-center transition-colors focus-within:ring-2 focus-within:ring-tarkov-green ${dragging ? "border-tarkov-green bg-tarkov-green/10" : "border-white/20 bg-white/[0.02] hover:bg-white/5"} ${c.fileName ? "px-4 py-4" : "px-6 py-12"}`}
+							className={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed text-center transition-colors focus-within:ring-2 focus-within:ring-brand ${dragging ? "border-brand bg-brand/10" : "border-highlight/20 bg-highlight/[0.02] hover:bg-highlight/5"} ${c.fileName ? "px-4 py-4" : "px-6 py-12"}`}
 							onDragOver={(event) => {
 								event.preventDefault();
 								setDragging(true);
@@ -110,23 +110,23 @@ export function PlayerProgressCard() {
 									event.target.value = "";
 								}}
 							/>
-							<FileJson size={22} className="shrink-0 text-[#c7b99b]" />
-							<span className="max-w-full break-all text-sm font-medium text-gray-200">
+							<FileJson size={22} className="shrink-0 text-[var(--brand)]" />
+							<span className="max-w-full break-all text-sm font-medium text-foreground">
 								{c.fileName || "Drop your backup here"}
 							</span>
-							<span className="text-xs text-gray-500">
+							<span className="text-xs text-subtle-foreground">
 								{c.fileName ? "Drop another file or click to replace" : "or click to browse"}
 							</span>
 						</label>
 						{c.loading && (
-							<p role="status" className="text-sm text-gray-400">
+							<p role="status" className="text-sm text-muted-foreground">
 								Reading and validating backup…
 							</p>
 						)}
 						{c.error && (
 							<p
 								role="alert"
-								className="rounded border border-red-400/25 bg-red-400/10 p-3 text-xs leading-5 text-red-200"
+								className="rounded border border-danger/25 bg-danger/10 p-3 text-xs leading-5 text-danger"
 							>
 								{c.error}
 							</p>
@@ -137,7 +137,7 @@ export function PlayerProgressCard() {
 									const incoming = c.backup!.profiles[mode];
 									if (!incoming)
 										return (
-											<p key={mode} className="text-xs text-gray-500">
+											<p key={mode} className="text-xs text-subtle-foreground">
 												{mode} · Not in backup
 											</p>
 										);
@@ -148,19 +148,19 @@ export function PlayerProgressCard() {
 									return (
 										<section
 											key={mode}
-											className={`overflow-hidden rounded-md border ${c.selected.includes(mode) ? "border-tarkov-green/30" : "border-white/10"}`}
+											className={`overflow-hidden rounded-md border ${c.selected.includes(mode) ? "border-brand/30" : "border-highlight/10"}`}
 										>
-											<label className="flex cursor-pointer items-center gap-3 bg-white/[0.03] px-4 py-3">
+											<label className="flex cursor-pointer items-center gap-3 bg-highlight/[0.03] px-4 py-3">
 												<input
 													type="checkbox"
-													className="size-4 accent-tarkov-green"
+													className="size-4 accent-brand"
 													checked={c.selected.includes(mode)}
 													disabled={same}
 													onChange={() => c.toggle(mode)}
 												/>
-												<span className="text-sm font-semibold text-white">{mode}</span>
+												<span className="text-sm font-semibold text-foreground">{mode}</span>
 												<span
-													className={`ml-auto flex items-center gap-1.5 text-xs ${same || state === "empty" ? "text-tarkov-green" : "text-amber-200"}`}
+													className={`ml-auto flex items-center gap-1.5 text-xs ${same || state === "empty" ? "text-success" : "text-warning"}`}
 												>
 													{same ? (
 														<>
@@ -174,28 +174,28 @@ export function PlayerProgressCard() {
 													)}
 												</span>
 											</label>
-											<div className="grid grid-cols-3 gap-2 border-t border-white/5 px-4 py-3 text-xs text-gray-400">
+											<div className="grid grid-cols-3 gap-2 border-t border-highlight/5 px-4 py-3 text-xs text-muted-foreground">
 												<span>
-													Level <b className="text-gray-200">{incoming.progress.playerLevel}</b>
+													Level <b className="text-foreground">{incoming.progress.playerLevel}</b>
 												</span>
 												<span>
-													<b className="text-gray-200">{Object.keys(incoming.progress.itemCounts).length}</b> item types
+													<b className="text-foreground">{Object.keys(incoming.progress.itemCounts).length}</b> item types
 												</span>
 												<span>
-													<b className="text-gray-200">
+													<b className="text-foreground">
 														{Object.values(incoming.progress.completedQuests).filter(Boolean).length}
 													</b>{" "}
 													quests done
 												</span>
 											</div>
 											{!same && (
-												<details className="border-t border-white/5">
-													<summary className="cursor-pointer px-4 py-2.5 text-xs text-[#c7b99b]">
+												<details className="border-t border-highlight/5">
+													<summary className="cursor-pointer px-4 py-2.5 text-xs text-[var(--brand)]">
 														Compare progress
 													</summary>
 													<div className="overflow-x-auto px-4 pb-3">
 														<table className="w-full text-left text-xs">
-															<thead className="text-[10px] uppercase tracking-wider text-gray-500">
+															<thead className="text-[10px] uppercase tracking-wider text-subtle-foreground">
 																<tr>
 																	<th className="py-2 font-medium">Progress</th>
 																	<th className="py-2 font-medium">Current</th>
@@ -206,12 +206,12 @@ export function PlayerProgressCard() {
 																{rows.map((row) => (
 																	<tr
 																		key={row.label}
-																		className={`border-t border-white/5 ${row.changed ? "text-amber-100" : "text-gray-400"}`}
+																		className={`border-t border-highlight/5 ${row.changed ? "text-warning" : "text-muted-foreground"}`}
 																	>
 																		<td className="max-w-48 py-2 pr-3 align-top">
 																			{row.label}
 																			{!row.changed && (
-																				<span className="block text-[10px] text-gray-500">Unchanged</span>
+																				<span className="block text-[10px] text-subtle-foreground">Unchanged</span>
 																			)}
 																		</td>
 																		{[row.current, row.incoming].map((value, index) => (
@@ -221,10 +221,10 @@ export function PlayerProgressCard() {
 																					typeof value === "object" &&
 																					Object.keys(value).length > 0 && (
 																						<details className="mt-1">
-																							<summary className="cursor-pointer text-[10px] text-[#c7b99b]">
+																							<summary className="cursor-pointer text-[10px] text-[var(--brand)]">
 																								View records / IDs
 																							</summary>
-																							<pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded bg-black/20 p-2 text-[10px]">
+																							<pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded bg-shadow/20 p-2 text-[10px]">
 																								{JSON.stringify(value, null, 2)}
 																							</pre>
 																						</details>
@@ -242,10 +242,10 @@ export function PlayerProgressCard() {
 									);
 								})}
 								{c.replacing && (
-									<label className="flex items-start gap-3 rounded-md border border-amber-300/25 bg-amber-300/5 p-3 text-xs leading-5 text-amber-100">
+									<label className="flex items-start gap-3 rounded-md border border-warning/25 bg-warning/5 p-3 text-xs leading-5 text-warning">
 										<input
 											type="checkbox"
-											className="mt-1 size-4 shrink-0 accent-tarkov-green"
+											className="mt-1 size-4 shrink-0 accent-brand"
 											checked={c.acknowledged}
 											onChange={(event) => c.setAcknowledged(event.target.checked)}
 										/>
@@ -255,7 +255,7 @@ export function PlayerProgressCard() {
 							</>
 						)}
 					</div>
-					<DialogFooter className="grid shrink-0 grid-cols-2 items-center border-t border-white/10 bg-black/15 px-5 py-4 sm:flex">
+					<DialogFooter className="grid shrink-0 grid-cols-2 items-center border-t border-highlight/10 bg-shadow/15 px-5 py-4 sm:flex">
 						<button className={button} onClick={c.close}>
 							Cancel
 						</button>

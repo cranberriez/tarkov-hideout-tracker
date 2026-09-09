@@ -22,8 +22,8 @@ export function HideoutControls() {
                     onClick={() => setHideRequirements(!hideRequirements)}
                     className={`text-xs font-bold font-mono border border-border-color px-3 py-2 rounded uppercase tracking-widest transition-colors ${
                         hideRequirements
-                            ? "bg-white/10 text-white border-white/20"
-                            : "text-gray-400 hover:bg-white/5"
+                            ? "bg-highlight/10 text-foreground border-highlight/20"
+                            : "text-muted-foreground hover:bg-highlight/5"
                     }`}
                 >
                     {hideRequirements ? "Show Reqs" : "Hide Reqs"}
@@ -33,8 +33,8 @@ export function HideoutControls() {
                     onClick={() => setHideMoney(!hideMoney)}
                     className={`text-xs font-bold font-mono border border-border-color px-3 py-2 rounded uppercase tracking-widest transition-colors ${
                         hideMoney
-                            ? "bg-white/10 text-white border-white/20"
-                            : "text-gray-400 hover:bg-white/5"
+                            ? "bg-highlight/10 text-foreground border-highlight/20"
+                            : "text-muted-foreground hover:bg-highlight/5"
                     }`}
                 >
                     {hideMoney ? "Show Money" : "Hide Money"}
@@ -44,8 +44,8 @@ export function HideoutControls() {
                     onClick={() => setShowHidden(!showHidden)}
                     className={`text-xs font-bold font-mono border border-border-color px-3 py-2 rounded uppercase tracking-widest transition-colors ${
                         showHidden
-                            ? "bg-white/10 text-white border-white/20"
-                            : "text-gray-400 hover:bg-white/5"
+                            ? "bg-highlight/10 text-foreground border-highlight/20"
+                            : "text-muted-foreground hover:bg-highlight/5"
                     }`}
                 >
                     {showHidden ? "Hide Hidden" : "Show Hidden"}
@@ -56,8 +56,8 @@ export function HideoutControls() {
                         onClick={() => setHideoutCompactMode(false)}
                         className={`px-3 py-2 text-xs font-bold font-mono uppercase tracking-widest transition-colors ${
                             !hideoutCompactMode
-                                ? "bg-white/10 text-white"
-                                : "text-gray-400 hover:bg-white/5"
+                                ? "bg-highlight/10 text-foreground"
+                                : "text-muted-foreground hover:bg-highlight/5"
                         }`}
                         title="Expanded View"
                     >
@@ -67,8 +67,8 @@ export function HideoutControls() {
                         onClick={() => setHideoutCompactMode(true)}
                         className={`px-3 py-2 text-xs font-bold uppercase tracking-widest transition-colors ${
                             hideoutCompactMode
-                                ? "bg-white/10 text-white"
-                                : "text-gray-400 hover:bg-white/5"
+                                ? "bg-highlight/10 text-foreground"
+                                : "text-muted-foreground hover:bg-highlight/5"
                         }`}
                         title="Compact View"
                     >

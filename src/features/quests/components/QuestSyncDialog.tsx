@@ -58,16 +58,16 @@ export function QuestSyncDialog({
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden border-border-color bg-card p-0 md:max-w-5xl">
-                <DialogHeader className="border-b border-border-color bg-black/60 px-6 py-4">
-                    <DialogTitle className="text-sm font-semibold tracking-[0.2em] text-gray-400">
+                <DialogHeader className="border-b border-border-color bg-shadow/60 px-6 py-4">
+                    <DialogTitle className="text-sm font-semibold tracking-[0.2em] text-muted-foreground">
                         QUEST SYNC
                     </DialogTitle>
                 </DialogHeader>
 
                 {lastQuestSyncAction && (
-                    <div className="border-b border-white/10 bg-black/50 px-6 py-3">
+                    <div className="border-b border-highlight/10 bg-shadow/50 px-6 py-3">
                         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                            <div className="text-sm text-gray-300">
+                            <div className="text-sm text-foreground">
                                 Last sync: {lastQuestSyncAction.traderName} ·{" "}
                                 {lastQuestSyncAction.completedIds.length} quest
                                 {lastQuestSyncAction.completedIds.length === 1 ? "" : "s"} completed
@@ -94,8 +94,8 @@ export function QuestSyncDialog({
                                 disabled={lastQuestSyncAction.completedIds.length === 0}
                                 className={`rounded-sm px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
                                     lastQuestSyncAction.completedIds.length > 0
-                                        ? "border border-white/10 bg-black/30 text-gray-200 hover:border-white/20 hover:text-white"
-                                        : "cursor-not-allowed border border-white/10 bg-black/20 text-gray-600"
+                                        ? "border border-highlight/10 bg-shadow/30 text-foreground hover:border-highlight/20 hover:text-foreground"
+                                        : "cursor-not-allowed border border-highlight/10 bg-shadow/20 text-subtle-foreground"
                                 }`}
                             >
                                 Undo Last Sync

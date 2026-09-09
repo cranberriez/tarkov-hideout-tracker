@@ -27,9 +27,9 @@ export function ProfitCell({
 	customized?: boolean;
 	originalValue?: React.ReactNode;
 }) {
-	const color = value == null ? "text-foreground" : value > 0 ? "text-tarkov-green" : value < 0 ? "text-red-300" : "text-foreground";
+	const color = value == null ? "text-foreground" : value > 0 ? "text-success" : value < 0 ? "text-danger" : "text-foreground";
 	return (
-		<div className="flex flex-col items-start justify-center border-l border-white/5 px-3">
+		<div className="flex flex-col items-start justify-center border-l border-highlight/5 px-3">
 			{(responsiveLabel || showLabel) && <span className={`mb-1 text-[10px] font-medium text-muted-foreground ${showLabel ? "" : "2xl:hidden"}`}>{label}</span>}
 			<span className="flex items-center gap-1">
 				<span
@@ -71,7 +71,7 @@ export function SellValueCell({
 	const comparison = getItemSellComparison(item, overrides, pricingContext, count);
 	const trader = comparison.bestTraderOffer;
 	return (
-		<div className="flex min-w-0 flex-col items-start justify-center border-l border-white/5 px-3">
+		<div className="flex min-w-0 flex-col items-start justify-center border-l border-highlight/5 px-3">
 			{responsiveLabel && <span className="mb-1 text-[10px] font-medium text-muted-foreground 2xl:hidden">Sale proceeds</span>}
 			<span
 				className="whitespace-nowrap font-mono text-sm font-semibold text-foreground"
@@ -82,7 +82,7 @@ export function SellValueCell({
 			{sellSourceLabel ? (
 				<span className="mt-0.5 text-[8px] text-muted-foreground">{sellSourceLabel}</span>
 			) : comparison.selectedSource === "manual" ? (
-				<span className="mt-0.5 text-[8px] uppercase tracking-wide text-amber-300">Manual price</span>
+				<span className="mt-0.5 text-[8px] uppercase tracking-wide text-warning">Manual price</span>
 			) : comparison.pricesAreClose && comparison.fleaPrice !== null && trader ? (
 				<span className="mt-0.5 block max-w-full space-y-0.5 text-[8px] leading-tight text-muted-foreground">
 					<span className="block truncate">Flea {formatCompactPrice(comparison.fleaPrice * count)}</span>

@@ -34,8 +34,8 @@ export function HideoutClientPage({ data }: HideoutClientPageProps) {
         <main className="container mx-auto px-6 py-8">
             <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-border-color pb-6 gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">HIDEOUT STATIONS</h1>
-                    <p className="text-gray-400 mt-2 text-sm">
+                    <h1 className="text-3xl font-bold text-foreground tracking-tight">HIDEOUT STATIONS</h1>
+                    <p className="text-muted-foreground mt-2 text-sm">
                         Manage your current station levels to calculate required items
                     </p>
                 </div>
@@ -46,7 +46,7 @@ export function HideoutClientPage({ data }: HideoutClientPageProps) {
             </div>
 
             {!hasSeenHideoutLevelWarning && (
-                <div className="mb-4 flex items-center gap-3 rounded border border-yellow-500/40 bg-yellow-900/20 px-3 py-2 text-xs text-yellow-100 w-full">
+                <div className="mb-4 flex items-center gap-3 rounded border border-warning/40 bg-warning-surface/20 px-3 py-2 text-xs text-warning w-full">
                     <div className="flex-1">
                         Increasing or decreasing station levels will affect your item counts. Use
                         Setup at the top to modify base station levels without adjusting item
@@ -55,7 +55,7 @@ export function HideoutClientPage({ data }: HideoutClientPageProps) {
                     <button
                         type="button"
                         onClick={() => setHasSeenHideoutLevelWarning(true)}
-                        className="ml-2 text-[10px] uppercase tracking-wide font-mono text-yellow-200 hover:text-yellow-50 hover:bg-yellow-500/20 rounded px-2 py-1"
+                        className="ml-2 text-[10px] uppercase tracking-wide font-mono text-warning hover:text-warning hover:bg-warning/20 rounded px-2 py-1"
                     >
                         Close
                     </button>
@@ -77,7 +77,7 @@ export function HideoutClientPage({ data }: HideoutClientPageProps) {
                     {unresolvedItemIds.length > 0 && (
                         <div
                             role="alert"
-                            className="mb-4 rounded border border-amber-400/30 bg-amber-950/30 px-4 py-3 text-sm text-amber-100"
+                            className="mb-4 rounded border border-warning/30 bg-warning-surface/30 px-4 py-3 text-sm text-warning"
                         >
                             {unresolvedItemIds.length} hideout item
                             {unresolvedItemIds.length === 1 ? " is" : "s are"} missing from

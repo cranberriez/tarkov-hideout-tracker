@@ -132,12 +132,12 @@ export function QuestSyncTraderStep({
             <div className="space-y-2">
                 <button
                     onClick={onBack}
-                    className="text-xs font-semibold uppercase tracking-wide text-gray-500 transition-colors hover:text-white"
+                    className="text-xs font-semibold uppercase tracking-wide text-subtle-foreground transition-colors hover:text-foreground"
                 >
                     Back
                 </button>
                 <div className="space-y-1">
-                    <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-300">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">
                         Step 2 - Pick Trader
                     </h3>
                 </div>
@@ -148,13 +148,13 @@ export function QuestSyncTraderStep({
                             onClick={() => onSelectTrader(trader.id)}
                             className={`flex w-full items-center justify-between rounded-sm border px-3 py-2 text-left text-sm transition-colors ${
                                 trader.id === activeTraderId
-                                    ? "border-tarkov-green/40 bg-tarkov-green/10 text-white"
-                                    : "border-white/10 bg-black/20 text-gray-400 hover:border-white/20 hover:text-white"
+                                    ? "border-brand/40 bg-brand/10 text-foreground"
+                                    : "border-highlight/10 bg-shadow/20 text-muted-foreground hover:border-highlight/20 hover:text-foreground"
                             }`}
                         >
                             <span>{trader.name}</span>
                             {latestResultByTrader[trader.id] && (
-                                <span className="text-[10px] uppercase tracking-wide text-tarkov-green">
+                                <span className="text-[10px] uppercase tracking-wide text-success">
                                     Synced
                                 </span>
                             )}
@@ -163,19 +163,19 @@ export function QuestSyncTraderStep({
                 </div>
             </div>
 
-            <div className="min-w-0 rounded-sm border border-white/10 bg-black/20 p-4">
+            <div className="min-w-0 rounded-sm border border-highlight/10 bg-shadow/20 p-4">
                 {!activeTrader ? (
-                    <div className="flex min-h-64 items-center justify-center text-sm text-gray-500">
+                    <div className="flex min-h-64 items-center justify-center text-sm text-subtle-foreground">
                         Select a trader.
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        <div className="flex flex-col gap-3 border-b border-white/10 pb-4 md:flex-row md:items-center md:justify-between">
+                        <div className="flex flex-col gap-3 border-b border-highlight/10 pb-4 md:flex-row md:items-center md:justify-between">
                             <div className="space-y-1">
-                                <h4 className="text-lg font-semibold text-white">
+                                <h4 className="text-lg font-semibold text-foreground">
                                     {activeTrader.name}
                                 </h4>
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-subtle-foreground">
                                     Search for and select quests that are currently active to
                                     auto-complete prerequisites.
                                 </p>
@@ -190,8 +190,8 @@ export function QuestSyncTraderStep({
                                             }
                                             className={`rounded-sm px-3 py-2 text-sm transition-colors ${
                                                 loyaltyLevel === level
-                                                    ? "bg-tarkov-green text-black"
-                                                    : "border border-white/10 bg-black/30 text-gray-400 hover:border-white/20 hover:text-white"
+                                                    ? "bg-brand text-inverse"
+                                                    : "border border-highlight/10 bg-shadow/30 text-muted-foreground hover:border-highlight/20 hover:text-foreground"
                                             }`}
                                         >
                                             LL{level}
@@ -206,14 +206,14 @@ export function QuestSyncTraderStep({
                                 value={searchQuery}
                                 onChange={(event) => setSearchQuery(event.target.value)}
                                 placeholder="Search all quests"
-                                className="w-full rounded-sm border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none transition-colors placeholder:text-gray-600 focus:border-tarkov-green/50"
+                                className="w-full rounded-sm border border-highlight/10 bg-shadow/40 px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-subtle-foreground focus:border-brand/50"
                             />
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-subtle-foreground">
                                 {syncCandidates.length} total quest
                                 {syncCandidates.length === 1 ? "" : "s"}
                             </div>
                             {showNetworkProviderWarning && (
-                                <div className="rounded-sm border border-red-500/35 bg-red-500/12 px-3 py-2 text-xs font-semibold text-red-100">
+                                <div className="rounded-sm border border-danger/35 bg-danger/12 px-3 py-2 text-xs font-semibold text-danger">
                                     WARNING: If you got Network Provider - Part 1 from the story
                                     missions, do not select it. This can auto-complete a large
                                     number of quests you may not intend to do.
@@ -229,20 +229,20 @@ export function QuestSyncTraderStep({
                                     />
                                 ))}
                                 {filteredCandidates.length === 0 && (
-                                    <div className="rounded-sm border border-dashed border-white/10 px-3 py-6 text-center text-sm text-gray-500">
+                                    <div className="rounded-sm border border-dashed border-highlight/10 px-3 py-6 text-center text-sm text-subtle-foreground">
                                         No quests match the current search.
                                     </div>
                                 )}
                             </div>
                         </div>
 
-                        <div className="space-y-2 border-t border-white/10 pt-4">
-                            <label className="flex items-start gap-2 px-3 py-2 text-xs text-gray-300">
+                        <div className="space-y-2 border-t border-highlight/10 pt-4">
+                            <label className="flex items-start gap-2 px-3 py-2 text-xs text-foreground">
                                 <input
                                     type="checkbox"
                                     checked={enableInference}
                                     onChange={(event) => setEnableInference(event.target.checked)}
-                                    className="h-4 w-4 accent-tarkov-green"
+                                    className="h-4 w-4 accent-brand"
                                 />
                                 <span>
                                     Infer same-trader completed quests. Branching quests are not
@@ -271,32 +271,32 @@ export function QuestSyncTraderStep({
                                     className={`rounded-sm px-4 py-2 text-sm font-semibold transition-colors ${
                                         selectedQuestIds.length > 0 &&
                                         blockedSensitiveQuestIds.length === 0
-                                            ? "bg-tarkov-green text-black hover:bg-tarkov-green-dim"
-                                            : "cursor-not-allowed border border-white/10 bg-black/30 text-gray-600"
+                                            ? "bg-brand text-inverse hover:bg-brand-hover"
+                                            : "cursor-not-allowed border border-highlight/10 bg-shadow/30 text-subtle-foreground"
                                     }`}
                                 >
                                     Sync {activeTrader.name}
                                 </button>
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs text-subtle-foreground">
                                     {selectedQuestIds.length} selected
                                 </span>
                             </div>
                         </div>
 
                         {hasNoOpSyncResult && (
-                            <div className="rounded-sm border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs text-amber-200">
+                            <div className="rounded-sm border border-warning/20 bg-warning/8 px-3 py-2 text-xs text-warning">
                                 This sync did not auto-complete any additional quests. The previous
                                 sync result was kept so you can still undo it.
                             </div>
                         )}
 
                         {previewResult && (
-                            <div className="space-y-3 rounded-sm border border-white/10 bg-black/30 p-4">
+                            <div className="space-y-3 rounded-sm border border-highlight/10 bg-shadow/30 p-4">
                                 <div className="space-y-1">
-                                    <h5 className="text-sm font-semibold text-white">
+                                    <h5 className="text-sm font-semibold text-foreground">
                                         Sync Preview
                                     </h5>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-subtle-foreground">
                                         {previewResult.completedIds.length > 0 ||
                                         previewResult.autoFailedQuestIds.length > 0 ||
                                         previewResult.skippedBranchingQuestIds.length > 0
@@ -307,7 +307,7 @@ export function QuestSyncTraderStep({
 
                                 {previewResult.autoFailedQuestIds.length > 0 && (
                                     <div className="space-y-1">
-                                        <div className="text-[10px] font-semibold uppercase tracking-wide text-red-300">
+                                        <div className="text-[10px] font-semibold uppercase tracking-wide text-danger">
                                             Will Fail
                                         </div>
                                         <QuestListByTrader
@@ -320,10 +320,10 @@ export function QuestSyncTraderStep({
 
                                 {previewResult.skippedBranchingQuestIds.length > 0 && (
                                     <div className="space-y-1">
-                                        <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+                                        <div className="text-[10px] font-semibold uppercase tracking-wide text-warning">
                                             Needs Branch Choice
                                         </div>
-                                        <p className="text-xs text-gray-500">
+                                        <p className="text-xs text-subtle-foreground">
                                             These likely completed quests can fail another quest, so
                                             sync leaves them unchanged until you choose the branch.
                                         </p>
@@ -337,7 +337,7 @@ export function QuestSyncTraderStep({
 
                                 {previewResult.prerequisiteCompletedIds.length > 0 && (
                                     <div className="space-y-1">
-                                        <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+                                        <div className="text-[10px] font-semibold uppercase tracking-wide text-subtle-foreground">
                                             Prerequisites
                                         </div>
                                         <QuestListByTrader
@@ -369,7 +369,7 @@ export function QuestSyncTraderStep({
 
                                 {previewResult.inferredCompletedIds.length > 0 && (
                                     <div className="space-y-1">
-                                        <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+                                        <div className="text-[10px] font-semibold uppercase tracking-wide text-subtle-foreground">
                                             Inferred
                                         </div>
                                         <QuestListByTrader
@@ -384,7 +384,7 @@ export function QuestSyncTraderStep({
 
                         {lastQuestSyncAction?.traderId === activeTrader.id &&
                             lastQuestSyncAction.completedIds.length > 0 && (
-                                <div className="flex flex-wrap items-center gap-3 rounded-sm border border-sky-500/20 bg-sky-500/8 px-3 py-3 text-sm text-sky-100">
+                                <div className="flex flex-wrap items-center gap-3 rounded-sm border border-info/20 bg-info/8 px-3 py-3 text-sm text-info">
                                     <span>
                                         Last sync completed{" "}
                                         {lastQuestSyncAction.completedIds.length} quest
@@ -396,7 +396,7 @@ export function QuestSyncTraderStep({
                                     </span>
                                     <button
                                         onClick={handleCloseAndJumpToTrader}
-                                        className="rounded-sm border border-sky-400/30 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-sky-200 transition-colors hover:border-sky-300/50 hover:text-white"
+                                        className="rounded-sm border border-info/30 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-info transition-colors hover:border-info/50 hover:text-foreground"
                                     >
                                         Close And Jump To {activeTrader.name}
                                     </button>
@@ -405,8 +405,8 @@ export function QuestSyncTraderStep({
 
                         {syncedQuestIds.length > 0 &&
                             lastQuestSyncAction?.traderId !== activeTrader.id && (
-                                <div className="space-y-2 rounded-sm border border-white/10 bg-black/25 p-3">
-                                    <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+                                <div className="space-y-2 rounded-sm border border-highlight/10 bg-shadow/25 p-3">
+                                    <div className="text-[10px] font-semibold uppercase tracking-wide text-subtle-foreground">
                                         Last local result for {activeTrader.name}
                                     </div>
                                     <QuestListByTrader
@@ -435,29 +435,29 @@ function SensitiveBackfillGate({
     onDeny: (questId: string) => void;
 }) {
     return (
-        <div className="rounded-sm border border-dashed border-red-500/60 px-3 py-3 text-sm text-gray-200">
-            <div className="font-semibold text-red-400">
+        <div className="rounded-sm border border-dashed border-danger/60 px-3 py-3 text-sm text-foreground">
+            <div className="font-semibold text-danger">
                 Sensitive prerequisite backfill blocked.
             </div>
             <div className="mt-3 space-y-4">
                 {questIds.map((questId) => (
                     <div key={questId}>
                         <div className="font-semibold">{getQuestName(questId)}</div>
-                        <p className="mt-1 text-xs leading-5 text-gray-400">
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">
                             {getSensitiveBackfillQuest(questId)?.warning}
                         </p>
                         <div className="mt-3 flex flex-wrap gap-2">
                             <button
                                 type="button"
                                 onClick={() => onDeny(questId)}
-                                className="rounded-sm border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-300 transition-colors hover:border-white/25 hover:text-white"
+                                className="rounded-sm border border-highlight/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-foreground transition-colors hover:border-highlight/25 hover:text-foreground"
                             >
                                 Ignore Pre-requisites
                             </button>
                             <button
                                 type="button"
                                 onClick={() => onAllow(questId)}
-                                className="rounded-sm border border-red-500/50 bg-red-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-red-100 transition-colors hover:border-red-400 hover:bg-red-500/25 hover:text-white"
+                                className="rounded-sm border border-danger/50 bg-danger/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-danger transition-colors hover:border-danger hover:bg-danger/25 hover:text-foreground"
                             >
                                 Complete Pre-requisites
                             </button>

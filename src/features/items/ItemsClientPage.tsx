@@ -2,7 +2,7 @@
 
 import { useDeferredPriceItems } from "@/features/items/DeferredPriceBoundary";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import type { ItemSummary } from "@/types/items";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsList } from "@/features/items/components/ItemsList";
@@ -12,6 +12,7 @@ import { ItemDetailModal } from "@/features/items/item-detail/LazyItemDetailModa
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { DataLoadError } from "@/components/core/DataLoadError";
 import type { ItemChecklistPageData } from "@/types/contracts";
+import { PROFILE_BASE_COLORS } from "@/lib/cfg/profile-colors";
 
 interface ItemsClientPageProps {
     data: ItemChecklistPageData;
@@ -53,20 +54,15 @@ export function ItemsClientPage({ data }: ItemsClientPageProps) {
         <main className="container mx-auto px-6 py-8">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+                    <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight text-foreground">
                         ITEM CHECKLIST
                     </h1>
                 </div>
-                <div className="flex items-center gap-3 self-start rounded-sm border border-white/10 bg-black/20 px-3 py-2 text-xs text-gray-400 sm:self-auto">
+                <div className="flex items-center gap-3 self-start rounded-sm border border-highlight/10 bg-shadow/20 px-3 py-2 text-xs text-muted-foreground sm:self-auto">
                     <span>Active profile prices</span>
                     <span
-                        className={`inline-flex items-center gap-2 rounded-sm border px-3 py-1.5 font-mono font-semibold tracking-wide transition-all shadow-md ${
-                            gameMode === "PVP"
-                                ? "border-red-500/70 bg-red-900/60 text-red-200 shadow-[0_0_18px_rgba(248,113,113,0.45)]"
-                                : gameMode === "PVE"
-                                  ? "border-sky-400/80 bg-sky-900/70 text-sky-100 shadow-[0_0_20px_rgba(56,189,248,0.7)]"
-                                  : "border-amber-400/80 bg-amber-900/70 text-amber-100 shadow-[0_0_20px_rgba(251,191,36,0.45)]"
-                        }`}
+                        style={{ "--profile-color": PROFILE_BASE_COLORS[gameMode] } as CSSProperties}
+                        className="inline-flex items-center gap-2 rounded-sm border border-[color-mix(in_srgb,var(--profile-color)_80%,transparent)] bg-[color-mix(in_srgb,var(--profile-color)_18%,var(--background))] px-3 py-1.5 font-mono font-semibold tracking-wide text-[color-mix(in_srgb,var(--profile-color)_55%,var(--foreground))] shadow-md shadow-[color-mix(in_srgb,var(--profile-color)_45%,transparent)] transition-all"
                     >
                         <span>{gameMode}</span>
                     </span>

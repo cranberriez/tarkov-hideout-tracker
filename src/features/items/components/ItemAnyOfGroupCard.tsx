@@ -46,7 +46,7 @@ function ItemImage({ item, className }: { item: AnyOfGroupItem; className: strin
     const imageSrc = item.iconLink ?? item.gridImageLink;
 
     if (!imageSrc) {
-        return <span className="text-xs text-gray-600">?</span>;
+        return <span className="text-xs text-subtle-foreground">?</span>;
     }
 
     return <img src={imageSrc} alt={item.name} className={cn("object-contain", className)} />;
@@ -80,8 +80,8 @@ function ItemPreviewStack({
                     <div
                         key={item.id}
                         className={cn(
-                            "absolute flex items-center justify-center rounded border bg-black/40 transition-all duration-200",
-                            isFirRequired ? "border-orange-400/35" : "border-white/10",
+                            "absolute flex items-center justify-center rounded border bg-shadow/40 transition-all duration-200",
+                            isFirRequired ? "border-warning/35" : "border-highlight/10",
                             isIconMode ? "size-12" : "size-10",
                             layerClass,
                             index === 0 && "-translate-x-2 rotate-[-4deg]",
@@ -105,7 +105,7 @@ function GroupHeader({ group, expanded, isIconMode }: GroupHeaderProps) {
                 <div className="flex flex-col min-w-0 flex-1">
                     <h3
                         className={cn(
-                            "leading-tight font-bold text-balance line-clamp-2 text-gray-100",
+                            "leading-tight font-bold text-balance line-clamp-2 text-foreground",
                             isIconMode ? "line-clamp-2 text-xs" : "text-sm",
                         )}
                         title={group.questName}
@@ -115,7 +115,7 @@ function GroupHeader({ group, expanded, isIconMode }: GroupHeaderProps) {
 
                     <Link
                         href={getQuestDeepLinkHref(group.questId)}
-                        className="inline-flex w-fit items-center gap-1 text-xs text-gray-500 transition-colors hover:text-tarkov-green"
+                        className="inline-flex w-fit items-center gap-1 text-xs text-subtle-foreground transition-colors hover:text-brand"
                         onClick={(e) => e.stopPropagation()}
                     >
                         Quest
@@ -123,7 +123,7 @@ function GroupHeader({ group, expanded, isIconMode }: GroupHeaderProps) {
                     </Link>
                 </div>
 
-                <span className="shrink-0 text-gray-500">
+                <span className="shrink-0 text-subtle-foreground">
                     {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 </span>
             </div>
@@ -143,15 +143,15 @@ function ObjectiveLabelRow({
     return (
         <div
             className={cn(
-                "flex w-full items-start justify-between gap-3 text-pretty text-gray-400",
+                "flex w-full items-start justify-between gap-3 text-pretty text-muted-foreground",
                 isIconMode ? "text-[11px] leading-snug" : "text-xs",
             )}
         >
             <span className="flex shrink-0 items-center gap-2 font-medium">
-                <span className="text-gray-200 tabular-nums">{group.requiredCount}x</span>
-                {isFirRequired && <span className="text-orange-400">FiR</span>}
+                <span className="text-foreground tabular-nums">{group.requiredCount}x</span>
+                {isFirRequired && <span className="text-warning">FiR</span>}
                 {group.isPartial && (
-                    <span className="rounded border border-blue-400/30 bg-blue-400/10 px-1.5 py-0.5 text-[9px] font-medium text-blue-300">
+                    <span className="rounded border border-info/30 bg-info/10 px-1.5 py-0.5 text-[9px] font-medium text-info">
                         Partial
                     </span>
                 )}
@@ -169,19 +169,19 @@ function GroupItemsGrid({ items, isFirRequired, onClickItem }: GroupItemsGridPro
                     key={item.id}
                     type="button"
                     onClick={() => onClickItem(item)}
-                    className="flex items-center gap-3 rounded-md border border-white/10 bg-black/20 p-2 text-left transition-colors hover:border-blue-400"
+                    className="flex items-center gap-3 rounded-md border border-highlight/10 bg-shadow/20 p-2 text-left transition-colors hover:border-info"
                 >
                     <div
                         className={cn(
-                            "flex size-10 shrink-0 items-center justify-center rounded border bg-black/40",
-                            isFirRequired ? "border-orange-400/35" : "border-white/10",
+                            "flex size-10 shrink-0 items-center justify-center rounded border bg-shadow/40",
+                            isFirRequired ? "border-warning/35" : "border-highlight/10",
                         )}
                     >
                         <ItemImage item={item} className="size-8" />
                     </div>
 
                     <div className="min-w-0">
-                        <div className="line-clamp-2 text-sm text-gray-100">{item.name}</div>
+                        <div className="line-clamp-2 text-sm text-foreground">{item.name}</div>
                     </div>
                 </button>
             ))}
@@ -214,7 +214,7 @@ export function ItemAnyOfGroupCard({
         <div
             className={cn(
                 "rounded-lg border bg-card p-3 transition-colors",
-                expanded ? "col-span-full border-blue-400/40" : "hover:border-blue-400",
+                expanded ? "col-span-full border-info/40" : "hover:border-info",
             )}
         >
             <button
@@ -246,9 +246,9 @@ export function ItemAnyOfGroupCard({
             </button>
 
             {expanded && (
-                <div className="mt-4 space-y-3 border-t border-white/8 pt-4">
+                <div className="mt-4 space-y-3 border-t border-highlight/8 pt-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="text-xs text-gray-400 text-pretty">
+                        <div className="text-xs text-muted-foreground text-pretty">
                             {group.isPartial
                                 ? `Showing ${items.length} of ${group.totalItemCount} qualifying items.`
                                 : "Any one of these items will satisfy the quest objective."}

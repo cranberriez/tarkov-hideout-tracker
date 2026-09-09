@@ -134,6 +134,13 @@ eligible ingredients for a hypothetical recipe; they never make a route eligible
 Unknown route costs remain dashes. Locked estimates do not recursively expand
 other locked recipe estimates.
 
+Acquisition method colors are independent roles in
+[globals.css](../src/app/globals.css): `acquisition-craft` (orange),
+`acquisition-barter` (blue), `acquisition-trader` (purple), `acquisition-flea`
+(emerald), and `acquisition-sell-value` (yellow). Profit rows, route selectors,
+recipe previews and item-detail method badges share these roles. Status warnings,
+profit signs and charts retain their own palette.
+
 Ingredient route controls use a solid method-colored border for a manual selection
 that differs from the recommendation. A dashed border identifies an automatic
 fallback only when a priced locked alternative would beat the selected route,

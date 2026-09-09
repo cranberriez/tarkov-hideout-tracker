@@ -66,15 +66,15 @@ export function QuestCascadeConfirmDialog() {
             }}
         >
             <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden border-border-color bg-card p-0 md:max-w-2xl">
-                <DialogHeader className="border-b border-border-color bg-black/60 px-6 py-4">
-                    <DialogTitle className="text-sm font-semibold tracking-[0.2em] text-gray-300">
+                <DialogHeader className="border-b border-border-color bg-shadow/60 px-6 py-4">
+                    <DialogTitle className="text-sm font-semibold tracking-[0.2em] text-foreground">
                         {hasAutoFailures
                             ? "Confirm branch change"
                             : isComplete
                               ? `Mark ${totalCount} quest${totalCount === 1 ? "" : "s"} as complete`
                               : `Uncomplete ${totalCount} quest${totalCount === 1 ? "" : "s"}`}
                     </DialogTitle>
-                    <DialogDescription className="text-sm text-gray-400">
+                    <DialogDescription className="text-sm text-muted-foreground">
                         {hasAutoFailures
                             ? `This will complete the selected quest and fail ${autoFailedCount} mutually exclusive quest${autoFailedCount === 1 ? "" : "s"}.`
                             : isComplete
@@ -85,13 +85,13 @@ export function QuestCascadeConfirmDialog() {
 
                 <div className="flex flex-col gap-3 px-6 py-4">
                     {!hasAutoFailures && crossTraderCount > 0 && (
-                        <div className="rounded-sm border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+                        <div className="rounded-sm border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
                             Includes {crossTraderCount} quest{crossTraderCount === 1 ? "" : "s"}{" "}
                             from other traders.
                         </div>
                     )}
                     {!hasAutoFailures && sensitiveCount > 0 && (
-                        <div className="rounded-sm border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-100">
+                        <div className="rounded-sm border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">
                             Includes sensitive backfill:{" "}
                             {request.sensitiveQuestIds
                                 .map(
@@ -110,7 +110,7 @@ export function QuestCascadeConfirmDialog() {
                     <div className="space-y-4">
                         {hasAutoFailures && (
                             <section className="space-y-2">
-                                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-red-300">
+                                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-danger">
                                     Will be failed
                                 </div>
                                 <QuestListByTrader
@@ -123,7 +123,7 @@ export function QuestCascadeConfirmDialog() {
                         {(!hasAutoFailures || questIdsToComplete.length > 0) && (
                             <section className="space-y-2">
                                 {hasAutoFailures && (
-                                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-tarkov-green">
+                                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-success">
                                         Will be completed
                                     </div>
                                 )}
@@ -137,11 +137,11 @@ export function QuestCascadeConfirmDialog() {
                     </div>
                 </div>
 
-                <div className="flex flex-wrap justify-end gap-2 border-t border-border-color bg-black/40 px-6 py-3">
+                <div className="flex flex-wrap justify-end gap-2 border-t border-border-color bg-shadow/40 px-6 py-3">
                     <button
                         type="button"
                         onClick={closeRequest}
-                        className="rounded-sm border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+                        className="rounded-sm border border-highlight/10 bg-highlight/5 px-3 py-2 text-sm text-foreground transition-colors hover:border-highlight/20 hover:bg-highlight/10 hover:text-foreground"
                     >
                         Cancel
                     </button>
@@ -149,7 +149,7 @@ export function QuestCascadeConfirmDialog() {
                         <button
                             type="button"
                             onClick={handleCompleteSelectedOnly}
-                            className="rounded-sm border border-tarkov-green/30 bg-tarkov-green/10 px-3 py-2 text-sm font-semibold text-tarkov-green transition-colors hover:border-tarkov-green/60"
+                            className="rounded-sm border border-brand/30 bg-brand/10 px-3 py-2 text-sm font-semibold text-brand transition-colors hover:border-brand/60"
                         >
                             Complete Only Selected
                         </button>
@@ -157,7 +157,7 @@ export function QuestCascadeConfirmDialog() {
                     <button
                         type="button"
                         onClick={handleConfirm}
-                        className="rounded-sm border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm font-semibold text-amber-100 transition-colors hover:border-amber-300/60 hover:bg-amber-500/15"
+                        className="rounded-sm border border-warning/30 bg-warning/10 px-3 py-2 text-sm font-semibold text-warning transition-colors hover:border-warning/60 hover:bg-warning/15"
                     >
                         Confirm
                     </button>

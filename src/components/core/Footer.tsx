@@ -3,14 +3,14 @@ import { DataStatusDialog, type DataStatusConfig } from "./DataStatusDialog";
 export function Footer({ statusConfig }: { statusConfig: DataStatusConfig }) {
     return (
         <footer className="border-t border-border-color bg-card py-6 mt-10">
-            <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+            <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-subtle-foreground">
                 <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3">
                     <span>
                         <a
                             href="https://github.com/cranberriez/tarkov-hideout-tracker"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="transition-colors text-tarkov-green-dim hover:text-tarkov-green hover:underline"
+                            className="transition-colors text-brand-hover hover:text-brand hover:underline"
                         >
                             GitHub
                         </a>
@@ -21,7 +21,7 @@ export function Footer({ statusConfig }: { statusConfig: DataStatusConfig }) {
                             href="https://tarkov.dev/"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="transition-colors text-tarkov-green-dim hover:text-tarkov-green hover:underline"
+                            className="transition-colors text-brand-hover hover:text-brand hover:underline"
                         >
                             tarkov.dev
                         </a>
@@ -32,7 +32,7 @@ export function Footer({ statusConfig }: { statusConfig: DataStatusConfig }) {
                             href="https://escapefromtarkov.fandom.com/wiki/Escape_from_Tarkov_Wiki"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="transition-colors text-tarkov-green-dim hover:text-tarkov-green hover:underline"
+                            className="transition-colors text-brand-hover hover:text-brand hover:underline"
                         >
                             Wiki
                         </a>

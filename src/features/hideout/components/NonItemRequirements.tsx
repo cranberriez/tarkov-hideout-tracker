@@ -31,23 +31,23 @@ export function NonItemRequirements({
                             key={`st-${idx}`}
                             className={`flex items-center gap-2 px-2 py-1 rounded border ${
                                 isMet
-                                    ? "bg-green-900/20 border-green-500/20"
-                                    : "bg-red-900/20 border-red-500/20"
+                                    ? "bg-success-surface/20 border-success/20"
+                                    : "bg-danger-surface/20 border-danger/20"
                             }`}
                         >
                             {isMet ? (
-                                <Lock size={12} className={"text-green-400"} />
+                                <Lock size={12} className={"text-success"} />
                             ) : (
-                                <LockOpen size={12} className={"text-red-400"} />
+                                <LockOpen size={12} className={"text-danger"} />
                             )}
 
                             <span
                                 className={`text-[10px] font-medium uppercase ${
-                                    isMet ? "text-green-200" : "text-red-200"
+                                    isMet ? "text-success" : "text-danger"
                                 }`}
                             >
                                 {req.station.normalizedName.replace(/-/g, " ")}{" "}
-                                <span className="text-white ml-1">LVL {req.level}</span>
+                                <span className="text-foreground ml-1">LVL {req.level}</span>
                             </span>
                         </div>
                     );
@@ -55,7 +55,7 @@ export function NonItemRequirements({
             {nextLevelData.skillRequirements?.map((req, idx) => (
                 <div
                     key={`sk-${idx}`}
-                    className="flex items-center gap-2 bg-gray-900/10 border border-gray-500/10 px-2 py-1 rounded"
+                    className="flex items-center gap-2 bg-card/10 border border-border/10 px-2 py-1 rounded"
                 >
                     <div className="w-3 h-3 relative shrink-0">
                         {req.skill.imageLink && (
@@ -68,15 +68,15 @@ export function NonItemRequirements({
                             />
                         )}
                     </div>
-                    <span className="text-[10px] text-gray-200 font-medium uppercase">
-                        {req.skill.name} <span className="text-white ml-1">LVL {req.level}</span>
+                    <span className="text-[10px] text-foreground font-medium uppercase">
+                        {req.skill.name} <span className="text-foreground ml-1">LVL {req.level}</span>
                     </span>
                 </div>
             ))}
             {nextLevelData.traderRequirements?.map((req, idx) => (
                 <div
                     key={`tr-${idx}`}
-                    className="flex items-center gap-2 bg-gray-900/10 border border-gray-500/10 px-2 py-1 rounded"
+                    className="flex items-center gap-2 bg-card/10 border border-border/10 px-2 py-1 rounded"
                 >
                     <div className="w-3 h-3 relative shrink-0 rounded-full overflow-hidden">
                         {req.trader.imageLink && (
@@ -89,8 +89,8 @@ export function NonItemRequirements({
                             />
                         )}
                     </div>
-                    <span className="text-[10px] text-gray-200 font-medium uppercase">
-                        {req.trader.name} <span className="text-white ml-1">LL{req.value}</span>
+                    <span className="text-[10px] text-foreground font-medium uppercase">
+                        {req.trader.name} <span className="text-foreground ml-1">LL{req.value}</span>
                     </span>
                 </div>
             ))}

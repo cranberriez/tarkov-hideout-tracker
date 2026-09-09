@@ -60,14 +60,14 @@ export function QuestDetailModal({ quest, isOpen, onClose, onQuestChange }: Ques
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent
                 showCloseButton={false}
-                className="max-h-[min(88vh,900px)] max-w-4xl overflow-y-auto border-white/10 bg-[#0d0d0d] p-2 pt-2 shadow-2xl sm:p-6 sm:pt-8"
+                className="max-h-[min(88vh,900px)] max-w-4xl overflow-y-auto border-highlight/10 bg-[var(--background)] p-2 pt-2 shadow-2xl sm:p-6 sm:pt-8"
             >
                 <DialogTitle className="sr-only">{quest?.name ?? "Quest details"}</DialogTitle>
                 <DialogClose asChild>
                     <button
                         type="button"
                         aria-label="Close quest details"
-                        className="absolute right-1 top-1 z-10 flex size-8 items-center justify-center rounded-full text-gray-300 shadow-lg transition-colors hover:border-white/25 hover:bg-[#181818] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tarkov-green"
+                        className="absolute right-1 top-1 z-10 flex size-8 items-center justify-center rounded-full text-foreground shadow-lg transition-colors hover:border-highlight/25 hover:bg-[var(--surface-raised)] hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                     >
                         <X size={16} aria-hidden="true" />
                     </button>
