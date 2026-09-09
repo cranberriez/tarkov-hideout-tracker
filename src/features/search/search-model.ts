@@ -27,9 +27,22 @@ export function buildPaletteIndex(manifest: ReturnType<typeof decodeSearchManife
 	];
 }
 
-export function searchPalette(index: SearchResult[], query: string) {
+export type SearchKind = SearchResult["kind"];
+
+/** Consume one leading prefix; once scoped, subsequent prefixes are literal search text. */
+export function parsePaletteInput(value: string, kind: SearchKind | null = null) {
+	const prefix = kind ? null : value.match(/^\s*([iq]):\s*/i);
+	return {
+		kind: prefix ? ((prefix[1].toLowerCase() === "i" ? "item" : "quest") as SearchKind) : kind,
+		query: prefix ? value.slice(prefix[0].length) : value,
+	};
+}
+
+export function searchPalette(index: SearchResult[], query: string, kind: SearchKind | null = null) {
+	const scoped = kind ? index.filter((entry) => entry.kind === kind) : index;
 	const normalized = normalizeName(query.trim());
-	if (!normalized) return [];
+	if (!normalized)
+		return kind ? [...scoped].sort((a, b) => a.name.localeCompare(b.name, "en") || a.id.localeCompare(b.id)) : [];
 	const terms = normalized.split("-").filter(Boolean);
 	if (!terms.length) return [];
 	const score = (entry: SearchResult) =>
@@ -38,7 +51,7 @@ export function searchPalette(index: SearchResult[], query: string) {
 			: entry.fields.some((field) => field.startsWith(normalized))
 				? 1
 				: 2;
-	return index
+	return scoped
 		.filter(({ fields }) => terms.every((term) => fields.some((field) => field.includes(term))))
 		.sort(
 			(a, b) =>

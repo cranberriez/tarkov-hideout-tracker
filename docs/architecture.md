@@ -139,7 +139,12 @@ items and quests in the shared [compact manifest](data-layer.md#compact-search-m
 without network requests while typing or expanding results. The
 [pure search model](../src/features/search/search-model.ts) matches all normalized
 terms and ranks exact name/short-name matches before prefixes and other matches,
-with deterministic alphabetical ties. It shows 10 results initially, expandable
+with deterministic alphabetical ties. A leading `i:` or `q:` (case-insensitive) becomes a removable Item or Quest chip;
+only that entity kind is searched. An empty scoped query browses that kind.
+Only one chip can exist: subsequent prefixes remain literal search text.
+Backspace with a collapsed caret at the start removes the chip while preserving
+the query; its remove button also supports touch. The footer explains the prefixes.
+It shows 10 results initially, expandable
 to 50, labels entity kinds, and shows quest trader names/portraits.
 
 The dialog traps focus, supports arrow navigation and Enter selection, closes on

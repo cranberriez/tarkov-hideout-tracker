@@ -7,7 +7,13 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { useSearchManifest } from "@/lib/search/useSearchManifest";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { cn } from "@/lib/utils";
-import { buildPaletteIndex, searchPalette, type SearchResult } from "./search-model";
+import {
+	buildPaletteIndex,
+	parsePaletteInput,
+	searchPalette,
+	type SearchResult,
+	type SearchKind,
+} from "./search-model";
 
 export function SearchPalette({
 	mode,
@@ -22,6 +28,7 @@ export function SearchPalette({
 }) {
 	const manifest = useSearchManifest(mode, true);
 	const [query, setQuery] = useState("");
+	const [kind, setKind] = useState<SearchKind | null>(null);
 	const [limit, setLimit] = useState(10);
 	const [active, setActive] = useState(0);
 	const [retrying, setRetrying] = useState(false);
@@ -29,7 +36,15 @@ export function SearchPalette({
 	const selected = useRef(false);
 	const listId = useId();
 	const index = useMemo(() => (manifest.data ? buildPaletteIndex(manifest.data) : []), [manifest.data]);
-	const matches = useMemo(() => searchPalette(index, query), [index, query]);
+	const matches = useMemo(() => searchPalette(index, query, kind), [index, query, kind]);
+	const scopeLabel = kind === "item" ? "Item" : "Quest";
+	const hasSearch = !!query.trim() || !!kind;
+	const clearKind = () => {
+		setKind(null);
+		setActive(0);
+		setLimit(10);
+		input.current?.focus();
+	};
 	const results = matches.slice(0, limit);
 	const activeIndex = Math.min(active, results.length - 1);
 	const optionId = (index: number) => `${listId}-${index}`;
@@ -56,31 +71,55 @@ export function SearchPalette({
 			>
 				<DialogTitle className="sr-only">Search items and quests</DialogTitle>
 				<DialogDescription className="sr-only">
-					Search the catalog. Use the up and down arrows to choose a result and Enter to open it.
+					Search the catalog. Use the up and down arrows to choose a result and Enter to open it. Type i: for items or
+					q: for quests. Backspace at the start removes the filter.
 				</DialogDescription>
 				<div className="flex shrink-0 items-center gap-3 border-b border-border-color px-4 py-3">
 					<Search size={20} className="shrink-0 text-brand" aria-hidden="true" />
+					{kind && (
+						<button
+							type="button"
+							aria-label={`Remove ${scopeLabel} filter`}
+							onClick={clearKind}
+							className="inline-flex shrink-0 items-center gap-1 rounded border border-border-color bg-background px-2 py-1 text-xs font-medium text-foreground hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+						>
+							{scopeLabel}
+							<X size={12} aria-hidden="true" />
+						</button>
+					)}
 					<input
 						ref={input}
 						role="combobox"
-						aria-label="Search items and quests"
+						aria-label={kind ? `Search ${kind}s` : "Search items and quests"}
 						aria-autocomplete="list"
 						aria-expanded={true}
 						aria-controls={listId}
 						aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
 						value={query}
 						maxLength={80}
-						placeholder="Search items and quests…"
+						placeholder={kind ? `Search ${kind}s…` : "Search items and quests…"}
 						autoComplete="off"
 						spellCheck={false}
 						className="min-w-0 flex-1 bg-transparent py-2 text-base text-foreground outline-none placeholder:text-subtle-foreground"
 						onChange={(event) => {
-							setQuery(event.target.value);
+							const parsed = parsePaletteInput(event.target.value, kind);
+							setQuery(parsed.query);
+							setKind(parsed.kind);
 							setActive(0);
 							setLimit(10);
 						}}
 						onKeyDown={(event) => {
 							if (event.nativeEvent.isComposing) return;
+							if (
+								event.key === "Backspace" &&
+								kind &&
+								event.currentTarget.selectionStart === 0 &&
+								event.currentTarget.selectionEnd === 0
+							) {
+								event.preventDefault();
+								clearKind();
+								return;
+							}
 							if (event.key === "ArrowDown" || event.key === "ArrowUp") {
 								event.preventDefault();
 								if (results.length)
@@ -133,15 +172,15 @@ export function SearchPalette({
 						Loading search…
 					</div>
 				)}
-				{manifest.data && !query.trim() && (
+				{manifest.data && !hasSearch && (
 					<div className="px-6 py-10 text-center">
 						<p className="font-medium text-foreground">Find an item or quest</p>
 						<p className="mt-2 text-sm text-muted-foreground">Search names or item abbreviations, like GPU.</p>
 					</div>
 				)}
-				{manifest.data && query.trim() && !matches.length && (
+				{manifest.data && hasSearch && !matches.length && (
 					<p role="status" className="px-6 py-10 text-center text-sm text-muted-foreground">
-						No items or quests match “{query}”.
+						No {kind ? `${kind}s` : "items or quests"} match “{query}”.
 					</p>
 				)}
 				<div
@@ -202,11 +241,18 @@ export function SearchPalette({
 					</button>
 				)}
 				<div className="flex shrink-0 items-center justify-between gap-3 border-t border-border-color bg-background/50 px-4 py-2 text-xs text-muted-foreground">
-					<span role="status" aria-live="polite">
-						{query.trim() && manifest.data
-							? `${Math.min(matches.length, limit)} of ${matches.length} results`
-							: "Items & quests"}
-					</span>
+					<div className="flex gap-3">
+						<span>
+							<kbd className="font-semibold text-foreground">i:</kbd> Items <span aria-hidden="true">·</span>{" "}
+							<kbd className="font-semibold text-foreground">q:</kbd> Quests
+						</span>
+						<span role="status" aria-live="polite">
+							{hasSearch && manifest.data
+								? `${Math.min(matches.length, limit)} of ${matches.length} results`
+								: "Type a prefix to filter"}
+							{kind ? " · Backspace at start to remove" : ""}
+						</span>
+					</div>
 					<span className="hidden items-center gap-2 sm:flex">
 						<ArrowUp size={12} />
 						<ArrowDown size={12} /> Navigate <CornerDownLeft size={12} className="ml-2" /> Open{" "}
