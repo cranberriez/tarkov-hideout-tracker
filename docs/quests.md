@@ -110,3 +110,10 @@ observes query parameter changes as well as initial navigation, selects the ques
 and switches to Details even when the planner or visualizer was active. Selection
 is independent of list filters and opens the detail pane on mobile. The consumed
 link is removed through the existing deep-link helper.
+
+## Current-price requests
+
+The quest workspace uses unpriced item summaries and makes no current-price
+requests. Explicitly opening an item modal can load the selected item and recipe
+prices through the [shared price cache](data-layer.md). No player progression or
+quest filtering behavior depends on those prices.

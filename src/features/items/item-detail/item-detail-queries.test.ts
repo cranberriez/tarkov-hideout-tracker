@@ -43,6 +43,7 @@ test("detail domains reuse complete results independently", async () => {
     const calls = new Map<string, number>();
     globalThis.fetch = async (input) => {
         const path = String(input);
+        assert.equal(new URL(path, "https://example.test").searchParams.get("prices"), "none");
         const domain = path.includes("/relations?") ? "relations" : path.includes("/usage?") ? "usage" : "acquisition";
         calls.set(domain, (calls.get(domain) ?? 0) + 1);
         return Response.json(domain === "relations" ? relations : domain === "usage" ? usage : acquisition);

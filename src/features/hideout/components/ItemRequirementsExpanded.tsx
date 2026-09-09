@@ -9,150 +9,142 @@ import { computeNeeds } from "@/lib/utils/item-needs";
 import { formatCompactRoubles, getFleaPrice, hasFleaMarketData, fleaPriceStatusLabel } from "@/lib/utils/market-price";
 
 export function ExpandedItemRequirements({
-    nextLevelData,
-    hideMoney,
-    onClickItem,
-    pooledFirByItem,
-    itemById,
+	nextLevelData,
+	hideMoney,
+	onClickItem,
+	pooledFirByItem,
+	itemById,
 }: BaseItemRequirementsProps) {
-    const itemCounts = useUserStore((state) => state.itemCounts);
-    return (
-        <div className="flex flex-col gap-1.5">
-            {nextLevelData.itemRequirements
-                .filter((req) => {
-                    const item = itemById[req.itemId];
-                    if (!item) return false;
-                    if (!hideMoney) return true;
-                    const norm = item.normalizedName;
-                    return norm !== "roubles" && norm !== "dollars" && norm !== "euros";
-                })
-                .map((req) => {
-                    const item = itemById[req.itemId];
-                    if (!item) return null;
-                    const norm = item.normalizedName;
-                    const isCurrency = norm === "roubles" || norm === "dollars" || norm === "euros";
-                    const marketPrice = item.marketPrice;
-                    const fleaPrice = getFleaPrice(marketPrice);
-                    const priceLabel = item.priceLoadState === "pending" ? "Loading price…" : item.priceLoadState === "error" ? "Price failed" : marketPrice?.fleaStability === "unavailable" ? fleaPriceStatusLabel(marketPrice) : marketPrice && !hasFleaMarketData(marketPrice)
-                          ? "No flea"
-                          : fleaPrice != null
-                            ? `${formatCompactRoubles(fleaPrice)} ₽`
-                            : "No data";
+	const itemCounts = useUserStore((state) => state.itemCounts);
+	return (
+		<div className="flex flex-col gap-1.5">
+			{nextLevelData.itemRequirements
+				.filter((req) => {
+					const item = itemById[req.itemId];
+					if (!item) return false;
+					if (!hideMoney) return true;
+					const norm = item.normalizedName;
+					return norm !== "roubles" && norm !== "dollars" && norm !== "euros";
+				})
+				.map((req) => {
+					const item = itemById[req.itemId];
+					if (!item) return null;
+					const norm = item.normalizedName;
+					const isCurrency = norm === "roubles" || norm === "dollars" || norm === "euros";
+					const marketPrice = item.marketPrice;
+					const fleaPrice = getFleaPrice(marketPrice);
+					const priceLabel =
+						item.priceLoadState === "pending"
+							? "Loading…"
+							: item.priceLoadState === "error"
+								? "Failed"
+								: marketPrice?.fleaStability === "unavailable"
+									? fleaPriceStatusLabel(marketPrice)
+									: marketPrice && !hasFleaMarketData(marketPrice)
+										? "No flea"
+										: fleaPrice != null
+											? `${formatCompactRoubles(fleaPrice)} ₽`
+											: "No data";
 
-                    const owned = itemCounts[req.itemId] ?? { have: 0, haveFir: 0 };
-                    const globalFirRemaining = pooledFirByItem[req.itemId] ?? 0;
-                    const firSurplus = Math.max(0, owned.haveFir - globalFirRemaining);
-                    const needs = isCurrency
-                        ? computeNeeds({
-                              totalRequired: req.count,
-                              requiredFir: 0,
-                              haveNonFir: 0,
-                              haveFir: 0,
-                          })
-                        : req.isFir
-                        ? computeNeeds({
-                              totalRequired: req.count,
-                              requiredFir: req.count,
-                              haveNonFir: 0,
-                              haveFir: owned.haveFir,
-                          })
-                        : computeNeeds({
-                              totalRequired: req.count,
-                              requiredFir: 0,
-                              haveNonFir: owned.have + firSurplus,
-                              haveFir: 0,
-                          });
+					const owned = itemCounts[req.itemId] ?? { have: 0, haveFir: 0 };
+					const globalFirRemaining = pooledFirByItem[req.itemId] ?? 0;
+					const firSurplus = Math.max(0, owned.haveFir - globalFirRemaining);
+					const needs = isCurrency
+						? computeNeeds({
+								totalRequired: req.count,
+								requiredFir: 0,
+								haveNonFir: 0,
+								haveFir: 0,
+							})
+						: req.isFir
+							? computeNeeds({
+									totalRequired: req.count,
+									requiredFir: req.count,
+									haveNonFir: 0,
+									haveFir: owned.haveFir,
+								})
+							: computeNeeds({
+									totalRequired: req.count,
+									requiredFir: 0,
+									haveNonFir: owned.have + firSurplus,
+									haveFir: 0,
+								});
 
-                    const isCompleted = !isCurrency
-                        ? req.isFir
-                            ? needs.isSatisfied
-                            : needs.isSatisfied && !needs.usesFirForNonFir
-                        : false;
+					const isCompleted = !isCurrency
+						? req.isFir
+							? needs.isSatisfied
+							: needs.isSatisfied && !needs.usesFirForNonFir
+						: false;
 
-                    return (
-                        <div
-                            key={req.id}
-                            onClick={() => onClickItem(item)}
-                            className={`flex items-center gap-3 bg-shadow/20 p-1 border transition-colors cursor-pointer ${
-                                isCompleted
-                                    ? "border-success/30 opacity-60 bg-success-surface/5"
-                                    : "border-highlight/5 hover:border-highlight/10"
-                            }`}
-                        >
-                            <div
-                                className={`relative w-10 h-10 shrink-0 ${
-                                    req.isFir ? "ring-1 ring-warning" : ""
-                                }`}
-                            >
-                                {item.iconLink && (
-                                    <Image
-                                        src={item.iconLink}
-                                        alt={item.name}
-                                        fill
-                                        className={`object-contain ${
-                                            isCompleted ? "grayscale" : ""
-                                        }`}
-                                        unoptimized
-                                    />
-                                )}
-                                {isCompleted && (
-                                    <div className="absolute inset-0 flex items-center justify-center text-success">
-                                        <Check size={24} strokeWidth={2} />
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex-1 min-w-0 flex items-center justify-between">
-                                <div className="flex flex-col items-start gap-0.5 min-w-0">
-                                    <div
-                                        className={`text-xs truncate ${
-                                            isCompleted ? "text-subtle-foreground" : "text-foreground"
-                                        }`}
-                                    >
-                                        <span
-                                            className={`font-bold mr-2 font-mono ${
-                                                isCompleted ? "text-subtle-foreground" : "text-foreground"
-                                            }`}
-                                        >
-                                            {item.shortName || item.name}
-                                        </span>
-                                    </div>
-                                    <div className="text-[10px] font-mono text-muted-foreground">
-                                        {isCurrency ? (
-                                            <span className="text-brand">
-                                                {formatNumber(req.count)}
-                                            </span>
-                                        ) : req.isFir ? (
-                                            <span className={isCompleted ? "text-success" : "text-warning"}>
-                                                FiR {formatNumber(needs.haveFirReserved)} /{" "}
-                                                {formatNumber(needs.requiredFir)}
-                                            </span>
-                                        ) : (
-                                            <span className={isCompleted ? "text-success" : "text-brand"}>
-                                                {formatNumber(needs.effectiveHave)}
-                                                {owned.haveFir > 0 && (
-                                                    <span className="text-warning">
-                                                        {` (${formatNumber(owned.haveFir)})`}
-                                                    </span>
-                                                )}
-                                                {` / ${formatNumber(needs.totalRequired)}`}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                                {req.isFir && !isCompleted && (
-                                    <div className="text-warning" title="Found In Raid">
-                                        <CircleCheckBig className="w-4 h-4" />
-                                    </div>
-                                )}
-                                {!isCurrency && (
-                                    <div className="ml-2 shrink-0 text-right text-[10px] font-mono text-subtle-foreground">
-                                        {priceLabel}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
-        </div>
-    );
+					return (
+						<div
+							key={req.id}
+							onClick={() => onClickItem(item)}
+							className={`flex items-center gap-3 bg-shadow/20 p-1 border transition-colors cursor-pointer ${
+								isCompleted
+									? "border-success/30 opacity-60 bg-success-surface/5"
+									: "border-highlight/5 hover:border-highlight/10"
+							}`}
+						>
+							<div className={`relative w-10 h-10 shrink-0 ${req.isFir ? "ring-1 ring-warning" : ""}`}>
+								{item.iconLink && (
+									<Image
+										src={item.iconLink}
+										alt={item.name}
+										fill
+										className={`object-contain ${isCompleted ? "grayscale" : ""}`}
+										unoptimized
+									/>
+								)}
+								{isCompleted && (
+									<div className="absolute inset-0 flex items-center justify-center text-success">
+										<Check size={24} strokeWidth={2} />
+									</div>
+								)}
+							</div>
+							<div className="flex-1 min-w-0 flex items-center justify-between">
+								<div className="flex flex-col items-start gap-0.5 min-w-0">
+									<div className={`text-xs truncate ${isCompleted ? "text-subtle-foreground" : "text-foreground"}`}>
+										<span
+											className={`font-bold mr-2 font-mono ${
+												isCompleted ? "text-subtle-foreground" : "text-foreground"
+											}`}
+										>
+											{item.shortName || item.name}
+										</span>
+									</div>
+									<div className="text-[10px] font-mono text-muted-foreground">
+										{isCurrency ? (
+											<span className="text-brand">{formatNumber(req.count)}</span>
+										) : req.isFir ? (
+											<span className={isCompleted ? "text-success" : "text-warning"}>
+												FiR {formatNumber(needs.haveFirReserved)} / {formatNumber(needs.requiredFir)}
+											</span>
+										) : (
+											<span className={isCompleted ? "text-success" : "text-brand"}>
+												{formatNumber(needs.effectiveHave)}
+												{owned.haveFir > 0 && (
+													<span className="text-warning">{` (${formatNumber(owned.haveFir)})`}</span>
+												)}
+												{` / ${formatNumber(needs.totalRequired)}`}
+											</span>
+										)}
+									</div>
+								</div>
+								{req.isFir && !isCompleted && (
+									<div className="text-warning" title="Found In Raid">
+										<CircleCheckBig className="w-4 h-4" />
+									</div>
+								)}
+								{!isCurrency && (
+									<div className="ml-2 shrink-0 text-right text-[10px] font-mono text-subtle-foreground">
+										{priceLabel}
+									</div>
+								)}
+							</div>
+						</div>
+					);
+				})}
+		</div>
+	);
 }

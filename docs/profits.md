@@ -5,11 +5,14 @@ which loads [getProfitPageData](../src/server/queries/getProfitPageData.ts) and
 renders [ProfitPageClient](../src/features/profit-pages/ProfitPageClient.tsx).
 Craft Planner consumes the same mode-keyed `recipes-crafts-barters` Query cache.
 Server pages prefetch and hydrate that payload, and client refetches update every
-consumer without duplicating the graph arrays. The query supplies both normalized recipe graphs, referenced item prices, and
-compact trader/station presentation. Both graphs are required because acquisition
+consumer without duplicating the graph arrays. The metadata query supplies both normalized recipe graphs, referenced items, and
+compact trader/station presentation without prices. The shared mode/item price
+cache loads the named recipes scope in one GET, reusing prices from other pages.
+Initial figures wait for prices; one-hour freshness and manual refresh are owned
+by [the shared price layer](data-layer.md). Metadata refetches do not refresh prices. Both graphs are required because acquisition
 can cross between crafts and barters; either graph error blocks profit figures.
 Stored acquisition views remain unpriced graphs; [data layer](data-layer.md) owns
-runtime hydration and the price refresh pipeline.
+shared runtime pricing and the price refresh pipeline.
 
 ## Calculation owners and rules
 

@@ -10,6 +10,7 @@ import { getItemChecklistPageData } from "./getItemChecklistPageData";
 import { getProfitPageData } from "./getProfitPageData";
 import { getQuestWorkspacePageData } from "./getQuestWorkspacePageData";
 import { getKappaChecklistPageData, COLLECTOR_QUEST_ID_BY_MODE } from "./getKappaChecklistPageData";
+import { getItemPriceResponse } from "./getDeferredPrices";
 
 function result<T>(data: T, updatedAt = 1): DataResult<T> {
     return { data, updatedAt, diagnostics: { provider: "json" } };
@@ -103,6 +104,64 @@ test("unpriced page reads finish without calling prices and retain unresolved re
         assert.ok(data.unresolvedItemIds.includes("item-a"));
     }
     assert.equal(priceCalls, 0);
+});
+
+test("named checklist price scope matches checklist IDs without loading item records", async () => {
+    const itemId = "000000000000000000000001";
+    const rewardId = "000000000000000000000002";
+    const priceStation = { ...station, levels: station.levels.map((level) => ({ ...level,
+        itemRequirements: level.itemRequirements.map((requirement) => ({ ...requirement, itemId })),
+    })) };
+    const priceQuest: FullQuest = { ...quest, finishItemRewards: [{ itemId: rewardId, count: 1 }], objectives: [{
+        id: "give", type: "giveItem", description: "Give", optional: false, count: 1, foundInRaid: false, itemIds: [itemId],
+    }] };
+    for (const mode of ["regular", "pve", "pvp-season"] as const) {
+        const calls: string[][] = [];
+        const repository = createRepository({
+            stations: async () => result([priceStation]), quests: async () => result([priceQuest]),
+            prices: async (requestedMode, ids) => {
+                assert.equal(requestedMode, mode);
+                calls.push([...ids]);
+                return result({ [itemId]: { price: 17 } });
+            },
+        });
+        const response = await getItemPriceResponse({ mode, scope: "checklist" }, repository);
+        const page = await getItemChecklistPageData(mode, { ...repository, items: { getByIds: async () => result({}) } }, { includePrices: false });
+        assert.deepEqual(response.itemIds, [...page.itemIds].sort());
+        assert.deepEqual(calls, [response.itemIds]);
+        assert.ok(!response.itemIds.includes(rewardId), "reward-only items are excluded");
+        assert.equal(response.prices[itemId].price, 17);
+    }
+});
+
+test("failed named price scopes reject instead of returning cacheable partial prices", async () => {
+    let priceCalls = 0;
+    const repository = createRepository({
+        stations: async () => result([station]),
+        quests: async () => { throw new Error("quest read failed"); },
+        prices: async () => { priceCalls++; return result({}); },
+    });
+    await assert.rejects(getItemPriceResponse({ mode: "regular", scope: "checklist" }, repository), /quest read failed/);
+    await assert.rejects(getItemPriceResponse({ mode: "regular", scope: "recipes" }, repository));
+    assert.equal(priceCalls, 0);
+});
+
+test("unpriced profit metadata does not read prices; recipe price scope reads both graphs", async () => {
+    let priceCalls = 0;
+    const repository = createRepository({
+        barters: async () => result([{ id: "barter", offeredItemId: "000000000000000000000001", offeredCount: 1, traderId: "trader", minTraderLevel: 1, requiredItems: [{ itemId: "000000000000000000000002", count: 1 }, { itemId: "customdogtags12345678910", count: 1 }] }]),
+        crafts: async () => result([]),
+        items: async () => result({}), traders: async () => result([]),
+        prices: async () => { priceCalls++; return result({}); },
+    });
+    const data = await getProfitPageData("regular", repository, { includePrices: false });
+    assert.equal(priceCalls, 0);
+    assert.equal(data.freshness.pricesUpdatedAt, null);
+    assert.equal(data.errors.prices, null);
+    const prices = await getItemPriceResponse({ mode: "regular", scope: "recipes" }, repository);
+    assert.deepEqual(prices.itemIds, ["000000000000000000000001", "000000000000000000000002"]);
+    assert.ok(data.itemIds.includes("customdogtags12345678910"), "synthetic requirements remain in the recipe graph");
+    assert.equal(priceCalls, 1);
 });
 
 test("hideout reads only deduped station item IDs and retains summaries when prices fail", async () => {

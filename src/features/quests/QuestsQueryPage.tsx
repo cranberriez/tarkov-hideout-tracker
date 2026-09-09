@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { DataLoadError, DataQueryRetryProvider, DataRefreshError } from "@/components/core/DataLoadError";
 import { RouteLoader } from "@/components/core/RouteLoader";
-import { DeferredPriceBoundary } from "@/features/items/DeferredPriceBoundary";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { useGameDataEnabled, useUserStoreHydrated } from "@/lib/query/game-data";
 import { pageDataFromQuery, questWorkspacePageQueryOptions } from "@/lib/query/page-data";
@@ -28,6 +27,6 @@ export function QuestsQueryPage({ mode, devQuery, initialQuestId, fallbackData }
                 {data.unresolvedItemIds.length} referenced item{data.unresolvedItemIds.length === 1 ? " is" : "s are"} unavailable. Affected requirements remain unresolved.
             </div>
         )}
-        <DeferredPriceBoundary mode={mode} itemIds={data.itemIds}><QuestsClientPage quests={data.quests} items={data.items} initialQuestId={initialQuestId} /></DeferredPriceBoundary>
+        <QuestsClientPage quests={data.quests} items={data.items} initialQuestId={initialQuestId} />
     </DataQueryRetryProvider>;
 }

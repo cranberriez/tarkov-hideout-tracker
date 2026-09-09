@@ -18,6 +18,8 @@ import { summarizeItemDetailDemand } from "./item-detail-summary";
 import { buildStationRequirements, mergeItemDetailItems } from "./item-detail-data";
 import { useItemDetailNavigationController } from "./useItemDetailNavigationController";
 import { useItemDetailRequestController } from "./useItemDetailRequestController";
+import { useItemPrices } from "../useItemPrices";
+import { isPriceItemId } from "@/lib/query/price-contract";
 
 export function useItemDetailModalController({
     item,
@@ -38,7 +40,7 @@ export function useItemDetailModalController({
     const itemRelations = requests.relations;
     const itemUsage = requests.usage;
     const acquisitionTree = requests.tree;
-    const itemDetailsById = useMemo(
+    const unpricedItemsById = useMemo(
         () =>
             mergeItemDetailItems(
                 item ? [item] : [],
@@ -50,6 +52,18 @@ export function useItemDetailModalController({
             ),
         [acquisitionTree, item, itemRelations, itemUsage, navigatedItemsById],
     );
+    // Wait for the initial graphs so related prices share one transport batch.
+    const metadataReady = !requests.relationsLoading && !requests.usageLoading && !requests.treeLoading;
+    const priceIds = useMemo(() => isOpen && metadataReady
+        ? Object.keys(unpricedItemsById).filter(isPriceItemId) : [],
+    [isOpen, metadataReady, unpricedItemsById]);
+    const prices = useItemPrices(tarkovMode, priceIds);
+    const itemDetailsById = useMemo(() => Object.fromEntries(Object.entries(unpricedItemsById).map(([id, summary]) => [
+        id, { ...summary, marketPrice: prices.prices[id] ?? null, priceLoadState: prices.states[id] ?? (isPriceItemId(id) ? "pending" : "ready") },
+    ])), [unpricedItemsById, prices.prices, prices.states]);
+    const pricesLoading = isOpen && metadataReady && prices.state === "pending";
+    const priceError = prices.state === "error" ? "Item prices could not be updated. Use Retry prices." : null;
+    const pricesReady = Object.values(prices.states).every((state) => state === "ready") && metadataReady;
     const selectedItem = itemDetailsById[activeItemId] ?? null;
     const selectedItemId = selectedItem?.id ?? activeItemId;
     const marketPrice = selectedItem?.marketPrice;
@@ -113,7 +127,7 @@ export function useItemDetailModalController({
               });
     const recipeCalculator = useMemo(
         () =>
-            acquisitionTree
+            acquisitionTree && pricesReady
                 ? createRecipeCalculator({
                       itemsById: itemDetailsById,
                       barters: acquisitionTree.barters,
@@ -129,6 +143,7 @@ export function useItemDetailModalController({
                 : null,
         [
             acquisitionTree,
+            pricesReady,
             craftingSkillLevel,
             hideoutManagementSkillLevel,
             itemDetailsById,
@@ -330,13 +345,16 @@ export function useItemDetailModalController({
         relationsLoading: requests.relationsLoading,
         relationsError: requests.relationsError,
         retryRelations: requests.retryRelations,
-        usageLoading: requests.usageLoading,
-        usageError: requests.usageError,
+        usageLoading: requests.usageLoading || pricesLoading,
+        usageError: requests.usageError ?? priceError,
         retryUsage: requests.retryUsage,
         barterError: itemUsage?.bartersError ?? requests.usageError,
         craftError: itemUsage?.craftsError ?? requests.usageError,
-        profitLoading: requests.treeLoading,
-        profitError: requests.treeError,
+        profitLoading: requests.treeLoading || pricesLoading,
+        profitError: requests.treeError ?? priceError,
+        pricesFetching: prices.fetching,
+        priceError,
+        refreshPrices: prices.refresh,
         retryProfit: requests.retryTree,
         close: navigation.close,
         back: navigation.back,

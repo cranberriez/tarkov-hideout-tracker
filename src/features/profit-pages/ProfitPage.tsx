@@ -19,7 +19,7 @@ export async function ProfitPage({
     getActiveTarkovJsonGameMode(),
   ]);
   const options = profitPageQueryOptions(mode);
-  const { state, fallbackData } = await prefetchPageData(options.queryKey, PAGE_DATA_STALE_TIME, async () => getProfitPageData(mode, await getCurrentPageRepository(mode)), isCompleteProfitPageData);
+  const { state, fallbackData } = await prefetchPageData(options.queryKey, PAGE_DATA_STALE_TIME, async () => getProfitPageData(mode, await getCurrentPageRepository(mode), { includePrices: false }), isCompleteProfitPageData);
   return (
     <HydrationBoundary state={state}><ProfitQueryPage mode={mode} kind={kind} fallbackData={fallbackData} initialTargetRecipeId={recipe} /></HydrationBoundary>
   );

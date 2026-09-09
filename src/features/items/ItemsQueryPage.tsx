@@ -19,5 +19,5 @@ export function ItemsQueryPage({ mode, fallbackData }: { mode: TarkovJsonGameMod
     const data = pageDataFromQuery(query.data, query.error, fallbackData);
     if (!data && query.isPending) return <RouteLoader page="items" />;
     if (!data) return <DataQueryRetryProvider retry={() => void query.refetch()}><main className="container mx-auto px-6 py-8"><DataLoadError title="Item checklist data is unavailable" messages={[query.error?.message ?? "Item checklist data could not be loaded."]} /></main></DataQueryRetryProvider>;
-    return <DataQueryRetryProvider retry={() => void query.refetch()}>{query.error && !(query.error instanceof PartialDataError) && <DataRefreshError message="Updated checklist data could not be loaded." />}<DeferredPriceBoundary mode={mode} itemIds={data.itemIds}><ItemsClientPage data={data} dataMode={mode} /></DeferredPriceBoundary></DataQueryRetryProvider>;
+    return <DataQueryRetryProvider retry={() => void query.refetch()}>{query.error && !(query.error instanceof PartialDataError) && <DataRefreshError message="Updated checklist data could not be loaded." />}<DeferredPriceBoundary mode={mode} itemIds={data.itemIds} scope="checklist"><ItemsClientPage data={data} dataMode={mode} /></DeferredPriceBoundary></DataQueryRetryProvider>;
 }

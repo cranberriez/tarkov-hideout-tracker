@@ -16,7 +16,7 @@ const completeHideout = {
 
 test("page keys isolate modes and keep every profit consumer on one recipes cache", () => {
     assert.deepEqual(hideoutPageQueryOptions("pve").queryKey, ["game-data", "pve", "hideout-page"]);
-    assert.deepEqual(profitPageQueryOptions("regular").queryKey, ["game-data", "regular", "recipes-crafts-barters"]);
+    assert.deepEqual(profitPageQueryOptions("regular").queryKey, ["game-data", "regular", "recipes-crafts-barters", "unpriced-v1"]);
     assert.notDeepEqual(profitPageQueryOptions("pve").queryKey, profitPageQueryOptions("regular").queryKey);
     assert.notDeepEqual(questWorkspacePageQueryOptions("regular").queryKey, questWorkspacePageQueryOptions("regular", "dev-test").queryKey);
 });

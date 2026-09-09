@@ -22,6 +22,7 @@ export async function GET(
         const payload = await getItemAcquisitionView(
             requestedMode as TarkovJsonGameMode,
             itemId,
+            request.nextUrl.searchParams.get("prices") !== "none",
         );
         return NextResponse.json(payload, {
             headers: {

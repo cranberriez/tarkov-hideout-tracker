@@ -71,7 +71,7 @@ export function kappaChecklistPageQueryOptions(mode: TarkovJsonGameMode) {
 }
 
 export function profitPageQueryOptions(mode: TarkovJsonGameMode) {
-    return pageQueryOptions<ProfitPageData>(mode, "recipes-crafts-barters", `/api/page-data/profit?mode=${mode}`, isCompleteProfitPageData);
+    return pageQueryOptions<ProfitPageData>(mode, "recipes-crafts-barters", `/api/page-data/profit?mode=${mode}&prices=none`, isCompleteProfitPageData, ["unpriced-v1"]);
 }
 
 export function pageDataFromQuery<T>(data: T | undefined, error: Error | null, fallbackData: T | null): T | null {

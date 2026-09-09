@@ -21,7 +21,7 @@ export async function GET(
 
     try {
         const mode = requestedMode as TarkovJsonGameMode;
-        const response = await getItemUsageView(mode, itemId);
+        const response = await getItemUsageView(mode, itemId, request.nextUrl.searchParams.get("prices") !== "none");
         return NextResponse.json(response, {
             headers: {
                 "Cache-Control": process.env.NODE_ENV === "development" || !isCompleteItemUsageData(response)

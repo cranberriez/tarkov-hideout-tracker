@@ -1,7 +1,5 @@
 "use client";
 
-import { useDeferredPriceItems } from "@/features/items/DeferredPriceBoundary";
-
 import { useMemo, useState } from "react";
 import type { FullQuest } from "@/types/quests";
 import type { ItemSummary } from "@/types/items";
@@ -20,10 +18,9 @@ interface QuestsClientPageProps {
 
 export function QuestsClientPage({
     quests,
-    items: initialItems,
+    items,
     initialQuestId = null,
 }: QuestsClientPageProps) {
-    const items = useDeferredPriceItems(initialItems);
     const questDataIndex = useMemo(() => buildQuestDataIndex(quests), [quests]);
     const itemById = useMemo(
         () => Object.fromEntries((items ?? []).map((item) => [item.id, item])) as Record<string, ItemSummary>,

@@ -42,7 +42,8 @@ all selected modes. Canonical hashes exclude record timestamps. Stored item-view
 freshness is null for unavailable domains and zero for available domains;
 [item-views.ts](../src/server/db/item-views.ts) hydrates available timestamps from
 source freshness metadata selected in the same SQL read, preserving null failures.
-Prices hydrate separately from the scoped current-price result. A content no-op
+Current prices hydrate separately through the shared client price cache; compatibility
+item-view callers can still request server hydration. A content no-op
 keeps its revision and freshness metadata and writes no rows. Source freshness
 describes the published content revision, not the latest unchanged provider check.
 Removed rows and unreferenced shared payloads are deleted; historical full datasets
@@ -64,7 +65,7 @@ keyed records, and omit missing IDs; query contracts report those omissions in
 | ------------ | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | Hideout      | [getHideoutPageData](../src/server/queries/getHideoutPageData.ts)               | Stations and only their referenced item summaries/prices                    |
 | Items        | [getItemChecklistPageData](../src/server/queries/getItemChecklistPageData.ts)   | Independently settled stations/quests, demand metadata, demand items/prices |
-| Quests       | [getQuestWorkspacePageData](../src/server/queries/getQuestWorkspacePageData.ts) | Prepared full quests and their referenced standard item summaries/prices    |
+| Quests       | [getQuestWorkspacePageData](../src/server/queries/getQuestWorkspacePageData.ts) | Prepared full quests and their referenced standard item summaries (no prices)    |
 | Kappa        | [getKappaChecklistPageData](../src/server/queries/getKappaChecklistPageData.ts) | One mode-specific Collector quest and its hand-in items/prices              |
 | Profit pages | [getProfitPageData](../src/server/queries/getProfitPageData.ts)                 | Both recipe graphs, referenced items/prices, compact source presentation    |
 
@@ -90,19 +91,49 @@ Craft Planner share one `recipes-crafts-barters` cache entry. Explicit unresolve
 IDs stay in successful payloads and visible warnings; domain errors produce usable
 partial payloads that remain retryable rather than reusable complete cache entries.
 
-Hideout, Items, Quests, and Kappa routes request their named query with
-`includePrices: false`. Their core payload retains requirements and item
-summaries while [DeferredPriceBoundary](../src/features/items/DeferredPriceBoundary.tsx)
-loads prices separately. Query defaults still include prices for other callers.
-The boundary captures mode, suppresses stale results after a mode
-change, and presents pending/error states separately from unavailable prices.
-Network failures offer a retry without refreshing or discarding checklist data.
-[deferred-prices.ts](../src/features/items/deferred-prices.ts) sends up to three
-128-ID requests concurrently. Its TanStack query key uses mode and
-sorted/deduplicated IDs; complete results are fresh for 60 seconds, retained while
-inactive for five minutes, and capped at 20 inactive price queries. Requests are
-not retried automatically. Price-dependent filters update when prices arrive.
-Profit pages still await pricing before calculating and ranking recipes.
+Hideout, Items, Quests, Kappa, Profit, and Craft Planner server pages request
+unpriced metadata. Quests does not mount a price consumer: opening the workspace,
+changing filters, or navigating quests makes no current-price requests. An explicitly
+opened item detail modal still loads the prices needed for that item and its recipes.
+
+[useItemPrices](../src/features/items/useItemPrices.ts) owns shared current-price
+queries, keyed by mode and individual item ID. [The transport](../src/features/items/deferred-prices.ts)
+coalesces concurrently requested missing/stale items into GETs to
+[the price endpoint](../src/app/api/items/prices/route.ts). Known subsets accept
+1–200 standard IDs per URL; larger arbitrary subsets split at that limit. Items
+uses the named **checklist** scope for one GET covering its complete demand set,
+including items needed for sorting, filtering, and totals. Profit lists and Craft
+Planner use the named **recipes** scope for one GET covering both graphs. Synthetic recipe references, such as generic dog tags, remain in their graphs
+but are excluded from market-price requests. Scope ID
+selection shares the page's derivation, pins the current revision, and fails as a
+whole when a source domain fails; it does not read item presentation records.
+Hideout and Kappa request their own referenced IDs and reuse per-item cache entries
+populated by other consumers. There is no request per rendered item or per scroll.
+
+Prices stay fresh in TanStack for one hour, with 24-hour inactive retention,
+no interval polling, no focus/reconnect refetch, and no automatic retry. A newly
+mounted consumer fetches only missing/stale entries. Successful unavailable prices
+are cached as explicit null, never zero; failures do not erase previously usable
+prices. The existing scope lifecycle cancels/removes the old mode without touching
+player storage. Canceling one item does not abort a shared batch still needed by
+another; canceling the entire batch aborts its fetch.
+
+**Refresh prices**/**Retry prices** invalidate the consumer's item queries, update
+all shared observers, and request HTTP revalidation without cache-busting URLs.
+They read stored prices; they do not trigger provider ingestion. The existing
+300-second server mutable-price cache may still supply a recent snapshot.
+Complete GET responses use browser 300s and CDN 3600s freshness; failed responses
+are no-store. The POST endpoint remains private/no-store for already-open older
+clients. The schema and limits live in [price-contract](../src/lib/query/price-contract.ts).
+
+[DeferredPriceBoundary](../src/features/items/DeferredPriceBoundary.tsx) supplies
+Hideout/Items/Kappa with per-item pending/error/ready presentation and a manual
+refresh control. Profit consumers wait for initial prices before ranking recipes
+and preserve usable cached prices after a failed refresh. Item detail queries ask
+for **prices=none** and hydrate their combined item index from the same shared cache
+after the initial metadata domains settle. Their query keys distinguish unpriced
+metadata from older priced payloads. Compatibility API callers can still request
+the previous price-hydrated payloads.
 
 Item routes validate standard item IDs and require a supported data `mode`.
 Except for the compact search manifest protocol below, the browser never sends
@@ -119,7 +150,7 @@ full-domain composition on every modal open.
 
 | API / owner                                                                                                                                                      | Result and cache policy                                                                                                                              |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [prices](../src/app/api/items/prices/route.ts)                                                                                                                   | POST with explicit mode and at most 200 standard item IDs; `private, no-store`; underlying database reads use the caches below                      |
+| [prices](../src/app/api/items/prices/route.ts)                                                                                                                   | GET with explicit mode and 1–200 IDs or named checklist/recipes scope; browser 300s, CDN 3600s; legacy POST remains private/no-store                      |
 | [relations](../src/app/api/items/[itemId]/relations/route.ts)                                                                                                    | Hideout requirements, quest demand/rewards and availability closure; complete responses use browser 300s, CDN 900s, stale-while-revalidate 300s     |
 | [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and recipes producing one item, referenced items and source labels; same complete-response policy                           |
 | [acquisition-tree](../src/app/api/items/[itemId]/acquisition-tree/route.ts)                                                                                      | Cycle-safe graph bounded by depth/item count with `truncated`; same complete-response policy                                                         |
@@ -198,7 +229,7 @@ operational failure still surfaces. This data cache does not cache entire
 cookie-dependent page responses or change the existing mode cookie behavior.
 
 Immutable recipe graphs and stored item views describe relationships, not selected
-priced routes. Runtime readers hydrate item prices via
+priced routes. Compatibility readers hydrate item prices via
 [price-data.ts](../src/server/db/price-data.ts). It merges release price records
 (including trader valuations and reference averages) with mutable current-price
 fields. A usable mutable price wins; release values remain the fallback when no

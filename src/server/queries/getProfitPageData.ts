@@ -11,6 +11,7 @@ import {
 export async function getProfitPageData(
     mode: TarkovDataMode,
     repository?: TarkovDataRepository,
+    options: { includePrices?: boolean } = {},
 ): Promise<ProfitPageData> {
     const dataRepository = repository ?? (await getDefaultRepository());
     const [bartersResult, craftsResult] = await Promise.allSettled([
@@ -26,7 +27,9 @@ export async function getProfitPageData(
     const [itemsResult, pricesResult, tradersResult, stationsResult] =
         await Promise.allSettled([
             dataRepository.items.getByIds(mode, itemIds),
-            dataRepository.prices.getCurrent(mode, itemIds),
+            options.includePrices === false
+                ? Promise.resolve({ data: {}, updatedAt: null })
+                : dataRepository.prices.getCurrent(mode, itemIds),
             // The catalog is small. Loading it beside items avoids a follow-up read
             // after buyFromTrader offer IDs are known, then we serialize only the
             // traders referenced by the recipe graph.

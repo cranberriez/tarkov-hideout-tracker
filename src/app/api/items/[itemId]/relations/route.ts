@@ -22,6 +22,7 @@ export async function GET(
         const payload = await getItemRelationsView(
             requestedMode as TarkovJsonGameMode,
             itemId,
+            request.nextUrl.searchParams.get("prices") !== "none",
         );
         const isPartial = Object.values(payload.errors).some((error) => error !== null);
         return NextResponse.json(payload, {

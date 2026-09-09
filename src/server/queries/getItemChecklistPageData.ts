@@ -1,18 +1,9 @@
-import { toQuestAvailabilityQuest } from "../../lib/utils/quest-availability";
-import {
-    buildQuestAnyOfGroups,
-    buildQuestItemIndex,
-} from "../../lib/utils/quest-item-index";
-import { orderQuestsByPrerequisites } from "../../lib/utils/quest-ordering";
-import { prepareQuestDataForMode } from "../../lib/utils/quest-preparation";
-import { excludeRemovedQuests } from "../../lib/utils/removed-quests";
+import { buildChecklistReferences } from "./checklist-references";
 import type { TarkovDataRepository } from "@/server/repositories/tarkov-data/types";
 import type { TarkovDataMode } from "@/types/common";
 import type { ItemChecklistPageData } from "@/types/contracts";
 import {
-    dedupeIds,
     getDefaultRepository,
-    getStationItemIds,
     mergePricedItems,
 } from "./query-utils";
 
@@ -27,22 +18,9 @@ export async function getItemChecklistPageData(
         dataRepository.quests.getAll(mode),
     ]);
     const stations = stationsResult.status === "fulfilled" ? stationsResult.value.data : null;
-    const quests =
-        questsResult.status === "fulfilled"
-            ? orderQuestsByPrerequisites(
-                  excludeRemovedQuests(
-                      prepareQuestDataForMode(questsResult.value.data, mode),
-                  ),
-              )
-            : [];
-    const questItemIndex = buildQuestItemIndex(quests);
-    const questAnyOfGroups = buildQuestAnyOfGroups(quests);
-    const questAvailabilityQuests = quests.map(toQuestAvailabilityQuest);
-    const itemIds = dedupeIds([
-        ...getStationItemIds(stations ?? []),
-        ...questItemIndex.map((entry) => entry.itemId),
-        ...questAnyOfGroups.flatMap((group) => group.itemIds),
-    ]);
+    const { questItemIndex, questAnyOfGroups, questAvailabilityQuests, itemIds } = buildChecklistReferences(
+        mode, stations ?? [], questsResult.status === "fulfilled" ? questsResult.value.data : [],
+    );
 
     if (stationsResult.status === "rejected" && questsResult.status === "rejected") {
         return {

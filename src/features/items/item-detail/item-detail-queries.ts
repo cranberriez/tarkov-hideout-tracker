@@ -17,9 +17,9 @@ function scopedItemViewQueryOptions<T>({ mode, itemId, domain, path, complete, p
     partialMessage: string;
 }) {
     return queryOptions({
-        queryKey: gameDataKey(mode, `item-detail-${domain}`, itemId),
+        queryKey: gameDataKey(mode, `item-detail-${domain}`, itemId, "unpriced-v1"),
         queryFn: async ({ signal }) => {
-            const params = new URLSearchParams({ mode });
+            const params = new URLSearchParams({ mode, prices: "none" });
             const payload = await fetchJson<T>(
                 `/api/items/${encodeURIComponent(itemId)}/${path}?${params}`,
                 { signal },
