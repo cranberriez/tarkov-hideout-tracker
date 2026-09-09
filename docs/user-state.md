@@ -58,6 +58,44 @@ Prepare for Escape, Edge of Darkness, and Unheard respectively; Unheard also
 starts Cultist Circle at level 1. The per-profile edition marker prevents repeated
 bonus application. Preserve progress-aware handling in the existing action.
 
+## Player progress backups
+
+Settings uses [PlayerProgressCard](../src/features/settings/PlayerProgressCard.tsx)
+and its [controller](../src/features/settings/useProgressBackupController.ts) to
+download all three profiles directly as a versioned JSON file and review imports.
+The import dialog starts with a file drop zone, then shows the chosen filename
+and profile comparisons; choosing a file also works from the keyboard. The
+[backup model](../src/features/settings/progress-backup.ts) validates the complete
+file before any write, rejects unknown versions/fields and unsafe values, preserves
+signed inventory balances produced by existing consumption actions, and
+compares records independently of object key order. Files may contain any nonempty
+selection of PVP/PVE/KORD profiles; IDs and modes are retained exactly.
+
+The explicit [progress allowlist](../src/lib/player-progress.ts) includes inventory,
+hideout levels/requirements, completed/failed quests, visited objectives, hand-ins,
+history, character levels, traders, Fence reputation, faction, edition and setup
+markers. Backups also include mode-specific Kappa completion and Crafting/Hideout
+Management skills. They exclude hidden/ignored lists, pins, goals, filters, display
+preferences, craft plans, price overrides, import-file metadata, legacy conversion
+archives, active mode and ephemeral UI state. Setup/edition markers travel with
+progress to prevent onboarding from applying starting bonuses again.
+
+Imports replace progression only for selected modes, including removing current
+records absent from the incoming profile. Default profiles are preselected;
+identical profiles are disabled and skipped. Existing progress requires selection
+and an overwrite acknowledgment. Expandable comparisons show current/incoming
+values and full records with their stable IDs. The
+[storage coordinator](../src/features/settings/progress-backup-storage.ts) rejects
+stale previews, uses dedicated user/Kappa import actions, preserves active-mode
+projection and preferences, merges only skills into profit settings, and restores
+previous state if a write fails. Persistent keys, schemas, migrations and reset
+scopes are unchanged. The former hideout-only clipboard code is replaced by this
+file format; old `v1-` codes are not accepted as full progress backups.
+
+Run `node --test --import jiti/register src/features/settings/progress-backup.test.ts`
+for file validation, round trips, defaults, comparisons, mode isolation, reload,
+preference preservation and write-failure recovery.
+
 ## Reset behavior
 
 [StorageResetCard](../src/features/settings/StorageResetCard.tsx) composes store

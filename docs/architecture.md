@@ -16,7 +16,7 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and Turso;
 | `/items/kappa-checklist` | [Collector checklist](<../src/app/(data)/items/kappa-checklist/page.tsx>); see [quests](quests.md) |
 | `/items/barter-profits`, `/items/crafting-profits` | Shared [ProfitPage](../src/features/profit-pages/ProfitPage.tsx); see [profits](profits.md) |
 | `/hideout/craft-planner` | Station craft recommendations using the shared profit query; see [profits](profits.md) |
-| `/settings` | [Character settings and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md) |
+| `/settings` | [Player progression backups, import review, legacy tools and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md) |
 | `/news` | [News page](../src/app/news/page.tsx) |
 | `/dev` | [Development-only release dashboard](../src/app/dev/page.tsx): history, shared pin/rollback and local preview; see [operations](operations.md) |
 

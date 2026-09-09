@@ -157,7 +157,7 @@ export function StorageResetCard() {
                 return {
                     title: "Delete all item data?",
                     description:
-                        "Deletes tracked item counts and Kappa checklist progress. Settings stay the same.",
+                        "Deletes item counts for the active profile and Kappa checklist progress for all three profiles. Settings stay the same.",
                     confirmLabel: "Delete item data",
                 };
             case "quests":
@@ -171,7 +171,7 @@ export function StorageResetCard() {
                 return {
                     title: "Delete ALL data?",
                     description:
-                        "Deletes all saved data. This cannot be undone.",
+                        "Deletes all three player profiles, Kappa progress, and their shared settings. Separate profit settings and import-file history remain. This cannot be undone.",
                     confirmLabel: "Delete ALL data",
                 };
             default:
@@ -189,7 +189,7 @@ export function StorageResetCard() {
         {
             key: "items" as const,
             label: "Delete all item data",
-            description: "Removes item counts and Kappa checklist progress.",
+            description: "Active profile’s items and all profiles’ Kappa completion.",
             tone: "border-red-500/15 bg-red-500/[0.07] text-red-100 hover:bg-red-500/[0.11]",
         },
         {
@@ -201,8 +201,8 @@ export function StorageResetCard() {
         {
             key: "all" as const,
             label: "Delete ALL data",
-            description: "Removes all saved data.",
-            tone: "border-red-500/60 bg-red-600 text-white hover:bg-red-500",
+            description: "All profiles, Kappa progress, and shared settings. Separate profit data remains.",
+            tone: "border-red-500/30 bg-red-500/10 text-red-200 hover:bg-red-500/20",
         },
     ];
 
@@ -230,23 +230,23 @@ export function StorageResetCard() {
                     </div>
                     <div className="flex items-center justify-between gap-3 text-xs text-gray-400">
                         <span>{percentLabel}% of saved space used</span>
-                        <span>Very small for most players</span>
+                        <span>Profile & Kappa storage · estimated capacity</span>
                     </div>
                 </div>
 
-                <div className="rounded-lg border border-red-500/20 bg-red-500/[0.04] p-4 sm:p-5 space-y-4">
+                <div className="border-t border-white/10 pt-4 space-y-3">
                     <div className="space-y-1">
-                        <div className="text-sm font-medium text-white">Danger zone</div>
+                        <div className="text-sm font-medium text-red-200">Reset progress</div>
                         <div className="text-xs text-gray-300/80 max-w-xl leading-5">
-                            Delete progress by section. The final action removes everything.
+                            Section resets affect the active profile unless noted. Export a backup before deleting progress.
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-3">
+                    <div className="divide-y divide-white/5">
                         {resetButtons.map((button) => (
                             <div
                                 key={button.key}
-                                className="rounded-md border border-white/6 bg-black/10 p-3 sm:p-4"
+                                className="py-3"
                             >
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="space-y-1">
@@ -260,9 +260,9 @@ export function StorageResetCard() {
                                     <button
                                         type="button"
                                         onClick={() => setPendingReset(button.key)}
-                                        className={`inline-flex min-w-44 items-center justify-center rounded-md border px-3 py-2 text-xs font-medium sm:text-sm transition-colors ${button.tone}`}
+                                        className={`inline-flex shrink-0 items-center justify-center rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${button.tone}`}
                                     >
-                                        {button.key === "all" ? "Delete everything" : "Delete"}
+                                        {button.key === "all" ? "Reset all profiles" : "Reset"}
                                     </button>
                                 </div>
                             </div>

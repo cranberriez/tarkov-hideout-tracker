@@ -14,6 +14,7 @@ interface KappaState {
     setViewMode: (viewMode: KappaViewMode) => void;
     toggleCompletedItem: (gameMode: GameMode, itemId: string) => void;
     resetCompletedItems: () => void;
+    importCompletedItems: (profiles: CompletedItemsByMode) => void;
     resetAll: () => void;
 }
 
@@ -26,6 +27,9 @@ export const useKappaStore = create<KappaState>()(
     persist(
         (set) => ({
             ...DEFAULT_KAPPA_STATE,
+            importCompletedItems: (profiles) => set((state) => ({
+                completedItemsByMode: { ...state.completedItemsByMode, ...profiles },
+            })),
             setViewMode: (viewMode) => set({ viewMode }),
             toggleCompletedItem: (gameMode, itemId) =>
                 set((state) => {

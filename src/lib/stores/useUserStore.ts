@@ -126,7 +126,7 @@ export interface PlayerProfileState {
     hasCompletedSetup: boolean;
 }
 
-function createDefaultPlayerProfile(): PlayerProfileState {
+export function createDefaultPlayerProfile(): PlayerProfileState {
     return {
         stationLevels: {},
         hiddenStations: {},
@@ -348,6 +348,7 @@ interface UserState {
     applyEditionBonuses: (stations: StationEditionTarget[]) => void;
 
     importStationLevels: (levels: Record<string, number>) => void;
+    importPlayerProgress: (profiles: Partial<Record<GameMode, import("../player-progress").PlayerProgress>>) => void;
     resetHideoutData: () => void;
     resetItemData: () => void;
     resetQuestData: () => void;
@@ -430,6 +431,13 @@ export const useUserStore = create<UserState>()(
             const set = setWithProfileSync;
 
             return ({
+            importPlayerProgress: (incoming) => rawSet((state) => {
+                const profiles = { ...state.profiles };
+                for (const mode of GAME_MODES) {
+                    if (incoming[mode]) profiles[mode] = { ...profiles[mode], ...incoming[mode] };
+                }
+                return { profiles, ...profiles[state.gameMode] };
+            }),
             profiles: createDefaultProfiles(),
             deprecatedLegacyState: null,
             hasConvertedDeprecatedLegacyState: false,
