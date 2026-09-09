@@ -1,16 +1,19 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { useId } from "react";
+import { FilterPanel } from "@/components/ui/filter-bar";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsFiltersPanel } from "./controls/ItemsFiltersPanel";
 import { ItemsToolbar } from "./controls/ItemsToolbar";
 
 interface ItemsControlsProps {
-    onOpenSearch: () => void;
+    searchQuery: string;
+    onSearchQueryChange: (query: string) => void;
     children: React.ReactNode;
 }
 
-export function ItemsControls({ onOpenSearch, children }: ItemsControlsProps) {
+export function ItemsControls({ searchQuery, onSearchQueryChange, children }: ItemsControlsProps) {
+    const panelId = useId();
     const {
         itemFiltersOpen,
         setItemFiltersOpen,
@@ -49,7 +52,9 @@ export function ItemsControls({ onOpenSearch, children }: ItemsControlsProps) {
             <ItemsToolbar
                 filtersOpen={itemFiltersOpen}
                 onToggleFilters={() => setItemFiltersOpen(!itemFiltersOpen)}
-                onOpenSearch={onOpenSearch}
+                searchQuery={searchQuery}
+                onSearchQueryChange={onSearchQueryChange}
+                panelId={panelId}
                 itemSourceFilter={itemSourceFilter}
                 onItemSourceFilterChange={setItemSourceFilter}
                 itemsSize={itemsSize}
@@ -61,15 +66,17 @@ export function ItemsControls({ onOpenSearch, children }: ItemsControlsProps) {
             />
 
             <div className="relative min-h-0">
-                <div
-                    className={cn(
-                        "absolute left-0 top-0 z-45 w-full max-w-[340px] transition-all duration-200 ease-out",
-                        itemFiltersOpen
-                            ? "pointer-events-auto translate-x-0 opacity-100"
-                            : "pointer-events-none -translate-x-4 opacity-0",
-                    )}
-                    aria-hidden={!itemFiltersOpen}
-                    inert={!itemFiltersOpen}
+                <FilterPanel
+                    id={panelId}
+                    open={itemFiltersOpen}
+                    onKeyDown={(event) => {
+                        if (event.key === "Escape") {
+                            setItemFiltersOpen(false);
+                            document
+                                .querySelector<HTMLButtonElement>(`[aria-controls="${panelId}"]`)
+                                ?.focus();
+                        }
+                    }}
                 >
                     <ItemsFiltersPanel
                         checklistViewMode={checklistViewMode}
@@ -94,7 +101,7 @@ export function ItemsControls({ onOpenSearch, children }: ItemsControlsProps) {
                         onCheapPriceThresholdChange={setCheapPriceThreshold}
                         className="w-full"
                     />
-                </div>
+                </FilterPanel>
 
                 <div className="min-w-0 flex-1">{children}</div>
             </div>

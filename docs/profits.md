@@ -151,6 +151,20 @@ source toggles control whether crafts and barters participate.
 evaluation, selection, and modal navigation. [Components](../src/features/profit-pages/components/)
 render sorting, source/availability filters, recipe chains, route alternatives,
 price inputs, and recipe previews. The default metric is descending profit/hour.
+Both routes compose [ProfitPageControls](../src/features/profit-pages/components/ProfitPageControls.tsx)
+from the shared [filter bar kit](../src/components/ui/filter-bar.tsx): local output
+search, trader multi-selection, Options/Skills triggers, and the pinned-crafts toggle.
+Options uses shared panel sections and checkboxes; Skills retains its specialized
+validation and dialog. Escape closes Options and restores trigger focus.
+The [multi-select dropdown](../src/components/ui/filter-multi-select.tsx) supplies
+the trigger/menu and checkbox-row interactions, including keyboard navigation,
+disabled rows, and remaining open after selection. The profits feature supplies
+station row content (icons, names, levels), selected IDs, the All stations reset,
+and the rule disabling unbuilt stations when hiding locked recipes. An empty
+station selection still means all stations. Barters use the same dropdown for traders,
+with trader portraits supplied by the profits feature. Selecting multiple traders
+includes recipes from any selected trader; an empty selection means all traders.
+Selections remain local to the page. Calculation rules and persistence keys are unchanged.
 At viewport widths below 1536px, both lists use compact cards with separate
 sort buttons for cost, sale proceeds, profit, and profit/hour. Each card groups
 actions, source, output, and the selected profit metric above ingredients and a

@@ -2,7 +2,7 @@
 
 import { CheckCircle, Circle } from "lucide-react";
 
-interface ItemsCheckboxControlProps {
+interface FilterCheckboxProps {
     id: string;
     label: string;
     checked: boolean;
@@ -10,13 +10,13 @@ interface ItemsCheckboxControlProps {
     trailing?: React.ReactNode;
 }
 
-export function ItemsCheckboxControl({
+export function FilterCheckbox({
     id,
     label,
     checked,
     onCheckedChange,
     trailing,
-}: ItemsCheckboxControlProps) {
+}: FilterCheckboxProps) {
     return (
         <div className="flex items-center justify-between gap-3 px-1 py-1">
             <label htmlFor={id} className="flex cursor-pointer items-center gap-2">
@@ -25,9 +25,9 @@ export function ItemsCheckboxControl({
                     type="checkbox"
                     checked={checked}
                     onChange={(event) => onCheckedChange(event.target.checked)}
-                    className="sr-only"
+                    className="peer sr-only"
                 />
-                <span className="text-gray-600 transition-colors hover:text-tarkov-green">
+                <span className="text-gray-600 transition-colors hover:text-tarkov-green peer-focus-visible:outline-2 peer-focus-visible:outline-tarkov-green">
                     {checked ? (
                         <CheckCircle size={16} className="text-tarkov-green" />
                     ) : (

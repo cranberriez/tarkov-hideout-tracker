@@ -8,7 +8,6 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsList } from "@/features/items/components/ItemsList";
 import { ItemsControls } from "@/features/items/components/ItemsControls";
 import { ItemsStatsRow } from "@/features/items/components/ItemsStatsRow";
-import { ItemSearchModal } from "@/features/items/components/ItemSearchModal";
 import { ItemDetailModal } from "@/features/items/item-detail/LazyItemDetailModal";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { DataLoadError } from "@/components/core/DataLoadError";
@@ -29,13 +28,10 @@ export function ItemsClientPage({ data }: ItemsClientPageProps) {
         errors,
     } = data;
     const items = useDeferredPriceItems(initialItems);
-    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
     const [selectedItem, setSelectedItem] = useState<ItemSummary | null>(null);
 
-    const {
-        gameMode,
-        initializeDefaults,
-    } = useUserStore();
+    const { gameMode, initializeDefaults } = useUserStore();
 
     useEffect(() => {
         if (stations && stations.length > 0) {
@@ -102,7 +98,10 @@ export function ItemsClientPage({ data }: ItemsClientPageProps) {
                                 />
                             </div>
                         )}
-                        <ItemsControls onOpenSearch={() => setIsSearchOpen(true)}>
+                        <ItemsControls
+                            searchQuery={searchQuery}
+                            onSearchQueryChange={setSearchQuery}
+                        >
                             <ItemsStatsRow
                                 stations={stations}
                                 items={items}
@@ -111,6 +110,7 @@ export function ItemsClientPage({ data }: ItemsClientPageProps) {
                                 questAvailabilityQuests={questAvailabilityQuestList}
                             />
                             <ItemsList
+                                searchQuery={searchQuery}
                                 stations={stations}
                                 itemById={itemById}
                                 onClickItem={setSelectedItem}
@@ -126,15 +126,6 @@ export function ItemsClientPage({ data }: ItemsClientPageProps) {
             <DataLastUpdated
                 stationsUpdatedAt={freshness.stationsUpdatedAt}
                 itemsUpdatedAt={freshness.itemsUpdatedAt}
-            />
-
-            <ItemSearchModal
-                isOpen={isSearchOpen}
-                onClose={() => setIsSearchOpen(false)}
-                onSelect={(item) => {
-                    setSelectedItem(item);
-                    setIsSearchOpen(false);
-                }}
             />
 
             {selectedItem && (

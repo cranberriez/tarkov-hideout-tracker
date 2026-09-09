@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
-interface ItemsDraftNumberInputProps {
+interface FilterNumberInputProps {
+    label?: string;
     value: number;
     onCommit: (value: number) => void;
     widthClassName: string;
@@ -13,7 +14,8 @@ interface ItemsDraftNumberInputProps {
     onInteract?: () => void;
 }
 
-export function ItemsDraftNumberInput({
+export function FilterNumberInput({
+    label,
     value,
     onCommit,
     widthClassName,
@@ -21,7 +23,7 @@ export function ItemsDraftNumberInput({
     suffix,
     disabled = false,
     onInteract,
-}: ItemsDraftNumberInputProps) {
+}: FilterNumberInputProps) {
     const [draftValue, setDraftValue] = useState(String(value));
 
     useEffect(() => {
@@ -56,6 +58,7 @@ export function ItemsDraftNumberInput({
             {prefix}
             <input
                 type="text"
+                aria-label={label}
                 inputMode="numeric"
                 value={draftValue}
                 disabled={disabled}

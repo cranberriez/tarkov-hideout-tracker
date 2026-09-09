@@ -69,7 +69,7 @@ export function ProfitPageClient({
   const { overrides, setItemOverride } = useManualPriceOverrides(gameMode);
   const { pinnedCrafts, togglePinnedCraft } = usePinnedCrafts(gameMode);
   const [search, setSearch] = useState("");
-  const [sourceId, setSourceId] = useState("all");
+  const [traderSourceIds, setTraderSourceIds] = useState<string[]>([]);
   const [stationSourceIds, setStationSourceIds] = useState<string[]>([]);
   const {
     craftingSkillLevel,
@@ -196,7 +196,7 @@ export function ProfitPageClient({
               imageLink: stationsById[id]?.imageLink,
               level: stationLevels[id] ?? 0,
             }
-          : {}),
+          : { imageLink: tradersById[id]?.imageLink ?? tradersById[id]?.image4xLink ?? undefined }),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [
@@ -227,7 +227,7 @@ export function ProfitPageClient({
           kind === "craft"
             ? stationSourceIds.length > 0 &&
               !stationSourceIds.includes(recipeSourceId)
-            : sourceId !== "all" && recipeSourceId !== sourceId
+            : traderSourceIds.length > 0 && !traderSourceIds.includes(recipeSourceId)
         )
           return false;
         if (
@@ -271,7 +271,7 @@ export function ProfitPageClient({
     showPinnedOnly,
     sortDirection,
     sortKey,
-    sourceId,
+    traderSourceIds,
     stationSourceIds,
     stationLevels,
     targetRecipeId,
@@ -337,8 +337,8 @@ export function ProfitPageClient({
           kind={kind}
           search={search}
           onSearchChange={setSearch}
-          sourceId={sourceId}
-          onSourceIdChange={setSourceId}
+          traderSourceIds={traderSourceIds}
+          onTraderSourceIdsChange={setTraderSourceIds}
           stationSourceIds={stationSourceIds}
           onStationSourceIdsChange={setStationSourceIds}
           sources={sources}

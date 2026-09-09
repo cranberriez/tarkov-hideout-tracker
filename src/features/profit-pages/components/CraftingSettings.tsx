@@ -1,6 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { FilterPanelButton } from "@/components/ui/filter-bar";
+import { useEffect, useId, useRef, useState } from "react";
 import { Settings } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { craftingTimeReduction } from "@/lib/price-calculation/crafting-skill";
 import { hideoutManagementConsumptionReduction } from "@/lib/price-calculation/craft-rules";
 
@@ -19,15 +26,21 @@ export function CraftingSettings({
   onCraftingLevelChange: (level: number) => void;
   onHideoutManagementLevelChange: (level: number) => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button type="button" className="flex h-9 items-center justify-center gap-2 rounded border border-white/10 bg-[#0b0c0e] px-3 text-sm hover:border-tarkov-green/60">
+        <FilterPanelButton open={open} panelId={panelId}>
           <Settings className="size-4" aria-hidden />
           Skills
-        </button>
+        </FilterPanelButton>
       </DialogTrigger>
-      <DialogContent aria-describedby={undefined} className="grid gap-4 p-5 sm:max-w-md">
+      <DialogContent
+        id={panelId}
+        aria-describedby={undefined}
+        className="grid gap-4 p-5 sm:max-w-md"
+      >
         <DialogHeader className="pr-5">
           <DialogTitle>Skills</DialogTitle>
         </DialogHeader>
@@ -56,7 +69,17 @@ export function CraftingSettings({
   );
 }
 
-function SkillRow({ id, label, level, onLevelChange, forced = false, note, reduction, reductionLabel, eliteNote }: {
+function SkillRow({
+  id,
+  label,
+  level,
+  onLevelChange,
+  forced = false,
+  note,
+  reduction,
+  reductionLabel,
+  eliteNote,
+}: {
   id: string;
   label: string;
   level: number;
@@ -79,8 +102,10 @@ function SkillRow({ id, label, level, onLevelChange, forced = false, note, reduc
 
   function validate(value: string) {
     const parsed = Number(value);
-    const next = value.trim() !== "" && Number.isFinite(parsed)
-      ? Math.min(50, Math.max(0, Math.trunc(parsed))) : Math.min(level, 50);
+    const next =
+      value.trim() !== "" && Number.isFinite(parsed)
+        ? Math.min(50, Math.max(0, Math.trunc(parsed)))
+        : Math.min(level, 50);
     setDraft(String(next));
     if (next !== level) onLevelChange(next);
   }
@@ -88,7 +113,9 @@ function SkillRow({ id, label, level, onLevelChange, forced = false, note, reduc
   return (
     <div>
       <div className="flex items-center gap-2 text-sm sm:gap-3">
-        <label htmlFor={id} className="mr-auto">{label}</label>
+        <label htmlFor={id} className="mr-auto">
+          {label}
+        </label>
         <input
           id={id}
           aria-label={`${label} skill level`}
@@ -108,7 +135,10 @@ function SkillRow({ id, label, level, onLevelChange, forced = false, note, reduc
           }}
           className="h-8 w-12 rounded border border-white/15 bg-[#0b0c0e] px-2 text-center outline-none focus:border-tarkov-green/60 disabled:opacity-50"
         />
-        <span className="whitespace-nowrap text-xs text-tarkov-green" aria-label={`${Number((reduction(level) * 100).toFixed(2))}% ${reductionLabel} reduction`}>
+        <span
+          className="whitespace-nowrap text-xs text-tarkov-green"
+          aria-label={`${Number((reduction(level) * 100).toFixed(2))}% ${reductionLabel} reduction`}
+        >
           -{Number((reduction(level) * 100).toFixed(2))}% {reductionLabel}
         </span>
         <button

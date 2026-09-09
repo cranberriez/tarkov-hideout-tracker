@@ -2,9 +2,9 @@
 
 import { ChevronDown, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ItemsCheckboxControl } from "./ItemsCheckboxControl";
-import { ItemsDraftNumberInput } from "./ItemsDraftNumberInput";
-import { ItemsSegmentedButton } from "./ItemsSegmentedButton";
+import { FilterCheckbox } from "@/components/ui/FilterCheckbox";
+import { FilterNumberInput } from "@/components/ui/FilterNumberInput";
+import { FilterRadioGroup, FilterSection as PanelSection } from "@/components/ui/filter-bar";
 import type { ItemQuestVisibilityMode } from "@/lib/stores/useUserStore";
 
 interface ItemsFiltersPanelProps {
@@ -63,21 +63,16 @@ export function ItemsFiltersPanel({
 
             <div className="space-y-4">
                 <PanelSection title="Hideout">
-                    <div className="flex flex-wrap gap-2">
-                        <ItemsSegmentedButton
-                            active={checklistViewMode === "nextLevel"}
-                            onClick={() => onChecklistViewModeChange("nextLevel")}
-                        >
-                            Next Level
-                        </ItemsSegmentedButton>
-                        <ItemsSegmentedButton
-                            active={checklistViewMode === "all"}
-                            onClick={() => onChecklistViewModeChange("all")}
-                        >
-                            All Future
-                        </ItemsSegmentedButton>
-                    </div>
-                    <ItemsCheckboxControl
+                    <FilterRadioGroup
+                        label="Hideout levels"
+                        value={checklistViewMode}
+                        onValueChange={onChecklistViewModeChange}
+                        options={[
+                            { value: "nextLevel", label: "Next Level" },
+                            { value: "all", label: "All Future" },
+                        ]}
+                    />
+                    <FilterCheckbox
                         id="items-filter-show-hidden"
                         label="Show Hidden Stations"
                         checked={showHidden}
@@ -86,37 +81,19 @@ export function ItemsFiltersPanel({
                 </PanelSection>
 
                 <PanelSection title="Quests">
-                    <div className="flex flex-wrap gap-2">
-                        <ItemsSegmentedButton
-                            active={itemQuestVisibilityMode === "available"}
-                            onClick={() => onItemQuestVisibilityModeChange("available")}
-                        >
-                            Available
-                        </ItemsSegmentedButton>
-                        <ItemsSegmentedButton
-                            active={itemQuestVisibilityMode === "nextLayer"}
-                            onClick={() => onItemQuestVisibilityModeChange("nextLayer")}
-                        >
-                            Next Layer
-                        </ItemsSegmentedButton>
-                        <ItemsSegmentedButton
-                            active={itemQuestVisibilityMode === "allFuture"}
-                            onClick={() => onItemQuestVisibilityModeChange("allFuture")}
-                        >
-                            All Future
-                        </ItemsSegmentedButton>
-                    </div>
-
+                    <FilterRadioGroup
+                        label="Quest visibility"
+                        value={itemQuestVisibilityMode}
+                        onValueChange={onItemQuestVisibilityModeChange}
+                        className="flex-wrap"
+                        options={[
+                            { value: "available", label: "Available" },
+                            { value: "nextLayer", label: "Next Layer" },
+                            { value: "allFuture", label: "All Future" },
+                            { value: "custom", label: "Custom" },
+                        ]}
+                    />
                     <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => onItemQuestVisibilityModeChange("custom")}
-                        onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") {
-                                event.preventDefault();
-                                onItemQuestVisibilityModeChange("custom");
-                            }
-                        }}
                         className={cn(
                             "w-full rounded-md border px-3 py-3 text-left transition-colors",
                             itemQuestVisibilityMode === "custom"
@@ -152,19 +129,19 @@ export function ItemsFiltersPanel({
                     </div>
 
                     <div className="space-y-1">
-                        <ItemsCheckboxControl
+                        <FilterCheckbox
                             id="items-filter-pinned-only"
                             label="Pinned Only"
                             checked={itemShowPinnedQuestOnly}
                             onCheckedChange={onItemShowPinnedQuestOnlyChange}
                         />
-                        <ItemsCheckboxControl
+                        <FilterCheckbox
                             id="items-filter-all-future-fir"
                             label="All Future FiR"
                             checked={itemShowFutureFir}
                             onCheckedChange={onItemShowFutureFirChange}
                         />
-                        <ItemsCheckboxControl
+                        <FilterCheckbox
                             id="items-filter-show-ignored"
                             label="Show Ignored"
                             checked={itemShowIgnored}
@@ -174,13 +151,14 @@ export function ItemsFiltersPanel({
                 </PanelSection>
 
                 <PanelSection title="Value">
-                    <ItemsCheckboxControl
+                    <FilterCheckbox
                         id="items-filter-hide-cheap"
                         label="Hide Cheap"
                         checked={hideCheap}
                         onCheckedChange={onHideCheapChange}
                         trailing={
-                            <ItemsDraftNumberInput
+                            <FilterNumberInput
+                                label="Cheap price threshold in RUB"
                                 value={cheapPriceThreshold}
                                 onCommit={onCheapPriceThresholdChange}
                                 widthClassName="w-20"
@@ -201,15 +179,6 @@ export function ItemsFiltersPanel({
     );
 }
 
-function PanelSection({ title, children }: { title: string; children: React.ReactNode }) {
-    return (
-        <section className="space-y-3 py-1">
-            <div className="text-[10px] font-bold uppercase tracking-wide text-gray-600">{title}</div>
-            {children}
-        </section>
-    );
-}
-
 function NumberRow({
     label,
     value,
@@ -222,7 +191,7 @@ function NumberRow({
     return (
         <label className="flex items-center justify-between gap-3 px-1 py-1 text-xs text-gray-400">
             <span>{label}</span>
-            <ItemsDraftNumberInput
+            <FilterNumberInput
                 value={value}
                 onCommit={onChange}
                 widthClassName="w-12"

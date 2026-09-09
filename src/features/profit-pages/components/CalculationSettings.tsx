@@ -1,3 +1,6 @@
+import { useId, useRef, useState } from "react";
+import { FilterPanel, FilterPanelButton, FilterSection } from "@/components/ui/filter-bar";
+import { FilterCheckbox } from "@/components/ui/FilterCheckbox";
 import { Settings2 } from "lucide-react";
 
 import type { ProfitLockOptionsProps } from "../types";
@@ -25,73 +28,81 @@ export function CalculationSettings({
   allowBarters: boolean;
   onAllowBartersChange: (value: boolean) => void;
 } & ProfitLockOptionsProps) {
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+  const trigger = useRef<HTMLButtonElement>(null);
   return (
-    <details className="group/settings relative">
-      <summary className="flex h-9 cursor-pointer list-none items-center justify-center gap-2 rounded border border-white/10 bg-[#0b0c0e] px-3 text-xs font-semibold text-muted-foreground hover:border-white/20 hover:text-foreground">
-        <Settings2 className="size-4" />
-        Options
-      </summary>
-      <div className="absolute right-0 top-11 z-50 max-h-[min(26rem,55dvh)] w-72 overflow-y-auto overscroll-contain rounded-md border border-white/15 bg-[#0b0c0e] p-3 shadow-2xl [scrollbar-width:thin] [scrollbar-color:#444_#0b0c0e]">
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          List filters
-        </p>
-        <Toggle
-          checked={profitableOnly}
-          onChange={onProfitableOnlyChange}
-          label="Profitable recipes only"
-        />
-        <p className="mb-2 mt-3 border-t border-white/10 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Availability
-        </p>
-        <Toggle
-          checked={availableOnly}
-          onChange={onAvailableOnlyChange}
-          label="Hide locked recipes"
-        />
-        <div className="ml-3 border-l border-white/10 pl-2">
-          {([
-            ["flea", "Hide no flea sale"],
-            ["quest", "Hide quest locked"],
-            ["vendor", "Hide vendor locked"],
-            ["station", "Hide station locked"],
-          ] as const).map(([key, label]) => (
-            <Toggle
-              key={key}
-              checked={lockFilters[key]}
-              onChange={(value) =>
-                onLockFiltersChange({ ...lockFilters, [key]: value })
-              }
-              label={label}
-            />
-          ))}
-        </div>
-        <p className="mb-2 mt-3 border-t border-white/10 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Output valuation
-        </p>
-        <Toggle
-          checked={useTraderSaleForLockedOutputs}
-          onChange={onUseTraderSaleForLockedOutputsChange}
-          label="Use vendor sale for locked outputs"
-        />
-        <p className="mb-2 mt-3 border-t border-white/10 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Ingredient sources
-        </p>
-        <Toggle
-          checked={allowCrafts}
-          onChange={onAllowCraftsChange}
-          label="Use crafts for ingredients"
-        />
-        <Toggle
-          checked={allowBarters}
-          onChange={onAllowBartersChange}
-          label="Use barters for ingredients"
-        />
-        <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
-          The recipe being evaluated remains visible; these options only change
-          how its required items are acquired.
-        </p>
-      </div>
-    </details>
+    <>
+      <FilterPanelButton ref={trigger} open={open} panelId={panelId} onClick={() => setOpen(!open)}>
+        <Settings2 className="size-3.5" /> Options
+      </FilterPanelButton>
+      <FilterPanel
+        id={panelId}
+        open={open}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setOpen(false);
+            trigger.current?.focus();
+          }
+        }}
+        className="left-auto right-0 top-full mt-2 max-h-[min(26rem,55dvh)] w-80 max-w-full overflow-y-auto overscroll-contain rounded-md border bg-muted p-4 shadow-2xl"
+      >
+        <FilterSection title="List filters">
+          <Toggle
+            checked={profitableOnly}
+            onChange={onProfitableOnlyChange}
+            label="Profitable recipes only"
+          />
+        </FilterSection>
+        <FilterSection title="Availability">
+          <Toggle
+            checked={availableOnly}
+            onChange={onAvailableOnlyChange}
+            label="Hide locked recipes"
+          />
+          <div className="ml-3 border-l border-white/10 pl-2">
+            {(
+              [
+                ["flea", "Hide no flea sale"],
+                ["quest", "Hide quest locked"],
+                ["vendor", "Hide vendor locked"],
+                ["station", "Hide station locked"],
+              ] as const
+            ).map(([key, label]) => (
+              <Toggle
+                key={key}
+                checked={lockFilters[key]}
+                onChange={(value) => onLockFiltersChange({ ...lockFilters, [key]: value })}
+                label={label}
+              />
+            ))}
+          </div>
+        </FilterSection>
+        <FilterSection title="Output valuation">
+          <Toggle
+            checked={useTraderSaleForLockedOutputs}
+            onChange={onUseTraderSaleForLockedOutputsChange}
+            label="Use vendor sale for locked outputs"
+          />
+        </FilterSection>
+        <FilterSection title="Ingredient sources">
+          <Toggle
+            checked={allowCrafts}
+            onChange={onAllowCraftsChange}
+            label="Use crafts for ingredients"
+          />
+          <Toggle
+            checked={allowBarters}
+            onChange={onAllowBartersChange}
+            label="Use barters for ingredients"
+          />
+          <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
+            The recipe being evaluated remains visible; these options only change how its required
+            items are acquired.
+          </p>
+        </FilterSection>
+      </FilterPanel>
+    </>
   );
 }
 
@@ -104,16 +115,6 @@ function Toggle({
   onChange: (value: boolean) => void;
   label: string;
 }) {
-  return (
-    <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-foreground hover:bg-white/5">
-      <input
-        type="checkbox"
-        aria-label={label}
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="accent-tarkov-green"
-      />
-      {label}
-    </label>
-  );
+  const id = useId();
+  return <FilterCheckbox id={id} checked={checked} onCheckedChange={onChange} label={label} />;
 }

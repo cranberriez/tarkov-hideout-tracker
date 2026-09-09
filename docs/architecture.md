@@ -82,11 +82,34 @@ alternatives as individual requirements.
 
 ## Search, Quick Add, and item details
 
-[useItemSearchController](../src/features/items/useItemSearchController.ts)
-debounces and cancels bounded catalog searches. Checklist search requests up to
-50 results, Quick Add up to 10; prefix matches precede other alphabetical matches.
+[Filter bar UI kit](../src/components/ui/filter-bar.tsx) provides the shared bar,
+panel trigger/panel, search input, native single-select radio groups, toggle
+buttons, and panel sections. [FilterCheckbox](../src/components/ui/FilterCheckbox.tsx)
+and [FilterNumberInput](../src/components/ui/FilterNumberInput.tsx) supply panel
+inputs. These controlled components own presentation and accessibility; consumers
+own state, labels, options, and effects. [ItemsControls](../src/features/items/components/ItemsControls.tsx)
+wires them to existing preferences without changing persistence. Panel triggers
+expose expanded state; radios support arrow keys, toggles expose pressed state,
+and Escape from the checklist panel closes it and returns focus to its trigger.
+
+Checklist search is a local, non-persisted input. It filters visible rows and
+quest groups by standard item name, short name, or normalized name, matching all
+case-insensitive whitespace-separated terms. [Checklist search](../src/features/items/checklist-search.ts)
+also searches all referenced standard items in the selected All/Hideout/Quests
+source, independently of progression and other filters. Matches absent from visible
+rows/groups appear under **Outside current filters**, including past/future
+requirements, as detail links without adding demand counts. Group alternatives
+remain grouped and are not duplicated in the extra results. Missing item IDs are
+reported explicitly while searching. This uses the current route's mode-specific
+item index without catalog requests or shared-layout preloads.
+
+[ItemSearchModal](../src/features/items/components/ItemSearchModal.tsx) is retained
+as a catalog search palette for future site-wide placement, detached from the
+checklist. Its [useItemSearchController](../src/features/items/useItemSearchController.ts)
+debounces and cancels bounded catalog searches. The palette requests up to 50
+results, Quick Add up to 10; prefix matches precede other alphabetical matches.
 The endpoint searches all standard catalog items, including those absent from
-current checklist demand. Its database owner and validation are in [data layer](data-layer.md).
+checklist demand. Its database owner and validation are in [data layer](data-layer.md).
 
 [QuickAddModal](../src/features/quick-add/QuickAddModal.tsx) keeps draft rows and
 FiR/non-FiR additions locally, then commits inventory additions through store

@@ -1,12 +1,8 @@
 import { CraftingSettings } from "./CraftingSettings";
 import Image from "next/image";
-import { ChevronDown, Pin, Search, Wrench } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Pin, Users, Wrench } from "lucide-react";
+import { FilterBar, FilterSearchInput, FilterToggle } from "@/components/ui/filter-bar";
+import { FilterMultiSelect, FilterMultiSelectItem } from "@/components/ui/filter-multi-select";
 import type { ProfitPageKind } from "../types";
 import { CalculationSettings } from "./CalculationSettings";
 
@@ -29,8 +25,8 @@ export function ProfitPageControls({
   onHideoutManagementSkillLevelChange,
   search,
   onSearchChange,
-  sourceId,
-  onSourceIdChange,
+  traderSourceIds,
+  onTraderSourceIdsChange,
   stationSourceIds,
   onStationSourceIdsChange,
   sources,
@@ -58,8 +54,8 @@ export function ProfitPageControls({
   onHideoutManagementSkillLevelChange: (value: number) => void;
   search: string;
   onSearchChange: (value: string) => void;
-  sourceId: string;
-  onSourceIdChange: (value: string) => void;
+  traderSourceIds: string[];
+  onTraderSourceIdsChange: (value: string[]) => void;
   stationSourceIds: string[];
   onStationSourceIdsChange: (value: string[]) => void;
   sources: SourceOption[];
@@ -75,86 +71,66 @@ export function ProfitPageControls({
   onShowPinnedOnlyChange: (value: boolean) => void;
 } & ProfitLockOptionsProps) {
   return (
-    <section className="mb-4 rounded-md border border-white/10 bg-card/70 p-3 shadow-lg">
-      <div
-        className={`grid gap-3 ${kind === "craft" ? "lg:grid-cols-[minmax(220px,1fr)_220px_auto_auto_auto]" : "lg:grid-cols-[minmax(220px,1fr)_220px_auto]"}`}
-      >
-        <label className="relative">
-          <Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search output item"
-            className="h-9 w-full rounded border border-white/10 bg-[#0b0c0e] pl-9 pr-3 text-sm outline-none focus:border-tarkov-green/60"
-          />
-        </label>
-        {kind === "craft" ? (
-          <StationSourceSelect
-            selectedSourceIds={stationSourceIds}
-            onSelectedSourceIdsChange={onStationSourceIdsChange}
-            sources={sources}
-            availableOnly={availableOnly}
-          />
-        ) : (
-          <select
-            value={sourceId}
-            onChange={(event) => onSourceIdChange(event.target.value)}
-            className="h-9 rounded border border-white/10 bg-[#0b0c0e] px-3 text-sm text-foreground [color-scheme:dark]"
-          >
-            <option className="bg-[#0b0c0e] text-foreground" value="all">
-              All traders
-            </option>
-            {sources.map((source) => (
-              <option
-                className="bg-[#0b0c0e] text-foreground"
-                key={source.id}
-                value={source.id}
-              >
-                {source.name}
-              </option>
-            ))}
-          </select>
-        )}
-        {kind === "craft" && (
-          <CraftingSettings
-            forced={craftingSkillForced}
-            note={craftingSkillNote}
-            craftingLevel={craftingSkillLevel}
-            onCraftingLevelChange={onCraftingSkillLevelChange}
-            hideoutManagementLevel={hideoutManagementSkillLevel}
-            onHideoutManagementLevelChange={onHideoutManagementSkillLevelChange}
-          />
-        )}
-        <CalculationSettings
-          lockFilters={lockFilters}
-          onLockFiltersChange={onLockFiltersChange}
-          useTraderSaleForLockedOutputs={useTraderSaleForLockedOutputs}
-          onUseTraderSaleForLockedOutputsChange={onUseTraderSaleForLockedOutputsChange}
+    <FilterBar
+      className="relative mb-4"
+      aria-label={kind === "craft" ? "Craft profit filters" : "Barter profit filters"}
+    >
+      <FilterSearchInput
+        value={search}
+        onValueChange={onSearchChange}
+        label="Search output item"
+        placeholder="Search output item"
+      />
+      {kind === "craft" ? (
+        <StationSourceSelect
+          selectedSourceIds={stationSourceIds}
+          onSelectedSourceIdsChange={onStationSourceIdsChange}
+          sources={sources}
           availableOnly={availableOnly}
-          onAvailableOnlyChange={onAvailableOnlyChange}
-          profitableOnly={profitableOnly}
-          onProfitableOnlyChange={onProfitableOnlyChange}
-          allowCrafts={allowCrafts}
-          onAllowCraftsChange={onAllowCraftsChange}
-          allowBarters={allowBarters}
-          onAllowBartersChange={onAllowBartersChange}
         />
-        {kind === "craft" && (
-          <button
-            type="button"
-            aria-pressed={showPinnedOnly}
-            aria-label="Show pinned crafts only"
-            title={
-              showPinnedOnly ? "Show all crafts" : "Show pinned crafts only"
-            }
-            onClick={() => onShowPinnedOnlyChange(!showPinnedOnly)}
-            className={`flex h-9 items-center justify-center rounded border bg-[#0b0c0e] px-3 transition ${showPinnedOnly ? "border-sky-400/40 text-sky-300" : "border-white/10 text-muted-foreground hover:border-sky-400/30 hover:text-sky-300"}`}
-          >
-            <Pin className={`size-4 ${showPinnedOnly ? "fill-current" : ""}`} />
-          </button>
-        )}
-      </div>
-    </section>
+      ) : (
+        <TraderSourceSelect
+          selectedSourceIds={traderSourceIds}
+          onSelectedSourceIdsChange={onTraderSourceIdsChange}
+          sources={sources}
+        />
+      )}
+      {kind === "craft" && (
+        <CraftingSettings
+          forced={craftingSkillForced}
+          note={craftingSkillNote}
+          craftingLevel={craftingSkillLevel}
+          onCraftingLevelChange={onCraftingSkillLevelChange}
+          hideoutManagementLevel={hideoutManagementSkillLevel}
+          onHideoutManagementLevelChange={onHideoutManagementSkillLevelChange}
+        />
+      )}
+      <CalculationSettings
+        lockFilters={lockFilters}
+        onLockFiltersChange={onLockFiltersChange}
+        useTraderSaleForLockedOutputs={useTraderSaleForLockedOutputs}
+        onUseTraderSaleForLockedOutputsChange={onUseTraderSaleForLockedOutputsChange}
+        availableOnly={availableOnly}
+        onAvailableOnlyChange={onAvailableOnlyChange}
+        profitableOnly={profitableOnly}
+        onProfitableOnlyChange={onProfitableOnlyChange}
+        allowCrafts={allowCrafts}
+        onAllowCraftsChange={onAllowCraftsChange}
+        allowBarters={allowBarters}
+        onAllowBartersChange={onAllowBartersChange}
+      />
+      {kind === "craft" && (
+        <FilterToggle
+          checked={showPinnedOnly}
+          onCheckedChange={onShowPinnedOnlyChange}
+          aria-label="Show pinned crafts only"
+          title={showPinnedOnly ? "Show all crafts" : "Show pinned crafts only"}
+        >
+          <Pin className={`size-3.5 ${showPinnedOnly ? "fill-current" : ""}`} />
+          Pinned only
+        </FilterToggle>
+      )}
+    </FilterBar>
   );
 }
 
@@ -169,11 +145,8 @@ function StationSourceSelect({
   sources: SourceOption[];
   availableOnly: boolean;
 }) {
-  const selectedSources = sources.filter((source) =>
-    selectedSourceIds.includes(source.id),
-  );
-  const selectedSource =
-    selectedSources.length === 1 ? selectedSources[0] : undefined;
+  const selectedSources = sources.filter((source) => selectedSourceIds.includes(source.id));
+  const selectedSource = selectedSources.length === 1 ? selectedSources[0] : undefined;
   const selectionLabel =
     selectedSources.length === 0
       ? "All stations"
@@ -182,74 +155,62 @@ function StationSourceSelect({
         : `${selectedSources.length} stations`;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className="flex h-9 min-w-0 items-center gap-2 rounded border border-white/10 bg-[#0b0c0e] px-2.5 text-sm text-foreground outline-none transition hover:border-white/20 focus-visible:border-tarkov-green/60"
-          aria-label={`Filter by hideout station: ${selectionLabel}`}
-        >
+    <FilterMultiSelect
+      label={`Filter by hideout station: ${selectionLabel}`}
+      className="min-w-[180px]"
+      summary={
+        <>
           {selectedSource ? (
             <StationIcon source={selectedSource} />
           ) : (
             <Wrench className="size-5 shrink-0 text-muted-foreground" />
           )}
-          <span className="min-w-0 flex-1 truncate text-left">
-            {selectionLabel}
-          </span>
+          <span className="min-w-0 flex-1 truncate text-left">{selectionLabel}</span>
           {(selectedSource?.level ?? 0) > 0 && (
             <span className="shrink-0 text-xs text-muted-foreground">
               Level {selectedSource?.level}
             </span>
           )}
-          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        sideOffset={4}
-        className="min-w-[var(--radix-dropdown-menu-trigger-width)] bg-[#0b0c0e]"
+        </>
+      }
+    >
+      <FilterMultiSelectItem
+        checked={selectedSourceIds.length === 0}
+        onCheckedChange={() => onSelectedSourceIdsChange([])}
+        className="gap-2"
       >
-        <DropdownMenuCheckboxItem
-          checked={selectedSourceIds.length === 0}
-          onSelect={(event) => event.preventDefault()}
-          onCheckedChange={() => onSelectedSourceIdsChange([])}
-          className="gap-2"
-        >
-          <Wrench className="size-6 text-muted-foreground" />
-          <span className="flex-1">All stations</span>
-        </DropdownMenuCheckboxItem>
-        {sources.map((source) => {
-          const built = (source.level ?? 0) > 0;
-          const checked = selectedSourceIds.includes(source.id);
-          return (
-            <DropdownMenuCheckboxItem
-              key={source.id}
-              checked={checked}
-              disabled={availableOnly && !built}
-              onSelect={(event) => event.preventDefault()}
-              onCheckedChange={() =>
-                onSelectedSourceIdsChange(
-                  checked
-                    ? selectedSourceIds.filter((id) => id !== source.id)
-                    : [...selectedSourceIds, source.id],
-                )
-              }
-              className="gap-2"
-              title={!built ? "Station not built" : undefined}
-            >
-              <StationIcon source={source} />
-              <span className="min-w-0 flex-1 truncate">{source.name}</span>
-              {built && (
-                <span className="ml-4 shrink-0 text-xs text-muted-foreground">
-                  Level {source.level}
-                </span>
-              )}
-            </DropdownMenuCheckboxItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+        <Wrench className="size-6 text-muted-foreground" />
+        <span className="flex-1">All stations</span>
+      </FilterMultiSelectItem>
+      {sources.map((source) => {
+        const built = (source.level ?? 0) > 0;
+        const checked = selectedSourceIds.includes(source.id);
+        return (
+          <FilterMultiSelectItem
+            key={source.id}
+            checked={checked}
+            disabled={availableOnly && !built}
+            onCheckedChange={() =>
+              onSelectedSourceIdsChange(
+                checked
+                  ? selectedSourceIds.filter((id) => id !== source.id)
+                  : [...selectedSourceIds, source.id],
+              )
+            }
+            className="gap-2"
+            title={!built ? "Station not built" : undefined}
+          >
+            <StationIcon source={source} />
+            <span className="min-w-0 flex-1 truncate">{source.name}</span>
+            {built && (
+              <span className="ml-4 shrink-0 text-xs text-muted-foreground">
+                Level {source.level}
+              </span>
+            )}
+          </FilterMultiSelectItem>
+        );
+      })}
+    </FilterMultiSelect>
   );
 }
 
@@ -265,5 +226,82 @@ function StationIcon({ source }: { source: SourceOption }) {
     />
   ) : (
     <Wrench className="size-6 shrink-0 text-muted-foreground" />
+  );
+}
+
+function TraderSourceSelect({
+  selectedSourceIds,
+  onSelectedSourceIdsChange,
+  sources,
+}: {
+  selectedSourceIds: string[];
+  onSelectedSourceIdsChange: (value: string[]) => void;
+  sources: SourceOption[];
+}) {
+  const selectedSources = sources.filter((source) => selectedSourceIds.includes(source.id));
+  const selectedSource = selectedSources.length === 1 ? selectedSources[0] : undefined;
+  const selectionLabel =
+    selectedSources.length === 0
+      ? "All traders"
+      : selectedSource
+        ? selectedSource.name
+        : `${selectedSources.length} traders`;
+  return (
+    <FilterMultiSelect
+      label={`Filter by trader: ${selectionLabel}`}
+      className="min-w-[180px]"
+      summary={
+        <>
+          {selectedSource ? (
+            <TraderIcon source={selectedSource} />
+          ) : (
+            <Users className="size-5 shrink-0 text-muted-foreground" />
+          )}
+          <span className="min-w-0 flex-1 truncate text-left">{selectionLabel}</span>
+        </>
+      }
+    >
+      <FilterMultiSelectItem
+        checked={selectedSourceIds.length === 0}
+        onCheckedChange={() => onSelectedSourceIdsChange([])}
+      >
+        <Users className="size-6 text-muted-foreground" />
+        <span className="flex-1">All traders</span>
+      </FilterMultiSelectItem>
+      {sources.map((source) => {
+        const checked = selectedSourceIds.includes(source.id);
+        return (
+          <FilterMultiSelectItem
+            key={source.id}
+            checked={checked}
+            onCheckedChange={() =>
+              onSelectedSourceIdsChange(
+                checked
+                  ? selectedSourceIds.filter((id) => id !== source.id)
+                  : [...selectedSourceIds, source.id],
+              )
+            }
+          >
+            <TraderIcon source={source} />
+            <span className="min-w-0 flex-1 truncate">{source.name}</span>
+          </FilterMultiSelectItem>
+        );
+      })}
+    </FilterMultiSelect>
+  );
+}
+
+function TraderIcon({ source }: { source: SourceOption }) {
+  return source.imageLink ? (
+    <Image
+      src={source.imageLink}
+      alt=""
+      width={24}
+      height={24}
+      className="size-6 shrink-0 rounded object-contain"
+      unoptimized
+    />
+  ) : (
+    <Users className="size-6 shrink-0 text-muted-foreground" />
   );
 }

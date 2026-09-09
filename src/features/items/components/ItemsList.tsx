@@ -19,9 +19,15 @@ import {
 } from "@/lib/utils/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
 import { getFleaPrice } from "@/lib/utils/market-price";
+import {
+    buildChecklistSearchIds,
+    findOutsideFilterMatches,
+    matchesChecklistSearch,
+} from "../checklist-search";
 import type { Station } from "@/types/hideout";
 
 interface ItemsListProps {
+    searchQuery: string;
     stations: Station[];
     itemById: Readonly<Record<string, ItemSummary>>;
     onClickItem: (item: ItemSummary) => void;
@@ -52,6 +58,7 @@ type DisplayEntry =
     | { type: "group"; key: string; group: DerivedQuestAnyOfGroup };
 
 export function ItemsList({
+    searchQuery,
     stations,
     itemById,
     onClickItem,
@@ -162,7 +169,10 @@ export function ItemsList({
             new Map(
                 activeQuestStates.map((state) => {
                     const deduction = groupedQuestDeductionsByItemId.get(state.itemId);
-                    const requiredCount = Math.max(0, state.requiredCount - (deduction?.count ?? 0));
+                    const requiredCount = Math.max(
+                        0,
+                        state.requiredCount - (deduction?.count ?? 0),
+                    );
                     const requiredFirCount = Math.max(
                         0,
                         state.requiredFirCount - (deduction?.firCount ?? 0),
@@ -274,7 +284,9 @@ export function ItemsList({
     };
 
     const finalizeDisplayItems = (
-        itemsToDisplay: Array<MergedItem & { details?: ItemSummary; questState?: DerivedQuestItemState }>,
+        itemsToDisplay: Array<
+            MergedItem & { details?: ItemSummary; questState?: DerivedQuestItemState }
+        >,
     ): DisplayItem[] => {
         let finalItems = itemsToDisplay.filter((item): item is DisplayItem => !!item.details);
 
@@ -368,6 +380,29 @@ export function ItemsList({
                     itemShowPinnedQuestOnly,
                 );
 
+    const searchIds = useMemo(
+        () => buildChecklistSearchIds(stations, questItemIndex, questAnyOfGroups, itemSourceFilter),
+        [stations, questItemIndex, questAnyOfGroups, itemSourceFilter],
+    );
+    const searching = searchQuery.trim().length > 0;
+    const matchingItems = searching
+        ? sourceItems.filter((item) => matchesChecklistSearch(item.details, searchQuery))
+        : sourceItems;
+    const matchingGroups = searching
+        ? visibleQuestGroups.filter((group) =>
+              group.itemIds.some((id) => matchesChecklistSearch(itemById[id], searchQuery)),
+          )
+        : visibleQuestGroups;
+    const outsideMatches = findOutsideFilterMatches({
+        query: searchQuery,
+        sourceIds: searchIds,
+        visibleIds: new Set([
+            ...sourceItems.map((item) => item.id),
+            ...visibleQuestGroups.flatMap((group) => group.itemIds),
+        ]),
+        itemById,
+    });
+
     const gridClassesBySize: Record<string, string> = {
         Icon: "grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8",
         Compact: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
@@ -375,9 +410,14 @@ export function ItemsList({
     };
     const gridClasses = gridClassesBySize[itemsSize] ?? gridClassesBySize.Expanded;
 
-    const renderMixedGrid = (itemsToRender: DisplayItem[], groupsToRender: DerivedQuestAnyOfGroup[]) => {
+    const renderMixedGrid = (
+        itemsToRender: DisplayItem[],
+        groupsToRender: DerivedQuestAnyOfGroup[],
+    ) => {
         const entries: DisplayEntry[] = [
-            ...groupsToRender.map((group) => ({ type: "group", key: group.groupId, group }) as const),
+            ...groupsToRender.map(
+                (group) => ({ type: "group", key: group.groupId, group }) as const,
+            ),
             ...itemsToRender.map((item) => ({ type: "item", key: item.id, item }) as const),
         ];
 
@@ -423,7 +463,10 @@ export function ItemsList({
         );
     };
 
-    const renderItems = (itemsToRender: DisplayItem[], groupsToRender: DerivedQuestAnyOfGroup[]) => {
+    const renderItems = (
+        itemsToRender: DisplayItem[],
+        groupsToRender: DerivedQuestAnyOfGroup[],
+    ) => {
         if (!useCategorization) {
             return renderMixedGrid(itemsToRender, groupsToRender);
         }
@@ -484,17 +527,71 @@ export function ItemsList({
         );
     };
 
-    if (sourceItems.length === 0 && visibleQuestGroups.length === 0) {
+    if (!searching && sourceItems.length === 0 && visibleQuestGroups.length === 0) {
         return (
             <div className="py-20 text-center text-gray-500">
                 <div className="mb-2 text-xl">No items needed!</div>
                 <div className="text-sm">
-                    You might have maxed out your hideout, completed your visible quests, or filtered
-                    everything out.
+                    You might have maxed out your hideout, completed your visible quests, or
+                    filtered everything out.
                 </div>
             </div>
         );
     }
 
-    return <div className="space-y-8">{renderItems(sourceItems, visibleQuestGroups)}</div>;
+    return (
+        <div className="space-y-8">
+            {searching && (
+                <p role="status" className="text-sm text-gray-400">
+                    {matchingItems.length + matchingGroups.length} visible matches &middot;{" "}
+                    {outsideMatches.items.length} outside current filters
+                </p>
+            )}
+            {matchingItems.length + matchingGroups.length > 0 ? (
+                renderItems(matchingItems, matchingGroups)
+            ) : (
+                <p className="py-8 text-center text-gray-400">
+                    No matching items in the current filtered list.
+                </p>
+            )}
+            {outsideMatches.items.length > 0 && (
+                <section aria-labelledby="outside-filter-results">
+                    <h2 id="outside-filter-results" className="text-xl font-bold text-tarkov-green">
+                        Outside current filters
+                    </h2>
+                    <p className="mb-4 mt-1 text-sm text-gray-400">
+                        Matches from the full{" "}
+                        {itemSourceFilter === "all" ? "hideout and quest" : itemSourceFilter}{" "}
+                        checklist, including past and future requirements. Open an item for details.
+                    </p>
+                    <div className={`grid gap-2 ${gridClasses}`}>
+                        {outsideMatches.items.map((item) => (
+                            <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => onClickItem(item)}
+                                className="rounded-md border border-white/10 bg-black/20 p-3 text-left text-sm text-gray-200 hover:border-tarkov-green/50 focus-visible:outline-2 focus-visible:outline-tarkov-green"
+                            >
+                                <span className="block font-medium">{item.name}</span>
+                                {item.shortName && (
+                                    <span className="text-xs text-gray-500">{item.shortName}</span>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                </section>
+            )}
+            {outsideMatches.missingIds.length > 0 && (
+                <details className="text-sm text-amber-300">
+                    <summary>
+                        Search is incomplete: {outsideMatches.missingIds.length} checklist items
+                        have no item data.
+                    </summary>
+                    <p className="mt-2 break-all text-xs">
+                        Missing IDs: {outsideMatches.missingIds.join(", ")}
+                    </p>
+                </details>
+            )}
+        </div>
+    );
 }
