@@ -87,7 +87,12 @@ Hideout, Items, Quests, Kappa, and Profit server pages prefetch their named
 payload through a request-local QueryClient and hydrate the same mode-keyed query
 for the browser. The bounded `/api/page-data/*` routes capture the current database
 revision internally and support whole-payload refetches. Both profit lists and
-Craft Planner share one `recipes-crafts-barters` cache entry. Explicit unresolved
+Craft Planner share one `recipes-crafts-barters` cache entry. Complete unpriced
+API responses are publicly cached for 300 seconds in browsers and 3600 seconds
+on the CDN, with mode isolated in the URL. Compatibility profit requests that
+include prices use 300 seconds for both. Partial responses and HTTP errors use
+`no-store`. These API headers do not cache initial server-page HTML/RSC payloads,
+which still select mode from the cookie and prefetch queries directly. Explicit unresolved
 IDs stay in successful payloads and visible warnings; domain errors produce usable
 partial payloads that remain retryable rather than reusable complete cache entries.
 
@@ -118,17 +123,16 @@ prices. The existing scope lifecycle cancels/removes the old mode without touchi
 player storage. Canceling one item does not abort a shared batch still needed by
 another; canceling the entire batch aborts its fetch.
 
-**Refresh prices**/**Retry prices** invalidate the consumer's item queries, update
-all shared observers, and request HTTP revalidation without cache-busting URLs.
-They read stored prices; they do not trigger provider ingestion. The existing
-300-second server mutable-price cache may still supply a recent snapshot.
+Price refresh controls are not currently exposed in the UI. Reloading the page
+recreates the in-memory query cache and retries failed price reads; successful
+responses can still come from the browser/CDN cache. The existing 300-second
+server mutable-price cache may also supply a recent snapshot.
 Complete GET responses use browser 300s and CDN 3600s freshness; failed responses
 are no-store. The POST endpoint remains private/no-store for already-open older
 clients. The schema and limits live in [price-contract](../src/lib/query/price-contract.ts).
 
 [DeferredPriceBoundary](../src/features/items/DeferredPriceBoundary.tsx) supplies
-Hideout/Items/Kappa with per-item pending/error/ready presentation and a manual
-refresh control. Profit consumers wait for initial prices before ranking recipes
+Hideout/Items/Kappa with per-item pending/error/ready presentation. Profit consumers wait for initial prices before ranking recipes
 and preserve usable cached prices after a failed refresh. Item detail queries ask
 for **prices=none** and hydrate their combined item index from the same shared cache
 after the initial metadata domains settle. Their query keys distinguish unpriced
@@ -158,7 +162,7 @@ full-domain composition on every modal open.
 | [search](../src/app/api/items/search/route.ts)                                                                                                                   | Required mode and `q` up to 80 characters, normalized for matching; 10 results by default or 50 with `limit=50`; `private, no-store`                  |
 | [status](../src/app/api/data/status/route.ts)                                                                                                                    | Mode/release identity, hideout/item/quest/craft/barter release freshness, and independent mutable-price change/check timestamps; `private, no-store` |
 | [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); `private, no-store`                                       |
-| [page data](../src/app/api/page-data/)                                                                                                                           | Mode-only bounded Hideout, Items, Quests, Kappa, and shared Profit payloads; `private, no-store`                                                       |
+| [page data](../src/app/api/page-data/)                                                                                                                           | Mode-specific Hideout, Items, Quests, Kappa, and shared Profit payloads; complete unpriced responses: browser 300s, CDN 3600s; partial/error responses: `no-store`                                                       |
 | [map APIs](../src/app/api/maps/)                                                                                                                                 | Committed map metadata, navigation overlays, and allow-listed SVG service; see [maps](maps.md)                                                        |
 | [price cron APIs](../src/app/api/cron/prices/)                                                                                                                   | Protected mutable-price refresh; see [operations](operations.md)                                                                                     |
 

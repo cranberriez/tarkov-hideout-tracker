@@ -76,9 +76,6 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
                                     hideoutRequiredCount={vm.demandSummary.hideoutRequiredCount}
                                     questRequiredCount={vm.demandSummary.questRequiredCount}
                                 />
-                                <button type="button" disabled={vm.pricesFetching} onClick={() => void vm.refreshPrices()} className="mt-2 text-xs text-muted-foreground underline disabled:no-underline">
-                                    {vm.pricesFetching ? "Updating prices…" : vm.priceError ? "Retry prices" : "Refresh prices"}
-                                </button>
                                 <button type="button" onClick={vm.close} className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:border-border-color hover:bg-shadow/20 hover:text-foreground sm:right-4 sm:top-4" aria-label="Close item details">
                                     <X size={18} />
                                 </button>

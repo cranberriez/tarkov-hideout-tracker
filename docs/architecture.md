@@ -184,7 +184,7 @@ fixed while its content panel scrolls independently with a 700px maximum height;
 the wider desktop modal does not scroll the sidebar and tabs as one region.
 Current prices use one shared mode/item TanStack cache across lists, profit pages,
 and explicitly opened item details; Quests does not preload prices. See
-[data layer](data-layer.md) for GET batching, one-hour freshness and manual refresh.
+[data layer](data-layer.md) for GET batching, one-hour freshness.
 Relations, usage, acquisition, and price history use feature-owned TanStack query
 options. Only complete detail responses enter reusable success cache state;
 partial payloads remain available to the modal with their explicit errors and stay

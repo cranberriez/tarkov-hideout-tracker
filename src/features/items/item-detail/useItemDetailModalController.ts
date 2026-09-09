@@ -62,7 +62,7 @@ export function useItemDetailModalController({
         id, { ...summary, marketPrice: prices.prices[id] ?? null, priceLoadState: prices.states[id] ?? (isPriceItemId(id) ? "pending" : "ready") },
     ])), [unpricedItemsById, prices.prices, prices.states]);
     const pricesLoading = isOpen && metadataReady && prices.state === "pending";
-    const priceError = prices.state === "error" ? "Item prices could not be updated. Use Retry prices." : null;
+    const priceError = prices.state === "error" ? "Item prices could not be updated. Reload the page to try again." : null;
     const pricesReady = Object.values(prices.states).every((state) => state === "ready") && metadataReady;
     const selectedItem = itemDetailsById[activeItemId] ?? null;
     const selectedItemId = selectedItem?.id ?? activeItemId;
@@ -352,9 +352,7 @@ export function useItemDetailModalController({
         craftError: itemUsage?.craftsError ?? requests.usageError,
         profitLoading: requests.treeLoading || pricesLoading,
         profitError: requests.treeError ?? priceError,
-        pricesFetching: prices.fetching,
         priceError,
-        refreshPrices: prices.refresh,
         retryProfit: requests.retryTree,
         close: navigation.close,
         back: navigation.back,
