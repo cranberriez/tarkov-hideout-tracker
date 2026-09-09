@@ -217,6 +217,11 @@ the previous continuous scheduling panel and its temporary selections.
 
 The board uses horizontal station rows with output, duration, required inputs,
 gross sale price per output, net batch profit, profit/hour, pin and detail actions.
+[StationCraftRow](../src/features/profit-pages/optimize/StationCraftRow.tsx) renders
+each craft and its expanded content; the board owns selection, pins and ranking.
+Details compose [StationCraftIngredient](../src/features/profit-pages/optimize/StationCraftIngredient.tsx)
+for each ingredient and [StationCraftPriceField](../src/features/profit-pages/optimize/StationCraftPriceField.tsx)
+for input and sale price editing, using the existing callbacks and saved choices.
 Smaller screens wrap the rows. Each station initially shows all profitable crafts;
 players can hide unpinned rows or include unprofitable crafts. Ranking
 offers profit/hour, batch profit, long runs, and easy inputs (distinct purchase
@@ -244,9 +249,19 @@ ingredient sources and editable costs. Recipe-specific input unit costs update
 profit immediately and persist without changing other crafts. Sale overrides
 reuse the existing item-wide mode-scoped prices, with an explicit flea/trader
 destination and a best-net-return reset. Fee details, estimated flea break-even,
-10% return target and optional acquisition steps live here. Materials required
-pool purchased leaves for one batch of each available saved craft; reusable tools
-are separate and pooled by maximum quantity, without assuming inventory access.
+10% return target and optional acquisition steps live here.
+
+Expanded details use a borderless two-column layout (stacked on phones), with
+ingredients beside sale, costs and profit. Source names share the unit-price
+editor; custom prices stay blue and expose a reset arrow. Alternatives within
+10% of the cheapest source appear inline, while other sources remain selectable
+from the source menu. This comparison uses estimates before recipe-specific
+custom prices, so editing a price does not rearrange source choices. Inline
+prices are per unit; item totals and menu totals include the required quantity.
+Profit is emphasized, with smaller costs and estimated price targets beneath it.
+Price-edit guidance and calculation notes are expandable; lock reasons, missing
+routes and unavailable fee estimates remain visible. Expanded details leave
+28px before the next craft; the craft row itself is unchanged.
 
 The board and profit table share existing craft pins. The additional
 `tarkov-craft-board-v1:{mode}` payload stores recipe variant, ingredient route keys,
@@ -262,6 +277,7 @@ selling-hour predictions and transaction logs remain outside this version.
 ```bash
 node --test --import jiti/register src/lib/price-calculation/optimizer.test.ts src/features/profit-pages/utils/recipes.test.ts src/server/queries/page-data-queries.test.ts
 node --test --import jiti/register src/features/profit-pages/optimize/station-board.test.ts src/lib/price-calculation/calc-tax.test.ts
+node --test --import jiti/register src/features/profit-pages/optimize/station-craft-details-model.test.ts
 ```
 
 Include tests for the changed route/availability/pricing rule and browser checks

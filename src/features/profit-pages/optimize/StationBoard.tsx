@@ -2,17 +2,16 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Pin, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import type { GameMode } from "@/lib/game-mode";
 import type { RecipeCalculatorInput } from "@/lib/price-calculation";
 import type { ProfitStationSource, PriceChangeHandler } from "../types";
 import { usePinnedCrafts } from "../usePinnedCrafts";
 import { useStoredProfitValue } from "../useStoredProfitValue";
-import { formatDuration, formatQuantity, formatRoundedRoubles, formatSignedRoubles } from "../utils/formatters";
+import { StationCraftRow } from "./StationCraftRow";
 import { CraftImage } from "./CraftImage";
 import { StationCraftDetails } from "./StationCraftDetails";
 import {
-	boardCraftAvailable,
 	boardCraftPlacements,
 	buildStationBoard,
 	parseBoardChoices,
@@ -129,101 +128,19 @@ export function StationBoard({
 							</div>
 
 							<div>
-							{visible.map((row) => {
-								const output = input.itemsById[row.outputItemId];
-								const pinned = !!pinnedCrafts[row.id];
-								const available = boardCraftAvailable(row);
-								const open = detailId === row.id;
-								const placement = placements[row.id];
-								const gross = row.grossSellValue === undefined ? row.sellValue : row.grossSellValue;
-								const roi = row.cost && row.profit !== null ? (row.profit / row.cost) * 100 : null;
-								return (
-									<div key={row.id} className={`bg-white/2.5 ${pinned ? "bg-white/5" : ""} rounded`}>
-										<div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-2 py-2.5 lg:grid-cols-[minmax(170px,1.15fr)_82px_minmax(200px,2fr)_108px_124px_78px]">
-											<button
-												type="button"
-												onClick={() => onItemOpen(row.outputItemId)}
-												className="flex min-w-0 items-center gap-2 text-left hover:text-tarkov-green"
-											>
-												<CraftImage item={output} size={36} />
-												<span className="min-w-0 text-xs font-medium">
-													{output?.name ?? row.outputItemId}
-													<span className="ml-1 text-muted-foreground">×{formatQuantity(row.outputCount)}</span>
-												</span>
-											</button>
-											<span className="text-xs text-muted-foreground lg:block">{formatDuration(row.durationSeconds)}</span>
-											<div className="col-span-2 flex flex-wrap items-center gap-x-3 gap-y-1 lg:col-span-1">
-												{row.requiredItems.map((part) => (
-													<button
-														key={`${part.itemId}:${part.isTool}`}
-														type="button"
-														title={`${input.itemsById[part.itemId]?.name ?? part.itemId}${part.isTool ? " · reusable tool" : ""}`}
-														onClick={() => onItemOpen(part.itemId)}
-														className={`inline-flex items-center gap-1 text-xs hover:text-foreground ${part.isTool ? "text-muted-foreground/70" : "text-muted-foreground"}`}
-													>
-														<CraftImage item={input.itemsById[part.itemId]} size={22} />
-														<span>
-															{formatQuantity(part.quantity)}× {input.itemsById[part.itemId]?.shortName ?? input.itemsById[part.itemId]?.name ?? part.itemId}
-															{part.isTool ? " · tool" : ""}
-														</span>
-													</button>
-												))}
-											</div>
-											<div className="text-xs">
-												<span className="block font-mono">{formatRoundedRoubles(gross === null ? null : gross / row.outputCount)}</span>
-												<span className="text-[11px] text-muted-foreground">each · {row.sellSourceLabel ?? "No sale price"}</span>
-											</div>
-											<div
-												className="relative pr-9 text-right text-xs lg:text-left"
-												title={`Inputs: ${formatRoundedRoubles(row.cost)} · Listing fee: ${formatRoundedRoubles(row.sellFee ?? null)} · Proceeds: ${formatRoundedRoubles(row.sellValue)}${roi === null ? "" : ` · Return on inputs: ${roi.toFixed(1)}%`}`}
-											>
-												<span
-													className={`block font-mono font-medium ${!available ? "text-amber-300" : (row.profit ?? 0) > 0 ? "text-tarkov-green" : "text-red-300"}`}
-												>
-													{!available ? "Check details" : formatSignedRoubles(row.profit)}
-												</span>
-												<span className="text-[11px] text-muted-foreground">
-													{available ? `${formatSignedRoubles(row.profitPerHour)} / h` : "Saved craft retained"}
-												</span>
-												{placement && (
-													<span
-														title={`${placement === 1 ? "Gold" : placement === 2 ? "Silver" : "Bronze"} craft for this station`}
-														className={`absolute right-0 top-1/2 -translate-y-1/2 rounded border px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
-															placement === 1
-																? "border-amber-300/40 bg-amber-300/10 text-amber-300"
-																: placement === 2
-																	? "border-slate-300/40 bg-slate-300/10 text-slate-300"
-																	: "border-orange-400/40 bg-orange-400/10 text-orange-400"
-														}`}
-													>
-														#{placement}
-													</span>
-												)}
-											</div>
-											<div className="col-span-2 flex justify-end gap-1 lg:col-span-1">
-												<button
-													type="button"
-													aria-label={`${pinned ? "Unpin" : "Pin"} ${output?.name ?? row.id}`}
-													aria-pressed={pinned}
-													title={pinned ? "Remove from board" : "Keep on board"}
-													onClick={() => togglePinnedCraft(row.id)}
-													className={`rounded p-2 hover:bg-white/10 ${pinned ? "text-sky-300" : "text-muted-foreground"}`}
-												>
-													<Pin size={15} className={pinned ? "fill-current" : ""} />
-												</button>
-												<button
-													type="button"
-													aria-label={`Details for ${output?.name ?? row.id}`}
-													aria-expanded={open}
-													title="Prices and routes"
-													onClick={() => setDetailId(open ? null : row.id)}
-													className={`rounded p-2 hover:bg-white/10 ${open ? "text-foreground bg-white/10" : "text-muted-foreground"}`}
-												>
-													<SlidersHorizontal size={15} />
-												</button>
-											</div>
-										</div>
-										{open && (
+								{visible.map((row) => (
+									<StationCraftRow
+										key={row.id}
+										row={row}
+										itemsById={input.itemsById}
+										pinned={!!pinnedCrafts[row.id]}
+										open={detailId === row.id}
+										placement={placements[row.id]}
+										onItemOpen={onItemOpen}
+										onTogglePinned={() => togglePinnedCraft(row.id)}
+										onToggleDetails={() => setDetailId(detailId === row.id ? null : row.id)}
+									>
+										{detailId === row.id && (
 											<StationCraftDetails
 												craft={craftById[row.id]}
 												row={row}
@@ -236,10 +153,11 @@ export function StationBoard({
 												onItemOpen={onItemOpen}
 											/>
 										)}
-									</div>
-								);
-                            })}
-								{!hidden && !visible.length && <p className="px-2 pt-2 text-xs text-muted-foreground">No matching crafts at your current unlocks and prices.</p>}
+									</StationCraftRow>
+								))}
+								{!hidden && !visible.length && (
+									<p className="px-2 pt-2 text-xs text-muted-foreground">No matching crafts at your current unlocks and prices.</p>
+								)}
 							</div>
 						</section>
 					);
