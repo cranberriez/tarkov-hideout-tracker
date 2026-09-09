@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Crosshair, KeyRound, Maximize2, Minimize2, X } from "lucide-react";
 import Image from "next/image";
 import { MapViewer } from "@/features/maps/MapViewer";
@@ -8,6 +9,7 @@ import type { MapViewTransform } from "@/features/maps/map-view-transform";
 import type { MapOverlayMarker } from "@/types/maps";
 import type { ItemSummary } from "@/types/items";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { mapOverlaysQueryOptions } from "@/lib/query/maps";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { useQuestsContext } from "../QuestsContext";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
@@ -26,14 +28,12 @@ interface RaidPlannerPaneProps {
     onViewChange: (mapKey: string, view: MapViewTransform | null) => void;
 }
 
+const EMPTY_NAVIGATION_MARKERS: MapOverlayMarker[] = [];
+
 export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPaneProps) {
     const { itemById } = useQuestsContext();
     const [isKillListOpen, setIsKillListOpen] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
-    const [navigationMarkers, setNavigationMarkers] = useState<{
-        mapKey: string;
-        markers: MapOverlayMarker[];
-    } | null>(null);
     const completedQuestObjectives = useUserStore((state) => state.completedQuestObjectives);
     const toggleQuestObjectiveCompletion = useUserStore((state) => state.toggleQuestObjectiveCompletion);
     const {
@@ -54,6 +54,11 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
         [maps, plannerMapKey],
     );
     const selectedMapKey = selectedMap?.key;
+    const navigationQuery = useQuery({
+        ...mapOverlaysQueryOptions(selectedMapKey ?? ""),
+        enabled: Boolean(selectedMapKey),
+    });
+    const navigationMarkers = navigationQuery.data?.markers ?? EMPTY_NAVIGATION_MARKERS;
     const plannerQuests = useMemo(() => selectedMap
         ? activeQuests.filter((quest) =>
             getQuestMapGroupsForQuest(quest).some((map) => map.key === selectedMap.key),
@@ -61,7 +66,7 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
         : [], [activeQuests, selectedMap]);
     const markers = useMemo(() => selectedMap ? [
         ...buildRaidPlannerMarkers(plannerQuests, selectedMap.key, markerByQuestId, completedQuestObjectives),
-        ...(navigationMarkers?.mapKey === selectedMap.key ? navigationMarkers.markers : []),
+        ...navigationMarkers,
     ] : [], [completedQuestObjectives, markerByQuestId, navigationMarkers, plannerQuests, selectedMap]);
     const killObjectives = useMemo(
         () => buildRaidPlannerKillList(plannerQuests),
@@ -80,22 +85,6 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
         document.body.classList.toggle("quest-raid-planner-fullscreen", isFullScreen);
         return () => document.body.classList.remove("quest-raid-planner-fullscreen");
     }, [isFullScreen]);
-
-    useEffect(() => {
-        if (!selectedMapKey) return;
-        const controller = new AbortController();
-        fetch(`/api/maps/overlays/${encodeURIComponent(selectedMapKey)}`, { signal: controller.signal })
-            .then(async (response) => {
-                if (!response.ok) return { markers: [] };
-                return response.json() as Promise<{ markers: MapOverlayMarker[] }>;
-            })
-            .then(({ markers }) => setNavigationMarkers({ mapKey: selectedMapKey, markers }))
-            .catch((error: unknown) => {
-                if (error instanceof DOMException && error.name === "AbortError") return;
-                setNavigationMarkers({ mapKey: selectedMapKey, markers: [] });
-            });
-        return () => controller.abort();
-    }, [selectedMapKey]);
 
     const focusQuest = (questId: string | null) => {
         setHighlightedQuestId(questId);
@@ -143,6 +132,12 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
 
     return (
         <div className="relative min-h-0 flex-1 overflow-hidden bg-[var(--card-bg)]">
+            {navigationQuery.isError && (
+                <div role="alert" className="absolute right-3 top-3 z-40 border border-danger/30 bg-danger-surface/90 px-3 py-2 text-xs text-danger">
+                    Map navigation could not be loaded.
+                    <button type="button" onClick={() => void navigationQuery.refetch()} className="ml-2 underline">Retry</button>
+                </div>
+            )}
             <MapViewer
                 mapKey={selectedMap.key}
                 markers={markers}

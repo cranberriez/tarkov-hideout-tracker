@@ -9,6 +9,9 @@ import { orderMapFloorsTopToBottom, resolveMapFloors } from "./map-floor-resolut
 import type { MapOverlayMarker, MapRenderDefinition } from "@/types/maps";
 import { constrainMapView, zoomViewAroundPoint, type MapViewTransform } from "./map-view-transform";
 import { getQuestObjectiveTypeLabel, QuestObjectiveIcon } from "@/features/quests/components/QuestObjectiveIcon";
+import { useQuery } from "@tanstack/react-query";
+import { mapMetadataQueryOptions } from "@/lib/query/maps";
+import { RequestError } from "@/lib/query/request";
 
 interface MapViewerProps {
     mapKey: string;
@@ -140,11 +143,7 @@ export function MapViewer({
     } | null>(null);
     const dragFrameRef = useRef<number | null>(null);
     const pendingDragViewRef = useRef<MapViewTransform | null>(null);
-    const [mapRequest, setMapRequest] = useState<{
-        mapKey: string;
-        state: "ready" | "unsupported" | "error";
-        definition: MapRenderDefinition | null;
-    } | null>(null);
+    const mapRequest = useQuery(mapMetadataQueryOptions(mapKey));
     const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
     const [manualView, setManualView] = useState<{
         key: string;
@@ -181,26 +180,12 @@ export function MapViewer({
         return () => document.removeEventListener("pointerdown", dismissPinnedPopup, true);
     }, [pinnedMarkerPopup]);
 
-    useEffect(() => {
-        const controller = new AbortController();
-        fetch(`/api/maps/render/${encodeURIComponent(mapKey)}`, { signal: controller.signal })
-            .then(async (response) => {
-                if (response.status === 404) {
-                    setMapRequest({ mapKey, state: "unsupported", definition: null });
-                    return;
-                }
-                if (!response.ok) throw new Error(`Map manifest request failed (${response.status})`);
-                setMapRequest({ mapKey, state: "ready", definition: await response.json() as MapRenderDefinition });
-            })
-            .catch((error: unknown) => {
-                if (error instanceof DOMException && error.name === "AbortError") return;
-                setMapRequest({ mapKey, state: "error", definition: null });
-            });
-        return () => controller.abort();
-    }, [mapKey]);
-
-    const loadState = mapRequest?.mapKey === mapKey ? mapRequest.state : "loading";
-    const definition = mapRequest?.mapKey === mapKey ? mapRequest.definition : null;
+    const definition = mapRequest.data ?? null;
+    const loadState = definition
+        ? "ready"
+        : mapRequest.isPending
+          ? "loading"
+          : mapRequest.error instanceof RequestError && mapRequest.error.status === 404 ? "unsupported" : "error";
 
     useEffect(() => {
         const element = containerRef.current;

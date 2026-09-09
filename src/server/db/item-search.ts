@@ -5,7 +5,7 @@ import { normalizeName } from "@/lib/utils/normalize-name";
 import type { ItemSearchPayload } from "@/types/contracts";
 import type { ItemSummary } from "@/types/items";
 import { getTursoClient } from "./client";
-import { TursoDataIntegrityError, TursoRecordNotFoundError } from "./errors";
+import { TursoDataIntegrityError, TursoRecordNotFoundError, TursoTransientReadError } from "./errors";
 import { getActiveDataReleaseId } from "./release-config";
 import { parseStoredJson } from "./stored-json";
 
@@ -28,6 +28,7 @@ function assertItemSummary(value: ItemSummary, expectedId: unknown): ItemSummary
 export async function searchItemPreviews(
 	query: string,
 	mode: TarkovJsonGameMode,
+	releaseId: string,
 	resultLimit: number,
 	database: Client = getTursoClient(),
 ): Promise<ItemSearchPayload> {
@@ -36,7 +37,6 @@ export async function searchItemPreviews(
 		throw new RangeError("Item search query must contain searchable characters");
 	}
 
-	const releaseId = await getActiveDataReleaseId(mode, database);
 	const normalizedPattern = escapeLikePattern(normalizedQuery);
 	const compactPattern = escapeLikePattern(normalizedQuery.replace(/-/g, ""));
 	const result = await database.execute({
@@ -71,7 +71,11 @@ export async function searchItemPreviews(
 			args: [mode, releaseId],
 		});
 		if (!selected.rows.length)
-			throw new TursoRecordNotFoundError(`No ready data release exists for ${mode}/${releaseId}`);
+			if ((await getActiveDataReleaseId(mode, database)) !== releaseId) {
+				throw new TursoTransientReadError("The current data changed while search was loading. Retry the request.");
+			} else {
+				throw new TursoRecordNotFoundError(`No ready data release exists for ${mode}/${releaseId}`);
+			}
 	}
 
 	const discovery = await getItemDiscovery(

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Activity, CheckCircle2, CircleAlert, Database } from "lucide-react";
 import {
     Dialog,
@@ -14,11 +15,7 @@ import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { formatRelativeUpdatedAt, formatUpdatedAt } from "@/lib/utils/format-time";
 import type { DataStatusPayload } from "@/types/contracts";
-
-export interface DataStatusConfig {
-    activeDataset: "regular" | "pve" | "pvp-season";
-    releaseId: string;
-}
+import { dataStatusQueryOptions } from "@/lib/query/status";
 
 interface StatusRowProps {
     label: string;
@@ -60,51 +57,14 @@ function freshness(timestamp: number | null) {
     };
 }
 
-export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
+export function DataStatusDialog() {
     const gameMode = useUserStore((state) => state.gameMode);
     const [isOpen, setIsOpen] = useState(false);
     const requestedMode = toTarkovJsonGameMode(gameMode);
-    const [statusRequest, setStatusRequest] = useState<{
-        mode: string;
-        payload: DataStatusPayload | null;
-        error: string | null;
-    } | null>(null);
-
-    useEffect(() => {
-        if (!isOpen) return;
-
-        const controller = new AbortController();
-        fetch(
-            `/api/data/status?mode=${encodeURIComponent(requestedMode)}`,
-            { signal: controller.signal },
-        )
-            .then(async (response) => {
-                if (!response.ok) throw new Error("Data status could not be loaded.");
-                return response.json() as Promise<DataStatusPayload>;
-            })
-            .then((payload) => {
-                if (!controller.signal.aborted) {
-                    setStatusRequest({ mode: requestedMode, payload, error: null });
-                }
-            })
-            .catch((error: unknown) => {
-                if (controller.signal.aborted) return;
-                if (error instanceof DOMException && error.name === "AbortError") return;
-                setStatusRequest({
-                    mode: requestedMode,
-                    payload: null,
-                    error: "Data status could not be loaded.",
-                });
-            });
-
-        return () => controller.abort();
-    }, [isOpen, requestedMode]);
-
-    const currentRequest =
-        statusRequest?.mode === requestedMode ? statusRequest : null;
-    const status = currentRequest?.payload ?? null;
-    const requestError = currentRequest?.error ?? null;
-    const isLoading = isOpen && currentRequest === null;
+    const statusRequest = useQuery({ ...dataStatusQueryOptions(requestedMode), enabled: isOpen });
+    const status: DataStatusPayload | null = statusRequest.data ?? null;
+    const requestError = statusRequest.isError ? "Data status could not be loaded." : null;
+    const isLoading = isOpen && statusRequest.isPending;
     const stations = status?.stations ?? null;
     const items = status?.items ?? null;
     const stationFreshness = freshness(stations?.updatedAt ?? null);
@@ -113,8 +73,7 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
     const priceError = requestError ?? prices?.error;
     const priceFreshness = freshness(prices?.changedAt ?? null);
     const priceCheckFreshness = freshness(prices?.checkedAt ?? null);
-    const releaseId = status?.releaseId ??
-        (config.activeDataset === requestedMode ? config.releaseId : null);
+    const releaseId = status?.releaseId ?? null;
     const hasCoreError = Boolean(
         requestError ||
             (status && (!stations?.available || !items?.available)),
@@ -143,7 +102,7 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                         Data status
                     </DialogTitle>
                     <DialogDescription className="sr-only">
-                        Current database release, dataset freshness, and price updates.
+                        Current dataset status, freshness, and price updates.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -181,7 +140,7 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                         }
                     />
                     <StatusRow
-                        label="Release"
+                        label="Data revision"
                         value={releaseId ?? "Checking"}
                     />
                     <StatusRow
@@ -196,7 +155,7 @@ export function DataStatusDialog({ config }: { config: DataStatusConfig }) {
                     />
                     <StatusRow
                         label="Localization"
-                        value="Stored release labels"
+                        value="Stored labels"
                         state="ok"
                     />
 

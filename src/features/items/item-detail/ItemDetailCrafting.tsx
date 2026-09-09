@@ -21,6 +21,7 @@ interface ItemDetailCraftingProps {
     overrides?: ManualPriceOverrides;
     profitLoading: boolean;
     profitError: string | null;
+    onRetryProfit?: () => void;
     outputItem: ItemSummary;
     onItemClick: (itemId: string) => void;
 }
@@ -34,6 +35,7 @@ export function ItemDetailCrafting({
     overrides = {},
     profitLoading,
     profitError,
+    onRetryProfit,
     outputItem,
     onItemClick,
 }: ItemDetailCraftingProps) {
@@ -93,6 +95,7 @@ export function ItemDetailCrafting({
                                 kind="craft"
                                 loading={profitLoading}
                                 error={profitError}
+                                onRetry={onRetryProfit}
                             />
                         </div>
 

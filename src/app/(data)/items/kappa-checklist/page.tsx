@@ -1,23 +1,17 @@
-import { DeferredPriceBoundary } from "@/features/items/DeferredPriceBoundary";
-import { getDeferredPriceScope } from "@/server/queries/getDeferredPrices";
+import { HydrationBoundary } from "@tanstack/react-query";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
-import { KappaChecklistClientPage } from "@/features/items/kappa/KappaChecklistClientPage";
+import { KappaQueryPage } from "@/features/items/kappa/KappaQueryPage";
 import { getKappaChecklistPageData } from "@/server/queries/getKappaChecklistPageData";
-
-export const revalidate = false; // Frozen during the Tarkov 1.1 transition
+import { isCompleteKappaChecklistPageData, kappaChecklistPageQueryOptions, PAGE_DATA_STALE_TIME } from "@/lib/query/page-data";
+import { prefetchPageData } from "@/server/queries/prefetchPageData";
+import { getCurrentPageRepository } from "@/server/queries/currentPageRepository";
 
 export default async function KappaChecklistPage() {
 	const gameMode = await getActiveTarkovJsonGameMode();
-	const pageData = await getKappaChecklistPageData(gameMode, undefined, { includePrices: false });
+	const options = kappaChecklistPageQueryOptions(gameMode);
+	const { state, fallbackData } = await prefetchPageData(options.queryKey, PAGE_DATA_STALE_TIME, async () => getKappaChecklistPageData(gameMode, await getCurrentPageRepository(gameMode), { includePrices: false }), isCompleteKappaChecklistPageData);
 
 	return (
-		<DeferredPriceBoundary {...await getDeferredPriceScope(gameMode)} itemIds={pageData.items.map((item) => item.id)}>
-			<KappaChecklistClientPage
-				collectorQuest={pageData.collectorQuest}
-				collectorItems={pageData.items}
-				unresolvedItemIds={pageData.unresolvedItemIds}
-				errors={pageData.errors}
-			/>
-		</DeferredPriceBoundary>
+		<HydrationBoundary state={state}><KappaQueryPage mode={gameMode} fallbackData={fallbackData} /></HydrationBoundary>
 	);
 }

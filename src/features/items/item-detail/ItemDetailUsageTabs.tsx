@@ -14,15 +14,14 @@ import {
 import { ItemDetailQuestRequirements } from "./ItemDetailQuestRequirements";
 import { ItemDetailAcquisition } from "./ItemDetailAcquisition";
 import { ItemDetailCrafting } from "./ItemDetailCrafting";
-import {
-    getCachedPriceHistoryAvailability,
-    ItemDetailPriceHistory,
-} from "./ItemDetailPriceHistory";
+import { ItemDetailPriceHistory } from "./ItemDetailPriceHistory";
+import { getCachedPriceHistoryAvailability } from "./price-history-query";
 import type { ItemCraftRecipe, ItemTraderOffer } from "@/features/items/item-detail/item-detail-types";
 import type { ItemSummary } from "@/types/items";
 import type { GameEdition } from "@/lib/stores/useUserStore";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import type { ManualPriceOverrides, RecipeEvaluation } from "@/lib/price-calculation";
+import { useQueryClient } from "@tanstack/react-query";
 
 type UsageTab = "hideout" | "quests" | "traders" | "crafting" | "prices";
 
@@ -41,9 +40,11 @@ interface ItemDetailUsageTabsProps {
     crafts: ItemCraftRecipe[];
     relationsLoading: boolean;
     relationsError: string | null;
+    onRetryRelations: () => void;
     acquisitionLoading: boolean;
     barterError: string | null;
     craftError: string | null;
+    onRetryAcquisition: () => void;
     acquisitionWarning: string | null;
     completedQuests: Record<string, boolean>;
     traderLoyaltyLevels: Record<string, number>;
@@ -55,6 +56,7 @@ interface ItemDetailUsageTabsProps {
     overrides?: ManualPriceOverrides;
     profitLoading: boolean;
     profitError: string | null;
+    onRetryProfit: () => void;
     onItemClick: (itemId: string) => void;
 }
 
@@ -73,9 +75,11 @@ export function ItemDetailUsageTabs({
     crafts,
     relationsLoading,
     relationsError,
+    onRetryRelations,
     acquisitionLoading,
     barterError,
     craftError,
+    onRetryAcquisition,
     acquisitionWarning,
     completedQuests,
     traderLoyaltyLevels,
@@ -87,13 +91,15 @@ export function ItemDetailUsageTabs({
     overrides = {},
     profitLoading,
     profitError,
+    onRetryProfit,
     onItemClick,
 }: ItemDetailUsageTabsProps) {
+    const queryClient = useQueryClient();
     const hideoutCount = stationRequirements.reduce((count, [, reqs]) => count + reqs.length, 0);
     const questCount = (questItemState?.relatedQuestCount ?? 0) + anyOfGroups.length + questRewards.length;
     const [activeTab, setActiveTab] = useState<UsageTab>("hideout");
     const [hasLoadedPriceHistory, setHasLoadedPriceHistory] = useState<boolean | null>(() =>
-        getCachedPriceHistoryAvailability(selectedItemId, gameMode),
+        getCachedPriceHistoryAvailability(queryClient, selectedItemId, gameMode),
     );
     const hideoutEnabled = hideoutCount > 0 || relationsLoading || relationsError !== null;
     const questsEnabled = questCount > 0 || relationsLoading || relationsError !== null;
@@ -167,6 +173,7 @@ export function ItemDetailUsageTabs({
                                 loading={relationsLoading}
                                 error={relationsError}
                                 loadingMessage="Loading hideout data…"
+                                onRetry={onRetryRelations}
                             />
                         )}
                         {hideoutCount > 0 && (
@@ -186,6 +193,7 @@ export function ItemDetailUsageTabs({
                                 loading={relationsLoading}
                                 error={relationsError}
                                 loadingMessage="Loading quest data…"
+                                onRetry={onRetryRelations}
                             />
                         )}
                         {questCount > 0 && (
@@ -207,6 +215,7 @@ export function ItemDetailUsageTabs({
                         error={barterError}
                         warning={acquisitionWarning}
                         empty={traderOffers.length === 0}
+                        onRetry={onRetryAcquisition}
                     >
                         <ItemDetailAcquisition
                             offers={traderOffers}
@@ -216,6 +225,7 @@ export function ItemDetailUsageTabs({
                             evaluationsById={barterEvaluationsById}
                             profitLoading={profitLoading}
                             profitError={profitError}
+                            onRetryProfit={onRetryProfit}
                             outputItem={selectedItem}
                             onItemClick={onItemClick}
                         />
@@ -227,6 +237,7 @@ export function ItemDetailUsageTabs({
                         error={craftError}
                         warning={acquisitionWarning}
                         empty={crafts.length === 0}
+                        onRetry={onRetryAcquisition}
                     >
                         <ItemDetailCrafting
                             recipes={crafts}
@@ -237,6 +248,7 @@ export function ItemDetailUsageTabs({
                             evaluationsById={craftEvaluationsById}
                             profitLoading={profitLoading}
                             profitError={profitError}
+                            onRetryProfit={onRetryProfit}
                             outputItem={selectedItem}
                             onItemClick={onItemClick}
                         />
@@ -260,18 +272,20 @@ function AcquisitionState({
     warning,
     empty,
     children,
+    onRetry,
 }: {
     loading: boolean;
     error: string | null;
     warning: string | null;
     empty: boolean;
     children: ReactNode;
+    onRetry: () => void;
 }) {
     if (loading) {
         return <p className="px-4 py-6 text-sm text-muted-foreground">Loading acquisition data…</p>;
     }
     if (error) {
-        return <p className="px-4 py-6 text-sm text-warning">{error}</p>;
+        return <ErrorState message={error} onRetry={onRetry} />;
     }
     if (empty) {
         return (
@@ -297,19 +311,34 @@ function RelationState({
     loading,
     error,
     loadingMessage,
+    onRetry,
 }: {
     loading: boolean;
     error: string | null;
     loadingMessage: string;
+    onRetry: () => void;
 }) {
+    if (error) return <ErrorState message={error} onRetry={onRetry} compact />;
     return (
         <p
             className={`border-b border-border-color px-4 py-2 text-xs ${
-                error ? "text-warning" : "text-muted-foreground"
+                "text-muted-foreground"
             }`}
         >
-            {error ?? (loading ? loadingMessage : null)}
+            {loading ? loadingMessage : null}
         </p>
+    );
+}
+
+function ErrorState({ message, onRetry, compact = false }: { message: string; onRetry: () => void; compact?: boolean }) {
+    const actionLabel = message.startsWith("The data release changed") ? "Refresh page" : "Try again";
+    return (
+        <div className={`flex items-center justify-between gap-3 text-warning ${compact ? "border-b border-border-color px-4 py-2 text-xs" : "px-4 py-6 text-sm"}`}>
+            <span>{message}</span>
+            <button type="button" onClick={onRetry} className="shrink-0 rounded border border-warning/30 px-2 py-1 text-xs hover:bg-warning/10">
+                {actionLabel}
+            </button>
+        </div>
     );
 }
 

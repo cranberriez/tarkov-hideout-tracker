@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
     ArrowDownRight,
     ArrowRight,
@@ -19,15 +20,7 @@ import {
     type PriceHistoryRange,
 } from "@/lib/utils/price-history";
 import type { PriceHistoryPoint } from "@/types/prices";
-
-const HISTORY_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
-
-interface CachedPriceHistory {
-    points: PriceHistoryPoint[];
-    cachedAt: number;
-}
-
-const historyCache = new Map<string, CachedPriceHistory>();
+import { priceHistoryQueryOptions } from "./price-history-query";
 const RANGE_LABELS: Array<{ value: PriceHistoryRange; label: string }> = [
     { value: "day", label: "1D" },
     { value: "threeDays", label: "3D" },
@@ -42,61 +35,19 @@ interface ItemDetailPriceHistoryProps {
     onAvailabilityChange?: (hasData: boolean) => void;
 }
 
-export function getCachedPriceHistoryAvailability(itemId: string, mode: TarkovJsonGameMode) {
-    const cached = getFreshCachedHistory(`${mode}:${itemId}`);
-    return cached ? cached.points.length > 0 : null;
-}
-
-function getFreshCachedHistory(cacheKey: string) {
-    const cached = historyCache.get(cacheKey);
-    if (!cached) return null;
-    if (Date.now() - cached.cachedAt < HISTORY_CACHE_TTL_MS) return cached;
-    historyCache.delete(cacheKey);
-    return null;
-}
-
 export function ItemDetailPriceHistory({
     itemId,
     mode,
     onAvailabilityChange,
 }: ItemDetailPriceHistoryProps) {
-    const cacheKey = `${mode}:${itemId}`;
-    const [points, setPoints] = useState<PriceHistoryPoint[] | null>(
-        () => getFreshCachedHistory(cacheKey)?.points ?? null,
-    );
-    const [error, setError] = useState<string | null>(null);
-    const [retry, setRetry] = useState(0);
+    const historyQuery = useQuery(priceHistoryQueryOptions(itemId, mode));
+    const points = historyQuery.data ?? null;
     const [range, setRange] = useState<PriceHistoryRange>("week");
     const [hovered, setHovered] = useState<PriceHistoryPoint | null>(null);
 
     useEffect(() => {
         if (points !== null) onAvailabilityChange?.(points.length > 0);
     }, [onAvailabilityChange, points]);
-
-    useEffect(() => {
-        const cached = getFreshCachedHistory(cacheKey);
-        if (cached) {
-            return;
-        }
-        const controller = new AbortController();
-        fetch(`/api/items/${encodeURIComponent(itemId)}/price-history?mode=${mode}`, {
-            signal: controller.signal,
-        })
-            .then(async (response) => {
-                if (!response.ok) throw new Error("Price history is temporarily unavailable.");
-                return (await response.json()) as { data?: PriceHistoryPoint[] };
-            })
-            .then((response) => {
-                const data = Array.isArray(response.data) ? response.data : [];
-                historyCache.set(cacheKey, { points: data, cachedAt: Date.now() });
-                setPoints(data);
-            })
-            .catch((reason: unknown) => {
-                if (controller.signal.aborted) return;
-                setError(reason instanceof Error ? reason.message : "Price history could not be loaded.");
-            });
-        return () => controller.abort();
-    }, [cacheKey, itemId, mode, retry]);
 
     const filtered = useMemo(
         () => filterPriceHistory(points ?? [], range),
@@ -106,16 +57,13 @@ export function ItemDetailPriceHistory({
     const plotted = useMemo(() => downsamplePriceHistory(visible), [visible]);
     const insights = useMemo(() => calculatePriceHistoryInsights(visible), [visible]);
 
-    if (error) {
+    if (historyQuery.error) {
         return (
             <div className="flex min-h-72 flex-col items-center justify-center gap-3 p-6 text-center">
-                <p className="text-sm text-muted-foreground">{error}</p>
+                <p className="text-sm text-muted-foreground">Price history is temporarily unavailable.</p>
                 <button
                     type="button"
-                    onClick={() => {
-                        setError(null);
-                        setRetry((value) => value + 1);
-                    }}
+                    onClick={() => void historyQuery.refetch()}
                     className="flex items-center gap-2 rounded-md border border-border-color px-3 py-2 text-xs text-foreground hover:bg-highlight/5"
                 >
                     <RefreshCw size={12} /> Try again

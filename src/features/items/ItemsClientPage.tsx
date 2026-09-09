@@ -13,12 +13,16 @@ import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { DataLoadError } from "@/components/core/DataLoadError";
 import type { ItemChecklistPageData } from "@/types/contracts";
 import { PROFILE_BASE_COLORS } from "@/lib/cfg/profile-colors";
+import type { TarkovJsonGameMode } from "@/lib/game-mode";
+import { toTarkovJsonGameMode } from "@/lib/game-mode";
+import { useUserStoreHydrated } from "@/lib/query/game-data";
 
 interface ItemsClientPageProps {
     data: ItemChecklistPageData;
+    dataMode: TarkovJsonGameMode;
 }
 
-export function ItemsClientPage({ data }: ItemsClientPageProps) {
+export function ItemsClientPage({ data, dataMode }: ItemsClientPageProps) {
     const {
         stations,
         items: initialItems,
@@ -33,12 +37,13 @@ export function ItemsClientPage({ data }: ItemsClientPageProps) {
     const [selectedItem, setSelectedItem] = useState<ItemSummary | null>(null);
 
     const { gameMode, initializeDefaults } = useUserStore();
+    const hydrated = useUserStoreHydrated();
 
     useEffect(() => {
-        if (stations && stations.length > 0) {
+        if (hydrated && toTarkovJsonGameMode(gameMode) === dataMode && stations && stations.length > 0) {
             initializeDefaults(stations);
         }
-    }, [stations, freshness.stationsUpdatedAt, initializeDefaults]);
+    }, [dataMode, gameMode, hydrated, stations, freshness.stationsUpdatedAt, initializeDefaults]);
 
     const itemById = useMemo(
         () => Object.fromEntries((items ?? []).map((item) => [item.id, item])),

@@ -82,21 +82,33 @@ missing/failed presentation distinct from recipe and price availability.
 
 ## Lazy API reads and exceptions
 
+Hideout, Items, Quests, Kappa, and Profit server pages prefetch their named
+payload through a request-local QueryClient and hydrate the same mode-keyed query
+for the browser. The bounded `/api/page-data/*` routes capture the current database
+revision internally and support whole-payload refetches. Both profit lists and
+Craft Planner share one `recipes-crafts-barters` cache entry. Explicit unresolved
+IDs stay in successful payloads and visible warnings; domain errors produce usable
+partial payloads that remain retryable rather than reusable complete cache entries.
+
 Hideout, Items, Quests, and Kappa routes request their named query with
 `includePrices: false`. Their core payload retains requirements and item
 summaries while [DeferredPriceBoundary](../src/features/items/DeferredPriceBoundary.tsx)
 loads prices separately. Query defaults still include prices for other callers.
-The boundary captures mode and release, suppresses stale results after a mode
+The boundary captures mode, suppresses stale results after a mode
 change, and presents pending/error states separately from unavailable prices.
 Network failures offer a retry without refreshing or discarding checklist data.
-A release mismatch returns HTTP 409 and offers a page refresh to obtain the
-new release scope, instead of repeatedly retrying the old release.
 [deferred-prices.ts](../src/features/items/deferred-prices.ts) sends up to three
-128-ID requests concurrently and reuses complete results for 60 seconds in a
-bounded, non-persisted session cache. Price-dependent filters update when prices
-arrive. Profit pages still await pricing before calculating and ranking recipes.
+128-ID requests concurrently. Its TanStack query key uses mode and
+sorted/deduplicated IDs; complete results are fresh for 60 seconds, retained while
+inactive for five minutes, and capped at 20 inactive price queries. Requests are
+not retried automatically. Price-dependent filters update when prices arrive.
+Profit pages still await pricing before calculating and ranking recipes.
 
 Item routes validate standard item IDs and require a supported data `mode`.
+The browser never sends or validates database revision IDs. Each API resolves the
+current revision internally. Multi-step stored reads pin that revision for their
+duration; if publication retires it mid-read, the request fails transiently rather
+than mixing datasets or reporting a missing entity.
 Runtime item-view routes read precomputed [item-views.ts](../src/server/db/item-views.ts)
 records; the similarly named [relations](../src/server/queries/getItemRelationsData.ts),
 [usage](../src/server/queries/getItemUsageData.ts), and
@@ -106,20 +118,48 @@ full-domain composition on every modal open.
 
 | API / owner                                                                                                                                                      | Result and cache policy                                                                                                                              |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [prices](../src/app/api/items/prices/route.ts)                                                                                                                   | POST with explicit mode, active release ID, and at most 200 standard item IDs; `private, no-store`; underlying database reads use the caches below   |
-| [relations](../src/app/api/items/[itemId]/relations/route.ts)                                                                                                    | Hideout requirements, quest demand/rewards and availability closure; complete responses use browser 300s, CDN 900s, stale-while-revalidate 300s      |
-| [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and barters offering / crafts producing one item, referenced items and source labels; same complete-response policy          |
+| [prices](../src/app/api/items/prices/route.ts)                                                                                                                   | POST with explicit mode and at most 200 standard item IDs; `private, no-store`; underlying database reads use the caches below                      |
+| [relations](../src/app/api/items/[itemId]/relations/route.ts)                                                                                                    | Hideout requirements, quest demand/rewards and availability closure; complete responses use browser 300s, CDN 900s, stale-while-revalidate 300s     |
+| [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and recipes producing one item, referenced items and source labels; same complete-response policy                           |
 | [acquisition-tree](../src/app/api/items/[itemId]/acquisition-tree/route.ts)                                                                                      | Cycle-safe graph bounded by depth/item count with `truncated`; same complete-response policy                                                         |
 | [price-history](../src/app/api/items/[itemId]/price-history/route.ts)                                                                                            | On-demand provider history; browser 300s, CDN and upstream Next.js fetch cache 7200s                                                                 |
-| [search](../src/app/api/items/search/route.ts)                                                                                                                   | `q` up to 80 characters; 10 results by default or 50 with `limit=50`; `private, no-store`                                                            |
+| [search](../src/app/api/items/search/route.ts)                                                                                                                   | Required mode and `q` up to 80 characters, normalized for matching; 10 results by default or 50 with `limit=50`; `private, no-store`                  |
 | [status](../src/app/api/data/status/route.ts)                                                                                                                    | Mode/release identity, hideout/item/quest/craft/barter release freshness, and independent mutable-price change/check timestamps; `private, no-store` |
 | [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); `private, no-store`                                       |
-| [map APIs](../src/app/api/maps/)                                                                                                                                 | Committed map metadata and allow-listed SVG service; see [maps](maps.md)                                                                             |
+| [page data](../src/app/api/page-data/)                                                                                                                           | Mode-only bounded Hideout, Items, Quests, Kappa, and shared Profit payloads; `private, no-store`                                                       |
+| [map APIs](../src/app/api/maps/)                                                                                                                                 | Committed map metadata, navigation overlays, and allow-listed SVG service; see [maps](maps.md)                                                        |
 | [price cron APIs](../src/app/api/cron/prices/)                                                                                                                   | Protected mutable-price refresh; see [operations](operations.md)                                                                                     |
 
-Partial item-view responses use `no-store`; clients must keep them retryable.
+Partial item-view responses use `no-store`; the item-detail queries expose their
+payload through a typed partial-data error rather than entering it as reusable
+success data. Relations, usage, and acquisition results are fresh for 60 seconds,
+retained inactive for five minutes, share a cap of 60 inactive item-detail queries,
+and require explicit retries. Mutable price history uses the same retention group
+with a two-hour freshness and retention period.
 Search validation is in [searchItems.ts](../src/server/queries/searchItems.ts),
-while ranking and bounded SQL reads belong to [item-search.ts](../src/server/db/item-search.ts).
+while ranking and bounded release-specific SQL reads belong to
+[item-search.ts](../src/server/db/item-search.ts). Catalog query keys include mode,
+result limit, and canonical normalized text. Results are fresh for 60 seconds,
+retained inactive for five minutes, and capped at 20 inactive search queries.
+Transient failures use the shared retry policy; validation errors require an
+explicit retry.
+
+The root [QueryProvider](../src/lib/query/QueryProvider.tsx) keeps one browser
+QueryClient across navigation. Its default inactive retention is 30 minutes and
+its shared retry predicate allows at most two retries for transient failures. It
+does not retry aborts, 4xx responses, invalid JSON or validated response shapes,
+or partial payloads. Feature queries opt into strict inactive
+entry caps; active and fetching entries are not evicted. Game-data keys start with
+mode, and the scope lifecycle cancels and removes the old mode without touching
+player storage or unrelated queries.
+
+The mode status query is informational and runs on demand when the footer dialog
+opens; it does not gate game-data queries or poll in the background. Map metadata
+and navigation overlays use separate map-keyed queries with one-hour freshness,
+24-hour inactive retention, and no automatic retry. The allow-listed SVG remains
+an ordinary browser asset request. Conversion previews also use Query, keyed by
+their explicitly requested destination mode rather than the active profile gate.
+
 The development dashboard reads [release-management.ts](../src/server/db/release-management.ts)
 directly, reading only current metadata for the selected mode. These bounded database/service paths are explicit exceptions to page
 repository composition, not a reason to import provider adapters into features.
@@ -137,7 +177,8 @@ any item in the selected mode, not a guarantee that every item was refreshed.
 Missing tables or rows show unavailable timestamps; operational price-status
 errors remain separate from core release availability. No entity arrays are
 loaded for this status read. The compact dialog shows label/value rows with relative times and local dates
-on hover, and keeps its dataset and release labels aligned with the requested mode.
+on hover and labels the current data revision without threading it through layouts
+or browser game-data keys.
 
 Runtime entity reads use [read-cache.ts](../src/server/db/read-cache.ts) and
 indexed joins from `current_records` to `data_payloads`; ID-only reads omit

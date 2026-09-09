@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, ArchiveRestore, Check, ShieldCheck } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -8,9 +9,9 @@ import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { GAME_MODES, type GameMode, type PlayerProfileState, useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
+import { legacyProfileConversionQueryOptions } from "@/lib/query/conversions";
 import type {
     LegacyConversionStation,
-    LegacyProfileConversionData,
 } from "@/types/contracts";
 
 type DialogStep = "select" | "replace";
@@ -150,20 +151,17 @@ export function LegacyProfileConversionDialog() {
     })));
     const [selectedModeOverride, setSelectedModeOverride] = useState<GameMode | null>(null);
     const [step, setStep] = useState<DialogStep>("select");
-    const [conversionRequest, setConversionRequest] = useState<{
-        mode: string;
-        payload: LegacyProfileConversionData | null;
-        error: string | null;
-    } | null>(null);
     const shouldOpenAutomatically = store.deprecatedLegacyState !== null && !store.hasConverted && !store.hasDismissed;
     const isOpen = store.deprecatedLegacyState !== null && (shouldOpenAutomatically || isOpenFromSettings);
     const selectedMode = selectedModeOverride ?? store.gameMode;
     const requestedMode = toTarkovJsonGameMode(selectedMode);
-    const currentRequest =
-        conversionRequest?.mode === requestedMode ? conversionRequest : null;
-    const conversionData = currentRequest?.payload ?? null;
-    const requestError = currentRequest?.error ?? null;
-    const isLoading = isOpen && currentRequest === null;
+    const conversionQuery = useQuery({
+        ...legacyProfileConversionQueryOptions(requestedMode),
+        enabled: isOpen,
+    });
+    const conversionData = conversionQuery.data ?? null;
+    const requestError = conversionQuery.error ? "Station details could not be loaded." : null;
+    const isLoading = isOpen && conversionQuery.isPending;
     const destinationHasData = hasProfileData(store.profiles[selectedMode]);
     const availableStations = conversionData?.stations ?? EMPTY_STATIONS;
     const oldStats = useMemo(
@@ -174,33 +172,6 @@ export function LegacyProfileConversionDialog() {
         () => buildStats(store.profiles[selectedMode] as unknown as Record<string, unknown>, availableStations),
         [availableStations, selectedMode, store.profiles],
     );
-
-    useEffect(() => {
-        if (!isOpen) return;
-
-        const controller = new AbortController();
-        fetch(
-            `/api/conversion/legacy-profile?mode=${encodeURIComponent(requestedMode)}`,
-            { signal: controller.signal },
-        )
-            .then(async (response) => {
-                if (!response.ok) throw new Error("Station details could not be loaded.");
-                return response.json() as Promise<LegacyProfileConversionData>;
-            })
-            .then((payload) =>
-                setConversionRequest({ mode: requestedMode, payload, error: null }),
-            )
-            .catch((error: unknown) => {
-                if (error instanceof DOMException && error.name === "AbortError") return;
-                setConversionRequest({
-                    mode: requestedMode,
-                    payload: null,
-                    error: "Station details could not be loaded.",
-                });
-            });
-
-        return () => controller.abort();
-    }, [isOpen, requestedMode]);
 
     if (!store.deprecatedLegacyState || !oldStats) return null;
 
@@ -239,6 +210,7 @@ export function LegacyProfileConversionDialog() {
                         {isLoading
                             ? "Loading hideout station details…"
                             : requestError ?? conversionData?.errors.stations}
+                        {requestError && <button type="button" onClick={() => void conversionQuery.refetch()} className="ml-2 underline">Retry</button>}
                     </div>
                 )}
 

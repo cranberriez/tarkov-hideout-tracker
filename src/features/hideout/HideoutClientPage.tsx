@@ -9,26 +9,31 @@ import { HideoutConversionGate } from "@/features/hideout/components/HideoutConv
 import { HideoutList } from "@/features/hideout/components/HideoutList";
 import { DataLoadError } from "@/components/core/DataLoadError";
 import type { HideoutPageData } from "@/types/contracts";
+import type { TarkovJsonGameMode } from "@/lib/game-mode";
+import { toTarkovJsonGameMode } from "@/lib/game-mode";
+import { useUserStoreHydrated } from "@/lib/query/game-data";
 
 interface HideoutClientPageProps {
     data: HideoutPageData;
+    dataMode: TarkovJsonGameMode;
 }
 
-export function HideoutClientPage({ data }: HideoutClientPageProps) {
+export function HideoutClientPage({ data, dataMode }: HideoutClientPageProps) {
     const { stations, items: initialItems, unresolvedItemIds, freshness, errors } = data;
     const items = useDeferredPriceItems(initialItems);
     const itemById = useMemo(
         () => Object.fromEntries((items ?? []).map((item) => [item.id, item])),
         [items],
     );
-    const { initializeDefaults, hasSeenHideoutLevelWarning, setHasSeenHideoutLevelWarning } =
+    const hydrated = useUserStoreHydrated();
+    const { gameMode, initializeDefaults, hasSeenHideoutLevelWarning, setHasSeenHideoutLevelWarning } =
         useUserStore();
 
     useEffect(() => {
-        if (stations && stations.length > 0) {
+        if (hydrated && toTarkovJsonGameMode(gameMode) === dataMode && stations && stations.length > 0) {
             initializeDefaults(stations);
         }
-    }, [stations, freshness.stationsUpdatedAt, initializeDefaults]);
+    }, [dataMode, gameMode, hydrated, stations, freshness.stationsUpdatedAt, initializeDefaults]);
 
     return (
         <main className="container mx-auto px-6 py-8">

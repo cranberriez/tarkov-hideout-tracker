@@ -23,8 +23,17 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and Turso;
 Inventory, Keys, Station Goals, and Bitcoin Farm routes are placeholders. Check
 their [route implementations](<../src/app/(data)/>) before extending them.
 [Navbar](../src/components/core/Navbar.tsx) owns navigation. The
-[(data) layout](<../src/app/(data)/layout.tsx>) supplies footer release metadata
-and profile conversion UI, without loading entity arrays for descendants.
+[(data) layout](<../src/app/(data)/layout.tsx>) supplies the footer and profile
+conversion UI without loading metadata or entity arrays for descendants.
+
+The root layout also supplies one browser [QueryProvider](../src/lib/query/QueryProvider.tsx)
+across route navigation. TanStack Query owns reusable server-data requests,
+including page payloads. Server pages prefetch the same mode-keyed query in a
+request-local client and hydrate it for the browser. Partial payloads remain usable
+fallbacks and retry instead of entering the reusable success cache. The provider
+waits for persisted profile hydration and removes the prior mode's game-data scope
+after a mode change. Player progress and preferences remain in their Zustand
+stores, while modal selections and drafts remain local to their features.
 
 [RouteLoader](../src/components/core/RouteLoader.tsx) owns the shared responsive
 tan route card and green indeterminate bar for all page loading boundaries.
@@ -62,8 +71,8 @@ belong in globals with a purpose before use in a component.
 ```text
 offline source adapters -> current Turso dataset + shared payloads
 server page -> named query -> repository -> targeted Turso reads
-                          -> route contract -> client feature
-client controller -> bounded API -> stored item view/search or explicit service
+            -> request-local Query prefetch -> hydrated client feature
+client Query/controller -> bounded API -> named query, stored item view/search, or explicit service
 ```
 
 [Data layer](data-layer.md) owns the read matrix and its exceptions. Canonical
@@ -127,10 +136,14 @@ item index without catalog requests or shared-layout preloads.
 [ItemSearchModal](../src/features/items/components/ItemSearchModal.tsx) is retained
 as a catalog search palette for future site-wide placement, detached from the
 checklist. Its [useItemSearchController](../src/features/items/useItemSearchController.ts)
-debounces and cancels bounded catalog searches. The palette requests up to 50
+debounces for 200ms and observes mode-scoped
+[search queries](../src/features/items/search-query.ts). Changing or closing a
+search detaches its observer so unused transport is aborted, while identical
+queries share one in-flight read and cached result. The palette requests up to 50
 results, Quick Add up to 10; prefix matches precede other alphabetical matches.
-The endpoint searches all standard catalog items, including those absent from
-checklist demand. Its database owner and validation are in [data layer](data-layer.md).
+Errors offer an explicit retry. The endpoint searches all standard catalog items, including those absent
+from checklist demand. Its database owner and validation are in
+[data layer](data-layer.md).
 
 [QuickAddModal](../src/features/quick-add/QuickAddModal.tsx) keeps draft rows and
 FiR/non-FiR additions locally, then commits inventory additions through store
@@ -152,8 +165,11 @@ own lazy relations, usage, acquisition, history, and in-dialog navigation. Relat
 item navigation stays in the dialog; closing it clears session history. Loading,
 empty, partial, and failed domains stay distinguishable. The usage tab bar remains
 fixed while its content panel scrolls independently with a 700px maximum height;
-the wider desktop modal does not scroll the sidebar and tabs as one region. Only
-complete responses enter the in-memory cache. Recipe calculations reuse the
+the wider desktop modal does not scroll the sidebar and tabs as one region.
+Relations, usage, acquisition, and price history use feature-owned TanStack query
+options. Only complete detail responses enter reusable success cache state;
+partial payloads remain available to the modal with their explicit errors and stay
+retryable. Recipe calculations reuse the
 [profit engine](profits.md).
 
 For changes here, run [page query tests](../src/server/queries/page-data-queries.test.ts),

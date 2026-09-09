@@ -205,7 +205,16 @@ export function QuickAddModal() {
                                             <div className="p-3 text-center text-xs text-muted-foreground">Searching items…</div>
                                         )}
                                         {search.error && (
-                                            <div className="p-3 text-center text-xs text-danger">{search.error}</div>
+                                            <div className="p-3 text-center text-xs text-danger">
+                                                <p>{search.error}</p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => void search.retry()}
+                                                    className="mt-2 rounded border border-current px-2 py-1 hover:bg-danger/10"
+                                                >
+                                                    Retry search
+                                                </button>
+                                            </div>
                                         )}
                                         {search.hasNoResults && (
                                             <div className="p-3 text-center text-xs text-muted-foreground">No items found.</div>

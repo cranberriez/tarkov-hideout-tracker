@@ -58,10 +58,6 @@ export function buildStationRequirements(
     });
 }
 
-export function hasCompleteItemRelations(payload: ItemRelationsPayload): boolean {
-    return Object.values(payload.errors).every((error) => error === null);
-}
-
 export function getItemRelationsError(
     payload: ItemRelationsPayload | null,
     requestError: string | null,

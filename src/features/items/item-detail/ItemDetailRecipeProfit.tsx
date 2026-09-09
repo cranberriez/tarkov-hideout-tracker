@@ -9,12 +9,14 @@ export function ItemDetailRecipeProfit({
     kind,
     loading,
     error,
+    onRetry,
 }: {
     evaluation?: RecipeEvaluation;
     recipeId: string;
     kind: "barter" | "craft";
     loading: boolean;
     error: string | null;
+    onRetry?: () => void;
 }) {
     const route = kind === "barter" ? "/items/barter-profits" : "/items/crafting-profits";
 
@@ -26,7 +28,10 @@ export function ItemDetailRecipeProfit({
                         Calculating profit and ingredient routes…
                     </span>
                 ) : error ? (
-                    <span className="text-[11px] text-warning">{error}</span>
+                    <span className="flex items-center gap-2 text-[11px] text-warning">
+                        {error}
+                        {onRetry && <button type="button" onClick={onRetry} className="rounded border border-warning/30 px-1.5 py-0.5 hover:bg-warning/10">{error.startsWith("The data release changed") ? "Refresh page" : "Try again"}</button>}
+                    </span>
                 ) : evaluation ? (
                     <>
                         <Metric label="Cost" value={formatPrice(evaluation.cost)} />

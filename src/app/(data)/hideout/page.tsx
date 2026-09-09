@@ -1,18 +1,17 @@
-import { DeferredPriceBoundary } from "@/features/items/DeferredPriceBoundary";
-import { getDeferredPriceScope } from "@/server/queries/getDeferredPrices";
-import { HideoutClientPage } from "@/features/hideout/HideoutClientPage";
+import { HydrationBoundary } from "@tanstack/react-query";
+import { HideoutQueryPage } from "@/features/hideout/HideoutQueryPage";
+import { hideoutPageQueryOptions, isCompleteHideoutPageData, PAGE_DATA_STALE_TIME } from "@/lib/query/page-data";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
 import { getHideoutPageData } from "@/server/queries/getHideoutPageData";
-
-export const revalidate = false; // Frozen during the Tarkov 1.1 transition
+import { prefetchPageData } from "@/server/queries/prefetchPageData";
+import { getCurrentPageRepository } from "@/server/queries/currentPageRepository";
 
 export default async function HideoutPage() {
 	const gameMode = await getActiveTarkovJsonGameMode();
-	const data = await getHideoutPageData(gameMode, undefined, { includePrices: false });
+	const options = hideoutPageQueryOptions(gameMode);
+	const { state, fallbackData } = await prefetchPageData(options.queryKey, PAGE_DATA_STALE_TIME, async () => getHideoutPageData(gameMode, await getCurrentPageRepository(gameMode), { includePrices: false }), isCompleteHideoutPageData);
 
 	return (
-		<DeferredPriceBoundary {...await getDeferredPriceScope(gameMode)} itemIds={data.itemIds}>
-			<HideoutClientPage data={data} />
-		</DeferredPriceBoundary>
+		<HydrationBoundary state={state}><HideoutQueryPage mode={gameMode} fallbackData={fallbackData} /></HydrationBoundary>
 	);
 }

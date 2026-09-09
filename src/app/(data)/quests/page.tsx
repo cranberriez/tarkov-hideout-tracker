@@ -1,15 +1,14 @@
-import { DeferredPriceBoundary } from "@/features/items/DeferredPriceBoundary";
-import { getDeferredPriceScope } from "@/server/queries/getDeferredPrices";
+import { HydrationBoundary } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { RouteLoader } from "@/components/core/RouteLoader";
-import { DataLoadError } from "@/components/core/DataLoadError";
-import { QuestsClientPage } from "@/features/quests/QuestsClientPage";
+import { QuestsQueryPage } from "@/features/quests/QuestsQueryPage";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
 import { SHOW_REMOVED_QUESTS } from "@/features/quests/quest-feature-flags";
 import { getQuestWorkspacePageData } from "@/server/queries/getQuestWorkspacePageData";
 import { DEV_QUEST_FIXTURES, DEV_QUEST_ID, DEV_QUEST_QUERY } from "@/features/quests/dev-quest-fixture";
-
-export const revalidate = false; // Frozen during the Tarkov 1.1 transition
+import { isCompleteQuestWorkspacePageData, PAGE_DATA_STALE_TIME, questWorkspacePageQueryOptions } from "@/lib/query/page-data";
+import { prefetchPageData } from "@/server/queries/prefetchPageData";
+import { getCurrentPageRepository } from "@/server/queries/currentPageRepository";
 
 interface QuestsPageProps {
 	searchParams: Promise<{ q?: string | string[] }>;
@@ -20,25 +19,16 @@ export default async function QuestsPage({ searchParams }: QuestsPageProps) {
 	const query = Array.isArray(queryValue) ? queryValue[0] : queryValue;
 	const showDevQuest = process.env.NODE_ENV === "development" && query === DEV_QUEST_QUERY;
 	const gameMode = await getActiveTarkovJsonGameMode();
-	const data = await getQuestWorkspacePageData(gameMode, undefined, {
+	const options = questWorkspacePageQueryOptions(gameMode, showDevQuest ? DEV_QUEST_QUERY : null);
+	const { state, fallbackData } = await prefetchPageData(options.queryKey, PAGE_DATA_STALE_TIME, async () => getQuestWorkspacePageData(gameMode, await getCurrentPageRepository(gameMode), {
 		includePrices: false,
 		showRemovedQuests: SHOW_REMOVED_QUESTS,
 		displayQuestAdditions: showDevQuest ? DEV_QUEST_FIXTURES : [],
-	});
-
-	if (!data.quests) {
-		return (
-			<main className="container mx-auto px-6 py-8">
-				<DataLoadError title="Quest workspace data is unavailable" messages={[data.errors.quests ?? "Quest workspace data could not be loaded."]} />
-			</main>
-		);
-	}
+	}), isCompleteQuestWorkspacePageData);
 
 	return (
 		<Suspense fallback={<RouteLoader page="quests" />}>
-			<DeferredPriceBoundary {...await getDeferredPriceScope(gameMode)} itemIds={data.itemIds}>
-				<QuestsClientPage quests={data.quests} items={data.items} initialQuestId={showDevQuest ? DEV_QUEST_ID : null} />
-			</DeferredPriceBoundary>
+			<HydrationBoundary state={state}><QuestsQueryPage mode={gameMode} devQuery={showDevQuest ? DEV_QUEST_QUERY : null} initialQuestId={showDevQuest ? DEV_QUEST_ID : null} fallbackData={fallbackData} /></HydrationBoundary>
 		</Suspense>
 	);
 }

@@ -3,7 +3,7 @@ import type { Client } from "@libsql/client";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import type { ItemAcquisitionTreeData, ItemRelationsPayload, ItemUsageData } from "@/types/contracts";
 import { getTursoClient } from "./client";
-import { TursoDataIntegrityError, TursoRecordNotFoundError } from "./errors";
+import { TursoDataIntegrityError, TursoRecordNotFoundError, TursoTransientReadError } from "./errors";
 import { getActiveDataReleaseId } from "./release-config";
 import { parseStoredJson } from "./stored-json";
 import { getCurrentPriceData } from "./price-data";
@@ -42,6 +42,9 @@ export async function getItemView<ViewType extends ItemViewType>(
 	});
 	const row = result.rows[0];
 	if (!row) {
+		if ((await getActiveDataReleaseId(mode, database)) !== releaseId) {
+			throw new TursoTransientReadError("The current data changed while item details were loading. Retry the request.");
+		}
 		throw new TursoRecordNotFoundError(`No ${viewType} view exists for ${mode}/${releaseId}/${itemId}`);
 	}
 
@@ -94,7 +97,7 @@ export async function getItemView<ViewType extends ItemViewType>(
 	});
 	if (viewType === "relations") {
 		const relations = payload as ItemRelationsPayload;
-		return {
+		const hydrated = {
 			...relations,
 			item: relations.item ? hydrate(relations.item) : null,
 			relatedItems: relations.relatedItems.map(hydrate),
@@ -103,9 +106,10 @@ export async function getItemView<ViewType extends ItemViewType>(
 				pricesUpdatedAt: priceResult.updatedAt,
 			},
 		} as ItemViewPayloads[ViewType];
+		return hydrated;
 	}
 	const recipePayload = payload as ItemUsageData | ItemAcquisitionTreeData;
-	return {
+	const hydrated = {
 		...recipePayload,
 		items: recipePayload.items.map(hydrate),
 		freshness: {
@@ -113,16 +117,17 @@ export async function getItemView<ViewType extends ItemViewType>(
 			pricesUpdatedAt: priceResult.updatedAt,
 		},
 	} as ItemViewPayloads[ViewType];
+	return hydrated;
 }
 
 export function getItemRelationsView(mode: TarkovJsonGameMode, itemId: string) {
-	return getItemView(mode, itemId, "relations");
+	return getItemView(mode, itemId, "relations", getTursoClient());
 }
 
 export function getItemUsageView(mode: TarkovJsonGameMode, itemId: string) {
-	return getItemView(mode, itemId, "usage");
+	return getItemView(mode, itemId, "usage", getTursoClient());
 }
 
 export function getItemAcquisitionView(mode: TarkovJsonGameMode, itemId: string) {
-	return getItemView(mode, itemId, "acquisition");
+	return getItemView(mode, itemId, "acquisition", getTursoClient());
 }

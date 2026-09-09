@@ -60,8 +60,8 @@ test("current revisions isolate modes, retain discovery and hydrate metadata-onl
 		assert.equal(entities.data["item-a"].name, "regular new");
 		assert.equal(entities.data["item-a"].firstSeenAt, 1000);
 		assert.equal(entities.data.missing, undefined);
-		assert.equal((await searchItemPreviews("test", "regular", 10, db)).items[0].firstSeenPatch, "1.1.5.0");
-		assert.deepEqual((await searchItemPreviews("absent", "regular", 10, db)).items, []);
+		assert.equal((await searchItemPreviews("test", "regular", "new", 10, db)).items[0].firstSeenPatch, "1.1.5.0");
+		assert.deepEqual((await searchItemPreviews("absent", "regular", "new", 10, db)).items, []);
 		const detail = await getItemView("pve", "item-a", "relations", db);
 		assert.equal(detail.item?.firstSeenAt, null);
 		assert.equal(detail.item?.firstSeenPatch, "pre-1.1.5");
@@ -79,7 +79,7 @@ test("current revisions isolate modes, retain discovery and hydrate metadata-onl
 
 test("publication between revision selection and search or detail fails explicitly", async () => {
 	for (const read of [
-		() => searchItemPreviews("test", "regular", 10, client),
+		() => searchItemPreviews("test", "regular", "removed", 10, client),
 		() => getItemView("regular", "item-a", "relations", client),
 	]) {
 		await assert.rejects(read(), /No .* (release|view)/);

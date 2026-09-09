@@ -19,6 +19,7 @@ interface ItemDetailAcquisitionProps {
     overrides?: ManualPriceOverrides;
     profitLoading: boolean;
     profitError: string | null;
+    onRetryProfit?: () => void;
     outputItem: ItemSummary;
     onItemClick: (itemId: string) => void;
 }
@@ -31,6 +32,7 @@ export function ItemDetailAcquisition({
     overrides = {},
     profitLoading,
     profitError,
+    onRetryProfit,
     outputItem,
     onItemClick,
 }: ItemDetailAcquisitionProps) {
@@ -96,6 +98,7 @@ export function ItemDetailAcquisition({
                                     kind="barter"
                                     loading={profitLoading}
                                     error={profitError}
+                                    onRetry={onRetryProfit}
                                 />
                             )}
                         </div>

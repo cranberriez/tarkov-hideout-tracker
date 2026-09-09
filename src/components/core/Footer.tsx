@@ -1,6 +1,6 @@
-import { DataStatusDialog, type DataStatusConfig } from "./DataStatusDialog";
+import { DataStatusDialog } from "./DataStatusDialog";
 
-export function Footer({ statusConfig }: { statusConfig: DataStatusConfig }) {
+export function Footer() {
     return (
         <footer className="border-t border-border-color bg-card py-6 mt-10">
             <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-subtle-foreground">
@@ -37,7 +37,7 @@ export function Footer({ statusConfig }: { statusConfig: DataStatusConfig }) {
                             Wiki
                         </a>
                     </span>
-                    <DataStatusDialog config={statusConfig} />
+                    <DataStatusDialog />
                 </div>
                 <div>Created by the community for the community. Not affiliated with BSG.</div>
             </div>

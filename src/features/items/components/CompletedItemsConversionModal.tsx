@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { completedItemsConversionQueryOptions } from "@/lib/query/conversions";
 import type { CompletedItemsConversionData } from "@/types/contracts";
 import {
     buildCompletedItemConversions,
@@ -21,16 +23,13 @@ interface CompletedItemsConversionModalProps {
 export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItemsConversionModalProps) {
     const { gameMode, stationLevels, completedRequirements, addItemCounts } = useUserStore();
     const requestedMode = toTarkovJsonGameMode(gameMode);
-    const [conversionRequest, setConversionRequest] = useState<{
-        mode: string;
-        payload: CompletedItemsConversionData | null;
-        error: string | null;
-    } | null>(null);
-    const currentRequest =
-        conversionRequest?.mode === requestedMode ? conversionRequest : null;
-    const data = currentRequest?.payload ?? null;
-    const requestError = currentRequest?.error ?? null;
-    const isLoading = isOpen && currentRequest === null;
+    const conversionQuery = useQuery({
+        ...completedItemsConversionQueryOptions(requestedMode),
+        enabled: isOpen,
+    });
+    const data = conversionQuery.data ?? null;
+    const requestError = conversionQuery.error ? "Conversion data could not be loaded." : null;
+    const isLoading = isOpen && conversionQuery.isPending;
     const itemNameWarning =
         data?.errors.items ??
         (data && data.unresolvedItemIds.length > 0
@@ -38,33 +37,6 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
             : null);
     const stations = data?.stations ?? EMPTY_STATIONS;
     const items = data?.items ?? EMPTY_ITEMS;
-
-    useEffect(() => {
-        if (!isOpen) return;
-
-        const controller = new AbortController();
-        fetch(
-            `/api/conversion/completed-items?mode=${encodeURIComponent(requestedMode)}`,
-            { signal: controller.signal },
-        )
-            .then(async (response) => {
-                if (!response.ok) throw new Error("Conversion data could not be loaded.");
-                return response.json() as Promise<CompletedItemsConversionData>;
-            })
-            .then((payload) =>
-                setConversionRequest({ mode: requestedMode, payload, error: null }),
-            )
-            .catch((error: unknown) => {
-                if (error instanceof DOMException && error.name === "AbortError") return;
-                setConversionRequest({
-                    mode: requestedMode,
-                    payload: null,
-                    error: "Conversion data could not be loaded.",
-                });
-            });
-
-        return () => controller.abort();
-    }, [isOpen, requestedMode]);
 
     const { conversions, convertedRequirementIds } = useMemo(
         () => buildCompletedItemConversions(
@@ -77,6 +49,7 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
     );
 
     const handleApply = () => {
+        if (conversionQuery.isError) return;
         conversions.forEach(({ itemId, total, totalFir }) => {
             const nonFir = total - totalFir;
             addItemCounts(itemId, nonFir, totalFir);
@@ -118,6 +91,7 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
                 ) : requestError || data?.errors.stations ? (
                     <div className="text-xs text-danger">
                         {requestError ?? data?.errors.stations}
+                        {requestError && <button type="button" onClick={() => void conversionQuery.refetch()} className="ml-2 underline">Retry</button>}
                     </div>
                 ) : conversions.length === 0 ? (
                     <div className="text-xs text-subtle-foreground">
@@ -172,7 +146,7 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
                     >
                         Close
                     </button>
-                    {conversions.length > 0 && (
+                    {conversions.length > 0 && !conversionQuery.isError && (
                         <button
                             type="button"
                             onClick={handleApply}

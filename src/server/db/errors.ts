@@ -18,3 +18,10 @@ export class TursoDataIntegrityError extends Error {
         this.name = "TursoDataIntegrityError";
     }
 }
+
+export class TursoTransientReadError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "TursoTransientReadError";
+    }
+}

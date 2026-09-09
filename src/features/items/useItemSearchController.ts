@@ -1,16 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import type { ItemSearchPayload } from "@/types/contracts";
-import type { ItemSummary } from "@/types/items";
-
-const SEARCH_DEBOUNCE_MS = 200;
-
-type SearchState =
-    | { requestKey: string; status: "success"; items: ItemSummary[]; error: null }
-    | { requestKey: string; status: "error"; items: ItemSummary[]; error: string }
-    | null;
+import { useGameDataEnabled } from "@/lib/query/game-data";
+import {
+    canonicalItemSearchQuery,
+    ITEM_SEARCH_DEBOUNCE_MS,
+    itemSearchQueryOptions,
+} from "@/features/items/search-query";
 
 export function useItemSearchController({
     enabled,
@@ -23,66 +21,43 @@ export function useItemSearchController({
     query: string;
     resultLimit: number;
 }) {
-    const [state, setState] = useState<SearchState>(null);
-    const trimmedQuery = query.trim();
-    const requestKey = enabled && trimmedQuery ? `${mode}:${resultLimit}:${trimmedQuery}` : null;
+    const gameDataEnabled = useGameDataEnabled(mode);
+    const canonicalQuery = canonicalItemSearchQuery(query);
+    const [debouncedQuery, setDebouncedQuery] = useState("");
 
     useEffect(() => {
-        if (!enabled || !trimmedQuery) {
+        if (!enabled || !canonicalQuery) {
             return;
         }
+        const timer = window.setTimeout(
+            () => setDebouncedQuery(canonicalQuery),
+            ITEM_SEARCH_DEBOUNCE_MS,
+        );
+        return () => window.clearTimeout(timer);
+    }, [canonicalQuery, enabled]);
 
-        const controller = new AbortController();
-        const activeRequestKey = `${mode}:${resultLimit}:${trimmedQuery}`;
-        const timer = window.setTimeout(() => {
-            const params = new URLSearchParams({
-                mode,
-                q: trimmedQuery,
-                limit: String(resultLimit),
-            });
-            fetch(`/api/items/search?${params}`, { signal: controller.signal })
-                .then(async (response) => {
-                    if (!response.ok) {
-                        throw new Error("Item search is temporarily unavailable.");
-                    }
-                    return (await response.json()) as ItemSearchPayload;
-                })
-                .then((payload) => {
-                    setState({
-                        requestKey: activeRequestKey,
-                        status: "success",
-                        items: payload.items,
-                        error: null,
-                    });
-                })
-                .catch((reason: unknown) => {
-                    if (controller.signal.aborted) return;
-                    setState({
-                        requestKey: activeRequestKey,
-                        status: "error",
-                        items: [],
-                        error:
-                            reason instanceof Error
-                                ? reason.message
-                                : "Item search could not be loaded.",
-                    });
-                });
-        }, SEARCH_DEBOUNCE_MS);
-
-        return () => {
-            window.clearTimeout(timer);
-            controller.abort();
-        };
-    }, [enabled, mode, resultLimit, trimmedQuery]);
-
-    const isSettled = requestKey !== null && state?.requestKey === requestKey;
-    const items = isSettled && state?.status === "success" ? state.items : [];
+    const observedQuery = enabled ? canonicalQuery : "";
+    const hasCurrentDebouncedQuery = Boolean(canonicalQuery) && debouncedQuery === canonicalQuery;
+    const queryEnabled = enabled && gameDataEnabled && hasCurrentDebouncedQuery;
+    const result = useQuery({
+        ...itemSearchQueryOptions(mode, observedQuery, resultLimit),
+        enabled: queryEnabled,
+    });
+    const resultError = queryEnabled ? result.error : null;
+    const hasSearchIntent = enabled && Boolean(canonicalQuery);
+    const items = queryEnabled && result.data ? result.data.items : [];
 
     return {
         items,
-        isLoading: requestKey !== null && !isSettled,
-        error: isSettled && state?.status === "error" ? state.error : null,
+        isLoading:
+            hasSearchIntent &&
+            !resultError &&
+            (!queryEnabled || result.isPending || result.isFetching),
+        error: resultError
+            ? resultError.message || "Item search could not be loaded."
+            : null,
+        retry: () => result.refetch(),
         hasNoResults:
-            isSettled && state?.status === "success" && state.items.length === 0,
+            queryEnabled && result.isSuccess && result.data.items.length === 0,
     };
 }

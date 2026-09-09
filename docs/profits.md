@@ -3,7 +3,9 @@
 Both profit routes enter [ProfitPage](../src/features/profit-pages/ProfitPage.tsx),
 which loads [getProfitPageData](../src/server/queries/getProfitPageData.ts) and
 renders [ProfitPageClient](../src/features/profit-pages/ProfitPageClient.tsx).
-The query supplies both normalized recipe graphs, referenced item prices, and
+Craft Planner consumes the same mode-keyed `recipes-crafts-barters` Query cache.
+Server pages prefetch and hydrate that payload, and client refetches update every
+consumer without duplicating the graph arrays. The query supplies both normalized recipe graphs, referenced item prices, and
 compact trader/station presentation. Both graphs are required because acquisition
 can cross between crafts and barters; either graph error blocks profit figures.
 Stored acquisition views remain unpriced graphs; [data layer](data-layer.md) owns

@@ -10,8 +10,10 @@ reward items use IDs; task-owned quest-specific pickups are inline display data.
 They do not enter standard inventory or item demand.
 
 [getQuestWorkspacePageData](../src/server/queries/getQuestWorkspacePageData.ts)
-loads/prepares quests and referenced standard items through the repository. See
-[data layer](data-layer.md) for route delivery and release regeneration.
+loads/prepares quests and referenced standard items through the repository. The
+server page prefetches its mode-keyed Query and the client wrapper consumes and
+refetches that same payload. See [data layer](data-layer.md) for route delivery
+and release regeneration.
 
 | Change | Source owner |
 |---|---|

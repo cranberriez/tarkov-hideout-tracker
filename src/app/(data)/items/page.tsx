@@ -1,18 +1,17 @@
-import { DeferredPriceBoundary } from "@/features/items/DeferredPriceBoundary";
-import { getDeferredPriceScope } from "@/server/queries/getDeferredPrices";
-import { ItemsClientPage } from "@/features/items/ItemsClientPage";
+import { HydrationBoundary } from "@tanstack/react-query";
+import { ItemsQueryPage } from "@/features/items/ItemsQueryPage";
+import { isCompleteItemChecklistPageData, itemChecklistPageQueryOptions, PAGE_DATA_STALE_TIME } from "@/lib/query/page-data";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
 import { getItemChecklistPageData } from "@/server/queries/getItemChecklistPageData";
-
-export const revalidate = false; // Frozen during the Tarkov 1.1 transition
+import { prefetchPageData } from "@/server/queries/prefetchPageData";
+import { getCurrentPageRepository } from "@/server/queries/currentPageRepository";
 
 export default async function ItemsPage() {
 	const gameMode = await getActiveTarkovJsonGameMode();
-	const data = await getItemChecklistPageData(gameMode, undefined, { includePrices: false });
+	const options = itemChecklistPageQueryOptions(gameMode);
+	const { state, fallbackData } = await prefetchPageData(options.queryKey, PAGE_DATA_STALE_TIME, async () => getItemChecklistPageData(gameMode, await getCurrentPageRepository(gameMode), { includePrices: false }), isCompleteItemChecklistPageData);
 
 	return (
-		<DeferredPriceBoundary {...await getDeferredPriceScope(gameMode)} itemIds={data.itemIds}>
-			<ItemsClientPage data={data} />
-		</DeferredPriceBoundary>
+		<HydrationBoundary state={state}><ItemsQueryPage mode={gameMode} fallbackData={fallbackData} /></HydrationBoundary>
 	);
 }

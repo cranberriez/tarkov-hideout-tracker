@@ -114,9 +114,11 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
                                         crafts={vm.crafts}
                                         relationsLoading={vm.relationsLoading}
                                         relationsError={vm.relationsError}
+                                        onRetryRelations={vm.retryRelations}
                                         acquisitionLoading={vm.usageLoading}
                                         barterError={vm.barterError}
                                         craftError={vm.craftError}
+                                        onRetryAcquisition={vm.retryUsage}
                                         acquisitionWarning={vm.usagePresentationError}
                                         completedQuests={vm.completedQuests}
                                         traderLoyaltyLevels={vm.traderLoyaltyLevels}
@@ -128,6 +130,7 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
                                         overrides={vm.overrides}
                                         profitLoading={vm.profitLoading}
                                         profitError={vm.profitError}
+                                        onRetryProfit={vm.retryProfit}
                                         onItemClick={vm.openItem}
                                     />
                                 </div>

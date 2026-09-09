@@ -107,7 +107,16 @@ export function ItemSearchModal({ isOpen, onClose, onSelect }: ItemSearchModalPr
 					) : search.isLoading ? (
 						<div className="p-8 text-center text-subtle-foreground">Searching items…</div>
 					) : search.error ? (
-						<div className="p-8 text-center text-danger">{search.error}</div>
+						<div className="p-8 text-center text-danger">
+							<p>{search.error}</p>
+							<button
+								type="button"
+								onClick={() => void search.retry()}
+								className="mt-3 rounded border border-current px-3 py-1.5 text-sm hover:bg-danger/10"
+							>
+								Retry search
+							</button>
+						</div>
 					) : search.hasNoResults ? (
 						<div className="p-8 text-center text-subtle-foreground">
 							No items found matching {query.trim()}

@@ -1,6 +1,10 @@
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
 import { getProfitPageData } from "@/server/queries/getProfitPageData";
-import { ProfitPageClient } from "./ProfitPageClient";
+import { HydrationBoundary } from "@tanstack/react-query";
+import { isCompleteProfitPageData, PAGE_DATA_STALE_TIME, profitPageQueryOptions } from "@/lib/query/page-data";
+import { prefetchPageData } from "@/server/queries/prefetchPageData";
+import { getCurrentPageRepository } from "@/server/queries/currentPageRepository";
+import { ProfitQueryPage } from "./ProfitQueryPage";
 import type { ProfitPageKind } from "./types";
 
 export async function ProfitPage({
@@ -14,8 +18,9 @@ export async function ProfitPage({
     searchParams,
     getActiveTarkovJsonGameMode(),
   ]);
-  const data = await getProfitPageData(mode);
+  const options = profitPageQueryOptions(mode);
+  const { state, fallbackData } = await prefetchPageData(options.queryKey, PAGE_DATA_STALE_TIME, async () => getProfitPageData(mode, await getCurrentPageRepository(mode)), isCompleteProfitPageData);
   return (
-    <ProfitPageClient kind={kind} data={data} initialTargetRecipeId={recipe} />
+    <HydrationBoundary state={state}><ProfitQueryPage mode={mode} kind={kind} fallbackData={fallbackData} initialTargetRecipeId={recipe} /></HydrationBoundary>
   );
 }

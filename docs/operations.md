@@ -35,6 +35,10 @@ npm run docs:check
 npm run test:architecture
 npm run test:theme
 npm run test:contracts
+npm run test:query
+npm run test:search
+npm run test:page-data
+npm run test:reusable-reads
 npm run lint
 npm run build
 ```
@@ -53,6 +57,12 @@ The existing [ESLint configuration](../eslint.config.mjs) also enforces selected
 import restrictions. `test:contracts` runs repository-injected query tests for
 bounded reads, partial failures, and Kappa's single-quest call behavior. Neither
 requires a live Turso database. Do not describe these as exhaustive static analysis.
+`test:query` covers shared request validation, retry decisions, mode-scoped removal,
+and strict inactive-cache limits with fresh QueryClients. `test:search` covers
+canonical mode-scoped keys, request reuse, transport aborts, invalid responses,
+and server validation. `test:page-data` covers shared page keys, hydration,
+reusable complete payloads, and retryable partials. `test:reusable-reads` covers
+conversion and map-overlay query ownership. These suites require no live Turso database.
 
 Focused TypeScript tests use Node's test runner with `jiti/register`:
 
@@ -115,10 +125,11 @@ npm run db:upload -- --release-dir db-scripts/.generated/<new-release-id>
 ```
 
 Upload publishes immediately after validation. There is no separate activation,
-historical release selection, pin, or rollback. Current revision IDs still scope
-runtime caches and multi-step reads. A disappearing selected revision fails rather
-than mixing datasets; deferred-price scope mismatches return 409. Existing browser
-and HTTP responses retain their documented expiry in [data layer](data-layer.md).
+historical release selection, pin, or rollback. Browser caches are mode-scoped and
+do not carry revision IDs. APIs resolve the current revision internally; multi-step
+reads capture one revision and fail transiently if publication retires it rather
+than mixing datasets. Existing browser and HTTP responses retain their documented
+expiry in [data layer](data-layer.md).
 Publication is maintenance work, not a validation step for unrelated changes.
 
 Read-only catalog checks compare upstream IDs with durable discovery history:

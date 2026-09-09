@@ -73,6 +73,13 @@ the project user agent, and caches upstream fetches for seven days. Its browser
 response uses one-day freshness and seven-day stale-while-revalidate. Render and
 overlay JSON use one-hour freshness and one-day stale-while-revalidate.
 
+[MapViewer](../src/features/maps/MapViewer.tsx) reads the compact render definition
+through a map-keyed TanStack query with one-hour freshness, 24-hour inactive
+retention, and no automatic retry. Raid Planner reads its committed overlay chunk
+through a second map-keyed Query with the same policy. The processed SVG remains
+an ordinary browser asset request; these mode-independent map queries do not enter
+the game-data cache.
+
 Unsupported or unvalidated SVG definitions return an intentional unsupported
 state. Icebreaker, The Lab, and The Labyrinth currently lack validated interactive
 SVG paths. Keep author attribution and the configured CC BY-NC-SA 4.0 license
