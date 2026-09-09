@@ -1,6 +1,6 @@
 "use client";
 
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { DialogTitle } from "@/components/ui/dialog";
 import Image from "next/image";
 import { ArrowLeft, Bug, PackageOpen, X } from "lucide-react";
 import type { ItemSummary } from "@/types/items";
@@ -16,24 +16,21 @@ export interface ItemDetailModalProps {
     onClose: () => void;
 }
 
-export function ItemDetailModal(props: ItemDetailModalProps) {
+export function ItemDetailModalContent(props: ItemDetailModalProps) {
     const vm = useItemDetailModalController(props);
     const { selectedItem } = vm;
     if (!selectedItem) return null;
     // Expand after the initial detail domains settle. Errors must remain visible;
     // acquisition/profit requests retain their own loading states in the full UI.
-    const loading = (vm.relationsLoading || vm.usageLoading) && !vm.relationsError && !vm.usageError;
+    const loading = vm.initialDetailLoading;
 
     return (
-        <Dialog open={props.isOpen} onOpenChange={(open) => !open && vm.close()}>
-            <DialogContent
-                showCloseButton={loading}
-                aria-busy={loading}
-                aria-describedby={undefined}
-                className={loading ? ITEM_DETAIL_LOADING_CLASS : "w-full overflow-visible border-0 bg-transparent p-0 shadow-none sm:max-w-4xl lg:max-w-5xl transition-[max-width] duration-200 motion-reduce:transition-none"}
-            >
+        <div
+            aria-busy={loading}
+            className={loading ? ITEM_DETAIL_LOADING_CLASS : "pointer-events-auto relative mx-auto w-full max-w-full transition-[max-width] duration-200 motion-reduce:transition-none"}
+        >
                 <DialogTitle className="sr-only">{selectedItem.name}</DialogTitle>
-                {loading ? <ItemDetailLoading item={selectedItem} /> : <>
+                {loading ? <ItemDetailLoading item={selectedItem} onClose={vm.close} /> : <>
                 {vm.previousItem && (
                     <button
                         type="button"
@@ -150,7 +147,6 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
                     </button>
                 )}
                 </>}
-            </DialogContent>
-        </Dialog>
+        </div>
     );
 }

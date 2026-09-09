@@ -345,8 +345,12 @@ export function useItemDetailModalController({
         relationsLoading: requests.relationsLoading,
         relationsError: requests.relationsError,
         retryRelations: requests.retryRelations,
-        usageLoading: requests.usageLoading || pricesLoading,
-        usageError: requests.usageError ?? priceError,
+        initialDetailLoading:
+            (requests.relationsLoading || requests.usageLoading) &&
+            !requests.relationsError &&
+            !requests.usageError,
+        usageLoading: requests.usageLoading,
+        usageError: requests.usageError,
         retryUsage: requests.retryUsage,
         barterError: itemUsage?.bartersError ?? requests.usageError,
         craftError: itemUsage?.craftsError ?? requests.usageError,
