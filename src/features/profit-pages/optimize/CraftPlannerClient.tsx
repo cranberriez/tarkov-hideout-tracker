@@ -31,8 +31,6 @@ export function CraftPlannerClient({ data }: { data: ProfitPageData }) {
     !data.items ? "Item prices could not be loaded." : null].filter((error): error is string => Boolean(error));
   return <main className="container mx-auto px-4 py-8 sm:px-6">
     {errors.length ? <DataLoadError title="Craft planner data is unavailable" messages={errors} /> : <>
-      {(data.errors.stations || data.errors.traders || data.errors.taskUnlocks || data.unresolvedItemIds.length > 0) &&
-        <p role="status" className="mb-4 text-xs text-amber-300">Some item, station, trader or quest details are unavailable. Recipes with missing inputs are excluded.</p>}
       <StationBoard key={profile.gameMode} input={input} gameMode={profile.gameMode} stations={stations} traders={traders} onItemOpen={setItemId} onPriceChange={setItemOverride} />
       <ItemDetailModal item={itemId ? itemsById[itemId] ?? null : null} isOpen={itemId !== null} onClose={() => setItemId(null)} />
     </>}

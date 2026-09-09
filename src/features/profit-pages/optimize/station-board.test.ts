@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildStationBoard, selectedBoardCraft, boardCraftAvailable, boardMaterials, parseBoardChoices, rankBoardCrafts } from "./station-board";
+import { boardCraftPlacements, buildStationBoard, selectedBoardCraft, boardCraftAvailable, boardMaterials, parseBoardChoices, rankBoardCrafts, visibleBoardCrafts } from "./station-board";
 import { createRecipeCalculator } from "../../../lib/price-calculation/optimizer";
 import type { RecipeCalculatorInput } from "../../../lib/price-calculation/types";
 import { parsePinnedCrafts } from "../usePinnedCrafts";
@@ -78,6 +78,35 @@ test("saved craft/route remains selected through a loss, ranking and missing rou
 	const stale = selectedBoardCraft(craft, { variant: "direct", routes: { "b:input": "barter:removed" } });
 	assert.equal(stale.profit, null);
 	assert.equal(boardCraftAvailable(stale), false);
+});
+test("board visibility and order stay based on the initial evaluation while choices change", () => {
+	const input = fixture();
+	const baseline = buildStationBoard(input).map((craft) => selectedBoardCraft(craft));
+	const changed = baseline.map((row) => row.id === "output" ? { ...row, profit: -24_000, profitPerHour: -24_000 } : row);
+	const expectedOrder = rankBoardCrafts(baseline.filter((row) => boardCraftAvailable(row) && (row.profit ?? 0) > 0), "profit-hour").map((row) => row.id);
+	const visible = visibleBoardCrafts({
+		rows: changed,
+		baselineRows: baseline,
+		ranking: "profit-hour",
+		includeLosses: false,
+		pinnedCrafts: {},
+		hideUnpinned: false,
+	});
+	assert.deepEqual(visible.map((row) => row.id), expectedOrder);
+	assert.equal(visible.find((row) => row.id === "output")?.profit, -24_000);
+	assert.deepEqual(visibleBoardCrafts({
+		rows: changed,
+		baselineRows: baseline,
+		ranking: "profit-hour",
+		includeLosses: false,
+		pinnedCrafts: { input: true },
+		hideUnpinned: true,
+	}).map((row) => row.id), ["input"]);
+});
+test("station placements mark the top three profitable available crafts", () => {
+	const rows = buildStationBoard(fixture()).map((craft) => selectedBoardCraft(craft));
+	const ranked = rankBoardCrafts(rows.filter((row) => boardCraftAvailable(row) && (row.profit ?? 0) > 0), "profit-hour");
+	assert.deepEqual(boardCraftPlacements(rows, "profit-hour"), Object.fromEntries(ranked.slice(0, 3).map((row, index) => [row.id, index + 1])));
 });
 test("materials pool purchased leaves and preserve quantities", () => {
 	const craft = buildStationBoard(fixture()).find((row) => row.id === "output")!;

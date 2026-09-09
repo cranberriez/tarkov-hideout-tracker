@@ -4,6 +4,7 @@ import { fleaTargetPrice, itemBasePrice } from "@/lib/price-calculation/calc-tax
 import type { PriceChangeHandler, ProfitStationSource } from "../types";
 import { acquisitionRouteKey, getAcquisitionRoutes } from "../utils/recipes";
 import { formatDuration, formatQuantity, formatRoundedRoubles, formatSignedRoubles } from "../utils/formatters";
+import { CraftImage } from "./CraftImage";
 import { boardCraftAvailable, boardVariants, requirementKey, selectedBoardCraft, type BoardChoice, type BoardCraft } from "./station-board";
 
 export function StationCraftDetails({
@@ -52,7 +53,8 @@ export function StationCraftDetails({
 	function chain(parts: AcquisitionPlan[], depth = 0): React.ReactNode {
 		return parts.map((part) => (
 			<div key={`${part.itemId}:${part.sourceId}:${part.isTool}`} className="py-1" style={{ paddingLeft: Math.min(depth, 4) * 12 }}>
-				<button type="button" className="text-left text-xs hover:text-tarkov-green" onClick={() => onItemOpen(part.itemId)}>
+				<button type="button" className="inline-flex items-center gap-2 text-left text-xs hover:text-tarkov-green" onClick={() => onItemOpen(part.itemId)}>
+					<CraftImage item={input.itemsById[part.itemId]} size={24} />
 					{formatQuantity(part.quantity)}× {input.itemsById[part.itemId]?.name ?? part.itemId}
 				</button>
 				<span className="ml-2 text-[11px] text-muted-foreground">
@@ -103,7 +105,8 @@ export function StationCraftDetails({
 						return (
 							<div key={key} className="space-y-1.5">
 								<div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-									<button type="button" className="text-left hover:text-tarkov-green" onClick={() => onItemOpen(part.itemId)}>
+									<button type="button" className="inline-flex items-center gap-2 text-left hover:text-tarkov-green" onClick={() => onItemOpen(part.itemId)}>
+										<CraftImage item={input.itemsById[part.itemId]} size={32} />
 										{formatQuantity(part.quantity)}× {input.itemsById[part.itemId]?.name ?? part.itemId}
 									</button>
 									{part.isTool ? (

@@ -13,11 +13,11 @@ import { CraftImage } from "./CraftImage";
 import { StationCraftDetails } from "./StationCraftDetails";
 import {
 	boardCraftAvailable,
-	boardMaterials,
+	boardCraftPlacements,
 	buildStationBoard,
 	parseBoardChoices,
-	rankBoardCrafts,
 	selectedBoardCraft,
+	visibleBoardCrafts,
 	type BoardChoice,
 	type BoardRanking,
 } from "./station-board";
@@ -49,21 +49,17 @@ export function StationBoard({
 	const choices = useMemo(() => parseBoardChoices(rawChoices), [rawChoices]);
 	const crafts = useMemo(() => buildStationBoard(input), [input]);
 	const [ranking, setRanking] = useState<BoardRanking>("profit-hour");
-	const [openStation, setOpenStation] = useState<string | null | undefined>(undefined);
 	const [detailId, setDetailId] = useState<string | null>(null);
-	const [allStations, setAllStations] = useState<Record<string, boolean>>({});
+	const [hiddenStations, setHiddenStations] = useState<Record<string, boolean>>({});
 	const [includeLosses, setIncludeLosses] = useState(false);
 	const rows = useMemo(() => crafts.map((craft) => selectedBoardCraft(craft, choices[craft.id])), [crafts, choices]);
+	const [baselineRows] = useState(() => crafts.map((craft) => selectedBoardCraft(craft, choices[craft.id])));
 	const craftById = useMemo(() => Object.fromEntries(crafts.map((craft) => [craft.id, craft])), [crafts]);
-	const saved = rows.filter((row) => pinnedCrafts[row.id]);
 	const stationIds = [...new Set(crafts.map((craft) => craft.stationId))].sort(
 		(a, b) =>
 			Number((input.stationLevels?.[b] ?? 0) > 0) - Number((input.stationLevels?.[a] ?? 0) > 0) ||
 			(stations[a]?.name ?? a).localeCompare(stations[b]?.name ?? b),
 	);
-	const initialStation = stationIds.find((id) => rows.some((row) => row.craft?.stationId === id && boardCraftAvailable(row) && (row.profit ?? 0) > 0));
-	const expandedId = openStation === undefined ? (saved.length ? null : initialStation) : openStation;
-	const materials = boardMaterials(saved.filter(boardCraftAvailable));
 	function saveChoice(id: string, choice: BoardChoice) {
 		updateChoices((raw) => JSON.stringify({ ...parseBoardChoices(raw), [id]: choice }));
 	}
@@ -79,8 +75,8 @@ export function StationBoard({
 					All craft profits →
 				</Link>
 			</header>
-			<div className="flex flex-wrap items-center justify-between gap-3">
-				<div className="flex flex-wrap gap-1" aria-label="Recommendation order">
+			<div className="flex flex-wrap items-center justify-end gap-4">
+				<div className="flex flex-wrap justify-end gap-1" aria-label="Recommendation order">
 					{rankings.map((option) => (
 						<button
 							key={option.id}
@@ -94,18 +90,26 @@ export function StationBoard({
 						</button>
 					))}
 				</div>
-				<span className="text-xs text-muted-foreground">{saved.length ? `${saved.length} pinned · saved automatically` : "Pin crafts to keep them here"}</span>
+				<label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+					<input type="checkbox" checked={includeLosses} onChange={(event) => setIncludeLosses(event.target.checked)} />
+					Include unprofitable crafts
+				</label>
 			</div>
 			<div className="divide-y divide-white/10">
 				{stationIds.map((stationId) => {
 					const stationRows = rows.filter((row) => row.craft?.stationId === stationId);
 					const pinned = stationRows.filter((row) => pinnedCrafts[row.id]);
-					const candidates = rankBoardCrafts(
-						stationRows.filter((row) => !pinnedCrafts[row.id] && boardCraftAvailable(row) && (includeLosses || (row.profit ?? 0) > 0)),
+					const baselineStationRows = baselineRows.filter((row) => row.craft?.stationId === stationId);
+					const placements = boardCraftPlacements(baselineStationRows, ranking);
+					const hidden = !!hiddenStations[stationId];
+					const visible = visibleBoardCrafts({
+						rows: stationRows,
+						baselineRows: baselineStationRows,
 						ranking,
-					);
-					const expanded = expandedId === stationId;
-					const visible = [...pinned, ...(expanded ? candidates.slice(0, allStations[stationId] ? undefined : 4) : [])];
+						includeLosses,
+						pinnedCrafts,
+						hideUnpinned: hidden,
+					});
 					return (
 						<section key={stationId} id={stationId} aria-label={stations[stationId]?.name ?? stationId} className="py-3">
 							<div className="flex items-center gap-2 pb-2">
@@ -116,22 +120,25 @@ export function StationBoard({
 								<button
 									type="button"
 									className="ml-auto inline-flex items-center gap-1 py-1 text-xs text-muted-foreground hover:text-foreground"
-									aria-expanded={expanded}
-									onClick={() => setOpenStation(expanded ? null : stationId)}
+									aria-expanded={!hidden}
+									onClick={() => setHiddenStations((current) => ({ ...current, [stationId]: !hidden }))}
 								>
-									{expanded ? "Done picking" : pinned.length ? "Change crafts" : "Choose crafts"}
-									{expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+									{hidden ? "Show crafts" : "Hide unpinned"}
+									{hidden ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
 								</button>
 							</div>
+
+							<div>
 							{visible.map((row) => {
 								const output = input.itemsById[row.outputItemId];
 								const pinned = !!pinnedCrafts[row.id];
 								const available = boardCraftAvailable(row);
 								const open = detailId === row.id;
+								const placement = placements[row.id];
 								const gross = row.grossSellValue === undefined ? row.sellValue : row.grossSellValue;
 								const roi = row.cost && row.profit !== null ? (row.profit / row.cost) * 100 : null;
 								return (
-									<div key={row.id} className={`rounded ${pinned ? "bg-white/[0.025]" : ""}`}>
+									<div key={row.id} className={`bg-white/2.5 ${pinned ? "bg-white/5" : ""} rounded`}>
 										<div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-2 py-2.5 lg:grid-cols-[minmax(170px,1.15fr)_82px_minmax(200px,2fr)_108px_124px_78px]">
 											<button
 												type="button"
@@ -167,7 +174,7 @@ export function StationBoard({
 												<span className="text-[11px] text-muted-foreground">each · {row.sellSourceLabel ?? "No sale price"}</span>
 											</div>
 											<div
-												className="text-right text-xs lg:text-left"
+												className="relative pr-9 text-right text-xs lg:text-left"
 												title={`Inputs: ${formatRoundedRoubles(row.cost)} · Listing fee: ${formatRoundedRoubles(row.sellFee ?? null)} · Proceeds: ${formatRoundedRoubles(row.sellValue)}${roi === null ? "" : ` · Return on inputs: ${roi.toFixed(1)}%`}`}
 											>
 												<span
@@ -178,6 +185,20 @@ export function StationBoard({
 												<span className="text-[11px] text-muted-foreground">
 													{available ? `${formatSignedRoubles(row.profitPerHour)} / h` : "Saved craft retained"}
 												</span>
+												{placement && (
+													<span
+														title={`${placement === 1 ? "Gold" : placement === 2 ? "Silver" : "Bronze"} craft for this station`}
+														className={`absolute right-0 top-1/2 -translate-y-1/2 rounded border px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
+															placement === 1
+																? "border-amber-300/40 bg-amber-300/10 text-amber-300"
+																: placement === 2
+																	? "border-slate-300/40 bg-slate-300/10 text-slate-300"
+																	: "border-orange-400/40 bg-orange-400/10 text-orange-400"
+														}`}
+													>
+														#{placement}
+													</span>
+												)}
 											</div>
 											<div className="col-span-2 flex justify-end gap-1 lg:col-span-1">
 												<button
@@ -217,56 +238,13 @@ export function StationBoard({
 										)}
 									</div>
 								);
-							})}
-							{expanded && (
-								<div className="flex flex-wrap items-center gap-4 px-2 pt-2 text-xs text-muted-foreground">
-									{!candidates.length && <span>{pinned.length ? "No other matching crafts." : "No matching crafts at your current unlocks and prices."}</span>}
-									{candidates.length > 4 && (
-										<button
-											type="button"
-											className="hover:text-foreground"
-											onClick={() => setAllStations((current) => ({ ...current, [stationId]: !current[stationId] }))}
-										>
-											{allStations[stationId] ? "Show shortlist" : `Show all ${candidates.length} alternatives`}
-										</button>
-									)}
-									<label className="inline-flex items-center gap-1.5">
-										<input type="checkbox" checked={includeLosses} onChange={(event) => setIncludeLosses(event.target.checked)} />
-										Include unprofitable crafts
-									</label>
-								</div>
-							)}
+                            })}
+								{!hidden && !visible.length && <p className="px-2 pt-2 text-xs text-muted-foreground">No matching crafts at your current unlocks and prices.</p>}
+							</div>
 						</section>
 					);
 				})}
 			</div>
-			{!!materials.length && (
-				<details className="py-2">
-					<summary className="cursor-pointer text-sm font-medium">
-						Materials required <span className="ml-2 text-xs font-normal text-muted-foreground">One batch of each available pinned craft</span>
-					</summary>
-					<div className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
-						{materials.map((part) => (
-							<div key={`${part.itemId}:${part.isTool}:${part.sourceId ?? part.method}`} className="flex items-center gap-2 text-xs">
-								<CraftImage item={input.itemsById[part.itemId]} size={26} />
-								<span className="min-w-0 flex-1">
-									{input.itemsById[part.itemId]?.name ?? part.itemId}
-									<span className="block text-[11px] text-muted-foreground">
-										{part.isTool
-											? "Reusable tool"
-											: part.traderOffer
-												? (traders[part.traderOffer.traderId]?.name ?? "Trader")
-												: part.method === "flea"
-													? "Flea market"
-													: "Check source"}
-									</span>
-								</span>
-								<span className="font-mono">×{formatQuantity(part.quantity)}</span>
-							</div>
-						))}
-					</div>
-				</details>
-			)}
 			{!!unknownPins.length && (
 				<details className="text-xs text-muted-foreground">
 					<summary>{unknownPins.length} saved crafts are absent from this catalog</summary>

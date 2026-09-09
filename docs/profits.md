@@ -217,13 +217,16 @@ the previous continuous scheduling panel and its temporary selections.
 
 The board uses horizontal station rows with output, duration, required inputs,
 gross sale price per output, net batch profit, profit/hour, pin and detail actions.
-Smaller screens wrap the rows. A station expands to a four-craft shortlist;
-players can reveal all alternatives and include unprofitable crafts. Ranking
+Smaller screens wrap the rows. Each station initially shows all profitable crafts;
+players can hide unpinned rows or include unprofitable crafts. Ranking
 offers profit/hour, batch profit, long runs, and easy inputs (distinct purchase
 sources plus intermediate craft/barter steps). Profit/hour assumes prompt
 restarts and includes allocated intermediate craft time, not an automated queue.
-New users see the first station with recommendations expanded. Returning users
-see saved crafts. Done picking collapses the station to all its pinned crafts.
+The top three profitable, available crafts in each station display gold, silver,
+and bronze rank markers for the active recommendation order.
+Changing an ingredient approach, route, or custom price updates the row in place
+without changing its visibility or position. Ranking is based on the evaluation
+captured when the page is opened; pinning moves crafts into the pinned group.
 Pins are unlimited reminders, not concurrent jobs; no station-slot scheduler,
 continuous-run controls, inventory deduction or automatic starts are implied.
 

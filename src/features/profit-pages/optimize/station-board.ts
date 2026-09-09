@@ -123,22 +123,43 @@ export function rankBoardCrafts(rows: RecipeEvaluation[], ranking: BoardRanking)
 					: (row.profitPerHour ?? -Infinity);
 	return [...rows].sort((a, b) => score(b) - score(a) || (b.profit ?? -Infinity) - (a.profit ?? -Infinity) || a.id.localeCompare(b.id));
 }
-/** One batch of each saved craft; same-source purchases pool, tools remain separate. */
-export function boardMaterials(rows: RecipeEvaluation[]) {
-	const result = new Map<string, AcquisitionPlan>();
-	function add(part: AcquisitionPlan) {
-		if (!part.isTool && part.children.length) {
-			part.children.forEach(add);
-			return;
-		}
-		const key = `${requirementKey(part)}:${part.sourceId ?? part.method}`;
-		const previous = result.get(key);
-		result.set(key, {
-			...part,
-			quantity: part.isTool ? Math.max(previous?.quantity ?? 0, part.quantity) : (previous?.quantity ?? 0) + part.quantity,
-			totalCost: part.isTool ? null : previous?.totalCost === null || part.totalCost === null ? null : (previous?.totalCost ?? 0) + part.totalCost,
-		});
-	}
-	rows.forEach((row) => row.requiredItems.forEach(add));
-	return [...result.values()];
+
+export function boardCraftPlacements(rows: RecipeEvaluation[], ranking: BoardRanking) {
+	return Object.fromEntries(
+		rankBoardCrafts(
+			rows.filter((row) => boardCraftAvailable(row) && (row.profit ?? 0) > 0),
+			ranking,
+		)
+			.slice(0, 3)
+			.map((row, index) => [row.id, index + 1]),
+	) as Record<string, number>;
+}
+
+export function visibleBoardCrafts({
+	rows,
+	baselineRows,
+	ranking,
+	includeLosses,
+	pinnedCrafts,
+	hideUnpinned,
+}: {
+	rows: RecipeEvaluation[];
+	baselineRows: RecipeEvaluation[];
+	ranking: BoardRanking;
+	includeLosses: boolean;
+	pinnedCrafts: Record<string, boolean>;
+	hideUnpinned: boolean;
+}) {
+	const currentById = new Map(rows.map((row) => [row.id, row]));
+	const orderedBaseline = rankBoardCrafts(baselineRows, ranking);
+	const pinned = orderedBaseline.flatMap(({ id }) => {
+		const current = currentById.get(id);
+		return pinnedCrafts[id] && current ? [current] : [];
+	});
+	if (hideUnpinned) return pinned;
+	const candidates = orderedBaseline.flatMap((baseline) => {
+		const current = currentById.get(baseline.id);
+		return current && !pinnedCrafts[baseline.id] && boardCraftAvailable(baseline) && (includeLosses || (baseline.profit ?? 0) > 0) ? [current] : [];
+	});
+	return [...pinned, ...candidates];
 }
