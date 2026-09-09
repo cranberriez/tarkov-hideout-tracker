@@ -104,3 +104,9 @@ excluded, independently of player progression and workspace filters. Seasonal
 Lightkeeper/series exclusions use the existing preparation policy. Compact
 summaries contain identity, display name, normalized name, and trader ID only;
 see [compact search delivery](data-layer.md#compact-search-manifest).
+
+The global command palette uses the existing `?quest=` deep link. The workspace
+observes query parameter changes as well as initial navigation, selects the quest,
+and switches to Details even when the planner or visualizer was active. Selection
+is independent of list filters and opens the detail pane on mobile. The consumed
+link is removed through the existing deep-link helper.

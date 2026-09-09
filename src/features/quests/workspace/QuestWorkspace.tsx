@@ -2,6 +2,7 @@
 
 import { ChevronLeft } from "lucide-react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { FullQuest } from "@/types/quests";
 import type { MapViewTransform } from "@/features/maps/map-view-transform";
@@ -27,7 +28,8 @@ const RaidPlannerPane = dynamic(() => import("./RaidPlannerPane").then((module) 
 const QuestVisualizerPane = dynamic(() => import("./QuestVisualizerPane").then((module) => module.QuestVisualizerPane), { loading: PaneLoading });
 
 export function QuestWorkspace({ quests }: { quests: FullQuest[] }) {
-    const { mode, plannerMapKey, questsById, selectedQuestId, setSelectedQuestId } = useQuestWorkspace();
+    const { mode, setMode, plannerMapKey, questsById, selectedQuestId, setSelectedQuestId } = useQuestWorkspace();
+    const searchParams = useSearchParams();
     const [compactSearchOpen, setCompactSearchOpen] = useState(false);
     const [plannerViews, setPlannerViews] = useState(() => new Map<string, MapViewTransform>());
     const rememberPlannerView = useCallback((mapKey: string, view: MapViewTransform | null) => {
@@ -52,8 +54,9 @@ export function QuestWorkspace({ quests }: { quests: FullQuest[] }) {
         if (!questId || !questsById.has(questId)) return;
         clearQuestDeepLink();
         setSelectedQuestId(questId);
+        setMode("details");
         requestAnimationFrame(() => document.getElementById(`quest-workspace-${questId}`)?.scrollIntoView({ block: "center" }));
-    }, [questsById, setSelectedQuestId]);
+    }, [questsById, setSelectedQuestId, setMode, searchParams]);
     return (
         <main
             data-quest-workspace

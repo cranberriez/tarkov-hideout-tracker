@@ -133,19 +133,29 @@ remain grouped and are not duplicated in the extra results. Missing item IDs are
 reported explicitly while searching. This uses the current route's mode-specific
 item index without catalog requests or shared-layout preloads.
 
-[ItemSearchModal](../src/features/items/components/ItemSearchModal.tsx) is retained
-as a catalog search palette for future site-wide placement, detached from the
-checklist. Its [useItemSearchController](../src/features/items/useItemSearchController.ts)
-uses the shared [compact search manifest](data-layer.md#compact-search-manifest).
-The persistent provider loads it in the background after page load and idle time;
-opening search sooner starts the same request. Names, normalized names, and short
-names are indexed once per accepted mode/revision and searched locally. The palette
-returns up to 50 results and Quick Add up to 10, with prefix matches first and
-alphabetical ties. Typing, changing the limit, and reopening a ready palette do not
-fetch search results. Initial loading and failures retain explicit loading/retry UI.
-The manifest also contains eligible quest and trader summaries for future catalog
-consumers; this checkout does not yet have a site-wide item/quest palette.
+The [SearchPalette](../src/features/search/SearchPalette.tsx) opens from the
+rightmost nav search button on desktop and mobile, or Ctrl/Cmd+K. It searches
+items and quests in the shared [compact manifest](data-layer.md#compact-search-manifest)
+without network requests while typing or expanding results. The
+[pure search model](../src/features/search/search-model.ts) matches all normalized
+terms and ranks exact name/short-name matches before prefixes and other matches,
+with deterministic alphabetical ties. It shows 10 results initially, expandable
+to 50, labels entity kinds, and shows quest trader names/portraits.
 
+The dialog traps focus, supports arrow navigation and Enter selection, closes on
+Escape, and restores focus to the opener on dismissal. Empty, loading, error/retry,
+and no-match states are explicit. Selecting an item closes search and opens the
+existing lazy item modal; quest selection navigates to its deep link and opens the
+workspace detail pane, including on mobile or when already on the quest page.
+Nav-owned search/selection state resets on mode changes and is never persisted.
+On narrow phones Setup remains available in the menu, leaving room for the always
+visible search button. The existing explicit quest fullscreen nav toggle remains
+unchanged.
+
+Quick Add uses [useItemSearchController](../src/features/items/useItemSearchController.ts)
+against the same manifest with a 10-item limit. The older
+[ItemSearchModal](../src/features/items/components/ItemSearchModal.tsx) remains an
+item-only consumer, detached from the checklist.
 [QuickAddModal](../src/features/quick-add/QuickAddModal.tsx) keeps draft rows and
 FiR/non-FiR additions locally, then commits inventory additions through store
 actions. [useUIStore](../src/lib/stores/useUIStore.ts) coordinates its shared open
