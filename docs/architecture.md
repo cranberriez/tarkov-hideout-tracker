@@ -241,15 +241,28 @@ cost, gross sale, net sale, and profit.
 [canonical routes](../src/lib/entity-routes.ts), so click, middle-click, and new tabs
 behave normally; [ItemLink](../src/components/entities/item-link.tsx) is a button that
 opens the item dialog. [EntityPreview](../src/components/entities/entity-preview.tsx)
-wraps [useFloatingPreview](../src/components/ui/floating-preview.tsx): hover or
-keyboard focus opens a card after a short delay, the pointer can move into it,
-Escape/scroll/click dismisses it, only one is open at a time, and touch taps skip
-it and activate the link or button. Cards use supplied data, saved progress, and already-cached
-prices, workspace quests, or Hideout stations only; they never start detail
-requests. `Tooltip` reuses the same positioning for short text. Profit recipe items
-keep their recipe-specific hover card (route, cost, savings) through
-[RecipeItemHoverProvider](../src/features/profit-pages/components/RecipeItemHoverProvider.tsx);
-their icons open the item dialog, keyboard focus anchors that card, and Escape closes it.
+uses the shared [HoverPreviewProvider](../src/components/ui/hover-preview-provider.tsx)
+mounted in the root layout. It places one card beside the pointer or focused
+trigger, moves with the pointer, lets the pointer enter the card, and closes on
+Escape, scroll, or click. Hover preparation starts after 50 ms; the card appears
+after at least 200 ms and waits for its image or other preview data to settle.
+Touch taps activate the link or button without opening a preview. Cards use
+supplied data, saved progress, and already-cached prices, workspace quests, or
+Hideout stations; they never start detail requests. Quest previews use the
+mode-scoped compact search manifest for a trader portrait when the full quest is
+not already available. The expanded Items checklist cards show their item details
+in place, so they do not open another item hover card. Item previews prefer the
+square 512px image over the labeled grid image.
+Hideout station names show a small outbound arrow. Station previews show only
+the saved level; item previews omit short names. Entity previews have no
+instruction footer. Quest previews show the issuing trader loyalty tier and
+required objective items or keys when their names are available in the cached
+workspace payload, falling back to objective descriptions when item data is
+missing.
+Profit recipe items use the same provider and positioning with their
+recipe-specific card (route, cost, savings); their icons open the item dialog and
+keyboard focus anchors the card. Short text `Tooltip` uses
+[floating-preview.tsx](../src/components/ui/floating-preview.tsx) separately.
 Quest-only pickups stay display-only (`linked={false}`).
 
 For changes here, run [page query tests](../src/server/queries/page-data-queries.test.ts),

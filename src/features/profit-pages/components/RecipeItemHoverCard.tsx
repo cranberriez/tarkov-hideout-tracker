@@ -1,4 +1,4 @@
-import { useProfitPricingContext } from "./ProfitPricingContext";
+import type { useProfitPricingContext } from "./ProfitPricingContext";
 import Image from "next/image";
 import { X } from "lucide-react";
 import {
@@ -19,14 +19,8 @@ import {
 import { RecipePreviewCard } from "./RecipePreviewCard";
 import { RouteIcon, routeChipClasses } from "./RouteIcon";
 
-export interface ItemHoverPosition {
-	left: number;
-	placeAbove: boolean;
-	verticalOffset: number;
-}
-
 export interface RecipeItemHoverData {
-	position: ItemHoverPosition;
+	pricingContext: ReturnType<typeof useProfitPricingContext>;
 	item?: ItemSummary;
 	count: number;
 	method: RouteMethod;
@@ -43,7 +37,7 @@ export interface RecipeItemHoverData {
 }
 
 export function RecipeItemHoverCard({
-	position,
+	pricingContext,
 	item,
 	count,
 	method,
@@ -63,7 +57,6 @@ export function RecipeItemHoverCard({
 	onClose: () => void;
 	onKeepOpen: () => void;
 }) {
-	const pricingContext = useProfitPricingContext();
 	const unitRoutePrice = totalPrice === null || count <= 0 ? null : totalPrice / count;
 	const directUnitPrice = item
 		? priceKind === "buy"
@@ -107,15 +100,8 @@ export function RecipeItemHoverCard({
 			? ingredientSellValue - plan.totalCost
 			: null;
 	return (
-		<span
-			className="pointer-events-none fixed z-[100] flex max-w-[calc(100vw-16px)] items-stretch gap-2 text-left"
-			style={{
-				left: position.left,
-				width: recipePreview || theoreticalRecipePreview ? Math.min(660, window.innerWidth - 16) : 320,
-				...(position.placeAbove ? { bottom: position.verticalOffset } : { top: position.verticalOffset }),
-			}}
-		>
-			<span className="relative block w-80 max-w-full shrink-0 rounded-md border border-highlight/15 bg-[var(--background)] p-3 shadow-[0_18px_55px_color-mix(in_oklab,_var(--shadow)_80%,_transparent)]">
+		<>
+			<span className="pointer-events-auto relative block w-80 max-w-full shrink-0 rounded-md border border-highlight/15 bg-[var(--background)] p-3 shadow-[0_18px_55px_color-mix(in_oklab,_var(--shadow)_80%,_transparent)]">
 				<button
 					type="button"
 					aria-label="Close item details"
@@ -291,6 +277,6 @@ export function RecipeItemHoverCard({
 					<RecipePreviewCard preview={theoreticalRecipePreview} routeContext={routeContext} />
 				</span>
 			)}
-		</span>
+		</>
 	);
 }

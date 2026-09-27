@@ -12,7 +12,6 @@ import type { GoToRecipeHandler, PriceChangeHandler, ProfitPageKind, SortDirecti
 import { estimateProfitRowHeight, isRecipeAvailable } from "../utils/recipes";
 import styles from "./ProfitTable.module.css";
 import { ProfitRow } from "./ProfitRow";
-import { RecipeItemHoverProvider } from "./RecipeItemHoverProvider";
 
 export function ProfitTable({
 	kind,
@@ -92,108 +91,106 @@ export function ProfitTable({
 		lastScrollRequestRef.current = requestKey;
 	}, [evaluations, scrollMargin, scrollRequestId, targetRecipeId, virtualizer]);
 	return (
-		<RecipeItemHoverProvider>
-			<div className={styles.table}>
-				<div className={styles.header}>
-					<span className={styles.sortLabel}>Sort by</span>
-					<span className={styles.columnLabel} aria-label="Actions" />
-					<span className={styles.columnLabel}>Source</span>
-					<span className={styles.columnLabel}>Output</span>
-					<span className={styles.columnLabel}>Required items</span>
-					<SortableHeader
-						label="Cost"
-						sortKey="cost"
-						activeSortKey={sortKey}
-						direction={sortDirection}
-						onSortChange={onSortChange}
-					/>
-					<SortableHeader
-						label="Sale proceeds"
-						sortKey="sellValue"
-						activeSortKey={sortKey}
-						direction={sortDirection}
-						onSortChange={onSortChange}
-					/>
-					<SortableHeader
-						label="Profit"
-						sortKey="profit"
-						activeSortKey={sortKey}
-						direction={sortDirection}
-						onSortChange={onSortChange}
-					/>
-					<SortableHeader
-						label="Profit / hour"
-						sortKey="profitPerHour"
-						activeSortKey={sortKey}
-						direction={sortDirection}
-						onSortChange={onSortChange}
-					/>
-				</div>
-				<div ref={listRef} className="w-full min-w-0">
-					{evaluations.length > 0 ? (
-						<div
-							style={{
-								height: `${virtualizer.getTotalSize()}px`,
-								position: "relative",
-								width: "100%",
-							}}
-						>
-							{virtualizer.getVirtualItems().map((virtualRow) => {
-								const evaluation = evaluations[virtualRow.index];
-								const translateY = virtualRow.start - virtualizer.options.scrollMargin;
-								return (
-									<div
-										key={virtualRow.key}
-										data-index={virtualRow.index}
-										ref={virtualizer.measureElement}
-										className={`absolute left-0 top-0 w-full ${styles.virtualRow}`}
-										style={{ transform: `translateY(${translateY}px)` }}
-									>
-										<ProfitRow
-											sortKey={sortKey}
-											evaluation={evaluation}
-											baselineEvaluation={baselineEvaluationsById[evaluation.id]}
-											itemById={itemById}
-											sourceName={
-												kind === "barter"
-													? tradersById[evaluation.barter?.traderId ?? ""]?.name
-													: stationsById[evaluation.craft?.stationId ?? ""]?.name
-											}
-											available={isRecipeAvailable(evaluation, stationLevels, traderLoyaltyLevels, completedQuests)}
-											source={
-												kind === "barter"
-													? tradersById[evaluation.barter?.traderId ?? ""]
-													: stationsById[evaluation.craft?.stationId ?? ""]
-											}
-											overrides={overrides}
-											onPriceChange={onPriceChange}
-											bartersById={bartersById}
-											craftsById={craftsById}
-											tradersById={tradersById}
-											stationsById={stationsById}
-											onGoToRecipe={onGoToRecipe}
-											highlighted={evaluation.id === targetRecipeId}
-											pinned={kind === "craft" && Boolean(pinnedCrafts[evaluation.id])}
-											onTogglePinned={kind === "craft" ? () => onTogglePinnedCraft(evaluation.id) : undefined}
-											routeSelections={ingredientRouteSelections[evaluation.id] ?? {}}
-											onRouteChange={(index, routeKey) => onIngredientRouteChange(evaluation.id, index, routeKey)}
-										/>
-									</div>
-								);
-							})}
-						</div>
-					) : (
-						<div className="px-4 py-14 text-center text-sm text-muted-foreground">
-							{kind === "craft" && showPinnedOnly
-								? Object.keys(pinnedCrafts).length === 0
-									? "No pinned crafts yet. Pin a craft from the actions column to add it here."
-									: "No pinned crafts match these filters."
-								: "No recipes match these filters."}
-						</div>
-					)}
-				</div>
+		<div className={styles.table}>
+			<div className={styles.header}>
+				<span className={styles.sortLabel}>Sort by</span>
+				<span className={styles.columnLabel} aria-label="Actions" />
+				<span className={styles.columnLabel}>Source</span>
+				<span className={styles.columnLabel}>Output</span>
+				<span className={styles.columnLabel}>Required items</span>
+				<SortableHeader
+					label="Cost"
+					sortKey="cost"
+					activeSortKey={sortKey}
+					direction={sortDirection}
+					onSortChange={onSortChange}
+				/>
+				<SortableHeader
+					label="Sale proceeds"
+					sortKey="sellValue"
+					activeSortKey={sortKey}
+					direction={sortDirection}
+					onSortChange={onSortChange}
+				/>
+				<SortableHeader
+					label="Profit"
+					sortKey="profit"
+					activeSortKey={sortKey}
+					direction={sortDirection}
+					onSortChange={onSortChange}
+				/>
+				<SortableHeader
+					label="Profit / hour"
+					sortKey="profitPerHour"
+					activeSortKey={sortKey}
+					direction={sortDirection}
+					onSortChange={onSortChange}
+				/>
 			</div>
-		</RecipeItemHoverProvider>
+			<div ref={listRef} className="w-full min-w-0">
+				{evaluations.length > 0 ? (
+					<div
+						style={{
+							height: `${virtualizer.getTotalSize()}px`,
+							position: "relative",
+							width: "100%",
+						}}
+					>
+						{virtualizer.getVirtualItems().map((virtualRow) => {
+							const evaluation = evaluations[virtualRow.index];
+							const translateY = virtualRow.start - virtualizer.options.scrollMargin;
+							return (
+								<div
+									key={virtualRow.key}
+									data-index={virtualRow.index}
+									ref={virtualizer.measureElement}
+									className={`absolute left-0 top-0 w-full ${styles.virtualRow}`}
+									style={{ transform: `translateY(${translateY}px)` }}
+								>
+									<ProfitRow
+										sortKey={sortKey}
+										evaluation={evaluation}
+										baselineEvaluation={baselineEvaluationsById[evaluation.id]}
+										itemById={itemById}
+										sourceName={
+											kind === "barter"
+												? tradersById[evaluation.barter?.traderId ?? ""]?.name
+												: stationsById[evaluation.craft?.stationId ?? ""]?.name
+										}
+										available={isRecipeAvailable(evaluation, stationLevels, traderLoyaltyLevels, completedQuests)}
+										source={
+											kind === "barter"
+												? tradersById[evaluation.barter?.traderId ?? ""]
+												: stationsById[evaluation.craft?.stationId ?? ""]
+										}
+										overrides={overrides}
+										onPriceChange={onPriceChange}
+										bartersById={bartersById}
+										craftsById={craftsById}
+										tradersById={tradersById}
+										stationsById={stationsById}
+										onGoToRecipe={onGoToRecipe}
+										highlighted={evaluation.id === targetRecipeId}
+										pinned={kind === "craft" && Boolean(pinnedCrafts[evaluation.id])}
+										onTogglePinned={kind === "craft" ? () => onTogglePinnedCraft(evaluation.id) : undefined}
+										routeSelections={ingredientRouteSelections[evaluation.id] ?? {}}
+										onRouteChange={(index, routeKey) => onIngredientRouteChange(evaluation.id, index, routeKey)}
+									/>
+								</div>
+							);
+						})}
+					</div>
+				) : (
+					<div className="px-4 py-14 text-center text-sm text-muted-foreground">
+						{kind === "craft" && showPinnedOnly
+							? Object.keys(pinnedCrafts).length === 0
+								? "No pinned crafts yet. Pin a craft from the actions column to add it here."
+								: "No pinned crafts match these filters."
+							: "No recipes match these filters."}
+					</div>
+				)}
+			</div>
+		</div>
 	);
 }
 

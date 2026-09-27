@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, EyeOff, Minus, Plus } from "lucide-react";
+import { ArrowUpRight, Eye, EyeOff, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Station } from "@/types/hideout";
 import { stationHref } from "@/lib/entity-routes";
@@ -56,9 +56,10 @@ export function StationCardHeader({
 				name={
 					<Link
 						href={stationHref(station.id)}
-						className="rounded-xs transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
+						className="inline-flex items-center gap-0.5 rounded-xs transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
 					>
 						{station.name}
+						<ArrowUpRight size={13} aria-hidden="true" className="shrink-0" />
 					</Link>
 				}
 			/>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useUIStore } from "@/lib/stores/useUIStore";
+import { useId } from "react";
 import { useProfitPricingContext } from "./ProfitPricingContext";
 import Image from "next/image";
 import { ExternalLink } from "lucide-react";
@@ -17,7 +18,8 @@ import { acquisitionRouteKey, describeRoute, getPlanRecipePreview, selectAcquisi
 import { LockReasons } from "./LockReasons";
 import { InfoHint } from "./InfoHint";
 import { InlineItemPrice } from "./InlineItemPrice";
-import { useRecipeItemHover } from "./RecipeItemHoverProvider";
+import { preloadHoverImage, useHoverPreview } from "@/components/ui/hover-preview-provider";
+import { RecipeItemHoverCard } from "./RecipeItemHoverCard";
 import { RouteIcon } from "./RouteIcon";
 import { RouteSelector } from "./RouteSelector";
 
@@ -67,7 +69,8 @@ export function RecipeItem({
 	const pricingContext = useProfitPricingContext();
 	const reasons =
 		method === "unavailable" ? [{ kind: "unavailable" as const, message: "No available route" }] : lockReasons;
-	const hover = useRecipeItemHover();
+	const hover = useHoverPreview();
+	const hoverKey = useId();
 	const routeDetail = detail ?? (plan ? describeRoute(plan, routeContext) : null);
 	const unitRoutePrice = totalPrice === null || count <= 0 ? null : totalPrice / count;
 	const directUnitPrice = item ? getItemBuyPrice(item, overrides, pricingContext) : null;
@@ -104,17 +107,7 @@ export function RecipeItem({
 		showHoverAt(bounds.right, bounds.bottom);
 	}
 	function showHoverAt(clientX: number, clientY: number) {
-		const gap = 12;
-		const hoverWidth = Math.min(resolvedRecipePreview || theoreticalRecipePreview ? 660 : 320, window.innerWidth - 16);
-		const preferredLeft =
-			clientX + gap + hoverWidth <= window.innerWidth - 8 ? clientX + gap : clientX - hoverWidth - gap;
-		const placeAbove = clientY > window.innerHeight / 2;
-		hover.show({
-			position: {
-				left: Math.max(8, Math.min(preferredLeft, window.innerWidth - hoverWidth - 8)),
-				placeAbove,
-				verticalOffset: placeAbove ? window.innerHeight - clientY + gap : clientY + gap,
-			},
+		const data = {
 			item,
 			count,
 			method,
@@ -129,6 +122,15 @@ export function RecipeItem({
 			theoreticalSavings:
 				plan?.totalCost != null && plan.theoreticalCost != null ? plan.totalCost - plan.theoreticalCost : null,
 			showRouteIcon,
+			pricingContext,
+		};
+		hover.show({
+			key: hoverKey,
+			content: <RecipeItemHoverCard {...data} onClose={hover.close} onKeepOpen={hover.cancelClose} />,
+			clientX,
+			clientY,
+			width: resolvedRecipePreview || theoreticalRecipePreview ? 660 : 320,
+			prepare: () => preloadHoverImage(item?.iconLink),
 		});
 	}
 	const itemLinkProps = {

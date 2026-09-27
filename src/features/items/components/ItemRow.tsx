@@ -129,6 +129,7 @@ export function ItemRow({ item, count, firCount = 0, size, isHideout = false, is
 	return (
 		<ItemLink
 			item={item}
+			preview={false}
 			className="bg-card border rounded-lg p-3 group/item transition-colors flex flex-col gap-3 h-full relative hover:border-info focus-visible:outline-2 focus-visible:outline-brand"
 		>
 			{/* Header: Icon & Name */}

@@ -8,6 +8,7 @@ import { ActiveGameModeSync } from "@/components/core/ActiveGameModeSync";
 import { QuickAddModal } from "@/features/quick-add/QuickAddModal";
 import { GlobalItemDetailModal } from "@/features/items/item-detail/GlobalItemDetailModal";
 import { QueryProvider } from "@/lib/query/QueryProvider";
+import { HoverPreviewProvider } from "@/components/ui/hover-preview-provider";
 
 export const viewport: Viewport = {
 	width: "device-width",
@@ -28,14 +29,16 @@ export default function RootLayout({
 		<html lang="en">
 			<body className="antialiased flex min-h-dvh flex-col">
 				<QueryProvider>
-					<ActiveGameModeSync />
-					<Navbar />
-					{/* <SeasonUpdateBanner /> */}
-					<div className="flex min-h-0 flex-1 flex-col">{children}</div>
-					<SetupModal />
-					<QuickAddModal />
-					<GlobalItemDetailModal />
-					<Analytics />
+					<HoverPreviewProvider>
+						<ActiveGameModeSync />
+						<Navbar />
+						{/* <SeasonUpdateBanner /> */}
+						<div className="flex min-h-0 flex-1 flex-col">{children}</div>
+						<SetupModal />
+						<QuickAddModal />
+						<GlobalItemDetailModal />
+						<Analytics />
+					</HoverPreviewProvider>
 				</QueryProvider>
 			</body>
 		</html>

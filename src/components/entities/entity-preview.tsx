@@ -1,10 +1,18 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { FloatingPortal, useFloatingPreview } from "@/components/ui/floating-preview";
+import { useId, type FocusEvent, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { useHoverPreview } from "@/components/ui/hover-preview-provider";
 import { cn } from "@/lib/utils";
 
-export type EntityTriggerProps = ReturnType<typeof useFloatingPreview>["triggerProps"];
+export type EntityTriggerProps = {
+	onPointerEnter: (event: PointerEvent<HTMLElement>) => void;
+	onPointerMove: (event: PointerEvent<HTMLElement>) => void;
+	onPointerLeave: (event: PointerEvent<HTMLElement>) => void;
+	onPointerDown: (event: PointerEvent<HTMLElement>) => void;
+	onFocus: (event: FocusEvent<HTMLElement>) => void;
+	onBlur: () => void;
+	onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
+};
 
 /**
  * Rich hover/focus card around an entity link. The trigger stays a normal link
@@ -12,31 +20,62 @@ export type EntityTriggerProps = ReturnType<typeof useFloatingPreview>["triggerP
  */
 export function EntityPreview({
 	renderPreview,
+	prepare,
 	disabled = false,
 	className,
 	children,
 }: {
 	renderPreview: () => ReactNode;
+	prepare?: () => Promise<unknown>;
 	disabled?: boolean;
 	className?: string;
 	children: (triggerProps: EntityTriggerProps) => ReactNode;
 }) {
-	const preview = useFloatingPreview({ disabled });
-	return (
-		<>
-			{children(preview.triggerProps)}
-			<FloatingPortal
-				open={preview.open}
-				floatingProps={preview.floatingProps}
-				className={cn(
-					"w-80 max-w-[calc(100vw-16px)] rounded-md border border-highlight/15 bg-background p-3 text-left shadow-[0_18px_55px_color-mix(in_oklab,_var(--shadow)_80%,_transparent)]",
-					className,
-				)}
-			>
-				{renderPreview()}
-			</FloatingPortal>
-		</>
-	);
+	const preview = useHoverPreview();
+	const key = useId();
+	const show = (clientX: number, clientY: number) =>
+		preview.show({
+			key,
+			clientX,
+			clientY,
+			prepare,
+			content: (
+				<div
+					role="tooltip"
+					className={cn(
+						"pointer-events-auto max-h-[calc(100vh-16px)] w-80 max-w-full overflow-y-auto rounded-md border border-highlight/15 bg-background p-3 shadow-[0_18px_55px_color-mix(in_oklab,_var(--shadow)_80%,_transparent)]",
+						className,
+					)}
+				>
+					{renderPreview()}
+				</div>
+			),
+		});
+	const triggerProps: EntityTriggerProps = {
+		onPointerEnter: (event) => {
+			if (event.pointerType === "touch") return;
+			if (!disabled) show(event.clientX, event.clientY);
+		},
+		onPointerMove: (event) => {
+			if (event.pointerType !== "touch" && !disabled) show(event.clientX, event.clientY);
+		},
+		onPointerLeave: (event) => {
+			if (event.pointerType !== "touch") preview.scheduleClose();
+		},
+		onPointerDown: () => {
+			preview.close();
+		},
+		onFocus: (event) => {
+			if (disabled || !event.currentTarget.matches(":focus-visible")) return;
+			const bounds = event.currentTarget.getBoundingClientRect();
+			show(bounds.right, bounds.bottom);
+		},
+		onBlur: preview.scheduleClose,
+		onKeyDown: (event) => {
+			if (event.key === "Escape" || event.key === "Enter" || event.key === " ") preview.close();
+		},
+	};
+	return children(triggerProps);
 }
 
 /** Label/value line inside a preview card. */
@@ -46,14 +85,6 @@ export function PreviewFact({ label, children }: { label: ReactNode; children: R
 			<span className="text-subtle-foreground">{label}</span>
 			<span className="min-w-0 text-right text-foreground">{children}</span>
 		</div>
-	);
-}
-
-export function PreviewFooter({ children }: { children: ReactNode }) {
-	return (
-		<p className="mt-3 border-t border-highlight/8 pt-2 text-[10px] uppercase tracking-wider text-subtle-foreground">
-			{children}
-		</p>
 	);
 }
 

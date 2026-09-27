@@ -3,6 +3,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { preloadHoverImage } from "@/components/ui/hover-preview-provider";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { gameDataKey } from "@/lib/query/scope";
 import { useUIStore } from "@/lib/stores/useUIStore";
@@ -11,7 +12,7 @@ import { describeFleaPrice, formatFleaPriceState } from "@/lib/utils/market-pric
 import { cn } from "@/lib/utils";
 import type { ItemSummary } from "@/types/items";
 import type { CurrentPrice } from "@/types/prices";
-import { EntityPreview, PreviewFact, PreviewFooter } from "./entity-preview";
+import { EntityPreview, PreviewFact } from "./entity-preview";
 import { ItemThumbnail } from "./item-thumbnail";
 
 export type PreviewItem = Pick<ItemSummary, "id" | "name"> &
@@ -57,8 +58,13 @@ export function ItemLink({
 	previewDetails?: ReactNode;
 }) {
 	const openItemDetail = useUIStore((state) => state.openItemDetail);
+	const previewImage = item.image512pxLink ?? item.iconLink ?? item.gridImageLink;
 	return (
-		<EntityPreview disabled={!preview} renderPreview={() => <ItemPreviewCard item={item} details={previewDetails} />}>
+		<EntityPreview
+			disabled={!preview}
+			prepare={() => preloadHoverImage(previewImage)}
+			renderPreview={() => <ItemPreviewCard item={item} details={previewDetails} />}
+		>
 			{(triggerProps) => (
 				<button
 					{...props}
@@ -92,13 +98,10 @@ function ItemPreviewCard({ item, details }: { item: PreviewItem; details?: React
 	return (
 		<div>
 			<div className="flex items-center gap-3">
-				<ItemThumbnail item={{ ...item, iconLink: item.gridImageLink ?? item.iconLink }} size="lg" framed />
+				<ItemThumbnail item={{ ...item, iconLink: item.image512pxLink ?? item.iconLink }} size="lg" framed />
 				<div className="min-w-0">
 					{category && <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand">{category}</p>}
 					<p className="text-sm font-semibold leading-snug text-foreground">{item.name}</p>
-					{item.shortName && item.shortName !== item.name && (
-						<p className="text-xs text-muted-foreground">{item.shortName}</p>
-					)}
 				</div>
 			</div>
 			<div className="mt-3 space-y-1.5">
@@ -121,7 +124,6 @@ function ItemPreviewCard({ item, details }: { item: PreviewItem; details?: React
 				)}
 				{details}
 			</div>
-			<PreviewFooter>Click for requirements, trades, and crafts</PreviewFooter>
 		</div>
 	);
 }

@@ -16,7 +16,7 @@ import { autoUpdate, flip, offset, shift, size, useFloating, type Placement } fr
 import { cn } from "@/lib/utils";
 
 /**
- * Shared hover/focus popover mechanics for rich entity previews and short tooltips:
+ * Hover/focus popover mechanics for short tooltips:
  * positioning, open/close delays, pointer travel into the card, Escape, one open
  * preview at a time, and touch suppression (taps keep normal link behavior).
  */
@@ -187,7 +187,7 @@ export function FloatingPortal({
 	);
 }
 
-/** Short explanatory text on hover/focus. Rich entity cards use `EntityPreview`. */
+/** Short explanatory text on hover/focus. Rich cards use `HoverPreviewProvider`. */
 export function Tooltip({
 	content,
 	children,

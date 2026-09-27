@@ -3,15 +3,14 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Badge } from "@/components/ui/badge";
+import { preloadHoverImage } from "@/components/ui/hover-preview-provider";
 import { stationHref } from "@/lib/entity-routes";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { hideoutPageQueryOptions } from "@/lib/query/page-data";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { formatDuration } from "@/lib/utils/format-time";
 import type { HideoutPageData } from "@/types/contracts";
 import type { Station } from "@/types/hideout";
-import { EntityPreview, PreviewFact, PreviewFooter } from "./entity-preview";
+import { EntityPreview } from "./entity-preview";
 import { StationImage } from "./station-image";
 
 type LinkProps = Omit<ComponentProps<typeof Link>, "href" | "children">;
@@ -31,8 +30,19 @@ export function StationLink({
 	children?: ReactNode;
 	preview?: boolean;
 }) {
+	const client = useQueryClient();
+	const mode = toTarkovJsonGameMode(useUserStore((state) => state.gameMode));
 	return (
-		<EntityPreview disabled={!preview} renderPreview={() => <StationPreviewCard station={station} />}>
+		<EntityPreview
+			disabled={!preview}
+			prepare={() => {
+				const cached = client
+					.getQueryData<HideoutPageData>(hideoutPageQueryOptions(mode).queryKey)
+					?.stations?.find((entry) => entry.id === station.id);
+				return preloadHoverImage(station.imageLink ?? cached?.imageLink);
+			}}
+			renderPreview={() => <StationPreviewCard station={station} />}
+		>
 			{(triggerProps) => (
 				<Link {...props} {...triggerProps} href={stationHref(station.id)} className={className}>
 					{children ?? station.name}
@@ -53,7 +63,6 @@ function StationPreviewCard({ station: supplied }: { station: Pick<Station, "id"
 				?.stations?.find((entry) => entry.id === supplied.id);
 	const station = { ...cached, ...supplied, levels: supplied.levels ?? cached?.levels };
 	const maxLevel = station.levels?.length ?? null;
-	const next = station.levels?.find((level) => level.level === currentLevel + 1) ?? null;
 
 	return (
 		<div>
@@ -74,29 +83,6 @@ function StationPreviewCard({ station: supplied }: { station: Pick<Station, "id"
 					</p>
 				</div>
 			</div>
-			{maxLevel != null && (
-				<div className="mt-3 space-y-1.5">
-					{next ? (
-						<>
-							<p className="text-[10px] font-semibold uppercase tracking-wider text-subtle-foreground">
-								Next: level {next.level}
-							</p>
-							<PreviewFact label="Items">{next.itemRequirements.length}</PreviewFact>
-							{next.stationLevelRequirements.length > 0 && (
-								<PreviewFact label="Stations">{next.stationLevelRequirements.length}</PreviewFact>
-							)}
-							{next.constructionTime > 0 && (
-								<PreviewFact label="Build time">{formatDuration(next.constructionTime)}</PreviewFact>
-							)}
-						</>
-					) : (
-						<Badge tone="success" size="xs">
-							Max level
-						</Badge>
-					)}
-				</div>
-			)}
-			<PreviewFooter>Open station for every level and its crafts</PreviewFooter>
 		</div>
 	);
 }
