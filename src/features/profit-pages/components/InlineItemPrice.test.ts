@@ -121,5 +121,8 @@ test("manual buy and sell prices use the customized blue treatment", () => {
 		);
 
 		assert.match(markup, /text-info/);
+		assert.match(markup, /underline decoration-dashed/);
+		assert.match(markup, new RegExp(`aria-label="Reset ${kind} price for ${kind}"`));
+		assert.match(markup, /title="Reset to normal price"/);
 	}
 });

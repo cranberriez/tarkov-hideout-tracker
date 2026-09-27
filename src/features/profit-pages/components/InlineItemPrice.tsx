@@ -2,6 +2,7 @@
 
 import { useProfitPricingContext } from "./ProfitPricingContext";
 import { useState } from "react";
+import { RotateCcw } from "lucide-react";
 import { getItemBuyPrice, getItemSellComparison, type ManualPriceOverride } from "@/lib/price-calculation";
 import type { ItemSummary } from "@/types/items";
 import type { PriceChangeHandler, RouteMethod } from "../types";
@@ -72,6 +73,13 @@ export function InlineItemPrice({
 		});
 		setEditing(false);
 	}
+	function resetManualPrice() {
+		onPriceChange(itemId, {
+			...currentOverride,
+			[kind]: undefined,
+			...(kind === "sell" ? { sellSource: undefined } : {}),
+		});
+	}
 	if (editing)
 		return (
 			<input
@@ -101,12 +109,29 @@ export function InlineItemPrice({
 						event.stopPropagation();
 						setEditing(true);
 					}}
-					className={`truncate ${color} hover:underline`}
+					className={`cursor-pointer truncate ${color} ${hasManualPrice ? "underline decoration-dashed underline-offset-2" : "hover:underline"}`}
 				>
 					{formattedPrice}
 				</button>
 			) : (
-				<span className={`truncate ${color}`}>{formattedPrice}</span>
+				<span className={`truncate ${color} ${hasManualPrice ? "underline decoration-dashed underline-offset-2" : ""}`}>
+					{formattedPrice}
+				</span>
+			)}
+			{hasManualPrice && (
+				<button
+					type="button"
+					aria-label={`Reset ${kind} price for ${item.name}`}
+					title="Reset to normal price"
+					onClick={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						resetManualPrice();
+					}}
+					className="inline-flex size-4 cursor-pointer items-center justify-center rounded-full text-info hover:bg-info/10 focus-visible:outline-2 focus-visible:outline-info"
+				>
+					<RotateCcw className="size-3" aria-hidden="true" />
+				</button>
 			)}
 			{warning &&
 				(kind === "buy" ? (

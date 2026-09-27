@@ -190,32 +190,32 @@ export function RecipeItem({
 							)}
 						</RecipeItemLink>
 						<span className="min-w-0 truncate text-[11px] font-medium text-foreground" title={item?.name}>
-							{item?.name ?? "Unknown item"}
+							{item?.shortName ?? item?.name ?? "Unknown item"}
 						</span>
 						{plan?.isTool && (
 							<span className="shrink-0 rounded-[3px] bg-info px-1 py-0.5 text-[7px] font-black uppercase text-inverse">
 								tool
 							</span>
 						)}
-						<span className="shrink-0 text-[10px] text-muted-foreground">—</span>
-						<span className="shrink-0 font-mono text-[10px] text-muted-foreground">{formatQuantity(count)} ×</span>
-						<span className="shrink-0 font-mono text-[10px]">
-							{plan?.isTool ? (
-								<span className="text-info">cost excluded</span>
-							) : (
-								<InlineItemPrice
-									item={item}
-									kind={priceKind}
-									buyMethod={method}
-									totalPrice={totalPrice}
-									displayPrice={unitRoutePrice}
-									overrides={overrides}
-									onPriceChange={onPriceChange}
-									onWarningShow={hover.close}
-									editable={method === "flea" || method === "sell" || method === "unavailable"}
-								/>
-							)}
-						</span>
+						{!plan?.isTool && (
+							<>
+								<span className="shrink-0 text-[10px] text-muted-foreground">—</span>
+								<span className="shrink-0 font-mono text-[10px] text-muted-foreground">{formatQuantity(count)} ×</span>
+								<span className="shrink-0 font-mono text-[10px]">
+									<InlineItemPrice
+										item={item}
+										kind={priceKind}
+										buyMethod={method}
+										totalPrice={totalPrice}
+										displayPrice={unitRoutePrice}
+										overrides={overrides}
+										onPriceChange={onPriceChange}
+										onWarningShow={hover.close}
+										editable={method === "flea" || method === "sell" || method === "unavailable"}
+									/>
+								</span>
+							</>
+						)}
 						{(routeSavingsTotal ?? 0) > 0 || (plan?.durationSeconds ?? 0) > 0 || canGoToRecipe ? (
 							<span className="ml-auto flex shrink-0 items-center gap-1.5">
 								{(routeSavingsTotal ?? 0) > 0 && cheapestDirectTotal !== null && plan?.totalCost !== null && (
@@ -294,26 +294,26 @@ export function RecipeItem({
 							>
 								{item?.shortName ?? item?.name ?? "Unknown item"}
 							</span>
-							<span className="font-mono text-[10px] text-muted-foreground">Quantity ×{formatQuantity(count)}</span>
-							<span className="font-mono text-[10px]">
-								{plan?.isTool ? (
-									<span className="text-info">Cost excluded</span>
-								) : (
-									<InlineItemPrice
-										item={item}
-										kind={priceKind}
-										buyMethod={method}
-										sellValueIsEstimate={sellValueIsEstimate}
-										totalPrice={totalPrice}
-										overrides={overrides}
-										onPriceChange={onPriceChange}
-										onWarningShow={hover.close}
-										editable={
-											priceKind === "sell" || method === "flea" || method === "sell" || method === "unavailable"
-										}
-									/>
-								)}
-							</span>
+							{!plan?.isTool && (
+								<>
+									<span className="font-mono text-[10px] text-muted-foreground">Quantity ×{formatQuantity(count)}</span>
+									<span className="font-mono text-[10px]">
+										<InlineItemPrice
+											item={item}
+											kind={priceKind}
+											buyMethod={method}
+											sellValueIsEstimate={sellValueIsEstimate}
+											totalPrice={totalPrice}
+											overrides={overrides}
+											onPriceChange={onPriceChange}
+											onWarningShow={hover.close}
+											editable={
+												priceKind === "sell" || method === "flea" || method === "sell" || method === "unavailable"
+											}
+										/>
+									</span>
+								</>
+							)}
 						</span>
 					</>
 				)}

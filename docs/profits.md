@@ -154,6 +154,10 @@ The initial best route is borderless; merely having alternatives (locked or usab
 does not add a border. Unknown locked prices cannot establish a fallback. Tooltips
 report available/locked source counts and explain marked fallbacks.
 Ingredient controls have no muted background or divider lines between ingredients.
+Profit ingredient rows prefer item short names while keeping full names in their
+hover text. Reusable tools show their tool badge without a quantity, separator,
+or price text. Customized prices have a dashed underline and a reset arrow that
+immediately restores the normal price for that item and side (buy or sell).
 Output tint fills the cell height while the item details stay at the top; locked
 outputs retain their red tint.
 Automatic recommendations still exclude locked sources; the existing ingredient
