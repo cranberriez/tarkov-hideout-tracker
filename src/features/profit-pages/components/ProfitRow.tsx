@@ -29,7 +29,6 @@ export function ProfitRow({
 	craftsById,
 	tradersById,
 	stationsById,
-	onItemOpen,
 	onGoToRecipe,
 	highlighted,
 	pinned,
@@ -51,7 +50,6 @@ export function ProfitRow({
 	craftsById: Readonly<Record<string, CraftRecord>>;
 	tradersById: Readonly<Record<string, Trader>>;
 	stationsById: Readonly<Record<string, ProfitStationSource>>;
-	onItemOpen: (itemId: string) => void;
 	onGoToRecipe: GoToRecipeHandler;
 	highlighted: boolean;
 	pinned: boolean;
@@ -131,7 +129,6 @@ export function ProfitRow({
 						overrides={overrides}
 						onPriceChange={onPriceChange}
 						routeContext={routeContext}
-						onItemOpen={onItemOpen}
 						recipePreview={{
 							kind: evaluation.kind,
 							sourceId: evaluation.id,
@@ -175,7 +172,6 @@ export function ProfitRow({
 							onPriceChange={onPriceChange}
 							routeContext={routeContext}
 							compactLine
-							onItemOpen={onItemOpen}
 							onGoToRecipe={onGoToRecipe}
 							onRouteChange={(routeKey) => onRouteChange(index, routeKey)}
 							baseRouteKey={acquisitionRouteKey(baseEvaluation.requiredItems[index])}

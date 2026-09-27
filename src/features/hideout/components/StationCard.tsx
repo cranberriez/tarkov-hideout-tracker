@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeStationUpgradeStatus } from "../station-model";
 import type { Station } from "@/types/hideout";
 import type { ItemSummary } from "@/types/items";
 import { StationCardHeader } from "./StationCardHeader";
 import { StationRequirementsSection } from "./StationRequirementsSection";
-import { ItemDetailModal } from "@/features/items/item-detail/LazyItemDetailModal";
 
 interface StationCardProps {
     station: Station;
@@ -38,8 +36,6 @@ export function StationCard({
         itemCounts,
         addItemCounts,
     } = useUserStore();
-
-    const [selectedItem, setSelectedItem] = useState<ItemSummary | null>(null);
 
     const currentLevel = stationLevels[station.id] ?? 0;
     const maxLevel = station.levels.length;
@@ -157,20 +153,12 @@ export function StationCard({
                     toggleRequirement={toggleRequirement}
                     hideMoney={hideMoney}
                     hideoutCompactMode={hideoutCompactMode}
-                    onClickItem={setSelectedItem}
                     pooledFirByItem={pooledFirByItem}
                     itemById={itemById}
                     upgradeStatus={upgradeStatus}
                 />
             )}
 
-            {selectedItem && (
-                <ItemDetailModal
-                    item={itemById[selectedItem.id] ?? selectedItem}
-                    isOpen={!!selectedItem}
-                    onClose={() => setSelectedItem(null)}
-                />
-            )}
         </div>
     );
 }

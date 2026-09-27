@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { Clock3, Hammer } from "lucide-react";
 import type { ItemAmount, ItemCraftRecipe } from "@/features/items/item-detail/item-detail-types";
 import type { ItemSummary } from "@/types/items";
 import type { GameEdition } from "@/lib/stores/useUserStore";
-import { questHref } from "@/features/quests/quest-routes";
+import { QuestLink } from "@/components/entities/quest-link";
 import { AvailabilityBadge, RecommendationBadge, ToolBadge } from "./ItemDetailBadges";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
 import { ItemDetailRecipeFlow } from "./ItemDetailRecipeFlow";
@@ -24,7 +23,6 @@ interface ItemDetailCraftingProps {
     profitError: string | null;
     onRetryProfit?: () => void;
     outputItem: ItemSummary;
-    onItemClick: (itemId: string) => void;
 }
 
 export function ItemDetailCrafting({
@@ -38,7 +36,6 @@ export function ItemDetailCrafting({
     profitError,
     onRetryProfit,
     outputItem,
-    onItemClick,
 }: ItemDetailCraftingProps) {
     const sorted = [...recipes].sort((a, b) =>
         Number(isCraftAvailable(b, completedQuests, stationLevels, gameEdition)) -
@@ -112,7 +109,6 @@ export function ItemDetailCrafting({
                                     plan={evaluation?.requiredItems.find(
                                         (candidate) => candidate.itemId === entry.item.id,
                                     )}
-                                    onItemClick={onItemClick}
                                 />
                             ))}
                             {recipe.requiredQuestItems.map((entry, index) => (
@@ -120,7 +116,6 @@ export function ItemDetailCrafting({
                                     key={`quest-${entry.item.id}-${index}`}
                                     entry={entry}
                                     questItem
-                                    onItemClick={onItemClick}
                                 />
                             ))}
                         </ItemDetailRecipeFlow>
@@ -169,18 +164,16 @@ function Ingredient({
     manualBuy,
     plan,
     questItem = false,
-    onItemClick,
 }: {
     entry: ItemAmount;
     manualBuy?: number;
     plan?: AcquisitionPlan;
     questItem?: boolean;
-    onItemClick: (itemId: string) => void;
 }) {
     return (
         <ItemDetailItemChip
             item={entry.item}
-            onClick={questItem ? undefined : () => onItemClick(entry.item.id)}
+            linked={!questItem}
             quantityLabel={`${entry.count}`}
             quantityOverlay
             secondary={
@@ -235,12 +228,11 @@ function LockedReasons({
                 <>
                     <span>
                         Needs{" "}
-                        <Link
-                            href={questHref(recipe.taskUnlock.id)}
+                        <QuestLink
+                            questId={recipe.taskUnlock.id}
+                            name={recipe.taskUnlock.name}
                             className="underline decoration-warning/30 underline-offset-2 hover:text-foreground"
-                        >
-                            {recipe.taskUnlock.name}
-                        </Link>
+                        />
                     </span>
                     {!editionMet && <span className="text-muted-foreground">·</span>}
                 </>

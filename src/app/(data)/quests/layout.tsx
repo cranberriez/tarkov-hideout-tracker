@@ -11,7 +11,8 @@ import { prefetchPageData } from "@/server/queries/prefetchPageData";
 import { getCurrentPageRepository } from "@/server/queries/currentPageRepository";
 
 export const metadata: Metadata = {
-	title: "Quests",
+	// A plain string title here would drop the root template for quest routes.
+	title: { default: "Quests · Tarkov Hideout Tracker", template: "%s · Tarkov Hideout Tracker" },
 	description: "Escape from Tarkov quest log with objectives, requirements, unlocks, and maps.",
 };
 

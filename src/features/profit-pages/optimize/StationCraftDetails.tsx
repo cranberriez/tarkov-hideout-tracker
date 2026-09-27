@@ -1,4 +1,5 @@
 "use client";
+import { ItemLink } from "@/components/entities/item-link";
 import { getItemSellComparison, type AcquisitionPlan, type RecipeCalculatorInput, type RecipeEvaluation } from "@/lib/price-calculation";
 import { fleaTargetPrice, itemBasePrice } from "@/lib/price-calculation/calc-tax";
 import type { PriceChangeHandler, ProfitStationSource } from "../types";
@@ -18,7 +19,6 @@ export function StationCraftDetails({
 	traders,
 	onChoice,
 	onPriceChange,
-	onItemOpen,
 }: {
 	craft: BoardCraft;
 	row: RecipeEvaluation;
@@ -28,7 +28,6 @@ export function StationCraftDetails({
 	traders: Record<string, { name: string }>;
 	onChoice: (choice: BoardChoice) => void;
 	onPriceChange: PriceChangeHandler;
-	onItemOpen: (id: string) => void;
 }) {
 	const selected = choice ?? { variant: "direct" };
 	const estimatedRow = selectedBoardCraft(craft, { ...selected, unitCosts: undefined });
@@ -59,10 +58,10 @@ export function StationCraftDetails({
 	function chain(parts: AcquisitionPlan[], depth = 0): React.ReactNode {
 		return parts.map((part) => (
 			<div key={`${part.itemId}:${part.sourceId}:${part.isTool}`} className="py-1" style={{ paddingLeft: Math.min(depth, 4) * 12 }}>
-				<button type="button" className="inline-flex items-center gap-2 text-left text-xs hover:text-brand" onClick={() => onItemOpen(part.itemId)}>
+				<ItemLink item={input.itemsById[part.itemId] ?? { id: part.itemId, name: part.itemId }} className="inline-flex items-center gap-2 text-left text-xs hover:text-brand focus-visible:outline-2 focus-visible:outline-brand">
 					<CraftImage item={input.itemsById[part.itemId]} size={24} />
 					{formatQuantity(part.quantity)}× {input.itemsById[part.itemId]?.name ?? part.itemId}
-				</button>
+				</ItemLink>
 				<span className="ml-2 text-[11px] text-muted-foreground">
 					{part.isTool
 						? "Reusable tool"
@@ -113,7 +112,6 @@ export function StationCraftDetails({
 							input={input}
 							routeLabel={routeLabel}
 							onChoice={onChoice}
-							onItemOpen={onItemOpen}
 						/>
 					))}
 					<details className="text-[11px] text-muted-foreground">

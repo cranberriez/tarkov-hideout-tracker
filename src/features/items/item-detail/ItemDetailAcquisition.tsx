@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import type { ItemAmount, ItemTraderOffer } from "@/features/items/item-detail/item-detail-types";
 import type { ItemSummary } from "@/types/items";
-import { questHref } from "@/features/quests/quest-routes";
+import { QuestLink } from "@/components/entities/quest-link";
 import { AvailabilityBadge, RecommendationBadge, ToolBadge } from "./ItemDetailBadges";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
 import { ItemDetailRecipeFlow } from "./ItemDetailRecipeFlow";
@@ -22,7 +21,6 @@ interface ItemDetailAcquisitionProps {
     profitError: string | null;
     onRetryProfit?: () => void;
     outputItem: ItemSummary;
-    onItemClick: (itemId: string) => void;
 }
 
 export function ItemDetailAcquisition({
@@ -35,7 +33,6 @@ export function ItemDetailAcquisition({
     profitError,
     onRetryProfit,
     outputItem,
-    onItemClick,
 }: ItemDetailAcquisitionProps) {
     const sorted = [...offers].sort((a, b) => {
         const aAvailable = isOfferAvailable(a, completedQuests, traderLoyaltyLevels);
@@ -117,7 +114,6 @@ export function ItemDetailAcquisition({
                                         plan={evaluation?.requiredItems.find(
                                             (candidate) => candidate.itemId === entry.item.id,
                                         )}
-                                        onItemClick={onItemClick}
                                     />
                                 ))}
                             </ItemDetailRecipeFlow>
@@ -144,12 +140,10 @@ function CostItem({
     entry,
     manualBuy,
     plan,
-    onItemClick,
 }: {
     entry: ItemAmount;
     manualBuy?: number;
     plan?: AcquisitionPlan;
-    onItemClick: (itemId: string) => void;
 }) {
     const currencySymbol =
         entry.item.normalizedName === "roubles"
@@ -162,7 +156,6 @@ function CostItem({
     return (
         <ItemDetailItemChip
             item={entry.item}
-            onClick={() => onItemClick(entry.item.id)}
             quantityLabel={
                 currencySymbol
                     ? `${currencySymbol}${entry.count.toLocaleString()}`
@@ -241,12 +234,11 @@ function LockedReasons({
             {!questMet && offer.taskUnlock && (
                 <span>
                     Needs{" "}
-                    <Link
-                        href={questHref(offer.taskUnlock.id)}
+                    <QuestLink
+                        questId={offer.taskUnlock.id}
+                        name={offer.taskUnlock.name}
                         className="underline decoration-warning/30 underline-offset-2 hover:text-foreground"
-                    >
-                        {offer.taskUnlock.name}
-                    </Link>
+                    />
                 </span>
             )}
         </span>

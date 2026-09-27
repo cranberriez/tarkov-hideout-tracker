@@ -1,13 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import type { ItemSize } from "@/lib/stores/useUserStore";
 import type { ItemSummary } from "@/types/items";
 import type { DerivedQuestAnyOfGroup } from "@/lib/quests/quest-item-index";
 import { cn } from "@/lib/utils";
-import { questHref } from "@/features/quests/quest-routes";
+import { ItemLink } from "@/components/entities/item-link";
+import { QuestLink } from "@/components/entities/quest-link";
 
 const MAX_PREVIEW_ITEMS = 3;
 
@@ -19,7 +19,6 @@ interface ItemAnyOfGroupCardProps {
     expanded: boolean;
     size: ItemSize;
     onToggleExpanded: () => void;
-    onClickItem: (item: ItemSummary) => void;
 }
 
 interface ItemPreviewStackProps {
@@ -39,7 +38,6 @@ interface GroupHeaderProps {
 interface GroupItemsGridProps {
     items: AnyOfGroupItem[];
     isFirRequired: boolean;
-    onClickItem: (item: ItemSummary) => void;
 }
 
 function ItemImage({ item, className }: { item: AnyOfGroupItem; className: string }) {
@@ -113,14 +111,15 @@ function GroupHeader({ group, expanded, isIconMode }: GroupHeaderProps) {
                         {group.questName}
                     </h3>
 
-                    <Link
-                        href={questHref(group.questId)}
+                    <QuestLink
+                        questId={group.questId}
+                        name={group.questName}
                         className="inline-flex w-fit items-center gap-1 text-xs text-subtle-foreground transition-colors hover:text-brand"
                         onClick={(e) => e.stopPropagation()}
                     >
                         Quest
                         <ExternalLink size={12} />
-                    </Link>
+                    </QuestLink>
                 </div>
 
                 <span className="shrink-0 text-subtle-foreground">
@@ -161,15 +160,14 @@ function ObjectiveLabelRow({
     );
 }
 
-function GroupItemsGrid({ items, isFirRequired, onClickItem }: GroupItemsGridProps) {
+function GroupItemsGrid({ items, isFirRequired }: GroupItemsGridProps) {
     return (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {items.map((item) => (
-                <button
+                <ItemLink
                     key={item.id}
-                    type="button"
-                    onClick={() => onClickItem(item)}
-                    className="flex items-center gap-3 rounded-md border border-highlight/10 bg-shadow/20 p-2 text-left transition-colors hover:border-info"
+                    item={item}
+                    className="flex items-center gap-3 rounded-md border border-highlight/10 bg-shadow/20 p-2 text-left transition-colors hover:border-info focus-visible:outline-2 focus-visible:outline-brand"
                 >
                     <div
                         className={cn(
@@ -183,7 +181,7 @@ function GroupItemsGrid({ items, isFirRequired, onClickItem }: GroupItemsGridPro
                     <div className="min-w-0">
                         <div className="line-clamp-2 text-sm text-foreground">{item.name}</div>
                     </div>
-                </button>
+                </ItemLink>
             ))}
         </div>
     );
@@ -195,7 +193,6 @@ export function ItemAnyOfGroupCard({
     expanded,
     size,
     onToggleExpanded,
-    onClickItem,
 }: ItemAnyOfGroupCardProps) {
     const previewItems = useMemo(() => items.slice(0, MAX_PREVIEW_ITEMS), [items]);
     const [previewIndex, setPreviewIndex] = useState(0);
@@ -258,7 +255,6 @@ export function ItemAnyOfGroupCard({
                     <GroupItemsGrid
                         items={items}
                         isFirRequired={isFirRequired}
-                        onClickItem={onClickItem}
                     />
                 </div>
             )}

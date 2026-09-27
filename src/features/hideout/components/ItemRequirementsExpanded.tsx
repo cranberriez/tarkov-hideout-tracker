@@ -1,6 +1,7 @@
 "use client";
 
 import type { BaseItemRequirementsProps } from "./ItemRequirements";
+import { ItemLink } from "@/components/entities/item-link";
 import Image from "next/image";
 import { CircleCheckBig, Check } from "lucide-react";
 import { formatNumber } from "@/lib/utils/format-number";
@@ -11,7 +12,6 @@ import { describeFleaPrice, formatFleaPriceState } from "@/lib/utils/market-pric
 export function ExpandedItemRequirements({
 	nextLevelData,
 	hideMoney,
-	onClickItem,
 	pooledFirByItem,
 	itemById,
 }: BaseItemRequirementsProps) {
@@ -64,10 +64,10 @@ export function ExpandedItemRequirements({
 						: false;
 
 					return (
-						<div
+						<ItemLink
 							key={req.id}
-							onClick={() => onClickItem(item)}
-							className={`flex items-center gap-3 bg-shadow/20 p-1 border transition-colors cursor-pointer ${
+							item={item}
+							className={`flex items-center gap-3 bg-shadow/20 p-1 border transition-colors focus-visible:outline-2 focus-visible:outline-brand ${
 								isCompleted
 									? "border-success/30 opacity-60 bg-success-surface/5"
 									: "border-highlight/5 hover:border-highlight/10"
@@ -129,7 +129,7 @@ export function ExpandedItemRequirements({
 									</div>
 								)}
 							</div>
-						</div>
+						</ItemLink>
 					);
 				})}
 		</div>

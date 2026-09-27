@@ -31,7 +31,8 @@ entire directory ignored by Git.
 
 | Task | Read | Start in source |
 |---|---|---|
-| Add a page or navigation | [Architecture](docs/architecture.md) | [App routes](<src/app/(data)/>), [Navbar](src/components/core/Navbar.tsx), [queries](src/server/queries/), [contracts](src/types/contracts.ts) |
+| Add a page or navigation | [Architecture](docs/architecture.md) | [App routes](<src/app/(data)/>), [Navbar](src/components/core/Navbar.tsx), [queries](src/server/queries/), [contracts](src/types/contracts.ts), [entity routes](src/lib/entity-routes.ts) |
+| Add or change shared UI, entity links, or previews | [Architecture](docs/architecture.md) | [UI primitives](src/components/ui/), [entity components](src/components/entities/), [filter kit](src/components/ui/filter-bar.tsx) |
 | Add/change provider data or API payload | [Data layer](docs/data-layer.md) | [Adapters](src/server/services/), [repository interface](src/server/repositories/tarkov-data/types.ts), [queries](src/server/queries/), [DB reads](src/server/db/), [generator](db-scripts/generate.mjs) |
 | Change a domain type | [Data layer](docs/data-layer.md) | Owning [src/types module](src/types/); [contracts](src/types/contracts.ts) for read payloads |
 | Change progress, preferences, setup, or reset | [User state](docs/user-state.md) | [useUserStore](src/lib/stores/useUserStore.ts), [useKappaStore](src/lib/stores/useKappaStore.ts), [setup](src/features/setup/), [StorageResetCard](src/features/settings/StorageResetCard.tsx) |

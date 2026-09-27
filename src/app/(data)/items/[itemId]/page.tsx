@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DataLoadError } from "@/components/core/DataLoadError";
 import { ItemDetailsPage } from "@/features/items/item-detail/ItemDetailsPage";
-import { itemHref } from "@/features/items/item-routes";
+import { itemHref } from "@/lib/entity-routes";
 import { decodeRouteParam } from "@/lib/utils/route-param";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
 import { getItemDetailPageData } from "@/server/queries/getItemDetailPageData";

@@ -1,4 +1,5 @@
 "use client";
+import { ItemLink } from "@/components/entities/item-link";
 import type { ReactNode } from "react";
 import { Pin, SlidersHorizontal } from "lucide-react";
 import type { RecipeCalculatorInput, RecipeEvaluation } from "@/lib/price-calculation";
@@ -12,7 +13,6 @@ export function StationCraftRow({
 	pinned,
 	open,
 	placement,
-	onItemOpen,
 	onTogglePinned,
 	onToggleDetails,
 	children,
@@ -22,7 +22,6 @@ export function StationCraftRow({
 	pinned: boolean;
 	open: boolean;
 	placement?: number;
-	onItemOpen: (id: string) => void;
 	onTogglePinned: () => void;
 	onToggleDetails: () => void;
 	children?: ReactNode;
@@ -34,21 +33,20 @@ export function StationCraftRow({
 	return (
 		<div className={`bg-highlight/2.5 ${pinned ? "bg-highlight/5" : ""} rounded`}>
 			<div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-2 py-2.5 lg:grid-cols-[minmax(170px,1.15fr)_82px_minmax(200px,2fr)_108px_124px_78px]">
-				<button type="button" onClick={() => onItemOpen(row.outputItemId)} className="flex min-w-0 items-center gap-2 text-left hover:text-brand">
+				<ItemLink item={output ?? { id: row.outputItemId, name: row.outputItemId }} className="flex min-w-0 items-center gap-2 text-left hover:text-brand focus-visible:outline-2 focus-visible:outline-brand">
 					<CraftImage item={output} size={36} />
 					<span className="min-w-0 text-xs font-medium">
 						{output?.name ?? row.outputItemId}
 						<span className="ml-1 text-muted-foreground">×{formatQuantity(row.outputCount)}</span>
 					</span>
-				</button>
+				</ItemLink>
 				<span className="text-xs text-muted-foreground lg:block">{formatDuration(row.durationSeconds)}</span>
 				<div className="col-span-2 flex flex-wrap items-center gap-x-3 gap-y-1 lg:col-span-1">
 					{row.requiredItems.map((part) => (
-						<button
+						<ItemLink
 							key={`${part.itemId}:${part.isTool}`}
-							type="button"
-							title={`${itemsById[part.itemId]?.name ?? part.itemId}${part.isTool ? " · reusable tool" : ""}`}
-							onClick={() => onItemOpen(part.itemId)}
+							item={itemsById[part.itemId] ?? { id: part.itemId, name: part.itemId }}
+							aria-label={`${formatQuantity(part.quantity)} × ${itemsById[part.itemId]?.name ?? part.itemId}${part.isTool ? ", reusable tool" : ""}`}
 							className={`inline-flex items-center gap-1 text-xs hover:text-foreground ${part.isTool ? "text-muted-foreground/70" : "text-muted-foreground"}`}
 						>
 							<CraftImage item={itemsById[part.itemId]} size={22} />
@@ -56,7 +54,7 @@ export function StationCraftRow({
 								{formatQuantity(part.quantity)}× {itemsById[part.itemId]?.shortName ?? itemsById[part.itemId]?.name ?? part.itemId}
 								{part.isTool ? " · tool" : ""}
 							</span>
-						</button>
+						</ItemLink>
 					))}
 				</div>
 				<div className="text-xs">

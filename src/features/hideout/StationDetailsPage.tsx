@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ChevronRight, Clock } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
@@ -11,7 +10,6 @@ import { DataNotice } from "@/components/ui/data-notice";
 import { DetailSection } from "@/components/ui/detail-section";
 import { FilterRadioGroup } from "@/components/ui/filter-bar";
 import { useDeferredPriceItems } from "@/features/items/DeferredPriceBoundary";
-import { itemHref } from "@/features/items/item-routes";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { formatDuration } from "@/lib/utils/format-time";
@@ -23,14 +21,13 @@ import { NonItemRequirements } from "./components/NonItemRequirements";
 import { StationCrafts } from "./components/StationCrafts";
 import { StationIdentity, StationImage } from "./components/StationIdentity";
 import { computeStationUpgradeStatus, defaultViewedLevel, getStationDependents, getStationLevel } from "./station-model";
-import { stationHref } from "./station-routes";
+import { stationHref } from "@/lib/entity-routes";
 
 /**
  * `/hideout/stations/[stationId]`. The viewed level is local page state: browsing
  * requirements never changes the player's saved station level.
  */
 export function StationDetailsPage({ station, data, mode }: { station: Station; data: HideoutPageData; mode: TarkovJsonGameMode }) {
-    const router = useRouter();
     const stations = useMemo(() => data.stations ?? [station], [data.stations, station]);
     const items = useDeferredPriceItems(data.items);
     const itemById = useMemo(() => Object.fromEntries((items ?? []).map((item) => [item.id, item])), [items]);
@@ -158,7 +155,6 @@ export function StationDetailsPage({ station, data, mode }: { station: Station; 
                                     hideMoney={false}
                                     completedRequirements={store.completedRequirements}
                                     toggleRequirement={store.toggleRequirement}
-                                    onClickItem={(item) => router.push(itemHref(item.id))}
                                     pooledFirByItem={pooledFirByItem}
                                     itemById={itemById}
                                 />

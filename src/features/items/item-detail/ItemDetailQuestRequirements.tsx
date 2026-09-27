@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowRight, CheckCircle, Circle, ExternalLink, Gift, PackageOpen } from "lucide-react";
 import type {
     DerivedQuestAnyOfGroup,
@@ -8,7 +7,7 @@ import type {
     DerivedQuestItemState,
     QuestRewardLink,
 } from "@/lib/quests/quest-item-index";
-import { questHref } from "@/features/quests/quest-routes";
+import { QuestLink } from "@/components/entities/quest-link";
 import { hasDisplayQuestLevel } from "@/lib/quests/quest-display";
 import type { ItemSummary } from "@/types/items";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
@@ -96,7 +95,7 @@ function QuestRewardRow({ reward, itemImageLink, completed }: { reward: QuestRew
                     </div>
                 </div>
                 <ItemRequirementCount imageLink={itemImageLink} standardCount={reward.count} firCount={0} />
-                <QuestActions questId={reward.questId} wikiLink={reward.questWikiLink} />
+                <QuestActions questId={reward.questId} questName={reward.questName} wikiLink={reward.questWikiLink} />
             </div>
         </div>
     );
@@ -156,7 +155,7 @@ function QuestRow({
                     standardCount={standardCount}
                     firCount={quest.requiredFirCount}
                 />
-                <QuestActions questId={quest.questId} wikiLink={quest.questWikiLink} />
+                <QuestActions questId={quest.questId} questName={quest.questName} wikiLink={quest.questWikiLink} />
             </div>
         </div>
     );
@@ -234,7 +233,7 @@ function AnyOfGroupRow({
                     standardCount={group.requiredCount}
                     firCount={0}
                 />
-                <QuestActions questId={group.questId} wikiLink={group.questWikiLink} />
+                <QuestActions questId={group.questId} questName={group.questName} wikiLink={group.questWikiLink} />
             </div>
             <div className="mt-2 text-[11px] text-muted-foreground">
                 <span className="font-semibold text-foreground">Any x{group.requiredCount}: </span>
@@ -308,15 +307,17 @@ function ItemRequirementCount({
     );
 }
 
-function QuestActions({ questId, wikiLink }: { questId: string; wikiLink?: string | null }) {
+function QuestActions({ questId, questName, wikiLink }: { questId: string; questName: string; wikiLink?: string | null }) {
     return (
         <div className="flex shrink-0 items-center gap-3 text-[11px]">
-            <Link
-                href={questHref(questId)}
+            <QuestLink
+                questId={questId}
+                name={questName}
+                aria-label={`View quest: ${questName}`}
                 className="flex items-center gap-1 font-medium text-foreground transition-colors hover:text-brand"
             >
                 View <ArrowRight size={12} />
-            </Link>
+            </QuestLink>
             {wikiLink && (
                 <a
                     href={wikiLink}

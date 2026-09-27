@@ -198,9 +198,9 @@ independently by app mode; key and reset semantics belong to [user state](user-s
 
 [ItemDetailRecipeProfit](../src/features/items/item-detail/ItemDetailRecipeProfit.tsx)
 uses the same engine with a bounded acquisition tree. Recipe links navigate to
-the corresponding profit row; standard ingredient clicks reuse item-modal navigation.
-When extending calculations, update the engine and consumers together so a modal
-and a full profit page do not disagree for the same inputs.
+the corresponding profit row; standard ingredients link to their item pages.
+When extending calculations, update the engine and consumers together so an item
+page and a full profit page do not disagree for the same inputs.
 
 ## Flea tax and net proceeds
 

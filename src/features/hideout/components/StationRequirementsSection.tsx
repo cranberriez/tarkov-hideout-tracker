@@ -15,7 +15,6 @@ export interface StationRequirementsSectionProps {
     toggleRequirement: (requirementId: string) => void;
     hideMoney: boolean;
     hideoutCompactMode: boolean;
-    onClickItem: (item: ItemSummary) => void;
     pooledFirByItem: Record<string, number>;
     itemById: Readonly<Record<string, ItemSummary>>;
     upgradeStatus: "ready" | "missing" | "illegal";
@@ -31,7 +30,6 @@ export function StationRequirementsSection({
     toggleRequirement,
     hideMoney,
     hideoutCompactMode,
-    onClickItem,
     pooledFirByItem,
     itemById,
     upgradeStatus,
@@ -88,7 +86,6 @@ export function StationRequirementsSection({
                             hideMoney={hideMoney}
                             completedRequirements={completedRequirements}
                             toggleRequirement={toggleRequirement}
-                            onClickItem={onClickItem}
                             pooledFirByItem={pooledFirByItem}
                             itemById={itemById}
                         />
@@ -99,7 +96,6 @@ export function StationRequirementsSection({
                             hideMoney={hideMoney}
                             completedRequirements={completedRequirements}
                             toggleRequirement={toggleRequirement}
-                            onClickItem={onClickItem}
                             pooledFirByItem={pooledFirByItem}
                             itemById={itemById}
                         />

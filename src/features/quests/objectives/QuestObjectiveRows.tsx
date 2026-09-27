@@ -4,8 +4,12 @@ import { useState } from "react";
 import {
     ChevronDown,
     ChevronUp,
-    Package,
 } from "lucide-react";
+import { ItemLink } from "@/components/entities/item-link";
+import { ItemReference } from "@/components/entities/item-reference";
+import { ItemThumbnail } from "@/components/entities/item-thumbnail";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import type { FullQuestObjective, QuestObjectiveItemType, QuestObjectiveShootType } from "@/types/quests";
 import type { ItemSummary } from "@/types/items";
 import { QuestObjectiveIcon } from "./QuestObjectiveIcon";
@@ -59,19 +63,14 @@ function RequiredKeysList({ groups, large = false }: { groups: ItemSummary[][]; 
                         <span className="text-[10px] text-subtle-foreground">or</span>
                     )}
                     {group.map((key) => (
-                        <span
+                        <ItemLink
                             key={key.id}
-                            className={`inline-flex items-stretch overflow-hidden rounded border border-highlight/10 bg-shadow/35 leading-snug text-foreground ${large ? "min-h-7 text-xs" : "min-h-5 text-[11px]"}`}
+                            item={key}
+                            className={`inline-flex items-stretch overflow-hidden rounded border border-highlight/10 bg-shadow/35 leading-snug text-foreground transition-colors hover:border-highlight/25 focus-visible:outline-2 focus-visible:outline-brand ${large ? "min-h-7 text-xs" : "min-h-5 text-[11px]"}`}
                         >
-                            {(key.iconLink ?? key.gridImageLink) && (
-                                <img
-                                    src={key.iconLink ?? key.gridImageLink ?? ""}
-                                    alt=""
-                                    className={large ? "h-7 w-7 shrink-0 self-center object-contain" : "h-5 w-5 shrink-0 self-center object-contain"}
-                                />
-                            )}
+                            <ItemThumbnail item={key} size={large ? "sm" : "xs"} className="self-center" />
                             <span className={`self-center ${large ? "px-2.5" : "px-2"}`}>{key.name}</span>
-                        </span>
+                        </ItemLink>
                     ))}
                 </div>
             ))}
@@ -81,7 +80,6 @@ function RequiredKeysList({ groups, large = false }: { groups: ItemSummary[][]; 
 
 interface ObjectiveRowProps {
     objective: FullQuestObjective;
-    onItemClick?: (itemId: string) => void;
     itemDisplay?: "compact" | "rows";
     showItems?: boolean;
     objectiveCompletion?: {
@@ -93,7 +91,7 @@ interface ObjectiveRowProps {
 const WORKSPACE_ITEM_PREVIEW_LIMIT = 10;
 const COMPACT_ITEM_PREVIEW_LIMIT = 15;
 
-export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", showItems = true, objectiveCompletion }: ObjectiveRowProps) {
+export function ObjectiveRow({ objective, itemDisplay = "compact", showItems = true, objectiveCompletion }: ObjectiveRowProps) {
     const [showAllItems, setShowAllItems] = useState(false);
     const { itemById } = useQuestActions();
     const item = isItemObjective(objective) ? objective : null;
@@ -192,45 +190,16 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
                         {(objective.type === "giveItem" || objective.type === "plantItem") && standardItems.length > 0 && (
                             <div className="flex flex-wrap gap-1.5">
                                 {compactItems.map((itm) => (
-                                    <div
+                                    <ItemLink
                                         key={itm.id}
-                                        className={`flex items-center gap-1.5 rounded border border-highlight/10 bg-shadow/40 px-2 py-1 ${onItemClick ? "cursor-pointer hover:border-highlight/25 transition-colors" : ""}`}
-                                        onClick={
-                                            onItemClick
-                                                ? (e) => {
-                                                      e.stopPropagation();
-                                                      onItemClick(itm.id);
-                                                  }
-                                                : undefined
-                                        }
+                                        item={itm}
+                                        className="flex items-center gap-1.5 rounded border border-highlight/10 bg-shadow/40 px-2 py-1 transition-colors hover:border-highlight/25 focus-visible:outline-2 focus-visible:outline-brand"
                                     >
-                                        {(itm.iconLink ?? itm.gridImageLink) && (
-                                            <span
-                                                className={`flex h-6 w-6 items-center justify-center rounded-sm bg-shadow/35 ${
-                                                    item.foundInRaid ? "ring-1 ring-warning" : ""
-                                                }`}
-                                            >
-                                                <img
-                                                    src={itm.iconLink ?? itm.gridImageLink ?? ""}
-                                                    alt={itm.name}
-                                                    className="h-5 w-5 object-contain"
-                                                />
-                                            </span>
-                                        )}
-                                        <span className="text-[11px] text-foreground">
-                                            {itm.name}
-                                        </span>
-                                        {!hasItemChoices && (
-                                            <span className="text-[11px] text-subtle-foreground">
-                                                x{item.count}
-                                            </span>
-                                        )}
-                                        {!hasItemChoices && item.foundInRaid && (
-                                            <span className="text-[9px] text-warning font-medium">
-                                                FiR
-                                            </span>
-                                        )}
-                                    </div>
+                                        <ItemThumbnail item={itm} size="xs" className={item.foundInRaid ? "rounded-sm ring-1 ring-warning" : undefined} />
+                                        <span className="text-[11px] text-foreground">{itm.name}</span>
+                                        {!hasItemChoices && <span className="text-[11px] text-subtle-foreground">x{item.count}</span>}
+                                        {!hasItemChoices && item.foundInRaid && <Badge tone="warning" size="xs">FiR</Badge>}
+                                    </ItemLink>
                                 ))}
                             </div>
                         )}
@@ -246,25 +215,19 @@ export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", 
                         )}
                         <div className="flex flex-wrap gap-2.5">
                             {visibleRowItems.map((rowItem) => {
-                                const content = (
-                                    <>
-                                        <span className={`flex h-11 w-11 shrink-0 items-center justify-center border bg-shadow/35 ${item?.foundInRaid ? "border-warning/65" : "border-highlight/15"}`}>
-                                            {(rowItem.iconLink ?? rowItem.gridImageLink) ? <img src={rowItem.iconLink ?? rowItem.gridImageLink ?? ""} alt="" className="h-11 w-11 object-contain" /> : <Package size={17} className="text-subtle-foreground" />}
-                                        </span>
-                                        <span className="flex min-w-0 flex-1 flex-col justify-center px-2.5">
-                                            <span className="truncate text-xs text-foreground">{rowItem.name}</span>
-                                            {item?.foundInRaid && <span className="mt-0.5 text-[9px] font-semibold uppercase text-warning">FiR</span>}
-                                        </span>
-                                        {!hasItemChoices && <span className="shrink-0 pr-2.5 text-xs text-subtle-foreground">x{item?.count ?? objective.count ?? 1}</span>}
-                                    </>
-                                );
+                                // Quest-specific pickups are display-only: no inventory, pricing, or item page.
                                 const isQuestSpecific = "source" in rowItem && rowItem.source === "questSpecific";
-                                return onItemClick && !isQuestSpecific ? (
-                                    <button key={rowItem.id} type="button" onClick={(event) => { event.stopPropagation(); onItemClick(rowItem.id); }} className="flex min-w-[13rem] max-w-xs flex-[1_1_14rem] items-center border border-highlight/10 bg-shadow/20 text-left transition-colors hover:border-highlight/25 hover:bg-highlight/4">
-                                        {content}
-                                    </button>
-                                ) : (
-                                    <div key={rowItem.id} className="flex min-w-[13rem] max-w-xs flex-[1_1_14rem] items-center border border-highlight/10 bg-shadow/20">{content}</div>
+                                return (
+                                    <ItemReference
+                                        key={rowItem.id}
+                                        variant="row"
+                                        thumbnailSize="md"
+                                        linked={!isQuestSpecific}
+                                        item={rowItem}
+                                        className={cn("min-h-11", item?.foundInRaid && "border-warning/40")}
+                                        badges={item?.foundInRaid ? <Badge tone="warning" size="xs" className="mr-2">FiR</Badge> : undefined}
+                                        quantityLabel={hasItemChoices ? undefined : `x${item?.count ?? objective.count ?? 1}`}
+                                    />
                                 );
                             })}
                             {hiddenRowItemCount > 0 && (

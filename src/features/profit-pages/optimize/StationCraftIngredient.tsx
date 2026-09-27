@@ -1,4 +1,5 @@
 "use client";
+import { ItemLink } from "@/components/entities/item-link";
 import { ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { AcquisitionPlan, RecipeCalculatorInput } from "@/lib/price-calculation";
@@ -16,7 +17,6 @@ export function StationCraftIngredient({
 	input,
 	routeLabel,
 	onChoice,
-	onItemOpen,
 }: {
 	part: AcquisitionPlan;
 	estimate: AcquisitionPlan;
@@ -24,7 +24,6 @@ export function StationCraftIngredient({
 	input: RecipeCalculatorInput;
 	routeLabel: (part: { method: string; sourceId?: string; traderOffer?: { traderId: string } }) => string;
 	onChoice: (choice: BoardChoice) => void;
-	onItemOpen: (id: string) => void;
 }) {
 	const key = requirementKey(part);
 	const sources = ingredientSourceOptions(estimate);
@@ -64,14 +63,15 @@ export function StationCraftIngredient({
 		);
 	return (
 		<div className="grid grid-cols-[32px_minmax(0,1fr)] items-start gap-2.5">
-			<button type="button" aria-label={`Open ${name}`} onClick={() => onItemOpen(part.itemId)}>
+			{/* Decorative duplicate of the name link below; kept out of the tab order. */}
+			<ItemLink item={input.itemsById[part.itemId] ?? { id: part.itemId, name }} preview={false} tabIndex={-1} aria-hidden="true">
 				<CraftImage item={input.itemsById[part.itemId]} size={32} />
-			</button>
+			</ItemLink>
 			<div className="min-w-0 space-y-1.5">
 				<div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-					<button type="button" className="text-left hover:text-brand" onClick={() => onItemOpen(part.itemId)}>
+					<ItemLink item={input.itemsById[part.itemId] ?? { id: part.itemId, name }} className="text-left hover:text-brand focus-visible:outline-2 focus-visible:outline-brand">
 						{formatQuantity(part.quantity)}× {name}
-					</button>
+					</ItemLink>
 					{!part.isTool && part.quantity !== 1 && (
 						<span className="font-mono text-[11px] text-muted-foreground" aria-label={`Total cost for ${name}`}>
 							{formatRoundedRoubles(part.totalCost)}

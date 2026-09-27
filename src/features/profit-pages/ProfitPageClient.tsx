@@ -6,7 +6,6 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useShallow } from "zustand/react/shallow";
 import { DataLoadError } from "@/components/core/DataLoadError";
-import { ItemDetailModal } from "@/features/items/item-detail/LazyItemDetailModal";
 import { createRecipeCalculator } from "@/lib/price-calculation";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ProfitPageData } from "@/types/contracts";
@@ -95,7 +94,6 @@ export function ProfitPageClient({
   const [ingredientRouteSelections, setIngredientRouteSelections] = useState<
     Record<string, Record<number, string>>
   >({});
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [targetRecipeId, setTargetRecipeId] = useState<string | null>(
     initialTargetRecipeId ?? null,
   );
@@ -371,7 +369,6 @@ export function ProfitPageClient({
           completedQuests={completedQuests}
           overrides={overrides}
           onPriceChange={setItemOverride}
-          onItemOpen={setSelectedItemId}
           onGoToRecipe={goToRecipe}
           targetRecipeId={targetRecipeId}
           scrollRequestId={scrollRequestId}
@@ -402,11 +399,6 @@ export function ProfitPageClient({
               },
             }))
           }
-        />
-        <ItemDetailModal
-          item={selectedItemId ? (itemById[selectedItemId] ?? null) : null}
-          isOpen={selectedItemId !== null}
-          onClose={() => setSelectedItemId(null)}
         />
       </main>
     </ProfitPricingContext.Provider>

@@ -1,11 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { ChevronRight } from "lucide-react";
 import type { ItemSummary } from "@/types/items";
-import { itemHref } from "../item-routes";
 import { ItemDetailHeader } from "./ItemDetailHeader";
 import { ItemDetailSidebar } from "./ItemDetailSidebar";
 import { ItemDetailUsageTabs } from "./ItemDetailUsageTabs";
@@ -16,7 +14,6 @@ import { useItemDetailsController } from "./useItemDetailsController";
  * semantics, viewport caps, or in-dialog history: related items are page links.
  */
 export function ItemDetailsPage({ item }: { item: ItemSummary }) {
-    const router = useRouter();
     const knownItems = useMemo(() => [item], [item]);
     const vm = useItemDetailsController({ activeItemId: item.id, knownItems, enabled: true });
     const selectedItem = vm.selectedItem ?? item;
@@ -90,7 +87,6 @@ export function ItemDetailsPage({ item }: { item: ItemSummary }) {
                         profitLoading={vm.profitLoading}
                         profitError={vm.profitError}
                         onRetryProfit={vm.retryProfit}
-                        onItemClick={(itemId) => router.push(itemHref(itemId))}
                     />
                 </div>
             </div>

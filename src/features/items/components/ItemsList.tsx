@@ -1,5 +1,6 @@
 "use client";
 
+import { ItemLink } from "@/components/entities/item-link";
 import { useMemo, useState } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemRow } from "./ItemRow";
@@ -30,7 +31,6 @@ interface ItemsListProps {
     searchQuery: string;
     stations: Station[];
     itemById: Readonly<Record<string, ItemSummary>>;
-    onClickItem: (item: ItemSummary) => void;
     questItemIndex: QuestItemIndexEntry[];
     questAnyOfGroups: QuestAnyOfGroupEntry[];
     questAvailabilityQuests: QuestAvailabilityQuest[];
@@ -61,7 +61,6 @@ export function ItemsList({
     searchQuery,
     stations,
     itemById,
-    onClickItem,
     questItemIndex,
     questAnyOfGroups,
     questAvailabilityQuests,
@@ -440,7 +439,6 @@ export function ItemsList({
                                         [entry.group.groupId]: !current[entry.group.groupId],
                                     }))
                                 }
-                                onClickItem={onClickItem}
                             />
                         );
                     }
@@ -455,7 +453,6 @@ export function ItemsList({
                             size={itemsSize}
                             isHideout={isHideout}
                             isQuest={isQuest}
-                            onClick={() => onClickItem(details)}
                         />
                     );
                 })}
@@ -516,8 +513,7 @@ export function ItemsList({
                                         size={itemsSize}
                                         isHideout={isHideout}
                                         isQuest={isQuest}
-                                        onClick={() => onClickItem(details)}
-                                    />
+                                                />
                                 ),
                             )}
                         </div>
@@ -566,17 +562,16 @@ export function ItemsList({
                     </p>
                     <div className={`grid gap-2 ${gridClasses}`}>
                         {outsideMatches.items.map((item) => (
-                            <button
+                            <ItemLink
                                 key={item.id}
-                                type="button"
-                                onClick={() => onClickItem(item)}
+                                item={item}
                                 className="rounded-md border border-highlight/10 bg-shadow/20 p-3 text-left text-sm text-foreground hover:border-brand/50 focus-visible:outline-2 focus-visible:outline-brand"
                             >
                                 <span className="block font-medium">{item.name}</span>
                                 {item.shortName && (
                                     <span className="text-xs text-subtle-foreground">{item.shortName}</span>
                                 )}
-                            </button>
+                            </ItemLink>
                         ))}
                     </div>
                 </section>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Eye, EyeOff, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Station } from "@/types/hideout";
-import { stationHref } from "../station-routes";
+import { stationHref } from "@/lib/entity-routes";
 import { StationIdentity } from "./StationIdentity";
 
 export interface StationCardHeaderProps {

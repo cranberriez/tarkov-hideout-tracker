@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { itemHref } from "@/lib/entity-routes";
 import { useProfitPricingContext } from "./ProfitPricingContext";
 import Image from "next/image";
 import { ExternalLink } from "lucide-react";
@@ -51,7 +53,6 @@ export function RecipeItem({
   showRouteIcon = true,
   fillColumn = false,
   compactLine = false,
-  onItemOpen,
   onGoToRecipe,
   recipePreview,
   onRouteChange,
@@ -73,7 +74,6 @@ export function RecipeItem({
   showRouteIcon?: boolean;
   fillColumn?: boolean;
   compactLine?: boolean;
-  onItemOpen: (itemId: string) => void;
   onGoToRecipe?: GoToRecipeHandler;
   recipePreview?: RecipePreviewData;
   onRouteChange?: (routeKey: string) => void;
@@ -128,16 +128,25 @@ export function RecipeItem({
       hover.close();
       return;
     }
+    showHoverAt(event.clientX, event.clientY);
+  }
+  /** Keyboard focus shows the same card, anchored to the focused item link. */
+  function showHoverForFocus(event: React.FocusEvent<HTMLElement>) {
+    if (!event.currentTarget.matches(":focus-visible")) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    showHoverAt(bounds.right, bounds.bottom);
+  }
+  function showHoverAt(clientX: number, clientY: number) {
     const gap = 12;
     const hoverWidth = Math.min(
       resolvedRecipePreview || theoreticalRecipePreview ? 660 : 320,
       window.innerWidth - 16,
     );
     const preferredLeft =
-      event.clientX + gap + hoverWidth <= window.innerWidth - 8
-        ? event.clientX + gap
-        : event.clientX - hoverWidth - gap;
-    const placeAbove = event.clientY > window.innerHeight / 2;
+      clientX + gap + hoverWidth <= window.innerWidth - 8
+        ? clientX + gap
+        : clientX - hoverWidth - gap;
+    const placeAbove = clientY > window.innerHeight / 2;
     hover.show({
       position: {
         left: Math.max(
@@ -146,8 +155,8 @@ export function RecipeItem({
         ),
         placeAbove,
         verticalOffset: placeAbove
-          ? window.innerHeight - event.clientY + gap
-          : event.clientY + gap,
+          ? window.innerHeight - clientY + gap
+          : clientY + gap,
       },
       item,
       count,
@@ -167,10 +176,16 @@ export function RecipeItem({
       showRouteIcon,
     });
   }
-  const openItem = (event: React.MouseEvent) => {
-    event.stopPropagation();
-    hover.close();
-    if (item) onItemOpen(item.id);
+  const itemLinkProps = {
+    onClick: (event: React.MouseEvent) => {
+      event.stopPropagation();
+      hover.close();
+    },
+    onFocus: showHoverForFocus,
+    onBlur: hover.scheduleClose,
+    onKeyDown: (event: React.KeyboardEvent) => {
+      if (event.key === "Escape") hover.close();
+    },
   };
   return (
     <span className={`flex flex-col ${fillColumn ? "h-full min-h-[72px]" : ""} ${reasons.length ? "bg-danger-surface/50" : emphasized && fillColumn ? "bg-brand/[0.07]" : ""}`}><span
@@ -199,12 +214,10 @@ export function RecipeItem({
           ) : (
             showRouteIcon && <RouteIcon method={method} rowRail />
           )}
-          <button
-            type="button"
-            aria-label={`Open ${item?.name ?? "item"} details`}
-            disabled={!item}
-            onClick={openItem}
-            className="relative ml-0.5 flex size-8 shrink-0 cursor-pointer items-center justify-center transition hover:bg-highlight/10 disabled:cursor-default"
+          <RecipeItemLink
+            item={item}
+            linkProps={itemLinkProps}
+            className="relative ml-0.5 flex size-8 shrink-0 items-center justify-center transition hover:bg-highlight/10"
           >
             {item?.iconLink ? (
               <Image
@@ -218,7 +231,7 @@ export function RecipeItem({
             ) : (
               <span className="size-8" />
             )}
-          </button>
+          </RecipeItemLink>
           <span
             className="min-w-0 truncate text-[11px] font-medium text-foreground"
             title={item?.name}
@@ -315,12 +328,10 @@ export function RecipeItem({
         </>
       ) : (
         <>
-          <button
-            type="button"
-            aria-label={`Open ${item?.name ?? "item"} details`}
-            disabled={!item}
-            onClick={openItem}
-            className="relative flex size-12 shrink-0 cursor-pointer items-center justify-center bg-highlight/[0.025] transition hover:bg-highlight/10 disabled:cursor-default"
+          <RecipeItemLink
+            item={item}
+            linkProps={itemLinkProps}
+            className="relative flex size-12 shrink-0 items-center justify-center bg-highlight/[0.025] transition hover:bg-highlight/10"
           >
             {showRouteIcon && <RouteIcon method={method} />}
             {plan?.isTool && (
@@ -340,7 +351,7 @@ export function RecipeItem({
             ) : (
               <span className="size-12" />
             )}
-          </button>
+          </RecipeItemLink>
           <span className="flex min-w-0 flex-1 flex-col items-start justify-center gap-0.5">
             <span
               className="w-full truncate text-[11px] font-medium leading-tight text-foreground"
@@ -372,5 +383,30 @@ export function RecipeItem({
         </>
       )}
     </span><span title={method === "unavailable" ? "See route options for details" : undefined}><LockReasons reasons={reasons} showIcon={priceKind === "sell"} /></span></span>
+  );
+}
+
+/** Real link to the item page; the recipe hover card (not EntityPreview) is its preview. */
+function RecipeItemLink({
+  item,
+  linkProps,
+  className,
+  children,
+}: {
+  item?: ItemSummary;
+  linkProps: Omit<React.ComponentProps<typeof Link>, "href">;
+  className: string;
+  children: React.ReactNode;
+}) {
+  if (!item) return <span className={className}>{children}</span>;
+  return (
+    <Link
+      {...linkProps}
+      href={itemHref(item.id)}
+      aria-label={`Open ${item.name} details`}
+      className={`${className} focus-visible:outline-2 focus-visible:outline-brand`}
+    >
+      {children}
+    </Link>
   );
 }

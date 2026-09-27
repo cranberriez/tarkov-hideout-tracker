@@ -17,7 +17,6 @@ interface QuestActionsContextValue {
     requestToggleQuestCompletion: (questId: string) => void;
     requestFailQuest: (questId: string) => void;
     requestResetQuestStatus: (questId: string) => void;
-    onItemClick: ((itemId: string) => void) | null;
 }
 
 const QuestActionsContext = createContext<QuestActionsContextValue | null>(null);
@@ -32,12 +31,10 @@ export function QuestActionsProvider({
     questDataIndex,
     itemById,
     children,
-    onItemClick,
 }: {
     questDataIndex: QuestDataIndex;
     itemById: Readonly<Record<string, ItemSummary>>;
     children: ReactNode;
-    onItemClick?: (itemId: string) => void;
 }) {
     const { questsById, leadsToByQuestId, failureMap } = questDataIndex;
 
@@ -158,7 +155,6 @@ export function QuestActionsProvider({
         requestToggleQuestCompletion,
         requestFailQuest,
         requestResetQuestStatus,
-        onItemClick: onItemClick ?? null,
     }), [
         itemById,
         questsById,
@@ -166,7 +162,6 @@ export function QuestActionsProvider({
         requestToggleQuestCompletion,
         requestFailQuest,
         requestResetQuestStatus,
-        onItemClick,
     ]);
 
     return <QuestActionsContext.Provider value={value}>{children}</QuestActionsContext.Provider>;

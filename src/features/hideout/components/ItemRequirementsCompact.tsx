@@ -1,6 +1,8 @@
 "use client";
 
 import type { BaseItemRequirementsProps } from "./ItemRequirements";
+import { PreviewFact } from "@/components/entities/entity-preview";
+import { ItemLink } from "@/components/entities/item-link";
 import Image from "next/image";
 import { CircleCheckBig, Check } from "lucide-react";
 import { formatNumber } from "@/lib/utils/format-number";
@@ -11,7 +13,6 @@ import { describeFleaPrice, formatFleaPriceState } from "@/lib/utils/market-pric
 export function CompactItemRequirements({
 	nextLevelData,
 	hideMoney,
-	onClickItem,
 	pooledFirByItem,
 	itemById,
 }: BaseItemRequirementsProps) {
@@ -65,15 +66,20 @@ export function CompactItemRequirements({
 						: false;
 
 					return (
-						<div
+						<ItemLink
 							key={req.id}
-							onClick={() => onClickItem(item)}
-							className={`relative w-16 h-16 bg-shadow/40 border group cursor-pointer transition-all ${
+							item={item}
+							aria-label={`${formatNumber(req.count)} ${item.name}${req.isFir ? ", found in raid" : ""}${isCompleted ? ", completed" : ""}`}
+							previewDetails={
+								<PreviewFact label="Required">
+									{formatNumber(req.count)}
+									{req.isFir && <span className="ml-1 text-warning">FiR</span>}
+									{isCompleted && <span className="ml-1 text-success">· done</span>}
+								</PreviewFact>
+							}
+							className={`relative block w-16 h-16 bg-shadow/40 border group transition-all focus-visible:outline-2 focus-visible:outline-brand ${
 								req.isFir ? "border-warning" : "border-highlight/10"
 							} ${isCompleted ? "opacity-50 grayscale" : "hover:border-highlight/30"}`}
-							title={`${formatNumber(req.count)} ${item.name}${
-								req.isFir ? " (Found In Raid)" : ""
-							}${priceLabel ? ` - ${priceLabel}` : ""}${isCompleted ? " (Completed)" : ""}`}
 						>
 							{item.iconLink && (
 								<Image src={item.iconLink} alt={item.name} fill className="object-contain p-1" unoptimized />
@@ -123,7 +129,7 @@ export function CompactItemRequirements({
 									{priceLabel}
 								</div>
 							)}
-						</div>
+						</ItemLink>
 					);
 				})}
 		</div>

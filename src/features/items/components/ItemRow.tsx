@@ -1,5 +1,6 @@
 "use client";
 
+import { ItemLink } from "@/components/entities/item-link";
 import type { ItemSummary } from "@/types/items";
 import { Bolt, BookOpen } from "lucide-react";
 import { formatNumber } from "@/lib/utils/format-number";
@@ -15,7 +16,6 @@ interface ItemRowProps {
     size: ItemSize;
     isHideout?: boolean;
     isQuest?: boolean;
-    onClick?: () => void;
 }
 
 function SourceBadges({
@@ -51,7 +51,6 @@ export function ItemRow({
     size,
     isHideout = false,
     isQuest = false,
-    onClick,
 }: ItemRowProps) {
     const { itemCounts } = useUserStore();
     const owned = itemCounts[item.id] ?? { have: 0, haveFir: 0 };
@@ -86,9 +85,10 @@ export function ItemRow({
 
     if (isCompactLike) {
         return (
-            <div
-                className="flex items-center gap-3 bg-card border p-2 rounded hover:bg-shadow/40 hover:border-info transition-colors cursor-pointer relative group"
-                onClick={onClick}
+            <ItemLink
+                item={item}
+                aria-label={isIconOnly ? item.name : undefined}
+                className="flex items-center gap-3 bg-card border p-2 rounded hover:bg-shadow/40 hover:border-info transition-colors relative group focus-visible:outline-2 focus-visible:outline-brand"
             >
                 <div className="w-10 h-10 bg-shadow/40 flex items-center justify-center shrink-0 overflow-hidden relative">
                     {item.iconLink ? (
@@ -148,15 +148,15 @@ export function ItemRow({
                 <SourceBadges isHideout={isHideout} isQuest={isQuest} size={11} />
 
                 <div className="absolute top-0 right-0 rounded-xs h-full w-full opacity-0 group-hover:opacity-100 transition-all bg-gradient-to-bl from-info/15 to-transparent z-0" />
-            </div>
+            </ItemLink>
         );
     }
 
     // Large (Grid) View
     return (
-        <div
-            className="bg-card border rounded-lg p-3 group/item transition-colors flex flex-col gap-3 h-full cursor-pointer relative hover:border-info"
-            onClick={onClick}
+        <ItemLink
+            item={item}
+            className="bg-card border rounded-lg p-3 group/item transition-colors flex flex-col gap-3 h-full relative hover:border-info focus-visible:outline-2 focus-visible:outline-brand"
         >
             {/* Header: Icon & Name */}
             <div className="flex items-start gap-3 min-w-0 z-1">
@@ -278,6 +278,6 @@ export function ItemRow({
             </div>
             {/* <div className="opacity-0 h-full w-full group-hover/item:opacity-100 bg-linear-to-br from-bg-card to-highlight/5 transition-opacity absolute top-0 left-0 z-0 rounded-lg" /> */}
             <div className="absolute top-0 right-0 rounded-md h-full w-full opacity-0 group-hover/item:opacity-100 transition-all bg-linear-to-bl from-info/15 to-transparent z-0" />
-        </div>
+        </ItemLink>
     );
 }

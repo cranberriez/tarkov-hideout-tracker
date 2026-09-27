@@ -3,12 +3,10 @@
 import { useDeferredPriceItems } from "@/features/items/DeferredPriceBoundary";
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import type { ItemSummary } from "@/types/items";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsList } from "@/features/items/components/ItemsList";
 import { ItemsControls } from "@/features/items/components/ItemsControls";
 import { ItemsStatsRow } from "@/features/items/components/ItemsStatsRow";
-import { ItemDetailModal } from "@/features/items/item-detail/LazyItemDetailModal";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { DataLoadError } from "@/components/core/DataLoadError";
 import type { ItemChecklistPageData } from "@/types/contracts";
@@ -34,7 +32,6 @@ export function ItemsClientPage({ data, dataMode }: ItemsClientPageProps) {
     } = data;
     const items = useDeferredPriceItems(initialItems);
     const [searchQuery, setSearchQuery] = useState("");
-    const [selectedItem, setSelectedItem] = useState<ItemSummary | null>(null);
 
     const { gameMode, initializeDefaults } = useUserStore();
     const hydrated = useUserStoreHydrated();
@@ -114,7 +111,6 @@ export function ItemsClientPage({ data, dataMode }: ItemsClientPageProps) {
                                 searchQuery={searchQuery}
                                 stations={stations}
                                 itemById={itemById}
-                                onClickItem={setSelectedItem}
                                 questItemIndex={questItemIndex}
                                 questAnyOfGroups={questAnyOfGroups}
                                 questAvailabilityQuests={questAvailabilityQuestList}
@@ -129,13 +125,6 @@ export function ItemsClientPage({ data, dataMode }: ItemsClientPageProps) {
                 itemsUpdatedAt={freshness.itemsUpdatedAt}
             />
 
-            {selectedItem && (
-                <ItemDetailModal
-                    item={itemById[selectedItem.id] ?? selectedItem}
-                    isOpen={!!selectedItem}
-                    onClose={() => setSelectedItem(null)}
-                />
-            )}
         </main>
     );
 }

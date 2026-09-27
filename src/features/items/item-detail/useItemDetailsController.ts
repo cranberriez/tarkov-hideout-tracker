@@ -19,11 +19,10 @@ import { buildStationRequirements, mergeItemDetailItems } from "./item-detail-da
 import { useItemDetailRequestController } from "./useItemDetailRequestController";
 import { useItemPrices } from "../useItemPrices";
 import { isPriceItemId } from "@/lib/query/price-contract";
-import { useItemDetailNavigationController } from "./useItemDetailNavigationController";
 
 /**
- * Item data and derived values shared by the item page and the legacy modal.
- * `knownItems` seeds summaries already on hand (the route item or modal history);
+ * Item data and derived values for the item page.
+ * `knownItems` seeds summaries already on hand (the route item);
  * `enabled` gates the mode-aware detail requests.
  */
 export function useItemDetailsController({
@@ -359,38 +358,5 @@ export function useItemDetailsController({
         profitError: requests.treeError ?? priceError,
         priceError,
         retryProfit: requests.retryTree,
-    };
-}
-
-/** Dialog adapter: in-dialog history and close behavior around the shared details controller. */
-export function useItemDetailModalController({
-    item,
-    isOpen,
-    onClose,
-}: {
-    item: ItemSummary | null;
-    isOpen: boolean;
-    onClose: () => void;
-}) {
-    const navigation = useItemDetailNavigationController({ item, isOpen, onClose });
-    const { activeItemId, navigatedItemsById } = navigation;
-    const knownItems = useMemo(
-        () => [...(item ? [item] : []), ...Object.values(navigatedItemsById)],
-        [item, navigatedItemsById],
-    );
-    const details = useItemDetailsController({ activeItemId, knownItems, enabled: isOpen });
-    return {
-        ...details,
-        showDebug: navigation.debugItemId === details.selectedItemId,
-        previousItem: navigation.previousItem,
-        close: navigation.close,
-        back: navigation.back,
-        openItem(itemId: string) {
-            const nextItem = details.itemDetailsById[itemId];
-            if (nextItem) navigation.navigate(nextItem);
-        },
-        toggleDebug() {
-            navigation.toggleDebug(details.selectedItemId);
-        },
     };
 }

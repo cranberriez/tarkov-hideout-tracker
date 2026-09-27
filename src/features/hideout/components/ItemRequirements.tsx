@@ -6,7 +6,6 @@ export interface BaseItemRequirementsProps {
     hideMoney: boolean;
     completedRequirements: Record<string, boolean>;
     toggleRequirement: (requirementId: string) => void;
-    onClickItem: (item: ItemSummary) => void;
     pooledFirByItem: Record<string, number>;
     itemById: Readonly<Record<string, ItemSummary>>;
 }

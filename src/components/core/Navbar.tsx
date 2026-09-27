@@ -6,10 +6,8 @@ import { ChevronDown, Menu, Plus, Search, Settings2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SearchPalette } from "@/features/search/SearchPalette";
-import { ItemDetailModal } from "@/features/items/item-detail/LazyItemDetailModal";
-import { questHref } from "@/features/quests/quest-routes";
+import { itemHref, questHref } from "@/lib/entity-routes";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
-import type { ItemSummary } from "@/types/items";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -31,7 +29,6 @@ export function Navbar() {
 function NavbarContent() {
 	const gameMode = useUserStore((state) => state.gameMode);
 	const [searchOpen, setSearchOpen] = useState(false);
-	const [selectedItem, setSelectedItem] = useState<ItemSummary | null>(null);
 	const searchTrigger = useRef<HTMLElement | null>(null);
 	const router = useRouter();
 	useEffect(() => {
@@ -221,19 +218,12 @@ function NavbarContent() {
 					restoreFocus={() => searchTrigger.current?.focus()}
 					onSelect={(result) => {
 						setSearchOpen(false);
-						if (result.kind === "item") setSelectedItem(result.item);
+						// Quest routes keep the workspace list scroll; item pages start at the top.
+						if (result.kind === "item") router.push(itemHref(result.item.id));
 						else router.push(questHref(result.id), { scroll: false });
 					}}
 				/>
 			)}
-			<ItemDetailModal
-				item={selectedItem}
-				isOpen={!!selectedItem}
-				onClose={() => {
-					setSelectedItem(null);
-					searchTrigger.current?.focus();
-				}}
-			/>
 		</>
 	);
 }

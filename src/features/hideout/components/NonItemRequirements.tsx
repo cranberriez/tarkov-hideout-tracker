@@ -1,5 +1,8 @@
+"use client";
+
 import type { Station } from "@/types/hideout";
 import Image from "next/image";
+import { StationLink } from "@/components/entities/station-link";
 import { RequirementChip } from "@/components/ui/requirement";
 
 export interface NonItemRequirementsProps {
@@ -19,11 +22,18 @@ export function NonItemRequirements({ station, nextLevelData, stations, stationL
 					const reqStationLevel = reqStation ? (stationLevels[reqStation.id] ?? 0) : 0;
 					const isMet = reqStationLevel >= req.level;
 
-					return (
-						<RequirementChip key={`st-${idx}`} satisfied={isMet}>
+					const chip = (
+						<RequirementChip satisfied={isMet} className={reqStation ? "transition-colors group-hover/station:border-current" : undefined}>
 							{reqStation?.name ?? req.station.normalizedName.replace(/-/g, " ")}
 							<span className="ml-1 text-foreground">LVL {req.level}</span>
 						</RequirementChip>
+					);
+					return reqStation ? (
+						<StationLink key={`st-${idx}`} station={reqStation} className="group/station rounded-sm focus-visible:outline-2 focus-visible:outline-brand">
+							{chip}
+						</StationLink>
+					) : (
+						<span key={`st-${idx}`}>{chip}</span>
 					);
 				})}
 			{nextLevelData.skillRequirements?.map((req, idx) => (

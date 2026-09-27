@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { HydrationBoundary } from "@tanstack/react-query";
 import { StationDetailQueryPage } from "@/features/hideout/StationDetailQueryPage";
-import { stationHref } from "@/features/hideout/station-routes";
+import { stationHref } from "@/lib/entity-routes";
 import { hideoutPageQueryOptions, isCompleteHideoutPageData, PAGE_DATA_STALE_TIME } from "@/lib/query/page-data";
 import { decodeRouteParam } from "@/lib/utils/route-param";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";

@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { DataLoadError } from "@/components/core/DataLoadError";
-import { ItemDetailModal } from "@/features/items/item-detail/LazyItemDetailModal";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { isTrackedCraft } from "@/lib/price-calculation/craft-rules";
 import type { ProfitPageData } from "@/types/contracts";
@@ -19,7 +18,6 @@ export function CraftPlannerClient({ data }: { data: ProfitPageData }) {
   })));
   const { craftingSkillLevel, hideoutManagementSkillLevel, useTraderSaleForLockedOutputs } = useProfitOptions(profile.gameMode);
   const { overrides, setItemOverride } = useManualPriceOverrides(profile.gameMode);
-  const [itemId, setItemId] = useState<string | null>(null);
   const itemsById = useMemo(() => Object.fromEntries((data.items ?? []).map(item => [item.id, item])), [data.items]);
   const stations = useMemo(() => Object.fromEntries(data.stations.map(station => [station.id, station])), [data.stations]);
   const traders = useMemo(() => Object.fromEntries(data.traders.map(trader => [trader.id, trader])), [data.traders]);
@@ -31,8 +29,7 @@ export function CraftPlannerClient({ data }: { data: ProfitPageData }) {
     !data.items ? "Item prices could not be loaded." : null].filter((error): error is string => Boolean(error));
   return <main className="container mx-auto px-4 py-8 sm:px-6">
     {errors.length ? <DataLoadError title="Craft planner data is unavailable" messages={errors} /> : <>
-      <StationBoard key={profile.gameMode} input={input} gameMode={profile.gameMode} stations={stations} traders={traders} onItemOpen={setItemId} onPriceChange={setItemOverride} />
-      <ItemDetailModal item={itemId ? itemsById[itemId] ?? null : null} isOpen={itemId !== null} onClose={() => setItemId(null)} />
+      <StationBoard key={profile.gameMode} input={input} gameMode={profile.gameMode} stations={stations} traders={traders} onPriceChange={setItemOverride} />
     </>}
   </main>;
 }

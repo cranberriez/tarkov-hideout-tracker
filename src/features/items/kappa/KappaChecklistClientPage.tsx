@@ -2,12 +2,12 @@
 
 import { useDeferredPriceItems } from "@/features/items/DeferredPriceBoundary";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { BadgeCheck, Check } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { DataLoadError } from "@/components/core/DataLoadError";
-import { ItemDetailModal } from "@/features/items/item-detail/LazyItemDetailModal";
+import { ItemLink } from "@/components/entities/item-link";
 import { useKappaStore, type KappaViewMode } from "@/lib/stores/useKappaStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ItemSummary } from "@/types/items";
@@ -31,7 +31,6 @@ export function KappaChecklistClientPage({
     errors,
 }: KappaChecklistClientPageProps) {
     const collectorItems = useDeferredPriceItems(initialItems) ?? EMPTY_ITEMS;
-    const [selectedItem, setSelectedItem] = useState<ItemSummary | null>(null);
     const gameMode = useUserStore((state) => state.gameMode);
     const { completedItemsByMode, viewMode, setViewMode, toggleCompletedItem } =
         useKappaStore(
@@ -181,11 +180,9 @@ export function KappaChecklistClientPage({
                                     isCompleted ? "border-success/40" : "border-highlight/10"
                                 }`}
                             >
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedItem(item)}
-                                    className="group relative aspect-square min-w-0 flex-1 overflow-hidden bg-shadow/35 transition-colors hover:bg-shadow/55 focus-visible:z-10"
-                                    title={`Open ${item.name} details`}
+                                <ItemLink
+                                    item={item}
+                                    className="group relative aspect-square min-w-0 flex-1 overflow-hidden bg-shadow/35 transition-colors hover:bg-shadow/55 focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
                                     aria-label={`Open ${item.name} details`}
                                 >
                                     {item.iconLink || item.gridImageLink ? (
@@ -205,7 +202,7 @@ export function KappaChecklistClientPage({
                                             ?
                                         </span>
                                     )}
-                                </button>
+                                </ItemLink>
                                 <button
                                     type="button"
                                     onClick={() => toggleCompletedItem(gameMode, item.id)}
@@ -233,13 +230,6 @@ export function KappaChecklistClientPage({
                 All Collector items must be found in raid.
             </p>
 
-            {selectedItem && (
-                <ItemDetailModal
-                    item={collectorItems.find((item) => item.id === selectedItem.id) ?? selectedItem}
-                    isOpen
-                    onClose={() => setSelectedItem(null)}
-                />
-            )}
         </main>
     );
 }

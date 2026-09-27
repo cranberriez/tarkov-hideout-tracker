@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataNotice } from "@/components/ui/data-notice";
 import { DetailSection } from "@/components/ui/detail-section";
-import { itemHref } from "@/features/items/item-routes";
+import { itemHref } from "@/lib/entity-routes";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { isTrackedCraft } from "@/lib/price-calculation/craft-rules";
 import { useGameDataEnabled } from "@/lib/query/game-data";

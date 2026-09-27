@@ -59,7 +59,6 @@ interface ItemDetailUsageTabsProps {
     profitLoading: boolean;
     profitError: string | null;
     onRetryProfit: () => void;
-    onItemClick: (itemId: string) => void;
 }
 
 export function ItemDetailUsageTabs({
@@ -95,7 +94,6 @@ export function ItemDetailUsageTabs({
     profitLoading,
     profitError,
     onRetryProfit,
-    onItemClick,
 }: ItemDetailUsageTabsProps) {
     const queryClient = useQueryClient();
     const hideoutCount = stationRequirements.reduce((count, [, reqs]) => count + reqs.length, 0);
@@ -230,7 +228,6 @@ export function ItemDetailUsageTabs({
                             profitError={profitError}
                             onRetryProfit={onRetryProfit}
                             outputItem={selectedItem}
-                            onItemClick={onItemClick}
                         />
                     </AcquisitionState>
                 )}
@@ -253,7 +250,6 @@ export function ItemDetailUsageTabs({
                             profitError={profitError}
                             onRetryProfit={onRetryProfit}
                             outputItem={selectedItem}
-                            onItemClick={onItemClick}
                         />
                     </AcquisitionState>
                 )}

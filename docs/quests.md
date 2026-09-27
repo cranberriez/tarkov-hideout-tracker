@@ -59,8 +59,9 @@ page-level fallback) and legacy `#quest-` fragments are translated client-side. 
 development fixture opts in with `?q=dev-test`, which is fetched client-side only.
 
 The outer [QuestActionsContext](../src/features/quests/QuestActionsContext.tsx) still owns
-shared quest actions, cascade confirmation, and item-click routing;
-it remains part of the current page. [quest-data-index](../src/features/quests/quest-data-index.ts)
+shared quest actions and cascade confirmation; standard items in objectives and
+rewards are `ItemLink`s to their pages, and quest references are `QuestLink`s.
+It remains part of the current page. [quest-data-index](../src/features/quests/quest-data-index.ts)
 provides the shared pure indexes consumed by both providers.
 Start here for new quest UI; inspect current imports before editing older quest
 components that remain in the feature directory.
@@ -79,8 +80,8 @@ before marker grouping; whole-quest completion clears that quest's visited recor
 The workspace loads planner and visualizer component code on demand, with a
 loading indicator in the selected pane. Shared quest indexes remain available
 for complete prerequisite and filter derivation.
-Pan/zoom and temporary map expansion stay in session memory. Standard-item clicks
-use the shared [item detail controllers](architecture.md); quest-only pickups are
+Pan/zoom and temporary map expansion stay in session memory. Standard items link
+to their [item pages](architecture.md#shared-ui-vocabulary-and-entity-links); quest-only pickups are
 informational. Persistent filter additions must follow [user-state](user-state.md).
 
 ## Log import
@@ -129,6 +130,6 @@ section for mode and mobile behavior.
 ## Current-price requests
 
 The quest workspace uses unpriced item summaries and makes no current-price
-requests. Explicitly opening an item modal can load the selected item and recipe
-prices through the [shared price cache](data-layer.md). No player progression or
+requests. Opening an item page loads that item's and its recipes' prices through the
+[shared price cache](data-layer.md). No player progression or
 quest filtering behavior depends on those prices.

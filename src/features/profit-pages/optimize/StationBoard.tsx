@@ -33,14 +33,12 @@ export function StationBoard({
 	gameMode,
 	stations,
 	traders,
-	onItemOpen,
 	onPriceChange,
 }: {
 	input: RecipeCalculatorInput;
 	gameMode: GameMode;
 	stations: Record<string, ProfitStationSource>;
 	traders: Record<string, { name: string }>;
-	onItemOpen: (id: string) => void;
 	onPriceChange: PriceChangeHandler;
 }) {
 	const { pinnedCrafts, togglePinnedCraft } = usePinnedCrafts(gameMode);
@@ -136,7 +134,6 @@ export function StationBoard({
 										pinned={!!pinnedCrafts[row.id]}
 										open={detailId === row.id}
 										placement={placements[row.id]}
-										onItemOpen={onItemOpen}
 										onTogglePinned={() => togglePinnedCraft(row.id)}
 										onToggleDetails={() => setDetailId(detailId === row.id ? null : row.id)}
 									>
@@ -150,7 +147,6 @@ export function StationBoard({
 												stations={stations}
 												onChoice={(choice) => saveChoice(row.id, choice)}
 												onPriceChange={onPriceChange}
-												onItemOpen={onItemOpen}
 											/>
 										)}
 									</StationCraftRow>

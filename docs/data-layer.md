@@ -98,8 +98,9 @@ partial payloads that remain retryable rather than reusable complete cache entri
 
 Hideout, Items, Quests, Kappa, Profit, and Craft Planner server pages request
 unpriced metadata. Quests does not mount a price consumer: opening the workspace,
-changing filters, or navigating quests makes no current-price requests. An explicitly
-opened item detail modal still loads the prices needed for that item and its recipes.
+changing filters, or navigating quests makes no current-price requests. An item
+page loads the prices needed for that item and its recipes; link previews only read
+prices already in the cache.
 
 [useItemPrices](../src/features/items/useItemPrices.ts) owns shared current-price
 queries, keyed by mode and individual item ID. [The transport](../src/features/items/deferred-prices.ts)
@@ -150,7 +151,7 @@ records; the similarly named [relations](../src/server/queries/getItemRelationsD
 [usage](../src/server/queries/getItemUsageData.ts), and
 [acquisition](../src/server/queries/getItemAcquisitionTreeData.ts) composers build
 those views during generation. Do not replace a one-row runtime view read with
-full-domain composition on every modal open.
+full-domain composition on every item page load.
 
 Shared route helpers in [src/app/api/_lib](../src/app/api/_lib/) own mode and item-ID
 parameter parsing, database error responses, and the named

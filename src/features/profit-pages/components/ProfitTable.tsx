@@ -28,7 +28,6 @@ export function ProfitTable({
 	completedQuests,
 	overrides,
 	onPriceChange,
-	onItemOpen,
 	onGoToRecipe,
 	targetRecipeId,
 	scrollRequestId,
@@ -54,7 +53,6 @@ export function ProfitTable({
 	completedQuests: Record<string, boolean>;
 	overrides: Record<string, ManualPriceOverride>;
 	onPriceChange: PriceChangeHandler;
-	onItemOpen: (itemId: string) => void;
 	onGoToRecipe: GoToRecipeHandler;
 	targetRecipeId: string | null;
 	scrollRequestId: number;
@@ -143,7 +141,6 @@ export function ProfitTable({
 											craftsById={craftsById}
 											tradersById={tradersById}
 											stationsById={stationsById}
-											onItemOpen={onItemOpen}
 											onGoToRecipe={onGoToRecipe}
 											highlighted={evaluation.id === targetRecipeId}
 											pinned={kind === "craft" && Boolean(pinnedCrafts[evaluation.id])}
