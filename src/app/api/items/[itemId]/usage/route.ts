@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { readItemRouteParams } from "@/app/api/_lib/item-params";
 import { getItemUsageView } from "@/server/db/item-views";
 import { itemDatabaseErrorResponse } from "@/app/api/_lib/route-errors";
-import { isCompleteItemUsageData } from "@/lib/utils/item-usage";
 import { CacheControl } from "@/app/api/_lib/cache-control";
 
 export async function GET(request: NextRequest, context: { params: Promise<{ itemId: string }> }) {
@@ -14,10 +13,8 @@ export async function GET(request: NextRequest, context: { params: Promise<{ ite
 		const response = await getItemUsageView(mode, itemId, request.nextUrl.searchParams.get("prices") !== "none");
 		return NextResponse.json(response, {
 			headers: {
-				"Cache-Control":
-					process.env.NODE_ENV === "development" || !isCompleteItemUsageData(response)
-						? CacheControl.noStore
-						: CacheControl.itemDetail,
+				// Trader offers change independently of the catalog version, so this read stays fresh through to PostgreSQL.
+				"Cache-Control": CacheControl.noStore,
 			},
 		});
 	} catch (error) {

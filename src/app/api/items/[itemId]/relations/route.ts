@@ -11,11 +11,10 @@ export async function GET(request: NextRequest, context: { params: Promise<{ ite
 
 	try {
 		const payload = await getItemRelationsView(mode, itemId, request.nextUrl.searchParams.get("prices") !== "none");
-		const isPartial = Object.values(payload.errors).some((error) => error !== null);
 		return NextResponse.json(payload, {
 			headers: {
-				"Cache-Control":
-					process.env.NODE_ENV === "development" || isPartial ? CacheControl.noStore : CacheControl.itemDetail,
+				// Item summaries include offers refreshed independently of catalog content.
+				"Cache-Control": CacheControl.noStore,
 			},
 		});
 	} catch (error) {

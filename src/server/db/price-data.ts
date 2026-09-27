@@ -1,93 +1,132 @@
 import type { DataResult, TarkovDataMode } from "@/types/common";
-import type { CurrentPrice, PriceHistoryPoint, StoredCurrentPrice } from "@/types/prices";
-import type { Client } from "@libsql/client";
-import { getEntitiesByIds } from "./entity-data";
-import { getMutableCurrentPricesByIds, isMissingMutablePriceStorage } from "./current-prices";
-import { getTursoClient } from "./client";
+import type { TraderPurchaseOffer } from "@/types/items";
+import type { CurrentPrice, PriceHistoryPoint, VendorPrice } from "@/types/prices";
+import { deriveEffectivePrice } from "../../lib/utils/price-history";
+import { getPostgresDb } from "../postgres/connection";
+import type { PostgresDatabase } from "../postgres/connection";
+import { itemPrices } from "../postgres/schema";
+import { and, eq, inArray } from "drizzle-orm";
 import { boundedReadCache, canonicalIds, mapBatches } from "./read-cache";
-import { getActiveDataReleaseId } from "./release-config";
-import { getStoredPricePoints } from "@/server/prices/price-store";
+
+function readPoints(value: unknown): PriceHistoryPoint[] {
+	if (!Array.isArray(value) || value.length > 10) return [];
+	const points: PriceHistoryPoint[] = [];
+	for (const candidate of value) {
+		if (typeof candidate !== "object" || candidate === null) return [];
+		const point = candidate as PriceHistoryPoint;
+		if (
+			!Number.isSafeInteger(point.timestamp) ||
+			point.timestamp <= 0 ||
+			!Number.isFinite(point.price) ||
+			point.price < 0 ||
+			!Number.isFinite(point.priceMin) ||
+			point.priceMin < 0 ||
+			(point.offerCount !== null && (!Number.isInteger(point.offerCount) || point.offerCount < 0)) ||
+			(points.length > 0 && points[points.length - 1].timestamp >= point.timestamp)
+		)
+			return [];
+		points.push({
+			timestamp: point.timestamp,
+			price: point.price,
+			priceMin: point.priceMin,
+			offerCount: point.offerCount,
+		});
+	}
+	return points;
+}
+
+function asFinite(value: unknown): number | null {
+	if (value === null || value === undefined) return null;
+	const normalized = typeof value === "string" ? Number(value) : value;
+	return typeof normalized === "number" && Number.isFinite(normalized) ? normalized : null;
+}
+
+function asOffers(value: unknown): TraderPurchaseOffer[] {
+	return Array.isArray(value) ? (value as TraderPurchaseOffer[]) : [];
+}
+
+function asSellOffers(value: unknown): VendorPrice[] {
+	return Array.isArray(value) ? (value as VendorPrice[]) : [];
+}
 
 export async function getCurrentPriceData(
 	mode: TarkovDataMode,
 	itemIds: readonly string[],
-	database?: Client,
-	selectedReleaseId?: string,
+	database?: PostgresDatabase,
 ): Promise<DataResult<Record<string, CurrentPrice>>> {
-	const releaseId = selectedReleaseId ?? (await getActiveDataReleaseId(mode, database));
-	const legacyPromise = getEntitiesByIds<CurrentPrice | null>(mode, "price", "items", itemIds, database, releaseId);
-	const mutablePromise = (async () => {
-		try {
-			if (database) return await getMutableCurrentPricesByIds(mode, itemIds, database);
-			const batches = await mapBatches(canonicalIds(itemIds), async (batch) => {
-				try {
-					return await boundedReadCache(
-						["mutable-prices", mode, releaseId, JSON.stringify(batch)],
-						() => getMutableCurrentPricesByIds(mode, batch),
-						300,
-					);
-				} catch (error) {
-					// Apply optional-storage fallback outside the cache and per
-					// batch so it cannot hide another batch's operational error.
-					if (!isMissingMutablePriceStorage(error)) throw error;
-					return {} as Record<string, StoredCurrentPrice>;
-				}
-			});
-			return Object.assign({}, ...batches) as Record<string, StoredCurrentPrice>;
-		} catch (error) {
-			if (!isMissingMutablePriceStorage(error)) throw error;
-			return {} as Record<string, StoredCurrentPrice>;
-		}
-	})();
-	const [legacyResult, mutable] = await Promise.all([legacyPromise, mutablePromise]);
-	const data = Object.fromEntries(
-		itemIds.flatMap((itemId) => {
-			const legacy = legacyResult.data[itemId];
-			const current = mutable[itemId];
-			if (!legacy && !current) return [];
-			return [
-				[
-					itemId,
-					{
-						...(legacy ?? {}),
+	const db = database ?? getPostgresDb();
+	const batches = await mapBatches(canonicalIds(itemIds), async (batch) => {
+		const read = async () => {
+			const rows = await db
+				.select()
+				.from(itemPrices)
+				.where(and(eq(itemPrices.mode, mode), inArray(itemPrices.itemId, batch)));
+			return Object.fromEntries(
+				rows.map((row) => {
+					const points = readPoints(row.recentPoints);
+					// Apply the age cutoff at the read boundary too. Otherwise a stalled
+					// refresh leaves an old cached sample labeled stable indefinitely.
+					const derived = deriveEffectivePrice(points, undefined, Date.now());
+					const current: CurrentPrice = {
+						avg24hPrice: asFinite(row.catalogAveragePrice ?? row.avg24hPrice),
+						high24hPrice: asFinite(row.catalogHighPrice ?? row.high24hPrice),
+						low24hPrice: asFinite(row.catalogLowPrice ?? row.low24hPrice),
+						lastLowPrice: asFinite(row.lastLowPrice),
+						lastOfferCount: row.latestOfferCount,
+						changeLast48hPercent: asFinite(row.changeLast48hPercent),
+						updatedAt: row.catalogReferenceUpdatedAt,
+						sellFor: asSellOffers(row.traderSellOffers),
 						fleaStability: "reference",
-						...(current
-							? {
-									price: current.effectivePrice,
-									referencePrice: current.latestPrice,
-									fleaStability: current.stability,
-									fleaPriceReasons: current.reasons,
-									fleaSampleCount: current.sampleCount,
-									lastLowPrice: current.latestPriceMin,
-									lastOfferCount: current.latestOfferCount,
-									changeLast48hPercent: undefined,
-									updatedAt: current.latestPointTimestamp,
-								}
-							: {}),
-					} satisfies CurrentPrice,
-				],
-			];
-		}),
-	);
-	const latestMutableTimestamp = Object.values(mutable).reduce(
-		(latest, price) => Math.max(latest, price.latestPointTimestamp),
-		0,
-	);
-	return {
-		data,
-		updatedAt: latestMutableTimestamp || legacyResult.updatedAt,
-	};
+					};
+					if (points.length > 0) {
+						current.price = derived.effectivePrice;
+						current.referencePrice = row.latestPrice;
+						current.fleaStability = derived.stability;
+						current.fleaPriceReasons = derived.reasons;
+						current.fleaSampleCount = derived.sampleCount;
+						current.lastLowPrice = row.latestPriceMin;
+						current.lastOfferCount = row.latestOfferCount;
+						current.updatedAt = row.latestPointAt;
+					}
+					return [row.itemId, current];
+				}),
+			);
+		};
+		return database ? read() : boundedReadCache(["postgres-prices", mode, JSON.stringify(batch)], read, 300);
+	});
+	const data = Object.assign({}, ...batches) as Record<string, CurrentPrice>;
+	const updatedAt = Object.values(data).reduce((latest, price) => Math.max(latest, price.updatedAt ?? 0), 0);
+	// Zero is the explicit unknown sentinel here. Do not fabricate a fresh time
+	// when no catalog or flea observation has supplied one.
+	return { data, updatedAt };
 }
 
 export async function getStoredPriceHistoryData(
 	mode: TarkovDataMode,
 	itemId: string,
+	database: PostgresDatabase = getPostgresDb(),
 ): Promise<DataResult<PriceHistoryPoint[]>> {
-	try {
-		const result = await getStoredPricePoints(getTursoClient(), mode, itemId);
-		return { data: result.points, updatedAt: result.updatedAt ?? Date.now() };
-	} catch (error) {
-		if (!isMissingMutablePriceStorage(error)) throw error;
-		return { data: [], updatedAt: Date.now() };
-	}
+	const [row] = await database
+		.select({ recentPoints: itemPrices.recentPoints })
+		.from(itemPrices)
+		.where(and(eq(itemPrices.mode, mode), eq(itemPrices.itemId, itemId)))
+		.limit(1);
+	const data = readPoints(row?.recentPoints);
+	return { data, updatedAt: data.at(-1)?.timestamp ?? 0 };
+}
+
+/** Offer metadata remains available while callers defer flea-price hydration. */
+export async function getTraderOffersByItemIds(
+	mode: TarkovDataMode,
+	itemIds: readonly string[],
+	database: PostgresDatabase = getPostgresDb(),
+): Promise<Record<string, TraderPurchaseOffer[]>> {
+	const batches = await mapBatches(canonicalIds(itemIds), async (batch) => {
+		const rows = await database
+			.select({ itemId: itemPrices.itemId, offers: itemPrices.traderPurchaseOffers })
+			.from(itemPrices)
+			.where(and(eq(itemPrices.mode, mode), inArray(itemPrices.itemId, batch)));
+		return Object.fromEntries(rows.map((row) => [row.itemId, asOffers(row.offers)]));
+	});
+	return Object.assign({}, ...batches) as Record<string, TraderPurchaseOffer[]>;
 }

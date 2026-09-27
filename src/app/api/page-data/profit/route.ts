@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isCompleteProfitPageData } from "@/lib/query/page-data";
 import { getProfitPageData } from "@/server/queries/getProfitPageData";
 import { getCurrentPageRepository, readPageDataMode } from "@/app/api/_lib/page-data-params";
-import { CacheControl } from "@/app/api/_lib/cache-control";
+import { CacheControl, profitPageDataCacheControl } from "@/app/api/_lib/cache-control";
 
 export async function GET(request: NextRequest) {
 	const mode = readPageDataMode(request);
@@ -15,13 +15,10 @@ export async function GET(request: NextRequest) {
 		const data = await getProfitPageData(mode, await getCurrentPageRepository(mode), {
 			includePrices: request.nextUrl.searchParams.get("prices") !== "none",
 		});
+		const includesPrices = request.nextUrl.searchParams.get("prices") !== "none";
 		return NextResponse.json(data, {
 			headers: {
-				"Cache-Control": isCompleteProfitPageData(data)
-					? request.nextUrl.searchParams.get("prices") === "none"
-						? CacheControl.publicCdnHour
-						: CacheControl.publicCdnFiveMinutes
-					: CacheControl.noStore,
+				"Cache-Control": profitPageDataCacheControl(isCompleteProfitPageData(data), includesPrices),
 			},
 		});
 	} catch (error) {

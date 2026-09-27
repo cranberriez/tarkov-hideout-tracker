@@ -2,7 +2,7 @@ import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { readRecords } from "./snapshot.mjs";
 import { getKnownItemIds } from "./catalog-history.mjs";
-import { encodeRecord } from "./current-storage.mjs";
+import { encodeRecord } from "./record-encoding.mjs";
 
 export async function readActiveReleaseId(client, mode, { allowMissing = false } = {}) {
 	const tables = new Set(

@@ -1,202 +1,207 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
+import { createRequire } from "node:module";
 import test from "node:test";
-import { createClient } from "@libsql/client";
-import { insertCurrentTestRecord } from "../db/current-test-fixture";
-import { TursoPriceRefreshStore, getStoredPricePoints } from "./price-store";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { eq } from "drizzle-orm";
+import type { PriceHistoryPoint } from "@/types/prices";
+import { itemModes, itemPrices, itemPriceSync, items, postgresSchema } from "../postgres/schema";
+import { getStoredPricePoints, PostgresPriceRefreshStore } from "./price-store";
 
-test("selects flea items and stores only the supplied bounded point set", async () => {
-	const database = createClient({ url: "file::memory:" });
-	try {
-		await database.executeMultiple(await readFile(path.join(process.cwd(), "db-scripts/schema.sql"), "utf8"));
-		await database.execute({
-			sql: `
-                INSERT INTO data_releases
-                    (mode, release_id, schema_version, generated_at, snapshot_sha256,
-                     source_freshness_json, record_counts_json, status)
-                VALUES ('regular', 'release-a', 1, 1, 'hash', '{}', '{}', 'ready')
-            `,
-			args: [],
-		});
-		const itemRows = [
-			["flea-item", { id: "flea-item", onFleaMarket: true }],
-			["blocked-item", { id: "blocked-item", onFleaMarket: false }],
-			["legacy-item", { id: "legacy-item" }],
-		] as const;
-		await database.execute("INSERT INTO active_data_releases VALUES ('regular', 'release-a', 1)");
-		for (const [itemId, payload] of itemRows) {
-			await insertCurrentTestRecord(database, "regular", "entity", itemId, "item", payload);
-		}
-		await insertCurrentTestRecord(database, "regular", "entity", "legacy-item", "price", { avg24hPrice: 100 });
+const require = createRequire(import.meta.url);
+const { postgresFixture } = require("../../../db-scripts/lib/test-postgres.mjs") as {
+	postgresFixture: () => Promise<{ pool: import("pg").Pool; close: () => Promise<void> }>;
+};
 
-		const store = new TursoPriceRefreshStore(database);
-		assert.deepEqual(await store.getEligibleItemIds("regular", "release-a"), ["flea-item", "legacy-item"]);
-		await assert.rejects(store.getEligibleItemIds("regular", "obsolete"), /No ready current data revision/);
-		await database.execute("INSERT INTO data_releases VALUES ('pve', 'empty', 1, 1, 'hash', '{}', '{}', 'ready', 1)");
-		await database.execute("INSERT INTO active_data_releases VALUES ('pve', 'empty', 1)");
-		assert.deepEqual(await store.getEligibleItemIds("pve", "empty"), []);
-		await insertCurrentTestRecord(database, "pve", "entity", "blocked", "item", { onFleaMarket: false });
-		assert.deepEqual(await store.getEligibleItemIds("pve", "empty"), []);
-		await store.writeOutcomes("regular", [
-			{
-				status: "updated",
-				itemId: "flea-item",
-				etag: '"v1"',
-				checkedAt: 500,
-				points: Array.from({ length: 10 }, (_, index) => ({
-					timestamp: 100 + index,
-					price: 1_000 + index,
-					priceMin: 900 + index,
-					offerCount: 2,
-				})),
-				effectivePrice: 1_007,
-				sampleCount: 5,
-				totalOfferCount: 10,
-			},
-		]);
+const hasDisposablePostgres = Boolean(process.env.TEST_DATABASE_URL);
 
-		const stored = await getStoredPricePoints(database, "regular", "flea-item");
-		assert.equal(stored.points.length, 10);
-		assert.equal(stored.points[9].price, 1_009);
-		const current = await database.execute({
-			sql: "SELECT effective_price, etag FROM item_prices WHERE mode = 'regular' AND item_id = 'flea-item'",
-			args: [],
-		});
-		assert.equal(current.rows[0].effective_price, 1_007);
-		assert.equal(current.rows[0].etag, '"v1"');
+test(
+	"PostgreSQL refresh store isolates modes, retains values on 304/failure, and skips vanished items",
+	{ skip: !hasDisposablePostgres },
+	async () => {
+		const fixture = await postgresFixture();
+		const db = drizzle(fixture.pool, { schema: postgresSchema });
+		try {
+			for (const [id, mode, onFleaMarket] of [
+				["item-a", "regular", true],
+				["item-b", "regular", false],
+				["item-a", "pve", true],
+			] as const) {
+				await db
+					.insert(items)
+					.values({
+						id,
+						name: id,
+						normalizedName: id,
+					})
+					.onConflictDoNothing();
+				await db.insert(itemModes).values({ itemId: id, mode, onFleaMarket });
+			}
+			const store = new PostgresPriceRefreshStore(db);
+			const now = Date.now();
+			assert.equal(await store.tryAcquireLock("regular", "run-a", now + 10_000, now), true);
+			assert.equal(await store.tryAcquireLock("regular", "run-b", now + 10_000, now + 1), false);
+			assert.equal(await store.renewLock("regular", "run-a", now + 20_000, now + 2), true);
+			await store.startRun("run-a", "regular", now + 3);
+			assert.deepEqual(await store.getEligibleItemIds("regular"), ["item-a"]);
 
-		await store.writeOutcomes("regular", [
-			{
-				status: "failed",
-				itemId: "flea-item",
-				checkedAt: 600,
-				error: "temporary failure",
-			},
-		]);
-		const afterFailure = await database.execute({
-			sql: "SELECT effective_price, consecutive_failures FROM item_prices WHERE mode = 'regular' AND item_id = 'flea-item'",
-			args: [],
-		});
-		assert.equal(afterFailure.rows[0].effective_price, 1_007);
-		assert.equal(afterFailure.rows[0].consecutive_failures, 1);
-	} finally {
-		database.close();
-	}
-});
-
-test("writes only history deltas and preserves refresh metadata and mode isolation", async () => {
-	const database = createClient({ url: "file::memory:" });
-	try {
-		await database.executeMultiple(await readFile(path.join(process.cwd(), "db-scripts/schema.sql"), "utf8"));
-		await database.executeMultiple(`
-            CREATE TABLE writes (kind TEXT);
-            CREATE TRIGGER history_insert AFTER INSERT ON item_price_points
-                BEGIN INSERT INTO writes VALUES ('insert'); END;
-            CREATE TRIGGER history_update AFTER UPDATE ON item_price_points
-                BEGIN INSERT INTO writes VALUES ('update'); END;
-            CREATE TRIGGER history_delete AFTER DELETE ON item_price_points
-                BEGIN INSERT INTO writes VALUES ('delete'); END;
-            CREATE TRIGGER current_update AFTER UPDATE ON item_prices
-                BEGIN INSERT INTO writes VALUES ('current'); END;
-        `);
-		const store = new TursoPriceRefreshStore(database);
-		const outcome = {
-			status: "updated" as const,
-			itemId: "item",
-			etag: '"v1"',
-			checkedAt: 500,
-			points: [
-				{ timestamp: 100, price: 1000, priceMin: 900, offerCount: 2 },
-				{ timestamp: 200, price: 1100, priceMin: 950, offerCount: null },
-			],
-			effectivePrice: 925,
-			sampleCount: 2,
-			totalOfferCount: 0,
-		};
-		await store.writeOutcomes("regular", [outcome]);
-		await store.writeOutcomes("pve", [outcome]);
-		await database.execute("DELETE FROM writes");
-		await store.writeOutcomes("regular", [outcome]);
-		assert.deepEqual((await database.execute("SELECT kind FROM writes")).rows, []);
-		await store.writeOutcomes("regular", [{ ...outcome, checkedAt: 600 }]);
-		assert.deepEqual(
-			(await database.execute("SELECT kind FROM writes")).rows.map((row) => row.kind),
-			["current"],
-		);
-		assert.deepEqual(
-			(await database.execute("SELECT observed_at FROM item_price_points WHERE mode = 'regular'")).rows.map(
-				(row) => row.observed_at,
-			),
-			[500, 500],
-		);
-
-		await database.execute("DELETE FROM writes");
-		const changed = {
-			...outcome,
-			checkedAt: 700,
-			etag: '"v2"',
-			points: [
-				{ ...outcome.points[1], price: 1200, priceMin: 975, offerCount: 3 },
-				{ timestamp: 300, price: 1300, priceMin: 1000, offerCount: 4 },
-			],
-		};
-		await store.writeOutcomes("regular", [changed]);
-		assert.deepEqual(
-			(await database.execute("SELECT kind FROM writes ORDER BY kind")).rows.map((row) => row.kind),
-			["current", "delete", "insert", "update"],
-		);
-		assert.deepEqual((await getStoredPricePoints(database, "regular", "item")).points, changed.points);
-		assert.deepEqual((await getStoredPricePoints(database, "pve", "item")).points, outcome.points);
-		await store.writeOutcomes("regular", [{ status: "failed", itemId: "item", checkedAt: 800, error: "failure" }]);
-		await store.writeOutcomes("regular", [{ status: "not-modified", itemId: "item", checkedAt: 900, etag: null }]);
-		const current = (await database.execute("SELECT * FROM item_prices WHERE mode = 'regular'")).rows[0];
-		assert.equal(current.etag, '"v2"');
-		assert.equal(current.last_checked_at, 900);
-		assert.equal(current.last_changed_at, 700);
-		assert.equal(current.consecutive_failures, 0);
-		assert.equal(current.last_error, null);
-		assert.equal(current.effective_price, outcome.effectivePrice);
-		await database.execute("DELETE FROM writes");
-		await store.writeOutcomes("regular", [{ status: "not-modified", itemId: "item", checkedAt: 900, etag: null }]);
-		assert.deepEqual((await database.execute("SELECT kind FROM writes")).rows, []);
-	} finally {
-		database.close();
-	}
-});
-
-test("rolls back history deltas when the current price write fails", async () => {
-	const database = createClient({ url: "file::memory:" });
-	try {
-		await database.executeMultiple(await readFile(path.join(process.cwd(), "db-scripts/schema.sql"), "utf8"));
-		const store = new TursoPriceRefreshStore(database);
-		const outcome = {
-			status: "updated" as const,
-			itemId: "item",
-			etag: null,
-			checkedAt: 500,
-			points: [{ timestamp: 100, price: 1000, priceMin: 900, offerCount: 2 }],
-			effectivePrice: 900,
-			sampleCount: 1,
-			totalOfferCount: 2,
-		};
-		await store.writeOutcomes("regular", [outcome]);
-		await database.executeMultiple(`
-            CREATE TRIGGER reject_current BEFORE UPDATE ON item_prices
-                BEGIN SELECT RAISE(ABORT, 'test failure'); END;
-        `);
-		await assert.rejects(
-			store.writeOutcomes("regular", [
+			const purchaseOffer = {
+				traderId: "prapor",
+				price: 10,
+				priceRUB: 10,
+				currency: "RUB",
+				currencyItemId: "rouble",
+				minTraderLevel: 1,
+				taskUnlockId: "task-a",
+				restockAmount: null,
+				buyLimit: 4,
+			};
+			const catalogRecords = [
 				{
-					...outcome,
-					checkedAt: 600,
-					points: [{ ...outcome.points[0], timestamp: 200 }],
+					itemId: "item-a",
+					marketPrice: {
+						avg24hPrice: 100,
+						high24hPrice: 130,
+						low24hPrice: 90,
+						changeLast48hPercent: -20,
+						updatedAt: 700,
+						sellFor: [],
+					},
+					traderPurchaseOffers: [purchaseOffer],
 				},
-			]),
-			/test failure/,
-		);
-		assert.deepEqual((await getStoredPricePoints(database, "regular", "item")).points, outcome.points);
-	} finally {
-		database.close();
-	}
-});
+			];
+			await store.writeCatalogPrices("regular", "run-a", catalogRecords);
+			const [initialCatalogRow] = await db.select().from(itemPrices).where(eq(itemPrices.itemId, "item-a"));
+			const initialCatalogChangedAt = initialCatalogRow.lastChangedAt;
+			assert.ok(initialCatalogChangedAt !== null);
+			await store.writeCatalogPrices("regular", "run-a", [{ itemId: "item-a", marketPrice: { updatedAt: 800 } }]);
+			const [afterMissingCatalogObservation] = await db
+				.select()
+				.from(itemPrices)
+				.where(eq(itemPrices.itemId, "item-a"));
+			assert.equal(afterMissingCatalogObservation.catalogAveragePrice, "100");
+			assert.equal(afterMissingCatalogObservation.catalogReferenceUpdatedAt, 700);
+			assert.equal(afterMissingCatalogObservation.lastChangedAt, initialCatalogChangedAt);
+			assert.deepEqual(afterMissingCatalogObservation.traderPurchaseOffers, [purchaseOffer]);
+			await store.writeCatalogPrices("regular", "run-a", [
+				{
+					itemId: "item-a",
+					marketPrice: { avg24hPrice: 50, updatedAt: 600, sellFor: [] },
+					traderPurchaseOffers: [],
+				},
+			]);
+			const [afterOlderCatalogObservation] = await db.select().from(itemPrices).where(eq(itemPrices.itemId, "item-a"));
+			assert.equal(afterOlderCatalogObservation.catalogAveragePrice, "100");
+			assert.equal(afterOlderCatalogObservation.catalogReferenceUpdatedAt, 700);
+			assert.equal(afterOlderCatalogObservation.lastChangedAt, initialCatalogChangedAt);
+			assert.deepEqual(afterOlderCatalogObservation.traderPurchaseOffers, [purchaseOffer]);
+			await fixture.pool.query("create table catalog_update_writes (item_id text)");
+			await fixture.pool.query(
+				"create function count_catalog_update() returns trigger language plpgsql as $$ begin insert into catalog_update_writes values (new.item_id); return new; end $$",
+			);
+			await fixture.pool.query(
+				"create trigger count_catalog_update after update on item_prices for each row execute function count_catalog_update()",
+			);
+			const changedOffer = { ...purchaseOffer, buyLimit: 8 };
+			const changedOffersRecord = [{ ...catalogRecords[0], traderPurchaseOffers: [changedOffer] }];
+			await store.writeCatalogPrices("regular", "run-a", changedOffersRecord);
+			const [afterOfferChange] = await db.select().from(itemPrices).where(eq(itemPrices.itemId, "item-a"));
+			assert.ok(afterOfferChange.lastChangedAt! > initialCatalogChangedAt!);
+			const offerChangedAt = afterOfferChange.lastChangedAt;
+			await store.writeCatalogPrices("regular", "run-a", changedOffersRecord);
+			assert.equal(
+				(await fixture.pool.query("select count(*)::int as count from catalog_update_writes")).rows[0].count,
+				1,
+			);
+			const [afterOfferNoop] = await db.select().from(itemPrices).where(eq(itemPrices.itemId, "item-a"));
+			assert.equal(afterOfferNoop.lastChangedAt, offerChangedAt);
+			const originalPoints: PriceHistoryPoint[] = [
+				{ timestamp: 100, price: 1_000, priceMin: 900, offerCount: 2 },
+				{ timestamp: 200, price: 1_100, priceMin: 950, offerCount: null },
+			];
+			await store.writeOutcomes("regular", "run-a", [
+				{
+					status: "updated",
+					itemId: "item-a",
+					etag: '"v1"',
+					checkedAt: 500,
+					points: originalPoints,
+					effectivePrice: 925,
+					sampleCount: 2,
+					totalOfferCount: 2,
+				},
+			]);
+			await store.writeOutcomes("regular", "run-a", [
+				{
+					status: "updated",
+					itemId: "item-a",
+					etag: '"v1"',
+					checkedAt: 550,
+					points: originalPoints,
+					effectivePrice: 925,
+					sampleCount: 2,
+					totalOfferCount: 2,
+				},
+			]);
+			await assert.rejects(
+				store.writeOutcomes("regular", "run-a", [
+					{
+						status: "updated",
+						itemId: "item-a",
+						etag: '"old"',
+						checkedAt: 560,
+						points: [{ timestamp: 150, price: 1_050, priceMin: 950, offerCount: 2 }],
+						effectivePrice: 950,
+						sampleCount: 1,
+						totalOfferCount: 2,
+					},
+				]),
+				/older observations/,
+			);
+			await store.writeOutcomes("regular", "run-a", [
+				{ status: "not-modified", itemId: "item-a", etag: null, checkedAt: 600 },
+				{
+					status: "updated",
+					itemId: "removed-item",
+					etag: null,
+					checkedAt: 700,
+					points: originalPoints,
+					effectivePrice: 925,
+					sampleCount: 2,
+					totalOfferCount: 2,
+				},
+			]);
+			await store.writeOutcomes("regular", "run-a", [
+				{ status: "failed", itemId: "item-a", checkedAt: 700, error: "provider unavailable" },
+			]);
+
+			const [current] = await db.select().from(itemPrices).where(eq(itemPrices.itemId, "item-a"));
+			assert.equal(current.price, 925);
+			assert.equal(current.avg24hPrice, "100");
+			assert.equal(current.changeLast48hPercent, "-20");
+			assert.equal(current.catalogReferenceUpdatedAt, 700);
+			assert.deepEqual(current.traderPurchaseOffers, [changedOffer]);
+			assert.deepEqual((await getStoredPricePoints(db, "regular", "item-a")).points, originalPoints);
+			assert.deepEqual(
+				current.recentPoints.map((point) => point.observedAt),
+				[500, 500],
+			);
+			assert.ok(current.lastChangedAt! > current.lastCheckedAt!);
+			const [sync] = await db.select().from(itemPriceSync).where(eq(itemPriceSync.itemId, "item-a"));
+			assert.equal(sync.etag, '"v1"');
+			assert.equal(sync.consecutiveFailures, 1);
+			assert.equal(sync.lastError, "provider unavailable");
+			assert.equal(
+				await db
+					.select()
+					.from(itemPrices)
+					.where(eq(itemPrices.itemId, "removed-item"))
+					.then((rows) => rows.length),
+				0,
+			);
+			assert.deepEqual(await store.getEligibleItemIds("pve"), ["item-a"]);
+			await store.releaseLock("regular", "run-a");
+		} finally {
+			await fixture.close();
+		}
+	},
+);

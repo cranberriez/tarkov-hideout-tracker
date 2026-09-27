@@ -23,6 +23,7 @@
 /db-scripts/*.db
 /db-scripts/*.db-shm
 /db-scripts/*.db-wal
+/discovery.json
 
 # misc
 .DS_Store
@@ -53,3 +54,8 @@ plans/
 src/lib/data/quests-full.json
 src/lib/data/tasks-pve.json
 src/lib/data/tasks-regular.json
+
+# Test databases
+tarkov-hideout-test1.db
+tarkov-hideout-test1.db-shm
+tarkov-hideout-test1.db-wal

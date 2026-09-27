@@ -40,7 +40,7 @@ export async function boundedReadCache<T>(
 				}
 				return value;
 			},
-			["turso-read-v1", ...key],
+			["postgres-read-v1", ...key],
 			{ revalidate },
 		)();
 	} catch (error) {

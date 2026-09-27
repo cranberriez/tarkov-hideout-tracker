@@ -115,7 +115,7 @@ export function DataStatusDialog() {
 
 					<StatusRow
 						label="API provider"
-						value={isLoading ? "Checking connection" : hasCoreError ? "Connection failed" : "Turso"}
+						value={isLoading ? "Checking connection" : hasCoreError ? "Connection failed" : "PostgreSQL"}
 						state={isLoading ? "neutral" : hasCoreError ? "error" : "ok"}
 					/>
 					<StatusRow label="Data revision" value={releaseId ?? "Checking"} />

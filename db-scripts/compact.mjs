@@ -1,3 +1,4 @@
+import { encodeRecord, recordKey } from "./lib/record-encoding.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -5,13 +6,7 @@ import { loadLocalEnv, getTursoConfig } from "./lib/config.mjs";
 import { createTursoClient } from "./lib/turso.mjs";
 import { initializeCatalogHistory } from "./lib/catalog-history.mjs";
 import { loadSnapshotManifest, validateSnapshotFiles, readRecords, assertSafeReleaseId } from "./lib/snapshot.mjs";
-import {
-	encodeRecord,
-	payloadStatement,
-	currentRecordStatement,
-	executeBounded,
-	recordKey,
-} from "./lib/current-storage.mjs";
+import { payloadStatement, currentRecordStatement, executeBounded } from "./lib/current-storage.mjs";
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 

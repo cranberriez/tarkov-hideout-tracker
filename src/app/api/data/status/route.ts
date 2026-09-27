@@ -16,6 +16,6 @@ export async function GET(request: NextRequest) {
 			headers: { "Cache-Control": CacheControl.privateNoStore },
 		});
 	} catch (error) {
-		return itemDatabaseErrorResponse(error, "Data release status is temporarily unavailable");
+		return itemDatabaseErrorResponse(error, "PostgreSQL data status is temporarily unavailable");
 	}
 }

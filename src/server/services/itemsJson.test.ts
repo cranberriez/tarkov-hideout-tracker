@@ -45,10 +45,6 @@ test("getGlobalItemList retains normalized direct trader purchase offers", async
 								restockAmount: 3_900_000,
 								buyLimit: 5,
 							},
-							{
-								trader: null,
-								price: "invalid",
-							},
 						],
 					},
 				},
@@ -70,6 +66,68 @@ test("getGlobalItemList retains normalized direct trader purchase offers", async
 			buyLimit: 5,
 		},
 	]);
+});
+
+test("catalog mapping keeps omitted price and offer observations distinguishable from empty values", async (context) => {
+	context.mock.method(globalThis, "fetch", async (input) => {
+		const url = String(input);
+		if (url.endsWith("_en")) return Response.json({ data: { name: "Name" } });
+		if (url.endsWith("/traders"))
+			return Response.json({
+				data: { therapist: { id: "therapist", name: "Therapist", normalizedName: "therapist" } },
+			});
+		return Response.json({
+			data: {
+				items: {
+					omitted: { id: "omitted", name: "Name", types: [] },
+					empty: {
+						id: "empty",
+						name: "Name",
+						types: [],
+						buyFromTrader: [],
+						sellToTrader: [],
+						avg24hPrice: 0,
+					},
+				},
+			},
+		});
+	});
+
+	const { data } = await getGlobalItemList("regular");
+	assert.equal(data.items[0]?.marketPrice?.avg24hPrice, undefined);
+	assert.equal(data.items[0]?.marketPrice?.sellFor, undefined);
+	assert.equal(data.items[0]?.buyFromTrader, undefined);
+	assert.equal(data.items[1]?.marketPrice?.avg24hPrice, 0);
+	assert.deepEqual(data.items[1]?.marketPrice?.sellFor, []);
+	assert.deepEqual(data.items[1]?.buyFromTrader, []);
+});
+
+test("catalog mapping rejects malformed nonempty trader offer arrays instead of treating them as empty", async (context) => {
+	let sourceItem: Record<string, unknown> = {
+		id: "item",
+		name: "Item",
+		types: [],
+		buyFromTrader: [],
+		sellToTrader: [],
+	};
+	context.mock.method(globalThis, "fetch", async (input) => {
+		const url = String(input);
+		if (url.endsWith("_en")) return Response.json({ data: { name: "Name" } });
+		if (url.endsWith("/traders"))
+			return Response.json({
+				data: { therapist: { id: "therapist", name: "Therapist", normalizedName: "therapist" } },
+			});
+		return Response.json({ data: { items: { item: sourceItem } } });
+	});
+
+	const emptyArrays = await getGlobalItemList("regular");
+	assert.deepEqual(emptyArrays.data.items[0]?.buyFromTrader, []);
+	assert.deepEqual(emptyArrays.data.items[0]?.marketPrice?.sellFor, []);
+
+	sourceItem = { ...sourceItem, buyFromTrader: [{ trader: "therapist", price: "invalid" }] };
+	await assert.rejects(getGlobalItemList("regular"), /malformed trader purchase offer/);
+	sourceItem = { id: "item", name: "Item", types: [], sellToTrader: [{ trader: "therapist", priceRUB: "invalid" }] };
+	await assert.rejects(getGlobalItemList("regular"), /malformed trader sale offer/);
 });
 
 test("catalog ingestion rejects malformed required records and duplicate IDs", async (context) => {

@@ -44,9 +44,10 @@ To set up the project locally, you will need a few prerequisites.
 
 ### 1. Storage
 
-The hosted project runs on Vercel and reads normalized game data from Turso.
-For local development, use the Turso database credentials for the selected
-immutable releases.
+The application reads normalized game data from PostgreSQL. Provision a target,
+apply migrations and bootstrap catalog/prices. Discovery history import is optional,
+as described in [operations](docs/operations.md). Production switching follows the
+separate [cutover runbook](docs/postgresql-cutover.md).
 
 ### 2. Environment Variables
 
@@ -60,14 +61,11 @@ cp .sample.env .env
 Required variables:
 
 ```env
-TURSO_DATABASE_URL="libsql://your-database.turso.io"
-TURSO_AUTH_TOKEN="your-turso-auth-token"
+DATABASE_URL="postgresql://user:password@localhost:5432/tarkov"
 ```
 
-Runtime release IDs are selected in
-[release-config.ts](src/server/db/release-config.ts). `CRON_SECRET` protects
-scheduled price refreshes. [Operations](docs/operations.md) covers environment
-configuration, release publication, and price maintenance.
+`CRON_SECRET` protects scheduled price refreshes. [Operations](docs/operations.md)
+covers connection settings, catalog updates, and independent price maintenance.
 
 ### 3. Run the Development Server
 

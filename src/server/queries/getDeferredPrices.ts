@@ -10,8 +10,8 @@ import {
 } from "../../lib/query/price-contract";
 
 async function getPriceRepository(mode: TarkovDataMode) {
-	const { getActiveDataReleaseId } = await import("../db/release-config");
-	return getDefaultRepository({ mode, releaseId: await getActiveDataReleaseId(mode) });
+	const { getCatalogVersion } = await import("../db/postgres-read");
+	return getDefaultRepository({ mode, contentVersion: await getCatalogVersion(mode) });
 }
 
 export async function getDeferredPrices(mode: TarkovDataMode, ids: string[]) {

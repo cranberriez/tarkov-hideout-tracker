@@ -1,92 +1,53 @@
-import { getItemDiscovery } from "./item-discovery";
-import type { Client } from "@libsql/client";
-import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import { normalizeName } from "@/lib/utils/normalize-name";
+import "server-only";
+
+import { and, asc, eq, sql } from "drizzle-orm";
+import type { TarkovDataMode } from "@/types/common";
 import type { ItemSearchPayload } from "@/types/contracts";
-import type { ItemSummary } from "@/types/items";
-import { getTursoClient } from "./client";
-import { TursoDataIntegrityError, TursoRecordNotFoundError, TursoTransientReadError } from "./errors";
-import { getActiveDataReleaseId } from "./release-config";
-import { parseStoredJson } from "./stored-json";
-
-function escapeLikePattern(value: string): string {
-	return value.replace(/[\\%_]/g, "\\$&");
-}
-
-function assertItemSummary(value: ItemSummary, expectedId: unknown): ItemSummary {
-	if (
-		typeof expectedId !== "string" ||
-		value.id !== expectedId ||
-		typeof value.name !== "string" ||
-		typeof value.normalizedName !== "string"
-	) {
-		throw new TursoDataIntegrityError("An item search preview has an invalid shape");
-	}
-	return value;
-}
+import { normalizeName } from "@/lib/utils/normalize-name";
+import { items, itemModes } from "@/server/postgres/schema";
+import { getPostgresDb, type PostgresDatabase } from "@/server/postgres/connection";
+import { getItemsByIds } from "./domain-data";
+import { withStableCatalogRead } from "./postgres-read";
+import { DatabaseDataIntegrityError } from "./errors";
 
 export async function searchItemPreviews(
 	query: string,
-	mode: TarkovJsonGameMode,
-	releaseId: string,
+	mode: TarkovDataMode,
+	contentVersion: string,
 	resultLimit: number,
-	database: Client = getTursoClient(),
+	database?: PostgresDatabase,
 ): Promise<ItemSearchPayload> {
-	const normalizedQuery = normalizeName(query);
-	if (!normalizedQuery) {
-		throw new RangeError("Item search query must contain searchable characters");
-	}
-
-	const normalizedPattern = escapeLikePattern(normalizedQuery);
-	const compactPattern = escapeLikePattern(normalizedQuery.replace(/-/g, ""));
-	const result = await database.execute({
-		sql: `
-            SELECT search.item_id, search.preview_json
-            FROM item_search AS search
-            INNER JOIN data_releases AS release
-                ON release.mode = search.mode
-                AND release.release_id = search.release_id
-                AND release.status = 'ready'
-            WHERE search.mode = ?
-                AND search.release_id = ?
-                AND (
-                    search.normalized_name LIKE '%' || ? || '%' ESCAPE '\\'
-                    OR search.compact_name LIKE '%' || ? || '%' ESCAPE '\\'
-                )
-            ORDER BY
-                CASE
-                    WHEN search.normalized_name LIKE ? || '%' ESCAPE '\\' THEN 0
-                    ELSE 1
-                END,
-                search.sort_name COLLATE NOCASE,
-                search.item_id
-            LIMIT ?
-        `,
-		args: [mode, releaseId, normalizedPattern, compactPattern, normalizedPattern, resultLimit],
-	});
-
-	if (!result.rows.length) {
-		const selected = await database.execute({
-			sql: "SELECT release_id FROM data_releases WHERE mode = ? AND release_id = ? AND status = 'ready'",
-			args: [mode, releaseId],
-		});
-		if (!selected.rows.length)
-			if ((await getActiveDataReleaseId(mode, database)) !== releaseId) {
-				throw new TursoTransientReadError("The current data changed while search was loading. Retry the request.");
-			} else {
-				throw new TursoRecordNotFoundError(`No ready data release exists for ${mode}/${releaseId}`);
-			}
-	}
-
-	const discovery = await getItemDiscovery(
+	const normalized = normalizeName(query);
+	if (!normalized) throw new RangeError("Item search query must contain searchable characters");
+	const compact = normalized.replace(/-/g, "");
+	const db = database ?? getPostgresDb();
+	const effectiveName = sql`lower(coalesce(${itemModes.displayOverride}->>'normalizedName', ${itemModes.displayOverride}->>'normalized_name', ${items.normalizedName}))`;
+	const effectiveShortName = sql`lower(coalesce(${itemModes.displayOverride}->>'shortName', ${itemModes.displayOverride}->>'short_name', ${items.shortName}, ''))`;
+	const queryResult: { data: string[]; contentVersion: string } = await withStableCatalogRead(
 		mode,
-		result.rows.map((row) => String(row.item_id)),
-		database,
+		async (conn): Promise<string[]> => {
+			const rows = await conn
+				.select({ id: items.id, normalizedName: items.normalizedName })
+				.from(items)
+				.innerJoin(itemModes, and(eq(itemModes.itemId, items.id), eq(itemModes.mode, mode)))
+				.where(
+					sql`(position(${normalized} in ${effectiveName}) > 0 OR position(${compact} in regexp_replace(${effectiveName}, '-', '', 'g')) > 0 OR position(${normalized} in ${effectiveShortName}) > 0 OR position(${normalized.replaceAll("-", " ")} in ${effectiveShortName}) > 0)`,
+				)
+				.orderBy(
+					sql`case when position(${normalized} in ${effectiveName}) = 1 then 0 when position(${normalized} in ${effectiveShortName}) = 1 or position(${normalized.replaceAll("-", " ")} in ${effectiveShortName}) = 1 then 1 else 2 end`,
+					effectiveName,
+					asc(items.id),
+				)
+				.limit(resultLimit);
+			return rows.map((row) => row.id);
+		},
+		db,
+		contentVersion,
 	);
-	return {
-		items: result.rows.map((row) => ({
-			...assertItemSummary(parseStoredJson<ItemSummary>(row.preview_json, "item search preview"), row.item_id),
-			...discovery[String(row.item_id)],
-		})),
-	};
+	const previews = await getItemsByIds(mode, queryResult.data, db, queryResult.contentVersion);
+	const previewItems = queryResult.data.map((id) => previews.data[id]);
+	if (previewItems.some((item) => !item || item.id.length === 0 || typeof item.normalizedName !== "string")) {
+		throw new DatabaseDataIntegrityError("An item search preview has an invalid shape");
+	}
+	return { items: previewItems };
 }

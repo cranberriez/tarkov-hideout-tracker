@@ -1,139 +1,43 @@
-import type { Client } from "@libsql/client";
-import type { TarkovJsonGameMode } from "@/lib/game-mode";
+import "server-only";
+
+import { eq, max } from "drizzle-orm";
+import type { TarkovDataMode } from "@/types/common";
 import type {
 	CompletedItemsConversionData,
 	DataStatusPayload,
 	LegacyConversionStation,
 	LegacyProfileConversionData,
 } from "@/types/contracts";
-import type { Station } from "@/types/hideout";
 import type { ItemIdentity } from "@/types/items";
-import { getTursoClient } from "./client";
-import { isMissingMutablePriceStorage } from "./current-prices";
-import { TursoDataIntegrityError, TursoRecordNotFoundError } from "./errors";
-import { getManifest } from "./manifests";
-import { getActiveDataReleaseId } from "./release-config";
-import { parseStoredJson } from "./stored-json";
+import { catalogStatus, itemPrices, itemPriceSync } from "@/server/postgres/schema";
+import { getPostgresDb } from "@/server/postgres/connection";
+import { assertCatalogVersion, getCatalogVersion } from "./postgres-read";
+import { getItemsByIds, getStations } from "./domain-data";
+import { DatabaseConfigurationError } from "./errors";
 
-interface PreviewManifest<Preview> {
-	ids: string[];
-	previews: Preview[];
+function timestamp(value: unknown): number | null {
+	return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : null;
 }
-
-interface StoredEntities<Entity> {
-	records: Entity[];
-	updatedAt: number | null;
-}
-
-function uniqueStationItemIds(stations: readonly Station[]): string[] {
-	return [
-		...new Set(
-			stations.flatMap((station) =>
-				station.levels.flatMap((level) => level.itemRequirements.map((requirement) => requirement.itemId)),
-			),
-		),
-	];
-}
-
-function numberOrNull(value: unknown): number | null {
-	if (value === null) return null;
-	const number = Number(value);
-	return Number.isFinite(number) ? number : null;
-}
-
-async function getAllEntities<Entity>(
-	mode: TarkovJsonGameMode,
-	entityType: string,
-	database: Client,
-	releaseId: string,
-): Promise<StoredEntities<Entity>> {
-	const result = await database.execute({
-		sql: `
-            SELECT entity.updated_at, entity.payload_json
-            FROM data_entities AS entity
-            INNER JOIN data_releases AS release
-                ON release.mode = entity.mode
-                AND release.release_id = entity.release_id
-                AND release.status = 'ready'
-            WHERE entity.mode = ?
-                AND entity.release_id = ?
-                AND entity.entity_type = ?
-            ORDER BY entity.sort_key, entity.entity_id
-        `,
-		args: [mode, releaseId, entityType],
-	});
-	if (result.rows.length === 0) {
-		throw new TursoRecordNotFoundError(`No ${entityType} entities exist for ${mode}/${releaseId}`);
-	}
-
-	const updateTimes = result.rows.map((row) => numberOrNull(row.updated_at));
+function domainStatus(freshness: Record<string, unknown>, key: string, label: string): DataStatusPayload["quests"] {
+	const updatedAt = timestamp(freshness[key]);
 	return {
-		records: result.rows.map((row) => parseStoredJson<Entity>(row.payload_json, `${entityType} entity`)),
-		updatedAt: updateTimes.every((value) => value === null)
-			? null
-			: Math.max(...updateTimes.map((value) => value ?? 0)),
+		available: updatedAt !== null,
+		updatedAt,
+		diagnostics: updatedAt !== null ? { provider: "json" } : null,
+		error: updatedAt !== null ? null : `${label} update time is unavailable.`,
 	};
 }
 
-async function getItemIdentities(
-	mode: TarkovJsonGameMode,
-	itemIds: readonly string[],
-	database: Client,
-	releaseId: string,
-): Promise<{ itemsById: Record<string, ItemIdentity>; updatedAt: number | null }> {
-	if (itemIds.length === 0) return { itemsById: {}, updatedAt: null };
-
-	const result = await database.execute({
-		sql: `
-            SELECT
-                entity.entity_id,
-                entity.updated_at,
-                json_extract(entity.payload_json, '$.name') AS name,
-                json_extract(entity.payload_json, '$.normalizedName') AS normalized_name
-            FROM data_entities AS entity
-            INNER JOIN data_releases AS release
-                ON release.mode = entity.mode
-                AND release.release_id = entity.release_id
-                AND release.status = 'ready'
-            WHERE entity.mode = ?
-                AND entity.release_id = ?
-                AND entity.entity_type = 'item'
-                AND entity.entity_id IN (SELECT value FROM json_each(?))
-        `,
-		args: [mode, releaseId, JSON.stringify(itemIds)],
-	});
-
-	const itemsById: Record<string, ItemIdentity> = Object.create(null) as Record<string, ItemIdentity>;
-	let updatedAt: number | null = null;
-	for (const row of result.rows) {
-		if (typeof row.entity_id !== "string" || typeof row.name !== "string" || typeof row.normalized_name !== "string") {
-			throw new TursoDataIntegrityError("An item identity has an invalid shape");
-		}
-		itemsById[row.entity_id] = {
-			id: row.entity_id,
-			name: row.name,
-			normalizedName: row.normalized_name,
-		};
-		const rowUpdatedAt = numberOrNull(row.updated_at);
-		if (rowUpdatedAt !== null) updatedAt = Math.max(updatedAt ?? 0, rowUpdatedAt);
-	}
-
-	return { itemsById, updatedAt };
-}
-
-export async function getLegacyProfileConversionView(
-	mode: TarkovJsonGameMode,
-	database?: Client,
-): Promise<LegacyProfileConversionData> {
+export async function getLegacyProfileConversionView(mode: TarkovDataMode): Promise<LegacyProfileConversionData> {
 	try {
-		const manifest = await getManifest<PreviewManifest<LegacyConversionStation>>(
-			mode,
-			"stations",
-			database ?? getTursoClient(),
-		);
+		const stations = await getStations(mode, getPostgresDb());
 		return {
-			stations: manifest.payload.previews,
-			freshness: { stationsUpdatedAt: manifest.updatedAt },
+			stations: stations.data.map((station): LegacyConversionStation => ({
+				id: station.id,
+				name: station.name,
+				maxLevel: station.levels.reduce((maxLevel, level) => Math.max(maxLevel, level.level), 0),
+			})),
+			freshness: { stationsUpdatedAt: stations.updatedAt },
 			errors: { stations: null },
 		};
 	} catch {
@@ -145,182 +49,104 @@ export async function getLegacyProfileConversionView(
 	}
 }
 
-export async function getCompletedItemsConversionView(
-	mode: TarkovJsonGameMode,
-	database?: Client,
-): Promise<CompletedItemsConversionData> {
-	let db: Client;
-	let stationData: StoredEntities<Station>;
-	let releaseId: string;
+export async function getCompletedItemsConversionView(mode: TarkovDataMode): Promise<CompletedItemsConversionData> {
+	const contentVersion = await getCatalogVersion(mode);
+	let stations: Awaited<ReturnType<typeof getStations>>;
 	try {
-		db = database ?? getTursoClient();
-		releaseId = await getActiveDataReleaseId(mode, database);
-		stationData = await getAllEntities<Station>(mode, "station", db, releaseId);
+		stations = await getStations(mode, getPostgresDb(), contentVersion);
 	} catch {
 		return {
 			stations: [],
 			items: [],
 			unresolvedItemIds: [],
 			freshness: { stationsUpdatedAt: null, itemsUpdatedAt: null },
-			errors: {
-				stations: "Hideout station data could not be loaded.",
-				items: null,
-			},
+			errors: { stations: "Hideout station data could not be loaded.", items: null },
 		};
 	}
-
-	const itemIds = uniqueStationItemIds(stationData.records);
-	let itemData: Awaited<ReturnType<typeof getItemIdentities>>;
+	const uniqueIds = [
+		...new Set(
+			stations.data.flatMap((station) =>
+				station.levels.flatMap((level) => level.itemRequirements.map((requirement) => requirement.itemId)),
+			),
+		),
+	];
 	try {
-		itemData = await getItemIdentities(mode, itemIds, db, releaseId);
-	} catch {
-		itemData = { itemsById: {}, updatedAt: null };
+		const result = await getItemsByIds(mode, uniqueIds, getPostgresDb(), contentVersion);
+		await assertCatalogVersion(mode, contentVersion);
+		const items = Object.values(result.data).map(({ id, name, normalizedName }): ItemIdentity => ({
+			id,
+			name,
+			normalizedName,
+		}));
 		return {
-			stations: stationData.records.map((station) => ({
+			stations: stations.data.map((station) => ({
 				id: station.id,
 				levels: station.levels.map((level) => ({
 					level: level.level,
-					itemRequirements: level.itemRequirements.map((requirement) => ({
-						id: requirement.id,
-						itemId: requirement.itemId,
-						count: requirement.count,
-						isFir: requirement.isFir,
+					itemRequirements: level.itemRequirements.map(({ id, itemId, count, isFir }) => ({
+						id,
+						itemId,
+						count,
+						isFir,
+					})),
+				})),
+			})),
+			items,
+			unresolvedItemIds: uniqueIds.filter((id) => !result.data[id]),
+			freshness: { stationsUpdatedAt: stations.updatedAt, itemsUpdatedAt: result.updatedAt },
+			errors: { stations: null, items: null },
+		};
+	} catch {
+		await assertCatalogVersion(mode, contentVersion);
+		return {
+			stations: stations.data.map((station) => ({
+				id: station.id,
+				levels: station.levels.map((level) => ({
+					level: level.level,
+					itemRequirements: level.itemRequirements.map(({ id, itemId, count, isFir }) => ({
+						id,
+						itemId,
+						count,
+						isFir,
 					})),
 				})),
 			})),
 			items: [],
-			unresolvedItemIds: itemIds,
-			freshness: {
-				stationsUpdatedAt: stationData.updatedAt,
-				itemsUpdatedAt: null,
-			},
-			errors: {
-				stations: null,
-				items: "Hideout item names could not be loaded.",
-			},
-		};
-	}
-
-	return {
-		stations: stationData.records.map((station) => ({
-			id: station.id,
-			levels: station.levels.map((level) => ({
-				level: level.level,
-				itemRequirements: level.itemRequirements.map((requirement) => ({
-					id: requirement.id,
-					itemId: requirement.itemId,
-					count: requirement.count,
-					isFir: requirement.isFir,
-				})),
-			})),
-		})),
-		items: itemIds.flatMap((itemId) => (itemData.itemsById[itemId] ? [itemData.itemsById[itemId]] : [])),
-		unresolvedItemIds: itemIds.filter((itemId) => !itemData.itemsById[itemId]),
-		freshness: {
-			stationsUpdatedAt: stationData.updatedAt,
-			itemsUpdatedAt: itemData.updatedAt,
-		},
-		errors: { stations: null, items: null },
-	};
-}
-
-async function getPriceStatus(mode: TarkovJsonGameMode, database?: Client): Promise<DataStatusPayload["prices"]> {
-	try {
-		const result = await (database ?? getTursoClient()).execute({
-			sql: `SELECT MAX(last_changed_at) AS changed_at,
-                         MAX(last_checked_at) AS checked_at
-                  FROM item_prices WHERE mode = ?`,
-			args: [mode],
-		});
-		return {
-			changedAt: numberOrNull(result.rows[0]?.changed_at),
-			checkedAt: numberOrNull(result.rows[0]?.checked_at),
-			error: null,
-		};
-	} catch (error) {
-		return {
-			changedAt: null,
-			checkedAt: null,
-			error: isMissingMutablePriceStorage(error) ? null : "Price update status could not be loaded.",
+			unresolvedItemIds: uniqueIds,
+			freshness: { stationsUpdatedAt: stations.updatedAt, itemsUpdatedAt: null },
+			errors: { stations: null, items: "Hideout item names could not be loaded." },
 		};
 	}
 }
 
-function releaseDomainStatus(value: unknown, label: string): DataStatusPayload["quests"] {
-	const timestamp = numberOrNull(value);
-	const updatedAt = timestamp !== null && timestamp > 0 ? timestamp : null;
-	return {
-		available: updatedAt !== null,
-		updatedAt,
-		diagnostics: updatedAt !== null ? { provider: "json" } : null,
-		error: updatedAt === null ? `${label} update time is unavailable.` : null,
-	};
-}
-
-export async function getDataStatusView(mode: TarkovJsonGameMode, database?: Client): Promise<DataStatusPayload> {
-	const releaseId = await getActiveDataReleaseId(mode, database);
-	const pricesPromise = getPriceStatus(mode, database);
+export async function getDataStatusView(mode: TarkovDataMode): Promise<DataStatusPayload> {
+	const db = getPostgresDb();
+	const [catalog] = await db.select().from(catalogStatus).where(eq(catalogStatus.mode, mode)).limit(1);
+	if (!catalog || catalog.contentVersion <= 0)
+		throw new DatabaseConfigurationError(`PostgreSQL catalog is not ready for ${mode}. Run db:update.`);
+	let priceStatus: DataStatusPayload["prices"];
 	try {
-		const result = await (database ?? getTursoClient()).execute({
-			sql: `
-                SELECT source_freshness_json
-                FROM data_releases
-                WHERE mode = ? AND release_id = ? AND status = 'ready'
-                LIMIT 1
-            `,
-			args: [mode, releaseId],
-		});
-		const row = result.rows[0];
-		if (!row) {
-			throw new TursoRecordNotFoundError(`No ready data release exists for ${mode}/${releaseId}`);
-		}
-		const freshness = parseStoredJson<Record<string, unknown>>(row.source_freshness_json, `${mode} release freshness`);
-		const stationsUpdatedAt = numberOrNull(freshness.stations);
-		const itemsUpdatedAt = numberOrNull(freshness.items);
-		if (stationsUpdatedAt === null || itemsUpdatedAt === null) {
-			throw new TursoDataIntegrityError("Core release freshness is incomplete");
-		}
-
-		return {
-			mode,
-			releaseId,
-			prices: await pricesPromise,
-			quests: releaseDomainStatus(freshness.quests, "Quest dataset"),
-			crafts: releaseDomainStatus(freshness.crafts, "Craft recipes"),
-			barters: releaseDomainStatus(freshness.barters, "Barter recipes"),
-			stations: {
-				available: true,
-				updatedAt: stationsUpdatedAt,
-				diagnostics: { provider: "json" },
-				error: null,
-			},
-			items: {
-				available: true,
-				updatedAt: itemsUpdatedAt,
-				diagnostics: { provider: "json" },
-				error: null,
-			},
-		};
+		const [prices] = await db
+			.select({ changedAt: max(itemPrices.lastChangedAt) })
+			.from(itemPrices)
+			.where(eq(itemPrices.mode, mode));
+		const [checks] = await db
+			.select({ checkedAt: max(itemPriceSync.lastCheckedAt) })
+			.from(itemPriceSync)
+			.where(eq(itemPriceSync.mode, mode));
+		priceStatus = { changedAt: timestamp(prices?.changedAt), checkedAt: timestamp(checks?.checkedAt), error: null };
 	} catch {
-		return {
-			mode,
-			releaseId,
-			prices: await pricesPromise,
-			quests: releaseDomainStatus(null, "Quest dataset"),
-			crafts: releaseDomainStatus(null, "Craft recipes"),
-			barters: releaseDomainStatus(null, "Barter recipes"),
-			stations: {
-				available: false,
-				updatedAt: null,
-				diagnostics: null,
-				error: "Hideout station data could not be loaded.",
-			},
-			items: {
-				available: false,
-				updatedAt: null,
-				diagnostics: null,
-				error: "Item catalog data could not be loaded.",
-			},
-		};
+		priceStatus = { changedAt: null, checkedAt: null, error: "Price update status could not be loaded." };
 	}
+	const freshness = (catalog.sourceFreshness ?? {}) as Record<string, unknown>;
+	return {
+		mode,
+		releaseId: String(catalog.contentVersion),
+		prices: priceStatus,
+		quests: domainStatus(freshness, "quests", "Quest dataset"),
+		crafts: domainStatus(freshness, "crafts", "Craft recipes"),
+		barters: domainStatus(freshness, "barters", "Barter recipes"),
+		stations: domainStatus(freshness, "stations", "Hideout station"),
+		items: domainStatus(freshness, "items", "Item catalog"),
+	};
 }

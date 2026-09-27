@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { TarkovDataMode } from "@/types/common";
-import { getTursoClient } from "@/server/db/client";
-import { getActiveDataReleaseId } from "@/server/db/release-config";
-import { TursoPriceRefreshStore } from "./price-store";
+import { getPostgresDb } from "@/server/postgres/connection";
+import { PostgresPriceRefreshStore } from "./price-store";
 import { refreshPriceMode } from "./refresh-prices";
 
 export async function runPriceCron(request: NextRequest, modes: readonly TarkovDataMode[]) {
@@ -14,14 +13,13 @@ export async function runPriceCron(request: NextRequest, modes: readonly TarkovD
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 	}
 
-	const store = new TursoPriceRefreshStore(getTursoClient());
+	const store = new PostgresPriceRefreshStore(getPostgresDb());
 	const summaries = [];
 	try {
 		for (const mode of modes) {
 			summaries.push(
 				await refreshPriceMode({
 					mode,
-					releaseId: await getActiveDataReleaseId(mode),
 					store,
 				}),
 			);

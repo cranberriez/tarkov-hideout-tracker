@@ -109,7 +109,7 @@ test("pages enter Tarkov data through queries rather than the concrete repositor
 		.filter((file) => /(?:^|[\\/])page\.tsx$/.test(file))
 		.filter((file) =>
 			moduleImports(readFileSync(file, "utf8")).some(
-				(specifier) => specifier === "@/server/repositories/tarkov-data/turso-repository",
+				(specifier) => specifier === "@/server/repositories/tarkov-data/postgres-repository",
 			),
 		)
 		.map(relativePath);
@@ -127,12 +127,17 @@ test("queries do not bypass repositories by importing provider services", () => 
 	assert.deepEqual(violations, []);
 });
 
-test("the runtime repository uses Turso for current and stored historical prices", () => {
-	const repositoryPath = path.join(sourceRoot, "server", "repositories", "tarkov-data", "turso-repository.ts");
+test("the runtime repository uses named PostgreSQL reads and current bounded prices", () => {
+	const repositoryPath = path.join(sourceRoot, "server", "repositories", "tarkov-data", "postgres-repository.ts");
 	const repositoryImports = moduleImports(readFileSync(repositoryPath, "utf8"));
 	const serviceImports = repositoryImports.filter((specifier) => specifier.startsWith("@/server/services/"));
 	assert.deepEqual(serviceImports, []);
+	assert.ok(repositoryImports.includes("@/server/db/domain-data"));
+	assert.ok(repositoryImports.includes("@/server/db/price-data"));
 
 	const queryUtils = readFileSync(path.join(sourceRoot, "server", "queries", "query-utils.ts"), "utf8");
-	assert.ok(moduleImports(queryUtils).includes("@/server/repositories/tarkov-data/turso-repository"));
+	assert.ok(moduleImports(queryUtils).includes("@/server/repositories/tarkov-data/postgres-repository"));
+	const cache = readFileSync(path.join(sourceRoot, "server", "db", "read-cache.ts"), "utf8");
+	assert.match(cache, /postgres-read-v1/);
+	assert.doesNotMatch(cache, /turso-read-v1/);
 });

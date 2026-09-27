@@ -8,6 +8,7 @@ class MemoryStore implements PriceRefreshStore {
 	outcomes: PriceRefreshOutcome[] = [];
 	completed: PriceRefreshSummary | null = null;
 	acquired = true;
+	catalogWriteCount = 0;
 
 	async getEligibleItemIds() {
 		return ["item-a", "item-b", "item-c"];
@@ -18,12 +19,18 @@ class MemoryStore implements PriceRefreshStore {
 	async tryAcquireLock() {
 		return this.acquired;
 	}
+	async renewLock() {
+		return this.acquired;
+	}
 	async releaseLock() {}
 	async startRun() {}
-	async writeOutcomes(_mode: string, outcomes: PriceRefreshOutcome[]) {
+	async writeCatalogPrices() {
+		this.catalogWriteCount++;
+	}
+	async writeOutcomes(_mode: string, _runId: string, outcomes: PriceRefreshOutcome[]) {
 		this.outcomes.push(...outcomes);
 	}
-	async completeRun(summary: PriceRefreshSummary) {
+	async completeRun(_runId: string, summary: PriceRefreshSummary) {
 		this.completed = summary;
 	}
 }
@@ -32,8 +39,8 @@ test("refreshes eligible items, keeps ten points, and reports partial failures",
 	const store = new MemoryStore();
 	const summary = await refreshPriceMode({
 		mode: "pvp-season",
-		releaseId: "release-a",
 		store,
+		fetchCatalogPrices: async () => [],
 		concurrency: 2,
 		fetchHistory: async (_mode, itemId, etag) => {
 			if (itemId === "item-a") {
@@ -59,6 +66,8 @@ test("refreshes eligible items, keeps ten points, and reports partial failures",
 	assert.equal(summary.changedCount, 1);
 	assert.equal(summary.notModifiedCount, 1);
 	assert.equal(summary.failedCount, 1);
+	assert.equal(summary.catalogPriceStatus, "updated");
+	assert.equal(store.catalogWriteCount, 1);
 	const updated = store.outcomes.find(
 		(outcome): outcome is Extract<PriceRefreshOutcome, { status: "updated" }> => outcome.status === "updated",
 	);
@@ -69,13 +78,30 @@ test("refreshes eligible items, keeps ten points, and reports partial failures",
 	assert.equal(store.completed?.status, "partial");
 });
 
+test("catalog reference failure does not prevent independent flea checks", async () => {
+	const store = new MemoryStore();
+	const summary = await refreshPriceMode({
+		mode: "regular",
+		store,
+		fetchCatalogPrices: async () => {
+			throw new Error("catalog source unavailable");
+		},
+		fetchHistory: async (_mode, _itemId, etag) => ({ status: "not-modified", etag: etag ?? null }),
+	});
+	assert.equal(summary.status, "partial");
+	assert.equal(summary.catalogPriceStatus, "failed");
+	assert.equal(summary.checkedCount, 3);
+	assert.equal(summary.notModifiedCount, 3);
+	assert.equal(store.outcomes.length, 3);
+});
+
 test("skips when another refresh holds the mode lock", async () => {
 	const store = new MemoryStore();
 	store.acquired = false;
 	const summary = await refreshPriceMode({
 		mode: "regular",
-		releaseId: "release-a",
 		store,
+		fetchCatalogPrices: async () => [],
 	});
 	assert.equal(summary.status, "skipped");
 	assert.equal(store.outcomes.length, 0);
@@ -85,8 +111,8 @@ test("invalid updated histories produce failures rather than replacement prices"
 	const store = new MemoryStore();
 	const result = await refreshPriceMode({
 		mode: "pve",
-		releaseId: "release-a",
 		store,
+		fetchCatalogPrices: async () => [],
 		fetchHistory: async (_mode, id) => ({
 			status: "updated",
 			etag: "invalid",

@@ -9,7 +9,8 @@ import {
 	catalogPublicationStatements,
 	newCatalogItems,
 } from "./lib/catalog-history.mjs";
-import { encodeRecord, payloadStatement, currentRecordStatement } from "./lib/current-storage.mjs";
+import { encodeRecord } from "./lib/record-encoding.mjs";
+import { payloadStatement, currentRecordStatement } from "./lib/current-storage.mjs";
 import { compareEntities } from "./lib/release-diff.mjs";
 import { readReleasePrices, preserveItemPrices } from "./lib/release-prices.mjs";
 

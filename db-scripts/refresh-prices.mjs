@@ -2,8 +2,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createJiti } from "jiti";
-import { getTursoConfig, loadLocalEnv, parseModes } from "./lib/config.mjs";
-import { createTursoClient } from "./lib/turso.mjs";
+import { loadLocalEnv, parseModes } from "./lib/config.mjs";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDirectory, "..");
@@ -28,19 +27,17 @@ async function main() {
 	const jiti = createJiti(pathToFileURL(import.meta.url).href, {
 		alias: { "@": path.join(projectRoot, "src") },
 	});
-	const [{ refreshPriceMode }, { TursoPriceRefreshStore }, releaseConfig] = await Promise.all([
+	const [{ refreshPriceMode }, { PostgresPriceRefreshStore }, postgres] = await Promise.all([
 		jiti.import(path.join(projectRoot, "src/server/prices/refresh-prices.ts")),
 		jiti.import(path.join(projectRoot, "src/server/prices/price-store.ts")),
-		jiti.import(path.join(projectRoot, "src/server/db/release-config.ts")),
+		jiti.import(path.join(projectRoot, "src/server/postgres/connection.ts")),
 	]);
-	const client = createTursoClient(getTursoConfig());
-	const store = new TursoPriceRefreshStore(client);
+	const store = new PostgresPriceRefreshStore(postgres.getPostgresDb());
 	try {
 		for (const mode of options.modes) {
 			process.stdout.write(`Refreshing ${mode} prices…\n`);
 			const summary = await refreshPriceMode({
 				mode,
-				releaseId: await releaseConfig.getActiveDataReleaseId(mode, client),
 				store,
 				concurrency: options.concurrency,
 				onProgress(checked, eligible) {
@@ -52,7 +49,7 @@ async function main() {
 			process.stdout.write(`${JSON.stringify(summary)}\n`);
 		}
 	} finally {
-		client.close();
+		await postgres.closePostgresPool();
 	}
 }
 

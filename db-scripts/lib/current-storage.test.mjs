@@ -1,16 +1,11 @@
+import { encodeRecord } from "./record-encoding.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createClient } from "@libsql/client";
-import {
-	encodeRecord,
-	stableStringify,
-	publishSnapshot,
-	payloadStatement,
-	currentRecordStatement,
-} from "./current-storage.mjs";
+import { publishSnapshot, payloadStatement, currentRecordStatement } from "./current-storage.mjs";
 import { hashFile, validateSnapshotFiles } from "./snapshot.mjs";
 import { createJiti } from "jiti";
 
@@ -44,35 +39,6 @@ test("snapshot validation rejects incomplete search manifests before publication
 	}
 });
 
-test("canonical payloads deduplicate; freshness preserves availability, nested timestamps remain content", () => {
-	assert.equal(stableStringify({ b: 2, a: 1 }), stableStringify({ a: 1, b: 2 }));
-	const base = {
-		type: "itemView",
-		itemId: "x",
-		viewType: "usage",
-		updatedAt: 1,
-		payload: { freshness: { itemsUpdatedAt: 123, pricesUpdatedAt: null }, data: { updatedAt: 5 } },
-	};
-	const a = encodeRecord("regular", base),
-		b = encodeRecord("pve", {
-			...base,
-			updatedAt: 2,
-			payload: { ...base.payload, freshness: { itemsUpdatedAt: 456, pricesUpdatedAt: null } },
-		});
-	assert.equal(a.payloadHash, b.payloadHash);
-	assert.equal(a.contentHash, b.contentHash);
-	assert.notEqual(
-		a.contentHash,
-		encodeRecord("regular", { ...base, payload: { ...base.payload, data: { updatedAt: 6 } } }).contentHash,
-	);
-	assert.notEqual(
-		a.contentHash,
-		encodeRecord("regular", {
-			...base,
-			payload: { ...base.payload, freshness: { itemsUpdatedAt: null, pricesUpdatedAt: null } },
-		}).contentHash,
-	);
-});
 async function fixture(directory, releaseId, changed = false, previousReleaseId) {
 	const records = [
 		...["item", "station", "quest", "trader", "skill", "barter", "craft"].map((entityType) => ({

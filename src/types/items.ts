@@ -27,7 +27,7 @@ export interface TraderPurchaseOffer {
 
 /** A standard item from the mode-specific Tarkov JSON item catalog. */
 export interface ItemSummary extends ItemIdentity {
-	/** First successful catalog publication; null means the pre-1.1.5 baseline. */
+	/** First successful observation; null means an imported or unknown-date baseline. */
 	firstSeenAt?: number | null;
 	/** Patch being tracked when discovered, not a verified game introduction. */
 	firstSeenPatch?: string;

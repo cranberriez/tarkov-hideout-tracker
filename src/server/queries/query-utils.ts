@@ -8,11 +8,10 @@ import type { BarterRecord, CraftRecord } from "@/types/recipes";
 
 export async function getDefaultRepository(scope?: {
 	mode: TarkovDataMode;
-	releaseId: string;
+	contentVersion: string;
 }): Promise<TarkovDataRepository> {
-	const { tursoTarkovDataRepository, createTursoRepository } =
-		await import("@/server/repositories/tarkov-data/turso-repository");
-	return scope ? createTursoRepository(scope) : tursoTarkovDataRepository;
+	const { createPostgresRepository } = await import("@/server/repositories/tarkov-data/postgres-repository");
+	return createPostgresRepository(scope);
 }
 
 export function dedupeIds(ids: Iterable<string>): string[] {

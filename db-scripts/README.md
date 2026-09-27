@@ -1,142 +1,113 @@
-# Turso data ingestion
+# Database tooling
 
-Offline tooling generates complete local NDJSON snapshots from canonical adapters
-and item-detail composers, validates checksums and counts, then publishes only
-changed records to the current dataset. Runtime reads live under `src/server/db/`.
-Price history is never generated or uploaded by the dataset pipeline.
-
-## Configuration
-
-Set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in `.env.local`, `.env`, or the
-process environment. Local testing can use `TURSO_DATABASE_URL=file:db-scripts/local.db`
-without a token. Existing environment values take precedence.
-
-## Convert existing storage
-
-```bash
-npm run db:storage
-npm run db:compact
-npm run db:storage
-```
-
-[compact.mjs](compact.mjs) converts the existing development database immediately.
-It requires one ready active dataset for each of the three modes and matching,
-checksum-verified local snapshots under `db-scripts/.generated/<release-id>/`.
-Use `--snapshot-root <directory>` to select another local snapshot root. It
-initializes durable catalog history before removing the baseline copies, prepares
-shared payloads, checks counts and unchanged active selections, then atomically
-replaces the four legacy full-record tables with compatibility views. It retains
-the three current datasets and removes historical dataset metadata and pins.
-Catalog discovery and mutable price/history tables are preserved. Running it on
-current storage is a no-op. Missing or mismatched snapshots fail conversion.
-
-`db:storage` is read-only and reports database/storage metrics for comparison.
-It separates `dbstat` table/index bytes from the allocated file size and reusable
-free pages. Turso Cloud rejects `VACUUM`; deleting old snapshots leaves reusable
-pages rather than shrinking the allocated file. See [Turso's storage accounting](https://docs.turso.tech/help/usage-and-billing).
+Runtime and routine commands use PostgreSQL domain tables. Read
+[operations](../docs/operations.md), the [agreed design](../docs/postgresql-migration.md),
+and the separate [production cutover runbook](../docs/postgresql-cutover.md).
 
 ## Commands
 
+| Command                                                     | Responsibility                                                                  |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| npm run db:migrate                                          | Apply checked-in SQL migrations explicitly                                      |
+| npm run db:update                                           | Fetch all modes, normalize/validate, compose details, atomically upsert catalog |
+| npm run db:update -- --dry-run                              | Validate upstream input and report without writes                               |
+| npm run db:update -- --patch 1.1.5.0                        | Record patch provenance for genuinely new discoveries                           |
+| npm run db:prices:refresh -- --modes regular,pve,pvp-season | Independently refresh reference prices/offers and flea observations             |
+| npm run db:prices:refresh -- --concurrency 12               | Limit HTTP concurrency (1–32)                                                   |
+| npm run db:status                                           | Read catalog/discovery/price readiness and latest timestamps                    |
+| npm run db:status -- --storage                              | Also report PostgreSQL relation sizes                                           |
+
+DATABASE_URL is required. DATABASE_MIGRATION_URL optionally selects a direct
+migration connection. Process environment wins over .env.local, which wins over
+.env. Migrations are never implicit in runtime or build. Partial-mode catalog
+updates are refused; prices may select modes independently.
+
+For repeatable local diagnosis, `db:update -- --dry-run --export-fixture fixture.json`
+exports normalized inputs and detail projections without publishing. Replay with
+`db:update -- --fixture fixture.json` against a disposable target; normal validation,
+discovery gating and transaction/version guards still apply. Fixtures are debugging
+artifacts, not a production migration source or durable catalog history.
+
+## Optional discovery import
+
+`npm run db:update` works without SQLite or an import. It automatically uses a
+verified `discovery.json` in the project root when present; choose another file
+with `npm run db:update -- --discovery path/to/discovery.json`. The import and catalog
+write share one transaction. Invalid files or conflicting records abort that update;
+an explicitly requested missing file is an error. Dry runs preview without writing.
+
+Without an import, each uninitialized mode records its current items with unknown
+first-seen date and patch (`null`), then marks discovery initialized. Later updates
+record the observation date and tracked patch for new IDs. Returning IDs retain
+their original metadata, and existing discovery is never reset. The initial catalog
+is not labeled as newly released or assumed to predate a particular patch.
+
+To preserve old history without downloading the database, set the old source's
+`TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in your local environment and run:
+
 ```bash
+npm run db:discovery:export -- --turso discovery.json
 npm run db:update
-npm run db:update -- --modes regular,pve --patch 1.1.5.0 --release <new-release-id>
-npm run db:update -- --dry-run
 ```
 
-The default is all three modes, patch `1.1.5.0`, and a timestamp revision ID.
-The command generates and validates local snapshots, writes `changes.json`, and
-publishes additions, changes, and removals atomically across the selected modes.
-It compares compact stored content hashes, uploads only missing shared payloads,
-and deletes removed current records and unreferenced payloads. Existing catalog
-price payloads/timestamps survive; new items receive null fallback prices. Trader
-offers and recipes update as content. Mutable prices and history are separate.
+This one-time exporter uses [Turso's SQL-over-HTTP API](https://docs.turso.tech/sdk/http/reference)
+to read only `item_catalog_history` and `catalog_tracking` in one read-only snapshot.
+It uses a deferred `BEGIN`, fixed `SELECT` statements, and `ROLLBACK`; it does not
+send `PRAGMA query_only`, which the hosted Turso API rejects.
+It verifies per-mode row counts and the existing manifest rules. It does not modify
+Turso, import game data, or add a Turso dependency to the application. Credentials
+are only needed for this export and are never written into the manifest.
 
-Unchanged content keeps the current revision and source freshness metadata,
-without database writes. Freshness describes the published content revision;
-timestamp-only provider checks do not change it. A changed current revision during generation or publication causes
-an explicit failure; regenerate against the current dataset. `--dry-run` generates
-local files and reports planned writes without changing the database.
-
-Use `--patch` for subsequent patches; the default lives in
-[catalog-history.mjs](lib/catalog-history.mjs). This records detection during a
-patch, not a verified game introduction date. Publication never overwrites durable
-first-seen metadata, including when an item disappears and returns.
-
-Individual local generation and publication commands remain available:
+Alternatively, use a consistent local SQLite database download. Turso's `.db`
+download is the right file type; no separate backup format or rename is needed.
+With Node 22.13+ (24 recommended):
 
 ```bash
-npm run db:generate -- --modes regular,pve --release <new-release-id> --preserve-prices
-npm run db:validate -- db-scripts/.generated/<new-release-id>
-npm run db:upload -- --release-dir db-scripts/.generated/<new-release-id> --patch 1.1.5.0
-npm run db:status
+npm run db:discovery:export -- source.db discovery.json
+npm run db:update
 ```
 
-Generated files are ignored by Git. Standalone generation without
-`--preserve-prices` captures provider reference prices. Neither generation path
-refreshes mutable prices. `db:upload` publishes immediately after validation;
-there is no separate activation command or historical selection. It also accepts
-`--dry-run`. Uploads reject legacy full-table storage until `db:compact` succeeds.
-Retry the same validated snapshot after an interrupted publication; a current
-revision cannot be reused with a conflicting checksum or changed content.
+The exporter opens local files read-only and refuses an existing output file in
+either mode. If SQLite reports a malformed database, use the direct Turso export;
+changing the file extension cannot repair missing or inconsistent database pages.
+It exports only item_id, mode, first_seen_at, first_seen_patch and legacy release
+provenance, with SHA-256 and completeness metadata. It does not import game
+entities, release lifecycle, prices, ETags, history, or locks. The target importer
+validates the checksum/counts, atomically reports conflicts without overwriting,
+and makes identical reimports no-ops. Baseline null dates and removed IDs survive.
+Missing established discovery stops for an explicit initialization decision.
 
-Read-only new-item checks compare the upstream catalog with durable history:
+For a standalone metadata-only import, run `npm run db:discovery:import -- discovery.json`;
+it updates PostgreSQL without running the catalog workflow. Identical reimports are
+safe. Late imports can enrich bootstrap records only when date, patch and provenance
+are all null. Known historical baselines and later discoveries remain protected:
+different known facts abort the whole transaction, and unknown imported facts do
+not clear known target values. Removed IDs and records outside the file survive.
+`db:update` checks these conflicts before fetching/preparing the catalog, then
+rechecks under the transaction lock. Errors print counts and at most five examples;
+the full report is saved under `db-scripts/.generated/diagnostics/`.
 
-```bash
-npm run db:items:check
-npm run db:items:check -- --modes pvp-season
-```
+Run db:update and db:prices:refresh before serving traffic. The price bootstrap supplies trader
+purchase/unlock metadata even for unpriced item-detail requests.
 
-`db:catalog:init` remains the explicit legacy baseline initializer. It seeds
-`20260904T211847Z` as `pre-1.1.5` with unknown dates and preserves established
-history. Compaction performs this before removing old datasets. Missing required
-legacy baselines fail rather than invent dates.
+## Implementation owners
 
-```bash
-npm run db:prices:init
-npm run db:prices:refresh -- --modes pvp-season
-npm run db:prices:refresh -- --modes regular,pve
-```
+- [Schema](../src/server/postgres/schema.ts), [SQL migrations](migrations/), and
+  [shared connection](../src/server/postgres/connection.ts).
+- [Catalog command](update.mjs) and [atomic writer](lib/postgres-catalog.mjs).
+- [Discovery validation/import](lib/discovery.mjs).
+- [Price workflow](../src/server/prices/refresh-prices.ts) and
+  [PostgreSQL store](../src/server/prices/price-store.ts).
 
-See [refresh operations](../docs/operations.md) for mutable prices and schedules.
+Integration tests use TEST_DATABASE_URL with disposable schema fixtures. Preserve
+stable source IDs and all existing player data. Never use source compaction/reset
+as a workaround for validation errors.
 
-## Stored read models
+## Retained legacy source
 
-[schema.sql](schema.sql) defines:
-
-- `current_records`: one current record per mode, type, stable ID, and variant;
-  compact content/payload hashes and search fields support targeted updates.
-- `data_payloads`: canonical JSON deduplicated by SHA-256 across records and modes.
-- `data_entities`, `item_views`, `item_search`, and `data_manifests`: compatibility
-  SQL views joining current records, payloads, and the mode's current revision.
-- `data_releases` and `active_data_releases`: current metadata and revision per mode.
-- `catalog_tracking` and `item_catalog_history`: durable baseline and first-seen
-  facts, independent of current dataset replacement.
-
-[current-storage.mjs](lib/current-storage.mjs) canonicalizes JSON and excludes
-record timestamps from content hashes. Stored item-view freshness uses null for
-missing/failed domains and zero for available domains; runtime hydrates available
-timestamps from current revision metadata. Prices hydrate from mutable price
-reads. Freshness advances with content publication, keeping revision-keyed caches consistent.
-
-## Runtime revision scope
-
-[release-config.ts](../src/server/db/release-config.ts) selects the ready current
-revision per mode. React memoization shares the selection within a render; explicit
-multi-step reads capture the revision. Readers fail if publication removes their
-selected revision. Mode/revision cache keys remain isolated; normal browser and
-HTTP responses retain their documented expiry in [data layer](../docs/data-layer.md).
-There is no historical rollback, pin, or local development preview. `/dev` is a
-read-only current status page with mode tabs, counts, and timestamps.
-
-Focused offline tests:
-
-```bash
-node --test db-scripts/catalog-history.test.mjs db-scripts/snapshot.test.mjs db-scripts/current-storage.test.mjs
-node --test --import jiti/register src/server/db/catalog-release.test.ts src/lib/utils/new-items.test.ts src/server/services/itemsJson.test.ts
-```
-
-New snapshots include a validated `compact-search-v1` manifest with standard item,
-quest, and trader summaries. `db:update` publishes it atomically with other records;
-no separate schema migration or upload is required. Existing ready datasets remain
-searchable through summary-manifest fallback until their next update. See
-[compact search delivery](../docs/data-layer.md#compact-search-manifest).
+The old generator/publisher/compactor and their helper/test sources remain
+temporarily to preserve pre-existing local changes and aid rollback review. Their
+npm commands are removed, and runtime/routine PostgreSQL tooling does not import
+them. They are not supported target operations. Remove them only after the agreed
+rollback window; production source retirement is a separate action. The earlier
+[record-encoding extraction](lib/record-encoding.mjs) is preserved with those edits.

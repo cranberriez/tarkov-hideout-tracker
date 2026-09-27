@@ -1,137 +1,187 @@
-import { getItemDiscovery } from "./item-discovery";
-import type { Client } from "@libsql/client";
-import type { TarkovJsonGameMode } from "@/lib/game-mode";
+import "server-only";
+
+import { and, eq } from "drizzle-orm";
+import type { TarkovDataMode } from "@/types/common";
 import type { ItemAcquisitionTreeData, ItemRelationsPayload, ItemUsageData } from "@/types/contracts";
-import { getTursoClient } from "./client";
-import { TursoDataIntegrityError, TursoRecordNotFoundError, TursoTransientReadError } from "./errors";
-import { getActiveDataReleaseId } from "./release-config";
-import { parseStoredJson } from "./stored-json";
-import { getCurrentPriceData } from "./price-data";
 import type { ItemSummary } from "@/types/items";
 import type { CurrentPrice } from "@/types/prices";
+import { itemDetails, catalogStatus } from "@/server/postgres/schema";
+import { getPostgresDb } from "@/server/postgres/connection";
+import { getItemsByIds } from "./domain-data";
+import { getCurrentPriceData, getTraderOffersByItemIds } from "./price-data";
+import { assertCatalogVersion, getCatalogVersion, withStableCatalogRead } from "./postgres-read";
+import { DatabaseDataIntegrityError, DatabaseRecordNotFoundError } from "./errors";
+import { getTraders, getQuests } from "./domain-data";
 
 interface ItemViewPayloads {
 	relations: ItemRelationsPayload;
 	usage: ItemUsageData;
 	acquisition: ItemAcquisitionTreeData;
 }
-
 export type ItemViewType = keyof ItemViewPayloads;
 
+function validatePayload<T>(payload: unknown, label: string): T {
+	if (payload === null || typeof payload !== "object") throw new DatabaseDataIntegrityError(`${label} is invalid`);
+	return payload as T;
+}
+
 export async function getItemView<ViewType extends ItemViewType>(
-	mode: TarkovJsonGameMode,
+	mode: TarkovDataMode,
 	itemId: string,
 	viewType: ViewType,
-	database: Client = getTursoClient(),
 	includePrices = true,
 ): Promise<ItemViewPayloads[ViewType]> {
-	const releaseId = await getActiveDataReleaseId(mode, database);
-	const result = await database.execute({
-		sql: `
-            SELECT view.payload_json, release.source_freshness_json
-            FROM item_views AS view
-            INNER JOIN data_releases AS release
-                ON release.mode = view.mode
-                AND release.release_id = view.release_id
-                AND release.status = 'ready'
-            WHERE view.mode = ?
-                AND view.release_id = ?
-                AND view.item_id = ?
-                AND view.view_type = ?
-            LIMIT 1
-        `,
-		args: [mode, releaseId, itemId, viewType],
-	});
-	const row = result.rows[0];
-	if (!row) {
-		if ((await getActiveDataReleaseId(mode, database)) !== releaseId) {
-			throw new TursoTransientReadError("The current data changed while item details were loading. Retry the request.");
-		}
-		throw new TursoRecordNotFoundError(`No ${viewType} view exists for ${mode}/${releaseId}/${itemId}`);
-	}
-
-	const payload = parseStoredJson<ItemViewPayloads[ViewType]>(row.payload_json, `${viewType} view for ${itemId}`);
-	const sourceFreshness = parseStoredJson<Record<string, number>>(
-		row.source_freshness_json,
-		"Item view source freshness",
+	const expectedVersion = await getCatalogVersion(mode);
+	const { data: payload } = await withStableCatalogRead(
+		mode,
+		async (db) => {
+			const [row] = await db
+				.select({ value: itemDetails[viewType], sourceFreshness: catalogStatus.sourceFreshness })
+				.from(itemDetails)
+				.innerJoin(catalogStatus, eq(catalogStatus.mode, itemDetails.mode))
+				.where(and(eq(itemDetails.mode, mode), eq(itemDetails.itemId, itemId)))
+				.limit(1);
+			if (!row) throw new DatabaseRecordNotFoundError(`No ${viewType} detail view exists for ${mode}/${itemId}`);
+			const dto = validatePayload<ItemViewPayloads[ViewType]>(row.value, `${viewType} view for ${itemId}`);
+			const freshnessDomains: Record<string, string> =
+				viewType === "relations"
+					? { itemsUpdatedAt: "items", stationsUpdatedAt: "stations", questsUpdatedAt: "quests" }
+					: viewType === "usage"
+						? {
+								itemsUpdatedAt: "items",
+								stationsUpdatedAt: "stations",
+								questsUpdatedAt: "quests",
+								taskUnlocksUpdatedAt: "quests",
+								tradersUpdatedAt: "traders",
+								bartersUpdatedAt: "barters",
+								craftsUpdatedAt: "crafts",
+							}
+						: { itemsUpdatedAt: "items", bartersUpdatedAt: "barters", craftsUpdatedAt: "crafts" };
+			const freshness = (dto.freshness ?? {}) as Record<string, number | null | undefined>;
+			for (const key of Object.keys(freshnessDomains)) freshness[key] ??= null;
+			for (const [key, domain] of Object.entries(freshnessDomains)) {
+				const timestamp = (row.sourceFreshness as Record<string, unknown> | null)?.[domain];
+				if (typeof timestamp !== "number" || !Number.isSafeInteger(timestamp) || timestamp <= 0)
+					throw new DatabaseDataIntegrityError(`Item view has invalid ${domain} source freshness`);
+				freshness[key] = timestamp;
+			}
+			if (viewType === "relations") freshness.pricesUpdatedAt ??= null;
+			if (viewType === "usage") freshness.pricesUpdatedAt ??= null;
+			if (viewType === "acquisition") freshness.pricesUpdatedAt ??= null;
+			(dto as { freshness: Record<string, number | null | undefined> }).freshness = freshness;
+			if (viewType === "relations") {
+				(dto as ItemRelationsPayload).errors ??= { items: null, prices: null, stations: null, quests: null };
+			}
+			if (viewType === "acquisition") {
+				(dto as ItemAcquisitionTreeData).errors ??= { items: null, prices: null, barters: null, crafts: null };
+			}
+			return dto;
+		},
+		undefined,
+		expectedVersion,
 	);
-	const freshnessDomains: Record<string, string> = {
-		itemsUpdatedAt: "items",
-		stationsUpdatedAt: "stations",
-		questsUpdatedAt: "quests",
-		taskUnlocksUpdatedAt: "quests",
-		bartersUpdatedAt: "barters",
-		craftsUpdatedAt: "crafts",
-		tradersUpdatedAt: "traders",
-	};
-	for (const [key, domain] of Object.entries(freshnessDomains)) {
-		const freshness = payload.freshness as Record<string, number | null>;
-		if (freshness[key] === undefined || freshness[key] === null) continue;
-		const updatedAt = sourceFreshness[domain];
-		if (!Number.isFinite(updatedAt) || updatedAt <= 0)
-			throw new TursoDataIntegrityError(`Item view has invalid ${domain} source freshness`);
-		freshness[key] = updatedAt;
-	}
-	const items =
-		viewType === "relations"
+
+	const allItems: ItemSummary[] =
+		payload && viewType === "relations"
 			? [
 					...((payload as ItemRelationsPayload).item ? [(payload as ItemRelationsPayload).item as ItemSummary] : []),
 					...(payload as ItemRelationsPayload).relatedItems,
 				]
 			: (payload as ItemUsageData | ItemAcquisitionTreeData).items;
-	const [priceResult, discovery] = await Promise.all([
+	const itemIds = [...new Set(allItems.map((item) => item.id))];
+	const [catalogItems, priceResult, offersById] = await Promise.all([
+		getItemsByIds(mode, itemIds, getPostgresDb(), expectedVersion),
 		includePrices
-			? getCurrentPriceData(
-					mode,
-					items.map((item) => item.id),
-					database,
-					releaseId,
-				)
+			? getCurrentPriceData(mode, itemIds)
 			: Promise.resolve({ data: {} as Record<string, CurrentPrice>, updatedAt: null }),
-		getItemDiscovery(
-			mode,
-			items.map((item) => item.id),
-			database,
-		),
+		getTraderOffersByItemIds(mode, itemIds),
 	]);
-	const hydrate = (item: ItemSummary): ItemSummary => ({
-		...item,
-		...discovery[item.id],
-		marketPrice: priceResult.data[item.id] ?? null,
-	});
+	const hydrate = (item: ItemSummary): ItemSummary => {
+		const stored = catalogItems.data[item.id];
+		const merged: ItemSummary = { ...(stored ?? item), buyFromTrader: offersById[item.id] ?? [] };
+		return { ...merged, marketPrice: includePrices ? (priceResult.data[item.id] ?? null) : null };
+	};
+	const hydratedItems = allItems.map(hydrate);
+	let traderById: Record<string, import("@/types/traders").Trader> = {};
+	let taskUnlocksById: Record<string, { id: string; name: string; wikiLink?: string | null }> = {};
+	let traderPresentationUpdatedAt: number | null = null;
+	let taskPresentationUpdatedAt: number | null = null;
+	let presentationError: string | undefined;
+	if (viewType === "usage") {
+		const usage = payload as ItemUsageData;
+		const rootOffers = offersById[itemId] ?? [];
+		const traderIds = [...new Set([...Object.keys(usage.tradersById), ...rootOffers.map((offer) => offer.traderId)])];
+		const unlockIds = [
+			...new Set([
+				...Object.keys(usage.taskUnlocksById),
+				...rootOffers.flatMap((offer) => (offer.taskUnlockId ? [offer.taskUnlockId] : [])),
+			]),
+		];
+		try {
+			const [traders, quests] = await Promise.all([
+				traderIds.length ? getTraders(mode, getPostgresDb(), expectedVersion, traderIds) : Promise.resolve(null),
+				unlockIds.length ? getQuests(mode, getPostgresDb(), expectedVersion, unlockIds) : Promise.resolve(null),
+			]);
+			traderById = {
+				...usage.tradersById,
+				...(traders ? Object.fromEntries(traders.data.map((trader) => [trader.id, trader])) : {}),
+			};
+			taskUnlocksById = {
+				...usage.taskUnlocksById,
+				...(quests
+					? Object.fromEntries(
+							quests.data.map((quest) => [quest.id, { id: quest.id, name: quest.name, wikiLink: quest.wikiLink }]),
+						)
+					: {}),
+			};
+			traderPresentationUpdatedAt = traders?.updatedAt ?? null;
+			taskPresentationUpdatedAt = quests?.updatedAt ?? null;
+		} catch {
+			presentationError = "Acquisition labels are temporarily unavailable";
+			traderById = usage.tradersById;
+			taskUnlocksById = usage.taskUnlocksById;
+		}
+	}
+	await assertCatalogVersion(mode, expectedVersion);
 	if (viewType === "relations") {
 		const relations = payload as ItemRelationsPayload;
-		const hydrated = {
+		return {
 			...relations,
 			item: relations.item ? hydrate(relations.item) : null,
 			relatedItems: relations.relatedItems.map(hydrate),
-			freshness: {
-				...relations.freshness,
-				pricesUpdatedAt: priceResult.updatedAt,
-			},
+			freshness: { ...relations.freshness, pricesUpdatedAt: priceResult.updatedAt },
 		} as ItemViewPayloads[ViewType];
-		return hydrated;
 	}
-	const recipePayload = payload as ItemUsageData | ItemAcquisitionTreeData;
-	const hydrated = {
-		...recipePayload,
-		items: recipePayload.items.map(hydrate),
-		freshness: {
-			...recipePayload.freshness,
-			pricesUpdatedAt: priceResult.updatedAt,
-		},
+	const details = payload as ItemUsageData | ItemAcquisitionTreeData;
+	if (viewType === "usage") {
+		const usage = details as ItemUsageData;
+		return {
+			...usage,
+			items: hydratedItems,
+			tradersById: traderById,
+			taskUnlocksById,
+			freshness: {
+				...usage.freshness,
+				pricesUpdatedAt: priceResult.updatedAt,
+				tradersUpdatedAt: traderPresentationUpdatedAt ?? usage.freshness.tradersUpdatedAt,
+				taskUnlocksUpdatedAt: taskPresentationUpdatedAt ?? usage.freshness.taskUnlocksUpdatedAt,
+			},
+			presentationError,
+		} as ItemViewPayloads[ViewType];
+	}
+	return {
+		...details,
+		items: hydratedItems,
+		freshness: { ...details.freshness, pricesUpdatedAt: priceResult.updatedAt },
 	} as ItemViewPayloads[ViewType];
-	return hydrated;
 }
 
-export function getItemRelationsView(mode: TarkovJsonGameMode, itemId: string, includePrices = true) {
-	return getItemView(mode, itemId, "relations", getTursoClient(), includePrices);
+export function getItemRelationsView(mode: TarkovDataMode, itemId: string, includePrices = true) {
+	return getItemView(mode, itemId, "relations", includePrices);
 }
-
-export function getItemUsageView(mode: TarkovJsonGameMode, itemId: string, includePrices = true) {
-	return getItemView(mode, itemId, "usage", getTursoClient(), includePrices);
+export function getItemUsageView(mode: TarkovDataMode, itemId: string, includePrices = true) {
+	return getItemView(mode, itemId, "usage", includePrices);
 }
-
-export function getItemAcquisitionView(mode: TarkovJsonGameMode, itemId: string, includePrices = true) {
-	return getItemView(mode, itemId, "acquisition", getTursoClient(), includePrices);
+export function getItemAcquisitionView(mode: TarkovDataMode, itemId: string, includePrices = true) {
+	return getItemView(mode, itemId, "acquisition", includePrices);
 }

@@ -1,47 +1,117 @@
+import "server-only";
+
 import { gzipSync, gunzipSync } from "node:zlib";
-import type { Client } from "@libsql/client";
-import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import type { FullQuest } from "@/types/quests";
-import type { ItemSummary } from "@/types/items";
+import { and, asc, eq, sql } from "drizzle-orm";
+import type { TarkovDataMode } from "@/types/common";
 import type { Trader } from "@/types/traders";
 import { buildSearchManifest } from "@/lib/search/build-manifest";
 import { validateSearchManifest } from "@/lib/search/manifest";
-import { getTursoClient } from "./client";
+import { DatabaseTransientReadError } from "./errors";
 import { boundedReadCache } from "./read-cache";
-import { TursoDataIntegrityError } from "./errors";
+import { getCatalogVersion, withStableCatalogRead } from "./postgres-read";
+import { getPostgresDb, type PostgresDatabase } from "@/server/postgres/connection";
+import { items, itemModes, quests, questModes, traders, traderModes } from "@/server/postgres/schema";
 
-export async function readSearchManifest(mode: TarkovJsonGameMode, releaseId: string, database?: Client) {
-	const read = async () => {
-		const db = database ?? getTursoClient();
-		const query = (names: string[]) =>
-			db.execute({
-				sql: `SELECT manifest_name, payload_json FROM data_manifests
-                WHERE mode = ? AND release_id = ? AND manifest_name IN (${names.map(() => "?").join(",")})`,
-				args: [mode, releaseId, ...names],
-			});
-		const stored = await query(["compact-search-v1"]);
-		let payload: unknown;
-		if (stored.rows.length) payload = JSON.parse(String(stored.rows[0].payload_json));
-		else {
-			// Transitional support for ready datasets generated before the manifest existed.
-			const legacy = await query(["items", "quests", "traders"]);
-			const records = Object.fromEntries(
-				legacy.rows.map((row) => [String(row.manifest_name), JSON.parse(String(row.payload_json))]),
-			);
-			if (!records.items?.previews || !records.quests?.previews || !records.traders?.records) {
-				throw new TursoDataIntegrityError("Search summaries unavailable or data revision changed");
-			}
-			payload = buildSearchManifest(
-				mode,
-				records.items.previews as ItemSummary[],
-				records.quests.previews as FullQuest[],
-				records.traders.records as Trader[],
-			);
-		}
-		const manifest = validateSearchManifest(payload, mode);
-		// Compressed server cache entries stay below the shared cache-size guard.
-		return gzipSync(JSON.stringify({ ...manifest, releaseId })).toString("base64");
-	};
-	const compressed = database ? await read() : await boundedReadCache(["compact-search", "1", mode, releaseId], read);
+async function build(mode: TarkovDataMode, contentVersion: string, database: PostgresDatabase) {
+	const { data } = await withStableCatalogRead(
+		mode,
+		async (db) => {
+			const itemRows = await db
+				.select({
+					id: items.id,
+					name: sql`case when ${itemModes.displayOverride} is null then ${items.name} else ${itemModes.displayOverride}->>'name' end`.as(
+						"name",
+					),
+					normalizedName:
+						sql`case when ${itemModes.displayOverride} is null then ${items.normalizedName} else ${itemModes.displayOverride}->>'normalizedName' end`.as(
+							"normalized_name",
+						),
+					shortName:
+						sql`case when ${itemModes.displayOverride} is null then ${items.shortName} else ${itemModes.displayOverride}->>'shortName' end`.as(
+							"short_name",
+						),
+					iconLink:
+						sql`case when ${itemModes.displayOverride} is null then ${items.iconLink} else ${itemModes.displayOverride}->>'iconLink' end`.as(
+							"icon_link",
+						),
+				})
+				.from(items)
+				.innerJoin(itemModes, and(eq(itemModes.itemId, items.id), eq(itemModes.mode, mode)))
+				.orderBy(asc(items.normalizedName), asc(items.id));
+			const traderRows = await db
+				.select({
+					id: traders.id,
+					name: sql`case when ${traderModes.displayOverride} is null then ${traders.name} else ${traderModes.displayOverride}->>'name' end`.as(
+						"name",
+					),
+					imageLink:
+						sql`case when ${traderModes.displayOverride} is null then ${traders.imageLink} else ${traderModes.displayOverride}->>'imageLink' end`.as(
+							"image_link",
+						),
+				})
+				.from(traders)
+				.innerJoin(traderModes, and(eq(traderModes.traderId, traders.id), eq(traderModes.mode, mode)))
+				.orderBy(asc(traders.normalizedName), asc(traders.id));
+			const questRows = await db
+				.select({
+					id: quests.id,
+					name: sql`case when ${questModes.displayOverride} is null then ${quests.name} else ${questModes.displayOverride}->>'name' end`.as(
+						"name",
+					),
+					normalizedName:
+						sql`case when ${questModes.displayOverride} is null then ${quests.normalizedName} else ${questModes.displayOverride}->>'normalizedName' end`.as(
+							"normalized_name",
+						),
+					lightkeeperRequired: questModes.lightkeeperRequired,
+					traderId: questModes.traderId,
+					traderName:
+						sql`case when ${traderModes.displayOverride} is null then ${traders.name} else ${traderModes.displayOverride}->>'name' end`.as(
+							"trader_name",
+						),
+					traderNormalizedName:
+						sql`case when ${traderModes.displayOverride} is null then ${traders.normalizedName} else ${traderModes.displayOverride}->>'normalizedName' end`.as(
+							"trader_normalized_name",
+						),
+				})
+				.from(quests)
+				.innerJoin(questModes, and(eq(questModes.questId, quests.id), eq(questModes.mode, mode)))
+				.innerJoin(traders, eq(traders.id, questModes.traderId))
+				.innerJoin(traderModes, and(eq(traderModes.traderId, questModes.traderId), eq(traderModes.mode, mode)))
+				.orderBy(asc(quests.normalizedName), asc(quests.id));
+			const compactQuests = questRows.map((quest) => ({
+				id: quest.id,
+				name: quest.name,
+				normalizedName: quest.normalizedName,
+				trader: { id: quest.traderId ?? "", name: quest.traderName, normalizedName: quest.traderNormalizedName },
+				lightkeeperRequired: quest.lightkeeperRequired,
+			})) as never;
+			const compactItems = itemRows.map((item) => ({
+				...item,
+				shortName: item.shortName ?? undefined,
+				iconLink: item.iconLink ?? undefined,
+			})) as never;
+			const compactTraders = traderRows.map((trader) => ({
+				id: trader.id,
+				name: trader.name as string,
+				normalizedName: "",
+				imageLink: typeof trader.imageLink === "string" ? trader.imageLink : undefined,
+			})) as Trader[];
+			return validateSearchManifest(buildSearchManifest(mode, compactItems, compactQuests, compactTraders), mode);
+		},
+		database,
+		contentVersion,
+	);
+	return gzipSync(JSON.stringify({ ...data, releaseId: contentVersion })).toString("base64");
+}
+
+export async function readSearchManifest(mode: TarkovDataMode, contentVersion: string, database?: PostgresDatabase) {
+	const db = database ?? getPostgresDb();
+	if ((await getCatalogVersion(mode, db)) !== contentVersion)
+		throw new DatabaseTransientReadError("Search revision changed");
+	const compressed = database
+		? await build(mode, contentVersion, db)
+		: await boundedReadCache(["compact-search", "1", mode, contentVersion], () => build(mode, contentVersion, db));
+	if ((await getCatalogVersion(mode, db)) !== contentVersion)
+		throw new DatabaseTransientReadError("Search revision changed");
 	return JSON.parse(gunzipSync(Buffer.from(compressed, "base64")).toString("utf8"));
 }

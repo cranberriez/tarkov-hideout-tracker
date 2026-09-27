@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import { getReleaseDashboard } from "@/server/db/release-management";
+import { getCatalogDashboard } from "@/server/db/postgres-dashboard";
 
 const MODES: Array<{ value: TarkovJsonGameMode; label: string }> = [
 	{ value: "regular", label: "PVP" },
@@ -28,7 +28,7 @@ export default async function DevPage({
 	let dashboard;
 	let error: string | null = null;
 	try {
-		dashboard = await getReleaseDashboard(mode.value);
+		dashboard = await getCatalogDashboard(mode.value);
 	} catch (cause) {
 		error = cause instanceof Error ? cause.message : String(cause);
 	}
@@ -38,7 +38,7 @@ export default async function DevPage({
 				<p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand">Development only</p>
 				<h1 className="text-3xl font-bold tracking-tight">Current dataset</h1>
 				<p className="text-sm leading-6 text-muted-foreground">
-					Publication status for the current data in each game mode.
+					Current PostgreSQL catalog status for the selected game mode.
 				</p>
 			</header>
 			<nav aria-label="Dataset game mode" className="flex gap-2">
@@ -62,26 +62,27 @@ export default async function DevPage({
 			{dashboard && (
 				<section className="space-y-4 rounded-xl border border-border bg-card p-5">
 					<h2 className="font-semibold">
-						{mode.label} · {dashboard.status}
+						{mode.label} · PostgreSQL {dashboard.status}
 					</h2>
-					<p className="break-all font-mono text-sm">{dashboard.releaseId}</p>
+					<p className="break-all font-mono text-sm">Content version {dashboard.contentVersion}</p>
 					<dl className="grid gap-4 text-sm sm:grid-cols-3">
 						<div>
-							<dt className="text-muted-foreground">Generated</dt>
-							<dd>{timestamp(dashboard.generatedAt)}</dd>
+							<dt className="text-muted-foreground">Last checked</dt>
+							<dd>{timestamp(dashboard.checkedAt)}</dd>
 						</div>
 						<div>
-							<dt className="text-muted-foreground">Uploaded</dt>
-							<dd>{timestamp(dashboard.uploadedAt)}</dd>
+							<dt className="text-muted-foreground">Last content update</dt>
+							<dd>{timestamp(dashboard.updatedAt)}</dd>
 						</div>
 						<div>
-							<dt className="text-muted-foreground">Published</dt>
-							<dd>{timestamp(dashboard.activatedAt)}</dd>
+							<dt className="text-muted-foreground">Discovery import</dt>
+							<dd>{dashboard.discoveryInitialized ? "Initialized" : "Pending"}</dd>
 						</div>
 					</dl>
 					<p className="text-sm text-muted-foreground">
-						Schema {dashboard.schemaVersion} · {dashboard.counts.entity ?? 0} entities ·{" "}
-						{dashboard.counts.itemView ?? 0} item views · {dashboard.counts.itemSearch ?? 0} search rows
+						{dashboard.counts.items} items · {dashboard.counts.stations} stations · {dashboard.counts.quests} quests ·{" "}
+						{dashboard.counts.crafts} crafts · {dashboard.counts.barters} barters · {dashboard.counts.itemDetails} item
+						details
 					</p>
 				</section>
 			)}

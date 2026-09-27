@@ -1,19 +1,26 @@
 import type { TarkovDataMode } from "@/types/common";
+import { getGlobalItemList } from "../services/itemsJson";
 import { deriveEffectivePrice, STORED_PRICE_POINT_LIMIT } from "../../lib/utils/price-history";
 import { fetchJsonPriceHistory, normalizePriceHistory, type PriceHistoryFetchResult } from "../services/priceHistory";
-import type { PriceRefreshOutcome, PriceRefreshStore, PriceRefreshSummary } from "./types";
+import { toCatalogPriceRecord } from "./price-store";
+import type { CatalogPriceRecord, PriceRefreshOutcome, PriceRefreshStore, PriceRefreshSummary } from "./types";
 
 const DEFAULT_CONCURRENCY = 12;
 const PERSISTENCE_CHUNK_SIZE = 60;
-const LOCK_DURATION_MS = 60 * 60 * 1000;
+const LOCK_DURATION_MS = 30 * 60 * 1000;
 
 export interface RefreshPriceModeOptions {
 	mode: TarkovDataMode;
-	releaseId: string;
 	store: PriceRefreshStore;
 	concurrency?: number;
 	fetchHistory?: (mode: TarkovDataMode, itemId: string, etag?: string | null) => Promise<PriceHistoryFetchResult>;
+	fetchCatalogPrices?: (mode: TarkovDataMode) => Promise<CatalogPriceRecord[]>;
 	onProgress?: (checked: number, eligible: number) => void;
+}
+
+async function fetchNormalizedCatalogPrices(mode: TarkovDataMode): Promise<CatalogPriceRecord[]> {
+	const response = await getGlobalItemList(mode);
+	return response.data.items.map(toCatalogPriceRecord);
 }
 
 async function mapWithConcurrency<T, Result>(
@@ -36,10 +43,10 @@ async function mapWithConcurrency<T, Result>(
 
 export async function refreshPriceMode({
 	mode,
-	releaseId,
 	store,
 	concurrency = DEFAULT_CONCURRENCY,
 	fetchHistory = fetchJsonPriceHistory,
+	fetchCatalogPrices = fetchNormalizedCatalogPrices,
 	onProgress,
 }: RefreshPriceModeOptions): Promise<PriceRefreshSummary> {
 	const safeConcurrency = Math.max(1, Math.min(Math.floor(concurrency), 32));
@@ -70,15 +77,32 @@ export async function refreshPriceMode({
 		notModifiedCount: 0,
 		failedCount: 0,
 	};
+	let catalogRefresh: Promise<void> | null = null;
 	try {
 		await store.startRun(runId, mode, startedAt);
-		const [itemIds, syncStates] = await Promise.all([
-			store.getEligibleItemIds(mode, releaseId),
-			store.getSyncStates(mode),
-		]);
+		// Reference prices and trader offers have their own source and acceptance
+		// path. Always attempt them, even if every flea request returns 304/fails.
+		catalogRefresh = (async () => {
+			try {
+				const records = await fetchCatalogPrices(mode);
+				if (!(await store.renewLock(mode, runId, Date.now() + LOCK_DURATION_MS, Date.now()))) {
+					throw new Error(`Price refresh lease for ${mode} expired before catalog write`);
+				}
+				await store.writeCatalogPrices(mode, runId, records);
+				summary.catalogPriceStatus = "updated";
+			} catch (error) {
+				summary.catalogPriceStatus = "failed";
+				summary.catalogPriceError = error instanceof Error ? error.message : String(error);
+			}
+		})();
+		const [itemIds, syncStates] = await Promise.all([store.getEligibleItemIds(mode), store.getSyncStates(mode)]);
 		summary.eligibleCount = itemIds.length;
 
 		for (let offset = 0; offset < itemIds.length; offset += PERSISTENCE_CHUNK_SIZE) {
+			const renewalTime = Date.now();
+			if (!(await store.renewLock(mode, runId, renewalTime + LOCK_DURATION_MS, renewalTime))) {
+				throw new Error(`Price refresh lease for ${mode} expired before writing history chunk`);
+			}
 			const chunk = itemIds.slice(offset, offset + PERSISTENCE_CHUNK_SIZE);
 			const outcomes = await mapWithConcurrency(
 				chunk,
@@ -123,22 +147,25 @@ export async function refreshPriceMode({
 					}
 				},
 			);
-			await store.writeOutcomes(mode, outcomes);
+			await store.writeOutcomes(mode, runId, outcomes);
 			summary.checkedCount += outcomes.length;
 			summary.changedCount += outcomes.filter((outcome) => outcome.status === "updated").length;
 			summary.notModifiedCount += outcomes.filter((outcome) => outcome.status === "not-modified").length;
 			summary.failedCount += outcomes.filter((outcome) => outcome.status === "failed").length;
 			onProgress?.(summary.checkedCount, summary.eligibleCount);
 		}
-		summary.status = summary.failedCount > 0 ? "partial" : "succeeded";
-		await store.completeRun(summary, Date.now());
+		await catalogRefresh;
+		summary.status = summary.failedCount > 0 || summary.catalogPriceStatus === "failed" ? "partial" : "succeeded";
+		await store.completeRun(runId, summary, Date.now());
 		return summary;
 	} catch (error) {
 		summary.status = "failed";
 		summary.error = error instanceof Error ? error.message : String(error);
-		await store.completeRun(summary, Date.now()).catch(() => undefined);
+		await store.completeRun(runId, summary, Date.now()).catch(() => undefined);
 		throw error;
 	} finally {
+		// Do not release the lease while a reference-price request can still write.
+		if (catalogRefresh) await catalogRefresh;
 		await store.releaseLock(mode, runId).catch(() => undefined);
 	}
 }

@@ -1,8 +1,8 @@
 import type { TarkovDataMode } from "@/types/common";
-import { getActiveDataReleaseId } from "@/server/db/release-config";
+import { getCatalogVersion } from "@/server/db/postgres-read";
 import { getDefaultRepository } from "./query-utils";
 
 export async function getCurrentPageRepository(mode: TarkovDataMode) {
-	const releaseId = await getActiveDataReleaseId(mode);
-	return getDefaultRepository({ mode, releaseId });
+	const contentVersion = await getCatalogVersion(mode);
+	return getDefaultRepository({ mode, contentVersion });
 }

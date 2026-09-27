@@ -2,33 +2,45 @@
 
 ## Local setup
 
-Install the Node/npm versions supported by the checked-in
-[Next.js package](../package.json), then run `npm ci`. Copy
-[.sample.env](../.sample.env) to `.env` and provide credentials for the Turso
-database containing ready releases and per-mode active pointers.
-[release-config.ts](../src/server/db/release-config.ts) reads those pointers. Do not overwrite an
-existing local environment file or commit credentials.
+Install dependencies with npm ci. Copy [.sample.env](../.sample.env) only when no
+local environment file already exists. The runtime and routine commands use
+PostgreSQL; production switching follows the separate
+[cutover runbook](postgresql-cutover.md).
 
-| Variable                         | Purpose                                                                                                                                            |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TURSO_DATABASE_URL`             | Runtime and offline-tool database URL                                                                                                              |
-| `TURSO_AUTH_TOKEN`               | Remote Turso authentication; local CLI `file:` databases can omit it                                                                               |
-| `CRON_SECRET`                    | Bearer secret for price-refresh routes; use at least 16 characters as directed by the sample environment                                           |
-| `TARKOV_JSON_REQUEST_TIMEOUT_MS` | Optional positive per-attempt offline source timeout override; default 120,000ms in the [JSON client](../src/server/services/tarkovJson/client.ts) |
+| Variable                       | Purpose                                                 |
+| ------------------------------ | ------------------------------------------------------- |
+| DATABASE_URL                   | Runtime, catalog and price PostgreSQL connection        |
+| DATABASE_MIGRATION_URL         | Optional direct migration connection for pooled hosting |
+| PG_POOL_MAX                    | Connection pool limit (default 10)                      |
+| PG_STATEMENT_TIMEOUT_MS        | Statement timeout (default 30000 ms)                    |
+| TEST_DATABASE_URL              | Separate disposable PostgreSQL test database            |
+| CRON_SECRET                    | Existing bearer secret for scheduled pricing routes     |
+| TARKOV_JSON_REQUEST_TIMEOUT_MS | Existing provider per-attempt timeout override          |
 
-The [offline environment loader](../db-scripts/lib/config.mjs) reads process
-environment, then `.env.local` and `.env` without replacing existing values.
+Only the optional one-time `db:discovery:export -- --turso discovery.json` command
+uses `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`. These source credentials are not
+needed by PostgreSQL runtime or updates. See the [CLI guide](../db-scripts/README.md)
+for direct export and local `.db` export alternatives.
 
-```bash
-npm run dev
-```
+The [environment loader](../db-scripts/lib/config.mjs) preserves process values,
+then reads .env.local before .env. Never commit credentials. Use your provider's
+verified TLS configuration; migration/build operations do not disable certificate
+validation. Apply schema explicitly with npm run db:migrate. Runtime and builds
+never run migrations.
 
-Open [localhost:3000](http://localhost:3000). After building, `npm start` serves
-the production build. Database-backed routes require usable configured releases.
+Run `npm run db:update` to bootstrap the catalog and discovery directly in PostgreSQL,
+then `npm run db:prices:refresh`. No SQLite backup or discovery import is required.
+If a verified `discovery.json` exists in the project root, the update imports it
+atomically with catalog changes; `--discovery path.json` selects a different file.
+Without a file, the first update records current items with unknown first-seen dates;
+later updates timestamp genuinely new items. See the [CLI guide](../db-scripts/README.md).
+Run npm run dev and open [localhost:3000](http://localhost:3000). A production
+build uses npm run build followed by npm start. Database routes require initialized
+catalog data and bootstrapped offers/prices for every served mode.
 
 ## Validation
 
-Run from the repository root. [package.json](../package.json) is the command owner.
+Run from the repository root:
 
 ```bash
 npm run docs:check
@@ -39,136 +51,78 @@ npm run test:query
 npm run test:search
 npm run test:page-data
 npm run test:reusable-reads
+npm run test:postgres
 npm run lint
 npm run build
-```
-
-`docs:check` uses the `markdown-link-check` development dependency
-through [check-doc-links.mjs](../scripts/check-doc-links.mjs) to check relative
-Markdown links in root guidance, the active docs, and the ingestion README.
-It ignores external URLs, does not check backticked filenames, and is not a claim
-that remote services are available. Use real Markdown links for source owners.
-
-`test:architecture` runs [import-boundary checks](../src/architecture/data-import-boundaries.test.ts).
-`test:theme` checks [color conventions](../src/architecture/theme-colors.test.ts):
-application source uses the documented global palette, with explicit loading-art
-and profile-identity exceptions.
-The existing [ESLint configuration](../eslint.config.mjs) also enforces selected
-import restrictions. `test:contracts` runs repository-injected query tests for
-bounded reads, partial failures, and Kappa's single-quest call behavior. Neither
-requires a live Turso database. Do not describe these as exhaustive static analysis.
-`test:query` covers shared request validation, retry decisions, mode-scoped removal,
-and strict inactive-cache limits with fresh QueryClients. `test:search` covers
-canonical mode-scoped keys, request reuse, transport aborts, invalid responses,
-and server validation. `test:page-data` covers shared page keys, hydration,
-reusable complete payloads, and retryable partials. `test:reusable-reads` covers
-conversion and map-overlay query ownership. These suites require no live Turso database.
-
-Focused TypeScript tests use Node's test runner with `jiti/register`:
-
-```bash
 node --test --import jiti/register src/lib/quests/quest-availability.test.ts
-node --test --import jiti/register src/server/prices/refresh-prices.test.ts src/server/prices/price-store.test.ts src/server/prices/live-price-history.test.ts
-node --test --import jiti/register src/server/db/read-cache.test.ts src/server/db/price-data.test.ts src/features/items/deferred-prices.test.ts
-node --test scripts/generate-quest-series-candidates.test.mjs scripts/pull-map-overlays.test.mjs
 ```
 
-Find adjacent tests with `rg --files src scripts | rg '\.test\.(ts|mjs)$'`.
-[Quests](quests.md), [maps](maps.md), [profits](profits.md), and
-[user state](user-state.md) identify relevant focused suites. Run tests for changed
-behavior plus lint/build for application changes. Docs-only edits need the link
-check; no new UI test is needed for prose. Verify visible behavior with the dev
-server when changing interactions, including affected empty/error states and mode
-switches. Keep failures and environmental blockers explicit in the handoff.
+PostgreSQL tests require TEST_DATABASE_URL and use isolated disposable schemas.
+Pure contract/model tests require no database. The local link check validates
+repository links, not remote service availability. Use adjacent pricing, discovery,
+ingestion and adapter tests when changing those owners. Validate affected routes,
+loading/error states, item details/search/profits and all three mode switches in
+the development UI. Preserve browser player storage. Report environmental blockers
+instead of resetting data or hiding unrelated failures.
 
-## Current dataset publication
-
-The [ingestion CLI guide](../db-scripts/README.md) owns command arguments and
-local snapshot layout. Convert the existing development database directly with
-`npm run db:compact` before publishing to current storage. Conversion requires
-checksum-verified local snapshots matching all three ready active datasets. It
-retains those current datasets, initializes catalog history before removing old
-baseline copies, and replaces full historical tables with shared payload storage
-and compatibility views. Player data, catalog discovery, and mutable price history
-are preserved. `npm run db:storage` reports read-only before/after storage metrics.
-
-Routine maintenance generates validated local snapshots and applies only the
-content changes:
+## Catalog updates
 
 ```bash
 npm run db:update -- --dry-run
-npm run db:update
-npm run db:update -- --modes regular,pve,pvp-season --patch 1.1.5.0
+npm run db:update -- --patch 1.1.5.0
 npm run db:status
+npm run db:status -- --storage
 ```
 
-The default tracked patch is `1.1.5.0`; pass the next patch explicitly when it
-changes. Existing catalog price payloads/timestamps survive, new items receive
-null price fallbacks, and mutable prices/history are never refreshed by this
-command. Trader offers and recipes still update. The ignored snapshot directory
-contains `changes.json` with added, changed, removed, and never-seen item details.
-Dry runs create local files and report planned database writes without applying them.
+Catalog ingestion fetches/normalizes all three modes, validates complete input,
+composes current item details and atomically applies changed domain rows. All-mode
+updates reconcile shared presentation and variant overrides. Partial-mode catalog
+writes are rejected. The tracked patch is explicit provenance; update it as needed.
+Dry runs validate and report without writing. They do not consume discoveries.
 
-[Publication](../db-scripts/lib/current-storage.mjs) compares compact content hashes,
-reuses shared JSON payloads, and commits all selected modes atomically. It deletes
-removed current records and unreferenced payloads. Unchanged content keeps its
-current revision and its source freshness metadata without writing database rows.
-A revision change during generation/publication fails explicitly; regenerate
-against the current dataset. Malformed or empty required domains cannot publish.
+The catalog advisory lock and content-version check reject competing stale writers.
+Catalog writes preserve prices and existing discovery, and malformed/empty inputs
+cannot publish readiness. A no-op may advance source/check freshness in the small
+status row without changing content_version. There is no release directory,
+activation, snapshot hash registry, manual pin or historical catalog rollback.
 
-The individual commands remain available:
+Optional discovery input is checksummed and conflict-checked. A present but invalid
+file stops the update; it is never silently ignored. Dry runs preview discovery
+without importing or initializing it. Standalone `db:discovery:import` writes only
+discovery metadata; it does not require a catalog update. Later imports can enrich
+wholly unknown bootstrap records, but cannot overwrite established observations or
+known historical baselines. Unknown imported records cannot erase known facts.
+Conflicts are checked before expensive catalog preparation and again under the
+transaction lock. Console output shows counts and at most five examples; the full
+prior/incoming records are written to `db-scripts/.generated/diagnostics/`.
+Capture complete command output when diagnosing a run, for example in PowerShell:
+`npm run db:update *> db-scripts/.generated/catalog-update.log` (create the output
+directory first). Keep logs and reports local; never include environment values.
 
-```bash
-npm run db:generate -- --modes regular,pve,pvp-season --release <new-release-id> --preserve-prices
-npm run db:validate -- db-scripts/.generated/<new-release-id>
-npm run db:upload -- --release-dir db-scripts/.generated/<new-release-id>
-```
+## Current dataset dashboard
 
-Upload publishes immediately after validation. There is no separate activation,
-historical release selection, pin, or rollback. Browser caches are mode-scoped and
-do not carry revision IDs. APIs resolve the current revision internally; multi-step
-reads capture one revision and fail transiently if publication retires it rather
-than mixing datasets. Existing browser and HTTP responses retain their documented
-expiry in [data layer](data-layer.md).
-Publication is maintenance work, not a validation step for unrelated changes.
-
-Read-only catalog checks compare upstream IDs with durable discovery history:
-
-```bash
-npm run db:items:check
-npm run db:items:check -- --modes pvp-season
-```
-
-These checks do not consume new IDs or assign dates. See [catalog history](data-layer.md)
-for first-seen semantics. The explicit legacy `db:catalog:init` initializer requires
-baseline `20260904T211847Z` when history is not yet established; compaction runs it
-before deleting old datasets and preserves established history.
-
-### Current dataset dashboard
-
-Open `/dev` under `npm run dev`. The [dashboard](../src/app/dev/page.tsx) is
-read-only, with PVP/PVE/KORD tabs showing the current revision, status, counts,
-and generation/upload/publication timestamps. It reports missing data and read
-errors explicitly and remains unavailable in production builds. Obsolete local
-preview cookies have no effect on runtime selection.
+The development-only [/dev page](../src/app/dev/page.tsx) displays current status,
+counts, content version and freshness by mode. The API keeps releaseId only as a
+compatibility field containing the string content version. It is not a release
+lifecycle. Search's stale-token protocol remains unchanged.
 
 ## Mutable price refresh
 
 ```bash
-npm run db:prices:init
 npm run db:prices:refresh -- --modes pvp-season
-npm run db:prices:refresh -- --modes regular,pve
+npm run db:prices:refresh -- --modes regular,pve --concurrency 12
 ```
 
-Initialization creates additive price tables. Manual refresh accepts
-`--concurrency` from 1 to 32, default 12. [vercel.json](../vercel.json) schedules
-both seasonal and regular/PVE refresh daily at 00:15 UTC.
-[cron.ts](../src/server/prices/cron.ts) protects the routes with `CRON_SECRET`;
-[refresh-prices.ts](../src/server/prices/refresh-prices.ts) owns locking, conditional
-requests, and per-item failure handling. Refresh runs complete within one function
-invocation, so inspect duration/run records when diagnosing schedule failures.
-Current-price retention and on-demand modal history are separate paths in
-[data layer](data-layer.md).
+[refresh-prices.ts](../src/server/prices/refresh-prices.ts) separately accepts
+catalog reference values/trader offers and conditional flea history. Failed inputs
+retain their own previous good values. The store uses renewable owned leases,
+chunked guarded writes, current sync state and only the latest run summary.
+The retained recent window has at most ten points per item/mode. The History tab
+continues its independent on-demand upstream fetch.
+
+[vercel.json](../vercel.json) and [cron auth](../src/server/prices/cron.ts) retain
+the existing schedule and CRON_SECRET. Check hosting execution-duration limits
+and external jobs at deployment; none are implicitly provisioned here.
 
 ### Flea stability evidence and validation
 
@@ -224,17 +178,13 @@ node --test --import jiti/register src/lib/utils/flea-price.test.ts src/lib/util
 
 ## Diagnostics and content maintenance
 
-| Symptom or task                       | Start here                                                                                                                                                          |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Missing or wrong-mode game data       | [release-config](../src/server/db/release-config.ts), `db:status`, [database error mapping](../src/app/api/_lib/route-errors.ts)                                    |
-| Inspect current dataset               | [/dev source](../src/app/dev/page.tsx): development-only read-only current status, counts, and timestamps by mode                                                   |
-| Stale current prices                  | [price refresh runs/store](../src/server/prices/price-store.ts), active release flea eligibility, cron authorization and run duration                               |
-| History fails but current price works | [live-price-history](../src/server/prices/live-price-history.ts): independent upstream request/cache                                                                |
-| Search misses/ranking                 | [local search](../src/lib/search/manifest.ts), [manifest read](../src/server/db/search-manifest.ts), [controller](../src/features/items/useItemSearchController.ts) |
-| Quest source corrections              | [quests](quests.md); `npm run quest-series-candidates -- <task-snapshot.json>` emits review candidates, never automatic manifest updates                            |
-| Compare quest snapshots               | [compare-quest-data.mjs](../scripts/compare-quest-data.mjs); inspect its arguments before running `npm run quest-data-compare`                                      |
-| Refresh navigation overlays           | `npm run pull-map-overlays`, review committed [overlay chunks](../src/lib/data/map-overlays/) and run the script's tests                                            |
-| Hideout quantity/FiR correction       | [override owners in data layer](data-layer.md), then regenerate the affected release                                                                                |
+Use db:status for discovery readiness, current catalog counts/freshness and price
+summaries; --storage adds PostgreSQL relation sizes. Inspect
+[database errors](../src/app/api/_lib/route-errors.ts),
+[search](../src/server/db/search-manifest.ts), and
+[price store](../src/server/prices/price-store.ts) for the corresponding failures.
+Do not treat content_version as a restore point.
 
-Use the active documentation and source implementations above for operational
-requirements.
+Map/quest-content utilities remain independent: npm run pull-map-overlays,
+quest-series-candidates and quest-data-compare. See [maps](maps.md), [quests](quests.md)
+and [data layer](data-layer.md) for their source policies.

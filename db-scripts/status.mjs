@@ -1,39 +1,37 @@
-import path from "node:path";
-import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { getTursoConfig, loadLocalEnv } from "./lib/config.mjs";
-import { createTursoClient } from "./lib/turso.mjs";
+import { createJiti } from "jiti";
+import { loadLocalEnv } from "./lib/config.mjs";
 
-const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
-const projectRoot = path.resolve(scriptDirectory, "..");
-
-await loadLocalEnv(projectRoot);
-const client = createTursoClient(getTursoConfig());
+await loadLocalEnv(fileURLToPath(new URL("../", import.meta.url)));
+if (process.argv.slice(2).some((arg) => arg !== "--storage"))
+	throw new Error("Usage: npm run db:status -- [--storage]");
+const jiti = createJiti(import.meta.url);
+const { getPostgresPool, closePostgresPool } = await jiti.import("../src/server/postgres/connection.ts");
 try {
-	const result = await client.execute(`
-        SELECT
-            releases.mode,
-            releases.release_id,
-            releases.status,
-            releases.generated_at,
-            releases.uploaded_at,
-            active.release_id = releases.release_id AS is_active,
-            releases.record_counts_json
-        FROM data_releases AS releases
-        LEFT JOIN active_data_releases AS active ON active.mode = releases.mode
-        ORDER BY releases.generated_at DESC, releases.mode
-        LIMIT 30
-    `);
-	const rows = result.rows.map((row) => ({
-		mode: String(row.mode),
-		releaseId: String(row.release_id),
-		status: String(row.status),
-		active: Boolean(row.is_active),
-		generatedAt: new Date(Number(row.generated_at)).toISOString(),
-		uploadedAt: row.uploaded_at ? new Date(Number(row.uploaded_at)).toISOString() : null,
-		counts: JSON.parse(String(row.record_counts_json)),
-	}));
-	process.stdout.write(`${JSON.stringify(rows, null, 2)}\n`);
+	const pool = getPostgresPool();
+	const { rows } = await pool.query(`SELECT c.*,
+  (SELECT count(*)::int FROM item_modes i WHERE i.mode=c.mode) AS items,
+  (SELECT count(*)::int FROM item_details d WHERE d.mode=c.mode) AS item_details,
+  (SELECT count(*)::int FROM item_prices p WHERE p.mode=c.mode AND p.catalog_reference_updated_at IS NOT NULL) AS priced_items,
+  p.last_started_at, p.last_completed_at, p.last_summary, p.lease_owner, p.lease_expires_at
+  FROM catalog_status c LEFT JOIN price_refresh_state p USING(mode) ORDER BY c.mode`);
+	console.log(
+		JSON.stringify(
+			{
+				modes: rows,
+				...(process.argv.includes("--storage")
+					? {
+							storage: (
+								await pool.query(`SELECT relname, pg_total_relation_size(relid)::text AS bytes
+   FROM pg_catalog.pg_statio_user_tables ORDER BY pg_total_relation_size(relid) DESC`)
+							).rows,
+						}
+					: {}),
+			},
+			null,
+			2,
+		),
+	);
 } finally {
-	client.close();
+	await closePostgresPool();
 }

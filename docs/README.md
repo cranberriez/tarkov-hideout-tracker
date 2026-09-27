@@ -15,8 +15,10 @@ contributor invariants and a task-to-source routing table.
 | [Profits](profits.md)           | Acquisition optimization, recipe availability, price inputs, and profit UI              |
 | [Operations](operations.md)     | Setup, validation commands, release/price operations, and diagnostics                   |
 
-These eight files (including this index) are the active reference set. The
-[database tooling README](../db-scripts/README.md) owns detailed ingestion CLI
+These eight files (including this index) are the current behavior reference set.
+The [PostgreSQL migration](postgresql-migration.md) records the agreed architecture.
+The [production cutover runbook](postgresql-cutover.md) separates deployment,
+readiness and rollback from implementation. The [database tooling README](../db-scripts/README.md) owns detailed ingestion CLI
 usage. Research notes and [wiki source](../wiki-src/) are non-authoritative working
 material; verify against source before using them. Git history retains superseded
 documentation.

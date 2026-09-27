@@ -15,3 +15,9 @@ export const CacheControl = {
 	/** Browser 1 day with week-long background revalidation (rendered map SVG). */
 	mapSvg: "public, max-age=86400, stale-while-revalidate=604800",
 } as const;
+
+/** Unpriced profit data still embeds independently refreshed trader offers. */
+export function profitPageDataCacheControl(isComplete: boolean, includesPrices: boolean): string {
+	if (!isComplete || !includesPrices) return CacheControl.noStore;
+	return CacheControl.publicCdnFiveMinutes;
+}

@@ -1,14 +1,10 @@
-import {
-	fetchTarkovJsonDataset,
-	type TarkovJsonDataset,
-	type TarkovJsonGameMode,
-} from "@/server/services/tarkovJson/client";
+import { fetchTarkovJsonDataset, type TarkovJsonDataset, type TarkovJsonGameMode } from "./tarkovJson/client";
 import type { ItemSummary, ItemCategory, TraderPurchaseOffer } from "@/types/items";
 import type { CurrentPrice } from "@/types/prices";
 import type { GlobalSkill } from "@/types/hideout";
 import type { ItemsPayload, SkillsPayload } from "@/types/contracts";
 import type { DataResult } from "@/types/common";
-import { isOnFleaMarket } from "@/lib/utils/flea-eligibility";
+import { isOnFleaMarket } from "../../lib/utils/flea-eligibility";
 
 interface JsonItemCategory {
 	id: string;
@@ -90,36 +86,65 @@ function numberOrNullish(value: unknown): number | null | undefined {
 	return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
-function mapTraderPurchaseOffer(
-	value: NonNullable<JsonCatalogItem["buyFromTrader"]>[number],
-): TraderPurchaseOffer | null {
+function validOptionalPrice(value: unknown): boolean {
+	return value == null || (typeof value === "number" && Number.isFinite(value) && value >= 0);
+}
+
+function validateMarketPriceInput(item: JsonCatalogItem): void {
+	for (const field of ["avg24hPrice", "high24hPrice", "low24hPrice", "lastLowPrice", "lastOfferCount"] as const) {
+		if (!validOptionalPrice(item[field])) throw new Error(`Tarkov JSON item ${item.id} contains an invalid ${field}`);
+	}
 	if (
-		typeof value.trader !== "string" ||
-		!value.trader ||
-		typeof value.price !== "number" ||
-		!Number.isFinite(value.price) ||
-		typeof value.priceRUB !== "number" ||
-		!Number.isFinite(value.priceRUB) ||
-		typeof value.currency !== "string" ||
-		!value.currency ||
-		typeof value.currencyItem !== "string" ||
-		!value.currencyItem ||
-		typeof value.minTraderLevel !== "number" ||
-		!Number.isFinite(value.minTraderLevel)
+		item.changeLast48hPercent != null &&
+		(typeof item.changeLast48hPercent !== "number" || !Number.isFinite(item.changeLast48hPercent))
 	) {
-		return null;
+		throw new Error(`Tarkov JSON item ${item.id} contains an invalid changeLast48hPercent`);
+	}
+	if (item.lastScan != null && (typeof item.lastScan !== "string" || !Number.isFinite(Date.parse(item.lastScan)))) {
+		throw new Error(`Tarkov JSON item ${item.id} contains an invalid lastScan timestamp`);
+	}
+	if (item.buyFromTrader != null && !Array.isArray(item.buyFromTrader)) {
+		throw new Error(`Tarkov JSON item ${item.id} contains invalid trader purchase offers`);
+	}
+	if (item.sellToTrader != null && !Array.isArray(item.sellToTrader)) {
+		throw new Error(`Tarkov JSON item ${item.id} contains invalid trader sale offers`);
+	}
+}
+
+function mapTraderPurchaseOffer(value: unknown, itemId: string): TraderPurchaseOffer {
+	const offer = typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+	if (
+		typeof offer.trader !== "string" ||
+		!offer.trader ||
+		typeof offer.price !== "number" ||
+		!Number.isFinite(offer.price) ||
+		offer.price < 0 ||
+		typeof offer.priceRUB !== "number" ||
+		!Number.isFinite(offer.priceRUB) ||
+		offer.priceRUB < 0 ||
+		typeof offer.currency !== "string" ||
+		!offer.currency ||
+		typeof offer.currencyItem !== "string" ||
+		!offer.currencyItem ||
+		typeof offer.minTraderLevel !== "number" ||
+		!Number.isFinite(offer.minTraderLevel) ||
+		offer.minTraderLevel < 0 ||
+		(offer.restockAmount != null && !validOptionalPrice(offer.restockAmount)) ||
+		(offer.buyLimit != null && !validOptionalPrice(offer.buyLimit))
+	) {
+		throw new Error(`Tarkov JSON item ${itemId} contains a malformed trader purchase offer`);
 	}
 
 	return {
-		traderId: value.trader,
-		price: value.price,
-		priceRUB: value.priceRUB,
-		currency: value.currency,
-		currencyItemId: value.currencyItem,
-		minTraderLevel: value.minTraderLevel,
-		...(typeof value.taskUnlock === "string" && value.taskUnlock ? { taskUnlockId: value.taskUnlock } : {}),
-		restockAmount: numberOrNullish(value.restockAmount),
-		buyLimit: numberOrNullish(value.buyLimit),
+		traderId: offer.trader,
+		price: offer.price,
+		priceRUB: offer.priceRUB,
+		currency: offer.currency,
+		currencyItemId: offer.currencyItem,
+		minTraderLevel: offer.minTraderLevel,
+		...(typeof offer.taskUnlock === "string" && offer.taskUnlock ? { taskUnlockId: offer.taskUnlock } : {}),
+		restockAmount: numberOrNullish(offer.restockAmount),
+		buyLimit: numberOrNullish(offer.buyLimit),
 	};
 }
 
@@ -137,23 +162,38 @@ function mapMarketPrice(
 		lastOfferCount: numberOrNullish(item.lastOfferCount),
 		changeLast48hPercent: numberOrNullish(item.changeLast48hPercent),
 		updatedAt: Number.isNaN(lastScan) ? null : lastScan,
-		sellFor: (item.sellToTrader ?? []).flatMap((offer) => {
-			if (typeof offer.trader !== "string" || !Number.isFinite(offer.priceRUB)) return [];
-			const trader = traders[offer.trader];
-			return [
-				{
-					vendor: {
-						id: offer.trader,
-						name: translateTrader(trader?.name ?? offer.trader),
-						normalizedName: trader?.normalizedName ?? offer.trader,
-						imageLink: trader?.imageLink,
-					},
-					price: numberOrNullish(offer.price) ?? offer.priceRUB,
-					currency: offer.currency,
-					priceRUB: offer.priceRUB,
-				},
-			];
-		}),
+		sellFor:
+			item.sellToTrader == null
+				? undefined
+				: item.sellToTrader.map((value) => {
+						const offer =
+							typeof value === "object" && value !== null
+								? value
+								: ({} as NonNullable<JsonCatalogItem["sellToTrader"]>[number]);
+						if (
+							typeof offer.trader !== "string" ||
+							!offer.trader ||
+							typeof offer.priceRUB !== "number" ||
+							!Number.isFinite(offer.priceRUB) ||
+							offer.priceRUB < 0 ||
+							(offer.price != null && !validOptionalPrice(offer.price)) ||
+							(offer.currency != null && (typeof offer.currency !== "string" || !offer.currency))
+						) {
+							throw new Error(`Tarkov JSON item ${item.id} contains a malformed trader sale offer`);
+						}
+						const trader = traders[offer.trader];
+						return {
+							vendor: {
+								id: offer.trader,
+								name: translateTrader(trader?.name ?? offer.trader),
+								normalizedName: trader?.normalizedName ?? offer.trader,
+								imageLink: trader?.imageLink,
+							},
+							price: numberOrNullish(offer.price) ?? offer.priceRUB,
+							currency: offer.currency,
+							priceRUB: offer.priceRUB,
+						};
+					}),
 	};
 }
 
@@ -166,6 +206,7 @@ function mapItem(
 ): ItemSummary | null {
 	if (!item || typeof item.id !== "string" || !item.id.trim() || typeof item.name !== "string" || !item.name.trim())
 		return null;
+	validateMarketPriceInput(item);
 	let category: ItemCategory | undefined;
 	for (const categoryId of item.categories ?? []) {
 		const sourceCategory = categories[categoryId];
@@ -194,10 +235,11 @@ function mapItem(
 		// generic parents. Keep only the leaf; repeating every parent on every
 		// item materially inflates all catalog cache and RSC payloads.
 		category,
-		buyFromTrader: (item.buyFromTrader ?? []).flatMap((offer) => {
-			const mapped = mapTraderPurchaseOffer(offer);
-			return mapped ? [mapped] : [];
-		}),
+		...(item.buyFromTrader == null
+			? {}
+			: {
+					buyFromTrader: item.buyFromTrader.map((offer) => mapTraderPurchaseOffer(offer, item.id)),
+				}),
 		marketPrice: mapMarketPrice(item, traders, translateTrader),
 	};
 }

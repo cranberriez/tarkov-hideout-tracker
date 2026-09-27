@@ -13,10 +13,8 @@ export async function GET(request: NextRequest, context: { params: Promise<{ ite
 		const payload = await getItemAcquisitionView(mode, itemId, request.nextUrl.searchParams.get("prices") !== "none");
 		return NextResponse.json(payload, {
 			headers: {
-				"Cache-Control":
-					process.env.NODE_ENV === "development" || Object.values(payload.errors).some(Boolean)
-						? CacheControl.privateNoStore
-						: CacheControl.itemDetail,
+				// Item summaries include offers refreshed independently of catalog content.
+				"Cache-Control": CacheControl.noStore,
 			},
 		});
 	} catch (error) {

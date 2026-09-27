@@ -2,7 +2,7 @@
 
 The app tracks Escape from Tarkov hideout upgrades, inventory, quest progress,
 and item requirements across independent PVP, PVE, and KORD profiles. It uses
-Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and Turso;
+Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreSQL;
 [package.json](../package.json) owns installed versions and commands.
 
 ## Routes and composition
@@ -79,8 +79,8 @@ belong in globals with a purpose before use in a component.
 ## Dependency direction
 
 ```text
-offline source adapters -> current Turso dataset + shared payloads
-server page -> named query -> repository -> targeted Turso reads
+offline source adapters -> current PostgreSQL domain tables
+server page -> named query -> repository -> targeted PostgreSQL reads
             -> request-local Query prefetch -> hydrated client feature
 client Query/controller -> bounded API -> named query, stored item view/search, or explicit service
 ```

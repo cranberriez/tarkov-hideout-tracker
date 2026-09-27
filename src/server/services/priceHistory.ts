@@ -32,11 +32,11 @@ export function normalizePriceHistory(data: unknown, strict = false): PriceHisto
 			offerCount: point.offerCount == null ? null : numeric(point.offerCount),
 		};
 		const valid =
-			Number.isFinite(normalized.price) &&
+			Number.isSafeInteger(normalized.price) &&
 			normalized.price >= 0 &&
-			Number.isFinite(normalized.priceMin) &&
+			Number.isSafeInteger(normalized.priceMin) &&
 			normalized.priceMin >= 0 &&
-			Number.isFinite(normalized.timestamp) &&
+			Number.isSafeInteger(normalized.timestamp) &&
 			normalized.timestamp > 0 &&
 			(normalized.offerCount === null || (Number.isInteger(normalized.offerCount) && normalized.offerCount >= 0)) &&
 			(normalized.offerCount === 0 || (normalized.price > 0 && normalized.priceMin > 0));

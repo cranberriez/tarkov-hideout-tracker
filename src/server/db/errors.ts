@@ -1,27 +1,27 @@
-export class TursoConfigurationError extends Error {
+export class DatabaseConfigurationError extends Error {
 	constructor(message: string) {
 		super(message);
-		this.name = "TursoConfigurationError";
+		this.name = "DatabaseConfigurationError";
 	}
 }
 
-export class TursoRecordNotFoundError extends Error {
+export class DatabaseRecordNotFoundError extends Error {
 	constructor(message: string) {
 		super(message);
-		this.name = "TursoRecordNotFoundError";
+		this.name = "DatabaseRecordNotFoundError";
 	}
 }
 
-export class TursoDataIntegrityError extends Error {
+export class DatabaseDataIntegrityError extends Error {
 	constructor(message: string) {
 		super(message);
-		this.name = "TursoDataIntegrityError";
+		this.name = "DatabaseDataIntegrityError";
 	}
 }
 
-export class TursoTransientReadError extends Error {
+export class DatabaseTransientReadError extends Error {
 	constructor(message: string) {
 		super(message);
-		this.name = "TursoTransientReadError";
+		this.name = "DatabaseTransientReadError";
 	}
 }
