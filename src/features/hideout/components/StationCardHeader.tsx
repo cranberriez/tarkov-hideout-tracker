@@ -1,7 +1,9 @@
-import Image from "next/image";
-import { Lock, Eye, EyeOff, Minus, Plus } from "lucide-react";
+import Link from "next/link";
+import { Eye, EyeOff, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Station } from "@/types/hideout";
+import { stationHref } from "../station-routes";
+import { StationIdentity } from "./StationIdentity";
 
 export interface StationCardHeaderProps {
     station: Station;
@@ -45,50 +47,18 @@ export function StationCardHeader({
                 hideRequirements ? "" : "border-b border-border-color"
             }`}
         >
-            <div className="flex items-center gap-3">
-                <div
-                    className={`relative w-10 h-10 rounded overflow-hidden border ${iconBorderClass} shrink-0`}
-                >
-                    {station.imageLink ? (
-                        <Image
-                            src={station.imageLink}
-                            alt={station.name}
-                            fill
-                            className="object-cover"
-                            unoptimized
-                        />
-                    ) : (
-                        // Fallback to local image based on normalized name if api image missing (or just as a safe default)
-                        <Image
-                            src={`/images/hideout/${station.normalizedName}_Portrait.webp`}
-                            alt={station.name}
-                            fill
-                            className="object-cover"
-                            onError={(e) => {
-                                // Fallback if file not found - could set a placeholder
-                                (e.target as HTMLImageElement).style.display = "none";
-                            }}
-                        />
-                    )}
-                    {isLocked && (
-                        <div className="absolute inset-0 bg-shadow/75 flex items-center justify-center">
-                            <Lock size={16} />
-                        </div>
-                    )}
-                </div>
-                <div>
-                    <h3 className="font-bold text-base text-foreground leading-tight">
+            <StationIdentity
+                station={station}
+                currentLevel={currentLevel}
+                maxLevel={maxLevel}
+                locked={isLocked}
+                imageClassName={iconBorderClass}
+                name={
+                    <Link href={stationHref(station.id)} className="rounded-xs transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-brand">
                         {station.name}
-                    </h3>
-                    <div className="text-[10px] text-subtle-foreground font-mono mt-0.5">
-                        LEVEL{" "}
-                        <span className={currentLevel > 0 ? "text-brand" : "text-subtle-foreground"}>
-                            {currentLevel}
-                        </span>{" "}
-                        <span className="text-subtle-foreground">/</span> {maxLevel}
-                    </div>
-                </div>
-            </div>
+                    </Link>
+                }
+            />
 
             <div className="flex items-center gap-2">
                 <Button

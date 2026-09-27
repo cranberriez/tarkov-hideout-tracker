@@ -7,7 +7,7 @@ import type { ItemSummary } from "@/types/items";
 import { ItemDetailHeader } from "./ItemDetailHeader";
 import { ItemDetailSidebar } from "./ItemDetailSidebar";
 import { ItemDetailUsageTabs } from "./ItemDetailUsageTabs";
-import { useItemDetailModalController } from "./useItemDetailModalController";
+import { useItemDetailModalController } from "./useItemDetailsController";
 import { ItemDetailLoading, ITEM_DETAIL_LOADING_CLASS } from "./ItemDetailLoading";
 
 export interface ItemDetailModalProps {

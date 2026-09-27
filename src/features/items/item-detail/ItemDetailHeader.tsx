@@ -6,6 +6,7 @@ import { ExternalLink, PackageOpen } from "lucide-react";
 
 interface ItemDetailHeaderProps {
     item: ItemSummary;
+    headingLevel?: "h1" | "h2";
     totalRequiredCount: number;
     needsBreakdown: NeedBreakdown | null;
     hideoutRequiredCount: number;
@@ -14,6 +15,7 @@ interface ItemDetailHeaderProps {
 
 export function ItemDetailHeader({
     item,
+    headingLevel: Heading = "h2",
     totalRequiredCount,
     needsBreakdown,
     hideoutRequiredCount,
@@ -48,9 +50,9 @@ export function ItemDetailHeader({
                             </span>
                         </div>
                     )}
-                    <h2 className="text-xl font-semibold leading-tight text-foreground">
+                    <Heading className="text-xl font-semibold leading-tight text-foreground">
                         {item.name}
-                    </h2>
+                    </Heading>
                     <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                         {item.wikiLink && (
                             <a

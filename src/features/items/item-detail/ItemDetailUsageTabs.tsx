@@ -27,6 +27,8 @@ type UsageTab = "hideout" | "quests" | "traders" | "crafting" | "prices";
 
 interface ItemDetailUsageTabsProps {
     className?: string;
+    /** Dialogs cap and scroll the tab panel; pages let it flow with the document. */
+    contained?: boolean;
     selectedItemId: string;
     selectedItemImageLink?: string;
     stationRequirements: [string, StationRequirementEntry[]][];
@@ -62,6 +64,7 @@ interface ItemDetailUsageTabsProps {
 
 export function ItemDetailUsageTabs({
     className = "",
+    contained = true,
     selectedItemId,
     selectedItemImageLink,
     stationRequirements,
@@ -165,7 +168,7 @@ export function ItemDetailUsageTabs({
                 />
             </div>
 
-            <div role="tabpanel" className="flex min-h-0 max-h-[700px] flex-1 flex-col overflow-y-auto">
+            <div role="tabpanel" className={contained ? "flex min-h-0 max-h-[700px] flex-1 flex-col overflow-y-auto" : "flex flex-1 flex-col"}>
                 {selectedTab === "hideout" && (
                     <>
                         {(relationsLoading || relationsError) && (

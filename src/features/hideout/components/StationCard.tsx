@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { computeNeeds } from "@/lib/utils/item-needs";
+import { computeStationUpgradeStatus } from "../station-model";
 import type { Station } from "@/types/hideout";
 import type { ItemSummary } from "@/types/items";
 import { StationCardHeader } from "./StationCardHeader";
@@ -45,95 +45,20 @@ export function StationCard({
     const maxLevel = station.levels.length;
 
     const nextLevelData = station.levels.find((l) => l.level === currentLevel + 1);
-    const currentLevelData = station.levels.find((l) => l.level === currentLevel);
     const isMaxed = currentLevel >= maxLevel;
     const isHidden = hiddenStations[station.id] || isMaxed;
     const hasUnresolvedNextLevelItem =
         nextLevelData?.itemRequirements.some((requirement) => !itemById[requirement.itemId]) ??
         false;
 
-    const computeUpgradeStatus = (): "ready" | "missing" | "illegal" => {
-        let isIllegal = false;
-
-        if (currentLevelData) {
-            for (const req of currentLevelData.stationLevelRequirements ?? []) {
-                const reqStation = stations.find(
-                    (s) => s.normalizedName === req.station.normalizedName
-                );
-                if (!reqStation) continue;
-                const reqStationLevel = stationLevels[reqStation.id] ?? 0;
-                if (reqStationLevel < req.level) {
-                    isIllegal = true;
-                    break;
-                }
-            }
-        }
-
-        if (isIllegal) return "illegal";
-
-        if (!nextLevelData) return "missing";
-
-        let stationReqMissing = false;
-        for (const req of nextLevelData.stationLevelRequirements ?? []) {
-            const reqStation = stations.find(
-                (s) => s.normalizedName === req.station.normalizedName
-            );
-            if (!reqStation) continue;
-            const reqStationLevel = stationLevels[reqStation.id] ?? 0;
-            if (reqStationLevel < req.level) {
-                stationReqMissing = true;
-                break;
-            }
-        }
-
-        let itemsMissing = false;
-        if (nextLevelData && !itemsMissing) {
-            for (const req of nextLevelData.itemRequirements) {
-                const item = itemById[req.itemId];
-                if (!item) {
-                    itemsMissing = true;
-                    break;
-                }
-                const norm = item.normalizedName;
-                const isCurrency = norm === "roubles" || norm === "dollars" || norm === "euros";
-
-                if (isCurrency) {
-                    continue;
-                }
-
-                const owned = itemCounts[req.itemId] ?? { have: 0, haveFir: 0 };
-
-                if (req.isFir) {
-                    if (owned.haveFir < req.count) {
-                        itemsMissing = true;
-                        break;
-                    }
-                } else {
-                    const globalFirRemaining = pooledFirByItem[req.itemId] ?? 0;
-                    const firSurplus = Math.max(0, owned.haveFir - globalFirRemaining);
-                    const needs = computeNeeds({
-                        totalRequired: req.count,
-                        requiredFir: 0,
-                        haveNonFir: owned.have + firSurplus,
-                        haveFir: 0,
-                    });
-
-                    if (needs.effectiveHave < req.count) {
-                        itemsMissing = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (!stationReqMissing && !itemsMissing) {
-            return "ready";
-        }
-
-        return "missing";
-    };
-
-    const upgradeStatus = computeUpgradeStatus();
+    const upgradeStatus = computeStationUpgradeStatus({
+        station,
+        stations,
+        stationLevels,
+        itemById,
+        itemCounts,
+        pooledFirByItem,
+    });
 
     const handleLevelUp = () => {
         if (isMaxed || hasUnresolvedNextLevelItem) return;

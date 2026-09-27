@@ -16,22 +16,26 @@ import { useManualPriceOverrides } from "@/features/profit-pages/useManualPriceO
 import { hasItemMarketData } from "./ItemDetailMarket";
 import { summarizeItemDetailDemand } from "./item-detail-summary";
 import { buildStationRequirements, mergeItemDetailItems } from "./item-detail-data";
-import { useItemDetailNavigationController } from "./useItemDetailNavigationController";
 import { useItemDetailRequestController } from "./useItemDetailRequestController";
 import { useItemPrices } from "../useItemPrices";
 import { isPriceItemId } from "@/lib/query/price-contract";
+import { useItemDetailNavigationController } from "./useItemDetailNavigationController";
 
-export function useItemDetailModalController({
-    item,
-    isOpen,
-    onClose,
+/**
+ * Item data and derived values shared by the item page and the legacy modal.
+ * `knownItems` seeds summaries already on hand (the route item or modal history);
+ * `enabled` gates the mode-aware detail requests.
+ */
+export function useItemDetailsController({
+    activeItemId,
+    knownItems,
+    enabled,
 }: {
-    item: ItemSummary | null;
-    isOpen: boolean;
-    onClose: () => void;
+    activeItemId: string;
+    knownItems: readonly ItemSummary[];
+    enabled: boolean;
 }) {
-    const navigation = useItemDetailNavigationController({ item, isOpen, onClose });
-    const { activeItemId, navigatedItemsById } = navigation;
+    const isOpen = enabled;
     const store = useUserStore();
     const { overrides } = useManualPriceOverrides(store.gameMode);
     const { craftingSkillLevel, hideoutManagementSkillLevel } = useProfitOptions(store.gameMode);
@@ -43,14 +47,14 @@ export function useItemDetailModalController({
     const unpricedItemsById = useMemo(
         () =>
             mergeItemDetailItems(
-                item ? [item] : [],
-                Object.values(navigatedItemsById),
+                [...knownItems],
+                [],
                 acquisitionTree?.items,
                 itemUsage?.items,
                 itemRelations?.relatedItems,
                 itemRelations?.item ? [itemRelations.item] : [],
             ),
-        [acquisitionTree, item, itemRelations, itemUsage, navigatedItemsById],
+        [acquisitionTree, knownItems, itemRelations, itemUsage],
     );
     // Wait for the initial graphs so related prices share one transport batch.
     const metadataReady = !requests.relationsLoading && !requests.usageLoading && !requests.treeLoading;
@@ -283,7 +287,6 @@ export function useItemDetailModalController({
             marketPrice?.avg24hPrice != null ||
             marketPrice?.lastLowPrice != null);
     const showSidebar = showInventory || showMarket;
-    const showDebug = navigation.debugItemId === selectedItemId;
     const debugData = {
         item: selectedItem,
         inventory: { owned, needsBreakdown, demandSummary },
@@ -330,9 +333,7 @@ export function useItemDetailModalController({
         showMarket,
         showPriceHistory,
         showSidebar,
-        showDebug,
         debugData,
-        previousItem: navigation.previousItem,
         isDevelopment: process.env.NODE_ENV === "development",
         stationLevels: store.stationLevels,
         hiddenStations: store.hiddenStations,
@@ -358,14 +359,38 @@ export function useItemDetailModalController({
         profitError: requests.treeError ?? priceError,
         priceError,
         retryProfit: requests.retryTree,
+    };
+}
+
+/** Dialog adapter: in-dialog history and close behavior around the shared details controller. */
+export function useItemDetailModalController({
+    item,
+    isOpen,
+    onClose,
+}: {
+    item: ItemSummary | null;
+    isOpen: boolean;
+    onClose: () => void;
+}) {
+    const navigation = useItemDetailNavigationController({ item, isOpen, onClose });
+    const { activeItemId, navigatedItemsById } = navigation;
+    const knownItems = useMemo(
+        () => [...(item ? [item] : []), ...Object.values(navigatedItemsById)],
+        [item, navigatedItemsById],
+    );
+    const details = useItemDetailsController({ activeItemId, knownItems, enabled: isOpen });
+    return {
+        ...details,
+        showDebug: navigation.debugItemId === details.selectedItemId,
+        previousItem: navigation.previousItem,
         close: navigation.close,
         back: navigation.back,
         openItem(itemId: string) {
-            const nextItem = itemDetailsById[itemId];
+            const nextItem = details.itemDetailsById[itemId];
             if (nextItem) navigation.navigate(nextItem);
         },
         toggleDebug() {
-            navigation.toggleDebug(selectedItemId);
+            navigation.toggleDebug(details.selectedItemId);
         },
     };
 }

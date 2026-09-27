@@ -10,6 +10,7 @@ import { getItemChecklistPageData } from "./getItemChecklistPageData";
 import { getProfitPageData } from "./getProfitPageData";
 import { getQuestWorkspacePageData } from "./getQuestWorkspacePageData";
 import { getQuestDetailPageData } from "./getQuestDetailPageData";
+import { getItemDetailPageData } from "./getItemDetailPageData";
 import { getKappaChecklistPageData, COLLECTOR_QUEST_ID_BY_MODE } from "./getKappaChecklistPageData";
 import { getItemPriceResponse } from "./getDeferredPrices";
 
@@ -404,5 +405,25 @@ test("quest detail reads one quest by ID and distinguishes missing from failed r
         questNames: async () => { throw new Error("offline"); },
     }));
     assert.equal(failed.quest, null);
+    assert.ok(failed.error);
+});
+
+test("item detail reads one unpriced item and distinguishes missing from failed reads", async () => {
+    const item = { id: "item-a", name: "Item A", normalizedName: "item-a" } satisfies ItemSummary;
+    const requested: string[][] = [];
+    const repository = createRepository({
+        items: async (_mode, ids) => {
+            requested.push([...ids]);
+            return result(ids.includes(item.id) ? { [item.id]: item } : {});
+        },
+    });
+
+    assert.deepEqual(await getItemDetailPageData("pve", item.id, repository), { item, error: null });
+    assert.deepEqual(requested, [[item.id]]);
+    assert.deepEqual(await getItemDetailPageData("pve", "unknown", repository), { item: null, error: null });
+    const failed = await getItemDetailPageData("pve", item.id, createRepository({
+        items: async () => { throw new Error("offline"); },
+    }));
+    assert.equal(failed.item, null);
     assert.ok(failed.error);
 });

@@ -310,3 +310,10 @@ export interface ProfitPageData {
         taskUnlocks: string | null;
     };
 }
+
+/** `/items/[itemId]` route payload: one standard item summary, unpriced. */
+export interface ItemDetailPageData {
+    /** `null` with `error: null` means the ID is not a standard item in this mode. */
+    item: ItemSummary | null;
+    error: string | null;
+}

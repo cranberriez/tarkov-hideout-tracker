@@ -13,12 +13,22 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and Turso;
 | `/hideout` | [Hideout page](<../src/app/(data)/hideout/page.tsx>): next station upgrades |
 | `/items` | [Items page](<../src/app/(data)/items/page.tsx>): pooled hideout and quest demand |
 | `/quests`, `/quests/[questId]` | [Quests layout](<../src/app/(data)/quests/layout.tsx>) owns the persistent workspace; the [index](<../src/app/(data)/quests/page.tsx>) and [quest route](<../src/app/(data)/quests/[questId]/page.tsx>) fill its detail pane; see [quests](quests.md) |
+| `/items/[itemId]` | [Item page](<../src/app/(data)/items/[itemId]/page.tsx>): one-item read, then the shared item-detail sections |
+| `/hideout/stations/[stationId]` | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): all levels, dependencies, and on-demand crafts from the Hideout query |
 | `/items/kappa-checklist` | [Collector checklist](<../src/app/(data)/items/kappa-checklist/page.tsx>); see [quests](quests.md) |
 | `/items/barter-profits`, `/items/crafting-profits` | Shared [ProfitPage](../src/features/profit-pages/ProfitPage.tsx); see [profits](profits.md) |
 | `/hideout/craft-planner` | Station craft recommendations using the shared profit query; see [profits](profits.md) |
 | `/settings` | [Player progression backups, import review, legacy tools and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md) |
 | `/news` | [News page](../src/app/news/page.tsx) |
 | `/dev` | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md) |
+
+Detail routes use bounded reads: [getItemDetailPageData](../src/server/queries/getItemDetailPageData.ts)
+reads one item, [getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts)
+one quest, and station pages reuse the mode-keyed Hideout page query. Each sets
+entity-specific titles, descriptions, and canonical URLs. Missing IDs render
+not-found states; failed reads report errors instead of 404s. Pages render public
+identity from server data; player progress hydrates afterwards. Titles use the root
+`%s · Tarkov Hideout Tracker` template.
 
 Inventory, Keys, Station Goals, and Bitcoin Farm routes are placeholders. Check
 their [route implementations](<../src/app/(data)/>) before extending them.
@@ -94,6 +104,13 @@ separate browser-persistence boundary.
 upgrade from the active profile's station levels. Reviewed display ordering lives
 in [stationOrder.ts](../src/lib/cfg/stationOrder.ts). Edition starting levels are
 applied through setup/store actions; see [user state](user-state.md).
+
+[station-model](../src/features/hideout/station-model.ts) owns the pure upgrade
+status (`ready`/`missing`/`illegal`), default viewed level, and reverse dependencies
+shared by [StationCard](../src/features/hideout/components/StationCard.tsx) and the
+[station page](../src/features/hideout/StationDetailsPage.tsx). The page's viewed
+level is local state: browsing a level never changes the saved station level. Its
+crafts load only on request through the shared unpriced profit query.
 
 [item-pooling.ts](../src/lib/utils/item-pooling.ts) aggregates stable requirement
 IDs and item IDs across remaining levels or just the next level. Hidden stations
@@ -172,7 +189,9 @@ card with the item image and an indeterminate bar while the code and initial
 relations/usage requests arrive. The card has an explicit compact width, then
 expands to the full dialog; request failures reveal the existing error UI and
 profit requests keep their own loading states. Motion respects reduced-motion
-preferences. Its [modal controller](../src/features/items/item-detail/useItemDetailModalController.ts),
+preferences. The [details controller](../src/features/items/item-detail/useItemDetailsController.ts)
+derives item data for both the [item page](../src/features/items/item-detail/ItemDetailsPage.tsx)
+and the dialog adapter in the same module;
 [request controller](../src/features/items/item-detail/useItemDetailRequestController.ts),
 and [navigation controller](../src/features/items/item-detail/useItemDetailNavigationController.ts)
 own lazy relations, usage, acquisition, history, and in-dialog navigation. Related
