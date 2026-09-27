@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SeasonUpdateBanner } from "@/components/core/SeasonUpdateBanner";
 import { ActiveGameModeSync } from "@/components/core/ActiveGameModeSync";
 import { QuickAddModal } from "@/features/quick-add/QuickAddModal";
+import { GlobalItemDetailModal } from "@/features/items/item-detail/GlobalItemDetailModal";
 import { QueryProvider } from "@/lib/query/QueryProvider";
 
 export const viewport: Viewport = {
@@ -33,6 +34,7 @@ export default function RootLayout({
                     <div className="flex min-h-0 flex-1 flex-col">{children}</div>
                     <SetupModal />
                     <QuickAddModal />
+                    <GlobalItemDetailModal />
                     <Analytics />
                 </QueryProvider>
             </body>

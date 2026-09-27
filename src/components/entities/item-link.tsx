@@ -1,12 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import { itemHref } from "@/lib/entity-routes";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { gameDataKey } from "@/lib/query/scope";
+import { useUIStore } from "@/lib/stores/useUIStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { describeFleaPrice, formatFleaPriceState } from "@/lib/utils/market-price";
 import { cn } from "@/lib/utils";
@@ -19,12 +18,17 @@ export type PreviewItem = Pick<ItemSummary, "id" | "name"> & Partial<Pick<ItemSu
     "shortName" | "iconLink" | "gridImageLink" | "image512pxLink" | "category" | "marketPrice" | "priceLoadState" | "normalizedName"
 >>;
 
-type LinkProps = Omit<ComponentProps<typeof Link>, "href" | "children">;
+type ButtonProps = Omit<ComponentProps<"button">, "children" | "type">;
+
+/** Summary accepted by the item dialog; partial link data is completed by its relations request. */
+export function toItemSummary(item: PreviewItem): ItemSummary {
+    return { normalizedName: item.normalizedName ?? item.id, ...item };
+}
 
 /**
- * Link to `/items/[itemId]` with a hover/focus preview. The preview uses supplied
- * summary data, saved inventory, and already-cached prices only; it never starts
- * the item-detail request pipeline.
+ * Opens the global item-detail dialog, with a hover/focus preview. The preview uses
+ * supplied summary data, saved inventory, and already-cached prices only; it never
+ * starts the item-detail request pipeline. (`/items/[itemId]` exists but is not linked yet.)
  */
 export function ItemLink({
     item,
@@ -32,20 +36,32 @@ export function ItemLink({
     preview = true,
     previewDetails,
     className,
+    onClick,
     ...props
-}: LinkProps & {
+}: ButtonProps & {
     item: PreviewItem;
     children?: ReactNode;
     preview?: boolean;
     /** Consumer-supplied context, for example demand or FiR counts. */
     previewDetails?: ReactNode;
 }) {
+    const openItemDetail = useUIStore((state) => state.openItemDetail);
     return (
         <EntityPreview disabled={!preview} renderPreview={() => <ItemPreviewCard item={item} details={previewDetails} />}>
             {(triggerProps) => (
-                <Link {...props} {...triggerProps} href={itemHref(item.id)} className={cn(className)}>
+                <button
+                    {...props}
+                    {...triggerProps}
+                    type="button"
+                    aria-haspopup="dialog"
+                    onClick={(event) => {
+                        onClick?.(event);
+                        if (!event.defaultPrevented) openItemDetail(toItemSummary(item));
+                    }}
+                    className={cn("cursor-pointer text-left", className)}
+                >
                     {children ?? item.name}
-                </Link>
+                </button>
             )}
         </EntityPreview>
     );
@@ -84,7 +100,7 @@ function ItemPreviewCard({ item, details }: { item: PreviewItem; details?: React
                 )}
                 {details}
             </div>
-            <PreviewFooter>Open item page for requirements, trades, and crafts</PreviewFooter>
+            <PreviewFooter>Click for requirements, trades, and crafts</PreviewFooter>
         </div>
     );
 }

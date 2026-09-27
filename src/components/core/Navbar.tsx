@@ -6,7 +6,7 @@ import { ChevronDown, Menu, Plus, Search, Settings2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SearchPalette } from "@/features/search/SearchPalette";
-import { itemHref, questHref } from "@/lib/entity-routes";
+import { questHref } from "@/lib/entity-routes";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import {
 	DropdownMenu,
@@ -31,6 +31,7 @@ function NavbarContent() {
 	const [searchOpen, setSearchOpen] = useState(false);
 	const searchTrigger = useRef<HTMLElement | null>(null);
 	const router = useRouter();
+	const openItemDetail = useUIStore((state) => state.openItemDetail);
 	useEffect(() => {
 		const onKeyDown = (event: KeyboardEvent) => {
 			if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k" && !event.repeat) {
@@ -218,8 +219,7 @@ function NavbarContent() {
 					restoreFocus={() => searchTrigger.current?.focus()}
 					onSelect={(result) => {
 						setSearchOpen(false);
-						// Quest routes keep the workspace list scroll; item pages start at the top.
-						if (result.kind === "item") router.push(itemHref(result.item.id));
+						if (result.kind === "item") openItemDetail(result.item);
 						else router.push(questHref(result.id), { scroll: false });
 					}}
 				/>

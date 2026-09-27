@@ -198,7 +198,7 @@ independently by app mode; key and reset semantics belong to [user state](user-s
 
 [ItemDetailRecipeProfit](../src/features/items/item-detail/ItemDetailRecipeProfit.tsx)
 uses the same engine with a bounded acquisition tree. Recipe links navigate to
-the corresponding profit row; standard ingredients link to their item pages.
+the corresponding profit row; standard ingredients open the item-detail dialog.
 When extending calculations, update the engine and consumers together so an item
 page and a full profit page do not disagree for the same inputs.
 

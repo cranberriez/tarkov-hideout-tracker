@@ -13,6 +13,7 @@ import { formatCompactRoubles } from "@/lib/utils/market-price";
 
 interface ItemDetailAcquisitionProps {
     offers: ItemTraderOffer[];
+    profileReady: boolean;
     completedQuests: Record<string, boolean>;
     traderLoyaltyLevels: Record<string, number>;
     evaluationsById: Readonly<Record<string, RecipeEvaluation>>;
@@ -25,6 +26,7 @@ interface ItemDetailAcquisitionProps {
 
 export function ItemDetailAcquisition({
     offers,
+    profileReady,
     completedQuests,
     traderLoyaltyLevels,
     evaluationsById,
@@ -34,7 +36,8 @@ export function ItemDetailAcquisition({
     onRetryProfit,
     outputItem,
 }: ItemDetailAcquisitionProps) {
-    const sorted = [...offers].sort((a, b) => {
+    // Availability ordering depends on the profile; keep data order until it loads.
+    const sorted = !profileReady ? [...offers].sort((a, b) => a.minTraderLevel - b.minTraderLevel) : [...offers].sort((a, b) => {
         const aAvailable = isOfferAvailable(a, completedQuests, traderLoyaltyLevels);
         const bAvailable = isOfferAvailable(b, completedQuests, traderLoyaltyLevels);
         return Number(bAvailable) - Number(aAvailable) || a.minTraderLevel - b.minTraderLevel;
@@ -71,8 +74,8 @@ export function ItemDetailAcquisition({
                                         <span className="rounded bg-highlight/5 px-1.5 py-0.5 text-[10px] text-muted-foreground">
                                             {offer.kind === "buy" ? "Buy" : "Barter"}
                                         </span>
-                                        <AvailabilityBadge available={available} />
-                                        {!available && (
+                                        {profileReady && <AvailabilityBadge available={available} />}
+                                        {profileReady && !available && (
                                             <LockedReasons
                                                 offer={offer}
                                                 loyaltyMet={loyaltyMet}

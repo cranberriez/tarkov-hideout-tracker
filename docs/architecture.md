@@ -13,7 +13,7 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and Turso;
 | `/hideout` | [Hideout page](<../src/app/(data)/hideout/page.tsx>): next station upgrades |
 | `/items` | [Items page](<../src/app/(data)/items/page.tsx>): pooled hideout and quest demand |
 | `/quests`, `/quests/[questId]` | [Quests layout](<../src/app/(data)/quests/layout.tsx>) owns the persistent workspace; the [index](<../src/app/(data)/quests/page.tsx>) and [quest route](<../src/app/(data)/quests/[questId]/page.tsx>) fill its detail pane; see [quests](quests.md) |
-| `/items/[itemId]` | [Item page](<../src/app/(data)/items/[itemId]/page.tsx>): one-item read, then the shared item-detail sections |
+| `/items/[itemId]` | [Item page](<../src/app/(data)/items/[itemId]/page.tsx>): server-rendered item details; not linked yet (items open the dialog) |
 | `/hideout/stations/[stationId]` | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): all levels, dependencies, and on-demand crafts from the Hideout query |
 | `/items/kappa-checklist` | [Collector checklist](<../src/app/(data)/items/kappa-checklist/page.tsx>); see [quests](quests.md) |
 | `/items/barter-profits`, `/items/crafting-profits` | Shared [ProfitPage](../src/features/profit-pages/ProfitPage.tsx); see [profits](profits.md) |
@@ -166,7 +166,7 @@ to 50, labels entity kinds, and shows quest trader names/portraits.
 
 The dialog traps focus, supports arrow navigation and Enter selection, closes on
 Escape, and restores focus to the opener on dismissal. Empty, loading, error/retry,
-and no-match states are explicit. Selecting an item navigates to `/items/[itemId]`;
+and no-match states are explicit. Selecting an item opens the item-detail dialog;
 quest selection navigates to `/quests/[questId]` and opens the workspace detail
 pane, including on mobile or when already on the quest page.
 Nav-owned search/selection state resets on mode changes and is never persisted.
@@ -181,21 +181,39 @@ FiR/non-FiR additions locally, then commits inventory additions through store
 actions. [useUIStore](../src/lib/stores/useUIStore.ts) coordinates its shared open
 state and pending items.
 
-The [item page](../src/features/items/item-detail/ItemDetailsPage.tsx) is the only
-item-detail destination; there is no item dialog. The
-[details controller](../src/features/items/item-detail/useItemDetailsController.ts)
-derives inventory, demand, market, usage, and recipe values, and the
+The item-detail dialog is the default destination for every item click.
+[GlobalItemDetailModal](../src/features/items/item-detail/GlobalItemDetailModal.tsx)
+is mounted once in the root layout; `ItemLink`, recipe items, and search results open
+it through `openItemDetail` in [useUIStore](../src/lib/stores/useUIStore.ts). Opening
+another item while it is open pushes the dialog's Back history
+([navigation controller](../src/features/items/item-detail/useItemDetailNavigationController.ts));
+closing clears it. [LazyItemDetailModal](../src/features/items/item-detail/LazyItemDetailModal.tsx)
+downloads the detail UI only when opened and shows the compact loading card first.
+The [details controller](../src/features/items/item-detail/useItemDetailsController.ts)
+derives inventory, demand, market, usage, and recipe values for both the dialog and
+the [item page](../src/features/items/item-detail/ItemDetailsPage.tsx); the
 [request controller](../src/features/items/item-detail/useItemDetailRequestController.ts)
-owns mode-aware relations, usage, and acquisition queries with partial-error
-handling. Related items are ordinary links, so browser history replaces in-dialog
-navigation. Loading, empty, partial, and failed domains stay distinguishable; on
-the page the usage tab panel flows with the document instead of a 700px scroll box.
+owns mode-aware relations, usage, and acquisition queries with partial-error handling.
+In the dialog the usage tab panel scrolls within a 700px maximum height.
+
+`/items/[itemId]` still exists but nothing links to it yet. It server-renders its
+rows: [getItemDetailViews](../src/server/queries/getItemDetailViews.ts) reads the
+same unpriced stored views the item API routes serve; complete views are hydrated
+into the client query keys and partial views are passed as retryable fallbacks. Every
+data tab renders (inactive ones `hidden`), so hideout, quest, trade, and craft rows are
+in the server HTML. Rows are always shown; profile-dependent status (available/locked
+badges, lock reasons, availability ordering, current station level, quest status) is
+rendered client-side only after the saved profile loads. Until then the controller
+derives from the store's initial state so server HTML and the hydration render agree.
+Quest rows still follow the player's item-quest visibility filters, so that list
+itself is profile-dependent.
+
 Current prices use one shared mode/item TanStack cache across lists, profit pages,
-and item pages; Quests does not preload prices. See
+and item details; Quests does not preload prices. See
 [data layer](data-layer.md) for GET batching, one-hour freshness.
 Relations, usage, acquisition, and price history use feature-owned TanStack query
 options. Only complete detail responses enter reusable success cache state;
-partial payloads remain available to the page with their explicit errors and stay
+partial payloads remain available to the dialog or page with their explicit errors and stay
 retryable. Recipe calculations reuse the
 [profit engine](profits.md).
 
@@ -218,19 +236,20 @@ cost, gross sale, net sale, and profit.
 
 [Entity components](../src/components/entities/) share identity presentation
 (`ItemThumbnail`, `ItemQuantityBadge`, `ItemReference`, `StationImage`) and links:
-[ItemLink](../src/components/entities/item-link.tsx), [QuestLink](../src/components/entities/quest-link.tsx),
-and [StationLink](../src/components/entities/station-link.tsx) are real links to
+[QuestLink](../src/components/entities/quest-link.tsx) and
+[StationLink](../src/components/entities/station-link.tsx) are real links to
 [canonical routes](../src/lib/entity-routes.ts), so click, middle-click, and new tabs
-behave normally. [EntityPreview](../src/components/entities/entity-preview.tsx)
+behave normally; [ItemLink](../src/components/entities/item-link.tsx) is a button that
+opens the item dialog. [EntityPreview](../src/components/entities/entity-preview.tsx)
 wraps [useFloatingPreview](../src/components/ui/floating-preview.tsx): hover or
 keyboard focus opens a card after a short delay, the pointer can move into it,
 Escape/scroll/click dismisses it, only one is open at a time, and touch taps skip
-it and navigate. Cards use supplied data, saved progress, and already-cached
+it and activate the link or button. Cards use supplied data, saved progress, and already-cached
 prices, workspace quests, or Hideout stations only; they never start detail
 requests. `Tooltip` reuses the same positioning for short text. Profit recipe items
 keep their recipe-specific hover card (route, cost, savings) through
 [RecipeItemHoverProvider](../src/features/profit-pages/components/RecipeItemHoverProvider.tsx);
-their icons are item links whose keyboard focus anchors that card, and Escape closes it.
+their icons open the item dialog, keyboard focus anchors that card, and Escape closes it.
 Quest-only pickups stay display-only (`linked={false}`).
 
 For changes here, run [page query tests](../src/server/queries/page-data-queries.test.ts),

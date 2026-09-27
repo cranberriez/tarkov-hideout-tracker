@@ -29,6 +29,8 @@ interface ItemDetailUsageTabsProps {
     className?: string;
     /** Dialogs cap and scroll the tab panel; pages let it flow with the document. */
     contained?: boolean;
+    /** Pages render every data tab (hidden when inactive) so server HTML includes all relations. */
+    renderInactivePanels?: boolean;
     selectedItemId: string;
     selectedItemImageLink?: string;
     stationRequirements: [string, StationRequirementEntry[]][];
@@ -48,6 +50,8 @@ interface ItemDetailUsageTabsProps {
     craftError: string | null;
     onRetryAcquisition: () => void;
     acquisitionWarning: string | null;
+    /** False until the saved profile loads (and on the server): status indicators stay neutral. */
+    profileReady: boolean;
     completedQuests: Record<string, boolean>;
     traderLoyaltyLevels: Record<string, number>;
     gameEdition: GameEdition | null;
@@ -64,6 +68,7 @@ interface ItemDetailUsageTabsProps {
 export function ItemDetailUsageTabs({
     className = "",
     contained = true,
+    renderInactivePanels = false,
     selectedItemId,
     selectedItemImageLink,
     stationRequirements,
@@ -83,6 +88,7 @@ export function ItemDetailUsageTabs({
     craftError,
     onRetryAcquisition,
     acquisitionWarning,
+    profileReady,
     completedQuests,
     traderLoyaltyLevels,
     gameEdition,
@@ -167,7 +173,7 @@ export function ItemDetailUsageTabs({
             </div>
 
             <div role="tabpanel" className={contained ? "flex min-h-0 max-h-[700px] flex-1 flex-col overflow-y-auto" : "flex flex-1 flex-col"}>
-                {selectedTab === "hideout" && (
+                <UsagePanel active={selectedTab === "hideout"} keep={renderInactivePanels && hideoutEnabled}>
                     <>
                         {(relationsLoading || relationsError) && (
                             <RelationState
@@ -181,13 +187,14 @@ export function ItemDetailUsageTabs({
                             <ItemDetailHideoutRequirements
                                 selectedItemImageLink={selectedItemImageLink}
                                 stationRequirements={stationRequirements}
+                                profileReady={profileReady}
                                 stationLevels={stationLevels}
                                 hiddenStations={hiddenStations}
                             />
                         )}
                     </>
-                )}
-                {selectedTab === "quests" && (
+                </UsagePanel>
+                <UsagePanel active={selectedTab === "quests"} keep={renderInactivePanels && questsEnabled}>
                     <>
                         {(relationsLoading || relationsError) && (
                             <RelationState
@@ -209,8 +216,8 @@ export function ItemDetailUsageTabs({
                             />
                         )}
                     </>
-                )}
-                {selectedTab === "traders" && (
+                </UsagePanel>
+                <UsagePanel active={selectedTab === "traders"} keep={renderInactivePanels && tradersEnabled}>
                     <AcquisitionState
                         loading={acquisitionLoading}
                         error={barterError}
@@ -220,6 +227,7 @@ export function ItemDetailUsageTabs({
                     >
                         <ItemDetailAcquisition
                             offers={traderOffers}
+                            profileReady={profileReady}
                             completedQuests={completedQuests}
                             traderLoyaltyLevels={traderLoyaltyLevels}
                             overrides={overrides}
@@ -230,8 +238,8 @@ export function ItemDetailUsageTabs({
                             outputItem={selectedItem}
                         />
                     </AcquisitionState>
-                )}
-                {selectedTab === "crafting" && (
+                </UsagePanel>
+                <UsagePanel active={selectedTab === "crafting"} keep={renderInactivePanels && craftingEnabled}>
                     <AcquisitionState
                         loading={acquisitionLoading}
                         error={craftError}
@@ -241,6 +249,7 @@ export function ItemDetailUsageTabs({
                     >
                         <ItemDetailCrafting
                             recipes={crafts}
+                            profileReady={profileReady}
                             completedQuests={completedQuests}
                             stationLevels={stationLevels}
                             gameEdition={gameEdition}
@@ -252,7 +261,7 @@ export function ItemDetailUsageTabs({
                             outputItem={selectedItem}
                         />
                     </AcquisitionState>
-                )}
+                </UsagePanel>
                 {selectedTab === "prices" && historyEnabled && (
                     <ItemDetailPriceHistory
                         itemId={selectedItemId}
@@ -263,6 +272,12 @@ export function ItemDetailUsageTabs({
             </div>
         </section>
     );
+}
+
+/** Inactive panels stay mounted but hidden only when `keep` is set (item page). */
+function UsagePanel({ active, keep, children }: { active: boolean; keep: boolean; children: ReactNode }) {
+    if (!active && !keep) return null;
+    return <div hidden={!active} className="contents">{children}</div>;
 }
 
 function AcquisitionState({

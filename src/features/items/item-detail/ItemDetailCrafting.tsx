@@ -14,6 +14,7 @@ import { formatDuration } from "@/lib/utils/format-time";
 
 interface ItemDetailCraftingProps {
     recipes: ItemCraftRecipe[];
+    profileReady: boolean;
     completedQuests: Record<string, boolean>;
     stationLevels: Record<string, number>;
     gameEdition: GameEdition | null;
@@ -27,6 +28,7 @@ interface ItemDetailCraftingProps {
 
 export function ItemDetailCrafting({
     recipes,
+    profileReady,
     completedQuests,
     stationLevels,
     gameEdition,
@@ -37,7 +39,8 @@ export function ItemDetailCrafting({
     onRetryProfit,
     outputItem,
 }: ItemDetailCraftingProps) {
-    const sorted = [...recipes].sort((a, b) =>
+    // Availability ordering depends on the profile; keep level order until it loads.
+    const sorted = [...recipes].sort((a, b) => !profileReady ? a.level - b.level :
         Number(isCraftAvailable(b, completedQuests, stationLevels, gameEdition)) -
             Number(isCraftAvailable(a, completedQuests, stationLevels, gameEdition)) ||
         a.level - b.level,
@@ -71,8 +74,8 @@ export function ItemDetailCrafting({
                                         <span className="text-sm font-medium text-foreground">
                                             {recipe.station.name} level {recipe.level}
                                         </span>
-                                        <AvailabilityBadge available={available} />
-                                        {!available && (
+                                        {profileReady && <AvailabilityBadge available={available} />}
+                                        {profileReady && !available && (
                                             <LockedReasons
                                                 recipe={recipe}
                                                 stationMet={stationMet}

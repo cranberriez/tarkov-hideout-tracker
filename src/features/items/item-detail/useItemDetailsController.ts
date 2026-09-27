@@ -10,36 +10,48 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { formatRelativeUpdatedAt } from "@/lib/utils/format-time";
 import { computeNeeds } from "@/lib/utils/item-needs";
 import { deriveQuestAnyOfGroups, deriveQuestItemState } from "@/lib/quests/quest-item-index";
-import { toTarkovJsonGameMode } from "@/lib/game-mode";
+import { toTarkovJsonGameMode, type TarkovJsonGameMode } from "@/lib/game-mode";
+import { useUserStoreHydrated } from "@/lib/query/game-data";
 import { createRecipeCalculator } from "@/lib/price-calculation";
 import { useManualPriceOverrides } from "@/features/profit-pages/useManualPriceOverrides";
 import { hasItemMarketData } from "./ItemDetailMarket";
 import { summarizeItemDetailDemand } from "./item-detail-summary";
 import { buildStationRequirements, mergeItemDetailItems } from "./item-detail-data";
-import { useItemDetailRequestController } from "./useItemDetailRequestController";
+import { useItemDetailRequestController, type InitialItemDetailViews } from "./useItemDetailRequestController";
 import { useItemPrices } from "../useItemPrices";
 import { isPriceItemId } from "@/lib/query/price-contract";
+import { useUIStore } from "@/lib/stores/useUIStore";
+import { useItemDetailNavigationController } from "./useItemDetailNavigationController";
 
 /**
- * Item data and derived values for the item page.
- * `knownItems` seeds summaries already on hand (the route item);
+ * Item data and derived values shared by the item dialog and the item page.
+ * `knownItems` seeds summaries already on hand (the opened items or route item);
  * `enabled` gates the mode-aware detail requests.
  */
 export function useItemDetailsController({
     activeItemId,
     knownItems,
     enabled,
+    mode,
+    initialViews,
 }: {
     activeItemId: string;
     knownItems: readonly ItemSummary[];
     enabled: boolean;
+    /** Route data mode (item page); the dialog follows the active profile's mode. */
+    mode?: TarkovJsonGameMode;
+    initialViews?: InitialItemDetailViews;
 }) {
     const isOpen = enabled;
-    const store = useUserStore();
+    const liveStore = useUserStore();
+    // Rows always render from item data; profile-dependent values use the initial profile
+    // until the saved one loads, so server HTML and the hydration render agree.
+    const profileReady = useUserStoreHydrated();
+    const store = profileReady ? liveStore : { ...useUserStore.getInitialState(), addItemCounts: liveStore.addItemCounts };
     const { overrides } = useManualPriceOverrides(store.gameMode);
     const { craftingSkillLevel, hideoutManagementSkillLevel } = useProfitOptions(store.gameMode);
-    const tarkovMode = toTarkovJsonGameMode(store.gameMode);
-    const requests = useItemDetailRequestController({ activeItemId, isOpen, mode: tarkovMode });
+    const tarkovMode = mode ?? toTarkovJsonGameMode(store.gameMode);
+    const requests = useItemDetailRequestController({ activeItemId, isOpen, mode: tarkovMode, initial: initialViews });
     const itemRelations = requests.relations;
     const itemUsage = requests.usage;
     const acquisitionTree = requests.tree;
@@ -334,6 +346,7 @@ export function useItemDetailsController({
         showSidebar,
         debugData,
         isDevelopment: process.env.NODE_ENV === "development",
+        profileReady,
         stationLevels: store.stationLevels,
         hiddenStations: store.hiddenStations,
         completedQuests: store.completedQuests,
@@ -358,5 +371,39 @@ export function useItemDetailsController({
         profitError: requests.treeError ?? priceError,
         priceError,
         retryProfit: requests.retryTree,
+    };
+}
+
+/**
+ * Dialog adapter: in-dialog Back history and close behavior around the shared
+ * details controller. Item links inside the dialog reopen it through the UI store,
+ * which the navigation controller records as a history push.
+ */
+export function useItemDetailModalController({
+    item,
+    isOpen,
+    onClose,
+}: {
+    item: ItemSummary | null;
+    isOpen: boolean;
+    onClose: () => void;
+}) {
+    const navigation = useItemDetailNavigationController({ item, isOpen, onClose });
+    const { activeItemId, navigatedItemsById } = navigation;
+    const openedItems = useUIStore((state) => state.itemDetailKnownItems);
+    const knownItems = useMemo(
+        () => [...Object.values(openedItems), ...(item ? [item] : []), ...Object.values(navigatedItemsById)],
+        [item, navigatedItemsById, openedItems],
+    );
+    const details = useItemDetailsController({ activeItemId, knownItems, enabled: isOpen });
+    return {
+        ...details,
+        showDebug: navigation.debugItemId === details.selectedItemId,
+        previousItem: navigation.previousItem,
+        close: navigation.close,
+        back: navigation.back,
+        toggleDebug() {
+            navigation.toggleDebug(details.selectedItemId);
+        },
     };
 }

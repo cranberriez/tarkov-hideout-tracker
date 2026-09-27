@@ -8,6 +8,7 @@ import type {
     QuestRewardLink,
 } from "@/lib/quests/quest-item-index";
 import { QuestLink } from "@/components/entities/quest-link";
+import { useUserStoreHydrated } from "@/lib/query/game-data";
 import { hasDisplayQuestLevel } from "@/lib/quests/quest-display";
 import type { ItemSummary } from "@/types/items";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
@@ -109,7 +110,7 @@ function QuestRow({
     itemImageLink?: string;
 }) {
     const standardCount = quest.requiredCount - quest.requiredFirCount;
-    const isCompleted = quest.status === "completed";
+    const isCompleted = useUserStoreHydrated() && quest.status === "completed";
 
     return (
         <div className="bg-shadow/10 px-3 py-2.5 hover:bg-highlight/[0.02]">
@@ -170,7 +171,7 @@ function AnyOfGroupRow({
     selectedItemId: string;
     itemDetailsById: Record<string, ItemSummary>;
 }) {
-    const isCompleted = group.status === "completed";
+    const isCompleted = useUserStoreHydrated() && group.status === "completed";
     const groupItems = group.itemIds
         .map((itemId) => itemDetailsById[itemId])
         .filter((item): item is ItemSummary => !!item);
@@ -261,13 +262,16 @@ function AnyOfGroupRow({
     );
 }
 
+/** Profile-dependent status: hidden until the saved profile loads (and in server HTML). */
 function QuestStatus({ status }: { status: DerivedQuestItemQuest["status"] }) {
+    const profileReady = useUserStoreHydrated();
     const styles = {
         available: "bg-info/10 text-info",
         future: "bg-warning/10 text-warning",
         completed: "bg-success/10 text-success",
         ignored: "bg-highlight/5 text-muted-foreground",
     };
+    if (!profileReady) return null;
     return (
         <span className={`rounded-md px-1.5 py-0.5 text-[10px] capitalize ${styles[status]}`}>
             {status}

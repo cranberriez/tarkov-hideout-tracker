@@ -33,8 +33,16 @@ function scopedItemViewQueryOptions<T>({ mode, itemId, domain, path, complete, p
     });
 }
 
+export function isCompleteItemRelations(payload: ItemRelationsPayload) {
+    return Object.values(payload.errors).every((error) => error === null);
+}
+
+export function isCompleteItemAcquisition(payload: ItemAcquisitionTreeData) {
+    return Object.values(payload.errors).every((error) => error === null);
+}
+
 export function itemRelationsQueryOptions(mode: TarkovJsonGameMode, itemId: string) {
-    return scopedItemViewQueryOptions<ItemRelationsPayload>({ mode, itemId, domain: "relations", path: "relations", complete: (payload) => Object.values(payload.errors).every((error) => error === null), partialMessage: "Some hideout or quest relations are unavailable." });
+    return scopedItemViewQueryOptions<ItemRelationsPayload>({ mode, itemId, domain: "relations", path: "relations", complete: isCompleteItemRelations, partialMessage: "Some hideout or quest relations are unavailable." });
 }
 
 export function itemUsageQueryOptions(mode: TarkovJsonGameMode, itemId: string) {
@@ -42,5 +50,5 @@ export function itemUsageQueryOptions(mode: TarkovJsonGameMode, itemId: string) 
 }
 
 export function itemAcquisitionQueryOptions(mode: TarkovJsonGameMode, itemId: string) {
-    return scopedItemViewQueryOptions<ItemAcquisitionTreeData>({ mode, itemId, domain: "acquisition", path: "acquisition-tree", complete: (payload) => Object.values(payload.errors).every((error) => error === null), partialMessage: "Some profit recommendation data is unavailable." });
+    return scopedItemViewQueryOptions<ItemAcquisitionTreeData>({ mode, itemId, domain: "acquisition", path: "acquisition-tree", complete: isCompleteItemAcquisition, partialMessage: "Some profit recommendation data is unavailable." });
 }

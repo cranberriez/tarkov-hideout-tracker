@@ -60,7 +60,7 @@ development fixture opts in with `?q=dev-test`, which is fetched client-side onl
 
 The outer [QuestActionsContext](../src/features/quests/QuestActionsContext.tsx) still owns
 shared quest actions and cascade confirmation; standard items in objectives and
-rewards are `ItemLink`s to their pages, and quest references are `QuestLink`s.
+rewards are `ItemLink`s that open the item dialog, and quest references are `QuestLink`s.
 It remains part of the current page. [quest-data-index](../src/features/quests/quest-data-index.ts)
 provides the shared pure indexes consumed by both providers.
 Start here for new quest UI; inspect current imports before editing older quest
@@ -81,7 +81,7 @@ The workspace loads planner and visualizer component code on demand, with a
 loading indicator in the selected pane. Shared quest indexes remain available
 for complete prerequisite and filter derivation.
 Pan/zoom and temporary map expansion stay in session memory. Standard items link
-to their [item pages](architecture.md#shared-ui-vocabulary-and-entity-links); quest-only pickups are
+open the [item-detail dialog](architecture.md#shared-ui-vocabulary-and-entity-links); quest-only pickups are
 informational. Persistent filter additions must follow [user-state](user-state.md).
 
 ## Log import
@@ -130,6 +130,6 @@ section for mode and mobile behavior.
 ## Current-price requests
 
 The quest workspace uses unpriced item summaries and makes no current-price
-requests. Opening an item page loads that item's and its recipes' prices through the
+requests. Opening an item's details loads that item's and its recipes' prices through the
 [shared price cache](data-layer.md). No player progression or
 quest filtering behavior depends on those prices.

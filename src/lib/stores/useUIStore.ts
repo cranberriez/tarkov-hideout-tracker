@@ -35,6 +35,12 @@ interface UIState {
     isLegacyProfileConversionOpen: boolean;
     setLegacyProfileConversionOpen: (isOpen: boolean) => void;
 
+    /** Item shown by the global item-detail dialog; opening another while open pushes dialog history. */
+    itemDetailItem: ItemSummary | null;
+    /** Summaries opened during this dialog session, so Back can show earlier items immediately. */
+    itemDetailKnownItems: Record<string, ItemSummary>;
+    openItemDetail: (item: ItemSummary) => void;
+    closeItemDetail: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -55,4 +61,17 @@ export const useUIStore = create<UIState>((set) => ({
     setLegacyProfileConversionOpen: (isOpen) =>
         set({ isLegacyProfileConversionOpen: isOpen }),
 
+    itemDetailItem: null,
+    itemDetailKnownItems: {},
+    openItemDetail: (item) => set((state) => {
+        const known = state.itemDetailItem ? state.itemDetailKnownItems : {};
+        // Keep richer summaries (prices, categories) over partial link data.
+        const merged = { ...item, ...known[item.id], ...stripUndefined(item) };
+        return { itemDetailItem: merged, itemDetailKnownItems: { ...known, [item.id]: merged } };
+    }),
+    closeItemDetail: () => set({ itemDetailItem: null, itemDetailKnownItems: {} }),
 }));
+
+function stripUndefined<T extends object>(value: T): Partial<T> {
+    return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as Partial<T>;
+}

@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { itemHref } from "@/lib/entity-routes";
+import { useUIStore } from "@/lib/stores/useUIStore";
 import { useProfitPricingContext } from "./ProfitPricingContext";
 import Image from "next/image";
 import { ExternalLink } from "lucide-react";
@@ -386,7 +385,7 @@ export function RecipeItem({
   );
 }
 
-/** Real link to the item page; the recipe hover card (not EntityPreview) is its preview. */
+/** Opens the item dialog; the recipe hover card (not EntityPreview) is its preview. */
 function RecipeItemLink({
   item,
   linkProps,
@@ -394,19 +393,25 @@ function RecipeItemLink({
   children,
 }: {
   item?: ItemSummary;
-  linkProps: Omit<React.ComponentProps<typeof Link>, "href">;
+  linkProps: Pick<React.ComponentProps<"button">, "onClick" | "onFocus" | "onBlur" | "onKeyDown">;
   className: string;
   children: React.ReactNode;
 }) {
+  const openItemDetail = useUIStore((state) => state.openItemDetail);
   if (!item) return <span className={className}>{children}</span>;
   return (
-    <Link
+    <button
       {...linkProps}
-      href={itemHref(item.id)}
+      type="button"
+      aria-haspopup="dialog"
+      onClick={(event) => {
+        linkProps.onClick?.(event);
+        openItemDetail(item);
+      }}
       aria-label={`Open ${item.name} details`}
-      className={`${className} focus-visible:outline-2 focus-visible:outline-brand`}
+      className={`${className} cursor-pointer focus-visible:outline-2 focus-visible:outline-brand`}
     >
       {children}
-    </Link>
+    </button>
   );
 }

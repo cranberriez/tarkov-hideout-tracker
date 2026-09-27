@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Clock } from "lucide-react";
@@ -9,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataNotice } from "@/components/ui/data-notice";
 import { DetailSection } from "@/components/ui/detail-section";
-import { itemHref } from "@/lib/entity-routes";
+import { ItemLink } from "@/components/entities/item-link";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { isTrackedCraft } from "@/lib/price-calculation/craft-rules";
 import { useGameDataEnabled } from "@/lib/query/game-data";
@@ -100,13 +99,12 @@ function CraftItem({ amount, item, showName = false }: { amount: ItemAmountRef; 
     );
     if (!item) return <span title={label} className="flex items-center gap-2">{content}</span>;
     return (
-        <Link
-            href={itemHref(item.id)}
-            title={`${amount.count} × ${label}`}
+        <ItemLink
+            item={item}
             aria-label={showName ? undefined : `${amount.count} × ${label}`}
             className="flex items-center gap-2 rounded-sm transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-brand"
         >
             {content}
-        </Link>
+        </ItemLink>
     );
 }

@@ -20,6 +20,7 @@ export interface StationRequirementEntry {
 interface ItemDetailHideoutRequirementsProps {
     selectedItemImageLink?: string;
     stationRequirements: [string, StationRequirementEntry[]][];
+    profileReady: boolean;
     stationLevels: Record<string, number>;
     hiddenStations: Record<string, boolean>;
 }
@@ -27,6 +28,7 @@ interface ItemDetailHideoutRequirementsProps {
 export function ItemDetailHideoutRequirements({
     selectedItemImageLink,
     stationRequirements,
+    profileReady,
     stationLevels,
     hiddenStations,
 }: ItemDetailHideoutRequirementsProps) {
@@ -137,8 +139,8 @@ export function ItemDetailHideoutRequirements({
                                             isRoomyLayout ? "text-xs" : "text-[10px]"
                                         }`}
                                     >
-                                        <span>Current {currentLevel}</span>
-                                        {isHidden && (
+                                        {profileReady && <span>Current {currentLevel}</span>}
+                                        {profileReady && isHidden && (
                                             <span className="flex items-center gap-0.5 text-danger">
                                                 <EyeOff size={9} /> Hidden
                                             </span>

@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { ChevronRight } from "lucide-react";
+import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import type { ItemSummary } from "@/types/items";
+import type { InitialItemDetailViews } from "./useItemDetailRequestController";
 import { ItemDetailHeader } from "./ItemDetailHeader";
 import { ItemDetailSidebar } from "./ItemDetailSidebar";
 import { ItemDetailUsageTabs } from "./ItemDetailUsageTabs";
@@ -13,9 +15,14 @@ import { useItemDetailsController } from "./useItemDetailsController";
  * `/items/[itemId]` composition. Reuses the item-detail sections without dialog
  * semantics, viewport caps, or in-dialog history: related items are page links.
  */
-export function ItemDetailsPage({ item }: { item: ItemSummary }) {
+export function ItemDetailsPage({ item, mode, initialViews }: {
+    item: ItemSummary;
+    /** Server data mode, so hydrated views render before the saved profile loads. */
+    mode: TarkovJsonGameMode;
+    initialViews?: InitialItemDetailViews;
+}) {
     const knownItems = useMemo(() => [item], [item]);
-    const vm = useItemDetailsController({ activeItemId: item.id, knownItems, enabled: true });
+    const vm = useItemDetailsController({ activeItemId: item.id, knownItems, enabled: true, mode, initialViews });
     const selectedItem = vm.selectedItem ?? item;
 
     return (
@@ -56,6 +63,7 @@ export function ItemDetailsPage({ item }: { item: ItemSummary }) {
                     )}
                     <ItemDetailUsageTabs
                         contained={false}
+                        renderInactivePanels
                         className="min-h-80"
                         selectedItemId={selectedItem.id}
                         selectedItemImageLink={selectedItem.iconLink ?? selectedItem.gridImageLink}
@@ -76,6 +84,7 @@ export function ItemDetailsPage({ item }: { item: ItemSummary }) {
                         craftError={vm.craftError}
                         onRetryAcquisition={vm.retryUsage}
                         acquisitionWarning={vm.usagePresentationError}
+                        profileReady={vm.profileReady}
                         completedQuests={vm.completedQuests}
                         traderLoyaltyLevels={vm.traderLoyaltyLevels}
                         gameEdition={vm.gameEdition}

@@ -1,0 +1,23 @@
+.track {
+    height: 3px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--highlight) 10%, transparent);
+}
+
+.signal {
+    height: 100%;
+    width: 40%;
+    border-radius: inherit;
+    background: var(--brand);
+    animation: travel 1.2s ease-in-out infinite;
+}
+
+@keyframes travel {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(350%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .signal { animation: none; width: 100%; opacity: 0.6; }
+}
