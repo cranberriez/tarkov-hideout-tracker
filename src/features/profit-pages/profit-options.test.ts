@@ -8,6 +8,7 @@ import {
 } from "./profit-options";
 
 test("malformed and non-object payloads restore defaults", () => {
+	assert.equal(DEFAULT_PROFIT_OPTIONS.availableOnly, false);
 	for (const raw of [null, "{", "null", "[]", "true", '"text"', "42"]) {
 		assert.deepEqual(parseProfitOptions(raw), DEFAULT_PROFIT_OPTIONS);
 	}
@@ -88,9 +89,9 @@ test("storage failures retain edits in memory without affecting another mode", (
 	};
 	const pvp = createProfitOptionsStore("PVP", unavailable);
 	const pve = createProfitOptionsStore("PVE", unavailable);
-	pvp.setOption("availableOnly", false);
-	assert.equal(pvp.getSnapshot().availableOnly, false);
-	assert.equal(pve.getSnapshot().availableOnly, true);
+	pvp.setOption("availableOnly", true);
+	assert.equal(pvp.getSnapshot().availableOnly, true);
+	assert.equal(pve.getSnapshot().availableOnly, false);
 
 	const readOnly = createProfitOptionsStore("KORD", () => ({
 		getItem: () => null,

@@ -73,7 +73,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 	);
 	const [targetRecipeId, setTargetRecipeId] = useState<string | null>(initialTargetRecipeId ?? null);
 	const [scrollRequestId, setScrollRequestId] = useState(0);
-	const [sortKey, setSortKey] = useState<SortKey>("profitPerHour");
+	const [sortKey, setSortKey] = useState<SortKey>(kind === "barter" ? "profit" : "profitPerHour");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("descending");
 	const calculatorInput = useMemo(
 		() => ({

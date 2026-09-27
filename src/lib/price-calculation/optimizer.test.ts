@@ -371,7 +371,7 @@ test("compares flea and trader sales in roubles while retaining trader currency"
 	assert.equal(comparison.bestTraderOffer?.currency, "USD");
 });
 
-test("cyclic recipes terminate as unavailable", () => {
+test("cyclic recipes terminate at the locked flea fallback", () => {
 	const craftX: CraftRecord = {
 		id: "craft-x",
 		productItemId: "X",
@@ -400,7 +400,10 @@ test("cyclic recipes terminate as unavailable", () => {
 		craftsByItemId: { X: [craftX], Y: [craftY] },
 	});
 
-	assert.equal(optimizer.optimize("X").method, "unavailable");
+	const plan = optimizer.optimize("X");
+	assert.equal(plan.method, "flea");
+	assert.equal(plan.totalCost, null);
+	assert.equal(plan.lockReasons?.some((reason) => reason.message === "No accessible priced acquisition route"), true);
 });
 
 test("zero-input production is not treated as a free ingredient source", () => {
@@ -624,7 +627,7 @@ test("crafting skill reduces root and nested times, caps Elite, and exempts Bitc
 	assert.equal(nested.duration, 3600);
 });
 
-test("uses sale value as the opportunity cost when an ingredient has no accessible acquisition route", () => {
+test("defaults a locked ingredient to flea and keeps sell value as a manual last-resort option", () => {
 	const foundInRaid: ItemSummary = {
 		id: "B",
 		name: "Found in raid input",
@@ -648,17 +651,26 @@ test("uses sale value as the opportunity cost when an ingredient has no accessib
 	const input = { itemsById: { A: item("A", 100), B: foundInRaid }, crafts: [craft], barters: [] };
 
 	const evaluation = createRecipeCalculator(input).evaluateCraft(craft);
-	assert.equal(evaluation.requiredItems[0].method, "sell");
-	assert.equal(evaluation.requiredItems[0].totalCost, 120);
-	assert.equal(evaluation.cost, 120);
-	assert.equal(evaluation.profit, -20);
+	assert.equal(evaluation.requiredItems[0].method, "flea");
+	assert.equal(evaluation.requiredItems[0].totalCost, null);
+	assert.equal(evaluation.requiredItems[0].lockReasons?.[0]?.message, "Not on flea");
+	assert.deepEqual(evaluation.requiredItems[0].alternatives.map((route) => route.method), ["sell"]);
+	assert.equal(evaluation.cost, null);
+	assert.equal(evaluation.profit, null);
+
+	const sellValue = withRequiredItemRoute(evaluation, 0, "sell:direct");
+	assert.equal(sellValue.requiredItems[0].method, "sell");
+	assert.equal(sellValue.requiredItems[0].lockReasons, undefined);
+	assert.equal(sellValue.requiredItems[0].totalCost, 120);
+	assert.equal(sellValue.cost, 120);
+	assert.equal(sellValue.profit, -20);
 
 	const overridden = createRecipeCalculator({ ...input, overrides: { B: { buy: 25 } } }).evaluateCraft(craft);
 	assert.equal(overridden.requiredItems[0].method, "flea");
 	assert.equal(overridden.cost, 50);
 });
 
-test("uses trader sale value when flea pricing is unavailable and no other acquisition route exists", () => {
+test("offers trader sale value without replacing the locked flea fallback", () => {
 	const itemWithNoRoute: ItemSummary = {
 		id: "A",
 		name: "A",
@@ -674,8 +686,42 @@ test("uses trader sale value when flea pricing is unavailable and no other acqui
 		3,
 	);
 
-	assert.equal(plan.method, "sell");
-	assert.equal(plan.totalCost, 225);
+	assert.equal(plan.method, "flea");
+	assert.equal(plan.totalCost, null);
+	assert.deepEqual(plan.alternatives.map((route) => [route.method, route.totalCost]), [["sell", 225]]);
+});
+
+test("does not offer sell value when another acquisition method exists but is locked", () => {
+	const lockedTraderItem: ItemSummary = {
+		id: "A",
+		name: "A",
+		normalizedName: "a",
+		onFleaMarket: false,
+		marketPrice: {
+			avg24hPrice: 100,
+			sellFor: [{ vendor: { name: "Trader", normalizedName: "trader" }, priceRUB: 75 }],
+		},
+		buyFromTrader: [
+			{
+				traderId: "trader",
+				minTraderLevel: 2,
+				price: 50,
+				priceRUB: 50,
+				currency: "RUB",
+				currencyItemId: "roubles",
+			},
+		],
+	};
+	const plan = createRecipeCalculator({
+		itemsById: { A: lockedTraderItem },
+		crafts: [],
+		barters: [],
+		traderLoyaltyLevels: { trader: 1 },
+	}).evaluateNode("A");
+
+	assert.equal(plan.method, "flea");
+	assert.equal(plan.lockedAlternatives?.some((route) => route.method === "trader"), true);
+	assert.equal(plan.alternatives.some((route) => route.method === "sell"), false);
 });
 
 test("calculator excludes passive Bitcoin production and prices skill-adjusted Superwater filters", () => {

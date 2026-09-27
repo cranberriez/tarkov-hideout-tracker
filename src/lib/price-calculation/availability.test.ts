@@ -51,7 +51,8 @@ test("nested crafts with unavailable tools fall back without charging recurring 
 	);
 	const hypothetical = calculator.evaluateCraft(nested);
 	assert.equal(hypothetical.cost, 10);
-	assert.equal(hypothetical.requiredItems.find((plan) => plan.isTool)?.method, "unavailable");
+	assert.equal(hypothetical.requiredItems.find((plan) => plan.isTool)?.method, "flea");
+	assert.equal((hypothetical.requiredItems.find((plan) => plan.isTool)?.lockReasons?.length ?? 0) > 0, true);
 	const unlocked = createRecipeCalculator({ ...input, completedQuests: { "tool-quest": true } }).evaluateCraft(parent);
 	assert.equal(unlocked.requiredItems[0].method, "craft");
 	assert.equal(unlocked.cost, 10);
@@ -118,7 +119,8 @@ test("nested inaccessible recipes fall back and retain quest/station reasons thr
 		...input,
 		itemsById: { ...input.itemsById, A: { ...item("A"), onFleaMarket: false, marketPrice: { avg24hPrice: 100 } } },
 	}).evaluateNode("A");
-	assert.equal(unavailable.totalCost, null);
+	assert.equal(unavailable.method, "flea");
+	assert.equal(unavailable.totalCost, 100);
 	assert.equal(
 		unavailable.lockReasons?.some((r) => r.questId === "quest"),
 		true,
@@ -288,15 +290,16 @@ test("locked trader price metadata is display-only and rejects invalid estimates
 	}
 });
 
-test("locked flea estimates without a sale value never supply ingredients or win selection", () => {
+test("locked flea estimates become the display fallback without becoming accessible", () => {
 	const calculator = createRecipeCalculator({
 		itemsById: { A: { ...item("A", 123), onFleaMarket: false, marketPrice: { avg24hPrice: 123 } } },
 		crafts: [],
 		barters: [],
 	});
 	const plan = calculator.evaluateNode("A", 3);
-	assert.equal(plan.method, "unavailable");
-	assert.equal(plan.totalCost, null);
+	assert.equal(plan.method, "flea");
+	assert.equal(plan.totalCost, 369);
+	assert.equal(plan.lockReasons?.[0]?.message, "Not on flea");
 	assert.equal(plan.lockedAlternatives?.find((route) => route.method === "flea")?.estimatedUnitPrice, 123);
 });
 
@@ -381,7 +384,7 @@ test("propagated diagnostics deduplicate shared reasons without merging distinct
 		barters: [],
 	});
 	const plan = calculator.evaluateNode("A");
-	assert.equal(plan.method, "unavailable");
+	assert.equal(plan.method, "flea");
 	const propagated = plan.lockedAlternatives?.find((r) => r.sourceId === "parent")?.lockReasons ?? [];
 	assert.deepEqual(
 		propagated.filter((r) => r.kind === "quest").map((r) => r.questId),

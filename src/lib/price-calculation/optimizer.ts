@@ -151,11 +151,10 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
 			}
 		}
 
-		// Items without an accessible acquisition route are generally supplied
-		// from raid. Consuming one still costs the value the player gives up by
-		// not selling it, so use that opportunity value instead of leaving the
-		// recipe unpriced.
-		if (candidates.length === 0) {
+		// Sell value is a manual opportunity-cost option only for items that have
+		// no trader, barter, or craft acquisition method. Flea remains the default
+		// fallback below, including when that flea route is locked.
+		if (candidates.length === 0 && !lockedAlternatives.some((candidate) => candidate.method !== "flea")) {
 			const sale = getItemSellComparison(
 				context.itemsById[itemId],
 				overrides,
@@ -174,6 +173,15 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
 						children: [],
 					});
 				}
+			}
+		}
+
+		if (!candidates.some((candidate) => candidate.method !== "sell")) {
+			const lockedFlea = lockedAlternatives.find((candidate) => candidate.method === "flea");
+			if (lockedFlea) {
+				const plan = lockedFleaFallbackPlan(itemId, normalizedQuantity, lockedFlea, lockedAlternatives, candidates);
+				memo.set(memoKey, plan);
+				return plan;
 			}
 		}
 
@@ -270,17 +278,18 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
 		// Tools must be obtainable to execute a nested craft, even though their
 		// acquisition cost is excluded from recurring production costs.
 		const unavailableTools =
-			kind === "craft" ? children.filter((child) => child.isTool && child.method === "unavailable") : [];
+			kind === "craft" ? children.filter((child) => child.isTool && !isAccessiblePlan(child)) : [];
 		if (unavailableTools.length) {
 			lockReasons.push(...unavailableTools.flatMap((tool) => tool.lockReasons ?? []));
 			return reject("Required reusable tool has no accessible acquisition route");
 		}
-		const totalCost = sumPlanCost(children, "totalCost");
-		const theoreticalCost = sumPlanCost(children, "theoreticalCost");
+		const hasUnavailableIngredients = children.some((child) => !child.isTool && !isAccessiblePlan(child));
+		const totalCost = hasUnavailableIngredients ? null : sumPlanCost(children, "totalCost");
+		const theoreticalCost = hasUnavailableIngredients ? null : sumPlanCost(children, "theoreticalCost");
 		if (totalCost === null || theoreticalCost === null) {
 			lockReasons.push(
 				...children
-					.filter((child) => !child.isTool && child.totalCost === null)
+					.filter((child) => !child.isTool && !isAccessiblePlan(child))
 					.flatMap((child) => child.lockReasons ?? []),
 			);
 			return reject("Recipe ingredients have no accessible priced route");
@@ -315,6 +324,10 @@ function isSameCandidate(left: Candidate, right: Candidate) {
 
 function isDirectCandidate(candidate: Candidate) {
 	return candidate.method === "flea" || candidate.method === "trader";
+}
+
+function isAccessiblePlan(plan: AcquisitionPlan) {
+	return plan.method !== "unavailable" && plan.totalCost !== null && !plan.lockReasons?.length;
 }
 
 function traderCandidateId(itemId: string, offer: TraderPurchaseOffer, index: number) {
@@ -407,6 +420,37 @@ function toAcquisitionAlternative(candidate: Candidate): AcquisitionAlternative 
 		theoreticalCost: candidate.theoreticalCost,
 		durationSeconds: candidate.durationSeconds,
 		children: candidate.children,
+	};
+}
+
+function lockedFleaFallbackPlan(
+	itemId: string,
+	quantity: number,
+	lockedFlea: LockedAcquisitionAlternative,
+	lockedAlternatives: LockedAcquisitionAlternative[],
+	alternatives: Candidate[],
+): AcquisitionPlan {
+	const totalCost =
+		lockedFlea.estimatedUnitPrice === undefined ? null : lockedFlea.estimatedUnitPrice * quantity;
+	return {
+		itemId,
+		quantity,
+		lockedAlternatives,
+		lockReasons: uniqueLockReasons([
+			...lockedAlternatives.flatMap((route) => route.lockReasons),
+			{ kind: "unavailable", message: "No accessible priced acquisition route" },
+		]),
+		method: "flea",
+		batches: 1,
+		totalCost,
+		selectedRouteTheoreticalCost: totalCost ?? undefined,
+		theoreticalCost: totalCost,
+		theoreticalMethod: "flea",
+		directBuyCost: null,
+		directBuyMethod: null,
+		durationSeconds: 0,
+		children: [],
+		alternatives: alternatives.map(toAcquisitionAlternative),
 	};
 }
 

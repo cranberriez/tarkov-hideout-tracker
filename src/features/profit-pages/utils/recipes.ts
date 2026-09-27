@@ -164,6 +164,7 @@ export function selectAcquisitionRoute(plan: AcquisitionPlan, routeKey: string):
 		.sort((left, right) => left.totalCost - right.totalCost)[0];
 	return {
 		...plan,
+		lockReasons: undefined,
 		method: selected.method,
 		sourceId: selected.sourceId,
 		traderOffer: selected.traderOffer,

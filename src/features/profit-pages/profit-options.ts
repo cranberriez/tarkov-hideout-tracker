@@ -21,7 +21,7 @@ export interface ProfitOptions {
 export const DEFAULT_PROFIT_OPTIONS: ProfitOptions = {
 	craftingSkillLevel: 0,
 	hideoutManagementSkillLevel: 0,
-	availableOnly: true,
+	availableOnly: false,
 	profitableOnly: false,
 	useTraderSaleForLockedOutputs: true,
 	allowCrafts: true,

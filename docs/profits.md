@@ -38,7 +38,8 @@ rather than selecting routes independently.
   separate from barter records. Loyalty and task unlocks gate eligibility.
 - Flea access uses the active player's level and the item's `onFleaMarket` and
   `minLevelForFlea` metadata, with a minimum player level of 15. Locked flea
-  purchases cannot supply ingredients. Manual prices remain explicit overrides.
+  purchases remain the displayed fallback but cannot supply nested recipes.
+  Manual prices remain explicit overrides.
 - Crafts and barters may recursively supply ingredients. Batch quantities round
   up; cycle/depth guards bound traversal. Tools are reusable and excluded from
   recurring cost and opportunity-value calculations. A nested craft still requires
@@ -52,12 +53,12 @@ rather than selecting routes independently.
 - Passive Bitcoin Farm production and the Water Collector's same-item bottled-water
   refill are excluded from the normalized craft graph and therefore do not appear
   as craft rows or recursive acquisition routes.
-- When an ingredient has no accessible priced acquisition route but does have a
-  usable sale value, its acquisition cost falls back to that opportunity value:
+- When an ingredient has no trader, barter, or craft acquisition method, a usable
+  sale value remains available as a manual **(sell value)** opportunity-cost route:
   the money forgone by consuming a primarily found-in-raid item instead of selling
-  it. Profit pages and item-detail recipes label this route **(sell value)**. If
-  neither an acquisition route nor a sale source is usable, costs, sale values and
-  dependent profit figures remain null. Unstable estimates continue to
+  it. The page still defaults to flea, even when flea is locked or unpriced, and
+  never automatically switches back to sell value. If the selected route cannot
+  be priced, dependent profit figures remain null. Unstable estimates continue to
   price both recipe inputs and outputs. `sellValueIsEstimate` marks a selected
   unstable flea sale; `sellSourceLabel` names the selected source. Manual sales
   and selected trader sales do not carry the instability warning.
@@ -109,13 +110,15 @@ flea, quest, trader loyalty, and station lock reasons. Recipe quest checks use
 IDs; they do not scan quest rewards. The page resolves only those known quest IDs
 for compact name/link presentation. Missing names remain explicit and never
 remove unlock requirements. Quest reasons show **Complete Quest:** above the
-linked quest name. These checks also apply recursively to ingredient routes. The optimizer
-selects the next usable source and retains locked alternatives for manual
-inspection with explanatory reason rows. Players may explicitly select a locked
+linked quest name. These checks also apply recursively to ingredient routes. The
+optimizer selects the next usable source and retains locked alternatives for manual
+inspection with explanatory reason rows. When no usable source remains, flea is
+the displayed fallback even if locked. Players may explicitly select a locked
 source to view its known hypothetical cost and recipe chain, but locked sources
-never become automatic recommendations or eligible recursive inputs. If every
-route fails, ingredient costs and dependent profits remain unknown and the
-ingredient displays a red lock reason.
+never become eligible recursive inputs. Sell value is offered only when no trader,
+barter, or craft method exists, and selecting it is retained by the page's route
+selection. If the selected route cannot be priced, ingredient costs and dependent
+profit figures remain unknown and the ingredient displays a red lock reason.
 
 Outputs that cannot be sold on the flea have a red background and lock indicator,
 even when they can be sold to a trader. The vendor fallback option uses the best
@@ -126,7 +129,8 @@ recipes** filter covers recipe locks, flea output locks, and unavailable ingredi
 routes. Separate filters hide flea-sale, quest, vendor, or station locks. These
 options persist per app mode and are shared by both profit pages, independently
 of saved progress and price overrides. The menu groups list filters, availability,
-output valuation, and ingredient sources.
+output valuation, and ingredient sources. **Hide locked recipes** is off by
+default; an explicitly saved per-mode choice is retained.
 An explicitly linked recipe remains visible with its lock reasons so its profit
 breakdown can still be inspected.
 
@@ -166,7 +170,8 @@ source toggles control whether crafts and barters participate.
 [ProfitPageClient](../src/features/profit-pages/ProfitPageClient.tsx) owns filters,
 evaluation, selection, and modal navigation. [Components](../src/features/profit-pages/components/)
 render sorting, source/availability filters, recipe chains, route alternatives,
-price inputs, and recipe previews. The default metric is descending profit/hour.
+price inputs, and recipe previews. Barters default to descending profit; crafts
+default to descending profit/hour.
 Both routes compose [ProfitPageControls](../src/features/profit-pages/components/ProfitPageControls.tsx)
 from the shared [filter bar kit](../src/components/ui/filter-bar.tsx): local output
 search, trader multi-selection, Options/Skills triggers, and the pinned-crafts toggle.
