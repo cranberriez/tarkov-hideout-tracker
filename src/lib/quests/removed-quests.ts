@@ -6,20 +6,15 @@ const removedQuestIds = new Set<string>(removedQuestData.questIds);
 export const REMOVED_QUEST_IDS = removedQuestIds as ReadonlySet<string>;
 
 export function isRemovedQuestId(questId: string): boolean {
-    return removedQuestIds.has(questId);
+	return removedQuestIds.has(questId);
 }
 
 export function excludeRemovedQuests<T extends { id: string }>(quests: T[]): T[] {
-    return quests.filter((quest) => !isRemovedQuestId(quest.id));
+	return quests.filter((quest) => !isRemovedQuestId(quest.id));
 }
 
-export function prepareQuestsForDisplay(
-    quests: FullQuest[],
-    showRemovedQuests: boolean,
-): FullQuest[] {
-    if (!showRemovedQuests) return excludeRemovedQuests(quests);
+export function prepareQuestsForDisplay(quests: FullQuest[], showRemovedQuests: boolean): FullQuest[] {
+	if (!showRemovedQuests) return excludeRemovedQuests(quests);
 
-    return quests.map((quest) =>
-        isRemovedQuestId(quest.id) ? { ...quest, removed: true } : quest,
-    );
+	return quests.map((quest) => (isRemovedQuestId(quest.id) ? { ...quest, removed: true } : quest));
 }

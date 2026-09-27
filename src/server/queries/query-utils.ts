@@ -6,8 +6,12 @@ import type { CurrentPrice } from "@/types/prices";
 import type { FullQuest } from "@/types/quests";
 import type { BarterRecord, CraftRecord } from "@/types/recipes";
 
-export async function getDefaultRepository(scope?: { mode: TarkovDataMode; releaseId: string }): Promise<TarkovDataRepository> {
-	const { tursoTarkovDataRepository, createTursoRepository } = await import("@/server/repositories/tarkov-data/turso-repository");
+export async function getDefaultRepository(scope?: {
+	mode: TarkovDataMode;
+	releaseId: string;
+}): Promise<TarkovDataRepository> {
+	const { tursoTarkovDataRepository, createTursoRepository } =
+		await import("@/server/repositories/tarkov-data/turso-repository");
 	return scope ? createTursoRepository(scope) : tursoTarkovDataRepository;
 }
 
@@ -16,7 +20,11 @@ export function dedupeIds(ids: Iterable<string>): string[] {
 }
 
 export function getStationItemIds(stations: readonly Station[]): string[] {
-	return dedupeIds(stations.flatMap((station) => station.levels.flatMap((level) => level.itemRequirements.map((requirement) => requirement.itemId))));
+	return dedupeIds(
+		stations.flatMap((station) =>
+			station.levels.flatMap((level) => level.itemRequirements.map((requirement) => requirement.itemId)),
+		),
+	);
 }
 
 export function getQuestReferencedItemIds(quests: readonly FullQuest[]): string[] {

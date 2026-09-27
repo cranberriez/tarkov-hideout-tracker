@@ -1,5 +1,5 @@
 import { RouteLoader } from "@/components/core/RouteLoader";
 
 export default function Loading() {
-    return <RouteLoader page="items" title="Barter Profits" />;
+	return <RouteLoader page="items" title="Barter Profits" />;
 }

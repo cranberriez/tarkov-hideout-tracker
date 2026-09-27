@@ -21,16 +21,16 @@ bounded one-quest read used by `/quests/[questId]` for metadata and not-found
 resolution. It applies the same mode preparation and removed-quest policy. A failed
 read does not 404; the workspace reports its own data errors.
 
-| Change | Source owner |
-|---|---|
-| Prerequisite normalization/status gates | [quest-requirements](../src/server/services/quest-requirements.ts), [quest-availability](../src/lib/quests/quest-availability.ts) |
-| Level, prestige, faction, loyalty, and other gates | [quest-availability](../src/lib/quests/quest-availability.ts), [quest-trader-gates](../src/lib/quests/quest-trader-gates.ts), [quest-trader-completion-gates](../src/lib/quests/quest-trader-completion-gates.ts) |
-| Prepared mode-specific quest set | [quest-preparation](../src/lib/quests/quest-preparation.ts), [removed-quests](../src/lib/quests/removed-quests.ts) |
-| Reviewed faction/series/tab corrections | [quest-faction-overrides](../src/lib/quests/quest-faction-overrides.ts), [quest-series](../src/lib/quests/quest-series.ts), [quest-trader-tab-overrides](../src/lib/quests/quest-trader-tab-overrides.ts), [reviewed data](../src/lib/data/) |
-| LL1–LL4 and Series organization | [quest-organization](../src/lib/quests/quest-organization.ts); display categories do not replace prerequisite relationships |
-| Prerequisite ordering and relationships | [quest-ordering](../src/lib/quests/quest-ordering.ts), [quest-relations](../src/lib/quests/quest-relations.ts) |
-| Failure and completion cascades | [quest-failures](../src/lib/quests/quest-failures.ts), [quest-cascade](../src/features/quests/quest-cascade.ts) |
-| Exact/any-of/broad-any/plant/FiR demand and reward indexes | [quest-item-index](../src/lib/quests/quest-item-index.ts) |
+| Change                                                     | Source owner                                                                                                                                                                                                                                 |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Prerequisite normalization/status gates                    | [quest-requirements](../src/server/services/quest-requirements.ts), [quest-availability](../src/lib/quests/quest-availability.ts)                                                                                                            |
+| Level, prestige, faction, loyalty, and other gates         | [quest-availability](../src/lib/quests/quest-availability.ts), [quest-trader-gates](../src/lib/quests/quest-trader-gates.ts), [quest-trader-completion-gates](../src/lib/quests/quest-trader-completion-gates.ts)                            |
+| Prepared mode-specific quest set                           | [quest-preparation](../src/lib/quests/quest-preparation.ts), [removed-quests](../src/lib/quests/removed-quests.ts)                                                                                                                           |
+| Reviewed faction/series/tab corrections                    | [quest-faction-overrides](../src/lib/quests/quest-faction-overrides.ts), [quest-series](../src/lib/quests/quest-series.ts), [quest-trader-tab-overrides](../src/lib/quests/quest-trader-tab-overrides.ts), [reviewed data](../src/lib/data/) |
+| LL1–LL4 and Series organization                            | [quest-organization](../src/lib/quests/quest-organization.ts); display categories do not replace prerequisite relationships                                                                                                                  |
+| Prerequisite ordering and relationships                    | [quest-ordering](../src/lib/quests/quest-ordering.ts), [quest-relations](../src/lib/quests/quest-relations.ts)                                                                                                                               |
+| Failure and completion cascades                            | [quest-failures](../src/lib/quests/quest-failures.ts), [quest-cascade](../src/features/quests/quest-cascade.ts)                                                                                                                              |
+| Exact/any-of/broad-any/plant/FiR demand and reward indexes | [quest-item-index](../src/lib/quests/quest-item-index.ts)                                                                                                                                                                                    |
 
 Availability is more than a level comparison: preserve required prerequisite
 statuses, failure handling, faction, prestige, and trader/other gates. Ignoring
@@ -66,13 +66,13 @@ provides the shared pure indexes consumed by both providers.
 Start here for new quest UI; inspect current imports before editing older quest
 components that remain in the feature directory.
 
-| Behavior | Owner |
-|---|---|
-| Status, trader, map, objective and locked-quest filters | [quest-workspace-selector](../src/features/quests/workspace/quest-workspace-selector.ts), [QuestFilterBar](../src/features/quests/workspace/QuestFilterBar.tsx), [workspace context](../src/features/quests/workspace/QuestWorkspaceContext.tsx) |
-| Grouping and list presentation | [quest-list-model](../src/features/quests/workspace/quest-list-model.ts), [QuestListPane](../src/features/quests/workspace/QuestListPane.tsx) |
-| Detail selection/actions and objectives | [useQuestDetailsController](../src/features/quests/workspace/useQuestDetailsController.ts), [quest-details-model](../src/features/quests/workspace/quest-details-model.ts), [QuestDetailsPane](../src/features/quests/workspace/QuestDetailsPane.tsx) |
-| Prerequisite visualizer | [quest-branch-graph](../src/features/quests/workspace/quest-branch-graph.ts), [quest-graph-layout](../src/features/quests/workspace/quest-graph-layout.ts), [QuestVisualizerPane](../src/features/quests/workspace/QuestVisualizerPane.tsx) |
-| Raid Planner | [RaidPlannerPane](../src/features/quests/workspace/RaidPlannerPane.tsx), [raid-planner-summary](../src/features/quests/workspace/raid-planner-summary.ts), [raid-planner-markers](../src/features/quests/workspace/raid-planner-markers.ts); geometry belongs to [maps](maps.md) |
+| Behavior                                                | Owner                                                                                                                                                                                                                                                                            |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status, trader, map, objective and locked-quest filters | [quest-workspace-selector](../src/features/quests/workspace/quest-workspace-selector.ts), [QuestFilterBar](../src/features/quests/workspace/QuestFilterBar.tsx), [workspace context](../src/features/quests/workspace/QuestWorkspaceContext.tsx)                                 |
+| Grouping and list presentation                          | [quest-list-model](../src/features/quests/workspace/quest-list-model.ts), [QuestListPane](../src/features/quests/workspace/QuestListPane.tsx)                                                                                                                                    |
+| Detail selection/actions and objectives                 | [useQuestDetailsController](../src/features/quests/workspace/useQuestDetailsController.ts), [quest-details-model](../src/features/quests/workspace/quest-details-model.ts), [QuestDetailsPane](../src/features/quests/workspace/QuestDetailsPane.tsx)                            |
+| Prerequisite visualizer                                 | [quest-branch-graph](../src/features/quests/workspace/quest-branch-graph.ts), [quest-graph-layout](../src/features/quests/workspace/quest-graph-layout.ts), [QuestVisualizerPane](../src/features/quests/workspace/QuestVisualizerPane.tsx)                                      |
+| Raid Planner                                            | [RaidPlannerPane](../src/features/quests/workspace/RaidPlannerPane.tsx), [raid-planner-summary](../src/features/quests/workspace/raid-planner-summary.ts), [raid-planner-markers](../src/features/quests/workspace/raid-planner-markers.ts); geometry belongs to [maps](maps.md) |
 
 The planner uses profile-active quests independently of the workspace's other
 status filters. Visited positioned objectives are profile state and are filtered

@@ -10,34 +10,34 @@ import { GlobalItemDetailModal } from "@/features/items/item-detail/GlobalItemDe
 import { QueryProvider } from "@/lib/query/QueryProvider";
 
 export const viewport: Viewport = {
-    width: "device-width",
-    initialScale: 1,
+	width: "device-width",
+	initialScale: 1,
 };
 
 export const metadata: Metadata = {
-    title: { default: "Tarkov Hideout Tracker", template: "%s · Tarkov Hideout Tracker" },
-    description: "Track your Escape from Tarkov hideout progress",
+	title: { default: "Tarkov Hideout Tracker", template: "%s · Tarkov Hideout Tracker" },
+	description: "Track your Escape from Tarkov hideout progress",
 };
 
 export default function RootLayout({
-    children,
+	children,
 }: Readonly<{
-    children: React.ReactNode;
+	children: React.ReactNode;
 }>) {
-    return (
-        <html lang="en">
-            <body className="antialiased flex min-h-dvh flex-col">
-                <QueryProvider>
-                    <ActiveGameModeSync />
-                    <Navbar />
-                    {/* <SeasonUpdateBanner /> */}
-                    <div className="flex min-h-0 flex-1 flex-col">{children}</div>
-                    <SetupModal />
-                    <QuickAddModal />
-                    <GlobalItemDetailModal />
-                    <Analytics />
-                </QueryProvider>
-            </body>
-        </html>
-    );
+	return (
+		<html lang="en">
+			<body className="antialiased flex min-h-dvh flex-col">
+				<QueryProvider>
+					<ActiveGameModeSync />
+					<Navbar />
+					{/* <SeasonUpdateBanner /> */}
+					<div className="flex min-h-0 flex-1 flex-col">{children}</div>
+					<SetupModal />
+					<QuickAddModal />
+					<GlobalItemDetailModal />
+					<Analytics />
+				</QueryProvider>
+			</body>
+		</html>
+	);
 }

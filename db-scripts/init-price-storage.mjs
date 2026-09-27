@@ -8,17 +8,17 @@ const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDirectory, "..");
 
 async function main() {
-    await loadLocalEnv(projectRoot);
-    const client = createTursoClient(getTursoConfig());
-    try {
-        await applySchema(client, path.join(scriptDirectory, "schema.sql"));
-        process.stdout.write("Price storage is ready.\n");
-    } finally {
-        client.close();
-    }
+	await loadLocalEnv(projectRoot);
+	const client = createTursoClient(getTursoConfig());
+	try {
+		await applySchema(client, path.join(scriptDirectory, "schema.sql"));
+		process.stdout.write("Price storage is ready.\n");
+	} finally {
+		client.close();
+	}
 }
 
 main().catch((error) => {
-    process.stderr.write(`${error instanceof Error ? error.stack : String(error)}\n`);
-    process.exitCode = 1;
+	process.stderr.write(`${error instanceof Error ? error.stack : String(error)}\n`);
+	process.exitCode = 1;
 });

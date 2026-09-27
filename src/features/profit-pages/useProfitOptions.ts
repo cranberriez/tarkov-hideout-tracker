@@ -5,10 +5,10 @@ import { getSeasonalCraftingSettings } from "@/lib/cfg/seasonal";
 import { normalizeHideoutManagementSkillLevel } from "@/lib/price-calculation/craft-rules";
 import type { GameMode } from "@/lib/game-mode";
 import {
-  createProfitOptionsStore,
-  DEFAULT_PROFIT_OPTIONS,
-  profitOptionsStorageKey,
-  type ProfitOptions,
+	createProfitOptionsStore,
+	DEFAULT_PROFIT_OPTIONS,
+	profitOptionsStorageKey,
+	type ProfitOptions,
 } from "./profit-options";
 
 const stores = new Map<GameMode, ReturnType<typeof createProfitOptionsStore>>();
@@ -16,51 +16,53 @@ const CHANGE_EVENT = "tarkov-profit-options-change";
 const getServerSnapshot = () => DEFAULT_PROFIT_OPTIONS;
 
 function getStore(gameMode: GameMode) {
-  let store = stores.get(gameMode);
-  if (!store) {
-    store = createProfitOptionsStore(gameMode, () => window.localStorage);
-    stores.set(gameMode, store);
-  }
-  return store;
+	let store = stores.get(gameMode);
+	if (!store) {
+		store = createProfitOptionsStore(gameMode, () => window.localStorage);
+		stores.set(gameMode, store);
+	}
+	return store;
 }
 
 export function useProfitOptions(gameMode: GameMode) {
-  const store = getStore(gameMode);
-  const subscribe = useCallback((notify: () => void) => {
-    function onStorage(event: StorageEvent) {
-      if (event.key === null || event.key === profitOptionsStorageKey(gameMode)) {
-        notify();
-      }
-    }
-    window.addEventListener("storage", onStorage);
-    window.addEventListener(CHANGE_EVENT, notify);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener(CHANGE_EVENT, notify);
-    };
-  }, [gameMode]);
-  const options = useSyncExternalStore(subscribe, store.getSnapshot, getServerSnapshot);
+	const store = getStore(gameMode);
+	const subscribe = useCallback(
+		(notify: () => void) => {
+			function onStorage(event: StorageEvent) {
+				if (event.key === null || event.key === profitOptionsStorageKey(gameMode)) {
+					notify();
+				}
+			}
+			window.addEventListener("storage", onStorage);
+			window.addEventListener(CHANGE_EVENT, notify);
+			return () => {
+				window.removeEventListener("storage", onStorage);
+				window.removeEventListener(CHANGE_EVENT, notify);
+			};
+		},
+		[gameMode],
+	);
+	const options = useSyncExternalStore(subscribe, store.getSnapshot, getServerSnapshot);
 
-  function setOption<K extends keyof ProfitOptions>(key: K, value: ProfitOptions[K]) {
-    store.setOption(key, value);
-    window.dispatchEvent(new Event(CHANGE_EVENT));
-  }
+	function setOption<K extends keyof ProfitOptions>(key: K, value: ProfitOptions[K]) {
+		store.setOption(key, value);
+		window.dispatchEvent(new Event(CHANGE_EVENT));
+	}
 
-  const seasonalCrafting = getSeasonalCraftingSettings(gameMode, options.craftingSkillLevel);
-  return {
-    ...options,
-    ...seasonalCrafting,
-    setCraftingSkillLevel: (value: number) => {
-      if (!seasonalCrafting.craftingSkillForced) setOption("craftingSkillLevel", value);
-    },
-    setHideoutManagementSkillLevel: (value: number) =>
-      setOption("hideoutManagementSkillLevel", normalizeHideoutManagementSkillLevel(value)),
-    setAvailableOnly: (value: boolean) => setOption("availableOnly", value),
-    setProfitableOnly: (value: boolean) => setOption("profitableOnly", value),
-    setUseTraderSaleForLockedOutputs: (value: boolean) =>
-      setOption("useTraderSaleForLockedOutputs", value),
-    setAllowCrafts: (value: boolean) => setOption("allowCrafts", value),
-    setAllowBarters: (value: boolean) => setOption("allowBarters", value),
-    setLockFilters: (value: ProfitOptions["lockFilters"]) => setOption("lockFilters", value),
-  };
+	const seasonalCrafting = getSeasonalCraftingSettings(gameMode, options.craftingSkillLevel);
+	return {
+		...options,
+		...seasonalCrafting,
+		setCraftingSkillLevel: (value: number) => {
+			if (!seasonalCrafting.craftingSkillForced) setOption("craftingSkillLevel", value);
+		},
+		setHideoutManagementSkillLevel: (value: number) =>
+			setOption("hideoutManagementSkillLevel", normalizeHideoutManagementSkillLevel(value)),
+		setAvailableOnly: (value: boolean) => setOption("availableOnly", value),
+		setProfitableOnly: (value: boolean) => setOption("profitableOnly", value),
+		setUseTraderSaleForLockedOutputs: (value: boolean) => setOption("useTraderSaleForLockedOutputs", value),
+		setAllowCrafts: (value: boolean) => setOption("allowCrafts", value),
+		setAllowBarters: (value: boolean) => setOption("allowBarters", value),
+		setLockFilters: (value: ProfitOptions["lockFilters"]) => setOption("lockFilters", value),
+	};
 }

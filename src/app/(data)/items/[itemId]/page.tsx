@@ -69,15 +69,18 @@ function dehydrateItemDetailViews(mode: TarkovJsonGameMode, itemId: string, view
 	const client = createQueryClient({ gcTime: Infinity });
 	const initialViews: InitialItemDetailViews = {};
 	if (views.relations) {
-		if (isCompleteItemRelations(views.relations)) client.setQueryData(itemRelationsQueryOptions(mode, itemId).queryKey, views.relations);
+		if (isCompleteItemRelations(views.relations))
+			client.setQueryData(itemRelationsQueryOptions(mode, itemId).queryKey, views.relations);
 		else initialViews.relations = views.relations;
 	}
 	if (views.usage) {
-		if (isCompleteItemUsageData(views.usage)) client.setQueryData(itemUsageQueryOptions(mode, itemId).queryKey, views.usage);
+		if (isCompleteItemUsageData(views.usage))
+			client.setQueryData(itemUsageQueryOptions(mode, itemId).queryKey, views.usage);
 		else initialViews.usage = views.usage;
 	}
 	if (views.tree) {
-		if (isCompleteItemAcquisition(views.tree)) client.setQueryData(itemAcquisitionQueryOptions(mode, itemId).queryKey, views.tree);
+		if (isCompleteItemAcquisition(views.tree))
+			client.setQueryData(itemAcquisitionQueryOptions(mode, itemId).queryKey, views.tree);
 		else initialViews.tree = views.tree;
 	}
 	const state = dehydrate(client);

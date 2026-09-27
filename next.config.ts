@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
 			},
 		],
 	},
-	allowedDevOrigins: ['192.168.2.13'],
+	allowedDevOrigins: ["192.168.2.13"],
 	async redirects() {
 		return [
 			{

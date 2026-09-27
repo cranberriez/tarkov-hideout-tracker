@@ -6,17 +6,13 @@ interface DataLastUpdatedProps {
 	itemsUpdatedAt?: number | null;
 }
 
-export function DataLastUpdated({
-	stationsUpdatedAt = null,
-	itemsUpdatedAt = null,
-}: DataLastUpdatedProps) {
-
+export function DataLastUpdated({ stationsUpdatedAt = null, itemsUpdatedAt = null }: DataLastUpdatedProps) {
 	const formatted = useMemo(
 		() => ({
 			stations: formatUpdatedAt(stationsUpdatedAt),
 			items: formatUpdatedAt(itemsUpdatedAt),
 		}),
-		[stationsUpdatedAt, itemsUpdatedAt]
+		[stationsUpdatedAt, itemsUpdatedAt],
 	);
 
 	const hasAnyTimestamp = !!formatted.stations || !!formatted.items;

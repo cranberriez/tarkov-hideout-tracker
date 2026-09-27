@@ -11,14 +11,20 @@ export class RequestError extends Error {
 }
 
 export class PartialDataError<T> extends Error {
-	constructor(message: string, public readonly payload: T) {
+	constructor(
+		message: string,
+		public readonly payload: T,
+	) {
 		super(message);
 		this.name = "PartialDataError";
 	}
 }
 
 export class ResponseValidationError extends Error {
-	constructor(message: string, public readonly details: unknown = null) {
+	constructor(
+		message: string,
+		public readonly details: unknown = null,
+	) {
 		super(message);
 		this.name = "ResponseValidationError";
 	}
@@ -35,7 +41,8 @@ export async function fetchJson<T>(input: RequestInfo | URL, init: RequestInit =
 	try {
 		body = await response.json();
 	} catch {
-		if (response.ok) throw new RequestError("The server returned an invalid JSON response", response.status, "invalid_json");
+		if (response.ok)
+			throw new RequestError("The server returned an invalid JSON response", response.status, "invalid_json");
 	}
 	if (!response.ok) {
 		const code = body && typeof body === "object" && "code" in body && typeof body.code === "string" ? body.code : null;
@@ -44,7 +51,11 @@ export async function fetchJson<T>(input: RequestInfo | URL, init: RequestInit =
 	return body as T;
 }
 
-export function requireComplete<T>(payload: T, isComplete: (payload: T) => boolean, message = "Some requested data is unavailable"): T {
+export function requireComplete<T>(
+	payload: T,
+	isComplete: (payload: T) => boolean,
+	message = "Some requested data is unavailable",
+): T {
 	if (!isComplete(payload)) throw new PartialDataError(message, payload);
 	return payload;
 }

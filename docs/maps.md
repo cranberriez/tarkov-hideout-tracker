@@ -14,7 +14,7 @@ source. Omit invalid optional points; never fabricate a position from an outline
 
 [maps.json](../src/lib/data/maps.json) is reduced by
 [map-render-definitions](../src/server/services/map-render-definitions.ts) into
-one compact selected-map definition via the [render API](<../src/app/api/maps/render/[mapKey]/route.ts>).
+one compact selected-map definition via the [render API](../src/app/api/maps/render/[mapKey]/route.ts).
 The browser receives the selected definition and SVG, not the complete source
 metadata or raster tile paths. This static map service is an explicit exception
 to the Tarkov repository; it is not a model for general page data access.
@@ -22,7 +22,7 @@ to the Tarkov repository; it is not a model for general page data access.
 [pull-map-overlays.mjs](../scripts/pull-map-overlays.mjs) reduces upstream regular
 map data into committed [map-overlays](../src/lib/data/map-overlays/) chunks.
 [map-navigation-overlays](../src/server/services/map-navigation-overlays.ts) and
-the [overlay API](<../src/app/api/maps/overlays/[mapKey]/route.ts>) return only the
+the [overlay API](../src/app/api/maps/overlays/[mapKey]/route.ts) return only the
 selected map's PMC extracts and transits. Boss chunks are retained for future
 work but are not displayed. Refreshes are explicit maintenance operations;
 see [operations](operations.md).
@@ -66,7 +66,7 @@ marker navigates to its quest; hover does not scroll the quest list.
 
 ## Assets, unsupported maps, and caching
 
-The [SVG route](<../src/app/api/maps/render/[mapKey]/svg/route.ts>) derives upstream
+The [SVG route](../src/app/api/maps/render/[mapKey]/svg/route.ts) derives upstream
 URLs from validated configuration; it must not become an arbitrary URL proxy.
 It applies [SVG layer processing](../src/server/services/map-svg-layers.ts), uses
 the project user agent, and caches upstream fetches for seven days. Its browser

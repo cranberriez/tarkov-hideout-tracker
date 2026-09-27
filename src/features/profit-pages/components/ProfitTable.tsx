@@ -100,10 +100,34 @@ export function ProfitTable({
 					<span className={styles.columnLabel}>Source</span>
 					<span className={styles.columnLabel}>Output</span>
 					<span className={styles.columnLabel}>Required items</span>
-					<SortableHeader label="Cost" sortKey="cost" activeSortKey={sortKey} direction={sortDirection} onSortChange={onSortChange} />
-					<SortableHeader label="Sale proceeds" sortKey="sellValue" activeSortKey={sortKey} direction={sortDirection} onSortChange={onSortChange} />
-					<SortableHeader label="Profit" sortKey="profit" activeSortKey={sortKey} direction={sortDirection} onSortChange={onSortChange} />
-					<SortableHeader label="Profit / hour" sortKey="profitPerHour" activeSortKey={sortKey} direction={sortDirection} onSortChange={onSortChange} />
+					<SortableHeader
+						label="Cost"
+						sortKey="cost"
+						activeSortKey={sortKey}
+						direction={sortDirection}
+						onSortChange={onSortChange}
+					/>
+					<SortableHeader
+						label="Sale proceeds"
+						sortKey="sellValue"
+						activeSortKey={sortKey}
+						direction={sortDirection}
+						onSortChange={onSortChange}
+					/>
+					<SortableHeader
+						label="Profit"
+						sortKey="profit"
+						activeSortKey={sortKey}
+						direction={sortDirection}
+						onSortChange={onSortChange}
+					/>
+					<SortableHeader
+						label="Profit / hour"
+						sortKey="profitPerHour"
+						activeSortKey={sortKey}
+						direction={sortDirection}
+						onSortChange={onSortChange}
+					/>
 				</div>
 				<div ref={listRef} className="w-full min-w-0">
 					{evaluations.length > 0 ? (
@@ -131,10 +155,16 @@ export function ProfitTable({
 											baselineEvaluation={baselineEvaluationsById[evaluation.id]}
 											itemById={itemById}
 											sourceName={
-												kind === "barter" ? tradersById[evaluation.barter?.traderId ?? ""]?.name : stationsById[evaluation.craft?.stationId ?? ""]?.name
+												kind === "barter"
+													? tradersById[evaluation.barter?.traderId ?? ""]?.name
+													: stationsById[evaluation.craft?.stationId ?? ""]?.name
 											}
 											available={isRecipeAvailable(evaluation, stationLevels, traderLoyaltyLevels, completedQuests)}
-											source={kind === "barter" ? tradersById[evaluation.barter?.traderId ?? ""] : stationsById[evaluation.craft?.stationId ?? ""]}
+											source={
+												kind === "barter"
+													? tradersById[evaluation.barter?.traderId ?? ""]
+													: stationsById[evaluation.craft?.stationId ?? ""]
+											}
 											overrides={overrides}
 											onPriceChange={onPriceChange}
 											bartersById={bartersById}
@@ -181,7 +211,13 @@ function SortableHeader({
 	onSortChange: (sortKey: SortKey) => void;
 }) {
 	const active = sortKey === activeSortKey;
-	const nextDirection = active ? (direction === "descending" ? "ascending" : "descending") : sortKey === "cost" ? "ascending" : "descending";
+	const nextDirection = active
+		? direction === "descending"
+			? "ascending"
+			: "descending"
+		: sortKey === "cost"
+			? "ascending"
+			: "descending";
 	const SortIcon = !active ? ArrowUpDown : direction === "ascending" ? ArrowUp : ArrowDown;
 	return (
 		<span className={styles.sortControl}>

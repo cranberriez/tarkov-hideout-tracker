@@ -15,392 +15,310 @@ import { ProfitPageControls } from "./components/ProfitPageControls";
 import { ProfitPageHeader } from "./components/ProfitPageHeader";
 import { ProfitPricingContext } from "./components/ProfitPricingContext";
 import { ProfitTable } from "./components/ProfitTable";
-import type {
-  ProfitPageKind,
-  ProfitStationSource,
-  SortDirection,
-  SortKey,
-} from "./types";
-import {
-  compareEvaluationsByBaseline,
-  getRecipeSourceId,
-  isRecipeAvailable,
-  passesLockFilters,
-} from "./utils/recipes";
+import type { ProfitPageKind, ProfitStationSource, SortDirection, SortKey } from "./types";
+import { compareEvaluationsByBaseline, getRecipeSourceId, isRecipeAvailable, passesLockFilters } from "./utils/recipes";
 import { useManualPriceOverrides } from "./useManualPriceOverrides";
 import { usePinnedCrafts } from "./usePinnedCrafts";
 import { useProfitOptions } from "./useProfitOptions";
 
 interface ProfitPageClientProps {
-  kind: ProfitPageKind;
-  data: ProfitPageData;
-  initialTargetRecipeId?: string;
+	kind: ProfitPageKind;
+	data: ProfitPageData;
+	initialTargetRecipeId?: string;
 }
 
-export function ProfitPageClient({
-  kind,
-  data,
-  initialTargetRecipeId,
-}: ProfitPageClientProps) {
-  const router = useRouter();
-  const items = data.items;
-  const crafts = useMemo(() => data.crafts.filter(isTrackedCraft), [data.crafts]);
-  const itemsError = data.errors.items ?? data.errors.prices;
-  const itemById = useMemo(
-    () => Object.fromEntries((items ?? []).map((item) => [item.id, item])),
-    [items],
-  );
-  const {
-    playerLevel,
-    gameMode,
-    stationLevels,
-    completedQuests,
-    traderLoyaltyLevels,
-  } = useUserStore(
-    useShallow((state) => ({
-      playerLevel: state.playerLevel,
-      gameMode: state.gameMode,
-      stationLevels: state.stationLevels,
-      completedQuests: state.completedQuests,
-      traderLoyaltyLevels: state.questTraderLoyaltyLevels,
-    })),
-  );
-  const { overrides, setItemOverride } = useManualPriceOverrides(gameMode);
-  const { pinnedCrafts, togglePinnedCraft } = usePinnedCrafts(gameMode);
-  const [search, setSearch] = useState("");
-  const [traderSourceIds, setTraderSourceIds] = useState<string[]>([]);
-  const [stationSourceIds, setStationSourceIds] = useState<string[]>([]);
-  const {
-    craftingSkillLevel,
-    hideoutManagementSkillLevel,
-    craftingSkillForced,
-    craftingSkillNote,
-    setCraftingSkillLevel,
-    setHideoutManagementSkillLevel,
-    availableOnly,
-    setAvailableOnly,
-    lockFilters,
-    setLockFilters,
-    useTraderSaleForLockedOutputs,
-    setUseTraderSaleForLockedOutputs,
-    profitableOnly,
-    setProfitableOnly,
-    allowCrafts,
-    setAllowCrafts,
-    allowBarters,
-    setAllowBarters,
-  } = useProfitOptions(gameMode);
-  const [showPinnedOnly, setShowPinnedOnly] = useState(false);
-  const [ingredientRouteSelections, setIngredientRouteSelections] = useState<
-    Record<string, Record<number, string>>
-  >({});
-  const [targetRecipeId, setTargetRecipeId] = useState<string | null>(
-    initialTargetRecipeId ?? null,
-  );
-  const [scrollRequestId, setScrollRequestId] = useState(0);
-  const [sortKey, setSortKey] = useState<SortKey>("profitPerHour");
-  const [sortDirection, setSortDirection] =
-    useState<SortDirection>("descending");
-  const calculatorInput = useMemo(() => ({
-      craftingSkillLevel,
-      hideoutManagementSkillLevel,
-      playerLevel,
-      stationLevels,
-      useTraderSaleForLockedOutputs,
-      itemsById: itemById,
-      barters: data.barters,
-      crafts,
-      allowCrafts,
-      allowBarters,
-      traderLoyaltyLevels,
-      completedQuests,
-  }), [
-    craftingSkillLevel,
-    hideoutManagementSkillLevel,
-    playerLevel,
-    stationLevels,
-    useTraderSaleForLockedOutputs,
-    allowBarters,
-    allowCrafts,
-    completedQuests,
-    data.barters,
-    crafts,
-    itemById,
-    traderLoyaltyLevels,
-  ]);
-  const baselineEvaluations = useMemo(() => {
-    const calculator = createRecipeCalculator(calculatorInput);
-    return kind === "barter"
-      ? calculator.evaluateBarters()
-      : calculator.evaluateCrafts();
-  }, [calculatorInput, kind]);
-  const baselineEvaluationsById = useMemo(
-    () =>
-      Object.fromEntries(
-        baselineEvaluations.map((evaluation) => [evaluation.id, evaluation]),
-      ),
-    [baselineEvaluations],
-  );
-  const evaluations = useMemo(() => {
-    const calculator = createRecipeCalculator({
-      ...calculatorInput,
-      overrides,
-    });
-    return kind === "barter"
-      ? calculator.evaluateBarters()
-      : calculator.evaluateCrafts();
-  }, [calculatorInput, kind, overrides]);
-  const tradersById = useMemo(
-    () =>
-      Object.fromEntries(
-        data.traders.map((trader) => [trader.id, trader]),
-      ) as Record<string, Trader>,
-    [data.traders],
-  );
-  const stationsById = useMemo(
-    () =>
-      Object.fromEntries(
-        data.stations.map((station) => [station.id, station]),
-      ) as Record<string, ProfitStationSource>,
-    [data.stations],
-  );
-  const bartersById = useMemo(
-    () =>
-      Object.fromEntries(
-        data.barters.map((barter) => [barter.id, barter]),
-      ) as Record<string, BarterRecord>,
-    [data.barters],
-  );
-  const craftsById = useMemo(
-    () =>
-      Object.fromEntries(
-        crafts.map((craft) => [craft.id, { ...craft, duration: craftingDuration(craft, craftingSkillLevel) }]),
-      ) as Record<string, CraftRecord>,
-    [crafts, craftingSkillLevel],
-  );
-  const sources = useMemo(() => {
-    const ids =
-      kind === "barter"
-        ? data.barters.map((entry) => entry.traderId)
-        : crafts.map((entry) => entry.stationId);
-    const map: Readonly<Record<string, Trader | ProfitStationSource>> =
-      kind === "barter" ? tradersById : stationsById;
-    return [...new Set(ids)]
-      .map((id) => ({
-        id,
-        name: map[id]?.name ?? id,
-        ...(kind === "craft"
-          ? {
-              imageLink: stationsById[id]?.imageLink,
-              level: stationLevels[id] ?? 0,
-            }
-          : { imageLink: tradersById[id]?.imageLink ?? tradersById[id]?.image4xLink ?? undefined }),
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [
-    data.barters,
-    crafts,
-    kind,
-    stationLevels,
-    stationsById,
-    tradersById,
-  ]);
-  const visibleEvaluations = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-    return evaluations
-      .filter((evaluation) => {
-        if (kind === "craft" && showPinnedOnly && !pinnedCrafts[evaluation.id])
-          return false;
-        if (evaluation.id === targetRecipeId) return true;
-        if (!passesLockFilters(evaluation, availableOnly, lockFilters)) return false;
-        const item = itemById[evaluation.outputItemId];
-        if (
-          normalizedSearch &&
-          !item?.name.toLowerCase().includes(normalizedSearch) &&
-          !item?.shortName?.toLowerCase().includes(normalizedSearch)
-        )
-          return false;
-        const recipeSourceId = getRecipeSourceId(evaluation);
-        if (
-          kind === "craft"
-            ? stationSourceIds.length > 0 &&
-              !stationSourceIds.includes(recipeSourceId)
-            : traderSourceIds.length > 0 && !traderSourceIds.includes(recipeSourceId)
-        )
-          return false;
-        if (
-          profitableOnly &&
-          (evaluation.profit ?? Number.NEGATIVE_INFINITY) <= 0
-        )
-          return false;
-        if (
-          availableOnly &&
-          !isRecipeAvailable(
-            evaluation,
-            stationLevels,
-            traderLoyaltyLevels,
-            completedQuests,
-          )
-        )
-          return false;
-        return true;
-      })
-      .sort((a, b) =>
-        compareEvaluationsByBaseline(
-          a,
-          b,
-          sortKey,
-          sortDirection,
-          itemById,
-          baselineEvaluationsById,
-        ),
-      );
-  }, [
-    availableOnly,
-    baselineEvaluationsById,
-    lockFilters,
-    completedQuests,
-    evaluations,
-    itemById,
-    kind,
-    profitableOnly,
-    pinnedCrafts,
-    search,
-    showPinnedOnly,
-    sortDirection,
-    sortKey,
-    traderSourceIds,
-    stationSourceIds,
-    stationLevels,
-    targetRecipeId,
-    traderLoyaltyLevels,
-  ]);
-  const recipeErrors = [data.errors.barters, data.errors.crafts].filter(
-    (message): message is string => Boolean(message),
-  );
-  if (!items || itemsError || recipeErrors.length > 0)
-    return (
-      <main className="container mx-auto px-6 py-8">
-        <DataLoadError
-          title={`${kind === "barter" ? "Barter" : "Craft"} profit data is unavailable`}
-          messages={[
-            itemsError,
-            ...recipeErrors,
-            !items ? "Item prices could not be loaded." : null,
-          ].filter((message): message is string => Boolean(message))}
-        />
-      </main>
-    );
-  function goToRecipe(method: "barter" | "craft", recipeId: string) {
-    const route =
-      method === "barter" ? "/items/barter-profits" : "/items/crafting-profits";
-    if (method !== kind) {
-      router.push(`${route}?recipe=${encodeURIComponent(recipeId)}`);
-      return;
-    }
-    window.history.replaceState(
-      null,
-      "",
-      `${route}?recipe=${encodeURIComponent(recipeId)}`,
-    );
-    setTargetRecipeId(recipeId);
-    setScrollRequestId((value) => value + 1);
-  }
-  return (
-    <ProfitPricingContext.Provider
-      value={{
-        playerLevel,
-        stationLevels,
-        hideoutManagementSkillLevel,
-        traderLoyaltyLevels,
-        useTraderSaleForLockedOutputs,
-        taskUnlocksById: data.taskUnlocksById,
-      }}
-    >
-      <main className="container mx-auto px-4 py-8 sm:px-6">
-        <ProfitPageHeader kind={kind} gameMode={gameMode} evaluations={visibleEvaluations} />
-        {data.errors.taskUnlocks && (
-          <p role="status" className="mb-4 text-xs text-warning">
-            Quest unlock details are partially unavailable: {data.errors.taskUnlocks}
-          </p>
-        )}
-        <ProfitPageControls
-          key={gameMode}
-          craftingSkillForced={craftingSkillForced}
-          craftingSkillNote={craftingSkillNote}
-          craftingSkillLevel={craftingSkillLevel}
-          onCraftingSkillLevelChange={setCraftingSkillLevel}
-          hideoutManagementSkillLevel={hideoutManagementSkillLevel}
-          onHideoutManagementSkillLevelChange={setHideoutManagementSkillLevel}
-          kind={kind}
-          search={search}
-          onSearchChange={setSearch}
-          traderSourceIds={traderSourceIds}
-          onTraderSourceIdsChange={setTraderSourceIds}
-          stationSourceIds={stationSourceIds}
-          onStationSourceIdsChange={setStationSourceIds}
-          sources={sources}
-          lockFilters={lockFilters}
-          onLockFiltersChange={setLockFilters}
-          useTraderSaleForLockedOutputs={useTraderSaleForLockedOutputs}
-          onUseTraderSaleForLockedOutputsChange={setUseTraderSaleForLockedOutputs}
-          availableOnly={availableOnly}
-          onAvailableOnlyChange={setAvailableOnly}
-          profitableOnly={profitableOnly}
-          onProfitableOnlyChange={setProfitableOnly}
-          allowCrafts={allowCrafts}
-          onAllowCraftsChange={setAllowCrafts}
-          allowBarters={allowBarters}
-          onAllowBartersChange={setAllowBarters}
-          showPinnedOnly={showPinnedOnly}
-          onShowPinnedOnlyChange={setShowPinnedOnly}
-        />
-        <ProfitTable
-          kind={kind}
-          evaluations={visibleEvaluations}
-          baselineEvaluationsById={baselineEvaluationsById}
-          itemById={itemById}
-          tradersById={tradersById}
-          stationsById={stationsById}
-          bartersById={bartersById}
-          craftsById={craftsById}
-          stationLevels={stationLevels}
-          traderLoyaltyLevels={traderLoyaltyLevels}
-          completedQuests={completedQuests}
-          overrides={overrides}
-          onPriceChange={setItemOverride}
-          onGoToRecipe={goToRecipe}
-          targetRecipeId={targetRecipeId}
-          scrollRequestId={scrollRequestId}
-          pinnedCrafts={pinnedCrafts}
-          onTogglePinnedCraft={togglePinnedCraft}
-          showPinnedOnly={showPinnedOnly}
-          ingredientRouteSelections={ingredientRouteSelections}
-          sortKey={sortKey}
-          sortDirection={sortDirection}
-          onSortChange={(nextSortKey) => {
-            if (nextSortKey === sortKey) {
-              setSortDirection((current) =>
-                current === "ascending" ? "descending" : "ascending",
-              );
-              return;
-            }
-            setSortKey(nextSortKey);
-            setSortDirection(
-              nextSortKey === "cost" ? "ascending" : "descending",
-            );
-          }}
-          onIngredientRouteChange={(recipeId, index, routeKey) =>
-            setIngredientRouteSelections((current) => ({
-              ...current,
-              [recipeId]: {
-                ...current[recipeId],
-                [index]: routeKey,
-              },
-            }))
-          }
-        />
-      </main>
-    </ProfitPricingContext.Provider>
-  );
+export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPageClientProps) {
+	const router = useRouter();
+	const items = data.items;
+	const crafts = useMemo(() => data.crafts.filter(isTrackedCraft), [data.crafts]);
+	const itemsError = data.errors.items ?? data.errors.prices;
+	const itemById = useMemo(() => Object.fromEntries((items ?? []).map((item) => [item.id, item])), [items]);
+	const { playerLevel, gameMode, stationLevels, completedQuests, traderLoyaltyLevels } = useUserStore(
+		useShallow((state) => ({
+			playerLevel: state.playerLevel,
+			gameMode: state.gameMode,
+			stationLevels: state.stationLevels,
+			completedQuests: state.completedQuests,
+			traderLoyaltyLevels: state.questTraderLoyaltyLevels,
+		})),
+	);
+	const { overrides, setItemOverride } = useManualPriceOverrides(gameMode);
+	const { pinnedCrafts, togglePinnedCraft } = usePinnedCrafts(gameMode);
+	const [search, setSearch] = useState("");
+	const [traderSourceIds, setTraderSourceIds] = useState<string[]>([]);
+	const [stationSourceIds, setStationSourceIds] = useState<string[]>([]);
+	const {
+		craftingSkillLevel,
+		hideoutManagementSkillLevel,
+		craftingSkillForced,
+		craftingSkillNote,
+		setCraftingSkillLevel,
+		setHideoutManagementSkillLevel,
+		availableOnly,
+		setAvailableOnly,
+		lockFilters,
+		setLockFilters,
+		useTraderSaleForLockedOutputs,
+		setUseTraderSaleForLockedOutputs,
+		profitableOnly,
+		setProfitableOnly,
+		allowCrafts,
+		setAllowCrafts,
+		allowBarters,
+		setAllowBarters,
+	} = useProfitOptions(gameMode);
+	const [showPinnedOnly, setShowPinnedOnly] = useState(false);
+	const [ingredientRouteSelections, setIngredientRouteSelections] = useState<Record<string, Record<number, string>>>(
+		{},
+	);
+	const [targetRecipeId, setTargetRecipeId] = useState<string | null>(initialTargetRecipeId ?? null);
+	const [scrollRequestId, setScrollRequestId] = useState(0);
+	const [sortKey, setSortKey] = useState<SortKey>("profitPerHour");
+	const [sortDirection, setSortDirection] = useState<SortDirection>("descending");
+	const calculatorInput = useMemo(
+		() => ({
+			craftingSkillLevel,
+			hideoutManagementSkillLevel,
+			playerLevel,
+			stationLevels,
+			useTraderSaleForLockedOutputs,
+			itemsById: itemById,
+			barters: data.barters,
+			crafts,
+			allowCrafts,
+			allowBarters,
+			traderLoyaltyLevels,
+			completedQuests,
+		}),
+		[
+			craftingSkillLevel,
+			hideoutManagementSkillLevel,
+			playerLevel,
+			stationLevels,
+			useTraderSaleForLockedOutputs,
+			allowBarters,
+			allowCrafts,
+			completedQuests,
+			data.barters,
+			crafts,
+			itemById,
+			traderLoyaltyLevels,
+		],
+	);
+	const baselineEvaluations = useMemo(() => {
+		const calculator = createRecipeCalculator(calculatorInput);
+		return kind === "barter" ? calculator.evaluateBarters() : calculator.evaluateCrafts();
+	}, [calculatorInput, kind]);
+	const baselineEvaluationsById = useMemo(
+		() => Object.fromEntries(baselineEvaluations.map((evaluation) => [evaluation.id, evaluation])),
+		[baselineEvaluations],
+	);
+	const evaluations = useMemo(() => {
+		const calculator = createRecipeCalculator({
+			...calculatorInput,
+			overrides,
+		});
+		return kind === "barter" ? calculator.evaluateBarters() : calculator.evaluateCrafts();
+	}, [calculatorInput, kind, overrides]);
+	const tradersById = useMemo(
+		() => Object.fromEntries(data.traders.map((trader) => [trader.id, trader])) as Record<string, Trader>,
+		[data.traders],
+	);
+	const stationsById = useMemo(
+		() =>
+			Object.fromEntries(data.stations.map((station) => [station.id, station])) as Record<string, ProfitStationSource>,
+		[data.stations],
+	);
+	const bartersById = useMemo(
+		() => Object.fromEntries(data.barters.map((barter) => [barter.id, barter])) as Record<string, BarterRecord>,
+		[data.barters],
+	);
+	const craftsById = useMemo(
+		() =>
+			Object.fromEntries(
+				crafts.map((craft) => [craft.id, { ...craft, duration: craftingDuration(craft, craftingSkillLevel) }]),
+			) as Record<string, CraftRecord>,
+		[crafts, craftingSkillLevel],
+	);
+	const sources = useMemo(() => {
+		const ids =
+			kind === "barter" ? data.barters.map((entry) => entry.traderId) : crafts.map((entry) => entry.stationId);
+		const map: Readonly<Record<string, Trader | ProfitStationSource>> = kind === "barter" ? tradersById : stationsById;
+		return [...new Set(ids)]
+			.map((id) => ({
+				id,
+				name: map[id]?.name ?? id,
+				...(kind === "craft"
+					? {
+							imageLink: stationsById[id]?.imageLink,
+							level: stationLevels[id] ?? 0,
+						}
+					: { imageLink: tradersById[id]?.imageLink ?? tradersById[id]?.image4xLink ?? undefined }),
+			}))
+			.sort((a, b) => a.name.localeCompare(b.name));
+	}, [data.barters, crafts, kind, stationLevels, stationsById, tradersById]);
+	const visibleEvaluations = useMemo(() => {
+		const normalizedSearch = search.trim().toLowerCase();
+		return evaluations
+			.filter((evaluation) => {
+				if (kind === "craft" && showPinnedOnly && !pinnedCrafts[evaluation.id]) return false;
+				if (evaluation.id === targetRecipeId) return true;
+				if (!passesLockFilters(evaluation, availableOnly, lockFilters)) return false;
+				const item = itemById[evaluation.outputItemId];
+				if (
+					normalizedSearch &&
+					!item?.name.toLowerCase().includes(normalizedSearch) &&
+					!item?.shortName?.toLowerCase().includes(normalizedSearch)
+				)
+					return false;
+				const recipeSourceId = getRecipeSourceId(evaluation);
+				if (
+					kind === "craft"
+						? stationSourceIds.length > 0 && !stationSourceIds.includes(recipeSourceId)
+						: traderSourceIds.length > 0 && !traderSourceIds.includes(recipeSourceId)
+				)
+					return false;
+				if (profitableOnly && (evaluation.profit ?? Number.NEGATIVE_INFINITY) <= 0) return false;
+				if (availableOnly && !isRecipeAvailable(evaluation, stationLevels, traderLoyaltyLevels, completedQuests))
+					return false;
+				return true;
+			})
+			.sort((a, b) => compareEvaluationsByBaseline(a, b, sortKey, sortDirection, itemById, baselineEvaluationsById));
+	}, [
+		availableOnly,
+		baselineEvaluationsById,
+		lockFilters,
+		completedQuests,
+		evaluations,
+		itemById,
+		kind,
+		profitableOnly,
+		pinnedCrafts,
+		search,
+		showPinnedOnly,
+		sortDirection,
+		sortKey,
+		traderSourceIds,
+		stationSourceIds,
+		stationLevels,
+		targetRecipeId,
+		traderLoyaltyLevels,
+	]);
+	const recipeErrors = [data.errors.barters, data.errors.crafts].filter((message): message is string =>
+		Boolean(message),
+	);
+	if (!items || itemsError || recipeErrors.length > 0)
+		return (
+			<main className="container mx-auto px-6 py-8">
+				<DataLoadError
+					title={`${kind === "barter" ? "Barter" : "Craft"} profit data is unavailable`}
+					messages={[itemsError, ...recipeErrors, !items ? "Item prices could not be loaded." : null].filter(
+						(message): message is string => Boolean(message),
+					)}
+				/>
+			</main>
+		);
+	function goToRecipe(method: "barter" | "craft", recipeId: string) {
+		const route = method === "barter" ? "/items/barter-profits" : "/items/crafting-profits";
+		if (method !== kind) {
+			router.push(`${route}?recipe=${encodeURIComponent(recipeId)}`);
+			return;
+		}
+		window.history.replaceState(null, "", `${route}?recipe=${encodeURIComponent(recipeId)}`);
+		setTargetRecipeId(recipeId);
+		setScrollRequestId((value) => value + 1);
+	}
+	return (
+		<ProfitPricingContext.Provider
+			value={{
+				playerLevel,
+				stationLevels,
+				hideoutManagementSkillLevel,
+				traderLoyaltyLevels,
+				useTraderSaleForLockedOutputs,
+				taskUnlocksById: data.taskUnlocksById,
+			}}
+		>
+			<main className="container mx-auto px-4 py-8 sm:px-6">
+				<ProfitPageHeader kind={kind} gameMode={gameMode} evaluations={visibleEvaluations} />
+				{data.errors.taskUnlocks && (
+					<p role="status" className="mb-4 text-xs text-warning">
+						Quest unlock details are partially unavailable: {data.errors.taskUnlocks}
+					</p>
+				)}
+				<ProfitPageControls
+					key={gameMode}
+					craftingSkillForced={craftingSkillForced}
+					craftingSkillNote={craftingSkillNote}
+					craftingSkillLevel={craftingSkillLevel}
+					onCraftingSkillLevelChange={setCraftingSkillLevel}
+					hideoutManagementSkillLevel={hideoutManagementSkillLevel}
+					onHideoutManagementSkillLevelChange={setHideoutManagementSkillLevel}
+					kind={kind}
+					search={search}
+					onSearchChange={setSearch}
+					traderSourceIds={traderSourceIds}
+					onTraderSourceIdsChange={setTraderSourceIds}
+					stationSourceIds={stationSourceIds}
+					onStationSourceIdsChange={setStationSourceIds}
+					sources={sources}
+					lockFilters={lockFilters}
+					onLockFiltersChange={setLockFilters}
+					useTraderSaleForLockedOutputs={useTraderSaleForLockedOutputs}
+					onUseTraderSaleForLockedOutputsChange={setUseTraderSaleForLockedOutputs}
+					availableOnly={availableOnly}
+					onAvailableOnlyChange={setAvailableOnly}
+					profitableOnly={profitableOnly}
+					onProfitableOnlyChange={setProfitableOnly}
+					allowCrafts={allowCrafts}
+					onAllowCraftsChange={setAllowCrafts}
+					allowBarters={allowBarters}
+					onAllowBartersChange={setAllowBarters}
+					showPinnedOnly={showPinnedOnly}
+					onShowPinnedOnlyChange={setShowPinnedOnly}
+				/>
+				<ProfitTable
+					kind={kind}
+					evaluations={visibleEvaluations}
+					baselineEvaluationsById={baselineEvaluationsById}
+					itemById={itemById}
+					tradersById={tradersById}
+					stationsById={stationsById}
+					bartersById={bartersById}
+					craftsById={craftsById}
+					stationLevels={stationLevels}
+					traderLoyaltyLevels={traderLoyaltyLevels}
+					completedQuests={completedQuests}
+					overrides={overrides}
+					onPriceChange={setItemOverride}
+					onGoToRecipe={goToRecipe}
+					targetRecipeId={targetRecipeId}
+					scrollRequestId={scrollRequestId}
+					pinnedCrafts={pinnedCrafts}
+					onTogglePinnedCraft={togglePinnedCraft}
+					showPinnedOnly={showPinnedOnly}
+					ingredientRouteSelections={ingredientRouteSelections}
+					sortKey={sortKey}
+					sortDirection={sortDirection}
+					onSortChange={(nextSortKey) => {
+						if (nextSortKey === sortKey) {
+							setSortDirection((current) => (current === "ascending" ? "descending" : "ascending"));
+							return;
+						}
+						setSortKey(nextSortKey);
+						setSortDirection(nextSortKey === "cost" ? "ascending" : "descending");
+					}}
+					onIngredientRouteChange={(recipeId, index, routeKey) =>
+						setIngredientRouteSelections((current) => ({
+							...current,
+							[recipeId]: {
+								...current[recipeId],
+								[index]: routeKey,
+							},
+						}))
+					}
+				/>
+			</main>
+		</ProfitPricingContext.Provider>
+	);
 }

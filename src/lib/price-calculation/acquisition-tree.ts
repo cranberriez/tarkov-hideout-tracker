@@ -1,50 +1,50 @@
 import type { BarterRecord, CraftRecord } from "@/types/recipes";
 
 export interface ItemAcquisitionTree {
-    rootItemId: string;
-    barters: BarterRecord[];
-    crafts: CraftRecord[];
-    itemIds: string[];
-    truncated: boolean;
+	rootItemId: string;
+	barters: BarterRecord[];
+	crafts: CraftRecord[];
+	itemIds: string[];
+	truncated: boolean;
 }
 
 export function buildItemAcquisitionTree(
-    itemId: string,
-    bartersByItemId: Readonly<Record<string, BarterRecord[]>>,
-    craftsByItemId: Readonly<Record<string, CraftRecord[]>>,
-    options: { maxDepth?: number; maxItems?: number } = {},
+	itemId: string,
+	bartersByItemId: Readonly<Record<string, BarterRecord[]>>,
+	craftsByItemId: Readonly<Record<string, CraftRecord[]>>,
+	options: { maxDepth?: number; maxItems?: number } = {},
 ): ItemAcquisitionTree {
-    const maxDepth = options.maxDepth ?? 16;
-    const maxItems = options.maxItems ?? 500;
-    const visited = new Set<string>();
-    const barters = new Map<string, BarterRecord>();
-    const crafts = new Map<string, CraftRecord>();
-    let truncated = false;
+	const maxDepth = options.maxDepth ?? 16;
+	const maxItems = options.maxItems ?? 500;
+	const visited = new Set<string>();
+	const barters = new Map<string, BarterRecord>();
+	const crafts = new Map<string, CraftRecord>();
+	let truncated = false;
 
-    function visit(currentItemId: string, depth: number) {
-        if (visited.has(currentItemId)) return;
-        if (depth > maxDepth || visited.size >= maxItems) {
-            truncated = true;
-            return;
-        }
-        visited.add(currentItemId);
+	function visit(currentItemId: string, depth: number) {
+		if (visited.has(currentItemId)) return;
+		if (depth > maxDepth || visited.size >= maxItems) {
+			truncated = true;
+			return;
+		}
+		visited.add(currentItemId);
 
-        for (const barter of bartersByItemId[currentItemId] ?? []) {
-            barters.set(barter.id, barter);
-            for (const requirement of barter.requiredItems) visit(requirement.itemId, depth + 1);
-        }
-        for (const craft of craftsByItemId[currentItemId] ?? []) {
-            crafts.set(craft.id, craft);
-            for (const requirement of craft.requiredItems) visit(requirement.itemId, depth + 1);
-        }
-    }
+		for (const barter of bartersByItemId[currentItemId] ?? []) {
+			barters.set(barter.id, barter);
+			for (const requirement of barter.requiredItems) visit(requirement.itemId, depth + 1);
+		}
+		for (const craft of craftsByItemId[currentItemId] ?? []) {
+			crafts.set(craft.id, craft);
+			for (const requirement of craft.requiredItems) visit(requirement.itemId, depth + 1);
+		}
+	}
 
-    visit(itemId, 0);
-    return {
-        rootItemId: itemId,
-        barters: [...barters.values()],
-        crafts: [...crafts.values()],
-        itemIds: [...visited],
-        truncated,
-    };
+	visit(itemId, 0);
+	return {
+		rootItemId: itemId,
+		barters: [...barters.values()],
+		crafts: [...crafts.values()],
+		itemIds: [...visited],
+		truncated,
+	};
 }

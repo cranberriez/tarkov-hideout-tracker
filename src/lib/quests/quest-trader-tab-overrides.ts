@@ -3,13 +3,10 @@ import overrideData from "../data/quest-trader-tab-overrides.json";
 export type QuestTraderTab = 1 | 2 | 3 | 4 | "essential";
 
 interface QuestTraderTabOverrideRecord {
-    traderTab: QuestTraderTab;
+	traderTab: QuestTraderTab;
 }
 
-const overrideValues = overrideData.values as Record<
-    string,
-    QuestTraderTabOverrideRecord | undefined
->;
+const overrideValues = overrideData.values as Record<string, QuestTraderTabOverrideRecord | undefined>;
 
 /**
  * Return the reviewed in-game trader tab for a quest ID.
@@ -19,17 +16,15 @@ const overrideValues = overrideData.values as Record<
  * behavior without changing quest IDs, cached payloads, or persisted progress.
  */
 export function getQuestTraderTabOverride(questId: string): QuestTraderTab | null {
-    const value = overrideValues[questId]?.traderTab;
-    return value === "essential" || value === 1 || value === 2 || value === 3 || value === 4
-        ? value
-        : null;
+	const value = overrideValues[questId]?.traderTab;
+	return value === "essential" || value === 1 || value === 2 || value === 3 || value === 4 ? value : null;
 }
 
 export function getQuestLoyaltyLevelOverride(questId: string): 1 | 2 | 3 | 4 | null {
-    const value = getQuestTraderTabOverride(questId);
-    return typeof value === "number" ? value : null;
+	const value = getQuestTraderTabOverride(questId);
+	return typeof value === "number" ? value : null;
 }
 
 export function isEssentialQuestOverride(questId: string) {
-    return getQuestTraderTabOverride(questId) === "essential";
+	return getQuestTraderTabOverride(questId) === "essential";
 }

@@ -179,7 +179,8 @@ export function PlayerProgressCard() {
 													Level <b className="text-foreground">{incoming.progress.playerLevel}</b>
 												</span>
 												<span>
-													<b className="text-foreground">{Object.keys(incoming.progress.itemCounts).length}</b> item types
+													<b className="text-foreground">{Object.keys(incoming.progress.itemCounts).length}</b> item
+													types
 												</span>
 												<span>
 													<b className="text-foreground">

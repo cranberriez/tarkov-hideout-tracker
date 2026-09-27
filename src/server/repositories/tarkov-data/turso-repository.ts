@@ -17,18 +17,21 @@ export function createTursoRepository(scope?: { mode: TarkovDataMode; releaseId:
 	}
 	return {
 		items: {
-			getByIds: (mode, ids) => getEntitiesByIds<ItemSummary>(mode, "item", "items", ids, undefined, selectedRelease(mode)),
+			getByIds: (mode, ids) =>
+				getEntitiesByIds<ItemSummary>(mode, "item", "items", ids, undefined, selectedRelease(mode)),
 		},
 		hideout: {
 			getStations: (mode) => getEntityList<Station>(mode, "station", "stations", undefined, selectedRelease(mode)),
 		},
 		quests: {
 			getAll: (mode) => getEntityList<FullQuest>(mode, "quest", "quests", undefined, selectedRelease(mode)),
-			getByIds: (mode, ids) => getEntitiesByIds<FullQuest>(mode, "quest", "quests", ids, undefined, selectedRelease(mode)),
+			getByIds: (mode, ids) =>
+				getEntitiesByIds<FullQuest>(mode, "quest", "quests", ids, undefined, selectedRelease(mode)),
 		},
 		traders: {
 			getAll: (mode) => getEntityList<Trader>(mode, "trader", "traders", undefined, selectedRelease(mode)),
-			getByIds: (mode, ids) => getEntitiesByIds<Trader>(mode, "trader", "traders", ids, undefined, selectedRelease(mode)),
+			getByIds: (mode, ids) =>
+				getEntitiesByIds<Trader>(mode, "trader", "traders", ids, undefined, selectedRelease(mode)),
 		},
 		recipes: {
 			getBarters: (mode) => getEntityList<BarterRecord>(mode, "barter", "barters", undefined, selectedRelease(mode)),

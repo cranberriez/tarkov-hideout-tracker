@@ -16,19 +16,8 @@ interface HideoutListProps {
 	itemsUpdatedAt: number | null;
 }
 
-export function HideoutList({
-	stations,
-	itemById,
-	stationsUpdatedAt,
-	itemsUpdatedAt,
-}: HideoutListProps) {
-	const {
-		stationLevels,
-		hiddenStations,
-		checklistViewMode,
-		showHidden,
-		completedRequirements,
-	} = useUserStore();
+export function HideoutList({ stations, itemById, stationsUpdatedAt, itemsUpdatedAt }: HideoutListProps) {
+	const { stationLevels, hiddenStations, checklistViewMode, showHidden, completedRequirements } = useUserStore();
 
 	// 2. Helper to check if station is locked
 	const isStationLocked = (station: Station) => {
@@ -65,14 +54,7 @@ export function HideoutList({
 			viewMode: checklistViewMode,
 			completedRequirements,
 		});
-	}, [
-		stations,
-		stationLevels,
-		hiddenStations,
-		checklistViewMode,
-		showHidden,
-		completedRequirements,
-	]);
+	}, [stations, stationLevels, hiddenStations, checklistViewMode, showHidden, completedRequirements]);
 
 	const pooledFirByItem = useMemo(() => {
 		const map: Record<string, number> = {};
@@ -97,10 +79,7 @@ export function HideoutList({
 				))}
 			</div>
 
-			<DataLastUpdated
-				stationsUpdatedAt={stationsUpdatedAt}
-				itemsUpdatedAt={itemsUpdatedAt}
-			/>
+			<DataLastUpdated stationsUpdatedAt={stationsUpdatedAt} itemsUpdatedAt={itemsUpdatedAt} />
 		</>
 	);
 }

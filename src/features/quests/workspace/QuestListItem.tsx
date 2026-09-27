@@ -1,16 +1,16 @@
 import {
-    CheckCircle2,
-    Circle,
-    Crown,
-    Eye,
-    EyeOff,
-    GitBranch,
-    KeyRound,
-    Lock,
-    MapPin,
-    Pin,
-    RotateCcw,
-    XCircle,
+	CheckCircle2,
+	Circle,
+	Crown,
+	Eye,
+	EyeOff,
+	GitBranch,
+	KeyRound,
+	Lock,
+	MapPin,
+	Pin,
+	RotateCcw,
+	XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -23,199 +23,222 @@ import { QuestObjectiveTypeTag } from "./QuestObjectiveTypeTag";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 export function QuestListItem({
-    questId,
-    selected,
-    highlighted,
-    keepMode = true,
-    includeElementId = true,
+	questId,
+	selected,
+	highlighted,
+	keepMode = true,
+	includeElementId = true,
 }: {
-    questId: string;
-    selected: boolean;
-    highlighted: boolean;
-    /** Keep the planner/visualizer open when navigating; otherwise the details pane is shown. */
-    keepMode?: boolean;
-    includeElementId?: boolean;
+	questId: string;
+	selected: boolean;
+	highlighted: boolean;
+	/** Keep the planner/visualizer open when navigating; otherwise the details pane is shown. */
+	keepMode?: boolean;
+	includeElementId?: boolean;
 }) {
-    const {
-        questHref,
-        markInternalSelection,
-        questsById,
-        statusByQuestId,
-        upcomingLockedQuestIds,
-        branchLineByQuestId,
-        retainQuestAfterCompletion,
-    } = useQuestWorkspace();
-    const quest = questsById.get(questId)!;
-    const status = statusByQuestId.get(questId)!;
-    const branchLine = branchLineByQuestId.get(questId);
-    const pinned = useUserStore((state) => !!state.pinnedQuests[questId]);
-    const hidden = useUserStore((state) => !!state.ignoredQuests[questId]);
-    const togglePinnedQuest = useUserStore((state) => state.togglePinnedQuest);
-    const toggleIgnoredQuest = useUserStore((state) => state.toggleIgnoredQuest);
-    const { requestToggleQuestCompletion } = useQuestActions();
-    const completed = status.status === "completed";
-    const failed = status.status === "failed";
-    const resolved = completed || failed;
-    const categories = [...getQuestObjectiveCategories(quest)].slice(0, 2);
-    const traderImage = quest.trader.image4xLink ?? quest.trader.imageLink;
-    const traderLoyaltyLevel = getQuestTraderTabLoyaltyLevel(quest);
-    const essential = isEssentialQuest(quest.id);
-    const upcoming = upcomingLockedQuestIds.has(quest.id);
+	const {
+		questHref,
+		markInternalSelection,
+		questsById,
+		statusByQuestId,
+		upcomingLockedQuestIds,
+		branchLineByQuestId,
+		retainQuestAfterCompletion,
+	} = useQuestWorkspace();
+	const quest = questsById.get(questId)!;
+	const status = statusByQuestId.get(questId)!;
+	const branchLine = branchLineByQuestId.get(questId);
+	const pinned = useUserStore((state) => !!state.pinnedQuests[questId]);
+	const hidden = useUserStore((state) => !!state.ignoredQuests[questId]);
+	const togglePinnedQuest = useUserStore((state) => state.togglePinnedQuest);
+	const toggleIgnoredQuest = useUserStore((state) => state.toggleIgnoredQuest);
+	const { requestToggleQuestCompletion } = useQuestActions();
+	const completed = status.status === "completed";
+	const failed = status.status === "failed";
+	const resolved = completed || failed;
+	const categories = [...getQuestObjectiveCategories(quest)].slice(0, 2);
+	const traderImage = quest.trader.image4xLink ?? quest.trader.imageLink;
+	const traderLoyaltyLevel = getQuestTraderTabLoyaltyLevel(quest);
+	const essential = isEssentialQuest(quest.id);
+	const upcoming = upcomingLockedQuestIds.has(quest.id);
 
-    return (
-        <article
-            id={includeElementId ? `quest-workspace-${quest.id}` : undefined}
-            className={cn(
-                "group relative grid min-h-20 cursor-pointer grid-cols-[108px_minmax(0,1fr)] overflow-hidden text-left transition-colors has-[a:focus-visible]:bg-highlight/6 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:-outline-offset-2 has-[a:focus-visible]:outline-brand",
-                quest.removed
-                    ? "border border-danger/70 bg-danger/5"
-                    : "border-b border-highlight/8 bg-[var(--card-bg)]",
-                selected && "bg-highlight/6 shadow-[inset_3px_0_0_var(--brand)]",
-                highlighted && "bg-highlight/10",
-            )}
-        >
-            <div className="relative min-h-full overflow-hidden bg-[radial-gradient(circle_at_50%_45%,var(--surface-raised),var(--card-bg)_70%)]">
-                {quest.taskImageLink ? (
-                    <img
-                        src={quest.taskImageLink}
-                        alt=""
-                        className={cn(
-                            "absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-[1.025]",
-                            resolved && "opacity-50",
-                        )}
-                    />
-                ) : (
-                    <span className="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-foreground/8">
-                        {quest.name.slice(0, 1)}
-                    </span>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[var(--card-bg)]/80" />
-            </div>
+	return (
+		<article
+			id={includeElementId ? `quest-workspace-${quest.id}` : undefined}
+			className={cn(
+				"group relative grid min-h-20 cursor-pointer grid-cols-[108px_minmax(0,1fr)] overflow-hidden text-left transition-colors has-[a:focus-visible]:bg-highlight/6 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:-outline-offset-2 has-[a:focus-visible]:outline-brand",
+				quest.removed ? "border border-danger/70 bg-danger/5" : "border-b border-highlight/8 bg-[var(--card-bg)]",
+				selected && "bg-highlight/6 shadow-[inset_3px_0_0_var(--brand)]",
+				highlighted && "bg-highlight/10",
+			)}
+		>
+			<div className="relative min-h-full overflow-hidden bg-[radial-gradient(circle_at_50%_45%,var(--surface-raised),var(--card-bg)_70%)]">
+				{quest.taskImageLink ? (
+					<img
+						src={quest.taskImageLink}
+						alt=""
+						className={cn(
+							"absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-[1.025]",
+							resolved && "opacity-50",
+						)}
+					/>
+				) : (
+					<span className="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-foreground/8">
+						{quest.name.slice(0, 1)}
+					</span>
+				)}
+				<div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[var(--card-bg)]/80" />
+			</div>
 
-            <div className="min-w-0 px-3 py-2.5">
-                <div className="flex min-w-0 items-start gap-2">
-                    <h3 className={cn(
-                        "min-w-0 flex-1 truncate text-[13px] font-semibold leading-5 text-foreground",
-                        resolved && "text-subtle-foreground",
-                    )}>
-                        {/* Stretched link: the whole row navigates; action buttons sit above it. */}
-                        <Link
-                            href={questHref(quest.id)}
-                            scroll={false}
-                            aria-current={selected ? "page" : undefined}
-                            onClick={(event) => {
-                                if (keepMode && !event.metaKey && !event.ctrlKey && !event.shiftKey) markInternalSelection(quest.id);
-                            }}
-                            className="outline-none after:absolute after:inset-0 after:content-['']"
-                        >
-                            {quest.name}
-                        </Link>
-                    </h3>
-                    {branchLine && (
-                        <span
-                            className="flex h-7 w-7 shrink-0 items-center justify-center text-brand/70"
-                            aria-label={`Part of ${branchLine.name}`}
-                            title={`Part of ${branchLine.name}`}
-                        >
-                            <GitBranch size={14} />
-                        </span>
-                    )}
-                    <div className="relative z-10 flex shrink-0 items-center gap-0.5">
-                        <button
-                            type="button"
-                            title={hidden ? "Show quest" : "Hide quest"}
-                            aria-label={hidden ? "Show quest" : "Hide quest"}
-                            onClick={() => toggleIgnoredQuest(quest.id)}
-                            className={cn(
-                                "hidden h-7 w-7 items-center justify-center rounded text-subtle-foreground transition-colors hover:bg-special/8 hover:text-special lg:flex",
-                                hidden && "bg-special/8 text-special",
-                            )}
-                        >
-                            {hidden ? <Eye size={14} /> : <EyeOff size={14} />}
-                        </button>
-                        <button
-                            type="button"
-                            title={pinned ? "Unpin quest" : "Pin quest"}
-                            aria-label={pinned ? "Unpin quest" : "Pin quest"}
-                            aria-pressed={pinned}
-                            onClick={() => togglePinnedQuest(quest.id)}
-                            className={cn(
-                                "-mb-px hidden h-7 w-7 items-center justify-center rounded text-subtle-foreground transition-colors hover:bg-info/8 hover:text-info lg:flex",
-                                pinned && "bg-info/8 text-info",
-                            )}
-                        >
-                            <Pin size={14} className={pinned ? "fill-current" : ""} />
-                        </button>
-                        <button
-                            type="button"
-                            title={completed ? "Mark incomplete" : "Mark complete"}
-                            aria-label={`${completed ? "Mark incomplete" : "Mark complete"}: ${quest.name}`}
-                            onClick={() => {
-                                if (!completed) retainQuestAfterCompletion(quest.id);
-                                requestToggleQuestCompletion(quest.id);
-                            }}
-                            className={cn(
-                                "group/complete relative flex h-7 w-7 items-center justify-center rounded transition-colors",
-                                completed
-                                    ? "bg-success/12 text-success hover:bg-danger/12 hover:text-danger"
-                                    : failed
-                                      ? "bg-danger/10 text-danger hover:bg-danger/16 hover:text-danger"
-                                      : "text-subtle-foreground hover:bg-brand/10 hover:text-brand",
-                            )}
-                        >
-                            {completed ? (
-                                <>
-                                    <CheckCircle2 size={15} className="group-hover/complete:hidden" />
-                                    <RotateCcw size={15} className="hidden group-hover/complete:block" />
-                                </>
-                            ) : failed ? <XCircle size={15} /> : <Circle size={15} />}
-                        </button>
-                    </div>
-                </div>
+			<div className="min-w-0 px-3 py-2.5">
+				<div className="flex min-w-0 items-start gap-2">
+					<h3
+						className={cn(
+							"min-w-0 flex-1 truncate text-[13px] font-semibold leading-5 text-foreground",
+							resolved && "text-subtle-foreground",
+						)}
+					>
+						{/* Stretched link: the whole row navigates; action buttons sit above it. */}
+						<Link
+							href={questHref(quest.id)}
+							scroll={false}
+							aria-current={selected ? "page" : undefined}
+							onClick={(event) => {
+								if (keepMode && !event.metaKey && !event.ctrlKey && !event.shiftKey) markInternalSelection(quest.id);
+							}}
+							className="outline-none after:absolute after:inset-0 after:content-['']"
+						>
+							{quest.name}
+						</Link>
+					</h3>
+					{branchLine && (
+						<span
+							className="flex h-7 w-7 shrink-0 items-center justify-center text-brand/70"
+							aria-label={`Part of ${branchLine.name}`}
+							title={`Part of ${branchLine.name}`}
+						>
+							<GitBranch size={14} />
+						</span>
+					)}
+					<div className="relative z-10 flex shrink-0 items-center gap-0.5">
+						<button
+							type="button"
+							title={hidden ? "Show quest" : "Hide quest"}
+							aria-label={hidden ? "Show quest" : "Hide quest"}
+							onClick={() => toggleIgnoredQuest(quest.id)}
+							className={cn(
+								"hidden h-7 w-7 items-center justify-center rounded text-subtle-foreground transition-colors hover:bg-special/8 hover:text-special lg:flex",
+								hidden && "bg-special/8 text-special",
+							)}
+						>
+							{hidden ? <Eye size={14} /> : <EyeOff size={14} />}
+						</button>
+						<button
+							type="button"
+							title={pinned ? "Unpin quest" : "Pin quest"}
+							aria-label={pinned ? "Unpin quest" : "Pin quest"}
+							aria-pressed={pinned}
+							onClick={() => togglePinnedQuest(quest.id)}
+							className={cn(
+								"-mb-px hidden h-7 w-7 items-center justify-center rounded text-subtle-foreground transition-colors hover:bg-info/8 hover:text-info lg:flex",
+								pinned && "bg-info/8 text-info",
+							)}
+						>
+							<Pin size={14} className={pinned ? "fill-current" : ""} />
+						</button>
+						<button
+							type="button"
+							title={completed ? "Mark incomplete" : "Mark complete"}
+							aria-label={`${completed ? "Mark incomplete" : "Mark complete"}: ${quest.name}`}
+							onClick={() => {
+								if (!completed) retainQuestAfterCompletion(quest.id);
+								requestToggleQuestCompletion(quest.id);
+							}}
+							className={cn(
+								"group/complete relative flex h-7 w-7 items-center justify-center rounded transition-colors",
+								completed
+									? "bg-success/12 text-success hover:bg-danger/12 hover:text-danger"
+									: failed
+										? "bg-danger/10 text-danger hover:bg-danger/16 hover:text-danger"
+										: "text-subtle-foreground hover:bg-brand/10 hover:text-brand",
+							)}
+						>
+							{completed ? (
+								<>
+									<CheckCircle2 size={15} className="group-hover/complete:hidden" />
+									<RotateCcw size={15} className="hidden group-hover/complete:block" />
+								</>
+							) : failed ? (
+								<XCircle size={15} />
+							) : (
+								<Circle size={15} />
+							)}
+						</button>
+					</div>
+				</div>
 
-                <div className="mt-0.5 flex min-w-0 items-center gap-2 text-[10px] text-subtle-foreground">
-                    <span className="flex min-w-0 items-center gap-1">
-                        {traderImage && <img src={traderImage} alt="" className="h-3.5 w-3.5 rounded-full object-cover" />}
-                        <span className="truncate font-medium">{quest.trader.name}</span>
-                        {essential ? (
-                            <span className="shrink-0 font-serif text-[9px] font-bold uppercase text-warning/75" title="Essential quest">
-                                Essential
-                            </span>
-                        ) : (
-                            <span
-                                className="flex h-3.5 min-w-3.5 shrink-0 items-center justify-center text-brand/75"
-                                title={`${quest.trader.name} loyalty level ${traderLoyaltyLevel} tab`}
-                                aria-label={`Trader loyalty level ${traderLoyaltyLevel} tab`}
-                            >
-                                {traderLoyaltyLevel === 4
-                                    ? <Crown size={10} />
-                                    : <span className="font-serif text-[9px] font-bold leading-none">{["", "I", "II", "III"][traderLoyaltyLevel]}</span>}
-                            </span>
-                        )}
-                        {quest.removed && (
-                            <span className="shrink-0 font-serif text-[9px] font-bold uppercase text-danger">Removed</span>
-                        )}
-                    </span>
-                    {status.status === "locked" && (
-                        <span className={cn(
-                            "flex shrink-0 items-center gap-1 uppercase",
-                            upcoming ? "text-warning/80" : "text-danger/70",
-                        )}>
-                            <Lock size={10} /> {upcoming ? "Upcoming" : status.label}
-                        </span>
-                    )}
-                    {failed && <span className="flex shrink-0 items-center gap-1 uppercase text-danger/70"><XCircle size={10} /> Failed</span>}
-                    {(quest.minPlayerLevel ?? 0) > 0 && <span className="shrink-0">Lv {quest.minPlayerLevel}</span>}
-                    {quest.objectives.some((objective) => objective.requiredKeyIds?.length) && (
-                        <KeyRound size={10} className="shrink-0 text-warning/70" />
-                    )}
-                </div>
+				<div className="mt-0.5 flex min-w-0 items-center gap-2 text-[10px] text-subtle-foreground">
+					<span className="flex min-w-0 items-center gap-1">
+						{traderImage && <img src={traderImage} alt="" className="h-3.5 w-3.5 rounded-full object-cover" />}
+						<span className="truncate font-medium">{quest.trader.name}</span>
+						{essential ? (
+							<span
+								className="shrink-0 font-serif text-[9px] font-bold uppercase text-warning/75"
+								title="Essential quest"
+							>
+								Essential
+							</span>
+						) : (
+							<span
+								className="flex h-3.5 min-w-3.5 shrink-0 items-center justify-center text-brand/75"
+								title={`${quest.trader.name} loyalty level ${traderLoyaltyLevel} tab`}
+								aria-label={`Trader loyalty level ${traderLoyaltyLevel} tab`}
+							>
+								{traderLoyaltyLevel === 4 ? (
+									<Crown size={10} />
+								) : (
+									<span className="font-serif text-[9px] font-bold leading-none">
+										{["", "I", "II", "III"][traderLoyaltyLevel]}
+									</span>
+								)}
+							</span>
+						)}
+						{quest.removed && (
+							<span className="shrink-0 font-serif text-[9px] font-bold uppercase text-danger">Removed</span>
+						)}
+					</span>
+					{status.status === "locked" && (
+						<span
+							className={cn(
+								"flex shrink-0 items-center gap-1 uppercase",
+								upcoming ? "text-warning/80" : "text-danger/70",
+							)}
+						>
+							<Lock size={10} /> {upcoming ? "Upcoming" : status.label}
+						</span>
+					)}
+					{failed && (
+						<span className="flex shrink-0 items-center gap-1 uppercase text-danger/70">
+							<XCircle size={10} /> Failed
+						</span>
+					)}
+					{(quest.minPlayerLevel ?? 0) > 0 && <span className="shrink-0">Lv {quest.minPlayerLevel}</span>}
+					{quest.objectives.some((objective) => objective.requiredKeyIds?.length) && (
+						<KeyRound size={10} className="shrink-0 text-warning/70" />
+					)}
+				</div>
 
-                <div className="mt-1 flex min-w-0 items-center gap-2 text-[10px] font-medium text-subtle-foreground">
-                    {quest.map && <span className="flex shrink-0 items-center gap-1"><MapPin size={10} /> {quest.map.name}</span>}
-                    {categories.map((category) => <QuestObjectiveTypeTag key={category} category={category} />)}
-                </div>
-            </div>
-        </article>
-    );
+				<div className="mt-1 flex min-w-0 items-center gap-2 text-[10px] font-medium text-subtle-foreground">
+					{quest.map && (
+						<span className="flex shrink-0 items-center gap-1">
+							<MapPin size={10} /> {quest.map.name}
+						</span>
+					)}
+					{categories.map((category) => (
+						<QuestObjectiveTypeTag key={category} category={category} />
+					))}
+				</div>
+			</div>
+		</article>
+	);
 }

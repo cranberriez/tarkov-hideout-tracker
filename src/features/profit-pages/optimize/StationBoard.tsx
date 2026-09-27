@@ -108,7 +108,12 @@ export function StationBoard({
 						hideUnpinned: hidden,
 					});
 					return (
-						<section key={stationId} id={stationId} aria-label={stations[stationId]?.name ?? stationId} className="py-3">
+						<section
+							key={stationId}
+							id={stationId}
+							aria-label={stations[stationId]?.name ?? stationId}
+							className="py-3"
+						>
 							<div className="flex items-center gap-2 pb-2">
 								<CraftImage src={stations[stationId]?.imageLink ?? undefined} size={26} />
 								<h2 className="text-sm font-medium">{stations[stationId]?.name ?? stationId}</h2>
@@ -152,7 +157,9 @@ export function StationBoard({
 									</StationCraftRow>
 								))}
 								{!hidden && !visible.length && (
-									<p className="px-2 pt-2 text-xs text-muted-foreground">No matching crafts at your current unlocks and prices.</p>
+									<p className="px-2 pt-2 text-xs text-muted-foreground">
+										No matching crafts at your current unlocks and prices.
+									</p>
 								)}
 							</div>
 						</section>

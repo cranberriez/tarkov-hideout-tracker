@@ -24,7 +24,11 @@ export function LegacyProfileConversionCard() {
 			? { label: "Not restored", icon: Clock3, tone: "border-highlight/15 bg-highlight/5 text-muted-foreground" }
 			: isOutstanding
 				? { label: "Outstanding", icon: Clock3, tone: "border-warning/25 bg-warning/10 text-warning" }
-				: { label: "No old data", icon: CheckCircle2, tone: "border-highlight/10 bg-highlight/5 text-subtle-foreground" };
+				: {
+						label: "No old data",
+						icon: CheckCircle2,
+						tone: "border-highlight/10 bg-highlight/5 text-subtle-foreground",
+					};
 	const StatusIcon = status.icon;
 
 	return (

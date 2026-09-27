@@ -80,12 +80,14 @@ export async function getItemView<ViewType extends ItemViewType>(
 				]
 			: (payload as ItemUsageData | ItemAcquisitionTreeData).items;
 	const [priceResult, discovery] = await Promise.all([
-		includePrices ? getCurrentPriceData(
-			mode,
-			items.map((item) => item.id),
-			database,
-			releaseId,
-		) : Promise.resolve({ data: {} as Record<string, CurrentPrice>, updatedAt: null }),
+		includePrices
+			? getCurrentPriceData(
+					mode,
+					items.map((item) => item.id),
+					database,
+					releaseId,
+				)
+			: Promise.resolve({ data: {} as Record<string, CurrentPrice>, updatedAt: null }),
 		getItemDiscovery(
 			mode,
 			items.map((item) => item.id),

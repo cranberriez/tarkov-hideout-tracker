@@ -36,7 +36,11 @@ export function parseBoardChoices(raw: string | null): BoardChoices {
 						: {};
 				const unitCosts =
 					choice.unitCosts && typeof choice.unitCosts === "object"
-						? Object.fromEntries(Object.entries(choice.unitCosts).filter(([, price]) => typeof price === "number" && Number.isFinite(price) && price >= 0))
+						? Object.fromEntries(
+								Object.entries(choice.unitCosts).filter(
+									([, price]) => typeof price === "number" && Number.isFinite(price) && price >= 0,
+								),
+							)
 						: {};
 				return [[id, { variant: choice.variant, routes, unitCosts }]];
 			}),
@@ -70,7 +74,8 @@ export function selectedBoardCraft(craft: BoardCraft, choice?: BoardChoice): Rec
 	for (const [index, part] of row.requiredItems.entries()) {
 		const route = choice?.routes?.[requirementKey(part)];
 		if (!route) continue;
-		if (getAcquisitionRoutes(part).some((candidate) => acquisitionRouteKey(candidate) === route)) row = withRequiredItemRoute(row, index, route);
+		if (getAcquisitionRoutes(part).some((candidate) => acquisitionRouteKey(candidate) === route))
+			row = withRequiredItemRoute(row, index, route);
 		else missingRoute = true;
 	}
 	if (choice?.unitCosts && Object.keys(choice.unitCosts).length) {
@@ -79,9 +84,17 @@ export function selectedBoardCraft(craft: BoardCraft, choice?: BoardChoice): Rec
 			return part.isTool || price === undefined ? part : { ...part, totalCost: price * part.quantity };
 		});
 		const unknown = requiredItems.some((part) => !part.isTool && part.totalCost === null);
-		const cost = unknown ? null : requiredItems.reduce((total, part) => total + (part.isTool ? 0 : (part.totalCost ?? 0)), 0);
+		const cost = unknown
+			? null
+			: requiredItems.reduce((total, part) => total + (part.isTool ? 0 : (part.totalCost ?? 0)), 0);
 		const profit = cost === null || row.sellValue === null ? null : row.sellValue - cost;
-		row = { ...row, requiredItems, cost, profit, profitPerHour: profit === null || row.durationSeconds <= 0 ? null : (profit * 3600) / row.durationSeconds };
+		row = {
+			...row,
+			requiredItems,
+			cost,
+			profit,
+			profitPerHour: profit === null || row.durationSeconds <= 0 ? null : (profit * 3600) / row.durationSeconds,
+		};
 	}
 	// A stale saved route stays visible but cannot imply a silently substituted profit.
 	return missingRoute
@@ -90,14 +103,21 @@ export function selectedBoardCraft(craft: BoardCraft, choice?: BoardChoice): Rec
 				cost: null,
 				profit: null,
 				profitPerHour: null,
-				lockReasons: [...row.lockReasons, { kind: "unavailable", message: "A saved input route is unavailable. Choose another route." }],
+				lockReasons: [
+					...row.lockReasons,
+					{ kind: "unavailable", message: "A saved input route is unavailable. Choose another route." },
+				],
 			}
 		: row;
 }
 export function boardCraftAvailable(row: RecipeEvaluation): boolean {
 	const usable = (part: AcquisitionPlan): boolean =>
 		part.isTool === true ||
-		(part.method !== "unavailable" && part.method !== "sell" && !part.lockReasons?.length && part.totalCost !== null && part.children.every(usable));
+		(part.method !== "unavailable" &&
+			part.method !== "sell" &&
+			!part.lockReasons?.length &&
+			part.totalCost !== null &&
+			part.children.every(usable));
 	return row.lockReasons.length === 0 && row.profit !== null && row.requiredItems.every(usable);
 }
 export function boardEffort(row: RecipeEvaluation): number {
@@ -121,7 +141,9 @@ export function rankBoardCrafts(rows: RecipeEvaluation[], ranking: BoardRanking)
 				: ranking === "profit"
 					? (row.profit ?? -Infinity)
 					: (row.profitPerHour ?? -Infinity);
-	return [...rows].sort((a, b) => score(b) - score(a) || (b.profit ?? -Infinity) - (a.profit ?? -Infinity) || a.id.localeCompare(b.id));
+	return [...rows].sort(
+		(a, b) => score(b) - score(a) || (b.profit ?? -Infinity) - (a.profit ?? -Infinity) || a.id.localeCompare(b.id),
+	);
 }
 
 export function boardCraftPlacements(rows: RecipeEvaluation[], ranking: BoardRanking) {
@@ -159,7 +181,12 @@ export function visibleBoardCrafts({
 	if (hideUnpinned) return pinned;
 	const candidates = orderedBaseline.flatMap((baseline) => {
 		const current = currentById.get(baseline.id);
-		return current && !pinnedCrafts[baseline.id] && boardCraftAvailable(baseline) && (includeLosses || (baseline.profit ?? 0) > 0) ? [current] : [];
+		return current &&
+			!pinnedCrafts[baseline.id] &&
+			boardCraftAvailable(baseline) &&
+			(includeLosses || (baseline.profit ?? 0) > 0)
+			? [current]
+			: [];
 	});
 	return [...pinned, ...candidates];
 }

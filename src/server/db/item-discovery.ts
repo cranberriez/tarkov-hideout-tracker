@@ -6,7 +6,11 @@ import { TursoDataIntegrityError } from "./errors";
 
 type ItemDiscovery = Pick<ItemSummary, "firstSeenAt" | "firstSeenPatch" | "firstSeenReleaseId">;
 
-export async function getItemDiscovery(mode: TarkovJsonGameMode, ids: readonly string[], database: Client): Promise<Record<string, ItemDiscovery>> {
+export async function getItemDiscovery(
+	mode: TarkovJsonGameMode,
+	ids: readonly string[],
+	database: Client,
+): Promise<Record<string, ItemDiscovery>> {
 	if (!ids.length) return {};
 	const results = await mapBatches(canonicalIds(ids), async (batch) => {
 		const result = await database.execute({
@@ -21,7 +25,9 @@ export async function getItemDiscovery(mode: TarkovJsonGameMode, ids: readonly s
 				typeof row.item_id !== "string" ||
 				typeof row.first_seen_patch !== "string" ||
 				typeof row.first_seen_release_id !== "string" ||
-				(row.first_seen_patch === "pre-1.1.5" ? timestamp !== null : timestamp === null || !Number.isFinite(timestamp) || timestamp <= 0)
+				(row.first_seen_patch === "pre-1.1.5"
+					? timestamp !== null
+					: timestamp === null || !Number.isFinite(timestamp) || timestamp <= 0)
 			) {
 				throw new TursoDataIntegrityError("Invalid item discovery metadata");
 			}

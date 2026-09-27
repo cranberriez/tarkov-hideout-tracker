@@ -12,7 +12,11 @@ function subscribeToHydration(notify: () => void) {
 }
 
 export function useUserStoreHydrated(): boolean {
-	return useSyncExternalStore(subscribeToHydration, () => useUserStore.persist.hasHydrated(), () => false);
+	return useSyncExternalStore(
+		subscribeToHydration,
+		() => useUserStore.persist.hasHydrated(),
+		() => false,
+	);
 }
 
 export function useGameDataEnabled(mode: TarkovJsonGameMode): boolean {

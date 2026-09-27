@@ -8,19 +8,23 @@ import { ProfitQueryPage } from "./ProfitQueryPage";
 import type { ProfitPageKind } from "./types";
 
 export async function ProfitPage({
-  kind,
-  searchParams,
+	kind,
+	searchParams,
 }: {
-  kind: ProfitPageKind;
-  searchParams: Promise<{ recipe?: string }>;
+	kind: ProfitPageKind;
+	searchParams: Promise<{ recipe?: string }>;
 }) {
-  const [{ recipe }, mode] = await Promise.all([
-    searchParams,
-    getActiveTarkovJsonGameMode(),
-  ]);
-  const options = profitPageQueryOptions(mode);
-  const { state, fallbackData } = await prefetchPageData(options.queryKey, PAGE_DATA_STALE_TIME, async () => getProfitPageData(mode, await getCurrentPageRepository(mode), { includePrices: false }), isCompleteProfitPageData);
-  return (
-    <HydrationBoundary state={state}><ProfitQueryPage mode={mode} kind={kind} fallbackData={fallbackData} initialTargetRecipeId={recipe} /></HydrationBoundary>
-  );
+	const [{ recipe }, mode] = await Promise.all([searchParams, getActiveTarkovJsonGameMode()]);
+	const options = profitPageQueryOptions(mode);
+	const { state, fallbackData } = await prefetchPageData(
+		options.queryKey,
+		PAGE_DATA_STALE_TIME,
+		async () => getProfitPageData(mode, await getCurrentPageRepository(mode), { includePrices: false }),
+		isCompleteProfitPageData,
+	);
+	return (
+		<HydrationBoundary state={state}>
+			<ProfitQueryPage mode={mode} kind={kind} fallbackData={fallbackData} initialTargetRecipeId={recipe} />
+		</HydrationBoundary>
+	);
 }

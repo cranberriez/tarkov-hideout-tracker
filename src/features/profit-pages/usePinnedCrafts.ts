@@ -5,7 +5,9 @@ import { useStoredProfitValue } from "./useStoredProfitValue";
 export function parsePinnedCrafts(raw: string | null): Record<string, true> {
 	try {
 		const value: unknown = JSON.parse(raw ?? "[]");
-		return Array.isArray(value) ? Object.fromEntries(value.filter((id): id is string => typeof id === "string").map((id) => [id, true])) : {};
+		return Array.isArray(value)
+			? Object.fromEntries(value.filter((id): id is string => typeof id === "string").map((id) => [id, true]))
+			: {};
 	} catch {
 		return {};
 	}

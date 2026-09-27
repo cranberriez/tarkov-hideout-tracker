@@ -8,15 +8,15 @@ import { getDefaultRepository } from "./query-utils";
  * prices keep loading through their existing feature-owned client queries.
  */
 export async function getItemDetailPageData(
-    mode: TarkovDataMode,
-    itemId: string,
-    repository?: TarkovDataRepository,
+	mode: TarkovDataMode,
+	itemId: string,
+	repository?: TarkovDataRepository,
 ): Promise<ItemDetailPageData> {
-    const dataRepository = repository ?? (await getDefaultRepository());
-    try {
-        const { data } = await dataRepository.items.getByIds(mode, [itemId]);
-        return { item: data[itemId] ?? null, error: null };
-    } catch {
-        return { item: null, error: "Item data could not be loaded." };
-    }
+	const dataRepository = repository ?? (await getDefaultRepository());
+	try {
+		const { data } = await dataRepository.items.getByIds(mode, [itemId]);
+		return { item: data[itemId] ?? null, error: null };
+	} catch {
+		return { item: null, error: "Item data could not be loaded." };
+	}
 }

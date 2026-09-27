@@ -23,13 +23,20 @@ export function NonItemRequirements({ station, nextLevelData, stations, stationL
 					const isMet = reqStationLevel >= req.level;
 
 					const chip = (
-						<RequirementChip satisfied={isMet} className={reqStation ? "transition-colors group-hover/station:border-current" : undefined}>
+						<RequirementChip
+							satisfied={isMet}
+							className={reqStation ? "transition-colors group-hover/station:border-current" : undefined}
+						>
 							{reqStation?.name ?? req.station.normalizedName.replace(/-/g, " ")}
 							<span className="ml-1 text-foreground">LVL {req.level}</span>
 						</RequirementChip>
 					);
 					return reqStation ? (
-						<StationLink key={`st-${idx}`} station={reqStation} className="group/station rounded-sm focus-visible:outline-2 focus-visible:outline-brand">
+						<StationLink
+							key={`st-${idx}`}
+							station={reqStation}
+							className="group/station rounded-sm focus-visible:outline-2 focus-visible:outline-brand"
+						>
 							{chip}
 						</StationLink>
 					) : (
@@ -40,9 +47,18 @@ export function NonItemRequirements({ station, nextLevelData, stations, stationL
 				<RequirementChip
 					key={`sk-${idx}`}
 					satisfied={null}
-					icon={req.skill.imageLink ? (
-						<Image src={req.skill.imageLink} alt="" width={12} height={12} className="size-3 object-contain" unoptimized />
-					) : undefined}
+					icon={
+						req.skill.imageLink ? (
+							<Image
+								src={req.skill.imageLink}
+								alt=""
+								width={12}
+								height={12}
+								className="size-3 object-contain"
+								unoptimized
+							/>
+						) : undefined
+					}
 				>
 					{req.skill.name}
 					<span className="ml-1">LVL {req.level}</span>
@@ -52,9 +68,18 @@ export function NonItemRequirements({ station, nextLevelData, stations, stationL
 				<RequirementChip
 					key={`tr-${idx}`}
 					satisfied={null}
-					icon={req.trader.imageLink ? (
-						<Image src={req.trader.imageLink} alt="" width={12} height={12} className="size-3 rounded-full object-cover" unoptimized />
-					) : undefined}
+					icon={
+						req.trader.imageLink ? (
+							<Image
+								src={req.trader.imageLink}
+								alt=""
+								width={12}
+								height={12}
+								className="size-3 rounded-full object-cover"
+								unoptimized
+							/>
+						) : undefined
+					}
 				>
 					{req.trader.name}
 					<span className="ml-1">LL{req.value}</span>

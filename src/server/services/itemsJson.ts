@@ -1,4 +1,8 @@
-import { fetchTarkovJsonDataset, type TarkovJsonDataset, type TarkovJsonGameMode } from "@/server/services/tarkovJson/client";
+import {
+	fetchTarkovJsonDataset,
+	type TarkovJsonDataset,
+	type TarkovJsonGameMode,
+} from "@/server/services/tarkovJson/client";
 import type { ItemSummary, ItemCategory, TraderPurchaseOffer } from "@/types/items";
 import type { CurrentPrice } from "@/types/prices";
 import type { GlobalSkill } from "@/types/hideout";
@@ -86,7 +90,9 @@ function numberOrNullish(value: unknown): number | null | undefined {
 	return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
-function mapTraderPurchaseOffer(value: NonNullable<JsonCatalogItem["buyFromTrader"]>[number]): TraderPurchaseOffer | null {
+function mapTraderPurchaseOffer(
+	value: NonNullable<JsonCatalogItem["buyFromTrader"]>[number],
+): TraderPurchaseOffer | null {
 	if (
 		typeof value.trader !== "string" ||
 		!value.trader ||
@@ -117,7 +123,11 @@ function mapTraderPurchaseOffer(value: NonNullable<JsonCatalogItem["buyFromTrade
 	};
 }
 
-function mapMarketPrice(item: JsonCatalogItem, traders: Record<string, JsonTrader>, translateTrader: (key: string | null | undefined) => string): CurrentPrice {
+function mapMarketPrice(
+	item: JsonCatalogItem,
+	traders: Record<string, JsonTrader>,
+	translateTrader: (key: string | null | undefined) => string,
+): CurrentPrice {
 	const lastScan = item.lastScan ? Date.parse(item.lastScan) : Number.NaN;
 	return {
 		avg24hPrice: numberOrNullish(item.avg24hPrice),
@@ -154,7 +164,8 @@ function mapItem(
 	translateItem: (key: string | null | undefined) => string,
 	translateTrader: (key: string | null | undefined) => string,
 ): ItemSummary | null {
-	if (!item || typeof item.id !== "string" || !item.id.trim() || typeof item.name !== "string" || !item.name.trim()) return null;
+	if (!item || typeof item.id !== "string" || !item.id.trim() || typeof item.name !== "string" || !item.name.trim())
+		return null;
 	let category: ItemCategory | undefined;
 	for (const categoryId of item.categories ?? []) {
 		const sourceCategory = categories[categoryId];
@@ -202,7 +213,13 @@ export async function getGlobalItemList(gameMode: TarkovJsonGameMode = "regular"
 		throw new Error("Tarkov JSON item dataset omitted flea eligibility types");
 	}
 	const items = sourceItems.flatMap((item) => {
-		const mapped = mapItem(item, itemsDataset.data.itemCategories ?? {}, tradersDataset.data, itemsDataset.translate, tradersDataset.translate);
+		const mapped = mapItem(
+			item,
+			itemsDataset.data.itemCategories ?? {},
+			tradersDataset.data,
+			itemsDataset.translate,
+			tradersDataset.translate,
+		);
 		if (!mapped) throw new Error("Tarkov JSON item dataset contains an invalid required item record");
 		return [mapped];
 	});
@@ -228,7 +245,9 @@ export async function getGlobalItemList(gameMode: TarkovJsonGameMode = "regular"
 export async function getGlobalSkillList(gameMode: TarkovJsonGameMode = "regular"): Promise<DataResult<SkillsPayload>> {
 	const dataset = await getItemsDataset(gameMode);
 	const skills: GlobalSkill[] = (dataset.data.skills ?? []).flatMap((skill) =>
-		typeof skill.id === "string" && skill.id ? [{ id: skill.id, name: dataset.translate(skill.name), imageLink: skill.imageLink }] : [],
+		typeof skill.id === "string" && skill.id
+			? [{ id: skill.id, name: dataset.translate(skill.name), imageLink: skill.imageLink }]
+			: [],
 	);
 	if (skills.length === 0) throw new Error("Tarkov JSON item dataset contained no skills");
 	return {

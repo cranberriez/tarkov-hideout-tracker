@@ -8,16 +8,16 @@ account for existing users' data.
 
 ## Persistent owners
 
-| Storage key | Owner and scope |
-|---|---|
-| `tarkov-hideout-user-state` | [useUserStore](../src/lib/stores/useUserStore.ts), Zustand persist **v23**; profiles, active profile projection, shared preferences and conversion state |
-| `tarkov-kappa-checklist-state` | [useKappaStore](../src/lib/stores/useKappaStore.ts), Zustand persist **v1**; `completedItemsByMode` and shared `viewMode` |
-| `tarkov-profit-price-overrides-v1:{mode}` | [useManualPriceOverrides](../src/features/profit-pages/useManualPriceOverrides.ts); independent buy/sell overrides |
-| `tarkov-profit-pinned-crafts-v1:{mode}` | [usePinnedCrafts](../src/features/profit-pages/usePinnedCrafts.ts); independent craft pins |
-| `tarkov-craft-board-v1:{mode}` | [StationBoard](../src/features/profit-pages/optimize/StationBoard.tsx); recipe acquisition variants, stable ingredient route choices and custom input costs |
-| `tarkov-profit-options-v1:{mode}` | [useProfitOptions](../src/features/profit-pages/useProfitOptions.ts); options-menu preferences and crafting skill shared by crafts and barters within each mode |
+| Storage key                                     | Owner and scope                                                                                                                                                                                      |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tarkov-hideout-user-state`                     | [useUserStore](../src/lib/stores/useUserStore.ts), Zustand persist **v23**; profiles, active profile projection, shared preferences and conversion state                                             |
+| `tarkov-kappa-checklist-state`                  | [useKappaStore](../src/lib/stores/useKappaStore.ts), Zustand persist **v1**; `completedItemsByMode` and shared `viewMode`                                                                            |
+| `tarkov-profit-price-overrides-v1:{mode}`       | [useManualPriceOverrides](../src/features/profit-pages/useManualPriceOverrides.ts); independent buy/sell overrides                                                                                   |
+| `tarkov-profit-pinned-crafts-v1:{mode}`         | [usePinnedCrafts](../src/features/profit-pages/usePinnedCrafts.ts); independent craft pins                                                                                                           |
+| `tarkov-craft-board-v1:{mode}`                  | [StationBoard](../src/features/profit-pages/optimize/StationBoard.tsx); recipe acquisition variants, stable ingredient route choices and custom input costs                                          |
+| `tarkov-profit-options-v1:{mode}`               | [useProfitOptions](../src/features/profit-pages/useProfitOptions.ts); options-menu preferences and crafting skill shared by crafts and barters within each mode                                      |
 | `tarkov-hideout:quest-log-import:seen-files:v1` | [quest-log-import.ts](../src/lib/quests/quest-log-import.ts) and [import controller](../src/features/quests/import/useQuestLogImportController.ts); processed-file metadata, not per-profile storage |
-| `tarkov-active-game-mode` cookie | [game-mode.ts](../src/lib/game-mode.ts); active profile selection for server reads |
+| `tarkov-active-game-mode` cookie                | [game-mode.ts](../src/lib/game-mode.ts); active profile selection for server reads                                                                                                                   |
 
 Profit key suffixes are app modes `PVP`, `PVE`, and `KORD`, not dataset names.
 The user/Kappa stores are separate persistent owners; neither owns the profit
@@ -100,11 +100,11 @@ preference preservation and write-failure recovery.
 [StorageResetCard](../src/features/settings/StorageResetCard.tsx) composes store
 actions with resets of other owners. Its current behavior is:
 
-| Settings action | Actual scope |
-|---|---|
-| Hideout reset | Active profile's station levels, hidden stations, and completed requirements |
-| Item reset | Active profile's inventory; Kappa completion for **all modes**, retaining Kappa view preference |
-| Quest reset | Active profile's completed/failed/visited-objective/hand-in/ignored/pinned/history state; removes the shared import seen-files key |
+| Settings action | Actual scope                                                                                                                                             |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hideout reset   | Active profile's station levels, hidden stations, and completed requirements                                                                             |
+| Item reset      | Active profile's inventory; Kappa completion for **all modes**, retaining Kappa view preference                                                          |
+| Quest reset     | Active profile's completed/failed/visited-objective/hand-in/ignored/pinned/history state; removes the shared import seen-files key                       |
 | Delete ALL data | Resets the entire user store and all three profiles to defaults, selects PVP and updates its cookie; resets all Kappa completion and its view preference |
 
 Section resets preserve unrelated settings/profiles except the explicitly

@@ -33,7 +33,9 @@ export async function generateMetadata({ params }: QuestPageProps): Promise<Meta
 		`${quest.traderName} quest`,
 		quest.mapName ? `on ${quest.mapName}` : null,
 		quest.minPlayerLevel ? `from level ${quest.minPlayerLevel}` : null,
-	].filter(Boolean).join(" ");
+	]
+		.filter(Boolean)
+		.join(" ");
 	const objectives = quest.objectiveDescriptions.slice(0, 3).join(" ");
 	return {
 		title: `${quest.name} (${quest.traderName})`,

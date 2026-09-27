@@ -59,13 +59,20 @@ export function ProfitRow({
 }) {
 	const [expanded, setExpanded] = useState(false);
 	const evaluation = useMemo(
-		() => Object.entries(routeSelections).reduce((current, [index, routeKey]) => withRequiredItemRoute(current, Number(index), routeKey), baseEvaluation),
+		() =>
+			Object.entries(routeSelections).reduce(
+				(current, [index, routeKey]) => withRequiredItemRoute(current, Number(index), routeKey),
+				baseEvaluation,
+			),
 		[baseEvaluation, routeSelections],
 	);
 	const originalEvaluation = useMemo(
 		() =>
 			baselineEvaluation
-				? Object.entries(routeSelections).reduce((current, [index, routeKey]) => withRequiredItemRoute(current, Number(index), routeKey), baselineEvaluation)
+				? Object.entries(routeSelections).reduce(
+						(current, [index, routeKey]) => withRequiredItemRoute(current, Number(index), routeKey),
+						baselineEvaluation,
+					)
 				: undefined,
 		[baselineEvaluation, routeSelections],
 	);
@@ -226,14 +233,18 @@ export function ProfitRow({
 						responsiveLabel
 						label="Profit / hour"
 						value={evaluation.profitPerHour}
-						customized={originalEvaluation !== undefined && evaluation.profitPerHour !== originalEvaluation.profitPerHour}
+						customized={
+							originalEvaluation !== undefined && evaluation.profitPerHour !== originalEvaluation.profitPerHour
+						}
 						originalValue={originalEvaluation ? formatSignedRoubles(originalEvaluation.profitPerHour) : undefined}
 					>
 						{formatSignedRoubles(evaluation.profitPerHour)}
 					</ProfitCell>
 				</div>
 			</div>
-			{expanded && hasNestedRecipe && <RecipeChain evaluation={evaluation} routeContext={routeContext} onGoToRecipe={onGoToRecipe} />}
+			{expanded && hasNestedRecipe && (
+				<RecipeChain evaluation={evaluation} routeContext={routeContext} onGoToRecipe={onGoToRecipe} />
+			)}
 		</div>
 	);
 }

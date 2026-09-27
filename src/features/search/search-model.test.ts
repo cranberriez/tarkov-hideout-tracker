@@ -53,7 +53,10 @@ test("a chip restricts matches and an empty scoped query browses only that kind"
 	const index = buildPaletteIndex(manifest);
 	assert.equal(searchPalette(index, "farming", "item").length, 0);
 	assert.equal(searchPalette(index, "GPU", "quest").length, 0);
-	assert.deepEqual(searchPalette(index, "", "quest").map((entry) => entry.name), ["Farming - Part 4"]);
+	assert.deepEqual(
+		searchPalette(index, "", "quest").map((entry) => entry.name),
+		["Farming - Part 4"],
+	);
 	assert.ok(searchPalette(index, "a", "item").every((entry) => entry.kind === "item"));
 	assert.equal(searchPalette(index, "a").length, 3);
 });

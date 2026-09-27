@@ -8,47 +8,72 @@ import type { ItemAcquisitionTreeData, ItemRelationsPayload, ItemUsageData } fro
 const DETAIL_STALE_TIME = 60_000;
 const DETAIL_GC_TIME = 5 * 60_000;
 const DETAIL_QUERY_LIMIT = 60;
-function scopedItemViewQueryOptions<T>({ mode, itemId, domain, path, complete, partialMessage }: {
-    mode: TarkovJsonGameMode;
-    itemId: string;
-    domain: "relations" | "usage" | "acquisition";
-    path: string;
-    complete: (payload: T) => boolean;
-    partialMessage: string;
+function scopedItemViewQueryOptions<T>({
+	mode,
+	itemId,
+	domain,
+	path,
+	complete,
+	partialMessage,
+}: {
+	mode: TarkovJsonGameMode;
+	itemId: string;
+	domain: "relations" | "usage" | "acquisition";
+	path: string;
+	complete: (payload: T) => boolean;
+	partialMessage: string;
 }) {
-    return queryOptions({
-        queryKey: gameDataKey(mode, `item-detail-${domain}`, itemId, "unpriced-v1"),
-        queryFn: async ({ signal }) => {
-            const params = new URLSearchParams({ mode, prices: "none" });
-            const payload = await fetchJson<T>(
-                `/api/items/${encodeURIComponent(itemId)}/${path}?${params}`,
-                { signal },
-            );
-            return requireComplete(payload, complete, partialMessage);
-        },
-        staleTime: DETAIL_STALE_TIME,
-        gcTime: DETAIL_GC_TIME,
-        retry: false,
-        meta: { retentionGroup: "item-detail", inactiveQueryLimit: DETAIL_QUERY_LIMIT },
-    });
+	return queryOptions({
+		queryKey: gameDataKey(mode, `item-detail-${domain}`, itemId, "unpriced-v1"),
+		queryFn: async ({ signal }) => {
+			const params = new URLSearchParams({ mode, prices: "none" });
+			const payload = await fetchJson<T>(`/api/items/${encodeURIComponent(itemId)}/${path}?${params}`, { signal });
+			return requireComplete(payload, complete, partialMessage);
+		},
+		staleTime: DETAIL_STALE_TIME,
+		gcTime: DETAIL_GC_TIME,
+		retry: false,
+		meta: { retentionGroup: "item-detail", inactiveQueryLimit: DETAIL_QUERY_LIMIT },
+	});
 }
 
 export function isCompleteItemRelations(payload: ItemRelationsPayload) {
-    return Object.values(payload.errors).every((error) => error === null);
+	return Object.values(payload.errors).every((error) => error === null);
 }
 
 export function isCompleteItemAcquisition(payload: ItemAcquisitionTreeData) {
-    return Object.values(payload.errors).every((error) => error === null);
+	return Object.values(payload.errors).every((error) => error === null);
 }
 
 export function itemRelationsQueryOptions(mode: TarkovJsonGameMode, itemId: string) {
-    return scopedItemViewQueryOptions<ItemRelationsPayload>({ mode, itemId, domain: "relations", path: "relations", complete: isCompleteItemRelations, partialMessage: "Some hideout or quest relations are unavailable." });
+	return scopedItemViewQueryOptions<ItemRelationsPayload>({
+		mode,
+		itemId,
+		domain: "relations",
+		path: "relations",
+		complete: isCompleteItemRelations,
+		partialMessage: "Some hideout or quest relations are unavailable.",
+	});
 }
 
 export function itemUsageQueryOptions(mode: TarkovJsonGameMode, itemId: string) {
-    return scopedItemViewQueryOptions<ItemUsageData>({ mode, itemId, domain: "usage", path: "usage", complete: isCompleteItemUsageData, partialMessage: "Some trader or crafting data is unavailable." });
+	return scopedItemViewQueryOptions<ItemUsageData>({
+		mode,
+		itemId,
+		domain: "usage",
+		path: "usage",
+		complete: isCompleteItemUsageData,
+		partialMessage: "Some trader or crafting data is unavailable.",
+	});
 }
 
 export function itemAcquisitionQueryOptions(mode: TarkovJsonGameMode, itemId: string) {
-    return scopedItemViewQueryOptions<ItemAcquisitionTreeData>({ mode, itemId, domain: "acquisition", path: "acquisition-tree", complete: isCompleteItemAcquisition, partialMessage: "Some profit recommendation data is unavailable." });
+	return scopedItemViewQueryOptions<ItemAcquisitionTreeData>({
+		mode,
+		itemId,
+		domain: "acquisition",
+		path: "acquisition-tree",
+		complete: isCompleteItemAcquisition,
+		partialMessage: "Some profit recommendation data is unavailable.",
+	});
 }

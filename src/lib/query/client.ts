@@ -10,9 +10,10 @@ function enforceInactiveLimits(client: QueryClient) {
 		if (query.isActive() || query.state.fetchStatus !== "idle") continue;
 		const group = query.meta?.retentionGroup;
 		if (typeof group !== "string") continue;
-		const limit = typeof query.meta?.inactiveQueryLimit === "number"
-			? Math.max(0, Math.floor(query.meta.inactiveQueryLimit))
-			: DEFAULT_INACTIVE_QUERY_LIMIT;
+		const limit =
+			typeof query.meta?.inactiveQueryLimit === "number"
+				? Math.max(0, Math.floor(query.meta.inactiveQueryLimit))
+				: DEFAULT_INACTIVE_QUERY_LIMIT;
 		const current = groups.get(group) ?? { limit, queries: [] };
 		current.limit = Math.min(current.limit, limit);
 		current.queries.push(query);

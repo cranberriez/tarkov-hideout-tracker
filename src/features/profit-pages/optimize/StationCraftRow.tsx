@@ -33,7 +33,10 @@ export function StationCraftRow({
 	return (
 		<div className={`bg-highlight/2.5 ${pinned ? "bg-highlight/5" : ""} rounded`}>
 			<div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-2 py-2.5 lg:grid-cols-[minmax(170px,1.15fr)_82px_minmax(200px,2fr)_108px_124px_78px]">
-				<ItemLink item={output ?? { id: row.outputItemId, name: row.outputItemId }} className="flex min-w-0 items-center gap-2 text-left hover:text-brand focus-visible:outline-2 focus-visible:outline-brand">
+				<ItemLink
+					item={output ?? { id: row.outputItemId, name: row.outputItemId }}
+					className="flex min-w-0 items-center gap-2 text-left hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
+				>
 					<CraftImage item={output} size={36} />
 					<span className="min-w-0 text-xs font-medium">
 						{output?.name ?? row.outputItemId}
@@ -51,24 +54,31 @@ export function StationCraftRow({
 						>
 							<CraftImage item={itemsById[part.itemId]} size={22} />
 							<span>
-								{formatQuantity(part.quantity)}× {itemsById[part.itemId]?.shortName ?? itemsById[part.itemId]?.name ?? part.itemId}
+								{formatQuantity(part.quantity)}×{" "}
+								{itemsById[part.itemId]?.shortName ?? itemsById[part.itemId]?.name ?? part.itemId}
 								{part.isTool ? " · tool" : ""}
 							</span>
 						</ItemLink>
 					))}
 				</div>
 				<div className="text-xs">
-					<span className="block font-mono">{formatRoundedRoubles(gross === null ? null : gross / row.outputCount)}</span>
+					<span className="block font-mono">
+						{formatRoundedRoubles(gross === null ? null : gross / row.outputCount)}
+					</span>
 					<span className="text-[11px] text-muted-foreground">each · {row.sellSourceLabel ?? "No sale price"}</span>
 				</div>
 				<div
 					className="relative pr-9 text-right text-xs lg:text-left"
 					title={`Inputs: ${formatRoundedRoubles(row.cost)} · Listing fee: ${formatRoundedRoubles(row.sellFee ?? null)} · Proceeds: ${formatRoundedRoubles(row.sellValue)}${roi === null ? "" : ` · Return on inputs: ${roi.toFixed(1)}%`}`}
 				>
-					<span className={`block font-mono font-medium ${!available ? "text-warning" : (row.profit ?? 0) > 0 ? "text-success" : "text-danger"}`}>
+					<span
+						className={`block font-mono font-medium ${!available ? "text-warning" : (row.profit ?? 0) > 0 ? "text-success" : "text-danger"}`}
+					>
 						{!available ? "Check details" : formatSignedRoubles(row.profit)}
 					</span>
-					<span className="text-[11px] text-muted-foreground">{available ? `${formatSignedRoubles(row.profitPerHour)} / h` : "Saved craft retained"}</span>
+					<span className="text-[11px] text-muted-foreground">
+						{available ? `${formatSignedRoubles(row.profitPerHour)} / h` : "Saved craft retained"}
+					</span>
 					{placement && (
 						<span
 							title={`${placement === 1 ? "Gold" : placement === 2 ? "Silver" : "Bronze"} craft for this station`}

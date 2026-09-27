@@ -7,20 +7,20 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and Turso;
 
 ## Routes and composition
 
-| Route | Entry point and responsibility |
-|---|---|
-| `/` | [Redirect to Hideout](../src/app/page.tsx) |
-| `/hideout` | [Hideout page](<../src/app/(data)/hideout/page.tsx>): next station upgrades |
-| `/items` | [Items page](<../src/app/(data)/items/page.tsx>): pooled hideout and quest demand |
-| `/quests`, `/quests/[questId]` | [Quests layout](<../src/app/(data)/quests/layout.tsx>) owns the persistent workspace; the [index](<../src/app/(data)/quests/page.tsx>) and [quest route](<../src/app/(data)/quests/[questId]/page.tsx>) fill its detail pane; see [quests](quests.md) |
-| `/items/[itemId]` | [Item page](<../src/app/(data)/items/[itemId]/page.tsx>): server-rendered item details; not linked yet (items open the dialog) |
-| `/hideout/stations/[stationId]` | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): all levels, dependencies, and on-demand crafts from the Hideout query |
-| `/items/kappa-checklist` | [Collector checklist](<../src/app/(data)/items/kappa-checklist/page.tsx>); see [quests](quests.md) |
-| `/items/barter-profits`, `/items/crafting-profits` | Shared [ProfitPage](../src/features/profit-pages/ProfitPage.tsx); see [profits](profits.md) |
-| `/hideout/craft-planner` | Station craft recommendations using the shared profit query; see [profits](profits.md) |
-| `/settings` | [Player progression backups, import review, legacy tools and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md) |
-| `/news` | [News page](../src/app/news/page.tsx) |
-| `/dev` | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md) |
+| Route                                              | Entry point and responsibility                                                                                                                                                                                                                        |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                                                | [Redirect to Hideout](../src/app/page.tsx)                                                                                                                                                                                                            |
+| `/hideout`                                         | [Hideout page](<../src/app/(data)/hideout/page.tsx>): next station upgrades                                                                                                                                                                           |
+| `/items`                                           | [Items page](<../src/app/(data)/items/page.tsx>): pooled hideout and quest demand                                                                                                                                                                     |
+| `/quests`, `/quests/[questId]`                     | [Quests layout](<../src/app/(data)/quests/layout.tsx>) owns the persistent workspace; the [index](<../src/app/(data)/quests/page.tsx>) and [quest route](<../src/app/(data)/quests/[questId]/page.tsx>) fill its detail pane; see [quests](quests.md) |
+| `/items/[itemId]`                                  | [Item page](<../src/app/(data)/items/[itemId]/page.tsx>): server-rendered item details; not linked yet (items open the dialog)                                                                                                                        |
+| `/hideout/stations/[stationId]`                    | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): all levels, dependencies, and on-demand crafts from the Hideout query                                                                                                      |
+| `/items/kappa-checklist`                           | [Collector checklist](<../src/app/(data)/items/kappa-checklist/page.tsx>); see [quests](quests.md)                                                                                                                                                    |
+| `/items/barter-profits`, `/items/crafting-profits` | Shared [ProfitPage](../src/features/profit-pages/ProfitPage.tsx); see [profits](profits.md)                                                                                                                                                           |
+| `/hideout/craft-planner`                           | Station craft recommendations using the shared profit query; see [profits](profits.md)                                                                                                                                                                |
+| `/settings`                                        | [Player progression backups, import review, legacy tools and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md)                                                                                                  |
+| `/news`                                            | [News page](../src/app/news/page.tsx)                                                                                                                                                                                                                 |
+| `/dev`                                             | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md)                                                                                                      |
 
 Detail routes use bounded reads: [getItemDetailPageData](../src/server/queries/getItemDetailPageData.ts)
 reads one item, [getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts)

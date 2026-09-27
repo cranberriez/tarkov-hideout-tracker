@@ -8,7 +8,9 @@ export default function StationNotFound() {
 			<p className="mt-2 max-w-sm text-sm text-muted-foreground">
 				This station is not part of the current game mode&apos;s hideout data.
 			</p>
-			<Link href="/hideout" className={buttonClassName({ className: "mt-5" })}>Back to hideout</Link>
+			<Link href="/hideout" className={buttonClassName({ className: "mt-5" })}>
+				Back to hideout
+			</Link>
 		</main>
 	);
 }

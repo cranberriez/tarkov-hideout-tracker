@@ -7,8 +7,17 @@ import { prefetchPageData } from "@/server/queries/prefetchPageData";
 import { getCurrentPageRepository } from "@/server/queries/currentPageRepository";
 
 export default async function CraftPlannerPage() {
-  const mode = await getActiveTarkovJsonGameMode();
-  const options = profitPageQueryOptions(mode);
-  const { state, fallbackData } = await prefetchPageData(options.queryKey, PAGE_DATA_STALE_TIME, async () => getProfitPageData(mode, await getCurrentPageRepository(mode), { includePrices: false }), isCompleteProfitPageData);
-  return <HydrationBoundary state={state}><CraftPlannerQueryPage mode={mode} fallbackData={fallbackData} /></HydrationBoundary>;
+	const mode = await getActiveTarkovJsonGameMode();
+	const options = profitPageQueryOptions(mode);
+	const { state, fallbackData } = await prefetchPageData(
+		options.queryKey,
+		PAGE_DATA_STALE_TIME,
+		async () => getProfitPageData(mode, await getCurrentPageRepository(mode), { includePrices: false }),
+		isCompleteProfitPageData,
+	);
+	return (
+		<HydrationBoundary state={state}>
+			<CraftPlannerQueryPage mode={mode} fallbackData={fallbackData} />
+		</HydrationBoundary>
+	);
 }

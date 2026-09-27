@@ -12,7 +12,9 @@ export function parsePriceOverrides(raw: string | null): ManualPriceOverrides {
 				if (!value || typeof value !== "object" || Array.isArray(value)) return false;
 				const entry = value as ManualPriceOverride;
 				return (
-					[entry.buy, entry.sell].every((price) => price === undefined || (typeof price === "number" && Number.isFinite(price) && price >= 0)) &&
+					[entry.buy, entry.sell].every(
+						(price) => price === undefined || (typeof price === "number" && Number.isFinite(price) && price >= 0),
+					) &&
 					(entry.sellSource === undefined || entry.sellSource === "flea" || entry.sellSource === "trader")
 				);
 			}),

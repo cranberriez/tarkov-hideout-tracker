@@ -6,37 +6,28 @@ import { CompletedItemsConversionModal } from "@/features/items/components/Compl
 import type { Station } from "@/types/hideout";
 
 interface HideoutConversionGateProps {
-    stations: Station[];
+	stations: Station[];
 }
 
 export function HideoutConversionGate({ stations }: HideoutConversionGateProps) {
-    const {
-        stationLevels,
-        completedRequirements,
-        hasSeenItemConversionModal,
-        setHasSeenItemConversionModal,
-    } = useUserStore();
+	const { stationLevels, completedRequirements, hasSeenItemConversionModal, setHasSeenItemConversionModal } =
+		useUserStore();
 
-    const hasConvertible = useMemo(() => {
-        return stations.some((station) => {
-            const currentLevel = stationLevels[station.id] ?? 0;
+	const hasConvertible = useMemo(() => {
+		return stations.some((station) => {
+			const currentLevel = stationLevels[station.id] ?? 0;
 
-            return station.levels.some((level) => {
-                if (currentLevel >= level.level) return false;
+			return station.levels.some((level) => {
+				if (currentLevel >= level.level) return false;
 
-                return level.itemRequirements.some((req) => completedRequirements[req.id]);
-            });
-        });
-    }, [stations, stationLevels, completedRequirements]);
+				return level.itemRequirements.some((req) => completedRequirements[req.id]);
+			});
+		});
+	}, [stations, stationLevels, completedRequirements]);
 
-    const isOpen = hasConvertible && !hasSeenItemConversionModal;
+	const isOpen = hasConvertible && !hasSeenItemConversionModal;
 
-    if (!isOpen) return null;
+	if (!isOpen) return null;
 
-    return (
-        <CompletedItemsConversionModal
-            isOpen={true}
-            onClose={() => setHasSeenItemConversionModal(true)}
-        />
-    );
+	return <CompletedItemsConversionModal isOpen={true} onClose={() => setHasSeenItemConversionModal(true)} />;
 }

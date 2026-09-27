@@ -5,19 +5,19 @@ quest progress, quest hand-ins, and item requirements.
 
 ## Features
 
--   **Quests page**: Browse Tarkov.dev quest data by tree, trader, map, or list.
--   **Quest progress**: Track completed, failed, pinned, ignored, and item-ready quests.
--   **Manual quest sync**: Rebuild quest progress trader by trader from the quests currently visible in game.
--   **Quest log import**: Semi-automated log importing helps keep quest state closer to your character.
--   **Character settings**: Adjust level, faction, prestige, trader loyalty, game edition, and game mode in one place.
--   **Quest items on Items**: Include quest hand-ins and quest item groups alongside hideout requirements.
--   **Item filtering**: Filter by hideout items, quest items, available/future quest demand, FiR, pinned quests, Kappa, and Lightkeeper.
--   **Hideout tracking**: Manage station levels, hidden stations, upgrade readiness, and missing requirements.
--   **Inventory management**: Track collected item counts, including separate Found in Raid and non-FiR counts.
--   **Price data**: View current flea and trader values, recipe acquisition costs, and price history.
--   **Raid Planner**: Plan active quests on interactive objective maps with required keys, PMC extracts, and transits.
--   **Profit pages**: Compare barter and crafting routes with profile-aware availability and manual price overrides.
--   **Kappa checklist**: Track Collector items separately for each game mode.
+- **Quests page**: Browse Tarkov.dev quest data by tree, trader, map, or list.
+- **Quest progress**: Track completed, failed, pinned, ignored, and item-ready quests.
+- **Manual quest sync**: Rebuild quest progress trader by trader from the quests currently visible in game.
+- **Quest log import**: Semi-automated log importing helps keep quest state closer to your character.
+- **Character settings**: Adjust level, faction, prestige, trader loyalty, game edition, and game mode in one place.
+- **Quest items on Items**: Include quest hand-ins and quest item groups alongside hideout requirements.
+- **Item filtering**: Filter by hideout items, quest items, available/future quest demand, FiR, pinned quests, Kappa, and Lightkeeper.
+- **Hideout tracking**: Manage station levels, hidden stations, upgrade readiness, and missing requirements.
+- **Inventory management**: Track collected item counts, including separate Found in Raid and non-FiR counts.
+- **Price data**: View current flea and trader values, recipe acquisition costs, and price history.
+- **Raid Planner**: Plan active quests on interactive objective maps with required keys, PMC extracts, and transits.
+- **Profit pages**: Compare barter and crafting routes with profile-aware availability and manual price overrides.
+- **Kappa checklist**: Track Collector items separately for each game mode.
 
 ## Profiles and saved progress
 
@@ -34,9 +34,9 @@ This site started as a pet project and learning tool for an early-career web
 developer. If you want more features, deeper progression tools, or probably more
 active development, check out these excellent sites:
 
--   [ttracker.org](https://ttracker.org/)
--   [tarkovtracker.org](https://tarkovtracker.org/)
--   [kappas.pages.dev](https://kappas.pages.dev/)
+- [ttracker.org](https://ttracker.org/)
+- [tarkovtracker.org](https://tarkovtracker.org/)
+- [kappas.pages.dev](https://kappas.pages.dev/)
 
 ## Development Setup
 
@@ -97,8 +97,8 @@ npm run test:contracts
 
 ## Learn More
 
--   [Project documentation](docs/README.md)
--   [Contributor and AI agent guidance](AGENTS.md)
--   [Focused tests and operations](docs/operations.md)
--   [Next.js Documentation](https://nextjs.org/docs)
--   [Tarkov.dev API](https://api.tarkov.dev/)
+- [Project documentation](docs/README.md)
+- [Contributor and AI agent guidance](AGENTS.md)
+- [Focused tests and operations](docs/operations.md)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Tarkov.dev API](https://api.tarkov.dev/)

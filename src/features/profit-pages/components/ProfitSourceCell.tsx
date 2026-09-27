@@ -18,7 +18,16 @@ export function ProfitSourceCell({
 	return (
 		<span className={styles.sourceCell}>
 			<span className={`relative flex size-9 shrink-0 items-center justify-center ${styles.sourceIcon}`}>
-				{source?.imageLink && <Image src={source.imageLink} alt="" width={36} height={36} className="size-9 rounded object-contain" unoptimized />}
+				{source?.imageLink && (
+					<Image
+						src={source.imageLink}
+						alt=""
+						width={36}
+						height={36}
+						className="size-9 rounded object-contain"
+						unoptimized
+					/>
+				)}
 				{!available && (
 					<span
 						title="Locked for the current profile"
@@ -37,7 +46,9 @@ export function ProfitSourceCell({
 							<strong className="text-foreground">{evaluation.barter.minTraderLevel}</strong>
 						</span>
 					)}
-					{evaluation.craft && <strong className="shrink-0 font-mono text-[10px] text-foreground">{evaluation.craft.level}</strong>}
+					{evaluation.craft && (
+						<strong className="shrink-0 font-mono text-[10px] text-foreground">{evaluation.craft.level}</strong>
+					)}
 				</span>
 				<LockReasons reasons={evaluation.lockReasons ?? []} showIcon={false} />
 			</span>

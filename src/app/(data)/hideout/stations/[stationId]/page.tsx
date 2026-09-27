@@ -18,7 +18,8 @@ interface StationPageProps {
 /** Metadata and the page share one request-scoped Hideout read. */
 const loadHideout = cache(async () => {
 	const gameMode = await getActiveTarkovJsonGameMode();
-	const load = async () => getHideoutPageData(gameMode, await getCurrentPageRepository(gameMode), { includePrices: false });
+	const load = async () =>
+		getHideoutPageData(gameMode, await getCurrentPageRepository(gameMode), { includePrices: false });
 	return { gameMode, data: await load() };
 });
 
@@ -39,7 +40,12 @@ export default async function StationPage({ params }: StationPageProps) {
 	// Missing stations 404 only when the station list itself loaded.
 	if (data.stations && !data.stations.some((entry) => entry.id === stationId)) notFound();
 	const options = hideoutPageQueryOptions(gameMode);
-	const { state, fallbackData } = await prefetchPageData(options.queryKey, PAGE_DATA_STALE_TIME, async () => data, isCompleteHideoutPageData);
+	const { state, fallbackData } = await prefetchPageData(
+		options.queryKey,
+		PAGE_DATA_STALE_TIME,
+		async () => data,
+		isCompleteHideoutPageData,
+	);
 
 	return (
 		<HydrationBoundary state={state}>

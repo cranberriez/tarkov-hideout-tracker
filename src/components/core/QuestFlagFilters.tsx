@@ -3,70 +3,70 @@
 import { cn } from "@/lib/utils";
 
 interface QuestFlagFiltersProps {
-    showKappa: boolean;
-    showLightkeeper: boolean;
-    onToggleKappa: () => void;
-    onToggleLightkeeper: () => void;
-    expand?: boolean;
-    className?: string;
+	showKappa: boolean;
+	showLightkeeper: boolean;
+	onToggleKappa: () => void;
+	onToggleLightkeeper: () => void;
+	expand?: boolean;
+	className?: string;
 }
 
 export function QuestFlagFilters({
-    showKappa,
-    showLightkeeper,
-    onToggleKappa,
-    onToggleLightkeeper,
-    expand = false,
-    className,
+	showKappa,
+	showLightkeeper,
+	onToggleKappa,
+	onToggleLightkeeper,
+	expand = false,
+	className,
 }: QuestFlagFiltersProps) {
-    return (
-        <div className={cn("flex items-center gap-2", expand && "w-full", className)}>
-            <QuestFlagButton
-                label="Kappa"
-                active={showKappa}
-                onClick={onToggleKappa}
-                expand={expand}
-                activeClassName="border-warning/70 bg-shadow/40 text-warning"
-                inactiveClassName="border-transparent bg-shadow/40 text-warning/80 hover:border-warning/35"
-            />
-            <QuestFlagButton
-                label="Lightkeeper"
-                active={showLightkeeper}
-                onClick={onToggleLightkeeper}
-                expand={expand}
-                activeClassName="border-info/70 bg-shadow/40 text-info"
-                inactiveClassName="border-transparent bg-shadow/40 text-info/80 hover:border-info/35"
-            />
-        </div>
-    );
+	return (
+		<div className={cn("flex items-center gap-2", expand && "w-full", className)}>
+			<QuestFlagButton
+				label="Kappa"
+				active={showKappa}
+				onClick={onToggleKappa}
+				expand={expand}
+				activeClassName="border-warning/70 bg-shadow/40 text-warning"
+				inactiveClassName="border-transparent bg-shadow/40 text-warning/80 hover:border-warning/35"
+			/>
+			<QuestFlagButton
+				label="Lightkeeper"
+				active={showLightkeeper}
+				onClick={onToggleLightkeeper}
+				expand={expand}
+				activeClassName="border-info/70 bg-shadow/40 text-info"
+				inactiveClassName="border-transparent bg-shadow/40 text-info/80 hover:border-info/35"
+			/>
+		</div>
+	);
 }
 
 function QuestFlagButton({
-    label,
-    active,
-    onClick,
-    expand,
-    activeClassName,
-    inactiveClassName,
+	label,
+	active,
+	onClick,
+	expand,
+	activeClassName,
+	inactiveClassName,
 }: {
-    label: string;
-    active: boolean;
-    onClick: () => void;
-    expand: boolean;
-    activeClassName: string;
-    inactiveClassName: string;
+	label: string;
+	active: boolean;
+	onClick: () => void;
+	expand: boolean;
+	activeClassName: string;
+	inactiveClassName: string;
 }) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            className={cn(
-                "inline-flex h-8 items-center justify-center rounded-sm border px-3 text-xs font-medium leading-none transition-all",
-                expand && "flex-1",
-                active ? activeClassName : inactiveClassName,
-            )}
-        >
-            {label}
-        </button>
-    );
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			className={cn(
+				"inline-flex h-8 items-center justify-center rounded-sm border px-3 text-xs font-medium leading-none transition-all",
+				expand && "flex-1",
+				active ? activeClassName : inactiveClassName,
+			)}
+		>
+			{label}
+		</button>
+	);
 }

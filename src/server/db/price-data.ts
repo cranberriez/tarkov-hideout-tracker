@@ -21,7 +21,11 @@ export async function getCurrentPriceData(
 			if (database) return await getMutableCurrentPricesByIds(mode, itemIds, database);
 			const batches = await mapBatches(canonicalIds(itemIds), async (batch) => {
 				try {
-					return await boundedReadCache(["mutable-prices", mode, releaseId, JSON.stringify(batch)], () => getMutableCurrentPricesByIds(mode, batch), 300);
+					return await boundedReadCache(
+						["mutable-prices", mode, releaseId, JSON.stringify(batch)],
+						() => getMutableCurrentPricesByIds(mode, batch),
+						300,
+					);
 				} catch (error) {
 					// Apply optional-storage fallback outside the cache and per
 					// batch so it cannot hide another batch's operational error.
@@ -65,14 +69,20 @@ export async function getCurrentPriceData(
 			];
 		}),
 	);
-	const latestMutableTimestamp = Object.values(mutable).reduce((latest, price) => Math.max(latest, price.latestPointTimestamp), 0);
+	const latestMutableTimestamp = Object.values(mutable).reduce(
+		(latest, price) => Math.max(latest, price.latestPointTimestamp),
+		0,
+	);
 	return {
 		data,
 		updatedAt: latestMutableTimestamp || legacyResult.updatedAt,
 	};
 }
 
-export async function getStoredPriceHistoryData(mode: TarkovDataMode, itemId: string): Promise<DataResult<PriceHistoryPoint[]>> {
+export async function getStoredPriceHistoryData(
+	mode: TarkovDataMode,
+	itemId: string,
+): Promise<DataResult<PriceHistoryPoint[]>> {
 	try {
 		const result = await getStoredPricePoints(getTursoClient(), mode, itemId);
 		return { data: result.points, updatedAt: result.updatedAt ?? Date.now() };

@@ -20,9 +20,15 @@ test("fee at base price, quantity scaling and final rounding", () => {
 		assert.ok(Math.abs(calcTax(10_000, price, 8)! - calcTax(10_000, price)! * 8) <= 4);
 	}
 	assert.equal(calcTax(10_000, 10_000, 1, { stationLevels: { "intelligence-center": 3 } }), 700);
-	assert.equal(calcTax(10_000, 10_000, 1, { stationLevels: { "intelligence-center": 3 }, hideoutManagementSkillLevel: 51 }), 550);
+	assert.equal(
+		calcTax(10_000, 10_000, 1, { stationLevels: { "intelligence-center": 3 }, hideoutManagementSkillLevel: 51 }),
+		550,
+	);
 	assert.equal(calcTax(10_000, 10_000, 1, { hideoutManagementSkillLevel: 50 }), 1_000);
-	assert.equal(calcTax(10_000, 10_000, 1, { stationLevels: { [INTELLIGENCE_CENTER_ID]: 3 }, hideoutManagementSkillLevel: 50 }), 550);
+	assert.equal(
+		calcTax(10_000, 10_000, 1, { stationLevels: { [INTELLIGENCE_CENTER_ID]: 3 }, hideoutManagementSkillLevel: 50 }),
+		550,
+	);
 	assert.equal(calcTax(10_000, 10_000, 1, { stationLevels: { [INTELLIGENCE_CENTER_ID]: 2 } }), 1_000);
 });
 test("base price uses trader buybacks, not purchase or flea values", () => {

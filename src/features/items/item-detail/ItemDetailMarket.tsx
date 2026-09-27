@@ -7,173 +7,157 @@ import { ItemDetailSection } from "./ItemDetailSection";
 import { ItemDetailPriceStability } from "./ItemDetailPriceStability";
 
 interface ItemDetailMarketProps {
-    marketPrice: CurrentPrice;
-    relativeUpdatedAt: string | null;
-    valuationCount: number;
-    isFiat: boolean;
-    minLevelForFlea?: number | null;
-    playerLevel: number;
+	marketPrice: CurrentPrice;
+	relativeUpdatedAt: string | null;
+	valuationCount: number;
+	isFiat: boolean;
+	minLevelForFlea?: number | null;
+	playerLevel: number;
 }
 
 export function hasItemMarketData(marketPrice: CurrentPrice | null | undefined) {
-    return Boolean(
-        marketPrice &&
-            (hasFleaMarketData(marketPrice) ||
-                marketPrice.lastOfferCount != null ||
-                marketPrice.sellFor?.some((offer) => offer.priceRUB > 0)),
-    );
+	return Boolean(
+		marketPrice &&
+		(hasFleaMarketData(marketPrice) ||
+			marketPrice.lastOfferCount != null ||
+			marketPrice.sellFor?.some((offer) => offer.priceRUB > 0)),
+	);
 }
 
 export function ItemDetailMarket({
-    marketPrice,
-    relativeUpdatedAt,
-    valuationCount,
-    isFiat,
-    minLevelForFlea,
-    playerLevel,
+	marketPrice,
+	relativeUpdatedAt,
+	valuationCount,
+	isFiat,
+	minLevelForFlea,
+	playerLevel,
 }: ItemDetailMarketProps) {
-    if (!hasItemMarketData(marketPrice)) return null;
+	if (!hasItemMarketData(marketPrice)) return null;
 
-    const hasFleaData = hasFleaMarketData(marketPrice);
-    const canSellOnFlea = minLevelForFlea != null && playerLevel >= minLevelForFlea;
-    const fleaPrice = getFleaPriceEstimate(marketPrice);
-    const unstable = !isFiat && marketPrice.fleaStability === "unstable";
-    const traderValuationCount = Math.max(1, Math.floor(valuationCount));
-    const topTraderValuations = (marketPrice.sellFor ?? [])
-        .filter((offer) => offer.priceRUB > 0 && offer.vendor.normalizedName !== "flea-market")
-        .sort((a, b) => b.priceRUB - a.priceRUB)
-        .slice(0, 3);
-    const details = [
-        marketPrice.low24hPrice != null
-            ? { label: "24h low", value: formatRoubles(marketPrice.low24hPrice) }
-            : null,
-        marketPrice.high24hPrice != null
-            ? { label: "24h high", value: formatRoubles(marketPrice.high24hPrice) }
-            : null,
-    ].filter((detail): detail is { label: string; value: string } => Boolean(detail));
+	const hasFleaData = hasFleaMarketData(marketPrice);
+	const canSellOnFlea = minLevelForFlea != null && playerLevel >= minLevelForFlea;
+	const fleaPrice = getFleaPriceEstimate(marketPrice);
+	const unstable = !isFiat && marketPrice.fleaStability === "unstable";
+	const traderValuationCount = Math.max(1, Math.floor(valuationCount));
+	const topTraderValuations = (marketPrice.sellFor ?? [])
+		.filter((offer) => offer.priceRUB > 0 && offer.vendor.normalizedName !== "flea-market")
+		.sort((a, b) => b.priceRUB - a.priceRUB)
+		.slice(0, 3);
+	const details = [
+		marketPrice.low24hPrice != null ? { label: "24h low", value: formatRoubles(marketPrice.low24hPrice) } : null,
+		marketPrice.high24hPrice != null ? { label: "24h high", value: formatRoubles(marketPrice.high24hPrice) } : null,
+	].filter((detail): detail is { label: string; value: string } => Boolean(detail));
 
-    return (
-        <ItemDetailSection
-            title={isFiat ? "Exchange value" : "Market"}
-            className="border-t border-border-color"
-            aside={
-                <div className="flex items-center gap-2">
-                    {!isFiat && (minLevelForFlea != null || !hasFleaData) && (
-                        minLevelForFlea != null && hasFleaData ? (
-                            <span className="flex items-center gap-1 rounded bg-highlight/[0.03] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
-                                LVL {minLevelForFlea}
-                                {canSellOnFlea ? (
-                                    <Check size={11} strokeWidth={2.5} className="text-success" />
-                                ) : (
-                                    <X size={11} strokeWidth={2.5} className="text-danger" />
-                                )}
-                            </span>
-                        ) : (
-                            <span className="rounded bg-danger/8 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-danger/90">
-                                No flea
-                            </span>
-                        )
-                    )}
-                    {relativeUpdatedAt && (
-                        <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                            <Clock3 size={11} /> {relativeUpdatedAt}
-                        </span>
-                    )}
-                </div>
-            }
-        >
-            {fleaPrice != null && (
-                <div className="flex items-end justify-between gap-3 rounded-md border border-border-color bg-shadow/25 px-2.5 py-2">
-                    <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-4 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                            <span>{isFiat ? "Rouble cost" : "Flea estimate"}</span>
-                            {!isFiat && marketPrice.lastOfferCount != null && (
-                                <span className="text-right">
-                                    {`${new Intl.NumberFormat("en-US").format(marketPrice.lastOfferCount)} offers`}
-                                </span>
-                            )}
-                        </div>
-                        <div className={`mt-1 flex items-center gap-1.5 font-mono text-2xl font-semibold ${unstable ? "text-warning" : "text-foreground"}`}>
-                            {formatRoubles(fleaPrice)}
-                            {unstable && <span className="text-[10px] font-normal">value unstable</span>}
-                        </div>
-                    </div>
-                    {marketPrice.changeLast48hPercent != null && (
-                        <PriceChange value={marketPrice.changeLast48hPercent} />
-                    )}
-                </div>
-            )}
+	return (
+		<ItemDetailSection
+			title={isFiat ? "Exchange value" : "Market"}
+			className="border-t border-border-color"
+			aside={
+				<div className="flex items-center gap-2">
+					{!isFiat &&
+						(minLevelForFlea != null || !hasFleaData) &&
+						(minLevelForFlea != null && hasFleaData ? (
+							<span className="flex items-center gap-1 rounded bg-highlight/[0.03] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+								LVL {minLevelForFlea}
+								{canSellOnFlea ? (
+									<Check size={11} strokeWidth={2.5} className="text-success" />
+								) : (
+									<X size={11} strokeWidth={2.5} className="text-danger" />
+								)}
+							</span>
+						) : (
+							<span className="rounded bg-danger/8 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-danger/90">
+								No flea
+							</span>
+						))}
+					{relativeUpdatedAt && (
+						<span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+							<Clock3 size={11} /> {relativeUpdatedAt}
+						</span>
+					)}
+				</div>
+			}
+		>
+			{fleaPrice != null && (
+				<div className="flex items-end justify-between gap-3 rounded-md border border-border-color bg-shadow/25 px-2.5 py-2">
+					<div className="min-w-0 flex-1">
+						<div className="flex items-center justify-between gap-4 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+							<span>{isFiat ? "Rouble cost" : "Flea estimate"}</span>
+							{!isFiat && marketPrice.lastOfferCount != null && (
+								<span className="text-right">
+									{`${new Intl.NumberFormat("en-US").format(marketPrice.lastOfferCount)} offers`}
+								</span>
+							)}
+						</div>
+						<div
+							className={`mt-1 flex items-center gap-1.5 font-mono text-2xl font-semibold ${unstable ? "text-warning" : "text-foreground"}`}
+						>
+							{formatRoubles(fleaPrice)}
+							{unstable && <span className="text-[10px] font-normal">value unstable</span>}
+						</div>
+					</div>
+					{marketPrice.changeLast48hPercent != null && <PriceChange value={marketPrice.changeLast48hPercent} />}
+				</div>
+			)}
 
-            {unstable && <ItemDetailPriceStability marketPrice={marketPrice} />}
+			{unstable && <ItemDetailPriceStability marketPrice={marketPrice} />}
 
-            {!isFiat && marketPrice.fleaStability === "unavailable" && (
-                <div className="mt-2 text-xs text-muted-foreground">Flea unavailable{marketPrice.lastOfferCount != null ? ` · ${marketPrice.lastOfferCount} offers` : ""}</div>
-            )}
+			{!isFiat && marketPrice.fleaStability === "unavailable" && (
+				<div className="mt-2 text-xs text-muted-foreground">
+					Flea unavailable{marketPrice.lastOfferCount != null ? ` · ${marketPrice.lastOfferCount} offers` : ""}
+				</div>
+			)}
 
-            {details.length > 0 && !isFiat && (
-                <div className="mt-4 grid grid-cols-2">
-                    {details.map((detail) => (
-                        <div key={detail.label} className="px-3 py-2.5">
-                            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                                {detail.label}
-                            </div>
-                            <div className="mt-1 font-mono text-sm text-foreground">
-                                {detail.value}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+			{details.length > 0 && !isFiat && (
+				<div className="mt-4 grid grid-cols-2">
+					{details.map((detail) => (
+						<div key={detail.label} className="px-3 py-2.5">
+							<div className="text-[10px] uppercase tracking-wide text-muted-foreground">{detail.label}</div>
+							<div className="mt-1 font-mono text-sm text-foreground">{detail.value}</div>
+						</div>
+					))}
+				</div>
+			)}
 
-            {topTraderValuations.length > 0 && (
-                <div className="mt-3">
-                    <div className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                        <Store size={12} /> Trader value
-                    </div>
-                    <div className="space-y-1.5">
-                        {topTraderValuations.map((offer) => {
-                            const totalRoubles = offer.priceRUB * traderValuationCount;
-                            return (
-                                <div
-                                    key={offer.vendor.normalizedName}
-                                    className="flex min-w-0 items-center gap-2 rounded-md px-1 py-1 text-xs"
-                                >
-                                    {offer.vendor.imageLink && (
-                                        <img
-                                            src={offer.vendor.imageLink}
-                                            alt=""
-                                            className="h-5 w-5 shrink-0 rounded-full object-cover"
-                                        />
-                                    )}
-                                    <span className="min-w-0 flex-1 truncate text-muted-foreground">
-                                        {offer.vendor.name}
-                                    </span>
-                                    <span className="shrink-0 font-mono text-foreground">
-                                        {formatRoubles(totalRoubles)}
-                                    </span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-        </ItemDetailSection>
-    );
+			{topTraderValuations.length > 0 && (
+				<div className="mt-3">
+					<div className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+						<Store size={12} /> Trader value
+					</div>
+					<div className="space-y-1.5">
+						{topTraderValuations.map((offer) => {
+							const totalRoubles = offer.priceRUB * traderValuationCount;
+							return (
+								<div
+									key={offer.vendor.normalizedName}
+									className="flex min-w-0 items-center gap-2 rounded-md px-1 py-1 text-xs"
+								>
+									{offer.vendor.imageLink && (
+										<img src={offer.vendor.imageLink} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover" />
+									)}
+									<span className="min-w-0 flex-1 truncate text-muted-foreground">{offer.vendor.name}</span>
+									<span className="shrink-0 font-mono text-foreground">{formatRoubles(totalRoubles)}</span>
+								</div>
+							);
+						})}
+					</div>
+				</div>
+			)}
+		</ItemDetailSection>
+	);
 }
 
 function PriceChange({ value }: { value: number }) {
-    const positive = value >= 0;
-    const Icon = positive ? ArrowUpRight : ArrowDownRight;
-    return (
-        <span
-            className={`flex items-center gap-1 rounded-md px-2 py-1 font-mono text-xs ${
-                positive
-                    ? "bg-success/10 text-success"
-                    : "bg-danger/10 text-danger"
-            }`}
-        >
-            <Icon size={13} />
-            {Math.abs(value).toFixed(2)}%
-        </span>
-    );
+	const positive = value >= 0;
+	const Icon = positive ? ArrowUpRight : ArrowDownRight;
+	return (
+		<span
+			className={`flex items-center gap-1 rounded-md px-2 py-1 font-mono text-xs ${
+				positive ? "bg-success/10 text-success" : "bg-danger/10 text-danger"
+			}`}
+		>
+			<Icon size={13} />
+			{Math.abs(value).toFixed(2)}%
+		</span>
+	);
 }

@@ -24,7 +24,16 @@ export function itemBasePrice(offers: readonly VendorPrice[] = [], options: TaxO
 		const name = offer.vendor.normalizedName.toLowerCase();
 		// Ref's quote requires a known loyalty tier; prefer fixed-multiplier traders.
 		const level = options.traderLoyaltyLevels?.[offer.vendor.id ?? "ref"];
-		const multiplier = name === "ref" ? (level === undefined ? undefined : level >= 4 ? 0.5 : level >= 2 ? 0.45 : 0.4) : multipliers[name];
+		const multiplier =
+			name === "ref"
+				? level === undefined
+					? undefined
+					: level >= 4
+						? 0.5
+						: level >= 2
+							? 0.45
+							: 0.4
+				: multipliers[name];
 		return multiplier && Number.isFinite(offer.priceRUB) && offer.priceRUB > 0
 			? [{ value: offer.priceRUB / multiplier, variable: name === "ref" || name === "fence" }]
 			: [];
@@ -38,22 +47,37 @@ export function itemBasePrice(offers: readonly VendorPrice[] = [], options: TaxO
 
 /** RUB listings, unit asking price, whole listing quantity. Bulk has no fee discount. */
 export function calcTax(basePrice: number, unitPrice: number, quantity = 1, options: TaxOptions = {}): number | null {
-	if (![basePrice, unitPrice, quantity].every(Number.isFinite) || basePrice <= 0 || unitPrice < 0 || quantity < 0) return null;
+	if (![basePrice, unitPrice, quantity].every(Number.isFinite) || basePrice <= 0 || unitPrice < 0 || quantity < 0)
+		return null;
 	if (quantity === 0 || unitPrice === 0) return 0;
 	let po = Math.log10(basePrice / unitPrice);
 	let pr = Math.log10(unitPrice / basePrice);
 	if (unitPrice < basePrice) po = po ** 1.08;
 	if (unitPrice >= basePrice) pr = pr ** 1.08;
-	const skill = Number.isFinite(options.hideoutManagementSkillLevel) ? Math.min(50, Math.max(0, options.hideoutManagementSkillLevel ?? 0)) : 0;
-	const intelligenceLevel = options.stationLevels?.[INTELLIGENCE_CENTER_ID] ?? options.stationLevels?.["intelligence-center"] ?? 0;
+	const skill = Number.isFinite(options.hideoutManagementSkillLevel)
+		? Math.min(50, Math.max(0, options.hideoutManagementSkillLevel ?? 0))
+		: 0;
+	const intelligenceLevel =
+		options.stationLevels?.[INTELLIGENCE_CENTER_ID] ?? options.stationLevels?.["intelligence-center"] ?? 0;
 	const reduction = intelligenceLevel >= 3 ? 0.3 + skill * 0.003 : 0;
 	const fee = (basePrice * 0.05 * 4 ** po + unitPrice * 0.05 * 4 ** pr) * quantity * (1 - reduction);
 	return Number.isFinite(fee) ? Math.round(fee) : null;
 }
 
 /** Lowest whole-rouble asking price meeting a net target. Fees are nonlinear. */
-export function fleaTargetPrice(basePrice: number, quantity: number, targetNet: number, options: TaxOptions = {}): number | null {
-	if (!(basePrice > 0) || !(quantity > 0) || !(targetNet > 0) || ![basePrice, quantity, targetNet].every(Number.isFinite)) return null;
+export function fleaTargetPrice(
+	basePrice: number,
+	quantity: number,
+	targetNet: number,
+	options: TaxOptions = {},
+): number | null {
+	if (
+		!(basePrice > 0) ||
+		!(quantity > 0) ||
+		!(targetNet > 0) ||
+		![basePrice, quantity, targetNet].every(Number.isFinite)
+	)
+		return null;
 	const net = (price: number) => {
 		const fee = calcTax(basePrice, price, quantity, options);
 		return fee === null ? -Infinity : price * quantity - fee;

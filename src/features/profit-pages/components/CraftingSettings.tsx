@@ -1,162 +1,152 @@
 import { FilterPanelButton } from "@/components/ui/filter-bar";
 import { useEffect, useId, useRef, useState } from "react";
 import { Settings } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { craftingTimeReduction } from "@/lib/price-calculation/crafting-skill";
 import { hideoutManagementConsumptionReduction } from "@/lib/price-calculation/craft-rules";
 
 export function CraftingSettings({
-  craftingLevel,
-  onCraftingLevelChange,
-  hideoutManagementLevel,
-  onHideoutManagementLevelChange,
-  forced,
-  note,
+	craftingLevel,
+	onCraftingLevelChange,
+	hideoutManagementLevel,
+	onHideoutManagementLevelChange,
+	forced,
+	note,
 }: {
-  craftingLevel: number;
-  hideoutManagementLevel: number;
-  forced: boolean;
-  note?: string;
-  onCraftingLevelChange: (level: number) => void;
-  onHideoutManagementLevelChange: (level: number) => void;
+	craftingLevel: number;
+	hideoutManagementLevel: number;
+	forced: boolean;
+	note?: string;
+	onCraftingLevelChange: (level: number) => void;
+	onHideoutManagementLevelChange: (level: number) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const panelId = useId();
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <FilterPanelButton open={open} panelId={panelId}>
-          <Settings className="size-4" aria-hidden />
-          Skills
-        </FilterPanelButton>
-      </DialogTrigger>
-      <DialogContent
-        id={panelId}
-        aria-describedby={undefined}
-        className="grid gap-4 p-5 sm:max-w-md"
-      >
-        <DialogHeader className="pr-5">
-          <DialogTitle>Skills</DialogTitle>
-        </DialogHeader>
-        <SkillRow
-          id="crafting-skill-level"
-          label="Crafting"
-          level={craftingLevel}
-          onLevelChange={onCraftingLevelChange}
-          forced={forced}
-          note={note}
-          reduction={craftingTimeReduction}
-          reductionLabel="time"
-          eliteNote="2 crafts possible at once."
-        />
-        <SkillRow
-          id="hideout-management-skill-level"
-          label="Hideout Management"
-          level={hideoutManagementLevel}
-          onLevelChange={onHideoutManagementLevelChange}
-          reduction={hideoutManagementConsumptionReduction}
-          reductionLabel="filter use"
-          note="Applied to Water filters consumed by Superwater."
-        />
-      </DialogContent>
-    </Dialog>
-  );
+	const [open, setOpen] = useState(false);
+	const panelId = useId();
+	return (
+		<Dialog open={open} onOpenChange={setOpen}>
+			<DialogTrigger asChild>
+				<FilterPanelButton open={open} panelId={panelId}>
+					<Settings className="size-4" aria-hidden />
+					Skills
+				</FilterPanelButton>
+			</DialogTrigger>
+			<DialogContent id={panelId} aria-describedby={undefined} className="grid gap-4 p-5 sm:max-w-md">
+				<DialogHeader className="pr-5">
+					<DialogTitle>Skills</DialogTitle>
+				</DialogHeader>
+				<SkillRow
+					id="crafting-skill-level"
+					label="Crafting"
+					level={craftingLevel}
+					onLevelChange={onCraftingLevelChange}
+					forced={forced}
+					note={note}
+					reduction={craftingTimeReduction}
+					reductionLabel="time"
+					eliteNote="2 crafts possible at once."
+				/>
+				<SkillRow
+					id="hideout-management-skill-level"
+					label="Hideout Management"
+					level={hideoutManagementLevel}
+					onLevelChange={onHideoutManagementLevelChange}
+					reduction={hideoutManagementConsumptionReduction}
+					reductionLabel="filter use"
+					note="Applied to Water filters consumed by Superwater."
+				/>
+			</DialogContent>
+		</Dialog>
+	);
 }
 
 function SkillRow({
-  id,
-  label,
-  level,
-  onLevelChange,
-  forced = false,
-  note,
-  reduction,
-  reductionLabel,
-  eliteNote,
+	id,
+	label,
+	level,
+	onLevelChange,
+	forced = false,
+	note,
+	reduction,
+	reductionLabel,
+	eliteNote,
 }: {
-  id: string;
-  label: string;
-  level: number;
-  forced?: boolean;
-  note?: string;
-  onLevelChange: (level: number) => void;
-  reduction: (level: number) => number;
-  reductionLabel: string;
-  eliteNote?: string;
+	id: string;
+	label: string;
+	level: number;
+	forced?: boolean;
+	note?: string;
+	onLevelChange: (level: number) => void;
+	reduction: (level: number) => number;
+	reductionLabel: string;
+	eliteNote?: string;
 }) {
-  const elite = level === 51;
-  const [draft, setDraft] = useState(String(Math.min(level, 50)));
-  const [savedLevel, setSavedLevel] = useState(level);
-  if (savedLevel !== level) {
-    setSavedLevel(level);
-    setDraft(String(Math.min(level, 50)));
-  }
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(() => () => clearTimeout(timer.current), [level]);
+	const elite = level === 51;
+	const [draft, setDraft] = useState(String(Math.min(level, 50)));
+	const [savedLevel, setSavedLevel] = useState(level);
+	if (savedLevel !== level) {
+		setSavedLevel(level);
+		setDraft(String(Math.min(level, 50)));
+	}
+	const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+	useEffect(() => () => clearTimeout(timer.current), [level]);
 
-  function validate(value: string) {
-    const parsed = Number(value);
-    const next =
-      value.trim() !== "" && Number.isFinite(parsed)
-        ? Math.min(50, Math.max(0, Math.trunc(parsed)))
-        : Math.min(level, 50);
-    setDraft(String(next));
-    if (next !== level) onLevelChange(next);
-  }
+	function validate(value: string) {
+		const parsed = Number(value);
+		const next =
+			value.trim() !== "" && Number.isFinite(parsed)
+				? Math.min(50, Math.max(0, Math.trunc(parsed)))
+				: Math.min(level, 50);
+		setDraft(String(next));
+		if (next !== level) onLevelChange(next);
+	}
 
-  return (
-    <div>
-      <div className="flex items-center gap-2 text-sm sm:gap-3">
-        <label htmlFor={id} className="mr-auto">
-          {label}
-        </label>
-        <input
-          id={id}
-          aria-label={`${label} skill level`}
-          type="text"
-          inputMode="numeric"
-          value={draft}
-          disabled={elite}
-          onChange={(event) => {
-            const value = event.target.value;
-            setDraft(value);
-            clearTimeout(timer.current);
-            timer.current = setTimeout(() => validate(value), 500);
-          }}
-          onBlur={() => {
-            clearTimeout(timer.current);
-            if (!elite) validate(draft);
-          }}
-          className="h-8 w-12 rounded border border-highlight/15 bg-[var(--background)] px-2 text-center outline-none focus:border-brand/60 disabled:opacity-50"
-        />
-        <span
-          className="whitespace-nowrap text-xs text-brand"
-          aria-label={`${Number((reduction(level) * 100).toFixed(2))}% ${reductionLabel} reduction`}
-        >
-          -{Number((reduction(level) * 100).toFixed(2))}% {reductionLabel}
-        </span>
-        <button
-          type="button"
-          disabled={forced}
-          aria-pressed={elite}
-          onPointerDown={(event) => event.preventDefault()}
-          onClick={() => {
-            clearTimeout(timer.current);
-            onLevelChange(elite ? 50 : 51);
-          }}
-          className={`h-8 rounded border px-2.5 text-xs transition ${elite ? "border-brand/60 bg-brand/10 text-brand" : "border-highlight/15 text-muted-foreground hover:border-highlight/30"}`}
-        >
-          Elite
-        </button>
-      </div>
-      {note && <p className="mt-2 text-xs text-muted-foreground">{note}</p>}
-      {elite && eliteNote && <p className="mt-2 text-xs text-muted-foreground">{eliteNote}</p>}
-    </div>
-  );
+	return (
+		<div>
+			<div className="flex items-center gap-2 text-sm sm:gap-3">
+				<label htmlFor={id} className="mr-auto">
+					{label}
+				</label>
+				<input
+					id={id}
+					aria-label={`${label} skill level`}
+					type="text"
+					inputMode="numeric"
+					value={draft}
+					disabled={elite}
+					onChange={(event) => {
+						const value = event.target.value;
+						setDraft(value);
+						clearTimeout(timer.current);
+						timer.current = setTimeout(() => validate(value), 500);
+					}}
+					onBlur={() => {
+						clearTimeout(timer.current);
+						if (!elite) validate(draft);
+					}}
+					className="h-8 w-12 rounded border border-highlight/15 bg-[var(--background)] px-2 text-center outline-none focus:border-brand/60 disabled:opacity-50"
+				/>
+				<span
+					className="whitespace-nowrap text-xs text-brand"
+					aria-label={`${Number((reduction(level) * 100).toFixed(2))}% ${reductionLabel} reduction`}
+				>
+					-{Number((reduction(level) * 100).toFixed(2))}% {reductionLabel}
+				</span>
+				<button
+					type="button"
+					disabled={forced}
+					aria-pressed={elite}
+					onPointerDown={(event) => event.preventDefault()}
+					onClick={() => {
+						clearTimeout(timer.current);
+						onLevelChange(elite ? 50 : 51);
+					}}
+					className={`h-8 rounded border px-2.5 text-xs transition ${elite ? "border-brand/60 bg-brand/10 text-brand" : "border-highlight/15 text-muted-foreground hover:border-highlight/30"}`}
+				>
+					Elite
+				</button>
+			</div>
+			{note && <p className="mt-2 text-xs text-muted-foreground">{note}</p>}
+			{elite && eliteNote && <p className="mt-2 text-xs text-muted-foreground">{eliteNote}</p>}
+		</div>
+	);
 }

@@ -1,7 +1,12 @@
 "use client";
 import { ItemLink } from "@/components/entities/item-link";
 import { ChevronDown } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { AcquisitionPlan, RecipeCalculatorInput } from "@/lib/price-calculation";
 import { acquisitionRouteKey } from "../utils/recipes";
 import { formatDuration, formatQuantity, formatRoundedRoubles } from "../utils/formatters";
@@ -28,7 +33,8 @@ export function StationCraftIngredient({
 	const key = requirementKey(part);
 	const sources = ingredientSourceOptions(estimate);
 	const savedRoute = selected.routes?.[key];
-	const missingSavedRoute = savedRoute !== undefined && !sources.routes.some((route) => acquisitionRouteKey(route) === savedRoute);
+	const missingSavedRoute =
+		savedRoute !== undefined && !sources.routes.some((route) => acquisitionRouteKey(route) === savedRoute);
 	const custom = selected.unitCosts?.[key];
 	const name = input.itemsById[part.itemId]?.name ?? part.itemId;
 	const selectRoute = (routeKey: string) => onChoice({ ...selected, routes: { ...selected.routes, [key]: routeKey } });
@@ -36,7 +42,11 @@ export function StationCraftIngredient({
 		sources.hasMore || (missingSavedRoute && sources.routes.length > 0) ? (
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<button type="button" aria-label={`All sources for ${name}`} className="inline-flex items-center gap-1 text-left hover:text-foreground">
+					<button
+						type="button"
+						aria-label={`All sources for ${name}`}
+						className="inline-flex items-center gap-1 text-left hover:text-foreground"
+					>
 						{missingSavedRoute ? "Choose source" : routeLabel(part)} <ChevronDown size={12} aria-hidden="true" />
 					</button>
 				</DropdownMenuTrigger>
@@ -52,7 +62,9 @@ export function StationCraftIngredient({
 								{acquisitionRouteKey(route) === (savedRoute ?? acquisitionRouteKey(part)) ? " · Selected" : ""}
 							</span>
 							<span className="text-[11px] text-muted-foreground">
-								{route.durationSeconds ? `${formatDuration(route.durationSeconds)} additional time` : "Direct acquisition"}
+								{route.durationSeconds
+									? `${formatDuration(route.durationSeconds)} additional time`
+									: "Direct acquisition"}
 							</span>
 						</DropdownMenuItem>
 					))}
@@ -64,12 +76,20 @@ export function StationCraftIngredient({
 	return (
 		<div className="grid grid-cols-[32px_minmax(0,1fr)] items-start gap-2.5">
 			{/* Decorative duplicate of the name link below; kept out of the tab order. */}
-			<ItemLink item={input.itemsById[part.itemId] ?? { id: part.itemId, name }} preview={false} tabIndex={-1} aria-hidden="true">
+			<ItemLink
+				item={input.itemsById[part.itemId] ?? { id: part.itemId, name }}
+				preview={false}
+				tabIndex={-1}
+				aria-hidden="true"
+			>
 				<CraftImage item={input.itemsById[part.itemId]} size={32} />
 			</ItemLink>
 			<div className="min-w-0 space-y-1.5">
 				<div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-					<ItemLink item={input.itemsById[part.itemId] ?? { id: part.itemId, name }} className="text-left hover:text-brand focus-visible:outline-2 focus-visible:outline-brand">
+					<ItemLink
+						item={input.itemsById[part.itemId] ?? { id: part.itemId, name }}
+						className="text-left hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
+					>
 						{formatQuantity(part.quantity)}× {name}
 					</ItemLink>
 					{!part.isTool && part.quantity !== 1 && (
@@ -86,7 +106,9 @@ export function StationCraftIngredient({
 							label={`Input cost per unit for ${name}`}
 							source={source}
 							value={custom}
-							estimate={estimate.quantity > 0 && estimate.totalCost !== null ? estimate.totalCost / estimate.quantity : null}
+							estimate={
+								estimate.quantity > 0 && estimate.totalCost !== null ? estimate.totalCost / estimate.quantity : null
+							}
 							onChange={(price) => {
 								const unitCosts = { ...selected.unitCosts };
 								if (price === undefined) delete unitCosts[key];
@@ -102,11 +124,16 @@ export function StationCraftIngredient({
 									key={routeKey}
 									type="button"
 									aria-pressed={false}
-									title={route.durationSeconds ? `${formatDuration(route.durationSeconds)} additional time` : "Direct acquisition"}
+									title={
+										route.durationSeconds
+											? `${formatDuration(route.durationSeconds)} additional time`
+											: "Direct acquisition"
+									}
 									onClick={() => selectRoute(routeKey)}
 									className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-highlight/5 hover:text-foreground"
 								>
-									{routeLabel(route)} · {formatRoundedRoubles(part.quantity > 0 ? route.totalCost / part.quantity : null)}
+									{routeLabel(route)} ·{" "}
+									{formatRoundedRoubles(part.quantity > 0 ? route.totalCost / part.quantity : null)}
 									{part.quantity !== 1 ? " / each" : ""}
 								</button>
 							);

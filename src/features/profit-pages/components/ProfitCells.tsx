@@ -27,17 +27,24 @@ export function ProfitCell({
 	customized?: boolean;
 	originalValue?: React.ReactNode;
 }) {
-	const color = value == null ? "text-foreground" : value > 0 ? "text-success" : value < 0 ? "text-danger" : "text-foreground";
+	const color =
+		value == null ? "text-foreground" : value > 0 ? "text-success" : value < 0 ? "text-danger" : "text-foreground";
 	return (
 		<div className="flex flex-col items-start justify-center border-l border-highlight/5 px-3">
-			{(responsiveLabel || showLabel) && <span className={`mb-1 text-[10px] font-medium text-muted-foreground ${showLabel ? "" : "2xl:hidden"}`}>{label}</span>}
+			{(responsiveLabel || showLabel) && (
+				<span className={`mb-1 text-[10px] font-medium text-muted-foreground ${showLabel ? "" : "2xl:hidden"}`}>
+					{label}
+				</span>
+			)}
 			<span className="flex items-center gap-1">
 				<span
 					className={`flex min-w-0 flex-col items-start font-mono text-sm font-semibold leading-tight ${color}`}
 					title={customized ? `${label} uses customized pricing` : label}
 				>
 					{customized && originalValue !== undefined && (
-						<span className="whitespace-nowrap text-muted-foreground line-through decoration-muted-foreground/80">{originalValue}</span>
+						<span className="whitespace-nowrap text-muted-foreground line-through decoration-muted-foreground/80">
+							{originalValue}
+						</span>
 					)}
 					<span className="whitespace-nowrap">{children}</span>
 				</span>
@@ -72,7 +79,9 @@ export function SellValueCell({
 	const trader = comparison.bestTraderOffer;
 	return (
 		<div className="flex min-w-0 flex-col items-start justify-center border-l border-highlight/5 px-3">
-			{responsiveLabel && <span className="mb-1 text-[10px] font-medium text-muted-foreground 2xl:hidden">Sale proceeds</span>}
+			{responsiveLabel && (
+				<span className="mb-1 text-[10px] font-medium text-muted-foreground 2xl:hidden">Sale proceeds</span>
+			)}
 			<span
 				className="whitespace-nowrap font-mono text-sm font-semibold text-foreground"
 				title={`Gross sale: ${formatRoundedRoubles(comparison.grossTotal)} · Flea fee: ${formatRoundedRoubles(comparison.fee)} · Proceeds: ${formatRoundedRoubles(comparison.netTotal)}`}

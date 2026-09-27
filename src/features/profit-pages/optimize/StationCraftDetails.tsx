@@ -1,12 +1,24 @@
 "use client";
 import { ItemLink } from "@/components/entities/item-link";
-import { getItemSellComparison, type AcquisitionPlan, type RecipeCalculatorInput, type RecipeEvaluation } from "@/lib/price-calculation";
+import {
+	getItemSellComparison,
+	type AcquisitionPlan,
+	type RecipeCalculatorInput,
+	type RecipeEvaluation,
+} from "@/lib/price-calculation";
 import { fleaTargetPrice, itemBasePrice } from "@/lib/price-calculation/calc-tax";
 import type { PriceChangeHandler, ProfitStationSource } from "../types";
 import { acquisitionRouteKey } from "../utils/recipes";
 import { formatDuration, formatQuantity, formatRoundedRoubles, formatSignedRoubles } from "../utils/formatters";
 import { CraftImage } from "./CraftImage";
-import { boardCraftAvailable, boardVariants, requirementKey, selectedBoardCraft, type BoardChoice, type BoardCraft } from "./station-board";
+import {
+	boardCraftAvailable,
+	boardVariants,
+	requirementKey,
+	selectedBoardCraft,
+	type BoardChoice,
+	type BoardCraft,
+} from "./station-board";
 import { StationCraftIngredient } from "./StationCraftIngredient";
 import { StationCraftPriceField } from "./StationCraftPriceField";
 
@@ -36,16 +48,22 @@ export function StationCraftDetails({
 	const sale = getItemSellComparison(output, input.overrides, input, row.outputCount);
 	const base = itemBasePrice(output?.marketPrice?.sellFor, input);
 	const breakEven = base === null || row.cost === null ? null : fleaTargetPrice(base, row.outputCount, row.cost, input);
-	const target = base === null || row.cost === null ? null : fleaTargetPrice(base, row.outputCount, row.cost * 1.1, input);
+	const target =
+		base === null || row.cost === null ? null : fleaTargetPrice(base, row.outputCount, row.cost * 1.1, input);
 	const totalCost = row.cost === null || sale.fee === null ? null : row.cost + sale.fee;
 	const saleSource =
-		sale.saleDestination === "flea" ? "Flea" : sale.saleDestination === "trader" ? (sale.bestTraderOffer?.vendor.name ?? "Trader") : "Unavailable";
+		sale.saleDestination === "flea"
+			? "Flea"
+			: sale.saleDestination === "trader"
+				? (sale.bestTraderOffer?.vendor.name ?? "Trader")
+				: "Unavailable";
 	const hasChain = row.requiredItems.some((part) => !part.isTool && part.children.length);
 	const variants = boardVariants.filter((variant, index, all) => {
 		const evaluated = craft.variants[variant.id];
 		if (!evaluated) return false;
 		if (variant.id === selected.variant) return true;
-		const signature = (value: RecipeEvaluation | undefined) => JSON.stringify(value?.requiredItems.map((part) => [acquisitionRouteKey(part), part.totalCost]));
+		const signature = (value: RecipeEvaluation | undefined) =>
+			JSON.stringify(value?.requiredItems.map((part) => [acquisitionRouteKey(part), part.totalCost]));
 		return !all.slice(0, index).some((previous) => signature(craft.variants[previous.id]) === signature(evaluated));
 	});
 	function routeLabel(part: { method: string; sourceId?: string; traderOffer?: { traderId: string } }) {
@@ -57,8 +75,15 @@ export function StationCraftDetails({
 	}
 	function chain(parts: AcquisitionPlan[], depth = 0): React.ReactNode {
 		return parts.map((part) => (
-			<div key={`${part.itemId}:${part.sourceId}:${part.isTool}`} className="py-1" style={{ paddingLeft: Math.min(depth, 4) * 12 }}>
-				<ItemLink item={input.itemsById[part.itemId] ?? { id: part.itemId, name: part.itemId }} className="inline-flex items-center gap-2 text-left text-xs hover:text-brand focus-visible:outline-2 focus-visible:outline-brand">
+			<div
+				key={`${part.itemId}:${part.sourceId}:${part.isTool}`}
+				className="py-1"
+				style={{ paddingLeft: Math.min(depth, 4) * 12 }}
+			>
+				<ItemLink
+					item={input.itemsById[part.itemId] ?? { id: part.itemId, name: part.itemId }}
+					className="inline-flex items-center gap-2 text-left text-xs hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
+				>
 					<CraftImage item={input.itemsById[part.itemId]} size={24} />
 					{formatQuantity(part.quantity)}× {input.itemsById[part.itemId]?.name ?? part.itemId}
 				</ItemLink>
@@ -94,7 +119,9 @@ export function StationCraftDetails({
 						>
 							<span className="block font-medium">{variant.label}</span>
 							<span className="mt-1 block text-[11px] text-muted-foreground">
-								{available ? `${formatSignedRoubles(option.profit)} · ${formatDuration(option.durationSeconds)}` : "Check requirements"}
+								{available
+									? `${formatSignedRoubles(option.profit)} · ${formatDuration(option.durationSeconds)}`
+									: "Check requirements"}
 							</span>
 						</button>
 					);
@@ -117,8 +144,8 @@ export function StationCraftDetails({
 					<details className="text-[11px] text-muted-foreground">
 						<summary className="w-fit cursor-pointer hover:text-foreground">Price edits</summary>
 						<p className="mt-2">
-							Prices are per unit; item totals include quantity. Input edits are saved for this craft. Clear a price or use the reset arrow to restore its
-							estimate. Blue prices are custom.
+							Prices are per unit; item totals include quantity. Input edits are saved for this craft. Clear a price or
+							use the reset arrow to restore its estimate. Blue prices are custom.
 						</p>
 					</details>
 				</div>
@@ -145,12 +172,17 @@ export function StationCraftDetails({
 										return;
 									}
 									const sellSource = source as "flea" | "trader";
-									const price = sellSource === "flea" ? (sale.fleaPrice ?? override.sell) : sale.bestTraderOffer?.priceRUB;
-									if (price !== null && price !== undefined) onPriceChange(row.outputItemId, { ...override, sellSource, sell: price });
+									const price =
+										sellSource === "flea" ? (sale.fleaPrice ?? override.sell) : sale.bestTraderOffer?.priceRUB;
+									if (price !== null && price !== undefined)
+										onPriceChange(row.outputItemId, { ...override, sellSource, sell: price });
 								}}
 							>
 								<option value="auto">Best net return</option>
-								<option value="flea" disabled={!!row.outputLockReasons.length || (sale.fleaPrice === null && override.sell === undefined)}>
+								<option
+									value="flea"
+									disabled={!!row.outputLockReasons.length || (sale.fleaPrice === null && override.sell === undefined)}
+								>
 									Flea market
 								</option>
 								<option value="trader" disabled={!sale.bestTraderOffer}>
@@ -169,13 +201,16 @@ export function StationCraftDetails({
 									onPriceChange(row.outputItemId, {
 										...override,
 										sell,
-										sellSource: sell === undefined ? undefined : (override.sellSource ?? sale.saleDestination ?? "flea"),
+										sellSource:
+											sell === undefined ? undefined : (override.sellSource ?? sale.saleDestination ?? "flea"),
 									})
 								}
 							/>
 							<span className="text-[11px] text-muted-foreground">/ item</span>
 						</div>
-						<p className="text-[11px] text-muted-foreground">{formatRoundedRoubles(row.sellValue)} proceeds after fee</p>
+						<p className="text-[11px] text-muted-foreground">
+							{formatRoundedRoubles(row.sellValue)} proceeds after fee
+						</p>
 					</div>
 					<div className="space-y-2">
 						<h3 className="text-xs font-medium">Costs</h3>
@@ -187,7 +222,9 @@ export function StationCraftDetails({
 							<dt className="mt-1 text-xs text-foreground">Total</dt>
 							<dd className="mt-1 text-right font-mono text-xs text-foreground">{formatRoundedRoubles(totalCost)}</dd>
 						</dl>
-						{sale.fee === null && <p className="text-xs text-warning">A flea fee cannot be estimated without a usable item base value.</p>}
+						{sale.fee === null && (
+							<p className="text-xs text-warning">A flea fee cannot be estimated without a usable item base value.</p>
+						)}
 					</div>
 					<div className="space-y-2">
 						<div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -200,15 +237,19 @@ export function StationCraftDetails({
 							>
 								{formatSignedRoubles(row.profit)}
 							</span>
-							<span className="font-mono text-[11px] text-muted-foreground">{formatSignedRoubles(row.profitPerHour)} / h</span>
+							<span className="font-mono text-[11px] text-muted-foreground">
+								{formatSignedRoubles(row.profitPerHour)} / h
+							</span>
 						</div>
 						{sale.saleDestination === "flea" && (
 							<div className="space-y-1 text-[11px] text-muted-foreground">
 								<p>
-									<span className="font-mono text-foreground">{formatRoundedRoubles(breakEven)}</span> estimated break-even / item
+									<span className="font-mono text-foreground">{formatRoundedRoubles(breakEven)}</span> estimated
+									break-even / item
 								</p>
 								<p>
-									<span className="font-mono text-foreground">{formatRoundedRoubles(target)}</span> for 10% return / item
+									<span className="font-mono text-foreground">{formatRoundedRoubles(target)}</span> for 10% return /
+									item
 								</p>
 							</div>
 						)}
@@ -218,16 +259,20 @@ export function StationCraftDetails({
 			<details className="text-[11px] text-muted-foreground">
 				<summary className="w-fit cursor-pointer hover:text-foreground">Calculation notes</summary>
 				<p className="mt-2">
-					Gross sale: {formatRoundedRoubles(sale.grossTotal)} for {formatQuantity(row.outputCount)} {row.outputCount === 1 ? "item" : "items"}. Sale edits also
-					apply to this item in profit comparisons.
+					Gross sale: {formatRoundedRoubles(sale.grossTotal)} for {formatQuantity(row.outputCount)}{" "}
+					{row.outputCount === 1 ? "item" : "items"}. Sale edits also apply to this item in profit comparisons.
 				</p>
-				<p className="mt-2">Estimates exclude fuel and initial tool purchases. Listing price and stock are not guaranteed.</p>
+				<p className="mt-2">
+					Estimates exclude fuel and initial tool purchases. Listing price and stock are not guaranteed.
+				</p>
 			</details>
 			{hasChain && (
 				<details>
 					<summary className="cursor-pointer text-xs font-medium">Acquisition steps</summary>
 					<div className="mt-2">{chain(row.requiredItems)}</div>
-					<p className="mt-2 text-[11px] text-muted-foreground">Duration includes allocated intermediate craft time. Starts and collections are manual.</p>
+					<p className="mt-2 text-[11px] text-muted-foreground">
+						Duration includes allocated intermediate craft time. Starts and collections are manual.
+					</p>
 				</details>
 			)}
 		</div>

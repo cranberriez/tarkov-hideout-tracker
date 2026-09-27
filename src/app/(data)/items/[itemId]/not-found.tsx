@@ -8,7 +8,9 @@ export default function ItemNotFound() {
 			<p className="mt-2 max-w-sm text-sm text-muted-foreground">
 				This item is not part of the current game mode&apos;s item catalog.
 			</p>
-			<Link href="/items" className={buttonClassName({ className: "mt-5" })}>Back to items</Link>
+			<Link href="/items" className={buttonClassName({ className: "mt-5" })}>
+				Back to items
+			</Link>
 		</main>
 	);
 }

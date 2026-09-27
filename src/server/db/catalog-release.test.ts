@@ -87,26 +87,31 @@ test("publication between revision selection and search or detail fails explicit
 });
 
 test("unpriced stored item views preserve metadata without reading current or release prices", async () => {
-    const db = createClient({ url: "file::memory:" });
-    try {
-        await db.executeMultiple(await readFile("db-scripts/schema.sql", "utf8"));
-        await publish(db, "regular", "current");
-        const guarded = new Proxy(db, { get(target, key) {
-            if (key === "execute") return (statement: InStatement) => {
-                const sql = typeof statement === "string" ? statement : statement.sql;
-                const args = typeof statement === "string" ? [] : Object.values(statement.args ?? {});
-                assert.doesNotMatch(sql, /item_prices|item_price_points/);
-                assert.ok(!args.includes("price"), "must not load release-price entities");
-                return target.execute(statement);
-            };
-            return Reflect.get(target, key);
-        } }) as Client;
-        const detail = await getItemView("regular", "item-a", "relations", guarded, false);
-        assert.equal(detail.item?.name, "regular current");
-        assert.equal(detail.item?.marketPrice, null);
-        assert.equal(detail.freshness.pricesUpdatedAt, null);
-        assert.equal(detail.freshness.itemsUpdatedAt, 100);
-    } finally { db.close(); }
+	const db = createClient({ url: "file::memory:" });
+	try {
+		await db.executeMultiple(await readFile("db-scripts/schema.sql", "utf8"));
+		await publish(db, "regular", "current");
+		const guarded = new Proxy(db, {
+			get(target, key) {
+				if (key === "execute")
+					return (statement: InStatement) => {
+						const sql = typeof statement === "string" ? statement : statement.sql;
+						const args = typeof statement === "string" ? [] : Object.values(statement.args ?? {});
+						assert.doesNotMatch(sql, /item_prices|item_price_points/);
+						assert.ok(!args.includes("price"), "must not load release-price entities");
+						return target.execute(statement);
+					};
+				return Reflect.get(target, key);
+			},
+		}) as Client;
+		const detail = await getItemView("regular", "item-a", "relations", guarded, false);
+		assert.equal(detail.item?.name, "regular current");
+		assert.equal(detail.item?.marketPrice, null);
+		assert.equal(detail.freshness.pricesUpdatedAt, null);
+		assert.equal(detail.freshness.itemsUpdatedAt, 100);
+	} finally {
+		db.close();
+	}
 });
 const client = {
 	execute: async (statement: { sql: string }) => ({

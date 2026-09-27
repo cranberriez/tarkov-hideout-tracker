@@ -7,20 +7,30 @@ import { getCurrentPageRepository, readPageDataMode } from "@/app/api/_lib/page-
 import { CacheControl } from "@/app/api/_lib/cache-control";
 
 export async function GET(request: NextRequest) {
-    const mode = readPageDataMode(request);
-    if (!mode) return NextResponse.json({ error: "A supported game mode is required" }, { status: 400, headers: { "Cache-Control": CacheControl.noStore } });
-    const showDevQuest = process.env.NODE_ENV === "development" && request.nextUrl.searchParams.get("q") === DEV_QUEST_QUERY;
-    try {
-        const data = await getQuestWorkspacePageData(mode, await getCurrentPageRepository(mode), {
-            includePrices: false,
-            showRemovedQuests: SHOW_REMOVED_QUESTS,
-            displayQuestAdditions: showDevQuest ? DEV_QUEST_FIXTURES : [],
-        });
-        return NextResponse.json(data, { headers: { "Cache-Control": isCompleteQuestWorkspacePageData(data)
-            ? CacheControl.publicCdnHour
-            : CacheControl.noStore } });
-    } catch (error) {
-        console.error("Quest page data could not be loaded", error);
-        return NextResponse.json({ error: "Quest page data could not be loaded" }, { status: 503, headers: { "Cache-Control": CacheControl.noStore } });
-    }
+	const mode = readPageDataMode(request);
+	if (!mode)
+		return NextResponse.json(
+			{ error: "A supported game mode is required" },
+			{ status: 400, headers: { "Cache-Control": CacheControl.noStore } },
+		);
+	const showDevQuest =
+		process.env.NODE_ENV === "development" && request.nextUrl.searchParams.get("q") === DEV_QUEST_QUERY;
+	try {
+		const data = await getQuestWorkspacePageData(mode, await getCurrentPageRepository(mode), {
+			includePrices: false,
+			showRemovedQuests: SHOW_REMOVED_QUESTS,
+			displayQuestAdditions: showDevQuest ? DEV_QUEST_FIXTURES : [],
+		});
+		return NextResponse.json(data, {
+			headers: {
+				"Cache-Control": isCompleteQuestWorkspacePageData(data) ? CacheControl.publicCdnHour : CacheControl.noStore,
+			},
+		});
+	} catch (error) {
+		console.error("Quest page data could not be loaded", error);
+		return NextResponse.json(
+			{ error: "Quest page data could not be loaded" },
+			{ status: 503, headers: { "Cache-Control": CacheControl.noStore } },
+		);
+	}
 }

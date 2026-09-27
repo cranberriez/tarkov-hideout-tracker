@@ -224,17 +224,17 @@ node --test --import jiti/register src/lib/utils/flea-price.test.ts src/lib/util
 
 ## Diagnostics and content maintenance
 
-| Symptom or task                       | Start here                                                                                                                                                                      |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Missing or wrong-mode game data       | [release-config](../src/server/db/release-config.ts), `db:status`, [database error mapping](../src/app/api/_lib/route-errors.ts) |
-| Inspect current dataset               | [/dev source](../src/app/dev/page.tsx): development-only read-only current status, counts, and timestamps by mode |
-| Stale current prices                  | [price refresh runs/store](../src/server/prices/price-store.ts), active release flea eligibility, cron authorization and run duration                                           |
-| History fails but current price works | [live-price-history](../src/server/prices/live-price-history.ts): independent upstream request/cache                                                                            |
-| Search misses/ranking                 | [local search](../src/lib/search/manifest.ts), [manifest read](../src/server/db/search-manifest.ts), [controller](../src/features/items/useItemSearchController.ts)       |
-| Quest source corrections              | [quests](quests.md); `npm run quest-series-candidates -- <task-snapshot.json>` emits review candidates, never automatic manifest updates                                        |
-| Compare quest snapshots               | [compare-quest-data.mjs](../scripts/compare-quest-data.mjs); inspect its arguments before running `npm run quest-data-compare`                                                  |
-| Refresh navigation overlays           | `npm run pull-map-overlays`, review committed [overlay chunks](../src/lib/data/map-overlays/) and run the script's tests                                                        |
-| Hideout quantity/FiR correction       | [override owners in data layer](data-layer.md), then regenerate the affected release                                                                                            |
+| Symptom or task                       | Start here                                                                                                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Missing or wrong-mode game data       | [release-config](../src/server/db/release-config.ts), `db:status`, [database error mapping](../src/app/api/_lib/route-errors.ts)                                    |
+| Inspect current dataset               | [/dev source](../src/app/dev/page.tsx): development-only read-only current status, counts, and timestamps by mode                                                   |
+| Stale current prices                  | [price refresh runs/store](../src/server/prices/price-store.ts), active release flea eligibility, cron authorization and run duration                               |
+| History fails but current price works | [live-price-history](../src/server/prices/live-price-history.ts): independent upstream request/cache                                                                |
+| Search misses/ranking                 | [local search](../src/lib/search/manifest.ts), [manifest read](../src/server/db/search-manifest.ts), [controller](../src/features/items/useItemSearchController.ts) |
+| Quest source corrections              | [quests](quests.md); `npm run quest-series-candidates -- <task-snapshot.json>` emits review candidates, never automatic manifest updates                            |
+| Compare quest snapshots               | [compare-quest-data.mjs](../scripts/compare-quest-data.mjs); inspect its arguments before running `npm run quest-data-compare`                                      |
+| Refresh navigation overlays           | `npm run pull-map-overlays`, review committed [overlay chunks](../src/lib/data/map-overlays/) and run the script's tests                                            |
+| Hideout quantity/FiR correction       | [override owners in data layer](data-layer.md), then regenerate the affected release                                                                                |
 
 Use the active documentation and source implementations above for operational
 requirements.

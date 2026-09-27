@@ -3,44 +3,43 @@ import test from "node:test";
 
 import type { FullQuest } from "@/types/quests";
 import {
-    aggregateQuestEvents,
-    dedupeQuestEvents,
-    filterQuestLogFiles,
-    parseQuestLogFile,
-    parseQuestLogFiles,
-    selectionLooksLikeEftLogsFolder,
+	aggregateQuestEvents,
+	dedupeQuestEvents,
+	filterQuestLogFiles,
+	parseQuestLogFile,
+	parseQuestLogFiles,
+	selectionLooksLikeEftLogsFolder,
 } from "./quest-log-parser.ts";
 
 function makeQuest(overrides: Partial<FullQuest> & Pick<FullQuest, "id" | "name">): FullQuest {
-    return {
-        id: overrides.id,
-        name: overrides.name,
-        normalizedName:
-            overrides.normalizedName ?? overrides.name.toLowerCase().replace(/\s+/g, "-"),
-        experience: overrides.experience ?? 1000,
-        trader: overrides.trader ?? {
-            id: "prapor",
-            name: "Prapor",
-            normalizedName: "prapor",
-            imageLink: null,
-            image4xLink: null,
-        },
-        taskRequirements: overrides.taskRequirements ?? [],
-        traderRequirements: overrides.traderRequirements ?? [],
-        otherRequirements: overrides.otherRequirements ?? [],
-        requiredPrestige: overrides.requiredPrestige ?? null,
-        objectives: overrides.objectives ?? [],
-        wikiLink: overrides.wikiLink ?? null,
-        minPlayerLevel: overrides.minPlayerLevel ?? 1,
-        kappaRequired: overrides.kappaRequired ?? false,
-        lightkeeperRequired: overrides.lightkeeperRequired ?? false,
-        factionName: overrides.factionName ?? null,
-        map: overrides.map ?? null,
-    };
+	return {
+		id: overrides.id,
+		name: overrides.name,
+		normalizedName: overrides.normalizedName ?? overrides.name.toLowerCase().replace(/\s+/g, "-"),
+		experience: overrides.experience ?? 1000,
+		trader: overrides.trader ?? {
+			id: "prapor",
+			name: "Prapor",
+			normalizedName: "prapor",
+			imageLink: null,
+			image4xLink: null,
+		},
+		taskRequirements: overrides.taskRequirements ?? [],
+		traderRequirements: overrides.traderRequirements ?? [],
+		otherRequirements: overrides.otherRequirements ?? [],
+		requiredPrestige: overrides.requiredPrestige ?? null,
+		objectives: overrides.objectives ?? [],
+		wikiLink: overrides.wikiLink ?? null,
+		minPlayerLevel: overrides.minPlayerLevel ?? 1,
+		kappaRequired: overrides.kappaRequired ?? false,
+		lightkeeperRequired: overrides.lightkeeperRequired ?? false,
+		factionName: overrides.factionName ?? null,
+		map: overrides.map ?? null,
+	};
 }
 
 test("parseQuestLogFile tags pvp and pve quest events from the latest preceding signals", () => {
-    const logText = `
+	const logText = `
 2026-05-15 10:00:00.000 {"type":"userConfirmed","raidMode":"Online","mode":"deathmatch"}
 2026-05-15 10:00:05.000 Got notification | ChatMessageReceived
 {
@@ -73,17 +72,17 @@ test("parseQuestLogFile tags pvp and pve quest events from the latest preceding 
   }
 }`;
 
-    const events = parseQuestLogFile(logText, "push-notifications_000.log");
+	const events = parseQuestLogFile(logText, "push-notifications_000.log");
 
-    assert.equal(events.length, 2);
-    assert.equal(events[0]?.raidMode, "pvp");
-    assert.equal(events[1]?.raidMode, "pve");
-    assert.equal(events[1]?.rewards[0]?.templateId, "reward-bolts");
-    assert.equal(events[1]?.rewards[0]?.spawnedInSession, true);
+	assert.equal(events.length, 2);
+	assert.equal(events[0]?.raidMode, "pvp");
+	assert.equal(events[1]?.raidMode, "pve");
+	assert.equal(events[1]?.rewards[0]?.templateId, "reward-bolts");
+	assert.equal(events[1]?.rewards[0]?.spawnedInSession, true);
 });
 
 test("parseQuestLogFile inherits pvp mode from a prior multiline UserConfirmed payload", () => {
-    const logText = `
+	const logText = `
 2026-05-15 10:00:00.000 UserConfirmed
 {
   "type": "userConfirmed",
@@ -100,14 +99,14 @@ test("parseQuestLogFile inherits pvp mode from a prior multiline UserConfirmed p
   }
 }`;
 
-    const events = parseQuestLogFile(logText, "push-notifications_000.log");
+	const events = parseQuestLogFile(logText, "push-notifications_000.log");
 
-    assert.equal(events.length, 1);
-    assert.equal(events[0]?.raidMode, "pvp");
+	assert.equal(events.length, 1);
+	assert.equal(events[0]?.raidMode, "pvp");
 });
 
 test("parseQuestLogFile keeps seasonal websocket mode when UserConfirmed says deathmatch", () => {
-    const logText = `
+	const logText = `
 2026-08-27 03:14:08.841 NotificationManager: new params received url: ws:wss://wsn-pvp-season-02.escapefromtarkov.com/push/notifier/getwebsocket/token
 2026-08-27 03:22:39.296 Got notification | UserConfirmed
 {
@@ -134,22 +133,22 @@ test("parseQuestLogFile keeps seasonal websocket mode when UserConfirmed says de
   }
 }`;
 
-    const events = parseQuestLogFile(logText, "push-notifications_000.log");
+	const events = parseQuestLogFile(logText, "push-notifications_000.log");
 
-    assert.equal(events.length, 2);
-    assert.equal(events[0]?.raidMode, "kord");
-    assert.equal(events[1]?.raidMode, "pvp");
+	assert.equal(events.length, 2);
+	assert.equal(events[0]?.raidMode, "kord");
+	assert.equal(events[1]?.raidMode, "pvp");
 });
 
 test("parseQuestLogFiles can exclude a processed mode while retaining other modes in one file", () => {
-    const seasonalQuest = makeQuest({ id: "quest-seasonal", name: "Seasonal Quest" });
-    const regularQuest = makeQuest({ id: "quest-regular", name: "Regular Quest" });
-    const result = parseQuestLogFiles(
-        [
-            {
-                name: "push-notifications_000.log",
-                excludedRaidModes: ["kord"],
-                text: `
+	const seasonalQuest = makeQuest({ id: "quest-seasonal", name: "Seasonal Quest" });
+	const regularQuest = makeQuest({ id: "quest-regular", name: "Regular Quest" });
+	const result = parseQuestLogFiles(
+		[
+			{
+				name: "push-notifications_000.log",
+				excludedRaidModes: ["kord"],
+				text: `
 2026-08-27 03:14:08.841 ws:wss://wsn-pvp-season-02.escapefromtarkov.com/push/notifier/getwebsocket/token
 2026-08-27 03:14:10.000 Got notification | ChatMessageReceived
 {"message":{"type":12,"templateId":"quest-seasonal successMessageText","hasRewards":false}}
@@ -157,19 +156,22 @@ test("parseQuestLogFiles can exclude a processed mode while retaining other mode
 2026-08-27 03:30:05.000 Got notification | ChatMessageReceived
 {"message":{"type":12,"templateId":"quest-regular successMessageText","hasRewards":false}}
 `,
-            },
-        ],
-        [seasonalQuest, regularQuest],
-    );
+			},
+		],
+		[seasonalQuest, regularQuest],
+	);
 
-    assert.deepEqual(result.events.map((event) => event.questId), ["quest-regular"]);
-    assert.equal(result.totals.kordEvents, 0);
-    assert.equal(result.totals.pvpEvents, 1);
+	assert.deepEqual(
+		result.events.map((event) => event.questId),
+		["quest-regular"],
+	);
+	assert.equal(result.totals.kordEvents, 0);
+	assert.equal(result.totals.pvpEvents, 1);
 });
 
 test("dedupeQuestEvents collapses repeated deliveries within one second and keeps tally", () => {
-    const events = parseQuestLogFile(
-        `
+	const events = parseQuestLogFile(
+		`
 2026-05-15 10:00:00.000 {"type":"userConfirmed","mode":"deathmatch"}
 2026-05-15 10:00:05.000 Got notification | ChatMessageReceived
 {
@@ -189,24 +191,24 @@ test("dedupeQuestEvents collapses repeated deliveries within one second and keep
     "hasRewards": false
   }
 }`,
-        "push-notifications_001.log",
-    );
+		"push-notifications_001.log",
+	);
 
-    const deduped = dedupeQuestEvents(events);
-    const groups = aggregateQuestEvents(deduped);
+	const deduped = dedupeQuestEvents(events);
+	const groups = aggregateQuestEvents(deduped);
 
-    assert.equal(deduped.length, 1);
-    assert.equal(deduped[0]?.occurrenceCount, 2);
-    assert.equal(groups[0]?.occurrenceCount, 2);
-    assert.equal(groups[0]?.eventCount, 1);
+	assert.equal(deduped.length, 1);
+	assert.equal(deduped[0]?.occurrenceCount, 2);
+	assert.equal(groups[0]?.occurrenceCount, 2);
+	assert.equal(groups[0]?.eventCount, 1);
 });
 
 test("parseQuestLogFiles separates unresolved quest ids and unknown raid mode", () => {
-    const result = parseQuestLogFiles(
-        [
-            {
-                name: "push-notifications_010.log",
-                text: `
+	const result = parseQuestLogFiles(
+		[
+			{
+				name: "push-notifications_010.log",
+				text: `
 2026-05-15 10:00:05.000 Got notification | ChatMessageReceived
 {
   "message": {
@@ -216,27 +218,27 @@ test("parseQuestLogFiles separates unresolved quest ids and unknown raid mode", 
     "hasRewards": false
   }
 }`,
-            },
-            {
-                name: "other.log",
-                text: "ignored",
-            },
-        ],
-        [makeQuest({ id: "quest-known", name: "Known Quest" })],
-    );
+			},
+			{
+				name: "other.log",
+				text: "ignored",
+			},
+		],
+		[makeQuest({ id: "quest-known", name: "Known Quest" })],
+	);
 
-    assert.equal(result.totals.filesScanned, 2);
-    assert.equal(result.totals.filesParsed, 1);
-    assert.equal(result.totals.filesIgnored, 1);
-    assert.equal(result.totals.unknownEvents, 1);
-    assert.equal(result.resolvedGroups.length, 0);
-    assert.equal(result.unresolvedGroups.length, 1);
-    assert.equal(result.unresolvedGroups[0]?.questId, "quest-missing");
+	assert.equal(result.totals.filesScanned, 2);
+	assert.equal(result.totals.filesParsed, 1);
+	assert.equal(result.totals.filesIgnored, 1);
+	assert.equal(result.totals.unknownEvents, 1);
+	assert.equal(result.resolvedGroups.length, 0);
+	assert.equal(result.unresolvedGroups.length, 1);
+	assert.equal(result.unresolvedGroups[0]?.questId, "quest-missing");
 });
 
 test("parseQuestLogFile ignores quest events before the current wipe cutoff", () => {
-    const events = parseQuestLogFile(
-        `
+	const events = parseQuestLogFile(
+		`
 2025-11-14 23:59:59.999 Got notification | ChatMessageReceived
 {
   "message": {
@@ -255,23 +257,22 @@ test("parseQuestLogFile ignores quest events before the current wipe cutoff", ()
     "hasRewards": false
   }
 }`,
-        "push-notifications_000.log",
-    );
+		"push-notifications_000.log",
+	);
 
-    assert.deepEqual(
-        events.map((event) => event.questId),
-        ["post-wipe"],
-    );
+	assert.deepEqual(
+		events.map((event) => event.questId),
+		["post-wipe"],
+	);
 });
 
 test("parseQuestLogFiles uses log folder date as cutoff fallback when event timestamp is missing", () => {
-    const result = parseQuestLogFiles(
-        [
-            {
-                name: "push-notifications_000.log",
-                webkitRelativePath:
-                    "Logs/log_2025.11.14_23-00-00_1.0.0.0/push-notifications_000.log",
-                text: `
+	const result = parseQuestLogFiles(
+		[
+			{
+				name: "push-notifications_000.log",
+				webkitRelativePath: "Logs/log_2025.11.14_23-00-00_1.0.0.0/push-notifications_000.log",
+				text: `
 Got notification | ChatMessageReceived
 {
   "message": {
@@ -281,12 +282,11 @@ Got notification | ChatMessageReceived
     "hasRewards": false
   }
 }`,
-            },
-            {
-                name: "push-notifications_001.log",
-                webkitRelativePath:
-                    "Logs/log_2025.11.15_00-00-00_1.0.0.0/push-notifications_001.log",
-                text: `
+			},
+			{
+				name: "push-notifications_001.log",
+				webkitRelativePath: "Logs/log_2025.11.15_00-00-00_1.0.0.0/push-notifications_001.log",
+				text: `
 Got notification | ChatMessageReceived
 {
   "message": {
@@ -296,54 +296,54 @@ Got notification | ChatMessageReceived
     "hasRewards": false
   }
 }`,
-            },
-        ],
-        [makeQuest({ id: "post-wipe", name: "Post Wipe" })],
-    );
+			},
+		],
+		[makeQuest({ id: "post-wipe", name: "Post Wipe" })],
+	);
 
-    assert.deepEqual(
-        result.events.map((event) => event.questId),
-        ["post-wipe"],
-    );
-    assert.deepEqual(result.preWipeIgnoredFiles, ["push-notifications_000.log"]);
-    assert.equal(result.totals.preWipeFilesIgnored, 1);
-    assert.equal(result.totals.preWipeEventsIgnored, 1);
-    assert.equal(result.resolvedGroups.length, 1);
-    assert.equal(result.unresolvedGroups.length, 0);
+	assert.deepEqual(
+		result.events.map((event) => event.questId),
+		["post-wipe"],
+	);
+	assert.deepEqual(result.preWipeIgnoredFiles, ["push-notifications_000.log"]);
+	assert.equal(result.totals.preWipeFilesIgnored, 1);
+	assert.equal(result.totals.preWipeEventsIgnored, 1);
+	assert.equal(result.resolvedGroups.length, 1);
+	assert.equal(result.unresolvedGroups.length, 0);
 });
 
 test("filterQuestLogFiles only keeps push-notification logs inside Logs or log_* folders", () => {
-    const files = [
-        {
-            name: "push-notifications_001.log",
-            webkitRelativePath: "Logs/log_2026_05_15/push-notifications_001.log",
-        },
-        {
-            name: "push-notifications_002.log",
-            webkitRelativePath: "Desktop/push-notifications_002.log",
-        },
-        {
-            name: "application.log",
-            webkitRelativePath: "Logs/log_2026_05_15/application.log",
-        },
-    ];
+	const files = [
+		{
+			name: "push-notifications_001.log",
+			webkitRelativePath: "Logs/log_2026_05_15/push-notifications_001.log",
+		},
+		{
+			name: "push-notifications_002.log",
+			webkitRelativePath: "Desktop/push-notifications_002.log",
+		},
+		{
+			name: "application.log",
+			webkitRelativePath: "Logs/log_2026_05_15/application.log",
+		},
+	];
 
-    const result = filterQuestLogFiles(files);
+	const result = filterQuestLogFiles(files);
 
-    assert.deepEqual(
-        result.matched.map((file) => file.name),
-        ["push-notifications_001.log"],
-    );
-    assert.equal(selectionLooksLikeEftLogsFolder(files), true);
+	assert.deepEqual(
+		result.matched.map((file) => file.name),
+		["push-notifications_001.log"],
+	);
+	assert.equal(selectionLooksLikeEftLogsFolder(files), true);
 });
 
 test("selectionLooksLikeEftLogsFolder rejects selections without Logs or log_* paths", () => {
-    const files = [
-        {
-            name: "random.txt",
-            webkitRelativePath: "Users/jakev/Documents/random.txt",
-        },
-    ];
+	const files = [
+		{
+			name: "random.txt",
+			webkitRelativePath: "Users/jakev/Documents/random.txt",
+		},
+	];
 
-    assert.equal(selectionLooksLikeEftLogsFolder(files), false);
+	assert.equal(selectionLooksLikeEftLogsFolder(files), false);
 });

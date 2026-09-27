@@ -10,5 +10,6 @@ test("new items expire individually after 28 days; baseline and unknown dates st
 	assert.equal(isNewItem(item, 999), false);
 	assert.equal(isNewItem({ firstSeenAt: null, firstSeenPatch: "pre-1.1.5" }, 1000), false);
 	assert.equal(isNewItem({ ...item, firstSeenPatch: "pre-1.1.5" }, 1000), false);
-	for (const firstSeenAt of [undefined, null, NaN, Infinity, -1, 0]) assert.equal(isNewItem({ firstSeenAt }, 1000), false);
+	for (const firstSeenAt of [undefined, null, NaN, Infinity, -1, 0])
+		assert.equal(isNewItem({ firstSeenAt }, 1000), false);
 });

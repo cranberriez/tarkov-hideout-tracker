@@ -1,548 +1,521 @@
-import {
-    fetchTarkovJsonDataset,
-    type TarkovJsonGameMode,
-} from "@/server/services/tarkovJson/client";
-import {
-    mapQuestOtherRequirements,
-    type RawQuestOtherRequirement,
-} from "@/server/services/quest-requirements";
+import { fetchTarkovJsonDataset, type TarkovJsonGameMode } from "@/server/services/tarkovJson/client";
+import { mapQuestOtherRequirements, type RawQuestOtherRequirement } from "@/server/services/quest-requirements";
 import { normalizeQuestObjectiveLocations } from "@/server/services/quest-objective-locations";
-import type { FullQuest, FullQuestObjective, QuestFailCondition, QuestSpecificItem, QuestMap, QuestItemReward, QuestPrestige, QuestTraderStandingReward } from "@/types/quests";
+import type {
+	FullQuest,
+	FullQuestObjective,
+	QuestFailCondition,
+	QuestSpecificItem,
+	QuestMap,
+	QuestItemReward,
+	QuestPrestige,
+	QuestTraderStandingReward,
+} from "@/types/quests";
 import type { FullQuestsPayload } from "@/types/contracts";
 import type { DataResult } from "@/types/common";
 
 interface JsonItem {
-    id: string;
-    name: string;
-    normalizedName: string;
-    shortName?: string;
-    iconLink?: string;
-    gridImageLink?: string;
+	id: string;
+	name: string;
+	normalizedName: string;
+	shortName?: string;
+	iconLink?: string;
+	gridImageLink?: string;
 }
 
 interface JsonTrader {
-    id: string;
-    name: string;
-    normalizedName: string;
-    imageLink?: string | null;
-    image4xLink?: string | null;
+	id: string;
+	name: string;
+	normalizedName: string;
+	imageLink?: string | null;
+	image4xLink?: string | null;
 }
 
 interface JsonMap {
-    id: string;
-    name: string;
-    normalizedName: string;
+	id: string;
+	name: string;
+	normalizedName: string;
 }
 
 interface JsonRewardSet {
-    traderStanding?: Array<{ trader: string; standing: number }>;
-    items?: Array<{ item: string; count: number }>;
+	traderStanding?: Array<{ trader: string; standing: number }>;
+	items?: Array<{ item: string; count: number }>;
 }
 
 interface JsonTaskRequirement {
-    task: string;
-    status?: string[];
+	task: string;
+	status?: string[];
 }
 
 interface JsonTraderRequirement {
-    id: string;
-    trader: string;
-    requirementType: string;
-    compareMethod: string;
-    value: number;
+	id: string;
+	trader: string;
+	requirementType: string;
+	compareMethod: string;
+	value: number;
 }
 
 interface JsonObjective {
-    id: string;
-    type: string;
-    description?: string;
-    optional?: boolean;
-    count?: number;
-    maps?: string[];
-    zones?: Array<{
-        id?: string;
-        name?: string;
-        map?: string;
-        position?: unknown;
-        outline?: unknown;
-        top?: unknown;
-        bottom?: unknown;
-    }>;
-    possibleLocations?: Array<{ map?: string; positions?: unknown }>;
-    requiredKeys?: string[] | string[][];
-    items?: string[];
-    foundInRaid?: boolean;
-    target?: string;
-    targetNames?: string[];
-    shotType?: string;
-    bodyParts?: string[];
-    exitName?: string | null;
-    exitStatus?: string[];
-    item?: string;
-    containsAll?: string[];
-    containsCategory?: string[];
-    buildAttributes?: Array<{
-        name: string;
-        requirement: { compareMethod: string; value: number };
-    }>;
-    hideoutStation?: string;
-    station?: string;
-    stationLevel?: number | null;
-    questItem?: string;
-    task?: string;
-    status?: string[];
-    trader?: string;
-    level?: number;
-    compareMethod?: string;
-    value?: number;
-    playerLevel?: number;
-    useAny?: string[];
+	id: string;
+	type: string;
+	description?: string;
+	optional?: boolean;
+	count?: number;
+	maps?: string[];
+	zones?: Array<{
+		id?: string;
+		name?: string;
+		map?: string;
+		position?: unknown;
+		outline?: unknown;
+		top?: unknown;
+		bottom?: unknown;
+	}>;
+	possibleLocations?: Array<{ map?: string; positions?: unknown }>;
+	requiredKeys?: string[] | string[][];
+	items?: string[];
+	foundInRaid?: boolean;
+	target?: string;
+	targetNames?: string[];
+	shotType?: string;
+	bodyParts?: string[];
+	exitName?: string | null;
+	exitStatus?: string[];
+	item?: string;
+	containsAll?: string[];
+	containsCategory?: string[];
+	buildAttributes?: Array<{
+		name: string;
+		requirement: { compareMethod: string; value: number };
+	}>;
+	hideoutStation?: string;
+	station?: string;
+	stationLevel?: number | null;
+	questItem?: string;
+	task?: string;
+	status?: string[];
+	trader?: string;
+	level?: number;
+	compareMethod?: string;
+	value?: number;
+	playerLevel?: number;
+	useAny?: string[];
 }
 
 interface JsonFailCondition extends JsonObjective {
-    task?: string;
+	task?: string;
 }
 
 interface JsonTask {
-    id: string;
-    name: string;
-    normalizedName: string;
-    taskImageLink?: string | null;
-    wikiLink?: string | null;
-    minPlayerLevel?: number | null;
-    kappaRequired?: boolean | null;
-    lightkeeperRequired?: boolean | null;
-    factionName?: string | null;
-    experience: number;
-    map?: string | null;
-    trader: string;
-    taskRequirements?: JsonTaskRequirement[];
-    traderRequirements?: JsonTraderRequirement[];
-    otherRequirements?: RawQuestOtherRequirement[];
-    failConditions?: JsonFailCondition[];
-    requiredPrestige?: string | null;
-    finishRewards?: JsonRewardSet;
-    failureOutcome?: JsonRewardSet;
-    objectives?: JsonObjective[];
+	id: string;
+	name: string;
+	normalizedName: string;
+	taskImageLink?: string | null;
+	wikiLink?: string | null;
+	minPlayerLevel?: number | null;
+	kappaRequired?: boolean | null;
+	lightkeeperRequired?: boolean | null;
+	factionName?: string | null;
+	experience: number;
+	map?: string | null;
+	trader: string;
+	taskRequirements?: JsonTaskRequirement[];
+	traderRequirements?: JsonTraderRequirement[];
+	otherRequirements?: RawQuestOtherRequirement[];
+	failConditions?: JsonFailCondition[];
+	requiredPrestige?: string | null;
+	finishRewards?: JsonRewardSet;
+	failureOutcome?: JsonRewardSet;
+	objectives?: JsonObjective[];
 }
 
 interface JsonPrestige {
-    id: string;
-    name: string;
-    prestigeLevel: number;
-    imageLink?: string | null;
-    iconLink?: string | null;
+	id: string;
+	name: string;
+	prestigeLevel: number;
+	imageLink?: string | null;
+	iconLink?: string | null;
 }
 
 interface JsonTasksData {
-    tasks: Record<string, JsonTask>;
-    questItems?: Record<string, JsonItem>;
-    prestige?: JsonPrestige[];
+	tasks: Record<string, JsonTask>;
+	questItems?: Record<string, JsonItem>;
+	prestige?: JsonPrestige[];
 }
 
 interface JsonMapsData {
-    maps: Record<string, JsonMap>;
+	maps: Record<string, JsonMap>;
 }
 
 interface MappingContext {
-    tasks: Record<string, JsonTask>;
-    questItems: Record<string, JsonItem>;
-    traders: Record<string, JsonTrader>;
-    maps: Record<string, JsonMap>;
-    hideout: Record<string, { id: string; name: string; normalizedName: string }>;
-    prestige: Record<string, JsonPrestige>;
-    translateTask: (key: string | null | undefined) => string;
-    translateTrader: (key: string | null | undefined) => string;
-    translateMap: (key: string | null | undefined) => string;
-    translateHideout: (key: string | null | undefined) => string;
+	tasks: Record<string, JsonTask>;
+	questItems: Record<string, JsonItem>;
+	traders: Record<string, JsonTrader>;
+	maps: Record<string, JsonMap>;
+	hideout: Record<string, { id: string; name: string; normalizedName: string }>;
+	prestige: Record<string, JsonPrestige>;
+	translateTask: (key: string | null | undefined) => string;
+	translateTrader: (key: string | null | undefined) => string;
+	translateMap: (key: string | null | undefined) => string;
+	translateHideout: (key: string | null | undefined) => string;
 }
 
 function toStandardItemIds(ids: string[] | undefined, context: MappingContext): string[] {
-    return (ids ?? []).filter((id) => !context.questItems[id]);
+	return (ids ?? []).filter((id) => !context.questItems[id]);
 }
 
 function toQuestSpecificItem(id: string, context: MappingContext): QuestSpecificItem | null {
-    const item = context.questItems[id];
-    if (!item) return null;
-    return {
-        source: "questSpecific",
-        id: item.id,
-        name: context.translateTask(item.name),
-        normalizedName: item.normalizedName,
-        shortName: item.shortName ? context.translateTask(item.shortName) : undefined,
-        iconLink: item.iconLink,
-        gridImageLink: item.gridImageLink,
-    };
+	const item = context.questItems[id];
+	if (!item) return null;
+	return {
+		source: "questSpecific",
+		id: item.id,
+		name: context.translateTask(item.name),
+		normalizedName: item.normalizedName,
+		shortName: item.shortName ? context.translateTask(item.shortName) : undefined,
+		iconLink: item.iconLink,
+		gridImageLink: item.gridImageLink,
+	};
 }
 
 function toQuestSpecificItems(ids: string[] | undefined, context: MappingContext) {
-    return (ids ?? [])
-        .map((id) => toQuestSpecificItem(id, context))
-        .filter((item): item is QuestSpecificItem => item !== null);
+	return (ids ?? [])
+		.map((id) => toQuestSpecificItem(id, context))
+		.filter((item): item is QuestSpecificItem => item !== null);
 }
 
-function toRequiredKeyGroups(
-    ids: JsonObjective["requiredKeys"],
-    context: MappingContext,
-): string[][] | undefined {
-    if (!ids?.length) return undefined;
-    const groups = Array.isArray(ids[0]) ? (ids as string[][]) : [ids as string[]];
-    const mapped = groups
-        .map((group) => toStandardItemIds(group, context))
-        .filter((group) => group.length);
-    return mapped.length ? mapped : undefined;
+function toRequiredKeyGroups(ids: JsonObjective["requiredKeys"], context: MappingContext): string[][] | undefined {
+	if (!ids?.length) return undefined;
+	const groups = Array.isArray(ids[0]) ? (ids as string[][]) : [ids as string[]];
+	const mapped = groups.map((group) => toStandardItemIds(group, context)).filter((group) => group.length);
+	return mapped.length ? mapped : undefined;
 }
 
 function toQuestMap(id: string | null | undefined, context: MappingContext): QuestMap | null {
-    if (!id) return null;
-    const map = context.maps[id];
-    if (!map) return null;
-    return {
-        id: map.id,
-        name: context.translateMap(map.name),
-        normalizedName: map.normalizedName,
-    };
+	if (!id) return null;
+	const map = context.maps[id];
+	if (!map) return null;
+	return {
+		id: map.id,
+		name: context.translateMap(map.name),
+		normalizedName: map.normalizedName,
+	};
 }
 
 function mapObjective(objective: JsonObjective, context: MappingContext): FullQuestObjective {
-    const maps = (objective.maps ?? [])
-        .map((id) => toQuestMap(id, context))
-        .filter((map): map is QuestMap => map !== null);
-    const requiredKeyIds = toRequiredKeyGroups(objective.requiredKeys, context);
-    const locations = normalizeQuestObjectiveLocations(
-        objective,
-        (mapId) => toQuestMap(mapId, context),
-    );
-    const base = {
-        id: objective.id,
-        type: objective.type,
-        description: context.translateTask(objective.description),
-        optional: objective.optional ?? false,
-        maps,
-        requiredKeyIds,
-        locations,
-    };
+	const maps = (objective.maps ?? [])
+		.map((id) => toQuestMap(id, context))
+		.filter((map): map is QuestMap => map !== null);
+	const requiredKeyIds = toRequiredKeyGroups(objective.requiredKeys, context);
+	const locations = normalizeQuestObjectiveLocations(objective, (mapId) => toQuestMap(mapId, context));
+	const base = {
+		id: objective.id,
+		type: objective.type,
+		description: context.translateTask(objective.description),
+		optional: objective.optional ?? false,
+		maps,
+		requiredKeyIds,
+		locations,
+	};
 
-    if (["giveItem", "findItem", "plantItem"].includes(objective.type)) {
-        const itemIds = toStandardItemIds(objective.items, context);
-        const questSpecificItems = toQuestSpecificItems(objective.items, context);
-        const totalItemCount = itemIds.length;
-        const isPartial = totalItemCount > 15;
-        return {
-            ...base,
-            type: objective.type as "giveItem" | "findItem" | "plantItem",
-            count: objective.count ?? 0,
-            foundInRaid: objective.foundInRaid ?? false,
-            // Keep the full set for the selected-quest expandable item table.
-            // Demand classification still uses isPartial/totalItemCount and does
-            // not treat broad any-of groups as exact checklist requirements.
-            itemIds,
-            questSpecificItems: questSpecificItems.length ? questSpecificItems : undefined,
-            totalItemCount,
-            isPartial,
-        };
-    }
+	if (["giveItem", "findItem", "plantItem"].includes(objective.type)) {
+		const itemIds = toStandardItemIds(objective.items, context);
+		const questSpecificItems = toQuestSpecificItems(objective.items, context);
+		const totalItemCount = itemIds.length;
+		const isPartial = totalItemCount > 15;
+		return {
+			...base,
+			type: objective.type as "giveItem" | "findItem" | "plantItem",
+			count: objective.count ?? 0,
+			foundInRaid: objective.foundInRaid ?? false,
+			// Keep the full set for the selected-quest expandable item table.
+			// Demand classification still uses isPartial/totalItemCount and does
+			// not treat broad any-of groups as exact checklist requirements.
+			itemIds,
+			questSpecificItems: questSpecificItems.length ? questSpecificItems : undefined,
+			totalItemCount,
+			isPartial,
+		};
+	}
 
-    if (objective.type === "shoot") {
-        return {
-            ...base,
-            type: "shoot",
-            count: objective.count ?? 1,
-            target: objective.target ?? "",
-            targetNames: (objective.targetNames ?? []).map(context.translateTask),
-            shotType: objective.shotType,
-            zoneNames: (objective.zones ?? []).map((zone) =>
-                context.translateTask(zone.name),
-            ),
-            bodyParts: (objective.bodyParts ?? []).map(context.translateTask),
-        };
-    }
+	if (objective.type === "shoot") {
+		return {
+			...base,
+			type: "shoot",
+			count: objective.count ?? 1,
+			target: objective.target ?? "",
+			targetNames: (objective.targetNames ?? []).map(context.translateTask),
+			shotType: objective.shotType,
+			zoneNames: (objective.zones ?? []).map((zone) => context.translateTask(zone.name)),
+			bodyParts: (objective.bodyParts ?? []).map(context.translateTask),
+		};
+	}
 
-    if (objective.type === "extract") {
-        return {
-            ...base,
-            type: "extract",
-            exitName: objective.exitName ? context.translateTask(objective.exitName) : null,
-            count: objective.count,
-            exitStatus: (objective.exitStatus ?? []).map(context.translateTask),
-            zoneNames: (objective.zones ?? []).map((zone) =>
-                context.translateTask(zone.name),
-            ),
-        };
-    }
+	if (objective.type === "extract") {
+		return {
+			...base,
+			type: "extract",
+			exitName: objective.exitName ? context.translateTask(objective.exitName) : null,
+			count: objective.count,
+			exitStatus: (objective.exitStatus ?? []).map(context.translateTask),
+			zoneNames: (objective.zones ?? []).map((zone) => context.translateTask(zone.name)),
+		};
+	}
 
-    if ((objective.type === "buildWeapon" || objective.type === "buildItem") && objective.item) {
-        if (!context.questItems[objective.item]) {
-            return {
-                ...base,
-                type: "buildItem",
-                itemId: objective.item,
-                containsAllItemIds: toStandardItemIds(objective.containsAll, context),
-                containsCategoryIds: objective.containsCategory ?? [],
-                attributes: objective.buildAttributes ?? [],
-            };
-        }
-    }
+	if ((objective.type === "buildWeapon" || objective.type === "buildItem") && objective.item) {
+		if (!context.questItems[objective.item]) {
+			return {
+				...base,
+				type: "buildItem",
+				itemId: objective.item,
+				containsAllItemIds: toStandardItemIds(objective.containsAll, context),
+				containsCategoryIds: objective.containsCategory ?? [],
+				attributes: objective.buildAttributes ?? [],
+			};
+		}
+	}
 
-    if (objective.type === "hideoutStation") {
-        const stationId = objective.hideoutStation ?? objective.station;
-        const station = stationId ? context.hideout[stationId] : undefined;
-        if (station) {
-            return {
-                ...base,
-                type: "hideoutStation",
-                hideoutStation: {
-                    id: station.id,
-                    name: context.translateHideout(station.name),
-                    normalizedName: station.normalizedName,
-                },
-                stationLevel: objective.stationLevel ?? null,
-            };
-        }
-    }
+	if (objective.type === "hideoutStation") {
+		const stationId = objective.hideoutStation ?? objective.station;
+		const station = stationId ? context.hideout[stationId] : undefined;
+		if (station) {
+			return {
+				...base,
+				type: "hideoutStation",
+				hideoutStation: {
+					id: station.id,
+					name: context.translateHideout(station.name),
+					normalizedName: station.normalizedName,
+				},
+				stationLevel: objective.stationLevel ?? null,
+			};
+		}
+	}
 
-    if (["findQuestItem", "giveQuestItem", "pickupQuestItem"].includes(objective.type)) {
-        const questItem = objective.questItem
-            ? toQuestSpecificItem(objective.questItem, context)
-            : null;
-        if (questItem) {
-            return {
-                ...base,
-                type: objective.type === "findQuestItem" ? "findQuestItem" : "pickupQuestItem",
-                questItem,
-                count: objective.count ?? 1,
-            };
-        }
-    }
+	if (["findQuestItem", "giveQuestItem", "pickupQuestItem"].includes(objective.type)) {
+		const questItem = objective.questItem ? toQuestSpecificItem(objective.questItem, context) : null;
+		if (questItem) {
+			return {
+				...base,
+				type: objective.type === "findQuestItem" ? "findQuestItem" : "pickupQuestItem",
+				questItem,
+				count: objective.count ?? 1,
+			};
+		}
+	}
 
-    if (objective.type === "taskStatus" && objective.task) {
-        return {
-            ...base,
-            type: "taskStatus",
-            task: {
-                id: objective.task,
-                name: context.translateTask(context.tasks[objective.task]?.name),
-            },
-            status: objective.status ?? [],
-        };
-    }
+	if (objective.type === "taskStatus" && objective.task) {
+		return {
+			...base,
+			type: "taskStatus",
+			task: {
+				id: objective.task,
+				name: context.translateTask(context.tasks[objective.task]?.name),
+			},
+			status: objective.status ?? [],
+		};
+	}
 
-    if (objective.type === "traderLevel" && objective.trader) {
-        const trader = context.traders[objective.trader];
-        if (trader) {
-            return {
-                ...base,
-                type: "traderLevel",
-                trader: {
-                    id: trader.id,
-                    name: context.translateTrader(trader.name),
-                    normalizedName: trader.normalizedName,
-                },
-                level: objective.level ?? 1,
-            };
-        }
-    }
+	if (objective.type === "traderLevel" && objective.trader) {
+		const trader = context.traders[objective.trader];
+		if (trader) {
+			return {
+				...base,
+				type: "traderLevel",
+				trader: {
+					id: trader.id,
+					name: context.translateTrader(trader.name),
+					normalizedName: trader.normalizedName,
+				},
+				level: objective.level ?? 1,
+			};
+		}
+	}
 
-    if (objective.type === "traderStanding" && objective.trader) {
-        const trader = context.traders[objective.trader];
-        if (trader) {
-            return {
-                ...base,
-                type: "traderStanding",
-                trader: {
-                    id: trader.id,
-                    name: context.translateTrader(trader.name),
-                    normalizedName: trader.normalizedName,
-                },
-                compareMethod: objective.compareMethod ?? ">=",
-                value: objective.value ?? 0,
-            };
-        }
-    }
+	if (objective.type === "traderStanding" && objective.trader) {
+		const trader = context.traders[objective.trader];
+		if (trader) {
+			return {
+				...base,
+				type: "traderStanding",
+				trader: {
+					id: trader.id,
+					name: context.translateTrader(trader.name),
+					normalizedName: trader.normalizedName,
+				},
+				compareMethod: objective.compareMethod ?? ">=",
+				value: objective.value ?? 0,
+			};
+		}
+	}
 
-    if (objective.type === "playerLevel" && objective.playerLevel != null) {
-        return { ...base, type: "playerLevel", playerLevel: objective.playerLevel };
-    }
+	if (objective.type === "playerLevel" && objective.playerLevel != null) {
+		return { ...base, type: "playerLevel", playerLevel: objective.playerLevel };
+	}
 
-    if (objective.type === "useItem") {
-        return {
-            ...base,
-            type: "useItem",
-            useAnyItemIds: toStandardItemIds(objective.useAny, context),
-            compareMethod: objective.compareMethod ?? ">=",
-            count: objective.count ?? 1,
-            zoneNames: (objective.zones ?? []).map((zone) =>
-                context.translateTask(zone.name),
-            ),
-        };
-    }
+	if (objective.type === "useItem") {
+		return {
+			...base,
+			type: "useItem",
+			useAnyItemIds: toStandardItemIds(objective.useAny, context),
+			compareMethod: objective.compareMethod ?? ">=",
+			count: objective.count ?? 1,
+			zoneNames: (objective.zones ?? []).map((zone) => context.translateTask(zone.name)),
+		};
+	}
 
-    return base;
+	return base;
 }
 
 function mapFailCondition(condition: JsonFailCondition, context: MappingContext): QuestFailCondition {
-    const base = {
-        id: condition.id,
-        type: condition.type,
-        description: context.translateTask(condition.description),
-        optional: condition.optional ?? null,
-    };
-    if (condition.type === "taskStatus" && condition.task) {
-        return {
-            ...base,
-            type: "taskStatus",
-            status: condition.status ?? [],
-            task: { id: condition.task },
-        };
-    }
-    return base;
+	const base = {
+		id: condition.id,
+		type: condition.type,
+		description: context.translateTask(condition.description),
+		optional: condition.optional ?? null,
+	};
+	if (condition.type === "taskStatus" && condition.task) {
+		return {
+			...base,
+			type: "taskStatus",
+			status: condition.status ?? [],
+			task: { id: condition.task },
+		};
+	}
+	return base;
 }
 
-function mapStandingRewards(
-    rewards: JsonRewardSet | undefined,
-    context: MappingContext,
-): QuestTraderStandingReward[] {
-    const mapped: QuestTraderStandingReward[] = [];
-    for (const reward of rewards?.traderStanding ?? []) {
-        const trader = context.traders[reward.trader];
-        if (trader) {
-            mapped.push({
-                trader: {
-                    id: trader.id,
-                    name: context.translateTrader(trader.name),
-                    normalizedName: trader.normalizedName,
-                    imageLink: trader.imageLink,
-                    image4xLink: trader.image4xLink,
-                },
-                standing: reward.standing,
-            });
-        }
-    }
-    return mapped;
+function mapStandingRewards(rewards: JsonRewardSet | undefined, context: MappingContext): QuestTraderStandingReward[] {
+	const mapped: QuestTraderStandingReward[] = [];
+	for (const reward of rewards?.traderStanding ?? []) {
+		const trader = context.traders[reward.trader];
+		if (trader) {
+			mapped.push({
+				trader: {
+					id: trader.id,
+					name: context.translateTrader(trader.name),
+					normalizedName: trader.normalizedName,
+					imageLink: trader.imageLink,
+					image4xLink: trader.image4xLink,
+				},
+				standing: reward.standing,
+			});
+		}
+	}
+	return mapped;
 }
 
 function mapItemRewards(rewards: JsonRewardSet | undefined): QuestItemReward[] {
-    return (rewards?.items ?? [])
-        .filter((reward) => reward.item && Number.isFinite(reward.count) && reward.count > 0)
-        .map((reward) => ({ itemId: reward.item, count: reward.count }));
+	return (rewards?.items ?? [])
+		.filter((reward) => reward.item && Number.isFinite(reward.count) && reward.count > 0)
+		.map((reward) => ({ itemId: reward.item, count: reward.count }));
 }
 
 async function fetchAndMapFullQuests(gameMode: TarkovJsonGameMode): Promise<FullQuest[]> {
-    const [tasksDataset, tradersDataset, mapsDataset, hideoutDataset] =
-        await Promise.all([
-            fetchTarkovJsonDataset<JsonTasksData>("tasks", gameMode),
-            fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders", gameMode),
-            fetchTarkovJsonDataset<JsonMapsData>("maps", gameMode),
-            fetchTarkovJsonDataset<
-                Record<string, { id: string; name: string; normalizedName: string }>
-            >("hideout", gameMode),
-        ]);
+	const [tasksDataset, tradersDataset, mapsDataset, hideoutDataset] = await Promise.all([
+		fetchTarkovJsonDataset<JsonTasksData>("tasks", gameMode),
+		fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders", gameMode),
+		fetchTarkovJsonDataset<JsonMapsData>("maps", gameMode),
+		fetchTarkovJsonDataset<Record<string, { id: string; name: string; normalizedName: string }>>("hideout", gameMode),
+	]);
 
-    const rawTasks = Object.values(tasksDataset.data.tasks ?? {});
-    if (rawTasks.length === 0) {
-        throw new Error("Tarkov JSON task response contained no tasks");
-    }
+	const rawTasks = Object.values(tasksDataset.data.tasks ?? {});
+	if (rawTasks.length === 0) {
+		throw new Error("Tarkov JSON task response contained no tasks");
+	}
 
-    const context: MappingContext = {
-        tasks: tasksDataset.data.tasks,
-        questItems: tasksDataset.data.questItems ?? {},
-        traders: tradersDataset.data,
-        maps: mapsDataset.data.maps ?? {},
-        hideout: hideoutDataset.data,
-        prestige: Object.fromEntries(
-            (tasksDataset.data.prestige ?? []).map((entry) => [entry.id, entry]),
-        ),
-        translateTask: tasksDataset.translate,
-        translateTrader: tradersDataset.translate,
-        translateMap: mapsDataset.translate,
-        translateHideout: hideoutDataset.translate,
-    };
+	const context: MappingContext = {
+		tasks: tasksDataset.data.tasks,
+		questItems: tasksDataset.data.questItems ?? {},
+		traders: tradersDataset.data,
+		maps: mapsDataset.data.maps ?? {},
+		hideout: hideoutDataset.data,
+		prestige: Object.fromEntries((tasksDataset.data.prestige ?? []).map((entry) => [entry.id, entry])),
+		translateTask: tasksDataset.translate,
+		translateTrader: tradersDataset.translate,
+		translateMap: mapsDataset.translate,
+		translateHideout: hideoutDataset.translate,
+	};
 
-    return rawTasks.map((task): FullQuest => {
-            const trader = context.traders[task.trader];
-            if (!trader) throw new Error(`Tarkov JSON quest trader ${task.trader} was not found`);
+	return rawTasks.map((task): FullQuest => {
+		const trader = context.traders[task.trader];
+		if (!trader) throw new Error(`Tarkov JSON quest trader ${task.trader} was not found`);
 
-            const prestige = task.requiredPrestige
-                ? context.prestige[task.requiredPrestige]
-                : undefined;
-            const requiredPrestige: QuestPrestige | null = prestige
-                ? {
-                      id: prestige.id,
-                      name: context.translateTask(prestige.name),
-                      prestigeLevel: prestige.prestigeLevel,
-                      imageLink: prestige.imageLink,
-                      iconLink: prestige.iconLink,
-                  }
-                : null;
+		const prestige = task.requiredPrestige ? context.prestige[task.requiredPrestige] : undefined;
+		const requiredPrestige: QuestPrestige | null = prestige
+			? {
+					id: prestige.id,
+					name: context.translateTask(prestige.name),
+					prestigeLevel: prestige.prestigeLevel,
+					imageLink: prestige.imageLink,
+					iconLink: prestige.iconLink,
+				}
+			: null;
 
-            return {
-                id: task.id,
-                name: context.translateTask(task.name),
-                normalizedName: task.normalizedName,
-                taskImageLink: task.taskImageLink,
-                wikiLink: task.wikiLink,
-                minPlayerLevel: task.minPlayerLevel,
-                kappaRequired: task.kappaRequired,
-                lightkeeperRequired: task.lightkeeperRequired,
-                factionName: task.factionName,
-                experience: task.experience,
-                map: toQuestMap(task.map, context),
-                trader: {
-                    id: trader.id,
-                    name: context.translateTrader(trader.name),
-                    normalizedName: trader.normalizedName,
-                    imageLink: trader.imageLink,
-                    image4xLink: trader.image4xLink,
-                },
-                taskRequirements: (task.taskRequirements ?? []).map((requirement) => ({
-                    task: {
-                        id: requirement.task,
-                        name: context.translateTask(context.tasks[requirement.task]?.name),
-                    },
-                    status: requirement.status ?? [],
-                })),
-                failConditions: (task.failConditions ?? []).map((condition) =>
-                    mapFailCondition(condition, context),
-                ),
-                traderRequirements: (task.traderRequirements ?? [])
-                    .map((requirement) => {
-                        const requirementTrader = context.traders[requirement.trader];
-                        if (!requirementTrader) return null;
-                        return {
-                            id: requirement.id,
-                            trader: {
-                                id: requirementTrader.id,
-                                name: context.translateTrader(requirementTrader.name),
-                                normalizedName: requirementTrader.normalizedName,
-                                imageLink: requirementTrader.imageLink,
-                                image4xLink: requirementTrader.image4xLink,
-                            },
-                            requirementType: requirement.requirementType,
-                            compareMethod: requirement.compareMethod,
-                            value: requirement.value,
-                        };
-                    })
-                    .filter((requirement): requirement is NonNullable<typeof requirement> => requirement !== null),
-                otherRequirements: mapQuestOtherRequirements(task.otherRequirements),
-                requiredPrestige,
-                finishItemRewards: mapItemRewards(task.finishRewards),
-                finishTraderStandingRewards: mapStandingRewards(task.finishRewards, context),
-                failureTraderStandingRewards: mapStandingRewards(task.failureOutcome, context),
-                objectives: (task.objectives ?? []).map((objective) =>
-                    mapObjective(objective, context),
-                ),
-            };
-    });
+		return {
+			id: task.id,
+			name: context.translateTask(task.name),
+			normalizedName: task.normalizedName,
+			taskImageLink: task.taskImageLink,
+			wikiLink: task.wikiLink,
+			minPlayerLevel: task.minPlayerLevel,
+			kappaRequired: task.kappaRequired,
+			lightkeeperRequired: task.lightkeeperRequired,
+			factionName: task.factionName,
+			experience: task.experience,
+			map: toQuestMap(task.map, context),
+			trader: {
+				id: trader.id,
+				name: context.translateTrader(trader.name),
+				normalizedName: trader.normalizedName,
+				imageLink: trader.imageLink,
+				image4xLink: trader.image4xLink,
+			},
+			taskRequirements: (task.taskRequirements ?? []).map((requirement) => ({
+				task: {
+					id: requirement.task,
+					name: context.translateTask(context.tasks[requirement.task]?.name),
+				},
+				status: requirement.status ?? [],
+			})),
+			failConditions: (task.failConditions ?? []).map((condition) => mapFailCondition(condition, context)),
+			traderRequirements: (task.traderRequirements ?? [])
+				.map((requirement) => {
+					const requirementTrader = context.traders[requirement.trader];
+					if (!requirementTrader) return null;
+					return {
+						id: requirement.id,
+						trader: {
+							id: requirementTrader.id,
+							name: context.translateTrader(requirementTrader.name),
+							normalizedName: requirementTrader.normalizedName,
+							imageLink: requirementTrader.imageLink,
+							image4xLink: requirementTrader.image4xLink,
+						},
+						requirementType: requirement.requirementType,
+						compareMethod: requirement.compareMethod,
+						value: requirement.value,
+					};
+				})
+				.filter((requirement): requirement is NonNullable<typeof requirement> => requirement !== null),
+			otherRequirements: mapQuestOtherRequirements(task.otherRequirements),
+			requiredPrestige,
+			finishItemRewards: mapItemRewards(task.finishRewards),
+			finishTraderStandingRewards: mapStandingRewards(task.finishRewards, context),
+			failureTraderStandingRewards: mapStandingRewards(task.failureOutcome, context),
+			objectives: (task.objectives ?? []).map((objective) => mapObjective(objective, context)),
+		};
+	});
 }
 
 export async function getCurrentJsonFullQuestData(
-    gameMode: TarkovJsonGameMode = "regular",
+	gameMode: TarkovJsonGameMode = "regular",
 ): Promise<DataResult<FullQuestsPayload>> {
-    const quests = await fetchAndMapFullQuests(gameMode);
-    if (quests.length === 0) throw new Error("Tarkov JSON task mapping produced no quests");
-    return {
-        data: { quests },
-        updatedAt: Date.now(),
-        diagnostics: { provider: "json", upstreamStatus: "ok" },
-    };
+	const quests = await fetchAndMapFullQuests(gameMode);
+	if (quests.length === 0) throw new Error("Tarkov JSON task mapping produced no quests");
+	return {
+		data: { quests },
+		updatedAt: Date.now(),
+		diagnostics: { provider: "json", upstreamStatus: "ok" },
+	};
 }

@@ -1,6 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { boardCraftPlacements, buildStationBoard, selectedBoardCraft, boardCraftAvailable, parseBoardChoices, rankBoardCrafts, visibleBoardCrafts } from "./station-board";
+import {
+	boardCraftPlacements,
+	buildStationBoard,
+	selectedBoardCraft,
+	boardCraftAvailable,
+	parseBoardChoices,
+	rankBoardCrafts,
+	visibleBoardCrafts,
+} from "./station-board";
 import { createRecipeCalculator } from "../../../lib/price-calculation/optimizer";
 import type { RecipeCalculatorInput } from "../../../lib/price-calculation/types";
 import { parsePinnedCrafts } from "../usePinnedCrafts";
@@ -59,7 +67,9 @@ test("board and profit table share net proceeds and input routes", () => {
 	const input = fixture();
 	const craft = buildStationBoard(input).find((row) => row.id === "output")!;
 	const direct = selectedBoardCraft(craft);
-	const table = createRecipeCalculator({ ...input, allowCrafts: false, allowBarters: false }).evaluateCraft(input.crafts[0]);
+	const table = createRecipeCalculator({ ...input, allowCrafts: false, allowBarters: false }).evaluateCraft(
+		input.crafts[0],
+	);
 	assert.equal(direct.profit, table.profit);
 	assert.equal(direct.profit, 30_000);
 	assert.equal(direct.sellFee, 4_000);
@@ -82,8 +92,13 @@ test("saved craft/route remains selected through a loss, ranking and missing rou
 test("board visibility and order stay based on the initial evaluation while choices change", () => {
 	const input = fixture();
 	const baseline = buildStationBoard(input).map((craft) => selectedBoardCraft(craft));
-	const changed = baseline.map((row) => row.id === "output" ? { ...row, profit: -24_000, profitPerHour: -24_000 } : row);
-	const expectedOrder = rankBoardCrafts(baseline.filter((row) => boardCraftAvailable(row) && (row.profit ?? 0) > 0), "profit-hour").map((row) => row.id);
+	const changed = baseline.map((row) =>
+		row.id === "output" ? { ...row, profit: -24_000, profitPerHour: -24_000 } : row,
+	);
+	const expectedOrder = rankBoardCrafts(
+		baseline.filter((row) => boardCraftAvailable(row) && (row.profit ?? 0) > 0),
+		"profit-hour",
+	).map((row) => row.id);
 	const visible = visibleBoardCrafts({
 		rows: changed,
 		baselineRows: baseline,
@@ -92,21 +107,33 @@ test("board visibility and order stay based on the initial evaluation while choi
 		pinnedCrafts: {},
 		hideUnpinned: false,
 	});
-	assert.deepEqual(visible.map((row) => row.id), expectedOrder);
+	assert.deepEqual(
+		visible.map((row) => row.id),
+		expectedOrder,
+	);
 	assert.equal(visible.find((row) => row.id === "output")?.profit, -24_000);
-	assert.deepEqual(visibleBoardCrafts({
-		rows: changed,
-		baselineRows: baseline,
-		ranking: "profit-hour",
-		includeLosses: false,
-		pinnedCrafts: { input: true },
-		hideUnpinned: true,
-	}).map((row) => row.id), ["input"]);
+	assert.deepEqual(
+		visibleBoardCrafts({
+			rows: changed,
+			baselineRows: baseline,
+			ranking: "profit-hour",
+			includeLosses: false,
+			pinnedCrafts: { input: true },
+			hideUnpinned: true,
+		}).map((row) => row.id),
+		["input"],
+	);
 });
 test("station placements mark the top three profitable available crafts", () => {
 	const rows = buildStationBoard(fixture()).map((craft) => selectedBoardCraft(craft));
-	const ranked = rankBoardCrafts(rows.filter((row) => boardCraftAvailable(row) && (row.profit ?? 0) > 0), "profit-hour");
-	assert.deepEqual(boardCraftPlacements(rows, "profit-hour"), Object.fromEntries(ranked.slice(0, 3).map((row, index) => [row.id, index + 1])));
+	const ranked = rankBoardCrafts(
+		rows.filter((row) => boardCraftAvailable(row) && (row.profit ?? 0) > 0),
+		"profit-hour",
+	);
+	assert.deepEqual(
+		boardCraftPlacements(rows, "profit-hour"),
+		Object.fromEntries(ranked.slice(0, 3).map((row, index) => [row.id, index + 1])),
+	);
 });
 test("older pins and price overrides survive; malformed board entries are ignored", () => {
 	assert.deepEqual(parsePinnedCrafts('["output","input",7]'), { output: true, input: true });

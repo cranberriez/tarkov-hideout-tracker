@@ -9,10 +9,10 @@ import { useQuestWorkspace } from "./QuestWorkspaceContext";
  * appear immediately and are independent of the current list filters.
  */
 export function QuestDetailRoute({ questId }: { questId: string }) {
-    const { questsById } = useQuestWorkspace();
-    const quest = questsById.get(questId);
-    if (!quest) {
-        return <QuestNotFound message="This quest is not part of the loaded quest data for the current game mode." />;
-    }
-    return <QuestDetailsPane key={quest.id} quest={quest} />;
+	const { questsById } = useQuestWorkspace();
+	const quest = questsById.get(questId);
+	if (!quest) {
+		return <QuestNotFound message="This quest is not part of the loaded quest data for the current game mode." />;
+	}
+	return <QuestDetailsPane key={quest.id} quest={quest} />;
 }

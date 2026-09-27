@@ -1,6 +1,11 @@
 import type { Client } from "@libsql/client";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import type { CompletedItemsConversionData, DataStatusPayload, LegacyConversionStation, LegacyProfileConversionData } from "@/types/contracts";
+import type {
+	CompletedItemsConversionData,
+	DataStatusPayload,
+	LegacyConversionStation,
+	LegacyProfileConversionData,
+} from "@/types/contracts";
 import type { Station } from "@/types/hideout";
 import type { ItemIdentity } from "@/types/items";
 import { getTursoClient } from "./client";
@@ -21,7 +26,13 @@ interface StoredEntities<Entity> {
 }
 
 function uniqueStationItemIds(stations: readonly Station[]): string[] {
-	return [...new Set(stations.flatMap((station) => station.levels.flatMap((level) => level.itemRequirements.map((requirement) => requirement.itemId))))];
+	return [
+		...new Set(
+			stations.flatMap((station) =>
+				station.levels.flatMap((level) => level.itemRequirements.map((requirement) => requirement.itemId)),
+			),
+		),
+	];
 }
 
 function numberOrNull(value: unknown): number | null {
@@ -30,7 +41,12 @@ function numberOrNull(value: unknown): number | null {
 	return Number.isFinite(number) ? number : null;
 }
 
-async function getAllEntities<Entity>(mode: TarkovJsonGameMode, entityType: string, database: Client, releaseId: string): Promise<StoredEntities<Entity>> {
+async function getAllEntities<Entity>(
+	mode: TarkovJsonGameMode,
+	entityType: string,
+	database: Client,
+	releaseId: string,
+): Promise<StoredEntities<Entity>> {
 	const result = await database.execute({
 		sql: `
             SELECT entity.updated_at, entity.payload_json
@@ -53,7 +69,9 @@ async function getAllEntities<Entity>(mode: TarkovJsonGameMode, entityType: stri
 	const updateTimes = result.rows.map((row) => numberOrNull(row.updated_at));
 	return {
 		records: result.rows.map((row) => parseStoredJson<Entity>(row.payload_json, `${entityType} entity`)),
-		updatedAt: updateTimes.every((value) => value === null) ? null : Math.max(...updateTimes.map((value) => value ?? 0)),
+		updatedAt: updateTimes.every((value) => value === null)
+			? null
+			: Math.max(...updateTimes.map((value) => value ?? 0)),
 	};
 }
 
@@ -103,9 +121,16 @@ async function getItemIdentities(
 	return { itemsById, updatedAt };
 }
 
-export async function getLegacyProfileConversionView(mode: TarkovJsonGameMode, database?: Client): Promise<LegacyProfileConversionData> {
+export async function getLegacyProfileConversionView(
+	mode: TarkovJsonGameMode,
+	database?: Client,
+): Promise<LegacyProfileConversionData> {
 	try {
-		const manifest = await getManifest<PreviewManifest<LegacyConversionStation>>(mode, "stations", database ?? getTursoClient());
+		const manifest = await getManifest<PreviewManifest<LegacyConversionStation>>(
+			mode,
+			"stations",
+			database ?? getTursoClient(),
+		);
 		return {
 			stations: manifest.payload.previews,
 			freshness: { stationsUpdatedAt: manifest.updatedAt },
@@ -120,7 +145,10 @@ export async function getLegacyProfileConversionView(mode: TarkovJsonGameMode, d
 	}
 }
 
-export async function getCompletedItemsConversionView(mode: TarkovJsonGameMode, database?: Client): Promise<CompletedItemsConversionData> {
+export async function getCompletedItemsConversionView(
+	mode: TarkovJsonGameMode,
+	database?: Client,
+): Promise<CompletedItemsConversionData> {
 	let db: Client;
 	let stationData: StoredEntities<Station>;
 	let releaseId: string;

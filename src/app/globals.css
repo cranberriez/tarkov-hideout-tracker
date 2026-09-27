@@ -6,233 +6,233 @@
    opacity variants are supported. RouteLoader artwork keeps its own colors;
    PVE/PVP/seasonal identity colors live in src/lib/cfg/profile-colors.ts. */
 :root {
-    --font-geist-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    --font-geist-mono: "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
-    --radius: 0.625rem;
+	--font-geist-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+	--font-geist-mono: "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
+	--radius: 0.625rem;
 
-    /* Surfaces: page/canvas, cards, then raised controls and popovers. Use opacity for overlays. */
-    --background: oklch(0.1408 0.0044 285.82);
-    --card-bg: oklch(0.1647 0.0042 285.94);
-    --surface-raised: oklch(0.24 0.005 286);
+	/* Surfaces: page/canvas, cards, then raised controls and popovers. Use opacity for overlays. */
+	--background: oklch(0.1408 0.0044 285.82);
+	--card-bg: oklch(0.1647 0.0042 285.94);
+	--surface-raised: oklch(0.24 0.005 286);
 
-    /* Text hierarchy: primary content, supporting copy, then quiet metadata/disabled content. */
-    --foreground: oklch(0.9219 0 0);
-    --muted-foreground: oklch(0.75 0 0);
-    --subtle-foreground: oklch(0.60 0.01 286);
+	/* Text hierarchy: primary content, supporting copy, then quiet metadata/disabled content. */
+	--foreground: oklch(0.9219 0 0);
+	--muted-foreground: oklch(0.75 0 0);
+	--subtle-foreground: oklch(0.6 0.01 286);
 
-    /* Neutral primitives: white overlays/borders, black scrims/shadows, dark text on bright fills. */
-    --highlight: #ffffff;
-    --shadow: #000000;
-    --inverse: var(--background);
+	/* Neutral primitives: white overlays/borders, black scrims/shadows, dark text on bright fills. */
+	--highlight: #ffffff;
+	--shadow: #000000;
+	--inverse: var(--background);
 
-    /* Brand: navigation, selection, links and primary actions. Change this to var(--accent-alternate) to trial tan; hover derives automatically. */
-    --brand: oklch(0.8003 0.1821 151.71);
-    --brand-hover: color-mix(in oklab, var(--brand) 85%, var(--highlight));
+	/* Brand: navigation, selection, links and primary actions. Change this to var(--accent-alternate) to trial tan; hover derives automatically. */
+	--brand: oklch(0.8003 0.1821 151.71);
+	--brand-hover: color-mix(in oklab, var(--brand) 85%, var(--highlight));
 
-    /* Reserved alternate accent from Settings, retained for future brand experiments. */
-    --accent-alternate: #c7b99b;
+	/* Reserved alternate accent from Settings, retained for future brand experiments. */
+	--accent-alternate: #c7b99b;
 
-    /* Success: completed, satisfied, ready, positive profit. Intentionally independent of brand, even while the values match. */
-    --success: oklch(0.8003 0.1821 151.71);
+	/* Success: completed, satisfied, ready, positive profit. Intentionally independent of brand, even while the values match. */
+	--success: oklch(0.8003 0.1821 151.71);
 
-    /* Warning: unmet prerequisites, FiR attention, caution and partial/missing-data notices. */
-    --warning: oklch(0.828 0.16 84.429);
+	/* Warning: unmet prerequisites, FiR attention, caution and partial/missing-data notices. */
+	--warning: oklch(0.828 0.16 84.429);
 
-    /* Danger: failed/error states, destructive actions and negative profit. */
-    --danger: oklch(0.704 0.191 22.216);
+	/* Danger: failed/error states, destructive actions and negative profit. */
+	--danger: oklch(0.704 0.191 22.216);
 
-    /* Information: active/in-progress states, pinned quests, informational links and notices. */
-    --info: oklch(0.746 0.16 232.661);
+	/* Information: active/in-progress states, pinned quests, informational links and notices. */
+	--info: oklch(0.746 0.16 232.661);
 
-    /* Special: prestige and milestone badges, exceptional/hidden quest annotations. */
-    --special: oklch(0.714 0.17 305.504);
+	/* Special: prestige and milestone badges, exceptional/hidden quest annotations. */
+	--special: oklch(0.714 0.17 305.504);
 
-    /* Opaque status surfaces for panels/buttons; translucent variants use the base role with /opacity. */
-    --success-surface: color-mix(in oklab, var(--success) 15%, var(--card-bg));
-    --warning-surface: color-mix(in oklab, var(--warning) 15%, var(--card-bg));
-    --danger-surface: color-mix(in oklab, var(--danger) 15%, var(--card-bg));
-    --info-surface: color-mix(in oklab, var(--info) 15%, var(--card-bg));
-    --special-surface: color-mix(in oklab, var(--special) 15%, var(--card-bg));
+	/* Opaque status surfaces for panels/buttons; translucent variants use the base role with /opacity. */
+	--success-surface: color-mix(in oklab, var(--success) 15%, var(--card-bg));
+	--warning-surface: color-mix(in oklab, var(--warning) 15%, var(--card-bg));
+	--danger-surface: color-mix(in oklab, var(--danger) 15%, var(--card-bg));
+	--info-surface: color-mix(in oklab, var(--info) 15%, var(--card-bg));
+	--special-surface: color-mix(in oklab, var(--special) 15%, var(--card-bg));
 
-    /* Shared control outlines and neutral dividers. Highlight/opacity supports subtle separators. */
-    --border: oklch(0.28 0 0);
-    --border-color: var(--border);
+	/* Shared control outlines and neutral dividers. Highlight/opacity supports subtle separators. */
+	--border: oklch(0.28 0 0);
+	--border-color: var(--border);
 
-    /* Component-library roles reuse the same surfaces and text. Accent is the selected/hover surface, brand is its chromatic emphasis. */
-    --card: var(--card-bg);
-    --card-foreground: var(--foreground);
-    --popover: var(--surface-raised);
-    --popover-foreground: var(--foreground);
-    --primary: var(--surface-raised);
-    --primary-foreground: var(--foreground);
-    --secondary: var(--surface-raised);
-    --secondary-foreground: var(--foreground);
-    --muted: oklch(0.22 0 0);
-    --accent: color-mix(in oklab, var(--brand) 10%, var(--surface-raised));
-    --accent-foreground: var(--foreground);
-    --destructive: var(--danger);
-    --input: var(--surface-raised);
-    --ring: var(--brand);
+	/* Component-library roles reuse the same surfaces and text. Accent is the selected/hover surface, brand is its chromatic emphasis. */
+	--card: var(--card-bg);
+	--card-foreground: var(--foreground);
+	--popover: var(--surface-raised);
+	--popover-foreground: var(--foreground);
+	--primary: var(--surface-raised);
+	--primary-foreground: var(--foreground);
+	--secondary: var(--surface-raised);
+	--secondary-foreground: var(--foreground);
+	--muted: oklch(0.22 0 0);
+	--accent: color-mix(in oklab, var(--brand) 10%, var(--surface-raised));
+	--accent-foreground: var(--foreground);
+	--destructive: var(--danger);
+	--input: var(--surface-raised);
+	--ring: var(--brand);
 
-    /* Acquisition method identities: independent of brand, status and chart colors.
+	/* Acquisition method identities: independent of brand, status and chart colors.
        Shared by profit rows, route selectors, recipe previews and item details. */
-    --acquisition-craft: #fb923c; /* Orange: hideout crafting routes. */
-    --acquisition-barter: #38bdf8; /* Blue: trader barter exchanges. */
-    --acquisition-trader: #c084fc; /* Purple: direct trader purchases. */
-    --acquisition-flea: #34d399; /* Emerald: flea-market purchases. */
-    --acquisition-sell-value: #fde047; /* Yellow: sale/opportunity value used as ingredient cost. */
+	--acquisition-craft: #fb923c; /* Orange: hideout crafting routes. */
+	--acquisition-barter: #38bdf8; /* Blue: trader barter exchanges. */
+	--acquisition-trader: #c084fc; /* Purple: direct trader purchases. */
+	--acquisition-flea: #34d399; /* Emerald: flea-market purchases. */
+	--acquisition-sell-value: #fde047; /* Yellow: sale/opportunity value used as ingredient cost. */
 
-    /* Visualization series: price history uses series 1; objective groups cycle through all five.
+	/* Visualization series: price history uses series 1; objective groups cycle through all five.
        Labels, icons and outlines supplement these category colors. */
-    --chart-1: var(--success);
-    --chart-2: var(--info);
-    --chart-3: var(--warning);
-    --chart-4: var(--special);
-    --chart-5: var(--danger);
+	--chart-1: var(--success);
+	--chart-2: var(--info);
+	--chart-3: var(--warning);
+	--chart-4: var(--special);
+	--chart-5: var(--danger);
 
-    /* Map roles: objective fallback, extracts and transits; independent aliases allow map-only adjustments. */
-    --map-objective: var(--chart-1);
-    --map-extract: var(--success);
-    --map-transit: var(--warning);
+	/* Map roles: objective fallback, extracts and transits; independent aliases allow map-only adjustments. */
+	--map-objective: var(--chart-1);
+	--map-extract: var(--success);
+	--map-transit: var(--warning);
 
-    /* Faction insignia stripes: blue/red reuse the information/danger pigments without tying their identity to brand. */
-    --faction-blue: var(--info);
-    --faction-red: var(--danger);
+	/* Faction insignia stripes: blue/red reuse the information/danger pigments without tying their identity to brand. */
+	--faction-blue: var(--info);
+	--faction-red: var(--danger);
 
-    /* Sidebar roles reuse the shared component palette. */
-    --sidebar: var(--muted);
-    --sidebar-foreground: var(--foreground);
-    --sidebar-primary: var(--primary);
-    --sidebar-primary-foreground: var(--foreground);
-    --sidebar-accent: var(--accent);
-    --sidebar-accent-foreground: var(--foreground);
-    --sidebar-border: var(--border);
-    --sidebar-ring: var(--ring);
+	/* Sidebar roles reuse the shared component palette. */
+	--sidebar: var(--muted);
+	--sidebar-foreground: var(--foreground);
+	--sidebar-primary: var(--primary);
+	--sidebar-primary-foreground: var(--foreground);
+	--sidebar-accent: var(--accent);
+	--sidebar-accent-foreground: var(--foreground);
+	--sidebar-border: var(--border);
+	--sidebar-ring: var(--ring);
 }
 
 @theme inline {
-    --color-acquisition-craft: var(--acquisition-craft);
-    --color-acquisition-barter: var(--acquisition-barter);
-    --color-acquisition-trader: var(--acquisition-trader);
-    --color-acquisition-flea: var(--acquisition-flea);
-    --color-acquisition-sell-value: var(--acquisition-sell-value);
-    --color-background: var(--background);
-    --color-surface-raised: var(--surface-raised);
-    --color-foreground: var(--foreground);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-subtle-foreground: var(--subtle-foreground);
-    --color-highlight: var(--highlight);
-    --color-shadow: var(--shadow);
-    --color-inverse: var(--inverse);
-    --color-brand: var(--brand);
-    --color-brand-hover: var(--brand-hover);
-    --color-accent-alternate: var(--accent-alternate);
-    --color-success: var(--success);
-    --color-warning: var(--warning);
-    --color-danger: var(--danger);
-    --color-info: var(--info);
-    --color-special: var(--special);
-    --color-success-surface: var(--success-surface);
-    --color-warning-surface: var(--warning-surface);
-    --color-danger-surface: var(--danger-surface);
-    --color-info-surface: var(--info-surface);
-    --color-special-surface: var(--special-surface);
-    --color-border: var(--border);
-    --color-border-color: var(--border-color);
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
-    --color-popover: var(--popover);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-primary: var(--primary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-secondary: var(--secondary);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-muted: var(--muted);
-    --color-accent: var(--accent);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-destructive: var(--destructive);
-    --color-input: var(--input);
-    --color-ring: var(--ring);
-    --color-chart-1: var(--chart-1);
-    --color-chart-2: var(--chart-2);
-    --color-chart-3: var(--chart-3);
-    --color-chart-4: var(--chart-4);
-    --color-chart-5: var(--chart-5);
-    --color-map-objective: var(--map-objective);
-    --color-map-extract: var(--map-extract);
-    --color-map-transit: var(--map-transit);
-    --color-faction-blue: var(--faction-blue);
-    --color-faction-red: var(--faction-red);
-    --color-sidebar: var(--sidebar);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-ring: var(--sidebar-ring);
-    --font-sans: var(--font-geist-sans);
-    --font-mono: var(--font-geist-mono);
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) + 4px);
+	--color-acquisition-craft: var(--acquisition-craft);
+	--color-acquisition-barter: var(--acquisition-barter);
+	--color-acquisition-trader: var(--acquisition-trader);
+	--color-acquisition-flea: var(--acquisition-flea);
+	--color-acquisition-sell-value: var(--acquisition-sell-value);
+	--color-background: var(--background);
+	--color-surface-raised: var(--surface-raised);
+	--color-foreground: var(--foreground);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-subtle-foreground: var(--subtle-foreground);
+	--color-highlight: var(--highlight);
+	--color-shadow: var(--shadow);
+	--color-inverse: var(--inverse);
+	--color-brand: var(--brand);
+	--color-brand-hover: var(--brand-hover);
+	--color-accent-alternate: var(--accent-alternate);
+	--color-success: var(--success);
+	--color-warning: var(--warning);
+	--color-danger: var(--danger);
+	--color-info: var(--info);
+	--color-special: var(--special);
+	--color-success-surface: var(--success-surface);
+	--color-warning-surface: var(--warning-surface);
+	--color-danger-surface: var(--danger-surface);
+	--color-info-surface: var(--info-surface);
+	--color-special-surface: var(--special-surface);
+	--color-border: var(--border);
+	--color-border-color: var(--border-color);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+	--color-map-objective: var(--map-objective);
+	--color-map-extract: var(--map-extract);
+	--color-map-transit: var(--map-transit);
+	--color-faction-blue: var(--faction-blue);
+	--color-faction-red: var(--faction-red);
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+	--font-sans: var(--font-geist-sans);
+	--font-mono: var(--font-geist-mono);
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
 }
 
 body {
-    font-family: var(--font-sans), sans-serif;
+	font-family: var(--font-sans), sans-serif;
 }
 
 body.quest-workspace-active {
-    height: 100dvh;
-    min-height: 0;
-    overflow: hidden;
+	height: 100dvh;
+	min-height: 0;
+	overflow: hidden;
 }
 
 @media (width >= 64rem) {
-    body.quest-raid-planner-fullscreen [data-main-nav],
-    body.quest-raid-planner-fullscreen [data-quest-list-pane],
-    body.quest-raid-planner-fullscreen [data-quest-action-bar] {
-        display: none;
-    }
+	body.quest-raid-planner-fullscreen [data-main-nav],
+	body.quest-raid-planner-fullscreen [data-quest-list-pane],
+	body.quest-raid-planner-fullscreen [data-quest-action-bar] {
+		display: none;
+	}
 
-    body.quest-raid-planner-fullscreen [data-quest-workspace] {
-        height: 100dvh;
-    }
+	body.quest-raid-planner-fullscreen [data-quest-workspace] {
+		height: 100dvh;
+	}
 
-    body.quest-raid-planner-fullscreen [data-quest-workspace-grid] {
-        grid-template-columns: minmax(0, 1fr);
-    }
+	body.quest-raid-planner-fullscreen [data-quest-workspace-grid] {
+		grid-template-columns: minmax(0, 1fr);
+	}
 }
 
 @media (width < 64rem) {
-    body.quest-raid-planner-active [data-main-nav] {
-        display: none;
-    }
+	body.quest-raid-planner-active [data-main-nav] {
+		display: none;
+	}
 
-    body.quest-objective-map-active [data-quest-mobile-back-bar] {
-        display: none;
-    }
+	body.quest-objective-map-active [data-quest-mobile-back-bar] {
+		display: none;
+	}
 }
 
 @layer base {
-    * {
-        @apply border-border outline-ring/50;
-    }
-    body {
-        @apply bg-background text-foreground;
-    }
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
 }
 
 /* Chrome, Safari, Edge, Opera */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+	-webkit-appearance: none;
+	margin: 0;
 }
 
 /* Firefox */
-input[type=number] {
-    appearance: textfield;
-    -moz-appearance: textfield;
+input[type="number"] {
+	appearance: textfield;
+	-moz-appearance: textfield;
 }

@@ -9,9 +9,16 @@ import { getCurrentPageRepository } from "@/server/queries/currentPageRepository
 export default async function HideoutPage() {
 	const gameMode = await getActiveTarkovJsonGameMode();
 	const options = hideoutPageQueryOptions(gameMode);
-	const { state, fallbackData } = await prefetchPageData(options.queryKey, PAGE_DATA_STALE_TIME, async () => getHideoutPageData(gameMode, await getCurrentPageRepository(gameMode), { includePrices: false }), isCompleteHideoutPageData);
+	const { state, fallbackData } = await prefetchPageData(
+		options.queryKey,
+		PAGE_DATA_STALE_TIME,
+		async () => getHideoutPageData(gameMode, await getCurrentPageRepository(gameMode), { includePrices: false }),
+		isCompleteHideoutPageData,
+	);
 
 	return (
-		<HydrationBoundary state={state}><HideoutQueryPage mode={gameMode} fallbackData={fallbackData} /></HydrationBoundary>
+		<HydrationBoundary state={state}>
+			<HideoutQueryPage mode={gameMode} fallbackData={fallbackData} />
+		</HydrationBoundary>
 	);
 }

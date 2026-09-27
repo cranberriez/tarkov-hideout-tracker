@@ -14,7 +14,13 @@ function completeRecords() {
 			updatedAt: 1,
 			payload: entityType === "price" ? null : { id: "a", name: "A" },
 		})),
-		...["relations", "usage", "acquisition"].map((viewType) => ({ type: "itemView", itemId: "a", viewType, updatedAt: 1, payload: {} })),
+		...["relations", "usage", "acquisition"].map((viewType) => ({
+			type: "itemView",
+			itemId: "a",
+			viewType,
+			updatedAt: 1,
+			payload: {},
+		})),
 		{ type: "itemSearch", itemId: "a", payload: { id: "a" } },
 		{ type: "manifest", manifestName: "items", updatedAt: 1, payload: { ids: ["a"] } },
 	];
@@ -32,7 +38,8 @@ async function snapshot(directory, records) {
 	};
 	for (const record of records) {
 		entry.recordCounts[record.type]++;
-		if (record.type === "entity" && record.entityType !== "price") entry.entityCounts[record.entityType] = (entry.entityCounts[record.entityType] ?? 0) + 1;
+		if (record.type === "entity" && record.entityType !== "price")
+			entry.entityCounts[record.entityType] = (entry.entityCounts[record.entityType] ?? 0) + 1;
 	}
 	const manifest = { schemaVersion: 1, releaseId: "test-release", modes: [entry] };
 	await fs.writeFile(path.join(directory, "manifest.json"), JSON.stringify(manifest));
@@ -54,7 +61,10 @@ test("snapshot validation rejects empty required domains, duplicate IDs and inco
 			),
 			/quest domain/,
 		);
-		await assert.rejects(validateSnapshotFiles(directory, await snapshot(directory, [...complete, complete[0]])), /duplicate record/);
+		await assert.rejects(
+			validateSnapshotFiles(directory, await snapshot(directory, [...complete, complete[0]])),
+			/duplicate record/,
+		);
 		await assert.rejects(
 			validateSnapshotFiles(
 				directory,

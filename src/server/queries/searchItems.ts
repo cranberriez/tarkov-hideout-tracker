@@ -8,21 +8,21 @@ import { getActiveDataReleaseId } from "../db/release-config";
 import { getTursoClient } from "../db/client";
 
 export function isValidItemSearchQuery(query: string): boolean {
-    const trimmedQuery = query.trim();
-    return (
-        trimmedQuery.length > 0 &&
-        trimmedQuery.length <= ITEM_SEARCH_MAX_QUERY_LENGTH &&
-        normalizeName(trimmedQuery).length > 0
-    );
+	const trimmedQuery = query.trim();
+	return (
+		trimmedQuery.length > 0 &&
+		trimmedQuery.length <= ITEM_SEARCH_MAX_QUERY_LENGTH &&
+		normalizeName(trimmedQuery).length > 0
+	);
 }
 
 export async function searchItems(
-    query: string,
-    mode: TarkovJsonGameMode,
-    resultLimit: number,
-    database?: Client,
+	query: string,
+	mode: TarkovJsonGameMode,
+	resultLimit: number,
+	database?: Client,
 ): Promise<ItemSearchPayload> {
-    const db = database ?? getTursoClient();
-    const releaseId = await getActiveDataReleaseId(mode, db);
-    return searchItemPreviews(query, mode, releaseId, resultLimit, db);
+	const db = database ?? getTursoClient();
+	const releaseId = await getActiveDataReleaseId(mode, db);
+	return searchItemPreviews(query, mode, releaseId, resultLimit, db);
 }

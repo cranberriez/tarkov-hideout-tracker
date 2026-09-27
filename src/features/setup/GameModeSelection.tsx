@@ -24,10 +24,10 @@ export function GameModeSelection({ selected, onSelect }: GameModeSelectionProps
 							className={`
                                 flex-1 px-3 py-2.5 rounded-md border transition-all duration-200 font-semibold text-center text-sm
                                 ${
-									isSelected
-										? "bg-highlight/10 border-highlight text-foreground shadow-[0_0_15px_color-mix(in_oklab,_var(--highlight)_10%,_transparent)]"
-										: "bg-card border-border-color text-muted-foreground hover:border-border hover:text-foreground hover:bg-highlight/5"
-								}
+																	isSelected
+																		? "bg-highlight/10 border-highlight text-foreground shadow-[0_0_15px_color-mix(in_oklab,_var(--highlight)_10%,_transparent)]"
+																		: "bg-card border-border-color text-muted-foreground hover:border-border hover:text-foreground hover:bg-highlight/5"
+																}
                             `}
 						>
 							{mode}

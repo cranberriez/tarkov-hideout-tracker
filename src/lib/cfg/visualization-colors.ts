@@ -5,13 +5,13 @@
  * active theme while retaining a stable, distinct sequence in each view.
  */
 export const VISUALIZATION_COLORS = [
-    "var(--chart-1)",
-    "var(--chart-2)",
-    "var(--chart-3)",
-    "var(--chart-4)",
-    "var(--chart-5)",
+	"var(--chart-1)",
+	"var(--chart-2)",
+	"var(--chart-3)",
+	"var(--chart-4)",
+	"var(--chart-5)",
 ] as const;
 
 export function getVisualizationColor(index: number) {
-    return VISUALIZATION_COLORS[Math.abs(index) % VISUALIZATION_COLORS.length];
+	return VISUALIZATION_COLORS[Math.abs(index) % VISUALIZATION_COLORS.length];
 }

@@ -32,7 +32,10 @@ test("status isolates modes and distinguishes changed data from unchanged and fa
 					JSON.stringify({ items: 100, stations: 200, quests: 300 + index, crafts: 400 + index, barters: 500 + index }),
 				],
 			});
-			await db.execute({ sql: "INSERT INTO active_data_releases VALUES (?, ?, 1)", args: [mode, ACTIVE_DATA_RELEASE_IDS[mode]] });
+			await db.execute({
+				sql: "INSERT INTO active_data_releases VALUES (?, ?, 1)",
+				args: [mode, ACTIVE_DATA_RELEASE_IDS[mode]],
+			});
 			const changedAt = 1000 + index;
 			await store.writeOutcomes(mode, [
 				{
@@ -46,10 +49,14 @@ test("status isolates modes and distinguishes changed data from unchanged and fa
 					points: [{ price: 100, priceMin: 100, offerCount: 5, timestamp: 500 }],
 				},
 			]);
-			await store.writeOutcomes(mode, [{ status: "not-modified", itemId: "item-a", etag: "a", checkedAt: 2000 + index }]);
+			await store.writeOutcomes(mode, [
+				{ status: "not-modified", itemId: "item-a", etag: "a", checkedAt: 2000 + index },
+			]);
 			let status = await getDataStatusView(mode, db);
 			assert.deepEqual(status.prices, { changedAt, checkedAt: 2000 + index, error: null });
-			await store.writeOutcomes(mode, [{ status: "failed", itemId: "item-a", checkedAt: 3000 + index, error: "upstream failed" }]);
+			await store.writeOutcomes(mode, [
+				{ status: "failed", itemId: "item-a", checkedAt: 3000 + index, error: "upstream failed" },
+			]);
 			status = await getDataStatusView(mode, db);
 			assert.equal(status.mode, mode);
 			assert.equal(status.releaseId, ACTIVE_DATA_RELEASE_IDS[mode]);
