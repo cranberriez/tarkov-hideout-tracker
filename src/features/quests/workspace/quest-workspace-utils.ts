@@ -444,11 +444,3 @@ export function getAvailableObjectiveCategories(quests: FullQuest[]) {
 export function getQuestMapKeys(quest: FullQuest) {
     return new Set(getQuestMapGroupsForQuest(quest).map((group) => group.key));
 }
-
-export function getQuestObjectiveSummary(quest: FullQuest) {
-    const descriptions = quest.objectives
-        .filter((objective) => !objective.optional)
-        .slice(0, 2)
-        .map((objective) => objective.description);
-    return descriptions.join(" · ") || "Review quest objectives";
-}

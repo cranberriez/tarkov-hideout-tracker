@@ -236,5 +236,3 @@ export function deriveQuestOrganization(
         validationIssues: [...validationIssues, ...tierIssues],
     };
 }
-
-export const buildQuestOrganization = deriveQuestOrganization;

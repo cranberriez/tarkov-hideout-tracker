@@ -42,8 +42,4 @@ export function formatQuantity(value: number) {
     : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
-export function formatDuration(seconds: number) {
-  const hours = Math.floor(seconds / 3_600);
-  const minutes = Math.round((seconds % 3_600) / 60);
-  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-}
+export { formatDuration } from "../../../lib/utils/format-time";

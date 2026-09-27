@@ -1,7 +1,7 @@
-import type { FullQuest, QuestMapLocation } from "@/types/quests";
+import type { FullQuest } from "@/types/quests";
 import type { MapOverlayMarker } from "@/types/maps";
 import { getVisualizationColor } from "../../../lib/cfg/visualization-colors";
-import { getQuestMapGroupKey } from "../quest-map-groups";
+import { isLocationOnMap } from "../quest-map-groups";
 
 export interface QuestMarkerStyle {
     color: string;
@@ -15,11 +15,6 @@ export function createQuestMarkerStyles(quests: FullQuest[]) {
         });
     });
     return styles;
-}
-
-function isLocationOnMap(location: QuestMapLocation, mapKey: string) {
-    return getQuestMapGroupKey(location.map.normalizedName) === mapKey ||
-        getQuestMapGroupKey(location.map.name) === mapKey;
 }
 
 export function buildRaidPlannerMarkers(
@@ -77,12 +72,4 @@ export function buildRaidPlannerMarkers(
         markers.push(...markerByPosition.values());
     }
     return markers;
-}
-
-export function questHasRenderedLocation(quest: FullQuest, mapKey: string) {
-    return quest.objectives.some((objective) =>
-        (objective.locations ?? []).some((location) =>
-            !!location.position && isLocationOnMap(location, mapKey),
-        ),
-    );
 }

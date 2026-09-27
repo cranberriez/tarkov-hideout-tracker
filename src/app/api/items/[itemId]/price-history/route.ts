@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { TarkovJsonGameMode } from "@/lib/game-mode";
+import { readItemRouteParams } from "../_params";
 import {
     fetchCachedJsonPriceHistory,
     PRICE_HISTORY_REVALIDATE_SECONDS,
@@ -7,24 +7,17 @@ import {
 
 export const revalidate = 7200;
 
-const MODES = new Set<TarkovJsonGameMode>(["regular", "pve", "pvp-season"]);
-
 export async function GET(
     request: NextRequest,
     context: { params: Promise<{ itemId: string }> },
 ) {
-    const { itemId } = await context.params;
-    const requestedMode = request.nextUrl.searchParams.get("mode") ?? "regular";
-    if (!MODES.has(requestedMode as TarkovJsonGameMode)) {
-        return NextResponse.json({ error: "Unsupported game mode" }, { status: 400 });
-    }
-    if (!/^[a-zA-Z0-9_-]{8,80}$/.test(itemId)) {
-        return NextResponse.json({ error: "Invalid item ID" }, { status: 400 });
-    }
+    const params = await readItemRouteParams(request, context);
+    if (!params.ok) return params.response;
+    const { mode, itemId } = params;
 
     try {
         const data = await fetchCachedJsonPriceHistory(
-            requestedMode as TarkovJsonGameMode,
+            mode,
             itemId,
         );
         return NextResponse.json({ data, fetchedAt: Date.now() }, {

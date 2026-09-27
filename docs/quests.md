@@ -38,7 +38,7 @@ tool, not runtime authority; see [operations](operations.md).
 [QuestWorkspace](../src/features/quests/workspace/QuestWorkspace.tsx), backed by
 [QuestWorkspaceContext](../src/features/quests/workspace/QuestWorkspaceContext.tsx).
 The outer [QuestsContext](../src/features/quests/QuestsContext.tsx) still owns
-shared quest actions, cascade confirmation, manual sync, and item-click routing;
+shared quest actions, cascade confirmation, and item-click routing;
 it remains part of the current page. [quest-data-index](../src/features/quests/quest-data-index.ts)
 provides the shared pure indexes consumed by both providers.
 Start here for new quest UI; inspect current imports before editing older quest
@@ -62,13 +62,12 @@ Pan/zoom and temporary map expansion stay in session memory. Standard-item click
 use the shared [item detail controllers](architecture.md); quest-only pickups are
 informational. Persistent filter additions must follow [user-state](user-state.md).
 
-## Manual sync and log import
+## Log import
 
-[quest-sync.ts](../src/features/quests/quest-sync.ts) is the pure manual sync
-engine used by [QuestSyncDialog](../src/features/quests/components/QuestSyncDialog.tsx).
-Inference scans selected-trader candidates; cross-trader prerequisite chains can
-be backfilled only when they are the sole blocker. Preserve explicit visible-quest
-selection, failure state, and the existing availability wrapper.
+The per-trader manual sync dialog has been removed; log upload is the supported
+bulk-progress path. [quest-sync.ts](../src/features/quests/quest-sync.ts) retains
+the pure trader sync engine and its availability wrapper, which currently has no
+UI consumer.
 
 [quest-log-parser](../src/lib/utils/quest-log-parser.ts) and
 [quest-log-import](../src/lib/utils/quest-log-import.ts) parse and derive import

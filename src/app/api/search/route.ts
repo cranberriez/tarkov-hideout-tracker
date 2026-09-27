@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { TarkovJsonGameMode } from "@/lib/game-mode";
+import { isTarkovJsonGameMode } from "@/lib/game-mode";
 import { getActiveDataReleaseId } from "@/server/db/release-config";
 import { readSearchManifest } from "@/server/db/search-manifest";
 import { itemDatabaseErrorResponse } from "@/server/db/route-errors";
 
 export async function GET(request: NextRequest) {
-	const mode = request.nextUrl.searchParams.get("mode") as TarkovJsonGameMode;
-	if (!["regular", "pve", "pvp-season"].includes(mode))
+	const mode = request.nextUrl.searchParams.get("mode");
+	if (!isTarkovJsonGameMode(mode))
 		return NextResponse.json({ error: "A supported game mode is required" }, { status: 400 });
 	const headers = { "Cache-Control": "private, no-store" };
 	try {

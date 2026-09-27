@@ -1,5 +1,4 @@
 import type { RecipeEvaluation } from "@/lib/price-calculation";
-import Link from "next/link";
 import type { ProfitPageKind } from "../types";
 import { formatRoundedRoubles } from "../utils/formatters";
 

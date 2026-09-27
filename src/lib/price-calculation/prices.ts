@@ -25,14 +25,6 @@ export function getItemBuyPrice(
     return getFleaLockReasons(item, context.playerLevel).length ? null : getFleaPrice(item.marketPrice);
 }
 
-export function getItemSellPrice(
-    item: ItemSummary | undefined,
-    overrides: ManualPriceOverrides = {},
-    context: SaleContext = {},
-): number | null {
-    return getItemSellComparison(item, overrides, context).selectedNetPrice;
-}
-
 export interface ItemSellComparison {
     isEstimate: boolean;
     fleaPrice: number | null;

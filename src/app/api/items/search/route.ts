@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { TarkovJsonGameMode } from "@/lib/game-mode";
+import { isTarkovJsonGameMode } from "@/lib/game-mode";
 import {
     isValidItemSearchQuery,
     searchItems,
@@ -10,11 +10,9 @@ import {
     ITEM_SEARCH_QUICK_RESULT_LIMIT,
 } from "@/types/contracts";
 
-const MODES = new Set<TarkovJsonGameMode>(["regular", "pve", "pvp-season"]);
-
 export async function GET(request: NextRequest) {
     const requestedMode = request.nextUrl.searchParams.get("mode");
-    if (!requestedMode || !MODES.has(requestedMode as TarkovJsonGameMode)) {
+    if (!isTarkovJsonGameMode(requestedMode)) {
         return NextResponse.json(
             { error: "A supported game mode is required" },
             { status: 400 },
@@ -38,7 +36,7 @@ export async function GET(request: NextRequest) {
     try {
         const payload = await searchItems(
             query,
-            requestedMode as TarkovJsonGameMode,
+            requestedMode,
             resultLimit,
         );
         return NextResponse.json(payload, {

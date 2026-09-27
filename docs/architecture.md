@@ -158,9 +158,7 @@ visible search button. The existing explicit quest fullscreen nav toggle remains
 unchanged.
 
 Quick Add uses [useItemSearchController](../src/features/items/useItemSearchController.ts)
-against the same manifest with a 10-item limit. The older
-[ItemSearchModal](../src/features/items/components/ItemSearchModal.tsx) remains an
-item-only consumer, detached from the checklist.
+against the same manifest with a 10-item limit.
 [QuickAddModal](../src/features/quick-add/QuickAddModal.tsx) keeps draft rows and
 FiR/non-FiR additions locally, then commits inventory additions through store
 actions. [useUIStore](../src/lib/stores/useUIStore.ts) coordinates its shared open

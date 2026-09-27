@@ -12,12 +12,9 @@ import type { FullQuest } from "@/types/quests";
 import type { ItemSummary } from "@/types/items";
 import type { QuestDataIndex } from "./quest-data-index";
 import {
-    getSyncCandidatesForTrader as getSyncCandidatesForTraderFromProfile,
     matchesFactionVisibility,
-    syncTraderProgress,
     type FactionFilter,
     type QuestSyncProfile,
-    type QuestSyncResult,
 } from "./quest-sync";
 import { getQuestMapGroupKey } from "./quest-map-groups";
 import { useUIStore } from "@/lib/stores/useUIStore";
@@ -28,10 +25,6 @@ import {
     questCanFail,
 } from "@/lib/utils/quest-failures";
 import { selectLegacyQuests } from "./quest-legacy-selector";
-
-interface LastQuestSyncAction extends QuestSyncResult {
-    traderName: string;
-}
 
 interface QuestsContextValue {
     quests: FullQuest[];
@@ -54,7 +47,6 @@ interface QuestsContextValue {
     showPrereqs: boolean;
     searchQuery: string;
     syncProfile: QuestSyncProfile;
-    lastQuestSyncAction: LastQuestSyncAction | null;
 
     filteredQuests: FullQuest[];
     questsById: Map<string, FullQuest>;
@@ -91,26 +83,10 @@ interface QuestsContextValue {
     setShowDebug: (value: boolean) => void;
     setShowPrereqs: (value: boolean) => void;
     setSearchQuery: (value: string) => void;
-    getSyncCandidatesForTrader: (traderId: string) => FullQuest[];
     requestToggleQuestCompletion: (questId: string) => void;
     requestFailQuest: (questId: string) => void;
     requestResetQuestStatus: (questId: string) => void;
     isQuestDisabled: (questId: string) => boolean;
-    previewTraderSelection: (
-        traderId: string,
-        selectedQuestIds: string[],
-        enableInference?: boolean,
-        allowedSensitiveBackfillQuestIds?: string[],
-        deniedSensitiveBackfillQuestIds?: string[],
-    ) => QuestSyncResult;
-    syncTraderSelection: (
-        traderId: string,
-        selectedQuestIds: string[],
-        enableInference?: boolean,
-        allowedSensitiveBackfillQuestIds?: string[],
-        deniedSensitiveBackfillQuestIds?: string[],
-    ) => LastQuestSyncAction;
-    undoLastQuestSync: () => boolean;
     onItemClick: ((itemId: string) => void) | null;
     onQuestClick: ((questId: string) => void) | null;
 }
@@ -121,30 +97,6 @@ export function useQuestsContext() {
     const ctx = useContext(QuestsContext);
     if (!ctx) throw new Error("useQuestsContext must be used within QuestsProvider");
     return ctx;
-}
-
-function buildSyncProfile(state: ReturnType<typeof useUserStore.getState>): QuestSyncProfile {
-    return {
-        playerLevel: state.playerLevel,
-        prestigeLevel: state.prestigeLevel,
-        faction: state.questFaction,
-        traderLoyaltyLevels: state.questTraderLoyaltyLevels,
-        fenceReputation: state.questFenceReputation,
-        completedQuests: state.completedQuests,
-        failedQuests: state.failedQuests,
-    };
-}
-
-function restoreRecordValues(
-    target: Record<string, boolean>,
-    previousValues: Record<string, boolean | undefined>,
-    ids: string[],
-) {
-    for (const id of ids) {
-        const previousValue = previousValues[id];
-        if (previousValue === undefined) delete target[id];
-        else target[id] = previousValue;
-    }
 }
 
 export function QuestsProvider({
@@ -163,7 +115,6 @@ export function QuestsProvider({
     onQuestClick?: (questId: string) => void;
 }) {
     const [searchQuery, setSearchQuery] = useState("");
-    const [lastQuestSyncAction, setLastQuestSyncAction] = useState<LastQuestSyncAction | null>(null);
     const {
         completedQuests,
         failedQuests,
@@ -361,8 +312,6 @@ export function QuestsProvider({
     const toggleKappa = () => setQuestShowKappa(!showKappa);
     const toggleLightkeeper = () => setQuestShowLightkeeper(!showLightkeeper);
 
-    const getSyncCandidatesForTrader = (traderId: string) => getSyncCandidatesForTraderFromProfile(quests, traderId);
-
     const requestToggleQuestCompletion = (questId: string) => {
         const userState = useUserStore.getState();
         const isCurrentlyComplete = !!userState.completedQuests[questId];
@@ -473,87 +422,6 @@ export function QuestsProvider({
         });
     };
 
-    const previewTraderSelection = (
-        traderId: string,
-        selectedQuestIds: string[],
-        enableInference: boolean = true,
-        allowedSensitiveBackfillQuestIds: string[] = [],
-        deniedSensitiveBackfillQuestIds: string[] = [],
-    ) => {
-        const state = useUserStore.getState();
-        return syncTraderProgress({
-            quests,
-            traderId,
-            selectedQuestIds,
-            enableInference,
-            allowedSensitiveBackfillQuestIds,
-            deniedSensitiveBackfillQuestIds,
-            profile: buildSyncProfile(state),
-            questsWithItems: state.questsWithItems,
-        });
-    };
-
-    const syncTraderSelection = (
-        traderId: string,
-        selectedQuestIds: string[],
-        enableInference: boolean = true,
-        allowedSensitiveBackfillQuestIds: string[] = [],
-        deniedSensitiveBackfillQuestIds: string[] = [],
-    ) => {
-        const result = previewTraderSelection(
-            traderId,
-            selectedQuestIds,
-            enableInference,
-            allowedSensitiveBackfillQuestIds,
-            deniedSensitiveBackfillQuestIds,
-        );
-
-        if (result.completedIds.length > 0) {
-            useUserStore.getState().applyQuestCompletionChange({
-                complete: result.completedIds,
-                fail: result.autoFailedQuestIds,
-            });
-        }
-
-        const action = {
-            ...result,
-            traderName: quests.find((quest) => quest.trader.id === traderId)?.trader.name ?? "Trader",
-        };
-        if (result.completedIds.length > 0) {
-            setLastQuestSyncAction(action);
-        }
-        return action;
-    };
-
-    const undoLastQuestSync = () => {
-        if (!lastQuestSyncAction || lastQuestSyncAction.completedIds.length === 0) return false;
-
-        const state = useUserStore.getState();
-        const affectedQuestIds = [
-            ...lastQuestSyncAction.completedIds,
-            ...lastQuestSyncAction.autoFailedQuestIds,
-        ];
-        const complete = affectedQuestIds.filter(
-            (questId) => !!lastQuestSyncAction.previousCompletedQuests[questId] && !state.completedQuests[questId],
-        );
-        const uncomplete = affectedQuestIds.filter(
-            (questId) => !lastQuestSyncAction.previousCompletedQuests[questId] && !!state.completedQuests[questId],
-        );
-        state.applyQuestCompletionChange({ complete, uncomplete });
-
-        const currentState = useUserStore.getState();
-        {
-            const failedQuests = { ...currentState.failedQuests };
-            const questsWithItems = { ...currentState.questsWithItems };
-            restoreRecordValues(failedQuests, lastQuestSyncAction.previousFailedQuests, affectedQuestIds);
-            restoreRecordValues(questsWithItems, lastQuestSyncAction.previousQuestsWithItems, affectedQuestIds);
-            currentState.applyProfilePatch({ failedQuests, questsWithItems });
-        }
-
-        setLastQuestSyncAction(null);
-        return true;
-    };
-
     return (
         <QuestsContext.Provider
             value={{
@@ -576,7 +444,6 @@ export function QuestsProvider({
                 showPrereqs,
                 searchQuery,
                 syncProfile,
-                lastQuestSyncAction,
                 filteredQuests,
                 questsById,
                 failureMap,
@@ -610,14 +477,10 @@ export function QuestsProvider({
                 setShowDebug,
                 setShowPrereqs,
                 setSearchQuery,
-                getSyncCandidatesForTrader,
                 requestToggleQuestCompletion,
                 requestFailQuest,
                 requestResetQuestStatus,
                 isQuestDisabled,
-                previewTraderSelection,
-                syncTraderSelection,
-                undoLastQuestSync,
                 onItemClick: onItemClick ?? null,
                 onQuestClick: onQuestClick ?? null,
             }}

@@ -16,21 +16,8 @@ import type {
 } from "../types";
 import { formatDuration } from "./formatters";
 
-export function indexByOutput<T>(
-  records: T[],
-  getItemId: (record: T) => string,
-) {
-  const index: Record<string, T[]> = Object.create(null) as Record<string, T[]>;
-  for (const record of records) (index[getItemId(record)] ??= []).push(record);
-  return index;
-}
-
 export function getRecipeSourceId(evaluation: RecipeEvaluation) {
   return evaluation.barter?.traderId ?? evaluation.craft?.stationId ?? "";
-}
-
-export function profitGrid() {
-  return "grid-cols-[40px_125px_170px_minmax(300px,1fr)_110px_150px_120px_120px]";
 }
 
 export function estimateProfitRowHeight(evaluation?: RecipeEvaluation) {

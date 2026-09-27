@@ -1,7 +1,7 @@
 import type { MapOverlayMarker } from "@/types/maps";
 import type { FullQuest, FullQuestObjective, QuestMapLocation } from "@/types/quests";
 import { getVisualizationColor } from "../../../lib/cfg/visualization-colors";
-import { getQuestMapGroup, getQuestMapGroupKey, type QuestMapGroup } from "../quest-map-groups";
+import { getQuestMapGroup, isLocationOnMap, type QuestMapGroup } from "../quest-map-groups";
 
 export interface PositionedObjectiveMap extends QuestMapGroup {
     locationCount: number;
@@ -9,11 +9,6 @@ export interface PositionedObjectiveMap extends QuestMapGroup {
 
 export interface ObjectiveMarkerStyle {
     color: string;
-}
-
-function isLocationOnMap(location: QuestMapLocation, mapKey: string) {
-    return getQuestMapGroupKey(location.map.normalizedName) === mapKey ||
-        getQuestMapGroupKey(location.map.name) === mapKey;
 }
 
 function getPositionedLocations(objective: FullQuestObjective) {

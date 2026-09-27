@@ -2,7 +2,12 @@ export type GameMode = "PVP" | "PVE" | "KORD";
 export type TarkovJsonGameMode = "regular" | "pve" | "pvp-season";
 
 export const GAME_MODES: readonly GameMode[] = ["PVP", "PVE", "KORD"];
+export const TARKOV_JSON_GAME_MODES: readonly TarkovJsonGameMode[] = ["regular", "pve", "pvp-season"];
 export const ACTIVE_GAME_MODE_COOKIE = "tarkov-active-game-mode";
+
+export function isTarkovJsonGameMode(value: unknown): value is TarkovJsonGameMode {
+    return TARKOV_JSON_GAME_MODES.includes(value as TarkovJsonGameMode);
+}
 
 export function toTarkovJsonGameMode(mode: GameMode): TarkovJsonGameMode {
     if (mode === "PVE") return "pve";

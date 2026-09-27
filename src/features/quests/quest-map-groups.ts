@@ -1,4 +1,4 @@
-import type { FullQuest } from "@/types/quests";
+import type { FullQuest, QuestMapLocation } from "@/types/quests";
 
 export const NO_QUEST_MAP_GROUP_KEY = "__no-map";
 
@@ -25,6 +25,11 @@ export function getQuestMapGroupKey(value: string) {
     }
 
     return normalized;
+}
+
+export function isLocationOnMap(location: QuestMapLocation, mapKey: string) {
+    return getQuestMapGroupKey(location.map.normalizedName) === mapKey ||
+        getQuestMapGroupKey(location.map.name) === mapKey;
 }
 
 export function getQuestMapGroup(map: FullQuest["map"]): QuestMapGroup {

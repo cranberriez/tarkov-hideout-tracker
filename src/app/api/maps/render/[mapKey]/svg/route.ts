@@ -1,7 +1,6 @@
 import { getMapRenderDefinition } from "@/server/services/map-render-definitions";
 import { applyMapSvgLayers } from "@/server/services/map-svg-layers";
-
-const USER_AGENT = "TarkovHideoutTracker/1.0 (+https://tarkovhideout.com)";
+import { TARKOV_API_USER_AGENT } from "@/server/services/tarkovApi";
 
 export async function GET(
     request: Request,
@@ -15,7 +14,7 @@ export async function GET(
     }
 
     const response = await fetch(svgUrl, {
-        headers: { "User-Agent": USER_AGENT },
+        headers: { "User-Agent": TARKOV_API_USER_AGENT },
         next: { revalidate: 604800 },
     });
     if (!response.ok) return new Response("Map asset unavailable", { status: 502 });

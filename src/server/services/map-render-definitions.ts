@@ -132,7 +132,3 @@ export function getMapRenderDefinition(mapKey: string): MapRenderDefinition | nu
     }
     return null;
 }
-
-export function getMapSvgUpstreamUrl(mapKey: string) {
-    return getMapRenderDefinition(mapKey)?.svgPath ?? null;
-}

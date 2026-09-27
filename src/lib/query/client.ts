@@ -47,6 +47,3 @@ export function createQueryClient(options: { gcTime?: number } = {}): QueryClien
 	});
 	return client;
 }
-
-/** Server callers must create one client per request. */
-export const makeQueryClient = createQueryClient;

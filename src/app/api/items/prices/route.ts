@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDeferredPrices, getItemPriceResponse } from "@/server/queries/getDeferredPrices";
 import { parsePriceRequest } from "@/lib/query/price-contract";
+import { isTarkovJsonGameMode } from "@/lib/game-mode";
 
 export async function GET(request: NextRequest) {
     const input = parsePriceRequest(request.nextUrl.searchParams);
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     let body;
     try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid price request" }, { status: 400 }); }
     const { mode, ids } = body ?? {};
-    if (!["regular", "pve", "pvp-season"].includes(mode) ||
+    if (!isTarkovJsonGameMode(mode) ||
         !Array.isArray(ids) || ids.length > 200 || ids.some((id) => typeof id !== "string" || !/^[a-f0-9]{24}$/.test(id))) {
         return NextResponse.json({ error: "A supported mode and at most 200 item IDs are required" }, { status: 400 });
     }
