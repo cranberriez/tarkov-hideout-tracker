@@ -8,6 +8,7 @@ import { HideoutControls } from "@/features/hideout/components/HideoutControls";
 import { HideoutConversionGate } from "@/features/hideout/components/HideoutConversionGate";
 import { HideoutList } from "@/features/hideout/components/HideoutList";
 import { DataLoadError } from "@/components/core/DataLoadError";
+import { DataNotice } from "@/components/ui/data-notice";
 import type { HideoutPageData } from "@/types/contracts";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
@@ -80,15 +81,12 @@ export function HideoutClientPage({ data, dataMode }: HideoutClientPageProps) {
             ) : (
                 <>
                     {unresolvedItemIds.length > 0 && (
-                        <div
-                            role="alert"
-                            className="mb-4 rounded border border-warning/30 bg-warning-surface/30 px-4 py-3 text-sm text-warning"
-                        >
+                        <DataNotice className="mb-4">
                             {unresolvedItemIds.length} hideout item
                             {unresolvedItemIds.length === 1 ? " is" : "s are"} missing from
                             the catalog. Affected station upgrades are disabled until the data
                             source is complete.
-                        </div>
+                        </DataNotice>
                     )}
                     <HideoutList
                         stations={stations}

@@ -1,3 +1,4 @@
+import { ItemQuantityBadge, ItemThumbnail } from "@/components/entities/item-thumbnail";
 import type { ReactNode } from "react";
 
 interface ItemDetailItemChipProps {
@@ -24,16 +25,14 @@ export function ItemDetailItemChip({
     className = "",
     onClick,
 }: ItemDetailItemChipProps) {
-    const imageLink = item.iconLink ?? item.gridImageLink;
     const content = (
         <>
-            {imageLink && (
-                <span className="relative flex h-11 w-11 shrink-0 items-center justify-center">
-                    <img src={imageLink} alt="" className="h-11 w-11 object-contain" />
+            {(item.iconLink ?? item.gridImageLink) && (
+                <ItemThumbnail item={item} size="md">
                     {quantityOverlay && quantityLabel && (
                         <ItemQuantityBadge label={quantityLabel} />
                     )}
-                </span>
+                </ItemThumbnail>
             )}
             <span className="flex min-w-0 flex-1 flex-col">
                 <span className="flex min-w-0 items-center gap-2">
@@ -68,14 +67,6 @@ export function ItemDetailItemChip({
             className={`flex min-h-12 max-w-52 items-center gap-1.5 rounded-[4px] bg-highlight/[0.035] px-1.5 py-1 text-[13px] ${className}`}
         >
             {content}
-        </span>
-    );
-}
-
-export function ItemQuantityBadge({ label }: { label: string }) {
-    return (
-        <span className="absolute -bottom-1 -right-1 inline-flex min-w-5 items-center justify-center rounded bg-background px-1.5 py-0.5 font-mono text-xs font-bold leading-none text-foreground shadow-sm ring-1 ring-highlight/15">
-            {label}
         </span>
     );
 }

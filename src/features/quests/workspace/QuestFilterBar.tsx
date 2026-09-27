@@ -15,6 +15,7 @@ import {
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
+import { FilterGroupTitle, FilterOptionRow, FilterSwitchRow } from "@/components/ui/filter-bar";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import {
     type QuestTraderLoyaltyLevel,
@@ -58,43 +59,9 @@ function FilterTrigger({
     );
 }
 
-function MenuRow({ selected, onClick, image, label, count, description }: {
-    selected: boolean;
-    onClick: () => void;
-    image?: string | null;
-    label: string;
-    count?: number;
-    description?: string;
-}) {
-    return (
-        <button
-            type="button"
-            aria-pressed={selected}
-            onClick={onClick}
-            className={cn(
-                "flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-highlight/5",
-                selected && "bg-brand/8",
-            )}
-        >
-            {image ? (
-                <img src={image} alt="" className="h-8 w-8 rounded-full object-cover grayscale-[20%]" />
-            ) : (
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-highlight/5 text-subtle-foreground"><CircleDot size={14} /></span>
-            )}
-            <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm text-foreground">{label}</span>
-                {description && <span className="block text-[10px] text-subtle-foreground">{description}</span>}
-            </span>
-            {count !== undefined && <span className="font-mono text-xs text-subtle-foreground">{count}</span>}
-            <span className={cn("flex h-4 w-4 items-center justify-center border", selected ? "border-brand bg-brand text-inverse" : "border-highlight/15")}>
-                {selected && <Check size={11} strokeWidth={3} />}
-            </span>
-        </button>
-    );
-}
 
 function AnyRow({ active, onClick, count }: { active: boolean; onClick: () => void; count: number }) {
-    return <MenuRow selected={active} onClick={onClick} label="Any" count={count} description="Do not limit this filter" />;
+    return <FilterOptionRow selected={active} onClick={onClick} label="Any" count={count} description="Do not limit this filter" />;
 }
 
 export function QuestFilterBar() {
@@ -540,14 +507,14 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
                         </p>
                     )}
                 </>}
-                {section === "maps" && <><AnyRow active={selectedMapKeys.size === 0} onClick={clearMaps} count={quests.length} />{maps.map((map) => <MenuRow key={map.key} selected={selectedMapKeys.has(map.key)} onClick={() => toggleMap(map.key)} label={map.name} count={quests.filter((quest) => getQuestMapGroupsForQuest(quest).some((group) => group.key === map.key)).length} />)}</>}
+                {section === "maps" && <><AnyRow active={selectedMapKeys.size === 0} onClick={clearMaps} count={quests.length} />{maps.map((map) => <FilterOptionRow key={map.key} selected={selectedMapKeys.has(map.key)} onClick={() => toggleMap(map.key)} label={map.name} count={quests.filter((quest) => getQuestMapGroupsForQuest(quest).some((group) => group.key === map.key)).length} />)}</>}
                 {section === "status" && <>
-                    {STATUS_OPTIONS.map((option) => <MenuRow key={option.id} selected={selectedStatuses.has(option.id)} onClick={() => toggleStatus(option.id)} label={option.label} description={option.description} count={quests.filter((quest) => statusByQuestId.get(quest.id)?.status === option.id).length} />)}
+                    {STATUS_OPTIONS.map((option) => <FilterOptionRow key={option.id} selected={selectedStatuses.has(option.id)} onClick={() => toggleStatus(option.id)} label={option.label} description={option.description} count={quests.filter((quest) => statusByQuestId.get(quest.id)?.status === option.id).length} />)}
                     {selectedStatuses.has("locked") && <>
-                        <FilterSectionTitle>Locked reasons</FilterSectionTitle>
-                        <ToggleRow
+                        <FilterGroupTitle>Locked reasons</FilterGroupTitle>
+                        <FilterSwitchRow
                             checked={lockedFilters.showAll}
-                            onChange={(checked) => setLockedFilters({ showAll: checked })}
+                            onCheckedChange={(checked) => setLockedFilters({ showAll: checked })}
                             label="Show ALL Locked Tasks"
                             description="Override the reason filters and include every locked quest"
                             emphasized
@@ -556,9 +523,9 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
                             "transition-opacity",
                             lockedFilters.showAll && "opacity-35",
                         )} disabled={lockedFilters.showAll}>
-                            <ToggleRow
+                            <FilterSwitchRow
                                 checked={lockedFilters.showPlayerLevel}
-                                onChange={(checked) => setLockedFilters({ showPlayerLevel: checked })}
+                                onCheckedChange={(checked) => setLockedFilters({ showPlayerLevel: checked })}
                                 label="Player level"
                                 description="Show quests locked by your PMC level"
                             />
@@ -570,9 +537,9 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
                                 min={0}
                                 onValueChange={(value) => setLockedFilters({ playerLevelLookahead: value })}
                             />}
-                            <ToggleRow
+                            <FilterSwitchRow
                                 checked={lockedFilters.showTaskCount}
-                                onChange={(checked) => setLockedFilters({ showTaskCount: checked })}
+                                onCheckedChange={(checked) => setLockedFilters({ showTaskCount: checked })}
                                 label="Number of completed quests"
                                 description="Show quests locked by trader task-count milestones"
                             />
@@ -581,9 +548,9 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
                                 onChange={(checked) => setLockedFilters({ taskCountUpcomingOnly: checked })}
                                 description="Only show the next incomplete milestone (for example 1, then 3, then 5)"
                             />}
-                            <ToggleRow
+                            <FilterSwitchRow
                                 checked={lockedFilters.showPrerequisite}
-                                onChange={(checked) => setLockedFilters({ showPrerequisite: checked })}
+                                onCheckedChange={(checked) => setLockedFilters({ showPrerequisite: checked })}
                                 label="Previous quest incomplete"
                                 description="Show quests with unfinished prerequisite quests"
                             />
@@ -595,9 +562,9 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
                                 min={1}
                                 onValueChange={(value) => setLockedFilters({ prerequisiteLookahead: value })}
                             />}
-                            <ToggleRow
+                            <FilterSwitchRow
                                 checked={lockedFilters.showFaction}
-                                onChange={(checked) => setLockedFilters({ showFaction: checked })}
+                                onCheckedChange={(checked) => setLockedFilters({ showFaction: checked })}
                                 label="Incorrect faction"
                                 description="Show quests restricted to the other faction"
                             />
@@ -606,39 +573,39 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
                     </>}
                 </>}
                 {section === "filters" && <>
-                    <FilterSectionTitle>Visibility</FilterSectionTitle>
-                    <ToggleRow
+                    <FilterGroupTitle>Visibility</FilterGroupTitle>
+                    <FilterSwitchRow
                         checked={showHiddenQuests}
-                        onChange={setShowHiddenQuests}
+                        onCheckedChange={setShowHiddenQuests}
                         label="Show hidden quests"
                         description="Include quests you have chosen to hide"
                     />
 
-                    <FilterSectionTitle>Requirements</FilterSectionTitle>
-                    <ToggleRow
+                    <FilterGroupTitle>Requirements</FilterGroupTitle>
+                    <FilterSwitchRow
                         checked={filterByTraderRequirements}
-                        onChange={setFilterByTraderRequirements}
+                        onCheckedChange={setFilterByTraderRequirements}
                         label="Filter quests by reputation requirement"
                         description="Use your trader loyalty levels and Fence reputation"
                     />
 
-                    <FilterSectionTitle>Grouping</FilterSectionTitle>
-                    <ToggleRow
+                    <FilterGroupTitle>Grouping</FilterGroupTitle>
+                    <FilterSwitchRow
                         checked={groupByTrader}
-                        onChange={setGroupByTrader}
+                        onCheckedChange={setGroupByTrader}
                         label="Group by trader"
                         description="Separate quests by their issuing trader"
                     />
-                    <ToggleRow
+                    <FilterSwitchRow
                         checked={groupByLoyaltyLevel}
-                        onChange={setGroupByLoyaltyLevel}
+                        onCheckedChange={setGroupByLoyaltyLevel}
                         label="Group by loyalty level"
                         description="Separate quests by the issuing trader's required LL"
                     />
 
-                    <FilterSectionTitle>Sort</FilterSectionTitle>
+                    <FilterGroupTitle>Sort</FilterGroupTitle>
                     {SORT_OPTIONS.map((option) => (
-                        <MenuRow
+                        <FilterOptionRow
                             key={option.id}
                             selected={sortMode === option.id}
                             onClick={() => setSortMode(option.id)}
@@ -647,9 +614,9 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
                         />
                     ))}
 
-                    <FilterSectionTitle>Quest types</FilterSectionTitle>
+                    <FilterGroupTitle>Quest types</FilterGroupTitle>
                     <AnyRow active={selectedObjectiveCategories.size === 0} onClick={clearObjectiveCategories} count={quests.length} />
-                    {objectiveCategories.map((category) => <MenuRow key={category} selected={selectedObjectiveCategories.has(category)} onClick={() => toggleObjectiveCategory(category)} label={OBJECTIVE_CATEGORY_LABELS[category]} count={quests.filter((quest) => getQuestObjectiveCategories(quest).has(category)).length} />)}
+                    {objectiveCategories.map((category) => <FilterOptionRow key={category} selected={selectedObjectiveCategories.has(category)} onClick={() => toggleObjectiveCategory(category)} label={OBJECTIVE_CATEGORY_LABELS[category]} count={quests.filter((quest) => getQuestObjectiveCategories(quest).has(category)).length} />)}
                 </>}
             </div>
         </div>
@@ -664,35 +631,7 @@ const SORT_OPTIONS = [
     { id: "unlockImpact", label: "Unlock impact", description: "Quests that unlock the most follow-ups first" },
 ] as const;
 
-function FilterSectionTitle({ children }: { children: React.ReactNode }) {
-    return (
-        <div className="border-y border-highlight/8 bg-highlight/[0.025] px-3 py-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-subtle-foreground first:border-t-0">
-            {children}
-        </div>
-    );
-}
 
-function ToggleRow({ checked, onChange, label, description, emphasized = false }: {
-    checked: boolean;
-    onChange: (checked: boolean) => void;
-    label: string;
-    description: string;
-    emphasized?: boolean;
-}) {
-    return (
-        <label className={cn(
-            "flex cursor-pointer items-center justify-between gap-4 px-3 py-2.5 transition-colors hover:bg-highlight/5",
-            emphasized && "border-y border-warning/20 bg-warning/[0.06] hover:bg-warning/[0.09]",
-        )}>
-            <span className="min-w-0">
-                <span className={cn("block text-sm text-foreground", emphasized && "font-semibold text-warning")}>{label}</span>
-                <span className="block text-[10px] text-subtle-foreground">{description}</span>
-            </span>
-            <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="peer sr-only" />
-            <span className="relative h-5 w-9 shrink-0 rounded-full bg-highlight/10 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-muted after:transition-transform peer-checked:bg-brand/25 peer-checked:after:translate-x-4 peer-checked:after:bg-brand peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-brand" />
-        </label>
-    );
-}
 
 function UpcomingRuleRow({
     checked,

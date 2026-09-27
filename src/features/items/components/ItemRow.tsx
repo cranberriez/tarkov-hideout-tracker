@@ -6,7 +6,7 @@ import { formatNumber } from "@/lib/utils/format-number";
 import type { ItemSize } from "@/lib/stores/useUserStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
-import { formatRoubles, getFleaPrice, hasFleaMarketData, fleaPriceStatusLabel } from "@/lib/utils/market-price";
+import { describeFleaPrice, formatFleaPriceState } from "@/lib/utils/market-price";
 
 interface ItemRowProps {
     item: ItemSummary;
@@ -54,11 +54,8 @@ export function ItemRow({
     onClick,
 }: ItemRowProps) {
     const { itemCounts } = useUserStore();
-    const loading = item.priceLoadState === "pending";
     const owned = itemCounts[item.id] ?? { have: 0, haveFir: 0 };
-    const marketPrice = item.marketPrice;
-    const unitPrice = getFleaPrice(marketPrice);
-    const hasFleaData = hasFleaMarketData(marketPrice);
+    const priceState = describeFleaPrice(item);
 
     // Helper to determine if an item is a currency for display purposes
     const isCurrency =
@@ -73,8 +70,6 @@ export function ItemRow({
         haveFir: isCurrency ? 0 : owned.haveFir,
     });
 
-    // Calculate total estimated cost if we have price data
-    const estimatedTotal = unitPrice != null ? unitPrice * needs.neededNonFir : null;
 
     const firRequired = firCount ?? 0;
     const nonFirRequired = Math.max(0, count - firRequired);
@@ -274,16 +269,9 @@ export function ItemRow({
                             Est. Cost
                         </div>
                         <div className="text-sm font-medium text-foreground leading-tight">
-                            {loading && !marketPrice && <span className="text-subtle-foreground">Loading price…</span>}
-                            {!loading && (marketPrice === null || marketPrice === undefined) && (
-                                <span className="text-subtle-foreground">{item.priceLoadState === "error" ? "Price failed" : "No data"}</span>
-                            )}
-                            {!loading && marketPrice && !hasFleaData && (
-                                <span className="text-subtle-foreground">No flea</span>
-                            )}
-                            {!loading && marketPrice && hasFleaData && (
-                                <>{marketPrice.fleaStability === "unavailable" ? fleaPriceStatusLabel(marketPrice) : formatRoubles(estimatedTotal)}</>
-                            )}
+                            {priceState.kind === "price"
+                                ? formatFleaPriceState(priceState, { count: needs.neededNonFir })
+                                : <span className="text-subtle-foreground">{formatFleaPriceState(priceState)}</span>}
                         </div>
                     </div>
                 )}

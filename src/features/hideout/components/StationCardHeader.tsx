@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { Lock, Eye, EyeOff } from "lucide-react";
+import { Lock, Eye, EyeOff, Minus, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { Station } from "@/types/hideout";
 
 export interface StationCardHeaderProps {
@@ -37,13 +38,6 @@ export function StationCardHeader({
             : upgradeStatus === "illegal"
             ? "border-danger/60"
             : "border-highlight/10";
-
-    const plusButtonColor =
-        upgradeStatus === "ready"
-            ? "text-success hover:text-success"
-            : upgradeStatus === "illegal"
-            ? "text-danger hover:text-danger"
-            : "text-muted-foreground hover:text-foreground";
 
     return (
         <div
@@ -97,38 +91,49 @@ export function StationCardHeader({
             </div>
 
             <div className="flex items-center gap-2">
-                {/* Visibility Toggle */}
-                <button
+                <Button
+                    variant="ghost"
+                    iconOnly
+                    size="xs"
                     onClick={() => toggleHiddenStation(station.id)}
-                    className="p-1 text-subtle-foreground hover:text-foreground transition-colors mr-1"
-                    title={isHidden ? "Show Station" : "Hide Station"}
+                    aria-pressed={isHidden}
+                    aria-label={isHidden ? `Show ${station.name}` : `Hide ${station.name}`}
+                    title={isHidden ? "Show station" : "Hide station"}
                 >
                     {isHidden ? <Eye size={16} /> : <EyeOff size={16} />}
-                </button>
+                </Button>
 
-                {/* Level Controls */}
-                <div className="flex items-center bg-shadow/20 rounded border border-highlight/5">
-                    <button
+                <div className="flex items-center rounded-sm border border-highlight/10 bg-shadow/20" role="group" aria-label={`${station.name} level`}>
+                    <Button
+                        variant="ghost"
+                        iconOnly
+                        size="xs"
                         onClick={onLevelDown}
                         disabled={currentLevel === 0}
-                        className="px-2 py-1 text-muted-foreground hover:text-foreground hover:bg-highlight/5 disabled:opacity-30 transition-colors font-mono text-xs"
-                        title="Level Down"
+                        aria-label={`Lower ${station.name} to level ${Math.max(0, currentLevel - 1)}`}
+                        title="Level down"
+                        className="rounded-none"
                     >
-                        -
-                    </button>
-                    <div className="w-px h-3 bg-highlight/10"></div>
-                    <button
+                        <Minus size={14} />
+                    </Button>
+                    <div className="h-3 w-px bg-highlight/10" />
+                    <Button
+                        variant="ghost"
+                        tone={upgradeStatus === "ready" ? "success" : upgradeStatus === "illegal" ? "danger" : "neutral"}
+                        iconOnly
+                        size="xs"
                         onClick={onLevelUp}
                         disabled={isMaxed || hasUnresolvedItemData}
-                        className={`px-2 py-1 ${plusButtonColor} hover:bg-highlight/5 disabled:opacity-30 transition-colors font-mono text-xs`}
+                        aria-label={`Raise ${station.name} to level ${currentLevel + 1}`}
                         title={
                             hasUnresolvedItemData
                                 ? "Level up unavailable while required item data is missing"
-                                : "Level Up"
+                                : "Level up"
                         }
+                        className="rounded-none"
                     >
-                        +
-                    </button>
+                        <Plus size={14} />
+                    </Button>
                 </div>
             </div>
         </div>

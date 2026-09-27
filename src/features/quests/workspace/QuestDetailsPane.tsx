@@ -3,8 +3,12 @@
 import dynamic from "next/dynamic";
 import type { CSSProperties } from "react";
 import { useMemo } from "react";
-import { AlertTriangle, Bug, CheckCircle2, ChevronRight, Circle, Eye, EyeOff, ExternalLink, Flag, GitBranch, GripVertical, Map as MapIcon, PackageOpen, Pin, RotateCcw, X, XCircle } from "lucide-react";
+import { AlertTriangle, Bug, CheckCircle2, ChevronRight, Eye, EyeOff, ExternalLink, Flag, GitBranch, GripVertical, Map as MapIcon, PackageOpen, Pin, RotateCcw, X, XCircle } from "lucide-react";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonClassName } from "@/components/ui/button";
+import { SectionLabel } from "@/components/ui/detail-section";
+import { RequirementRow } from "@/components/ui/requirement";
 import { cn } from "@/lib/utils";
 import { formatQuestTraderGate, getQuestTraderGateType } from "@/lib/quests/quest-trader-gates";
 import {
@@ -399,32 +403,29 @@ export function QuestDetailsPane() {
                             {detailMaps.length > 1 && (
                                 <div className="ml-auto flex min-w-0 flex-wrap justify-end gap-1" aria-label="Quest objective maps">
                                     {detailMaps.map((map) => (
-                                        <button
-                                            type="button"
+                                        <Button
                                             key={map.key}
+                                            size="xs"
+                                            selected={map.key === selectedDetailMapKey}
                                             aria-pressed={map.key === selectedDetailMapKey}
                                             onClick={() => selectDetailMap(map.key)}
-                                            className={cn(
-                                                "border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors",
-                                                map.key === selectedDetailMapKey
-                                                    ? "border-brand/45 bg-brand/10 text-brand"
-                                                    : "border-highlight/10 bg-highlight/3 text-subtle-foreground hover:border-highlight/25 hover:text-foreground",
-                                            )}
+                                            className="h-6 text-[10px] uppercase tracking-wider"
                                         >
                                             {map.name} · {map.locationCount}
-                                        </button>
+                                        </Button>
                                     ))}
                                 </div>
                             )}
-                            <button
-                                type="button"
+                            <Button
+                                tone="danger"
+                                iconOnly
                                 onClick={closeCompactMap}
-                                className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center border border-danger/35 bg-danger/10 text-danger transition-colors hover:border-danger/70 hover:bg-danger/20 hover:text-danger min-[1700px]:hidden"
+                                className="ml-auto min-[1700px]:hidden"
                                 aria-label="Close objective map"
                                 title="Close objective map"
                             >
                                 <X size={15} />
-                            </button>
+                            </Button>
                         </div>
                     </div>
                     <div className="relative min-h-0 flex-1 overflow-hidden bg-[var(--background)]">
@@ -540,15 +541,16 @@ function QuestDetailsHeader({
             )}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[var(--background)] via-[var(--background)]/88 to-transparent" />
             {hasObjectiveMap && !isDesktopMapOpen && (
-                <button
-                    type="button"
+                <Button
+                    iconOnly
+                    size="md"
                     onClick={onShowDesktopMap}
-                    className="absolute right-3 top-3 z-10 hidden h-9 w-9 items-center justify-center border border-highlight/15 bg-[var(--surface-raised)]/95 text-muted-foreground shadow-lg transition-colors hover:border-brand/40 hover:bg-[var(--accent)] hover:text-brand min-[1700px]:flex"
+                    className="absolute right-3 top-3 z-10 hidden shadow-lg min-[1700px]:inline-flex"
                     aria-label="Show objective map"
                     title="Show objective map"
                 >
                     <MapIcon size={16} />
-                </button>
+                </Button>
             )}
             <div className={cn("relative", !isCondensed && "max-w-4xl sm:pr-10")}>
                 <div className={cn("flex items-center gap-2.5 overflow-hidden transition-[height,margin,opacity] duration-200", isCondensed ? "h-0 opacity-0" : "mb-3 h-10 opacity-100")}>
@@ -575,18 +577,18 @@ function QuestDetailsHeader({
                         )}
                     </div>
                     <div className={cn("flex flex-wrap gap-1.5", isCondensed ? "mt-0" : "mt-4")}>
-                        <span className={cn("inline-flex items-center border px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider", isCondensed && "hidden", status.status === "locked" || status.status === "failed" ? "border-danger/25 bg-danger/8 text-danger" : status.status === "completed" ? "border-success/25 bg-success/8 text-success" : "border-info/25 bg-info/8 text-info")}>{status.label}</span>
-                        <button type="button" title={status.status === "completed" ? "Return this quest to an incomplete state" : "Mark this quest as completed"} onClick={onToggleCompletion} className={cn(questActionButtonClass, status.status === "completed" ? "border-success/30 bg-[var(--success-surface)] text-success hover:border-danger/50 hover:bg-[var(--danger-surface)] hover:text-danger" : "border-brand/35 bg-[var(--success-surface)] text-brand hover:border-brand/70 hover:bg-[var(--success-surface)]")}><CheckCircle2 size={14} />{status.status === "completed" ? "Mark incomplete" : "Mark complete"}</button>
-                        {questCanFail(quest) && !status.terminal && <button type="button" title="Mark this quest as failed" onClick={onFail} className={cn(questActionButtonClass, "border-danger/35 bg-[var(--danger-surface)] text-danger hover:border-danger/65 hover:bg-[var(--danger-surface)] hover:text-danger")}><XCircle size={14} /> Mark failed</button>}
-                        {status.terminal === "failed" && <button type="button" title="Clear the failed status" onClick={onResetStatus} className={cn(questActionButtonClass, "border-highlight/15 bg-[var(--surface-raised)] text-foreground hover:border-highlight/30 hover:bg-[var(--surface-raised)] hover:text-foreground")}><RotateCcw size={14} /> Reset status</button>}
-                        <button type="button" title={pinned ? "Remove this quest from pinned quests" : "Keep this quest in pinned views"} onClick={onTogglePinned} className={cn(questActionButtonClass, "hidden border-highlight/15 bg-[var(--surface-raised)] text-muted-foreground hover:border-info/40 hover:bg-[var(--info-surface)] hover:text-info lg:inline-flex", pinned && "border-info/35 bg-[var(--info-surface)] text-info hover:bg-[var(--info-surface)]")}><Pin size={14} className={pinned ? "fill-current" : ""} />{pinned ? "Unpin quest" : "Pin quest"}</button>
-                        <button type="button" title={hidden ? "Restore this quest to normal filtered views" : "Hide this quest from normal filtered views"} onClick={onToggleHidden} className={cn(questActionButtonClass, "hidden border-highlight/15 bg-[var(--surface-raised)] text-muted-foreground hover:border-special/40 hover:bg-[var(--special-surface)] hover:text-special lg:inline-flex", hidden && "border-special/35 bg-[var(--special-surface)] text-special hover:bg-[var(--special-surface)]")}>{hidden ? <Eye size={14} /> : <EyeOff size={14} />}{hidden ? "Show quest" : "Hide quest"}</button>
-                        {hasObjectiveMap && <button type="button" title="Show the objective map" onClick={onShowMap} className={cn(questActionButtonClass, "border-highlight/15 bg-[var(--surface-raised)] text-muted-foreground hover:border-brand/40 hover:bg-[var(--accent)] hover:text-brand min-[1700px]:hidden")}><MapIcon size={14} /> Show map</button>}
-                        {visualizerLines.length === 1 && <button type="button" onClick={() => onOpenVisualizer(visualizerLines[0].id)} className={cn(questActionButtonClass, "border-info/25 bg-[var(--info-surface)] text-info hover:border-info/50 hover:bg-[var(--info-surface)]")}><GitBranch size={14} /> View quest line</button>}
+                        <Badge size="md" tone={status.status === "locked" || status.status === "failed" ? "danger" : status.status === "completed" ? "success" : "info"} className={cn("h-8", isCondensed && "hidden")}>{status.label}</Badge>
+                        <Button tone={status.status === "completed" ? "success" : "brand"} selected={status.status === "completed"} title={status.status === "completed" ? "Return this quest to an incomplete state" : "Mark this quest as completed"} onClick={onToggleCompletion}><CheckCircle2 size={14} />{status.status === "completed" ? "Mark incomplete" : "Mark complete"}</Button>
+                        {questCanFail(quest) && !status.terminal && <Button tone="danger" title="Mark this quest as failed" onClick={onFail}><XCircle size={14} /> Mark failed</Button>}
+                        {status.terminal === "failed" && <Button title="Clear the failed status" onClick={onResetStatus}><RotateCcw size={14} /> Reset status</Button>}
+                        <Button tone={pinned ? "info" : "neutral"} selected={pinned} aria-pressed={pinned} title={pinned ? "Remove this quest from pinned quests" : "Keep this quest in pinned views"} onClick={onTogglePinned} className="hidden lg:inline-flex"><Pin size={14} className={pinned ? "fill-current" : ""} />{pinned ? "Unpin quest" : "Pin quest"}</Button>
+                        <Button tone={hidden ? "special" : "neutral"} selected={hidden} aria-pressed={hidden} title={hidden ? "Restore this quest to normal filtered views" : "Hide this quest from normal filtered views"} onClick={onToggleHidden} className="hidden lg:inline-flex">{hidden ? <Eye size={14} /> : <EyeOff size={14} />}{hidden ? "Show quest" : "Hide quest"}</Button>
+                        {hasObjectiveMap && <Button title="Show the objective map" onClick={onShowMap} className="min-[1700px]:hidden"><MapIcon size={14} /> Show map</Button>}
+                        {visualizerLines.length === 1 && <Button tone="info" onClick={() => onOpenVisualizer(visualizerLines[0].id)}><GitBranch size={14} /> View quest line</Button>}
                         {visualizerLines.length > 1 && (
                             <details className="group relative">
-                                <summary className={cn(questActionButtonClass, "cursor-pointer list-none border-info/25 bg-[var(--info-surface)] text-info hover:border-info/50 hover:bg-[var(--info-surface)] [&::-webkit-details-marker]:hidden")}><GitBranch size={14} /> View quest line</summary>
-                                <div className="absolute left-0 top-full z-[100] mt-1 min-w-56 border border-highlight/12 bg-[var(--card-bg)] p-1 shadow-2xl">
+                                <summary className={buttonClassName({ tone: "info", className: "list-none [&::-webkit-details-marker]:hidden" })}><GitBranch size={14} /> View quest line</summary>
+                                <div className="absolute left-0 top-full z-[100] mt-1 min-w-56 rounded-sm border border-highlight/12 bg-[var(--card-bg)] p-1 shadow-2xl">
                                     {visualizerLines.map((line) => (
                                         <button
                                             key={line.id}
@@ -595,16 +597,16 @@ function QuestDetailsHeader({
                                                 event.currentTarget.closest("details")?.removeAttribute("open");
                                                 onOpenVisualizer(line.id);
                                             }}
-                                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground transition-colors hover:bg-highlight/8 hover:text-foreground"
+                                            className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left text-xs text-foreground transition-colors hover:bg-highlight/8 hover:text-foreground focus-visible:outline-2 focus-visible:outline-brand"
                                         >
                                             <span className="min-w-0 flex-1 truncate">{line.name}</span>
-                                            {line.kind === "special" && <span className="text-[9px] font-semibold uppercase tracking-wider text-warning/70">Special</span>}
+                                            {line.kind === "special" && <Badge tone="warning" size="xs">Special</Badge>}
                                         </button>
                                     ))}
                                 </div>
                             </details>
                         )}
-                        {quest.wikiLink && <a href={quest.wikiLink} title="Open this quest on the Tarkov wiki" target="_blank" rel="noopener noreferrer" className={cn(questActionButtonClass, "border-highlight/15 bg-[var(--surface-raised)] text-muted-foreground hover:border-highlight/30 hover:bg-[var(--surface-raised)] hover:text-foreground")}>Open wiki <ExternalLink size={12} /></a>}
+                        {quest.wikiLink && <a href={quest.wikiLink} title="Open this quest on the Tarkov wiki" target="_blank" rel="noopener noreferrer" className={buttonClassName()}>Open wiki <ExternalLink size={12} /></a>}
                     </div>
                 </div>
             </div>
@@ -699,9 +701,14 @@ function QuestRequirementsSection({
                         key={requirement.task.id}
                         satisfied={isTaskRequirementSatisfied(requirement.status, !!completedQuests[requirement.task.id], !!failedQuests[requirement.task.id])}
                         label={formatTaskRequirementStatus(requirement.status)}
-                        onClick={() => onQuestClick(requirement.task.id)}
                     >
-                        {requirement.task.name}
+                        <button
+                            type="button"
+                            onClick={() => onQuestClick(requirement.task.id)}
+                            className="cursor-pointer text-left underline decoration-highlight/30 underline-offset-4 transition-colors hover:decoration-current"
+                        >
+                            {requirement.task.name}
+                        </button>
                     </RequirementRow>
                 ))}
             </div>
@@ -884,53 +891,6 @@ function MapLoadingPlaceholder({ label }: { label: string }) {
     );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-    return <h2 className="mb-3.5 text-xs font-semibold uppercase tracking-[0.2em] text-subtle-foreground">{children}</h2>;
-}
-
-const questActionButtonClass = "inline-flex cursor-pointer select-none items-center gap-1.5 border bg-[var(--surface-raised)] px-2.5 py-1.5 text-[11px] font-semibold shadow-[0_2px_0_color-mix(in_oklab,_var(--shadow)_35%,_transparent)] transition-[transform,background-color,border-color,color,box-shadow] hover:-translate-y-px active:translate-y-px active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-highlight/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-raised)]";
-
-function RequirementRow({
-    children,
-    label,
-    satisfied,
-    onClick,
-    title,
-}: {
-    children: React.ReactNode;
-    label: string;
-    satisfied: boolean | null;
-    onClick?: () => void;
-    title?: string;
-}) {
-    const icon = satisfied === true
-        ? <CheckCircle2 size={14} className="mt-[3px] shrink-0 text-success" />
-        : satisfied === false
-          ? <XCircle size={14} className="mt-[3px] shrink-0 text-danger" />
-          : <Circle size={14} className="mt-[3px] shrink-0 text-subtle-foreground" />;
-    return (
-        <p title={title} className="flex items-start gap-2">
-            {icon}
-            <span>
-                <span className="mr-2 text-subtle-foreground">{label}</span>
-                {onClick ? (
-                    <button
-                        type="button"
-                        onClick={onClick}
-                        className={cn(
-                            "cursor-pointer text-left underline decoration-highlight/30 underline-offset-4 transition-colors hover:text-foreground hover:decoration-current",
-                            satisfied === false ? "text-danger/80" : "text-foreground",
-                        )}
-                    >
-                        {children}
-                    </button>
-                ) : (
-                    <span className={satisfied === false ? "text-danger/80" : "text-foreground"}>{children}</span>
-                )}
-            </span>
-        </p>
-    );
-}
 
 function QuestDebugPanel({ quest, onClose }: { quest: FullQuest; onClose: () => void }) {
     return (

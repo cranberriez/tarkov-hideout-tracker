@@ -6,7 +6,7 @@ import { CircleCheckBig, Check } from "lucide-react";
 import { formatNumber } from "@/lib/utils/format-number";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
-import { formatCompactRoubles, getFleaPrice, hasFleaMarketData, fleaPriceStatusLabel } from "@/lib/utils/market-price";
+import { describeFleaPrice, formatFleaPriceState } from "@/lib/utils/market-price";
 
 export function ExpandedItemRequirements({
 	nextLevelData,
@@ -31,20 +31,7 @@ export function ExpandedItemRequirements({
 					if (!item) return null;
 					const norm = item.normalizedName;
 					const isCurrency = norm === "roubles" || norm === "dollars" || norm === "euros";
-					const marketPrice = item.marketPrice;
-					const fleaPrice = getFleaPrice(marketPrice);
-					const priceLabel =
-						item.priceLoadState === "pending"
-							? "Loading…"
-							: item.priceLoadState === "error"
-								? "Failed"
-								: marketPrice?.fleaStability === "unavailable"
-									? fleaPriceStatusLabel(marketPrice)
-									: marketPrice && !hasFleaMarketData(marketPrice)
-										? "No flea"
-										: fleaPrice != null
-											? `${formatCompactRoubles(fleaPrice)} ₽`
-											: "No data";
+					const priceLabel = formatFleaPriceState(describeFleaPrice(item), { compact: true });
 
 					const owned = itemCounts[req.itemId] ?? { have: 0, haveFir: 0 };
 					const globalFirRemaining = pooledFirByItem[req.itemId] ?? 0;

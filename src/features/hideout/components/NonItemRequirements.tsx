@@ -1,6 +1,6 @@
 import type { Station } from "@/types/hideout";
 import Image from "next/image";
-import { Lock, LockOpen } from "lucide-react";
+import { RequirementChip } from "@/components/ui/requirement";
 
 export interface NonItemRequirementsProps {
 	station: Station;
@@ -20,44 +20,35 @@ export function NonItemRequirements({ station, nextLevelData, stations, stationL
 					const isMet = reqStationLevel >= req.level;
 
 					return (
-						<div
-							key={`st-${idx}`}
-							className={`flex items-center gap-2 px-2 py-1 rounded border ${
-								isMet ? "bg-success-surface/20 border-success/20" : "bg-danger-surface/20 border-danger/20"
-							}`}
-						>
-							{isMet ? <LockOpen size={12} className={"text-success"} /> : <Lock size={12} className={"text-danger"} />}
-
-							<span className={`text-[10px] font-medium uppercase ${isMet ? "text-success" : "text-danger"}`}>
-								{req.station.normalizedName.replace(/-/g, " ")}{" "}
-								<span className="text-foreground ml-1">LVL {req.level}</span>
-							</span>
-						</div>
+						<RequirementChip key={`st-${idx}`} satisfied={isMet}>
+							{reqStation?.name ?? req.station.normalizedName.replace(/-/g, " ")}
+							<span className="ml-1 text-foreground">LVL {req.level}</span>
+						</RequirementChip>
 					);
 				})}
 			{nextLevelData.skillRequirements?.map((req, idx) => (
-				<div key={`sk-${idx}`} className="flex items-center gap-2 bg-card/10 border border-border/10 px-2 py-1 rounded">
-					<div className="w-3 h-3 relative shrink-0">
-						{req.skill.imageLink && (
-							<Image src={req.skill.imageLink} alt={req.skill.name} fill className="object-contain" unoptimized />
-						)}
-					</div>
-					<span className="text-[10px] text-foreground font-medium uppercase">
-						{req.skill.name} <span className="text-foreground ml-1">LVL {req.level}</span>
-					</span>
-				</div>
+				<RequirementChip
+					key={`sk-${idx}`}
+					satisfied={null}
+					icon={req.skill.imageLink ? (
+						<Image src={req.skill.imageLink} alt="" width={12} height={12} className="size-3 object-contain" unoptimized />
+					) : undefined}
+				>
+					{req.skill.name}
+					<span className="ml-1">LVL {req.level}</span>
+				</RequirementChip>
 			))}
 			{nextLevelData.traderRequirements?.map((req, idx) => (
-				<div key={`tr-${idx}`} className="flex items-center gap-2 bg-card/10 border border-border/10 px-2 py-1 rounded">
-					<div className="w-3 h-3 relative shrink-0 rounded-full overflow-hidden">
-						{req.trader.imageLink && (
-							<Image src={req.trader.imageLink} alt={req.trader.name} fill className="object-cover" unoptimized />
-						)}
-					</div>
-					<span className="text-[10px] text-foreground font-medium uppercase">
-						{req.trader.name} <span className="text-foreground ml-1">LL{req.value}</span>
-					</span>
-				</div>
+				<RequirementChip
+					key={`tr-${idx}`}
+					satisfied={null}
+					icon={req.trader.imageLink ? (
+						<Image src={req.trader.imageLink} alt="" width={12} height={12} className="size-3 rounded-full object-cover" unoptimized />
+					) : undefined}
+				>
+					{req.trader.name}
+					<span className="ml-1">LL{req.value}</span>
+				</RequirementChip>
 			))}
 		</div>
 	);

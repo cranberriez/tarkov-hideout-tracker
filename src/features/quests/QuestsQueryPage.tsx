@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { DataLoadError, DataQueryRetryProvider, DataRefreshError } from "@/components/core/DataLoadError";
+import { DataNotice } from "@/components/ui/data-notice";
 import { RouteLoader } from "@/components/core/RouteLoader";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { useGameDataEnabled, useUserStoreHydrated } from "@/lib/query/game-data";
@@ -23,9 +24,9 @@ export function QuestsQueryPage({ mode, devQuery, initialQuestId, fallbackData }
             ? <DataRefreshError message={data.errors.items} />
             : query.error && !(query.error instanceof PartialDataError) && <DataRefreshError message="Updated quest data could not be loaded." />}
         {data.unresolvedItemIds.length > 0 && (
-            <div role="status" className="mx-auto mb-4 max-w-5xl rounded border border-warning/30 bg-warning/10 px-4 py-2 text-sm text-warning">
+            <DataNotice className="mx-auto mb-4 max-w-5xl">
                 {data.unresolvedItemIds.length} referenced item{data.unresolvedItemIds.length === 1 ? " is" : "s are"} unavailable. Affected requirements remain unresolved.
-            </div>
+            </DataNotice>
         )}
         <QuestsClientPage quests={data.quests} items={data.items} initialQuestId={initialQuestId} />
     </DataQueryRetryProvider>;
