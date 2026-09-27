@@ -150,7 +150,7 @@ export function KappaChecklistClientPage({
 								: "You have collected every Kappa item."}
 						</div>
 					) : (
-						<ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10">
+						<ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12">
 							{visibleItems.map((item) => {
 								const isCompleted = !!completedItems[item.id];
 								return (
