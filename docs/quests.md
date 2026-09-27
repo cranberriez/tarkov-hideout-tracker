@@ -64,10 +64,8 @@ informational. Persistent filter additions must follow [user-state](user-state.m
 
 ## Log import
 
-The per-trader manual sync dialog has been removed; log upload is the supported
-bulk-progress path. [quest-sync.ts](../src/features/quests/quest-sync.ts) retains
-the pure trader sync engine and its availability wrapper, which currently has no
-UI consumer.
+Log upload is the supported bulk-progress path; the per-trader manual sync dialog
+and its engine have been removed.
 
 [quest-log-parser](../src/lib/utils/quest-log-parser.ts) and
 [quest-log-import](../src/lib/utils/quest-log-import.ts) parse and derive import
@@ -90,7 +88,7 @@ completion. Its reset scope is documented in [user-state](user-state.md).
 ## Validation
 
 ```bash
-node --test --import jiti/register src/lib/utils/quest-availability.test.ts src/lib/utils/quest-item-index.test.ts src/features/quests/quest-sync.test.ts src/server/queries/getKappaChecklistPageData.test.ts
+node --test --import jiti/register src/lib/utils/quest-availability.test.ts src/lib/utils/quest-item-index.test.ts src/server/queries/getKappaChecklistPageData.test.ts
 node --test --import jiti/register src/features/quests/workspace/quest-workspace-selector.test.ts src/features/quests/workspace/quest-details-model.test.ts src/features/quests/components/quest-log-import-model.test.ts
 ```
 

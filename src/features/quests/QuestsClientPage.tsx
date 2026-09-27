@@ -32,7 +32,7 @@ export function QuestsClientPage({
         : null;
 
     return (
-        <QuestsProvider quests={quests} questDataIndex={questDataIndex} itemById={itemById} onItemClick={setSelectedItemId}>
+        <QuestsProvider questDataIndex={questDataIndex} itemById={itemById} onItemClick={setSelectedItemId}>
             <QuestWorkspaceProvider quests={quests} questDataIndex={questDataIndex} initialQuestId={initialQuestId}>
                 <QuestWorkspace quests={quests} />
             </QuestWorkspaceProvider>

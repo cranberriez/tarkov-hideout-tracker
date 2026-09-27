@@ -10,7 +10,7 @@ contributor invariants and a task-to-source routing table.
 | [Architecture](architecture.md) | Routes, dependency direction, Hideout, Items, Quick Add, and client composition |
 | [Data layer](data-layer.md) | Ingestion, repository/query contracts, API reads, releases, current prices, and caching |
 | [User state](user-state.md) | Persistent owners, profiles, migrations, setup, and reset scope |
-| [Quests](quests.md) | Progression, demand, workspace, sync/import, and Kappa |
+| [Quests](quests.md) | Progression, demand, workspace, log import, and Kappa |
 | [Maps](maps.md) | Objective geometry, projection, floors, overlays, and SVG delivery |
 | [Profits](profits.md) | Acquisition optimization, recipe availability, price inputs, and profit UI |
 | [Operations](operations.md) | Setup, validation commands, release/price operations, and diagnostics |
