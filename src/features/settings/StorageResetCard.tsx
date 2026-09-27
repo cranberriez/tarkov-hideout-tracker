@@ -10,7 +10,7 @@ import {
     KAPPA_STORE_STORAGE_KEY,
     useKappaStore,
 } from "@/lib/stores/useKappaStore";
-import { QUEST_LOG_IMPORT_SEEN_FILES_KEY } from "@/lib/utils/quest-log-import";
+import { QUEST_LOG_IMPORT_SEEN_FILES_KEY } from "@/lib/quests/quest-log-import";
 import {
     Dialog,
     DialogContent,

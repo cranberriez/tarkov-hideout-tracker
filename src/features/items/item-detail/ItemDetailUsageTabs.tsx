@@ -6,7 +6,7 @@ import type {
     DerivedQuestAnyOfGroup,
     DerivedQuestItemState,
     QuestRewardLink,
-} from "@/lib/utils/quest-item-index";
+} from "@/lib/quests/quest-item-index";
 import {
     ItemDetailHideoutRequirements,
     type StationRequirementEntry,

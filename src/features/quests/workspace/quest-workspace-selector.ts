@@ -1,6 +1,6 @@
 import type { FullQuest } from "../../../types";
 import type { QuestWorkspaceLockedFilterSettings } from "../../../lib/stores/useUserStore";
-import { questMatchesTraderRequirementProfile } from "../../../lib/utils/quest-trader-gates";
+import { questMatchesTraderRequirementProfile } from "../../../lib/quests/quest-trader-gates";
 import { questMatchesSelectedMapGroups } from "../quest-map-groups";
 import {
     buildNextTaskCountGateByGroup,

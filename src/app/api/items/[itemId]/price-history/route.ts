@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readItemRouteParams } from "../_params";
+import { readItemRouteParams } from "@/app/api/_lib/item-params";
 import {
     fetchCachedJsonPriceHistory,
     PRICE_HISTORY_REVALIDATE_SECONDS,

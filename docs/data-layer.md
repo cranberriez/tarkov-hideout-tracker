@@ -152,6 +152,10 @@ records; the similarly named [relations](../src/server/queries/getItemRelationsD
 those views during generation. Do not replace a one-row runtime view read with
 full-domain composition on every modal open.
 
+Shared route helpers in [src/app/api/_lib](../src/app/api/_lib/) own mode and item-ID
+parameter parsing, database error responses, and the named
+[Cache-Control presets](../src/app/api/_lib/cache-control.ts) used below.
+
 | API / owner                                                                                                                                                      | Result and cache policy                                                                                                                              |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [prices](../src/app/api/items/prices/route.ts)                                                                                                                   | GET with explicit mode and 1–200 IDs or named checklist/recipes scope; browser 300s, CDN 3600s; legacy POST remains private/no-store                      |

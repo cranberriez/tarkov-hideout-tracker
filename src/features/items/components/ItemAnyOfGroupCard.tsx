@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import type { ItemSize } from "@/lib/stores/useUserStore";
 import type { ItemSummary } from "@/types/items";
-import type { DerivedQuestAnyOfGroup } from "@/lib/utils/quest-item-index";
+import type { DerivedQuestAnyOfGroup } from "@/lib/quests/quest-item-index";
 import { cn } from "@/lib/utils";
 import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
 

@@ -1,6 +1,7 @@
 import { getMapRenderDefinition } from "@/server/services/map-render-definitions";
 import { applyMapSvgLayers } from "@/server/services/map-svg-layers";
 import { TARKOV_API_USER_AGENT } from "@/server/services/tarkovApi";
+import { CacheControl } from "@/app/api/_lib/cache-control";
 
 export async function GET(
     request: Request,
@@ -26,7 +27,7 @@ export async function GET(
     return new Response(svg, {
         headers: {
             "Content-Type": "image/svg+xml; charset=utf-8",
-            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+            "Cache-Control": CacheControl.mapSvg,
             "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'",
         },
     });

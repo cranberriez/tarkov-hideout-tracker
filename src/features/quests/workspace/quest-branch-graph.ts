@@ -1,6 +1,6 @@
 import type { FullQuest, QuestFailConditionTaskStatus } from "../../../types";
-import { getQuestRelationTiming, type QuestRelationTiming } from "../../../lib/utils/quest-relations";
-import { statusIncludesComplete } from "../../../lib/utils/quest-failures";
+import { getQuestRelationTiming, type QuestRelationTiming } from "../../../lib/quests/quest-relations";
+import { statusIncludesComplete } from "../../../lib/quests/quest-failures";
 
 const LIGHTKEEPER_ACCESS_QUEST_IDS = [
     "625d6ff5ddc94657c21a1625", // Network Provider - Part 1

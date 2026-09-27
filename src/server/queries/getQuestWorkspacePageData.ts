@@ -1,6 +1,6 @@
-import { orderQuestsByPrerequisites } from "../../lib/utils/quest-ordering";
-import { prepareQuestDataForMode } from "../../lib/utils/quest-preparation";
-import { prepareQuestsForDisplay } from "../../lib/utils/removed-quests";
+import { orderQuestsByPrerequisites } from "../../lib/quests/quest-ordering";
+import { prepareQuestDataForMode } from "../../lib/quests/quest-preparation";
+import { prepareQuestsForDisplay } from "../../lib/quests/removed-quests";
 import type { TarkovDataRepository } from "@/server/repositories/tarkov-data/types";
 import type { TarkovDataMode } from "@/types/common";
 import type { QuestWorkspacePageData } from "@/types/contracts";

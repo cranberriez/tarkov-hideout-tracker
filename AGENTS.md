@@ -36,11 +36,11 @@ entire directory ignored by Git.
 | Change a domain type | [Data layer](docs/data-layer.md) | Owning [src/types module](src/types/); [contracts](src/types/contracts.ts) for read payloads |
 | Change progress, preferences, setup, or reset | [User state](docs/user-state.md) | [useUserStore](src/lib/stores/useUserStore.ts), [useKappaStore](src/lib/stores/useKappaStore.ts), [setup](src/features/setup/), [StorageResetCard](src/features/settings/StorageResetCard.tsx) |
 | Change hideout requirements or station order | [Architecture](docs/architecture.md), [data layer](docs/data-layer.md) | [HideoutList](src/features/hideout/components/HideoutList.tsx), [override policy](src/lib/utils/hideout-requirement-overrides.ts), [reviewed requirements](src/lib/data/hideout-data.json), [FiR fallback](src/lib/cfg/foundInRaid.ts), [stationOrder](src/lib/cfg/stationOrder.ts) |
-| Change item totals/filtering | [Architecture](docs/architecture.md), [quests](docs/quests.md) | [ItemsList](src/features/items/components/ItemsList.tsx), [item-pooling](src/lib/utils/item-pooling.ts), [item-needs](src/lib/utils/item-needs.ts), [quest-item-index](src/lib/utils/quest-item-index.ts) |
+| Change item totals/filtering | [Architecture](docs/architecture.md), [quests](docs/quests.md) | [ItemsList](src/features/items/components/ItemsList.tsx), [item-pooling](src/lib/utils/item-pooling.ts), [item-needs](src/lib/utils/item-needs.ts), [quest-item-index](src/lib/quests/quest-item-index.ts) |
 | Change catalog search or Quick Add | [Architecture](docs/architecture.md), [data layer](docs/data-layer.md) | [Search API](src/app/api/items/search/route.ts), [SQL search](src/server/db/item-search.ts), [search controller](src/features/items/useItemSearchController.ts), [QuickAddModal](src/features/quick-add/QuickAddModal.tsx) |
 | Open or change item details | [Architecture](docs/architecture.md) | [ItemDetailModal](src/features/items/item-detail/ItemDetailModal.tsx), [modal controller](src/features/items/item-detail/useItemDetailModalController.ts), [request controller](src/features/items/item-detail/useItemDetailRequestController.ts) |
 | Change quest filters, details, or planning | [Quests](docs/quests.md) | [QuestWorkspaceContext](src/features/quests/workspace/QuestWorkspaceContext.tsx), [workspace selector](src/features/quests/workspace/quest-workspace-selector.ts), [workspace components/models](src/features/quests/workspace/) |
-| Change quest availability or import | [Quests](docs/quests.md) | [quest-availability](src/lib/utils/quest-availability.ts), [import controller](src/features/quests/components/useQuestLogImportController.ts) |
+| Change quest availability or import | [Quests](docs/quests.md) | [quest-availability](src/lib/quests/quest-availability.ts), [import controller](src/features/quests/import/useQuestLogImportController.ts) |
 | Change Collector/Kappa | [Quests](docs/quests.md), [user state](docs/user-state.md) | [One-quest query](src/server/queries/getKappaChecklistPageData.ts), [Kappa store](src/lib/stores/useKappaStore.ts) |
 | Change maps or objective markers | [Maps](docs/maps.md) | [MapViewer](src/features/maps/MapViewer.tsx), [projection](src/features/maps/map-projection.ts), [marker models](src/features/quests/workspace/raid-planner-markers.ts) |
 | Change recipe costs or profits | [Profits](docs/profits.md) | [Optimizer](src/lib/price-calculation/optimizer.ts), [recipe calculator](src/features/profit-pages/utils/recipes.ts), [ProfitPageClient](src/features/profit-pages/ProfitPageClient.tsx) |
@@ -60,7 +60,7 @@ npm run test:architecture
 npm run test:contracts
 npm run lint
 npm run build
-node --test --import jiti/register src/lib/utils/quest-availability.test.ts
+node --test --import jiti/register src/lib/quests/quest-availability.test.ts
 ```
 
 Run focused adjacent tests for changed behavior; [operations](docs/operations.md)

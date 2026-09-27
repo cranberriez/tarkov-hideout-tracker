@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import type { FullQuest } from "@/types/quests";
 import { collectCompleteCascade, collectUncompleteCascade } from "./quest-cascade";
-import { NETWORK_PROVIDER_PART_1_ID } from "../../lib/utils/sensitive-quest-backfill";
+import { NETWORK_PROVIDER_PART_1_ID } from "../../lib/quests/sensitive-quest-backfill";
 
 const prapor = { id: "prapor", name: "Prapor", normalizedName: "prapor", imageLink: null, image4xLink: null };
 const therapist = { id: "therapist", name: "Therapist", normalizedName: "therapist", imageLink: null, image4xLink: null };

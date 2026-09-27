@@ -11,7 +11,7 @@ import type { ItemSummary } from "@/types/items";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { mapOverlaysQueryOptions } from "@/lib/query/maps";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
-import { useQuestsContext } from "../QuestsContext";
+import { useQuestActions } from "../QuestActionsContext";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 import { buildRaidPlannerMarkers } from "./raid-planner-markers";
 import { OBJECTIVE_CATEGORY_SHORT_LABELS } from "./quest-workspace-utils";
@@ -31,7 +31,7 @@ interface RaidPlannerPaneProps {
 const EMPTY_NAVIGATION_MARKERS: MapOverlayMarker[] = [];
 
 export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPaneProps) {
-    const { itemById } = useQuestsContext();
+    const { itemById } = useQuestActions();
     const [isKillListOpen, setIsKillListOpen] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const completedQuestObjectives = useUserStore((state) => state.completedQuestObjectives);

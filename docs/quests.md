@@ -17,14 +17,14 @@ and release regeneration.
 
 | Change | Source owner |
 |---|---|
-| Prerequisite normalization/status gates | [quest-requirements](../src/server/services/quest-requirements.ts), [quest-availability](../src/lib/utils/quest-availability.ts) |
-| Level, prestige, faction, loyalty, and other gates | [quest-availability](../src/lib/utils/quest-availability.ts), [quest-trader-gates](../src/lib/utils/quest-trader-gates.ts), [quest-trader-completion-gates](../src/lib/utils/quest-trader-completion-gates.ts) |
-| Prepared mode-specific quest set | [quest-preparation](../src/lib/utils/quest-preparation.ts), [removed-quests](../src/lib/utils/removed-quests.ts) |
-| Reviewed faction/series/tab corrections | [quest-faction-overrides](../src/lib/utils/quest-faction-overrides.ts), [quest-series](../src/lib/utils/quest-series.ts), [quest-trader-tab-overrides](../src/lib/utils/quest-trader-tab-overrides.ts), [reviewed data](../src/lib/data/) |
-| LL1–LL4 and Series organization | [quest-organization](../src/lib/utils/quest-organization.ts); display categories do not replace prerequisite relationships |
-| Prerequisite ordering and relationships | [quest-ordering](../src/lib/utils/quest-ordering.ts), [quest-relations](../src/lib/utils/quest-relations.ts) |
-| Failure and completion cascades | [quest-failures](../src/lib/utils/quest-failures.ts), [quest-cascade](../src/features/quests/quest-cascade.ts) |
-| Exact/any-of/broad-any/plant/FiR demand and reward indexes | [quest-item-index](../src/lib/utils/quest-item-index.ts) |
+| Prerequisite normalization/status gates | [quest-requirements](../src/server/services/quest-requirements.ts), [quest-availability](../src/lib/quests/quest-availability.ts) |
+| Level, prestige, faction, loyalty, and other gates | [quest-availability](../src/lib/quests/quest-availability.ts), [quest-trader-gates](../src/lib/quests/quest-trader-gates.ts), [quest-trader-completion-gates](../src/lib/quests/quest-trader-completion-gates.ts) |
+| Prepared mode-specific quest set | [quest-preparation](../src/lib/quests/quest-preparation.ts), [removed-quests](../src/lib/quests/removed-quests.ts) |
+| Reviewed faction/series/tab corrections | [quest-faction-overrides](../src/lib/quests/quest-faction-overrides.ts), [quest-series](../src/lib/quests/quest-series.ts), [quest-trader-tab-overrides](../src/lib/quests/quest-trader-tab-overrides.ts), [reviewed data](../src/lib/data/) |
+| LL1–LL4 and Series organization | [quest-organization](../src/lib/quests/quest-organization.ts); display categories do not replace prerequisite relationships |
+| Prerequisite ordering and relationships | [quest-ordering](../src/lib/quests/quest-ordering.ts), [quest-relations](../src/lib/quests/quest-relations.ts) |
+| Failure and completion cascades | [quest-failures](../src/lib/quests/quest-failures.ts), [quest-cascade](../src/features/quests/quest-cascade.ts) |
+| Exact/any-of/broad-any/plant/FiR demand and reward indexes | [quest-item-index](../src/lib/quests/quest-item-index.ts) |
 
 Availability is more than a level comparison: preserve required prerequisite
 statuses, failure handling, faction, prestige, and trader/other gates. Ignoring
@@ -37,7 +37,7 @@ tool, not runtime authority; see [operations](operations.md).
 [QuestsClientPage](../src/features/quests/QuestsClientPage.tsx) enters the current
 [QuestWorkspace](../src/features/quests/workspace/QuestWorkspace.tsx), backed by
 [QuestWorkspaceContext](../src/features/quests/workspace/QuestWorkspaceContext.tsx).
-The outer [QuestsContext](../src/features/quests/QuestsContext.tsx) still owns
+The outer [QuestActionsContext](../src/features/quests/QuestActionsContext.tsx) still owns
 shared quest actions, cascade confirmation, and item-click routing;
 it remains part of the current page. [quest-data-index](../src/features/quests/quest-data-index.ts)
 provides the shared pure indexes consumed by both providers.
@@ -67,10 +67,10 @@ informational. Persistent filter additions must follow [user-state](user-state.m
 Log upload is the supported bulk-progress path; the per-trader manual sync dialog
 and its engine have been removed.
 
-[quest-log-parser](../src/lib/utils/quest-log-parser.ts) and
-[quest-log-import](../src/lib/utils/quest-log-import.ts) parse and derive import
-changes. The [import model](../src/features/quests/components/quest-log-import-model.ts)
-and [controller](../src/features/quests/components/useQuestLogImportController.ts)
+[quest-log-parser](../src/lib/quests/quest-log-parser.ts) and
+[quest-log-import](../src/lib/quests/quest-log-import.ts) parse and derive import
+changes. The [import model](../src/features/quests/import/quest-log-import-model.ts)
+and [controller](../src/features/quests/import/useQuestLogImportController.ts)
 own review/workflow and seen-file tracking. Keep state mutation through existing
 store actions; [user-state](user-state.md) documents import metadata and reset scope.
 
@@ -88,8 +88,8 @@ completion. Its reset scope is documented in [user-state](user-state.md).
 ## Validation
 
 ```bash
-node --test --import jiti/register src/lib/utils/quest-availability.test.ts src/lib/utils/quest-item-index.test.ts src/server/queries/getKappaChecklistPageData.test.ts
-node --test --import jiti/register src/features/quests/workspace/quest-workspace-selector.test.ts src/features/quests/workspace/quest-details-model.test.ts src/features/quests/components/quest-log-import-model.test.ts
+node --test --import jiti/register src/lib/quests/quest-availability.test.ts src/lib/quests/quest-item-index.test.ts src/server/queries/getKappaChecklistPageData.test.ts
+node --test --import jiti/register src/features/quests/workspace/quest-workspace-selector.test.ts src/features/quests/workspace/quest-details-model.test.ts src/features/quests/import/quest-log-import-model.test.ts
 ```
 
 Run the adjacent tests for any correction, graph, marker, or import utility you

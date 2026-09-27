@@ -16,7 +16,7 @@ account for existing users' data.
 | `tarkov-profit-pinned-crafts-v1:{mode}` | [usePinnedCrafts](../src/features/profit-pages/usePinnedCrafts.ts); independent craft pins |
 | `tarkov-craft-board-v1:{mode}` | [StationBoard](../src/features/profit-pages/optimize/StationBoard.tsx); recipe acquisition variants, stable ingredient route choices and custom input costs |
 | `tarkov-profit-options-v1:{mode}` | [useProfitOptions](../src/features/profit-pages/useProfitOptions.ts); options-menu preferences and crafting skill shared by crafts and barters within each mode |
-| `tarkov-hideout:quest-log-import:seen-files:v1` | [quest-log-import.ts](../src/lib/utils/quest-log-import.ts) and [import controller](../src/features/quests/components/useQuestLogImportController.ts); processed-file metadata, not per-profile storage |
+| `tarkov-hideout:quest-log-import:seen-files:v1` | [quest-log-import.ts](../src/lib/quests/quest-log-import.ts) and [import controller](../src/features/quests/import/useQuestLogImportController.ts); processed-file metadata, not per-profile storage |
 | `tarkov-active-game-mode` cookie | [game-mode.ts](../src/lib/game-mode.ts); active profile selection for server reads |
 
 Profit key suffixes are app modes `PVP`, `PVE`, and `KORD`, not dataset names.

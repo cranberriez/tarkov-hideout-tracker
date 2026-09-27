@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readItemRouteParams } from "../_params";
+import { readItemRouteParams } from "@/app/api/_lib/item-params";
 import { getItemUsageView } from "@/server/db/item-views";
-import { itemDatabaseErrorResponse } from "@/server/db/route-errors";
+import { itemDatabaseErrorResponse } from "@/app/api/_lib/route-errors";
 import { isCompleteItemUsageData } from "@/lib/utils/item-usage";
+import { CacheControl } from "@/app/api/_lib/cache-control";
 
 export async function GET(
     request: NextRequest,
@@ -17,8 +18,8 @@ export async function GET(
         return NextResponse.json(response, {
             headers: {
                 "Cache-Control": process.env.NODE_ENV === "development" || !isCompleteItemUsageData(response)
-                    ? "no-store"
-                    : "public, max-age=300, s-maxage=900, stale-while-revalidate=300",
+                    ? CacheControl.noStore
+                    : CacheControl.itemDetail,
             },
         });
     } catch (error) {

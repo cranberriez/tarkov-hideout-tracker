@@ -10,7 +10,7 @@ const jiti = createJiti(import.meta.url, { alias: { "@": path.join(process.cwd()
 const { InlineItemPrice } = await jiti.import<typeof import("./InlineItemPrice")>("./InlineItemPrice.tsx");
 
 test("unstable output sale uses yellow price and an isolated warning icon, with no row message", () => {
-    const item: ItemSummary = { id: "sass", name: "SASS", normalizedName: "sass", marketPrice: { price: 120_000, fleaStability: "unstable" } };
+    const item: ItemSummary = { id: "sass", name: "SASS", normalizedName: "sass", marketPrice: { price: 120_000, fleaStability: "unstable", sellFor: [{ vendor: { name: "Therapist", normalizedName: "therapist" }, priceRUB: 30_000 }] } };
     const props = { item, kind: "sell" as const, totalPrice: 120_000, overrides: {}, onPriceChange: () => {} };
     const markup = renderToStaticMarkup(createElement(InlineItemPrice, props));
     assert.match(markup, /120k/);

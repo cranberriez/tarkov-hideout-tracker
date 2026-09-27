@@ -9,7 +9,7 @@ import type { ItemSummary } from "@/types/items";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { formatRelativeUpdatedAt } from "@/lib/utils/format-time";
 import { computeNeeds } from "@/lib/utils/item-needs";
-import { deriveQuestAnyOfGroups, deriveQuestItemState } from "@/lib/utils/quest-item-index";
+import { deriveQuestAnyOfGroups, deriveQuestItemState } from "@/lib/quests/quest-item-index";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { createRecipeCalculator } from "@/lib/price-calculation";
 import { useManualPriceOverrides } from "@/features/profit-pages/useManualPriceOverrides";

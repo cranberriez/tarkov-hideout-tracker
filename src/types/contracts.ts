@@ -9,8 +9,8 @@ import type {
     QuestAnyOfGroupEntry,
     QuestItemIndexEntry,
     QuestRewardIndexEntry,
-} from "@/lib/utils/quest-item-index";
-import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
+} from "@/lib/quests/quest-item-index";
+import type { QuestAvailabilityQuest } from "@/lib/quests/quest-availability";
 
 export interface SkillsPayload {
     skills: GlobalSkill[];

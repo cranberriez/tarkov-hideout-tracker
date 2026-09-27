@@ -7,9 +7,9 @@ import type {
     DerivedQuestItemQuest,
     DerivedQuestItemState,
     QuestRewardLink,
-} from "@/lib/utils/quest-item-index";
+} from "@/lib/quests/quest-item-index";
 import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
-import { hasDisplayQuestLevel } from "@/lib/utils/quest-display";
+import { hasDisplayQuestLevel } from "@/lib/quests/quest-display";
 import type { ItemSummary } from "@/types/items";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
 

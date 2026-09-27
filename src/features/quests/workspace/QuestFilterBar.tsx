@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import {
     type QuestTraderLoyaltyLevel,
-} from "@/lib/utils/quest-trader-gates";
+} from "@/lib/quests/quest-trader-gates";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { useQuestWorkspace, type QuestFilterSection } from "./QuestWorkspaceContext";
 import {

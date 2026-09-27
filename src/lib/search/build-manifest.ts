@@ -2,8 +2,8 @@ import type { TarkovJsonGameMode } from "../game-mode";
 import type { ItemSummary } from "../../types/items";
 import type { FullQuest } from "../../types/quests";
 import type { Trader } from "../../types/traders";
-import { prepareQuestDataForMode } from "../utils/quest-preparation";
-import { excludeRemovedQuests } from "../utils/removed-quests";
+import { prepareQuestDataForMode } from "../quests/quest-preparation";
+import { excludeRemovedQuests } from "../quests/removed-quests";
 import { validateSearchManifest } from "./manifest";
 
 export function buildSearchManifest(

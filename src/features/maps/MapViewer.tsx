@@ -8,7 +8,7 @@ import { getProjectedMapAspectRatio, worldToMapPoint } from "./map-projection";
 import { orderMapFloorsTopToBottom, resolveMapFloors } from "./map-floor-resolution";
 import type { MapOverlayMarker, MapRenderDefinition } from "@/types/maps";
 import { constrainMapView, zoomViewAroundPoint, type MapViewTransform } from "./map-view-transform";
-import { getQuestObjectiveTypeLabel, QuestObjectiveIcon } from "@/features/quests/components/QuestObjectiveIcon";
+import { getQuestObjectiveTypeLabel, QuestObjectiveIcon } from "@/features/quests/objectives/QuestObjectiveIcon";
 import { useQuery } from "@tanstack/react-query";
 import { mapMetadataQueryOptions } from "@/lib/query/maps";
 import { RequestError } from "@/lib/query/request";

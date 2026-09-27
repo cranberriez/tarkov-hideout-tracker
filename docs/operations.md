@@ -67,7 +67,7 @@ conversion and map-overlay query ownership. These suites require no live Turso d
 Focused TypeScript tests use Node's test runner with `jiti/register`:
 
 ```bash
-node --test --import jiti/register src/lib/utils/quest-availability.test.ts
+node --test --import jiti/register src/lib/quests/quest-availability.test.ts
 node --test --import jiti/register src/server/prices/refresh-prices.test.ts src/server/prices/price-store.test.ts src/server/prices/live-price-history.test.ts
 node --test --import jiti/register src/server/db/read-cache.test.ts src/server/db/price-data.test.ts src/features/items/deferred-prices.test.ts
 node --test scripts/generate-quest-series-candidates.test.mjs scripts/pull-map-overlays.test.mjs
@@ -226,7 +226,7 @@ node --test --import jiti/register src/lib/utils/flea-price.test.ts src/lib/util
 
 | Symptom or task                       | Start here                                                                                                                                                                      |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Missing or wrong-mode game data       | [release-config](../src/server/db/release-config.ts), `db:status`, [database error mapping](../src/server/db/route-errors.ts) |
+| Missing or wrong-mode game data       | [release-config](../src/server/db/release-config.ts), `db:status`, [database error mapping](../src/app/api/_lib/route-errors.ts) |
 | Inspect current dataset               | [/dev source](../src/app/dev/page.tsx): development-only read-only current status, counts, and timestamps by mode |
 | Stale current prices                  | [price refresh runs/store](../src/server/prices/price-store.ts), active release flea eligibility, cron authorization and run duration                                           |
 | History fails but current price works | [live-price-history](../src/server/prices/live-price-history.ts): independent upstream request/cache                                                                            |

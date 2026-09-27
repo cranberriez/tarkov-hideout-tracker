@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { FullQuest } from "@/types/quests";
-import { prepareQuestSeriesForGameMode } from "../../../lib/utils/quest-series";
+import { prepareQuestSeriesForGameMode } from "../../../lib/quests/quest-series";
 import { buildQuestBranchLines } from "./quest-branch-graph";
 
 function quest(

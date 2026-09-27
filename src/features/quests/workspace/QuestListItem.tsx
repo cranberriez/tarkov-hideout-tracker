@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
-import { getQuestTraderTabLoyaltyLevel } from "@/lib/utils/quest-trader-completion-gates";
-import { isEssentialQuest } from "@/lib/utils/quest-series";
-import { useQuestsContext } from "../QuestsContext";
+import { getQuestTraderTabLoyaltyLevel } from "@/lib/quests/quest-trader-completion-gates";
+import { isEssentialQuest } from "@/lib/quests/quest-series";
+import { useQuestActions } from "../QuestActionsContext";
 import { getQuestObjectiveCategories } from "./quest-workspace-utils";
 import { QuestObjectiveTypeTag } from "./QuestObjectiveTypeTag";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
@@ -48,7 +48,7 @@ export function QuestListItem({
     const hidden = useUserStore((state) => !!state.ignoredQuests[questId]);
     const togglePinnedQuest = useUserStore((state) => state.togglePinnedQuest);
     const toggleIgnoredQuest = useUserStore((state) => state.toggleIgnoredQuest);
-    const { requestToggleQuestCompletion } = useQuestsContext();
+    const { requestToggleQuestCompletion } = useQuestActions();
     const completed = status.status === "completed";
     const failed = status.status === "failed";
     const resolved = completed || failed;

@@ -8,15 +8,15 @@ import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import {
     getQuestTraderGateType,
     questTraderRequirementMatchesProfile,
-} from "../../../lib/utils/quest-trader-gates";
-import { isQuestDisabledByCompletedFailedRequirement } from "../../../lib/utils/quest-failures";
+} from "../../../lib/quests/quest-trader-gates";
+import { isQuestDisabledByCompletedFailedRequirement } from "../../../lib/quests/quest-failures";
 import {
     compareTraderTierCompletionCount,
     countCompletedTraderTierQuests,
     getTraderTierCompletionGate,
-} from "../../../lib/utils/quest-trader-completion-gates";
-import { QUEST_SERIES_MANIFEST } from "../../../lib/utils/quest-series";
-import { isQuestAvailableForProfile } from "../../../lib/utils/quest-availability";
+} from "../../../lib/quests/quest-trader-completion-gates";
+import { QUEST_SERIES_MANIFEST } from "../../../lib/quests/quest-series";
+import { isQuestAvailableForProfile } from "../../../lib/quests/quest-availability";
 
 export type { QuestObjectiveCategory, QuestWorkspaceStatus } from "@/lib/stores/useUserStore";
 

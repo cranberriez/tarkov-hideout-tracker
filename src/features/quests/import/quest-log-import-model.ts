@@ -5,11 +5,11 @@ import {
     type ImportGameMode,
     type QuestImportBuckets,
     type QuestImportRow,
-} from "../../../lib/utils/quest-log-import";
+} from "../../../lib/quests/quest-log-import";
 import type { FullQuest } from "@/types/quests";
 
 export interface ParsedImportView {
-    result: import("../../../lib/utils/quest-log-parser").QuestLogParseResult;
+    result: import("../../../lib/quests/quest-log-parser").QuestLogParseResult;
     buckets: QuestImportBuckets;
 }
 

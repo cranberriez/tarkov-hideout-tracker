@@ -11,13 +11,13 @@ import type {
     DerivedQuestItemState,
     QuestAnyOfGroupEntry,
     QuestItemIndexEntry,
-} from "@/lib/utils/quest-item-index";
+} from "@/lib/quests/quest-item-index";
 import {
     compareQuestItemState,
     deriveQuestAnyOfGroups,
     deriveQuestItemStates,
-} from "@/lib/utils/quest-item-index";
-import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
+} from "@/lib/quests/quest-item-index";
+import type { QuestAvailabilityQuest } from "@/lib/quests/quest-availability";
 import { getFleaPrice } from "@/lib/utils/market-price";
 import {
     buildChecklistSearchIds,

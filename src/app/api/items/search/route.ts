@@ -4,11 +4,12 @@ import {
     isValidItemSearchQuery,
     searchItems,
 } from "@/server/queries/searchItems";
-import { itemDatabaseErrorResponse } from "@/server/db/route-errors";
+import { itemDatabaseErrorResponse } from "@/app/api/_lib/route-errors";
 import {
     ITEM_SEARCH_PAGE_RESULT_LIMIT,
     ITEM_SEARCH_QUICK_RESULT_LIMIT,
 } from "@/types/contracts";
+import { CacheControl } from "@/app/api/_lib/cache-control";
 
 export async function GET(request: NextRequest) {
     const requestedMode = request.nextUrl.searchParams.get("mode");
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
             resultLimit,
         );
         return NextResponse.json(payload, {
-            headers: { "Cache-Control": "private, no-store" },
+            headers: { "Cache-Control": CacheControl.privateNoStore },
         });
     } catch (error) {
         return itemDatabaseErrorResponse(error, "Item search is temporarily unavailable");

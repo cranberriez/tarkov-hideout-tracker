@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { FullQuest } from "@/types/quests";
 import type { ItemSummary } from "@/types/items";
 import { ItemDetailModal } from "@/features/items/item-detail/LazyItemDetailModal";
-import { QuestsProvider } from "./QuestsContext";
+import { QuestActionsProvider } from "./QuestActionsContext";
 import { QuestCascadeConfirmDialog } from "./components/QuestCascadeConfirmDialog";
 import { QuestWorkspaceProvider } from "./workspace/QuestWorkspaceContext";
 import { QuestWorkspace } from "./workspace/QuestWorkspace";
@@ -32,12 +32,12 @@ export function QuestsClientPage({
         : null;
 
     return (
-        <QuestsProvider questDataIndex={questDataIndex} itemById={itemById} onItemClick={setSelectedItemId}>
+        <QuestActionsProvider questDataIndex={questDataIndex} itemById={itemById} onItemClick={setSelectedItemId}>
             <QuestWorkspaceProvider quests={quests} questDataIndex={questDataIndex} initialQuestId={initialQuestId}>
                 <QuestWorkspace quests={quests} />
             </QuestWorkspaceProvider>
             <ItemDetailModal item={selectedItem} isOpen={!!selectedItem} onClose={() => setSelectedItemId(null)} />
             <QuestCascadeConfirmDialog />
-        </QuestsProvider>
+        </QuestActionsProvider>
     );
 }

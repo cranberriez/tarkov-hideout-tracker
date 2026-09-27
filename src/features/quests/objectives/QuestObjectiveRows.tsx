@@ -8,8 +8,8 @@ import {
 } from "lucide-react";
 import type { FullQuestObjective, QuestObjectiveItemType, QuestObjectiveShootType } from "@/types/quests";
 import type { ItemSummary } from "@/types/items";
-import { QuestObjectiveIcon } from "../QuestObjectiveIcon";
-import { useQuestsContext } from "../../QuestsContext";
+import { QuestObjectiveIcon } from "./QuestObjectiveIcon";
+import { useQuestActions } from "../QuestActionsContext";
 
 function isItemObjective(o: FullQuestObjective): o is QuestObjectiveItemType {
     return (
@@ -95,7 +95,7 @@ const COMPACT_ITEM_PREVIEW_LIMIT = 15;
 
 export function ObjectiveRow({ objective, onItemClick, itemDisplay = "compact", showItems = true, objectiveCompletion }: ObjectiveRowProps) {
     const [showAllItems, setShowAllItems] = useState(false);
-    const { itemById } = useQuestsContext();
+    const { itemById } = useQuestActions();
     const item = isItemObjective(objective) ? objective : null;
     const shoot = isShootObjective(objective) ? objective : null;
     const standardItems = item?.itemIds.map((id) => itemById[id]).filter(Boolean) ?? [];

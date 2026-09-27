@@ -2,9 +2,9 @@ import type { MapOverlayMarker } from "@/types/maps";
 import {
     getTraderTierCompletionGate,
     type TraderTierCompletionGate,
-} from "../../../lib/utils/quest-trader-completion-gates";
-import { isEssentialQuest } from "../../../lib/utils/quest-series";
-import { formatQuestUnlockTiming } from "../../../lib/utils/quest-relations";
+} from "../../../lib/quests/quest-trader-completion-gates";
+import { isEssentialQuest } from "../../../lib/quests/quest-series";
+import { formatQuestUnlockTiming } from "../../../lib/quests/quest-relations";
 import type { FullQuest, QuestOtherRequirement } from "../../../types";
 import { formatQuestMapSummary, type QuestMapGroup } from "../quest-map-groups";
 import type { QuestBranchLine } from "./quest-branch-graph";

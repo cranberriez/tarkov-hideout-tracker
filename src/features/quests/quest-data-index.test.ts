@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import type { FullQuest, QuestMap } from "@/types/quests";
-import type { QuestSeriesManifest } from "@/lib/utils/quest-organization";
+import type { QuestSeriesManifest } from "@/lib/quests/quest-organization";
 import { buildQuestDataIndex } from "./quest-data-index";
 
 const customs: QuestMap = { id: "customs", name: "Customs", normalizedName: "customs" };

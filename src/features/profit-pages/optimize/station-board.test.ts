@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { boardCraftPlacements, buildStationBoard, selectedBoardCraft, boardCraftAvailable, boardMaterials, parseBoardChoices, rankBoardCrafts, visibleBoardCrafts } from "./station-board";
+import { boardCraftPlacements, buildStationBoard, selectedBoardCraft, boardCraftAvailable, parseBoardChoices, rankBoardCrafts, visibleBoardCrafts } from "./station-board";
 import { createRecipeCalculator } from "../../../lib/price-calculation/optimizer";
 import type { RecipeCalculatorInput } from "../../../lib/price-calculation/types";
 import { parsePinnedCrafts } from "../usePinnedCrafts";
@@ -107,14 +107,6 @@ test("station placements mark the top three profitable available crafts", () => 
 	const rows = buildStationBoard(fixture()).map((craft) => selectedBoardCraft(craft));
 	const ranked = rankBoardCrafts(rows.filter((row) => boardCraftAvailable(row) && (row.profit ?? 0) > 0), "profit-hour");
 	assert.deepEqual(boardCraftPlacements(rows, "profit-hour"), Object.fromEntries(ranked.slice(0, 3).map((row, index) => [row.id, index + 1])));
-});
-test("materials pool purchased leaves and preserve quantities", () => {
-	const craft = buildStationBoard(fixture()).find((row) => row.id === "output")!;
-	const row = selectedBoardCraft(craft, { variant: "craft" });
-	const materials = boardMaterials([row, row]);
-	assert.equal(materials.length, 1);
-	assert.equal(materials[0].itemId, "c");
-	assert.equal(materials[0].quantity, 2);
 });
 test("older pins and price overrides survive; malformed board entries are ignored", () => {
 	assert.deepEqual(parsePinnedCrafts('["output","input",7]'), { output: true, input: true });

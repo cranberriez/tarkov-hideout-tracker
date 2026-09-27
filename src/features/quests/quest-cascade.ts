@@ -1,6 +1,6 @@
 import type { FullQuest } from "@/types/quests";
-import { getSensitiveBackfillQuest } from "../../lib/utils/sensitive-quest-backfill";
-import { statusRequiresCompletion } from "../../lib/utils/quest-failures";
+import { getSensitiveBackfillQuest } from "../../lib/quests/sensitive-quest-backfill";
+import { statusRequiresCompletion } from "../../lib/quests/quest-failures";
 
 export interface QuestCascadeCompleteResult {
     toComplete: string[];

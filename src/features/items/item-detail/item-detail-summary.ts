@@ -1,7 +1,7 @@
 import type {
     DerivedQuestAnyOfGroup,
     DerivedQuestItemState,
-} from "@/lib/utils/quest-item-index";
+} from "@/lib/quests/quest-item-index";
 
 interface SummaryHideoutRequirement {
     count: number;

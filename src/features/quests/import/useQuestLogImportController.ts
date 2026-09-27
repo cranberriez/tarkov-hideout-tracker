@@ -17,13 +17,13 @@ import {
     writeQuestLogProcessedFileModes,
     type ImportGameMode,
     type QuestImportRow,
-} from "@/lib/utils/quest-log-import";
+} from "@/lib/quests/quest-log-import";
 import {
     filterQuestLogFiles,
     getPreWipeQuestLogFileNames,
     parseQuestLogFiles,
     selectionLooksLikeEftLogsFolder,
-} from "@/lib/utils/quest-log-parser";
+} from "@/lib/quests/quest-log-parser";
 import type { FullQuest } from "@/types/quests";
 import {
     buildCompletionMessage,

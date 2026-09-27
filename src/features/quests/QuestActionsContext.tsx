@@ -7,9 +7,9 @@ import type { ItemSummary } from "@/types/items";
 import type { QuestDataIndex } from "./quest-data-index";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { collectCompleteCascade, collectUncompleteCascade } from "./quest-cascade";
-import { getAutoFailedQuestIds, questCanFail } from "@/lib/utils/quest-failures";
+import { getAutoFailedQuestIds, questCanFail } from "@/lib/quests/quest-failures";
 
-interface QuestsContextValue {
+interface QuestActionsContextValue {
     itemById: Readonly<Record<string, ItemSummary>>;
     questsById: Map<string, FullQuest>;
     leadsToByQuestId: Map<string, string[]>;
@@ -20,15 +20,15 @@ interface QuestsContextValue {
     onItemClick: ((itemId: string) => void) | null;
 }
 
-const QuestsContext = createContext<QuestsContextValue | null>(null);
+const QuestActionsContext = createContext<QuestActionsContextValue | null>(null);
 
-export function useQuestsContext() {
-    const ctx = useContext(QuestsContext);
-    if (!ctx) throw new Error("useQuestsContext must be used within QuestsProvider");
+export function useQuestActions() {
+    const ctx = useContext(QuestActionsContext);
+    if (!ctx) throw new Error("useQuestActions must be used within QuestActionsProvider");
     return ctx;
 }
 
-export function QuestsProvider({
+export function QuestActionsProvider({
     questDataIndex,
     itemById,
     children,
@@ -151,7 +151,7 @@ export function QuestsProvider({
         });
     }, [leadsToByQuestId, questsById]);
 
-    const value = useMemo<QuestsContextValue>(() => ({
+    const value = useMemo<QuestActionsContextValue>(() => ({
         itemById,
         questsById,
         leadsToByQuestId,
@@ -169,5 +169,5 @@ export function QuestsProvider({
         onItemClick,
     ]);
 
-    return <QuestsContext.Provider value={value}>{children}</QuestsContext.Provider>;
+    return <QuestActionsContext.Provider value={value}>{children}</QuestActionsContext.Provider>;
 }

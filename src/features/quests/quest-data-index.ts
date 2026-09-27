@@ -4,13 +4,13 @@ import {
     buildQuestFailureMap,
     type MultipleChoiceQuestGroups,
     type QuestFailureMap,
-} from "../../lib/utils/quest-failures";
+} from "../../lib/quests/quest-failures";
 import {
     deriveQuestOrganization,
     QUEST_SERIES_MANIFEST,
     type QuestOrganizationResult,
     type QuestSeriesManifest,
-} from "../../lib/utils/quest-organization";
+} from "../../lib/quests/quest-organization";
 import type { FullQuest } from "../../types";
 import { buildQuestMapGroups, type QuestMapGroup } from "./quest-map-groups";
 import { buildQuestUnlockImpactMap } from "./quest-sorting";

@@ -9,15 +9,15 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog";
-import { getSensitiveBackfillQuest } from "@/lib/utils/sensitive-quest-backfill";
+import { getSensitiveBackfillQuest } from "@/lib/quests/sensitive-quest-backfill";
 import { QuestListByTrader } from "./QuestListByTrader";
-import { useQuestsContext } from "../QuestsContext";
+import { useQuestActions } from "../QuestActionsContext";
 
 export function QuestCascadeConfirmDialog() {
     const request = useUIStore((state) => state.questCascadeRequest);
     const closeRequest = useUIStore((state) => state.closeQuestCascadeRequest);
     const applyQuestCompletionChange = useUserStore((state) => state.applyQuestCompletionChange);
-    const { questsById } = useQuestsContext();
+    const { questsById } = useQuestActions();
 
     if (!request) return null;
 

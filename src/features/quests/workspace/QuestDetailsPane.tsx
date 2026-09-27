@@ -6,23 +6,23 @@ import { useMemo } from "react";
 import { AlertTriangle, Bug, CheckCircle2, ChevronRight, Circle, Eye, EyeOff, ExternalLink, Flag, GitBranch, GripVertical, Map as MapIcon, PackageOpen, Pin, RotateCcw, X, XCircle } from "lucide-react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
-import { formatQuestTraderGate, getQuestTraderGateType } from "@/lib/utils/quest-trader-gates";
+import { formatQuestTraderGate, getQuestTraderGateType } from "@/lib/quests/quest-trader-gates";
 import {
     compareTraderTierCompletionCount,
     countCompletedTraderTierQuests,
     formatTraderTierCompletionGate,
     getQuestTraderTabLoyaltyLevel,
-} from "@/lib/utils/quest-trader-completion-gates";
+} from "@/lib/quests/quest-trader-completion-gates";
 import {
     buildMultipleChoiceQuestGroups,
     getQuestFailConditionText,
     questCanFail,
-} from "@/lib/utils/quest-failures";
-import { formatTaskRequirementStatus } from "@/lib/utils/quest-relations";
+} from "@/lib/quests/quest-failures";
+import { formatTaskRequirementStatus } from "@/lib/quests/quest-relations";
 import type { FullQuest, QuestTraderStandingReward } from "@/types/quests";
-import { QuestObjectiveIcon } from "../components/QuestObjectiveIcon";
-import { ObjectiveRow } from "../components/quest-card/QuestObjectiveRows";
-import { useQuestsContext } from "../QuestsContext";
+import { QuestObjectiveIcon } from "../objectives/QuestObjectiveIcon";
+import { ObjectiveRow } from "../objectives/QuestObjectiveRows";
+import { useQuestActions } from "../QuestActionsContext";
 import { getPositionedObjectiveMaps } from "./quest-detail-markers";
 import {
     buildQuestDetailsModel,
@@ -60,7 +60,7 @@ export function QuestDetailsPane() {
         retainQuestAfterCompletion,
         openQuestVisualizer,
     } = useQuestWorkspace();
-    const { itemById, leadsToByQuestId, onItemClick, requestToggleQuestCompletion, requestFailQuest, requestResetQuestStatus } = useQuestsContext();
+    const { itemById, leadsToByQuestId, onItemClick, requestToggleQuestCompletion, requestFailQuest, requestResetQuestStatus } = useQuestActions();
     const pinned = useUserStore((state) => quest ? !!state.pinnedQuests[quest.id] : false);
     const hidden = useUserStore((state) => quest ? !!state.ignoredQuests[quest.id] : false);
     const completedQuestObjectives = useUserStore((state) => state.completedQuestObjectives);

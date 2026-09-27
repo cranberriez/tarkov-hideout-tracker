@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, type CSSProperties } from "react";
-import { useQuestsContext } from "../QuestsContext";
+import { useQuestActions } from "../QuestActionsContext";
 import {
     AlertCircle,
     ArrowLeft,
@@ -22,16 +22,16 @@ import {
     type ImportGameMode,
     type QuestImportBuckets,
     type QuestImportRow,
-} from "@/lib/utils/quest-log-import";
+} from "@/lib/quests/quest-log-import";
 import {
     type ParsedQuestEvent,
     type QuestLogParseResult,
-} from "@/lib/utils/quest-log-parser";
+} from "@/lib/quests/quest-log-parser";
 import {
     buildQuestAvailabilityMap,
     isQuestAvailableForProfile,
-} from "@/lib/utils/quest-availability";
-import { NETWORK_PROVIDER_PART_1_ID, getSensitiveBackfillQuest, getSensitiveBackfillQuestName } from "@/lib/utils/sensitive-quest-backfill";
+} from "@/lib/quests/quest-availability";
+import { NETWORK_PROVIDER_PART_1_ID, getSensitiveBackfillQuest, getSensitiveBackfillQuestName } from "@/lib/quests/sensitive-quest-backfill";
 import {
     Dialog,
     DialogContent,
@@ -39,7 +39,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { QuestListByTrader } from "./QuestListByTrader";
+import { QuestListByTrader } from "../components/QuestListByTrader";
 import { getSelectionKey, type AutoCompleteSelectionMap, type ImportSummary } from "./quest-log-import-model";
 import { useQuestLogImportController } from "./useQuestLogImportController";
 import { PROFILE_BASE_COLORS } from "@/lib/cfg/profile-colors";
@@ -51,7 +51,7 @@ interface QuestLogImportDialogProps {
 }
 
 export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImportDialogProps) {
-    const { questsById } = useQuestsContext();
+    const { questsById } = useQuestActions();
     const gameMode = useUserStore((state) => state.gameMode);
     const profiles = useUserStore((state) => state.profiles);
     const availableQuestIdsByMode = useMemo(() => {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getMapNavigationMarkers } from "@/server/services/map-navigation-overlays";
+import { CacheControl } from "@/app/api/_lib/cache-control";
 
 export async function GET(
     _request: Request,
@@ -12,6 +13,6 @@ export async function GET(
     }
     return NextResponse.json(
         { markers },
-        { headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" } },
+        { headers: { "Cache-Control": CacheControl.mapData } },
     );
 }

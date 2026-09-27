@@ -191,6 +191,6 @@ retryable. Recipe calculations reuse the
 
 For changes here, run [page query tests](../src/server/queries/page-data-queries.test.ts),
 [item detail tests](../src/features/items/item-detail/), and
-[quest-item demand tests](../src/lib/utils/quest-item-index.test.ts) as applicable;
+[quest-item demand tests](../src/lib/quests/quest-item-index.test.ts) as applicable;
 [operations](operations.md) gives runnable commands. Verify changed interactions
 in the browser, including a mode switch and partial/missing-data states.

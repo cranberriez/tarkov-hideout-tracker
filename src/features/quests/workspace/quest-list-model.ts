@@ -1,7 +1,7 @@
 import type { FullQuest } from "@/types/quests";
 import type { QuestSortMode } from "@/lib/stores/useUserStore";
-import { getQuestTraderTabLoyaltyLevel } from "../../../lib/utils/quest-trader-completion-gates";
-import { isEssentialQuest } from "../../../lib/utils/quest-series";
+import { getQuestTraderTabLoyaltyLevel } from "../../../lib/quests/quest-trader-completion-gates";
+import { isEssentialQuest } from "../../../lib/quests/quest-series";
 import { buildQuestUnlockImpactMap, sortQuestsForQuestView } from "../quest-sorting";
 import { buildEssentialQuestSeries, type QuestWorkspaceStatusInfo } from "./quest-workspace-utils";
 

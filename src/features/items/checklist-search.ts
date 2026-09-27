@@ -1,6 +1,6 @@
 import type { Station } from "@/types/hideout";
 import type { ItemSummary } from "@/types/items";
-import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
+import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/quests/quest-item-index";
 
 export function matchesChecklistSearch(item: ItemSummary | undefined, query: string): boolean {
     if (!item) return false;

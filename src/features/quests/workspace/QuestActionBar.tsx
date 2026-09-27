@@ -5,7 +5,7 @@ import { useState } from "react";
 import type { FullQuest } from "@/types/quests";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
-import { QuestLogImportDialog } from "../components/QuestLogImportDialog";
+import { QuestLogImportDialog } from "../import/QuestLogImportDialog";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 export function QuestActionBar({ quests }: { quests: FullQuest[] }) {

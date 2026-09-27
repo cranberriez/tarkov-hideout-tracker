@@ -1,8 +1,8 @@
-import { toQuestAvailabilityQuest } from "../../lib/utils/quest-availability";
-import { buildQuestAnyOfGroups, buildQuestItemIndex } from "../../lib/utils/quest-item-index";
-import { orderQuestsByPrerequisites } from "../../lib/utils/quest-ordering";
-import { prepareQuestDataForMode } from "../../lib/utils/quest-preparation";
-import { excludeRemovedQuests } from "../../lib/utils/removed-quests";
+import { toQuestAvailabilityQuest } from "../../lib/quests/quest-availability";
+import { buildQuestAnyOfGroups, buildQuestItemIndex } from "../../lib/quests/quest-item-index";
+import { orderQuestsByPrerequisites } from "../../lib/quests/quest-ordering";
+import { prepareQuestDataForMode } from "../../lib/quests/quest-preparation";
+import { excludeRemovedQuests } from "../../lib/quests/removed-quests";
 import type { TarkovDataMode } from "../../types/common";
 import type { Station } from "../../types/hideout";
 import type { FullQuest } from "../../types/quests";

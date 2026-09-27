@@ -5,7 +5,7 @@ import { buildSearchManifest } from "./build-manifest";
 import { decodeSearchManifest, searchManifestItems, validateSearchManifest } from "./manifest";
 import { searchManifestOptions } from "./query";
 import { removeGameDataScope } from "../query/scope";
-import { REMOVED_QUEST_IDS } from "../utils/removed-quests";
+import { REMOVED_QUEST_IDS } from "../quests/removed-quests";
 import type { FullQuest } from "../../types/quests";
 
 const quest = (id: string, lightkeeperRequired = false) =>
