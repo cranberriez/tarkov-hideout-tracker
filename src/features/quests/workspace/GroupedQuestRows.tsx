@@ -3,17 +3,16 @@ import type { QuestListEntry, QuestListModel } from "./quest-list-model";
 import { QuestGroupHeader } from "./QuestGroupHeader";
 import { QuestListItem } from "./QuestListItem";
 
-export function GroupedQuestRows({ model, collapsedGroupIds, onToggleGroup, selectedQuestId, highlightedQuestId, onSelectQuest }: {
+export function GroupedQuestRows({ model, collapsedGroupIds, onToggleGroup, selectedQuestId, highlightedQuestId }: {
     model: QuestListModel;
     collapsedGroupIds: ReadonlySet<string>;
     onToggleGroup: (groupId: string) => void;
     selectedQuestId: string | null;
     highlightedQuestId: string | null;
-    onSelectQuest: (questId: string) => void;
 }) {
     const renderEntries = (entries: QuestListEntry[]): React.ReactNode => entries.map((entry) => {
         if (entry.kind === "quest") {
-            return <QuestListItem key={entry.questId} questId={entry.questId} selected={selectedQuestId === entry.questId} highlighted={highlightedQuestId === entry.questId} onSelect={() => onSelectQuest(entry.questId)} />;
+            return <QuestListItem key={entry.questId} questId={entry.questId} selected={selectedQuestId === entry.questId} highlighted={highlightedQuestId === entry.questId} />;
         }
         if (entry.kind === "group") {
             const collapsed = collapsedGroupIds.has(entry.id);

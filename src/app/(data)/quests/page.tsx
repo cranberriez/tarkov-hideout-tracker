@@ -1,34 +1,22 @@
-import { HydrationBoundary } from "@tanstack/react-query";
-import { Suspense } from "react";
-import { RouteLoader } from "@/components/core/RouteLoader";
-import { QuestsQueryPage } from "@/features/quests/QuestsQueryPage";
-import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
-import { SHOW_REMOVED_QUESTS } from "@/features/quests/quest-feature-flags";
-import { getQuestWorkspacePageData } from "@/server/queries/getQuestWorkspacePageData";
-import { DEV_QUEST_FIXTURES, DEV_QUEST_ID, DEV_QUEST_QUERY } from "@/features/quests/dev-quest-fixture";
-import { isCompleteQuestWorkspacePageData, PAGE_DATA_STALE_TIME, questWorkspacePageQueryOptions } from "@/lib/query/page-data";
-import { prefetchPageData } from "@/server/queries/prefetchPageData";
-import { getCurrentPageRepository } from "@/server/queries/currentPageRepository";
+import { redirect } from "next/navigation";
+import { QuestSelectionPrompt } from "@/features/quests/workspace/QuestSelectionPrompt";
+import { DEV_QUEST_ID, DEV_QUEST_QUERY } from "@/features/quests/dev-quest-fixture";
+import { LEGACY_QUEST_QUERY_PARAM, questHref } from "@/features/quests/quest-routes";
 
 interface QuestsPageProps {
-	searchParams: Promise<{ q?: string | string[] }>;
+	searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+function first(value: string | string[] | undefined) {
+	return Array.isArray(value) ? value[0] : value;
 }
 
 export default async function QuestsPage({ searchParams }: QuestsPageProps) {
-	const queryValue = (await searchParams).q;
-	const query = Array.isArray(queryValue) ? queryValue[0] : queryValue;
-	const showDevQuest = process.env.NODE_ENV === "development" && query === DEV_QUEST_QUERY;
-	const gameMode = await getActiveTarkovJsonGameMode();
-	const options = questWorkspacePageQueryOptions(gameMode, showDevQuest ? DEV_QUEST_QUERY : null);
-	const { state, fallbackData } = await prefetchPageData(options.queryKey, PAGE_DATA_STALE_TIME, async () => getQuestWorkspacePageData(gameMode, await getCurrentPageRepository(gameMode), {
-		includePrices: false,
-		showRemovedQuests: SHOW_REMOVED_QUESTS,
-		displayQuestAdditions: showDevQuest ? DEV_QUEST_FIXTURES : [],
-	}), isCompleteQuestWorkspacePageData);
-
-	return (
-		<Suspense fallback={<RouteLoader page="quests" />}>
-			<HydrationBoundary state={state}><QuestsQueryPage mode={gameMode} devQuery={showDevQuest ? DEV_QUEST_QUERY : null} initialQuestId={showDevQuest ? DEV_QUEST_ID : null} fallbackData={fallbackData} /></HydrationBoundary>
-		</Suspense>
-	);
+	const params = await searchParams;
+	const legacyQuestId = first(params[LEGACY_QUEST_QUERY_PARAM]);
+	if (legacyQuestId) redirect(questHref(legacyQuestId));
+	if (process.env.NODE_ENV === "development" && first(params.q) === DEV_QUEST_QUERY) {
+		redirect(questHref(DEV_QUEST_ID, DEV_QUEST_QUERY));
+	}
+	return <QuestSelectionPrompt />;
 }

@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import type { CSSProperties } from "react";
 import { useMemo } from "react";
-import { AlertTriangle, Bug, CheckCircle2, ChevronRight, Eye, EyeOff, ExternalLink, Flag, GitBranch, GripVertical, Map as MapIcon, PackageOpen, Pin, RotateCcw, X, XCircle } from "lucide-react";
+import { AlertTriangle, Bug, CheckCircle2, ChevronRight, Eye, EyeOff, ExternalLink, GitBranch, GripVertical, Map as MapIcon, PackageOpen, Pin, RotateCcw, X, XCircle } from "lucide-react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonClassName } from "@/components/ui/button";
@@ -52,10 +52,9 @@ const LazyMapViewer = dynamic(
     },
 );
 
-export function QuestDetailsPane() {
+export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
     const {
         quests,
-        selectedQuest: quest,
         statusByQuestId,
         questsById,
         maps,
@@ -65,8 +64,8 @@ export function QuestDetailsPane() {
         openQuestVisualizer,
     } = useQuestWorkspace();
     const { itemById, leadsToByQuestId, onItemClick, requestToggleQuestCompletion, requestFailQuest, requestResetQuestStatus } = useQuestActions();
-    const pinned = useUserStore((state) => quest ? !!state.pinnedQuests[quest.id] : false);
-    const hidden = useUserStore((state) => quest ? !!state.ignoredQuests[quest.id] : false);
+    const pinned = useUserStore((state) => !!state.pinnedQuests[quest.id]);
+    const hidden = useUserStore((state) => !!state.ignoredQuests[quest.id]);
     const completedQuestObjectives = useUserStore((state) => state.completedQuestObjectives);
     const completedQuests = useUserStore((state) => state.completedQuests);
     const failedQuests = useUserStore((state) => state.failedQuests);
@@ -80,11 +79,9 @@ export function QuestDetailsPane() {
     const toggleQuestObjectiveCompletion = useUserStore((state) => state.toggleQuestObjectiveCompletion);
     const completedObjectiveIds = useMemo(
         () => new Set(
-            quest
-                ? Object.entries(completedQuestObjectives[quest.id] ?? {})
-                    .filter(([, completed]) => completed)
-                    .map(([objectiveId]) => objectiveId)
-                : [],
+            Object.entries(completedQuestObjectives[quest.id] ?? {})
+                .filter(([, completed]) => completed)
+                .map(([objectiveId]) => objectiveId),
         ),
         [completedQuestObjectives, quest],
     );
@@ -92,7 +89,7 @@ export function QuestDetailsPane() {
         () => buildMultipleChoiceQuestGroups(quests),
         [quests],
     );
-    const questDetailsModel = useMemo(() => quest ? buildQuestDetailsModel({
+    const questDetailsModel = useMemo(() => buildQuestDetailsModel({
         quest,
         questsById,
         leadsToQuestIds: leadsToByQuestId.get(quest.id) ?? [],
@@ -100,19 +97,8 @@ export function QuestDetailsPane() {
         branchLines: branchLinesByQuestId.get(quest.id) ?? [],
         multipleChoiceQuestIds: multipleChoiceGroups.get(quest.id) ?? [],
         completedObjectiveIds,
-    }) : null, [branchLinesByQuestId, completedObjectiveIds, leadsToByQuestId, maps, multipleChoiceGroups, quest, questsById]);
-    const controller = useQuestDetailsController(quest?.id ?? null, questDetailsModel?.mapData ?? null);
-
-    if (!quest) {
-        return (
-            <div className="flex min-h-[420px] border-t border-highlight/10 flex-1 items-center justify-center bg-[radial-gradient(circle_at_50%_45%,color-mix(in_oklab,_var(--highlight)_2.5%,_transparent),transparent_45%)] p-8 text-center">
-                <div className="max-w-xs">
-                    <Flag size={24} className="mx-auto mb-4 text-subtle-foreground" />
-                    <p className="text-sm text-subtle-foreground">Select a quest from the log to inspect its objectives, requirements, and progression links.</p>
-                </div>
-            </div>
-        );
-    }
+    }), [branchLinesByQuestId, completedObjectiveIds, leadsToByQuestId, maps, multipleChoiceGroups, quest, questsById]);
+    const controller = useQuestDetailsController(quest.id, questDetailsModel.mapData);
 
     const status = statusByQuestId.get(quest.id)!;
     const {
@@ -129,7 +115,7 @@ export function QuestDetailsPane() {
         visualizerLines,
         multipleChoiceQuests,
         mapData: questMapData,
-    } = questDetailsModel!;
+    } = questDetailsModel;
     const {
         showDebug, setShowDebug, isDesktopMapOpen, setIsDesktopMapOpen,
         isHeaderCondensed, isCompactMapOpen, closeCompactMap,

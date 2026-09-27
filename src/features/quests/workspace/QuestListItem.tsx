@@ -12,6 +12,7 @@ import {
     RotateCcw,
     XCircle,
 } from "lucide-react";
+import Link from "next/link";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import { getQuestTraderTabLoyaltyLevel } from "@/lib/quests/quest-trader-completion-gates";
@@ -25,16 +26,19 @@ export function QuestListItem({
     questId,
     selected,
     highlighted,
-    onSelect,
+    keepMode = true,
     includeElementId = true,
 }: {
     questId: string;
     selected: boolean;
     highlighted: boolean;
-    onSelect: () => void;
+    /** Keep the planner/visualizer open when navigating; otherwise the details pane is shown. */
+    keepMode?: boolean;
     includeElementId?: boolean;
 }) {
     const {
+        questHref,
+        markInternalSelection,
         questsById,
         statusByQuestId,
         upcomingLockedQuestIds,
@@ -61,18 +65,8 @@ export function QuestListItem({
     return (
         <article
             id={includeElementId ? `quest-workspace-${quest.id}` : undefined}
-            tabIndex={0}
-            role="button"
-            aria-pressed={selected}
-            onClick={onSelect}
-            onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    onSelect();
-                }
-            }}
             className={cn(
-                "group relative grid min-h-20 cursor-pointer grid-cols-[108px_minmax(0,1fr)] overflow-hidden text-left outline-none transition-colors focus-visible:bg-highlight/6",
+                "group relative grid min-h-20 cursor-pointer grid-cols-[108px_minmax(0,1fr)] overflow-hidden text-left transition-colors has-[a:focus-visible]:bg-highlight/6 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:-outline-offset-2 has-[a:focus-visible]:outline-brand",
                 quest.removed
                     ? "border border-danger/70 bg-danger/5"
                     : "border-b border-highlight/8 bg-[var(--card-bg)]",
@@ -104,7 +98,18 @@ export function QuestListItem({
                         "min-w-0 flex-1 truncate text-[13px] font-semibold leading-5 text-foreground",
                         resolved && "text-subtle-foreground",
                     )}>
-                        {quest.name}
+                        {/* Stretched link: the whole row navigates; action buttons sit above it. */}
+                        <Link
+                            href={questHref(quest.id)}
+                            scroll={false}
+                            aria-current={selected ? "page" : undefined}
+                            onClick={(event) => {
+                                if (keepMode && !event.metaKey && !event.ctrlKey && !event.shiftKey) markInternalSelection(quest.id);
+                            }}
+                            className="outline-none after:absolute after:inset-0 after:content-['']"
+                        >
+                            {quest.name}
+                        </Link>
                     </h3>
                     {branchLine && (
                         <span
@@ -115,7 +120,7 @@ export function QuestListItem({
                             <GitBranch size={14} />
                         </span>
                     )}
-                    <div className="flex shrink-0 items-center gap-0.5" onClick={(event) => event.stopPropagation()}>
+                    <div className="relative z-10 flex shrink-0 items-center gap-0.5">
                         <button
                             type="button"
                             title={hidden ? "Show quest" : "Hide quest"}
@@ -131,6 +136,8 @@ export function QuestListItem({
                         <button
                             type="button"
                             title={pinned ? "Unpin quest" : "Pin quest"}
+                            aria-label={pinned ? "Unpin quest" : "Pin quest"}
+                            aria-pressed={pinned}
                             onClick={() => togglePinnedQuest(quest.id)}
                             className={cn(
                                 "-mb-px hidden h-7 w-7 items-center justify-center rounded text-subtle-foreground transition-colors hover:bg-info/8 hover:text-info lg:flex",
@@ -142,6 +149,7 @@ export function QuestListItem({
                         <button
                             type="button"
                             title={completed ? "Mark incomplete" : "Mark complete"}
+                            aria-label={`${completed ? "Mark incomplete" : "Mark complete"}: ${quest.name}`}
                             onClick={() => {
                                 if (!completed) retainQuestAfterCompletion(quest.id);
                                 requestToggleQuestCompletion(quest.id);

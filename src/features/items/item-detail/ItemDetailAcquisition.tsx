@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import type { ItemAmount, ItemTraderOffer } from "@/features/items/item-detail/item-detail-types";
 import type { ItemSummary } from "@/types/items";
-import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
+import { questHref } from "@/features/quests/quest-routes";
 import { AvailabilityBadge, RecommendationBadge, ToolBadge } from "./ItemDetailBadges";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
 import { ItemDetailRecipeFlow } from "./ItemDetailRecipeFlow";
@@ -242,7 +242,7 @@ function LockedReasons({
                 <span>
                     Needs{" "}
                     <Link
-                        href={getQuestDeepLinkHref(offer.taskUnlock.id)}
+                        href={questHref(offer.taskUnlock.id)}
                         className="underline decoration-warning/30 underline-offset-2 hover:text-foreground"
                     >
                         {offer.taskUnlock.name}

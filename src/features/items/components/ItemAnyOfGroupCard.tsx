@@ -7,7 +7,7 @@ import type { ItemSize } from "@/lib/stores/useUserStore";
 import type { ItemSummary } from "@/types/items";
 import type { DerivedQuestAnyOfGroup } from "@/lib/quests/quest-item-index";
 import { cn } from "@/lib/utils";
-import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
+import { questHref } from "@/features/quests/quest-routes";
 
 const MAX_PREVIEW_ITEMS = 3;
 
@@ -114,7 +114,7 @@ function GroupHeader({ group, expanded, isIconMode }: GroupHeaderProps) {
                     </h3>
 
                     <Link
-                        href={getQuestDeepLinkHref(group.questId)}
+                        href={questHref(group.questId)}
                         className="inline-flex w-fit items-center gap-1 text-xs text-subtle-foreground transition-colors hover:text-brand"
                         onClick={(e) => e.stopPropagation()}
                     >

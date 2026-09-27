@@ -12,7 +12,7 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and Turso;
 | `/` | [Redirect to Hideout](../src/app/page.tsx) |
 | `/hideout` | [Hideout page](<../src/app/(data)/hideout/page.tsx>): next station upgrades |
 | `/items` | [Items page](<../src/app/(data)/items/page.tsx>): pooled hideout and quest demand |
-| `/quests` | [Quests page](<../src/app/(data)/quests/page.tsx>): workspace, details, visualizer, Raid Planner |
+| `/quests`, `/quests/[questId]` | [Quests layout](<../src/app/(data)/quests/layout.tsx>) owns the persistent workspace; the [index](<../src/app/(data)/quests/page.tsx>) and [quest route](<../src/app/(data)/quests/[questId]/page.tsx>) fill its detail pane; see [quests](quests.md) |
 | `/items/kappa-checklist` | [Collector checklist](<../src/app/(data)/items/kappa-checklist/page.tsx>); see [quests](quests.md) |
 | `/items/barter-profits`, `/items/crafting-profits` | Shared [ProfitPage](../src/features/profit-pages/ProfitPage.tsx); see [profits](profits.md) |
 | `/hideout/craft-planner` | Station craft recommendations using the shared profit query; see [profits](profits.md) |
@@ -150,8 +150,8 @@ to 50, labels entity kinds, and shows quest trader names/portraits.
 The dialog traps focus, supports arrow navigation and Enter selection, closes on
 Escape, and restores focus to the opener on dismissal. Empty, loading, error/retry,
 and no-match states are explicit. Selecting an item closes search and opens the
-existing lazy item modal; quest selection navigates to its deep link and opens the
-workspace detail pane, including on mobile or when already on the quest page.
+existing lazy item modal; quest selection navigates to `/quests/[questId]` and opens
+the workspace detail pane, including on mobile or when already on the quest page.
 Nav-owned search/selection state resets on mode changes and is never persisted.
 On narrow phones Setup remains available in the menu, leaving room for the always
 visible search button. The existing explicit quest fullscreen nav toggle remains

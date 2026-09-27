@@ -9,6 +9,7 @@ import { getHideoutPageData } from "./getHideoutPageData";
 import { getItemChecklistPageData } from "./getItemChecklistPageData";
 import { getProfitPageData } from "./getProfitPageData";
 import { getQuestWorkspacePageData } from "./getQuestWorkspacePageData";
+import { getQuestDetailPageData } from "./getQuestDetailPageData";
 import { getKappaChecklistPageData, COLLECTOR_QUEST_ID_BY_MODE } from "./getKappaChecklistPageData";
 import { getItemPriceResponse } from "./getDeferredPrices";
 
@@ -379,4 +380,29 @@ test("profit resolves only referenced unlock names and preserves requirements wh
         assert.deepEqual(failed.unresolvedTaskUnlockIds, ["quest-1", "missing"]);
         assert.match(failed.errors.taskUnlocks!, /could not be loaded/);
     }
+});
+
+test("quest detail reads one quest by ID and distinguishes missing from failed reads", async () => {
+    const requested: string[][] = [];
+    const repository = createRepository({
+        questNames: async (_mode, ids) => {
+            requested.push([...ids]);
+            return result(ids.includes(quest.id) ? { [quest.id]: quest } : {});
+        },
+    });
+
+    const found = await getQuestDetailPageData("regular", quest.id, repository);
+    assert.deepEqual(requested, [[quest.id]]);
+    assert.equal(found.error, null);
+    assert.equal(found.quest?.name, "Quest");
+    assert.deepEqual(found.quest?.objectiveDescriptions, ["Give"]);
+
+    const missing = await getQuestDetailPageData("regular", "unknown", repository);
+    assert.deepEqual(missing, { quest: null, error: null });
+
+    const failed = await getQuestDetailPageData("regular", quest.id, createRepository({
+        questNames: async () => { throw new Error("offline"); },
+    }));
+    assert.equal(failed.quest, null);
+    assert.ok(failed.error);
 });

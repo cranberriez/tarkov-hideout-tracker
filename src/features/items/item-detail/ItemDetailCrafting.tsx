@@ -5,7 +5,7 @@ import { Clock3, Hammer } from "lucide-react";
 import type { ItemAmount, ItemCraftRecipe } from "@/features/items/item-detail/item-detail-types";
 import type { ItemSummary } from "@/types/items";
 import type { GameEdition } from "@/lib/stores/useUserStore";
-import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
+import { questHref } from "@/features/quests/quest-routes";
 import { AvailabilityBadge, RecommendationBadge, ToolBadge } from "./ItemDetailBadges";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
 import { ItemDetailRecipeFlow } from "./ItemDetailRecipeFlow";
@@ -236,7 +236,7 @@ function LockedReasons({
                     <span>
                         Needs{" "}
                         <Link
-                            href={getQuestDeepLinkHref(recipe.taskUnlock.id)}
+                            href={questHref(recipe.taskUnlock.id)}
                             className="underline decoration-warning/30 underline-offset-2 hover:text-foreground"
                         >
                             {recipe.taskUnlock.name}

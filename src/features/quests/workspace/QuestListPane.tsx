@@ -13,7 +13,6 @@ export function QuestListPane() {
         filteredQuests,
         questDataIndex,
         selectedQuestId,
-        setSelectedQuestId,
         highlightedQuestId,
         listMode,
         openFilter,
@@ -48,7 +47,6 @@ export function QuestListPane() {
                 onToggleGroup={toggleGroup}
                 selectedQuestId={selectedQuestId}
                 highlightedQuestId={highlightedQuestId}
-                onSelectQuest={setSelectedQuestId}
             />
             {model.questCount === 0 && (
                 <div className="border-b border-dashed border-highlight/10 px-5 py-14 text-center text-sm text-subtle-foreground">

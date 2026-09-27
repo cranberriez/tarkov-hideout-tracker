@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { FullQuest } from "@/types/quests";
 import type { ItemSummary } from "@/types/items";
 import { ItemDetailModal } from "@/features/items/item-detail/LazyItemDetailModal";
@@ -13,13 +13,16 @@ import { buildQuestDataIndex } from "./quest-data-index";
 interface QuestsClientPageProps {
     quests: FullQuest[];
     items: ItemSummary[] | null;
-    initialQuestId?: string | null;
+    devQuery: string | null;
+    /** The routed detail pane (`/quests` prompt or `/quests/[questId]`). */
+    children: ReactNode;
 }
 
 export function QuestsClientPage({
     quests,
     items,
-    initialQuestId = null,
+    devQuery,
+    children,
 }: QuestsClientPageProps) {
     const questDataIndex = useMemo(() => buildQuestDataIndex(quests), [quests]);
     const itemById = useMemo(
@@ -33,8 +36,8 @@ export function QuestsClientPage({
 
     return (
         <QuestActionsProvider questDataIndex={questDataIndex} itemById={itemById} onItemClick={setSelectedItemId}>
-            <QuestWorkspaceProvider quests={quests} questDataIndex={questDataIndex} initialQuestId={initialQuestId}>
-                <QuestWorkspace quests={quests} />
+            <QuestWorkspaceProvider quests={quests} questDataIndex={questDataIndex} devQuery={devQuery}>
+                <QuestWorkspace quests={quests}>{children}</QuestWorkspace>
             </QuestWorkspaceProvider>
             <ItemDetailModal item={selectedItem} isOpen={!!selectedItem} onClose={() => setSelectedItemId(null)} />
             <QuestCascadeConfirmDialog />

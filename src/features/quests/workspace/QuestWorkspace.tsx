@@ -2,13 +2,12 @@
 
 import { ChevronLeft } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { FullQuest } from "@/types/quests";
 import type { MapViewTransform } from "@/features/maps/map-view-transform";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
-import { clearQuestDeepLink, getQuestDeepLinkId } from "../quest-deep-link";
 import {
     QuestCompactSearchBar,
     QuestFilterBar,
@@ -17,7 +16,6 @@ import {
 } from "./QuestFilterBar";
 import { QuestListPane } from "./QuestListPane";
 import { QuestActionBar } from "./QuestActionBar";
-import { QuestDetailsPane } from "./QuestDetailsPane";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 function PaneLoading() {
@@ -27,9 +25,9 @@ function PaneLoading() {
 const RaidPlannerPane = dynamic(() => import("./RaidPlannerPane").then((module) => module.RaidPlannerPane), { loading: PaneLoading });
 const QuestVisualizerPane = dynamic(() => import("./QuestVisualizerPane").then((module) => module.QuestVisualizerPane), { loading: PaneLoading });
 
-export function QuestWorkspace({ quests }: { quests: FullQuest[] }) {
-    const { mode, setMode, plannerMapKey, questsById, selectedQuestId, setSelectedQuestId } = useQuestWorkspace();
-    const searchParams = useSearchParams();
+/** `children` is the routed detail outlet: the selection prompt or `/quests/[questId]`. */
+export function QuestWorkspace({ quests, children }: { quests: FullQuest[]; children: ReactNode }) {
+    const { mode, setMode, plannerMapKey, selectedQuestId, indexHref, markInternalSelection, consumeInternalSelection } = useQuestWorkspace();
     const [compactSearchOpen, setCompactSearchOpen] = useState(false);
     const [plannerViews, setPlannerViews] = useState(() => new Map<string, MapViewTransform>());
     const rememberPlannerView = useCallback((mapKey: string, view: MapViewTransform | null) => {
@@ -49,14 +47,20 @@ export function QuestWorkspace({ quests }: { quests: FullQuest[] }) {
         document.body.classList.toggle("quest-raid-planner-active", mode === "planner");
         return () => document.body.classList.remove("quest-raid-planner-active");
     }, [mode]);
+    // Back/Forward, search, and shared links show the selected quest's details even when the
+    // planner or visualizer is open. Workspace-initiated selection keeps the current mode.
+    const previousQuestId = useRef(selectedQuestId);
     useEffect(() => {
-        const questId = getQuestDeepLinkId(window.location);
-        if (!questId || !questsById.has(questId)) return;
-        clearQuestDeepLink();
-        setSelectedQuestId(questId);
+        const questId = previousQuestId.current;
+        if (questId) requestAnimationFrame(() => document.getElementById(`quest-workspace-${questId}`)?.scrollIntoView({ block: "center" }));
+    }, []);
+    useEffect(() => {
+        if (previousQuestId.current === selectedQuestId) return;
+        previousQuestId.current = selectedQuestId;
+        if (consumeInternalSelection(selectedQuestId) || !selectedQuestId) return;
         setMode("details");
-        requestAnimationFrame(() => document.getElementById(`quest-workspace-${questId}`)?.scrollIntoView({ block: "center" }));
-    }, [questsById, setSelectedQuestId, setMode, searchParams]);
+        requestAnimationFrame(() => document.getElementById(`quest-workspace-${selectedQuestId}`)?.scrollIntoView({ block: "center" }));
+    }, [consumeInternalSelection, selectedQuestId, setMode]);
     return (
         <main
             data-quest-workspace
@@ -91,14 +95,15 @@ export function QuestWorkspace({ quests }: { quests: FullQuest[] }) {
                 )}>
                     <QuestActionBar quests={quests} />
                     {mode === "details" && selectedQuestId && (
-                        <button
-                            type="button"
-                            onClick={() => setSelectedQuestId(null)}
+                        <Link
+                            href={indexHref}
+                            scroll={false}
+                            onClick={() => markInternalSelection(null)}
                             data-quest-mobile-back-bar
                             className="flex h-12 shrink-0 items-center gap-2 border-b border-highlight/10 bg-[var(--card-bg)] px-4 text-xs font-medium text-foreground transition-colors hover:text-foreground lg:hidden"
                         >
                             <ChevronLeft size={16} /> Back to quests
-                        </button>
+                        </Link>
                     )}
                     {mode === "planner" ? (
                         <RaidPlannerPane
@@ -109,7 +114,7 @@ export function QuestWorkspace({ quests }: { quests: FullQuest[] }) {
                         />
                     ) : mode === "visualizer" ? (
                         <QuestVisualizerPane />
-                    ) : <QuestDetailsPane />}
+                    ) : children}
                 </section>
             </div>
         </main>

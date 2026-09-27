@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SearchPalette } from "@/features/search/SearchPalette";
 import { ItemDetailModal } from "@/features/items/item-detail/LazyItemDetailModal";
-import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
+import { questHref } from "@/features/quests/quest-routes";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import type { ItemSummary } from "@/types/items";
 import {
@@ -72,7 +72,7 @@ function NavbarContent() {
 	const isSecondaryRoute = currentPage === "/settings" || currentPage === "/news" || currentPage === "/dev";
 	const visibleMenus = process.env.NODE_ENV === "development" ? [...navMenus, devNavItem] : navMenus;
 
-	if (currentPage === "/quests" && isMainNavHidden) return null;
+	if ((currentPage === "/quests" || currentPage.startsWith("/quests/")) && isMainNavHidden) return null;
 
 	return (
 		<>
@@ -222,7 +222,7 @@ function NavbarContent() {
 					onSelect={(result) => {
 						setSearchOpen(false);
 						if (result.kind === "item") setSelectedItem(result.item);
-						else router.push(getQuestDeepLinkHref(result.id), { scroll: false });
+						else router.push(questHref(result.id), { scroll: false });
 					}}
 				/>
 			)}

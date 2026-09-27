@@ -5,7 +5,7 @@ import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 export function QuestHistoryList() {
     const history = useUserStore((state) => state.questChangeHistory);
-    const { questsById, selectedQuestId, setSelectedQuestId, setMode } = useQuestWorkspace();
+    const { questsById, selectedQuestId } = useQuestWorkspace();
     const entries = [...history].reverse().filter((entry) => questsById.has(entry.questId));
     return (
         <div className="min-h-0 flex-1 overflow-y-auto scroll-smooth bg-[var(--background)]">
@@ -16,7 +16,7 @@ export function QuestHistoryList() {
                         <span>{entry.change === "completed" ? "Marked completed" : "Marked incomplete"}</span>
                         <time dateTime={new Date(entry.timestamp).toISOString()} title={new Date(entry.timestamp).toLocaleString()}>{formatHistoryTime(entry.timestamp)}</time>
                     </div>
-                    <QuestListItem questId={entry.questId} selected={selectedQuestId === entry.questId} highlighted={false} onSelect={() => { setSelectedQuestId(entry.questId); setMode("details"); }} includeElementId={false} />
+                    <QuestListItem questId={entry.questId} selected={selectedQuestId === entry.questId} highlighted={false} keepMode={false} includeElementId={false} />
                 </div>
             ))}
             {entries.length === 0 && <div className="border-b border-dashed border-highlight/10 px-5 py-14 text-center text-sm text-subtle-foreground">Quest completion changes will appear here.</div>}

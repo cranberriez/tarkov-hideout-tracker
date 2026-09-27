@@ -1,6 +1,9 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { decodeRouteParam } from "@/lib/utils/route-param";
+import { QUESTS_HREF, questHref as buildQuestHref } from "../quest-routes";
 import { useShallow } from "zustand/react/shallow";
 import type { FullQuest } from "@/types/quests";
 import type { QuestDataIndex } from "../quest-data-index";
@@ -64,7 +67,14 @@ interface QuestWorkspaceContextValue {
     highlightedQuestId: string | null;
     visualizerLineId: string | null;
     visualizerFocusQuestId: string | null;
+    /** Navigates to the quest route (or the index for `null`); the route is the selection source. */
     setSelectedQuestId: (questId: string | null) => void;
+    questHref: (questId: string) => string;
+    indexHref: string;
+    /** Marks a workspace-initiated link so the route change keeps the current planner/visualizer mode. */
+    markInternalSelection: (questId: string | null) => void;
+    /** True once for a selection started inside the workspace; false for Back/Forward and external links. */
+    consumeInternalSelection: (questId: string | null) => boolean;
     toggleTrader: (traderId: string) => void;
     showOnlyTrader: (traderId: string) => void;
     clearTraders: () => void;
@@ -100,8 +110,11 @@ function toggleSetValue<T>(current: Set<T>, value: T) {
     return next;
 }
 
-export function QuestWorkspaceProvider({ quests, questDataIndex, initialQuestId = null, children }: { quests: FullQuest[]; questDataIndex: QuestDataIndex; initialQuestId?: string | null; children: ReactNode }) {
-    const [selectedQuestId, setSelectedQuestId] = useState<string | null>(initialQuestId);
+export function QuestWorkspaceProvider({ quests, questDataIndex, devQuery = null, children }: { quests: FullQuest[]; questDataIndex: QuestDataIndex; devQuery?: string | null; children: ReactNode }) {
+    const router = useRouter();
+    const params = useParams<{ questId?: string }>();
+    const selectedQuestId = params?.questId ? decodeRouteParam(params.questId) : null;
+    const internalSelection = useRef<{ questId: string | null } | null>(null);
     const [openFilter, setOpenFilter] = useState<QuestFilterSection>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [mode, setMode] = useState<QuestWorkspaceMode>("details");
@@ -245,6 +258,25 @@ export function QuestWorkspaceProvider({ quests, questDataIndex, initialQuestId 
         setRetainedCompletedQuestIds((current) => new Set(current).add(questId));
     };
 
+    const questHref = useCallback((questId: string) => buildQuestHref(questId, devQuery), [devQuery]);
+    const indexHref = devQuery ? `${QUESTS_HREF}?q=${encodeURIComponent(devQuery)}` : QUESTS_HREF;
+    const markInternalSelection = useCallback((questId: string | null) => {
+        internalSelection.current = { questId };
+    }, []);
+    const consumeInternalSelection = useCallback((questId: string | null) => {
+        const pending = internalSelection.current;
+        internalSelection.current = null;
+        return pending !== null && pending.questId === questId;
+    }, []);
+    const setSelectedQuestId = (questId: string | null) => {
+        if (questId === selectedQuestId) return;
+        markInternalSelection(questId);
+        const href = questId ? questHref(questId) : indexHref;
+        // Planner marker focus should not fill browser history; detail selection should.
+        if (mode === "planner") router.replace(href, { scroll: false });
+        else router.push(href, { scroll: false });
+    };
+
     const selectPlannerMap = (mapKey: string) => {
         setPlannerMapKey(mapKey);
         setMode("planner");
@@ -298,6 +330,10 @@ export function QuestWorkspaceProvider({ quests, questDataIndex, initialQuestId 
             visualizerLineId,
             visualizerFocusQuestId,
             setSelectedQuestId,
+            questHref,
+            indexHref,
+            markInternalSelection,
+            consumeInternalSelection,
             toggleTrader: (id) => { clearRetainedCompletedQuests(); store.setSelectedTraderIds([...toggleSetValue(selectedTraderIds, id)]); },
             showOnlyTrader: (id) => {
                 clearRetainedCompletedQuests();

@@ -11,9 +11,15 @@ They do not enter standard inventory or item demand.
 
 [getQuestWorkspacePageData](../src/server/queries/getQuestWorkspacePageData.ts)
 loads/prepares quests and referenced standard items through the repository. The
-server page prefetches its mode-keyed Query and the client wrapper consumes and
-refetches that same payload. See [data layer](data-layer.md) for route delivery
-and release regeneration.
+[quests layout](<../src/app/(data)/quests/layout.tsx>) prefetches that mode-keyed
+Query once for the segment and the client wrapper consumes and refetches the same
+payload; parent layouts still load nothing. See [data layer](data-layer.md) for
+route delivery and release regeneration.
+
+[getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts) is the
+bounded one-quest read used by `/quests/[questId]` for metadata and not-found
+resolution. It applies the same mode preparation and removed-quest policy. A failed
+read does not 404; the workspace reports its own data errors.
 
 | Change | Source owner |
 |---|---|
@@ -34,9 +40,24 @@ tool, not runtime authority; see [operations](operations.md).
 
 ## Workspace and client ownership
 
-[QuestsClientPage](../src/features/quests/QuestsClientPage.tsx) enters the current
+The [quests layout](<../src/app/(data)/quests/layout.tsx>) renders
+[QuestsClientPage](../src/features/quests/QuestsClientPage.tsx), which enters the current
 [QuestWorkspace](../src/features/quests/workspace/QuestWorkspace.tsx), backed by
 [QuestWorkspaceContext](../src/features/quests/workspace/QuestWorkspaceContext.tsx).
+The routed page is the workspace's detail outlet: `/quests` shows a selection prompt
+and `/quests/[questId]` renders [QuestDetailRoute](../src/features/quests/workspace/QuestDetailRoute.tsx),
+which reuses the loaded workspace quest (independent of list filters) and shows an
+in-pane not-found state when the quest is absent. The route parameter is the only
+selection source: list rows are real links, so search, filters, group collapse, and
+list scroll persist across quest navigation, and Back/Forward select the matching
+quest. Workspace-initiated selection keeps an open planner or visualizer; Back/Forward,
+search, and shared links switch to Details. Completing a quest does not navigate.
+On mobile the list hides while a quest route is active and "Back to quests" links to
+the index. [quest-routes](../src/features/quests/quest-routes.ts) builds hrefs;
+legacy `?quest=` links redirect permanently ([next.config](../next.config.ts), with a
+page-level fallback) and legacy `#quest-` fragments are translated client-side. The
+development fixture opts in with `?q=dev-test`, which is fetched client-side only.
+
 The outer [QuestActionsContext](../src/features/quests/QuestActionsContext.tsx) still owns
 shared quest actions, cascade confirmation, and item-click routing;
 it remains part of the current page. [quest-data-index](../src/features/quests/quest-data-index.ts)
@@ -89,7 +110,7 @@ completion. Its reset scope is documented in [user-state](user-state.md).
 
 ```bash
 node --test --import jiti/register src/lib/quests/quest-availability.test.ts src/lib/quests/quest-item-index.test.ts src/server/queries/getKappaChecklistPageData.test.ts
-node --test --import jiti/register src/features/quests/workspace/quest-workspace-selector.test.ts src/features/quests/workspace/quest-details-model.test.ts src/features/quests/import/quest-log-import-model.test.ts
+node --test --import jiti/register src/features/quests/workspace/quest-workspace-selector.test.ts src/features/quests/workspace/quest-details-model.test.ts src/features/quests/import/quest-log-import-model.test.ts src/features/quests/quest-routes.test.ts
 ```
 
 Run the adjacent tests for any correction, graph, marker, or import utility you
@@ -102,11 +123,8 @@ Lightkeeper/series exclusions use the existing preparation policy. Compact
 summaries contain identity, display name, normalized name, and trader ID only;
 see [compact search delivery](data-layer.md#compact-search-manifest).
 
-The global command palette uses the existing `?quest=` deep link. The workspace
-observes query parameter changes as well as initial navigation, selects the quest,
-and switches to Details even when the planner or visualizer was active. Selection
-is independent of list filters and opens the detail pane on mobile. The consumed
-link is removed through the existing deep-link helper.
+The global command palette navigates to `/quests/[questId]`; see the workspace
+section for mode and mobile behavior.
 
 ## Current-price requests
 

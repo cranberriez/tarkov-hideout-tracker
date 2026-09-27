@@ -1,6 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
+import type { ReactNode } from "react";
 import { DataLoadError, DataQueryRetryProvider, DataRefreshError } from "@/components/core/DataLoadError";
 import { DataNotice } from "@/components/ui/data-notice";
 import { RouteLoader } from "@/components/core/RouteLoader";
@@ -10,11 +12,15 @@ import { pageDataFromQuery, questWorkspacePageQueryOptions } from "@/lib/query/p
 import { PartialDataError } from "@/lib/query/request";
 import type { QuestWorkspacePageData } from "@/types/contracts";
 import { QuestsClientPage } from "./QuestsClientPage";
+import { DEV_QUEST_QUERY } from "./dev-quest-fixture";
 
-export function QuestsQueryPage({ mode, devQuery, initialQuestId, fallbackData }: { mode: TarkovJsonGameMode; devQuery: string | null; initialQuestId: string | null; fallbackData: QuestWorkspacePageData | null }) {
+export function QuestsQueryPage({ mode, fallbackData, children }: { mode: TarkovJsonGameMode; fallbackData: QuestWorkspacePageData | null; children: ReactNode }) {
+    const searchParams = useSearchParams();
+    // The development fixture is opt-in per URL and fetched client-side; it never enters the server prefetch.
+    const devQuery = process.env.NODE_ENV === "development" && searchParams.get("q") === DEV_QUEST_QUERY ? DEV_QUEST_QUERY : null;
     const hydrated = useUserStoreHydrated();
     const enabled = useGameDataEnabled(mode);
-    const query = useQuery({ ...questWorkspacePageQueryOptions(mode, devQuery), enabled, placeholderData: fallbackData ?? undefined });
+    const query = useQuery({ ...questWorkspacePageQueryOptions(mode, devQuery), enabled, placeholderData: devQuery ? undefined : fallbackData ?? undefined });
     if (hydrated && !enabled) return <RouteLoader page="quests" />;
     const data = pageDataFromQuery(query.data, query.error, fallbackData);
     if (!data && query.isPending) return <RouteLoader page="quests" />;
@@ -28,6 +34,6 @@ export function QuestsQueryPage({ mode, devQuery, initialQuestId, fallbackData }
                 {data.unresolvedItemIds.length} referenced item{data.unresolvedItemIds.length === 1 ? " is" : "s are"} unavailable. Affected requirements remain unresolved.
             </DataNotice>
         )}
-        <QuestsClientPage quests={data.quests} items={data.items} initialQuestId={initialQuestId} />
+        <QuestsClientPage quests={data.quests} items={data.items} devQuery={devQuery}>{children}</QuestsClientPage>
     </DataQueryRetryProvider>;
 }

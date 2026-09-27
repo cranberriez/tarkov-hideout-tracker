@@ -8,7 +8,7 @@ import type {
     DerivedQuestItemState,
     QuestRewardLink,
 } from "@/lib/quests/quest-item-index";
-import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
+import { questHref } from "@/features/quests/quest-routes";
 import { hasDisplayQuestLevel } from "@/lib/quests/quest-display";
 import type { ItemSummary } from "@/types/items";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
@@ -312,7 +312,7 @@ function QuestActions({ questId, wikiLink }: { questId: string; wikiLink?: strin
     return (
         <div className="flex shrink-0 items-center gap-3 text-[11px]">
             <Link
-                href={getQuestDeepLinkHref(questId)}
+                href={questHref(questId)}
                 className="flex items-center gap-1 font-medium text-foreground transition-colors hover:text-brand"
             >
                 View <ArrowRight size={12} />

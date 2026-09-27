@@ -14,7 +14,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-    title: "Tarkov Hideout Tracker",
+    title: { default: "Tarkov Hideout Tracker", template: "%s · Tarkov Hideout Tracker" },
     description: "Track your Escape from Tarkov hideout progress",
 };
 
