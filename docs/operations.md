@@ -65,6 +65,53 @@ loading/error states, item details/search/profits and all three mode switches in
 the development UI. Preserve browser player storage. Report environmental blockers
 instead of resetting data or hiding unrelated failures.
 
+## Old-to-new player data test
+
+Use a separate checkout of the old release, so branch changes cannot mix source,
+dependencies or Next.js output. The migration-test checkout prepared for this
+change is based on local `main` at `a86a28e9e1f4c69668c58f2b51e2ae6c93326af4`
+(Zustand user state v15). When preparing a production cutover, select the actual
+deployed commit and record it; do not assume a moving branch still matches it.
+Install that checkout's dependencies with `npm ci`. For the old JSON-backed build,
+run these commands in its own PowerShell terminal (no production credentials needed):
+
+```powershell
+$env:TARKOV_DATA_SOURCE = 'json'
+$env:CACHE_ENABLED = 'false'
+npm run dev -- --port 3000
+```
+
+1. Use a disposable browser profile, and keep it for the entire test. Open
+   `http://localhost:3000`. Complete setup, set several station levels, add several
+   items with both FiR and non-FiR counts, and complete a quest. Record the values.
+   Save the exact `tarkov-hideout-user-state` localStorage value as a local fixture
+   using browser developer tools. The old compact export alone cannot back up items.
+2. Close the old app's tabs, stop its server with Ctrl+C, then run
+   `npm run dev -- --port 3000` in the new checkout with its usual PostgreSQL setup.
+   Open the same origin in the same browser profile. The conversion dialog should
+   open automatically and explicitly say that quests will not be imported.
+3. Convert to PVE (or another chosen profile). Verify station levels and each
+   item's separate counts, reload, then switch through PVP/PVE/KORD. Only the
+   selected profile should contain the converted progress; quests should be fresh.
+   Check that the old storage value is byte-for-byte unchanged and the new
+   `tarkov-hideout-profiles-state` key exists.
+4. Reopen conversion from Settings and exercise the replacement warning, cancel,
+   and retry. In another disposable browser profile, repeat the first-load test
+   with dismissal, then reload: it should stay dismissed but remain available in
+   Settings. Check conversion still works if station metadata cannot load.
+5. Stop the new server, start the old one again, and verify the old progress remains
+   available. Close old tabs before switching back. New profiles should retain
+   their own progress and conversion status.
+
+The storage is localStorage, not cookies: the scheme, hostname **and port** must
+match throughout each trial. Cookies only help select the server-side game mode.
+If 3000 is occupied, use another explicit port for **both** versions. To repeat a
+first-visit test, use another disposable browser profile; do not clear real player
+storage. Automated [storage regression tests](../src/lib/stores/user-state-storage.test.ts)
+exercise serialized v15 hydration, stale flags, profile relocation, mixed saves,
+conversion, reload, mode switching, resets and write failures. If the test runner
+cannot spawn child processes, add `--experimental-test-isolation=none`.
+
 ## Catalog updates
 
 ```bash

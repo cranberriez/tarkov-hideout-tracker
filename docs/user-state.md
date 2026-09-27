@@ -10,7 +10,8 @@ account for existing users' data.
 
 | Storage key                                     | Owner and scope                                                                                                                                                                                      |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tarkov-hideout-user-state`                     | [useUserStore](../src/lib/stores/useUserStore.ts), Zustand persist **v23**; profiles, active profile projection, shared preferences and conversion state                                             |
+| `tarkov-hideout-profiles-state`                 | [useUserStore](../src/lib/stores/useUserStore.ts), Zustand persist **v23**; profiles, active profile projection, shared preferences and conversion state                                             |
+| `tarkov-hideout-user-state`                     | Previous application's save; read-only fallback through [user-state-storage](../src/lib/stores/user-state-storage.ts), never written or removed by the new user store |
 | `tarkov-kappa-checklist-state`                  | [useKappaStore](../src/lib/stores/useKappaStore.ts), Zustand persist **v1**; `completedItemsByMode` and shared `viewMode`                                                                            |
 | `tarkov-profit-price-overrides-v1:{mode}`       | [useManualPriceOverrides](../src/features/profit-pages/useManualPriceOverrides.ts); independent buy/sell overrides                                                                                   |
 | `tarkov-profit-pinned-crafts-v1:{mode}`         | [usePinnedCrafts](../src/features/profit-pages/usePinnedCrafts.ts); independent craft pins                                                                                                           |
@@ -44,9 +45,36 @@ This avoids alternating mode-cookie writes and refresh loops on missing routes.
 [active-game-mode.ts](../src/server/active-game-mode.ts)
 reads it for server queries. Dataset mapping is owned by [data layer](data-layer.md).
 
-The store's migration chain preserves older state and retained legacy-profile
-conversion data. [LegacyProfileConversionDialog](../src/features/profile-conversion/LegacyProfileConversionDialog.tsx)
-uses bounded conversion data to map stable progress into the selected profile.
+The new profile key takes precedence. When it is absent, the storage adapter reads
+the old key without changing its bytes. Existing v19–v23 profile saves retain their
+profiles, quests, preferences and conversion flags through the existing migration
+chain. Flat saves (including main's v15 schema) become a retained conversion
+snapshot with fresh conversion flags, even if a branch-switch test left a newer
+version number or stale flags. Mixed saves written by an old build retain their
+profile map and offer their flat progress for explicit conversion.
+
+[LegacyProfileConversionDialog](../src/features/profile-conversion/LegacyProfileConversionDialog.tsx)
+opens after hydration for an unconverted, undismissed snapshot. Its bounded station
+query supplies labels only; loading or missing station metadata does not prevent
+copying stable IDs. Conversion copies inventory with separate non-FiR/FiR balances
+(including signed balances), station levels, completed hideout requirements,
+hidden stations, character levels, traders, faction, edition and setup markers.
+It replaces the chosen profile after an overwrite review and leaves other profiles
+alone. The destination's "Has data" badge and overwrite review ignore the automatic
+level-1 Stash in an otherwise untouched profile. Higher Stash levels, other station
+upgrades, saved progress, or an explicitly configured profile still require review.
+**Legacy quests are not imported:** completed/failed quests, visited
+objectives, hand-ins, pins, history and quest goals start fresh; ignored quests use
+current defaults. Existing new-profile quests are preserved during key relocation.
+Save failures restore the prior in-memory profile and show an error without reloading.
+
+Conversion/dismissal flags and the retained snapshot live only in the new key.
+Settings can reopen conversion after dismissal or completion. Subsequent changes
+made by an old build do not overwrite the new profiles. Global legacy preferences
+are not copied from flat saves. The old `v1-` export code remains unsupported because
+it contains station levels only, not inventory; use the retained save for migration
+and the JSON backup for ongoing backups. See the [repeatable test](operations.md#old-to-new-player-data-test).
+
 Check the current `migrate` implementation and
 [profile migration tests](../src/lib/stores/useUserStore.profile.test.ts) before
 changing defaults or profile fields; adding a field involves more than an interface.
@@ -111,6 +139,9 @@ Section resets preserve unrelated settings/profiles except the explicitly
 all-mode Kappa reset above. Despite its label, Delete ALL data does **not** remove
 the separate profit overrides, craft pins, or import seen-files key. Do not broaden
 that action implicitly. Profit options also remain independent of these resets.
+The old user-state key remains untouched by every new-app reset, including Delete
+ALL data. That action clears the new conversion snapshot/flags along with new
+profiles, but the now-present new key prevents silently importing the old key again.
 The Crafting and Hideout Management skill options default to zero for older
 payloads and are normalized to integers from 0 to 51; existing saved preferences
 are retained without changing the storage key.
@@ -132,6 +163,7 @@ Do not combine a selector cleanup with a persistence redesign.
 
 ```bash
 node --test --import jiti/register src/lib/stores/useUserStore.profile.test.ts src/lib/stores/useKappaStore.test.ts src/lib/stores/quest-workspace-filters.test.ts src/lib/game-mode.test.ts
+node --test --import jiti/register src/lib/stores/user-state-storage.test.ts
 ```
 
 For intentional persistence changes, test representative older payloads, reload,

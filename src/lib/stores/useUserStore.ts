@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { createUserStateStorage, USER_STORE_STORAGE_KEY } from "./user-state-storage";
 import { DEFAULT_IGNORED_QUESTS } from "../cfg/defaultIgnoredQuests";
 import { GAME_MODES, serializeActiveGameModeCookie, toTarkovJsonGameMode, type GameMode } from "../game-mode";
 import type { Station } from "../../types";
@@ -7,7 +8,7 @@ import type { Station } from "../../types";
 export { GAME_MODES, toTarkovJsonGameMode };
 export type { GameMode };
 
-export const USER_STORE_STORAGE_KEY = "tarkov-hideout-user-state";
+export { USER_STORE_STORAGE_KEY };
 
 export type GameEdition = "Standard" | "Left Behind" | "Prepare for Escape" | "Edge of Darkness" | "Unheard";
 export type ItemSize = "Icon" | "Compact" | "Expanded";
@@ -351,15 +352,15 @@ function createPlayerProfileFromLegacyState(legacyState: Record<string, unknown>
 		stationLevels: { ...profile.stationLevels },
 		hiddenStations: { ...profile.hiddenStations },
 		completedRequirements: { ...profile.completedRequirements },
-		completedQuests: { ...profile.completedQuests },
-		completedQuestObjectives: Object.fromEntries(
-			Object.entries(profile.completedQuestObjectives).map(([questId, objectives]) => [questId, { ...objectives }]),
-		),
-		failedQuests: { ...profile.failedQuests },
-		questsWithItems: { ...profile.questsWithItems },
-		ignoredQuests: { ...profile.ignoredQuests },
-		pinnedQuests: { ...profile.pinnedQuests },
-		questChangeHistory: normalizeQuestChangeHistory(profile.questChangeHistory),
+		completedQuests: {},
+		completedQuestObjectives: {},
+		failedQuests: {},
+		questsWithItems: {},
+		ignoredQuests: { ...DEFAULT_IGNORED_QUESTS },
+		pinnedQuests: {},
+		questChangeHistory: [],
+		questShowKappa: false,
+		questShowLightkeeper: false,
 		itemCounts: Object.fromEntries(
 			Object.entries(profile.itemCounts).map(([itemId, counts]) => [itemId, { ...counts }]),
 		),
@@ -976,14 +977,12 @@ export const useUserStore = create<UserState>()(
 					}));
 				},
 				applyProfilePatch: (patch) => set(patch),
-				convertDeprecatedLegacyState: (targetMode) =>
-					rawSet((state) => {
-						if (!state.deprecatedLegacyState) return {};
-						const convertedProfile = createPlayerProfileFromLegacyState(state.deprecatedLegacyState);
-						if (typeof document !== "undefined") {
-							document.cookie = serializeActiveGameModeCookie(targetMode);
-						}
-						return {
+				convertDeprecatedLegacyState: (targetMode) => {
+					const state = get();
+					if (!state.deprecatedLegacyState) return;
+					const convertedProfile = createPlayerProfileFromLegacyState(state.deprecatedLegacyState);
+					try {
+						rawSet({
 							...convertedProfile,
 							profiles: {
 								...state.profiles,
@@ -993,13 +992,27 @@ export const useUserStore = create<UserState>()(
 							hasConvertedDeprecatedLegacyState: true,
 							hasDismissedDeprecatedLegacyState: false,
 							isSetupOpen: !convertedProfile.hasCompletedSetup,
-						};
-					}),
+						});
+					} catch (error) {
+						// Zustand updates memory before writing storage. Restore the prior
+						// snapshot even if storage is still unavailable, then surface failure.
+						try {
+							rawSet(state);
+						} catch {
+							/* Memory has still been restored. */
+						}
+						throw error;
+					}
+					if (typeof document !== "undefined") {
+						document.cookie = serializeActiveGameModeCookie(targetMode);
+					}
+				},
 				dismissDeprecatedLegacyState: () => rawSet({ hasDismissedDeprecatedLegacyState: true }),
 			};
 		},
 		{
 			name: USER_STORE_STORAGE_KEY,
+			storage: createJSONStorage(() => createUserStateStorage(localStorage)),
 			version: 23,
 			migrate: (persistedState, version) => {
 				let nextState =
@@ -1177,6 +1190,8 @@ export const useUserStore = create<UserState>()(
 						...profiles.PVP,
 						profiles,
 						deprecatedLegacyState,
+						hasConvertedDeprecatedLegacyState: false,
+						hasDismissedDeprecatedLegacyState: false,
 						gameMode: "PVP",
 					};
 				}

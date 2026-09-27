@@ -6,11 +6,14 @@ import { AlertTriangle, ArchiveRestore, Check, ShieldCheck } from "lucide-react"
 import { useShallow } from "zustand/react/shallow";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
-import { GAME_MODES, type GameMode, type PlayerProfileState, useUserStore } from "@/lib/stores/useUserStore";
+import { GAME_MODES, type GameMode, useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
 import { legacyProfileConversionQueryOptions } from "@/lib/query/conversions";
+import { useUserStoreHydrated } from "@/lib/query/game-data";
 import type { LegacyConversionStation } from "@/types/contracts";
+
+import { hasProfileData } from "./profile-data";
 
 type DialogStep = "select" | "replace";
 
@@ -23,7 +26,7 @@ interface ProfileStats {
 	edition: string;
 	completedQuests: number;
 	totalItems: number;
-	maxedStations: LegacyConversionStation[];
+	savedStations: Array<{ id: string; name: string; level: number }>;
 	loyaltySummary: Array<{ level: number; count: number }>;
 }
 
@@ -45,9 +48,10 @@ function buildStats(source: Record<string, unknown>, stations: LegacyConversionS
 		return total + getNumber(counts.have) + getNumber(counts.haveFir);
 	}, 0);
 	const stationLevels = asRecord(source.stationLevels);
-	const maxedStations = stations.filter(
-		(station) => getNumber(stationLevels[station.id]) >= station.maxLevel && station.maxLevel > 0,
-	);
+	const stationNames = new Map(stations.map((station) => [station.id, station.name]));
+	const savedStations = Object.entries(stationLevels)
+		.filter(([, level]) => getNumber(level) > 0)
+		.map(([id, level]) => ({ id, name: stationNames.get(id) ?? `Unknown station (${id})`, level: getNumber(level) }));
 	const loyaltyLevels = Object.values(asRecord(source.questTraderLoyaltyLevels)).map((value) => getNumber(value, 1));
 
 	return {
@@ -57,40 +61,14 @@ function buildStats(source: Record<string, unknown>, stations: LegacyConversionS
 		edition: typeof source.gameEdition === "string" ? source.gameEdition : "Not set",
 		completedQuests: countEnabled(source.completedQuests),
 		totalItems,
-		maxedStations,
+		savedStations,
 		loyaltySummary: [1, 2, 3, 4]
 			.map((level) => ({ level, count: loyaltyLevels.filter((value) => value === level).length }))
 			.filter(({ count }) => count > 0),
 	};
 }
 
-function hasProfileData(profile: PlayerProfileState) {
-	const hasStationProgress = Object.values(profile.stationLevels).some((level) => level > 0);
-	const hasItems = Object.values(profile.itemCounts).some(({ have, haveFir }) => have > 0 || haveFir > 0);
-	const hasQuestProgress = [
-		profile.completedQuests,
-		profile.failedQuests,
-		profile.questsWithItems,
-		profile.pinnedQuests,
-	].some((record) => Object.values(record).some(Boolean));
-
-	return (
-		profile.hasCompletedSetup ||
-		profile.gameEdition !== null ||
-		profile.playerLevel > 1 ||
-		profile.prestigeLevel > 0 ||
-		profile.questFenceReputation !== 0 ||
-		Object.values(profile.questTraderLoyaltyLevels).some((level) => level > 1) ||
-		hasStationProgress ||
-		hasItems ||
-		hasQuestProgress ||
-		profile.questChangeHistory.length > 0 ||
-		profile.questShowKappa ||
-		profile.questShowLightkeeper
-	);
-}
-
-function StatsPanel({ stats }: { stats: ProfileStats }) {
+function StatsPanel({ stats, legacy = false }: { stats: ProfileStats; legacy?: boolean }) {
 	return (
 		<div className="space-y-5">
 			<div className="grid grid-cols-2 gap-2">
@@ -99,7 +77,7 @@ function StatsPanel({ stats }: { stats: ProfileStats }) {
 					["Faction", stats.faction],
 					["Prestige", stats.prestigeLevel],
 					["Edition", stats.edition],
-					["Completed quests", stats.completedQuests],
+					[legacy ? "Old quests (not imported)" : "Completed quests", stats.completedQuests],
 					["Items held", stats.totalItems.toLocaleString()],
 				].map(([label, value]) => (
 					<div key={label} className="border border-highlight/8 bg-highlight/[0.03] p-3">
@@ -123,11 +101,11 @@ function StatsPanel({ stats }: { stats: ProfileStats }) {
 				</div>
 			</div>
 			<div>
-				<div className="text-xs text-subtle-foreground">Max-level hideout stations · {stats.maxedStations.length}</div>
+				<div className="text-xs text-subtle-foreground">Saved hideout levels · {stats.savedStations.length}</div>
 				<div className="mt-2 text-xs leading-5 text-muted-foreground">
-					{stats.maxedStations.length > 0
-						? stats.maxedStations.map((station) => station.name).join(", ")
-						: "No stations were at their maximum level."}
+					{stats.savedStations.length > 0
+						? stats.savedStations.map((station) => `${station.name}: level ${station.level}`).join(", ")
+						: "No saved station upgrades."}
 				</div>
 			</div>
 		</div>
@@ -135,6 +113,7 @@ function StatsPanel({ stats }: { stats: ProfileStats }) {
 }
 
 export function LegacyProfileConversionDialog() {
+	const hydrated = useUserStoreHydrated();
 	const store = useUserStore(
 		useShallow((state) => ({
 			deprecatedLegacyState: state.deprecatedLegacyState,
@@ -154,8 +133,9 @@ export function LegacyProfileConversionDialog() {
 	);
 	const [selectedModeOverride, setSelectedModeOverride] = useState<GameMode | null>(null);
 	const [step, setStep] = useState<DialogStep>("select");
+	const [saveError, setSaveError] = useState<string | null>(null);
 	const shouldOpenAutomatically = store.deprecatedLegacyState !== null && !store.hasConverted && !store.hasDismissed;
-	const isOpen = store.deprecatedLegacyState !== null && (shouldOpenAutomatically || isOpenFromSettings);
+	const isOpen = hydrated && store.deprecatedLegacyState !== null && (shouldOpenAutomatically || isOpenFromSettings);
 	const selectedMode = selectedModeOverride ?? store.gameMode;
 	const requestedMode = toTarkovJsonGameMode(selectedMode);
 	const conversionQuery = useQuery({
@@ -185,9 +165,16 @@ export function LegacyProfileConversionDialog() {
 		setStep("select");
 	};
 	const completeConversion = () => {
-		store.convert(selectedMode);
-		setOpenFromSettings(false);
-		window.location.reload();
+		setSaveError(null);
+		try {
+			store.convert(selectedMode);
+			setOpenFromSettings(false);
+			window.location.reload();
+		} catch {
+			setSaveError(
+				"Your profile could not be saved. Your previous data is preserved. Check browser storage and try again.",
+			);
+		}
 	};
 	const handleContinue = () => (destinationHasData ? setStep("replace") : completeConversion());
 
@@ -229,7 +216,7 @@ export function LegacyProfileConversionDialog() {
 							<div className="text-xs font-semibold uppercase tracking-[0.18em] text-subtle-foreground">
 								Your old data
 							</div>
-							<StatsPanel stats={oldStats} />
+							<StatsPanel stats={oldStats} legacy />
 						</section>
 						<section className="space-y-5 bg-shadow/20 p-6">
 							<div className="text-xs font-semibold uppercase tracking-[0.18em] text-subtle-foreground">
@@ -275,18 +262,27 @@ export function LegacyProfileConversionDialog() {
 								})}
 							</div>
 							<div className="text-xs leading-5 text-subtle-foreground">
-								Your old snapshot will remain stored after restoration.
+								Hideout levels, completed hideout requirements, inventory (including FiR counts), and character settings
+								will be copied. Your original old data will remain stored separately and unchanged.
+							</div>
+							<div className="text-xs leading-5 text-warning">
+								Quest progress will not be copied because quests have been extensively reworked. Completed, failed,
+								tracked, and pinned quests will start fresh in the destination profile.
 							</div>
 						</section>
 					</div>
 				) : (
 					<div className="grid max-h-[65dvh] overflow-y-auto md:grid-cols-2">
+						<p className="p-4 text-xs text-warning md:col-span-2">
+							This replaces the selected profile, including clearing its quest progress. Old quests are not imported.
+							Your original old storage and other profiles are preserved.
+						</p>
 						<section className="space-y-5 border-b border-brand/20 bg-brand/[0.03] p-6 md:border-b-0 md:border-r">
 							<div className="flex items-center justify-between gap-3">
 								<span className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">Old data</span>
 								<span className="text-[10px] uppercase tracking-wide text-brand/70">Will be restored</span>
 							</div>
-							<StatsPanel stats={oldStats} />
+							<StatsPanel stats={oldStats} legacy />
 						</section>
 						<section className="space-y-5 bg-danger/[0.03] p-6">
 							<div className="flex items-center justify-between gap-3">
@@ -300,6 +296,11 @@ export function LegacyProfileConversionDialog() {
 					</div>
 				)}
 
+				{saveError && (
+					<p role="alert" className="px-6 py-3 text-sm text-danger">
+						{saveError}
+					</p>
+				)}
 				<div className="flex flex-col-reverse gap-3 border-t border-border-color bg-shadow/70 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
 					<button
 						type="button"

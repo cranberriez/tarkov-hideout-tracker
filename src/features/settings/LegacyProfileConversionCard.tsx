@@ -46,7 +46,8 @@ export function LegacyProfileConversionCard() {
 				</span>
 			</div>
 			<div className="max-w-md text-xs leading-5 text-muted-foreground">
-				Review and copy data saved before separate PVP, PVE, and KORD profiles were introduced.
+				Review and copy data saved before separate PVP, PVE, and KORD profiles were introduced. Inventory and hideout
+				progress can be restored. Old quest progress is excluded; the original save remains unchanged.
 			</div>
 
 			<button
