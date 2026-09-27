@@ -69,6 +69,7 @@ export function ItemsControls({ searchQuery, onSearchQueryChange, children }: It
 				<FilterPanel
 					id={panelId}
 					open={itemFiltersOpen}
+					onOpenChange={setItemFiltersOpen}
 					onKeyDown={(event) => {
 						if (event.key === "Escape") {
 							setItemFiltersOpen(false);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, type ComponentProps, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ComponentProps, type ReactNode } from "react";
 import { Check, CircleDot, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -48,21 +48,49 @@ export function FilterPanelButton({
 			type="button"
 			aria-expanded={open}
 			aria-controls={panelId}
+			data-filter-panel-trigger={panelId}
 			className={cn(buttonClass(open), className)}
 		/>
 	);
 }
 
 /** Place beside page content inside a relatively positioned container. */
-export function FilterPanel({ open, className, ...props }: ComponentProps<"div"> & { open: boolean }) {
+export function FilterPanel({
+	open,
+	onOpenChange,
+	className,
+	...props
+}: ComponentProps<"div"> & { open: boolean; onOpenChange?: (open: boolean) => void }) {
+	const panelRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!open || !onOpenChange) return;
+		const closePanel = onOpenChange;
+
+		function onPointerDown(event: PointerEvent) {
+			const eventPath = event.composedPath();
+			if (panelRef.current && eventPath.includes(panelRef.current)) return;
+
+			const clickedTrigger = eventPath.some(
+				(target) =>
+					target instanceof HTMLElement && target.dataset.filterPanelTrigger === props.id,
+			);
+			if (!clickedTrigger) closePanel(false);
+		}
+
+		document.addEventListener("pointerdown", onPointerDown, true);
+		return () => document.removeEventListener("pointerdown", onPointerDown, true);
+	}, [open, onOpenChange, props.id]);
+
 	return (
 		<div
 			{...props}
+			ref={panelRef}
 			aria-hidden={!open}
 			inert={!open}
 			className={cn(
-				"absolute left-0 top-0 z-45 w-full max-w-[340px] transition-all duration-200 ease-out motion-reduce:transition-none",
-				open ? "pointer-events-auto translate-x-0 opacity-100" : "pointer-events-none -translate-x-4 opacity-0",
+				"absolute left-0 top-0 z-45 w-full max-w-[340px] origin-top-left transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none",
+				open ? "pointer-events-auto scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0",
 				className,
 			)}
 		/>

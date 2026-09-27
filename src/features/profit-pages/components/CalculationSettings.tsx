@@ -39,13 +39,14 @@ export function CalculationSettings({
 			<FilterPanel
 				id={panelId}
 				open={open}
+				onOpenChange={setOpen}
 				onKeyDown={(event) => {
 					if (event.key === "Escape") {
 						setOpen(false);
 						trigger.current?.focus();
 					}
 				}}
-				className="left-auto right-0 top-full mt-2 max-h-[min(26rem,55dvh)] w-80 max-w-full overflow-y-auto overscroll-contain rounded-md border bg-muted p-4 shadow-2xl"
+				className="left-auto right-0 top-full mt-2 max-h-[min(26rem,55dvh)] w-80 max-w-full origin-top-right overflow-y-auto overscroll-contain rounded-md border bg-muted p-4 shadow-2xl"
 			>
 				<FilterSection title="List filters">
 					<Toggle checked={profitableOnly} onChange={onProfitableOnlyChange} label="Profitable recipes only" />

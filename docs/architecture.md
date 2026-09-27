@@ -136,8 +136,10 @@ and [FilterNumberInput](../src/components/ui/FilterNumberInput.tsx) supply panel
 inputs. These controlled components own presentation and accessibility; consumers
 own state, labels, options, and effects. [ItemsControls](../src/features/items/components/ItemsControls.tsx)
 wires them to existing preferences without changing persistence. Panel triggers
-expose expanded state; radios support arrow keys, toggles expose pressed state,
-and Escape from the checklist panel closes it and returns focus to its trigger.
+expose expanded state; panels fade and expand into place, then close when the
+user clicks anywhere outside them; radios support arrow keys; and toggles expose
+pressed state. Escape from the checklist panel closes it and returns focus to its
+trigger.
 
 Checklist search is a local, non-persisted input. It filters visible rows and
 quest groups by standard item name, short name, or normalized name, matching all
