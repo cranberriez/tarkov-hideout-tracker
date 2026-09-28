@@ -146,8 +146,8 @@ an amber lock (red when data or a route is missing).
 opens a grouped list of all requirements (recipe, selling the output, each
 ingredient) on hover, keyboard focus, or click. It stays open while the pointer is
 inside, so quest links remain clickable; an outside press, Escape, or scrolling
-closes it. Ingredient lines show only a small lock icon whose title repeats their
-reasons.
+closes it. On wide screens ingredient lines show only a small lock icon whose
+title repeats their reasons; compact cards use an expandable row instead.
 
 Hovering an item opens a short card; the item dialog holds the full detail. For
 ingredients it shows the route chip (route icon inline with its label, or
@@ -231,14 +231,26 @@ includes recipes from any selected trader; an empty selection means all traders.
 Selections remain local to the page. Calculation rules and persistence keys are unchanged.
 At viewport widths below 1024px, both lists use compact cards with separate
 sort buttons for cost, sale proceeds, profit, and profit/hour. Each card places
-the Recipe cell and the selected profit metric above ingredients and a labeled
-totals row. Profit/hour is highlighted when sorting by that metric;
-other sorts highlight batch profit. On phones the header wraps and totals use
-two columns. The Recipe cell has no border accent in cards; output lock reasons instead
-give the entire card an amber border.
+the Recipe cell above its ingredients and a stacked list of cost, sale proceeds
+(with a short source name), profit (with duration) and profit/hour. Rows without
+a value are omitted, and the last remaining row is emphasised. Unpriced
+ingredients are named above the list. The requirements line keeps the lock and
+source and ends with an underlined **Requirements** link that expands the
+grouped list inline instead of opening the popup. Ingredient lines are two
+fixed-height lines: the name, then quantity, price, route savings and time.
+Ingredients with locks or a barter/craft route show lock, tree and chevron
+badges; tapping the row (not the route switcher or item image) expands it to
+list lock reasons, nested ingredients and a **View craft/barter** link. Compact
+cards have no bordered buttons: the pin is a bare icon, and the card-level
+recipe-chain toggle and per-ingredient recipe buttons are desktop-only.
+Every collapsed card block has a fixed height so `estimateProfitRowHeight`
+matches the rendered card and window virtualization does not jump while
+scrolling. The Recipe cell has no border accent in cards; output lock
+reasons instead give the entire card an amber border.
 Row actions put the recipe-chain toggle before the pin, so the pin keeps its
-position. Expanded recipe-chain rows use a capped-width grid with fixed quantity,
-route, cost and time columns so figures stay beside the item at every depth.
+position. On wide screens the toggle expands every barter/craft ingredient in
+place: its nested ingredients render directly beneath it, indented per depth,
+with quantity and route on the name lines and cost and time right-aligned.
 Wider screens retain the table; the Recipe column is marked by a 2px brand-colored
 left border rather than a background tint. Below 1280px the
 figure columns use fixed widths that fit the 1024px container, leaving the rest

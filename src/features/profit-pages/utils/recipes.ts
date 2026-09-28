@@ -12,14 +12,37 @@ import type { ItemSummary } from "@/types/items";
 import type { ItemAmountRef } from "@/types/recipes";
 import type { ProfitLockFilters, RecipePreviewData, RouteContext, SortDirection, SortKey } from "../types";
 import { formatDuration } from "./formatters";
+import { unpricedIngredientIds } from "./lock-summary";
 
 export function getRecipeSourceId(evaluation: RecipeEvaluation) {
 	return evaluation.barter?.traderId ?? evaluation.craft?.stationId ?? "";
 }
 
-export function estimateProfitRowHeight(evaluation?: RecipeEvaluation) {
-	if (!evaluation) return 88;
-	return Math.max(88, evaluation.requiredItems.length * 40 + 8) + 1;
+/**
+ * Collapsed row height for the window virtualizer. Compact cards (below 1024px)
+ * pin every block to a fixed height in ProfitTable.module.css, RecipeItem,
+ * RecipeRequirements and MetricList, so this matches the rendered card exactly;
+ * keep them in sync or scrolling jumps as rows are measured.
+ */
+export function estimateProfitRowHeight(evaluation?: RecipeEvaluation, compact = false) {
+	if (!compact) {
+		if (!evaluation) return 88;
+		return Math.max(88, evaluation.requiredItems.length * 40 + 8) + 1;
+	}
+	// Row gap 12 + card border 2 + recipe (8 + output 52 + 4 + requirements 36 + 6).
+	const recipe = 12 + 2 + 106;
+	// Top border 1 + vertical padding 16 + 48 per ingredient line.
+	const ingredients = 17 + (evaluation?.requiredItems.length ?? 0) * 48;
+	const values = evaluation
+		? [evaluation.cost, evaluation.sellValue, evaluation.profit, evaluation.profitPerHour].filter(
+				(value) => value !== null,
+			).length
+		: 4;
+	const warning = evaluation && unpricedIngredientIds(evaluation).length > 0 ? 1 : 0;
+	const children = values + warning;
+	// Top border 1 + padding 4, warning 24, rows 32 (last 40), 1px dividers between children.
+	const metrics = 5 + warning * 24 + (values ? (values - 1) * 32 + 40 : 0) + Math.max(0, children - 1);
+	return recipe + ingredients + metrics;
 }
 
 export function isRecipeAvailable(

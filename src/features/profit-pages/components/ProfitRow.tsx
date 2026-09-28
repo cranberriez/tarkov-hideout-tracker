@@ -1,19 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronRight, Pin } from "lucide-react";
+import { ListTree, Pin } from "lucide-react";
 import type { ManualPriceOverride, RecipeEvaluation } from "@/lib/price-calculation";
 import type { BarterRecord, CraftRecord } from "@/types/recipes";
 import type { ItemSummary } from "@/types/items";
 import type { ProfitStationSource } from "../types";
 import type { Trader } from "@/types/traders";
-import type { GoToRecipeHandler, PriceChangeHandler, RouteContext, SortKey } from "../types";
+import type { GoToRecipeHandler, PriceChangeHandler, RouteContext } from "../types";
 import { formatDuration, formatRoundedRoubles, formatSignedRoubles } from "../utils/formatters";
 import { acquisitionRouteKey, hasRecipeRoute, withRequiredItemRoute } from "../utils/recipes";
 import { ingredientLockReasons, unpricedIngredientIds } from "../utils/lock-summary";
 import styles from "./ProfitTable.module.css";
-import { ProfitCell, SellValueCell } from "./ProfitCells";
-import { RecipeChain } from "./RecipeChain";
+import { MetricList, ProfitCell, SellValueCell, useSellSourceNote } from "./ProfitCells";
+import { RecipeChainBranch } from "./RecipeChain";
 import { RecipeItem } from "./RecipeItem";
 import { RecipeRequirements } from "./RecipeRequirements";
 
@@ -35,9 +35,7 @@ export function ProfitRow({
 	onTogglePinned,
 	routeSelections,
 	onRouteChange,
-	sortKey,
 }: {
-	sortKey: SortKey;
 	evaluation: RecipeEvaluation;
 	baselineEvaluation?: RecipeEvaluation;
 	itemById: Readonly<Record<string, ItemSummary>>;
@@ -83,11 +81,31 @@ export function ProfitRow({
 		tradersById,
 		stationsById,
 	};
-	const headlineKey = sortKey === "profitPerHour" ? "profitPerHour" : "profit";
 	const hasNestedRecipe = evaluation.requiredItems.some(hasRecipeRoute);
 	const unpricedNames = unpricedIngredientIds(evaluation).map(
 		(itemId) => itemById[itemId]?.shortName ?? itemById[itemId]?.name ?? itemId,
 	);
+	const sellSourceNote = useSellSourceNote(output, evaluation.outputCount, evaluation.sellSourceLabel, overrides);
+	const sellInsteadInfo =
+		evaluation.profitVsSellingInputs !== null &&
+		evaluation.profitVsSellingInputs < 0 &&
+		evaluation.inputSellValue !== null &&
+		evaluation.sellValue !== null ? (
+			<>
+				<span className="block">
+					Selling all non-tool ingredients individually would return{" "}
+					<strong className="text-foreground">{formatRoundedRoubles(evaluation.inputSellValue)}</strong>.
+				</span>
+				<span className="mt-1 block">
+					The {evaluation.kind === "barter" ? "barter" : "craft"} output sells for{" "}
+					<strong className="text-foreground">{formatRoundedRoubles(evaluation.sellValue)}</strong>.
+				</span>
+				<span className="mt-2 block border-t border-highlight/10 pt-2 text-warning">
+					If you already own the ingredients, selling them separately is worth{" "}
+					<strong>{formatRoundedRoubles(-evaluation.profitVsSellingInputs)}</strong> more.
+				</span>
+			</>
+		) : undefined;
 	return (
 		<div
 			data-output-locked={Boolean(evaluation.outputLockReasons?.length)}
@@ -95,7 +113,7 @@ export function ProfitRow({
 		>
 			<div className={styles.row}>
 				<div className={styles.recipe}>
-					<div className="flex items-start gap-1">
+					<div className="flex items-start gap-1 max-lg:h-[52px]">
 						<div className="min-w-0 flex-1">
 							<RecipeItem
 								item={output}
@@ -132,9 +150,9 @@ export function ProfitRow({
 									aria-label={`${expanded ? "Collapse" : "Expand"} recipe chain`}
 									title={`${expanded ? "Collapse" : "Expand"} recipe chain`}
 									onClick={() => setExpanded((value) => !value)}
-									className={`flex size-9 items-center justify-center rounded transition hover:bg-highlight/[0.06] hover:text-brand lg:size-6 ${expanded ? "text-brand" : "text-muted-foreground/60"}`}
+									className={`flex size-6 items-center justify-center rounded transition hover:bg-highlight/[0.06] hover:text-brand max-lg:hidden ${expanded ? "text-brand" : "text-muted-foreground/60"}`}
 								>
-									<ChevronRight className={`size-4 transition-transform ${expanded ? "rotate-90" : ""}`} />
+									<ListTree className="size-4" />
 								</button>
 							)}
 							{onTogglePinned && (
@@ -153,43 +171,37 @@ export function ProfitRow({
 					</div>
 					<RecipeRequirements evaluation={evaluation} source={source} itemById={itemById} />
 				</div>
-				<div className={styles.headline}>
-					<ProfitCell
-						label={headlineKey === "profitPerHour" ? "Profit / hour" : "Profit"}
-						showLabel
-						value={evaluation[headlineKey]}
-						customized={originalEvaluation !== undefined && evaluation[headlineKey] !== originalEvaluation[headlineKey]}
-						originalValue={originalEvaluation ? formatSignedRoubles(originalEvaluation[headlineKey]) : undefined}
-					>
-						{formatSignedRoubles(evaluation[headlineKey])}
-					</ProfitCell>
-				</div>
 				<div className={`@container/ingredients ${styles.ingredients}`}>
-					<span className={styles.sectionLabel}>Required items</span>
 					{evaluation.requiredItems.map((plan, index) => (
-						<RecipeItem
-							key={`${plan.itemId}:${plan.isTool === true}`}
-							item={itemById[plan.itemId]}
-							count={plan.quantity}
-							method={plan.method}
-							totalPrice={plan.totalCost}
-							plan={plan}
-							lockReasons={ingredientLockReasons(plan)}
-							priceKind="buy"
-							overrides={overrides}
-							onPriceChange={onPriceChange}
-							routeContext={routeContext}
-							compactLine
-							onGoToRecipe={onGoToRecipe}
-							onRouteChange={(routeKey) => onRouteChange(index, routeKey)}
-							baseRouteKey={acquisitionRouteKey(baseEvaluation.requiredItems[index])}
-							recipeCost={evaluation.cost}
-						/>
+						<div key={`${plan.itemId}:${plan.isTool === true}`}>
+							<RecipeItem
+								item={itemById[plan.itemId]}
+								count={plan.quantity}
+								method={plan.method}
+								totalPrice={plan.totalCost}
+								plan={plan}
+								lockReasons={ingredientLockReasons(plan)}
+								priceKind="buy"
+								overrides={overrides}
+								onPriceChange={onPriceChange}
+								routeContext={routeContext}
+								compactLine
+								onGoToRecipe={onGoToRecipe}
+								onRouteChange={(routeKey) => onRouteChange(index, routeKey)}
+								baseRouteKey={acquisitionRouteKey(baseEvaluation.requiredItems[index])}
+								recipeCost={evaluation.cost}
+							/>
+							{/* Compact cards expand each ingredient from its own row instead. */}
+							{expanded && (plan.method === "barter" || plan.method === "craft") && (
+								<div className="max-lg:hidden">
+									<RecipeChainBranch plan={plan} routeContext={routeContext} onGoToRecipe={onGoToRecipe} />
+								</div>
+							)}
+						</div>
 					))}
 				</div>
 				<div className={styles.metrics}>
 					<ProfitCell
-						responsiveLabel
 						label="Cost"
 						detail={unpricedNames.length ? `No price: ${unpricedNames.join(", ")}` : undefined}
 						detailTone="danger"
@@ -197,7 +209,6 @@ export function ProfitRow({
 						{formatRoundedRoubles(evaluation.cost)}
 					</ProfitCell>
 					<SellValueCell
-						responsiveLabel
 						item={output}
 						count={evaluation.outputCount}
 						sellValue={evaluation.sellValue}
@@ -205,39 +216,17 @@ export function ProfitRow({
 						overrides={overrides}
 					/>
 					<ProfitCell
-						responsiveLabel
 						label="Profit"
 						value={evaluation.profit}
 						customized={originalEvaluation !== undefined && evaluation.profit !== originalEvaluation.profit}
 						originalValue={originalEvaluation ? formatSignedRoubles(originalEvaluation.profit) : undefined}
 						detail={evaluation.durationSeconds > 0 ? formatDuration(evaluation.durationSeconds) : undefined}
 						infoTitle="Sell the ingredients instead"
-						info={
-							evaluation.profitVsSellingInputs !== null &&
-							evaluation.profitVsSellingInputs < 0 &&
-							evaluation.inputSellValue !== null &&
-							evaluation.sellValue !== null ? (
-								<>
-									<span className="block">
-										Selling all non-tool ingredients individually would return{" "}
-										<strong className="text-foreground">{formatRoundedRoubles(evaluation.inputSellValue)}</strong>.
-									</span>
-									<span className="mt-1 block">
-										The {evaluation.kind === "barter" ? "barter" : "craft"} output sells for{" "}
-										<strong className="text-foreground">{formatRoundedRoubles(evaluation.sellValue)}</strong>.
-									</span>
-									<span className="mt-2 block border-t border-highlight/10 pt-2 text-warning">
-										If you already own the ingredients, selling them separately is worth{" "}
-										<strong>{formatRoundedRoubles(-evaluation.profitVsSellingInputs)}</strong> more.
-									</span>
-								</>
-							) : undefined
-						}
+						info={sellInsteadInfo}
 					>
 						{formatSignedRoubles(evaluation.profit)}
 					</ProfitCell>
 					<ProfitCell
-						responsiveLabel
 						label="Profit / hour"
 						value={evaluation.profitPerHour}
 						customized={
@@ -248,10 +237,31 @@ export function ProfitRow({
 						{formatSignedRoubles(evaluation.profitPerHour)}
 					</ProfitCell>
 				</div>
+				<div className={styles.mobileMetrics}>
+					<MetricList
+						warning={unpricedNames.length ? `No price: ${unpricedNames.join(", ")}` : undefined}
+						rows={[
+							{ label: "Cost", value: evaluation.cost },
+							{ label: "Sale proceeds", note: sellSourceNote, value: evaluation.sellValue },
+							{
+								label: "Profit",
+								note: evaluation.durationSeconds > 0 ? formatDuration(evaluation.durationSeconds) : undefined,
+								value: evaluation.profit,
+								signed: true,
+								originalValue: originalEvaluation?.profit,
+								info: sellInsteadInfo,
+								infoTitle: "Sell the ingredients instead",
+							},
+							{
+								label: "Profit / hour",
+								value: evaluation.profitPerHour,
+								signed: true,
+								originalValue: originalEvaluation?.profitPerHour,
+							},
+						]}
+					/>
+				</div>
 			</div>
-			{expanded && hasNestedRecipe && (
-				<RecipeChain evaluation={evaluation} routeContext={routeContext} onGoToRecipe={onGoToRecipe} />
-			)}
 		</div>
 	);
 }

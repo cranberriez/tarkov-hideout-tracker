@@ -1,7 +1,7 @@
 import { useProfitPricingContext } from "./ProfitPricingContext";
 import { getItemSellComparison, type ManualPriceOverride } from "@/lib/price-calculation";
 import type { ItemSummary } from "@/types/items";
-import { formatCompactPrice, formatRoundedRoubles, formatTraderOffer } from "../utils/formatters";
+import { formatCompactPrice, formatRoundedRoubles, formatSignedRoubles, formatTraderOffer } from "../utils/formatters";
 import { InfoHint } from "./InfoHint";
 
 export function ProfitCell({
@@ -14,11 +14,7 @@ export function ProfitCell({
 	infoTitle,
 	customized = false,
 	originalValue,
-	responsiveLabel = false,
-	showLabel = false,
 }: {
-	responsiveLabel?: boolean;
-	showLabel?: boolean;
 	label: string;
 	value?: number | null;
 	children: React.ReactNode;
@@ -33,11 +29,6 @@ export function ProfitCell({
 		value == null ? "text-foreground" : value > 0 ? "text-success" : value < 0 ? "text-danger" : "text-foreground";
 	return (
 		<div className="flex min-w-0 flex-col items-start self-start lg:self-auto lg:justify-center lg:border-l border-highlight/5 px-4 xl:px-3">
-			{(responsiveLabel || showLabel) && (
-				<span className={`mb-1 text-[10px] font-medium text-muted-foreground ${showLabel ? "" : "lg:hidden"}`}>
-					{label}
-				</span>
-			)}
 			<span className="flex items-center gap-1">
 				<span
 					className={`flex min-w-0 flex-col items-start font-mono text-sm font-semibold leading-tight ${color}`}
@@ -73,14 +64,12 @@ export function SellValueCell({
 	count,
 	sellValue,
 	sellSourceLabel,
-	responsiveLabel = false,
 	overrides,
 }: {
 	item?: ItemSummary;
 	count: number;
 	sellValue: number | null;
 	sellSourceLabel?: string;
-	responsiveLabel?: boolean;
 	overrides: Record<string, ManualPriceOverride>;
 }) {
 	const pricingContext = useProfitPricingContext();
@@ -88,9 +77,6 @@ export function SellValueCell({
 	const trader = comparison.bestTraderOffer;
 	return (
 		<div className="flex min-w-0 flex-col items-start justify-center border-l border-highlight/5 px-2 xl:px-3">
-			{responsiveLabel && (
-				<span className="mb-1 text-[10px] font-medium text-muted-foreground lg:hidden">Sale proceeds</span>
-			)}
 			<span
 				className="whitespace-nowrap font-mono text-sm font-semibold text-foreground"
 				title={`Gross sale: ${formatRoundedRoubles(comparison.grossTotal)} · Flea fee: ${formatRoundedRoubles(comparison.fee)} · Proceeds: ${formatRoundedRoubles(comparison.netTotal)}`}
@@ -119,4 +105,81 @@ export function SellValueCell({
 			)}
 		</div>
 	);
+}
+
+export interface MetricRow {
+	label: string;
+	/** Short muted note beside the label, e.g. sale source or duration. */
+	note?: string;
+	value: number | null;
+	signed?: boolean;
+	originalValue?: number | null;
+	info?: React.ReactNode;
+	infoTitle?: string;
+}
+
+/**
+ * Mobile-only stacked figures. Rows without a value are omitted; the last row
+ * is emphasised as the card's headline figure.
+ */
+export function MetricList({ rows, warning }: { rows: readonly MetricRow[]; warning?: string }) {
+	const shown = rows.filter((row) => row.value !== null);
+	return (
+		<div className="divide-y divide-highlight/[0.06]">
+			{warning && <p className="h-6 truncate font-mono text-[11px] leading-6 text-danger">{warning}</p>}
+			{shown.map((row, index) => {
+				const last = index === shown.length - 1;
+				const value = row.value as number;
+				const format = row.signed ? formatSignedRoubles : formatRoundedRoubles;
+				const color = !row.signed
+					? "text-foreground"
+					: value > 0
+						? "text-success"
+						: value < 0
+							? "text-danger"
+							: "text-foreground";
+				return (
+					<div key={row.label} className={`flex items-center gap-2 ${last ? "h-10" : "h-8"}`}>
+						<span
+							className={`flex min-w-0 items-center gap-1.5 ${last ? "text-xs font-semibold text-foreground" : "text-[11px] text-muted-foreground"}`}
+						>
+							<span className="shrink-0">{row.label}</span>
+							{row.note && (
+								<span className="truncate text-[10px] font-normal text-muted-foreground/80">{row.note}</span>
+							)}
+							{row.info && (
+								<InfoHint title={row.infoTitle ?? "Price comparison"} tone="warning">
+									{row.info}
+								</InfoHint>
+							)}
+						</span>
+						<span className="ml-auto flex shrink-0 items-baseline gap-1.5 font-mono">
+							{row.originalValue !== undefined && row.originalValue !== value && (
+								<span className="text-[11px] text-muted-foreground line-through decoration-muted-foreground/80">
+									{format(row.originalValue)}
+								</span>
+							)}
+							<span className={`font-semibold ${last ? "text-base" : "text-[13px]"} ${color}`}>{format(value)}</span>
+						</span>
+					</div>
+				);
+			})}
+		</div>
+	);
+}
+
+/** Short name of where the output sells, for the mobile metric list. */
+export function useSellSourceNote(
+	item: ItemSummary | undefined,
+	count: number,
+	sellSourceLabel: string | undefined,
+	overrides: Record<string, ManualPriceOverride>,
+): string | undefined {
+	const pricingContext = useProfitPricingContext();
+	if (sellSourceLabel) return sellSourceLabel;
+	const comparison = getItemSellComparison(item, overrides, pricingContext, count);
+	if (comparison.selectedSource === "manual") return "Manual";
+	if (comparison.selectedSource === "trader") return comparison.bestTraderOffer?.vendor.name;
+	if (comparison.selectedSource === "flea") return "Flea";
+	return undefined;
 }

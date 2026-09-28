@@ -64,9 +64,8 @@
 	justify-content: flex-start;
 	padding-top: 14px;
 }
-.headline,
 .sortLabel,
-.sectionLabel {
+.mobileMetrics {
 	display: none;
 }
 
@@ -125,8 +124,9 @@
 		background: transparent;
 	}
 	.actions {
-		gap: 0;
+		gap: 6px;
 	}
+	/* Flat icon buttons: the 36px box is only the touch target. */
 	.actions button {
 		width: 36px;
 		height: 36px;
@@ -140,40 +140,20 @@
 	.virtualRow > div[data-output-locked="true"] {
 		border-color: color-mix(in oklab, var(--warning) 45%, transparent);
 	}
-	.headline {
-		display: flex;
-		align-items: center;
-		padding: 8px 0;
-	}
 	.ingredients {
 		grid-column: 1 / -1;
 		padding: 8px 12px;
 		border-top: 1px solid color-mix(in oklab, var(--highlight) 8%, transparent);
 	}
-	.sectionLabel {
-		display: block;
-		margin-bottom: 4px;
-		color: var(--muted-foreground);
-		font-size: 10px;
-	}
 	.metrics {
-		display: grid;
-		grid-column: 1 / -1;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		border-top: 1px solid color-mix(in oklab, var(--highlight) 8%, transparent);
-		padding: 10px 0;
-		background: color-mix(in oklab, var(--shadow) 12%, transparent);
+		display: none;
 	}
-	.metrics > div {
-		min-width: 0;
-		justify-content: start;
-		padding-top: 0;
-	}
-	.responsiveLabel {
+	.mobileMetrics {
 		display: block;
-		margin-bottom: 4px;
-		color: var(--muted-foreground);
-		font-size: 10px;
+		grid-column: 1 / -1;
+		padding: 2px 12px;
+		border-top: 1px solid color-mix(in oklab, var(--highlight) 8%, transparent);
+		background: color-mix(in oklab, var(--shadow) 12%, transparent);
 	}
 }
 
@@ -187,28 +167,8 @@
 	.sortControl {
 		flex: 1 1 40%;
 	}
-	.headline > div {
-		padding: 0 8px;
-		border: 0;
-	}
-	.ingredients {
-		padding: 8px;
-	}
-	.ingredients > span > span:first-child {
-		flex-wrap: wrap;
-		height: auto;
-		min-height: 44px;
-		padding: 4px 0;
-	}
-	.ingredients button {
-		opacity: 1;
-	}
-	.ingredients > span > span:first-child > button {
-		height: 32px;
-		align-self: center;
-	}
-	.metrics {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 12px 0;
+	.ingredients,
+	.mobileMetrics {
+		padding-inline: 8px;
 	}
 }

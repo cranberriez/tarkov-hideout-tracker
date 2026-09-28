@@ -12,6 +12,7 @@ import type { GoToRecipeHandler, PriceChangeHandler, ProfitPageKind, SortDirecti
 import { estimateProfitRowHeight } from "../utils/recipes";
 import styles from "./ProfitTable.module.css";
 import { ProfitRow } from "./ProfitRow";
+import { useCompactCards } from "./useCompactCards";
 
 export function ProfitTable({
 	kind,
@@ -69,13 +70,16 @@ export function ProfitTable({
 		window.addEventListener("resize", updateScrollMargin);
 		return () => window.removeEventListener("resize", updateScrollMargin);
 	}, [kind]);
+	const compact = useCompactCards();
 	const virtualizer = useWindowVirtualizer({
 		count: evaluations.length,
-		estimateSize: (index) => estimateProfitRowHeight(evaluations[index]),
+		estimateSize: (index) => estimateProfitRowHeight(evaluations[index], compact),
 		getItemKey: (index) => evaluations[index]?.id ?? index,
 		overscan: 8,
 		scrollMargin,
 	});
+	// Cached measurements belong to the previous layout.
+	useEffect(() => virtualizer.measure(), [compact, virtualizer]);
 	useEffect(() => {
 		const requestKey = targetRecipeId ? `${targetRecipeId}:${scrollRequestId}` : null;
 		if (!requestKey || scrollMargin <= 0 || lastScrollRequestRef.current === requestKey) return;
@@ -140,7 +144,6 @@ export function ProfitTable({
 									style={{ transform: `translateY(${translateY}px)` }}
 								>
 									<ProfitRow
-										sortKey={sortKey}
 										evaluation={evaluation}
 										baselineEvaluation={baselineEvaluationsById[evaluation.id]}
 										itemById={itemById}

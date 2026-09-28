@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useId, useMemo } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import Image from "next/image";
-import { LockKeyhole } from "lucide-react";
+import { ChevronDown, LockKeyhole } from "lucide-react";
 import { QuestLink } from "@/components/entities/quest-link";
 import { FloatingPortal, useFloatingPreview } from "@/components/ui/floating-preview";
 import type { RecipeEvaluation } from "@/lib/price-calculation";
@@ -11,11 +11,13 @@ import type { Trader } from "@/types/traders";
 import type { ProfitStationSource } from "../types";
 import { summarizeRecipeRequirements, type LockChip } from "../utils/lock-summary";
 import { useProfitPricingContext } from "./ProfitPricingContext";
+import { useCompactCards } from "./useCompactCards";
 
 /**
  * One truncated line under the recipe output: source, then every requirement.
  * Hover, focus or click opens a list of all requirements; the list stays open
- * while the pointer is inside so quest links remain clickable.
+ * while the pointer is inside so quest links remain clickable. Compact cards
+ * instead end the line with a Requirements link that expands the list inline.
  */
 export function RecipeRequirements({
 	evaluation,
@@ -38,7 +40,14 @@ export function RecipeRequirements({
 		[context.coveredFleaLevel, context.lockChipNames, evaluation, itemById],
 	);
 	const locked = requirements.groups.length > 0;
-	const preview = useFloatingPreview({ placement: "bottom-start", openDelay: 250, closeDelay: 200, disabled: !locked });
+	const compact = useCompactCards();
+	const [inlineOpen, setInlineOpen] = useState(false);
+	const preview = useFloatingPreview({
+		placement: "bottom-start",
+		openDelay: 250,
+		closeDelay: 200,
+		disabled: !locked || compact,
+	});
 	const { open, hide } = preview;
 	// Click-opened popups (touch, or a deliberate click) close on an outside press.
 	useEffect(() => {
@@ -76,7 +85,10 @@ export function RecipeRequirements({
 			<span className="min-w-0 truncate">
 				<span className="font-medium text-foreground/90">{sourceLabel}</span>
 				{requirements.line.map((chip) => (
-					<span key={chip.key} className={chip.tone === "problem" ? "text-danger" : "text-muted-foreground"}>
+					<span
+						key={chip.key}
+						className={`max-lg:hidden ${chip.tone === "problem" ? "text-danger" : "text-muted-foreground"}`}
+					>
 						<span className="text-muted-foreground/60"> · </span>
 						{chipText(chip)}
 					</span>
@@ -84,8 +96,37 @@ export function RecipeRequirements({
 			</span>
 		</>
 	);
-	const lineClass = "flex w-full min-w-0 items-center gap-1.5 text-left text-[11px] leading-5";
+	// Fixed height below lg keeps compact cards at their estimated height.
+	const lineClass = "flex w-full min-w-0 items-center gap-1.5 text-left text-[11px] leading-5 max-lg:h-9";
+	const groups = requirements.groups.map((group) => (
+		<div key={group.key} className="mt-2.5 first:mt-0">
+			<p className="truncate font-medium text-foreground">{group.title}</p>
+			<LockChipList chips={group.chips} className="mt-1" />
+		</div>
+	));
 	if (!locked) return <span className={lineClass}>{summary}</span>;
+	if (compact)
+		return (
+			<>
+				<span className={lineClass}>
+					{summary}
+					<button
+						type="button"
+						aria-expanded={inlineOpen}
+						onClick={() => setInlineOpen((value) => !value)}
+						className="ml-auto flex h-full shrink-0 items-center gap-0.5 pl-2 font-medium text-foreground/90 underline decoration-foreground/40 underline-offset-2 focus-visible:outline-2 focus-visible:outline-brand"
+					>
+						Requirements
+						<ChevronDown aria-hidden className={`size-3.5 transition-transform ${inlineOpen ? "rotate-180" : ""}`} />
+					</button>
+				</span>
+				{inlineOpen && (
+					<div aria-label="Requirements" className="mb-1 rounded-sm bg-shadow/20 px-2.5 py-2 text-[11px]">
+						{groups}
+					</div>
+				)}
+			</>
+		);
 	return (
 		<>
 			<button
@@ -108,40 +149,41 @@ export function RecipeRequirements({
 			>
 				<div data-requirements={popupId} aria-label="Requirements" className="p-3">
 					<p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Requirements</p>
-					{requirements.groups.map((group) => (
-						<div key={group.key} className="mt-2.5 first:mt-0">
-							<p className="truncate font-medium text-foreground">{group.title}</p>
-							<ul className="mt-1 space-y-1">
-								{group.chips.map((chip) => (
-									<li key={chip.key} className="flex items-start gap-1.5 text-muted-foreground">
-										<LockKeyhole
-											aria-hidden
-											className={`mt-0.5 size-3 shrink-0 ${chip.tone === "problem" ? "text-danger" : "text-warning"}`}
-										/>
-										{chip.questId ? (
-											<span>
-												Complete{" "}
-												<QuestLink
-													className="text-foreground underline decoration-dotted hover:text-brand"
-													questId={chip.questId}
-													name={questName(chip.questId)}
-												/>
-											</span>
-										) : (
-											<span>
-												<span className={chip.tone === "problem" ? "text-danger" : "text-foreground/90"}>
-													{chip.label}
-												</span>
-												{chip.detail && <span> · {chip.detail}</span>}
-											</span>
-										)}
-									</li>
-								))}
-							</ul>
-						</div>
-					))}
+					{groups}
 				</div>
 			</FloatingPortal>
 		</>
+	);
+}
+
+/** Requirement chips as a list, with quest chips linking to the quest. */
+export function LockChipList({ chips, className = "" }: { chips: readonly LockChip[]; className?: string }) {
+	const context = useProfitPricingContext();
+	return (
+		<ul className={`space-y-1 ${className}`}>
+			{chips.map((chip) => (
+				<li key={chip.key} className="flex items-start gap-1.5 text-muted-foreground">
+					<LockKeyhole
+						aria-hidden
+						className={`mt-0.5 size-3 shrink-0 ${chip.tone === "problem" ? "text-danger" : "text-warning"}`}
+					/>
+					{chip.questId ? (
+						<span>
+							Complete{" "}
+							<QuestLink
+								className="text-foreground underline decoration-dotted hover:text-brand"
+								questId={chip.questId}
+								name={context.taskUnlocksById?.[chip.questId]?.name || "Quest details unavailable"}
+							/>
+						</span>
+					) : (
+						<span>
+							<span className={chip.tone === "problem" ? "text-danger" : "text-foreground/90"}>{chip.label}</span>
+							{chip.detail && <span> · {chip.detail}</span>}
+						</span>
+					)}
+				</li>
+			))}
+		</ul>
 	);
 }

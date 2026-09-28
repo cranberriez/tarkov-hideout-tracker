@@ -6,6 +6,7 @@ import {
 	acquisitionRouteKey,
 	compareEvaluations,
 	compareEvaluationsByBaseline,
+	estimateProfitRowHeight,
 	describeRoute,
 	getPlanRecipePreview,
 	hasRecipeRoute,
@@ -402,4 +403,18 @@ test("locked recipe previews list their ingredients when the route was rejected 
 			["tool", 2, true, "unavailable", null],
 		],
 	);
+});
+
+test("compact card height counts ingredient lines and only the figures that have values", () => {
+	const plan = { itemId: "a", totalCost: 100 } as AcquisitionPlan;
+	const barter = { ...evaluation("b", { cost: 100, sellValue: 200, profit: 100 }), requiredItems: [plan, plan] };
+	// 120 recipe + (17 + 2 × 48) ingredients + (5 + 2 × 32 + 40 + 2 dividers) figures.
+	assert.equal(estimateProfitRowHeight(barter, true), 344);
+	const unpriced = {
+		...evaluation("c", { sellValue: 200 }),
+		requiredItems: [{ itemId: "x", totalCost: null } as AcquisitionPlan],
+	};
+	// One figure plus the unpriced warning line and a divider between them.
+	assert.equal(estimateProfitRowHeight(unpriced, true), 120 + 65 + 5 + 24 + 40 + 1);
+	assert.equal(estimateProfitRowHeight(barter), 89);
 });
