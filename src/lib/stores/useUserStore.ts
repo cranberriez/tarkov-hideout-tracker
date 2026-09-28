@@ -77,7 +77,13 @@ function normalizeQuestChangeHistory(value: unknown): QuestChangeHistoryEntry[] 
 	return mergeQuestChangeHistory([], validEntries);
 }
 
-type StationEditionTarget = Pick<Station, "id" | "normalizedName">;
+/** Setup choices committed to one profile, which becomes the active profile. */
+export interface CompletedSetup {
+	gameMode: GameMode;
+	gameEdition: GameEdition | null;
+	editionBonusesAppliedFor: GameEdition | null;
+	stationLevels: Record<string, number>;
+}
 
 export interface PlayerProfileState {
 	stationLevels: Record<string, number>;
@@ -272,9 +278,8 @@ interface UserState {
 	setHasSeenItemConversionModal: (value: boolean) => void;
 	setHasSeenHideoutLevelWarning: (value: boolean) => void;
 
-	setGameEdition: (edition: GameEdition) => void;
 	setGameMode: (mode: GameMode) => void;
-	completeSetup: () => void;
+	completeSetup: (setup: CompletedSetup) => void;
 	setSetupOpen: (isOpen: boolean) => void;
 	setPlayerLevel: (level: number) => void;
 	setPrestigeLevel: (level: number) => void;
@@ -315,8 +320,6 @@ interface UserState {
 	setItemQuestCustomLevelLookahead: (value: number) => void;
 	setItemShowFutureFir: (value: boolean) => void;
 	setItemShowIgnored: (value: boolean) => void;
-
-	applyEditionBonuses: (stations: StationEditionTarget[]) => void;
 
 	importStationLevels: (levels: Record<string, number>) => void;
 	importPlayerProgress: (profiles: Partial<Record<GameMode, import("../player-progress").PlayerProgress>>) => void;
@@ -757,7 +760,6 @@ export const useUserStore = create<UserState>()(
 				setHasSeenItemConversionModal: (value) => set({ hasSeenItemConversionModal: value }),
 				setHasSeenHideoutLevelWarning: (value) => set({ hasSeenHideoutLevelWarning: value }),
 
-				setGameEdition: (edition) => set({ gameEdition: edition }),
 				setGameMode: (mode) =>
 					rawSet((state) => {
 						if (state.gameMode === mode) return {};
@@ -768,49 +770,24 @@ export const useUserStore = create<UserState>()(
 						return { ...profile, gameMode: mode };
 					}),
 
-				completeSetup: () => set({ hasCompletedSetup: true, isSetupOpen: false }),
+				completeSetup: ({ gameMode, ...setup }) =>
+					rawSet((state) => {
+						const profile = {
+							...(state.profiles[gameMode] ?? createDefaultPlayerProfile()),
+							...setup,
+							hasCompletedSetup: true,
+						};
+						if (gameMode !== state.gameMode && typeof document !== "undefined") {
+							document.cookie = serializeActiveGameModeCookie(gameMode);
+						}
+						return {
+							...profile,
+							profiles: { ...state.profiles, [gameMode]: profile },
+							gameMode,
+							isSetupOpen: false,
+						};
+					}),
 				setSetupOpen: (isOpen) => set({ isSetupOpen: isOpen }),
-
-				applyEditionBonuses: (stations) => {
-					const { gameEdition, stationLevels, editionBonusesAppliedFor } = get();
-					if (!gameEdition) return;
-
-					if (editionBonusesAppliedFor === gameEdition) return;
-
-					const newLevels = { ...stationLevels };
-					let stashLevel = 1;
-
-					switch (gameEdition) {
-						case "Standard":
-							stashLevel = 1;
-							break;
-						case "Left Behind":
-							stashLevel = 2;
-							break;
-						case "Prepare for Escape":
-							stashLevel = 3;
-							break;
-						case "Edge of Darkness":
-							stashLevel = 4;
-							break;
-						case "Unheard":
-							stashLevel = 4;
-							break;
-					}
-
-					stations.forEach((s) => {
-						if (s.normalizedName === "stash") {
-							newLevels[s.id] = stashLevel;
-						}
-						if (s.normalizedName === "cultist-circle" && gameEdition === "Unheard") {
-							if ((newLevels[s.id] || 0) < 1) {
-								newLevels[s.id] = 1;
-							}
-						}
-					});
-
-					set({ stationLevels: newLevels, editionBonusesAppliedFor: gameEdition });
-				},
 
 				initializeDefaults: (stations) => {
 					const { stationLevels, gameEdition } = get();

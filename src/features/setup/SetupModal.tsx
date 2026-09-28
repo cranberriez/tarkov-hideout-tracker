@@ -1,64 +1,64 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import type { GameMode } from "@/lib/game-mode";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { EditionSelection } from "./EditionSelection";
 import { GameModeSelection } from "./GameModeSelection";
 import { X } from "lucide-react";
 import { QuickHideoutLevels } from "./QuickHideoutLevels";
-import { STATIC_STATIONS, type SetupStation } from "@/lib/data/static-stations";
+import { STATIC_STATIONS } from "@/lib/data/static-stations";
+import {
+	createSetupDraft,
+	selectDraftGameEdition,
+	selectDraftGameMode,
+	setDraftStationLevel,
+	shouldStartOnHideoutLevels,
+} from "./setup-draft";
 
 export function SetupModal() {
-	const router = useRouter();
-	const {
-		gameEdition,
-		gameMode,
-		setGameEdition,
-		setGameMode,
-		applyEditionBonuses,
-		completeSetup,
-		isSetupOpen,
-		setSetupOpen,
-		hasCompletedSetup,
-		stationLevels,
-		setStationLevel,
-		deprecatedLegacyState,
-		hasConvertedDeprecatedLegacyState,
-		hasDismissedDeprecatedLegacyState,
-	} = useUserStore();
-	const hasPendingLegacyConversion =
-		deprecatedLegacyState !== null && !hasConvertedDeprecatedLegacyState && !hasDismissedDeprecatedLegacyState;
-
-	const [stations] = useState<SetupStation[]>(STATIC_STATIONS);
-	const [activeView, setActiveView] = useState<"settings" | "quick-levels">("settings");
-
-	// Apply bonuses whenever edition changes
-	useEffect(() => {
-		if (gameEdition && stations) {
-			applyEditionBonuses(stations);
-		}
-	}, [gameEdition, stations, applyEditionBonuses]);
+	const { isSetupOpen, hasPendingLegacyConversion } = useUserStore(
+		useShallow((state) => ({
+			isSetupOpen: state.isSetupOpen,
+			hasPendingLegacyConversion:
+				state.deprecatedLegacyState !== null &&
+				!state.hasConvertedDeprecatedLegacyState &&
+				!state.hasDismissedDeprecatedLegacyState,
+		})),
+	);
 
 	if (!isSetupOpen || hasPendingLegacyConversion) return null;
 
+	// Mounted only while open, so closing discards every unsaved draft change.
+	return <SetupDialog />;
+}
+
+function SetupDialog() {
+	const { profiles, gameMode, completeSetup, setSetupOpen } = useUserStore(
+		useShallow((state) => ({
+			profiles: state.profiles,
+			gameMode: state.gameMode,
+			completeSetup: state.completeSetup,
+			setSetupOpen: state.setSetupOpen,
+		})),
+	);
+	const stations = STATIC_STATIONS;
+	const [draft, setDraft] = useState(() => createSetupDraft(profiles, gameMode, stations));
+	const [activeView, setActiveView] = useState<"settings" | "quick-levels">(() =>
+		shouldStartOnHideoutLevels(profiles, gameMode) ? "quick-levels" : "settings",
+	);
+	const hasCompletedSetup = profiles[draft.gameMode].hasCompletedSetup;
+
 	const handleFinish = () => {
-		completeSetup();
+		completeSetup(draft);
 		window.location.reload();
 	};
 
-	const handleGameModeSelect = (mode: GameMode) => {
-		if (mode === gameMode) return;
-		setGameMode(mode);
-		router.refresh();
-	};
-
-	const canFinish = gameEdition !== null;
+	const canFinish = draft.gameEdition !== null;
 
 	return (
-		<Dialog open={isSetupOpen} onOpenChange={setSetupOpen}>
+		<Dialog open onOpenChange={setSetupOpen}>
 			<DialogContent
 				showCloseButton={false}
 				className="w-full md:max-w-3xl p-0 gap-0 overflow-hidden rounded-md bg-card border border-border-color"
@@ -87,11 +87,23 @@ export function SetupModal() {
 				<div className="p-6 max-h-[65vh] overflow-y-auto bg-shadow/40">
 					{activeView === "settings" ? (
 						<div className="space-y-8">
-							<GameModeSelection selected={gameMode} onSelect={handleGameModeSelect} />
-							<EditionSelection selected={gameEdition} onSelect={setGameEdition} />
+							<GameModeSelection
+								selected={draft.gameMode}
+								onSelect={(mode) => setDraft((current) => selectDraftGameMode(current, profiles, mode, stations))}
+							/>
+							<EditionSelection
+								selected={draft.gameEdition}
+								onSelect={(edition) => setDraft((current) => selectDraftGameEdition(current, edition, stations))}
+							/>
 						</div>
 					) : (
-						<QuickHideoutLevels stations={stations} stationLevels={stationLevels} setStationLevel={setStationLevel} />
+						<QuickHideoutLevels
+							stations={stations}
+							stationLevels={draft.stationLevels}
+							setStationLevel={(stationId, level) =>
+								setDraft((current) => setDraftStationLevel(current, stationId, level))
+							}
+						/>
 					)}
 				</div>
 

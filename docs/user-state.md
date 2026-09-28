@@ -80,11 +80,16 @@ Check the current `migrate` implementation and
 [profile migration tests](../src/lib/stores/useUserStore.profile.test.ts) before
 changing defaults or profile fields; adding a field involves more than an interface.
 
-[Setup](../src/features/setup/) configures mode and edition through store actions.
+[Setup](../src/features/setup/) edits a local [draft](../src/features/setup/setup-draft.ts)
+of mode, edition and station levels. Nothing reaches the store until Save/Complete,
+when `completeSetup` writes the chosen profile, marks it set up and makes it active
+(including the mode cookie) in one update; closing the dialog discards the draft.
+Once any profile has completed setup its edition is inherited, so first-time setup
+of another profile opens on Hideout Levels (Back still reaches mode/edition).
 Edition bonuses initialize Stash at levels 1/2/3/4/4 for Standard, Left Behind,
 Prepare for Escape, Edge of Darkness, and Unheard respectively; Unheard also
 starts Cultist Circle at level 1. The per-profile edition marker prevents repeated
-bonus application. Preserve progress-aware handling in the existing action.
+bonus application. Preserve progress-aware handling in the draft model.
 
 ## Player progress backups
 
