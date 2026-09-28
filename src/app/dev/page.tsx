@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { getCatalogDashboard, getMarketWorkerDashboard } from "@/server/db/postgres-dashboard";
 import { MarketWorkerPanel } from "./MarketWorkerPanel";
+import { ItemImageGallery } from "./ItemImageGallery";
 
 const MODES: Array<{ value: TarkovJsonGameMode; label: string }> = [
 	{ value: "regular", label: "PVP" },
@@ -49,6 +50,7 @@ export default async function DevPage({
 					Current PostgreSQL catalog status for the selected game mode.
 				</p>
 			</header>
+			<ItemImageGallery />
 			<nav aria-label="Dataset game mode" className="flex gap-2">
 				{MODES.map((entry) => (
 					<Link

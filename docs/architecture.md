@@ -257,6 +257,26 @@ used by quest filters and Hideout controls. [describeFleaPrice](../src/lib/utils
 shares loading/failed/unavailable/estimate price states without merging purchase
 cost, gross sale, net sale, and profit.
 
+[ItemImage](../src/components/entities/item-image.tsx) is the shared square item image
+API. Its only required prop is `item` (a name and optional image URLs); the default
+is a display-only, unframed 44px square. Optional `size`, `foundInRaid`, `completed`,
+`quantity` (number or formatted progress), `selected`, and `framed` cover standard
+variants; noninteractive `children` allow price/tool overlays. Completion replaces
+the top-right FiR marker with the hideout requirement grid's green circular check
+badge, offset 4px outside the corner, without dimming or desaturating the image.
+FiR and quantity overlays extend 1px past their corners to overlap the slot border;
+the gallery's price/tool chips use the same edge alignment and compact typography.
+Selection is a 1px border inset by 1px; quantities use a flat, borderless bottom-right chip.
+`opensModal` requires
+an item ID and reuses ItemLink's dialog and hover preview (`preview={false}` disables
+the latter). `onClick` adds a custom action; when combined with `opensModal`, calling
+`preventDefault()` cancels opening. Use a display-only image inside existing buttons.
+The shared ItemThumbnail renderer tries icon, 512px, grid, then base images, advancing
+on load failure and finally showing a placeholder. Existing thumbnail consumers use
+the same renderer; feature-local images can migrate separately. The development-only
+[/dev gallery](../src/app/dev/ItemImageGallery.tsx) shows minimal usage, all 32 visual
+boolean combinations, sizes, interactions, and fallback cases without saving progress.
+
 [Entity components](../src/components/entities/) share identity presentation
 (`ItemThumbnail`, `ItemQuantityBadge`, `ItemReference`, `StationImage`) and links:
 [QuestLink](../src/components/entities/quest-link.tsx) and

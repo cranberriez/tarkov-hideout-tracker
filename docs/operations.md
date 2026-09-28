@@ -148,6 +148,11 @@ directory first). Keep logs and reports local; never include environment values.
 
 ## Current dataset dashboard
 
+The page also contains an [ItemImage gallery](../src/app/dev/ItemImageGallery.tsx)
+with all visual flag combinations, sizes, image fallbacks, and local interaction
+examples. It uses a fixed sample item and remains available when dashboard data
+fails. Its custom controls do not modify saved player data.
+
 The development-only [/dev page](../src/app/dev/page.tsx) displays current status,
 counts, content version and freshness by mode, plus the latest price push, market
 analysis runs and biggest movers. The API keeps releaseId only as a
