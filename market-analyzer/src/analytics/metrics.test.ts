@@ -198,3 +198,14 @@ test("empty-market observations do not contribute prices", () => {
 	assert.ok(metrics.confidenceReasons.includes("no-offers"));
 	assert.equal(metrics.median7d, 3_000);
 });
+
+test("a large move made on one or two listings is low confidence", () => {
+	const points = upstream(
+		() => 4_000,
+		(at) => (at > NOW - DAY ? 12_000 : 4_000),
+		1,
+	);
+	const metrics = computeMarketMetrics(points, NOW)!;
+	assert.ok(metrics.confidenceReasons.includes("thin-large-move"), metrics.confidenceReasons.join());
+	assert.equal(metrics.confidence, "low");
+});

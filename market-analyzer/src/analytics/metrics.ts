@@ -24,6 +24,13 @@ const TREND_MIN_MOVE = 0.05;
 const VOLATILE_SPREAD = 0.35;
 const THIN_DEPTH = 3;
 const RECENT_REGIME_HOURS = 6;
+/** A move of at least this factor versus the 7-day median, made on thin listings, is low confidence. */
+const THIN_LARGE_MOVE_FACTOR = 2;
+/** Snapshots making up the current level, and how recent they must be. */
+const CURRENT_LEVEL_POINTS = 3;
+const CURRENT_LEVEL_WINDOW_MS = 8 * HOUR;
+const MOVE_WINDOW_MS = 12 * HOUR;
+const MOVE_MIN_POINTS = 4;
 
 export type Trend = "rising" | "falling" | "stable" | "unknown";
 export type Confidence = "high" | "medium" | "low";
@@ -37,7 +44,8 @@ export type ConfidenceReason =
 	| "volatile"
 	| "unconfirmed-move"
 	| "above-max-net"
-	| "recent-regime-change";
+	| "recent-regime-change"
+	| "thin-large-move";
 
 export interface MarketMetrics {
 	sourceUpdatedAt: number;
@@ -57,6 +65,16 @@ export interface MarketMetrics {
 	change6h: number | null;
 	change24h: number | null;
 	change7d: number | null;
+	/** The same changes in roubles: market value now minus market value then. */
+	change24hRub: number | null;
+	change7dRub: number | null;
+	/**
+	 * Responsive level: median of the last three snapshots within 8 hours. The market
+	 * value is deliberately conservative (it waits for confirmation) and can lag this.
+	 */
+	currentLevel: number | null;
+	/** Robust (Theil-Sen) direction of the minimum over the last 12 hours, as a relative change per 12 hours. */
+	move12h: number | null;
 	/** Share of the last 30 days the market spent below the current market value (0-1). */
 	percentile30d: number | null;
 	/** Relative interquartile spread of the last 7 days: (p75 - p25) / median. */
@@ -139,6 +157,38 @@ function change(current: number | null, previous: number | null): number | null 
 	return current !== null && previous !== null && previous > 0 ? current / previous - 1 : null;
 }
 
+function difference(current: number | null, previous: number | null): number | null {
+	return current !== null && previous !== null ? current - previous : null;
+}
+
+/** Median of the last three usable snapshots within 8 hours of `at`; null without recent listings. */
+export function currentLevelAt(points: readonly PriceHistoryPoint[], at: number): number | null {
+	const recent = points
+		.filter((point) => usable(point) && point.timestamp <= at && point.timestamp > at - CURRENT_LEVEL_WINDOW_MS)
+		.slice(-CURRENT_LEVEL_POINTS);
+	return median(recent.map((point) => point.priceMin));
+}
+
+/**
+ * Relative change per 12 hours from the Theil-Sen slope of log minimum prices over
+ * the last 12 hours: the median of all pairwise slopes, so a lone undercut or spike
+ * cannot set the direction. Needs four snapshots.
+ */
+export function move12hAt(points: readonly PriceHistoryPoint[], at: number): number | null {
+	const recent = points.filter(
+		(point) => usable(point) && point.timestamp <= at && point.timestamp >= at - MOVE_WINDOW_MS,
+	);
+	if (recent.length < MOVE_MIN_POINTS) return null;
+	const slopes: number[] = [];
+	for (let left = 0; left < recent.length; left += 1)
+		for (let right = left + 1; right < recent.length; right += 1)
+			slopes.push(
+				(Math.log(recent[right].priceMin) - Math.log(recent[left].priceMin)) /
+					(recent[right].timestamp - recent[left].timestamp),
+			);
+	return Math.exp(median(slopes)! * MOVE_WINDOW_MS) - 1;
+}
+
 function median(values: readonly number[]): number | null {
 	if (!values.length) return null;
 	const sorted = [...values].sort((left, right) => left - right);
@@ -183,11 +233,13 @@ export function computeMarketMetrics(points: readonly PriceHistoryPoint[], now: 
 	const month = windowView(points, now, 30 * DAY);
 
 	const valueNow = marketValueAsOf(points, now);
+	const value24hAgo = marketValueAsOf(points, now - DAY);
+	const value7dAgo = marketValueAsOf(points, now - 7 * DAY);
 	const median7d = covered(week, 0.5);
 	const q25 = covered(week, 0.25);
 	const q75 = covered(week, 0.75);
 	const volatility7d = median7d && q25 !== null && q75 !== null ? (q75 - q25) / median7d : null;
-	const change7d = change(valueNow, marketValueAsOf(points, now - 7 * DAY));
+	const change7d = change(valueNow, value7dAgo);
 	const threshold = Math.max(TREND_MIN_MOVE, (volatility7d ?? 0) / 2);
 	const trend: Trend =
 		change7d === null ? "unknown" : change7d > threshold ? "rising" : change7d < -threshold ? "falling" : "stable";
@@ -209,7 +261,19 @@ export function computeMarketMetrics(points: readonly PriceHistoryPoint[], now: 
 	if (effective.reasons.includes("price-jump") || effective.reasons.includes("divergent-reference"))
 		reasons.push("unconfirmed-move");
 	if (persistenceHours !== null && persistenceHours < RECENT_REGIME_HOURS) reasons.push("recent-regime-change");
-	const severe = reasons.some((reason) => reason === "stale" || reason === "no-offers" || reason === "short-history");
+	// Offer counts are listing snapshots, not volume; a big move on one or two listings is weak evidence.
+	const thinLargeMove =
+		depthMedian24h !== null &&
+		depthMedian24h < THIN_DEPTH &&
+		effective.effectivePrice !== null &&
+		median7d !== null &&
+		median7d > 0 &&
+		Math.max(effective.effectivePrice / median7d, median7d / effective.effectivePrice) >= THIN_LARGE_MOVE_FACTOR;
+	if (thinLargeMove) reasons.push("thin-large-move");
+	const severe = reasons.some(
+		(reason) =>
+			reason === "stale" || reason === "no-offers" || reason === "short-history" || reason === "thin-large-move",
+	);
 	const confidence: Confidence = severe || reasons.length >= 3 ? "low" : reasons.length ? "medium" : "high";
 
 	return {
@@ -226,8 +290,12 @@ export function computeMarketMetrics(points: readonly PriceHistoryPoint[], now: 
 		rangeLow7d: covered(week, 0.1),
 		rangeHigh7d: covered(week, 0.9),
 		change6h: change(valueNow, marketValueAsOf(points, now - 6 * HOUR)),
-		change24h: change(valueNow, marketValueAsOf(points, now - DAY)),
+		change24h: change(valueNow, value24hAgo),
 		change7d,
+		change24hRub: difference(valueNow, value24hAgo),
+		change7dRub: difference(valueNow, value7dAgo),
+		currentLevel: currentLevelAt(points, now),
+		move12h: move12hAt(points, now),
 		percentile30d:
 			effective.effectivePrice !== null && month.coverage >= MIN_COVERAGE
 				? percentileOf(month.samples, effective.effectivePrice)

@@ -1,6 +1,7 @@
 import type { PriceHistoryPoint, VendorPrice } from "../../../src/types/prices";
 import { computeEconomics } from "./economics";
 import { computeMarketMetrics, type Confidence, type Trend } from "./metrics";
+import { detectShock, type ShockPhase } from "./shock";
 
 /** One persisted row of item_market_observations. */
 export interface MarketObservation {
@@ -20,6 +21,16 @@ export interface MarketObservation {
 	change6h: number | null;
 	change24h: number | null;
 	change7d: number | null;
+	change24hRub: number | null;
+	change7dRub: number | null;
+	currentLevel: number | null;
+	move12h: number | null;
+	/** Latest shock within 72 hours, if any: see shock.ts. */
+	shockPhase: ShockPhase | null;
+	shockBaseline: number | null;
+	shockExtreme: number | null;
+	shockAt: number | null;
+	retracement: number | null;
 	percentile30d: number | null;
 	volatility7d: number | null;
 	trend: Trend;
@@ -57,6 +68,7 @@ export function buildObservation(
 	const metrics = computeMarketMetrics(points, calculatedAt);
 	if (!metrics) return null;
 	const economics = computeEconomics(metrics.marketValue, sellFor);
+	const shock = detectShock(points, calculatedAt);
 	// Above the max-net listing price the flea fee eats any increase (often the net is
 	// negative): not an economically sensible market, whatever its depth.
 	const aboveMaxNet =
@@ -80,6 +92,15 @@ export function buildObservation(
 		change6h: rounded(metrics.change6h),
 		change24h: rounded(metrics.change24h),
 		change7d: rounded(metrics.change7d),
+		change24hRub: metrics.change24hRub,
+		change7dRub: metrics.change7dRub,
+		currentLevel: metrics.currentLevel === null ? null : Math.round(metrics.currentLevel),
+		move12h: rounded(metrics.move12h),
+		shockPhase: shock?.phase ?? null,
+		shockBaseline: shock ? Math.round(shock.baseline) : null,
+		shockExtreme: shock ? Math.round(shock.extreme) : null,
+		shockAt: shock?.extremeAt ?? null,
+		retracement: shock ? rounded(shock.retracement) : null,
 		percentile30d: rounded(metrics.percentile30d),
 		volatility7d: rounded(metrics.volatility7d),
 		trend: metrics.trend,

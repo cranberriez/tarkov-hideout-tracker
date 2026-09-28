@@ -45,16 +45,30 @@ never as the last price persisting.
 | `median_24h/7d/30d`                         | Time-weighted medians; null below 50% window coverage                     |
 | `range_low_7d/high_7d`                      | 7-day p10–p90: the recent normal range                                    |
 | `change_6h/24h/7d`                          | Market value now vs the market value as of then (null if either is stale) |
+| `change_24h_rub/7d_rub`                     | The same changes in roubles, e.g. to compare with `flea_fee`              |
+| `current_level`                             | Median of the last 3 snapshots: responsive, unlike the market value       |
+| `move_12h`                                  | Robust (Theil–Sen) direction of the last 12 h, as change per 12 h         |
+| `shock_*`, `retracement`                    | A ≥2× move within 72 h and how much of it has been given back (below)     |
 | `percentile_30d`                            | Share of the last 30 days spent below the market value                    |
 | `volatility_7d`                             | (p75 − p25) / median over 7 days                                          |
 | `trend`                                     | 7-day change beyond max(5%, volatility / 2); `unknown` without coverage   |
 | `persistence_hours`                         | How long the current price regime (within 1.25×) has held                 |
 | `depth_median_24h`                          | Listing depth: supporting evidence, not volume                            |
-| `confidence`, `confidence_reasons`          | high / medium / low with reasons (stale, thin, volatile, above-max-net …) |
+| `confidence`, `confidence_reasons`          | high / medium / low with reasons (stale, thin, thin-large-move, …)        |
 | `trader_value`, `base_price`                | Best trader buyback and inferred base value                               |
 | `flea_net`, `flea_fee`                      | Net of listing at market value (no Intelligence Center reduction)         |
 | `trader_break_even`, `practical_break_even` | Asking price matching the trader, and beating it by min(5%, 5,000 ₽)      |
 | `max_net_price`, `max_net`                  | Listing price with the highest net; above it fees eat the increase        |
+
+### Shocks and retracement
+
+Flea spikes rarely persist: a demand shock draws sellers in and undercutting walks the
+minimum back down (crashes the reverse). A **shock** is a robust level (median of three
+consecutive snapshots, so a lone listing cannot form one) at least 2× away from the market
+value 24 h before it, within the last 72 h. `retracement` is the share of the jump given
+back. The phase is `reverted` (≥ 85% back), `retracing` (the 12 h move is ≥ 10% against
+the shock), `holding` (< 25% back) or `settled` (a new level). Example: VAZ car key, 2k →
+18k, retracing, 56% back, −23% over 12 h, where the 24 h change alone says +800%.
 
 ## Run it
 
