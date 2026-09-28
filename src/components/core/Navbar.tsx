@@ -68,15 +68,14 @@ function NavbarContent() {
 	const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
 	const currentPage = usePathname();
 	const isSecondaryRoute = currentPage === "/settings" || currentPage === "/news" || currentPage === "/dev";
-	const visibleMenus = process.env.NODE_ENV === "development" ? [...navMenus, devNavItem] : navMenus;
-
+	
 	if ((currentPage === "/quests" || currentPage.startsWith("/quests/")) && isMainNavHidden) return null;
 
 	return (
 		<>
 			<nav data-main-nav className="border-b bg-card">
 				<div className="container mx-auto px-3 py-3 sm:px-6 sm:py-4">
-					<div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-6">
+					<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
 						<div className="flex items-center justify-between gap-2 sm:gap-3">
 							<Link href="/" className="min-w-0 shrink-0">
 								<div className="group flex min-w-0 items-center gap-3">
@@ -98,7 +97,7 @@ function NavbarContent() {
 								</div>
 							</Link>
 
-							<div className="flex items-center gap-1 sm:gap-2 md:hidden">
+							<div className="flex items-center gap-1 sm:gap-2 lg:hidden">
 								<button
 									onClick={() => setQuickAddOpen(true)}
 									className={cn(
@@ -129,35 +128,18 @@ function NavbarContent() {
 										<Menu size={18} />
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="end" sideOffset={8}>
-										{visibleMenus.map((menu, index) => (
+										{navMenus.map((menu, index) => (
 											<MobileNavSection key={menu.name} menu={menu} currentPage={currentPage} separated={index > 0} />
 										))}
 										<DropdownMenuSeparator />
-										<DropdownMenuItem
-											asChild
-											className={cn(currentPage === "/news" && "bg-accent text-accent-foreground")}
-										>
-											<Link href="/news" className="w-full">
-												News
-											</Link>
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											asChild
-											className={cn(currentPage === "/settings" && "bg-accent text-accent-foreground")}
-										>
-											<Link href="/settings" className="w-full">
-												Settings
-											</Link>
-										</DropdownMenuItem>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem onSelect={() => setSetupOpen(true)}>Setup</DropdownMenuItem>
+										<SecondaryMenuItems currentPage={currentPage} onSetup={() => setSetupOpen(true)} />
 									</DropdownMenuContent>
 								</DropdownMenu>
 								{searchButton}
 							</div>
 						</div>
 
-						<div className="hidden flex-wrap items-center gap-3 text-sm font-medium text-muted-foreground md:flex lg:gap-4">
+						<div className="hidden flex-wrap items-center gap-4 text-sm font-medium text-muted-foreground lg:flex">
 							<button
 								onClick={() => setQuickAddOpen(true)}
 								className={cn(
@@ -168,7 +150,7 @@ function NavbarContent() {
 								<Plus size={16} />
 							</button>
 
-							{visibleMenus.map((menu) => (
+							{navMenus.map((menu) => (
 								<DesktopNavMenu key={menu.name} menu={menu} currentPage={currentPage} />
 							))}
 
@@ -187,24 +169,7 @@ function NavbarContent() {
 									<Menu size={18} />
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end" sideOffset={8}>
-									<DropdownMenuItem
-										asChild
-										className={cn(currentPage === "/news" && "bg-accent text-accent-foreground")}
-									>
-										<Link href="/news" className="w-full">
-											News
-										</Link>
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										asChild
-										className={cn(currentPage === "/settings" && "bg-accent text-accent-foreground")}
-									>
-										<Link href="/settings" className="w-full">
-											Settings
-										</Link>
-									</DropdownMenuItem>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem onSelect={() => setSetupOpen(true)}>Setup</DropdownMenuItem>
+									<SecondaryMenuItems currentPage={currentPage} onSetup={() => setSetupOpen(true)} />
 								</DropdownMenuContent>
 							</DropdownMenu>
 							{searchButton}
@@ -320,6 +285,33 @@ function MobileNavSection({
 					</Link>
 				</DropdownMenuItem>
 			))}
+		</>
+	);
+}
+
+function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onSetup: () => void }) {
+	const items: NavItem[] = [
+		{ name: "News", href: "/news" },
+		{ name: "Settings", href: "/settings" },
+		...(process.env.NODE_ENV === "development" ? [devNavItem] : []),
+	];
+
+	return (
+		<>
+			{items.map((item) => (
+				<DropdownMenuItem
+					key={item.href}
+					asChild
+					className={cn(isNavItemActive(currentPage, item) && "bg-accent text-accent-foreground")}
+				>
+					<Link href={item.href} className="flex w-full items-center gap-2">
+						<NavItemIcon item={item} />
+						{item.name}
+					</Link>
+				</DropdownMenuItem>
+			))}
+			<DropdownMenuSeparator />
+			<DropdownMenuItem onSelect={onSetup}>Setup</DropdownMenuItem>
 		</>
 	);
 }
