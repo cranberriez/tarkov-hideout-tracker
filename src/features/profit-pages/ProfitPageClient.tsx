@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useShallow } from "zustand/react/shallow";
 import { DataLoadError } from "@/components/core/DataLoadError";
+import { FilterDrawer } from "@/components/ui/filter-bar";
 import { createRecipeCalculator } from "@/lib/price-calculation";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ProfitPageData } from "@/types/contracts";
@@ -16,12 +17,14 @@ import { ProfitPageHeader } from "./components/ProfitPageHeader";
 import { ProfitPricingContext } from "./components/ProfitPricingContext";
 import { ProfitProfileBanner } from "./components/ProfitProfileBanner";
 import { ProfitTable } from "./components/ProfitTable";
+import { TraderLevelsModal } from "./components/TraderLevelsModal";
 import type { ProfitPageKind, ProfitStationSource, SortDirection, SortKey } from "./types";
 import { FLEA_UNLOCK_LEVEL, getProfileLockGaps } from "./utils/lock-summary";
 import { compareEvaluationsByBaseline, getRecipeSourceId, isRecipeAvailable, passesLockFilters } from "./utils/recipes";
 import { useManualPriceOverrides } from "./useManualPriceOverrides";
 import { usePinnedCrafts } from "./usePinnedCrafts";
 import { useProfitOptions } from "./useProfitOptions";
+import { useStoredProfitValue } from "./useStoredProfitValue";
 
 interface ProfitPageClientProps {
 	kind: ProfitPageKind;
@@ -70,6 +73,10 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 		setAllowBarters,
 	} = useProfitOptions(gameMode);
 	const [showPinnedOnly, setShowPinnedOnly] = useState(false);
+	const [traderLevelsOpen, setTraderLevelsOpen] = useState(false);
+	const [drawerState, setDrawerState] = useStoredProfitValue(
+		`tarkov-filter-drawer-v1:${kind === "barter" ? "barter-profits" : "crafting-profits"}`,
+	);
 	const [ingredientRouteSelections, setIngredientRouteSelections] = useState<Record<string, Record<number, string>>>(
 		{},
 	);
@@ -256,44 +263,59 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 			}}
 		>
 			<main className="container mx-auto px-4 py-8 sm:px-6">
-				<ProfitPageHeader kind={kind} gameMode={gameMode} evaluations={visibleEvaluations} />
+				<ProfitPageHeader kind={kind} />
 				{data.errors.taskUnlocks && (
 					<p role="status" className="mb-4 text-xs text-warning">
 						Quest unlock details are partially unavailable: {data.errors.taskUnlocks}
 					</p>
 				)}
-				<ProfitPageControls
-					key={gameMode}
-					craftingSkillForced={craftingSkillForced}
-					craftingSkillNote={craftingSkillNote}
-					craftingSkillLevel={craftingSkillLevel}
-					onCraftingSkillLevelChange={setCraftingSkillLevel}
-					hideoutManagementSkillLevel={hideoutManagementSkillLevel}
-					onHideoutManagementSkillLevelChange={setHideoutManagementSkillLevel}
-					kind={kind}
-					search={search}
-					onSearchChange={setSearch}
-					traderSourceIds={traderSourceIds}
-					onTraderSourceIdsChange={setTraderSourceIds}
-					stationSourceIds={stationSourceIds}
-					onStationSourceIdsChange={setStationSourceIds}
-					sources={sources}
-					lockFilters={lockFilters}
-					onLockFiltersChange={setLockFilters}
-					useTraderSaleForLockedOutputs={useTraderSaleForLockedOutputs}
-					onUseTraderSaleForLockedOutputsChange={setUseTraderSaleForLockedOutputs}
-					availableOnly={availableOnly}
-					onAvailableOnlyChange={setAvailableOnly}
-					profitableOnly={profitableOnly}
-					onProfitableOnlyChange={setProfitableOnly}
-					allowCrafts={allowCrafts}
-					onAllowCraftsChange={setAllowCrafts}
-					allowBarters={allowBarters}
-					onAllowBartersChange={setAllowBarters}
-					showPinnedOnly={showPinnedOnly}
-					onShowPinnedOnlyChange={setShowPinnedOnly}
-				/>
-				{!availableOnly && <ProfitProfileBanner gaps={profileLockGaps} onHideLocked={() => setAvailableOnly(true)} />}
+				<div className="mb-4">
+					<ProfitPageControls
+						key={gameMode}
+						craftingSkillForced={craftingSkillForced}
+						craftingSkillNote={craftingSkillNote}
+						craftingSkillLevel={craftingSkillLevel}
+						onCraftingSkillLevelChange={setCraftingSkillLevel}
+						hideoutManagementSkillLevel={hideoutManagementSkillLevel}
+						onHideoutManagementSkillLevelChange={setHideoutManagementSkillLevel}
+						kind={kind}
+						search={search}
+						onSearchChange={setSearch}
+						traderSourceIds={traderSourceIds}
+						onTraderSourceIdsChange={setTraderSourceIds}
+						stationSourceIds={stationSourceIds}
+						onStationSourceIdsChange={setStationSourceIds}
+						sources={sources}
+						lockFilters={lockFilters}
+						onLockFiltersChange={setLockFilters}
+						useTraderSaleForLockedOutputs={useTraderSaleForLockedOutputs}
+						onUseTraderSaleForLockedOutputsChange={setUseTraderSaleForLockedOutputs}
+						availableOnly={availableOnly}
+						onAvailableOnlyChange={setAvailableOnly}
+						profitableOnly={profitableOnly}
+						onProfitableOnlyChange={setProfitableOnly}
+						allowCrafts={allowCrafts}
+						onAllowCraftsChange={setAllowCrafts}
+						allowBarters={allowBarters}
+						onAllowBartersChange={setAllowBarters}
+						showPinnedOnly={showPinnedOnly}
+						onShowPinnedOnlyChange={setShowPinnedOnly}
+					/>
+					{!availableOnly && profileLockGaps.length > 0 && (
+						<FilterDrawer
+							label="profile details"
+							open={drawerState !== "hidden"}
+							onOpenChange={(open) => setDrawerState(() => (open ? "shown" : "hidden"))}
+						>
+							<ProfitProfileBanner
+								gaps={profileLockGaps}
+								onHideLocked={() => setAvailableOnly(true)}
+								onSetTraders={() => setTraderLevelsOpen(true)}
+							/>
+						</FilterDrawer>
+					)}
+				</div>
+				<TraderLevelsModal open={traderLevelsOpen} onOpenChange={setTraderLevelsOpen} traders={data.traders} />
 				<ProfitTable
 					kind={kind}
 					evaluations={visibleEvaluations}

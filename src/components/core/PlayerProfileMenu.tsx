@@ -14,6 +14,12 @@ const PRESTIGE_LEVELS = [1, 2, 3, 4, 5, 6];
 const PROFILE_ORDER: GameMode[] = ["PVE", "PVP", "KORD"];
 type Faction = "USEC" | "BEAR" | null;
 type OpenPanel = "character" | "profiles";
+const OPEN_CHARACTER_EVENT = "tarkov-open-character-panel";
+
+/** Opens the navbar character panel with its level input focused, from anywhere on the page. */
+export function openCharacterPanel() {
+	window.dispatchEvent(new Event(OPEN_CHARACTER_EVENT));
+}
 
 const profileColorStyle = (mode: GameMode) => ({ "--profile-color": PROFILE_BASE_COLORS[mode] }) as CSSProperties;
 
@@ -23,6 +29,7 @@ export function PlayerProfileMenu() {
 	const [isSwitching, startSwitch] = useTransition();
 	const router = useRouter();
 	const rootRef = useRef<HTMLDivElement>(null);
+	const focusLevelOnOpen = useRef(false);
 	const activePanel = pinnedPanel ?? hoveredPanel;
 
 	const {
@@ -70,6 +77,27 @@ export function PlayerProfileMenu() {
 		document.addEventListener("pointerdown", onPointerDown);
 		return () => document.removeEventListener("pointerdown", onPointerDown);
 	}, [activePanel]);
+
+	useEffect(() => {
+		function onOpenCharacter() {
+			// The navbar mounts a mobile and a desktop copy; only the visible one responds.
+			if (!rootRef.current?.getClientRects().length) return;
+			const levelInput = rootRef.current.querySelector<HTMLInputElement>("#player-profile-level");
+			if (levelInput) levelInput.focus();
+			else focusLevelOnOpen.current = true;
+			setHoveredPanel("character");
+			setPinnedPanel("character");
+		}
+
+		window.addEventListener(OPEN_CHARACTER_EVENT, onOpenCharacter);
+		return () => window.removeEventListener(OPEN_CHARACTER_EVENT, onOpenCharacter);
+	}, []);
+
+	useEffect(() => {
+		if (pinnedPanel !== "character" || !focusLevelOnOpen.current) return;
+		focusLevelOnOpen.current = false;
+		rootRef.current?.querySelector<HTMLInputElement>("#player-profile-level")?.focus();
+	}, [pinnedPanel]);
 
 	function switchProfile(mode: GameMode) {
 		if (mode === gameMode || isSwitching) return;

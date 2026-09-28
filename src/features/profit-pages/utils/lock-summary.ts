@@ -320,7 +320,6 @@ export function unpricedIngredientIds(evaluation: RecipeEvaluation) {
 export interface ProfileLockGap {
 	key: "player" | "hideout" | "traders";
 	label: string;
-	href: string;
 }
 
 /** Profile-wide gaps that lock most rows; shown once instead of on every row. */
@@ -337,11 +336,10 @@ export function getProfileLockGaps(
 		gaps.push({
 			key: "player",
 			label: `PMC lvl ${profile.playerLevel} (flea unlocks at ${FLEA_UNLOCK_LEVEL})`,
-			href: "/quests",
 		});
 	if (kind === "craft" && !Object.values(profile.stationLevels).some((level) => level > 0))
-		gaps.push({ key: "hideout", label: "Hideout levels not set", href: "/hideout" });
+		gaps.push({ key: "hideout", label: "Hideout levels not set" });
 	if (!Object.values(profile.traderLoyaltyLevels).some((level) => level > 1))
-		gaps.push({ key: "traders", label: "All traders LL1", href: "/quests" });
+		gaps.push({ key: "traders", label: "All traders LL1" });
 	return gaps;
 }

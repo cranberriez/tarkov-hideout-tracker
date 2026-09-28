@@ -137,7 +137,8 @@ inputs. These controlled components own presentation and accessibility; consumer
 own state, labels, options, and effects. [ItemsControls](../src/features/items/components/ItemsControls.tsx)
 wires them to existing preferences without changing persistence. Panel triggers
 expose expanded state; panels fade and expand into place, then close when the
-user clicks anywhere outside them; radios support arrow keys; and toggles expose
+user clicks anywhere outside them; `FilterDrawer` tucks a collapsible strip under a
+bar stacked above it, leaving only its eye toggle when hidden; radios support arrow keys; and toggles expose
 pressed state. Escape from the checklist panel closes it and returns focus to its
 trigger.
 

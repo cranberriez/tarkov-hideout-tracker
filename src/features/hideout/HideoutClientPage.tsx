@@ -34,12 +34,9 @@ export function HideoutClientPage({ data, dataMode }: HideoutClientPageProps) {
 
 	return (
 		<main className="container mx-auto px-6 py-8">
-			<div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-border-color pb-6 gap-4">
+			<div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 				<div>
 					<h1 className="text-3xl font-bold text-foreground tracking-tight">HIDEOUT STATIONS</h1>
-					<p className="text-muted-foreground mt-2 text-sm">
-						Manage your current station levels to calculate required items
-					</p>
 				</div>
 				<div className="flex flex-col w-full md:w-auto">
 					<HideoutControls />

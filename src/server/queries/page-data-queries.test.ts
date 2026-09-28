@@ -348,7 +348,7 @@ test("profit keeps the craft graph when barter and trader domains fail", async (
 	assert.equal(data.errors.crafts, null);
 });
 
-test("profit trader payload includes cash-only traders referenced by graph items", async () => {
+test("profit trader payload includes the whole trader catalog", async () => {
 	const cashOffer = {
 		traderId: "cash-trader",
 		price: 53,
@@ -396,7 +396,7 @@ test("profit trader payload includes cash-only traders referenced by graph items
 
 	assert.deepEqual(
 		data.traders.map((trader) => trader.id),
-		["cash-trader"],
+		["cash-trader", "unused"],
 	);
 	assert.equal(data.items?.find((entry) => entry.id === "item-b")?.buyFromTrader?.[0]?.price, 53);
 });

@@ -72,7 +72,7 @@ export function ProfitPageControls({
 } & ProfitLockOptionsProps) {
 	return (
 		<FilterBar
-			className="relative mb-4"
+			className="relative z-40"
 			aria-label={kind === "craft" ? "Craft profit filters" : "Barter profit filters"}
 		>
 			<FilterSearchInput

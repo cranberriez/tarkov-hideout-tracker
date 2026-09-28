@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsList } from "@/features/items/components/ItemsList";
 import { ItemsControls } from "@/features/items/components/ItemsControls";
-import { ItemsStatsRow } from "@/features/items/components/ItemsStatsRow";
+// import { ItemsStatsRow } from "@/features/items/components/ItemsStatsRow";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { DataLoadError } from "@/components/core/DataLoadError";
 import type { ItemChecklistPageData } from "@/types/contracts";
@@ -82,13 +82,13 @@ export function ItemsClientPage({ data, dataMode }: ItemsClientPageProps) {
 							</div>
 						)}
 						<ItemsControls searchQuery={searchQuery} onSearchQueryChange={setSearchQuery}>
-							<ItemsStatsRow
+							{/* <ItemsStatsRow
 								stations={stations}
 								items={items}
 								questItemIndex={questItemIndex}
 								questAnyOfGroups={questAnyOfGroups}
 								questAvailabilityQuests={questAvailabilityQuestList}
-							/>
+							/> */}
 							<ItemsList
 								searchQuery={searchQuery}
 								stations={stations}

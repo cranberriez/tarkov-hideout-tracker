@@ -57,7 +57,7 @@ keyed records, and omit missing IDs; query contracts report those omissions in
 | Items        | [getItemChecklistPageData](../src/server/queries/getItemChecklistPageData.ts)   | Independently settled stations/quests, demand metadata, demand items/prices   |
 | Quests       | [getQuestWorkspacePageData](../src/server/queries/getQuestWorkspacePageData.ts) | Prepared full quests and their referenced standard item summaries (no prices) |
 | Kappa        | [getKappaChecklistPageData](../src/server/queries/getKappaChecklistPageData.ts) | One mode-specific Collector quest and its hand-in items/prices                |
-| Profit pages | [getProfitPageData](../src/server/queries/getProfitPageData.ts)                 | Both recipe graphs, referenced items/prices, compact source presentation      |
+| Profit pages | [getProfitPageData](../src/server/queries/getProfitPageData.ts)                 | Both recipe graphs, referenced items/prices, full trader catalog, stations    |
 
 [contracts.ts](../src/types/contracts.ts) owns these payloads and their freshness
 and error fields. Item summaries can carry `marketPrice`; consumers may build

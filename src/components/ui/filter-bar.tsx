@@ -1,11 +1,59 @@
 "use client";
 
 import { useEffect, useId, useRef, type ComponentProps, type ReactNode } from "react";
-import { Check, CircleDot, Search, X } from "lucide-react";
+import { Check, CircleDot, Eye, EyeOff, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function FilterBar({ className, ...props }: ComponentProps<"div">) {
 	return <div className={cn("flex flex-wrap gap-1.5 rounded-md border bg-muted px-3 py-2", className)} {...props} />;
+}
+
+/**
+ * Collapsible strip tucked under the preceding `FilterBar`, which must stack above it
+ * (e.g. `relative z-40`). Hidden leaves only the eye toggle as a tab in the same spot.
+ */
+export function FilterDrawer({
+	open,
+	onOpenChange,
+	label,
+	className,
+	contentClassName,
+	children,
+}: {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	label: string;
+	className?: string;
+	contentClassName?: string;
+	children: ReactNode;
+}) {
+	const contentId = useId();
+	return (
+		<div
+			className={cn(
+				"-mt-[10px] flex items-start gap-2 rounded-b-md border border-t-0 border-highlight/10 bg-shadow/40 pb-2 pl-3 pr-2 pt-[18px]",
+				open ? "w-full" : "ml-auto w-fit pl-2",
+				className,
+			)}
+		>
+			{open && (
+				<div id={contentId} className={cn("min-w-0 flex-1", contentClassName)}>
+					{children}
+				</div>
+			)}
+			<button
+				type="button"
+				aria-expanded={open}
+				aria-controls={open ? contentId : undefined}
+				aria-label={open ? `Hide ${label}` : `Show ${label}`}
+				title={open ? `Hide ${label}` : `Show ${label}`}
+				onClick={() => onOpenChange(!open)}
+				className="shrink-0 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-brand"
+			>
+				{open ? <EyeOff size={14} /> : <Eye size={14} />}
+			</button>
+		</div>
+	);
 }
 
 const buttonClass = (active: boolean) =>
@@ -72,8 +120,7 @@ export function FilterPanel({
 			if (panelRef.current && eventPath.includes(panelRef.current)) return;
 
 			const clickedTrigger = eventPath.some(
-				(target) =>
-					target instanceof HTMLElement && target.dataset.filterPanelTrigger === props.id,
+				(target) => target instanceof HTMLElement && target.dataset.filterPanelTrigger === props.id,
 			);
 			if (!clickedTrigger) closePanel(false);
 		}

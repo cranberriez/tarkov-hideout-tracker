@@ -69,8 +69,7 @@ rather than selecting routes independently.
   overrides and non-flea routes do not carry this warning. The item modal market
   estimate uses small **value unstable** text without an icon or popup. Sale value, profit and
   profit/hour all use the same estimate, including after ingredient-route changes.
-  Route profit and owned-input opportunity value remain distinct. Header totals
-  count unpriced rows explicitly; positive value sums priced rows only.
+  Route profit and owned-input opportunity value remain distinct.
 - Hourly profit includes sequential nested craft time allocated per produced item;
   root crafts include their own duration. Instantaneous barter paths have no hourly
   value. The Skills panel has Crafting and Hideout Management level text inputs (0-50), validates
@@ -174,9 +173,14 @@ locked alternatives and nested recipes) remain unchanged for filters and the
 route menu. Lock reasons carry optional `sourceId` and `requiredLevel` for this
 presentation.
 
-While the **Hide locked recipes** filter is off, a banner lists profile-wide gaps once: player level below
-the flea unlock, unset hideout levels (crafts), and all traders at LL1, with
-links to the quests/hideout pages and a **Hide locked** shortcut. Flea requirements at
+While the **Hide locked recipes** filter is off, a banner in a collapsible
+`FilterDrawer` under the filter bar lists profile-wide gaps once: player level below
+the flea unlock, unset hideout levels (crafts), and all traders at LL1. Each gap has
+its own action: **Set PMC level** opens the navbar character panel
+(`openCharacterPanel`), **Set hideout levels** links to the hideout page, and
+**Set trader levels** opens [TraderLevelsModal](../src/features/profit-pages/components/TraderLevelsModal.tsx),
+which shares [TraderLoyaltyControl](../src/components/entities/trader-loyalty.tsx) with
+the quest trader filter. A **Hide locked** shortcut follows. Flea requirements at
 the general unlock level are omitted while the banner explains it.
 
 Locked dropdown choices retain the

@@ -81,7 +81,7 @@ export function CalculationSettings({
 				<FilterSection title="Ingredient sources">
 					<Toggle checked={allowCrafts} onChange={onAllowCraftsChange} label="Use crafts for ingredients" />
 					<Toggle checked={allowBarters} onChange={onAllowBartersChange} label="Use barters for ingredients" />
-					<p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
+					<p className="mt-2 text-[11px] font-semibold leading-relaxed text-muted-foreground">
 						The recipe being evaluated remains visible; these options only change how its required items are acquired.
 					</p>
 				</FilterSection>
