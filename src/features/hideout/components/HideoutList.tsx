@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { StationCard } from "./StationCard";
 import { stationOrder } from "@/lib/cfg/stationOrder";
@@ -17,7 +18,15 @@ interface HideoutListProps {
 }
 
 export function HideoutList({ stations, itemById, stationsUpdatedAt, itemsUpdatedAt }: HideoutListProps) {
-	const { stationLevels, hiddenStations, checklistViewMode, showHidden, completedRequirements } = useUserStore();
+	const { stationLevels, hiddenStations, checklistViewMode, showHidden, completedRequirements } = useUserStore(
+		useShallow((state) => ({
+			stationLevels: state.stationLevels,
+			hiddenStations: state.hiddenStations,
+			checklistViewMode: state.checklistViewMode,
+			showHidden: state.showHidden,
+			completedRequirements: state.completedRequirements,
+		})),
+	);
 
 	// 2. Helper to check if station is locked
 	const isStationLocked = (station: Station) => {

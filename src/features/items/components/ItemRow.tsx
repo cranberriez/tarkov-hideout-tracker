@@ -37,7 +37,7 @@ function SourceBadges({ isHideout, isQuest, size }: { isHideout: boolean; isQues
 }
 
 export function ItemRow({ item, count, firCount = 0, size, isHideout = false, isQuest = false }: ItemRowProps) {
-	const { itemCounts } = useUserStore();
+	const itemCounts = useUserStore((state) => state.itemCounts);
 	const owned = itemCounts[item.id] ?? { have: 0, haveFir: 0 };
 	const priceState = describeFleaPrice(item);
 

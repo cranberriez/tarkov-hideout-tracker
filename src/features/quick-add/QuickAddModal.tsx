@@ -14,7 +14,7 @@ import { useItemSearchController } from "@/features/items/useItemSearchControlle
 export function QuickAddModal() {
 	const { isQuickAddOpen, setQuickAddOpen, pendingQuickAddItems, setPendingQuickAddItems, clearPendingQuickAddItems } =
 		useUIStore();
-	const { addItemCounts } = useUserStore();
+	const addItemCounts = useUserStore((state) => state.addItemCounts);
 	const gameMode = useUserStore((state) => state.gameMode);
 
 	// State for the new item row

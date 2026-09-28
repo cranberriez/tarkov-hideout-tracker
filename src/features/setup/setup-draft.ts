@@ -1,5 +1,6 @@
 import type { GameEdition, GameMode, PlayerProfileState } from "@/lib/stores/useUserStore";
 import type { Station } from "@/types/hideout";
+import { EDITION_STARTING_LEVELS } from "@/lib/cfg/editionStartingLevels";
 
 type EditionBonusStation = Pick<Station, "id" | "normalizedName">;
 type SetupProfiles = Record<GameMode, PlayerProfileState>;
@@ -12,17 +13,11 @@ export interface SetupDraft {
 	stationLevels: Record<string, number>;
 }
 
-const EDITION_STASH_LEVELS: Record<GameEdition, number> = {
-	Standard: 1,
-	"Left Behind": 2,
-	"Prepare for Escape": 3,
-	"Edge of Darkness": 4,
-	Unheard: 4,
-};
-
 /** Edition is account-wide, so any completed profile tells us the player's edition. */
 export function findKnownEdition(profiles: SetupProfiles): GameEdition | null {
-	return Object.values(profiles).find((profile) => profile.hasCompletedSetup && profile.gameEdition)?.gameEdition ?? null;
+	return (
+		Object.values(profiles).find((profile) => profile.hasCompletedSetup && profile.gameEdition)?.gameEdition ?? null
+	);
 }
 
 /** First-time setup of another profile only needs hideout levels once the edition is known. */
@@ -33,11 +28,12 @@ export function shouldStartOnHideoutLevels(profiles: SetupProfiles, mode: GameMo
 function withEdition(draft: SetupDraft, edition: GameEdition | null, stations: EditionBonusStation[]): SetupDraft {
 	if (!edition || draft.editionBonusesAppliedFor === edition) return { ...draft, gameEdition: edition };
 
+	const starting = EDITION_STARTING_LEVELS[edition];
 	const stationLevels = { ...draft.stationLevels };
 	for (const station of stations) {
-		if (station.normalizedName === "stash") stationLevels[station.id] = EDITION_STASH_LEVELS[edition];
-		if (station.normalizedName === "cultist-circle" && edition === "Unheard" && (stationLevels[station.id] || 0) < 1) {
-			stationLevels[station.id] = 1;
+		if (station.normalizedName === "stash") stationLevels[station.id] = starting.stash;
+		if (station.normalizedName === "cultist-circle" && (stationLevels[station.id] || 0) < starting.cultistCircle) {
+			stationLevels[station.id] = starting.cultistCircle;
 		}
 	}
 	return { ...draft, gameEdition: edition, editionBonusesAppliedFor: edition, stationLevels };

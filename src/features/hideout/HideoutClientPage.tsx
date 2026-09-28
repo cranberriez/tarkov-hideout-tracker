@@ -3,6 +3,7 @@
 import { useDeferredPriceItems } from "@/features/items/DeferredPriceBoundary";
 
 import { useEffect, useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { HideoutControls } from "@/features/hideout/components/HideoutControls";
 import { HideoutConversionGate } from "@/features/hideout/components/HideoutConversionGate";
@@ -24,7 +25,14 @@ export function HideoutClientPage({ data, dataMode }: HideoutClientPageProps) {
 	const items = useDeferredPriceItems(initialItems);
 	const itemById = useMemo(() => Object.fromEntries((items ?? []).map((item) => [item.id, item])), [items]);
 	const hydrated = useUserStoreHydrated();
-	const { gameMode, initializeDefaults, hasSeenHideoutLevelWarning, setHasSeenHideoutLevelWarning } = useUserStore();
+	const { gameMode, initializeDefaults, hasSeenHideoutLevelWarning, setHasSeenHideoutLevelWarning } = useUserStore(
+		useShallow((state) => ({
+			gameMode: state.gameMode,
+			initializeDefaults: state.initializeDefaults,
+			hasSeenHideoutLevelWarning: state.hasSeenHideoutLevelWarning,
+			setHasSeenHideoutLevelWarning: state.setHasSeenHideoutLevelWarning,
+		})),
+	);
 
 	useEffect(() => {
 		if (hydrated && toTarkovJsonGameMode(gameMode) === dataMode && stations && stations.length > 0) {

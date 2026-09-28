@@ -1,5 +1,6 @@
 "use client";
 
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeStationUpgradeStatus } from "../station-model";
 import type { Station } from "@/types/hideout";
@@ -28,7 +29,20 @@ export function StationCard({ station, stations, itemById, isLocked = false, poo
 		hideMoney,
 		hideRequirements,
 		itemCounts,
-	} = useUserStore();
+	} = useUserStore(
+		useShallow((state) => ({
+			stationLevels: state.stationLevels,
+			hiddenStations: state.hiddenStations,
+			toggleHiddenStation: state.toggleHiddenStation,
+			hideoutCompactMode: state.hideoutCompactMode,
+			showHidden: state.showHidden,
+			completedRequirements: state.completedRequirements,
+			toggleRequirement: state.toggleRequirement,
+			hideMoney: state.hideMoney,
+			hideRequirements: state.hideRequirements,
+			itemCounts: state.itemCounts,
+		})),
+	);
 
 	const currentLevel = stationLevels[station.id] ?? 0;
 	const maxLevel = station.levels.length;

@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { completedItemsConversionQueryOptions } from "@/lib/query/conversions";
 import type { CompletedItemsConversionData } from "@/types/contracts";
@@ -18,7 +19,14 @@ interface CompletedItemsConversionModalProps {
 }
 
 export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItemsConversionModalProps) {
-	const { gameMode, stationLevels, completedRequirements, addItemCounts } = useUserStore();
+	const { gameMode, stationLevels, completedRequirements, addItemCounts } = useUserStore(
+		useShallow((state) => ({
+			gameMode: state.gameMode,
+			stationLevels: state.stationLevels,
+			completedRequirements: state.completedRequirements,
+			addItemCounts: state.addItemCounts,
+		})),
+	);
 	const requestedMode = toTarkovJsonGameMode(gameMode);
 	const conversionQuery = useQuery({
 		...completedItemsConversionQueryOptions(requestedMode),

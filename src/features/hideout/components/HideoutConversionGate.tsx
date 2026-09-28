@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { CompletedItemsConversionModal } from "@/features/items/components/CompletedItemsConversionModal";
 import type { Station } from "@/types/hideout";
@@ -11,7 +12,14 @@ interface HideoutConversionGateProps {
 
 export function HideoutConversionGate({ stations }: HideoutConversionGateProps) {
 	const { stationLevels, completedRequirements, hasSeenItemConversionModal, setHasSeenItemConversionModal } =
-		useUserStore();
+		useUserStore(
+			useShallow((state) => ({
+				stationLevels: state.stationLevels,
+				completedRequirements: state.completedRequirements,
+				hasSeenItemConversionModal: state.hasSeenItemConversionModal,
+				setHasSeenItemConversionModal: state.setHasSeenItemConversionModal,
+			})),
+		);
 
 	const hasConvertible = useMemo(() => {
 		return stations.some((station) => {

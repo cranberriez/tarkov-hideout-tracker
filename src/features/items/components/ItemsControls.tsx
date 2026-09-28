@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import { FilterPanel } from "@/components/ui/filter-bar";
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsFiltersPanel } from "./controls/ItemsFiltersPanel";
 import { ItemsToolbar } from "./controls/ItemsToolbar";
@@ -45,7 +46,40 @@ export function ItemsControls({ searchQuery, onSearchQueryChange, children }: It
 		setItemQuestCustomLevelLookahead,
 		setItemShowFutureFir,
 		setItemShowIgnored,
-	} = useUserStore();
+	} = useUserStore(
+		useShallow((state) => ({
+			itemFiltersOpen: state.itemFiltersOpen,
+			setItemFiltersOpen: state.setItemFiltersOpen,
+			checklistViewMode: state.checklistViewMode,
+			setChecklistViewMode: state.setChecklistViewMode,
+			showHidden: state.showHidden,
+			setShowHidden: state.setShowHidden,
+			hideCheap: state.hideCheap,
+			setHideCheap: state.setHideCheap,
+			itemsSize: state.itemsSize,
+			setItemsSize: state.setItemsSize,
+			cheapPriceThreshold: state.cheapPriceThreshold,
+			setCheapPriceThreshold: state.setCheapPriceThreshold,
+			useCategorization: state.useCategorization,
+			setUseCategorization: state.setUseCategorization,
+			showFirOnly: state.showFirOnly,
+			setShowFirOnly: state.setShowFirOnly,
+			itemSourceFilter: state.itemSourceFilter,
+			setItemSourceFilter: state.setItemSourceFilter,
+			itemShowPinnedQuestOnly: state.itemShowPinnedQuestOnly,
+			setItemShowPinnedQuestOnly: state.setItemShowPinnedQuestOnly,
+			itemQuestVisibilityMode: state.itemQuestVisibilityMode,
+			itemQuestCustomLookahead: state.itemQuestCustomLookahead,
+			itemQuestCustomLevelLookahead: state.itemQuestCustomLevelLookahead,
+			itemShowFutureFir: state.itemShowFutureFir,
+			itemShowIgnored: state.itemShowIgnored,
+			setItemQuestVisibilityMode: state.setItemQuestVisibilityMode,
+			setItemQuestCustomLookahead: state.setItemQuestCustomLookahead,
+			setItemQuestCustomLevelLookahead: state.setItemQuestCustomLevelLookahead,
+			setItemShowFutureFir: state.setItemShowFutureFir,
+			setItemShowIgnored: state.setItemShowIgnored,
+		})),
+	);
 
 	return (
 		<div className="space-y-3">

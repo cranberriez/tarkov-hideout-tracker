@@ -6,6 +6,7 @@ import { useProfitOptions } from "@/features/profit-pages/useProfitOptions";
 import { useMemo, useState } from "react";
 import type { ItemCraftRecipe, ItemTraderOffer } from "./item-detail-types";
 import type { ItemSummary } from "@/types/items";
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { formatRelativeUpdatedAt } from "@/lib/utils/format-time";
 import { computeNeeds } from "@/lib/utils/item-needs";
@@ -22,6 +23,35 @@ import { useItemPrices } from "../useItemPrices";
 import { isPriceItemId } from "@/lib/query/price-contract";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import type { ItemDetailModalProps } from "./ItemDetailModal";
+
+/** Profile values the item details read; subscribing to the whole store re-renders on any change. */
+function selectItemDetailState(state: ReturnType<typeof useUserStore.getState>) {
+	return {
+		addItemCounts: state.addItemCounts,
+		completedQuests: state.completedQuests,
+		completedRequirements: state.completedRequirements,
+		failedQuests: state.failedQuests,
+		gameEdition: state.gameEdition,
+		gameMode: state.gameMode,
+		hiddenStations: state.hiddenStations,
+		ignoredQuests: state.ignoredQuests,
+		itemCounts: state.itemCounts,
+		itemQuestCustomLevelLookahead: state.itemQuestCustomLevelLookahead,
+		itemQuestCustomLookahead: state.itemQuestCustomLookahead,
+		itemQuestVisibilityMode: state.itemQuestVisibilityMode,
+		itemShowFutureFir: state.itemShowFutureFir,
+		itemShowIgnored: state.itemShowIgnored,
+		pinnedQuests: state.pinnedQuests,
+		playerLevel: state.playerLevel,
+		prestigeLevel: state.prestigeLevel,
+		questFaction: state.questFaction,
+		questFenceReputation: state.questFenceReputation,
+		questShowKappa: state.questShowKappa,
+		questShowLightkeeper: state.questShowLightkeeper,
+		questTraderLoyaltyLevels: state.questTraderLoyaltyLevels,
+		stationLevels: state.stationLevels,
+	};
+}
 
 /**
  * Item data and derived values shared by the item dialog and the item page.
@@ -43,13 +73,13 @@ export function useItemDetailsController({
 	initialViews?: InitialItemDetailViews;
 }) {
 	const isOpen = enabled;
-	const liveStore = useUserStore();
+	const liveStore = useUserStore(useShallow(selectItemDetailState));
 	// Rows always render from item data; profile-dependent values use the initial profile
 	// until the saved one loads, so server HTML and the hydration render agree.
 	const profileReady = useUserStoreHydrated();
 	const store = profileReady
 		? liveStore
-		: { ...useUserStore.getInitialState(), addItemCounts: liveStore.addItemCounts };
+		: { ...selectItemDetailState(useUserStore.getInitialState()), addItemCounts: liveStore.addItemCounts };
 	const { overrides } = useManualPriceOverrides(store.gameMode);
 	const { craftingSkillLevel, hideoutManagementSkillLevel } = useProfitOptions(store.gameMode);
 	const tarkovMode = mode ?? toTarkovJsonGameMode(store.gameMode);

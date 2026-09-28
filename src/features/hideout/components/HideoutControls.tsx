@@ -1,5 +1,6 @@
 "use client";
 
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { FilterBar, FilterRadioGroup, FilterToggle } from "@/components/ui/filter-bar";
 import { Grid2x2, Rows2 } from "lucide-react";
@@ -19,7 +20,18 @@ export function HideoutControls() {
 		setHideMoney,
 		hideRequirements,
 		setHideRequirements,
-	} = useUserStore();
+	} = useUserStore(
+		useShallow((state) => ({
+			showHidden: state.showHidden,
+			setShowHidden: state.setShowHidden,
+			hideoutCompactMode: state.hideoutCompactMode,
+			setHideoutCompactMode: state.setHideoutCompactMode,
+			hideMoney: state.hideMoney,
+			setHideMoney: state.setHideMoney,
+			hideRequirements: state.hideRequirements,
+			setHideRequirements: state.setHideRequirements,
+		})),
+	);
 
 	return (
 		<FilterBar className="items-center">

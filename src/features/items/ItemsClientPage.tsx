@@ -3,6 +3,7 @@
 import { useDeferredPriceItems } from "@/features/items/DeferredPriceBoundary";
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsList } from "@/features/items/components/ItemsList";
 import { ItemsControls } from "@/features/items/components/ItemsControls";
@@ -33,7 +34,9 @@ export function ItemsClientPage({ data, dataMode }: ItemsClientPageProps) {
 	const items = useDeferredPriceItems(initialItems);
 	const [searchQuery, setSearchQuery] = useState("");
 
-	const { gameMode, initializeDefaults } = useUserStore();
+	const { gameMode, initializeDefaults } = useUserStore(
+		useShallow((state) => ({ gameMode: state.gameMode, initializeDefaults: state.initializeDefaults })),
+	);
 	const hydrated = useUserStoreHydrated();
 
 	useEffect(() => {

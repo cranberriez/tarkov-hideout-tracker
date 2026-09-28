@@ -2,6 +2,7 @@
 
 import { ItemLink } from "@/components/entities/item-link";
 import { useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemRow } from "./ItemRow";
 import { ItemAnyOfGroupCard } from "./ItemAnyOfGroupCard";
@@ -87,7 +88,38 @@ export function ItemsList({
 		itemShowIgnored,
 		questShowKappa,
 		questShowLightkeeper,
-	} = useUserStore();
+	} = useUserStore(
+		useShallow((state) => ({
+			stationLevels: state.stationLevels,
+			hiddenStations: state.hiddenStations,
+			checklistViewMode: state.checklistViewMode,
+			showHidden: state.showHidden,
+			hideCheap: state.hideCheap,
+			cheapPriceThreshold: state.cheapPriceThreshold,
+			itemsSize: state.itemsSize,
+			useCategorization: state.useCategorization,
+			showFirOnly: state.showFirOnly,
+			itemSourceFilter: state.itemSourceFilter,
+			completedRequirements: state.completedRequirements,
+			completedQuests: state.completedQuests,
+			failedQuests: state.failedQuests,
+			ignoredQuests: state.ignoredQuests,
+			pinnedQuests: state.pinnedQuests,
+			playerLevel: state.playerLevel,
+			prestigeLevel: state.prestigeLevel,
+			questTraderLoyaltyLevels: state.questTraderLoyaltyLevels,
+			questFenceReputation: state.questFenceReputation,
+			questFaction: state.questFaction,
+			itemShowPinnedQuestOnly: state.itemShowPinnedQuestOnly,
+			itemQuestVisibilityMode: state.itemQuestVisibilityMode,
+			itemQuestCustomLookahead: state.itemQuestCustomLookahead,
+			itemQuestCustomLevelLookahead: state.itemQuestCustomLevelLookahead,
+			itemShowFutureFir: state.itemShowFutureFir,
+			itemShowIgnored: state.itemShowIgnored,
+			questShowKappa: state.questShowKappa,
+			questShowLightkeeper: state.questShowLightkeeper,
+		})),
+	);
 
 	const deriveOptions = useMemo(
 		() => ({

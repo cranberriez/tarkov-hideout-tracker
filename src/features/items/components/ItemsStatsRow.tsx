@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { poolItems } from "@/lib/utils/item-pooling";
 import { getFleaPrice } from "@/lib/utils/market-price";
@@ -64,7 +65,37 @@ export function ItemsStatsRow({
 		hideCheap,
 		cheapPriceThreshold,
 		itemCounts,
-	} = useUserStore();
+	} = useUserStore(
+		useShallow((state) => ({
+			stationLevels: state.stationLevels,
+			hiddenStations: state.hiddenStations,
+			checklistViewMode: state.checklistViewMode,
+			showHidden: state.showHidden,
+			completedRequirements: state.completedRequirements,
+			completedQuests: state.completedQuests,
+			failedQuests: state.failedQuests,
+			ignoredQuests: state.ignoredQuests,
+			pinnedQuests: state.pinnedQuests,
+			playerLevel: state.playerLevel,
+			prestigeLevel: state.prestigeLevel,
+			questTraderLoyaltyLevels: state.questTraderLoyaltyLevels,
+			questFenceReputation: state.questFenceReputation,
+			questFaction: state.questFaction,
+			itemQuestVisibilityMode: state.itemQuestVisibilityMode,
+			itemQuestCustomLookahead: state.itemQuestCustomLookahead,
+			itemQuestCustomLevelLookahead: state.itemQuestCustomLevelLookahead,
+			itemShowFutureFir: state.itemShowFutureFir,
+			itemShowIgnored: state.itemShowIgnored,
+			questShowKappa: state.questShowKappa,
+			questShowLightkeeper: state.questShowLightkeeper,
+			itemShowPinnedQuestOnly: state.itemShowPinnedQuestOnly,
+			itemSourceFilter: state.itemSourceFilter,
+			showFirOnly: state.showFirOnly,
+			hideCheap: state.hideCheap,
+			cheapPriceThreshold: state.cheapPriceThreshold,
+			itemCounts: state.itemCounts,
+		})),
+	);
 
 	const deriveOptions = useMemo(
 		() => ({

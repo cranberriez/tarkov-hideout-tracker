@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { createUserStateStorage, USER_STORE_STORAGE_KEY } from "./user-state-storage";
 import { DEFAULT_IGNORED_QUESTS } from "../cfg/defaultIgnoredQuests";
+import { EDITION_STARTING_LEVELS } from "../cfg/editionStartingLevels";
 import { GAME_MODES, serializeActiveGameModeCookie, toTarkovJsonGameMode, type GameMode } from "../game-mode";
 import type { Station } from "../../types";
 
@@ -794,28 +795,9 @@ export const useUserStore = create<UserState>()(
 					const newLevels = { ...stationLevels };
 					let changed = false;
 
-					let stashBase = 1;
-					let cultistBase = 0;
-					if (gameEdition) {
-						switch (gameEdition) {
-							case "Standard":
-								stashBase = 1;
-								break;
-							case "Left Behind":
-								stashBase = 2;
-								break;
-							case "Prepare for Escape":
-								stashBase = 3;
-								break;
-							case "Edge of Darkness":
-								stashBase = 4;
-								break;
-							case "Unheard":
-								stashBase = 4;
-								cultistBase = 1;
-								break;
-						}
-					}
+					const starting = gameEdition ? EDITION_STARTING_LEVELS[gameEdition] : { stash: 1, cultistCircle: 0 };
+					const stashBase = starting.stash;
+					const cultistBase = starting.cultistCircle;
 
 					stations.forEach((s) => {
 						if (newLevels[s.id] === undefined) {
