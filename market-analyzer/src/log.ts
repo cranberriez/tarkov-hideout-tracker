@@ -164,6 +164,16 @@ function describe(record: LogRecord): PrettyEntry {
 			return { level: "INFO", mode, message: `exclusions cleared · ${count(f.count, "items")} rechecked next poll` };
 		case "recheck-requested":
 			return { level: "INFO", message: `recheck of excluded items requested · ${(f.modes as string[]).join(", ")}` };
+		case "run-requested":
+			return { level: "INFO", message: `run requested via ${text(f.source)} · ${text(f.request)}` };
+		case "run-request-invalid":
+			return { level: "ERROR", message: `ignored run request "${text(f.spec)}"`, details: errorDetails(f.error) };
+		case "run-now-started":
+			return {
+				level: "INFO",
+				mode,
+				message: `running now (outside schedule) · ${((f.steps ?? []) as string[]).join(" + ")}`,
+			};
 		case "mode-error":
 			return {
 				level: "ERROR",

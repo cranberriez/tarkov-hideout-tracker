@@ -62,7 +62,12 @@ export function seedAnalysisState(state: ModeState, baseline: AnalysisBaseline):
  * One analytics period for a mode: every item with new upstream data since its
  * previous observation gets one row. Unchanged items are not rewritten.
  */
-export async function analyzeMode(mode: TarkovDataMode, state: ModeState, deps: AnalysisDependencies) {
+export async function analyzeMode(
+	mode: TarkovDataMode,
+	state: ModeState,
+	deps: AnalysisDependencies,
+	options: { includeUnchanged?: boolean } = {},
+) {
 	const startedAt = deps.now();
 	const sellOffers = await deps.readTraderSellOffers(mode);
 	const observations: MarketObservation[] = [];
@@ -76,7 +81,8 @@ export async function analyzeMode(mode: TarkovDataMode, state: ModeState, deps: 
 			missingCount += 1;
 			continue;
 		}
-		if (item.analyzedTimestamp === item.latestTimestamp) {
+		// includeUnchanged recomputes every cached item, e.g. after a metric change.
+		if (!options.includeUnchanged && item.analyzedTimestamp === item.latestTimestamp) {
 			unchangedCount += 1;
 			continue;
 		}

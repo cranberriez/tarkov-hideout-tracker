@@ -142,6 +142,43 @@ export class WorkerStateStore {
 		writeAtomic(this.recheckFile(mode), String(Date.now()));
 	}
 
+	/** Queues steps for a running (or the next) worker; see run-spec.ts for the format. */
+	requestRun(spec: string) {
+		writeAtomic(path.join(this.directory, "requests", `run-now-${Date.now()}-${randomUUID()}.txt`), spec);
+	}
+
+	hasRunRequests(): boolean {
+		return this.runRequestFiles().length > 0;
+	}
+
+	/** Returns queued run specs, oldest first, removing them. */
+	consumeRunRequests(): string[] {
+		return this.runRequestFiles().flatMap((file) => {
+			try {
+				const spec = fs.readFileSync(file, "utf8");
+				fs.rmSync(file, { force: true });
+				return [spec];
+			} catch (error) {
+				if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+				throw error;
+			}
+		});
+	}
+
+	private runRequestFiles(): string[] {
+		const directory = path.join(this.directory, "requests");
+		try {
+			return fs
+				.readdirSync(directory)
+				.filter((name) => name.startsWith("run-now-") && name.endsWith(".txt"))
+				.sort()
+				.map((name) => path.join(directory, name));
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+			throw error;
+		}
+	}
+
 	consumeRecheck(mode: TarkovDataMode): boolean {
 		try {
 			fs.unlinkSync(this.recheckFile(mode));

@@ -12,7 +12,9 @@ COPY market-analyzer ./market-analyzer
 RUN cd market-analyzer && node build.mjs
 
 FROM node:24-alpine
+# Source maps also for commands run with `docker compose exec`.
 ENV NODE_ENV=production \
+	NODE_OPTIONS=--enable-source-maps \
 	MARKET_STATE_DIR=/data
 WORKDIR /app
 COPY --from=build /repo/market-analyzer/dist ./dist

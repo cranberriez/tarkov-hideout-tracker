@@ -120,3 +120,18 @@ test("lock holder liveness", () => {
 		false,
 	);
 });
+
+test("run requests queue in order and are consumed once", () => {
+	const { store, cleanup } = temporaryStore();
+	try {
+		assert.equal(store.hasRunRequests(), false);
+		assert.deepEqual(store.consumeRunRequests(), []);
+		store.requestRun("pvp-season:analyze");
+		store.requestRun("pve:poll");
+		assert.equal(store.hasRunRequests(), true);
+		assert.deepEqual(store.consumeRunRequests().sort(), ["pve:poll", "pvp-season:analyze"]);
+		assert.equal(store.hasRunRequests(), false);
+	} finally {
+		cleanup();
+	}
+});

@@ -54,6 +54,24 @@ test("analysis writes one row per item with new upstream data only", async () =>
 	assert.equal(run.missingCount, 1);
 	assert.equal(state.items.fresh.analyzedTimestamp, NOW);
 	assert.equal(state.lastAnalysisAt, NOW);
+
+	const again = await analyzeMode(
+		"pvp-season",
+		state,
+		{
+			readHistory: () => points,
+			readTraderSellOffers: async () => new Map(),
+			writeRun: async (_run, observations) => {
+				written = observations;
+			},
+			saveState: () => undefined,
+			now: () => NOW,
+			newRunId: () => "analysis-2",
+		},
+		{ includeUnchanged: true },
+	);
+	assert.equal(again.analyzedCount, 2);
+	assert.deepEqual(written.map((observation) => observation.itemId).sort(), ["fresh", "unchanged"]);
 });
 
 test("a fresh local state resumes analysis progress from PostgreSQL", () => {

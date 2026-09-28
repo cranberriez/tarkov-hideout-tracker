@@ -64,6 +64,17 @@ test("errors add the cause chain and hints as detail lines", () => {
 	);
 });
 
+test("run-now events describe what will run", () => {
+	assert.equal(
+		formatPretty({ at, event: "run-now-started", mode: "pvp-season", steps: ["poll", "analyze"] }),
+		"2026-09-28 14:42:37 INFO  [pvp-season] running now (outside schedule) · poll + analyze",
+	);
+	assert.equal(
+		formatPretty({ at, event: "run-requested", source: "run-now", request: "pve:analyze" }),
+		"2026-09-28 14:42:37 INFO  run requested via run-now · pve:analyze",
+	);
+});
+
 test("unknown events fall back to key=value", () => {
 	assert.equal(
 		formatPretty({ at, event: "custom", mode: "pve", count: 2, extra: { a: 1 } }),

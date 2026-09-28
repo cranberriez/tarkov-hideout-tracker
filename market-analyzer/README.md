@@ -33,8 +33,10 @@ identical inputs.
 ## Analytics fields
 
 Market state uses flea minimum listing prices. Windows are time-weighted: each
-observation counts for the time it represents (capped at 26 h), because upstream
-history is two-hourly recently and daily further back.
+observation counts for the time it represents. Upstream keeps daily aggregates (00:00
+UTC, held up to 26 h) for older history and a snapshot about every two hours recently
+(held up to 3 h). It records nothing when no listings exist, so a gap counts as no data,
+never as the last price persisting.
 
 | Field                                       | Meaning                                                                   |
 | ------------------------------------------- | ------------------------------------------------------------------------- |
@@ -42,13 +44,13 @@ history is two-hourly recently and daily further back.
 | `market_value`, `stability`                 | The site's robust current estimate (same function as `item_prices.price`) |
 | `median_24h/7d/30d`                         | Time-weighted medians; null below 50% window coverage                     |
 | `range_low_7d/high_7d`                      | 7-day p10–p90: the recent normal range                                    |
-| `change_6h/24h/7d`                          | Change of the robust level versus that long ago                           |
+| `change_6h/24h/7d`                          | Market value now vs the market value as of then (null if either is stale) |
 | `percentile_30d`                            | Share of the last 30 days spent below the market value                    |
 | `volatility_7d`                             | (p75 − p25) / median over 7 days                                          |
 | `trend`                                     | 7-day change beyond max(5%, volatility / 2); `unknown` without coverage   |
 | `persistence_hours`                         | How long the current price regime (within 1.25×) has held                 |
 | `depth_median_24h`                          | Listing depth: supporting evidence, not volume                            |
-| `confidence`, `confidence_reasons`          | high / medium / low with explicit reasons (stale, thin, volatile, …)      |
+| `confidence`, `confidence_reasons`          | high / medium / low with reasons (stale, thin, volatile, above-max-net …) |
 | `trader_value`, `base_price`                | Best trader buyback and inferred base value                               |
 | `flea_net`, `flea_fee`                      | Net of listing at market value (no Intelligence Center reduction)         |
 | `trader_break_even`, `practical_break_even` | Asking price matching the trader, and beating it by min(5%, 5,000 ₽)      |
@@ -64,14 +66,22 @@ cp .sample.env .env
 docker compose up -d --build
 ```
 
-Commands (use `docker compose run --rm market-analyzer <command>` or `exec`):
+Commands run inside the container: `docker compose exec market-analyzer node dist/worker.cjs <command>`.
 
-| Command                             | Purpose                                        |
-| ----------------------------------- | ---------------------------------------------- |
-| `run` (default)                     | Long-running scheduler                         |
-| `once [--modes pvp-season,regular]` | Every step once, then exit                     |
-| `status [--modes …]`                | Local cache/state summary (no database access) |
-| `recheck-excluded [--modes …]`      | Check excluded items again on the next poll    |
+| Command                        | Purpose                                                              |
+| ------------------------------ | -------------------------------------------------------------------- |
+| `run` (default)                | Long-running scheduler                                               |
+| `run-now <spec>`               | Ask the running worker to run steps now (picked up within ~5 s)      |
+| `once [spec]`                  | Run steps once and exit (default `all`); refused while a worker runs |
+| `status [--modes …]`           | Local cache/state summary (no database access)                       |
+| `recheck-excluded [--modes …]` | Check excluded items again on the next poll                          |
+
+A spec is `mode:steps`, comma-separated: `pvp-season:analyze`, `pvp-season:poll+push`,
+`regular` (all steps) or `all:analyze`. Steps are `poll` (also refreshes the eligible
+list), `push` (also refreshes catalog prices) and `analyze` (items with new upstream data).
+`reanalyze` recomputes every cached item, e.g. after changing a metric; `all` excludes it.
+`MARKET_RUN_ON_START=<spec>` runs a spec as soon as the worker starts. The development-only
+[/dev page](../src/app/dev/page.tsx) shows the latest push, analysis runs and biggest movers.
 
 Configuration is in [.sample.env](.sample.env); only `DATABASE_URL` is required. Inside the
 container `localhost` is the container itself: for a database on the Docker host use
