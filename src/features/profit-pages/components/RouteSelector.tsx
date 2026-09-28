@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
+import { Crown } from "lucide-react";
 import type { AcquisitionPlan } from "@/lib/price-calculation";
 import type { ItemSummary } from "@/types/items";
 import type { RouteContext } from "../types";
@@ -26,6 +27,7 @@ export function RouteSelector({
 	onSelect,
 	onOpen,
 	changedFromBase = false,
+	bestRouteKey,
 }: {
 	plan: AcquisitionPlan;
 	item?: ItemSummary;
@@ -33,6 +35,7 @@ export function RouteSelector({
 	onSelect: (routeKey: string) => void;
 	onOpen?: () => void;
 	changedFromBase?: boolean;
+	bestRouteKey?: string;
 }) {
 	const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
 	const buttonRef = useRef<HTMLButtonElement>(null);
@@ -41,6 +44,7 @@ export function RouteSelector({
 	const alternativeCount = plan.alternatives.length;
 	const lockedCount = plan.lockedAlternatives?.length ?? 0;
 	const automaticFallback = !changedFromBase && hasCheaperLockedRoute(plan);
+	const recommendedRouteKey = bestRouteKey ?? acquisitionRouteKey(plan);
 	const routeDescription = [
 		plan.method === "unavailable"
 			? "No available route"
@@ -151,6 +155,11 @@ export function RouteSelector({
 								const locked = "lockReasons" in route;
 								const key = acquisitionRouteKey(route);
 								const selected = key === acquisitionRouteKey(plan);
+								const best = key === recommendedRouteKey;
+								const selectRoute = () => {
+									onSelect(key);
+									setPosition(null);
+								};
 								const sourceName =
 									route.method === "trader" && route.traderOffer
 										? routeContext.tradersById[route.traderOffer.traderId]?.name
@@ -168,17 +177,29 @@ export function RouteSelector({
 												? routeContext.craftsById[route.sourceId ?? ""]?.level
 												: undefined;
 								return (
-									<span key={`${key}:${index}`} className={`block rounded ${locked ? "bg-danger-surface/40" : ""}`}>
+									<span
+										key={`${key}:${index}`}
+										className={`block cursor-pointer rounded border transition-colors hover:bg-highlight/[0.07] ${locked ? "border-danger/35" : "border-transparent"} ${selected ? "bg-brand/10" : ""}`}
+										onClick={(event) => {
+											if ((event.target as Element).closest("a, button")) return;
+											selectRoute();
+										}}
+									>
+										{best && (
+											<span className="mb-1 flex items-center gap-1 px-1.5 pt-1 text-[9px] font-bold uppercase tracking-wide text-warning">
+												<Crown aria-hidden="true" className="size-3" />
+												Best
+											</span>
+										)}
 										{locked && <LockReasons reasons={route.lockReasons} />}
 										<button
 											type="button"
 											onClick={(event) => {
 												event.preventDefault();
 												event.stopPropagation();
-												onSelect(key);
-												setPosition(null);
+												selectRoute();
 											}}
-											className={`grid w-full grid-cols-[18px_64px_30px_minmax(0,1fr)_auto] items-center gap-2 rounded px-2 py-1 text-left transition hover:bg-highlight/[0.07] ${selected ? (locked ? "bg-danger/10" : "bg-brand/10") : ""}`}
+											className="grid w-full grid-cols-[18px_64px_30px_minmax(0,1fr)_auto] items-center gap-2 rounded px-2 py-1 text-left"
 										>
 											<RouteIcon
 												method={route.method}
@@ -202,10 +223,10 @@ export function RouteSelector({
 											)}
 											<span className="min-w-0">
 												<span className="block truncate text-[10px] text-foreground">
-													{item?.name ?? "Unknown item"}
+													{item?.shortName ?? item?.name ?? "Unknown item"}
 												</span>
 												{(sourceName || requiredLevel !== undefined) && (
-													<span className="flex gap-1 text-[8px] text-muted-foreground">
+													<span className="flex gap-1 text-[9px] leading-tight text-muted-foreground">
 														<span className="truncate">{sourceName ?? "Unknown source"}</span>
 														{requiredLevel !== undefined && (
 															<span className="shrink-0">

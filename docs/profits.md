@@ -184,11 +184,14 @@ the quest trader filter. A **Hide locked** shortcut follows. Flea requirements a
 the general unlock level are omitted while the banner explains it.
 
 Locked dropdown choices retain the
-normal item/source/price layout, with a red background and a reason header that
-owns the lock icon. Display-only locked prices use known flea/trader offers or
+normal item/source/price layout, with a subtle red border and a reason header that
+owns the lock icon. Item labels prefer short names, source details use readable
+secondary text, and the recommended route is marked **Best** with a crown above
+any lock reasons. Display-only locked prices use known flea/trader offers or
 eligible ingredients for a hypothetical recipe; they never make a route eligible.
-Unknown route costs remain dashes. Locked estimates do not recursively expand
-other locked recipe estimates.
+Unknown route costs remain dashes. When an inaccessible recipe contains priced
+but locked ingredients, its display-only effective price recursively totals their
+known acquisition estimates without making either route eligible.
 
 Acquisition method colors are independent roles in
 [globals.css](../src/app/globals.css): `acquisition-craft` (orange),

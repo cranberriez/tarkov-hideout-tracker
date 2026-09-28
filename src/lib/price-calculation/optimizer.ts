@@ -62,6 +62,29 @@ function sumPlanCost(plans: AcquisitionPlan[], field: "totalCost" | "theoretical
 	return total;
 }
 
+/** Cheapest known display-only cost without treating a locked route as eligible. */
+function displayPlanCost(plan: AcquisitionPlan): number | null {
+	if (isAccessiblePlan(plan)) return plan.totalCost;
+	const knownCosts = [
+		plan.totalCost,
+		...(plan.lockedAlternatives ?? []).map((route) =>
+			route.estimatedUnitPrice === undefined ? null : route.estimatedUnitPrice * plan.quantity,
+		),
+	].filter((cost): cost is number => cost !== null && Number.isFinite(cost) && cost >= 0);
+	return knownCosts.length > 0 ? Math.min(...knownCosts) : null;
+}
+
+function sumDisplayPlanCost(plans: AcquisitionPlan[]) {
+	let total = 0;
+	for (const plan of plans) {
+		if (plan.isTool) continue;
+		const cost = displayPlanCost(plan);
+		if (cost === null) return null;
+		total += cost;
+	}
+	return total;
+}
+
 function sumRequirementSellValue(requirements: ItemAmountRef[], context: PriceCalculationContext) {
 	let total = 0;
 	for (const requirement of requirements) {
@@ -270,18 +293,32 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
 				: recipe.requiredItems;
 		const requirements = aggregateRequirements(recipeRequirements, batches);
 		const children = requirements.map((requirement) => ({
-			// A hypothetical recipe prices only eligible ingredient routes; do not
-			// recursively expand estimates for their locked alternatives.
-			...optimize(requirement.itemId, requirement.count, blocked, depth + 1, estimateLockedRecipes && !recipeLocked),
+			// Locked sources remain ineligible, but their known costs can contribute
+			// to a recursively calculated display estimate for this route.
+			...optimize(requirement.itemId, requirement.count, blocked, depth + 1, estimateLockedRecipes),
 			...(requirement.isTool ? { isTool: true } : {}),
 		}));
+		const durationSeconds =
+			(kind === "craft"
+				? craftingDuration(recipe as CraftRecord, context.craftingSkillLevel) * (quantity / outputCount)
+				: 0) + children.reduce((total, child) => total + (child.isTool ? 0 : child.durationSeconds), 0);
+		const displayCost = sumDisplayPlanCost(children);
+		const displayDetails = {
+			batches,
+			durationSeconds,
+			children,
+		};
 		// Tools must be obtainable to execute a nested craft, even though their
 		// acquisition cost is excluded from recurring production costs.
 		const unavailableTools =
 			kind === "craft" ? children.filter((child) => child.isTool && !isAccessiblePlan(child)) : [];
 		if (unavailableTools.length) {
 			lockReasons.push(...unavailableTools.flatMap((tool) => tool.lockReasons ?? []));
-			return reject("Required reusable tool has no accessible acquisition route");
+			return reject(
+				"Required reusable tool has no accessible acquisition route",
+				displayCost === null ? undefined : displayCost / quantity,
+				displayDetails,
+			);
 		}
 		const hasUnavailableIngredients = children.some((child) => !child.isTool && !isAccessiblePlan(child));
 		const totalCost = hasUnavailableIngredients ? null : sumPlanCost(children, "totalCost");
@@ -292,18 +329,14 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
 					.filter((child) => !child.isTool && !isAccessiblePlan(child))
 					.flatMap((child) => child.lockReasons ?? []),
 			);
-			return reject("Recipe ingredients have no accessible priced route");
+			return reject(
+				"Recipe ingredients have no accessible priced route",
+				displayCost === null ? undefined : displayCost / quantity,
+				displayDetails,
+			);
 		}
-		const durationSeconds =
-			(kind === "craft"
-				? craftingDuration(recipe as CraftRecord, context.craftingSkillLevel) * (quantity / outputCount)
-				: 0) + children.reduce((total, child) => total + (child.isTool ? 0 : child.durationSeconds), 0);
 		if (recipeLocked)
-			return reject(undefined, totalCost / quantity, {
-				batches,
-				durationSeconds,
-				children,
-			});
+			return reject(undefined, totalCost / quantity, displayDetails);
 		return {
 			method: kind,
 			sourceId: recipe.id,

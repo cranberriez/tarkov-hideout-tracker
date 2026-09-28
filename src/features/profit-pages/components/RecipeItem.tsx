@@ -193,6 +193,7 @@ export function RecipeItem({
 								onSelect={onRouteChange}
 								onOpen={hover.close}
 								changedFromBase={baseRouteKey !== undefined && baseRouteKey !== acquisitionRouteKey(plan)}
+								bestRouteKey={baseRouteKey}
 							/>
 						) : (
 							showRouteIcon && <RouteIcon method={method} rowRail />

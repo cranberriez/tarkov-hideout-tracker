@@ -303,7 +303,7 @@ test("locked flea estimates become the display fallback without becoming accessi
 	assert.equal(plan.lockedAlternatives?.find((route) => route.method === "flea")?.estimatedUnitPrice, 123);
 });
 
-test("locked recipe estimates use eligible ingredients and batch rounding without unlocking routes", () => {
+test("locked recipe estimates use effective ingredient costs and batch rounding without unlocking routes", () => {
 	const lockedCraft = { ...craft("locked-craft", "A", "B"), productCount: 2, taskUnlockId: "quest" };
 	const lockedBarter = {
 		id: "locked-barter",
@@ -337,13 +337,28 @@ test("locked recipe estimates use eligible ingredients and batch rounding withou
 		...input,
 		crafts: [lockedCraft, { ...nested, taskUnlockId: "nested-quest" }],
 	}).evaluateNode("A", 3);
-	assert.equal(
-		unavailable.lockedAlternatives
-			?.filter((route) => route.method === "craft" || route.method === "barter")
-			.every((route) => route.estimatedUnitPrice === undefined),
-		true,
-	);
+	for (const method of ["craft", "barter"]) {
+		assert.equal(unavailable.lockedAlternatives?.find((route) => route.method === method)?.estimatedUnitPrice, 8);
+		assert.equal(unavailable.alternatives.some((route) => route.method === method), false);
+	}
 	assert.equal(unavailable.totalCost, 3000);
+});
+
+test("locked recipe display estimates can use a priced but inaccessible ingredient", () => {
+	const lockedCraft = { ...craft("locked-craft", "A", "B"), taskUnlockId: "quest" };
+	const plan = createRecipeCalculator({
+		itemsById: {
+			A: item("A", 1000),
+			B: { ...item("B", 25), onFleaMarket: false },
+		},
+		crafts: [lockedCraft],
+		barters: [],
+	}).evaluateNode("A", 2);
+
+	assert.equal(plan.lockedAlternatives?.find((route) => route.sourceId === lockedCraft.id)?.estimatedUnitPrice, 25);
+	assert.equal(plan.alternatives.some((route) => route.sourceId === lockedCraft.id), false);
+	assert.equal(plan.method, "flea");
+	assert.equal(plan.totalCost, 2000);
 });
 
 test("root unknown production and quest-item costs carry unavailable reasons", () => {
