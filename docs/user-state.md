@@ -155,6 +155,11 @@ not every localStorage key.
 draft inputs, and Raid Planner viewport state are session state. Fetched entities,
 prices, and item relations come from route contracts/lazy requests; they do not
 belong in the persisted progress store.
+The item dialog adds same-URL browser-history entries containing only a session
+token and position. Its item summaries stay in memory, are invalidated on mode
+changes, and are not restored after a reload. Existing player storage, keys,
+migrations and reset actions are unchanged; [architecture](architecture.md) owns
+the Back, Forward and dismissal behavior.
 
 Select only the store values needed by a consumer. For grouped selections follow
 the existing `useShallow` pattern; put substantial derivation in pure models.

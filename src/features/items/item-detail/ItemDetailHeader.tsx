@@ -68,13 +68,13 @@ export function ItemDetailHeader({
 				</div>
 			</div>
 			{totalRequiredCount > 0 && (
-				<div className="grid w-full auto-cols-fr grid-flow-col overflow-hidden rounded-lg border border-border-color bg-shadow/20 lg:w-auto lg:min-w-[500px]">
+				<dl className="grid w-full grid-cols-2 gap-x-4 gap-y-1 lg:w-auto lg:min-w-[500px] lg:auto-cols-fr lg:grid-flow-col lg:grid-cols-none lg:gap-0 lg:overflow-hidden lg:rounded-lg lg:border lg:border-border-color lg:bg-shadow/20">
 					<SummaryValue label="Required" value={totalRequiredCount} />
 					<SummaryValue label="Need" value={needsBreakdown?.neededNonFir ?? 0} accent="green" />
 					<SummaryValue label="Need FiR" value={needsBreakdown?.neededFir ?? 0} accent="orange" />
 					{hideoutRequiredCount > 0 && <SummaryValue label="Hideout" value={hideoutRequiredCount} />}
 					{questRequiredCount > 0 && <SummaryValue label="Quests" value={questRequiredCount} />}
-				</div>
+				</dl>
 			)}
 		</div>
 	);
@@ -82,15 +82,15 @@ export function ItemDetailHeader({
 
 function SummaryValue({ label, value, accent }: { label: string; value: number; accent?: "green" | "orange" }) {
 	return (
-		<div className="border-r border-border-color px-3 py-2.5 last:border-r-0">
-			<div className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{label}</div>
-			<div
-				className={`mt-0.5 font-mono text-base font-semibold ${
+		<div className="flex flex-wrap items-baseline gap-x-1 lg:block lg:border-r lg:border-border-color lg:px-3 lg:py-2.5 lg:last:border-r-0">
+			<dt className="text-[11px] text-muted-foreground lg:text-[10px] lg:font-medium lg:uppercase lg:tracking-[0.12em]">{label}</dt>
+			<dd
+				className={`font-mono text-xs font-semibold lg:mt-0.5 lg:text-base ${
 					accent === "green" ? "text-brand" : accent === "orange" ? "text-warning" : "text-foreground"
 				}`}
 			>
 				{value}
-			</div>
+			</dd>
 		</div>
 	);
 }

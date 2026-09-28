@@ -1,11 +1,19 @@
 "use client";
 
-import { useUIStore } from "@/lib/stores/useUIStore";
+import { Suspense } from "react";
 import { ItemDetailModal } from "./LazyItemDetailModal";
+import { useItemDetailNavigationController } from "./useItemDetailNavigationController";
 
 /** The single item-detail dialog. Every item link and search result opens it via `openItemDetail`. */
 export function GlobalItemDetailModal() {
-	const item = useUIStore((state) => state.itemDetailItem);
-	const close = useUIStore((state) => state.closeItemDetail);
-	return <ItemDetailModal item={item} isOpen={!!item} onClose={close} />;
+	return (
+		<Suspense fallback={null}>
+			<ItemDetailModalHost />
+		</Suspense>
+	);
+}
+
+function ItemDetailModalHost() {
+	const { item, previousItem, back, close } = useItemDetailNavigationController();
+	return <ItemDetailModal item={item} isOpen={!!item} previousItem={previousItem} onBack={back} onClose={close} />;
 }

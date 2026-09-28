@@ -13,6 +13,8 @@ import { ItemDetailLoading, ITEM_DETAIL_LOADING_CLASS } from "./ItemDetailLoadin
 export interface ItemDetailModalProps {
 	item: ItemSummary | null;
 	isOpen: boolean;
+	previousItem: ItemSummary | null;
+	onBack: () => void;
 	onClose: () => void;
 }
 
@@ -42,7 +44,7 @@ export function ItemDetailModalContent(props: ItemDetailModalProps) {
 						<button
 							type="button"
 							onClick={vm.back}
-							className="absolute bottom-full left-0 mb-2 inline-flex h-10 items-center gap-2 rounded-md bg-background px-3 text-sm font-medium text-foreground shadow-2xl transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/70"
+							className="flex h-12 w-full items-center gap-2 border-b border-border-color bg-background px-3 text-left text-sm font-medium text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/70 lg:absolute lg:bottom-full lg:left-0 lg:mb-2 lg:h-10 lg:w-auto lg:rounded-md lg:border-0 lg:shadow-2xl"
 							aria-label="Back to previous item"
 						>
 							<ArrowLeft size={16} aria-hidden="true" />
@@ -62,7 +64,7 @@ export function ItemDetailModalContent(props: ItemDetailModalProps) {
 						</button>
 					)}
 					<div
-						className={`flex w-full flex-col overflow-hidden rounded-lg border border-border-color bg-background shadow-2xl ${vm.previousItem ? "max-h-[calc(92vh-3rem)]" : "max-h-[92vh]"}`}
+						className={`flex w-full flex-col bg-background lg:min-h-0 lg:overflow-hidden lg:rounded-lg lg:border lg:border-border-color lg:shadow-2xl ${vm.previousItem ? "min-h-[calc(100dvh-3rem)] lg:max-h-[calc(92vh-3rem)]" : "min-h-dvh lg:max-h-[92vh]"}`}
 					>
 						{vm.showDebug && vm.isDevelopment ? (
 							<section className="flex min-h-[420px] min-w-0 flex-col overflow-hidden bg-[var(--background)]">
@@ -86,7 +88,7 @@ export function ItemDetailModalContent(props: ItemDetailModalProps) {
 							</section>
 						) : (
 							<>
-								<header className="relative border-b border-border-color bg-gradient-to-br from-card via-card to-background py-3 pl-3 pr-20 sm:py-4 sm:pl-4 sm:pr-24">
+								<header className="relative shrink-0 border-b border-border-color bg-gradient-to-br from-card via-card to-background py-3 pl-3 pr-20 sm:py-4 sm:pl-4 sm:pr-24">
 									<ItemDetailHeader
 										item={selectedItem}
 										totalRequiredCount={vm.demandSummary.totalRequiredCount}
@@ -104,9 +106,9 @@ export function ItemDetailModalContent(props: ItemDetailModalProps) {
 									</button>
 								</header>
 
-								<div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:overflow-hidden">
+								<div className="flex flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
 									<div
-										className={`grid min-h-0 grid-cols-1 gap-0 lg:flex-1 ${vm.showSidebar ? "lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]" : ""}`}
+										className={`grid shrink-0 grid-cols-1 gap-0 lg:min-h-0 lg:flex-1 lg:shrink ${vm.showSidebar ? "lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]" : ""}`}
 									>
 										{vm.showSidebar && (
 											<ItemDetailSidebar
@@ -169,7 +171,7 @@ export function ItemDetailModalContent(props: ItemDetailModalProps) {
 							onClick={vm.toggleDebug}
 							aria-label={vm.showDebug ? "Hide item debug data" : "Show item debug data"}
 							aria-expanded={vm.showDebug}
-							className={`absolute -bottom-2.5 -right-2.5 z-[60] flex h-6 w-6 items-center justify-center rounded-full border bg-[var(--card-bg)] shadow-xl transition-colors ${vm.showDebug ? "border-brand/50 text-brand" : "border-highlight/15 text-subtle-foreground hover:border-highlight/30 hover:text-foreground"}`}
+							className={`absolute bottom-2 right-2 z-[60] flex h-6 w-6 items-center justify-center rounded-full border bg-[var(--card-bg)] shadow-xl transition-colors lg:-bottom-2.5 lg:-right-2.5 ${vm.showDebug ? "border-brand/50 text-brand" : "border-highlight/15 text-subtle-foreground hover:border-highlight/30 hover:text-foreground"}`}
 						>
 							<Bug size={11} />
 						</button>

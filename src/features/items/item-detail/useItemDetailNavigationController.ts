@@ -1,59 +1,65 @@
 "use client";
 
-import { useState } from "react";
-import type { ItemSummary } from "@/types/items";
-import {
-	emptyItemNavigation,
-	popItemNavigation,
-	pushItemNavigation,
-	reconcileItemNavigation,
-	toItemNavigationEntry,
-} from "./item-detail-navigation";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useUIStore } from "@/lib/stores/useUIStore";
+import { useUserStore } from "@/lib/stores/useUserStore";
+import { createItemDetailNavigation, emptyItemNavigation } from "./item-detail-navigation";
 
-export function useItemDetailNavigationController({
-	item,
-	isOpen,
-	onClose,
-}: {
-	item: ItemSummary | null;
-	isOpen: boolean;
-	onClose: () => void;
-}) {
-	const [storedNavigation, setNavigation] = useState(emptyItemNavigation);
-	const [navigatedItemsById, setNavigatedItemsById] = useState<Record<string, ItemSummary>>({});
-	const [debugItemId, setDebugItemId] = useState<string | null>(null);
-	const sourceItem = item ? toItemNavigationEntry(item) : null;
-	const navigation = reconcileItemNavigation(storedNavigation, sourceItem, isOpen);
-	// Item links reopen the global dialog with a new source item; keep that as a history push.
-	if (isOpen && sourceItem && storedNavigation.sourceItemId !== sourceItem.id) {
-		setNavigation(navigation);
-	}
+/** Mounted with the global dialog, before the lazy detail UI or its requests load. */
+export function useItemDetailNavigationController() {
+	const [navigation] = useState(createItemDetailNavigation);
+	const snapshot = useSyncExternalStore(navigation.subscribe, navigation.getSnapshot, () => emptyItemNavigation);
+	const pathname = usePathname();
+	const search = useSearchParams().toString();
 
-	const activeItemId = navigation.entries.at(-1)?.id ?? "";
+	useEffect(() => {
+		navigation.connect(
+			{
+				state: () => window.history.state,
+				href: () => window.location.href,
+				push: (state) => window.history.pushState(state, ""),
+				replace: (state) => window.history.replaceState(state, ""),
+				go: (delta) => window.history.go(delta),
+				newSessionId: () => crypto.randomUUID(),
+			},
+			useUserStore.getState().gameMode,
+		);
 
-	return {
-		activeItemId,
-		navigatedItemsById,
-		previousItem: navigation.entries.at(-2) ?? null,
-		debugItemId,
-		close() {
-			setDebugItemId(null);
-			setNavigation(emptyItemNavigation);
-			setNavigatedItemsById({});
-			onClose();
-		},
-		back() {
-			setDebugItemId(null);
-			setNavigation(popItemNavigation(navigation));
-		},
-		navigate(nextItem: ItemSummary) {
-			if (nextItem.id === activeItemId) return;
-			setDebugItemId(null);
-			setNavigatedItemsById((items) => ({ ...items, [nextItem.id]: nextItem }));
-			setNavigation(pushItemNavigation(navigation, toItemNavigationEntry(nextItem)));
-		},
-		toggleDebug(itemId: string) {
-			setDebugItemId((current) => (current === itemId ? null : itemId));
-		},
-	};
+		let restoring = false;
+		const unsubscribeNavigation = navigation.subscribe(() => {
+			restoring = true;
+			try {
+				const item = navigation.getSnapshot().item;
+				const store = useUIStore.getState();
+				if (item) store.openItemDetail(item);
+				else store.closeItemDetail();
+			} finally {
+				restoring = false;
+			}
+		});
+		const unsubscribeUI = useUIStore.subscribe((state, previous) => {
+			if (restoring || state.itemDetailItem === previous.itemDetailItem) return;
+			if (state.itemDetailItem) navigation.open(state.itemDetailItem);
+			else navigation.close();
+		});
+		const unsubscribeMode = useUserStore.subscribe((state, previous) => {
+			if (state.gameMode !== previous.gameMode) navigation.changeMode(state.gameMode);
+		});
+		window.addEventListener("popstate", navigation.restore);
+		window.addEventListener("hashchange", navigation.routeChanged);
+		const initialItem = useUIStore.getState().itemDetailItem;
+		if (initialItem) navigation.open(initialItem);
+		return () => {
+			window.removeEventListener("popstate", navigation.restore);
+			window.removeEventListener("hashchange", navigation.routeChanged);
+			unsubscribeNavigation();
+			unsubscribeUI();
+			unsubscribeMode();
+		};
+	}, [navigation]);
+
+	useEffect(() => navigation.routeChanged(), [pathname, search, navigation]);
+
+	return { ...snapshot, back: navigation.back, close: navigation.close };
 }

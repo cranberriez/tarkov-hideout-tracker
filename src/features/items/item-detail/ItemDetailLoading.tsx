@@ -6,7 +6,7 @@ import type { ItemSummary } from "@/types/items";
 import styles from "./ItemDetailLoading.module.css";
 
 export const ITEM_DETAIL_LOADING_CLASS =
-	"pointer-events-auto relative mx-auto w-full max-w-sm overflow-hidden rounded-lg border border-border-color bg-card shadow-2xl transition-[max-width] duration-200 motion-reduce:transition-none";
+	"pointer-events-auto relative mx-auto w-full max-w-sm overflow-hidden rounded-lg border border-border-color bg-card shadow-2xl transition-[max-width] duration-200 motion-reduce:transition-none max-lg:min-h-dvh max-lg:max-w-none max-lg:rounded-none max-lg:border-0";
 
 export function ItemDetailLoading({ item, onClose }: { item: ItemSummary; onClose: () => void }) {
 	const image = item.image512pxLink ?? item.gridImageLink ?? item.iconLink ?? item.baseImageLink;

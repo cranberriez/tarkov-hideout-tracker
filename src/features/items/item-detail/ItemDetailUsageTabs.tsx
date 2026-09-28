@@ -20,7 +20,7 @@ type UsageTab = "hideout" | "quests" | "traders" | "crafting" | "prices";
 
 interface ItemDetailUsageTabsProps {
 	className?: string;
-	/** Dialogs cap and scroll the tab panel; pages let it flow with the document. */
+	/** Desktop dialogs cap and scroll the panel; smaller dialogs and pages let it flow. */
 	contained?: boolean;
 	/** Pages render every data tab (hidden when inactive) so server HTML includes all relations. */
 	renderInactivePanels?: boolean;
@@ -167,7 +167,7 @@ export function ItemDetailUsageTabs({
 
 			<div
 				role="tabpanel"
-				className={contained ? "flex min-h-0 max-h-[700px] flex-1 flex-col overflow-y-auto" : "flex flex-1 flex-col"}
+				className={contained ? "flex flex-col lg:min-h-0 lg:max-h-[700px] lg:flex-1 lg:overflow-y-auto" : "flex flex-1 flex-col"}
 			>
 				<UsagePanel active={selectedTab === "hideout"} keep={renderInactivePanels && hideoutEnabled}>
 					<>

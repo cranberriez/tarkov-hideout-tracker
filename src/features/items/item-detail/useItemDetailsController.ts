@@ -3,7 +3,7 @@
 import { craftingDuration } from "@/lib/price-calculation/crafting-skill";
 import { craftRequiredItems, isTrackedCraft } from "@/lib/price-calculation/craft-rules";
 import { useProfitOptions } from "@/features/profit-pages/useProfitOptions";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { ItemCraftRecipe, ItemTraderOffer } from "./item-detail-types";
 import type { ItemSummary } from "@/types/items";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -21,7 +21,7 @@ import { useItemDetailRequestController, type InitialItemDetailViews } from "./u
 import { useItemPrices } from "../useItemPrices";
 import { isPriceItemId } from "@/lib/query/price-contract";
 import { useUIStore } from "@/lib/stores/useUIStore";
-import { useItemDetailNavigationController } from "./useItemDetailNavigationController";
+import type { ItemDetailModalProps } from "./ItemDetailModal";
 
 /**
  * Item data and derived values shared by the item dialog and the item page.
@@ -370,35 +370,21 @@ export function useItemDetailsController({
 }
 
 /**
- * Dialog adapter: in-dialog Back history and close behavior around the shared
- * details controller. Item links inside the dialog reopen it through the UI store,
- * which the navigation controller records as a history push.
+ * Dialog data adapter. The global dialog owns navigation even while this UI loads.
  */
-export function useItemDetailModalController({
-	item,
-	isOpen,
-	onClose,
-}: {
-	item: ItemSummary | null;
-	isOpen: boolean;
-	onClose: () => void;
-}) {
-	const navigation = useItemDetailNavigationController({ item, isOpen, onClose });
-	const { activeItemId, navigatedItemsById } = navigation;
+export function useItemDetailModalController({ item, isOpen, onClose, previousItem, onBack }: ItemDetailModalProps) {
+	const [debugItemId, setDebugItemId] = useState<string | null>(null);
 	const openedItems = useUIStore((state) => state.itemDetailKnownItems);
-	const knownItems = useMemo(
-		() => [...Object.values(openedItems), ...(item ? [item] : []), ...Object.values(navigatedItemsById)],
-		[item, navigatedItemsById, openedItems],
-	);
-	const details = useItemDetailsController({ activeItemId, knownItems, enabled: isOpen });
+	const knownItems = useMemo(() => [...Object.values(openedItems), ...(item ? [item] : [])], [item, openedItems]);
+	const details = useItemDetailsController({ activeItemId: item?.id ?? "", knownItems, enabled: isOpen });
 	return {
 		...details,
-		showDebug: navigation.debugItemId === details.selectedItemId,
-		previousItem: navigation.previousItem,
-		close: navigation.close,
-		back: navigation.back,
+		showDebug: debugItemId === details.selectedItemId,
+		previousItem,
+		close: onClose,
+		back: onBack,
 		toggleDebug() {
-			navigation.toggleDebug(details.selectedItemId);
+			setDebugItemId((current) => (current === details.selectedItemId ? null : details.selectedItemId));
 		},
 	};
 }

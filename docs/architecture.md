@@ -187,17 +187,37 @@ state and pending items.
 The item-detail dialog is the default destination for every item click.
 [GlobalItemDetailModal](../src/features/items/item-detail/GlobalItemDetailModal.tsx)
 is mounted once in the root layout; `ItemLink`, recipe items, and search results open
-it through `openItemDetail` in [useUIStore](../src/lib/stores/useUIStore.ts). Opening
-another item while it is open pushes the dialog's Back history
-([navigation controller](../src/features/items/item-detail/useItemDetailNavigationController.ts));
-closing clears it. [LazyItemDetailModal](../src/features/items/item-detail/LazyItemDetailModal.tsx)
-downloads the detail UI only when opened and shows the compact loading card first.
+it through `openItemDetail` in [useUIStore](../src/lib/stores/useUIStore.ts).
+The global [navigation controller](../src/features/items/item-detail/useItemDetailNavigationController.ts)
+owns same-URL browser history before the lazy detail UI loads. Opening an item
+pushes one entry; native Back and the dialog Back action visit earlier items,
+then close at the original page. Close, Escape and overlay dismissal unwind all
+entries in the current item sequence. Browser Forward can restore that sequence
+within the current page session; selecting another item after Back replaces the
+forward branch. No separate Forward button is rendered.
+Route links dismiss the dialog without cancelling navigation, and browser Back
+can restore the prior item on its original route. Mode changes close the dialog
+and invalidate its saved in-memory summaries. Browser history stores only a
+session token and position, preserves the framework's state, and never stores
+player progress or item payloads. Reloaded/stale tokens do not reopen items.
+[The navigation model](../src/features/items/item-detail/item-detail-navigation.ts)
+tests traversal, close/reopen races, route changes, mode changes and forward branches.
+[LazyItemDetailModal](../src/features/items/item-detail/LazyItemDetailModal.tsx)
+downloads the detail UI only when opened and shows a loading view first.
 The [details controller](../src/features/items/item-detail/useItemDetailsController.ts)
 derives inventory, demand, market, usage, and recipe values for both the dialog and
 the [item page](../src/features/items/item-detail/ItemDetailsPage.tsx); the
 [request controller](../src/features/items/item-detail/useItemDetailRequestController.ts)
 owns mode-aware relations, usage, and acquisition queries with partial-error handling.
-In the dialog the usage tab panel scrolls within a 700px maximum height.
+Below `lg`, the item dialog fills the full dynamic viewport even with short or
+loading content. The dialog itself is the vertical scroll surface: Back, the
+header, inventory, market and the active usage tab all scroll together. Back occupies
+a full-width 3rem row at the top when a previous item is available. The grid and
+tab contents keep their natural height, without a nested vertical tab scroller.
+This full-screen presentation is specific to the item dialog, not shared dialogs.
+At `lg` and above, the usage tab panel scrolls within a 700px maximum height.
+The shared item header presents requirement totals as a compact two-column
+text grid below `lg`, retaining the bordered summary on desktop.
 
 `/items/[itemId]` still exists but nothing links to it yet. It server-renders its
 rows: [getItemDetailViews](../src/server/queries/getItemDetailViews.ts) reads the
