@@ -19,8 +19,8 @@ COPY --from=build /repo/market-analyzer/dist ./dist
 RUN mkdir -p /data && chown node:node /data
 USER node
 VOLUME ["/data"]
-# The loop writes a heartbeat every tick; a cold start polls every mode first.
+# Unhealthy when the heartbeat is stale or every mode has failed for 15 minutes.
 HEALTHCHECK --interval=2m --timeout=10s --start-period=10m \
-	CMD node -e "const h=require('/data/heartbeat.json');process.exit(Date.now()-h.at<10*60*1000?0:1)"
+	CMD ["node", "dist/worker.cjs", "health"]
 ENTRYPOINT ["node", "--enable-source-maps", "dist/worker.cjs"]
 CMD ["run"]

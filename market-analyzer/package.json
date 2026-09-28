@@ -7,7 +7,7 @@
 		"build": "node build.mjs",
 		"start": "node build.mjs && node dist/worker.cjs",
 		"once": "node build.mjs && node dist/worker.cjs once",
-		"test": "node --test --import jiti/register src/analytics/metrics.test.ts src/analytics/economics.test.ts src/analytics/observation.test.ts src/worker-state.test.ts src/poll.test.ts src/flush.test.ts src/schedule.test.ts",
+		"test": "node --test --import jiti/register src/errors.test.ts src/analytics/metrics.test.ts src/analytics/economics.test.ts src/analytics/observation.test.ts src/worker-state.test.ts src/poll.test.ts src/flush.test.ts src/schedule.test.ts",
 		"typecheck": "tsc --noEmit -p ."
 	},
 	"devDependencies": {

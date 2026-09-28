@@ -73,8 +73,15 @@ Commands (use `docker compose run --rm market-analyzer <command>` or `exec`):
 | `status [--modes …]`                | Local cache/state summary (no database access) |
 | `recheck-excluded [--modes …]`      | Check excluded items again on the next poll    |
 
-Configuration is in [.sample.env](.sample.env); only `DATABASE_URL` is required. Logs
-are JSON lines. The container health check watches `/data/heartbeat.json`.
+Configuration is in [.sample.env](.sample.env); only `DATABASE_URL` is required. Inside the
+container `localhost` is the container itself: for a database on the Docker host use
+`host.docker.internal` (mapped in compose.yml). Logs are JSON lines; errors include their
+underlying cause.
+
+- **One worker per volume**: `/data/worker.lock` makes a second worker on the same volume
+  refuse to start (`state-directory-locked`); a restarted container reclaims its own lock.
+- **Health**: unhealthy when the heartbeat is stale or every mode has failed for 15 minutes.
+  A failing mode is retried every 5 minutes.
 
 ## Development
 

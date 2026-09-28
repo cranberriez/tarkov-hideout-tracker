@@ -3,7 +3,14 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { clearExclusions, emptyModeState, setEligible, WorkerStateStore } from "./worker-state";
+import {
+	clearExclusions,
+	emptyModeState,
+	lockHolderAlive,
+	setEligible,
+	WorkerStateStore,
+	type LockRecord,
+} from "./worker-state";
 
 function temporaryStore() {
 	const directory = fs.mkdtempSync(path.join(os.tmpdir(), "market-analyzer-"));
@@ -59,4 +66,57 @@ test("eligible refresh forgets items that left the catalog", () => {
 	assert.deepEqual(Object.keys(state.items), ["kept"]);
 	assert.deepEqual(state.pendingFailures, {});
 	assert.equal(state.eligibleAt, 9);
+});
+
+const MINUTE = 60_000;
+const record = (overrides: Partial<LockRecord>): LockRecord => ({
+	instanceId: "self",
+	hostname: "container-a",
+	pid: 1,
+	heartbeatAt: 100 * MINUTE,
+	...overrides,
+});
+
+test("a second worker on the same volume is refused while the holder is alive", () => {
+	const { store, cleanup } = temporaryStore();
+	try {
+		const first = record({ instanceId: "first", hostname: "container-a" });
+		const second = record({ instanceId: "second", hostname: "container-b" });
+		assert.equal(store.acquireLock(first, 10 * MINUTE), null);
+		assert.equal(store.acquireLock(second, 10 * MINUTE)?.instanceId, "first");
+		assert.equal(store.refreshLock(first), true);
+		store.releaseLock(second);
+		assert.equal(store.readLock()?.instanceId, "first");
+		store.releaseLock(first);
+		assert.equal(store.readLock(), null);
+		assert.equal(store.acquireLock(second, 10 * MINUTE), null);
+		assert.equal(store.refreshLock(first), false);
+	} finally {
+		cleanup();
+	}
+});
+
+test("lock holder liveness", () => {
+	const self = record({ instanceId: "new" });
+	const never = () => assert.fail("pid check not expected");
+	// Another container with a fresh heartbeat is alive; a stale one is abandoned.
+	assert.equal(
+		lockHolderAlive(record({ hostname: "other", heartbeatAt: 99 * MINUTE }), self, 10 * MINUTE, never),
+		true,
+	);
+	assert.equal(
+		lockHolderAlive(record({ hostname: "other", heartbeatAt: 80 * MINUTE }), self, 10 * MINUTE, never),
+		false,
+	);
+	// Same container restarted as the same PID: our own previous life.
+	assert.equal(lockHolderAlive(record({ instanceId: "old" }), self, 10 * MINUTE, never), false);
+	// Same container, different process (e.g. docker exec): ask the OS.
+	assert.equal(
+		lockHolderAlive(record({ pid: 41 }), self, 10 * MINUTE, () => true),
+		true,
+	);
+	assert.equal(
+		lockHolderAlive(record({ pid: 41 }), self, 10 * MINUTE, () => false),
+		false,
+	);
 });

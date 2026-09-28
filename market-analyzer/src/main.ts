@@ -11,17 +11,34 @@ import { loadConfig, parseModes, type WorkerConfig } from "./config";
 import { flushMode } from "./flush";
 import { pollMode } from "./poll";
 import { intervalDue, periodDue } from "./schedule";
-import { clearExclusions, setEligible, WorkerStateStore, type ModeState } from "./worker-state";
+import { databaseHint, describeDatabaseTarget, describeError } from "./errors";
+import {
+	clearExclusions,
+	newLockRecord,
+	setEligible,
+	WorkerStateStore,
+	type LockRecord,
+	type ModeState,
+} from "./worker-state";
 
 const TICK_MS = 60 * 1000;
 const ANALYSIS_RETRY_MS = 15 * 60 * 1000;
+/** A failing mode is retried at this pace instead of every tick. */
+const MODE_ERROR_BACKOFF_MS = 5 * 60 * 1000;
+/** The container reports unhealthy once every mode has failed for this long. */
+const UNHEALTHY_AFTER_MS = 15 * 60 * 1000;
+const HEARTBEAT_STALE_MS = 10 * 60 * 1000;
+/** A state-directory lock whose holder has not refreshed it for this long is abandoned. */
+const LOCK_STALE_MS = 10 * 60 * 1000;
+
+interface Heartbeat {
+	at: number;
+	modes: TarkovDataMode[];
+	failing: Partial<Record<TarkovDataMode, { since: number; lastAttemptAt: number; error: string }>>;
+}
 
 function log(event: string, fields: Record<string, unknown> = {}) {
 	console.log(JSON.stringify({ at: new Date().toISOString(), event, ...fields }));
-}
-
-function errorMessage(error: unknown) {
-	return error instanceof Error ? error.message : String(error);
 }
 
 class MarketWorker {
@@ -31,6 +48,8 @@ class MarketWorker {
 	/** In-memory retry pacing so a failing database is not hit every tick. */
 	private readonly attempts = new Map<string, number>();
 	private readonly seeded = new Set<TarkovDataMode>();
+	private readonly failing: Heartbeat["failing"] = {};
+	private readonly lock: LockRecord = newLockRecord();
 	private readonly priceStore = new PostgresPriceRefreshStore(getPostgresDb());
 	private readonly analyticsStore = new PostgresAnalyticsStore(getPostgresPool());
 
@@ -44,6 +63,43 @@ class MarketWorker {
 		this.wake?.();
 	}
 
+	/** Claims the state directory; false (with the holder logged) when another worker owns it. */
+	claimStateDirectory(): boolean {
+		const holder = this.local.acquireLock(this.lock, LOCK_STALE_MS);
+		if (!holder) return true;
+		log("state-directory-locked", {
+			stateDirectory: this.config.stateDirectory,
+			holder: { hostname: holder.hostname, pid: holder.pid, heartbeatAt: new Date(holder.heartbeatAt).toISOString() },
+			hint: "Another worker is using this volume. Stop it first; only one worker may share a state directory.",
+		});
+		return false;
+	}
+
+	releaseStateDirectory() {
+		this.local.releaseLock(this.lock);
+	}
+
+	/** Keeps our claim fresh during long work; stops the worker if another instance took over. */
+	private keepStateDirectory() {
+		if (this.stopping || this.local.refreshLock(this.lock)) return;
+		log("state-directory-lost", { hint: "Another worker claimed this volume; stopping to avoid corrupting it." });
+		this.stop();
+	}
+
+	private sleep(ms: number): Promise<void> {
+		// A stop requested during work must not start another uninterruptible sleep.
+		if (this.stopping) return Promise.resolve();
+		return new Promise((resolve) => {
+			const done = () => {
+				clearTimeout(timer);
+				this.wake = null;
+				resolve();
+			};
+			const timer = setTimeout(done, ms);
+			this.wake = done;
+		});
+	}
+
 	private state(mode: TarkovDataMode): ModeState {
 		let state = this.states.get(mode);
 		if (!state) {
@@ -53,6 +109,23 @@ class MarketWorker {
 		return state;
 	}
 
+	/** Logs whether PostgreSQL is reachable, with the real driver error and a hint when it is not. */
+	async checkDatabase(): Promise<boolean> {
+		const target = describeDatabaseTarget(process.env.DATABASE_URL);
+		try {
+			await getPostgresPool().query("SELECT 1");
+			log("database-ok", { target });
+			return true;
+		} catch (error) {
+			log("database-unreachable", {
+				target,
+				error: describeError(error),
+				hint: databaseHint(process.env.DATABASE_URL, fs.existsSync("/.dockerenv")),
+			});
+			return false;
+		}
+	}
+
 	async runForever() {
 		log("worker-started", {
 			modes: this.config.modes,
@@ -60,23 +133,28 @@ class MarketWorker {
 			schedules: this.config.schedules,
 			flushMs: this.config.flushMs,
 		});
+		// Keep running when the database is down: modes back off and recover on their own.
+		await this.checkDatabase();
 		while (!this.stopping) {
 			for (const mode of this.config.modes) {
 				if (this.stopping) break;
+				const failure = this.failing[mode];
+				if (failure && Date.now() - failure.lastAttemptAt < MODE_ERROR_BACKOFF_MS) continue;
+				const attemptAt = Date.now();
 				try {
 					await this.tick(mode, false);
+					if (failure) log("mode-recovered", { mode, failingSince: new Date(failure.since).toISOString() });
+					delete this.failing[mode];
 				} catch (error) {
-					log("mode-error", { mode, error: errorMessage(error) });
+					const message = describeError(error);
+					this.failing[mode] = { since: failure?.since ?? attemptAt, lastAttemptAt: attemptAt, error: message };
+					log("mode-error", { mode, error: message, retryInSeconds: MODE_ERROR_BACKOFF_MS / 1000 });
 				}
 			}
-			this.local.heartbeat({ modes: this.config.modes });
-			await new Promise<void>((resolve) => {
-				const timer = setTimeout(resolve, TICK_MS);
-				this.wake = () => {
-					clearTimeout(timer);
-					resolve();
-				};
-			});
+			this.keepStateDirectory();
+			const heartbeat: Omit<Heartbeat, "at"> = { modes: this.config.modes, failing: this.failing };
+			this.local.heartbeat(heartbeat);
+			await this.sleep(TICK_MS);
 		}
 		log("worker-stopped");
 	}
@@ -108,7 +186,10 @@ class MarketWorker {
 				saveState: save,
 				now: Date.now,
 				concurrency: this.config.concurrency,
-				shouldStop: () => this.stopping,
+				shouldStop: () => {
+					this.keepStateDirectory();
+					return this.stopping;
+				},
 			});
 			log("poll", { mode, ...counts, durationMs: Date.now() - startedAt });
 		}
@@ -135,7 +216,7 @@ class MarketWorker {
 					durationMs: Date.now() - startedAt,
 				});
 			} catch (error) {
-				log("flush-failed", { mode, error: errorMessage(error) });
+				log("flush-failed", { mode, error: describeError(error) });
 			}
 		}
 		if (this.stopping) return;
@@ -192,6 +273,20 @@ function statusReport(config: WorkerConfig, local: WorkerStateStore) {
 	});
 }
 
+/** Container health: the loop is alive and at least one mode is working. */
+function healthCheck(config: WorkerConfig): boolean {
+	let heartbeat: Heartbeat;
+	try {
+		heartbeat = JSON.parse(fs.readFileSync(`${config.stateDirectory}/heartbeat.json`, "utf8")) as Heartbeat;
+	} catch {
+		return false;
+	}
+	const now = Date.now();
+	if (now - heartbeat.at > HEARTBEAT_STALE_MS) return false;
+	const failures = heartbeat.modes.map((mode) => heartbeat.failing?.[mode]);
+	return !failures.every((failure) => failure && now - failure.since > UNHEALTHY_AFTER_MS);
+}
+
 function modesArgument(args: readonly string[]): TarkovDataMode[] | null {
 	const index = args.indexOf("--modes");
 	return index === -1 ? null : parseModes(args[index + 1]);
@@ -204,6 +299,10 @@ async function main() {
 	config.modes = modesArgument(args) ?? config.modes;
 	const local = new WorkerStateStore(config.stateDirectory);
 
+	if (command === "health") {
+		process.exitCode = healthCheck(config) ? 0 : 1;
+		return;
+	}
 	if (command === "status") {
 		console.log(JSON.stringify(statusReport(config, local), null, 2));
 		return;
@@ -221,18 +320,25 @@ async function main() {
 			log("stop-requested", { signal });
 			worker.stop();
 		});
+	if (!worker.claimStateDirectory()) {
+		process.exitCode = 1;
+		await closePostgresPool();
+		return;
+	}
 	try {
 		if (command === "once") {
+			if (!(await worker.checkDatabase())) throw new Error("PostgreSQL is unreachable; see database-unreachable above");
 			for (const mode of config.modes) await worker.tick(mode, true);
 		} else {
 			await worker.runForever();
 		}
 	} finally {
+		worker.releaseStateDirectory();
 		await closePostgresPool();
 	}
 }
 
 main().catch((error) => {
-	log("fatal", { error: error instanceof Error ? (error.stack ?? error.message) : String(error) });
+	log("fatal", { error: describeError(error), stack: error instanceof Error ? error.stack : undefined });
 	process.exitCode = 1;
 });

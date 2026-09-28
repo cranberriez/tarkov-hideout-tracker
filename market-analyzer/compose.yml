@@ -6,6 +6,9 @@ services:
     image: tarkov-market-analyzer
     restart: unless-stopped
     env_file: .env
+    # Lets DATABASE_URL reach a database on the Docker host (Docker Desktop and Linux).
+    extra_hosts:
+      - host.docker.internal:host-gateway
     environment:
       MARKET_STATE_DIR: /data
     volumes:

@@ -1,4 +1,6 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import type { TarkovDataMode } from "../../src/types/common";
 import type { PriceHistoryPoint } from "../../src/types/prices";
@@ -71,7 +73,8 @@ interface HistoryFile {
 
 function writeAtomic(file: string, contents: string) {
 	fs.mkdirSync(path.dirname(file), { recursive: true });
-	const temporary = `${file}.${process.pid}.tmp`;
+	// Unique per write: containers all run as PID 1, so a PID alone can collide.
+	const temporary = `${file}.${randomUUID()}.tmp`;
 	fs.writeFileSync(temporary, contents);
 	fs.renameSync(temporary, file);
 }
@@ -149,7 +152,41 @@ export class WorkerStateStore {
 		}
 	}
 
-	heartbeat(details: Record<string, unknown>) {
+	private lockFile() {
+		return path.join(this.directory, "worker.lock");
+	}
+
+	readLock(): LockRecord | null {
+		return readJson<LockRecord>(this.lockFile());
+	}
+
+	/**
+	 * Claims the state directory for one worker. Two workers sharing a volume would
+	 * overwrite each other's state and cache files. Returns the live holder on refusal.
+	 */
+	acquireLock(self: LockRecord, staleMs: number, isPidAlive = pidAlive): LockRecord | null {
+		const holder = this.readLock();
+		if (holder && holder.instanceId !== self.instanceId && lockHolderAlive(holder, self, staleMs, isPidAlive))
+			return holder;
+		writeAtomic(this.lockFile(), JSON.stringify(self));
+		return null;
+	}
+
+	/** Refreshes our claim; false when another instance has taken the directory over. */
+	refreshLock(self: LockRecord): boolean {
+		const holder = this.readLock();
+		if (holder && holder.instanceId !== self.instanceId) return false;
+		self.heartbeatAt = Date.now();
+		writeAtomic(this.lockFile(), JSON.stringify(self));
+		return true;
+	}
+
+	releaseLock(self: LockRecord) {
+		if (this.readLock()?.instanceId !== self.instanceId) return;
+		fs.rmSync(this.lockFile(), { force: true });
+	}
+
+	heartbeat(details: object) {
 		writeAtomic(path.join(this.directory, "heartbeat.json"), JSON.stringify({ at: Date.now(), ...details }));
 	}
 }
@@ -173,4 +210,39 @@ export function setEligible(state: ModeState, itemIds: readonly string[], at: nu
 	for (const itemId of Object.keys(state.items)) if (!eligible.has(itemId)) delete state.items[itemId];
 	for (const itemId of Object.keys(state.pendingFailures))
 		if (!eligible.has(itemId)) delete state.pendingFailures[itemId];
+}
+
+export interface LockRecord {
+	instanceId: string;
+	hostname: string;
+	pid: number;
+	heartbeatAt: number;
+}
+
+export function newLockRecord(): LockRecord {
+	return { instanceId: randomUUID(), hostname: os.hostname(), pid: process.pid, heartbeatAt: Date.now() };
+}
+
+function pidAlive(pid: number): boolean {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		return (error as NodeJS.ErrnoException).code === "EPERM";
+	}
+}
+
+/**
+ * Whether a recorded holder is still running. A restarted container keeps its
+ * hostname and runs as the same PID, so that record is our own previous life.
+ */
+export function lockHolderAlive(
+	holder: LockRecord,
+	self: LockRecord,
+	staleMs: number,
+	isPidAlive: (pid: number) => boolean,
+): boolean {
+	if (self.heartbeatAt - holder.heartbeatAt > staleMs) return false;
+	if (holder.hostname !== self.hostname) return true;
+	return holder.pid !== self.pid && isPidAlive(holder.pid);
 }
