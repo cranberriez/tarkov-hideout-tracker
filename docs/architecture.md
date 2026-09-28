@@ -14,7 +14,7 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 | `/items`                                           | [Items page](<../src/app/(data)/items/page.tsx>): pooled hideout and quest demand                                                                                                                                                                     |
 | `/quests`, `/quests/[questId]`                     | [Quests layout](<../src/app/(data)/quests/layout.tsx>) owns the persistent workspace; the [index](<../src/app/(data)/quests/page.tsx>) and [quest route](<../src/app/(data)/quests/[questId]/page.tsx>) fill its detail pane; see [quests](quests.md) |
 | `/items/[itemId]`                                  | [Item page](<../src/app/(data)/items/[itemId]/page.tsx>): server-rendered item details; not linked yet (items open the dialog)                                                                                                                        |
-| `/hideout/stations/[stationId]`                    | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): all levels, dependencies, and on-demand crafts from the Hideout query                                                                                                      |
+| `/hideout/stations/[stationId]`                    | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): level overview and level changes, prerequisites, dependents, remaining items, and streamed crafts with profit                                                              |
 | `/items/kappa-checklist`                           | [Collector checklist](<../src/app/(data)/items/kappa-checklist/page.tsx>); see [quests](quests.md)                                                                                                                                                    |
 | `/items/barter-profits`, `/items/crafting-profits` | Shared [ProfitPage](../src/features/profit-pages/ProfitPage.tsx); see [profits](profits.md)                                                                                                                                                           |
 | `/hideout/craft-planner`                           | Station craft recommendations using the shared profit query; see [profits](profits.md)                                                                                                                                                                |
@@ -108,9 +108,16 @@ applied through setup/store actions; see [user state](user-state.md).
 [station-model](../src/features/hideout/station-model.ts) owns the pure upgrade
 status (`ready`/`missing`/`illegal`), default viewed level, and reverse dependencies
 shared by [StationCard](../src/features/hideout/components/StationCard.tsx) and the
-[station page](../src/features/hideout/StationDetailsPage.tsx). The page's viewed
-level is local state: browsing a level never changes the saved station level. Its
-crafts load only on request through the shared unpriced profit query.
+[station page](../src/features/hideout/details/StationDetailsPage.tsx). Both change
+saved levels through [useStationLevelChange](../src/features/hideout/useStationLevelChange.ts);
+its `adjustItems` flag (default on) moves the level's item requirements out of or back
+into inventory. The station page exposes that flag as a page-local toggle. Its viewed
+level is local state: browsing a level never changes the saved station level.
+[station-details-model](../src/features/hideout/details/station-details-model.ts)
+derives per-level state and remaining cost (missing units × cheaper of flea and trader,
+roubles at face value) and the station's remaining items. Crafts are prefetched on the
+server alongside the Hideout read and streamed through a Suspense slot that hydrates
+the shared unpriced profit query; profit uses the profit pages' calculator and price scope.
 
 [item-pooling.ts](../src/lib/utils/item-pooling.ts) aggregates stable requirement
 IDs and item IDs across remaining levels or just the next level. Hidden stations

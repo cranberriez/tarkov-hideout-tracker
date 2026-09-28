@@ -67,10 +67,8 @@ export function ExpandedItemRequirements({
 						<ItemLink
 							key={req.id}
 							item={item}
-							className={`flex items-center gap-3 bg-shadow/20 p-1 border transition-colors focus-visible:outline-2 focus-visible:outline-brand ${
-								isCompleted
-									? "border-success/30 opacity-60 bg-success-surface/5"
-									: "border-highlight/5 hover:border-highlight/10"
+							className={`flex items-center gap-3 rounded-sm p-1 transition-colors focus-visible:outline-2 focus-visible:outline-brand ${
+								isCompleted ? "opacity-60 hover:bg-shadow/20" : "bg-shadow/40 hover:bg-shadow/60"
 							}`}
 						>
 							<div className={`relative w-10 h-10 shrink-0 ${req.isFir ? "ring-1 ring-warning" : ""}`}>
@@ -89,7 +87,7 @@ export function ExpandedItemRequirements({
 									</div>
 								)}
 							</div>
-							<div className="flex-1 min-w-0 flex items-center justify-between">
+							<div className="flex-1 min-w-0 flex items-center justify-between gap-2">
 								<div className="flex flex-col items-start gap-0.5 min-w-0">
 									<div className={`text-xs truncate ${isCompleted ? "text-subtle-foreground" : "text-foreground"}`}>
 										<span
@@ -100,7 +98,7 @@ export function ExpandedItemRequirements({
 											{item.shortName || item.name}
 										</span>
 									</div>
-									<div className="text-[10px] font-mono text-muted-foreground">
+									<div className="flex flex-wrap items-baseline gap-x-2 text-[10px] font-mono text-muted-foreground">
 										{isCurrency ? (
 											<span className="text-brand">{formatNumber(req.count)}</span>
 										) : req.isFir ? (
@@ -116,16 +114,12 @@ export function ExpandedItemRequirements({
 												{` / ${formatNumber(needs.totalRequired)}`}
 											</span>
 										)}
+										{!isCurrency && <span className="text-subtle-foreground">{priceLabel} ea</span>}
 									</div>
 								</div>
 								{req.isFir && !isCompleted && (
-									<div className="text-warning" title="Found In Raid">
+									<div className="shrink-0 text-warning" title="Found In Raid">
 										<CircleCheckBig className="w-4 h-4" />
-									</div>
-								)}
-								{!isCurrency && (
-									<div className="ml-2 shrink-0 text-right text-[10px] font-mono text-subtle-foreground">
-										{priceLabel}
 									</div>
 								)}
 							</div>

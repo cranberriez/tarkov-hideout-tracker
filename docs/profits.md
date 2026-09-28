@@ -3,7 +3,7 @@
 Both profit routes enter [ProfitPage](../src/features/profit-pages/ProfitPage.tsx),
 which loads [getProfitPageData](../src/server/queries/getProfitPageData.ts) and
 renders [ProfitPageClient](../src/features/profit-pages/ProfitPageClient.tsx).
-Craft Planner consumes the same mode-keyed `recipes-crafts-barters` Query cache.
+Craft Planner consumes the same mode-keyed `recipes-crafts-barters` Query cache. Station pages stream the same payload and evaluate their station's crafts with the shared calculator, skills and overrides.
 Server pages prefetch and hydrate that payload, and client refetches update every
 consumer without duplicating the graph arrays. The metadata query supplies both normalized recipe graphs, referenced items, and
 compact trader/station presentation without prices. The shared mode/item price

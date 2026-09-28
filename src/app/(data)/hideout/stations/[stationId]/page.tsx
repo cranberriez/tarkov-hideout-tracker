@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { cache } from "react";
+import { cache, Suspense } from "react";
 import { HydrationBoundary } from "@tanstack/react-query";
-import { StationDetailQueryPage } from "@/features/hideout/StationDetailQueryPage";
+import { StationCraftsSkeleton } from "@/features/hideout/details/crafts/StationCraftsSkeleton";
+import { prefetchStationCrafts, StationCraftsStream } from "@/features/hideout/details/crafts/StationCraftsStream";
+import { StationDetailQueryPage } from "@/features/hideout/details/StationDetailQueryPage";
 import { stationHref } from "@/lib/entity-routes";
 import { hideoutPageQueryOptions, isCompleteHideoutPageData, PAGE_DATA_STALE_TIME } from "@/lib/query/page-data";
 import { decodeRouteParam } from "@/lib/utils/route-param";
@@ -36,6 +38,9 @@ export async function generateMetadata({ params }: StationPageProps): Promise<Me
 
 export default async function StationPage({ params }: StationPageProps) {
 	const stationId = decodeRouteParam((await params).stationId);
+	const activeMode = await getActiveTarkovJsonGameMode();
+	// Starts before the Hideout await so the recipe read overlaps it; resolved by the Suspense slot.
+	const craftsPrefetch = prefetchStationCrafts(activeMode);
 	const { gameMode, data } = await loadHideout();
 	// Missing stations 404 only when the station list itself loaded.
 	if (data.stations && !data.stations.some((entry) => entry.id === stationId)) notFound();
@@ -49,7 +54,16 @@ export default async function StationPage({ params }: StationPageProps) {
 
 	return (
 		<HydrationBoundary state={state}>
-			<StationDetailQueryPage mode={gameMode} stationId={stationId} fallbackData={fallbackData} />
+			<StationDetailQueryPage
+					mode={gameMode}
+					stationId={stationId}
+					fallbackData={fallbackData}
+					crafts={
+						<Suspense fallback={<StationCraftsSkeleton />}>
+							<StationCraftsStream mode={activeMode} prefetch={craftsPrefetch} />
+						</Suspense>
+					}
+				/>
 		</HydrationBoundary>
 	);
 }

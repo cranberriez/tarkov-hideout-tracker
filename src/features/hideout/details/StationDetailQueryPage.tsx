@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DataLoadError, DataQueryRetryProvider, DataRefreshError } from "@/components/core/DataLoadError";
 import { RouteLoader } from "@/components/core/RouteLoader";
@@ -17,10 +17,12 @@ export function StationDetailQueryPage({
 	mode,
 	stationId,
 	fallbackData,
+	crafts,
 }: {
 	mode: TarkovJsonGameMode;
 	stationId: string;
 	fallbackData: HideoutPageData | null;
+	crafts?: ReactNode;
 }) {
 	const hydrated = useUserStoreHydrated();
 	const enabled = useGameDataEnabled(mode);
@@ -65,7 +67,7 @@ export function StationDetailQueryPage({
 				)
 			)}
 			<DeferredPriceBoundary mode={mode} itemIds={itemIds}>
-				<StationDetailsPage station={station} data={data} mode={mode} />
+				<StationDetailsPage station={station} data={data} crafts={crafts} />
 			</DeferredPriceBoundary>
 		</DataQueryRetryProvider>
 	);
