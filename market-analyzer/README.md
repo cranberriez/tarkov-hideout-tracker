@@ -35,14 +35,23 @@ identical inputs.
 Market state uses flea minimum listing prices. Windows are time-weighted: each
 observation counts for the time it represents. Upstream keeps daily aggregates (00:00
 UTC, held up to 26 h) for older history and a snapshot about every two hours recently
-(held up to 3 h). It records nothing when no listings exist, so a gap counts as no data,
-never as the last price persisting.
+(held up to 3 h). It records nothing when no listings exist, so a gap never counts as
+the last price persisting.
+
+Upstream also has recording outages shared by all modes (e.g. 27 h on 2026-09-15/16)
+and, in PvE since mid-September 2026, skipped scans of liquid items. Tarkov.dev does not
+publish these, so the item's own data decides: a gap of up to 48 h with at least 3 offers
+on both sides and a price within 1.25× counts as **unrecorded** and is removed from the
+coverage denominator. Thin items keep "gap = no market". At least half of each window
+must remain after that, so a statistic always rests on a quarter of its window.
+`no-recent-listings` means no observation in 24 h: right after a long outage that is
+no recent data rather than a listing-free market.
 
 | Field                                       | Meaning                                                                   |
 | ------------------------------------------- | ------------------------------------------------------------------------- |
 | `live_*`                                    | Latest upstream observation                                               |
 | `market_value`, `stability`                 | The site's robust current estimate (same function as `item_prices.price`) |
-| `median_24h/7d/30d`                         | Time-weighted medians; null below 50% window coverage                     |
+| `median_24h/7d/30d`                         | Time-weighted medians; null below 50% coverage of recorded time           |
 | `range_low_7d/high_7d`                      | 7-day p10–p90: the recent normal range                                    |
 | `change_6h/24h/7d`                          | Market value now vs the market value as of then (null if either is stale) |
 | `change_24h_rub/7d_rub`                     | The same changes in roubles, e.g. to compare with `flea_fee`              |

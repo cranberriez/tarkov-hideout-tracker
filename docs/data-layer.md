@@ -247,8 +247,12 @@ releaseId field; they are cache identities, not selectable releases. The
 
 The History tab still fetches [upstream history](../src/server/prices/live-price-history.ts)
 on demand with its two-hour cache. Its chart shows the upstream aggregate reference by
-default, with the minimum listing (the series pricing and analytics use) as a toggle;
-dashed lines bridge periods with no listings, and insights follow the leading series.
+default, with the minimum listing (the series pricing and analytics use) as a toggle.
+1M and All plot 12-hour and daily UTC buckets summarised like Tarkov.dev's own daily
+aggregates (mean aggregate, lowest minimum, mean offers), so both history eras match;
+hover shows the bucket interval and observation count. Dashed lines bridge periods with
+no data recorded by Tarkov.dev (no listings, an upstream outage or a skipped scan: the
+history cannot tell which). Insights use raw points and follow the leading series.
 Repository stored history returns only the bounded recent window. Player storage, map services, and browser mode keys are
 unchanged.
 

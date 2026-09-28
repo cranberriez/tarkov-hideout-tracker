@@ -8,7 +8,8 @@ const DAY = 24 * HOUR;
  * How long an observation describes the market. Upstream keeps daily aggregates
  * (stamped 00:00 UTC) for older history and a snapshot roughly every two hours
  * recently, and records nothing when no listings exist. A gap between snapshots
- * therefore means "no market", not "the last price persisted".
+ * therefore never means "the last price persisted"; see unrecordedGap for when it
+ * counts as missing data rather than no market.
  */
 export const DAILY_HOLD_MS = 26 * HOUR;
 export const SNAPSHOT_HOLD_MS = 3 * HOUR;
@@ -18,6 +19,8 @@ const CHANGE_FRESH_MS = 26 * HOUR;
 export const STALE_MS = 72 * HOUR;
 /** A window needs this fraction of its duration observed before a statistic is reported. */
 export const MIN_COVERAGE = 0.5;
+/** Longest gap that can count as unrecorded; upstream outages seen so far lasted up to ~29 h. */
+const MAX_UNRECORDED_GAP_MS = 48 * HOUR;
 /** Same contiguous-regime tolerance as deriveEffectivePrice. */
 const REGIME_RATIO = 1.25;
 const TREND_MIN_MOVE = 0.05;
@@ -98,6 +101,42 @@ function usable(point: PriceHistoryPoint): boolean {
 	return point.priceMin > 0 && point.offerCount !== 0;
 }
 
+function holdFor(point: PriceHistoryPoint): number {
+	return point.timestamp % DAY === 0 ? DAILY_HOLD_MS : SNAPSHOT_HOLD_MS;
+}
+
+/**
+ * A gap bounded by normal depth at a similar price on both sides is missing data
+ * (an upstream outage or a skipped scan), not an absent market: a liquid item does
+ * not lose every listing and come back unchanged. Only the item's own data decides;
+ * Tarkov.dev does not publish outages. Thin items keep "gap = no market".
+ */
+export function unrecordedGap(before: PriceHistoryPoint, after: PriceHistoryPoint): boolean {
+	return (
+		usable(before) &&
+		usable(after) &&
+		before.offerCount !== null &&
+		after.offerCount !== null &&
+		before.offerCount >= THIN_DEPTH &&
+		after.offerCount >= THIN_DEPTH &&
+		Math.max(before.priceMin, after.priceMin) / Math.min(before.priceMin, after.priceMin) <= REGIME_RATIO &&
+		after.timestamp - before.timestamp <= MAX_UNRECORDED_GAP_MS
+	);
+}
+
+/** Time within [start, end) that falls in unrecorded gaps (beyond each observation's hold). */
+function unrecordedTime(points: readonly PriceHistoryPoint[], start: number, end: number): number {
+	let total = 0;
+	for (let index = 0; index + 1 < points.length; index += 1) {
+		const [point, next] = [points[index], points[index + 1]];
+		if (!unrecordedGap(point, next)) continue;
+		const from = Math.max(point.timestamp + holdFor(point), start);
+		const to = Math.min(next.timestamp, end);
+		if (to > from) total += to - from;
+	}
+	return total;
+}
+
 /**
  * Time-weighted minimum listing prices within [start, end). Recent history is
  * sampled every ~2 hours and older history daily, so each observation weighs
@@ -107,8 +146,7 @@ export function timeWeightedSamples(points: readonly PriceHistoryPoint[], start:
 	const samples: WeightedValue[] = [];
 	for (let index = 0; index < points.length; index += 1) {
 		const point = points[index];
-		const hold = point.timestamp % DAY === 0 ? DAILY_HOLD_MS : SNAPSHOT_HOLD_MS;
-		const holdUntil = Math.min(points[index + 1]?.timestamp ?? Infinity, point.timestamp + hold, end);
+		const holdUntil = Math.min(points[index + 1]?.timestamp ?? Infinity, point.timestamp + holdFor(point), end);
 		const weight = holdUntil - Math.max(point.timestamp, start);
 		if (weight > 0 && usable(point)) samples.push({ value: point.priceMin, weight });
 	}
@@ -132,9 +170,16 @@ interface WindowView {
 	coverage: number;
 }
 
+/**
+ * Coverage is the observed share of the window's recorded time: unrecorded gaps are
+ * not held against the item, but at least half the window must remain to judge, so
+ * a reported statistic always rests on a quarter of its window or more.
+ */
 function windowView(points: readonly PriceHistoryPoint[], end: number, length: number): WindowView {
 	const samples = timeWeightedSamples(points, end - length, end);
-	return { samples, coverage: samples.reduce((sum, sample) => sum + sample.weight, 0) / length };
+	const observed = samples.reduce((sum, sample) => sum + sample.weight, 0);
+	const recorded = Math.max(length - unrecordedTime(points, end - length, end), length * MIN_COVERAGE);
+	return { samples, coverage: observed / recorded };
 }
 
 function covered(view: WindowView, fraction: number): number | null {

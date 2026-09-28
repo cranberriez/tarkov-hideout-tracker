@@ -114,25 +114,6 @@ export function filterPriceHistory(points: PriceHistoryPoint[], range: PriceHist
 	return points.filter((point) => point.timestamp >= cutoff);
 }
 
-export function downsamplePriceHistory(points: PriceHistoryPoint[], limit = 600) {
-	if (points.length <= limit) return points;
-	const sampled: PriceHistoryPoint[] = [];
-	const bucketSize = points.length / limit;
-	for (let index = 0; index < limit; index += 1) {
-		const start = Math.floor(index * bucketSize);
-		const end = Math.max(start + 1, Math.floor((index + 1) * bucketSize));
-		const bucket = points.slice(start, end);
-		const offers = bucket.map((point) => point.offerCount).filter((value): value is number => value !== null);
-		sampled.push({
-			timestamp: bucket[Math.floor(bucket.length / 2)].timestamp,
-			price: bucket.reduce((total, point) => total + point.price, 0) / bucket.length,
-			priceMin: Math.min(...bucket.map((point) => point.priceMin)),
-			offerCount: offers.length > 0 ? offers.reduce((total, value) => total + value, 0) / offers.length : null,
-		});
-	}
-	return sampled;
-}
-
 function percentile(sortedValues: number[], fraction: number) {
 	if (sortedValues.length === 1) return sortedValues[0];
 	const position = (sortedValues.length - 1) * fraction;

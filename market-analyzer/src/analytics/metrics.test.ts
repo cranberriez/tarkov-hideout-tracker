@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { PriceHistoryPoint } from "../../../src/types/prices";
-import { computeMarketMetrics, timeWeightedSamples, weightedQuantile } from "./metrics";
+import { computeMarketMetrics, timeWeightedSamples, unrecordedGap, weightedQuantile } from "./metrics";
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -208,4 +208,47 @@ test("a large move made on one or two listings is low confidence", () => {
 	const metrics = computeMarketMetrics(points, NOW)!;
 	assert.ok(metrics.confidenceReasons.includes("thin-large-move"), metrics.confidenceReasons.join());
 	assert.equal(metrics.confidence, "low");
+});
+
+/** Two-hourly snapshots over the last week with nothing recorded in [from, to) hours ago. */
+function withGap(fromHoursAgo: number, toHoursAgo: number, depth: number, after = 5_000) {
+	return series(NOW - 7 * DAY, NOW, 2 * HOUR, (at) => (at > NOW - toHoursAgo * HOUR ? after : 5_000), depth).filter(
+		(point) => point.timestamp <= NOW - fromHoursAgo * HOUR || point.timestamp >= NOW - toHoursAgo * HOUR,
+	);
+}
+
+test("a gap between consistent, liquid observations is unrecorded, not an absent market", () => {
+	const at = (hoursAgo: number, priceMin: number, offerCount: number | null): PriceHistoryPoint => ({
+		timestamp: NOW - hoursAgo * HOUR,
+		price: priceMin,
+		priceMin,
+		offerCount,
+	});
+	assert.equal(unrecordedGap(at(30, 5_000, 40), at(1, 5_500, 25)), true);
+	assert.equal(unrecordedGap(at(30, 5_000, 2), at(1, 5_000, 25)), false, "thin before the gap");
+	assert.equal(unrecordedGap(at(30, 5_000, 40), at(1, 9_000, 25)), false, "price moved across the gap");
+	assert.equal(unrecordedGap(at(30, 5_000, null), at(1, 5_000, 25)), false, "unknown depth");
+	assert.equal(unrecordedGap(at(60, 5_000, 40), at(1, 5_000, 25)), false, "longer than any outage");
+});
+
+test("an upstream outage does not cost a liquid item coverage; the same gap still counts for a thin item", () => {
+	// Real shape: the 27 h outage of 2026-09-15, which every mode shared.
+	const liquid = computeMarketMetrics(withGap(100, 71, 40), NOW)!;
+	assert.equal(liquid.coverage.week, 1);
+	assert.ok(!liquid.confidenceReasons.includes("short-history"));
+
+	const thin = computeMarketMetrics(withGap(100, 71, 2), NOW)!;
+	assert.ok(thin.coverage.week < 0.9, String(thin.coverage.week));
+});
+
+test("a move across a gap is not forgiven", () => {
+	const metrics = computeMarketMetrics(withGap(100, 71, 40, 12_000), NOW)!;
+	assert.ok(metrics.coverage.week < 0.9, String(metrics.coverage.week));
+});
+
+test("a window mostly lost to an outage still needs a quarter of it observed", () => {
+	// Outage from 27 h to 2 h ago: the last day holds two hours of observations.
+	const metrics = computeMarketMetrics(withGap(27, 2, 40), NOW)!;
+	assert.equal(metrics.median24h, null);
+	assert.equal(metrics.median7d, 5_000);
 });
