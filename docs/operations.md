@@ -149,7 +149,8 @@ directory first). Keep logs and reports local; never include environment values.
 ## Current dataset dashboard
 
 The development-only [/dev page](../src/app/dev/page.tsx) displays current status,
-counts, content version and freshness by mode. The API keeps releaseId only as a
+counts, content version and freshness by mode, plus the latest price push, market
+analysis runs and biggest movers. The API keeps releaseId only as a
 compatibility field containing the string content version. It is not a release
 lifecycle. Search's stale-token protocol remains unchanged.
 

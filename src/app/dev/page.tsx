@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import { getCatalogDashboard } from "@/server/db/postgres-dashboard";
+import { getCatalogDashboard, getMarketWorkerDashboard } from "@/server/db/postgres-dashboard";
+import { MarketWorkerPanel } from "./MarketWorkerPanel";
 
 const MODES: Array<{ value: TarkovJsonGameMode; label: string }> = [
 	{ value: "regular", label: "PVP" },
@@ -31,6 +32,13 @@ export default async function DevPage({
 		dashboard = await getCatalogDashboard(mode.value);
 	} catch (cause) {
 		error = cause instanceof Error ? cause.message : String(cause);
+	}
+	let market;
+	let marketError: string | null = null;
+	try {
+		market = await getMarketWorkerDashboard(mode.value);
+	} catch (cause) {
+		marketError = cause instanceof Error ? cause.message : String(cause);
 	}
 	return (
 		<main className="container mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 py-8 sm:px-6">
@@ -86,6 +94,12 @@ export default async function DevPage({
 					</p>
 				</section>
 			)}
+			{marketError && (
+				<p role="alert" className="rounded-xl border border-danger bg-danger-surface/20 p-5 text-sm text-danger">
+					Unable to load market worker status: {marketError}
+				</p>
+			)}
+			{market && <MarketWorkerPanel dashboard={market} modeValue={mode.value} />}
 		</main>
 	);
 }

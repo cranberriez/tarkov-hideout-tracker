@@ -222,8 +222,8 @@ The [market-analyzer worker](../market-analyzer/README.md) writes through this s
 store and lease, reusing the shared normalization and outcome derivation. It keeps
 full upstream histories only in its own disk cache, pushes changed items hourly,
 and does not write not-modified checks. Its derived analytics are append-only rows in
-market_analysis_runs and item_market_observations (migration 0002); no page reads them
-yet.
+market_analysis_runs and item_market_observations (migration 0002); only the
+development dashboard reads them so far.
 
 [price-data.ts](../src/server/db/price-data.ts) assembles CurrentPrice from catalog
 reference fields and recomputes the existing effective-price/stability model from
