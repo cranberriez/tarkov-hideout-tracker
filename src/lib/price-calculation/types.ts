@@ -27,6 +27,10 @@ export interface LockReason {
 	kind: "flea" | "quest" | "vendor" | "station" | "unavailable";
 	message: string;
 	questId?: string;
+	/** Station or trader ID for station/vendor locks. */
+	sourceId?: string;
+	/** Level that removes the lock: player level (flea), loyalty (vendor) or station level. */
+	requiredLevel?: number;
 }
 
 export interface LockedAcquisitionAlternative {

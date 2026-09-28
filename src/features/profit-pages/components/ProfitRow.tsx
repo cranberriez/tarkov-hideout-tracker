@@ -10,18 +10,18 @@ import type { Trader } from "@/types/traders";
 import type { GoToRecipeHandler, PriceChangeHandler, RouteContext, SortKey } from "../types";
 import { formatDuration, formatRoundedRoubles, formatSignedRoubles } from "../utils/formatters";
 import { acquisitionRouteKey, hasRecipeRoute, withRequiredItemRoute } from "../utils/recipes";
+import { ingredientLockReasons, unpricedIngredientIds } from "../utils/lock-summary";
 import styles from "./ProfitTable.module.css";
 import { ProfitCell, SellValueCell } from "./ProfitCells";
-import { ProfitSourceCell } from "./ProfitSourceCell";
 import { RecipeChain } from "./RecipeChain";
 import { RecipeItem } from "./RecipeItem";
+import { RecipeRequirements } from "./RecipeRequirements";
 
 export function ProfitRow({
 	evaluation: baseEvaluation,
 	baselineEvaluation,
 	itemById,
 	sourceName,
-	available,
 	source,
 	overrides,
 	onPriceChange,
@@ -42,7 +42,6 @@ export function ProfitRow({
 	baselineEvaluation?: RecipeEvaluation;
 	itemById: Readonly<Record<string, ItemSummary>>;
 	sourceName?: string;
-	available: boolean;
 	source?: Trader | ProfitStationSource;
 	overrides: Record<string, ManualPriceOverride>;
 	onPriceChange: PriceChangeHandler;
@@ -86,71 +85,73 @@ export function ProfitRow({
 	};
 	const headlineKey = sortKey === "profitPerHour" ? "profitPerHour" : "profit";
 	const hasNestedRecipe = evaluation.requiredItems.some(hasRecipeRoute);
+	const unpricedNames = unpricedIngredientIds(evaluation).map(
+		(itemId) => itemById[itemId]?.shortName ?? itemById[itemId]?.name ?? itemId,
+	);
 	return (
 		<div
 			data-output-locked={Boolean(evaluation.outputLockReasons?.length)}
 			className={highlighted ? "bg-brand/[0.06] ring-1 ring-inset ring-brand/40" : undefined}
 		>
 			<div className={styles.row}>
-				<div className={styles.actions}>
-					{onTogglePinned && (
-						<button
-							type="button"
-							aria-pressed={pinned}
-							aria-label={pinned ? "Unpin craft" : "Pin craft"}
-							title={pinned ? "Unpin craft" : "Pin craft"}
-							onClick={onTogglePinned}
-							className={`flex size-9 2xl:size-7 items-center justify-center rounded border transition ${pinned ? "border-info/40 bg-info/10 text-info" : "border-highlight/10 bg-highlight/[0.035] text-muted-foreground hover:border-info/40 hover:text-info"}`}
-						>
-							<Pin className={`size-4 ${pinned ? "fill-current" : ""}`} />
-						</button>
-					)}
-					{hasNestedRecipe && (
-						<button
-							type="button"
-							aria-expanded={expanded}
-							aria-label={`${expanded ? "Collapse" : "Expand"} recipe chain`}
-							title={`${expanded ? "Collapse" : "Expand"} recipe chain`}
-							onClick={() => setExpanded((value) => !value)}
-							className="flex size-9 2xl:size-7 items-center justify-center rounded border border-highlight/10 bg-highlight/[0.035] text-muted-foreground transition hover:border-brand/50 hover:text-brand"
-						>
-							<ChevronRight className={`size-4 transition-transform ${expanded ? "rotate-90" : ""}`} />
-						</button>
-					)}
-				</div>
-				<div className={styles.source}>
-					<ProfitSourceCell evaluation={evaluation} source={source} available={available} />
-				</div>
-				<div className={styles.output}>
-					<RecipeItem
-						item={output}
-						count={evaluation.outputCount}
-						method={evaluation.kind}
-						totalPrice={evaluation.grossSellValue === undefined ? evaluation.sellValue : evaluation.grossSellValue}
-						priceKind="sell"
-						lockReasons={evaluation.outputLockReasons ?? []}
-						sellValueIsEstimate={evaluation.sellValueIsEstimate ?? false}
-						emphasized
-						fillColumn
-						showRouteIcon={false}
-						overrides={overrides}
-						onPriceChange={onPriceChange}
-						routeContext={routeContext}
-						recipePreview={{
-							kind: evaluation.kind,
-							sourceId: evaluation.id,
-							outputItemId: evaluation.outputItemId,
-							outputCount: evaluation.outputCount,
-							batches: 1,
-							requiredItems: evaluation.requiredItems,
-							durationSeconds: evaluation.craft?.duration ?? 0,
-						}}
-						detail={
-							evaluation.barter
-								? `Barter with ${sourceName ?? "unknown trader"} at LL${evaluation.barter.minTraderLevel}`
-								: `Craft at ${sourceName ?? "unknown station"} level ${evaluation.craft?.level ?? "?"} · ${formatDuration(evaluation.craft?.duration ?? 0)}`
-						}
-					/>
+				<div className={styles.recipe}>
+					<div className="flex items-start gap-1">
+						<div className="min-w-0 flex-1">
+							<RecipeItem
+								item={output}
+								count={evaluation.outputCount}
+								method={evaluation.kind}
+								totalPrice={evaluation.grossSellValue === undefined ? evaluation.sellValue : evaluation.grossSellValue}
+								priceKind="sell"
+								sellValueIsEstimate={evaluation.sellValueIsEstimate ?? false}
+								showRouteIcon={false}
+								overrides={overrides}
+								onPriceChange={onPriceChange}
+								routeContext={routeContext}
+								recipePreview={{
+									kind: evaluation.kind,
+									sourceId: evaluation.id,
+									outputItemId: evaluation.outputItemId,
+									outputCount: evaluation.outputCount,
+									batches: 1,
+									requiredItems: evaluation.requiredItems,
+									durationSeconds: evaluation.craft?.duration ?? 0,
+								}}
+								detail={
+									evaluation.barter
+										? `Barter with ${sourceName ?? "unknown trader"} at LL${evaluation.barter.minTraderLevel}`
+										: `Craft at ${sourceName ?? "unknown station"} level ${evaluation.craft?.level ?? "?"} · ${formatDuration(evaluation.craft?.duration ?? 0)}`
+								}
+							/>
+						</div>
+						<div className={styles.actions}>
+							{hasNestedRecipe && (
+								<button
+									type="button"
+									aria-expanded={expanded}
+									aria-label={`${expanded ? "Collapse" : "Expand"} recipe chain`}
+									title={`${expanded ? "Collapse" : "Expand"} recipe chain`}
+									onClick={() => setExpanded((value) => !value)}
+									className={`flex size-9 items-center justify-center rounded transition hover:bg-highlight/[0.06] hover:text-brand lg:size-6 ${expanded ? "text-brand" : "text-muted-foreground/60"}`}
+								>
+									<ChevronRight className={`size-4 transition-transform ${expanded ? "rotate-90" : ""}`} />
+								</button>
+							)}
+							{onTogglePinned && (
+								<button
+									type="button"
+									aria-pressed={pinned}
+									aria-label={pinned ? "Unpin craft" : "Pin craft"}
+									title={pinned ? "Unpin craft" : "Pin craft"}
+									onClick={onTogglePinned}
+									className={`flex size-9 items-center justify-center rounded transition hover:bg-highlight/[0.06] lg:size-6 ${pinned ? "text-info" : "text-muted-foreground/60 hover:text-info"}`}
+								>
+									<Pin className={`size-4 lg:size-3.5 ${pinned ? "fill-current" : ""}`} />
+								</button>
+							)}
+						</div>
+					</div>
+					<RecipeRequirements evaluation={evaluation} source={source} itemById={itemById} />
 				</div>
 				<div className={styles.headline}>
 					<ProfitCell
@@ -163,7 +164,7 @@ export function ProfitRow({
 						{formatSignedRoubles(evaluation[headlineKey])}
 					</ProfitCell>
 				</div>
-				<div className={styles.ingredients}>
+				<div className={`@container/ingredients ${styles.ingredients}`}>
 					<span className={styles.sectionLabel}>Required items</span>
 					{evaluation.requiredItems.map((plan, index) => (
 						<RecipeItem
@@ -173,7 +174,7 @@ export function ProfitRow({
 							method={plan.method}
 							totalPrice={plan.totalCost}
 							plan={plan}
-							lockReasons={plan.lockReasons}
+							lockReasons={ingredientLockReasons(plan)}
 							priceKind="buy"
 							overrides={overrides}
 							onPriceChange={onPriceChange}
@@ -182,11 +183,17 @@ export function ProfitRow({
 							onGoToRecipe={onGoToRecipe}
 							onRouteChange={(routeKey) => onRouteChange(index, routeKey)}
 							baseRouteKey={acquisitionRouteKey(baseEvaluation.requiredItems[index])}
+							recipeCost={evaluation.cost}
 						/>
 					))}
 				</div>
 				<div className={styles.metrics}>
-					<ProfitCell responsiveLabel label="Cost">
+					<ProfitCell
+						responsiveLabel
+						label="Cost"
+						detail={unpricedNames.length ? `No price: ${unpricedNames.join(", ")}` : undefined}
+						detailTone="danger"
+					>
 						{formatRoundedRoubles(evaluation.cost)}
 					</ProfitCell>
 					<SellValueCell
@@ -203,7 +210,7 @@ export function ProfitRow({
 						value={evaluation.profit}
 						customized={originalEvaluation !== undefined && evaluation.profit !== originalEvaluation.profit}
 						originalValue={originalEvaluation ? formatSignedRoubles(originalEvaluation.profit) : undefined}
-						detail={`Total time ${evaluation.durationSeconds > 0 ? formatDuration(evaluation.durationSeconds) : "-"}`}
+						detail={evaluation.durationSeconds > 0 ? formatDuration(evaluation.durationSeconds) : undefined}
 						infoTitle="Sell the ingredients instead"
 						info={
 							evaluation.profitVsSellingInputs !== null &&

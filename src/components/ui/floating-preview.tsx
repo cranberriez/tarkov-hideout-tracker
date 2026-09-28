@@ -45,6 +45,8 @@ export function useFloatingPreview({
 		open,
 		placement,
 		strategy: "fixed",
+		// Position with left/top: the enter animation's transform would otherwise override the placement.
+		transform: false,
 		whileElementsMounted: autoUpdate,
 		middleware: [
 			offset(8),
@@ -154,7 +156,7 @@ export function useFloatingPreview({
 		onPointerLeave: () => hide(),
 	};
 
-	return { open, triggerProps, floatingProps, hide };
+	return { open, triggerProps, floatingProps, show, hide };
 }
 
 /** Portals the floating element when open. `className` styles the positioned container. */

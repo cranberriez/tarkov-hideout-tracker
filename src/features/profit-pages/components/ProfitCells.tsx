@@ -9,6 +9,7 @@ export function ProfitCell({
 	value,
 	children,
 	detail,
+	detailTone = "muted",
 	info,
 	infoTitle,
 	customized = false,
@@ -22,6 +23,7 @@ export function ProfitCell({
 	value?: number | null;
 	children: React.ReactNode;
 	detail?: string;
+	detailTone?: "muted" | "danger";
 	info?: React.ReactNode;
 	infoTitle?: string;
 	customized?: boolean;
@@ -30,9 +32,9 @@ export function ProfitCell({
 	const color =
 		value == null ? "text-foreground" : value > 0 ? "text-success" : value < 0 ? "text-danger" : "text-foreground";
 	return (
-		<div className="flex flex-col items-start justify-center border-l border-highlight/5 px-3">
+		<div className="flex min-w-0 flex-col items-start self-start lg:self-auto lg:justify-center lg:border-l border-highlight/5 px-4 xl:px-3">
 			{(responsiveLabel || showLabel) && (
-				<span className={`mb-1 text-[10px] font-medium text-muted-foreground ${showLabel ? "" : "2xl:hidden"}`}>
+				<span className={`mb-1 text-[10px] font-medium text-muted-foreground ${showLabel ? "" : "lg:hidden"}`}>
 					{label}
 				</span>
 			)}
@@ -54,7 +56,14 @@ export function ProfitCell({
 					</InfoHint>
 				)}
 			</span>
-			{detail && <span className="mt-0.5 whitespace-nowrap font-mono text-[9px] text-muted-foreground">{detail}</span>}
+			{detail && (
+				<span
+					title={detail}
+					className={`mt-0.5 max-w-full truncate font-mono text-[10px] ${detailTone === "danger" ? "text-danger" : "text-muted-foreground"}`}
+				>
+					{detail}
+				</span>
+			)}
 		</div>
 	);
 }
@@ -78,9 +87,9 @@ export function SellValueCell({
 	const comparison = getItemSellComparison(item, overrides, pricingContext, count);
 	const trader = comparison.bestTraderOffer;
 	return (
-		<div className="flex min-w-0 flex-col items-start justify-center border-l border-highlight/5 px-3">
+		<div className="flex min-w-0 flex-col items-start justify-center border-l border-highlight/5 px-2 xl:px-3">
 			{responsiveLabel && (
-				<span className="mb-1 text-[10px] font-medium text-muted-foreground 2xl:hidden">Sale proceeds</span>
+				<span className="mb-1 text-[10px] font-medium text-muted-foreground lg:hidden">Sale proceeds</span>
 			)}
 			<span
 				className="whitespace-nowrap font-mono text-sm font-semibold text-foreground"
@@ -89,18 +98,18 @@ export function SellValueCell({
 				{formatRoundedRoubles(sellValue)}
 			</span>
 			{sellSourceLabel ? (
-				<span className="mt-0.5 text-[8px] text-muted-foreground">{sellSourceLabel}</span>
+				<span className="mt-0.5 text-[10px] text-muted-foreground">{sellSourceLabel}</span>
 			) : comparison.selectedSource === "manual" ? (
-				<span className="mt-0.5 text-[8px] uppercase tracking-wide text-warning">Manual price</span>
+				<span className="mt-0.5 text-[10px] uppercase tracking-wide text-warning">Manual price</span>
 			) : comparison.pricesAreClose && comparison.fleaPrice !== null && trader ? (
-				<span className="mt-0.5 block max-w-full space-y-0.5 text-[8px] leading-tight text-muted-foreground">
+				<span className="mt-0.5 block max-w-full space-y-0.5 text-[10px] leading-tight text-muted-foreground">
 					<span className="block truncate">Flea {formatCompactPrice(comparison.fleaPrice * count)}</span>
 					<span className="block truncate">
 						{trader.vendor.name} {formatTraderOffer(trader, count, true)}
 					</span>
 				</span>
 			) : (
-				<span className="mt-0.5 max-w-full truncate text-[8px] text-muted-foreground">
+				<span className="mt-0.5 max-w-full truncate text-[10px] text-muted-foreground">
 					{comparison.selectedSource === "trader" && trader
 						? `${trader.vendor.name} · ${formatTraderOffer(trader, count, false)}`
 						: comparison.selectedSource === "flea"

@@ -6,7 +6,14 @@
 .header,
 .row {
 	display: grid;
-	grid-template-columns: 40px 125px 170px minmax(300px, 1fr) 110px 150px 120px 120px;
+	/* Fixed figure widths fit the 1024px container and leave the remainder to required items. */
+	grid-template-columns: 220px minmax(0, 1fr) 96px 112px 104px 104px;
+}
+@media (min-width: 1280px) {
+	.header,
+	.row {
+		grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) 115px 150px 125px 125px;
+	}
 }
 .header {
 	padding: 8px 0;
@@ -27,47 +34,35 @@
 	min-height: 72px;
 	align-items: stretch;
 }
+/* Output first, row actions at its top-right, then the one-line requirements summary. */
+.recipe {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	gap: 4px;
+	padding: 8px 8px 6px 10px;
+	border-right: 1px solid color-mix(in oklab, var(--highlight) 5%, transparent);
+	border-left: 2px solid color-mix(in oklab, var(--brand) 55%, transparent);
+}
 .actions {
 	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 4px;
-	border-right: 1px solid color-mix(in oklab, var(--highlight) 5%, transparent);
-	background: color-mix(in oklab, var(--shadow) 10%, transparent);
-}
-.source {
-	display: flex;
-	min-width: 0;
-}
-.source > span {
-	width: 100%;
-}
-.sourceCell {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
+	flex-shrink: 0;
 	gap: 2px;
-	border-right: 1px solid color-mix(in oklab, var(--highlight) 5%, transparent);
-	padding: 0 8px;
-	text-align: center;
-}
-.sourceDetails {
-	min-width: 0;
-}
-.output {
-	min-width: 0;
-	border-right: 1px solid color-mix(in oklab, var(--highlight) 5%, transparent);
 }
 .ingredients {
 	display: flex;
 	min-width: 0;
 	flex-direction: column;
-	justify-content: center;
+	justify-content: flex-start;
+	padding-top: 4px;
 }
 .metrics {
 	display: contents;
+}
+/* Figures share the top reading line with the output name and first ingredient. */
+.metrics > div {
+	justify-content: flex-start;
+	padding-top: 14px;
 }
 .headline,
 .sortLabel,
@@ -79,7 +74,7 @@
 	border-bottom: 1px solid color-mix(in oklab, var(--highlight) 10%, transparent);
 }
 
-@media (max-width: 1535px) {
+@media (max-width: 1023px) {
 	.table {
 		border: 0;
 		background: transparent;
@@ -123,14 +118,14 @@
 		background-color: var(--card-bg);
 	}
 	.row {
-		grid-template-columns: auto minmax(160px, 220px) minmax(0, 1fr) auto;
+		grid-template-columns: minmax(0, 1fr) auto;
 	}
-	.actions {
-		flex-direction: row;
-		gap: 0;
-		padding: 0 4px;
+	.recipe {
 		border: 0;
 		background: transparent;
+	}
+	.actions {
+		gap: 0;
 	}
 	.actions button {
 		width: 36px;
@@ -142,36 +137,8 @@
 		outline: 2px solid var(--brand);
 		outline-offset: -2px;
 	}
-	.sourceCell {
-		flex-direction: row;
-		justify-content: flex-start;
-		gap: 10px;
-		border: 0;
-		text-align: left;
-		padding: 8px;
-	}
-	.sourceDetails > span:first-child {
-		justify-content: flex-start;
-	}
-	.sourceDetails > span:first-child > span:first-child {
-		white-space: normal;
-	}
-	.sourceDetails > span[data-isolated-hover] {
-		padding: 2px 0 0;
-	}
-	.sourceIcon .sourceLock {
-		right: -4px;
-		top: auto;
-		bottom: -2px;
-		transform: none;
-	}
-	.output,
-	.output > span {
-		background: transparent;
-		border: 0;
-	}
 	.virtualRow > div[data-output-locked="true"] {
-		border-color: color-mix(in oklab, var(--danger) 65%, transparent);
+		border-color: color-mix(in oklab, var(--warning) 45%, transparent);
 	}
 	.headline {
 		display: flex;
@@ -200,6 +167,7 @@
 	.metrics > div {
 		min-width: 0;
 		justify-content: start;
+		padding-top: 0;
 	}
 	.responsiveLabel {
 		display: block;
@@ -218,31 +186,6 @@
 	}
 	.sortControl {
 		flex: 1 1 40%;
-	}
-	.row {
-		grid-template-columns: minmax(0, 1fr) auto;
-	}
-	.actions {
-		grid-column: 2;
-		grid-row: 1;
-		align-self: start;
-		padding: 4px;
-	}
-	.source {
-		grid-column: 1;
-		grid-row: 1;
-	}
-	.source > span {
-		border: 0;
-	}
-	.output {
-		grid-column: 1;
-		grid-row: 2;
-		border: 0;
-	}
-	.headline {
-		grid-column: 2;
-		grid-row: 2;
 	}
 	.headline > div {
 		padding: 0 8px;

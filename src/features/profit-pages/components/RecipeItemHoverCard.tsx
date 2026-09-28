@@ -1,23 +1,14 @@
 import type { useProfitPricingContext } from "./ProfitPricingContext";
 import Image from "next/image";
-import { X } from "lucide-react";
-import {
-	getItemBuyPrice,
-	getItemSellComparison,
-	type AcquisitionPlan,
-	type ManualPriceOverride,
-} from "@/lib/price-calculation";
+import { LockKeyhole, X } from "lucide-react";
+import { QuestLink } from "@/components/entities/quest-link";
+import { getItemSellComparison, type AcquisitionPlan, type ManualPriceOverride } from "@/lib/price-calculation";
 import type { ItemSummary } from "@/types/items";
 import type { RecipePreviewData, RouteContext, RouteMethod } from "../types";
-import {
-	formatDuration,
-	formatQuantity,
-	formatRoundedRoubles,
-	formatSignedRoubles,
-	formatTraderOffer,
-} from "../utils/formatters";
+import { formatDuration, formatQuantity, formatRoundedRoubles, formatTraderOffer } from "../utils/formatters";
+import { describeSelectedLock } from "../utils/lock-summary";
 import { RecipePreviewCard } from "./RecipePreviewCard";
-import { RouteIcon, routeChipClasses } from "./RouteIcon";
+import { RouteGlyph, routeChipClasses } from "./RouteIcon";
 
 export interface RecipeItemHoverData {
 	pricingContext: ReturnType<typeof useProfitPricingContext>;
@@ -31,9 +22,51 @@ export interface RecipeItemHoverData {
 	routeContext: RouteContext;
 	routeDetail: string | null;
 	recipePreview?: RecipePreviewData;
-	theoreticalRecipePreview?: RecipePreviewData;
-	theoreticalSavings?: number | null;
 	showRouteIcon: boolean;
+	recipeCost?: number | null;
+}
+
+const METHOD_LABELS: Record<RouteMethod, string> = {
+	flea: "Flea market",
+	trader: "Trader",
+	barter: "Barter",
+	craft: "Craft",
+	sell: "Sell value",
+	unavailable: "No source",
+};
+
+/** Label/value rows: labels left, figures right-aligned so they scan down one edge. */
+function Row({ label, children, strong = false }: { label: string; children: React.ReactNode; strong?: boolean }) {
+	return (
+		<span
+			className={`flex items-baseline justify-between gap-4 border-t border-highlight/[0.07] py-1.5 first:border-t-0 ${strong ? "font-semibold" : ""}`}
+		>
+			<span className="text-muted-foreground">{label}</span>
+			<span className="text-right font-mono text-foreground">{children}</span>
+		</span>
+	);
+}
+
+/** Where the selected route comes from, in a few words. */
+function sourceSummary(plan: AcquisitionPlan | undefined, method: RouteMethod, context: RouteContext) {
+	if (!plan) return null;
+	if (method === "trader" && plan.traderOffer) {
+		const offer = plan.traderOffer;
+		const native = offer.currency !== "RUB" ? ` · ${offer.price.toLocaleString()} ${offer.currency}` : "";
+		return `${context.tradersById[offer.traderId]?.name ?? "Unknown trader"} LL${offer.minTraderLevel}${native}`;
+	}
+	if (method === "barter" && plan.sourceId) {
+		const barter = context.bartersById[plan.sourceId];
+		return barter
+			? `${context.tradersById[barter.traderId]?.name ?? "Unknown trader"} LL${barter.minTraderLevel}`
+			: null;
+	}
+	if (method === "craft" && plan.sourceId) {
+		const craft = context.craftsById[plan.sourceId];
+		return craft ? `${context.stationsById[craft.stationId]?.name ?? "Unknown station"} ${craft.level}` : null;
+	}
+	if (method === "sell") return "Opportunity cost of not selling it";
+	return null;
 }
 
 export function RecipeItemHoverCard({
@@ -48,9 +81,8 @@ export function RecipeItemHoverCard({
 	routeContext,
 	routeDetail,
 	recipePreview,
-	theoreticalRecipePreview,
-	theoreticalSavings,
 	showRouteIcon,
+	recipeCost,
 	onClose,
 	onKeepOpen,
 }: RecipeItemHoverData & {
@@ -58,225 +90,146 @@ export function RecipeItemHoverCard({
 	onKeepOpen: () => void;
 }) {
 	const unitRoutePrice = totalPrice === null || count <= 0 ? null : totalPrice / count;
-	const directUnitPrice = item
-		? priceKind === "buy"
-			? getItemBuyPrice(item, overrides, pricingContext)
-			: getItemSellComparison(item, overrides, pricingContext, count).selectedPrice
-		: null;
-	const hasOverride = Boolean(item && overrides[item.id]?.[priceKind] !== undefined);
-	const selectedDirectHasOverride = hasOverride && plan?.directBuyMethod !== "trader";
-	const sellComparison = priceKind === "sell" ? getItemSellComparison(item, overrides, pricingContext, count) : null;
-	const routeLabel = plan?.isTool
-		? "Reusable tool"
-		: method === "flea"
-			? "Flea market"
-			: method === "sell"
-				? "Sell value"
-				: method === "trader"
-					? "Trader"
-					: method === "barter"
-						? "Barter"
-						: method === "craft"
-							? "Craft"
-							: "Unavailable";
-	const directRouteUnitPrice = plan?.directBuyCost != null && count > 0 ? plan.directBuyCost / count : directUnitPrice;
-	const routeSavingsPerUnit =
-		plan && method !== "flea" && method !== "trader" && directRouteUnitPrice !== null && unitRoutePrice !== null
-			? directRouteUnitPrice - unitRoutePrice
+	const manualPrice = Boolean(item && overrides[item.id]?.[priceKind] !== undefined);
+	const sale = priceKind === "sell" ? getItemSellComparison(item, overrides, pricingContext, count) : null;
+	const recipeSavings =
+		plan && (method === "barter" || method === "craft") && plan.directBuyCost !== null && plan.totalCost !== null
+			? plan.directBuyCost - plan.totalCost
 			: null;
-	const ingredientSellValue =
-		plan && !plan.isTool && item
-			? (() => {
-					return getItemSellComparison(
-						item,
-						overrides,
-						{ ...pricingContext, useTraderSaleForLockedOutputs: true },
-						count,
-					).netTotal;
-				})()
+	const recipeShare =
+		plan && !plan.isTool && plan.totalCost !== null && recipeCost != null && recipeCost > 0
+			? plan.totalCost / recipeCost
 			: null;
-	const ingredientSellPremium =
-		ingredientSellValue !== null && plan?.totalCost !== null && plan?.totalCost !== undefined
-			? ingredientSellValue - plan.totalCost
-			: null;
+	const lockReasons = plan ? describeSelectedLock(plan, routeContext) : [];
+	const summary = priceKind === "sell" ? routeDetail : sourceSummary(plan, method, routeContext);
+	const questName = (questId: string) => pricingContext.taskUnlocksById?.[questId]?.name || "Quest details unavailable";
 	return (
-		<>
-			<span className="pointer-events-auto relative block w-80 max-w-full shrink-0 rounded-md border border-highlight/15 bg-[var(--background)] p-3 shadow-[0_18px_55px_color-mix(in_oklab,_var(--shadow)_80%,_transparent)]">
-				<button
-					type="button"
-					aria-label="Close item details"
-					title="Close"
-					onMouseEnter={onKeepOpen}
-					onMouseLeave={onClose}
-					onClick={(event) => {
-						event.preventDefault();
-						event.stopPropagation();
-						onClose();
-					}}
-					className="pointer-events-auto absolute right-1.5 top-1.5 z-10 flex size-5 items-center justify-center rounded text-foreground/25 transition hover:bg-highlight/[0.06] hover:text-foreground/65 focus:outline-none focus:ring-1 focus:ring-highlight/30"
-				>
-					<X className="size-3" />
-				</button>
-				<span className="flex items-center gap-3">
-					<span className="relative flex size-16 shrink-0 items-center justify-center bg-highlight/[0.035]">
-						{showRouteIcon && <RouteIcon method={method} filled />}
+		<span className="pointer-events-auto relative flex min-w-0 flex-1 overflow-hidden rounded-md border border-highlight/15 bg-[var(--background)] text-xs shadow-[0_18px_55px_color-mix(in_oklab,_var(--shadow)_80%,_transparent)]">
+			<button
+				type="button"
+				aria-label="Close item details"
+				title="Close"
+				onMouseEnter={onKeepOpen}
+				onMouseLeave={onClose}
+				onClick={(event) => {
+					event.preventDefault();
+					event.stopPropagation();
+					onClose();
+				}}
+				className="pointer-events-auto absolute right-1.5 top-1.5 z-10 flex size-5 items-center justify-center rounded text-foreground/25 transition hover:bg-highlight/[0.06] hover:text-foreground/65 focus:outline-none focus:ring-1 focus:ring-highlight/30"
+			>
+				<X className="size-3" />
+			</button>
+			<span className="relative block w-80 max-w-full shrink-0 p-3">
+				<span className={`flex items-center gap-3 ${recipePreview ? "" : "pr-5"}`}>
+					<span className="relative flex size-12 shrink-0 items-center justify-center bg-highlight/[0.035]">
 						{item?.iconLink && (
-							<Image src={item.iconLink} alt="" width={64} height={64} className="size-16 object-contain" unoptimized />
+							<Image src={item.iconLink} alt="" width={48} height={48} className="size-12 object-contain" unoptimized />
 						)}
 					</span>
 					<span className="min-w-0">
 						<span className="block text-sm font-semibold leading-tight text-foreground">
 							{item?.name ?? "Unknown item"}
 						</span>
-						<span
-							className={`mt-1 inline-flex rounded-sm px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${routeChipClasses(method)}`}
-						>
-							{routeLabel}
+						<span className="mt-1 flex min-w-0 items-center gap-1.5">
+							{priceKind === "buy" && (
+								<span
+									className={`flex shrink-0 items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${routeChipClasses(method)}`}
+								>
+									{showRouteIcon && <RouteGlyph method={method} />}
+									{plan?.isTool ? "Tool" : METHOD_LABELS[method]}
+								</span>
+							)}
+							{summary && <span className="truncate text-[11px] text-muted-foreground">{summary}</span>}
 						</span>
-						<span className="ml-2 font-mono text-[10px] text-muted-foreground">×{formatQuantity(count)}</span>
 					</span>
 				</span>
-				{routeDetail && (
-					<span className="mt-3 block border-t border-highlight/10 pt-2 text-[11px] leading-relaxed text-foreground/80">
-						{routeDetail}
-					</span>
-				)}
-				<span className="mt-2 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 rounded bg-highlight/[0.035] p-2 font-mono text-[10px]">
-					{priceKind === "sell" && sellComparison ? (
+
+				<span className="mt-3 block">
+					{sale ? (
 						<>
-							<span className="text-muted-foreground">Listing fee / batch</span>
-							<span className="text-right text-foreground">{formatRoundedRoubles(sellComparison.fee)}</span>
-							<span className="text-muted-foreground">Net proceeds / batch</span>
-							<span className="text-right text-foreground">{formatRoundedRoubles(sellComparison.netTotal)}</span>
-							{
-								<>
-									<span className="text-muted-foreground">Flea sale / unit</span>
-									<span className="text-foreground">{formatRoundedRoubles(sellComparison.fleaPrice)}</span>
-									<span className="text-muted-foreground">Best trader / unit</span>
-									<span className="text-right text-foreground">
-										{sellComparison.bestTraderOffer ? (
-											<>
-												{sellComparison.bestTraderOffer.vendor.name} ·{" "}
-												{formatTraderOffer(sellComparison.bestTraderOffer, 1, true)}
-											</>
-										) : (
-											"-"
-										)}
-									</span>
-									{sellComparison.manualPrice !== null && (
-										<>
-											<span className="text-muted-foreground">Manual sale / unit</span>
-											<span className="text-warning">{formatRoundedRoubles(sellComparison.manualPrice)}</span>
-										</>
-									)}
-								</>
-							}
+							<Row label={`Sale price${count > 1 ? " / unit" : ""}`}>
+								<span className={manualPrice ? "text-info" : undefined}>
+									{formatRoundedRoubles(sale.selectedPrice)}
+								</span>
+							</Row>
+							{sale.fee !== null && sale.fee > 0 && (
+								<Row label="Flea listing fee">−{formatRoundedRoubles(sale.fee)}</Row>
+							)}
+							{sale.bestTraderOffer && (
+								<Row label={`Best trader (${sale.bestTraderOffer.vendor.name})`}>
+									{formatTraderOffer(sale.bestTraderOffer, 1, true)}
+								</Row>
+							)}
+							<Row label={`Net proceeds${count > 1 ? ` (×${formatQuantity(count)})` : ""}`} strong>
+								<span className="text-brand">{formatRoundedRoubles(sale.netTotal)}</span>
+							</Row>
 						</>
 					) : (
 						<>
-							<span className="text-muted-foreground">
-								{plan?.directBuyMethod === "trader" ? "Cheapest direct (trader) / unit" : "Flea/manual purchase / unit"}
-							</span>
-							<span className={selectedDirectHasOverride ? "text-warning" : "text-foreground"}>
-								{formatRoundedRoubles(directRouteUnitPrice)}
-								{selectedDirectHasOverride ? " · manual" : ""}
-							</span>
-						</>
-					)}
-					{plan?.method === "trader" && plan.traderOffer && (
-						<>
-							<span className="text-muted-foreground">Native trader price</span>
-							<span className="text-acquisition-trader">
-								{plan.traderOffer.price.toLocaleString()} {plan.traderOffer.currency}
-							</span>
-							<span className="text-muted-foreground">Trader / loyalty</span>
-							<span className="text-right text-foreground">
-								{routeContext.tradersById[plan.traderOffer.traderId]?.name ?? "Unknown trader"} · LL
-								{plan.traderOffer.minTraderLevel}
-							</span>
-							{plan.traderOffer.taskUnlockId && (
-								<>
-									<span className="text-muted-foreground">Quest unlock</span>
-									<span className="text-right text-warning">Required</span>
-								</>
+							<Row label="Price / unit">
+								<span className={manualPrice ? "text-info" : undefined}>
+									{formatRoundedRoubles(unitRoutePrice)}
+									{manualPrice ? " (custom)" : ""}
+								</span>
+							</Row>
+							<Row label={`Total (×${formatQuantity(count)})`} strong>
+								<span className="text-brand">{formatRoundedRoubles(totalPrice)}</span>
+							</Row>
+							{recipeShare !== null && (
+								<Row label="Share of recipe cost">
+									{recipeShare < 0.01 ? "<1%" : `${Math.round(recipeShare * 100)}%`}
+								</Row>
 							)}
-							{plan.traderOffer.buyLimit != null && (
-								<>
-									<span className="text-muted-foreground">Buy limit</span>
-									<span className="text-right text-foreground">{plan.traderOffer.buyLimit}</span>
-								</>
+							{recipeSavings !== null && recipeSavings > 0 && (
+								<Row label={`Saved vs ${plan?.directBuyMethod === "trader" ? "trader" : "flea"}`}>
+									<span className="text-success">{formatRoundedRoubles(recipeSavings)}</span>
+								</Row>
+							)}
+							{(plan?.durationSeconds ?? 0) > 0 && (
+								<Row label={`${method === "craft" ? "Craft" : "Route"} time`}>
+									{formatDuration(plan?.durationSeconds ?? 0)}
+									{(plan?.batches ?? 0) > 1 ? ` · ${plan?.batches} batches` : ""}
+								</Row>
 							)}
 						</>
 					)}
-					{plan && (
-						<>
-							<span className="text-muted-foreground">
-								{method === "flea" ? "Selected route / unit" : `${routeLabel} / unit`}
-							</span>
-							<span className="text-info">{formatRoundedRoubles(unitRoutePrice)}</span>
-						</>
-					)}
-					{routeSavingsPerUnit !== null && (
-						<>
-							<span className="text-muted-foreground">Savings / unit</span>
-							<span className={routeSavingsPerUnit > 0 ? "text-success" : "text-danger"}>
-								{formatSignedRoubles(routeSavingsPerUnit)}
-							</span>
-						</>
-					)}
-					{plan && ingredientSellValue !== null && (
-						<>
-							<span className="text-muted-foreground">Best sale value / total</span>
-							<span className="text-acquisition-sell-value">{formatRoundedRoubles(ingredientSellValue)}</span>
-						</>
-					)}
-					{plan && ingredientSellPremium !== null && ingredientSellPremium > 0 && (
-						<>
-							<span className="text-muted-foreground">Sale value above route cost</span>
-							<span className="text-acquisition-sell-value">+{formatRoundedRoubles(ingredientSellPremium)}</span>
-						</>
-					)}
-					<span className="text-muted-foreground">Quantity</span>
-					<span className="text-foreground">× {formatQuantity(count)}</span>
-					<span className="border-t border-highlight/10 pt-1 text-muted-foreground">Total</span>
-					<span className="border-t border-highlight/10 pt-1 font-semibold text-brand">
-						{plan?.isTool ? "Excluded" : formatRoundedRoubles(totalPrice)}
-					</span>
 				</span>
-				{plan && (plan.batches > 1 || plan.durationSeconds > 0) && (
-					<span className="mt-2 flex gap-3 text-[10px] text-muted-foreground">
-						<span>
-							Batches <b className="font-mono text-foreground">{plan.batches}</b>
+
+				{lockReasons.length > 0 && (
+					<span className="mt-3 block border-t border-highlight/10 pt-2.5">
+						<span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+							{lockReasons.length > 1 ? "Locked reasons" : "Locked reason"}
 						</span>
-						{plan.durationSeconds > 0 && (
-							<span>
-								Route time <b className="font-mono text-warning">{formatDuration(plan.durationSeconds)}</b>
-							</span>
-						)}
-					</span>
-				)}
-				{plan?.isTool && (
-					<span className="mt-2 block text-[10px] text-info">
-						Reusable tool price is not included in the craft cost.
-					</span>
-				)}
-				{plan?.theoreticalMethod !== undefined && plan.theoreticalMethod !== method && (
-					<span className="mt-2 block text-[10px] text-special">
-						Cheapest theoretical route: {plan.theoreticalMethod} · {formatRoundedRoubles(plan.theoreticalCost)}
+						<span className="block space-y-1">
+							{lockReasons.map((reason) => (
+								<span
+									key={`${reason.text}:${reason.questId ?? ""}`}
+									className={`flex items-center gap-1.5 leading-relaxed ${reason.tone === "problem" ? "text-danger" : "text-foreground"}`}
+								>
+									<LockKeyhole
+										aria-hidden
+										className={`size-3 shrink-0 ${reason.tone === "problem" ? "text-danger" : "text-warning"}`}
+									/>
+									{reason.questId ? (
+										<span>
+											Complete{" "}
+											<QuestLink
+												className="underline decoration-dotted hover:text-brand"
+												questId={reason.questId}
+												name={questName(reason.questId)}
+											/>
+										</span>
+									) : (
+										reason.text
+									)}
+								</span>
+							))}
+						</span>
 					</span>
 				)}
 			</span>
-			{recipePreview && (!theoreticalRecipePreview || theoreticalRecipePreview.sourceId === recipePreview.sourceId) && (
-				<RecipePreviewCard preview={recipePreview} routeContext={routeContext} />
-			)}
-			{theoreticalRecipePreview && (!recipePreview || theoreticalRecipePreview.sourceId !== recipePreview.sourceId) && (
-				<span className="relative block min-w-0 flex-1 pt-4">
-					<span className="absolute left-0 -top-3 z-10 rounded-full border border-special/30 bg-special px-2 py-0.5 text-xs font-bold tracking-wide text-inverse shadow-lg">
-						Alternate route ~{formatRoundedRoubles(theoreticalSavings ?? null)} cheaper
-					</span>
-					<RecipePreviewCard preview={theoreticalRecipePreview} routeContext={routeContext} />
-				</span>
-			)}
-		</>
+			{recipePreview && <RecipePreviewCard preview={recipePreview} routeContext={routeContext} />}
+		</span>
 	);
 }

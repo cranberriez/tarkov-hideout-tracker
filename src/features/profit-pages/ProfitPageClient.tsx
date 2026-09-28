@@ -14,8 +14,10 @@ import type { Trader } from "@/types/traders";
 import { ProfitPageControls } from "./components/ProfitPageControls";
 import { ProfitPageHeader } from "./components/ProfitPageHeader";
 import { ProfitPricingContext } from "./components/ProfitPricingContext";
+import { ProfitProfileBanner } from "./components/ProfitProfileBanner";
 import { ProfitTable } from "./components/ProfitTable";
 import type { ProfitPageKind, ProfitStationSource, SortDirection, SortKey } from "./types";
+import { FLEA_UNLOCK_LEVEL, getProfileLockGaps } from "./utils/lock-summary";
 import { compareEvaluationsByBaseline, getRecipeSourceId, isRecipeAvailable, passesLockFilters } from "./utils/recipes";
 import { useManualPriceOverrides } from "./useManualPriceOverrides";
 import { usePinnedCrafts } from "./usePinnedCrafts";
@@ -140,6 +142,17 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 			) as Record<string, CraftRecord>,
 		[crafts, craftingSkillLevel],
 	);
+	const lockChipNames = useMemo(
+		() => ({
+			station: (id: string) => stationsById[id]?.name,
+			trader: (id: string) => tradersById[id]?.name,
+		}),
+		[stationsById, tradersById],
+	);
+	const profileLockGaps = useMemo(
+		() => getProfileLockGaps(kind, { playerLevel, stationLevels, traderLoyaltyLevels }),
+		[kind, playerLevel, stationLevels, traderLoyaltyLevels],
+	);
 	const sources = useMemo(() => {
 		const ids =
 			kind === "barter" ? data.barters.map((entry) => entry.traderId) : crafts.map((entry) => entry.stationId);
@@ -237,6 +250,9 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 				traderLoyaltyLevels,
 				useTraderSaleForLockedOutputs,
 				taskUnlocksById: data.taskUnlocksById,
+				lockChipNames,
+				coveredFleaLevel:
+					!availableOnly && profileLockGaps.some((gap) => gap.key === "player") ? FLEA_UNLOCK_LEVEL : undefined,
 			}}
 		>
 			<main className="container mx-auto px-4 py-8 sm:px-6">
@@ -277,6 +293,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 					showPinnedOnly={showPinnedOnly}
 					onShowPinnedOnlyChange={setShowPinnedOnly}
 				/>
+				{!availableOnly && <ProfitProfileBanner gaps={profileLockGaps} onHideLocked={() => setAvailableOnly(true)} />}
 				<ProfitTable
 					kind={kind}
 					evaluations={visibleEvaluations}
@@ -286,9 +303,6 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 					stationsById={stationsById}
 					bartersById={bartersById}
 					craftsById={craftsById}
-					stationLevels={stationLevels}
-					traderLoyaltyLevels={traderLoyaltyLevels}
-					completedQuests={completedQuests}
 					overrides={overrides}
 					onPriceChange={setItemOverride}
 					onGoToRecipe={goToRecipe}

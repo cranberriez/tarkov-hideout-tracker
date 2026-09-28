@@ -3,10 +3,13 @@ import type {
 	AcquisitionAlternative,
 	AcquisitionPlan,
 	LockedAcquisitionAlternative,
+	ManualPriceOverrides,
 	RecipeEvaluation,
 } from "@/lib/price-calculation";
-import { practicalSavingsThreshold } from "../../../lib/price-calculation/prices";
+import { craftRequiredItems } from "../../../lib/price-calculation/craft-rules";
+import { getItemBuyPrice, practicalSavingsThreshold } from "../../../lib/price-calculation/prices";
 import type { ItemSummary } from "@/types/items";
+import type { ItemAmountRef } from "@/types/recipes";
 import type { ProfitLockFilters, RecipePreviewData, RouteContext, SortDirection, SortKey } from "../types";
 import { formatDuration } from "./formatters";
 
@@ -15,8 +18,8 @@ export function getRecipeSourceId(evaluation: RecipeEvaluation) {
 }
 
 export function estimateProfitRowHeight(evaluation?: RecipeEvaluation) {
-	if (!evaluation) return 72;
-	return Math.max(72, evaluation.requiredItems.length * 36 + 4) + 1;
+	if (!evaluation) return 88;
+	return Math.max(88, evaluation.requiredItems.length * 40 + 8) + 1;
 }
 
 export function isRecipeAvailable(
@@ -239,33 +242,86 @@ export function withRequiredItemRoute(
 	};
 }
 
+export interface RecipePreviewEstimateOptions {
+	overrides?: ManualPriceOverrides;
+	hideoutManagementSkillLevel?: number;
+}
+
+/**
+ * Ingredient rows priced as if every direct purchase were available. Locked
+ * recipes rejected before pricing (nested locks, unobtainable ingredients or
+ * tools) carry no children, but the preview should still show what they need.
+ */
+function estimatedRecipeRequirements(
+	requirements: readonly ItemAmountRef[],
+	batches: number,
+	context: RouteContext,
+	overrides: ManualPriceOverrides = {},
+): AcquisitionPlan[] {
+	return requirements.map((requirement) => {
+		const quantity = requirement.count * batches;
+		const unitPrice = getItemBuyPrice(context.itemById[requirement.itemId], overrides);
+		const totalCost = unitPrice === null ? null : unitPrice * quantity;
+		const method = unitPrice === null ? "unavailable" : "flea";
+		return {
+			itemId: requirement.itemId,
+			quantity,
+			...(requirement.isTool ? { isTool: true } : {}),
+			method,
+			batches: 1,
+			totalCost,
+			theoreticalCost: totalCost,
+			theoreticalMethod: method,
+			directBuyCost: totalCost,
+			directBuyMethod: unitPrice === null ? null : "flea",
+			durationSeconds: 0,
+			children: [],
+			alternatives: [],
+		};
+	});
+}
+
 export function getPlanRecipePreview(
 	plan: AcquisitionPlan | undefined,
 	context: RouteContext,
+	estimate: RecipePreviewEstimateOptions = {},
 ): RecipePreviewData | undefined {
 	if (!plan?.sourceId || (plan.method !== "barter" && plan.method !== "craft")) return undefined;
+	const batchesFor = (outputCount: number) =>
+		plan.batches > 0 ? plan.batches : Math.max(1, Math.ceil(plan.quantity / Math.max(1, outputCount)));
 	if (plan.method === "barter") {
 		const barter = context.bartersById[plan.sourceId];
 		if (!barter) return undefined;
+		const batches = batchesFor(barter.offeredCount);
 		return {
 			kind: "barter",
 			sourceId: barter.id,
 			outputItemId: barter.offeredItemId,
 			outputCount: barter.offeredCount,
-			batches: plan.batches,
-			requiredItems: plan.children,
+			batches,
+			requiredItems: plan.children.length
+				? plan.children
+				: estimatedRecipeRequirements(barter.requiredItems, batches, context, estimate.overrides),
 			durationSeconds: plan.durationSeconds,
 		};
 	}
 	const craft = context.craftsById[plan.sourceId];
 	if (!craft) return undefined;
+	const batches = batchesFor(craft.productCount);
 	return {
 		kind: "craft",
 		sourceId: craft.id,
 		outputItemId: craft.productItemId,
 		outputCount: craft.productCount,
-		batches: plan.batches,
-		requiredItems: plan.children,
+		batches,
+		requiredItems: plan.children.length
+			? plan.children
+			: estimatedRecipeRequirements(
+					craftRequiredItems(craft, estimate.hideoutManagementSkillLevel),
+					batches,
+					context,
+					estimate.overrides,
+				),
 		durationSeconds: craft.duration,
 	};
 }

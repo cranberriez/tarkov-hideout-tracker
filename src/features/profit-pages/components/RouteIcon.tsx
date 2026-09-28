@@ -146,3 +146,18 @@ export function routeChipClasses(method: RouteMethod) {
 	if (method === "sell") return "bg-acquisition-sell-value text-inverse";
 	return "bg-danger-surface/60 text-danger";
 }
+
+const ROUTE_GLYPHS = {
+	barter: CircleArrowRight,
+	craft: Wrench,
+	trader: UserRound,
+	flea: ChartNoAxesCombined,
+	sell: Coins,
+	unavailable: LockKeyhole,
+} satisfies Record<RouteMethod, unknown>;
+
+/** The bare route icon, for placing inside text such as a route chip. */
+export function RouteGlyph({ method, className = "size-3 stroke-[3]" }: { method: RouteMethod; className?: string }) {
+	const Glyph = ROUTE_GLYPHS[method];
+	return <Glyph aria-hidden className={className} />;
+}

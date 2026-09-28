@@ -95,7 +95,7 @@ export function InlineItemPrice({
 					if (event.key === "Escape") setEditing(false);
 				}}
 				onBlur={(event) => commit(event.currentTarget.value)}
-				className={`h-5 w-16 rounded border border-brand/50 bg-shadow px-1 text-[10px] outline-none ${hasManualPrice ? "text-info" : "text-foreground"}`}
+				className={`h-5 w-16 rounded border border-brand/50 bg-shadow px-1 text-xs outline-none ${hasManualPrice ? "text-info" : "text-foreground"}`}
 			/>
 		);
 	return (
@@ -135,12 +135,12 @@ export function InlineItemPrice({
 			)}
 			{warning &&
 				(kind === "buy" ? (
-					<span className="whitespace-nowrap text-[10px] font-normal text-warning">(value unstable)</span>
+					<span className="whitespace-nowrap text-[11px] font-normal text-warning">(value unstable)</span>
 				) : (
 					<InfoHint title="Value unstable" tone="warning" compact onShow={onWarningShow} />
 				))}
 			{usesSellValue && (
-				<span className="whitespace-nowrap text-[10px] font-normal text-muted-foreground">(sell value)</span>
+				<span className="whitespace-nowrap text-[11px] font-normal text-muted-foreground">(sell value)</span>
 			)}
 		</span>
 	);

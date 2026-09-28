@@ -30,7 +30,7 @@ interface Candidate {
 function uniqueLockReasons(reasons: LockReason[]): LockReason[] {
 	const seen = new Set<string>();
 	return reasons.filter((reason) => {
-		const key = JSON.stringify([reason.kind, reason.message, reason.questId]);
+		const key = JSON.stringify([reason.kind, reason.message, reason.questId, reason.sourceId, reason.requiredLevel]);
 		if (seen.has(key)) return false;
 		seen.add(key);
 		return true;

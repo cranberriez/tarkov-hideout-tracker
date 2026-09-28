@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Clock3 } from "lucide-react";
 import type { RecipePreviewData, RouteContext } from "../types";
 import { formatDuration, formatQuantity, formatRoundedRoubles } from "../utils/formatters";
 import { RouteIcon, routeChipClasses } from "./RouteIcon";
@@ -17,17 +18,18 @@ export function RecipePreviewCard({
 		: craft
 			? routeContext.stationsById[craft.stationId]
 			: undefined;
-	const output = routeContext.itemById[preview.outputItemId];
 	const totalCost = preview.requiredItems.reduce<number | null>(
 		(total, requirement) =>
-			total === null || requirement.totalCost === null
-				? null
-				: total + (requirement.isTool ? 0 : requirement.totalCost),
+			requirement.isTool
+				? total
+				: total === null || requirement.totalCost === null
+					? null
+					: total + requirement.totalCost,
 		0,
 	);
 	return (
-		<span className="block min-w-0 flex-1 overflow-hidden rounded-md border border-highlight/15 bg-[var(--background)] shadow-[0_18px_55px_color-mix(in_oklab,_var(--shadow)_80%,_transparent)]">
-			<span className="flex items-center gap-2 border-b border-highlight/10 bg-highlight/[0.035] px-3 py-2">
+		<span className="block min-w-0 flex-1 border-l border-highlight/10">
+			<span className="flex items-center gap-2 border-b border-highlight/10 bg-highlight/[0.035] py-2 pl-3 pr-8">
 				<RouteIcon method={preview.kind} preview filled />
 				{source?.imageLink && (
 					<Image
@@ -39,22 +41,16 @@ export function RecipePreviewCard({
 						unoptimized
 					/>
 				)}
-				<span className="min-w-0">
-					<span className="block truncate text-[11px] font-semibold text-foreground">
-						{source?.name ?? (preview.kind === "craft" ? "Unknown station" : "Unknown trader")}
-						{barter ? ` · LL${barter.minTraderLevel}` : craft ? ` · Level ${craft.level}` : ""}
-					</span>
-					<span className="block truncate text-[10px] text-muted-foreground">
-						{preview.kind === "craft" ? `Crafts ${output?.name ?? "item"}` : `Barters for ${output?.name ?? "item"}`}
-						{preview.batches > 1 ? ` · ${preview.batches} batches` : ""}
-					</span>
+				<span className="min-w-0 truncate text-xs font-semibold text-foreground">
+					{source?.name ?? (preview.kind === "craft" ? "Unknown station" : "Unknown trader")}
+					{barter ? ` · LL${barter.minTraderLevel}` : craft ? ` · Level ${craft.level}` : ""}
+					{preview.batches > 1 && (
+						<span className="font-normal text-muted-foreground"> · {preview.batches} batches</span>
+					)}
 				</span>
 			</span>
-			<span className="block p-2">
-				<span className="mb-1 block text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-					Required items
-				</span>
-				<span className="block rounded bg-highlight/[0.035] px-2">
+			<span className="block px-2.5 pt-2.5">
+				<span className="block">
 					{preview.requiredItems.map((requirement, index) => {
 						const item = routeContext.itemById[requirement.itemId];
 						return (
@@ -74,30 +70,37 @@ export function RecipePreviewCard({
 								) : (
 									<span className="size-8 shrink-0" />
 								)}
-								<span className="min-w-0 flex-1 truncate text-[10px] text-foreground">
-									{item?.name ?? "Unknown item"}
+								<span className="min-w-0 flex-1 truncate text-xs text-foreground" title={item?.name}>
+									{item?.shortName ?? item?.name ?? "Unknown item"}
 								</span>
-								<span className="font-mono text-[9px] text-muted-foreground">
+								<span className="font-mono text-[11px] text-muted-foreground">
 									×{formatQuantity(requirement.quantity)}
 								</span>
 								<span
-									className={`rounded px-1 py-0.5 text-[8px] font-bold uppercase ${routeChipClasses(requirement.method)}`}
+									className={`rounded px-1 py-0.5 text-[9px] font-bold uppercase ${routeChipClasses(requirement.method)}`}
 								>
 									{requirement.method === "trader" ? "Trader" : requirement.method}
 								</span>
-								<span className="w-14 text-right font-mono text-[9px] text-brand">
-									{requirement.isTool ? "Excluded" : formatRoundedRoubles(requirement.totalCost)}
-								</span>
+								{requirement.isTool ? (
+									<span className="w-16 text-right text-[11px] text-muted-foreground">Tool</span>
+								) : (
+									<span className="w-16 text-right font-mono text-[11px] text-foreground">
+										{formatRoundedRoubles(requirement.totalCost)}
+									</span>
+								)}
 							</span>
 						);
 					})}
-					<span className="flex items-center justify-between border-t border-highlight/10 py-1 font-mono text-[9px]">
-						<span className="text-warning">
-							{preview.kind === "craft" && preview.durationSeconds > 0
-								? `Time ${formatDuration(preview.durationSeconds)}`
-								: ""}
-						</span>
-						<span className="font-semibold text-brand">Total {formatRoundedRoubles(totalCost)}</span>
+					<span className="flex items-center justify-between border-t border-highlight/10 py-1.5 font-mono text-[11px]">
+						{preview.kind === "craft" && preview.durationSeconds > 0 ? (
+							<span className="flex items-center gap-1 text-foreground">
+								<Clock3 aria-hidden className="size-3 text-muted-foreground" />
+								{formatDuration(preview.durationSeconds)}
+							</span>
+						) : (
+							<span />
+						)}
+						<span className="font-semibold text-foreground">Total {formatRoundedRoubles(totalCost)}</span>
 					</span>
 				</span>
 			</span>

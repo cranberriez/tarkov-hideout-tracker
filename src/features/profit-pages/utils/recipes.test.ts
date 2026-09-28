@@ -346,3 +346,60 @@ test("lock filters independently include recipe, output and unavailable input re
 	assert.equal(passesLockFilters(row, false, { ...filters, flea: true }), true);
 	assert.equal(passesLockFilters(row, true, filters), false);
 });
+
+test("locked recipe previews list their ingredients when the route was rejected before pricing", () => {
+	const plan: AcquisitionPlan = {
+		itemId: "output",
+		quantity: 3,
+		method: "craft",
+		sourceId: "craft-a",
+		lockReasons: [{ kind: "station", message: "Station is lvl 0", sourceId: "bench", requiredLevel: 2 }],
+		batches: 0,
+		totalCost: null,
+		theoreticalCost: null,
+		theoreticalMethod: "unavailable",
+		directBuyCost: null,
+		directBuyMethod: null,
+		durationSeconds: 0,
+		children: [],
+		alternatives: [],
+	};
+	const context = {
+		itemById: { a: { id: "a" }, tool: { id: "tool" } },
+		bartersById: {},
+		craftsById: {
+			"craft-a": {
+				id: "craft-a",
+				stationId: "bench",
+				level: 2,
+				duration: 60,
+				productItemId: "output",
+				productCount: 2,
+				requiredItems: [
+					{ itemId: "a", count: 2 },
+					{ itemId: "tool", count: 1, isTool: true },
+				],
+				requiredQuestItems: [],
+			},
+		},
+		tradersById: {},
+		stationsById: {},
+	} as unknown as Parameters<typeof getPlanRecipePreview>[1];
+
+	const preview = getPlanRecipePreview(plan, context, { overrides: { a: { buy: 50 } } });
+
+	assert.equal(preview?.batches, 2);
+	assert.deepEqual(
+		preview?.requiredItems.map((item) => [
+			item.itemId,
+			item.quantity,
+			item.isTool === true,
+			item.method,
+			item.totalCost,
+		]),
+		[
+			["a", 4, false, "flea", 200],
+			["tool", 2, true, "unavailable", null],
+		],
+	);
+});

@@ -14,8 +14,8 @@ import {
 import type { ItemSummary } from "@/types/items";
 import type { GoToRecipeHandler, PriceChangeHandler, RecipePreviewData, RouteContext, RouteMethod } from "../types";
 import { formatCompactPrice, formatDuration, formatQuantity, formatRoundedRoubles } from "../utils/formatters";
-import { acquisitionRouteKey, describeRoute, getPlanRecipePreview, selectAcquisitionRoute } from "../utils/recipes";
-import { LockReasons } from "./LockReasons";
+import { acquisitionRouteKey, getPlanRecipePreview } from "../utils/recipes";
+import { LockIndicator } from "./LockIndicator";
 import { InfoHint } from "./InfoHint";
 import { InlineItemPrice } from "./InlineItemPrice";
 import { preloadHoverImage, useHoverPreview } from "@/components/ui/hover-preview-provider";
@@ -29,19 +29,18 @@ export function RecipeItem({
 	method,
 	totalPrice,
 	priceKind,
-	emphasized,
 	plan,
 	overrides,
 	onPriceChange,
 	routeContext,
 	detail,
 	showRouteIcon = true,
-	fillColumn = false,
 	compactLine = false,
 	onGoToRecipe,
 	recipePreview,
 	onRouteChange,
 	baseRouteKey,
+	recipeCost,
 	lockReasons = [],
 	sellValueIsEstimate,
 }: {
@@ -50,19 +49,18 @@ export function RecipeItem({
 	method: RouteMethod;
 	totalPrice: number | null;
 	priceKind: "buy" | "sell";
-	emphasized?: boolean;
 	plan?: AcquisitionPlan;
 	overrides: Record<string, ManualPriceOverride>;
 	onPriceChange: PriceChangeHandler;
 	routeContext: RouteContext;
 	detail?: string;
 	showRouteIcon?: boolean;
-	fillColumn?: boolean;
 	compactLine?: boolean;
 	onGoToRecipe?: GoToRecipeHandler;
 	recipePreview?: RecipePreviewData;
 	onRouteChange?: (routeKey: string) => void;
 	baseRouteKey?: string;
+	recipeCost?: number | null;
 	lockReasons?: LockReason[];
 	sellValueIsEstimate?: boolean;
 }) {
@@ -71,20 +69,16 @@ export function RecipeItem({
 		method === "unavailable" ? [{ kind: "unavailable" as const, message: "No available route" }] : lockReasons;
 	const hover = useHoverPreview();
 	const hoverKey = useId();
-	const routeDetail = detail ?? (plan ? describeRoute(plan, routeContext) : null);
+	const routeDetail = detail ?? null;
 	const unitRoutePrice = totalPrice === null || count <= 0 ? null : totalPrice / count;
 	const directUnitPrice = item ? getItemBuyPrice(item, overrides, pricingContext) : null;
 	const cheapestDirectTotal = plan?.directBuyCost ?? (directUnitPrice === null ? null : directUnitPrice * count);
-	const resolvedRecipePreview = recipePreview ?? getPlanRecipePreview(plan, routeContext);
-	const theoreticalAlternative = plan?.alternatives.find(
-		(alternative) =>
-			alternative.method === plan.theoreticalMethod && alternative.theoreticalCost === plan.theoreticalCost,
-	);
-	const theoreticalPlan =
-		plan && theoreticalAlternative
-			? selectAcquisitionRoute(plan, acquisitionRouteKey(theoreticalAlternative))
-			: undefined;
-	const theoreticalRecipePreview = getPlanRecipePreview(theoreticalPlan, routeContext);
+	const resolvedRecipePreview =
+		recipePreview ??
+		getPlanRecipePreview(plan, routeContext, {
+			overrides,
+			hideoutManagementSkillLevel: pricingContext.hideoutManagementSkillLevel,
+		});
 	const canGoToRecipe = Boolean(
 		compactLine && onGoToRecipe && plan?.sourceId && (plan.method === "barter" || plan.method === "craft"),
 	);
@@ -114,13 +108,11 @@ export function RecipeItem({
 			totalPrice,
 			priceKind,
 			plan,
+			recipeCost,
 			overrides,
 			routeContext,
 			routeDetail,
 			recipePreview: resolvedRecipePreview,
-			theoreticalRecipePreview,
-			theoreticalSavings:
-				plan?.totalCost != null && plan.theoreticalCost != null ? plan.totalCost - plan.theoreticalCost : null,
 			showRouteIcon,
 			pricingContext,
 		};
@@ -129,7 +121,7 @@ export function RecipeItem({
 			content: <RecipeItemHoverCard {...data} onClose={hover.close} onKeepOpen={hover.cancelClose} />,
 			clientX,
 			clientY,
-			width: resolvedRecipePreview || theoreticalRecipePreview ? 660 : 320,
+			width: resolvedRecipePreview ? 660 : 320,
 			prepare: () => preloadHoverImage(item?.iconLink),
 		});
 	}
@@ -145,11 +137,9 @@ export function RecipeItem({
 		},
 	};
 	return (
-		<span
-			className={`flex flex-col ${fillColumn ? "h-full min-h-[72px]" : ""} ${reasons.length ? "bg-danger-surface/50" : emphasized && fillColumn ? "bg-brand/[0.07]" : ""}`}
-		>
+		<span className="flex min-w-0 flex-col">
 			<span
-				className={`group/item relative flex shrink-0 items-center ${compactLine ? "h-9 w-full gap-1.5 pr-1 hover:bg-highlight/[0.025]" : `min-h-[72px] gap-1.5 px-1 ${fillColumn ? "w-full" : "w-40"} ${fillColumn ? "" : emphasized ? "bg-brand/[0.07]" : "bg-shadow/10"}`}`}
+				className={`group/item relative flex shrink-0 items-center ${compactLine ? "h-10 w-full gap-2 pr-1 hover:bg-highlight/[0.025]" : "w-full gap-2.5"}`}
 				onMouseEnter={updateHoverPosition}
 				onMouseMove={updateHoverPosition}
 				onMouseLeave={hover.scheduleClose}
@@ -189,7 +179,7 @@ export function RecipeItem({
 								<span className="size-8" />
 							)}
 						</RecipeItemLink>
-						<span className="min-w-0 truncate text-[11px] font-medium text-foreground" title={item?.name}>
+						<span className="min-w-0 truncate text-[13px] font-medium text-foreground" title={item?.name}>
 							{item?.shortName ?? item?.name ?? "Unknown item"}
 						</span>
 						{plan?.isTool && (
@@ -199,9 +189,9 @@ export function RecipeItem({
 						)}
 						{!plan?.isTool && (
 							<>
-								<span className="shrink-0 text-[10px] text-muted-foreground">—</span>
-								<span className="shrink-0 font-mono text-[10px] text-muted-foreground">{formatQuantity(count)} ×</span>
-								<span className="shrink-0 font-mono text-[10px]">
+								<span className="shrink-0 text-xs text-muted-foreground">—</span>
+								<span className="shrink-0 font-mono text-xs text-muted-foreground">{formatQuantity(count)} ×</span>
+								<span className="shrink-0 font-mono text-xs">
 									<InlineItemPrice
 										item={item}
 										kind={priceKind}
@@ -216,10 +206,11 @@ export function RecipeItem({
 								</span>
 							</>
 						)}
+						<LockIndicator reasons={reasons} />
 						{(routeSavingsTotal ?? 0) > 0 || (plan?.durationSeconds ?? 0) > 0 || canGoToRecipe ? (
 							<span className="ml-auto flex shrink-0 items-center gap-1.5">
 								{(routeSavingsTotal ?? 0) > 0 && cheapestDirectTotal !== null && plan?.totalCost !== null && (
-									<span className="flex items-center gap-0.5 whitespace-nowrap text-[9px] text-warning">
+									<span className="flex items-center gap-0.5 whitespace-nowrap text-[11px] text-warning">
 										{method === "craft" ? "Craft" : "Barter"} saves {formatCompactPrice(routeSavingsTotal)}
 										<InfoHint
 											title={`${method === "craft" ? "Crafting" : "Bartering"} saves ${formatRoundedRoubles(routeSavingsTotal)}`}
@@ -238,7 +229,7 @@ export function RecipeItem({
 									</span>
 								)}
 								{(plan?.durationSeconds ?? 0) > 0 && (
-									<span className="font-mono text-[9px] text-warning">
+									<span className="font-mono text-[11px] text-warning">
 										{formatDuration(plan?.durationSeconds ?? 0)}
 									</span>
 								)}
@@ -289,15 +280,15 @@ export function RecipeItem({
 						</RecipeItemLink>
 						<span className="flex min-w-0 flex-1 flex-col items-start justify-center gap-0.5">
 							<span
-								className="w-full truncate text-[11px] font-medium leading-tight text-foreground"
+								className="w-full truncate text-[13px] font-medium leading-tight text-foreground"
 								title={item?.name}
 							>
 								{item?.shortName ?? item?.name ?? "Unknown item"}
 							</span>
 							{!plan?.isTool && (
 								<>
-									<span className="font-mono text-[10px] text-muted-foreground">Quantity ×{formatQuantity(count)}</span>
-									<span className="font-mono text-[10px]">
+									<span className="font-mono text-[11px] text-muted-foreground">Quantity ×{formatQuantity(count)}</span>
+									<span className="font-mono text-xs">
 										<InlineItemPrice
 											item={item}
 											kind={priceKind}
@@ -318,14 +309,10 @@ export function RecipeItem({
 					</>
 				)}
 			</span>
-			<span title={method === "unavailable" ? "See route options for details" : undefined}>
-				<LockReasons reasons={reasons} showIcon={priceKind === "sell"} />
-			</span>
 		</span>
 	);
 }
 
-/** Opens the item dialog; the recipe hover card (not EntityPreview) is its preview. */
 function RecipeItemLink({
 	item,
 	linkProps,

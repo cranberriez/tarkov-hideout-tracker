@@ -63,53 +63,61 @@ function RecipeChainNode({
 	return (
 		<div>
 			<div
-				className={`group/chain flex min-h-10 items-center gap-2 pr-3 hover:bg-highlight/[0.025] ${root ? "min-h-12 bg-highlight/[0.02]" : ""}`}
-				style={{ paddingLeft: `${12 + Math.min(depth, 8) * 24}px` }}
+				className={`group/chain grid max-w-3xl grid-cols-[minmax(0,1fr)_3rem_4.5rem_5.5rem_4rem_1.5rem] items-center gap-2 pr-3 hover:bg-highlight/[0.025] ${root ? "min-h-12 bg-highlight/[0.02]" : "min-h-10"}`}
 			>
-				{!root && <CornerDownRight className="size-3.5 shrink-0 text-foreground/25" />}
-				{item?.iconLink ? (
-					<Image
-						src={item.iconLink}
-						alt=""
-						width={32}
-						height={32}
-						className="size-8 shrink-0 object-contain"
-						unoptimized
-					/>
-				) : (
-					<span className="size-8 shrink-0" />
-				)}
-				<span className="min-w-0 flex-1">
-					<span className="block truncate text-[11px] font-medium text-foreground">{item?.name ?? "Unknown item"}</span>
-					<span className="block truncate text-[9px] text-muted-foreground">
-						{source ? `${source.name} · ` : ""}
-						{describeChainRoute(plan, routeContext)}
+				<span className="flex min-w-0 items-center gap-2" style={{ paddingLeft: `${12 + Math.min(depth, 8) * 24}px` }}>
+					{!root && <CornerDownRight className="size-3.5 shrink-0 text-foreground/25" />}
+					{item?.iconLink ? (
+						<Image
+							src={item.iconLink}
+							alt=""
+							width={32}
+							height={32}
+							className="size-8 shrink-0 object-contain"
+							unoptimized
+						/>
+					) : (
+						<span className="size-8 shrink-0" />
+					)}
+					<span className="min-w-0">
+						<span className="flex min-w-0 items-center gap-1.5">
+							<span className="truncate text-[13px] font-medium text-foreground">{item?.name ?? "Unknown item"}</span>
+							{plan.isTool && (
+								<span className="shrink-0 rounded bg-info px-1 py-0.5 text-[7px] font-black uppercase text-inverse">
+									tool
+								</span>
+							)}
+						</span>
+						<span className="block truncate text-[11px] text-muted-foreground">
+							{source ? `${source.name} · ` : ""}
+							{describeChainRoute(plan, routeContext)}
+						</span>
 					</span>
 				</span>
-				{plan.isTool && (
-					<span className="rounded bg-info px-1 py-0.5 text-[7px] font-black uppercase text-inverse">tool</span>
-				)}
-				<span className="font-mono text-[10px] text-muted-foreground">×{formatQuantity(plan.quantity)}</span>
-				<span className={`rounded px-1.5 py-0.5 text-[8px] font-bold uppercase ${routeChipClasses(plan.method)}`}>
+				<span className="text-right font-mono text-xs text-muted-foreground">×{formatQuantity(plan.quantity)}</span>
+				<span
+					className={`justify-self-start rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${routeChipClasses(plan.method)}`}
+				>
 					{plan.method === "trader" ? "Trader" : plan.method}
 				</span>
-				<span className="w-20 text-right font-mono text-[10px] text-foreground">
+				<span className="text-right font-mono text-xs text-foreground">
 					{plan.isTool ? "Excluded" : formatRoundedRoubles(plan.totalCost)}
 				</span>
-				{plan.durationSeconds > 0 && (
-					<span className="w-16 text-right font-mono text-[10px] text-warning">
-						{formatDuration(plan.durationSeconds)}
-					</span>
-				)}
-				{preview && plan.sourceId && (plan.method === "barter" || plan.method === "craft") && (
+				<span className="text-right font-mono text-xs text-warning">
+					{plan.durationSeconds > 0 ? formatDuration(plan.durationSeconds) : ""}
+				</span>
+				{preview && plan.sourceId && (plan.method === "barter" || plan.method === "craft") ? (
 					<button
 						type="button"
 						title={`Go to ${plan.method} recipe`}
+						aria-label={`Go to ${plan.method} recipe for ${item?.name ?? "item"}`}
 						onClick={() => onGoToRecipe(plan.method as "barter" | "craft", plan.sourceId as string)}
 						className="flex size-6 items-center justify-center rounded text-muted-foreground opacity-0 transition hover:bg-highlight/10 hover:text-brand group-hover/chain:opacity-100 focus:opacity-100"
 					>
 						<ExternalLink className="size-3.5" />
 					</button>
+				) : (
+					<span />
 				)}
 			</div>
 			{!root && plan.children.length > 0 && (

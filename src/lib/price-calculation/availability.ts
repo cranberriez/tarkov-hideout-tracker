@@ -11,7 +11,7 @@ export function getFleaLockReasons(item: ItemSummary | undefined, playerLevel?: 
 	if (item.onFleaMarket === false) return [{ kind: "flea", message: "Not on flea" }];
 	const level = Math.max(15, item.minLevelForFlea ?? 15);
 	if (playerLevel !== undefined && playerLevel < level) {
-		reasons.push({ kind: "flea", message: `Flea unlocks at lvl ${level}` });
+		reasons.push({ kind: "flea", message: `Flea unlocks at lvl ${level}`, requiredLevel: level });
 	}
 	return reasons;
 }
@@ -22,7 +22,12 @@ export function getTraderLockReasons(
 ): LockReason[] {
 	const reasons: LockReason[] = [];
 	if ((context.traderLoyaltyLevels?.[offer.traderId] ?? 1) < offer.minTraderLevel) {
-		reasons.push({ kind: "vendor", message: `Trader is LL${context.traderLoyaltyLevels?.[offer.traderId] ?? 1}` });
+		reasons.push({
+			kind: "vendor",
+			message: `Trader is LL${context.traderLoyaltyLevels?.[offer.traderId] ?? 1}`,
+			sourceId: offer.traderId,
+			requiredLevel: offer.minTraderLevel,
+		});
 	}
 	if (offer.taskUnlockId && context.completedQuests?.[offer.taskUnlockId] !== true) {
 		reasons.push({ kind: "quest", questId: offer.taskUnlockId, message: "Complete required quest" });
@@ -34,7 +39,12 @@ export function getRecipeLockReasons(recipe: BarterRecord | CraftRecord, context
 	if ("traderId" in recipe) return getTraderLockReasons(recipe, context);
 	const reasons: LockReason[] = [];
 	if (context.stationLevels !== undefined && (context.stationLevels[recipe.stationId] ?? 0) < recipe.level) {
-		reasons.push({ kind: "station", message: `Station is lvl ${context.stationLevels[recipe.stationId] ?? 0}` });
+		reasons.push({
+			kind: "station",
+			message: `Station is lvl ${context.stationLevels[recipe.stationId] ?? 0}`,
+			sourceId: recipe.stationId,
+			requiredLevel: recipe.level,
+		});
 	}
 	if (recipe.taskUnlockId && context.completedQuests?.[recipe.taskUnlockId] !== true) {
 		reasons.push({ kind: "quest", questId: recipe.taskUnlockId, message: "Complete required quest" });

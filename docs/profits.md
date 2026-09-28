@@ -109,8 +109,7 @@ flea, quest, trader loyalty, and station lock reasons. Recipe quest checks use
 `taskUnlockId` on the recipe or trader offer and the profile's completed quest
 IDs; they do not scan quest rewards. The page resolves only those known quest IDs
 for compact name/link presentation. Missing names remain explicit and never
-remove unlock requirements. Quest reasons show **Complete Quest:** above the
-linked quest name. These checks also apply recursively to ingredient routes. The
+remove unlock requirements. These checks also apply recursively to ingredient routes. The
 optimizer selects the next usable source and retains locked alternatives for manual
 inspection with explanatory reason rows. When no usable source remains, flea is
 the displayed fallback even if locked. Players may explicitly select a locked
@@ -118,10 +117,11 @@ source to view its known hypothetical cost and recipe chain, but locked sources
 never become eligible recursive inputs. Sell value is offered only when no trader,
 barter, or craft method exists, and selecting it is retained by the page's route
 selection. If the selected route cannot be priced, ingredient costs and dependent
-profit figures remain unknown and the ingredient displays a red lock reason.
+profit figures remain unknown; the Cost cell names the unpriced ingredients
+(**No price: …**) in red.
 
-Outputs that cannot be sold on the flea have a red background and lock indicator,
-even when they can be sold to a trader. The vendor fallback option uses the best
+Outputs that cannot be sold on the flea list **No flea sale** in the row's
+requirements, even when they can be sold to a trader. The vendor fallback option uses the best
 trader sale by default; disabling it leaves locked output sales unpriced unless
 there is a manual sale override. Owned-input opportunity values always use usable
 sales, independently of the output fallback option. The master **Hide locked
@@ -134,9 +134,52 @@ default; an explicitly saved per-mode choice is retained.
 An explicitly linked recipe remains visible with its lock reasons so its profit
 breakdown can still be inspected.
 
-Source-level explanations show the current station/trader level alongside the
-existing required-level display. Source and ingredient explanations omit redundant
-lock icons; output explanations retain theirs. Locked dropdown choices retain the
+### Lock presentation
+
+Locks are a normal state, not an error, so rows stay compact and quiet. Source
+and output share one **Recipe** column: the output (image, name, quantity, sale
+price) leads, pin and recipe-chain controls sit at its top-right, and one
+truncated requirements line runs underneath. That line shows the station/trader
+icon with its required level, then every requirement joined by dots, prefixed by
+an amber lock (red when data or a route is missing).
+[RecipeRequirements](../src/features/profit-pages/components/RecipeRequirements.tsx)
+opens a grouped list of all requirements (recipe, selling the output, each
+ingredient) on hover, keyboard focus, or click. It stays open while the pointer is
+inside, so quest links remain clickable; an outside press, Escape, or scrolling
+closes it. Ingredient lines show only a small lock icon whose title repeats their
+reasons.
+
+Hovering an item opens a short card; the item dialog holds the full detail. For
+ingredients it shows the route chip (route icon inline with its label, or
+**Tool**) and its source (trader LL and non-rouble price, barter/craft source),
+price per unit, total, its share of the recipe's total cost (the ingredient's
+total, not its unit price; hidden for tools or when the recipe cost is unknown),
+craft/barter savings versus the cheapest direct purchase (**Saved vs flea** or
+**Saved vs trader**), and route time. When the selected route is locked, a
+**Locked reason** section lists only that route's gates in plain language (flea
+unlock level, required LL or station level with the player's current level,
+linked unlock quest); recipe routes list only their own station/trader/quest
+gates, not ingredient or tool gaps. Outputs show sale price, flea listing fee,
+best trader offer and net proceeds. Craft and barter routes add the recipe
+preview (source, level, ingredients, time and total) to the same card, divided
+by a vertical rule. A locked recipe rejected before pricing still previews its
+ingredients, priced from direct flea buy prices as if they were available.
+
+[lock-summary.ts](../src/features/profit-pages/utils/lock-summary.ts) derives the
+line and groups: one entry per requirement (station and level, trader LL, quest,
+highest flea level, **No flea**/**No flea sale**), dropping generic "no route"
+summaries when a specific reason exists. Ingredients contribute only their
+selected route's reasons; the optimizer's aggregate ingredient reasons (all
+locked alternatives and nested recipes) remain unchanged for filters and the
+route menu. Lock reasons carry optional `sourceId` and `requiredLevel` for this
+presentation.
+
+While the **Hide locked recipes** filter is off, a banner lists profile-wide gaps once: player level below
+the flea unlock, unset hideout levels (crafts), and all traders at LL1, with
+links to the quests/hideout pages and a **Hide locked** shortcut. Flea requirements at
+the general unlock level are omitted while the banner explains it.
+
+Locked dropdown choices retain the
 normal item/source/price layout, with a red background and a reason header that
 owns the lock icon. Display-only locked prices use known flea/trader offers or
 eligible ingredients for a hypothetical recipe; they never make a route eligible.
@@ -163,7 +206,7 @@ hover text. Reusable tools show their tool badge without a quantity, separator,
 or price text. Customized prices have a dashed underline and a reset arrow that
 immediately restores the normal price for that item and side (buy or sell).
 Output tint fills the cell height while the item details stay at the top; locked
-outputs retain their red tint.
+outputs use a faint amber tint instead of the brand tint.
 Automatic recommendations still exclude locked sources; the existing ingredient
 source toggles control whether crafts and barters participate.
 
@@ -186,16 +229,21 @@ station selection still means all stations. Barters use the same dropdown for tr
 with trader portraits supplied by the profits feature. Selecting multiple traders
 includes recipes from any selected trader; an empty selection means all traders.
 Selections remain local to the page. Calculation rules and persistence keys are unchanged.
-At viewport widths below 1536px, both lists use compact cards with separate
-sort buttons for cost, sale proceeds, profit, and profit/hour. Each card groups
-actions, source, output, and the selected profit metric above ingredients and a
-labeled totals row. Profit/hour is highlighted when sorting by that metric;
+At viewport widths below 1024px, both lists use compact cards with separate
+sort buttons for cost, sale proceeds, profit, and profit/hour. Each card places
+the Recipe cell and the selected profit metric above ingredients and a labeled
+totals row. Profit/hour is highlighted when sorting by that metric;
 other sorts highlight batch profit. On phones the header wraps and totals use
-two columns. Card actions are horizontal, unboxed icon controls; source icons
-and lock badges sit beside the source name and lock explanations. Output cells
-have no green/red fill in cards; output lock reasons instead give the entire
-card a red border, while the written lock reasons remain visible.
-Wide screens retain the table and its output-cell tint. Both layouts share row controls,
+two columns. The Recipe cell has no border accent in cards; output lock reasons instead
+give the entire card an amber border.
+Row actions put the recipe-chain toggle before the pin, so the pin keeps its
+position. Expanded recipe-chain rows use a capped-width grid with fixed quantity,
+route, cost and time columns so figures stay beside the item at every depth.
+Wider screens retain the table; the Recipe column is marked by a 2px brand-colored
+left border rather than a background tint. Below 1280px the
+figure columns use fixed widths that fit the 1024px container, leaving the rest
+to required items. Row content aligns to the top so the output name, first
+ingredient and figures share one reading line. Both layouts share row controls,
 price comparisons, recipe links, and measured window virtualization.
 List ordering uses the current market-price evaluation as its baseline, so manual
 buy or sell overrides recalculate a row without moving it. Editable customized

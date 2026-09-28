@@ -9,7 +9,7 @@ import type { ItemSummary } from "@/types/items";
 import type { ProfitStationSource } from "../types";
 import type { Trader } from "@/types/traders";
 import type { GoToRecipeHandler, PriceChangeHandler, ProfitPageKind, SortDirection, SortKey } from "../types";
-import { estimateProfitRowHeight, isRecipeAvailable } from "../utils/recipes";
+import { estimateProfitRowHeight } from "../utils/recipes";
 import styles from "./ProfitTable.module.css";
 import { ProfitRow } from "./ProfitRow";
 
@@ -22,9 +22,6 @@ export function ProfitTable({
 	stationsById,
 	bartersById,
 	craftsById,
-	stationLevels,
-	traderLoyaltyLevels,
-	completedQuests,
 	overrides,
 	onPriceChange,
 	onGoToRecipe,
@@ -47,9 +44,6 @@ export function ProfitTable({
 	stationsById: Readonly<Record<string, ProfitStationSource>>;
 	bartersById: Readonly<Record<string, BarterRecord>>;
 	craftsById: Readonly<Record<string, CraftRecord>>;
-	stationLevels: Record<string, number>;
-	traderLoyaltyLevels: Record<string, number>;
-	completedQuests: Record<string, boolean>;
 	overrides: Record<string, ManualPriceOverride>;
 	onPriceChange: PriceChangeHandler;
 	onGoToRecipe: GoToRecipeHandler;
@@ -94,9 +88,7 @@ export function ProfitTable({
 		<div className={styles.table}>
 			<div className={styles.header}>
 				<span className={styles.sortLabel}>Sort by</span>
-				<span className={styles.columnLabel} aria-label="Actions" />
-				<span className={styles.columnLabel}>Source</span>
-				<span className={styles.columnLabel}>Output</span>
+				<span className={styles.columnLabel}>Recipe</span>
 				<span className={styles.columnLabel}>Required items</span>
 				<SortableHeader
 					label="Cost"
@@ -157,7 +149,6 @@ export function ProfitTable({
 												? tradersById[evaluation.barter?.traderId ?? ""]?.name
 												: stationsById[evaluation.craft?.stationId ?? ""]?.name
 										}
-										available={isRecipeAvailable(evaluation, stationLevels, traderLoyaltyLevels, completedQuests)}
 										source={
 											kind === "barter"
 												? tradersById[evaluation.barter?.traderId ?? ""]

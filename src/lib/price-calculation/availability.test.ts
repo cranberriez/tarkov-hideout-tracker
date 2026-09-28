@@ -212,7 +212,7 @@ test("locked trader and barter routes remain visible and never win", () => {
 test("availability reasons show current levels and roubles bypass flea locks", () => {
 	const recipe = { ...craft("c", "A", "B"), taskUnlockId: "long-quest-id" };
 	assert.deepEqual(getRecipeLockReasons(recipe, { stationLevels: {} }), [
-		{ kind: "station", message: "Station is lvl 0" },
+		{ kind: "station", message: "Station is lvl 0", sourceId: "bench", requiredLevel: 2 },
 		{ kind: "quest", message: "Complete required quest", questId: "long-quest-id" },
 	]);
 	assert.deepEqual(
@@ -227,7 +227,7 @@ test("availability reasons show current levels and roubles bypass flea locks", (
 			},
 			{},
 		),
-		[{ kind: "vendor", message: "Trader is LL1" }],
+		[{ kind: "vendor", message: "Trader is LL1", sourceId: "long-trader-id", requiredLevel: 3 }],
 	);
 	const roubles = { ...item("roubles"), onFleaMarket: false, minLevelForFlea: 99 };
 	assert.deepEqual(getFleaLockReasons(roubles, 1), []);
