@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { itemHref } from "@/lib/entity-routes";
 import { formatRoubles } from "@/lib/utils/market-price";
-import type { MarketWorkerDashboard } from "@/server/db/postgres-dashboard";
+import type { MarketMoverRow, MarketWorkerDashboard } from "@/server/db/postgres-dashboard";
 
 function timestamp(value: number | null | undefined) {
 	return value ? new Date(value).toISOString().replace("T", " ").slice(0, 16) + " UTC" : "Never";
@@ -143,66 +143,98 @@ export function MarketWorkerPanel({ dashboard, modeValue }: { dashboard: MarketW
 						)}
 					</div>
 
-					<div className="space-y-2">
-						<h3 className="text-sm font-semibold">
-							Biggest 24h movers{" "}
-							<span className="font-normal text-muted-foreground">
-								· latest observation per item, medium/high confidence
-							</span>
-						</h3>
-						{analytics.movers.length ? (
-							<div className="overflow-x-auto">
-								<table className="w-full text-left text-sm">
-									<thead className="text-muted-foreground">
-										<tr>
-											<th className="py-1 pr-4 font-medium">Item</th>
-											<th className="py-1 pr-4 text-right font-medium">Live min</th>
-											<th className="py-1 pr-4 text-right font-medium">Market value</th>
-											<th className="py-1 pr-4 text-right font-medium">7d median</th>
-											<th className="py-1 pr-4 text-right font-medium">24h</th>
-											<th className="py-1 pr-4 text-right font-medium">7d</th>
-											<th className="py-1 pr-4 text-right font-medium">30d pct.</th>
-											<th className="py-1 pr-4 text-right font-medium">Depth 24h</th>
-											<th className="py-1 pr-4 font-medium">Trend</th>
-											<th className="py-1 pr-4 font-medium">Confidence</th>
-											<th className="py-1 text-right font-medium">Flea net / trader</th>
-										</tr>
-									</thead>
-									<tbody>
-										{analytics.movers.map((mover) => (
-											<tr key={mover.itemId} className="border-t border-border">
-												<td className="py-1 pr-4">
-													<Link href={itemHref(mover.itemId)} className="text-brand hover:underline">
-														{mover.name}
-													</Link>
-												</td>
-												<td className="py-1 pr-4 text-right whitespace-nowrap">{formatRoubles(mover.livePriceMin)}</td>
-												<td className="py-1 pr-4 text-right whitespace-nowrap">{formatRoubles(mover.marketValue)}</td>
-												<td className="py-1 pr-4 text-right whitespace-nowrap">{formatRoubles(mover.median7d)}</td>
-												<td
-													className={`py-1 pr-4 text-right ${(mover.change24h ?? 0) >= 0 ? "text-success" : "text-danger"}`}
-												>
-													{percent(mover.change24h)}
-												</td>
-												<td className="py-1 pr-4 text-right">{percent(mover.change7d)}</td>
-												<td className="py-1 pr-4 text-right">{percent(mover.percentile30d, false)}</td>
-												<td className="py-1 pr-4 text-right">{mover.depthMedian24h ?? "–"}</td>
-												<td className="py-1 pr-4">{mover.trend}</td>
-												<td className="py-1 pr-4">{mover.confidence}</td>
-												<td className="py-1 text-right whitespace-nowrap">
-													{formatRoubles(mover.fleaNet)} / {formatRoubles(mover.traderValue)}
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-							</div>
-						) : (
-							<p className="text-sm text-muted-foreground">No movers with enough confidence yet.</p>
-						)}
-					</div>
+					<MoversTable title="Biggest rouble moves" movers={analytics.moversByRub} />
+					<MoversTable title="Biggest % moves" movers={analytics.moversByPercent} />
 				</>
 			)}
 		</section>
+	);
+}
+
+function signedRoubles(value: number | null) {
+	if (value === null) return "–";
+	return `${value > 0 ? "+" : value < 0 ? "−" : ""}${formatRoubles(Math.abs(value))}`;
+}
+
+function compact(value: number | null) {
+	if (value === null) return "?";
+	return value >= 1_000_000
+		? `${(value / 1_000_000).toFixed(1)}m`
+		: value >= 1_000
+			? `${Math.round(value / 1_000)}k`
+			: String(value);
+}
+
+/** e.g. "retracing · 2k→18k, 56% back" */
+function shockLabel(mover: MarketMoverRow) {
+	if (!mover.shockPhase) return "–";
+	const back = mover.retracement === null ? "" : `, ${Math.round(mover.retracement * 100)}% back`;
+	return `${mover.shockPhase} · ${compact(mover.shockBaseline)}→${compact(mover.shockExtreme)}${back}`;
+}
+
+function MoversTable({ title, movers }: { title: string; movers: MarketMoverRow[] }) {
+	return (
+		<div className="space-y-2">
+			<h3 className="text-sm font-semibold">
+				{title}{" "}
+				<span className="font-normal text-muted-foreground">
+					· 24h, latest observation per item · depth ≥ 3, move larger than the flea fee, not low confidence
+				</span>
+			</h3>
+			{movers.length ? (
+				<div className="overflow-x-auto">
+					<table className="w-full text-left text-sm">
+						<thead className="text-muted-foreground">
+							<tr>
+								<th className="py-1 pr-4 font-medium">Item</th>
+								<th className="py-1 pr-4 text-right font-medium">Current</th>
+								<th className="py-1 pr-4 text-right font-medium">Market value</th>
+								<th className="py-1 pr-4 text-right font-medium">24h ₽</th>
+								<th className="py-1 pr-4 text-right font-medium">24h</th>
+								<th className="py-1 pr-4 text-right font-medium">× fee</th>
+								<th className="py-1 pr-4 text-right font-medium">Last 12h</th>
+								<th className="py-1 pr-4 font-medium">Shock</th>
+								<th className="py-1 pr-4 text-right font-medium">7d</th>
+								<th className="py-1 pr-4 text-right font-medium">Depth</th>
+								<th className="py-1 font-medium">Confidence</th>
+							</tr>
+						</thead>
+						<tbody>
+							{movers.map((mover) => (
+								<tr key={mover.itemId} className="border-t border-border">
+									<td className="py-1 pr-4">
+										<Link href={itemHref(mover.itemId)} className="text-brand hover:underline">
+											{mover.name}
+										</Link>
+									</td>
+									<td className="py-1 pr-4 text-right whitespace-nowrap">{formatRoubles(mover.currentLevel)}</td>
+									<td className="py-1 pr-4 text-right whitespace-nowrap">{formatRoubles(mover.marketValue)}</td>
+									<td
+										className={`py-1 pr-4 text-right whitespace-nowrap ${(mover.change24hRub ?? 0) >= 0 ? "text-success" : "text-danger"}`}
+									>
+										{signedRoubles(mover.change24hRub)}
+									</td>
+									<td className="py-1 pr-4 text-right">{percent(mover.change24h)}</td>
+									<td className="py-1 pr-4 text-right">
+										{mover.fleaFee && mover.change24hRub !== null
+											? `${(Math.abs(mover.change24hRub) / mover.fleaFee).toFixed(1)}×`
+											: "–"}
+									</td>
+									<td className={`py-1 pr-4 text-right ${(mover.move12h ?? 0) >= 0 ? "text-success" : "text-danger"}`}>
+										{percent(mover.move12h)}
+									</td>
+									<td className="py-1 pr-4 whitespace-nowrap">{shockLabel(mover)}</td>
+									<td className="py-1 pr-4 text-right">{percent(mover.change7d)}</td>
+									<td className="py-1 pr-4 text-right">{mover.depthMedian24h ?? "–"}</td>
+									<td className="py-1">{mover.confidence}</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			) : (
+				<p className="text-sm text-muted-foreground">No moves with enough evidence yet.</p>
+			)}
+		</div>
 	);
 }

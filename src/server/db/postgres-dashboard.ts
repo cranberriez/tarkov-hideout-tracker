@@ -70,15 +70,20 @@ export interface MarketMoverRow {
 	calculatedAt: number;
 	livePriceMin: number | null;
 	marketValue: number | null;
+	currentLevel: number | null;
 	median7d: number | null;
 	change24h: number | null;
+	change24hRub: number | null;
 	change7d: number | null;
-	percentile30d: number | null;
+	move12h: number | null;
 	depthMedian24h: number | null;
 	trend: string;
 	confidence: string;
-	traderValue: number | null;
-	fleaNet: number | null;
+	fleaFee: number | null;
+	shockPhase: string | null;
+	shockBaseline: number | null;
+	shockExtreme: number | null;
+	retracement: number | null;
 }
 
 export type MarketWorkerDashboard = {
@@ -92,7 +97,9 @@ export type MarketWorkerDashboard = {
 				observationCount: number;
 				itemCount: number;
 				runs: MarketAnalysisRunRow[];
-				movers: MarketMoverRow[];
+				/** Latest observation per item with real evidence: not low confidence, depth >= 3, move > flea fee. */
+				moversByRub: MarketMoverRow[];
+				moversByPercent: MarketMoverRow[];
 		  };
 };
 
@@ -100,10 +107,53 @@ function numberOrNull(value: unknown): number | null {
 	return value === null || value === undefined ? null : Number(value);
 }
 
-function undefinedTable(error: unknown): boolean {
-	for (let current = error; current instanceof Error; current = current.cause)
-		if ((current as { code?: unknown }).code === "42P01") return true;
-	return false;
+function postgresCode(error: unknown): string | null {
+	for (let current = error; current instanceof Error; current = current.cause) {
+		const code = (current as { code?: unknown }).code;
+		if (typeof code === "string") return code;
+	}
+	return null;
+}
+
+function moverRow(row: Record<string, unknown>): MarketMoverRow {
+	return {
+		itemId: String(row.item_id),
+		name: String(row.name),
+		calculatedAt: Number(row.calculated_at),
+		livePriceMin: numberOrNull(row.live_price_min),
+		marketValue: numberOrNull(row.market_value),
+		currentLevel: numberOrNull(row.current_level),
+		median7d: numberOrNull(row.median_7d),
+		change24h: numberOrNull(row.change_24h),
+		change24hRub: numberOrNull(row.change_24h_rub),
+		change7d: numberOrNull(row.change_7d),
+		move12h: numberOrNull(row.move_12h),
+		depthMedian24h: numberOrNull(row.depth_median_24h),
+		trend: String(row.trend),
+		confidence: String(row.confidence),
+		fleaFee: numberOrNull(row.flea_fee),
+		shockPhase: row.shock_phase === null || row.shock_phase === undefined ? null : String(row.shock_phase),
+		shockBaseline: numberOrNull(row.shock_baseline),
+		shockExtreme: numberOrNull(row.shock_extreme),
+		retracement: numberOrNull(row.retracement),
+	};
+}
+
+function latestMovers(mode: TarkovDataMode, order: "rub" | "percent") {
+	const ranking = order === "rub" ? sql.raw("abs(latest.change_24h_rub) desc") : sql.raw("abs(latest.change_24h) desc");
+	return sql`
+		with latest as (
+			select distinct on (item_id) item_id, calculated_at, live_price_min, market_value, current_level, median_7d,
+				change_24h, change_24h_rub, change_7d, move_12h, depth_median_24h, trend, confidence, flea_fee,
+				shock_phase, shock_baseline, shock_extreme, retracement
+			from item_market_observations where mode = ${mode}
+			order by item_id, calculated_at desc
+		)
+		select latest.*, items.name from latest join items on items.id = latest.item_id
+		where latest.change_24h_rub is not null and latest.confidence <> 'low'
+			and latest.depth_median_24h >= 3
+			and (latest.flea_fee is null or abs(latest.change_24h_rub) > latest.flea_fee)
+		order by ${ranking} limit 12`;
 }
 
 /** Development dashboard: latest price refresh (worker or cron) and market analytics for one mode. */
@@ -120,23 +170,15 @@ export async function getMarketWorkerDashboard(mode: TarkovDataMode): Promise<Ma
 			}
 		: null;
 	try {
-		const [totals, runs, movers] = await Promise.all([
+		const [totals, runs, byRub, byPercent] = await Promise.all([
 			db.execute(sql`
 				select count(*) as observations, count(distinct item_id) as items
 				from item_market_observations where mode = ${mode}`),
 			db.execute(sql`
 				select run_id, started_at, completed_at, status, analyzed_count, unchanged_count, missing_count, summary
 				from market_analysis_runs where mode = ${mode} order by started_at desc limit 6`),
-			db.execute(sql`
-				with latest as (
-					select distinct on (item_id) item_id, calculated_at, live_price_min, market_value, median_7d,
-						change_24h, change_7d, percentile_30d, depth_median_24h, trend, confidence, trader_value, flea_net
-					from item_market_observations where mode = ${mode}
-					order by item_id, calculated_at desc
-				)
-				select latest.*, items.name from latest join items on items.id = latest.item_id
-				where latest.change_24h is not null and latest.confidence <> 'low'
-				order by abs(latest.change_24h) desc limit 12`),
+			db.execute(latestMovers(mode, "rub")),
+			db.execute(latestMovers(mode, "percent")),
 		]);
 		const total = totals.rows[0] ?? {};
 		return {
@@ -163,30 +205,20 @@ export async function getMarketWorkerDashboard(mode: TarkovDataMode): Promise<Ma
 						confidence: summary.confidence ?? {},
 					};
 				}),
-				movers: movers.rows.map((row) => ({
-					itemId: String(row.item_id),
-					name: String(row.name),
-					calculatedAt: Number(row.calculated_at),
-					livePriceMin: numberOrNull(row.live_price_min),
-					marketValue: numberOrNull(row.market_value),
-					median7d: numberOrNull(row.median_7d),
-					change24h: numberOrNull(row.change_24h),
-					change7d: numberOrNull(row.change_7d),
-					percentile30d: numberOrNull(row.percentile_30d),
-					depthMedian24h: numberOrNull(row.depth_median_24h),
-					trend: String(row.trend),
-					confidence: String(row.confidence),
-					traderValue: numberOrNull(row.trader_value),
-					fleaNet: numberOrNull(row.flea_net),
-				})),
+				moversByRub: byRub.rows.map(moverRow),
+				moversByPercent: byPercent.rows.map(moverRow),
 			},
 		};
 	} catch (error) {
-		if (undefinedTable(error))
+		const code = postgresCode(error);
+		if (code === "42P01" || code === "42703")
 			return {
 				loadedAt,
 				refresh,
-				analytics: { available: false, reason: "Analytics tables are missing. Run npm run db:migrate (0002)." },
+				analytics: {
+					available: false,
+					reason: `Analytics schema is behind (${code === "42P01" ? "tables" : "columns"} missing). Run npm run db:migrate.`,
+				},
 			};
 		throw error;
 	}

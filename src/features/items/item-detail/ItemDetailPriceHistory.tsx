@@ -128,9 +128,9 @@ export function ItemDetailPriceHistory({ itemId, mode, onAvailabilityChange }: I
 				/>
 			</div>
 			<p className="mt-2 text-[10px] leading-relaxed text-muted-foreground/70">
-				Chart and comparisons show aggregate references with high outliers filtered, not the flea acquisition estimate.
-				Time-pattern comparisons use the latest 30 days and your device timezone. They describe correlation, not a
-				guaranteed buying window.
+				The chart shows the aggregate reference and the minimum listing, with high aggregate outliers filtered; neither
+				is the flea acquisition estimate. Comparisons use the aggregate. Time-pattern comparisons use the latest 30 days
+				and your device timezone. They describe correlation, not a guaranteed buying window.
 			</p>
 		</div>
 	);
@@ -147,7 +147,8 @@ function PriceChart({
 	const width = 800;
 	const height = 290;
 	const inset = { left: 0, right: 0, top: 12, bottom: 24 };
-	const prices = points.map((point) => point.price);
+	// Scale to both series so the minimum-listing line always fits.
+	const prices = points.flatMap((point) => [point.price, point.priceMin]);
 	const rawMin = Math.min(...prices);
 	const rawMax = Math.max(...prices);
 	const padding = Math.max((rawMax - rawMin) * 0.1, rawMax * 0.03, 1);
@@ -163,6 +164,9 @@ function PriceChart({
 		.map((point, index) => `${index === 0 ? "M" : "L"}${x(point.timestamp)},${y(point.price)}`)
 		.join(" ");
 	const area = `${path} L${x(lastTime)},${height - inset.bottom} L${x(firstTime)},${height - inset.bottom} Z`;
+	const minimumPath = points
+		.map((point, index) => `${index === 0 ? "M" : "L"}${x(point.timestamp)},${y(point.priceMin)}`)
+		.join(" ");
 
 	const handleMove = (event: MouseEvent<SVGSVGElement>) => {
 		if (points.length === 0) return;
@@ -182,11 +186,19 @@ function PriceChart({
 
 	return (
 		<div className="mt-3 overflow-hidden rounded-lg border border-border-color bg-shadow/15">
+			<div className="flex gap-3 px-2.5 pt-2 text-[10px] text-muted-foreground" aria-hidden="true">
+				<span className="flex items-center gap-1.5">
+					<span className="h-0.5 w-3 rounded-full bg-chart-1" /> Aggregate
+				</span>
+				<span className="flex items-center gap-1.5">
+					<span className="h-0.5 w-3 rounded-full bg-chart-2" /> Minimum listing
+				</span>
+			</div>
 			<svg
 				viewBox={`0 0 ${width} ${height}`}
 				className="block h-auto w-full touch-none"
 				role="img"
-				aria-label="Flea market price history"
+				aria-label="Flea market price history: aggregate reference and minimum listing"
 				onMouseMove={handleMove}
 				onMouseLeave={() => {
 					setActivePoint(null);
@@ -212,6 +224,13 @@ function PriceChart({
 				))}
 				<path d={area} fill="url(#price-history-area)" />
 				<path d={path} fill="none" stroke="var(--chart-1)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
+				<path
+					d={minimumPath}
+					fill="none"
+					stroke="var(--chart-2)"
+					strokeWidth="1.75"
+					vectorEffect="non-scaling-stroke"
+				/>
 				{activePoint && (
 					<>
 						<line
@@ -223,6 +242,15 @@ function PriceChart({
 							strokeWidth="1"
 							strokeDasharray="4 4"
 							className="text-foreground/30"
+							vectorEffect="non-scaling-stroke"
+						/>
+						<circle
+							cx={x(activePoint.timestamp)}
+							cy={y(activePoint.priceMin)}
+							r="3.5"
+							fill="var(--chart-2)"
+							stroke="var(--shadow)"
+							strokeWidth="2"
 							vectorEffect="non-scaling-stroke"
 						/>
 						<circle
