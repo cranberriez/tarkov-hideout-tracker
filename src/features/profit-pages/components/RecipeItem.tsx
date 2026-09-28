@@ -141,6 +141,26 @@ export function RecipeItem({
 			prepare: () => preloadHoverImage(item?.iconLink),
 		});
 	}
+	const hasDuration = (plan?.durationSeconds ?? 0) > 0;
+	const savingsLabel = hasSavings && (
+		<span className="flex items-center gap-0.5 whitespace-nowrap">
+			{method === "craft" ? "Craft" : "Barter"} saves {formatCompactPrice(routeSavingsTotal)}
+			<InfoHint
+				title={`${method === "craft" ? "Crafting" : "Bartering"} saves ${formatRoundedRoubles(routeSavingsTotal)}`}
+				onShow={hover.close}
+			>
+				<span className="block">
+					{method === "craft" ? "Crafting" : "Bartering for"} {formatQuantity(count)} × {item?.name ?? "this item"}{" "}
+					costs <strong className="text-foreground">{formatRoundedRoubles(plan?.totalCost ?? null)}</strong>.
+				</span>
+				<span className="mt-1 block">
+					The cheapest eligible direct purchase for the same quantity costs{" "}
+					<strong className="text-foreground">{formatRoundedRoubles(cheapestDirectTotal)}</strong>.
+				</span>
+			</InfoHint>
+		</span>
+	);
+	const durationLabel = hasDuration && <span className="font-mono">{formatDuration(plan?.durationSeconds ?? 0)}</span>;
 	const itemLinkProps = {
 		onClick: (event: React.MouseEvent) => {
 			event.stopPropagation();
@@ -195,7 +215,8 @@ export function RecipeItem({
 								<span className="size-8" />
 							)}
 						</RecipeItemLink>
-						{/* Below lg: name above figures plus badges, one tap target; at lg the wrappers dissolve into one line. */}
+						{/* Below lg: name above figures plus badges, one tap target. lg: name and figures above a
+						    muted savings/duration line. xl: the wrappers dissolve into one line. */}
 						<span className="relative flex h-full min-w-0 flex-1 items-center gap-2 lg:contents">
 							{expandable && (
 								<button
@@ -206,44 +227,55 @@ export function RecipeItem({
 									className="absolute inset-0 rounded-sm focus-visible:outline-2 focus-visible:outline-brand lg:hidden"
 								/>
 							)}
-							<span className="flex min-w-0 flex-1 flex-col justify-center lg:contents">
-								<span className="flex min-w-0 items-center gap-2 lg:contents">
-									<span className="min-w-0 truncate text-[13px] font-medium text-foreground" title={item?.name}>
-										{item?.shortName ?? item?.name ?? "Unknown item"}
+							<span className="flex min-w-0 flex-1 flex-col justify-center xl:contents">
+								<span className="contents lg:flex lg:min-w-0 lg:items-center lg:gap-2 xl:contents">
+									<span className="flex min-w-0 items-center gap-2 lg:contents">
+										<span className="min-w-0 truncate text-[13px] font-medium text-foreground" title={item?.name}>
+											{item?.shortName ?? item?.name ?? "Unknown item"}
+										</span>
+										{plan?.isTool && (
+											<span className="shrink-0 rounded-[3px] bg-info px-1 py-0.5 text-[7px] font-black uppercase text-inverse">
+												tool
+											</span>
+										)}
 									</span>
-									{plan?.isTool && (
-										<span className="shrink-0 rounded-[3px] bg-info px-1 py-0.5 text-[7px] font-black uppercase text-inverse">
-											tool
+									{!plan?.isTool && (
+										<span className="flex min-w-0 items-center gap-1.5 whitespace-nowrap lg:contents">
+											<span className="shrink-0 text-xs text-muted-foreground max-lg:hidden">—</span>
+											<span className="shrink-0 font-mono text-xs text-muted-foreground">
+												{formatQuantity(count)} ×
+											</span>
+											<span className="relative z-[1] shrink-0 font-mono text-xs">
+												<InlineItemPrice
+													item={item}
+													kind={priceKind}
+													buyMethod={method}
+													totalPrice={totalPrice}
+													displayPrice={unitRoutePrice}
+													overrides={overrides}
+													onPriceChange={onPriceChange}
+													onWarningShow={hover.close}
+													editable={method === "flea" || method === "sell" || method === "unavailable"}
+												/>
+											</span>
+											{hasSavings && (
+												<span className="truncate text-[11px] text-warning lg:hidden">
+													· Saves {formatCompactPrice(routeSavingsTotal)}
+												</span>
+											)}
+											{hasDuration && (
+												<span className="shrink-0 font-mono text-[11px] text-warning lg:hidden">
+													· {formatDuration(plan?.durationSeconds ?? 0)}
+												</span>
+											)}
 										</span>
 									)}
 								</span>
-								{!plan?.isTool && (
-									<span className="flex min-w-0 items-center gap-1.5 whitespace-nowrap lg:contents">
-										<span className="shrink-0 text-xs text-muted-foreground max-lg:hidden">—</span>
-										<span className="shrink-0 font-mono text-xs text-muted-foreground">{formatQuantity(count)} ×</span>
-										<span className="relative z-[1] shrink-0 font-mono text-xs">
-											<InlineItemPrice
-												item={item}
-												kind={priceKind}
-												buyMethod={method}
-												totalPrice={totalPrice}
-												displayPrice={unitRoutePrice}
-												overrides={overrides}
-												onPriceChange={onPriceChange}
-												onWarningShow={hover.close}
-												editable={method === "flea" || method === "sell" || method === "unavailable"}
-											/>
-										</span>
-										{hasSavings && (
-											<span className="truncate text-[11px] text-warning lg:hidden">
-												· Saves {formatCompactPrice(routeSavingsTotal)}
-											</span>
-										)}
-										{(plan?.durationSeconds ?? 0) > 0 && (
-											<span className="shrink-0 font-mono text-[11px] text-warning lg:hidden">
-												· {formatDuration(plan?.durationSeconds ?? 0)}
-											</span>
-										)}
+								{(hasSavings || hasDuration) && (
+									<span className="hidden min-w-0 items-center gap-1.5 overflow-hidden text-[11px] leading-tight text-warning/75 lg:flex xl:hidden">
+										{savingsLabel}
+										{savingsLabel && durationLabel && <span aria-hidden>·</span>}
+										{durationLabel}
 									</span>
 								)}
 							</span>
@@ -260,30 +292,12 @@ export function RecipeItem({
 							)}
 						</span>
 						<LockIndicator chips={lockChips} className="max-lg:hidden" />
-						{hasSavings || (plan?.durationSeconds ?? 0) > 0 || canGoToRecipe ? (
+						{hasSavings || hasDuration || canGoToRecipe ? (
 							<span className="ml-auto flex shrink-0 items-center gap-1.5 max-lg:hidden">
-								{hasSavings && (
-									<span className="flex items-center gap-0.5 whitespace-nowrap text-[11px] text-warning">
-										{method === "craft" ? "Craft" : "Barter"} saves {formatCompactPrice(routeSavingsTotal)}
-										<InfoHint
-											title={`${method === "craft" ? "Crafting" : "Bartering"} saves ${formatRoundedRoubles(routeSavingsTotal)}`}
-											onShow={hover.close}
-										>
-											<span className="block">
-												{method === "craft" ? "Crafting" : "Bartering for"} {formatQuantity(count)} ×{" "}
-												{item?.name ?? "this item"} costs{" "}
-												<strong className="text-foreground">{formatRoundedRoubles(plan?.totalCost ?? null)}</strong>.
-											</span>
-											<span className="mt-1 block">
-												The cheapest eligible direct purchase for the same quantity costs{" "}
-												<strong className="text-foreground">{formatRoundedRoubles(cheapestDirectTotal)}</strong>.
-											</span>
-										</InfoHint>
-									</span>
-								)}
-								{(plan?.durationSeconds ?? 0) > 0 && (
-									<span className="font-mono text-[11px] text-warning">
-										{formatDuration(plan?.durationSeconds ?? 0)}
+								{(hasSavings || hasDuration) && (
+									<span className="flex items-center gap-1.5 text-[11px] text-warning max-xl:hidden">
+										{savingsLabel}
+										{durationLabel}
 									</span>
 								)}
 								{canGoToRecipe && (
