@@ -18,6 +18,7 @@ import {
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
+import { HideoutStationsNav } from "./HideoutStationsNav";
 import { devNavItem, navMenus, type NavItem, type NavMenu } from "./nav-config";
 import { PlayerProfileMenu } from "./PlayerProfileMenu";
 
@@ -204,7 +205,7 @@ function NavItemIcon({ item, size = 16 }: { item: NavItem; size?: number }) {
 
 function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: string }) {
 	const visibleChildren = menu.children?.filter((item) => !item.disabled) ?? [];
-	const hasChildren = visibleChildren.length > 0;
+	const hasChildren = visibleChildren.length > 0 || !!menu.panel;
 	const isActive = isNavItemActive(currentPage, menu);
 
 	return (
@@ -226,7 +227,10 @@ function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: str
 				<div
 					role="menu"
 					aria-label={`${menu.name} pages`}
-					className="pointer-events-none invisible absolute left-0 top-full z-50 w-56 pt-2 opacity-0 transition-[opacity,visibility] duration-150 group-hover/nav-menu:pointer-events-auto group-hover/nav-menu:visible group-hover/nav-menu:opacity-100 group-focus-within/nav-menu:pointer-events-auto group-focus-within/nav-menu:visible group-focus-within/nav-menu:opacity-100"
+					className={cn(
+						"pointer-events-none invisible absolute left-0 top-full z-50 pt-2 opacity-0 transition-[opacity,visibility] duration-150 group-hover/nav-menu:pointer-events-auto group-hover/nav-menu:visible group-hover/nav-menu:opacity-100 group-focus-within/nav-menu:pointer-events-auto group-focus-within/nav-menu:visible group-focus-within/nav-menu:opacity-100",
+						menu.panel ? "w-md" : "w-56",
+					)}
 				>
 					<div className="rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
 						{visibleChildren.map((item) => (
@@ -243,6 +247,12 @@ function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: str
 								{item.name}
 							</Link>
 						))}
+						{menu.panel === "hideout-stations" && (
+							<>
+								{visibleChildren.length > 0 && <div className="-mx-1 my-1 h-px bg-border" />}
+								<HideoutStationsNav currentPage={currentPage} />
+							</>
+						)}
 					</div>
 				</div>
 			)}

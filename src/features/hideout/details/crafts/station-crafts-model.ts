@@ -41,3 +41,13 @@ export function craftLock(
 	}
 	return null;
 }
+
+/**
+ * Badge text for a craft amount. Continuous crafts consume part of an item per run
+ * (e.g. 0.66 of a water filter), shown as a percentage; single units show nothing.
+ */
+export function formatCraftQuantity(count: number): string | undefined {
+	if (count > 0 && count < 1) return `${Math.round(count * 100)}%`;
+	if (count > 1) return `×${Number(count.toFixed(2))}`;
+	return undefined;
+}

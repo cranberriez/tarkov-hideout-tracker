@@ -32,7 +32,11 @@ identity from server data; player progress hydrates afterwards. Titles use the r
 
 Inventory, Keys, Station Goals, and Bitcoin Farm routes are placeholders. Check
 their [route implementations](<../src/app/(data)/>) before extending them.
-[Navbar](../src/components/core/Navbar.tsx) owns navigation. The
+[Navbar](../src/components/core/Navbar.tsx) owns navigation. The desktop Hideout
+dropdown lists every station from the static
+[station list](../src/lib/data/static-stations.ts) in [stationOrder](../src/lib/cfg/stationOrder.ts),
+with bundled portraits and the saved level (a crown when maxed), so the shared
+layout still fetches no station data. The
 [(data) layout](<../src/app/(data)/layout.tsx>) supplies the footer and profile
 conversion UI without loading metadata or entity arrays for descendants.
 

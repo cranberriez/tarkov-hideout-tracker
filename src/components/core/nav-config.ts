@@ -22,6 +22,8 @@ export interface NavItem {
 
 export interface NavMenu extends NavItem {
 	children?: NavItem[];
+	/** Extra desktop dropdown content rendered below the child pages. */
+	panel?: "hideout-stations";
 }
 
 export const navMenus: NavMenu[] = [
@@ -53,6 +55,7 @@ export const navMenus: NavMenu[] = [
 		name: "Hideout",
 		href: "/hideout",
 		icon: House,
+		panel: "hideout-stations",
 		children: [
 			{ name: "Craft Planner", href: "/hideout/craft-planner", icon: Factory, disabled: true },
 			{
