@@ -57,6 +57,12 @@ export function buildObservation(
 	const metrics = computeMarketMetrics(points, calculatedAt);
 	if (!metrics) return null;
 	const economics = computeEconomics(metrics.marketValue, sellFor);
+	// Above the max-net listing price the flea fee eats any increase (often the net is
+	// negative): not an economically sensible market, whatever its depth.
+	const aboveMaxNet =
+		metrics.marketValue !== null && economics.maxNetPrice !== null && metrics.marketValue > economics.maxNetPrice;
+	const confidence = aboveMaxNet ? "low" : metrics.confidence;
+	const confidenceReasons = aboveMaxNet ? [...metrics.confidenceReasons, "above-max-net"] : metrics.confidenceReasons;
 	return {
 		itemId,
 		calculatedAt,
@@ -79,14 +85,14 @@ export function buildObservation(
 		trend: metrics.trend,
 		persistenceHours: rounded(metrics.persistenceHours, 2),
 		depthMedian24h: metrics.depthMedian24h,
-		confidence: metrics.confidence,
+		confidence,
 		basePrice: economics.basePrice,
 		traderValue: economics.traderValue,
 		fleaNet: economics.fleaNet,
 		traderBreakEven: economics.traderBreakEven,
 		practicalBreakEven: economics.practicalBreakEven,
 		maxNetPrice: economics.maxNetPrice,
-		confidenceReasons: metrics.confidenceReasons,
+		confidenceReasons,
 		stabilityReasons: metrics.stabilityReasons,
 		coverage24h: rounded(metrics.coverage.day, 3)!,
 		coverage7d: rounded(metrics.coverage.week, 3)!,

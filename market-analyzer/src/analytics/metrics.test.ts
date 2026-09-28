@@ -16,11 +16,13 @@ function series(from: number, to: number, step: number, value: (at: number) => n
 	return points;
 }
 
-/** Upstream shape: daily points for older history, two-hourly for the last week. */
+/** Upstream shape: daily aggregates (00:00 UTC) for older history, two-hourly snapshots for the last week. */
 function upstream(older: (at: number) => number, recent: (at: number) => number, depth = 20) {
+	const firstSnapshot = NOW - 7 * DAY;
+	const lastDaily = Math.floor(firstSnapshot / DAY) * DAY;
 	return [
-		...series(NOW - 40 * DAY, NOW - 7 * DAY - DAY, DAY, older, depth),
-		...series(NOW - 7 * DAY, NOW, 2 * HOUR, recent, depth),
+		...series(lastDaily - 33 * DAY, lastDaily, DAY, older, depth),
+		...series(firstSnapshot, NOW, 2 * HOUR, recent, depth),
 	];
 }
 
@@ -36,17 +38,77 @@ test("windows weigh observations by the time they represent, not by row count", 
 	assert.equal(metrics.median24h, 200);
 });
 
-test("a step never holds longer than 26 hours across a gap", () => {
+test("snapshots hold ~one sampling interval, daily aggregates a day", () => {
+	const midnight = Math.floor(NOW / DAY) * DAY - 10 * DAY;
 	const points: PriceHistoryPoint[] = [
-		{ timestamp: NOW - 10 * DAY, price: 10, priceMin: 10, offerCount: 5 },
+		{ timestamp: midnight, price: 10, priceMin: 10, offerCount: 5 },
+		{ timestamp: NOW - 5 * DAY, price: 30, priceMin: 30, offerCount: 5 },
 		{ timestamp: NOW - HOUR, price: 20, priceMin: 20, offerCount: 5 },
 	];
-	const samples = timeWeightedSamples(points, NOW - 10 * DAY, NOW);
+	const samples = timeWeightedSamples(points, midnight, NOW);
+	// Daily aggregate: 26h. Snapshot followed by days without listings: 3h, not the whole gap.
 	assert.deepEqual(
 		samples.map((sample) => sample.weight / HOUR),
-		[26, 1],
+		[26, 3, 1],
 	);
 	assert.equal(weightedQuantile(samples, 0.5), 10);
+});
+
+test("a cheap listing before a gap without listings does not anchor the 24h change", () => {
+	// Real regular-mode beanie: 2,000 single listings, 18h with no listings, then ~30k.
+	const at = (hoursAgo: number, priceMin: number, offerCount: number): PriceHistoryPoint => ({
+		timestamp: NOW - hoursAgo * HOUR,
+		price: priceMin,
+		priceMin,
+		offerCount,
+	});
+	const points = [
+		...[78, 76, 74, 72, 70].map((hours) => at(hours, 14_500, 3)),
+		at(60, 11_000, 2),
+		...[58, 56, 54, 52].map((hours) => at(hours, 9_000, 3)),
+		at(50, 15_999, 1),
+		at(44, 2_000, 1),
+		at(42, 2_000, 2),
+		at(24, 42_069, 1),
+		at(22, 42_069, 1),
+		at(20, 33_999, 3),
+		at(18, 28_000, 5),
+		at(16, 23_232, 8),
+		at(14, 27_888, 9),
+		at(12, 27_888, 8),
+		at(10, 28_000, 5),
+		at(8, 30_000, 3),
+		at(6, 30_000, 2),
+		at(4, 33_999, 1),
+	];
+	const metrics = computeMarketMetrics(points, NOW)!;
+	assert.ok(metrics.change24h !== null && Math.abs(metrics.change24h) < 3, `change24h ${metrics.change24h}`);
+	assert.ok(metrics.change6h !== null && Math.abs(metrics.change6h) < 0.5, `change6h ${metrics.change6h}`);
+});
+
+test("a shallow undercut inside a steady regime is not a 24h move", () => {
+	// Real regular-mode Soyuz-TM buffer tube: 180k at depth 3 with brief single undercuts.
+	const at = (hoursAgo: number, priceMin: number, offerCount: number): PriceHistoryPoint => ({
+		timestamp: NOW - hoursAgo * HOUR,
+		price: priceMin,
+		priceMin,
+		offerCount,
+	});
+	const points = [
+		...[49, 47, 45, 43, 41, 39].map((hours) => at(hours, 180_000, 3)),
+		at(37.2, 180_000, 3),
+		at(35.2, 180_000, 1),
+		at(31.2, 20_000, 1),
+		at(25.2, 49_999, 1),
+		at(21.4, 180_000, 3),
+		at(19.2, 150_000, 4),
+		at(17.2, 180_000, 3),
+		at(3.4, 180_000, 3),
+		at(1.4, 180_000, 3),
+	];
+	const metrics = computeMarketMetrics(points, NOW)!;
+	assert.equal(metrics.marketValue, 180_000);
+	assert.ok(metrics.change24h !== null && Math.abs(metrics.change24h) < 0.25, `change24h ${metrics.change24h}`);
 });
 
 test("flat deep market is stable, high confidence and mid-percentile", () => {

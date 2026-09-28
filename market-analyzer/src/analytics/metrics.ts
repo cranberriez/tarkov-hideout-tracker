@@ -4,8 +4,16 @@ import { deriveEffectivePrice } from "../../../src/lib/utils/price-history";
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 
-/** An observation describes the market until the next one, but never longer than this. */
-export const MAX_STEP_MS = 26 * HOUR;
+/**
+ * How long an observation describes the market. Upstream keeps daily aggregates
+ * (stamped 00:00 UTC) for older history and a snapshot roughly every two hours
+ * recently, and records nothing when no listings exist. A gap between snapshots
+ * therefore means "no market", not "the last price persisted".
+ */
+export const DAILY_HOLD_MS = 26 * HOUR;
+export const SNAPSHOT_HOLD_MS = 3 * HOUR;
+/** A robust value older than this cannot anchor a price change. */
+const CHANGE_FRESH_MS = 26 * HOUR;
 /** Matches the stale cutoff used by the current-price stability model. */
 export const STALE_MS = 72 * HOUR;
 /** A window needs this fraction of its duration observed before a statistic is reported. */
@@ -28,6 +36,7 @@ export type ConfidenceReason =
 	| "thin-listings"
 	| "volatile"
 	| "unconfirmed-move"
+	| "above-max-net"
 	| "recent-regime-change";
 
 export interface MarketMetrics {
@@ -80,7 +89,8 @@ export function timeWeightedSamples(points: readonly PriceHistoryPoint[], start:
 	const samples: WeightedValue[] = [];
 	for (let index = 0; index < points.length; index += 1) {
 		const point = points[index];
-		const holdUntil = Math.min(points[index + 1]?.timestamp ?? Infinity, point.timestamp + MAX_STEP_MS, end);
+		const hold = point.timestamp % DAY === 0 ? DAILY_HOLD_MS : SNAPSHOT_HOLD_MS;
+		const holdUntil = Math.min(points[index + 1]?.timestamp ?? Infinity, point.timestamp + hold, end);
 		const weight = holdUntil - Math.max(point.timestamp, start);
 		if (weight > 0 && usable(point)) samples.push({ value: point.priceMin, weight });
 	}
@@ -113,9 +123,16 @@ function covered(view: WindowView, fraction: number): number | null {
 	return view.coverage >= MIN_COVERAGE ? weightedQuantile(view.samples, fraction) : null;
 }
 
-/** Robust price level: the time-weighted median of the trailing window ending at `at`. */
-function level(points: readonly PriceHistoryPoint[], at: number, length: number): number | null {
-	return covered(windowView(points, at, length), 0.5);
+/**
+ * The site's robust market value as it stood at `at`, from history known then.
+ * It already refuses unconfirmed jumps and shallow undercuts, so price changes
+ * compare like with like. Null when there was no recent observation at that time.
+ */
+export function marketValueAsOf(points: readonly PriceHistoryPoint[], at: number): number | null {
+	const known = points.filter((point) => point.timestamp <= at);
+	const latest = known.at(-1);
+	if (!latest || at - latest.timestamp > CHANGE_FRESH_MS) return null;
+	return deriveEffectivePrice(known, undefined, at).effectivePrice;
 }
 
 function change(current: number | null, previous: number | null): number | null {
@@ -165,13 +182,12 @@ export function computeMarketMetrics(points: readonly PriceHistoryPoint[], now: 
 	const week = windowView(points, now, 7 * DAY);
 	const month = windowView(points, now, 30 * DAY);
 
-	const level6h = level(points, now, 6 * HOUR);
-	const level24h = level(points, now, DAY);
+	const valueNow = marketValueAsOf(points, now);
 	const median7d = covered(week, 0.5);
 	const q25 = covered(week, 0.25);
 	const q75 = covered(week, 0.75);
 	const volatility7d = median7d && q25 !== null && q75 !== null ? (q75 - q25) / median7d : null;
-	const change7d = change(level24h, level(points, now - 7 * DAY, DAY));
+	const change7d = change(valueNow, marketValueAsOf(points, now - 7 * DAY));
 	const threshold = Math.max(TREND_MIN_MOVE, (volatility7d ?? 0) / 2);
 	const trend: Trend =
 		change7d === null ? "unknown" : change7d > threshold ? "rising" : change7d < -threshold ? "falling" : "stable";
@@ -209,8 +225,8 @@ export function computeMarketMetrics(points: readonly PriceHistoryPoint[], now: 
 		median30d: covered(month, 0.5),
 		rangeLow7d: covered(week, 0.1),
 		rangeHigh7d: covered(week, 0.9),
-		change6h: change(level6h, level(points, now - 6 * HOUR, 6 * HOUR)),
-		change24h: change(level6h, level(points, now - DAY, 6 * HOUR)),
+		change6h: change(valueNow, marketValueAsOf(points, now - 6 * HOUR)),
+		change24h: change(valueNow, marketValueAsOf(points, now - DAY)),
 		change7d,
 		percentile30d:
 			effective.effectivePrice !== null && month.coverage >= MIN_COVERAGE
