@@ -64,6 +64,30 @@ export function calcTax(basePrice: number, unitPrice: number, quantity = 1, opti
 	return Number.isFinite(fee) ? Math.round(fee) : null;
 }
 
+function fleaNet(basePrice: number, unitPrice: number, quantity: number, options: TaxOptions): number {
+	const fee = calcTax(basePrice, unitPrice, quantity, options);
+	return fee === null ? -Infinity : unitPrice * quantity - fee;
+}
+
+/** Asking price with the highest net proceeds; raising the price further loses money to fees. */
+export function fleaMaxNetPrice(basePrice: number, quantity = 1, options: TaxOptions = {}): number | null {
+	if (!(basePrice > 0) || !(quantity > 0) || ![basePrice, quantity].every(Number.isFinite)) return null;
+	const net = (price: number) => fleaNet(basePrice, price, quantity, options);
+	// Net proceeds eventually fall as punitive fees dominate. Locate the peak
+	// before searching the rising side; never assume unbounded monotonicity.
+	let upper = Math.max(2, Math.ceil(basePrice));
+	for (let i = 0; i < 80 && net(upper * 2) > net(upper); i++) upper *= 2;
+	let left = 1,
+		right = upper * 2;
+	for (let i = 0; i < 100 && right - left > 4; i++) {
+		const a = left + (right - left) / 3,
+			b = right - (right - left) / 3;
+		if (net(a) < net(b)) left = a;
+		else right = b;
+	}
+	return Math.round((left + right) / 2);
+}
+
 /** Lowest whole-rouble asking price meeting a net target. Fees are nonlinear. */
 export function fleaTargetPrice(
 	basePrice: number,
@@ -78,24 +102,9 @@ export function fleaTargetPrice(
 		![basePrice, quantity, targetNet].every(Number.isFinite)
 	)
 		return null;
-	const net = (price: number) => {
-		const fee = calcTax(basePrice, price, quantity, options);
-		return fee === null ? -Infinity : price * quantity - fee;
-	};
-	// Net proceeds eventually fall as punitive fees dominate. Locate the peak
-	// before searching the rising side; never assume unbounded monotonicity.
-	let upper = Math.max(2, Math.ceil(basePrice));
-	for (let i = 0; i < 80 && net(upper * 2) > net(upper); i++) upper *= 2;
-	let left = 1,
-		right = upper * 2;
-	for (let i = 0; i < 100 && right - left > 4; i++) {
-		const a = left + (right - left) / 3,
-			b = right - (right - left) / 3;
-		if (net(a) < net(b)) left = a;
-		else right = b;
-	}
-	const peak = Math.round((left + right) / 2);
-	if (net(peak) < targetNet) return null;
+	const net = (price: number) => fleaNet(basePrice, price, quantity, options);
+	const peak = fleaMaxNetPrice(basePrice, quantity, options);
+	if (peak === null || net(peak) < targetNet) return null;
 	let low = 1,
 		high = peak;
 	while (low < high) {
