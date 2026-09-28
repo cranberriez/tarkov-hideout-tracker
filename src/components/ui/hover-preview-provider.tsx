@@ -70,6 +70,7 @@ export function HoverPreviewProvider({ children }: { children: ReactNode }) {
 	const [activePreview, setActivePreview] = useState<HoverPreview | null>(null);
 	const request = useRef<HoverRequest | null>(null);
 	const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const touchInput = useRef(false);
 	const cancelClose = useCallback(() => {
 		if (closeTimer.current) clearTimeout(closeTimer.current);
 		closeTimer.current = null;
@@ -98,6 +99,7 @@ export function HoverPreviewProvider({ children }: { children: ReactNode }) {
 	}, [cancelClose]);
 	const show = useCallback(
 		({ key, content, clientX, clientY, width = 320, prepare }: ShowHoverPreview) => {
+			if (touchInput.current) return;
 			cancelClose();
 			const placement = positionPreview(clientX, clientY, width);
 			if (request.current?.key === key) {
@@ -143,6 +145,23 @@ export function HoverPreviewProvider({ children }: { children: ReactNode }) {
 	);
 
 	useEffect(() => close, [close]);
+	useEffect(() => {
+		const onPointer = (event: PointerEvent) => {
+			touchInput.current = event.pointerType === "touch";
+			if (touchInput.current) close();
+		};
+		const onKeyDown = () => {
+			touchInput.current = false;
+		};
+		document.addEventListener("pointerdown", onPointer, { capture: true, passive: true });
+		document.addEventListener("pointermove", onPointer, { capture: true, passive: true });
+		document.addEventListener("keydown", onKeyDown, { capture: true });
+		return () => {
+			document.removeEventListener("pointerdown", onPointer, { capture: true });
+			document.removeEventListener("pointermove", onPointer, { capture: true });
+			document.removeEventListener("keydown", onKeyDown, { capture: true });
+		};
+	}, [close]);
 	useEffect(() => {
 		if (!activePreview) return;
 		const onKeyDown = (event: KeyboardEvent) => {

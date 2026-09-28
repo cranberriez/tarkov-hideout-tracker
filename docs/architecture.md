@@ -248,7 +248,10 @@ mounted in the root layout. It places one card beside the pointer or focused
 trigger, moves with the pointer, lets the pointer enter the card, and closes on
 Escape, scroll, or click. Hover preparation starts after 50 ms; the card appears
 after at least 200 ms and waits for its image or other preview data to settle.
-Touch taps activate the link or button without opening a preview. Cards use
+Touch taps activate the link or button without opening a preview: the provider
+ignores every show request (including emulated mouse events from profit recipe
+rows) while the latest pointer input is touch, and closes any open card on a
+tap. Mouse movement or a key press re-enables previews. Cards use
 supplied data, saved progress, and already-cached prices, workspace quests, or
 Hideout stations; they never start detail requests. Quest previews use the
 mode-scoped compact search manifest for a trader portrait when the full quest is
