@@ -67,6 +67,7 @@ export function ItemRow({ item, count, firCount = 0, size, isHideout = false, is
 		return (
 			<ItemLink
 				item={item}
+				preview={false}
 				aria-label={isIconOnly ? item.name : undefined}
 				className="flex items-center gap-3 bg-card border p-2 rounded hover:bg-shadow/40 hover:border-info transition-colors relative group focus-visible:outline-2 focus-visible:outline-brand"
 			>

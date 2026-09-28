@@ -296,9 +296,10 @@ tap. Mouse movement or a key press re-enables previews. Cards use
 supplied data, saved progress, and already-cached prices, workspace quests, or
 Hideout stations; they never start detail requests. Quest previews use the
 mode-scoped compact search manifest for a trader portrait when the full quest is
-not already available. The expanded Items checklist cards show their item details
-in place, so they do not open another item hover card. Item previews prefer the
-square 512px image over the labeled grid image.
+not already available. Items checklist rows do not open item hover cards in Icon,
+Compact, or Expanded sizes. Alternatives inside an expanded any-of group likewise
+omit hover cards in Icon and Compact sizes; the Expanded layout retains them. Item
+previews prefer the square 512px image over the labeled grid image.
 Hideout station names show a small outbound arrow. Station previews show only
 the saved level; item previews omit short names. Entity previews have no
 instruction footer. Quest previews show the issuing trader loyalty tier and

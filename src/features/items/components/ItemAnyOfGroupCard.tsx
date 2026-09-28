@@ -33,11 +33,13 @@ interface GroupHeaderProps {
 	group: DerivedQuestAnyOfGroup;
 	expanded: boolean;
 	isIconMode: boolean;
+	showToggle?: boolean;
 }
 
 interface GroupItemsGridProps {
 	items: AnyOfGroupItem[];
 	isFirRequired: boolean;
+	previewItems: boolean;
 }
 
 function ItemImage({ item, className }: { item: AnyOfGroupItem; className: string }) {
@@ -79,7 +81,7 @@ function ItemPreviewStack({ items, previewIndex, expanded, isIconMode, isFirRequ
 	);
 }
 
-function GroupHeader({ group, expanded, isIconMode }: GroupHeaderProps) {
+function GroupHeader({ group, expanded, isIconMode, showToggle = true }: GroupHeaderProps) {
 	return (
 		<div className="min-w-0 flex-1">
 			<div className="flex items-start justify-between gap-2">
@@ -105,11 +107,37 @@ function GroupHeader({ group, expanded, isIconMode }: GroupHeaderProps) {
 					</QuestLink>
 				</div>
 
-				<span className="shrink-0 text-subtle-foreground">
-					{expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-				</span>
+				{showToggle && (
+					<span className="shrink-0 text-subtle-foreground">
+						{expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+					</span>
+				)}
 			</div>
 		</div>
+	);
+}
+
+function RequirementSummary({
+	group,
+	isFirRequired,
+	stacked = false,
+}: {
+	group: DerivedQuestAnyOfGroup;
+	isFirRequired: boolean;
+	stacked?: boolean;
+}) {
+	return (
+		<span className={cn("flex shrink-0 font-medium items-center gap-2", stacked ? "flex-col items-start gap-1" : "")}>
+			<p className="flex items-center gap-2">
+				<span className="text-foreground tabular-nums">{group.requiredCount}x</span>
+				{isFirRequired && <span className="text-warning">FiR</span>}
+			</p>
+			{group.isPartial && (
+				<span className="rounded border border-info/30 bg-info/10 px-1.5 py-0.5 text-[9px] font-medium text-info">
+					Partial
+				</span>
+			)}
+		</span>
 	);
 }
 
@@ -129,27 +157,20 @@ function ObjectiveLabelRow({
 				isIconMode ? "text-[11px] leading-snug" : "text-xs",
 			)}
 		>
-			<span className="flex shrink-0 items-center gap-2 font-medium">
-				<span className="text-foreground tabular-nums">{group.requiredCount}x</span>
-				{isFirRequired && <span className="text-warning">FiR</span>}
-				{group.isPartial && (
-					<span className="rounded border border-info/30 bg-info/10 px-1.5 py-0.5 text-[9px] font-medium text-info">
-						Partial
-					</span>
-				)}
-			</span>
+			<RequirementSummary group={group} isFirRequired={isFirRequired} />
 			<span className="min-w-0 flex-1">{group.objectiveLabel}</span>
 		</div>
 	);
 }
 
-function GroupItemsGrid({ items, isFirRequired }: GroupItemsGridProps) {
+function GroupItemsGrid({ items, isFirRequired, previewItems }: GroupItemsGridProps) {
 	return (
 		<div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 			{items.map((item) => (
 				<ItemLink
 					key={item.id}
 					item={item}
+					preview={previewItems}
 					className="flex items-center gap-3 rounded-md border border-highlight/10 bg-shadow/20 p-2 text-left transition-colors hover:border-info focus-visible:outline-2 focus-visible:outline-brand"
 				>
 					<div
@@ -200,19 +221,43 @@ export function ItemAnyOfGroupCard({ group, items, expanded, size, onToggleExpan
 					isIconMode ? "" : "gap-2.5",
 				)}
 			>
-				<div className="flex w-full items-start gap-3">
-					<ItemPreviewStack
-						items={previewItems}
-						previewIndex={previewIndex}
-						expanded={expanded}
-						isIconMode={isIconMode}
-						isFirRequired={isFirRequired}
-					/>
+				{isIconMode ? (
+					<>
+						<div className="flex w-full items-start gap-3">
+							<ItemPreviewStack
+								items={previewItems}
+								previewIndex={previewIndex}
+								expanded={expanded}
+								isIconMode
+								isFirRequired={isFirRequired}
+							/>
+							<div className="min-w-0 flex-1 text-[11px] leading-snug text-muted-foreground">
+								<RequirementSummary group={group} isFirRequired={isFirRequired} stacked />
+							</div>
+							<span className="shrink-0 text-subtle-foreground">
+								{expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+							</span>
+						</div>
 
-					<GroupHeader group={group} expanded={expanded} isIconMode={isIconMode} />
-				</div>
+						<GroupHeader group={group} expanded={expanded} isIconMode showToggle={false} />
+					</>
+				) : (
+					<>
+						<div className="flex w-full items-start gap-3">
+							<ItemPreviewStack
+								items={previewItems}
+								previewIndex={previewIndex}
+								expanded={expanded}
+								isIconMode={false}
+								isFirRequired={isFirRequired}
+							/>
 
-				<ObjectiveLabelRow group={group} isIconMode={isIconMode} isFirRequired={isFirRequired} />
+							<GroupHeader group={group} expanded={expanded} isIconMode={false} />
+						</div>
+
+						<ObjectiveLabelRow group={group} isIconMode={false} isFirRequired={isFirRequired} />
+					</>
+				)}
 			</button>
 
 			{expanded && (
@@ -225,7 +270,7 @@ export function ItemAnyOfGroupCard({ group, items, expanded, size, onToggleExpan
 						</div>
 					</div>
 
-					<GroupItemsGrid items={items} isFirRequired={isFirRequired} />
+					<GroupItemsGrid items={items} isFirRequired={isFirRequired} previewItems={size === "Expanded"} />
 				</div>
 			)}
 		</div>
