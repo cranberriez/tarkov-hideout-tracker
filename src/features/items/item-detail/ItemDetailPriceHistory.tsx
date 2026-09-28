@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { Fragment, useEffect, useMemo, useState, type MouseEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Moon, RefreshCw, Sun, type LucideIcon } from "lucide-react";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
@@ -13,6 +13,17 @@ import {
 } from "@/lib/utils/price-history";
 import type { PriceHistoryPoint } from "@/types/prices";
 import { priceHistoryQueryOptions } from "./price-history-query";
+import {
+	PRICE_CHART_STYLES,
+	rollingMedian,
+	seriesPath,
+	splitAtGaps,
+	spreadBandPath,
+	type ChartScale,
+	type PriceChartStyle,
+	type PriceSeries,
+} from "./price-chart-model";
+
 const RANGE_LABELS: Array<{ value: PriceHistoryRange; label: string }> = [
 	{ value: "day", label: "1D" },
 	{ value: "threeDays", label: "3D" },
@@ -21,26 +32,45 @@ const RANGE_LABELS: Array<{ value: PriceHistoryRange; label: string }> = [
 	{ value: "all", label: "All" },
 ];
 
+const SERIES: Array<{ value: PriceSeries; label: string; color: string; swatch: string }> = [
+	{ value: "price", label: "Aggregate", color: "var(--chart-1)", swatch: "bg-chart-1" },
+	{ value: "priceMin", label: "Minimum", color: "var(--chart-2)", swatch: "bg-chart-2" },
+];
+
+/** Chart style experiments are a development tool, not a player setting. */
+const SHOW_STYLE_PICKER = process.env.NODE_ENV === "development";
+
 interface ItemDetailPriceHistoryProps {
 	itemId: string;
 	mode: TarkovJsonGameMode;
 	onAvailabilityChange?: (hasData: boolean) => void;
 }
 
+const asSeries = (points: readonly PriceHistoryPoint[], series: PriceSeries) =>
+	series === "price" ? [...points] : points.map((point) => ({ ...point, price: point.priceMin }));
+
 export function ItemDetailPriceHistory({ itemId, mode, onAvailabilityChange }: ItemDetailPriceHistoryProps) {
 	const historyQuery = useQuery(priceHistoryQueryOptions(itemId, mode));
 	const points = historyQuery.data ?? null;
 	const [range, setRange] = useState<PriceHistoryRange>("week");
 	const [hovered, setHovered] = useState<PriceHistoryPoint | null>(null);
+	const [shown, setShown] = useState<Record<PriceSeries, boolean>>({ price: true, priceMin: false });
+	const [style, setStyle] = useState<PriceChartStyle>("lines");
+	// The aggregate stays the baseline whenever it is shown; otherwise the minimum leads.
+	const primary: PriceSeries = shown.price ? "price" : "priceMin";
 
 	useEffect(() => {
 		if (points !== null) onAvailabilityChange?.(points.length > 0);
 	}, [onAvailabilityChange, points]);
 
 	const filtered = useMemo(() => filterPriceHistory(points ?? [], range), [points, range]);
-	const visible = useMemo(() => filterPriceHistoryOutliers(filtered), [filtered]);
+	const visible = useMemo(() => {
+		// Outliers are judged on the leading series, but both series stay on each kept point.
+		const kept = new Set(filterPriceHistoryOutliers(asSeries(filtered, primary)).map((point) => point.timestamp));
+		return filtered.filter((point) => kept.has(point.timestamp));
+	}, [filtered, primary]);
 	const plotted = useMemo(() => downsamplePriceHistory(visible), [visible]);
-	const insights = useMemo(() => calculatePriceHistoryInsights(visible), [visible]);
+	const insights = useMemo(() => calculatePriceHistoryInsights(asSeries(visible, primary)), [visible, primary]);
 
 	if (historyQuery.error) {
 		return (
@@ -70,39 +100,91 @@ export function ItemDetailPriceHistory({ itemId, mode, onAvailabilityChange }: I
 	}
 
 	const displayPoint = hovered ?? visible[visible.length - 1] ?? points[points.length - 1];
+	const toggleSeries = (series: PriceSeries) =>
+		setShown((current) => {
+			const next = { ...current, [series]: !current[series] };
+			// Keep at least one series visible.
+			return next.price || next.priceMin ? next : current;
+		});
 
 	return (
 		<div className="p-3 sm:p-4">
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div>
-					<div className="font-mono text-xl font-semibold text-foreground">{formatRoubles(displayPoint.price)}</div>
+					<div className="font-mono text-xl font-semibold text-foreground">{formatRoubles(displayPoint[primary])}</div>
 					<div className="mt-0.5 text-[11px] text-muted-foreground">
-						Aggregate reference · {new Date(displayPoint.timestamp).toLocaleString()} · minimum{" "}
-						{formatRoubles(displayPoint.priceMin)} · {displayPoint.offerCount ?? "unknown"} offers
+						{primary === "price" ? "Aggregate reference" : "Minimum listing"} ·{" "}
+						{new Date(displayPoint.timestamp).toLocaleString()} · {primary === "price" ? "minimum" : "aggregate"}{" "}
+						{formatRoubles(primary === "price" ? displayPoint.priceMin : displayPoint.price)} ·{" "}
+						{displayPoint.offerCount ?? "unknown"} offers
 					</div>
 				</div>
-				<div className="flex rounded-sm border border-border-color bg-shadow/15 p-0.5">
-					{RANGE_LABELS.map((option) => (
-						<button
-							key={option.value}
-							type="button"
-							onClick={() => {
-								setRange(option.value);
-								setHovered(null);
-							}}
-							className={`rounded px-2.5 py-1.5 text-[11px] transition-colors ${
-								range === option.value
-									? "bg-highlight/10 text-foreground"
-									: "text-muted-foreground hover:text-foreground"
-							}`}
+				<div className="flex flex-wrap items-center gap-2">
+					<div className="flex rounded-sm border border-border-color bg-shadow/15 p-0.5" aria-label="Price series">
+						{SERIES.map((series) => (
+							<button
+								key={series.value}
+								type="button"
+								aria-pressed={shown[series.value]}
+								onClick={() => toggleSeries(series.value)}
+								className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11px] transition-colors ${
+									shown[series.value]
+										? "bg-highlight/10 text-foreground"
+										: "text-muted-foreground hover:text-foreground"
+								}`}
+							>
+								<span
+									className={`h-0.5 w-3 rounded-full ${shown[series.value] ? series.swatch : "bg-muted-foreground/40"}`}
+								/>
+								{series.label}
+							</button>
+						))}
+					</div>
+					{SHOW_STYLE_PICKER && (
+						<select
+							aria-label="Chart style (development)"
+							value={style}
+							onChange={(event) => setStyle(event.target.value as PriceChartStyle)}
+							className="rounded-sm border border-border-color bg-shadow/15 px-2 py-1.5 text-[11px] text-foreground"
 						>
-							{option.label}
-						</button>
-					))}
+							{PRICE_CHART_STYLES.map((option) => (
+								<option key={option.value} value={option.value}>
+									{option.label} (dev)
+								</option>
+							))}
+						</select>
+					)}
+					<div className="flex rounded-sm border border-border-color bg-shadow/15 p-0.5">
+						{RANGE_LABELS.map((option) => (
+							<button
+								key={option.value}
+								type="button"
+								onClick={() => {
+									setRange(option.value);
+									setHovered(null);
+								}}
+								className={`rounded px-2.5 py-1.5 text-[11px] transition-colors ${
+									range === option.value
+										? "bg-highlight/10 text-foreground"
+										: "text-muted-foreground hover:text-foreground"
+								}`}
+							>
+								{option.label}
+							</button>
+						))}
+					</div>
 				</div>
 			</div>
 
-			<PriceChart points={plotted} onHover={setHovered} />
+			<PriceChart
+				points={plotted}
+				shown={shown}
+				primary={primary}
+				style={style}
+				// Downsampled buckets no longer sit on sampling times, so gaps cannot be judged there.
+				bridgeGaps={plotted.length === visible.length}
+				onHover={setHovered}
+			/>
 
 			<div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
 				<RangeInsight
@@ -128,9 +210,10 @@ export function ItemDetailPriceHistory({ itemId, mode, onAvailabilityChange }: I
 				/>
 			</div>
 			<p className="mt-2 text-[10px] leading-relaxed text-muted-foreground/70">
-				The chart shows the aggregate reference and the minimum listing, with high aggregate outliers filtered; neither
-				is the flea acquisition estimate. Comparisons use the aggregate. Time-pattern comparisons use the latest 30 days
-				and your device timezone. They describe correlation, not a guaranteed buying window.
+				Aggregate is the Tarkov.dev aggregate reference; minimum is the cheapest listing. Dashed lines bridge periods
+				with no listings. High outliers are filtered and the summaries follow the leading series (the aggregate when
+				shown); neither is the flea acquisition estimate. Time-pattern comparisons use the latest 30 days and your
+				device timezone. They describe correlation, not a guaranteed buying window.
 			</p>
 		</div>
 	);
@@ -138,17 +221,27 @@ export function ItemDetailPriceHistory({ itemId, mode, onAvailabilityChange }: I
 
 function PriceChart({
 	points,
+	shown,
+	primary,
+	style,
+	bridgeGaps,
 	onHover,
 }: {
 	points: PriceHistoryPoint[];
+	shown: Record<PriceSeries, boolean>;
+	primary: PriceSeries;
+	style: PriceChartStyle;
+	bridgeGaps: boolean;
 	onHover: (point: PriceHistoryPoint | null) => void;
 }) {
 	const [activePoint, setActivePoint] = useState<PriceHistoryPoint | null>(null);
 	const width = 800;
 	const height = 290;
 	const inset = { left: 0, right: 0, top: 12, bottom: 24 };
-	// Scale to both series so the minimum-listing line always fits.
-	const prices = points.flatMap((point) => [point.price, point.priceMin]);
+	const visibleSeries = SERIES.filter((series) => shown[series.value]);
+	// The spread band always spans both series, so scale to both when it is drawn.
+	const scaled = style === "band" ? SERIES : visibleSeries;
+	const prices = points.flatMap((point) => scaled.map((series) => point[series.value]));
 	const rawMin = Math.min(...prices);
 	const rawMax = Math.max(...prices);
 	const padding = Math.max((rawMax - rawMin) * 0.1, rawMax * 0.03, 1);
@@ -156,17 +249,15 @@ function PriceChart({
 	const max = rawMax + padding;
 	const firstTime = points[0]?.timestamp ?? 0;
 	const lastTime = points[points.length - 1]?.timestamp ?? firstTime + 1;
-	const x = (timestamp: number) =>
-		inset.left + ((timestamp - firstTime) / Math.max(lastTime - firstTime, 1)) * (width - inset.left - inset.right);
-	const y = (price: number) =>
-		inset.top + (1 - (price - min) / Math.max(max - min, 1)) * (height - inset.top - inset.bottom);
-	const path = points
-		.map((point, index) => `${index === 0 ? "M" : "L"}${x(point.timestamp)},${y(point.price)}`)
-		.join(" ");
-	const area = `${path} L${x(lastTime)},${height - inset.bottom} L${x(firstTime)},${height - inset.bottom} Z`;
-	const minimumPath = points
-		.map((point, index) => `${index === 0 ? "M" : "L"}${x(point.timestamp)},${y(point.priceMin)}`)
-		.join(" ");
+	const scale: ChartScale = {
+		x: (timestamp) =>
+			inset.left + ((timestamp - firstTime) / Math.max(lastTime - firstTime, 1)) * (width - inset.left - inset.right),
+		y: (price) => inset.top + (1 - (price - min) / Math.max(max - min, 1)) * (height - inset.top - inset.bottom),
+	};
+	const segments = bridgeGaps ? splitAtGaps(points) : [points];
+	const valuesFor = (segment: PriceHistoryPoint[], series: PriceSeries) =>
+		style === "smoothed" ? rollingMedian(segment, series) : segment.map((point) => point[series]);
+	const baseline = height - inset.bottom;
 
 	const handleMove = (event: MouseEvent<SVGSVGElement>) => {
 		if (points.length === 0) return;
@@ -187,18 +278,22 @@ function PriceChart({
 	return (
 		<div className="mt-3 overflow-hidden rounded-lg border border-border-color bg-shadow/15">
 			<div className="flex gap-3 px-2.5 pt-2 text-[10px] text-muted-foreground" aria-hidden="true">
-				<span className="flex items-center gap-1.5">
-					<span className="h-0.5 w-3 rounded-full bg-chart-1" /> Aggregate
-				</span>
-				<span className="flex items-center gap-1.5">
-					<span className="h-0.5 w-3 rounded-full bg-chart-2" /> Minimum listing
-				</span>
+				{visibleSeries.map((series) => (
+					<span key={series.value} className="flex items-center gap-1.5">
+						<span className={`h-0.5 w-3 rounded-full ${series.swatch}`} /> {series.label}
+					</span>
+				))}
+				{style === "band" && (
+					<span className="flex items-center gap-1.5">
+						<span className="h-2 w-3 rounded-sm bg-chart-2/20" /> Spread
+					</span>
+				)}
 			</div>
 			<svg
 				viewBox={`0 0 ${width} ${height}`}
 				className="block h-auto w-full touch-none"
 				role="img"
-				aria-label="Flea market price history: aggregate reference and minimum listing"
+				aria-label={`Flea market price history: ${visibleSeries.map((series) => series.label.toLowerCase()).join(" and ")}`}
 				onMouseMove={handleMove}
 				onMouseLeave={() => {
 					setActivePoint(null);
@@ -222,46 +317,97 @@ function PriceChart({
 						className="text-foreground/[0.055]"
 					/>
 				))}
-				<path d={area} fill="url(#price-history-area)" />
-				<path d={path} fill="none" stroke="var(--chart-1)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
-				<path
-					d={minimumPath}
-					fill="none"
-					stroke="var(--chart-2)"
-					strokeWidth="1.75"
-					vectorEffect="non-scaling-stroke"
-				/>
+				{segments.map((segment) => {
+					if (style === "band")
+						return (
+							<path
+								key={segment[0].timestamp}
+								d={spreadBandPath(segment, scale)}
+								fill="var(--chart-2)"
+								fillOpacity="0.16"
+							/>
+						);
+					if (primary !== "price" || segment.length < 2) return null;
+					const first = scale.x(segment[0].timestamp);
+					const last = scale.x(segment[segment.length - 1].timestamp);
+					const line = seriesPath(segment, valuesFor(segment, "price"), scale, style === "step");
+					return (
+						<path
+							key={segment[0].timestamp}
+							d={`${line} L${last},${baseline} L${first},${baseline} Z`}
+							fill="url(#price-history-area)"
+						/>
+					);
+				})}
+				{visibleSeries.map((series) => (
+					<g key={series.value}>
+						{segments.map((segment, index) => {
+							const values = valuesFor(segment, series.value);
+							const previous = segments[index - 1];
+							return (
+								<Fragment key={segment[0].timestamp}>
+									{previous && (
+										// No listings were recorded in between: bridge without inventing prices.
+										<line
+											x1={scale.x(previous[previous.length - 1].timestamp)}
+											y1={scale.y(valuesFor(previous, series.value).at(-1)!)}
+											x2={scale.x(segment[0].timestamp)}
+											y2={scale.y(values[0])}
+											stroke={series.color}
+											strokeOpacity="0.5"
+											strokeWidth="1.25"
+											strokeDasharray="4 4"
+											vectorEffect="non-scaling-stroke"
+										/>
+									)}
+									<path
+										d={seriesPath(segment, values, scale, style === "step")}
+										fill="none"
+										stroke={series.color}
+										strokeWidth={series.value === primary ? 2.5 : 1.75}
+										vectorEffect="non-scaling-stroke"
+									/>
+								</Fragment>
+							);
+						})}
+						{style === "smoothed" &&
+							points.map((point) => (
+								<circle
+									key={point.timestamp}
+									cx={scale.x(point.timestamp)}
+									cy={scale.y(point[series.value])}
+									r="1.5"
+									fill={series.color}
+									fillOpacity="0.35"
+								/>
+							))}
+					</g>
+				))}
 				{activePoint && (
 					<>
 						<line
-							x1={x(activePoint.timestamp)}
-							x2={x(activePoint.timestamp)}
+							x1={scale.x(activePoint.timestamp)}
+							x2={scale.x(activePoint.timestamp)}
 							y1={0}
-							y2={height - inset.bottom}
+							y2={baseline}
 							stroke="currentColor"
 							strokeWidth="1"
 							strokeDasharray="4 4"
 							className="text-foreground/30"
 							vectorEffect="non-scaling-stroke"
 						/>
-						<circle
-							cx={x(activePoint.timestamp)}
-							cy={y(activePoint.priceMin)}
-							r="3.5"
-							fill="var(--chart-2)"
-							stroke="var(--shadow)"
-							strokeWidth="2"
-							vectorEffect="non-scaling-stroke"
-						/>
-						<circle
-							cx={x(activePoint.timestamp)}
-							cy={y(activePoint.price)}
-							r="4"
-							fill="var(--chart-1)"
-							stroke="var(--shadow)"
-							strokeWidth="2"
-							vectorEffect="non-scaling-stroke"
-						/>
+						{visibleSeries.map((series) => (
+							<circle
+								key={series.value}
+								cx={scale.x(activePoint.timestamp)}
+								cy={scale.y(activePoint[series.value])}
+								r={series.value === primary ? 4 : 3.5}
+								fill={series.color}
+								stroke="var(--shadow)"
+								strokeWidth="2"
+								vectorEffect="non-scaling-stroke"
+							/>
+						))}
 					</>
 				)}
 				<text x={8} y={height - 7} fill="currentColor" className="text-[10px] text-muted-foreground">

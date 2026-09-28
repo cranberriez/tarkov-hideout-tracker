@@ -246,8 +246,9 @@ releaseId field; they are cache identities, not selectable releases. The
 [development dashboard](../src/app/dev/page.tsx) shows current counts and status.
 
 The History tab still fetches [upstream history](../src/server/prices/live-price-history.ts)
-on demand with its two-hour cache. Its chart plots the upstream aggregate reference and
-the minimum listing (the series pricing and analytics use); insights use the aggregate.
+on demand with its two-hour cache. Its chart shows the upstream aggregate reference by
+default, with the minimum listing (the series pricing and analytics use) as a toggle;
+dashed lines bridge periods with no listings, and insights follow the leading series.
 Repository stored history returns only the bounded recent window. Player storage, map services, and browser mode keys are
 unchanged.
 
