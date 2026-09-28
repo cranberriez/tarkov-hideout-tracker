@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { loadLocalEnv } from "./lib/config.mjs";
+import { matchesAppliedChecksum, migrationChecksum } from "./lib/migration-checksum.mjs";
 
 const { Client } = pg;
 const directory = path.dirname(fileURLToPath(import.meta.url));
@@ -37,14 +37,14 @@ async function main() {
 		const files = (await fs.readdir(migrationDirectory)).filter((name) => /^\d+_[a-z0-9_-]+\.sql$/.test(name)).sort();
 		for (const filename of files) {
 			const source = await fs.readFile(path.join(migrationDirectory, filename), "utf8");
-			const checksum = createHash("sha256").update(source).digest("hex");
+			const checksum = migrationChecksum(source);
 			if (applied.has(filename)) {
 				if (applied.get(filename) === null) {
 					await client.query("UPDATE schema_migrations SET checksum=$2 WHERE migration_name=$1 AND checksum IS NULL", [
 						filename,
 						checksum,
 					]);
-				} else if (applied.get(filename) !== checksum)
+				} else if (!matchesAppliedChecksum(source, applied.get(filename)))
 					throw new Error(`Applied migration ${filename} was modified; add a new migration instead`);
 				continue;
 			}

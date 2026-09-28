@@ -149,7 +149,8 @@ directory first). Keep logs and reports local; never include environment values.
 ## Current dataset dashboard
 
 The development-only [/dev page](../src/app/dev/page.tsx) displays current status,
-counts, content version and freshness by mode. The API keeps releaseId only as a
+counts, content version and freshness by mode, plus the latest price push, market
+analysis runs and biggest movers. The API keeps releaseId only as a
 compatibility field containing the string content version. It is not a release
 lifecycle. Search's stale-token protocol remains unchanged.
 
@@ -170,6 +171,11 @@ continues its independent on-demand upstream fetch.
 [vercel.json](../vercel.json) and [cron auth](../src/server/prices/cron.ts) retain
 the existing schedule and CRON_SECRET. Check hosting execution-duration limits
 and external jobs at deployment; none are implicitly provisioned here.
+
+The Dockerized [market-analyzer worker](../market-analyzer/README.md) is the frequent
+refresh path: Seasonal near-live, regular/PVE every six hours, pushed hourly, plus
+derived analytics. It shares the per-mode lease, so it and the daily crons never
+write concurrently. Keep the crons until the worker has run reliably on the VPS.
 
 ### Flea stability evidence and validation
 

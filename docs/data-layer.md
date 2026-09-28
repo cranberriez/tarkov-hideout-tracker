@@ -149,19 +149,19 @@ Shared route helpers in [src/app/api/_lib](../src/app/api/_lib/) own mode and it
 parameter parsing, database error responses, and the named
 [Cache-Control presets](../src/app/api/_lib/cache-control.ts) used below.
 
-| API / owner                                                                                                                                                      | Result and cache policy                                                                                                                                            |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [prices](../src/app/api/items/prices/route.ts)                                                                                                                   | GET with explicit mode and 1–200 IDs or named checklist/recipes scope; browser 300s, CDN 3600s; legacy POST remains private/no-store                               |
-| [relations](../src/app/api/items/[itemId]/relations/route.ts)                                                                                                    | Hideout requirements, quest demand/rewards and availability closure; private, no-store; current offers are hydrated on every request                               |
-| [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and recipes producing one item, referenced items and source labels; private, no-store; current offers are hydrated on every request        |
-| [acquisition-tree](../src/app/api/items/[itemId]/acquisition-tree/route.ts)                                                                                      | Cycle-safe graph bounded by depth/item count with `truncated`; private, no-store; current offers are hydrated on every request                                     |
-| [price-history](../src/app/api/items/[itemId]/price-history/route.ts)                                                                                            | On-demand provider history; browser 300s, CDN and upstream Next.js fetch cache 7200s                                                                               |
-| [search](../src/app/api/items/search/route.ts)                                                                                                                   | Required mode and `q` up to 80 characters, normalized for matching; 10 results by default or 50 with `limit=50`; `private, no-store`                               |
-| [status](../src/app/api/data/status/route.ts)                                                                                                                    | Mode/release identity, hideout/item/quest/craft/barter release freshness, and independent mutable-price change/check timestamps; `private, no-store`               |
-| [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); `private, no-store`                                                     |
+| API / owner                                                                                                                                                      | Result and cache policy                                                                                                                                                           |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [prices](../src/app/api/items/prices/route.ts)                                                                                                                   | GET with explicit mode and 1–200 IDs or named checklist/recipes scope; browser 300s, CDN 3600s; legacy POST remains private/no-store                                              |
+| [relations](../src/app/api/items/[itemId]/relations/route.ts)                                                                                                    | Hideout requirements, quest demand/rewards and availability closure; private, no-store; current offers are hydrated on every request                                              |
+| [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and recipes producing one item, referenced items and source labels; private, no-store; current offers are hydrated on every request                       |
+| [acquisition-tree](../src/app/api/items/[itemId]/acquisition-tree/route.ts)                                                                                      | Cycle-safe graph bounded by depth/item count with `truncated`; private, no-store; current offers are hydrated on every request                                                    |
+| [price-history](../src/app/api/items/[itemId]/price-history/route.ts)                                                                                            | On-demand provider history; browser 300s, CDN and upstream Next.js fetch cache 7200s                                                                                              |
+| [search](../src/app/api/items/search/route.ts)                                                                                                                   | Required mode and `q` up to 80 characters, normalized for matching; 10 results by default or 50 with `limit=50`; `private, no-store`                                              |
+| [status](../src/app/api/data/status/route.ts)                                                                                                                    | Mode/release identity, hideout/item/quest/craft/barter release freshness, and independent mutable-price change/check timestamps; `private, no-store`                              |
+| [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); `private, no-store`                                                                    |
 | [page data](../src/app/api/page-data/)                                                                                                                           | Mode-specific Hideout, Items, Quests, Kappa, and shared Profit payloads; unpriced profit: `no-store`; other complete unpriced: browser 300s, CDN 3600s; partial/error: `no-store` |
-| [map APIs](../src/app/api/maps/)                                                                                                                                 | Committed map metadata, navigation overlays, and allow-listed SVG service; see [maps](maps.md)                                                                     |
-| [price cron APIs](../src/app/api/cron/prices/)                                                                                                                   | Protected mutable-price refresh; see [operations](operations.md)                                                                                                   |
+| [map APIs](../src/app/api/maps/)                                                                                                                                 | Committed map metadata, navigation overlays, and allow-listed SVG service; see [maps](maps.md)                                                                                    |
+| [price cron APIs](../src/app/api/cron/prices/)                                                                                                                   | Protected mutable-price refresh; see [operations](operations.md)                                                                                                                  |
 
 All item-view responses use `no-store` so catalog versions cannot freeze current offers; the item-detail queries expose their
 payload through a typed partial-data error rather than entering it as reusable
@@ -218,6 +218,13 @@ Accepted reference/offer changes also advance `last_changed_at`; identical,
 missing-only and older catalog inputs leave it unchanged. This keeps the status
 API accurate even when flea checks return 304.
 
+The [market-analyzer worker](../market-analyzer/README.md) writes through this same
+store and lease, reusing the shared normalization and outcome derivation. It keeps
+full upstream histories only in its own disk cache, pushes changed items hourly,
+and does not write not-modified checks. Its derived analytics are append-only rows in
+market_analysis_runs and item_market_observations (migration 0002); only the
+development dashboard reads them so far.
+
 [price-data.ts](../src/server/db/price-data.ts) assembles CurrentPrice from catalog
 reference fields and recomputes the existing effective-price/stability model from
 recent samples, including age checks. Unknown remains null; explicit zero-depth
@@ -239,8 +246,14 @@ releaseId field; they are cache identities, not selectable releases. The
 [development dashboard](../src/app/dev/page.tsx) shows current counts and status.
 
 The History tab still fetches [upstream history](../src/server/prices/live-price-history.ts)
-on demand with its two-hour cache. Repository stored history returns only the
-bounded recent window. Player storage, map services, and browser mode keys are
+on demand with its two-hour cache. Its chart shows the upstream aggregate reference by
+default, with the minimum listing (the series pricing and analytics use) as a toggle.
+1M and All plot 12-hour and daily UTC buckets summarised like Tarkov.dev's own daily
+aggregates (mean aggregate, lowest minimum, mean offers), so both history eras match;
+hover shows the bucket interval and observation count. Dashed lines bridge periods with
+no data recorded by Tarkov.dev (no listings, an upstream outage or a skipped scan: the
+history cannot tell which). Insights use raw points and follow the leading series.
+Repository stored history returns only the bounded recent window. Player storage, map services, and browser mode keys are
 unchanged.
 
 ## Catalog discovery

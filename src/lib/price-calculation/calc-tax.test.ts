@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calcTax, fleaTargetPrice, itemBasePrice, INTELLIGENCE_CENTER_ID } from "./calc-tax";
+import { calcTax, fleaMaxNetPrice, fleaTargetPrice, itemBasePrice, INTELLIGENCE_CENTER_ID } from "./calc-tax";
 import { getItemBuyPrice, getItemSellComparison } from "./prices";
 import type { ItemSummary } from "@/types/items";
 
@@ -62,4 +62,14 @@ test("target price meets return after nonlinear fees, including unreachable targ
 	assert.ok(target * 8 - calcTax(10_000, target, 8)! >= 88_000);
 	assert.ok((target - 1) * 8 - calcTax(10_000, target - 1, 8)! < 88_000);
 	assert.equal(fleaTargetPrice(10_000, 1, 1e15), null);
+});
+
+test("max-net listing is the peak of net proceeds", () => {
+	const peak = fleaMaxNetPrice(10_000)!;
+	const net = (price: number) => price - calcTax(10_000, price)!;
+	assert.ok(peak > 10_000);
+	assert.ok(net(peak) >= net(Math.round(peak * 0.9)));
+	assert.ok(net(peak) >= net(Math.round(peak * 1.1)));
+	assert.equal(fleaTargetPrice(10_000, 1, net(peak) + 50), null);
+	assert.equal(fleaMaxNetPrice(0), null);
 });

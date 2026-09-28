@@ -18,7 +18,7 @@ export interface RefreshPriceModeOptions {
 	onProgress?: (checked: number, eligible: number) => void;
 }
 
-async function fetchNormalizedCatalogPrices(mode: TarkovDataMode): Promise<CatalogPriceRecord[]> {
+export async function fetchNormalizedCatalogPrices(mode: TarkovDataMode): Promise<CatalogPriceRecord[]> {
 	const response = await getGlobalItemList(mode);
 	return response.data.items.map(toCatalogPriceRecord);
 }
@@ -39,6 +39,34 @@ async function mapWithConcurrency<T, Result>(
 		}),
 	);
 	return results;
+}
+
+/** Validates an upstream history and derives the bounded working window stored as the current price. */
+export function buildUpdatedPriceOutcome(
+	itemId: string,
+	history: unknown,
+	etag: string | null,
+	checkedAt: number,
+	previousLatestTimestamp: number | null,
+): Extract<PriceRefreshOutcome, { status: "updated" }> {
+	const points = normalizePriceHistory(history, true).slice(-STORED_PRICE_POINT_LIMIT);
+	const derived = deriveEffectivePrice(points);
+	if (points.length === 0 || (derived.effectivePrice === null && points.at(-1)?.offerCount !== 0)) {
+		throw new Error("Price endpoint returned no usable points");
+	}
+	if (points[points.length - 1].timestamp < (previousLatestTimestamp ?? 0)) {
+		throw new Error("Price endpoint returned older observations than current storage");
+	}
+	return {
+		status: "updated",
+		itemId,
+		etag,
+		checkedAt,
+		points,
+		effectivePrice: derived.effectivePrice,
+		sampleCount: derived.sampleCount,
+		totalOfferCount: derived.totalOfferCount,
+	};
 }
 
 export async function refreshPriceMode({
@@ -119,24 +147,13 @@ export async function refreshPriceMode({
 								checkedAt,
 							};
 						}
-						const points = normalizePriceHistory(response.data, true).slice(-STORED_PRICE_POINT_LIMIT);
-						const derived = deriveEffectivePrice(points);
-						if (points.length === 0 || (derived.effectivePrice === null && points.at(-1)?.offerCount !== 0)) {
-							throw new Error("Price endpoint returned no usable points");
-						}
-						if (points[points.length - 1].timestamp < (syncStates[itemId]?.latestPointTimestamp ?? 0)) {
-							throw new Error("Price endpoint returned older observations than current storage");
-						}
-						return {
-							status: "updated",
+						return buildUpdatedPriceOutcome(
 							itemId,
-							etag: response.etag,
+							response.data,
+							response.etag,
 							checkedAt,
-							points,
-							effectivePrice: derived.effectivePrice,
-							sampleCount: derived.sampleCount,
-							totalOfferCount: derived.totalOfferCount,
-						};
+							syncStates[itemId]?.latestPointTimestamp ?? null,
+						);
 					} catch (error) {
 						return {
 							status: "failed",

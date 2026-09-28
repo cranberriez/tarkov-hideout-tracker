@@ -53,6 +53,14 @@ interface UpstreamPriceResponse {
 	data?: unknown;
 }
 
+/** Upstream HTTP failure; a 404 means the item has no flea history in that mode. */
+export class PriceHistoryHttpError extends Error {
+	constructor(readonly status: number) {
+		super(`Price history request failed with status ${status}`);
+		this.name = "PriceHistoryHttpError";
+	}
+}
+
 export type PriceHistoryFetchResult =
 	| { status: "not-modified"; etag: string | null }
 	| { status: "updated"; etag: string | null; data: PriceHistoryPoint[] };
@@ -74,7 +82,7 @@ export async function fetchJsonPriceHistory(
 		return { status: "not-modified", etag: responseEtag };
 	}
 	if (!response.ok) {
-		throw new Error(`Price history request failed with status ${response.status}`);
+		throw new PriceHistoryHttpError(response.status);
 	}
 	const body = (await response.json()) as UpstreamPriceResponse;
 	return {

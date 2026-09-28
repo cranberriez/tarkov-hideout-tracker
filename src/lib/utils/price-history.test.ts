@@ -1,11 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-	calculatePriceHistoryInsights,
-	downsamplePriceHistory,
-	filterPriceHistory,
-	filterPriceHistoryOutliers,
-} from "./price-history";
+import { calculatePriceHistoryInsights, filterPriceHistory, filterPriceHistoryOutliers } from "./price-history";
 import type { PriceHistoryPoint } from "@/types/prices";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -25,14 +20,6 @@ test("filters ranges relative to the newest upstream point", () => {
 	assert.equal(filterPriceHistory(points, "week").length, 8);
 	assert.equal(filterPriceHistory(points, "month").length, 31);
 	assert.equal(filterPriceHistory(points, "all").length, 40);
-});
-
-test("downsamples long histories into representative bucket averages", () => {
-	const points = Array.from({ length: 100 }, (_, index) => point(index, 1000 + index));
-	const sampled = downsamplePriceHistory(points, 10);
-	assert.equal(sampled.length, 10);
-	assert.equal(sampled[0].price, 1004.5);
-	assert.equal(sampled[9].price, 1094.5);
 });
 
 test("keeps ordinary price movement when filtering outliers", () => {

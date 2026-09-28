@@ -51,6 +51,9 @@ export interface PriceRefreshSummary {
 	error?: string;
 	catalogPriceStatus?: "updated" | "failed";
 	catalogPriceError?: string;
+	/** Set by the market-analyzer worker; its counts cover every poll since its previous push. */
+	source?: "worker";
+	excludedCount?: number;
 }
 
 export interface PriceRefreshStore {
