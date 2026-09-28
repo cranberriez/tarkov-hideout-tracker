@@ -9,6 +9,7 @@ import { analyzeMode, seedAnalysisState } from "./analysis";
 import { PostgresAnalyticsStore } from "./analytics-store";
 import { loadConfig, parseModes, type WorkerConfig } from "./config";
 import { flushMode } from "./flush";
+import { log, parseLogFormat, setLogFormat } from "./log";
 import { pollMode } from "./poll";
 import { intervalDue, periodDue } from "./schedule";
 import { databaseHint, describeDatabaseTarget, describeError } from "./errors";
@@ -35,10 +36,6 @@ interface Heartbeat {
 	at: number;
 	modes: TarkovDataMode[];
 	failing: Partial<Record<TarkovDataMode, { since: number; lastAttemptAt: number; error: string }>>;
-}
-
-function log(event: string, fields: Record<string, unknown> = {}) {
-	console.log(JSON.stringify({ at: new Date().toISOString(), event, ...fields }));
 }
 
 class MarketWorker {
@@ -294,6 +291,7 @@ function modesArgument(args: readonly string[]): TarkovDataMode[] | null {
 
 async function main() {
 	if (fs.existsSync(".env")) process.loadEnvFile(".env");
+	setLogFormat(parseLogFormat(process.env.MARKET_LOG_FORMAT));
 	const [command = "run", ...args] = process.argv.slice(2);
 	const config = loadConfig();
 	config.modes = modesArgument(args) ?? config.modes;

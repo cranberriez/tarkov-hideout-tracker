@@ -75,8 +75,9 @@ Commands (use `docker compose run --rm market-analyzer <command>` or `exec`):
 
 Configuration is in [.sample.env](.sample.env); only `DATABASE_URL` is required. Inside the
 container `localhost` is the container itself: for a database on the Docker host use
-`host.docker.internal` (mapped in compose.yml). Logs are JSON lines; errors include their
-underlying cause.
+`host.docker.internal` (mapped in compose.yml). Logs are JSON lines by default;
+`MARKET_LOG_FORMAT=pretty` prints one readable line per event, and errors add indented lines
+with their underlying cause and hints.
 
 - **One worker per volume**: `/data/worker.lock` makes a second worker on the same volume
   refuse to start (`state-directory-locked`); a restarted container reclaims its own lock.
