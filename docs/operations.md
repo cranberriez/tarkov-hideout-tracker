@@ -171,6 +171,11 @@ continues its independent on-demand upstream fetch.
 the existing schedule and CRON_SECRET. Check hosting execution-duration limits
 and external jobs at deployment; none are implicitly provisioned here.
 
+The Dockerized [market-analyzer worker](../market-analyzer/README.md) is the frequent
+refresh path: Seasonal near-live, regular/PVE every six hours, pushed hourly, plus
+derived analytics. It shares the per-mode lease, so it and the daily crons never
+write concurrently. Keep the crons until the worker has run reliably on the VPS.
+
 ### Flea stability evidence and validation
 
 On September 5, 2026, read-only inspection of the configured release

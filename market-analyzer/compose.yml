@@ -1,0 +1,22 @@
+services:
+  market-analyzer:
+    build:
+      context: ..
+      dockerfile: market-analyzer/Dockerfile
+    image: tarkov-market-analyzer
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MARKET_STATE_DIR: /data
+    volumes:
+      - market-data:/data
+    # Lets an in-flight poll chunk or flush finish on shutdown.
+    stop_grace_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  market-data:

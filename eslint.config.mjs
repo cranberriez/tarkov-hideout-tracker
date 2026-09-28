@@ -65,6 +65,8 @@ const eslintConfig = defineConfig([
 		"out/**",
 		"build/**",
 		"next-env.d.ts",
+		// Generated worker bundle.
+		"market-analyzer/dist/**",
 	]),
 ]);
 

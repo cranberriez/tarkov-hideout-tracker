@@ -19,6 +19,7 @@ These eight files (including this index) are the current behavior reference set.
 The [PostgreSQL migration](postgresql-migration.md) records the agreed architecture.
 The [production cutover runbook](postgresql-cutover.md) separates deployment,
 readiness and rollback from implementation. The [database tooling README](../db-scripts/README.md) owns detailed ingestion CLI
-usage. Research notes and [wiki source](../wiki-src/) are non-authoritative working
+usage. The [market-analyzer README](../market-analyzer/README.md) owns the VPS price
+worker and its analytics. Research notes and [wiki source](../wiki-src/) are non-authoritative working
 material; verify against source before using them. Git history retains superseded
 documentation.
