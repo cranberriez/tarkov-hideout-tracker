@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { StationImage } from "@/components/entities/station-image";
 import { DetailSection } from "@/components/ui/detail-section";
 import { stationHref } from "@/lib/entity-routes";
@@ -14,16 +14,25 @@ import { findRequiredStation } from "../../station-model";
 const rowClassName = "flex items-center gap-2.5 rounded-sm px-1.5 py-1.5 text-sm";
 
 /** Name, required level, and a green check when met. Unmet station levels read red; skills and traders are untracked. */
-function PrerequisiteRow({ icon, name, level, met }: { icon: ReactNode; name: string; level: string; met: boolean | null }) {
+function PrerequisiteRow({
+	icon,
+	name,
+	level,
+	met,
+}: {
+	icon: ReactNode;
+	name: string;
+	level: string;
+	met: boolean | null;
+}) {
 	return (
 		<>
 			{icon}
 			<span className="min-w-0 flex-1 truncate text-foreground">{name}</span>
-			<span className={cn("font-mono text-xs font-semibold", met === false ? "text-danger" : "text-muted-foreground")}>
-				{level}
-			</span>
+			<span className={cn("font-mono text-xs font-semibold text-muted-foreground")}>{level}</span>
 			<span className="flex w-3.5 justify-end">
 				{met && <Check size={14} aria-label="Met" className="text-success" />}
+				{!met && <X size={14} aria-label="Not met" className="text-danger" />}
 			</span>
 		</>
 	);

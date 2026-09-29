@@ -34,7 +34,7 @@ export function LevelControls({
 			? { label: `Level ${currentLevel} prerequisites are no longer met`, className: "text-danger" }
 			: ready
 				? { label: `Everything for level ${currentLevel + 1} is ready`, className: "text-success" }
-				: { label: `Level ${currentLevel + 1} still has missing requirements`, className: "text-muted-foreground" };
+				: { label: `Level ${currentLevel + 1} still has missing requirements`, className: "text-danger" };
 
 	return (
 		<div className="flex flex-col gap-2.5">
@@ -52,11 +52,7 @@ export function LevelControls({
 							key={index}
 							className={cn(
 								"h-1.5 w-5 rounded-full",
-								index < currentLevel
-									? "bg-brand"
-									: index === currentLevel && ready
-										? "bg-brand/35"
-										: "bg-highlight/10",
+								index < currentLevel ? "bg-brand" : index === currentLevel && ready ? "bg-brand/35" : "bg-highlight/10",
 							)}
 						/>
 					))}
