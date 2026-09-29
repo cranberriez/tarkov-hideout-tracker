@@ -144,11 +144,11 @@ export function BitcoinFarmPanel({
 		body = (
 			<>
 				<div className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-lg bg-shadow/20 px-4 py-3">
-					<div className="flex min-w-0 basis-full items-center gap-x-6 md:min-w-72 md:flex-1 md:basis-0">
+					<div className="flex min-w-0 flex-[1_1_18rem] items-center gap-x-6">
 						<GpuCountControl key={`${mode}:${slots}`} slots={slots} count={gpus} onChange={setGpus} />
 						<GpuSlotColumns slots={slots} count={gpus} />
 					</div>
-					<div className="flex flex-wrap md:ml-auto gap-x-6 gap-y-3">
+					<div className="flex flex-[1_1_34rem] flex-wrap justify-between gap-x-6 gap-y-3">
 						<Stat label="Time to produce 1 BTC">{figures ? formatSpan(figures.secondsPerBitcoin) : "—"}</Stat>
 						<Stat label="BTC / day">{figures ? figures.bitcoinPerDay.toFixed(3) : "—"}</Stat>
 						<Stat label="Est. profit / day">{loading ? "…" : formatRoubles(profitPerDay)}</Stat>
