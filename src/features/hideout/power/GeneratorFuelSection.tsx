@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { DataNotice } from "@/components/ui/data-notice";
 import { BASE_FUEL_UNITS_PER_HOUR, FUEL_TANK_ITEM_IDS } from "@/lib/cfg/hideout-power";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
@@ -11,8 +11,9 @@ import { useStationDetails } from "../details/StationDetailsContext";
 import { FuelTankCards } from "./FuelTankCards";
 import { fuelMultiplier, stationSlots, unbuiltFuelSources } from "./hideout-power-model";
 import { formatRoubles, formatSpan } from "./power-format";
-import { burnSummary, formatPercent, FuelUnitsInput, groupFuelSources } from "./StationPowerRow";
+import { burnSummary, formatPercent, groupFuelSources } from "./StationPowerRow";
 import { useHideoutPower } from "./useHideoutPower";
+import { PowerSkills } from "./PowerSkills";
 
 function Row({ label, value, muted = false }: { label: ReactNode; value: ReactNode; muted?: boolean }) {
 	return (
@@ -23,7 +24,7 @@ function Row({ label, value, muted = false }: { label: ReactNode; value: ReactNo
 	);
 }
 
-/** Generator page: burn modifiers, slot capacity, running costs and a power-out timer. */
+/** Generator page: burn modifiers, slot capacity and running costs. */
 export function GeneratorFuelSection({
 	mode,
 	fallbackData,
@@ -33,7 +34,6 @@ export function GeneratorFuelSection({
 }) {
 	const { station, stations, currentLevel } = useStationDetails();
 	const power = useHideoutPower(mode, fallbackData, stations);
-	const [fuelUnits, setFuelUnits] = useState(0);
 	const { fuel, hideoutManagementSkillLevel: skillLevel, stationLevels } = power;
 	const skill = Math.min(50, skillLevel);
 	const loading = power.pricing === "loading";
@@ -59,13 +59,19 @@ export function GeneratorFuelSection({
 	const metal = power.tanks.find((tank) => tank.id === FUEL_TANK_ITEM_IDS[0]);
 
 	return (
-		<WikiSection title="Fuel" description={burnSummary(fuel, skillLevel)} bodyClassName="flex flex-col gap-4">
+		<WikiSection
+			title="Fuel"
+			description={burnSummary(fuel, skillLevel)}
+			actions={<PowerSkills />}
+			bodyClassName="flex flex-col gap-4"
+		>
 			{fuel.bonusDataMissing && (
-				<DataNotice>Fuel modifiers (Solar Power, Defective Wall) are unavailable; showing the base burn rate.</DataNotice>
+				<DataNotice>
+					Fuel modifiers (Solar Power, Defective Wall) are unavailable; showing the base burn rate.
+				</DataNotice>
 			)}
 			{power.pricing === "unavailable" && <DataNotice>{power.unavailableReason}</DataNotice>}
 			<FuelTankCards tanks={power.tanks} loading={loading} />
-			<FuelUnitsInput fuelUnits={fuelUnits} onChange={setFuelUnits} fuel={fuel} />
 
 			<div className="grid gap-6 md:grid-cols-2">
 				<div>

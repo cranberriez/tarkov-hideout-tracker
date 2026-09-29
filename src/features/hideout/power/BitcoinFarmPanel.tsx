@@ -9,11 +9,11 @@ import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import type { ProfitPageData } from "@/types/contracts";
 import { WikiSection } from "../details/components/WikiSection";
 import { useStationDetails } from "../details/StationDetailsContext";
-import { bitcoinFarmFigures, comeBackBy, secondsUntilFull } from "./bitcoin-farm-model";
+import { bitcoinFarmFigures, secondsUntilFull } from "./bitcoin-farm-model";
 import { GpuSlotGrid } from "./GpuSlotGrid";
 import { stationSlots } from "./hideout-power-model";
 import { formatRoubles, formatSpan, useNow } from "./power-format";
-import { Countdown, powerOutSeconds, StationPowerRow } from "./StationPowerRow";
+import { Countdown, StationPowerRow } from "./StationPowerRow";
 import { useHideoutPower } from "./useHideoutPower";
 
 function Stat({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
@@ -32,8 +32,8 @@ function formatDays(hours: number | null) {
 }
 
 /**
- * Bitcoin Farm station page: Power row, then the calculator. Installed cards, generator
- * fuel, stored coins and progress are page-local and never persisted.
+ * Bitcoin Farm station page: Generator row, then the calculator. Installed cards,
+ * stored coins and progress are page-local and never persisted.
  */
 export function BitcoinFarmPanel({
 	mode,
@@ -46,7 +46,6 @@ export function BitcoinFarmPanel({
 	const power = useHideoutPower(mode, fallbackData, stations);
 	const now = useNow();
 	const [gpuInput, setGpus] = useState(0);
-	const [fuelUnits, setFuelUnits] = useState(0);
 	const [stored, setStored] = useState(0);
 	const [progress, setProgress] = useState(0);
 	const slots = stationSlots(station, currentLevel, GRAPHICS_CARD_ITEM_ID);
@@ -66,7 +65,6 @@ export function BitcoinFarmPanel({
 	const fullSeconds = figures
 		? secondsUntilFull({ secondsPerBitcoin: figures.secondsPerBitcoin, stored, progress: progress / 100 })
 		: null;
-	const comeBack = comeBackBy(fullSeconds, powerOutSeconds(fuelUnits, power.fuel));
 
 	let body: ReactNode;
 	if (currentLevel < 1) {
@@ -143,15 +141,6 @@ export function BitcoinFarmPanel({
 											<span className="text-warning">Full: production has stopped until you collect.</span>
 										))}
 								</div>
-								{comeBack && comeBack.seconds > 0 && (
-									<p className="text-sm text-foreground">
-										<Countdown label="Come back in" seconds={comeBack.seconds} now={now} />
-										<span className="text-muted-foreground">
-											{" "}
-											({comeBack.reason === "power" ? "power runs out" : "farm is full"})
-										</span>
-									</p>
-								)}
 							</div>
 						</>
 					)
@@ -162,7 +151,7 @@ export function BitcoinFarmPanel({
 
 	return (
 		<>
-			<StationPowerRow power={power} fuelUnits={fuelUnits} onFuelUnitsChange={setFuelUnits} />
+			<StationPowerRow power={power} />
 			<WikiSection
 				title="Bitcoin Farm"
 				description={

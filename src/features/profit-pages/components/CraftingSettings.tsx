@@ -59,7 +59,7 @@ export function CraftingSettings({
 	);
 }
 
-function SkillRow({
+export function SkillRow({
 	id,
 	label,
 	level,
@@ -69,6 +69,7 @@ function SkillRow({
 	reduction,
 	reductionLabel,
 	eliteNote,
+	inputClassName,
 }: {
 	id: string;
 	label: string;
@@ -79,6 +80,7 @@ function SkillRow({
 	reduction: (level: number) => number;
 	reductionLabel: string;
 	eliteNote?: string;
+	inputClassName?: string;
 }) {
 	const elite = level === 51;
 	const [draft, setDraft] = useState(String(Math.min(level, 50)));
@@ -123,7 +125,10 @@ function SkillRow({
 						clearTimeout(timer.current);
 						if (!elite) validate(draft);
 					}}
-					className="h-8 w-12 rounded border border-highlight/15 bg-[var(--background)] px-2 text-center outline-none focus:border-brand/60 disabled:opacity-50"
+					className={
+						inputClassName ??
+						"h-8 w-12 rounded border border-highlight/15 bg-[var(--background)] px-2 text-center outline-none focus:border-brand/60 disabled:opacity-50"
+					}
 				/>
 				<span
 					className="whitespace-nowrap text-xs text-brand"

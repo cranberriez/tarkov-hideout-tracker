@@ -314,10 +314,24 @@ modeled in recipe profit.
 
 The station page's streamed recipe slot
 ([StationRecipeSections](../src/features/hideout/details/crafts/StationRecipeSections.tsx))
-adds a Power row and Bitcoin calculator on the Bitcoin Farm and a Fuel breakdown on
+adds a Generator row and Bitcoin calculator on the Bitcoin Farm and a Fuel breakdown on
 the Generator, above Crafts. They wait for the saved profile like crafts, reuse the
-shared recipe query and calculator, and persist nothing: installed GPUs, fuel units,
+shared recipe query and calculator. Installed GPUs,
 stored coins and coin progress are page-local inputs.
+
+The Generator row leads with a borderless, softly shaded fuel-burn summary. Its
+station portrait sits beside the hourly rate, with daily usage and Solar below.
+The summary centers its contents and stretches to the fuel comparisons' height.
+The two tanks use borderless comparisons with larger item images, aligned numeric
+runtimes and hourly costs; the cheaper hourly option gets a small downward arrow
+and a soft success wash only when
+both costs are available and differ. Longer runtime does not imply better value.
+A built Solar Power bonus appears in the generator summary with its portrait and
+base efficiency percentage. There is no fuel-remaining
+input or power-out reminder; the Bitcoin timer estimates only when storage fills.
+The **Skills** chip on both power panels edits Hideout Management through the existing
+mode-scoped profit options, including Elite, shared with crafts and profit pages.
+It introduces no new saved fields or storage keys.
 
 - [hideout-power-model](../src/features/hideout/power/hideout-power-model.ts): base
   burn is constant (~4.75 units/h, independent of active stations). Built
@@ -329,7 +343,7 @@ stored coins and coin progress are page-local inputs.
   coin = base / (1 + (GPUs − 1) × 0.041225); the farm stops at 3 stored coins.
   Revenue/hour is gross (fuel shown beside it, not subtracted, using the pricier
   tank). ROI = GPU investment ÷ revenue/hour; each extra card has a constant payback.
-  "Come back in" is the earlier of the farm filling and power running out.
+  The storage timer assumes continuous power until the farm fills.
 - Prices: GPU and fuel tanks use the optimizer's recommended acquisition; Physical
   Bitcoin (flea-banned) uses the best sale. Missing items, prices or bonus data
   render explicit notices. Constants without a data feed live in
