@@ -15,6 +15,12 @@ export function formatRoubles(value: number | null | undefined): string {
 	return value == null ? "—" : `${formatCompactRoubles(value)} ₽`;
 }
 
+/** Like `formatRoubles`, but negatives stay compact ("-14k ₽") instead of falling back to raw digits. */
+export function formatSignedRoubles(value: number | null | undefined): string {
+	if (value == null) return "—";
+	return value < 0 ? `-${formatRoubles(-value)}` : formatRoubles(value);
+}
+
 let minuteNow = Date.now();
 
 function subscribeToMinutes(onChange: () => void) {

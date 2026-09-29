@@ -46,6 +46,16 @@ export function bitcoinFarmFigures({
 	};
 }
 
+/** Money left after paying for the cards and running until `secondsLeft` from now; negative while unpaid. */
+export function remainingProfit(
+	grossPerHour: number | null,
+	gpuInvestment: number | null,
+	secondsLeft: number,
+): number | null {
+	if (grossPerHour === null || gpuInvestment === null) return null;
+	return (grossPerHour * Math.max(0, secondsLeft)) / 3600 - gpuInvestment;
+}
+
 /** Seconds until the farm holds the storage cap; `progress` is the current coin's completion (0–1). */
 export function secondsUntilFull({
 	secondsPerBitcoin: seconds,

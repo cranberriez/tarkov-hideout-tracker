@@ -6,6 +6,8 @@ export const SEASONAL_CONFIG = {
 	name: "Season 1 KORD Breach",
 	mode: "KORD" as GameMode,
 	forceEliteCrafting: true,
+	/** End of the season's final day (UTC). */
+	endsAt: Date.UTC(2026, 11, 7, 23, 59, 59),
 };
 
 export function getSeasonalCraftingSettings(mode: GameMode, savedLevel: number) {
