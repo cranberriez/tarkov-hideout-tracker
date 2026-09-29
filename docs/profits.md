@@ -92,7 +92,8 @@ rather than selecting routes independently.
   Hideout Management reduces Superwater's base Water filter
   consumption by 0.5% per level, capped at 25% for level 50 and Elite. The adjusted
   quantity and cost are shared by profit pages, recursive routes, and item details.
-  Fuel costs and the skill's fuel effect are not modeled.
+  Craft profits do not include fuel; the station page's power model (below) owns
+  fuel burn and the skill's fuel effect.
 - Route profit assumes acquisition of inputs. Owned-input opportunity value compares
   selling the ingredients individually with selling the recipe output; preserve
   that distinction in labels and calculations.
@@ -307,7 +308,32 @@ Flea break-even and 10% return targets solve for an asking price after the
 nonlinear fee, including its high-price peak; unreachable targets stay unknown.
 Main profit views show proceeds/profit, with fees in tooltips or expanded details.
 Fuel, initial reusable-tool purchases, finite stock and sale execution are not
-modeled.
+modeled in recipe profit.
+
+## Generator fuel and Bitcoin Farm
+
+The station page's streamed recipe slot
+([StationRecipeSections](../src/features/hideout/details/crafts/StationRecipeSections.tsx))
+adds a Power row and Bitcoin calculator on the Bitcoin Farm and a Fuel breakdown on
+the Generator, above Crafts. They wait for the saved profile like crafts, reuse the
+shared recipe query and calculator, and persist nothing: installed GPUs, fuel units,
+stored coins and coin progress are page-local inputs.
+
+- [hideout-power-model](../src/features/hideout/power/hideout-power-model.ts): base
+  burn is constant (~4.75 units/h, independent of active stations). Built
+  `FuelConsumption` bonuses stack across levels (Solar Power −50%; Defective Wall
+  +5% per stage 2–5, cancelled at stage 6). Burn multiplier =
+  (1 + Σ bonuses × (1 + 1% × HM)) × (1 − 0.5% × HM), HM capped at 50. Slot counts
+  sum built `AdditionalSlots` for an item (GPUs 10/25/50, fuel tanks 2/4/6).
+- [bitcoin-farm-model](../src/features/hideout/power/bitcoin-farm-model.ts): time per
+  coin = base / (1 + (GPUs − 1) × 0.041225); the farm stops at 3 stored coins.
+  Revenue/hour is gross (fuel shown beside it, not subtracted, using the pricier
+  tank). ROI = GPU investment ÷ revenue/hour; each extra card has a constant payback.
+  "Come back in" is the earlier of the farm filling and power running out.
+- Prices: GPU and fuel tanks use the optimizer's recommended acquisition; Physical
+  Bitcoin (flea-banned) uses the best sale. Missing items, prices or bonus data
+  render explicit notices. Constants without a data feed live in
+  [hideout-power](../src/lib/cfg/hideout-power.ts).
 
 ## Craft planner
 

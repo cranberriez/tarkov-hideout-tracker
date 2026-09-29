@@ -24,14 +24,10 @@ export function useStationCraftData(mode: TarkovJsonGameMode, fallbackData: Prof
 export type CraftProfitStatus = "loading" | "ready" | "unavailable";
 
 /**
- * Profit for the given crafts using the profit pages' calculator, "recipes" price scope,
- * saved skills and manual overrides. Profit requires both recipe graphs.
+ * The profit pages' calculator over the shared recipe graphs, with the "recipes" price scope,
+ * saved skills and manual overrides. Null until both graphs and prices are ready.
  */
-export function useStationCraftEvaluations(
-	mode: TarkovJsonGameMode,
-	data: ProfitPageData | null,
-	crafts: readonly CraftRecord[],
-) {
+export function useStationRecipeCalculator(mode: TarkovJsonGameMode, data: ProfitPageData | null) {
 	const priceIds = useMemo(() => data?.itemIds ?? [], [data]);
 	const prices = useItemPrices(mode, priceIds, "recipes");
 	const store = useUserStore(
@@ -59,9 +55,9 @@ export function useStationCraftEvaluations(
 		: prices.state === "error"
 			? "Some prices could not be loaded."
 			: null;
-	const evaluationsById = useMemo((): Record<string, RecipeEvaluation> => {
-		if (status !== "ready" || !data) return {};
-		const calculator = createRecipeCalculator({
+	const calculator = useMemo(() => {
+		if (status !== "ready" || !data) return null;
+		return createRecipeCalculator({
 			itemsById,
 			barters: data.barters,
 			crafts: data.crafts,
@@ -76,13 +72,11 @@ export function useStationCraftEvaluations(
 			traderLoyaltyLevels: store.traderLoyaltyLevels,
 			completedQuests: store.completedQuests,
 		});
-		return Object.fromEntries(calculator.evaluateCrafts(crafts).map((evaluation) => [evaluation.id, evaluation]));
 	}, [
 		status,
 		data,
 		itemsById,
 		overrides,
-		crafts,
 		options.craftingSkillLevel,
 		options.hideoutManagementSkillLevel,
 		options.useTraderSaleForLockedOutputs,
@@ -93,5 +87,34 @@ export function useStationCraftEvaluations(
 		store.traderLoyaltyLevels,
 		store.completedQuests,
 	]);
+	const saleContext = useMemo(
+		() => ({ playerLevel: store.playerLevel, useTraderSaleForLockedOutputs: options.useTraderSaleForLockedOutputs }),
+		[store.playerLevel, options.useTraderSaleForLockedOutputs],
+	);
+	return {
+		calculator,
+		itemsById,
+		status,
+		unavailableReason,
+		overrides,
+		saleContext,
+		hideoutManagementSkillLevel: options.hideoutManagementSkillLevel,
+	};
+}
+
+/** Profit for the given crafts; profit requires both recipe graphs. */
+export function useStationCraftEvaluations(
+	mode: TarkovJsonGameMode,
+	data: ProfitPageData | null,
+	crafts: readonly CraftRecord[],
+) {
+	const { calculator, itemsById, status, unavailableReason } = useStationRecipeCalculator(mode, data);
+	const evaluationsById = useMemo(
+		(): Record<string, RecipeEvaluation> =>
+			calculator
+				? Object.fromEntries(calculator.evaluateCrafts(crafts).map((evaluation) => [evaluation.id, evaluation]))
+				: {},
+		[calculator, crafts],
+	);
 	return { evaluationsById, itemsById, status, unavailableReason };
 }

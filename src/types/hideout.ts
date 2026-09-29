@@ -35,6 +35,14 @@ export interface TraderRequirement {
 	value: number;
 }
 
+/**
+ * Validated provider bonuses the app models; the adapter drops other types. Each level's
+ * bonuses stack with lower built levels (Bitcoin Farm slots 10 + 15 + 25 = 50).
+ */
+export type StationBonus =
+	| { type: "AdditionalSlots"; value: number; slotItemIds: string[] }
+	| { type: "FuelConsumption"; value: number };
+
 export interface StationLevel {
 	id: string;
 	level: number;
@@ -43,6 +51,8 @@ export interface StationLevel {
 	stationLevelRequirements: StationLevelRequirement[];
 	skillRequirements: SkillRequirement[];
 	traderRequirements: TraderRequirement[];
+	/** Absent until the catalog is refreshed after migration 0004. */
+	bonuses?: StationBonus[];
 }
 
 export interface Station {

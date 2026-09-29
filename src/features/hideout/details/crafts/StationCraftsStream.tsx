@@ -4,7 +4,7 @@ import { isCompleteProfitPageData, PAGE_DATA_STALE_TIME, profitPageQueryOptions 
 import { getCurrentPageRepository } from "@/server/queries/currentPageRepository";
 import { getProfitPageData } from "@/server/queries/getProfitPageData";
 import { prefetchPageData } from "@/server/queries/prefetchPageData";
-import { StationCraftsSection } from "./StationCraftsSection";
+import { StationRecipeSections } from "./StationRecipeSections";
 
 /** Start early (before other awaits) so the recipe read overlaps the Hideout read. Never rejects. */
 export function prefetchStationCrafts(mode: TarkovJsonGameMode) {
@@ -27,7 +27,7 @@ export async function StationCraftsStream({
 	const { state, fallbackData } = await prefetch;
 	return (
 		<HydrationBoundary state={state}>
-			<StationCraftsSection mode={mode} fallbackData={fallbackData} />
+			<StationRecipeSections mode={mode} fallbackData={fallbackData} />
 		</HydrationBoundary>
 	);
 }

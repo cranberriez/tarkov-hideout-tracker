@@ -8,7 +8,7 @@ import {
 } from "@/lib/utils/hideout-requirement-overrides";
 import { fetchTarkovJsonDataset, type TarkovJsonGameMode } from "@/server/services/tarkovJson/client";
 import type { HideoutStationsPayload } from "@/types/contracts";
-import type { ItemRequirement, Station } from "@/types/hideout";
+import type { ItemRequirement, Station, StationBonus } from "@/types/hideout";
 import type { DataResult } from "@/types/common";
 
 interface JsonTrader {
@@ -33,6 +33,7 @@ interface JsonHideoutLevel {
 	stationLevelRequirements?: Array<{ station: string; level: number }>;
 	skillRequirements?: Array<{ skill: string; level: number }>;
 	traderRequirements?: Array<{ trader: string; value: number }>;
+	bonuses?: unknown[];
 }
 
 interface JsonHideoutStation {
@@ -41,6 +42,32 @@ interface JsonHideoutStation {
 	normalizedName: string;
 	imageLink?: string;
 	levels?: JsonHideoutLevel[];
+}
+
+/** Keeps the bonus types the app models; malformed entries of those types are dropped with a warning. */
+function mapStationBonuses(raw: unknown, levelId: string): StationBonus[] {
+	if (!Array.isArray(raw)) return [];
+	const bonuses: StationBonus[] = [];
+	for (const entry of raw) {
+		const bonus = typeof entry === "object" && entry !== null ? (entry as Record<string, unknown>) : {};
+		if (bonus.type !== "AdditionalSlots" && bonus.type !== "FuelConsumption") continue;
+		const value = bonus.value;
+		if (typeof value !== "number" || !Number.isFinite(value)) {
+			console.warn(`Skipping Tarkov JSON hideout bonus ${String(bonus.type)} on ${levelId}: invalid value`);
+			continue;
+		}
+		if (bonus.type === "FuelConsumption") {
+			bonuses.push({ type: "FuelConsumption", value });
+			continue;
+		}
+		const slotItems = bonus.slotItems;
+		if (!Array.isArray(slotItems) || !slotItems.every((id) => typeof id === "string" && id)) {
+			console.warn(`Skipping Tarkov JSON hideout bonus AdditionalSlots on ${levelId}: invalid slot items`);
+			continue;
+		}
+		bonuses.push({ type: "AdditionalSlots", value, slotItemIds: slotItems as string[] });
+	}
+	return bonuses;
 }
 
 export async function getJsonHideoutStations(
@@ -154,6 +181,7 @@ export async function getJsonHideoutStations(
 								value: requirement.value,
 							};
 						}),
+						bonuses: mapStationBonuses(level.bonuses, level.id),
 					};
 				}),
 			};

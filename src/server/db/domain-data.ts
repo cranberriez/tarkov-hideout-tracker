@@ -3,7 +3,7 @@ import "server-only";
 import { asc, eq, inArray, and } from "drizzle-orm";
 import type { DataResult, TarkovDataMode } from "@/types/common";
 import type { ItemSummary } from "@/types/items";
-import type { Station, StationLevel } from "@/types/hideout";
+import type { Station, StationBonus, StationLevel } from "@/types/hideout";
 import type { FullQuest } from "@/types/quests";
 import type { Trader } from "@/types/traders";
 import type { CraftRecord, BarterRecord } from "@/types/recipes";
@@ -100,6 +100,7 @@ export async function getItemsByIds(
 							wikiLink: items.wikiLink,
 							onFleaMarket: itemModes.onFleaMarket,
 							minLevelForFlea: itemModes.minLevelForFlea,
+							resourceUnits: itemModes.resourceUnits,
 							category: itemModes.category,
 							displayOverride: itemModes.displayOverride,
 							firstSeenAt: itemDiscovery.firstSeenAt,
@@ -157,6 +158,7 @@ export async function getItemsByIds(
 						...(row.wikiLink ? { wikiLink: row.wikiLink } : {}),
 						...(row.onFleaMarket !== null ? { onFleaMarket: Boolean(row.onFleaMarket) } : {}),
 						...(row.minLevelForFlea !== null ? { minLevelForFlea: row.minLevelForFlea } : {}),
+						...(row.resourceUnits !== null ? { resourceUnits: num(row.resourceUnits, "resource units") } : {}),
 						...(row.category ? { category: record(row.category, `category for ${row.id}`) } : {}),
 						...(firstSeenPatch ? { firstSeenPatch } : {}),
 						...(firstSeenAt !== undefined ? { firstSeenAt } : {}),
@@ -222,6 +224,7 @@ export async function getStations(
 					stationRequirements: stationLevels.stationRequirements,
 					skillRequirements: stationLevels.skillRequirements,
 					traderRequirements: stationLevels.traderRequirements,
+					bonuses: stationLevels.bonuses,
 					requirementId: stationItemRequirements.requirementId,
 					itemId: stationItemRequirements.itemId,
 					quantity: stationItemRequirements.quantity,
@@ -259,6 +262,7 @@ export async function getStations(
 							row.traderRequirements,
 							"trader requirements",
 						) as StationLevel["traderRequirements"],
+						...(row.bonuses !== null ? { bonuses: array<StationBonus>(row.bonuses, "station bonuses") } : {}),
 					};
 					levels.set(row.level, level);
 				}

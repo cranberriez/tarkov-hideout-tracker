@@ -9,6 +9,7 @@ const JSON_COLUMNS = new Set([
 	"station_requirements",
 	"skill_requirements",
 	"trader_requirements",
+	"bonuses",
 	"map",
 	"objectives",
 	"task_requirements",
@@ -51,6 +52,7 @@ function rowsFor(table, mode, data) {
 		mode,
 		on_flea_market: item.onFleaMarket ?? null,
 		min_level_for_flea: item.minLevelForFlea ?? null,
+		resource_units: item.resourceUnits ?? null,
 		category: json(item.category),
 		display_override: null,
 		source_updated_at: null,
@@ -88,6 +90,7 @@ function rowsFor(table, mode, data) {
 				station_requirements: json(level.stationLevelRequirements),
 				skill_requirements: json(level.skillRequirements),
 				trader_requirements: json(level.traderRequirements),
+				bonuses: json(level.bonuses ?? []),
 			});
 			for (const requirement of level.itemRequirements)
 				requirementRows.push({
@@ -305,6 +308,7 @@ function jsonifyRow(row) {
 					"station_requirements",
 					"skill_requirements",
 					"trader_requirements",
+					"bonuses",
 					"map",
 					"objectives",
 					"task_requirements",

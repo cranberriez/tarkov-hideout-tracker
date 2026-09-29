@@ -26,6 +26,16 @@ empty/malformed input aborts before writes. Reviewed
 requirements remain separate. Adapter recipe exclusions and translation fallback
 rules are unchanged.
 
+The hideout adapter keeps only validated `AdditionalSlots` (with slot item IDs) and
+`FuelConsumption` level bonuses in `StationLevel.bonuses`; other bonus types and
+malformed entries are dropped with a warning and never block a release. The item
+adapter maps resource capacity (`ItemPropertiesResource` units, e.g. fuel tanks)
+to `ItemSummary.resourceUnits`. Both are nullable columns (migration 0004), so
+rows read as absent until the next `db:update`; consumers report missing bonus
+data instead of assuming values. Passive Bitcoin production stays out of the craft
+graph, so its base duration is a named constant in
+[hideout-power](../src/lib/cfg/hideout-power.ts).
+
 The catalog writer validates and builds item-detail projections before its short
 writer transaction. It acquires the catalog advisory lock, checks the content
 versions used during preparation, and upserts changed domain rows atomically.

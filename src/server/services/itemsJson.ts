@@ -32,6 +32,7 @@ interface JsonCatalogItem {
 	changeLast48hPercent?: number | null;
 	lastScan?: string | null;
 	types?: string[];
+	properties?: { propertiesType?: unknown; units?: unknown } | null;
 	buyFromTrader?: Array<{
 		trader?: unknown;
 		price?: unknown;
@@ -109,6 +110,17 @@ function validateMarketPriceInput(item: JsonCatalogItem): void {
 	if (item.sellToTrader != null && !Array.isArray(item.sellToTrader)) {
 		throw new Error(`Tarkov JSON item ${item.id} contains invalid trader sale offers`);
 	}
+}
+
+/** Fuel-tank style capacity; other property types and invalid values are omitted. */
+function resourceUnits(item: JsonCatalogItem): { resourceUnits?: number } {
+	const units = item.properties?.units;
+	return item.properties?.propertiesType === "ItemPropertiesResource" &&
+		typeof units === "number" &&
+		Number.isFinite(units) &&
+		units > 0
+		? { resourceUnits: units }
+		: {};
 }
 
 function mapTraderPurchaseOffer(value: unknown, itemId: string): TraderPurchaseOffer {
@@ -235,6 +247,7 @@ function mapItem(
 		// generic parents. Keep only the leaf; repeating every parent on every
 		// item materially inflates all catalog cache and RSC payloads.
 		category,
+		...resourceUnits(item),
 		...(item.buyFromTrader == null
 			? {}
 			: {

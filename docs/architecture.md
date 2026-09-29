@@ -14,7 +14,7 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 | `/items`                                           | [Items page](<../src/app/(data)/items/page.tsx>): pooled hideout and quest demand                                                                                                                                                                     |
 | `/quests`, `/quests/[questId]`                     | [Quests layout](<../src/app/(data)/quests/layout.tsx>) owns the persistent workspace; the [index](<../src/app/(data)/quests/page.tsx>) and [quest route](<../src/app/(data)/quests/[questId]/page.tsx>) fill its detail pane; see [quests](quests.md) |
 | `/items/[itemId]`                                  | [Item page](<../src/app/(data)/items/[itemId]/page.tsx>): server-rendered item details; not linked yet (items open the dialog)                                                                                                                        |
-| `/hideout/stations/[stationId]`                    | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): level overview and level changes, prerequisites, dependents, remaining items, and streamed crafts with profit                                                              |
+| `/hideout/stations/[stationId]`                    | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): level overview and level changes, prerequisites, dependents, remaining items, streamed crafts with profit, and Bitcoin Farm/Generator power panels                                                              |
 | `/items/kappa-checklist`                           | [Collector checklist](<../src/app/(data)/items/kappa-checklist/page.tsx>); see [quests](quests.md)                                                                                                                                                    |
 | `/items/barter-profits`, `/items/crafting-profits` | Shared [ProfitPage](../src/features/profit-pages/ProfitPage.tsx); see [profits](profits.md)                                                                                                                                                           |
 | `/hideout/craft-planner`                           | Station craft recommendations using the shared profit query; see [profits](profits.md)                                                                                                                                                                |
@@ -30,7 +30,8 @@ not-found states; failed reads report errors instead of 404s. Pages render publi
 identity from server data; player progress hydrates afterwards. Titles use the root
 `%s · Tarkov Hideout Tracker` template.
 
-Inventory, Keys, Station Goals, and Bitcoin Farm routes are placeholders. Check
+Inventory, Keys, and Station Goals routes are placeholders; Bitcoin Farm
+calculations live on its station page (see [profits](profits.md)). Check
 their [route implementations](<../src/app/(data)/>) before extending them.
 [Navbar](../src/components/core/Navbar.tsx) owns navigation. The desktop Hideout
 dropdown lists every station from the static

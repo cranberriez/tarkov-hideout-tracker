@@ -40,6 +40,7 @@ export const itemModes = pgTable(
 		mode: text("mode", { enum: modes }).notNull(),
 		onFleaMarket: boolean("on_flea_market"),
 		minLevelForFlea: integer("min_level_for_flea"),
+		resourceUnits: numeric("resource_units"),
 		category: json("category"),
 		displayOverride: json("display_override"),
 		sourceUpdatedAt: bigint("source_updated_at", { mode: "number" }),
@@ -95,6 +96,7 @@ export const stationLevels = pgTable(
 		stationRequirements: json("station_requirements").notNull(),
 		skillRequirements: json("skill_requirements").notNull(),
 		traderRequirements: json("trader_requirements").notNull(),
+		bonuses: json("bonuses"),
 	},
 	(table) => [
 		primaryKey({ columns: [table.stationId, table.mode, table.level] }),

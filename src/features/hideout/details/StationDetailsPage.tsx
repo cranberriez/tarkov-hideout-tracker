@@ -123,7 +123,7 @@ export function StationDetailsPage({
 	);
 
 	return (
-		<StationDetailsProvider value={{ station, currentLevel }}>
+		<StationDetailsProvider value={{ station, stations, currentLevel }}>
 			<main className="container mx-auto flex flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
 				<nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-subtle-foreground">
 					<Link href="/hideout" className="transition-colors hover:text-foreground">

@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import {
-	Bitcoin,
 	Boxes,
 	Factory,
 	Goal,
@@ -62,12 +61,6 @@ export const navMenus: NavMenu[] = [
 				name: "Station Goals",
 				href: "/hideout/station-goals",
 				icon: Goal,
-				disabled: true,
-			},
-			{
-				name: "Bitcoin Farm",
-				href: "/hideout/bitcoin-farm",
-				icon: Bitcoin,
 				disabled: true,
 			},
 		],

@@ -42,6 +42,8 @@ export interface ItemSummary extends ItemIdentity {
 	minLevelForFlea?: number | null;
 	onFleaMarket?: boolean;
 	category?: ItemCategory;
+	/** Resource capacity from the provider's resource properties (fuel tank units). */
+	resourceUnits?: number;
 	buyFromTrader?: TraderPurchaseOffer[];
 	marketPrice?: CurrentPrice | null;
 	/** Ephemeral delivery state; never persisted in player progress. */

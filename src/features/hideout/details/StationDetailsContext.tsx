@@ -8,6 +8,8 @@ export type LevelSelection = number | "remaining";
 
 export interface StationDetailsContextValue {
 	station: Station;
+	/** Every station in the mode (the page's station alone if the list failed); power math reads other stations' bonuses. */
+	stations: Station[];
 	currentLevel: number;
 }
 
