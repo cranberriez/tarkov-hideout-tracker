@@ -47,7 +47,7 @@ export function Countdown({ label, seconds, now }: { label: string; seconds: num
 
 /** Compact generator overview for stations that depend on power. */
 export function StationPowerRow({ power }: { power: HideoutPower }) {
-	const { stations } = useStationDetails();
+	const { station, stations } = useStationDetails();
 	const generator = stations.find((station) => station.id === GENERATOR_STATION_ID);
 	const level = power.stationLevels[GENERATOR_STATION_ID] ?? 0;
 	const solar = stations.find((station) => station.id === "5d494a385b56502f18c98a0c");
@@ -56,7 +56,13 @@ export function StationPowerRow({ power }: { power: HideoutPower }) {
 		.reduce((total, source) => total + source.value, 0);
 	return (
 		<WikiSection
-			title={generator ? <StationLink station={generator}>Generator</StationLink> : "Generator"}
+			title={
+				generator && station.id !== generator.id ? (
+					<StationLink station={generator}>Generator</StationLink>
+				) : (
+					"Generator"
+				)
+			}
 			actions={<PowerSkills />}
 			bodyClassName="-mt-1 flex flex-col gap-4"
 		>
