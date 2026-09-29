@@ -1,4 +1,5 @@
 import { craftingDuration } from "./crafting-skill";
+import { emptyIngredientPlan, getEmptySale } from "./empty-value";
 import { craftRequiredItems, isTrackedCraft } from "./craft-rules";
 import { getFleaLockReasons, getRecipeLockReasons, getTraderLockReasons } from "./availability";
 import { getFleaPrice } from "../utils/market-price";
@@ -89,6 +90,12 @@ function sumRequirementSellValue(requirements: ItemAmountRef[], context: PriceCa
 	let total = 0;
 	for (const requirement of requirements) {
 		if (requirement.isTool) continue;
+		const emptySale = getEmptySale(context.itemsById[requirement.itemId], context.overrides, context);
+		if (emptySale !== null) {
+			if (emptySale.net === null) return null;
+			total += emptySale.net * requirement.count;
+			continue;
+		}
 		const sale = getItemSellComparison(
 			context.itemsById[requirement.itemId],
 			context.overrides,
@@ -112,9 +119,14 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
 		blocked = new Set<string>(),
 		depth = 0,
 		estimateLockedRecipes = true,
+		asIngredient = false,
 	): AcquisitionPlan {
 		const normalizedQuantity = Math.max(0, quantity);
-		const memoKey = `${estimateLockedRecipes}:${depth}:${itemId}:${normalizedQuantity}:${[...blocked].sort().join(",")}`;
+		if (asIngredient) {
+			const empty = emptyIngredientPlan(context.itemsById[itemId], normalizedQuantity, overrides, context);
+			if (empty) return empty;
+		}
+		const memoKey = `${asIngredient}:${estimateLockedRecipes}:${depth}:${itemId}:${normalizedQuantity}:${[...blocked].sort().join(",")}`;
 		const cached = memo.get(memoKey);
 		if (cached) return cached;
 
@@ -295,7 +307,14 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
 		const children = requirements.map((requirement) => ({
 			// Locked sources remain ineligible, but their known costs can contribute
 			// to a recursively calculated display estimate for this route.
-			...optimize(requirement.itemId, requirement.count, blocked, depth + 1, estimateLockedRecipes),
+			...optimize(
+				requirement.itemId,
+				requirement.count,
+				blocked,
+				depth + 1,
+				estimateLockedRecipes,
+				!requirement.isTool,
+			),
 			...(requirement.isTool ? { isTool: true } : {}),
 		}));
 		const durationSeconds =
@@ -335,8 +354,7 @@ export function createAcquisitionOptimizer(context: PriceCalculationContext) {
 				displayDetails,
 			);
 		}
-		if (recipeLocked)
-			return reject(undefined, totalCost / quantity, displayDetails);
+		if (recipeLocked) return reject(undefined, totalCost / quantity, displayDetails);
 		return {
 			method: kind,
 			sourceId: recipe.id,
@@ -463,8 +481,7 @@ function lockedFleaFallbackPlan(
 	lockedAlternatives: LockedAcquisitionAlternative[],
 	alternatives: Candidate[],
 ): AcquisitionPlan {
-	const totalCost =
-		lockedFlea.estimatedUnitPrice === undefined ? null : lockedFlea.estimatedUnitPrice * quantity;
+	const totalCost = lockedFlea.estimatedUnitPrice === undefined ? null : lockedFlea.estimatedUnitPrice * quantity;
 	return {
 		itemId,
 		quantity,
@@ -599,7 +616,7 @@ function evaluateTopLevelRecipe(
 			: recipe.requiredItems;
 	const aggregatedRequirements = aggregateRequirements(recipeRequirements, 1);
 	const requiredItems = aggregatedRequirements.map((requirement) => ({
-		...optimizer.optimize(requirement.itemId, requirement.count, blocked),
+		...optimizer.optimize(requirement.itemId, requirement.count, blocked, 0, true, !requirement.isTool),
 		...(requirement.isTool ? { isTool: true } : {}),
 	}));
 	const lockReasons = getRecipeLockReasons(recipe, context);

@@ -36,6 +36,15 @@ rather than selecting routes independently.
   valid. Roubles have unit value one. Browser persistence is unchanged.
 - Direct trader purchases are leaf routes from `ItemSummary.buyFromTrader`,
   separate from barter records. Loyalty and task unlocks gate eligibility.
+- A saved empty-container sale price, less estimated flea tax, replaces acquisition cost for consumed Metal and
+  Expeditionary fuel-can ingredients, including nested crafts/barters, locked
+  previews and owned-input opportunity values. The explicit **Empty value** route
+  uses the net proceeds from a manually entered pre-tax empty-can price, not a live market offer. Full
+  can purchases and output sales retain normal pricing; reusable tools and missing
+  item records never become empty-can inputs. Existing craft-board per-recipe
+  custom input costs remain authoritative, and stale saved routes remain explicit.
+  Clearing the value restores normal ingredient pricing. The reviewed item scope
+  lives in [empty-value](../src/lib/price-calculation/empty-value.ts).
 - Flea access uses the active player's level and the item's `onFleaMarket` and
   `minLevelForFlea` metadata, with a minimum player level of 15. Locked flea
   purchases remain the displayed fallback but cannot supply nested recipes.
@@ -322,6 +331,21 @@ stored coins and coin progress are page-local inputs.
 The Generator row leads with a borderless, softly shaded fuel-burn summary. Its
 station portrait sits beside the hourly rate, with daily usage and Solar below.
 The summary centers its contents and stretches to the fuel comparisons' height.
+Each fuel card has a short, flat, borderless **EDIT** chip in its top-right corner opening
+an **Edit sell value** dialog with the selected can's image, name, rouble input,
+Save and Reset. Drafts stay local until Save; dismissing discards them, and a mode
+switch closes the dialog. The value is saved for the active profile across the
+app. The entered amount is the pre-tax sale price and is saved unchanged. An
+always-visible estimated flea tax row shows a dash for blank/invalid input and
+Unavailable when the item base value is missing. The shared empty-sale model uses
+the profile's Intelligence Center, Hideout Management and trader loyalty settings;
+net residual value is clamped to zero when tax exceeds the sale price. Missing tax
+inputs leave residual value and dependent costs unknown, never gross-as-net.
+Blank/reset removes the value and zero remains valid. Full-can purchase prices
+remain visible. Running costs use
+`max(0, purchase cost - net empty proceeds)` divided by runtime, with **Net / hour** shown
+when a value is set. Generator daily/weekly costs, upgrade savings and Bitcoin's
+fuel estimate share this deduction. Unknown purchase prices stay unknown.
 The two tanks use borderless comparisons with larger item images, aligned numeric
 runtimes and hourly costs; the cheaper hourly option gets a small downward arrow
 and a soft success wash only when

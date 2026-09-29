@@ -67,6 +67,7 @@ export function StationCraftDetails({
 		return !all.slice(0, index).some((previous) => signature(craft.variants[previous.id]) === signature(evaluated));
 	});
 	function routeLabel(part: { method: string; sourceId?: string; traderOffer?: { traderId: string } }) {
+		if (part.method === "empty") return "Empty value";
 		if (part.method === "flea") return "Flea";
 		if (part.method === "trader") return traders[part.traderOffer?.traderId ?? ""]?.name ?? "Trader";
 		if (part.method === "barter") return "Barter";

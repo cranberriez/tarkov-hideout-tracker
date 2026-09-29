@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { getItemSellComparison, PHYSICAL_BITCOIN_ITEM_ID } from "@/lib/price-calculation";
+import { getEmptySale, getEmptyValue } from "@/lib/price-calculation/empty-value";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { FUEL_TANK_ITEM_IDS, GRAPHICS_CARD_ITEM_ID } from "@/lib/cfg/hideout-power";
 import type { ProfitPageData } from "@/types/contracts";
@@ -16,6 +17,8 @@ export interface FuelTank {
 	item: ItemSummary | undefined;
 	/** Recommended acquisition cost for one tank. */
 	price: number | null;
+	emptyValue: number | null;
+	netPrice: number | null;
 	units: number | undefined;
 	runtimeHours: number | null;
 	costPerHour: number | null;
@@ -46,21 +49,33 @@ export function useHideoutPower(
 	const { data } = useStationCraftData(mode, fallbackData);
 	const recipe = useStationRecipeCalculator(mode, data);
 	const stationLevels = useUserStore((state) => state.stationLevels);
+	const traderLoyaltyLevels = useUserStore((state) => state.questTraderLoyaltyLevels);
 	const { calculator, itemsById, overrides, saleContext, hideoutManagementSkillLevel } = recipe;
 
 	return useMemo(() => {
 		const fuel = fuelMultiplier({ stations, stationLevels, hideoutManagementSkillLevel });
-		const cost = (itemId: string) => (calculator && itemsById[itemId] ? calculator.evaluateNode(itemId, 1).totalCost : null);
+		const cost = (itemId: string) =>
+			calculator && itemsById[itemId] ? calculator.evaluateNode(itemId, 1).totalCost : null;
 		const tanks = FUEL_TANK_ITEM_IDS.map((id): FuelTank => {
 			const item = itemsById[id];
 			const price = cost(id);
+			const emptyValue = getEmptyValue(id, overrides);
+			const emptySale = getEmptySale(item, overrides, {
+				stationLevels,
+				traderLoyaltyLevels,
+				hideoutManagementSkillLevel,
+			});
+			const residual = emptyValue === null ? 0 : (emptySale?.net ?? null);
+			const netPrice = price === null || residual === null ? null : Math.max(0, price - residual);
 			return {
 				id,
 				item,
 				price,
+				emptyValue,
+				netPrice,
 				units: item?.resourceUnits,
 				runtimeHours: item?.resourceUnits ? fuelRuntimeHours(item.resourceUnits, fuel.unitsPerHour) : null,
-				costPerHour: fuelCostPerHour(price, item?.resourceUnits, fuel.unitsPerHour),
+				costPerHour: fuelCostPerHour(netPrice, item?.resourceUnits, fuel.unitsPerHour),
 			};
 		});
 		const bitcoinItem = itemsById[PHYSICAL_BITCOIN_ITEM_ID];
@@ -92,6 +107,7 @@ export function useHideoutPower(
 	}, [
 		stations,
 		stationLevels,
+		traderLoyaltyLevels,
 		hideoutManagementSkillLevel,
 		calculator,
 		itemsById,

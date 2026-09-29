@@ -7,6 +7,8 @@ import { ItemLink } from "@/components/entities/item-link";
 import { METAL_FUEL_TANK_ITEM_ID } from "@/lib/cfg/hideout-power";
 import { formatRoubles, formatSpan } from "./power-format";
 import type { FuelTank } from "./useHideoutPower";
+import { EmptyFuelValue } from "./EmptyFuelValue";
+import { useUserStore } from "@/lib/stores/useUserStore";
 
 /** Metal and Expeditionary tanks side by side at the current burn rate. */
 export function FuelTankCards({
@@ -18,6 +20,7 @@ export function FuelTankCards({
 	loading: boolean;
 	visual?: boolean;
 }) {
+	const mode = useUserStore((state) => state.gameMode);
 	if (visual) {
 		const comparable = !loading && tanks.length > 1 && tanks.every((tank) => tank.costPerHour !== null);
 		const lowestCost = comparable ? Math.min(...tanks.map((tank) => tank.costPerHour!)) : null;
@@ -38,7 +41,7 @@ export function FuelTankCards({
 									) : (
 										<ItemImage item={{ name: "Missing fuel tank" }} size={44} />
 									)}
-									<div className="flex min-w-0 flex-col gap-0.5">
+									<div className="flex min-w-0 flex-1 flex-col gap-0.5">
 										{tank.item ? (
 											<ItemLink
 												item={tank.item}
@@ -54,6 +57,12 @@ export function FuelTankCards({
 											{loading ? "…" : tank.price === null ? "Price unavailable" : formatRoubles(tank.price)}
 										</span>
 									</div>
+									<EmptyFuelValue
+										key={`${mode}:${tank.id}`}
+										itemId={tank.id}
+										name={tank.item?.name ?? "Fuel tank"}
+										item={tank.item}
+									/>
 								</div>
 								<div className="mt-4 grid grid-cols-[auto_auto] justify-between gap-2 tabular-nums">
 									<div className="min-w-0">
@@ -63,7 +72,9 @@ export function FuelTankCards({
 										</p>
 									</div>
 									<div className="min-w-0 text-right">
-										<p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Cost / hour</p>
+										<p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+											{tank.emptyValue !== null ? "Net / hour" : "Cost / hour"}
+										</p>
 										<p
 											className={
 												cheaper
@@ -113,7 +124,15 @@ export function FuelTankCards({
 						</span>
 					</div>
 					<span className="flex shrink-0 flex-col items-end gap-0.5">
-						<span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Per hour</span>
+						<EmptyFuelValue
+							key={`${mode}:${tank.id}`}
+							itemId={tank.id}
+							name={tank.item?.name ?? "Fuel tank"}
+							item={tank.item}
+						/>
+						<span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+							{tank.emptyValue !== null ? "Net / hour" : "Per hour"}
+						</span>
 						<span className="font-mono text-sm font-semibold leading-none text-foreground">
 							{loading ? "…" : formatRoubles(tank.costPerHour)}
 						</span>

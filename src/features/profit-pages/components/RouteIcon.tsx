@@ -41,6 +41,11 @@ function routeIconClasses(
 			background: "bg-acquisition-sell-value",
 			border: "border-acquisition-sell-value",
 		},
+		empty: {
+			color: "text-acquisition-sell-value",
+			background: "bg-acquisition-sell-value",
+			border: "border-acquisition-sell-value",
+		},
 	}[method];
 
 	if (filled) return `${styles.background} text-inverse`;
@@ -120,10 +125,10 @@ export function RouteIcon({
 				{caret}
 			</span>
 		);
-	if (method === "sell")
+	if (method === "sell" || method === "empty")
 		return (
 			<span
-				title={title ?? `Sell value used${changedTitle}`}
+				title={title ?? `${method === "empty" ? "Empty container value" : "Sell value"} used${changedTitle}`}
 				className={`${classes} ${routeIconClasses("sell", changedFromBase, filled, automaticFallback)}`}
 			>
 				<Coins className={iconClasses} />
@@ -143,7 +148,7 @@ export function routeChipClasses(method: RouteMethod) {
 	if (method === "craft") return "bg-acquisition-craft text-inverse";
 	if (method === "trader") return "bg-acquisition-trader text-inverse";
 	if (method === "flea") return "bg-acquisition-flea text-inverse";
-	if (method === "sell") return "bg-acquisition-sell-value text-inverse";
+	if (method === "sell" || method === "empty") return "bg-acquisition-sell-value text-inverse";
 	return "bg-danger-surface/60 text-danger";
 }
 
@@ -153,6 +158,7 @@ const ROUTE_GLYPHS = {
 	trader: UserRound,
 	flea: ChartNoAxesCombined,
 	sell: Coins,
+	empty: Coins,
 	unavailable: LockKeyhole,
 } satisfies Record<RouteMethod, unknown>;
 

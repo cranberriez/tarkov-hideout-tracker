@@ -18,6 +18,7 @@ const routeLabels = {
 	barter: "Barter",
 	craft: "Craft",
 	sell: "Sell value",
+	empty: "Empty value",
 } as const;
 
 export function RouteSelector({

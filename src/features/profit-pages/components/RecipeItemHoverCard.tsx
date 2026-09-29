@@ -32,6 +32,7 @@ const METHOD_LABELS: Record<RouteMethod, string> = {
 	barter: "Barter",
 	craft: "Craft",
 	sell: "Sell value",
+	empty: "Empty value",
 	unavailable: "No source",
 };
 
@@ -66,6 +67,7 @@ function sourceSummary(plan: AcquisitionPlan | undefined, method: RouteMethod, c
 		return craft ? `${context.stationsById[craft.stationId]?.name ?? "Unknown station"} ${craft.level}` : null;
 	}
 	if (method === "sell") return "Opportunity cost of not selling it";
+	if (method === "empty") return "Saved empty-container value for this profile";
 	return null;
 }
 
@@ -90,7 +92,7 @@ export function RecipeItemHoverCard({
 	onKeepOpen: () => void;
 }) {
 	const unitRoutePrice = totalPrice === null || count <= 0 ? null : totalPrice / count;
-	const manualPrice = Boolean(item && overrides[item.id]?.[priceKind] !== undefined);
+	const manualPrice = Boolean(method !== "empty" && item && overrides[item.id]?.[priceKind] !== undefined);
 	const sale = priceKind === "sell" ? getItemSellComparison(item, overrides, pricingContext, count) : null;
 	const recipeSavings =
 		plan && (method === "barter" || method === "craft") && plan.directBuyCost !== null && plan.totalCost !== null

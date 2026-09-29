@@ -81,8 +81,8 @@ export function RecipeItem({
 	const resolvedRecipePreview =
 		recipePreview ??
 		getPlanRecipePreview(plan, routeContext, {
+			...pricingContext,
 			overrides,
-			hideoutManagementSkillLevel: pricingContext.hideoutManagementSkillLevel,
 		});
 	const canGoToRecipe = Boolean(
 		compactLine && onGoToRecipe && plan?.sourceId && (plan.method === "barter" || plan.method === "craft"),

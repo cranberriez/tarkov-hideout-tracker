@@ -4,13 +4,15 @@ import type { ItemSummary, TraderPurchaseOffer } from "@/types/items";
 export interface ManualPriceOverride {
 	buy?: number;
 	sell?: number;
+	/** Gross empty-container sale price; calculation consumers deduct flea tax. */
+	emptyValue?: number;
 	/** Older overrides infer flea when accessible, otherwise a trader sale. */
 	sellSource?: "flea" | "trader";
 }
 
 export type ManualPriceOverrides = Record<string, ManualPriceOverride>;
 
-export type AcquisitionMethod = "flea" | "trader" | "barter" | "craft" | "sell" | "unavailable";
+export type AcquisitionMethod = "flea" | "trader" | "barter" | "craft" | "sell" | "empty" | "unavailable";
 
 export interface AcquisitionAlternative {
 	method: Exclude<AcquisitionMethod, "unavailable">;

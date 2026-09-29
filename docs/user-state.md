@@ -13,7 +13,7 @@ account for existing users' data.
 | `tarkov-hideout-profiles-state`                 | [useUserStore](../src/lib/stores/useUserStore.ts), Zustand persist **v23**; profiles, active profile projection, shared preferences and conversion state                                             |
 | `tarkov-hideout-user-state`                     | Previous application's save; read-only fallback through [user-state-storage](../src/lib/stores/user-state-storage.ts), never written or removed by the new user store                                |
 | `tarkov-kappa-checklist-state`                  | [useKappaStore](../src/lib/stores/useKappaStore.ts), Zustand persist **v1**; `completedItemsByMode` and shared `viewMode`                                                                            |
-| `tarkov-profit-price-overrides-v1:{mode}`       | [useManualPriceOverrides](../src/features/profit-pages/useManualPriceOverrides.ts); independent buy/sell overrides                                                                                   |
+| `tarkov-profit-price-overrides-v1:{mode}`       | [useManualPriceOverrides](../src/features/profit-pages/useManualPriceOverrides.ts); independent buy/sell overrides and optional empty-container values                                                                                   |
 | `tarkov-profit-pinned-crafts-v1:{mode}`         | [usePinnedCrafts](../src/features/profit-pages/usePinnedCrafts.ts); independent craft pins                                                                                                           |
 | `tarkov-craft-board-v1:{mode}`                  | [StationBoard](../src/features/profit-pages/optimize/StationBoard.tsx); recipe acquisition variants, stable ingredient route choices and custom input costs                                          |
 | `tarkov-profit-options-v1:{mode}`               | [useProfitOptions](../src/features/profit-pages/useProfitOptions.ts); options-menu preferences and crafting skill shared by crafts and barters within each mode                                      |
@@ -189,6 +189,18 @@ mode-scoped board key stores recipe variants, input route keys and custom unit
 costs. Existing pins and buy/sell amounts retain their keys, schema and values;
 manual sale entries may additionally specify `sellSource` as flea or trader.
 Older entries infer flea when accessible, otherwise trader.
+
+Price entries may also carry an optional non-negative `emptyValue` in roubles,
+initially consumed only for the two reviewed fuel-can IDs. It is the pre-tax sale price,
+shared by all consumers in that profile, and independent of normal buy/sell prices.
+The editor saves the entered amount unchanged; calculation consumers estimate and
+deduct flea tax. Existing saved numbers are not rewritten.
+Older payloads have no deduction or ingredient substitution; zero is an explicit
+value. Buy/sell edits and resets preserve it; the fuel card's Empty value reset
+removes only that field. Invalid empty values are ignored without dropping valid
+buy/sell amounts. The storage key/version, progress backups and section/all-data
+reset scopes remain unchanged. Empty values, like other price overrides, are not
+part of progression backups or resets.
 
 [useStoredProfitValue](../src/features/profit-pages/useStoredProfitValue.ts)
 synchronizes pins and prices between mounted consumers/tabs using external-store

@@ -37,9 +37,9 @@ export function GeneratorFuelSection({
 	const { fuel, hideoutManagementSkillLevel: skillLevel, stationLevels } = power;
 	const skill = Math.min(50, skillLevel);
 	const loading = power.pricing === "loading";
-	const pricedTanks = power.tanks.filter((tank) => tank.price !== null && tank.units);
+	const pricedTanks = power.tanks.filter((tank) => tank.netPrice !== null && tank.units);
 	const cheapestUnitCost = pricedTanks.length
-		? Math.min(...pricedTanks.map((tank) => tank.price! / tank.units!))
+		? Math.min(...pricedTanks.map((tank) => tank.netPrice! / tank.units!))
 		: null;
 
 	// Per unbuilt station: what finishing it would change (Solar saves, the Wall's last stage removes its penalty).

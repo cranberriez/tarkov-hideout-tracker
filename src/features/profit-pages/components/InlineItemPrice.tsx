@@ -41,7 +41,7 @@ export function InlineItemPrice({
 			? getItemBuyPrice(item, overrides, pricingContext)
 			: getItemSellComparison(item, overrides, pricingContext).selectedPrice;
 	const currentOverride = overrides[itemId] ?? {};
-	const manualPrice = currentOverride[kind];
+	const manualPrice = buyMethod === "empty" && kind === "buy" ? undefined : currentOverride[kind];
 	const hasManualPrice = typeof manualPrice === "number" && Number.isFinite(manualPrice) && manualPrice >= 0;
 	const manualBuy = currentOverride.buy;
 	const hasManualBuy = typeof manualBuy === "number" && Number.isFinite(manualBuy) && manualBuy >= 0;
@@ -141,6 +141,9 @@ export function InlineItemPrice({
 				))}
 			{usesSellValue && (
 				<span className="whitespace-nowrap text-[11px] font-normal text-muted-foreground">(sell value)</span>
+			)}
+			{kind === "buy" && buyMethod === "empty" && (
+				<span className="whitespace-nowrap text-[11px] font-normal text-muted-foreground">(empty value)</span>
 			)}
 		</span>
 	);

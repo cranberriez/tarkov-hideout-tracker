@@ -95,7 +95,8 @@ export function fuelCostPerHour(
 	tankPrice: number | null,
 	tankUnits: number | undefined,
 	unitsPerHour: number,
+	emptyValue = 0,
 ): number | null {
 	if (tankPrice === null || !tankUnits || tankUnits <= 0) return null;
-	return (tankPrice / tankUnits) * unitsPerHour;
+	return (Math.max(0, tankPrice - emptyValue) / tankUnits) * unitsPerHour;
 }

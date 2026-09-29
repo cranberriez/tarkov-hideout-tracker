@@ -8,17 +8,19 @@ export function ToolBadge() {
 
 export function RecommendationBadge({ plan, unstable }: { plan: AcquisitionPlan; unstable: boolean }) {
 	const label =
-		plan.method === "flea"
-			? "Buy"
-			: plan.method === "sell"
-				? "Found"
-				: plan.method === "trader"
-					? "Trader"
-					: plan.method === "craft"
-						? "Craft"
-						: plan.method === "barter"
-							? "Barter"
-							: "Unpriced";
+		plan.method === "empty"
+			? "Empty value"
+			: plan.method === "flea"
+				? "Buy"
+				: plan.method === "sell"
+					? "Found"
+					: plan.method === "trader"
+						? "Trader"
+						: plan.method === "craft"
+							? "Craft"
+							: plan.method === "barter"
+								? "Barter"
+								: "Unpriced";
 	const classes =
 		plan.method === "craft"
 			? "bg-acquisition-craft/10 text-acquisition-craft"
@@ -28,7 +30,7 @@ export function RecommendationBadge({ plan, unstable }: { plan: AcquisitionPlan;
 					? "bg-acquisition-barter/10 text-acquisition-barter"
 					: plan.method === "flea"
 						? "bg-acquisition-flea/10 text-acquisition-flea"
-						: plan.method === "sell"
+						: plan.method === "sell" || plan.method === "empty"
 							? "bg-acquisition-sell-value/10 text-acquisition-sell-value"
 							: "bg-highlight/5 text-muted-foreground";
 	return (

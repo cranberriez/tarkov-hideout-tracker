@@ -7,6 +7,8 @@ import type {
 	RecipeEvaluation,
 } from "@/lib/price-calculation";
 import { craftRequiredItems } from "../../../lib/price-calculation/craft-rules";
+import { emptyIngredientPlan } from "../../../lib/price-calculation/empty-value";
+import type { TaxOptions } from "@/lib/price-calculation/calc-tax";
 import { getItemBuyPrice, practicalSavingsThreshold } from "../../../lib/price-calculation/prices";
 import type { ItemSummary } from "@/types/items";
 import type { ItemAmountRef } from "@/types/recipes";
@@ -265,9 +267,8 @@ export function withRequiredItemRoute(
 	};
 }
 
-export interface RecipePreviewEstimateOptions {
+export interface RecipePreviewEstimateOptions extends TaxOptions {
 	overrides?: ManualPriceOverrides;
-	hideoutManagementSkillLevel?: number;
 }
 
 /**
@@ -279,10 +280,14 @@ function estimatedRecipeRequirements(
 	requirements: readonly ItemAmountRef[],
 	batches: number,
 	context: RouteContext,
-	overrides: ManualPriceOverrides = {},
+	estimate: RecipePreviewEstimateOptions = {},
 ): AcquisitionPlan[] {
+	const overrides = estimate.overrides ?? {};
 	return requirements.map((requirement) => {
 		const quantity = requirement.count * batches;
+		const empty =
+			!requirement.isTool && emptyIngredientPlan(context.itemById[requirement.itemId], quantity, overrides, estimate);
+		if (empty) return empty;
 		const unitPrice = getItemBuyPrice(context.itemById[requirement.itemId], overrides);
 		const totalCost = unitPrice === null ? null : unitPrice * quantity;
 		const method = unitPrice === null ? "unavailable" : "flea";
@@ -324,7 +329,7 @@ export function getPlanRecipePreview(
 			batches,
 			requiredItems: plan.children.length
 				? plan.children
-				: estimatedRecipeRequirements(barter.requiredItems, batches, context, estimate.overrides),
+				: estimatedRecipeRequirements(barter.requiredItems, batches, context, estimate),
 			durationSeconds: plan.durationSeconds,
 		};
 	}
@@ -343,13 +348,14 @@ export function getPlanRecipePreview(
 					craftRequiredItems(craft, estimate.hideoutManagementSkillLevel),
 					batches,
 					context,
-					estimate.overrides,
+					estimate,
 				),
 		durationSeconds: craft.duration,
 	};
 }
 
 export function describeRoute(plan: AcquisitionPlan, context: RouteContext) {
+	if (plan.method === "empty") return "Use the saved empty-container value for this profile as the ingredient cost.";
 	if (plan.isTool)
 		return `Reusable tool acquired via ${plan.method}; its value is not included in recurring craft cost.`;
 	if (plan.method === "flea")
@@ -380,6 +386,7 @@ export function describeRoute(plan: AcquisitionPlan, context: RouteContext) {
 }
 
 export function describeChainRoute(plan: AcquisitionPlan, context: RouteContext) {
+	if (plan.method === "empty") return "Empty value";
 	if (plan.method === "flea") return "Flea market";
 	if (plan.method === "sell") return "Sell value";
 	if (plan.method === "trader" && plan.traderOffer) {

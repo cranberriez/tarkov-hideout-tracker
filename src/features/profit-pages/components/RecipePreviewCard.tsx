@@ -79,7 +79,11 @@ export function RecipePreviewCard({
 								<span
 									className={`rounded px-1 py-0.5 text-[9px] font-bold uppercase ${routeChipClasses(requirement.method)}`}
 								>
-									{requirement.method === "trader" ? "Trader" : requirement.method}
+									{requirement.method === "empty"
+										? "Empty value"
+										: requirement.method === "trader"
+											? "Trader"
+											: requirement.method}
 								</span>
 								{requirement.isTool ? (
 									<span className="w-16 text-right text-[11px] text-muted-foreground">Tool</span>

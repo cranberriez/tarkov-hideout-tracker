@@ -3,7 +3,16 @@ import test from "node:test";
 import { GRAPHICS_CARD_ITEM_ID } from "../../../lib/cfg/hideout-power";
 import type { Station, StationBonus } from "@/types/hideout";
 import { bitcoinFarmFigures, comeBackBy, secondsPerBitcoin, secondsUntilFull } from "./bitcoin-farm-model";
-import { fuelMultiplier, fuelRuntimeHours, stationSlots } from "./hideout-power-model";
+import { fuelCostPerHour, fuelMultiplier, fuelRuntimeHours, stationSlots } from "./hideout-power-model";
+
+test("fuel running cost deducts residual value once, preserves unknowns and never becomes negative", () => {
+	assert.equal(fuelCostPerHour(200000, 100, 5), 10000);
+	assert.equal(fuelCostPerHour(200000, 100, 5, 50000), 7500);
+	assert.equal(fuelCostPerHour(200000, 100, 5, 0), 10000);
+	assert.equal(fuelCostPerHour(200000, 100, 5, 300000), 0);
+	assert.equal(fuelCostPerHour(null, 100, 5, 50000), null);
+	assert.equal(fuelCostPerHour(200000, undefined, 5, 50000), null);
+});
 
 function station(id: string, bonuses: StationBonus[][]): Station {
 	return {
@@ -47,7 +56,8 @@ test("fuel runtime matches the wiki for base, Solar, and Solar with Elite Hideou
 });
 
 test("Defective Wall penalties stack across stages and stage 6 cancels them", () => {
-	const at = (level: number) => fuelMultiplier({ stations: [wall], stationLevels: { wall: level }, hideoutManagementSkillLevel: 0 });
+	const at = (level: number) =>
+		fuelMultiplier({ stations: [wall], stationLevels: { wall: level }, hideoutManagementSkillLevel: 0 });
 	assert.ok(Math.abs(at(5).multiplier - 1.2) < 1e-9);
 	assert.ok(Math.abs(at(6).multiplier - 1) < 1e-9);
 });

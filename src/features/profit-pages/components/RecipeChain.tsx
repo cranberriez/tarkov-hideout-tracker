@@ -87,7 +87,7 @@ function RecipeChainNode({
 					</span>
 					<span className="flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground">
 						<span className={`shrink-0 rounded px-1 text-[8px] font-bold uppercase ${routeChipClasses(plan.method)}`}>
-							{plan.method === "trader" ? "Trader" : plan.method}
+							{plan.method === "empty" ? "Empty value" : plan.method === "trader" ? "Trader" : plan.method}
 						</span>
 						<span className="truncate">
 							{source ? `${source.name} · ` : ""}
