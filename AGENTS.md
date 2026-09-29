@@ -1,74 +1,59 @@
 # AGENTS.md
 
-Read [docs/README.md](docs/README.md) and [architecture](docs/architecture.md),
-then the owning document below before recommending or changing behavior. Source
-is authoritative; fix doc drift in the same change.
+Start with the requested files and their immediate dependencies. Read only the
+documentation sections needed for the change; no documentation is mandatory for
+every task. Source is authoritative. Update affected docs when behavior,
+contracts, persistence rules, or data flow change.
 
-The `plans/` directory contains unstable, disposable Codex plans, not project
-references. Do not link to its contents from documentation or depend on them in
-validation. Ignore `plans/future/` and `plans/notes/` in routine work: they are
-personal reference material, often discarded after implementation. Keep the
-entire directory ignored by Git.
+## Project constraints
 
-## Invariants
-
-- Preserve player data. Before touching persistent keys, fields, versions, actions,
-  migrations, profile scope, or reset behavior, read [user state](docs/user-state.md)
-  and the owning store/hook. Documentation and server-data refactors must leave
-  this boundary unchanged; never clear saved data as a workaround.
+- Preserve player data. Before changing persistence, store actions, migrations,
+  profile scope, or reset behavior, read [user state](docs/user-state.md) and the
+  owning store/hook. Never clear saved data as a workaround.
 - Preserve stable Tarkov entity and requirement IDs. Keep PVP, PVE, and KORD data
   and caches isolated using the existing mode mapping.
-- Validate/normalize raw provider records at the adapter boundary. Invalid or empty
-  required input must not publish a ready release or replace good current prices.
-- Shared layouts do not preload entity arrays. Pages call named queries and prefer
-  known-ID/batch reads; queries do not import provider services. Client modules
-  must not import server code. See [data layer](docs/data-layer.md) for bounded
-  item-view/search APIs, map services, price refresh/history, and dev exceptions.
-- Report missing IDs and partial errors explicitly. Missing data cannot satisfy a
-  requirement; profit figures require both recipe graphs.
+- Validate and normalize provider records at the adapter boundary. Invalid or
+  empty required input must not publish a ready release or replace good prices.
+- Keep server code out of client imports. Shared layouts do not preload entity
+  arrays; pages use named queries and prefer known-ID/batch reads. Queries do not
+  import provider services.
+- Report missing IDs and partial errors explicitly. Missing data cannot satisfy
+  a requirement; profit figures require both recipe graphs.
+- Keep `plans/` ignored by Git. Its contents are disposable, non-authoritative,
+  and must not be linked from docs or used in validation. Skip `plans/future/`
+  and `plans/notes/` in routine work.
 
-## Task routing
+## Documentation by task
 
-| Task                                               | Read                                                                   | Start in source                                                                                                                                                                                                                                                                                              |
-| -------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Add a page or navigation                           | [Architecture](docs/architecture.md)                                   | [App routes](<src/app/(data)/>), [Navbar](src/components/core/Navbar.tsx), [queries](src/server/queries/), [contracts](src/types/contracts.ts), [entity routes](src/lib/entity-routes.ts)                                                                                                                    |
-| Add or change shared UI, entity links, or previews | [Architecture](docs/architecture.md)                                   | [UI primitives](src/components/ui/), [entity components](src/components/entities/), [filter kit](src/components/ui/filter-bar.tsx)                                                                                                                                                                           |
-| Add/change provider data or API payload            | [Data layer](docs/data-layer.md)                                       | [Adapters](src/server/services/), [repository interface](src/server/repositories/tarkov-data/types.ts), [queries](src/server/queries/), [DB reads](src/server/db/), [catalog writer](db-scripts/update.mjs)                                                                                                  |
-| Change a domain type                               | [Data layer](docs/data-layer.md)                                       | Owning [src/types module](src/types/); [contracts](src/types/contracts.ts) for read payloads                                                                                                                                                                                                                 |
-| Change progress, preferences, setup, or reset      | [User state](docs/user-state.md)                                       | [useUserStore](src/lib/stores/useUserStore.ts), [useKappaStore](src/lib/stores/useKappaStore.ts), [setup](src/features/setup/), [StorageResetCard](src/features/settings/StorageResetCard.tsx)                                                                                                               |
-| Change hideout requirements or station order       | [Architecture](docs/architecture.md), [data layer](docs/data-layer.md) | [HideoutList](src/features/hideout/components/HideoutList.tsx), [override policy](src/lib/utils/hideout-requirement-overrides.ts), [reviewed requirements](src/lib/data/hideout-data.json), [FiR fallback](src/lib/cfg/foundInRaid.ts), [stationOrder](src/lib/cfg/stationOrder.ts)                          |
-| Change item totals/filtering                       | [Architecture](docs/architecture.md), [quests](docs/quests.md)         | [ItemsList](src/features/items/components/ItemsList.tsx), [item-pooling](src/lib/utils/item-pooling.ts), [item-needs](src/lib/utils/item-needs.ts), [quest-item-index](src/lib/quests/quest-item-index.ts)                                                                                                   |
-| Change catalog search or Quick Add                 | [Architecture](docs/architecture.md), [data layer](docs/data-layer.md) | [Search API](src/app/api/items/search/route.ts), [SQL search](src/server/db/item-search.ts), [search controller](src/features/items/useItemSearchController.ts), [QuickAddModal](src/features/quick-add/QuickAddModal.tsx)                                                                                   |
-| Open or change item details                        | [Architecture](docs/architecture.md)                                   | [item dialog](src/features/items/item-detail/ItemDetailModal.tsx), [item page](src/features/items/item-detail/ItemDetailsPage.tsx), [details controller](src/features/items/item-detail/useItemDetailsController.ts), [request controller](src/features/items/item-detail/useItemDetailRequestController.ts) |
-| Change quest filters, details, or planning         | [Quests](docs/quests.md)                                               | [QuestWorkspaceContext](src/features/quests/workspace/QuestWorkspaceContext.tsx), [workspace selector](src/features/quests/workspace/quest-workspace-selector.ts), [workspace components/models](src/features/quests/workspace/)                                                                             |
-| Change quest availability or import                | [Quests](docs/quests.md)                                               | [quest-availability](src/lib/quests/quest-availability.ts), [import controller](src/features/quests/import/useQuestLogImportController.ts)                                                                                                                                                                   |
-| Change Collector/Kappa                             | [Quests](docs/quests.md), [user state](docs/user-state.md)             | [One-quest query](src/server/queries/getKappaChecklistPageData.ts), [Kappa store](src/lib/stores/useKappaStore.ts)                                                                                                                                                                                           |
-| Change maps or objective markers                   | [Maps](docs/maps.md)                                                   | [MapViewer](src/features/maps/MapViewer.tsx), [projection](src/features/maps/map-projection.ts), [marker models](src/features/quests/workspace/raid-planner-markers.ts)                                                                                                                                      |
-| Change recipe costs or profits                     | [Profits](docs/profits.md)                                             | [Optimizer](src/lib/price-calculation/optimizer.ts), [recipe calculator](src/features/profit-pages/utils/recipes.ts), [ProfitPageClient](src/features/profit-pages/ProfitPageClient.tsx)                                                                                                                     |
-| Refresh releases/prices or diagnose data           | [Operations](docs/operations.md), [data layer](docs/data-layer.md)     | [Ingestion CLI](db-scripts/README.md), [current read context](src/server/db/postgres-read.ts), [price refresh](src/server/prices/refresh-prices.ts)                                                                                                                                                          |
+Use the relevant sections when the change touches these concerns. Follow links
+only as needed; [docs/README.md](docs/README.md) is an optional index.
+
+| Concern | Reference |
+| --- | --- |
+| Routes, shared UI, dependency boundaries, Hideout/Items composition | [Architecture](docs/architecture.md) |
+| Providers, domain types, queries/APIs, search, prices, caching | [Data layer](docs/data-layer.md) |
+| Saved progress/preferences, profiles, setup, migrations, resets | [User state](docs/user-state.md) |
+| Quest availability, demand, workspace, imports, Kappa | [Quests](docs/quests.md) |
+| Maps, objective markers, projection, overlays | [Maps](docs/maps.md) |
+| Recipe costs, acquisition optimization, profits | [Profits](docs/profits.md) |
+| Setup, release/price operations, diagnostics, validation commands | [Operations](docs/operations.md) |
+
+For a local visual change, inspect the component and the relevant UI conventions.
+Expand to persistence or data-layer docs only if the change reaches those boundaries.
 
 ## Implementation and validation
 
-Keep substantial deterministic derivation in pure tested models, workflow/network
-effects in controllers, and views focused on rendering and direct interaction.
-Reuse existing utilities and store actions. Keep local modal state local unless
-it needs a shared owner; do not introduce a generic abstraction without a consumer.
-Update the owning doc when a contract, persistence rule, or data flow changes.
+Keep substantial deterministic derivation in pure models, workflow/network effects
+in controllers, and views focused on rendering and direct interaction. Reuse existing
+utilities and store actions. Keep local state local unless it needs a shared owner.
 
-```bash
-npm run docs:check
-npm run test:architecture
-npm run test:contracts
-npm run lint
-npm run build
-node --test --import jiti/register src/lib/quests/quest-availability.test.ts
-```
-
-Run focused adjacent tests for changed behavior; [operations](docs/operations.md)
-and feature docs explain coverage. Docs-only edits need the link check. Use
-`npm run dev` to verify changed UI, including relevant loading/error states and
-mode switches. Report validation failures without resetting data or changing
-unrelated code to hide them.
+Choose validation for the affected behavior: focused adjacent tests for logic,
+architecture/contract checks for boundary changes, and lint/build when relevant.
+For UI changes, use `npm run dev` to verify affected interactions and relevant
+loading/error states and mode switches. Docs-only changes need `npm run docs:check`.
+[package.json](package.json) and [operations](docs/operations.md) list available
+checks; they are not a requirement to run every suite for every edit. Report
+failures without resetting data or changing unrelated code to hide them.
 
 ## Cost-aware delegation
 

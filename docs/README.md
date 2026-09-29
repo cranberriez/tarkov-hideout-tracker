@@ -1,9 +1,10 @@
 # Project documentation
 
-Start with [architecture](architecture.md), then read the owner for the behavior
-you are changing. Source code is authoritative when a document disagrees; correct
-the owning document in the same change. [AGENTS.md](../AGENTS.md) supplies the
-contributor invariants and a task-to-source routing table.
+Use this index when you need to locate a behavior reference. Start with the files
+involved in the task and read only the relevant documentation sections; there is
+no required documentation sequence. Source code is authoritative when a document
+disagrees; correct affected documentation in the same change.
+[AGENTS.md](../AGENTS.md) supplies project constraints and task-based doc routing.
 
 | Document                        | Owns                                                                                    |
 | ------------------------------- | --------------------------------------------------------------------------------------- |
