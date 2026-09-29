@@ -11,6 +11,15 @@ function validPrice(value: number | null | undefined) {
 	return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : null;
 }
 
+/** Highest valid trader buyback, independent of flea access and manual sale preferences. */
+export function getBestTraderOffer(item: ItemSummary | undefined): VendorPrice | null {
+	return (
+		[...(item?.marketPrice?.sellFor ?? [])]
+			.filter((offer) => validPrice(offer.priceRUB) !== null)
+			.sort((left, right) => right.priceRUB - left.priceRUB)[0] ?? null
+	);
+}
+
 export function getItemBuyPrice(
 	item: ItemSummary | undefined,
 	overrides: ManualPriceOverrides = {},
@@ -66,10 +75,7 @@ export function getItemSellComparison(
 	const manual = validPrice(overrides[item.id]?.sell);
 	const locked = item.normalizedName !== "roubles" && getFleaLockReasons(item, context.playerLevel).length > 0;
 	const fleaPrice = locked ? null : item.normalizedName === "roubles" ? 1 : getFleaPrice(item.marketPrice);
-	const bestTraderOffer =
-		[...(item.marketPrice?.sellFor ?? [])]
-			.filter((offer) => validPrice(offer.priceRUB) !== null)
-			.sort((left, right) => right.priceRUB - left.priceRUB)[0] ?? null;
+	const bestTraderOffer = getBestTraderOffer(item);
 	const traderPrice = bestTraderOffer ? validPrice(bestTraderOffer.priceRUB) : null;
 	const base = itemBasePrice(item.marketPrice?.sellFor, context);
 	const fleaFee =

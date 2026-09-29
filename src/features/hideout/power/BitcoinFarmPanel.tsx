@@ -18,9 +18,9 @@ import { useHideoutPower } from "./useHideoutPower";
 
 function Stat({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
 	return (
-		<div className="flex min-w-0 flex-col gap-1 rounded-sm border border-highlight/8 bg-shadow/20 px-3 py-2">
+		<div className="flex min-w-0 flex-col gap-1.5">
 			<span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
-			<span className="font-mono text-sm font-semibold leading-none text-foreground">{children}</span>
+			<span className="font-mono text-xl font-semibold leading-tight text-foreground">{children}</span>
 			{hint && <span className="text-[11px] leading-snug text-muted-foreground">{hint}</span>}
 		</div>
 	);
@@ -57,11 +57,6 @@ export function BitcoinFarmPanel({
 		bitcoinPrice: power.bitcoin.price,
 		gpuPrice: power.gpu.price,
 	});
-	// Conservative: compare revenue with the pricier tank's hourly cost.
-	const fuelPerHour = power.tanks.reduce<number | null>(
-		(highest, tank) => (tank.costPerHour === null ? highest : Math.max(highest ?? 0, tank.costPerHour)),
-		null,
-	);
 	const fullSeconds = figures
 		? secondsUntilFull({ secondsPerBitcoin: figures.secondsPerBitcoin, stored, progress: progress / 100 })
 		: null;
@@ -74,50 +69,11 @@ export function BitcoinFarmPanel({
 	} else {
 		body = (
 			<>
-				<GpuSlotGrid slots={slots} count={gpus} onChange={setGpus} />
-				{power.missingItemIds.length > 0 && (
-					<DataNotice>
-						{power.missingItemIds.length} Bitcoin Farm item{power.missingItemIds.length === 1 ? " is" : "s are"} missing
-						from the price data and cannot be valued.
-					</DataNotice>
-				)}
-				{power.pricing === "unavailable" && power.unavailableReason && (
-					<DataNotice>{power.unavailableReason}</DataNotice>
-				)}
-				{gpus === 0 ? (
-					<DataNotice tone="empty">Install graphics cards to see production, revenue and payback.</DataNotice>
-				) : (
-					figures && (
-						<>
-							<div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-								<Stat label="Per coin">{formatSpan(figures.secondsPerBitcoin)}</Stat>
-								<Stat label="BTC per day">{figures.bitcoinPerDay.toFixed(3)}</Stat>
-								<Stat
-									label="Revenue / hour"
-									hint={<>Fuel {loading ? "…" : formatRoubles(fuelPerHour)}/h, not subtracted</>}
-								>
-									{loading ? "…" : formatRoubles(figures.grossPerHour)}
-								</Stat>
-								<Stat label="GPU investment" hint={<>{formatRoubles(power.gpu.price)} each</>}>
-									{loading ? "…" : formatRoubles(figures.gpuInvestment)}
-								</Stat>
-								<Stat label="Return on GPUs">{loading ? "…" : formatDays(figures.roiHours)}</Stat>
-								<Stat label="Each extra GPU" hint="Pays for itself in">
-									{loading ? "…" : formatDays(figures.marginalGpuPaybackHours)}
-								</Stat>
-							</div>
-							{power.bitcoin.item && (
-								<p className="flex items-center gap-2 text-xs text-muted-foreground">
-									<ItemImage item={power.bitcoin.item} size={24} opensModal />
-									{power.bitcoin.item.name} sells for{" "}
-									<span className="font-mono font-semibold text-foreground">
-										{loading ? "…" : formatRoubles(power.bitcoin.price)}
-									</span>
-									{power.bitcoin.source && ` (${power.bitcoin.source})`}
-								</p>
-							)}
-							<div className="flex flex-col gap-2 text-xs text-muted-foreground">
-								<div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+				<div className="grid items-stretch gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+					<GpuSlotGrid key={`${mode}:${slots}`} slots={slots} count={gpus} onChange={setGpus}>
+						{figures && (
+							<div className="mt-1 flex flex-col gap-2 text-xs text-muted-foreground">
+								<div className="flex flex-wrap items-center gap-2">
 									<FilterNumberInput
 										label="Coins waiting in the farm"
 										value={stored}
@@ -134,17 +90,65 @@ export function BitcoinFarmPanel({
 										prefix={<span>Current coin</span>}
 										suffix={<span>%</span>}
 									/>
-									{fullSeconds !== null &&
-										(fullSeconds > 0 ? (
-											<Countdown label={`Full (${BITCOIN_STORAGE_CAP} BTC) in`} seconds={fullSeconds} now={now} />
-										) : (
-											<span className="text-warning">Full: production has stopped until you collect.</span>
-										))}
 								</div>
+								{fullSeconds !== null &&
+									(fullSeconds > 0 ? (
+										<Countdown label={`Full (${BITCOIN_STORAGE_CAP} BTC) in`} seconds={fullSeconds} now={now} />
+									) : (
+										<span className="text-warning">Full: production has stopped until you collect.</span>
+									))}
 							</div>
-						</>
-					)
+						)}
+					</GpuSlotGrid>
+					<div className="flex items-center gap-3 rounded-lg bg-warning/5 px-4 py-3 lg:min-w-44">
+						{power.bitcoin.item && (
+							<ItemImage
+								item={{
+									...power.bitcoin.item,
+									iconLink:
+										power.bitcoin.item.image512pxLink ??
+										power.bitcoin.item.gridImageLink ??
+										power.bitcoin.item.iconLink ??
+										power.bitcoin.item.baseImageLink,
+								}}
+								size={40}
+								opensModal
+							/>
+						)}
+						<div className="flex flex-col gap-1">
+							<span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+								Bitcoin value
+							</span>
+							<span className="font-mono text-xl font-semibold leading-tight text-foreground">
+								{loading ? "…" : formatRoubles(power.bitcoin.price)}
+							</span>
+							{(loading || power.bitcoin.price === null) && (
+								<span className="text-[11px] text-muted-foreground">
+									{loading ? "Loading trader offers…" : "Trader offer unavailable"}
+								</span>
+							)}
+						</div>
+					</div>
+				</div>
+				{power.missingItemIds.length > 0 && (
+					<DataNotice>
+						{power.missingItemIds.length} Bitcoin Farm item{power.missingItemIds.length === 1 ? " is" : "s are"} missing
+						from the price data and cannot be valued.
+					</DataNotice>
 				)}
+				{power.pricing === "unavailable" && power.unavailableReason && (
+					<DataNotice>{power.unavailableReason}</DataNotice>
+				)}
+				<div className="grid grid-cols-2 gap-x-6 gap-y-5 px-1 py-2 sm:grid-cols-4">
+					<Stat label="Time per Bitcoin">{figures ? formatSpan(figures.secondsPerBitcoin) : "—"}</Stat>
+					<Stat label="Bitcoin / day">{figures ? figures.bitcoinPerDay.toFixed(3) : "—"}</Stat>
+					<Stat label="Revenue / hour" hint="Fuel cost not deducted">
+						{loading ? "…" : formatRoubles(figures?.grossPerHour ?? null)}
+					</Stat>
+					<Stat label="GPU payback" hint="Installed cards · excludes fuel">
+						{loading ? "…" : formatDays(figures?.roiHours ?? null)}
+					</Stat>
+				</div>
 			</>
 		);
 	}
@@ -152,15 +156,7 @@ export function BitcoinFarmPanel({
 	return (
 		<>
 			<StationPowerRow power={power} />
-			<WikiSection
-				title="Bitcoin Farm"
-				description={
-					slots !== null && currentLevel > 0
-						? `${slots} graphics card slots at level ${currentLevel}. Revenue excludes fuel.`
-						: undefined
-				}
-				bodyClassName="flex flex-col gap-4"
-			>
+			<WikiSection title="Bitcoin Farm" bodyClassName="flex flex-col gap-4">
 				{body}
 			</WikiSection>
 		</>

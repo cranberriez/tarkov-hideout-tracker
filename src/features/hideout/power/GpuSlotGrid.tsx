@@ -1,71 +1,154 @@
 "use client";
 
+import { useId, useState, type ReactNode } from "react";
 import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FilterNumberInput } from "@/components/ui/FilterNumberInput";
 import { cn } from "@/lib/utils";
 
-/**
- * One cell per graphics-card slot at the saved level, filled in order. Clicking cell N
- * installs N cards (clicking the last filled cell removes it).
- */
+/** All 50 slots stay visible; the saved station level determines which can be used. */
 export function GpuSlotGrid({
 	slots,
 	count,
 	onChange,
+	children,
 }: {
 	slots: number;
 	count: number;
 	onChange: (count: number) => void;
+	children?: ReactNode;
 }) {
-	const set = (value: number) => onChange(Math.min(slots, Math.max(0, value)));
+	const inputId = useId();
+	const [preview, setPreview] = useState<number | null>(null);
+	const set = (value: number) => {
+		const next = Math.min(slots, Math.max(0, Math.floor(value)));
+		setPreview(null);
+		onChange(next);
+		return next;
+	};
 	return (
-		<div className="flex flex-col gap-3">
+		<div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-4 rounded-lg bg-shadow/20 p-4">
+			<div className="flex min-w-0 flex-col items-start gap-2 sm:max-w-72">
+				<label htmlFor={inputId} className="text-xs font-medium text-muted-foreground">
+					Graphics cards
+				</label>
+				<div className="flex items-center divide-x divide-highlight/10 rounded-sm border border-highlight/15 bg-shadow/20">
+					<div className="flex h-8 items-center pr-3">
+						<input
+							key={`${count}:${slots}`}
+							id={inputId}
+							type="text"
+							inputMode="numeric"
+							aria-label="Installed graphics cards"
+							defaultValue={count}
+							onFocus={(event) => event.currentTarget.select()}
+							onBlur={(event) => {
+								const value = event.currentTarget.value.trim();
+								const parsed = Number(value);
+								event.currentTarget.value = String(value !== "" && Number.isFinite(parsed) ? set(parsed) : count);
+							}}
+							onKeyDown={(event) => {
+								if (event.key === "Escape") event.currentTarget.value = String(count);
+								if (event.key === "Enter" || event.key === "Escape") event.currentTarget.blur();
+							}}
+							className="h-8 w-11 rounded-sm border-0 bg-transparent text-center font-mono text-sm font-semibold text-foreground focus-visible:outline-2 focus-visible:outline-brand"
+						/>
+						<span className="text-xs tabular-nums text-muted-foreground">/ {slots}</span>
+					</div>
+					<Button
+						variant="ghost"
+						size="sm"
+						iconOnly
+						className="rounded-none"
+						aria-label="Remove a graphics card"
+						disabled={count <= 0}
+						onClick={() => set(count - 1)}
+					>
+						<Minus size={14} />
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						iconOnly
+						className="rounded-none"
+						aria-label="Add a graphics card"
+						disabled={count >= slots}
+						onClick={() => set(count + 1)}
+					>
+						<Plus size={14} />
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="rounded-none"
+						aria-label="Fill graphics cards to maximum"
+						disabled={count >= slots}
+						onClick={() => set(slots)}
+					>
+						Max
+					</Button>
+					<Button variant="ghost" size="sm" className="rounded-l-none" disabled={count <= 0} onClick={() => set(0)}>
+						Clear
+					</Button>
+				</div>
+				{children}
+			</div>
 			<div
 				role="group"
 				aria-label={`Graphics card slots, ${count} of ${slots} installed`}
-				className="grid grid-cols-10 gap-1 sm:max-w-md"
+				onPointerLeave={() => setPreview(null)}
+				className="grid w-full max-w-64 grid-cols-10 gap-1"
 			>
-				{Array.from({ length: slots }, (_, index) => {
+				{Array.from({ length: 50 }, (_, index) => {
 					const slot = index + 1;
+					const available = slot <= slots;
 					const filled = slot <= count;
+					const next = filled ? slot - 1 : slot;
+					const adding = available && preview !== null && slot > count && slot <= preview;
+					const removing = filled && preview !== null && slot > preview;
 					return (
 						<button
 							key={slot}
 							type="button"
-							aria-label={filled && slot === count ? `Remove graphics card ${slot}` : `Install ${slot} graphics cards`}
-							aria-pressed={filled}
-							onClick={() => set(filled && slot === count ? slot - 1 : slot)}
+							disabled={!available}
+							aria-label={
+								!available
+									? `Graphics card slot ${slot}, locked`
+									: filled
+										? slot === count
+											? `Remove graphics card ${slot}`
+											: `Remove graphics cards ${slot} through ${count}`
+										: `Install ${slot} graphics cards`
+							}
+							aria-pressed={slot <= count}
+							onPointerEnter={(event) => {
+								if (event.pointerType !== "touch") setPreview(available ? next : null);
+							}}
+							onFocus={() => setPreview(next)}
+							onBlur={() => setPreview(null)}
+							onClick={() => set(next)}
 							className={cn(
-								"h-4 rounded-[2px] border transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
-								filled
-									? "border-brand bg-brand/80 hover:bg-brand"
-									: "border-highlight/12 bg-shadow/30 hover:border-brand/60",
+								"flex h-4 items-center justify-center gap-0.5 rounded-[3px] border transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
+								!available
+									? "border-highlight/5 bg-highlight/3"
+									: removing
+										? "cursor-pointer border-dashed border-danger/80 bg-danger/10 text-danger/70"
+										: adding
+											? "cursor-pointer border-dashed border-brand/80 bg-brand/5"
+											: filled
+												? "cursor-pointer border-brand/35 bg-brand/20 text-brand/80"
+												: "cursor-pointer border-dashed border-highlight/30 bg-highlight/5",
 							)}
-						/>
+						>
+							{filled && available && (
+								<span aria-hidden className="flex gap-0.5">
+									<span className="size-1 rounded-[1px] bg-current/70" />
+									<span className="size-1 rounded-[1px] bg-current/70" />
+									<span className="size-1 rounded-[1px] bg-current/70" />
+								</span>
+							)}
+						</button>
 					);
 				})}
-			</div>
-			<div className="flex flex-wrap items-center gap-2">
-				<Button size="xs" iconOnly aria-label="Remove a graphics card" disabled={count <= 0} onClick={() => set(count - 1)}>
-					<Minus size={12} />
-				</Button>
-				<FilterNumberInput
-					label="Installed graphics cards"
-					value={count}
-					onCommit={set}
-					widthClassName="w-8"
-					suffix={<span>/ {slots} GPUs</span>}
-				/>
-				<Button size="xs" iconOnly aria-label="Add a graphics card" disabled={count >= slots} onClick={() => set(count + 1)}>
-					<Plus size={12} />
-				</Button>
-				<Button size="xs" disabled={count >= slots} onClick={() => set(slots)}>
-					Fill to max
-				</Button>
-				<Button size="xs" variant="ghost" disabled={count <= 0} onClick={() => set(0)}>
-					Clear
-				</Button>
 			</div>
 		</div>
 	);

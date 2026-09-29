@@ -328,6 +328,23 @@ the Generator, above Crafts. They wait for the saved profile like crafts, reuse 
 shared recipe query and calculator. Installed GPUs,
 stored coins and coin progress are page-local inputs.
 
+The Bitcoin Farm shows all 50 GPU slots in a compact grid, with only the saved
+level's capacity enabled (10/25/50). Locked slots are muted, empty slots dashed,
+and installed cards softly colored with chip dots. Hover or keyboard focus previews
+the change without changing production: additions have dashed green borders and no
+dots; cards to be removed have dashed red borders. Clicking an empty slot fills
+through that slot; clicking any installed slot removes it and every card after it.
+A grouped number field and equal-height
+minus, plus, Max and Clear controls sit beside the grid and wrap on narrow screens.
+Stored coins, current-coin progress and the full-storage estimate sit below the GPU
+input. These controls appear once at least one card is installed.
+At zero cards, production statistics remain visible with dashes.
+The GPU controls share the top row with a Bitcoin value summary using the item
+modal's 512px image, without a trader caption. Four borderless statistics show time
+per Bitcoin, Bitcoin per day, hourly revenue and payback for the installed GPUs.
+Revenue and payback explicitly exclude fuel costs; the extra-card payback and
+investment statistics are not displayed. There are no divider lines around the stats.
+
 The Generator row leads with a borderless, softly shaded fuel-burn summary. Its
 station portrait sits beside the hourly rate, with daily usage and Solar below.
 The summary centers its contents and stretches to the fuel comparisons' height.
@@ -344,8 +361,8 @@ inputs leave residual value and dependent costs unknown, never gross-as-net.
 Blank/reset removes the value and zero remains valid. Full-can purchase prices
 remain visible. Running costs use
 `max(0, purchase cost - net empty proceeds)` divided by runtime, with **Net / hour** shown
-when a value is set. Generator daily/weekly costs, upgrade savings and Bitcoin's
-fuel estimate share this deduction. Unknown purchase prices stay unknown.
+when a value is set. Generator daily/weekly costs and upgrade savings share this
+deduction. Unknown purchase prices stay unknown.
 The two tanks use borderless comparisons with larger item images, aligned numeric
 runtimes and hourly costs; the cheaper hourly option gets a small downward arrow
 and a soft success wash only when
@@ -365,11 +382,14 @@ It introduces no new saved fields or storage keys.
   sum built `AdditionalSlots` for an item (GPUs 10/25/50, fuel tanks 2/4/6).
 - [bitcoin-farm-model](../src/features/hideout/power/bitcoin-farm-model.ts): time per
   coin = base / (1 + (GPUs − 1) × 0.041225); the farm stops at 3 stored coins.
-  Revenue/hour is gross (fuel shown beside it, not subtracted, using the pricier
-  tank). ROI = GPU investment ÷ revenue/hour; each extra card has a constant payback.
+  Revenue/hour is gross, without deducting fuel. ROI = GPU investment ÷ revenue/hour;
+  the model also exposes the constant marginal payback for an extra card.
   The storage timer assumes continuous power until the farm fills.
 - Prices: GPU and fuel tanks use the optimizer's recommended acquisition; Physical
-  Bitcoin (flea-banned) uses the best sale. Missing items, prices or bonus data
+  Bitcoin (flea-banned) uses the highest valid current trader buyback from `sellFor`,
+  with no flea fee. Crafting's locked-output trader toggle and manual sale overrides
+  do not change this value. The offer is mode-specific, not a hardcoded price;
+  missing trader offers remain unavailable. Missing items, prices or bonus data
   render explicit notices. Constants without a data feed live in
   [hideout-power](../src/lib/cfg/hideout-power.ts).
 
@@ -444,6 +464,7 @@ selling-hour predictions and transaction logs remain outside this version.
 node --test --import jiti/register src/lib/price-calculation/optimizer.test.ts src/features/profit-pages/utils/recipes.test.ts src/server/queries/page-data-queries.test.ts
 node --test --import jiti/register src/features/profit-pages/optimize/station-board.test.ts src/lib/price-calculation/calc-tax.test.ts
 node --test --import jiti/register src/features/profit-pages/optimize/station-craft-details-model.test.ts
+node --test --import jiti/register src/features/hideout/power/hideout-power-model.test.ts src/lib/price-calculation/prices.test.ts
 ```
 
 Include tests for the changed route/availability/pricing rule and browser checks

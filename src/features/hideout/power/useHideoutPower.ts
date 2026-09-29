@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { getItemSellComparison, PHYSICAL_BITCOIN_ITEM_ID } from "@/lib/price-calculation";
+import { PHYSICAL_BITCOIN_ITEM_ID } from "@/lib/price-calculation";
+import { getBestTraderOffer } from "@/lib/price-calculation/prices";
 import { getEmptySale, getEmptyValue } from "@/lib/price-calculation/empty-value";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { FUEL_TANK_ITEM_IDS, GRAPHICS_CARD_ITEM_ID } from "@/lib/cfg/hideout-power";
@@ -39,7 +40,7 @@ export interface HideoutPower {
 
 /**
  * Fuel burn and Bitcoin Farm inputs for the station page: the shared recipe query and
- * calculator price GPUs and fuel tanks (recommended acquisition) and Physical Bitcoin (best sale).
+ * calculator price GPUs and fuel tanks (recommended acquisition) and Physical Bitcoin (best trader buyback).
  */
 export function useHideoutPower(
 	mode: TarkovJsonGameMode,
@@ -50,7 +51,7 @@ export function useHideoutPower(
 	const recipe = useStationRecipeCalculator(mode, data);
 	const stationLevels = useUserStore((state) => state.stationLevels);
 	const traderLoyaltyLevels = useUserStore((state) => state.questTraderLoyaltyLevels);
-	const { calculator, itemsById, overrides, saleContext, hideoutManagementSkillLevel } = recipe;
+	const { calculator, itemsById, overrides, hideoutManagementSkillLevel } = recipe;
 
 	return useMemo(() => {
 		const fuel = fuelMultiplier({ stations, stationLevels, hideoutManagementSkillLevel });
@@ -79,7 +80,7 @@ export function useHideoutPower(
 			};
 		});
 		const bitcoinItem = itemsById[PHYSICAL_BITCOIN_ITEM_ID];
-		const sale = calculator && bitcoinItem ? getItemSellComparison(bitcoinItem, overrides, saleContext) : null;
+		const sale = calculator ? getBestTraderOffer(bitcoinItem) : null;
 		return {
 			pricing: recipe.status,
 			unavailableReason: recipe.unavailableReason,
@@ -88,15 +89,8 @@ export function useHideoutPower(
 			gpu: { item: itemsById[GRAPHICS_CARD_ITEM_ID], price: cost(GRAPHICS_CARD_ITEM_ID) },
 			bitcoin: {
 				item: bitcoinItem,
-				price: sale ? (sale.selectedNetPrice ?? sale.selectedPrice) : null,
-				source:
-					sale?.selectedSource === "trader"
-						? (sale.bestTraderOffer?.vendor.name ?? "Trader")
-						: sale?.selectedSource === "flea"
-							? "Flea"
-							: sale?.selectedSource === "manual"
-								? "Manual price"
-								: null,
+				price: sale?.priceRUB ?? null,
+				source: sale?.vendor.name ?? null,
 			},
 			missingItemIds: data
 				? [GRAPHICS_CARD_ITEM_ID, PHYSICAL_BITCOIN_ITEM_ID, ...FUEL_TANK_ITEM_IDS].filter((id) => !itemsById[id])
@@ -112,7 +106,6 @@ export function useHideoutPower(
 		calculator,
 		itemsById,
 		overrides,
-		saleContext,
 		data,
 		recipe.status,
 		recipe.unavailableReason,
