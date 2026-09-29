@@ -348,12 +348,14 @@ investment statistics are not displayed. There are no divider lines around the s
 The Generator row leads with a borderless, softly shaded fuel-burn summary. Its
 station portrait sits beside the hourly rate, with daily usage and Solar below.
 The summary centers its contents and stretches to the fuel comparisons' height.
-The Generator station page adds a **Fuel** section below the shared row: three headline
-stats (fuel use vs. base, how long full tank slots last, cheapest fuel per day), a
-**Modifiers** strip of buff (green) and debuff (red) chips for built Solar Power, the
-Defective Wall and Hideout Management with plain-language hover text, dashed ghost chips
-for **Available upgrades** (units and roubles saved), and a running-cost
-table (how long one tank lasts, then cost per hour/day/week) with the cheapest tank highlighted.
+The Generator station page adds a **Fuel** section below the shared row: four headline
+tiles (how long full tank slots last, cheapest fuel per day, tanks burned per week, cost to
+fill every slot) that sit in one row, a 2×2 grid or a single column depending on the panel's
+width. A **Modifiers** strip, headed by the net change vs. the base burn, shows buff (green)
+and debuff (red) chips for built Solar Power, the Defective Wall and Hideout Management, plus
+dashed ghost chips for **Available upgrades** (units and roubles saved). Station chips link to
+their station. Beside it on wide panels (below it otherwise) is a running-cost table (how
+long one tank lasts, then cost per hour/day/week) with the cheapest tank highlighted.
 
 The **Configure** button in the Generator row opens one dialog with Hideout Management and
 a section per fuel can. Each section has a rouble input with Save and Reset (drafts stay
