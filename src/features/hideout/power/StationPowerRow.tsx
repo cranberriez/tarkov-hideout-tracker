@@ -8,10 +8,10 @@ import { GENERATOR_STATION_ID } from "@/lib/cfg/hideout-power";
 import { WikiSection } from "../details/components/WikiSection";
 import { useStationDetails } from "../details/StationDetailsContext";
 import { FuelTankCards } from "./FuelTankCards";
-import { type FuelMultiplier, type FuelSource } from "./hideout-power-model";
+import { type FuelSource } from "./hideout-power-model";
 import { formatClock, formatSpan } from "./power-format";
 import type { HideoutPower } from "./useHideoutPower";
-import { PowerSkills } from "./PowerSkills";
+import { FuelConfigure } from "./FuelConfigure";
 
 export function formatPercent(value: number) {
 	const rounded = Math.round(value * 1000) / 10;
@@ -20,20 +20,17 @@ export function formatPercent(value: number) {
 
 /** Per-station totals of built bonuses (e.g. Solar Power −0.5); cancelled totals are omitted. */
 export function groupFuelSources(sources: readonly FuelSource[]) {
-	const byStation = new Map<string, { name: string; value: number }>();
+	const byStation = new Map<string, { stationId: string; name: string; value: number }>();
 	for (const source of sources) {
-		const entry = byStation.get(source.stationId) ?? { name: source.stationName, value: 0 };
+		const entry = byStation.get(source.stationId) ?? {
+			stationId: source.stationId,
+			name: source.stationName,
+			value: 0,
+		};
 		entry.value += source.value;
 		byStation.set(source.stationId, entry);
 	}
 	return [...byStation.values()].filter((entry) => Math.abs(entry.value) > 1e-9);
-}
-
-export function burnSummary(fuel: FuelMultiplier, hideoutManagementSkillLevel: number) {
-	const parts = groupFuelSources(fuel.sources).map((entry) => `${entry.name} ${formatPercent(entry.value)}`);
-	const skill = Math.min(50, hideoutManagementSkillLevel);
-	if (skill > 0) parts.push(`Hideout Management ${skill}`);
-	return `Burn ×${fuel.multiplier.toFixed(2)} · ${fuel.unitsPerHour.toFixed(2)} units/h${parts.length ? ` (${parts.join(", ")})` : ""}`;
 }
 
 export function Countdown({ label, seconds, now }: { label: string; seconds: number; now: number | null }) {
@@ -63,7 +60,7 @@ export function StationPowerRow({ power }: { power: HideoutPower }) {
 					"Generator"
 				)
 			}
-			actions={<PowerSkills />}
+			actions={<FuelConfigure power={power} />}
 			bodyClassName="-mt-1 flex flex-col gap-4"
 		>
 			{power.fuel.bonusDataMissing && (
@@ -98,7 +95,7 @@ export function StationPowerRow({ power }: { power: HideoutPower }) {
 						</div>
 					)}
 				</div>
-				<FuelTankCards tanks={power.tanks} loading={power.pricing === "loading"} visual />
+				<FuelTankCards tanks={power.tanks} loading={power.pricing === "loading"} />
 			</div>
 		</WikiSection>
 	);

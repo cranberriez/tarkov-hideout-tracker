@@ -348,11 +348,21 @@ investment statistics are not displayed. There are no divider lines around the s
 The Generator row leads with a borderless, softly shaded fuel-burn summary. Its
 station portrait sits beside the hourly rate, with daily usage and Solar below.
 The summary centers its contents and stretches to the fuel comparisons' height.
-Each fuel card has a short, flat, borderless **EDIT** chip in its top-right corner opening
-an **Edit sell value** dialog with the selected can's image, name, rouble input,
-Save and Reset. Drafts stay local until Save; dismissing discards them, and a mode
-switch closes the dialog. The value is saved for the active profile across the
-app. The entered amount is the pre-tax sale price and is saved unchanged. An
+The Generator station page adds a **Fuel** section below the shared row: three headline
+stats (fuel use vs. base, how long full tank slots last, cheapest fuel per day), a
+**Modifiers** strip of buff (green) and debuff (red) chips for built Solar Power, the
+Defective Wall and Hideout Management with plain-language hover text, dashed ghost chips
+for **Available upgrades** (units and roubles saved), and a running-cost
+table (how long one tank lasts, then cost per hour/day/week) with the cheapest tank highlighted.
+
+The **Configure** button in the Generator row opens one dialog with Hideout Management and
+a section per fuel can. Each section has a rouble input with Save and Reset (drafts stay
+local until Save; dismissing discards them) and the can's acquisition routes as a radio
+list: unlocked routes cheapest first, then locked ones with their first lock reason,
+the recommended one marked **Best**. Picking a route sets that can's cost; **Use
+recommended** clears the pick. A saved route that is no longer available leaves the
+can unpriced until another is chosen; it never falls back silently. The sale value is
+saved for the active profile across the app. The entered amount is the pre-tax sale price and is saved unchanged. An
 always-visible estimated flea tax row shows a dash for blank/invalid input and
 Unavailable when the item base value is missing. The shared empty-sale model uses
 the profile's Intelligence Center, Hideout Management and trader loyalty settings;
@@ -360,8 +370,8 @@ net residual value is clamped to zero when tax exceeds the sale price. Missing t
 inputs leave residual value and dependent costs unknown, never gross-as-net.
 Blank/reset removes the value and zero remains valid. Full-can purchase prices
 remain visible. Running costs use
-`max(0, purchase cost - net empty proceeds)` divided by runtime, with **Net / hour** shown
-when a value is set. Generator daily/weekly costs and upgrade savings share this
+`max(0, purchase cost - net empty proceeds)` divided by runtime, always labelled
+**Cost / hour**. Generator daily/weekly costs and upgrade savings share this
 deduction. Unknown purchase prices stay unknown.
 The two tanks use borderless comparisons with larger item images, aligned numeric
 runtimes and hourly costs; the cheaper hourly option gets a small downward arrow
@@ -370,9 +380,9 @@ both costs are available and differ. Longer runtime does not imply better value.
 A built Solar Power bonus appears in the generator summary with its portrait and
 base efficiency percentage. There is no fuel-remaining
 input or power-out reminder; the Bitcoin timer estimates only when storage fills.
-The **Skills** chip on both power panels edits Hideout Management through the existing
-mode-scoped profit options, including Elite, shared with crafts and profit pages.
-It introduces no new saved fields or storage keys.
+Hideout Management in the Configure dialog uses the existing mode-scoped profit options,
+including Elite, shared with crafts and profit pages. Chosen fuel routes are the only
+new saved field: `tarkov-fuel-routes-v1:{mode}`.
 
 - [hideout-power-model](../src/features/hideout/power/hideout-power-model.ts): base
   burn is constant (~4.75 units/h, independent of active stations). Built
@@ -385,7 +395,7 @@ It introduces no new saved fields or storage keys.
   Revenue/hour is gross, without deducting fuel. ROI = GPU investment ÷ revenue/hour;
   the model also exposes the constant marginal payback for an extra card.
   The storage timer assumes continuous power until the farm fills.
-- Prices: GPU and fuel tanks use the optimizer's recommended acquisition; Physical
+- Prices: GPUs use the optimizer's recommended acquisition, and fuel tanks the same unless a route was chosen in Configure; Physical
   Bitcoin (flea-banned) uses the highest valid current trader buyback from `sellFor`,
   with no flea fee. Crafting's locked-output trader toggle and manual sale overrides
   do not change this value. The offer is mode-specific, not a hardcoded price;
