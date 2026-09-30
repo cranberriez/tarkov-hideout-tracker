@@ -34,6 +34,7 @@ import {
 	initialQuestLogImportState,
 	questLogImportReducer,
 } from "./quest-log-import-model";
+import { collectDroppedFiles, pickLogFolder } from "./log-folder-picker";
 
 type DirectoryInputAttributes = InputHTMLAttributes<HTMLInputElement> & {
 	webkitdirectory?: string;
@@ -136,12 +137,11 @@ export function useQuestLogImportController(input: {
 				parsedView: { result, buckets },
 				pendingFingerprints: Array.from(new Set(newFingerprints)).sort((a, b) => a.localeCompare(b)),
 				preWipeIgnoredFileNames: result.preWipeIgnoredFiles ?? [],
-				selections: Object.assign(
-					{},
-					...IMPORT_GAME_MODES.map((mode) =>
-						prefixSelections(mode, setAllQuestImportSelections(getModeRows(buckets, mode), false)),
-					),
+				selections: prefixSelections(
+					input.gameMode,
+					setAllQuestImportSelections(getModeRows(buckets, input.gameMode), false),
 				),
+				reviewMode: input.gameMode,
 				error:
 					result.totals.filesParsed === 0 ? "No push-notifications log files were found in that selection." : undefined,
 			});
@@ -151,6 +151,24 @@ export function useQuestLogImportController(input: {
 				error: "The selected logs could not be read. Try choosing the EFT logs folder again.",
 			});
 		}
+	}
+
+	function selectCollectedFiles(files: File[]) {
+		if (files.length === 0) {
+			dispatch({ type: "parsingFailed", error: "No push-notification log files were found in that folder." });
+			return;
+		}
+		selectFiles(files);
+	}
+
+	async function chooseFolder() {
+		const picked = await pickLogFolder();
+		if (picked === undefined) fileInputRef.current?.click();
+		else if (picked) selectCollectedFiles(picked);
+	}
+
+	async function dropFolder(dataTransfer: DataTransfer) {
+		selectCollectedFiles(await collectDroppedFiles(dataTransfer));
 	}
 
 	function selectFiles(files: File[]) {
@@ -163,15 +181,6 @@ export function useQuestLogImportController(input: {
 			type: "setSelections",
 			selections: prefixSelections(mode, setAllQuestImportSelections(rows, value)),
 		});
-	}
-
-	function reviewMode(mode: ImportGameMode) {
-		const rows = modeModels.find((model) => model.mode === mode)?.rows ?? [];
-		dispatch(
-			rows.length === 0
-				? { type: "setImportNotice", notice: `No ${mode} quests are available to import.` }
-				: { type: "reviewStarted", mode },
-		);
 	}
 
 	function applyImport(mode: ImportGameMode) {
@@ -254,7 +263,8 @@ export function useQuestLogImportController(input: {
 		fileInputRef,
 		directoryInputProps,
 		commands: {
-			chooseFolder: () => fileInputRef.current?.click(),
+			chooseFolder: () => void chooseFolder(),
+			dropFolder: (dataTransfer: DataTransfer) => void dropFolder(dataTransfer),
 			selectFiles,
 			clear: () => dispatch({ type: "clear" }),
 			clearCache: () => {
@@ -268,11 +278,8 @@ export function useQuestLogImportController(input: {
 				dispatch({ type: "clearCacheNotice" });
 				void parseSelectedFiles(state.selectedFiles, { ignoreSeenFiles: true });
 			},
-			toggleAutoComplete: (mode: ImportGameMode, questId: string) =>
-				dispatch({ type: "toggleSelection", key: getSelectionKey(mode, questId) }),
 			setAllForMode,
-			reviewMode,
-			cancelReview: () => dispatch({ type: "reviewCancelled" }),
+			cancelReview: () => dispatch({ type: "clear" }),
 			toggleInfo: () => dispatch({ type: "toggleInfo" }),
 			allowSensitiveQuest: (questId: string) => dispatch({ type: "sensitiveAllowed", questId }),
 			denySensitiveQuest: (questId: string) => dispatch({ type: "sensitiveDenied", questId }),

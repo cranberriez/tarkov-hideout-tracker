@@ -97,6 +97,11 @@ and [controller](../src/features/quests/import/useQuestLogImportController.ts)
 own review/workflow and seen-file tracking. Keep state mutation through existing
 store actions; [user-state](user-state.md) documents import metadata and reset scope.
 
+The dialog is three steps for the active profile only: choose the logs folder,
+review the quests that would change against stored progress, then a result (or a
+gray "nothing imported" state when nothing changed). Closing resets it. Lightkeeper
+quests are not synced by import.
+
 ## Kappa checklist
 
 [getKappaChecklistPageData](../src/server/queries/getKappaChecklistPageData.ts)

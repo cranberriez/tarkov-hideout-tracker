@@ -1,47 +1,41 @@
 "use client";
 
-import { useMemo, type CSSProperties } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useQuestActions } from "../QuestActionsContext";
 import {
 	AlertCircle,
-	ArrowLeft,
 	Check,
 	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
+	CircleDot,
 	FolderOpen,
-	Info,
+	MinusCircle,
 	TriangleAlert,
-	Trash2,
 	Upload,
 } from "lucide-react";
 import type { FullQuest } from "@/types/quests";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
-import {
-	IMPORT_GAME_MODES,
-	type ImportGameMode,
-	type QuestImportBuckets,
-	type QuestImportRow,
-} from "@/lib/quests/quest-log-import";
+import { IMPORT_GAME_MODES, type ImportGameMode, type QuestImportBuckets } from "@/lib/quests/quest-log-import";
 import { type ParsedQuestEvent, type QuestLogParseResult } from "@/lib/quests/quest-log-parser";
 import { buildQuestAvailabilityMap, isQuestAvailableForProfile } from "@/lib/quests/quest-availability";
-import {
-	NETWORK_PROVIDER_PART_1_ID,
-	getSensitiveBackfillQuest,
-	getSensitiveBackfillQuestName,
-} from "@/lib/quests/sensitive-quest-backfill";
+import { getSensitiveBackfillQuest, getSensitiveBackfillQuestName } from "@/lib/quests/sensitive-quest-backfill";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QuestListByTrader } from "../components/QuestListByTrader";
-import { getSelectionKey, type AutoCompleteSelectionMap, type ImportSummary } from "./quest-log-import-model";
+import { type ImportSummary } from "./quest-log-import-model";
 import { useQuestLogImportController } from "./useQuestLogImportController";
-import { PROFILE_BASE_COLORS } from "@/lib/cfg/profile-colors";
 
 interface QuestLogImportDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	quests: FullQuest[];
 }
+
+const secondaryButton =
+	"inline-flex items-center gap-2 rounded-sm border border-highlight/10 bg-highlight/5 px-3 py-2 text-sm text-foreground transition-colors hover:border-highlight/20 hover:bg-highlight/10";
+const primaryButton =
+	"inline-flex items-center gap-2 rounded-sm border border-brand/30 bg-brand/10 px-3 py-2 text-sm font-semibold text-brand transition-colors hover:border-brand/60 disabled:cursor-not-allowed disabled:border-highlight/10 disabled:bg-shadow/30 disabled:text-subtle-foreground";
 
 export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImportDialogProps) {
 	const { questsById } = useQuestActions();
@@ -85,10 +79,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 	const { state, modeModels, reviewModel, fileInputRef, directoryInputProps, commands } = controller;
 	const {
 		parsedView,
-		selectedFileNames,
 		error,
 		showInfo,
-		importNotice,
 		cacheNotice,
 		preWipeIgnoredFileNames,
 		autoCompleteSelections,
@@ -98,318 +90,179 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 		deniedSensitiveBackfillQuestIds,
 	} = state;
 	const isParsing = state.status === "parsing";
-	const didConfirmImport = state.status === "success";
-	const step =
-		state.status === "review" || state.status === "applying" || state.status === "success" ? "review" : "select";
-	const hasResults = !!parsedView;
+	const isSuccess = state.status === "success";
+	const isReview = (state.status === "review" || state.status === "applying") && !!reviewMode && !!reviewModel;
+	const isSelect = !isReview && !isSuccess;
+
+	const mode = reviewMode ?? gameMode;
+	const reviewRows = modeModels.find((model) => model.mode === mode)?.rows ?? [];
+	const importedRows = reviewModel?.importedRows ?? [];
+	const prerequisiteQuests = reviewModel?.prerequisiteQuests ?? [];
+	const blockedSensitiveQuestIds = reviewModel?.blockedSensitiveQuestIds ?? [];
+	const sensitiveDecisionQuestIds = reviewModel?.sensitiveDecisionQuestIds ?? [];
+	const autoCompleteAll =
+		reviewRows.length > 0 && reviewRows.every((row) => autoCompleteSelections[`${mode}:${row.questId}`]);
 	const hasPreWipeIgnoredFiles = preWipeIgnoredFileNames.length > 0;
-	const importableModeModels = modeModels.filter((model) => model.rows.length > 0);
-	const hasAnyImportableRows = importableModeModels.length > 0;
-	const reviewPreview = reviewModel;
-	const reviewImportedRows = reviewModel?.importedRows ?? [];
-	const reviewPrerequisiteQuests = reviewModel?.prerequisiteQuests ?? [];
-	const reviewBlockedSensitiveQuestIds = reviewModel?.blockedSensitiveQuestIds ?? [];
-	const reviewSensitiveDecisionQuestIds = reviewModel?.sensitiveDecisionQuestIds ?? [];
-	const showSourceSummary = isParsing || step === "review" || hasResults || selectedFileNames.length > 0;
-	const showSelectFooter = step === "select" && hasResults && hasAnyImportableRows;
-	const showReviewFooter = step === "review" && !!reviewMode && !!reviewPreview;
-	const canClearSelection = isParsing || hasResults || selectedFileNames.length > 0;
-	const showSuccessBanner = didConfirmImport;
+	const hasChanges = reviewRows.length > 0;
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (!nextOpen) commands.clear();
+		onOpenChange(nextOpen);
+	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-[90dvh] max-w-6xl overflow-hidden p-0">
+		<Dialog open={open} onOpenChange={handleOpenChange}>
+			<DialogContent
+				className="max-h-[90dvh] max-w-3xl overflow-hidden p-0"
+				{...(isSelect ? {} : { "aria-describedby": undefined })}
+			>
 				<div className="flex max-h-[90dvh] flex-col">
-					<DialogHeader className="border-b border-highlight/10 px-6 py-5">
-						<DialogTitle className="text-balance text-xl text-foreground">Quest Log Import</DialogTitle>
-						<DialogDescription className="max-w-3xl text-pretty text-sm text-muted-foreground">
-							Upload EFT push-notification logs at the end of a play session to update quest completion state or quickly
-							get back up to speed. For more in-depth quest syncing, especially when starting fresh on the site, try the
-							main sync feature. Lightkeeper-related quests, including the To the Light access chain, are not synced
-							automatically for now and need to be marked by hand.
-						</DialogDescription>
-					</DialogHeader>
+					<input ref={fileInputRef} className="hidden" {...directoryInputProps} />
 
-					<div className="flex-1 overflow-y-auto p-4">
-						<input ref={fileInputRef} className="hidden" {...directoryInputProps} />
+					{isSelect ? (
+						<DialogHeader className="px-6 pb-2 pt-5">
+							<DialogTitle className="text-balance text-lg text-foreground">Quest Log Import</DialogTitle>
+							<DialogDescription className="text-pretty text-sm text-muted-foreground">
+								Update {mode} quest progress from EFT logs. Lightkeeper quests are not synced yet.
+							</DialogDescription>
+						</DialogHeader>
+					) : (
+						<DialogTitle className="sr-only">Quest Log Import</DialogTitle>
+					)}
 
-						{showSourceSummary && (
-							<section className="flex flex-col rounded-lg border border-highlight/10 bg-shadow/20 p-4">
-								<div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-									<div className="space-y-1">
-										<div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-											<FolderOpen size={16} className="text-brand" />
-											Choose EFT logs folder
-										</div>
-										<p className="max-w-2xl text-pretty text-sm text-muted-foreground">
-											The importer reads {gameMode} quest notifications for your active profile. Other modes in the same
-											files stay unprocessed for a later upload.
-										</p>
-										<p className="text-xs text-subtle-foreground">
-											<code className="rounded bg-highlight/5 px-1.5 py-0.5 text-foreground">
-												~\Battlestate Games\EFT\Logs
-											</code>{" "}
-											upload the whole logs folder or individual sub-folders.
-										</p>
-									</div>
-
-									<div className="flex flex-wrap items-center gap-2 lg:justify-end">
-										<button
-											type="button"
-											onClick={commands.chooseFolder}
-											aria-controls="quest-log-folder-upload"
-											className={cn(
-												"inline-flex items-center gap-2 rounded-sm border px-3 py-2 text-sm transition-colors",
-												selectedFileNames.length > 0
-													? "border-highlight/10 bg-highlight/5 text-foreground hover:border-highlight/20 hover:bg-highlight/10 hover:text-foreground"
-													: "border-brand/30 bg-brand/10 font-semibold text-brand hover:border-brand/60",
-											)}
-										>
-											<Upload size={14} />
-											{selectedFileNames.length > 0 ? "Change Folder" : "Choose Folder"}
-										</button>
-										<button
-											type="button"
-											onClick={commands.clear}
-											disabled={!canClearSelection}
-											aria-label="Clear selected folder"
-											className="inline-flex size-10 items-center justify-center rounded-sm border border-highlight/10 bg-highlight/5 text-foreground transition-colors hover:border-highlight/20 hover:bg-highlight/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-										>
-											<Trash2 size={15} />
-										</button>
-									</div>
-								</div>
-
-								{isParsing && (
-									<div className="mt-4 rounded-lg border border-highlight/10 bg-shadow/30 px-3 py-3">
-										<span className="inline-flex items-center gap-2 text-success">
-											<span className="size-2 rounded-full bg-success" />
-											Parsing logs...
-										</span>
-									</div>
-								)}
-
-								{error && (
-									<div className="mt-4 inline-flex items-center gap-2 rounded-sm border border-danger/20 bg-danger/10 px-3 py-2 text-sm text-danger">
-										<AlertCircle size={14} />
-										{error}
-									</div>
-								)}
-
-								{importNotice && !showSuccessBanner && (
-									<div className="mt-4 inline-flex items-center gap-2 rounded-sm border border-success/20 bg-success/10 px-3 py-2 text-sm text-success">
-										<CheckCircle2 size={14} />
-										{importNotice}
-									</div>
-								)}
-
-								{hasPreWipeIgnoredFiles && <PreWipeCutoffNotice fileCount={preWipeIgnoredFileNames.length} />}
-							</section>
-						)}
-
-						{step === "select" && !isParsing && !hasResults && selectedFileNames.length === 0 && (
-							<section className="mt-5 rounded-lg border border-dashed border-highlight/10 bg-shadow/10 p-8 text-center">
-								<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
-									<CheckCircle2 size={24} className="text-success/80" />
-									<h2 className="text-balance text-lg font-semibold text-foreground">
-										Ready to inspect and import quest notifications
-									</h2>
-									<p className="text-pretty text-sm text-muted-foreground">
-										Choose your EFT logs folder and the importer will import {gameMode} quest notifications for your
-										active profile. Other modes in the same files stay unprocessed.
-									</p>
-									<p className="text-xs text-subtle-foreground">
-										<code className="rounded bg-highlight/5 px-1.5 py-0.5 text-foreground">
-											~\Battlestate Games\EFT\Logs
-										</code>{" "}
-										upload the whole logs folder or individual sub-folders.
-									</p>
-									<button
-										type="button"
-										onClick={commands.chooseFolder}
-										className="rounded-sm border border-brand/30 bg-brand/10 px-3 py-2 text-sm font-semibold text-brand transition-colors hover:border-brand/60"
-									>
-										Choose Logs Folder
-									</button>
-								</div>
-
+					<div className="flex-1 overflow-y-auto px-6 py-5">
+						{isSelect && (
+							<div className="flex flex-col items-center gap-3 text-center">
+								<LogDropzone busy={isParsing} onChoose={commands.chooseFolder} onDrop={commands.dropFolder} />
+								{error && <Notice tone="danger" icon={<AlertCircle size={14} />} message={error} />}
 								{cacheNotice && (
-									<div className="mt-5 flex w-full flex-col items-center justify-center gap-3 rounded-sm border border-warning/35 bg-warning/12 px-4 py-3 text-center text-sm text-warning sm:flex-row sm:flex-wrap">
-										<div>{cacheNotice}</div>
+									<div className="flex flex-wrap items-center justify-center gap-3 rounded-sm border border-warning/35 bg-warning/12 px-4 py-3 text-sm text-warning">
+										<span>{cacheNotice}</span>
 										<button
 											type="button"
 											onClick={commands.clearCache}
-											className="text-xs text-warning underline underline-offset-2 transition-colors hover:text-foreground"
+											className="text-xs underline underline-offset-2 hover:text-foreground"
 										>
 											Clear cache
 										</button>
 										<button
 											type="button"
 											onClick={commands.ignoreCache}
-											className="rounded-sm border border-warning/30 bg-warning/10 px-2 py-1 text-xs font-semibold text-warning transition-colors hover:border-warning/60 hover:bg-warning/20 hover:text-foreground"
+											className="rounded-sm border border-warning/30 bg-warning/10 px-2 py-1 text-xs font-semibold hover:border-warning/60 hover:text-foreground"
 										>
 											Ignore for these files
 										</button>
 									</div>
 								)}
-							</section>
-						)}
-
-						{cacheNotice && showSourceSummary && (
-							<div className="mt-5 rounded-sm border border-warning/35 bg-warning/12 px-4 py-3 text-sm text-warning">
-								<div className="flex flex-col items-center justify-center gap-3 text-center sm:flex-row sm:flex-wrap">
-									<div>{cacheNotice}</div>
-									<button
-										type="button"
-										onClick={commands.clearCache}
-										className="text-xs text-warning underline underline-offset-2 transition-colors hover:text-foreground"
-									>
-										Clear cache
-									</button>
-									<button
-										type="button"
-										onClick={commands.ignoreCache}
-										className="rounded-sm border border-warning/30 bg-warning/10 px-2 py-1 text-xs font-semibold text-warning transition-colors hover:border-warning/60 hover:bg-warning/20 hover:text-foreground"
-									>
-										Ignore for these files
-									</button>
-								</div>
+								{hasPreWipeIgnoredFiles && <PreWipeCutoffNotice fileCount={preWipeIgnoredFileNames.length} />}
 							</div>
 						)}
 
-						{step === "select" && !isParsing && hasResults && !hasAnyImportableRows && !cacheNotice && (
-							<section className="mt-5 rounded-lg border border-highlight/10 bg-shadow/20 px-4 py-4 text-sm text-foreground">
-								All quests in logs are already completed.
-							</section>
-						)}
+						{isReview && (
+							<div className="space-y-5">
+								{hasChanges && (
+									<div className="flex flex-wrap items-center justify-between gap-3 pr-8">
+										<h2 className="text-balance text-lg font-semibold text-foreground">
+											{importedRows.length} {mode} quest{importedRows.length === 1 ? "" : "s"} will change
+										</h2>
+										<label className="inline-flex items-center gap-2 text-sm text-foreground">
+											<input
+												type="checkbox"
+												checked={autoCompleteAll}
+												onChange={() => commands.setAllForMode(mode, reviewRows, !autoCompleteAll)}
+												className="size-4 accent-brand"
+											/>
+											Complete prerequisites
+										</label>
+									</div>
+								)}
 
-						{hasResults && parsedView && step === "select" && hasAnyImportableRows && (
-							<div className="mt-5 space-y-5">
-								{importableModeModels.map((model) => (
-									<ModeSection
-										key={model.mode}
-										title={model.title}
-										mode={model.mode}
-										rows={model.rows}
-										completedQuests={model.completedQuests}
-										autoCompleteSelections={autoCompleteSelections}
-										onToggleAutoComplete={commands.toggleAutoComplete}
-										onEnableAll={() => commands.setAllForMode(model.mode, model.rows, true)}
-										onDisableAll={() => commands.setAllForMode(model.mode, model.rows, false)}
-									/>
-								))}
-							</div>
-						)}
+								{!hasChanges ? (
+									<NothingImported message={`Your ${mode} progress already matches these logs.`} />
+								) : (
+									<>
+										{sensitiveDecisionQuestIds.length > 0 && (
+											<SensitiveBackfillGate
+												questIds={sensitiveDecisionQuestIds}
+												allowedQuestIds={allowedSensitiveBackfillQuestIds}
+												deniedQuestIds={deniedSensitiveBackfillQuestIds}
+												getQuestName={(questId) => getSensitiveBackfillQuestName(questId, questsById)}
+												onAllow={commands.allowSensitiveQuest}
+												onDeny={commands.denySensitiveQuest}
+											/>
+										)}
 
-						{hasResults && parsedView && step === "review" && reviewMode && reviewPreview && (
-							<div className="mt-5 space-y-5">
-								<ReviewStep
-									mode={reviewMode}
-									importedRows={reviewImportedRows}
-									prerequisiteQuests={reviewPrerequisiteQuests}
-									sensitiveDecisionQuestIds={reviewSensitiveDecisionQuestIds}
-									allowedSensitiveQuestIds={allowedSensitiveBackfillQuestIds}
-									deniedSensitiveQuestIds={deniedSensitiveBackfillQuestIds}
-									didConfirmImport={didConfirmImport}
-									importSummary={importSummary}
-									questsById={questsById}
-									getQuestName={(questId) => getSensitiveBackfillQuestName(questId, questsById)}
-									onAllowSensitiveBackfill={commands.allowSensitiveQuest}
-									onDenySensitiveBackfill={commands.denySensitiveQuest}
-								/>
+										<QuestListByTrader
+											questIds={importedRows.map((row) => row.questId)}
+											questsById={questsById}
+											itemPrefix={(quest) => {
+												const row = importedRows.find((candidate) => candidate.questId === quest.id);
+												return row?.hasCompleted ? (
+													<Check size={14} className="shrink-0 text-success" aria-label="Completed" />
+												) : (
+													<CircleDot size={14} className="shrink-0 text-info" aria-label="Started" />
+												);
+											}}
+										/>
 
-								{!didConfirmImport && showInfo && (
+										{prerequisiteQuests.length > 0 && (
+											<section className="space-y-2">
+												<h3 className="text-sm font-semibold text-foreground">
+													Prerequisites to complete ({prerequisiteQuests.length})
+												</h3>
+												<QuestListByTrader
+													questIds={prerequisiteQuests.map((quest) => quest.id)}
+													questsById={questsById}
+													itemPrefix={() => <Check size={14} className="shrink-0 text-success" />}
+												/>
+											</section>
+										)}
+									</>
+								)}
+
+								{hasPreWipeIgnoredFiles && <PreWipeCutoffNotice fileCount={preWipeIgnoredFileNames.length} />}
+								{error && <Notice tone="danger" icon={<AlertCircle size={14} />} message={error} />}
+								{showInfo && parsedView && (
 									<InfoPanel result={parsedView.result} unknownModeGroups={parsedView.buckets.unknownMode} />
 								)}
 							</div>
 						)}
+
+						{isSuccess && <ImportResult summary={importSummary} mode={mode} />}
 					</div>
 
-					{(showSelectFooter || showReviewFooter) && (
-						<div className="border-t border-highlight/10 bg-card/95 px-6 py-3 backdrop-blur">
-							{showSelectFooter && (
-								<div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+					{isReview && (
+						<div className="flex items-center justify-between gap-3 border-t border-highlight/10 px-6 py-3">
+							<button type="button" onClick={commands.cancelReview} className={secondaryButton}>
+								Back
+							</button>
+							<div className="flex items-center gap-2">
+								<button type="button" onClick={commands.toggleInfo} className={secondaryButton}>
+									Details
+									{showInfo ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+								</button>
+								{hasChanges ? (
 									<button
 										type="button"
-										onClick={commands.clear}
-										className="inline-flex items-center gap-2 rounded-sm border border-highlight/10 bg-highlight/5 px-3 py-2 text-sm text-foreground transition-colors hover:border-highlight/20 hover:bg-highlight/10 hover:text-foreground"
+										onClick={() => commands.applyImport(mode)}
+										disabled={blockedSensitiveQuestIds.length > 0 || state.status === "applying"}
+										className={primaryButton}
 									>
-										<ArrowLeft size={14} />
-										Back
+										Confirm import
 									</button>
+								) : (
+									<button type="button" onClick={() => handleOpenChange(false)} className={primaryButton}>
+										Close
+									</button>
+								)}
+							</div>
+						</div>
+					)}
 
-									<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-										<span className="text-sm text-muted-foreground">Import quests from:</span>
-										<div className="flex flex-wrap items-center gap-2">
-											{importableModeModels.map((model) => (
-												<button
-													key={model.mode}
-													type="button"
-													onClick={() => commands.reviewMode(model.mode)}
-													style={{ "--profile-color": PROFILE_BASE_COLORS[model.mode] } as CSSProperties}
-													className="rounded-sm border border-[color-mix(in_srgb,var(--profile-color)_45%,transparent)] bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--profile-color)_22%,var(--background)),color-mix(in_srgb,var(--profile-color)_10%,var(--background)))] px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:border-[color-mix(in_srgb,var(--profile-color)_60%,transparent)] hover:bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--profile-color)_30%,var(--background)),color-mix(in_srgb,var(--profile-color)_15%,var(--background)))]"
-												>
-													Import {model.title}
-												</button>
-											))}
-										</div>
-									</div>
-								</div>
-							)}
-
-							{showReviewFooter && reviewMode && reviewPreview && (
-								<div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-									{didConfirmImport ? (
-										<div />
-									) : (
-										<button
-											type="button"
-											onClick={commands.cancelReview}
-											className="inline-flex items-center gap-2 rounded-sm border border-highlight/10 bg-highlight/5 px-3 py-2 text-sm text-foreground transition-colors hover:border-highlight/20 hover:bg-highlight/10 hover:text-foreground"
-										>
-											<ArrowLeft size={14} />
-											Back
-										</button>
-									)}
-
-									<div className="flex flex-wrap items-center gap-2 md:justify-end">
-										{!didConfirmImport && (
-											<button
-												type="button"
-												onClick={commands.toggleInfo}
-												className="inline-flex items-center gap-1 rounded-sm border border-highlight/10 bg-highlight/5 px-2.5 py-2 text-xs text-foreground transition-colors hover:border-highlight/20 hover:bg-highlight/10 hover:text-foreground"
-											>
-												<Info size={13} />
-												Info
-												{showInfo ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-											</button>
-										)}
-										{didConfirmImport ? (
-											<button
-												type="button"
-												onClick={() => onOpenChange(false)}
-												className="rounded-sm border border-brand/30 bg-brand/10 px-3 py-2 text-sm font-semibold text-brand transition-colors hover:border-brand/60"
-											>
-												Close
-											</button>
-										) : (
-											<button
-												type="button"
-												onClick={() => commands.applyImport(reviewMode)}
-												disabled={reviewBlockedSensitiveQuestIds.length > 0}
-												className={cn(
-													"rounded-sm px-3 py-2 text-sm font-semibold transition-colors",
-													reviewBlockedSensitiveQuestIds.length > 0
-														? "cursor-not-allowed border border-highlight/10 bg-shadow/30 text-subtle-foreground"
-														: "border border-brand/30 bg-brand/10 text-brand hover:border-brand/60",
-												)}
-											>
-												Confirm Import
-											</button>
-										)}
-									</div>
-								</div>
-							)}
+					{isSuccess && (
+						<div className="flex justify-end border-t border-highlight/10 px-6 py-3">
+							<button type="button" onClick={() => handleOpenChange(false)} className={primaryButton}>
+								Close
+							</button>
 						</div>
 					)}
 				</div>
@@ -418,235 +271,136 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 	);
 }
 
-function PreWipeCutoffNotice({ fileCount }: { fileCount: number }) {
+function LogDropzone({
+	busy,
+	onChoose,
+	onDrop,
+}: {
+	busy: boolean;
+	onChoose: () => void;
+	onDrop: (dataTransfer: DataTransfer) => void;
+}) {
+	const [dragging, setDragging] = useState(false);
+
 	return (
-		<div className="mt-4 flex w-full items-center gap-2 rounded-sm border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
-			<AlertCircle size={14} />
-			<span>
-				Some log files are older than the latest 1.0 wipe in November 2025 and were ignored.
-				{fileCount > 1 ? ` ${fileCount} files were skipped.` : ""}
-			</span>
+		<div
+			role="button"
+			tabIndex={0}
+			aria-label="Choose EFT logs folder"
+			aria-disabled={busy}
+			onClick={() => !busy && onChoose()}
+			onKeyDown={(event) => {
+				if (!busy && (event.key === "Enter" || event.key === " ")) {
+					event.preventDefault();
+					onChoose();
+				}
+			}}
+			onDragOver={(event) => {
+				event.preventDefault();
+				setDragging(true);
+			}}
+			onDragLeave={() => setDragging(false)}
+			onDrop={(event) => {
+				event.preventDefault();
+				setDragging(false);
+				if (!busy) onDrop(event.dataTransfer);
+			}}
+			className={cn(
+				"flex w-full cursor-pointer flex-col items-center gap-3 rounded-lg border-2 border-dashed px-6 py-12 transition-colors",
+				dragging ? "border-brand/60 bg-brand/10" : "border-highlight/15 bg-highlight/[0.03] hover:border-highlight/30",
+				busy && "cursor-progress opacity-70",
+			)}
+		>
+			<Upload size={28} className={dragging ? "text-brand" : "text-muted-foreground"} />
+			<div>
+				<div className="text-base font-semibold text-foreground">
+					{busy ? "Reading logs…" : "Drop your EFT logs folder here"}
+				</div>
+				<div className="mt-1 text-sm text-muted-foreground">or click to browse</div>
+			</div>
+			<button
+				type="button"
+				disabled={busy}
+				onClick={(event) => {
+					event.stopPropagation();
+					onChoose();
+				}}
+				className={secondaryButton}
+			>
+				<FolderOpen size={14} />
+				Choose folder
+			</button>
+			<div className="space-y-1 text-xs text-subtle-foreground">
+				<p>
+					Usually found at{" "}
+					<code className="whitespace-nowrap rounded bg-highlight/5 px-1.5 py-0.5 font-mono text-foreground">
+						{String.raw`~\Battlestate Games\EFT\Logs`}
+					</code>
+				</p>
+				<p>Select the whole Logs folder or a single log_ subfolder.</p>
+			</div>
 		</div>
 	);
 }
 
-function ModeSection({
-	title,
-	mode,
-	rows,
-	completedQuests,
-	autoCompleteSelections,
-	onToggleAutoComplete,
-	onEnableAll,
-	onDisableAll,
-}: {
-	title: string;
-	mode: ImportGameMode;
-	rows: QuestImportRow[];
-	completedQuests: Record<string, boolean>;
-	autoCompleteSelections: AutoCompleteSelectionMap;
-	onToggleAutoComplete: (mode: ImportGameMode, questId: string) => void;
-	onEnableAll: () => void;
-	onDisableAll: () => void;
-}) {
-	const accentClasses =
-		"from-[color-mix(in_srgb,var(--profile-color)_25%,transparent)] via-[color-mix(in_srgb,var(--profile-color)_8%,transparent)] to-transparent";
-
+function Notice({ tone, icon, message }: { tone: "danger" | "warning"; icon: ReactNode; message: string }) {
 	return (
-		<section
-			style={{ "--profile-color": PROFILE_BASE_COLORS[mode] } as CSSProperties}
-			className="rounded-lg border border-highlight/10 bg-shadow/20"
+		<div
+			className={cn(
+				"inline-flex items-center gap-2 rounded-sm border px-3 py-2 text-sm",
+				tone === "danger"
+					? "border-danger/20 bg-danger/10 text-danger"
+					: "border-warning/30 bg-warning/10 text-warning",
+			)}
 		>
-			<div className="relative flex flex-col gap-3 overflow-hidden border-b border-highlight/10 px-4 py-3 lg:flex-row lg:items-center">
-				<div
-					aria-hidden="true"
-					className={cn(
-						"pointer-events-none absolute -left-6 -top-8 h-20 w-32 rounded-full bg-gradient-to-br blur-2xl",
-						accentClasses,
-					)}
-				/>
-				<div className="relative">
-					<h2 className="text-balance text-lg font-semibold text-foreground">{title}</h2>
-				</div>
-
-				<div className="relative flex flex-wrap items-center gap-2 lg:ml-auto lg:justify-end">
-					<button
-						type="button"
-						onClick={onEnableAll}
-						className="rounded-sm border border-highlight/10 bg-highlight/5 px-3 py-2 text-sm text-foreground transition-colors hover:border-highlight/20 hover:bg-highlight/10 hover:text-foreground"
-					>
-						Enable All
-					</button>
-					<button
-						type="button"
-						onClick={onDisableAll}
-						className="rounded-sm border border-highlight/10 bg-highlight/5 px-3 py-2 text-sm text-foreground transition-colors hover:border-highlight/20 hover:bg-highlight/10 hover:text-foreground"
-					>
-						Disable All
-					</button>
-				</div>
-			</div>
-
-			<div className="divide-y divide-highlight/5">
-				{rows.map((row) => {
-					const selectionKey = getSelectionKey(mode, row.questId);
-					const autoCompleteEnabled = autoCompleteSelections[selectionKey] ?? false;
-					const alreadyCompleted = !!completedQuests[row.questId];
-					const showNetworkProviderWarning = row.questId === NETWORK_PROVIDER_PART_1_ID && autoCompleteEnabled;
-
-					return (
-						<div key={`${mode}-${row.questId}`} className="px-4 py-4">
-							<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-								<div className="min-w-0">
-									<div className="flex flex-wrap items-center gap-2">
-										<div className="truncate text-base font-semibold text-foreground">{row.quest.name}</div>
-										<QuestStateBadge hasStarted={row.hasStarted} hasCompleted={row.hasCompleted} />
-										{alreadyCompleted && (
-											<span className="inline-flex items-center rounded-full border border-success/20 bg-success/10 px-2 py-1 text-[11px] font-medium uppercase text-success">
-												Already Complete
-											</span>
-										)}
-									</div>
-									<div className="mt-1 text-xs text-subtle-foreground">{row.questId}</div>
-									<div className="mt-2 text-xs text-subtle-foreground tabular-nums">
-										Seen {row.occurrenceCount} · Events {row.eventCount} · Files {row.sourceFiles.length}
-									</div>
-								</div>
-
-								<div className="flex flex-col items-start gap-3 lg:items-end">
-									<div className="text-xs text-muted-foreground tabular-nums">
-										Latest: {formatTimestamp(row.latestTimestamp)}
-									</div>
-									<label className="inline-flex items-center gap-3 rounded-sm border border-highlight/10 bg-highlight/5 px-3 py-2 text-sm text-foreground">
-										<input
-											type="checkbox"
-											checked={autoCompleteEnabled}
-											onChange={() => onToggleAutoComplete(mode, row.questId)}
-											className="size-4 accent-brand"
-										/>
-										Auto-complete prerequisites
-									</label>
-								</div>
-							</div>
-
-							{showNetworkProviderWarning && (
-								<div className="mt-4 rounded-sm border border-danger/35 bg-danger/12 px-3 py-2 text-xs font-semibold text-danger">
-									WARNING: If you got Network Provider - Part 1 from the story missions, do not select it. This can
-									auto-complete a large number of quests you may not intend to do.
-								</div>
-							)}
-						</div>
-					);
-				})}
-			</div>
-		</section>
+			{icon}
+			{message}
+		</div>
 	);
 }
 
-function ReviewStep({
-	mode,
-	importedRows,
-	prerequisiteQuests,
-	sensitiveDecisionQuestIds,
-	allowedSensitiveQuestIds,
-	deniedSensitiveQuestIds,
-	didConfirmImport,
-	importSummary,
-	questsById,
-	getQuestName,
-	onAllowSensitiveBackfill,
-	onDenySensitiveBackfill,
-}: {
-	mode: ImportGameMode;
-	importedRows: QuestImportRow[];
-	prerequisiteQuests: FullQuest[];
-	sensitiveDecisionQuestIds: string[];
-	allowedSensitiveQuestIds: string[];
-	deniedSensitiveQuestIds: string[];
-	didConfirmImport: boolean;
-	importSummary: ImportSummary | null;
-	questsById: ReadonlyMap<string, FullQuest>;
-	getQuestName: (questId: string) => string;
-	onAllowSensitiveBackfill: (questId: string) => void;
-	onDenySensitiveBackfill: (questId: string) => void;
-}) {
-	if (didConfirmImport) {
-		const successMode = importSummary?.mode ?? mode;
-		const importedCount = importSummary?.importedCount ?? 0;
-		const prerequisiteCount = importSummary?.prerequisiteCount ?? 0;
-
-		return (
-			<section className="mt-5">
-				<div className="rounded-lg border border-success/25 bg-success/12 px-5 py-5 text-success">
-					<div className="flex items-center gap-3">
-						<CheckCircle2 size={20} className="text-success" />
-						<div>
-							<div className="text-base font-semibold text-foreground">
-								Successfully imported {importedCount} quest
-								{importedCount === 1 ? "" : "s"} and auto-completed {prerequisiteCount} quest
-								{prerequisiteCount === 1 ? "" : "s"}.
-							</div>
-							<div className="mt-1 text-sm text-success/80">
-								Your current {successMode} quest progress has been updated.
-							</div>
-						</div>
-					</div>
-				</div>
-			</section>
-		);
-	}
-
+function PreWipeCutoffNotice({ fileCount }: { fileCount: number }) {
 	return (
-		<section className="mt-5 rounded-lg border border-highlight/10 bg-shadow/20">
-			<div className="border-b border-highlight/10 px-4 py-4">
-				<div>
-					<h2 className="text-balance text-lg font-semibold text-foreground">Review {mode} Import</h2>
-					<p className="mt-1 text-pretty text-sm text-muted-foreground">
-						Confirm the quests detected from logs and the prerequisite quests that will be auto-completed for this
-						import pass.
-					</p>
-				</div>
+		<Notice
+			tone="warning"
+			icon={<AlertCircle size={14} />}
+			message={`Log files older than the November 2025 wipe were ignored${fileCount > 1 ? ` (${fileCount} files)` : ""}.`}
+		/>
+	);
+}
+
+function NothingImported({ message }: { message: string }) {
+	return (
+		<div className="flex items-center gap-3 rounded-md bg-highlight/5 px-4 py-4 text-muted-foreground">
+			<MinusCircle size={20} className="shrink-0" />
+			<div>
+				<div className="text-base font-semibold text-foreground">Nothing was imported</div>
+				<div className="mt-0.5 text-sm">{message}</div>
 			</div>
+		</div>
+	);
+}
 
-			<div className="space-y-5 px-4 py-4">
-				<div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-					<MiniStat label="Quests" value={importedRows.length} />
-					<MiniStat label="Prereqs" value={prerequisiteQuests.length} />
+function ImportResult({ summary, mode }: { summary: ImportSummary | null; mode: ImportGameMode }) {
+	const importedCount = summary?.importedCount ?? 0;
+	const prerequisiteCount = summary?.prerequisiteCount ?? 0;
+	if (importedCount === 0 && prerequisiteCount === 0) {
+		return <NothingImported message={`No ${mode} quests needed updating.`} />;
+	}
+	return (
+		<div className="flex items-center gap-3 rounded-md border border-success/25 bg-success/12 px-4 py-4">
+			<CheckCircle2 size={20} className="shrink-0 text-success" />
+			<div>
+				<div className="text-base font-semibold text-foreground">
+					Imported {importedCount} quest{importedCount === 1 ? "" : "s"}
+					{prerequisiteCount > 0
+						? ` and completed ${prerequisiteCount} prerequisite${prerequisiteCount === 1 ? "" : "s"}`
+						: ""}
+					.
 				</div>
-
-				{sensitiveDecisionQuestIds.length > 0 && (
-					<SensitiveBackfillGate
-						questIds={sensitiveDecisionQuestIds}
-						allowedQuestIds={allowedSensitiveQuestIds}
-						deniedQuestIds={deniedSensitiveQuestIds}
-						getQuestName={getQuestName}
-						onAllow={onAllowSensitiveBackfill}
-						onDeny={onDenySensitiveBackfill}
-					/>
-				)}
-
-				<section className="space-y-2">
-					<h3 className="text-sm font-semibold text-foreground">Quests from Logs</h3>
-					<QuestListByTrader
-						questIds={importedRows.map((row) => row.questId)}
-						questsById={questsById}
-						itemPrefix={() => <Check size={14} className="shrink-0 text-success" />}
-						emptyMessage={`No ${mode} quests are queued for import.`}
-					/>
-				</section>
-
-				{prerequisiteQuests.length > 0 && (
-					<section className="space-y-2">
-						<h3 className="text-sm font-semibold text-foreground">Prerequisites to Auto-Complete</h3>
-						<QuestListByTrader
-							questIds={prerequisiteQuests.map((quest) => quest.id)}
-							questsById={questsById}
-							itemPrefix={() => <Check size={14} className="shrink-0 text-success" />}
-						/>
-					</section>
-				)}
+				<div className="mt-0.5 text-sm text-success/80">Your {summary?.mode ?? mode} quest progress is up to date.</div>
 			</div>
-		</section>
+		</div>
 	);
 }
 
@@ -685,22 +439,18 @@ function SensitiveBackfillGate({
 				{questIds.map((questId) => (
 					<div key={questId} className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
 						<div className="min-w-0">
-							<div className="flex items-center gap-2 font-semibold">
-								<span>{getQuestName(questId)}</span>
-							</div>
+							<div className="font-semibold">{getQuestName(questId)}</div>
 							<p className="mt-1 text-xs leading-5 text-muted-foreground">
 								{getSensitiveBackfillQuest(questId)?.warning}
 							</p>
 						</div>
-						<div className="inline-flex shrink-0 overflow-hidden rounded-sm border border-highlight/10 lg:mt-0">
+						<div className="inline-flex shrink-0 overflow-hidden rounded-sm border border-highlight/10">
 							<button
 								type="button"
 								onClick={() => onDeny(questId)}
 								className={cn(
 									"px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors",
-									deniedSet.has(questId)
-										? "bg-highlight/10 text-foreground"
-										: "bg-transparent text-foreground hover:bg-highlight/5 hover:text-foreground",
+									deniedSet.has(questId) ? "bg-highlight/10 text-foreground" : "hover:bg-highlight/5",
 								)}
 							>
 								Deny
@@ -710,9 +460,7 @@ function SensitiveBackfillGate({
 								onClick={() => onAllow(questId)}
 								className={cn(
 									"inline-flex items-center gap-1 border-l border-highlight/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors",
-									allowedSet.has(questId)
-										? "bg-danger/15 text-danger"
-										: "bg-transparent text-foreground hover:bg-danger/10 hover:text-foreground",
+									allowedSet.has(questId) ? "bg-danger/15 text-danger" : "hover:bg-danger/10",
 								)}
 							>
 								<TriangleAlert size={12} className="text-warning" />
@@ -726,6 +474,7 @@ function SensitiveBackfillGate({
 	);
 }
 
+/** Parser stats and raw deduped events for debugging. */
 function InfoPanel({
 	result,
 	unknownModeGroups,
@@ -733,162 +482,75 @@ function InfoPanel({
 	result: QuestLogParseResult;
 	unknownModeGroups: QuestImportBuckets["unknownMode"];
 }) {
+	const stats: Array<[string, number]> = [
+		["Files parsed", result.totals.filesParsed],
+		["Files ignored", result.totals.filesIgnored],
+		["Raw events", result.totals.rawEvents],
+		["Deduped events", result.totals.dedupedEvents],
+		["Started", result.totals.startedEvents],
+		["Completed", result.totals.completedEvents],
+		["Unknown mode", result.totals.unknownEvents],
+	];
+
 	return (
-		<section className="rounded-lg border border-highlight/10 bg-shadow/20">
-			<div className="border-b border-highlight/10 px-4 py-3">
-				<h2 className="text-balance text-lg font-semibold text-foreground">Import Details</h2>
-				<p className="mt-1 text-pretty text-sm text-muted-foreground">
-					Parser stats and raw deduped events for debugging. Unknown-mode quests remain view-only.
-				</p>
+		<section className="space-y-4 border-t border-highlight/10 pt-4">
+			<div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+				{stats.map(([label, value]) => (
+					<span key={label}>
+						{label} <span className="tabular-nums text-foreground">{value}</span>
+					</span>
+				))}
 			</div>
 
-			<div className="space-y-5 px-4 py-4">
-				<section className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
-					<SummaryCard label="Files Parsed" value={result.totals.filesParsed} />
-					<SummaryCard label="Ignored Files" value={result.totals.filesIgnored} />
-					<SummaryCard label="Raw Events" value={result.totals.rawEvents} />
-					<SummaryCard label="Deduped Events" value={result.totals.dedupedEvents} />
-					<SummaryCard label="Unknown Mode" value={result.totals.unknownEvents} />
-					<SummaryCard label="Started" value={result.totals.startedEvents} />
-					<SummaryCard label="Completed" value={result.totals.completedEvents} />
-					<SummaryCard label="PVP" value={result.totals.pvpEvents} />
-					<SummaryCard label="PVE" value={result.totals.pveEvents} />
-					<SummaryCard label="KORD" value={result.totals.kordEvents} />
-					<SummaryCard label="Resolved Groups" value={result.resolvedGroups.length} />
-				</section>
-
-				<section className="rounded-lg border border-highlight/10 bg-shadow/20">
-					<div className="border-b border-highlight/10 px-4 py-3">
-						<h3 className="text-sm font-semibold text-foreground">Unknown Mode Quests</h3>
-						<p className="mt-1 text-sm text-muted-foreground">
-							These were resolved to known quests but no prior mode signal was found.
-						</p>
-					</div>
-
-					{unknownModeGroups.length === 0 ? (
-						<div className="px-4 py-5 text-sm text-subtle-foreground">No unknown-mode quests were detected.</div>
-					) : (
-						<div className="divide-y divide-highlight/5">
-							{unknownModeGroups.map((group) => (
-								<div key={`${group.questId}-${group.type}`} className="px-4 py-3">
-									<div className="flex flex-wrap items-center gap-2">
-										<span className="text-sm font-semibold text-foreground">{group.quest?.name ?? group.questId}</span>
-										<TypeBadge type={group.type} />
-										<CountBadge label="Seen" value={group.occurrenceCount} />
-									</div>
-									<div className="mt-1 text-xs text-subtle-foreground">
-										{group.questId} · Latest {formatTimestamp(group.latestTimestamp)}
-									</div>
-								</div>
-							))}
-						</div>
-					)}
-				</section>
-
-				<RawEventsSection events={result.events} />
-			</div>
-		</section>
-	);
-}
-
-function SummaryCard({ label, value }: { label: string; value: number }) {
-	return (
-		<div className="rounded-lg border border-highlight/10 bg-shadow/20 p-4">
-			<div className="text-xs font-medium text-subtle-foreground">{label}</div>
-			<div className="mt-2 text-2xl font-semibold tabular-nums text-foreground">{value}</div>
-		</div>
-	);
-}
-
-function MiniStat({ label, value }: { label: string; value: number }) {
-	return (
-		<span className="inline-flex items-center gap-1 rounded-full border border-highlight/10 bg-highlight/5 px-2 py-1 text-xs text-foreground">
-			<span>{label}</span>
-			<span className="tabular-nums text-foreground">{value}</span>
-		</span>
-	);
-}
-
-function QuestStateBadge({ hasStarted, hasCompleted }: { hasStarted: boolean; hasCompleted: boolean }) {
-	const label = hasStarted && hasCompleted ? "Started + Completed" : hasCompleted ? "Completed" : "Started";
-
-	return (
-		<span
-			className={cn(
-				"inline-flex items-center rounded-full border px-2 py-1 text-[11px] font-medium uppercase",
-				hasCompleted ? "border-success/25 bg-success/10 text-success" : "border-info/25 bg-info/10 text-info",
-			)}
-		>
-			{label}
-		</span>
-	);
-}
-
-function TypeBadge({ type }: { type: ParsedQuestEvent["type"] }) {
-	return (
-		<span
-			className={cn(
-				"inline-flex items-center rounded-full border px-2 py-1 text-[11px] font-medium uppercase",
-				type === "completed" ? "border-success/25 bg-success/10 text-success" : "border-info/25 bg-info/10 text-info",
-			)}
-		>
-			{type}
-		</span>
-	);
-}
-
-function CountBadge({ label, value }: { label: string; value: number }) {
-	return (
-		<span className="inline-flex items-center gap-1 rounded-full border border-highlight/10 bg-highlight/5 px-2 py-1 text-[11px] text-foreground">
-			<span>{label}</span>
-			<span className="tabular-nums text-foreground">{value}</span>
-		</span>
-	);
-}
-
-function RawEventsSection({ events }: { events: ParsedQuestEvent[] }) {
-	return (
-		<section className="rounded-lg border border-highlight/10 bg-shadow/20">
-			<div className="border-b border-highlight/10 px-4 py-3">
-				<h3 className="text-sm font-semibold text-foreground">Raw Events</h3>
-				<p className="mt-1 text-sm text-muted-foreground">
-					Deduped event list for spot checking timestamps, source files, IDs, and mode tags.
-				</p>
-			</div>
-
-			{events.length === 0 ? (
-				<div className="px-4 py-6 text-sm text-subtle-foreground">No quest events were parsed.</div>
-			) : (
-				<div className="overflow-x-auto">
-					<table className="min-w-full text-left text-sm">
-						<thead className="bg-highlight/5 text-xs uppercase text-subtle-foreground">
-							<tr>
-								<th className="px-4 py-3 font-medium">Timestamp</th>
-								<th className="px-4 py-3 font-medium">Quest</th>
-								<th className="px-4 py-3 font-medium">Type</th>
-								<th className="px-4 py-3 font-medium">Mode</th>
-								<th className="px-4 py-3 font-medium">Seen</th>
-								<th className="px-4 py-3 font-medium">Source File</th>
-							</tr>
-						</thead>
-						<tbody className="divide-y divide-highlight/5">
-							{events.map((event, index) => (
-								<tr key={`${event.questId}-${event.type}-${event.raidMode}-${index}`}>
-									<td className="px-4 py-3 text-foreground tabular-nums">{formatTimestamp(event.timestamp)}</td>
-									<td className="px-4 py-3 text-foreground">{event.questId}</td>
-									<td className="px-4 py-3">
-										<TypeBadge type={event.type} />
-									</td>
-									<td className="px-4 py-3 text-foreground uppercase">{event.raidMode}</td>
-									<td className="px-4 py-3 text-foreground tabular-nums">{event.occurrenceCount}</td>
-									<td className="px-4 py-3 text-subtle-foreground">{event.sourceFile}</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
+			{unknownModeGroups.length > 0 && (
+				<div>
+					<h3 className="text-sm font-semibold text-foreground">Unknown mode quests</h3>
+					<ul className="mt-1 space-y-1 text-xs text-muted-foreground">
+						{unknownModeGroups.map((group) => (
+							<li key={`${group.questId}-${group.type}`}>
+								{group.quest?.name ?? group.questId} · {group.type} · seen {group.occurrenceCount} · latest{" "}
+								{formatTimestamp(group.latestTimestamp)}
+							</li>
+						))}
+					</ul>
 				</div>
 			)}
+
+			<RawEventsTable events={result.events} />
 		</section>
+	);
+}
+
+function RawEventsTable({ events }: { events: ParsedQuestEvent[] }) {
+	if (events.length === 0) return <p className="text-sm text-subtle-foreground">No quest events were parsed.</p>;
+
+	return (
+		<div className="max-h-64 overflow-auto">
+			<table className="min-w-full text-left text-xs">
+				<thead className="sticky top-0 bg-card uppercase text-subtle-foreground">
+					<tr>
+						<th className="px-2 py-2 font-medium">Timestamp</th>
+						<th className="px-2 py-2 font-medium">Quest</th>
+						<th className="px-2 py-2 font-medium">Type</th>
+						<th className="px-2 py-2 font-medium">Mode</th>
+						<th className="px-2 py-2 font-medium">Seen</th>
+						<th className="px-2 py-2 font-medium">Source file</th>
+					</tr>
+				</thead>
+				<tbody className="divide-y divide-highlight/5">
+					{events.map((event, index) => (
+						<tr key={`${event.questId}-${event.type}-${event.raidMode}-${index}`}>
+							<td className="px-2 py-2 tabular-nums text-foreground">{formatTimestamp(event.timestamp)}</td>
+							<td className="px-2 py-2 text-foreground">{event.questId}</td>
+							<td className="px-2 py-2 capitalize text-foreground">{event.type}</td>
+							<td className="px-2 py-2 uppercase text-foreground">{event.raidMode}</td>
+							<td className="px-2 py-2 tabular-nums text-foreground">{event.occurrenceCount}</td>
+							<td className="px-2 py-2 text-subtle-foreground">{event.sourceFile}</td>
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
 	);
 }
 

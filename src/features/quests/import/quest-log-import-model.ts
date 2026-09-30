@@ -51,6 +51,8 @@ export type QuestLogImportAction =
 			pendingFingerprints: string[];
 			preWipeIgnoredFileNames: string[];
 			selections: AutoCompleteSelectionMap;
+			/** Go straight to review of this mode once parsing succeeds. */
+			reviewMode?: ImportGameMode;
 			error?: string;
 	  }
 	| { type: "parsingFailed"; error: string }
@@ -116,7 +118,8 @@ export function questLogImportReducer(state: QuestLogImportState, action: QuestL
 		case "parsingSucceeded":
 			return {
 				...state,
-				status: action.error ? "error" : "select",
+				status: action.error ? "error" : action.reviewMode ? "review" : "select",
+				reviewMode: action.error ? null : (action.reviewMode ?? null),
 				parsedView: action.parsedView,
 				autoCompleteSelections: action.selections,
 				cacheNotice: null,
