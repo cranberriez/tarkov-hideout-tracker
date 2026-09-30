@@ -325,7 +325,10 @@ Update this document when contracts, source ownership, or cache behavior changes
 and trader projections through mode membership. It reuses the
 [manifest builder](../src/lib/search/build-manifest.ts), compression, and bounded
 Next data cache. Cache keys include the PostgreSQL namespace, format version,
-mode and catalog content_version. No database manifest table is used.
+the quest preparation revision (a hash of the reviewed custom, series, faction,
+removed-quest and game-mode data in
+[quest-preparation](../src/lib/quests/quest-preparation.ts)), mode and catalog
+content_version. No database manifest table is used.
 
 [/api/search](../src/app/api/search/route.ts) keeps identity=1 and the releaseId
 request/response field. The field now carries the string content version. A

@@ -37,7 +37,7 @@ test("round trip keeps identities and short names, omits optional images and exc
 	);
 	assert.deepEqual(
 		seasonal.quests.map((entry) => entry.id),
-		["keep"],
+		["keep", "seasonal"],
 	);
 	assert.equal("releaseId" in seasonal, false);
 });

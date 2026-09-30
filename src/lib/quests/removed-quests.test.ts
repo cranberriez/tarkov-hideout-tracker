@@ -19,7 +19,7 @@ function makeQuest(id: string): FullQuest {
 }
 
 test("contains the validated removed quest IDs", () => {
-	assert.equal(REMOVED_QUEST_IDS.size, 35);
+	assert.equal(REMOVED_QUEST_IDS.size, 42);
 	assert.equal(isRemovedQuestId("596a204686f774576d4c95de"), true);
 	assert.equal(isRemovedQuestId("675c04f4db8807b75d0f38e8"), true);
 	assert.equal(isRemovedQuestId("63ab180c87413d64ae0ac20a"), true);

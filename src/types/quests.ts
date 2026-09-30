@@ -243,6 +243,8 @@ export interface FullQuest {
 	name: string;
 	normalizedName: string;
 	removed?: boolean;
+	/** Set when reviewed custom quest data (docs/quests.md) overrides or replaces provider data. */
+	customSource?: string | null;
 	taskImageLink?: string | null;
 	wikiLink?: string | null;
 	minPlayerLevel?: number | null;

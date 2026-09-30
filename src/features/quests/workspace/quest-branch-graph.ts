@@ -3,14 +3,16 @@ import { getQuestRelationTiming, type QuestRelationTiming } from "../../../lib/q
 import { statusIncludesComplete } from "../../../lib/quests/quest-failures";
 
 const LIGHTKEEPER_ACCESS_QUEST_IDS = [
-	"625d6ff5ddc94657c21a1625", // Network Provider - Part 1
-	"625d6ffaf7308432be1d44c5", // Network Provider - Part 2
-	"625d6ffcaa168e51321d69d7", // Assessment - Part 1
-	"625d6fff4149f1149b5b12c9", // Assessment - Part 2
-	"625d7001c4874104f230c0c5", // Assessment - Part 3
-	"625d70031ed3bb5bcc5bd9e5", // Key to the Tower
-	"625d7005a4eb80027c4f2e09", // Knock-Knock
-	"625d700cc48e6c62a440fab5", // Getting Acquainted
+	// Patch 1.1.5 "To the Light" chain (custom-quests.json). Side quests Someone Called? and Dangerous Ambitions branch off.
+	"custom-ttl-trust-but-verify",
+	"custom-ttl-false-call",
+	"custom-ttl-clip-their-wings",
+	"custom-ttl-fallen-bird",
+	"custom-ttl-bite-the-dust",
+	"custom-ttl-a-time-to-throw-stones",
+	"custom-ttl-a-time-to-gather-stones",
+	"custom-ttl-the-other-side",
+	"625d700cc48e6c62a440fab5", // To the Light - Getting Acquainted
 	"63966faeea19ac7ed845db2c", // Information Source
 ] as const;
 

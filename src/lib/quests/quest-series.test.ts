@@ -9,15 +9,18 @@ import {
 	prepareQuestSeriesForGameMode,
 } from "./quest-series";
 
-const NETWORK_PROVIDER_SERIES = [
-	["625d6ff5ddc94657c21a1625", "Network Provider - Part 1"],
-	["625d6ffaf7308432be1d44c5", "Network Provider - Part 2"],
-	["625d6ffcaa168e51321d69d7", "Assessment - Part 1"],
-	["625d6fff4149f1149b5b12c9", "Assessment - Part 2"],
-	["625d7001c4874104f230c0c5", "Assessment - Part 3"],
-	["625d70031ed3bb5bcc5bd9e5", "Key to the Tower"],
-	["625d7005a4eb80027c4f2e09", "Knock-Knock"],
-	["625d700cc48e6c62a440fab5", "Getting Acquainted"],
+const TO_THE_LIGHT_SERIES = [
+	["custom-ttl-trust-but-verify", "To the Light - Trust but Verify"],
+	["custom-ttl-false-call", "To the Light - False Call"],
+	["custom-ttl-someone-called", "To the Light - Someone Called?"],
+	["custom-ttl-clip-their-wings", "To the Light - Clip Their Wings"],
+	["custom-ttl-fallen-bird", "To the Light - Fallen Bird"],
+	["custom-ttl-dangerous-ambitions", "To the Light - Dangerous Ambitions"],
+	["custom-ttl-bite-the-dust", "To the Light - Bite the Dust"],
+	["custom-ttl-a-time-to-throw-stones", "To the Light - A Time to Throw Stones"],
+	["custom-ttl-a-time-to-gather-stones", "To the Light - A Time to Gather Stones"],
+	["custom-ttl-the-other-side", "To the Light - The Other Side"],
+	["625d700cc48e6c62a440fab5", "To the Light - Getting Acquainted"],
 ] as const;
 
 function makeQuest(id: string, name: string, traderName = "Mechanic", lightkeeperRequired = false): FullQuest {
@@ -40,13 +43,13 @@ function makeQuest(id: string, name: string, traderName = "Mechanic", lightkeepe
 	};
 }
 
-test("defines the full Network Provider access line as one ordered essential series", () => {
+test("defines the full To the Light access line as one ordered essential series", () => {
 	assert.deepEqual(
-		NETWORK_PROVIDER_SERIES.map(([questId]) => {
+		TO_THE_LIGHT_SERIES.map(([questId]) => {
 			const membership = getEssentialQuestSeriesMembership(questId);
 			return [membership?.series.id, membership?.order, isEssentialQuest(questId)];
 		}),
-		NETWORK_PROVIDER_SERIES.map((_, index) => ["network-provider", index + 1, true]),
+		TO_THE_LIGHT_SERIES.map((_, index) => ["to-the-light", index + 1, true]),
 	);
 });
 
@@ -67,30 +70,13 @@ test("keeps Good Times Part 2 in its reviewed Essential display series", () => {
 	);
 });
 
-test("marks every Network Provider series member as Lightkeeper-required", () => {
-	const quests = NETWORK_PROVIDER_SERIES.map(([id, name]) => makeQuest(id, name));
-	const prepared = applyQuestSeriesMetadata(quests);
-
-	assert.equal(
-		prepared.every((quest) => quest.lightkeeperRequired),
-		true,
-	);
-	assert.equal(
-		quests.every((quest) => !quest.lightkeeperRequired),
-		true,
-	);
-});
-
-test("removes Lightkeeper and his prerequisite series from seasonal quest data", () => {
+test("keeps Lightkeeper and his prerequisite series in every mode that has him", () => {
 	const quests = [
-		makeQuest(...NETWORK_PROVIDER_SERIES[0]),
+		makeQuest(...TO_THE_LIGHT_SERIES[0]),
 		makeQuest("lightkeeper-task", "Information Source", "Lightkeeper"),
 		makeQuest("ordinary-task", "Ordinary Quest", "Mechanic"),
 	];
 
-	assert.deepEqual(
-		prepareQuestSeriesForGameMode(quests, "pvp-season").map((quest) => quest.id),
-		["ordinary-task"],
-	);
+	assert.equal(prepareQuestSeriesForGameMode(quests, "pvp-season").length, 3);
 	assert.equal(prepareQuestSeriesForGameMode(quests, "regular").length, 3);
 });

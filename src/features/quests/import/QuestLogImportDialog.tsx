@@ -125,7 +125,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 						<DialogDescription className="max-w-3xl text-pretty text-sm text-muted-foreground">
 							Upload EFT push-notification logs at the end of a play session to update quest completion state or quickly
 							get back up to speed. For more in-depth quest syncing, especially when starting fresh on the site, try the
-							main sync feature.
+							main sync feature. Lightkeeper-related quests, including the To the Light access chain, are not synced
+							automatically for now and need to be marked by hand.
 						</DialogDescription>
 					</DialogHeader>
 

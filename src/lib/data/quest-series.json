@@ -2,20 +2,23 @@
 	"version": 1,
 	"series": [
 		{
-			"id": "network-provider",
-			"name": "Network Provider",
+			"id": "to-the-light",
+			"name": "To the Light",
 			"traderId": "5a7c2eca46aef81a7ca2145d",
+			"allowCrossTrader": true,
 			"essential": true,
-			"lightkeeperRequired": true,
 			"members": [
-				{ "questId": "625d6ff5ddc94657c21a1625", "order": 1 },
-				{ "questId": "625d6ffaf7308432be1d44c5", "order": 2 },
-				{ "questId": "625d6ffcaa168e51321d69d7", "order": 3 },
-				{ "questId": "625d6fff4149f1149b5b12c9", "order": 4 },
-				{ "questId": "625d7001c4874104f230c0c5", "order": 5 },
-				{ "questId": "625d70031ed3bb5bcc5bd9e5", "order": 6 },
-				{ "questId": "625d7005a4eb80027c4f2e09", "order": 7 },
-				{ "questId": "625d700cc48e6c62a440fab5", "order": 8 }
+				{ "questId": "custom-ttl-trust-but-verify", "order": 1 },
+				{ "questId": "custom-ttl-false-call", "order": 2 },
+				{ "questId": "custom-ttl-someone-called", "order": 3 },
+				{ "questId": "custom-ttl-clip-their-wings", "order": 4 },
+				{ "questId": "custom-ttl-fallen-bird", "order": 5 },
+				{ "questId": "custom-ttl-dangerous-ambitions", "order": 6 },
+				{ "questId": "custom-ttl-bite-the-dust", "order": 7 },
+				{ "questId": "custom-ttl-a-time-to-throw-stones", "order": 8 },
+				{ "questId": "custom-ttl-a-time-to-gather-stones", "order": 9 },
+				{ "questId": "custom-ttl-the-other-side", "order": 10 },
+				{ "questId": "625d700cc48e6c62a440fab5", "order": 11 }
 			]
 		},
 		{

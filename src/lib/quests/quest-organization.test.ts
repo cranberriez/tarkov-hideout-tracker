@@ -128,16 +128,16 @@ test("applies reviewed numeric and essential trader-tab overrides", () => {
 	assert.equal(result.byQuestId.get("597a171586f77405ba6887d3")?.seriesName, "Other essential quests");
 });
 
-test("organizes the curated Network Provider line as an essential named series", () => {
+test("organizes the curated To the Light line as an essential named series", () => {
 	const quest = makeQuest("625d700cc48e6c62a440fab5", "5a7c2eca46aef81a7ca2145d");
 
 	const result = deriveQuestOrganization([quest]);
 	const organization = result.byQuestId.get(quest.id);
 
 	assert.equal(organization?.category, "series");
-	assert.equal(organization?.seriesId, "network-provider");
-	assert.equal(organization?.seriesName, "Network Provider");
-	assert.equal(organization?.seriesOrder, 8);
+	assert.equal(organization?.seriesId, "to-the-light");
+	assert.equal(organization?.seriesName, "To the Light");
+	assert.equal(organization?.seriesOrder, 11);
 });
 
 test("clamps invalid issuing-trader tiers and reports each issue", () => {

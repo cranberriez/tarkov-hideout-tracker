@@ -69,9 +69,9 @@ function isLightkeeperTrader(quest: FullQuest) {
 }
 
 /**
- * Seasonal/KORD has no Lightkeeper. Remove his quests and all prerequisite
- * series marked as Lightkeeper progression before building any display or item
- * demand indexes.
+ * Modes without Lightkeeper (`hasLightkeeper: false`) drop his quests and all
+ * prerequisite series marked as Lightkeeper progression before building any
+ * display or item demand indexes.
  */
 export function prepareQuestSeriesForGameMode(quests: FullQuest[], gameMode: TarkovJsonGameMode) {
 	const prepared = applyQuestSeriesMetadata(quests);

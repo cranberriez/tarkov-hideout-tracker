@@ -176,14 +176,15 @@ test("does not infer an Essential quest series", () => {
 
 test("builds the explicit Lightkeeper access line through Information Source", () => {
 	const members = [
-		["625d6ff5ddc94657c21a1625", "Network Provider - Part 1"],
-		["625d6ffaf7308432be1d44c5", "Network Provider - Part 2"],
-		["625d6ffcaa168e51321d69d7", "Assessment - Part 1"],
-		["625d6fff4149f1149b5b12c9", "Assessment - Part 2"],
-		["625d7001c4874104f230c0c5", "Assessment - Part 3"],
-		["625d70031ed3bb5bcc5bd9e5", "Key to the Tower"],
-		["625d7005a4eb80027c4f2e09", "Knock-Knock"],
-		["625d700cc48e6c62a440fab5", "Getting Acquainted"],
+		["custom-ttl-trust-but-verify", "To the Light - Trust but Verify"],
+		["custom-ttl-false-call", "To the Light - False Call"],
+		["custom-ttl-clip-their-wings", "To the Light - Clip Their Wings"],
+		["custom-ttl-fallen-bird", "To the Light - Fallen Bird"],
+		["custom-ttl-bite-the-dust", "To the Light - Bite the Dust"],
+		["custom-ttl-a-time-to-throw-stones", "To the Light - A Time to Throw Stones"],
+		["custom-ttl-a-time-to-gather-stones", "To the Light - A Time to Gather Stones"],
+		["custom-ttl-the-other-side", "To the Light - The Other Side"],
+		["625d700cc48e6c62a440fab5", "To the Light - Getting Acquainted"],
 		["63966faeea19ac7ed845db2c", "Information Source"],
 	] as const;
 	const quests = members.map(([id, name], index) => ({
@@ -327,7 +328,7 @@ test("supports the PVE Easy Money root and omits Ref when neither root exists", 
 	);
 });
 
-test("keeps Lightkeeper quests in the BTR graph only outside seasonal mode", () => {
+test("keeps Lightkeeper quests in the BTR graph in every mode", () => {
 	const btrStart = quest("btr-start", "BTR start");
 	const btrChoice = quest("btr-choice", "BTR choice", [
 		{ task: { id: btrStart.id, name: btrStart.name }, status: ["active"] },
@@ -355,7 +356,7 @@ test("keeps Lightkeeper quests in the BTR graph only outside seasonal mode", () 
 	);
 	assert.equal(
 		seasonalLine.nodes.some((node) => node.quest.id === lightkeeperFollowUp.id),
-		false,
+		true,
 	);
 });
 

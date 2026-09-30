@@ -38,7 +38,7 @@ export const GAME_MODE_CONFIG: Readonly<Record<GameMode, GameModeDefinition>> = 
 		label: "KORD",
 		questImportTitle: "KORD Seasonal Quests",
 		seasonal: true,
-		hasLightkeeper: false,
+		hasLightkeeper: true,
 	},
 };
 

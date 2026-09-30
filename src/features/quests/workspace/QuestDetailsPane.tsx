@@ -13,6 +13,7 @@ import { buildQuestDetailsModel } from "./quest-details-model";
 import { useQuestDetailsController } from "./useQuestDetailsController";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 import { QuestDebugPanel } from "./details/QuestDebugPanel";
+import { QuestDataNote } from "./details/QuestDataNote";
 import { QuestDetailsHeader } from "./details/QuestDetailsHeader";
 import { QuestObjectiveMap } from "./details/QuestObjectiveMap";
 import { QuestObjectives } from "./details/QuestObjectives";
@@ -199,6 +200,7 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 
 							{hasQuestRewards(quest) && <QuestRewards quest={quest} itemById={itemById} />}
 						</section>
+						<QuestDataNote quest={quest} />
 					</div>
 				</div>
 

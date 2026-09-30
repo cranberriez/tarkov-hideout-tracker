@@ -1,3 +1,4 @@
+import { getCustomQuestAnchorIds } from "../../lib/quests/custom-quests";
 import { prepareQuestDataForMode } from "../../lib/quests/quest-preparation";
 import { prepareQuestsForDisplay } from "../../lib/quests/removed-quests";
 import type { TarkovDataRepository } from "@/server/repositories/tarkov-data/types";
@@ -46,13 +47,14 @@ export async function getQuestDetailPageData(
 ): Promise<QuestDetailPageData> {
 	const dataRepository = repository ?? (await getDefaultRepository());
 	try {
-		const { data } = await dataRepository.quests.getByIds(mode, [questId]);
-		const record = data[questId];
-		if (!record) return { quest: null, error: null };
-		const [prepared] = prepareQuestsForDisplay(
-			prepareQuestDataForMode([record], mode),
+		// Custom-only quests are not provider records; read their anchor so they can be prepared.
+		const { data } = await dataRepository.quests.getByIds(mode, [questId, ...getCustomQuestAnchorIds(questId, mode)]);
+		const records = Object.values(data);
+		if (records.length === 0) return { quest: null, error: null };
+		const prepared = prepareQuestsForDisplay(
+			prepareQuestDataForMode(records, mode),
 			options.showRemovedQuests ?? false,
-		);
+		).find((quest) => quest.id === questId);
 		return { quest: prepared ? summarize(prepared) : null, error: null };
 	} catch {
 		return { quest: null, error: "Quest data could not be loaded." };
