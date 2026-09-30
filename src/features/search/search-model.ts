@@ -1,12 +1,20 @@
+import { stationPortraitSrc, type SetupStation } from "../../lib/data/static-stations";
 import type { decodeSearchManifest } from "../../lib/search/manifest";
 import { normalizeName } from "../../lib/utils/normalize-name";
 import type { ItemSummary } from "../../types/items";
 
 export type SearchResult =
 	| { kind: "item"; id: string; name: string; iconLink?: string; item: ItemSummary; fields: string[] }
-	| { kind: "quest"; id: string; name: string; iconLink?: string; trader: string; fields: string[] };
+	| { kind: "quest"; id: string; name: string; iconLink?: string; trader: string; fields: string[] }
+	| { kind: "station"; id: string; name: string; iconLink?: string; maxLevel: number; fields: string[] };
 
-export function buildPaletteIndex(manifest: ReturnType<typeof decodeSearchManifest>): SearchResult[] {
+const PREFIX_KINDS = { i: "item", q: "quest", h: "station" } as const;
+
+/** Stations come from the bundled static list, so they need no manifest data. */
+export function buildPaletteIndex(
+	manifest: ReturnType<typeof decodeSearchManifest>,
+	stations: SetupStation[] = [],
+): SearchResult[] {
 	return [
 		...manifest.itemIndex.map(({ item, fields }) => ({
 			kind: "item" as const,
@@ -24,6 +32,14 @@ export function buildPaletteIndex(manifest: ReturnType<typeof decodeSearchManife
 			trader: manifest.traders[quest.traderId]?.name ?? "Unknown trader",
 			fields: [quest.name, quest.normalizedName].map(normalizeName),
 		})),
+		...stations.map((station) => ({
+			kind: "station" as const,
+			id: station.id,
+			name: station.name,
+			iconLink: stationPortraitSrc(station.name),
+			maxLevel: station.levels.length,
+			fields: [station.name, station.normalizedName].map(normalizeName),
+		})),
 	];
 }
 
@@ -31,9 +47,9 @@ export type SearchKind = SearchResult["kind"];
 
 /** Consume one leading prefix; once scoped, subsequent prefixes are literal search text. */
 export function parsePaletteInput(value: string, kind: SearchKind | null = null) {
-	const prefix = kind ? null : value.match(/^\s*([iq]):\s*/i);
+	const prefix = kind ? null : value.match(/^\s*([iqh]):\s*/i);
 	return {
-		kind: prefix ? ((prefix[1].toLowerCase() === "i" ? "item" : "quest") as SearchKind) : kind,
+		kind: prefix ? PREFIX_KINDS[prefix[1].toLowerCase() as keyof typeof PREFIX_KINDS] : kind,
 		query: prefix ? value.slice(prefix[0].length) : value,
 	};
 }

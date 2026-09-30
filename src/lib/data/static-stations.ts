@@ -4,6 +4,9 @@ export type SetupStation = Pick<Station, "id" | "name" | "normalizedName"> & {
 	levels: Array<Pick<StationLevel, "level">>;
 };
 
+/** Bundled portrait, e.g. "Hall of Fame" → /images/hideout/Hall_of_Fame_Portrait.webp. */
+export const stationPortraitSrc = (name: string) => `/images/hideout/${name.replace(/ /g, "_")}_Portrait.webp`;
+
 // Static list of stations with their max levels for initial setup
 // This avoids needing to fetch full station data during the setup phase
 export const STATIC_STATIONS: SetupStation[] = [

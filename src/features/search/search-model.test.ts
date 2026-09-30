@@ -44,6 +44,7 @@ test("prefixes consume only one leading filter and preserve the remaining search
 	assert.deepEqual(parsePaletteInput("i:GPU"), { kind: "item", query: "GPU" });
 	assert.deepEqual(parsePaletteInput(" Q: farming 4"), { kind: "quest", query: "farming 4" });
 	assert.deepEqual(parsePaletteInput("i:"), { kind: "item", query: "" });
+	assert.deepEqual(parsePaletteInput("h: med"), { kind: "station", query: "med" });
 	assert.deepEqual(parsePaletteInput("q: farming", "item"), { kind: "item", query: "q: farming" });
 	assert.deepEqual(parsePaletteInput("find i:GPU"), { kind: null, query: "find i:GPU" });
 	assert.deepEqual(parsePaletteInput("i:q:farming"), { kind: "item", query: "q:farming" });
@@ -59,4 +60,14 @@ test("a chip restricts matches and an empty scoped query browses only that kind"
 	);
 	assert.ok(searchPalette(index, "a", "item").every((entry) => entry.kind === "item"));
 	assert.equal(searchPalette(index, "a").length, 3);
+});
+
+test("stations are indexed by name and scoped by the hideout prefix", () => {
+	const index = buildPaletteIndex(manifest, [
+		{ id: "med", name: "Medstation", normalizedName: "medstation", levels: [{ level: 1 }, { level: 2 }] },
+	]);
+	const [station] = searchPalette(index, "med", "station");
+	assert.equal(station.kind === "station" && station.maxLevel, 2);
+	assert.equal(station.iconLink, "/images/hideout/Medstation_Portrait.webp");
+	assert.equal(searchPalette(index, "gpu", "station").length, 0);
 });

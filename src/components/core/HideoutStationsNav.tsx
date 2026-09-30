@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Crown } from "lucide-react";
 import { stationOrder } from "@/lib/cfg/stationOrder";
-import { STATIC_STATIONS } from "@/lib/data/static-stations";
+import { STATIC_STATIONS, stationPortraitSrc } from "@/lib/data/static-stations";
 import { stationHref } from "@/lib/entity-routes";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
@@ -21,9 +21,6 @@ const orderIndex = (normalizedName: string) => {
 const stations = [...STATIC_STATIONS].sort(
 	(a, b) => orderIndex(a.normalizedName) - orderIndex(b.normalizedName) || a.name.localeCompare(b.name),
 );
-
-/** Bundled portrait, e.g. "Hall of Fame" → /images/hideout/Hall_of_Fame_Portrait.webp. */
-const portraitSrc = (name: string) => `/images/hideout/${name.replace(/ /g, "_")}_Portrait.webp`;
 
 /** Hideout nav dropdown body: every station with the active profile's saved level. */
 export function HideoutStationsNav({ currentPage }: { currentPage: string }) {
@@ -49,7 +46,7 @@ export function HideoutStationsNav({ currentPage }: { currentPage: string }) {
 						)}
 					>
 						<Image
-							src={portraitSrc(station.name)}
+							src={stationPortraitSrc(station.name)}
 							alt=""
 							width={18}
 							height={18}

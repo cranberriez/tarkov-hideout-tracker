@@ -177,11 +177,11 @@ item index without catalog requests or shared-layout preloads.
 
 The [SearchPalette](../src/features/search/SearchPalette.tsx) opens from the
 rightmost nav search button on desktop and mobile, or Ctrl/Cmd+K. It searches
-items and quests in the shared [compact manifest](data-layer.md#compact-search-manifest)
-without network requests while typing or expanding results. The
+items and quests in the shared [compact manifest](data-layer.md#compact-search-manifest),
+plus hideout stations from the bundled static station list, without network requests while typing or expanding results. The
 [pure search model](../src/features/search/search-model.ts) matches all normalized
 terms and ranks exact name/short-name matches before prefixes and other matches,
-with deterministic alphabetical ties. A leading `i:` or `q:` (case-insensitive) becomes a removable Item or Quest chip;
+with deterministic alphabetical ties. A leading `i:`, `q:` or `h:` (case-insensitive) becomes a removable Item, Quest or Hideout chip;
 only that entity kind is searched. An empty scoped query browses that kind.
 Only one chip can exist: subsequent prefixes remain literal search text.
 Backspace with a collapsed caret at the start removes the chip while preserving

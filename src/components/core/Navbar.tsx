@@ -6,7 +6,7 @@ import { ChevronDown, Menu, Plus, Search, Settings2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SearchPalette } from "@/features/search/SearchPalette";
-import { questHref } from "@/lib/entity-routes";
+import { questHref, stationHref } from "@/lib/entity-routes";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import {
 	DropdownMenu,
@@ -49,8 +49,8 @@ function NavbarContent() {
 	const searchButton = (
 		<button
 			type="button"
-			aria-label="Search items and quests"
-			title="Search items and quests (Ctrl/⌘ K)"
+			aria-label="Search items, quests and stations"
+			title="Search items, quests and stations (Ctrl/⌘ K)"
 			aria-haspopup="dialog"
 			aria-expanded={searchOpen}
 			onClick={(event) => {
@@ -186,7 +186,8 @@ function NavbarContent() {
 					onSelect={(result) => {
 						setSearchOpen(false);
 						if (result.kind === "item") openItemDetail(result.item);
-						else router.push(questHref(result.id), { scroll: false });
+						else if (result.kind === "quest") router.push(questHref(result.id), { scroll: false });
+						else router.push(stationHref(result.id));
 					}}
 				/>
 			)}
