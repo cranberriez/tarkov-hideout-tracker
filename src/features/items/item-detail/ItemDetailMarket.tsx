@@ -79,24 +79,24 @@ export function ItemDetailMarket({
 			}
 		>
 			{fleaPrice != null && (
-				<div className="flex items-end justify-between gap-3 rounded-md border border-border-color bg-shadow/25 px-2.5 py-2">
-					<div className="min-w-0 flex-1">
-						<div className="flex items-center justify-between gap-4 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-							<span>{isFiat ? "Rouble cost" : "Flea estimate"}</span>
-							{!isFiat && marketPrice.lastOfferCount != null && (
-								<span className="text-right">
-									{`${new Intl.NumberFormat("en-US").format(marketPrice.lastOfferCount)} offers`}
-								</span>
-							)}
-						</div>
+				<div className="flex-col items-end justify-between gap-3 rounded-md border border-border-color bg-shadow/25 px-2.5 py-2">
+					<div className="flex items-center justify-between gap-4 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+						<span>{isFiat ? "Rouble cost" : "Flea estimate"}</span>
+						{!isFiat && marketPrice.lastOfferCount != null && (
+							<span className="text-right">
+								{`${new Intl.NumberFormat("en-US").format(marketPrice.lastOfferCount)} offers`}
+							</span>
+						)}
+					</div>
+					<div className="flex items-end min-w-0 flex-1 justify-between">
 						<div
-							className={`mt-1 flex items-center gap-1.5 font-mono text-2xl font-semibold ${unstable ? "text-warning" : "text-foreground"}`}
+							className={`mt-1 flex-col items-start font-mono text-2xl font-semibold ${unstable ? "text-warning" : "text-foreground"}`}
 						>
-							{formatRoubles(fleaPrice)}
+							<div>{formatRoubles(fleaPrice)}</div>
 							{unstable && <span className="text-[10px] font-normal">value unstable</span>}
 						</div>
+						{marketPrice.changeLast48hPercent != null && <PriceChange value={marketPrice.changeLast48hPercent} />}
 					</div>
-					{marketPrice.changeLast48hPercent != null && <PriceChange value={marketPrice.changeLast48hPercent} />}
 				</div>
 			)}
 
