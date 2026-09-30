@@ -103,11 +103,11 @@ Integration tests use TEST_DATABASE_URL with disposable schema fixtures. Preserv
 stable source IDs and all existing player data. Never use source compaction/reset
 as a workaround for validation errors.
 
-## Retained legacy source
+## Removed legacy source
 
-The old generator/publisher/compactor and their helper/test sources remain
-temporarily to preserve pre-existing local changes and aid rollback review. Their
-npm commands are removed, and runtime/routine PostgreSQL tooling does not import
-them. They are not supported target operations. Remove them only after the agreed
-rollback window; production source retirement is a separate action. The earlier
-[record-encoding extraction](lib/record-encoding.mjs) is preserved with those edits.
+The old SQLite/Turso generator, publisher, compactor, storage helpers
+(snapshot, current-storage, release-diff, release-prices, catalog-history,
+record-encoding, turso) and their tests were removed. Nothing in the runtime or
+routine PostgreSQL tooling imported them, and their npm commands were already
+gone. They remain in git history. Only the one-time discovery export still reads
+Turso, through [turso-discovery](lib/turso-discovery.mjs).
