@@ -117,8 +117,10 @@ separate browser-persistence boundary.
 
 [HideoutList](../src/features/hideout/components/HideoutList.tsx) derives the next
 upgrade from the active profile's station levels. Reviewed display ordering lives
-in [stationOrder.ts](../src/lib/cfg/stationOrder.ts). Edition starting levels are
-applied through setup/store actions; see [user state](user-state.md).
+in [stationOrder.ts](../src/lib/cfg/stationOrder.ts). Rules code references stations
+through `STATION_IDS` in [static-stations.ts](../src/lib/data/static-stations.ts)
+rather than inlining IDs or matching slugs. Edition starting levels are applied
+through setup/store actions; see [user state](user-state.md).
 
 [station-model](../src/features/hideout/station-model.ts) owns the pure upgrade
 status (`ready`/`missing`/`illegal`), default viewed level, and reverse dependencies

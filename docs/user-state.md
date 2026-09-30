@@ -89,10 +89,14 @@ when `completeSetup` writes the chosen profile, marks it set up and makes it act
 (including the mode cookie) in one update; closing the dialog discards the draft.
 Once any profile has completed setup its edition is inherited, so first-time setup
 of another profile opens on Hideout Levels (Back still reaches mode/edition).
-Edition bonuses initialize Stash at levels 1/2/3/4/4 for Standard, Left Behind,
-Prepare for Escape, Edge of Darkness, and Unheard respectively; Unheard also
-starts Cultist Circle at level 1. The per-profile edition marker prevents repeated
-bonus application. Preserve progress-aware handling in the draft model.
+Edition bonuses are typed entries in [editionBonuses.ts](../src/lib/cfg/editionBonuses.ts)
+(currently station levels: Stash 1/2/3/4/4 for Standard, Left Behind, Prepare for
+Escape, Edge of Darkness, and Unheard; Unheard also Cultist Circle 1). Setup and
+`initializeDefaults` share one applier, and bonus levels are floors: they raise
+lower levels but never lower one, including when switching to a lower edition.
+Profiles without an edition get the Standard baseline. The per-profile edition
+marker prevents repeated bonus application. Preserve progress-aware handling in
+the draft model.
 
 ## Player progress backups
 

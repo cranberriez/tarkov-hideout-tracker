@@ -4,6 +4,7 @@ import { Check, CircleDot, Compass, Map, Search, Settings, SlidersHorizontal, Us
 import { cn } from "@/lib/utils";
 import { FilterGroupTitle, FilterOptionRow, FilterSwitchRow } from "@/components/ui/filter-bar";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { GAME_MODE_CONFIG } from "@/lib/game-mode";
 import { hasLoyaltyControl, orderTraders, TraderLoyaltyControl } from "@/components/entities/trader-loyalty";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { useQuestWorkspace, type QuestFilterSection } from "./QuestWorkspaceContext";
@@ -438,9 +439,9 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
 								count={quests.filter((quest) => quest.trader.id === trader.id).length}
 							/>
 						))}
-						{gameMode === "KORD" && (
+						{!GAME_MODE_CONFIG[gameMode].hasLightkeeper && (
 							<p className="border-b border-warning/10 bg-warning/[0.035] px-3 py-2.5 text-[10px] leading-relaxed text-warning/55">
-								Lightkeeper is inaccessible in the KORD seasonal profile.
+								Lightkeeper is inaccessible in the {GAME_MODE_CONFIG[gameMode].label} profile.
 							</p>
 						)}
 					</>

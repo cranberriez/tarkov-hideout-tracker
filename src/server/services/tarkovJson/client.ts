@@ -1,5 +1,5 @@
 import { TARKOV_API_HEADERS } from "../tarkovApi";
-import type { TarkovJsonGameMode } from "@/lib/game-mode";
+import { DEFAULT_TARKOV_JSON_GAME_MODE, type TarkovJsonGameMode } from "../../../lib/game-mode";
 
 export type { TarkovJsonGameMode } from "@/lib/game-mode";
 
@@ -116,9 +116,9 @@ async function fetchLocale(
 			resolvedPath: localePath,
 		};
 	} catch (error) {
-		if (gameMode === "regular") throw error;
+		if (gameMode === DEFAULT_TARKOV_JSON_GAME_MODE) throw error;
 
-		const fallbackPath = `regular/${endpoint}_en`;
+		const fallbackPath = `${DEFAULT_TARKOV_JSON_GAME_MODE}/${endpoint}_en`;
 		const reason = error instanceof Error ? error.message : String(error);
 		console.warn(`Tarkov JSON locale ${localePath} was unavailable; falling back to ${fallbackPath} (${reason})`);
 		return {
@@ -131,7 +131,7 @@ async function fetchLocale(
 
 export async function fetchTarkovJsonDataset<T extends object>(
 	endpoint: TarkovJsonEndpoint,
-	gameMode: TarkovJsonGameMode = "regular",
+	gameMode: TarkovJsonGameMode = DEFAULT_TARKOV_JSON_GAME_MODE,
 ): Promise<TarkovJsonDataset<T>> {
 	const path = `${gameMode}/${endpoint}`;
 	const [response, localeResult] = await Promise.all([
@@ -164,7 +164,7 @@ export async function fetchTarkovJsonDataset<T extends object>(
 
 export async function fetchTarkovJsonData<T extends object>(
 	endpoint: TarkovJsonEndpoint,
-	gameMode: TarkovJsonGameMode = "regular",
+	gameMode: TarkovJsonGameMode = DEFAULT_TARKOV_JSON_GAME_MODE,
 ): Promise<T> {
 	const path = `${gameMode}/${endpoint}`;
 	const response = await fetchJson<TarkovJsonResponse<T>>(path);

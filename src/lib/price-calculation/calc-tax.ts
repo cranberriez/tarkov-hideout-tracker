@@ -1,4 +1,5 @@
 import type { VendorPrice } from "@/types/prices";
+import { STATION_IDS } from "../data/static-stations";
 
 export interface TaxOptions {
 	stationLevels?: Readonly<Record<string, number>>;
@@ -16,7 +17,7 @@ const multipliers: Readonly<Record<string, number>> = {
 	ragman: 0.5,
 	jaeger: 0.48,
 };
-export const INTELLIGENCE_CENTER_ID = "5d484fdf654e7600691aadf8";
+export const INTELLIGENCE_CENTER_ID = STATION_IDS["intelligence-center"];
 
 /** Catalog buybacks describe full items. Never infer base value from flea/purchase prices. */
 export function itemBasePrice(offers: readonly VendorPrice[] = [], options: TaxOptions = {}): number | null {

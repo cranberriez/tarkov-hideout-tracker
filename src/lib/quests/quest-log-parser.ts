@@ -1,6 +1,7 @@
 import type { FullQuest } from "@/types/quests";
+import type { RaidMode } from "@/lib/game-mode";
 
-export type ParsedRaidMode = "pvp" | "pve" | "kord" | "unknown";
+export type ParsedRaidMode = RaidMode | "unknown";
 export type ParsedQuestEventType = "started" | "completed";
 
 export interface QuestLogReward {

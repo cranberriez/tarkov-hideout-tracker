@@ -1,7 +1,8 @@
 import type { CraftRecord, ItemAmountRef } from "@/types/recipes";
+import { STATION_IDS } from "../data/static-stations";
 
-export const BITCOIN_FARM_STATION_ID = "5d494a445b56502f18c98a10";
-export const WATER_COLLECTOR_STATION_ID = "5d484fc8654e760065037abf";
+export const BITCOIN_FARM_STATION_ID = STATION_IDS["bitcoin-farm"];
+export const WATER_COLLECTOR_STATION_ID = STATION_IDS["water-collector"];
 export const PHYSICAL_BITCOIN_ITEM_ID = "59faff1d86f7746c51718c9c";
 export const BOTTLE_OF_WATER_ITEM_ID = "5448fee04bdc2dbc018b4567";
 export const PURIFIED_WATER_ITEM_ID = "5d1b33a686f7742523398398";

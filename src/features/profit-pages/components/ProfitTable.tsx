@@ -10,6 +10,7 @@ import type { ProfitStationSource } from "../types";
 import type { Trader } from "@/types/traders";
 import type { GoToRecipeHandler, PriceChangeHandler, ProfitPageKind, SortDirection, SortKey } from "../types";
 import { estimateProfitRowHeight } from "../utils/recipes";
+import { PROFIT_KINDS } from "../profit-kinds";
 import styles from "./ProfitTable.module.css";
 import { ProfitRow } from "./ProfitRow";
 import { useCompactCards } from "./useCompactCards";
@@ -59,6 +60,7 @@ export function ProfitTable({
 	onSortChange: (sortKey: SortKey) => void;
 	onIngredientRouteChange: (recipeId: string, requirementIndex: number, routeKey: string) => void;
 }) {
+	const { supportsPinning } = PROFIT_KINDS[kind];
 	const listRef = useRef<HTMLDivElement>(null);
 	const lastScrollRequestRef = useRef<string | null>(null);
 	const [scrollMargin, setScrollMargin] = useState(0);
@@ -165,8 +167,8 @@ export function ProfitTable({
 										stationsById={stationsById}
 										onGoToRecipe={onGoToRecipe}
 										highlighted={evaluation.id === targetRecipeId}
-										pinned={kind === "craft" && Boolean(pinnedCrafts[evaluation.id])}
-										onTogglePinned={kind === "craft" ? () => onTogglePinnedCraft(evaluation.id) : undefined}
+										pinned={supportsPinning && Boolean(pinnedCrafts[evaluation.id])}
+										onTogglePinned={supportsPinning ? () => onTogglePinnedCraft(evaluation.id) : undefined}
 										routeSelections={ingredientRouteSelections[evaluation.id] ?? {}}
 										onRouteChange={(index, routeKey) => onIngredientRouteChange(evaluation.id, index, routeKey)}
 									/>
@@ -176,7 +178,7 @@ export function ProfitTable({
 					</div>
 				) : (
 					<div className="px-4 py-14 text-center text-sm text-muted-foreground">
-						{kind === "craft" && showPinnedOnly
+						{supportsPinning && showPinnedOnly
 							? Object.keys(pinnedCrafts).length === 0
 								? "No pinned crafts yet. Pin a craft from the actions column to add it here."
 								: "No pinned crafts match these filters."

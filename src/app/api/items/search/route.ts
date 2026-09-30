@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isTarkovJsonGameMode } from "@/lib/game-mode";
 import { isValidItemSearchQuery, searchItems } from "@/server/queries/searchItems";
 import { itemDatabaseErrorResponse } from "@/app/api/_lib/route-errors";
+import { readModeParam } from "@/app/api/_lib/mode-params";
 import { ITEM_SEARCH_PAGE_RESULT_LIMIT, ITEM_SEARCH_QUICK_RESULT_LIMIT } from "@/types/contracts";
 import { CacheControl } from "@/app/api/_lib/cache-control";
 
 export async function GET(request: NextRequest) {
-	const requestedMode = request.nextUrl.searchParams.get("mode");
-	if (!isTarkovJsonGameMode(requestedMode)) {
-		return NextResponse.json({ error: "A supported game mode is required" }, { status: 400 });
-	}
+	const modeParam = readModeParam(request);
+	if (!modeParam.ok) return modeParam.response;
+	const requestedMode = modeParam.mode;
 
 	const query = request.nextUrl.searchParams.get("q") ?? "";
 	if (!isValidItemSearchQuery(query)) {

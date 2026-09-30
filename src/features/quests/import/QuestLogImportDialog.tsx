@@ -18,7 +18,12 @@ import {
 import type { FullQuest } from "@/types/quests";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
-import { type ImportGameMode, type QuestImportBuckets, type QuestImportRow } from "@/lib/quests/quest-log-import";
+import {
+	IMPORT_GAME_MODES,
+	type ImportGameMode,
+	type QuestImportBuckets,
+	type QuestImportRow,
+} from "@/lib/quests/quest-log-import";
 import { type ParsedQuestEvent, type QuestLogParseResult } from "@/lib/quests/quest-log-parser";
 import { buildQuestAvailabilityMap, isQuestAvailableForProfile } from "@/lib/quests/quest-availability";
 import {
@@ -46,7 +51,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 		const availabilityMap = buildQuestAvailabilityMap(quests);
 		const result = {} as Record<ImportGameMode, Set<string>>;
 
-		for (const mode of ["PVP", "PVE", "KORD"] as const) {
+		for (const mode of IMPORT_GAME_MODES) {
 			const profile = profiles[mode];
 			const availableIds = new Set<string>();
 			const availabilityProfile = {
@@ -98,10 +103,8 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 		state.status === "review" || state.status === "applying" || state.status === "success" ? "review" : "select";
 	const hasResults = !!parsedView;
 	const hasPreWipeIgnoredFiles = preWipeIgnoredFileNames.length > 0;
-	const filteredPvpRows = modeModels.find((model) => model.mode === "PVP")?.rows ?? [];
-	const filteredPveRows = modeModels.find((model) => model.mode === "PVE")?.rows ?? [];
-	const filteredKordRows = modeModels.find((model) => model.mode === "KORD")?.rows ?? [];
-	const hasAnyImportableRows = modeModels.some((model) => model.rows.length > 0);
+	const importableModeModels = modeModels.filter((model) => model.rows.length > 0);
+	const hasAnyImportableRows = importableModeModels.length > 0;
 	const reviewPreview = reviewModel;
 	const reviewImportedRows = reviewModel?.importedRows ?? [];
 	const reviewPrerequisiteQuests = reviewModel?.prerequisiteQuests ?? [];
@@ -281,44 +284,19 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 
 						{hasResults && parsedView && step === "select" && hasAnyImportableRows && (
 							<div className="mt-5 space-y-5">
-								{filteredPvpRows.length > 0 && (
+								{importableModeModels.map((model) => (
 									<ModeSection
-										title="PVP Quests"
-										mode="PVP"
-										rows={filteredPvpRows}
-										completedQuests={profiles.PVP.completedQuests}
+										key={model.mode}
+										title={model.title}
+										mode={model.mode}
+										rows={model.rows}
+										completedQuests={model.completedQuests}
 										autoCompleteSelections={autoCompleteSelections}
 										onToggleAutoComplete={commands.toggleAutoComplete}
-										onEnableAll={() => commands.setAllForMode("PVP", filteredPvpRows, true)}
-										onDisableAll={() => commands.setAllForMode("PVP", filteredPvpRows, false)}
+										onEnableAll={() => commands.setAllForMode(model.mode, model.rows, true)}
+										onDisableAll={() => commands.setAllForMode(model.mode, model.rows, false)}
 									/>
-								)}
-
-								{filteredPveRows.length > 0 && (
-									<ModeSection
-										title="PVE Quests"
-										mode="PVE"
-										rows={filteredPveRows}
-										completedQuests={profiles.PVE.completedQuests}
-										autoCompleteSelections={autoCompleteSelections}
-										onToggleAutoComplete={commands.toggleAutoComplete}
-										onEnableAll={() => commands.setAllForMode("PVE", filteredPveRows, true)}
-										onDisableAll={() => commands.setAllForMode("PVE", filteredPveRows, false)}
-									/>
-								)}
-
-								{filteredKordRows.length > 0 && (
-									<ModeSection
-										title="KORD Seasonal Quests"
-										mode="KORD"
-										rows={filteredKordRows}
-										completedQuests={profiles.KORD.completedQuests}
-										autoCompleteSelections={autoCompleteSelections}
-										onToggleAutoComplete={commands.toggleAutoComplete}
-										onEnableAll={() => commands.setAllForMode("KORD", filteredKordRows, true)}
-										onDisableAll={() => commands.setAllForMode("KORD", filteredKordRows, false)}
-									/>
-								)}
+								))}
 							</div>
 						)}
 
@@ -362,36 +340,17 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 									<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
 										<span className="text-sm text-muted-foreground">Import quests from:</span>
 										<div className="flex flex-wrap items-center gap-2">
-											{filteredPvpRows.length > 0 && (
+											{importableModeModels.map((model) => (
 												<button
+													key={model.mode}
 													type="button"
-													onClick={() => commands.reviewMode("PVP")}
-													style={{ "--profile-color": PROFILE_BASE_COLORS.PVP } as CSSProperties}
+													onClick={() => commands.reviewMode(model.mode)}
+													style={{ "--profile-color": PROFILE_BASE_COLORS[model.mode] } as CSSProperties}
 													className="rounded-sm border border-[color-mix(in_srgb,var(--profile-color)_45%,transparent)] bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--profile-color)_22%,var(--background)),color-mix(in_srgb,var(--profile-color)_10%,var(--background)))] px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:border-[color-mix(in_srgb,var(--profile-color)_60%,transparent)] hover:bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--profile-color)_30%,var(--background)),color-mix(in_srgb,var(--profile-color)_15%,var(--background)))]"
 												>
-													Import PVP Quests
+													Import {model.title}
 												</button>
-											)}
-											{filteredPveRows.length > 0 && (
-												<button
-													type="button"
-													onClick={() => commands.reviewMode("PVE")}
-													style={{ "--profile-color": PROFILE_BASE_COLORS.PVE } as CSSProperties}
-													className="rounded-sm border border-[color-mix(in_srgb,var(--profile-color)_45%,transparent)] bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--profile-color)_22%,var(--background)),color-mix(in_srgb,var(--profile-color)_10%,var(--background)))] px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:border-[color-mix(in_srgb,var(--profile-color)_60%,transparent)] hover:bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--profile-color)_30%,var(--background)),color-mix(in_srgb,var(--profile-color)_15%,var(--background)))]"
-												>
-													Import PVE Quests
-												</button>
-											)}
-											{filteredKordRows.length > 0 && (
-												<button
-													type="button"
-													onClick={() => commands.reviewMode("KORD")}
-													style={{ "--profile-color": PROFILE_BASE_COLORS.KORD } as CSSProperties}
-													className="rounded-sm border border-[color-mix(in_srgb,var(--profile-color)_45%,transparent)] bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--profile-color)_22%,var(--background)),color-mix(in_srgb,var(--profile-color)_10%,var(--background)))] px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:border-[color-mix(in_srgb,var(--profile-color)_60%,transparent)] hover:bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--profile-color)_30%,var(--background)),color-mix(in_srgb,var(--profile-color)_15%,var(--background)))]"
-												>
-													Import KORD Seasonal Quests
-												</button>
-											)}
+											))}
 										</div>
 									</div>
 								</div>

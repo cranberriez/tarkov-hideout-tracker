@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isCompleteProfitPageData } from "@/lib/query/page-data";
 import { getProfitPageData } from "@/server/queries/getProfitPageData";
-import { getCurrentPageRepository, readPageDataMode } from "@/app/api/_lib/page-data-params";
+import { getCurrentPageRepository } from "@/app/api/_lib/page-data-params";
+import { readModeParam } from "@/app/api/_lib/mode-params";
 import { CacheControl, profitPageDataCacheControl } from "@/app/api/_lib/cache-control";
 
 export async function GET(request: NextRequest) {
-	const mode = readPageDataMode(request);
-	if (!mode)
-		return NextResponse.json(
-			{ error: "A supported game mode is required" },
-			{ status: 400, headers: { "Cache-Control": CacheControl.noStore } },
-		);
+	const modeParam = readModeParam(request);
+	if (!modeParam.ok) return modeParam.response;
+	const { mode } = modeParam;
 	try {
 		const data = await getProfitPageData(mode, await getCurrentPageRepository(mode), {
 			includePrices: request.nextUrl.searchParams.get("prices") !== "none",

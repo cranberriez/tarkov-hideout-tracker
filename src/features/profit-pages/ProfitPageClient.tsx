@@ -18,7 +18,9 @@ import { ProfitPricingContext } from "./components/ProfitPricingContext";
 import { ProfitProfileBanner } from "./components/ProfitProfileBanner";
 import { ProfitTable } from "./components/ProfitTable";
 import { TraderLevelsModal } from "./components/TraderLevelsModal";
+import { profitRecipeHref } from "@/lib/entity-routes";
 import type { ProfitPageKind, ProfitStationSource, SortDirection, SortKey } from "./types";
+import { PROFIT_KINDS } from "./profit-kinds";
 import { FLEA_UNLOCK_LEVEL, getProfileLockGaps } from "./utils/lock-summary";
 import { compareEvaluationsByBaseline, getRecipeSourceId, isRecipeAvailable, passesLockFilters } from "./utils/recipes";
 import { useManualPriceOverrides } from "./useManualPriceOverrides";
@@ -74,15 +76,14 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 	} = useProfitOptions(gameMode);
 	const [showPinnedOnly, setShowPinnedOnly] = useState(false);
 	const [traderLevelsOpen, setTraderLevelsOpen] = useState(false);
-	const [drawerState, setDrawerState] = useStoredProfitValue(
-		`tarkov-filter-drawer-v1:${kind === "barter" ? "barter-profits" : "crafting-profits"}`,
-	);
+	const kindConfig = PROFIT_KINDS[kind];
+	const [drawerState, setDrawerState] = useStoredProfitValue(kindConfig.drawerStorageKey);
 	const [ingredientRouteSelections, setIngredientRouteSelections] = useState<Record<string, Record<number, string>>>(
 		{},
 	);
 	const [targetRecipeId, setTargetRecipeId] = useState<string | null>(initialTargetRecipeId ?? null);
 	const [scrollRequestId, setScrollRequestId] = useState(0);
-	const [sortKey, setSortKey] = useState<SortKey>(kind === "barter" ? "profit" : "profitPerHour");
+	const [sortKey, setSortKey] = useState<SortKey>(kindConfig.defaultSortKey);
 	const [sortDirection, setSortDirection] = useState<SortDirection>("descending");
 	const calculatorInput = useMemo(
 		() => ({
@@ -114,21 +115,18 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 			traderLoyaltyLevels,
 		],
 	);
-	const baselineEvaluations = useMemo(() => {
-		const calculator = createRecipeCalculator(calculatorInput);
-		return kind === "barter" ? calculator.evaluateBarters() : calculator.evaluateCrafts();
-	}, [calculatorInput, kind]);
+	const baselineEvaluations = useMemo(
+		() => PROFIT_KINDS[kind].evaluate(createRecipeCalculator(calculatorInput)),
+		[calculatorInput, kind],
+	);
 	const baselineEvaluationsById = useMemo(
 		() => Object.fromEntries(baselineEvaluations.map((evaluation) => [evaluation.id, evaluation])),
 		[baselineEvaluations],
 	);
-	const evaluations = useMemo(() => {
-		const calculator = createRecipeCalculator({
-			...calculatorInput,
-			overrides,
-		});
-		return kind === "barter" ? calculator.evaluateBarters() : calculator.evaluateCrafts();
-	}, [calculatorInput, kind, overrides]);
+	const evaluations = useMemo(
+		() => PROFIT_KINDS[kind].evaluate(createRecipeCalculator({ ...calculatorInput, overrides })),
+		[calculatorInput, kind, overrides],
+	);
 	const tradersById = useMemo(
 		() => Object.fromEntries(data.traders.map((trader) => [trader.id, trader])) as Record<string, Trader>,
 		[data.traders],
@@ -181,7 +179,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 		const normalizedSearch = search.trim().toLowerCase();
 		return evaluations
 			.filter((evaluation) => {
-				if (kind === "craft" && showPinnedOnly && !pinnedCrafts[evaluation.id]) return false;
+				if (PROFIT_KINDS[kind].supportsPinning && showPinnedOnly && !pinnedCrafts[evaluation.id]) return false;
 				if (evaluation.id === targetRecipeId) return true;
 				if (!passesLockFilters(evaluation, availableOnly, lockFilters)) return false;
 				const item = itemById[evaluation.outputItemId];
@@ -231,7 +229,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 		return (
 			<main className="container mx-auto px-6 py-8">
 				<DataLoadError
-					title={`${kind === "barter" ? "Barter" : "Craft"} profit data is unavailable`}
+					title={`${kindConfig.label} profit data is unavailable`}
 					messages={[itemsError, ...recipeErrors, !items ? "Item prices could not be loaded." : null].filter(
 						(message): message is string => Boolean(message),
 					)}
@@ -239,12 +237,12 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 			</main>
 		);
 	function goToRecipe(method: "barter" | "craft", recipeId: string) {
-		const route = method === "barter" ? "/items/barter-profits" : "/items/crafting-profits";
+		const href = profitRecipeHref(method, recipeId);
 		if (method !== kind) {
-			router.push(`${route}?recipe=${encodeURIComponent(recipeId)}`);
+			router.push(href);
 			return;
 		}
-		window.history.replaceState(null, "", `${route}?recipe=${encodeURIComponent(recipeId)}`);
+		window.history.replaceState(null, "", href);
 		setTargetRecipeId(recipeId);
 		setScrollRequestId((value) => value + 1);
 	}

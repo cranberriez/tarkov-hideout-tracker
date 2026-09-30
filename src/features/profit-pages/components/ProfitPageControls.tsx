@@ -4,6 +4,7 @@ import { Pin, Users, Wrench } from "lucide-react";
 import { FilterBar, FilterSearchInput, FilterToggle } from "@/components/ui/filter-bar";
 import { FilterMultiSelect, FilterMultiSelectItem } from "@/components/ui/filter-multi-select";
 import type { ProfitPageKind } from "../types";
+import { PROFIT_KINDS } from "../profit-kinds";
 import { CalculationSettings } from "./CalculationSettings";
 
 interface SourceOption {
@@ -71,10 +72,7 @@ export function ProfitPageControls({
 	onShowPinnedOnlyChange: (value: boolean) => void;
 } & ProfitLockOptionsProps) {
 	return (
-		<FilterBar
-			className="relative z-40"
-			aria-label={kind === "craft" ? "Craft profit filters" : "Barter profit filters"}
-		>
+		<FilterBar className="relative z-40" aria-label={`${PROFIT_KINDS[kind].label} profit filters`}>
 			<FilterSearchInput
 				value={search}
 				onValueChange={onSearchChange}
@@ -119,7 +117,7 @@ export function ProfitPageControls({
 				allowBarters={allowBarters}
 				onAllowBartersChange={onAllowBartersChange}
 			/>
-			{kind === "craft" && (
+			{PROFIT_KINDS[kind].supportsPinning && (
 				<FilterToggle
 					checked={showPinnedOnly}
 					onCheckedChange={onShowPinnedOnlyChange}

@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isTarkovJsonGameMode } from "@/lib/game-mode";
 import { getCatalogVersion } from "@/server/db/postgres-read";
 import { readSearchManifest } from "@/server/db/search-manifest";
 import { itemDatabaseErrorResponse } from "@/app/api/_lib/route-errors";
+import { readModeParam } from "@/app/api/_lib/mode-params";
 import { CacheControl } from "@/app/api/_lib/cache-control";
 import { DatabaseTransientReadError } from "@/server/db/errors";
 
 export async function GET(request: NextRequest) {
-	const mode = request.nextUrl.searchParams.get("mode");
-	if (!isTarkovJsonGameMode(mode))
-		return NextResponse.json({ error: "A supported game mode is required" }, { status: 400 });
+	const modeParam = readModeParam(request);
+	if (!modeParam.ok) return modeParam.response;
+	const { mode } = modeParam;
 	const headers = { "Cache-Control": CacheControl.privateNoStore };
 	try {
 		const releaseId = await getCatalogVersion(mode);

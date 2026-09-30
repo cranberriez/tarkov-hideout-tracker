@@ -9,8 +9,10 @@ The runtime and routine writers use PostgreSQL domain tables through
 cover migration and deployment. There are no active release pointers, generic
 payload tables, historical catalogs, or stored search manifests in PostgreSQL.
 
-[game-mode.ts](../src/lib/game-mode.ts) maps PVP to regular, PVE to pve, and
-KORD to pvp-season. Shared identity tables hold deterministic presentation;
+`GAME_MODE_CONFIG` in [game-mode.ts](../src/lib/game-mode.ts) is the single
+source for per-mode mappings (PVP to regular, PVE to pve, KORD to pvp-season),
+quest-log raid tags, labels and mode rules such as `seasonal` and `hasLightkeeper`;
+check those flags rather than comparing mode strings. Shared identity tables hold deterministic presentation;
 mode membership rows own gameplay fields and complete presentation overrides.
 Missing mode membership never inherits another mode's requirements. Entity,
 recipe, station-level and requirement IDs remain the upstream stable IDs.
@@ -142,7 +144,10 @@ after the initial metadata domains settle. Their query keys distinguish unpriced
 metadata from older priced payloads. Compatibility API callers can still request
 the previous price-hydrated payloads.
 
-Item routes validate standard item IDs and require a supported data `mode`.
+Data GET routes read the mode from the `?mode=` query parameter through
+[readModeParam](../src/app/api/_lib/mode-params.ts): a missing mode selects `regular`
+(PVP) and an unknown mode returns 400. Browser clients always send it explicitly so
+each mode keeps its own CDN cache entry. Item routes also validate standard item IDs.
 Except for the compact search manifest protocol below, the browser never sends
 or validates database revision IDs. Each API resolves the
 current revision internally. Multi-step stored reads pin that revision for their
@@ -161,12 +166,12 @@ parameter parsing, database error responses, and the named
 
 | API / owner                                                                                                                                                      | Result and cache policy                                                                                                                                                           |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [prices](../src/app/api/items/prices/route.ts)                                                                                                                   | GET with explicit mode and 1–200 IDs or named checklist/recipes scope; browser 300s, CDN 3600s; legacy POST remains private/no-store                                              |
+| [prices](../src/app/api/items/prices/route.ts)                                                                                                                   | GET with at most one mode and 1–200 IDs or named checklist/recipes scope; browser 300s, CDN 3600s; legacy POST remains private/no-store                                           |
 | [relations](../src/app/api/items/[itemId]/relations/route.ts)                                                                                                    | Hideout requirements, quest demand/rewards and availability closure; private, no-store; current offers are hydrated on every request                                              |
 | [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and recipes producing one item, referenced items and source labels; private, no-store; current offers are hydrated on every request                       |
 | [acquisition-tree](../src/app/api/items/[itemId]/acquisition-tree/route.ts)                                                                                      | Cycle-safe graph bounded by depth/item count with `truncated`; private, no-store; current offers are hydrated on every request                                                    |
 | [price-history](../src/app/api/items/[itemId]/price-history/route.ts)                                                                                            | On-demand provider history; browser 300s, CDN and upstream Next.js fetch cache 7200s                                                                                              |
-| [search](../src/app/api/items/search/route.ts)                                                                                                                   | Required mode and `q` up to 80 characters, normalized for matching; 10 results by default or 50 with `limit=50`; `private, no-store`                                              |
+| [search](../src/app/api/items/search/route.ts)                                                                                                                   | Mode and `q` up to 80 characters, normalized for matching; 10 results by default or 50 with `limit=50`; `private, no-store`                                                       |
 | [status](../src/app/api/data/status/route.ts)                                                                                                                    | Mode/release identity, hideout/item/quest/craft/barter release freshness, and independent mutable-price change/check timestamps; `private, no-store`                              |
 | [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); `private, no-store`                                                                    |
 | [page data](../src/app/api/page-data/)                                                                                                                           | Mode-specific Hideout, Items, Quests, Kappa, and shared Profit payloads; unpriced profit: `no-store`; other complete unpriced: browser 300s, CDN 3600s; partial/error: `no-store` |

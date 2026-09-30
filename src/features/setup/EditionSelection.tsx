@@ -1,13 +1,12 @@
 "use client";
 
 import { GameEdition } from "@/lib/stores/useUserStore";
+import { GAME_EDITIONS } from "@/lib/cfg/editionBonuses";
 
 interface EditionSelectionProps {
 	selected: GameEdition | null;
 	onSelect: (edition: GameEdition) => void;
 }
-
-const EDITIONS: GameEdition[] = ["Standard", "Left Behind", "Prepare for Escape", "Edge of Darkness", "Unheard"];
 
 export function EditionSelection({ selected, onSelect }: EditionSelectionProps) {
 	return (
@@ -17,7 +16,7 @@ export function EditionSelection({ selected, onSelect }: EditionSelectionProps) 
 				<p className="text-xs text-subtle-foreground mt-1">Sets your starting Stash and Cultist Circle levels.</p>
 			</div>
 			<div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
-				{EDITIONS.map((edition, index) => {
+				{GAME_EDITIONS.map((edition, index) => {
 					const isSelected = selected === edition;
 
 					// Layout logic: First 3 items span 2 cols (3x2=6), last 2 items span 3 cols (2x3=6)

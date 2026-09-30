@@ -1,3 +1,5 @@
+import type { StationSlug } from "../data/static-stations";
+
 export const stationOrder: string[] = [
 	"security",
 	"generator",
@@ -24,4 +26,4 @@ export const stationOrder: string[] = [
 	"library",
 	"solar-power",
 	"air-filtering-unit",
-];
+] satisfies StationSlug[];

@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
+import type { TarkovJsonGameMode } from "@/lib/game-mode";
 
-export type GameDataMode = "regular" | "pve" | "pvp-season";
+export type GameDataMode = TarkovJsonGameMode;
 
 export function gameDataKey(mode: GameDataMode, domain: string, ...parts: readonly unknown[]) {
 	return ["game-data", mode, domain, ...parts] as const;

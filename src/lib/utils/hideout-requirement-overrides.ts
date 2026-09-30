@@ -1,4 +1,4 @@
-import type { TarkovJsonGameMode } from "@/lib/game-mode";
+import { getGameModeForDataMode, type TarkovJsonGameMode } from "../game-mode";
 
 interface HideoutRequirementValues {
 	gameMode: TarkovJsonGameMode;
@@ -10,7 +10,7 @@ interface HideoutRequirementValues {
 }
 
 export function usesReviewedHideoutOverrides(gameMode: TarkovJsonGameMode) {
-	return gameMode !== "pvp-season";
+	return !getGameModeForDataMode(gameMode).seasonal;
 }
 
 /** Seasonal hideout rules are distinct and must remain authoritative. */

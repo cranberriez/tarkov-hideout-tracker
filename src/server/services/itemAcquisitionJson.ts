@@ -1,3 +1,4 @@
+import { DEFAULT_TARKOV_JSON_GAME_MODE } from "../../lib/game-mode";
 import { fetchTarkovJsonData, type TarkovJsonGameMode } from "@/server/services/tarkovJson/client";
 import type { BarterRecord, CraftRecord, ItemAmountRef } from "@/types/recipes";
 import type { BartersPayload, CraftsPayload } from "@/types/contracts";
@@ -106,7 +107,9 @@ function indexBy<T>(records: T[], key: (record: T) => string): Record<string, T[
 	return result;
 }
 
-export async function getBarterIndex(gameMode: TarkovJsonGameMode = "regular"): Promise<DataResult<BartersPayload>> {
+export async function getBarterIndex(
+	gameMode: TarkovJsonGameMode = DEFAULT_TARKOV_JSON_GAME_MODE,
+): Promise<DataResult<BartersPayload>> {
 	const raw = await fetchTarkovJsonData<JsonBarter[]>("barters", gameMode);
 	const barters = raw.flatMap((value) => {
 		const record = mapBarter(value);
@@ -122,7 +125,9 @@ export async function getBarterIndex(gameMode: TarkovJsonGameMode = "regular"): 
 	};
 }
 
-export async function getCraftIndex(gameMode: TarkovJsonGameMode = "regular"): Promise<DataResult<CraftsPayload>> {
+export async function getCraftIndex(
+	gameMode: TarkovJsonGameMode = DEFAULT_TARKOV_JSON_GAME_MODE,
+): Promise<DataResult<CraftsPayload>> {
 	const raw = await fetchTarkovJsonData<JsonCraft[]>("crafts", gameMode);
 	const crafts = raw.flatMap((value) => {
 		const record = mapCraft(value);

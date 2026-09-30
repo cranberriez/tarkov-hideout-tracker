@@ -2,10 +2,13 @@ import type { PlayerProfileState } from "../../../lib/stores/useUserStore";
 import {
 	applyQuestImportSelection,
 	filterIncompleteQuestImportRows,
+	IMPORT_GAME_MODES,
+	toParsedRaidMode,
 	type ImportGameMode,
 	type QuestImportBuckets,
 	type QuestImportRow,
 } from "../../../lib/quests/quest-log-import";
+import { GAME_MODE_CONFIG } from "../../../lib/game-mode";
 import type { FullQuest } from "@/types/quests";
 
 export interface ParsedImportView {
@@ -216,9 +219,7 @@ export function getSelectionKey(mode: ImportGameMode, questId: string) {
 }
 
 export function getModeRows(buckets: QuestImportBuckets, mode: ImportGameMode) {
-	if (mode === "PVP") return buckets.pvp;
-	if (mode === "PVE") return buckets.pve;
-	return buckets.kord;
+	return buckets[toParsedRaidMode(mode)];
 }
 
 export interface ModeImportViewModel {
@@ -234,14 +235,9 @@ export function buildModeImportViewModels(input: {
 	availableQuestIdsByMode: Record<ImportGameMode, Set<string>>;
 }): ModeImportViewModel[] {
 	if (!input.parsedView) return [];
-	const titles: Record<ImportGameMode, string> = {
-		PVP: "PVP Quests",
-		PVE: "PVE Quests",
-		KORD: "KORD Seasonal Quests",
-	};
-	return (["PVP", "PVE", "KORD"] as const).map((mode) => ({
+	return IMPORT_GAME_MODES.map((mode) => ({
 		mode,
-		title: titles[mode],
+		title: GAME_MODE_CONFIG[mode].questImportTitle,
 		rows: filterIncompleteQuestImportRows({
 			rows: getModeRows(input.parsedView!.buckets, mode),
 			completedQuests: input.profiles[mode].completedQuests,

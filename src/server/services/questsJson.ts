@@ -1,3 +1,4 @@
+import { DEFAULT_TARKOV_JSON_GAME_MODE } from "../../lib/game-mode";
 import { fetchTarkovJsonDataset, type TarkovJsonGameMode } from "@/server/services/tarkovJson/client";
 import { mapQuestOtherRequirements, type RawQuestOtherRequirement } from "@/server/services/quest-requirements";
 import { normalizeQuestObjectiveLocations } from "@/server/services/quest-objective-locations";
@@ -509,7 +510,7 @@ async function fetchAndMapFullQuests(gameMode: TarkovJsonGameMode): Promise<Full
 }
 
 export async function getCurrentJsonFullQuestData(
-	gameMode: TarkovJsonGameMode = "regular",
+	gameMode: TarkovJsonGameMode = DEFAULT_TARKOV_JSON_GAME_MODE,
 ): Promise<DataResult<FullQuestsPayload>> {
 	const quests = await fetchAndMapFullQuests(gameMode);
 	if (quests.length === 0) throw new Error("Tarkov JSON task mapping produced no quests");

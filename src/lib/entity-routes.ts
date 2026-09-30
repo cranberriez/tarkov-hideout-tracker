@@ -13,3 +13,13 @@ export function questHref(questId: string, devQuery: string | null = null) {
 export function stationHref(stationId: string) {
 	return `/hideout/stations/${encodeURIComponent(stationId)}`;
 }
+
+export const PROFIT_PAGE_HREFS = {
+	barter: "/items/barter-profits",
+	craft: "/items/crafting-profits",
+} as const;
+
+export function profitRecipeHref(kind: keyof typeof PROFIT_PAGE_HREFS, recipeId?: string) {
+	const href = PROFIT_PAGE_HREFS[kind];
+	return recipeId ? `${href}?recipe=${encodeURIComponent(recipeId)}` : href;
+}

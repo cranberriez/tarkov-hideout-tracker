@@ -1,5 +1,5 @@
 import type { FullQuest } from "@/types/quests";
-import type { TarkovJsonGameMode } from "@/lib/game-mode";
+import { getGameModeForDataMode, type TarkovJsonGameMode } from "../game-mode";
 import seriesData from "../data/quest-series.json";
 import { isEssentialQuestOverride } from "./quest-trader-tab-overrides";
 
@@ -75,6 +75,6 @@ function isLightkeeperTrader(quest: FullQuest) {
  */
 export function prepareQuestSeriesForGameMode(quests: FullQuest[], gameMode: TarkovJsonGameMode) {
 	const prepared = applyQuestSeriesMetadata(quests);
-	if (gameMode !== "pvp-season") return prepared;
+	if (getGameModeForDataMode(gameMode).hasLightkeeper) return prepared;
 	return prepared.filter((quest) => !quest.lightkeeperRequired && !isLightkeeperTrader(quest));
 }

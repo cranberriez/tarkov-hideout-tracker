@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClassName } from "@/components/ui/button";
 import type { RecipeEvaluation } from "@/lib/price-calculation";
 import { cn } from "@/lib/utils";
+import { profitRecipeHref } from "@/lib/entity-routes";
 import { formatDuration } from "@/lib/utils/format-time";
 import { formatCompactRoubles } from "@/lib/utils/market-price";
 import type { ProfitPageData } from "@/types/contracts";
@@ -42,7 +43,12 @@ function Metric({
 	);
 }
 
-function profitMetric(label: string, value: number | null | undefined, status: CraftProfitStatus, reason: string | null) {
+function profitMetric(
+	label: string,
+	value: number | null | undefined,
+	status: CraftProfitStatus,
+	reason: string | null,
+) {
 	return (
 		<Metric
 			label={label}
@@ -84,7 +90,11 @@ export function StationCraftRow({
 			<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2">
 				<div className="flex flex-wrap items-center gap-2">
 					{craft.requiredItems.map((requirement) => (
-						<CraftItem key={`${craft.id}-${requirement.itemId}`} amount={requirement} item={itemsById[requirement.itemId]} />
+						<CraftItem
+							key={`${craft.id}-${requirement.itemId}`}
+							amount={requirement}
+							item={itemsById[requirement.itemId]}
+						/>
 					))}
 				</div>
 				<ArrowRight size={16} aria-hidden="true" className="text-muted-foreground" />
@@ -114,7 +124,7 @@ export function StationCraftRow({
 					{profitMetric("Profit", evaluation?.profit, status, unavailableReason)}
 					{profitMetric("Per hour", evaluation?.profitPerHour, status, unavailableReason)}
 					<Link
-						href={`/items/crafting-profits?recipe=${encodeURIComponent(craft.id)}`}
+						href={profitRecipeHref("craft", craft.id)}
 						className={buttonClassName({ variant: "ghost", size: "sm", iconOnly: true })}
 						aria-label="Open in Crafting Profits"
 						title="Open in Crafting Profits"

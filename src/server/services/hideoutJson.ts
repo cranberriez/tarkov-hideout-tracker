@@ -1,3 +1,4 @@
+import { DEFAULT_TARKOV_JSON_GAME_MODE } from "../../lib/game-mode";
 import { requiresFoundInRaid } from "@/lib/cfg/foundInRaid";
 import { wikiData } from "@/lib/data/wiki-data";
 import { getGlobalItemList, getGlobalSkillList } from "@/server/services/itemsJson";
@@ -71,7 +72,7 @@ function mapStationBonuses(raw: unknown, levelId: string): StationBonus[] {
 }
 
 export async function getJsonHideoutStations(
-	gameMode: TarkovJsonGameMode = "regular",
+	gameMode: TarkovJsonGameMode = DEFAULT_TARKOV_JSON_GAME_MODE,
 ): Promise<DataResult<HideoutStationsPayload>> {
 	try {
 		const [hideoutDataset, catalogResponse, skillsDataset, tradersDataset] = await Promise.all([

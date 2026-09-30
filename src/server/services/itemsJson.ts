@@ -1,3 +1,4 @@
+import { DEFAULT_TARKOV_JSON_GAME_MODE } from "../../lib/game-mode";
 import { fetchTarkovJsonDataset, type TarkovJsonDataset, type TarkovJsonGameMode } from "./tarkovJson/client";
 import type { ItemSummary, ItemCategory, TraderPurchaseOffer } from "@/types/items";
 import type { CurrentPrice } from "@/types/prices";
@@ -258,7 +259,9 @@ function mapItem(
 }
 
 /** Direct source reader used only while generating immutable database releases. */
-export async function getGlobalItemList(gameMode: TarkovJsonGameMode = "regular"): Promise<DataResult<ItemsPayload>> {
+export async function getGlobalItemList(
+	gameMode: TarkovJsonGameMode = DEFAULT_TARKOV_JSON_GAME_MODE,
+): Promise<DataResult<ItemsPayload>> {
 	const [itemsDataset, tradersDataset] = await Promise.all([
 		getItemsDataset(gameMode),
 		fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders", gameMode),
@@ -297,7 +300,9 @@ export async function getGlobalItemList(gameMode: TarkovJsonGameMode = "regular"
 }
 
 /** Skills share the `/items` source but remain a compact hideout-only projection. */
-export async function getGlobalSkillList(gameMode: TarkovJsonGameMode = "regular"): Promise<DataResult<SkillsPayload>> {
+export async function getGlobalSkillList(
+	gameMode: TarkovJsonGameMode = DEFAULT_TARKOV_JSON_GAME_MODE,
+): Promise<DataResult<SkillsPayload>> {
 	const dataset = await getItemsDataset(gameMode);
 	const skills: GlobalSkill[] = (dataset.data.skills ?? []).flatMap((skill) =>
 		typeof skill.id === "string" && skill.id

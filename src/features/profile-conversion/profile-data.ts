@@ -1,8 +1,7 @@
 import type { PlayerProfileState } from "../../lib/stores/useUserStore";
-import { STATIC_STATIONS } from "../../lib/data/static-stations";
+import { STATION_IDS } from "../../lib/data/static-stations";
 
-// Match setup metadata without waiting for the conversion query to load.
-const STASH_ID = STATIC_STATIONS.find((station) => station.normalizedName === "stash")?.id;
+const STASH_ID = STATION_IDS.stash;
 
 export function hasProfileData(profile: PlayerProfileState) {
 	const hasStationProgress = Object.entries(profile.stationLevels).some(

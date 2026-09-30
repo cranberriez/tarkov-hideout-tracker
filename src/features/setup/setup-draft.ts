@@ -1,8 +1,8 @@
 import type { GameEdition, GameMode, PlayerProfileState } from "@/lib/stores/useUserStore";
 import type { Station } from "@/types/hideout";
-import { EDITION_STARTING_LEVELS } from "@/lib/cfg/editionStartingLevels";
+import { applyEditionStationBonuses } from "@/lib/cfg/editionBonuses";
 
-type EditionBonusStation = Pick<Station, "id" | "normalizedName">;
+type EditionBonusStation = Pick<Station, "id">;
 type SetupProfiles = Record<GameMode, PlayerProfileState>;
 
 /** Setup modal edits, committed to the chosen profile only when setup is saved. */
@@ -28,15 +28,12 @@ export function shouldStartOnHideoutLevels(profiles: SetupProfiles, mode: GameMo
 function withEdition(draft: SetupDraft, edition: GameEdition | null, stations: EditionBonusStation[]): SetupDraft {
 	if (!edition || draft.editionBonusesAppliedFor === edition) return { ...draft, gameEdition: edition };
 
-	const starting = EDITION_STARTING_LEVELS[edition];
-	const stationLevels = { ...draft.stationLevels };
-	for (const station of stations) {
-		if (station.normalizedName === "stash") stationLevels[station.id] = starting.stash;
-		if (station.normalizedName === "cultist-circle" && (stationLevels[station.id] || 0) < starting.cultistCircle) {
-			stationLevels[station.id] = starting.cultistCircle;
-		}
-	}
-	return { ...draft, gameEdition: edition, editionBonusesAppliedFor: edition, stationLevels };
+	const stationLevels = applyEditionStationBonuses(
+		draft.stationLevels,
+		edition,
+		new Set(stations.map((station) => station.id)),
+	);
+	return { ...draft, gameEdition: edition, editionBonusesAppliedFor: edition, stationLevels: { ...stationLevels } };
 }
 
 /** Load a profile into the draft, falling back to an already chosen or known edition. */

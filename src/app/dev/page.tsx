@@ -1,15 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { TarkovJsonGameMode } from "@/lib/game-mode";
+import { GAME_MODE_CONFIG, GAME_MODES, type TarkovJsonGameMode } from "@/lib/game-mode";
 import { getCatalogDashboard, getMarketWorkerDashboard } from "@/server/db/postgres-dashboard";
 import { MarketWorkerPanel } from "./MarketWorkerPanel";
 import { ItemImageGallery } from "./ItemImageGallery";
 
-const MODES: Array<{ value: TarkovJsonGameMode; label: string }> = [
-	{ value: "regular", label: "PVP" },
-	{ value: "pve", label: "PVE" },
-	{ value: "pvp-season", label: "KORD" },
-];
+const MODES: Array<{ value: TarkovJsonGameMode; label: string }> = GAME_MODES.map((mode) => ({
+	value: GAME_MODE_CONFIG[mode].dataMode,
+	label: GAME_MODE_CONFIG[mode].label,
+}));
 function timestamp(value: number | null) {
 	return value
 		? new Date(value)

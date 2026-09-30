@@ -136,11 +136,12 @@ export function useQuestLogImportController(input: {
 				parsedView: { result, buckets },
 				pendingFingerprints: Array.from(new Set(newFingerprints)).sort((a, b) => a.localeCompare(b)),
 				preWipeIgnoredFileNames: result.preWipeIgnoredFiles ?? [],
-				selections: {
-					...prefixSelections("PVP", setAllQuestImportSelections(buckets.pvp, false)),
-					...prefixSelections("PVE", setAllQuestImportSelections(buckets.pve, false)),
-					...prefixSelections("KORD", setAllQuestImportSelections(buckets.kord, false)),
-				},
+				selections: Object.assign(
+					{},
+					...IMPORT_GAME_MODES.map((mode) =>
+						prefixSelections(mode, setAllQuestImportSelections(getModeRows(buckets, mode), false)),
+					),
+				),
 				error:
 					result.totals.filesParsed === 0 ? "No push-notifications log files were found in that selection." : undefined,
 			});

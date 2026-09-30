@@ -4,7 +4,7 @@ import { DataNotice } from "@/components/ui/data-notice";
 import { Flame } from "lucide-react";
 import { StationImage } from "@/components/entities/station-image";
 import { StationLink } from "@/components/entities/station-link";
-import { GENERATOR_STATION_ID } from "@/lib/cfg/hideout-power";
+import { GENERATOR_STATION_ID, SOLAR_POWER_STATION_ID } from "@/lib/cfg/hideout-power";
 import { WikiSection } from "../details/components/WikiSection";
 import { useStationDetails } from "../details/StationDetailsContext";
 import { FuelTankCards } from "./FuelTankCards";
@@ -47,7 +47,7 @@ export function StationPowerRow({ power }: { power: HideoutPower }) {
 	const { station, stations } = useStationDetails();
 	const generator = stations.find((station) => station.id === GENERATOR_STATION_ID);
 	const level = power.stationLevels[GENERATOR_STATION_ID] ?? 0;
-	const solar = stations.find((station) => station.id === "5d494a385b56502f18c98a0c");
+	const solar = stations.find((station) => station.id === SOLAR_POWER_STATION_ID);
 	const solarBonus = power.fuel.sources
 		.filter((source) => source.stationId === solar?.id)
 		.reduce((total, source) => total + source.value, 0);

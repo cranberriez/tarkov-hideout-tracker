@@ -3,7 +3,10 @@
  * bonuses, tank capacity and the Bitcoin craft duration come from the catalog instead.
  * Bitcoin Farm and Physical Bitcoin IDs live in price-calculation/craft-rules.
  */
-export const GENERATOR_STATION_ID = "5d3b396e33c48f02b81cd9f3";
+import { STATION_IDS } from "../data/static-stations";
+
+export const GENERATOR_STATION_ID = STATION_IDS.generator;
+export const SOLAR_POWER_STATION_ID = STATION_IDS["solar-power"];
 export const GRAPHICS_CARD_ITEM_ID = "57347ca924597744596b4e71";
 export const METAL_FUEL_TANK_ITEM_ID = "5d1b36a186f7742523398433";
 export const EXPEDITIONARY_FUEL_TANK_ITEM_ID = "5d1b371186f774253763a656";

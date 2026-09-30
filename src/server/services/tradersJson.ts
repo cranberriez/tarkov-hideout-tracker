@@ -1,3 +1,4 @@
+import { DEFAULT_TARKOV_JSON_GAME_MODE } from "../../lib/game-mode";
 import { fetchTarkovJsonDataset, type TarkovJsonGameMode } from "@/server/services/tarkovJson/client";
 import type { DataResult } from "@/types/common";
 import type { Trader } from "@/types/traders";
@@ -11,7 +12,9 @@ interface JsonTrader {
 	image4xLink?: string | null;
 }
 
-export async function getJsonTraders(gameMode: TarkovJsonGameMode = "regular"): Promise<DataResult<TradersPayload>> {
+export async function getJsonTraders(
+	gameMode: TarkovJsonGameMode = DEFAULT_TARKOV_JSON_GAME_MODE,
+): Promise<DataResult<TradersPayload>> {
 	const dataset = await fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders", gameMode);
 	const traders: Trader[] = Object.values(dataset.data).map((trader) => ({
 		id: trader.id,

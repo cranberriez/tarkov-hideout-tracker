@@ -1,19 +1,15 @@
 import type { FullQuest } from "@/types/quests";
-import type {
-	ParsedQuestEventType,
-	ParsedRaidMode,
-	QuestLogParseResult,
-	ResolvedAggregatedQuestEvent,
-} from "./quest-log-parser.ts";
+import { GAME_MODE_CONFIG, GAME_MODES, type GameMode, type RaidMode } from "../game-mode";
+import type { ParsedQuestEventType, QuestLogParseResult, ResolvedAggregatedQuestEvent } from "./quest-log-parser.ts";
 import { collectTransitivePrerequisiteIds } from "./sensitive-quest-backfill";
 
-export type ImportGameMode = "PVP" | "PVE" | "KORD";
-export const IMPORT_GAME_MODES: readonly ImportGameMode[] = ["PVP", "PVE", "KORD"];
+export type ImportGameMode = GameMode;
+export const IMPORT_GAME_MODES = GAME_MODES;
 
 export interface QuestImportRow {
 	questId: string;
 	quest: FullQuest;
-	raidMode: "pvp" | "pve" | "kord";
+	raidMode: RaidMode;
 	types: ParsedQuestEventType[];
 	hasStarted: boolean;
 	hasCompleted: boolean;
@@ -23,12 +19,9 @@ export interface QuestImportRow {
 	sourceFiles: string[];
 }
 
-export interface QuestImportBuckets {
-	pvp: QuestImportRow[];
-	pve: QuestImportRow[];
-	kord: QuestImportRow[];
+export type QuestImportBuckets = Record<RaidMode, QuestImportRow[]> & {
 	unknownMode: ResolvedAggregatedQuestEvent[];
-}
+};
 
 export interface QuestImportSelectionState {
 	[questId: string]: boolean;
@@ -48,12 +41,15 @@ export const QUEST_LOG_IMPORT_SEEN_FILES_KEY = "tarkov-hideout:quest-log-import:
 export const ENABLE_QUEST_LOG_FILE_DEDUPE = true;
 
 export function buildQuestImportBuckets(parseResult: QuestLogParseResult): QuestImportBuckets {
-	const pvp = buildModeRows(parseResult.resolvedGroups, "pvp");
-	const pve = buildModeRows(parseResult.resolvedGroups, "pve");
-	const kord = buildModeRows(parseResult.resolvedGroups, "kord");
+	const rowsByRaidMode = Object.fromEntries(
+		GAME_MODES.map((mode) => {
+			const { raidMode } = GAME_MODE_CONFIG[mode];
+			return [raidMode, buildModeRows(parseResult.resolvedGroups, raidMode)];
+		}),
+	) as Record<RaidMode, QuestImportRow[]>;
 	const unknownMode = parseResult.resolvedGroups.filter((group) => group.quest && group.raidMode === "unknown");
 
-	return { pvp, pve, kord, unknownMode };
+	return { ...rowsByRaidMode, unknownMode };
 }
 
 export function applyQuestImportSelection(input: {
@@ -221,17 +217,15 @@ export function writeQuestLogProcessedFileModes(processedFiles: ReadonlyMap<stri
 	window.localStorage.setItem(QUEST_LOG_IMPORT_SEEN_FILES_KEY, JSON.stringify(serialized));
 }
 
-export function toParsedRaidMode(mode: ImportGameMode): Exclude<ParsedRaidMode, "unknown"> {
-	if (mode === "PVP") return "pvp";
-	if (mode === "PVE") return "pve";
-	return "kord";
+export function toParsedRaidMode(mode: ImportGameMode): RaidMode {
+	return GAME_MODE_CONFIG[mode].raidMode;
 }
 
 function isImportGameMode(value: unknown): value is ImportGameMode {
 	return typeof value === "string" && IMPORT_GAME_MODES.includes(value as ImportGameMode);
 }
 
-function buildModeRows(groups: ResolvedAggregatedQuestEvent[], raidMode: "pvp" | "pve" | "kord"): QuestImportRow[] {
+function buildModeRows(groups: ResolvedAggregatedQuestEvent[], raidMode: RaidMode): QuestImportRow[] {
 	const rows = new Map<string, QuestImportRow>();
 
 	for (const group of groups) {

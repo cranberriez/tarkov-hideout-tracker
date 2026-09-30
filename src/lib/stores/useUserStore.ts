@@ -2,8 +2,14 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { createUserStateStorage, USER_STORE_STORAGE_KEY } from "./user-state-storage";
 import { DEFAULT_IGNORED_QUESTS } from "../cfg/defaultIgnoredQuests";
-import { EDITION_STARTING_LEVELS } from "../cfg/editionStartingLevels";
-import { GAME_MODES, serializeActiveGameModeCookie, toTarkovJsonGameMode, type GameMode } from "../game-mode";
+import { applyEditionStationBonuses } from "../cfg/editionBonuses";
+import {
+	DEFAULT_GAME_MODE,
+	GAME_MODES,
+	serializeActiveGameModeCookie,
+	toTarkovJsonGameMode,
+	type GameMode,
+} from "../game-mode";
 import type { Station } from "../../types";
 
 export { GAME_MODES, toTarkovJsonGameMode };
@@ -137,11 +143,10 @@ export function createDefaultPlayerProfile(): PlayerProfileState {
 }
 
 function createDefaultProfiles(): Record<GameMode, PlayerProfileState> {
-	return {
-		PVP: createDefaultPlayerProfile(),
-		PVE: createDefaultPlayerProfile(),
-		KORD: createDefaultPlayerProfile(),
-	};
+	return Object.fromEntries(GAME_MODES.map((mode) => [mode, createDefaultPlayerProfile()])) as Record<
+		GameMode,
+		PlayerProfileState
+	>;
 }
 
 const PLAYER_PROFILE_KEYS = Object.keys(createDefaultPlayerProfile()) as Array<keyof PlayerProfileState>;
@@ -336,6 +341,72 @@ interface UserState {
 	initializeDefaults: (stations: Station[]) => void;
 }
 
+type UserStateData = {
+	[K in keyof UserState as UserState[K] extends (...args: never[]) => unknown ? never : K]: UserState[K];
+};
+
+/** Fresh values for every persisted field; shared by the initial state and Delete ALL. */
+function createDefaultUserState(): UserStateData {
+	return {
+		...createDefaultPlayerProfile(),
+		profiles: createDefaultProfiles(),
+		deprecatedLegacyState: null,
+		hasConvertedDeprecatedLegacyState: false,
+		hasDismissedDeprecatedLegacyState: false,
+
+		checklistViewMode: "all",
+		itemSourceFilter: "all",
+		itemFiltersOpen: false,
+		showHidden: false,
+		hideCheap: false,
+		hideMoney: false,
+		showFirOnly: false,
+		hideRequirements: false,
+		cheapPriceThreshold: 5000,
+		hideoutCompactMode: false,
+		itemsSize: "Expanded",
+		hasSeenItemConversionModal: false,
+		hasSeenHideoutLevelWarning: false,
+		sellToPreference: "best",
+		useCategorization: false,
+
+		questViewMode: "byTrader",
+		questCardSize: "small",
+		questSortMode: "unlockOrder",
+		questSelectedTraders: [],
+		questSelectedMaps: [],
+		questHideCompleted: false,
+		questShowAvailableOnly: false,
+		questVisibilityMode: "all",
+		questActiveDepth: 2,
+		questShowHandInOnly: false,
+		questShowFirHandInOnly: false,
+		questShowPinnedOnly: false,
+		questShowIgnored: false,
+		questShowDebug: false,
+		questShowPrereqs: true,
+		questSidebarCollapsed: false,
+		questWorkspaceSelectedTraders: [],
+		questWorkspaceFilterByTraderRequirements: true,
+		questWorkspaceSelectedMaps: [],
+		questWorkspaceSelectedStatuses: ["active", "completed", "failed", "locked"],
+		questWorkspaceLockedFilters: { ...DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS },
+		questWorkspaceSelectedObjectiveCategories: [],
+
+		itemShowPinnedQuestSection: true,
+		itemShowPinnedQuestOnly: false,
+		itemQuestMaxDepth: 1,
+		itemQuestVisibilityMode: "available",
+		itemQuestCustomLookahead: 5,
+		itemQuestCustomLevelLookahead: 5,
+		itemShowFutureFir: false,
+		itemShowIgnored: false,
+
+		gameMode: DEFAULT_GAME_MODE,
+		isSetupOpen: false,
+	};
+}
+
 function pickPlayerProfile(state: Partial<UserState>): Partial<PlayerProfileState> {
 	const profile: Partial<PlayerProfileState> = {};
 	for (const key of PLAYER_PROFILE_KEYS) {
@@ -402,83 +473,7 @@ export const useUserStore = create<UserState>()(
 						}
 						return { profiles, ...profiles[state.gameMode] };
 					}),
-				profiles: createDefaultProfiles(),
-				deprecatedLegacyState: null,
-				hasConvertedDeprecatedLegacyState: false,
-				hasDismissedDeprecatedLegacyState: false,
-				stationLevels: {},
-				hiddenStations: {},
-				completedRequirements: {},
-				completedQuests: {},
-				completedQuestObjectives: {},
-				failedQuests: {},
-				questsWithItems: {},
-				ignoredQuests: DEFAULT_IGNORED_QUESTS,
-				pinnedQuests: {},
-				questChangeHistory: [],
-				itemCounts: {},
-				checklistViewMode: "all",
-				itemSourceFilter: "all",
-				itemFiltersOpen: false,
-				showHidden: false,
-				hideCheap: false,
-				hideMoney: false,
-				showFirOnly: false,
-				hideRequirements: false,
-				cheapPriceThreshold: 5000,
-				hideoutCompactMode: false,
-				itemsSize: "Expanded",
-				hasSeenItemConversionModal: false,
-				hasSeenHideoutLevelWarning: false,
-				sellToPreference: "best",
-				useCategorization: false,
-
-				playerLevel: 1,
-				prestigeLevel: 0,
-				questTraderLoyaltyLevels: {},
-				questFenceReputation: 0,
-
-				questViewMode: "byTrader",
-				questCardSize: "small",
-				questSortMode: "unlockOrder",
-				questSelectedTraders: [],
-				questFaction: "USEC",
-				questShowKappa: false,
-				questShowLightkeeper: false,
-				questSelectedMaps: [],
-				questHideCompleted: false,
-				questShowAvailableOnly: false,
-				questVisibilityMode: "all",
-				questActiveDepth: 2,
-				questShowHandInOnly: false,
-				questShowFirHandInOnly: false,
-				questShowPinnedOnly: false,
-				questShowIgnored: false,
-				questShowDebug: false,
-				questShowPrereqs: true,
-				questSidebarCollapsed: false,
-				questWorkspaceSelectedTraders: [],
-				questWorkspaceFilterByTraderRequirements: true,
-				questWorkspaceSelectedMaps: [],
-				questWorkspaceSelectedStatuses: ["active", "completed", "failed", "locked"],
-				questWorkspaceLockedFilters: { ...DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS },
-				questWorkspaceSelectedObjectiveCategories: [],
-
-				itemShowPinnedQuestSection: true,
-				itemShowPinnedQuestOnly: false,
-				itemQuestMaxDepth: 1,
-				itemQuestVisibilityMode: "available",
-				itemQuestCustomLookahead: 5,
-				itemQuestCustomLevelLookahead: 5,
-				itemShowFutureFir: false,
-				itemShowIgnored: false,
-
-				gameEdition: null,
-				gameMode: "PVP",
-				hasCompletedSetup: false,
-				isSetupOpen: false,
-
-				editionBonusesAppliedFor: null,
+				...createDefaultUserState(),
 
 				setStationLevel: (stationId, level) =>
 					set((state) => ({ stationLevels: { ...state.stationLevels, [stationId]: level } })),
@@ -795,33 +790,21 @@ export const useUserStore = create<UserState>()(
 					const newLevels = { ...stationLevels };
 					let changed = false;
 
-					const starting = gameEdition ? EDITION_STARTING_LEVELS[gameEdition] : { stash: 1, cultistCircle: 0 };
-					const stashBase = starting.stash;
-					const cultistBase = starting.cultistCircle;
-
 					stations.forEach((s) => {
 						if (newLevels[s.id] === undefined) {
 							newLevels[s.id] = 0;
 							changed = true;
 						}
-
-						if (s.normalizedName === "stash") {
-							if ((newLevels[s.id] || 0) < stashBase) {
-								newLevels[s.id] = stashBase;
-								changed = true;
-							}
-						}
-
-						if (s.normalizedName === "cultist-circle") {
-							if ((newLevels[s.id] || 0) < cultistBase) {
-								newLevels[s.id] = cultistBase;
-								changed = true;
-							}
-						}
 					});
 
-					if (changed) {
-						set({ stationLevels: newLevels });
+					const withBonuses = applyEditionStationBonuses(
+						newLevels,
+						gameEdition,
+						new Set(stations.map((station) => station.id)),
+					);
+
+					if (changed || withBonuses !== newLevels) {
+						set({ stationLevels: { ...withBonuses } });
 					}
 				},
 
@@ -856,84 +839,11 @@ export const useUserStore = create<UserState>()(
 				},
 
 				resetAll: () => {
-					const profiles = createDefaultProfiles();
 					if (typeof document !== "undefined") {
-						document.cookie = serializeActiveGameModeCookie("PVP");
+						document.cookie = serializeActiveGameModeCookie(DEFAULT_GAME_MODE);
 					}
-					rawSet(() => ({
-						stationLevels: {},
-						hiddenStations: {},
-						completedRequirements: {},
-						completedQuests: {},
-						completedQuestObjectives: {},
-						failedQuests: {},
-						questsWithItems: {},
-						ignoredQuests: {},
-						pinnedQuests: {},
-						questChangeHistory: [],
-						itemCounts: {},
-						checklistViewMode: "all",
-						itemSourceFilter: "all",
-						itemFiltersOpen: false,
-						showHidden: false,
-						hideCheap: false,
-						hideMoney: false,
-						showFirOnly: false,
-						hideRequirements: false,
-						cheapPriceThreshold: 5000,
-						hideoutCompactMode: false,
-						itemsSize: "Expanded",
-						hasSeenItemConversionModal: false,
-						hasSeenHideoutLevelWarning: false,
-						sellToPreference: "best",
-						useCategorization: false,
-						playerLevel: 1,
-						prestigeLevel: 0,
-						questTraderLoyaltyLevels: {},
-						questFenceReputation: 0,
-						questViewMode: "byTrader",
-						questCardSize: "small",
-						questSortMode: "unlockOrder",
-						questSelectedTraders: [],
-						questFaction: "USEC",
-						questShowKappa: false,
-						questShowLightkeeper: false,
-						questSelectedMaps: [],
-						questHideCompleted: false,
-						questShowAvailableOnly: false,
-						questVisibilityMode: "all",
-						questActiveDepth: 2,
-						questShowHandInOnly: false,
-						questShowFirHandInOnly: false,
-						questShowPinnedOnly: false,
-						questShowIgnored: false,
-						questShowDebug: false,
-						questShowPrereqs: true,
-						questSidebarCollapsed: false,
-						questWorkspaceSelectedTraders: [],
-						questWorkspaceFilterByTraderRequirements: true,
-						questWorkspaceSelectedMaps: [],
-						questWorkspaceSelectedStatuses: ["active", "completed", "failed", "locked"],
-						questWorkspaceLockedFilters: { ...DEFAULT_QUEST_WORKSPACE_LOCKED_FILTERS },
-						questWorkspaceSelectedObjectiveCategories: [],
-						itemShowPinnedQuestSection: true,
-						itemShowPinnedQuestOnly: false,
-						itemQuestMaxDepth: 1,
-						itemQuestVisibilityMode: "available",
-						itemQuestCustomLookahead: 5,
-						itemQuestCustomLevelLookahead: 5,
-						itemShowFutureFir: false,
-						itemShowIgnored: false,
-						gameEdition: null,
-						gameMode: "PVP",
-						hasCompletedSetup: false,
-						isSetupOpen: false,
-						editionBonusesAppliedFor: null,
-						profiles,
-						deprecatedLegacyState: null,
-						hasConvertedDeprecatedLegacyState: false,
-						hasDismissedDeprecatedLegacyState: false,
-					}));
+					// Delete ALL intentionally leaves the active profile with no ignored quests.
+					rawSet(() => ({ ...createDefaultUserState(), ignoredQuests: {} }));
 				},
 				applyProfilePatch: (patch) => set(patch),
 				convertDeprecatedLegacyState: (targetMode) => {

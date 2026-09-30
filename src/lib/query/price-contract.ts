@@ -1,6 +1,6 @@
 import type { TarkovDataMode } from "../../types/common";
 import type { CurrentPrice } from "../../types/prices";
-import { isTarkovJsonGameMode } from "../game-mode";
+import { DEFAULT_TARKOV_JSON_GAME_MODE, isTarkovJsonGameMode } from "../game-mode";
 
 export const PRICE_BATCH_LIMIT = 200;
 export const PRICE_STALE_TIME = 60 * 60_000;
@@ -25,9 +25,9 @@ export function isPriceItemId(id: string) {
 }
 
 export function parsePriceRequest(params: URLSearchParams): PriceRequest | null {
-	const mode = params.get("mode");
+	const mode = params.get("mode") ?? DEFAULT_TARKOV_JSON_GAME_MODE;
 	if (!isTarkovJsonGameMode(mode)) return null;
-	if (params.getAll("mode").length !== 1 || params.getAll("scope").length > 1 || params.getAll("ids").length > 1)
+	if (params.getAll("mode").length > 1 || params.getAll("scope").length > 1 || params.getAll("ids").length > 1)
 		return null;
 	if (params.has("scope")) {
 		const scope = params.get("scope");

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import type { RecipeEvaluation } from "@/lib/price-calculation";
 import { formatCompactRoubles } from "@/lib/utils/market-price";
+import { PROFIT_PAGE_HREFS } from "@/lib/entity-routes";
 
 export function ItemDetailRecipeProfit({
 	evaluation,
@@ -18,7 +19,7 @@ export function ItemDetailRecipeProfit({
 	error: string | null;
 	onRetry?: () => void;
 }) {
-	const route = kind === "barter" ? "/items/barter-profits" : "/items/crafting-profits";
+	const route = PROFIT_PAGE_HREFS[kind];
 
 	return (
 		<div className="flex w-full flex-wrap items-end gap-x-4 gap-y-2 sm:ml-auto sm:w-auto sm:flex-nowrap sm:justify-end">
