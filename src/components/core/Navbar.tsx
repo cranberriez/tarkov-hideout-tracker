@@ -69,7 +69,7 @@ function NavbarContent() {
 	const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
 	const currentPage = usePathname();
 	const isSecondaryRoute = currentPage === "/settings" || currentPage === "/news" || currentPage === "/dev";
-	
+
 	if ((currentPage === "/quests" || currentPage.startsWith("/quests/")) && isMainNavHidden) return null;
 
 	return (
@@ -122,7 +122,7 @@ function NavbarContent() {
 									<DropdownMenuTrigger
 										className={cn(
 											"flex items-center gap-2 rounded p-2 text-muted-foreground transition-colors hover:text-foreground",
-											isSecondaryRoute && "bg-foreground/80 text-card",
+											isSecondaryRoute && "bg-brand text-inverse",
 										)}
 										aria-label="Menu"
 									>
@@ -163,7 +163,7 @@ function NavbarContent() {
 								<DropdownMenuTrigger
 									className={cn(
 										"flex items-center gap-2 rounded p-2 transition-colors",
-										isSecondaryRoute ? "bg-foreground/80 text-card" : "hover:text-foreground",
+										isSecondaryRoute ? "bg-brand text-inverse" : "hover:text-foreground",
 									)}
 									aria-label="Menu"
 								>
@@ -215,7 +215,7 @@ function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: str
 				aria-haspopup={hasChildren ? "menu" : undefined}
 				className={cn(
 					"flex items-center gap-2 rounded px-3 py-2 transition-colors",
-					isActive ? "bg-foreground/80 text-card" : "hover:text-foreground",
+					isActive ? "bg-brand text-inverse" : "hover:text-foreground",
 				)}
 			>
 				<NavItemIcon item={menu} />

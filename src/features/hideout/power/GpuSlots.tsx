@@ -103,7 +103,7 @@ export function GpuSlotColumns({ slots, count }: { slots: number; count: number 
 				<span
 					key={index}
 					aria-hidden
-					className={cn("rounded-[1px]", index < count ? "bg-white" : "border border-dashed border-highlight/40")}
+					className={cn("rounded-[1px]", index < count ? "bg-highlight" : "border border-dashed border-highlight/40")}
 				/>
 			))}
 		</div>

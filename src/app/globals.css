@@ -4,8 +4,10 @@
 /* Color contract: application UI uses these roles, never Tailwind's named palettes
    or local color literals. CSS var(), currentColor, transparent, color-mix and
    opacity variants are supported. RouteLoader artwork keeps its own colors;
-   PVE/PVP/seasonal identity colors live in src/lib/cfg/profile-colors.ts. */
-:root {
+   PVE/PVP/seasonal identity colors live in src/lib/cfg/profile-colors.ts.
+   [data-theme="default"] lets theme previews show the default palette inside another theme. */
+:root,
+[data-theme="default"] {
 	--font-geist-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 	--font-geist-mono: "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
 	--radius: 0.625rem;
@@ -108,6 +110,72 @@
 	--sidebar-accent-foreground: var(--foreground);
 	--sidebar-border: var(--border);
 	--sidebar-ring: var(--ring);
+}
+
+/* Appearance themes (Settings > Preferences, src/lib/cfg/app-preferences.ts), set on <html>. Each
+   overrides base roles only; component, chart, map and sidebar roles derive from them there. Elements
+   below <html> inherit derived roles already resolved, so scoped previews should use base roles. */
+[data-theme="dim"] {
+	color-scheme: dark;
+	--background: oklch(0.215 0.006 286);
+	--card-bg: oklch(0.245 0.006 286);
+	--surface-raised: oklch(0.315 0.007 286);
+	--foreground: oklch(0.94 0 0);
+	--muted-foreground: oklch(0.78 0 0);
+	--subtle-foreground: oklch(0.66 0.01 286);
+	--brand: oklch(0.78 0.16 152);
+	--success: oklch(0.78 0.16 152);
+	--border: oklch(0.36 0.005 286);
+	--muted: oklch(0.28 0.004 286);
+}
+
+/* Light: highlight flips to black so white overlays become dark tints; inverse follows the light
+   background. Shadow is a light grey because it mostly paints recessed wells, headers and map
+   overlays under foreground text. Status and acquisition colors are mid-tones that tint pastel. */
+[data-theme="light"] {
+	color-scheme: light;
+	--background: oklch(0.925 0.004 286);
+	--card-bg: oklch(0.962 0.003 286);
+	--surface-raised: oklch(0.9 0.005 286);
+	--foreground: oklch(0.22 0.006 286);
+	--muted-foreground: oklch(0.42 0.008 286);
+	--subtle-foreground: oklch(0.5 0.01 286);
+	--highlight: #000000;
+	--shadow: oklch(0.82 0.006 286);
+	--brand: oklch(0.24 0.008 286);
+	--brand-hover: color-mix(in oklab, var(--brand) 80%, var(--background));
+	--success: oklch(0.62 0.15 150);
+	--warning: oklch(0.6 0.13 65);
+	--danger: oklch(0.59 0.2 27);
+	--info: oklch(0.57 0.13 245);
+	--special: oklch(0.55 0.2 305);
+	--border: oklch(0.84 0.005 286);
+	--muted: oklch(0.89 0.004 286);
+	--acquisition-craft: #dd5a0c;
+	--acquisition-barter: #0284c7;
+	--acquisition-trader: #9333ea;
+	--acquisition-flea: #059669;
+	--acquisition-sell-value: #b7791f;
+}
+
+/* High contrast: hue-free neutrals with a near-white brand; status colors stay chromatic for meaning. */
+[data-theme="contrast"] {
+	color-scheme: dark;
+	--background: oklch(0 0 0);
+	--card-bg: oklch(0.13 0 0);
+	--surface-raised: oklch(0.27 0 0);
+	--foreground: oklch(1 0 0);
+	--muted-foreground: oklch(0.9 0 0);
+	--subtle-foreground: oklch(0.78 0 0);
+	--brand: oklch(0.96 0 0);
+	--brand-hover: color-mix(in oklab, var(--brand) 80%, var(--background));
+	--success: oklch(0.84 0.18 150);
+	--warning: oklch(0.87 0.15 88);
+	--danger: oklch(0.76 0.17 22);
+	--info: oklch(0.8 0.12 232);
+	--special: oklch(0.78 0.14 305);
+	--border: oklch(0.45 0 0);
+	--muted: oklch(0.2 0 0);
 }
 
 @theme inline {

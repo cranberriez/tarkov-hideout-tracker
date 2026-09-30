@@ -14,6 +14,7 @@ import {
 import { createPortal } from "react-dom";
 import { autoUpdate, flip, offset, shift, size, useFloating, type Placement } from "@floating-ui/react-dom";
 import { cn } from "@/lib/utils";
+import { useAppPreferencesStore } from "@/lib/stores/useAppPreferencesStore";
 
 /**
  * Hover/focus popover mechanics for short tooltips:
@@ -37,6 +38,8 @@ export function useFloatingPreview({
 	closeDelay = 140,
 	disabled = false,
 }: FloatingPreviewOptions = {}) {
+	// The hover-card preference blocks hover/focus opening only; explicit `show` calls (clicks) still open.
+	const hoverCards = useAppPreferencesStore((state) => state.hoverCards);
 	const id = useId();
 	const [open, setOpen] = useState(false);
 	const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -125,7 +128,7 @@ export function useFloatingPreview({
 				lastTouchAt = Date.now();
 				return;
 			}
-			show(openDelay);
+			if (hoverCards) show(openDelay);
 		},
 		onPointerLeave: (event: PointerEvent<HTMLElement>) => {
 			if (event.pointerType !== "touch") hide();
@@ -137,7 +140,7 @@ export function useFloatingPreview({
 		},
 		onFocus: (event: FocusEvent<HTMLElement>) => {
 			if (Date.now() - lastTouchAt < TOUCH_GRACE_MS) return;
-			if (event.currentTarget.matches(":focus-visible")) show(Math.min(openDelay, 200));
+			if (hoverCards && event.currentTarget.matches(":focus-visible")) show(Math.min(openDelay, 200));
 		},
 		onBlur: () => hide(),
 		onKeyDown: (event: KeyboardEvent<HTMLElement>) => {

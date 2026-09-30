@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useAppPreferencesStore } from "@/lib/stores/useAppPreferencesStore";
 
 interface HoverPreview {
 	position: { left: number; placeAbove: boolean; verticalOffset: number };
@@ -71,6 +72,7 @@ export function HoverPreviewProvider({ children }: { children: ReactNode }) {
 	const request = useRef<HoverRequest | null>(null);
 	const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const touchInput = useRef(false);
+	const hoverCards = useAppPreferencesStore((state) => state.hoverCards);
 	const cancelClose = useCallback(() => {
 		if (closeTimer.current) clearTimeout(closeTimer.current);
 		closeTimer.current = null;
@@ -99,7 +101,7 @@ export function HoverPreviewProvider({ children }: { children: ReactNode }) {
 	}, [cancelClose]);
 	const show = useCallback(
 		({ key, content, clientX, clientY, width = 320, prepare }: ShowHoverPreview) => {
-			if (touchInput.current) return;
+			if (touchInput.current || !hoverCards) return;
 			cancelClose();
 			const placement = positionPreview(clientX, clientY, width);
 			if (request.current?.key === key) {
@@ -141,7 +143,7 @@ export function HoverPreviewProvider({ children }: { children: ReactNode }) {
 				publish();
 			}, 200);
 		},
-		[cancelClose],
+		[cancelClose, hoverCards],
 	);
 
 	useEffect(() => close, [close]);
@@ -184,6 +186,7 @@ export function HoverPreviewProvider({ children }: { children: ReactNode }) {
 		<HoverPreviewContext.Provider value={controller}>
 			{children}
 			{activePreview &&
+				hoverCards &&
 				createPortal(
 					<div
 						className="pointer-events-none fixed z-[120] flex max-w-[calc(100vw-16px)] items-stretch gap-2 text-left"

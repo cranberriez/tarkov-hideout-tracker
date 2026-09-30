@@ -9,6 +9,8 @@ import { QuickAddModal } from "@/features/quick-add/QuickAddModal";
 import { GlobalItemDetailModal } from "@/features/items/item-detail/GlobalItemDetailModal";
 import { QueryProvider } from "@/lib/query/QueryProvider";
 import { HoverPreviewProvider } from "@/components/ui/hover-preview-provider";
+import { AppThemeSync } from "@/components/core/AppThemeSync";
+import { APP_THEME_BOOT_SCRIPT } from "@/lib/cfg/app-preferences";
 
 export const viewport: Viewport = {
 	width: "device-width",
@@ -26,11 +28,16 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en">
+		// The boot script sets data-theme before hydration.
+		<html lang="en" suppressHydrationWarning>
+			<head>
+				<script dangerouslySetInnerHTML={{ __html: APP_THEME_BOOT_SCRIPT }} />
+			</head>
 			<body className="antialiased flex min-h-dvh flex-col">
 				<QueryProvider>
 					<HoverPreviewProvider>
 						<ActiveGameModeSync />
+						<AppThemeSync />
 						<Navbar />
 						{/* <SeasonUpdateBanner /> */}
 						<div className="flex min-h-0 flex-1 flex-col">{children}</div>

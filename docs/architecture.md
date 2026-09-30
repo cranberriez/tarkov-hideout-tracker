@@ -14,7 +14,7 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 | `/items`                                           | [Items page](<../src/app/(data)/items/page.tsx>): pooled hideout and quest demand                                                                                                                                                                     |
 | `/quests`, `/quests/[questId]`                     | [Quests layout](<../src/app/(data)/quests/layout.tsx>) owns the persistent workspace; the [index](<../src/app/(data)/quests/page.tsx>) and [quest route](<../src/app/(data)/quests/[questId]/page.tsx>) fill its detail pane; see [quests](quests.md) |
 | `/items/[itemId]`                                  | [Item page](<../src/app/(data)/items/[itemId]/page.tsx>): server-rendered item details; not linked yet (items open the dialog)                                                                                                                        |
-| `/hideout/stations/[stationId]`                    | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): level overview and level changes, prerequisites, dependents, remaining items, streamed crafts with profit, and Bitcoin Farm/Generator power panels                                                              |
+| `/hideout/stations/[stationId]`                    | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): level overview and level changes, prerequisites, dependents, remaining items, streamed crafts with profit, and Bitcoin Farm/Generator power panels                         |
 | `/items/kappa-checklist`                           | [Collector checklist](<../src/app/(data)/items/kappa-checklist/page.tsx>); see [quests](quests.md)                                                                                                                                                    |
 | `/items/barter-profits`, `/items/crafting-profits` | Shared [ProfitPage](../src/features/profit-pages/ProfitPage.tsx); see [profits](profits.md)                                                                                                                                                           |
 | `/hideout/craft-planner`                           | Station craft recommendations using the shared profit query; see [profits](profits.md)                                                                                                                                                                |
@@ -77,6 +77,16 @@ separate extract/transit aliases. The route loading illustration keeps its artwo
 colors. [Profile colors](../src/lib/cfg/profile-colors.ts) separately own the three
 PVE/PVP/seasonal identity pigments; UI derives their tints through a local CSS
 property. External item images and map artwork retain their source pixels.
+
+Appearance themes (Default, Dim, Light, High contrast) are `[data-theme]` blocks in
+the same file that override base roles only (surfaces, text, `highlight`, `shadow`,
+brand and status/acquisition pigments); derived roles follow on `<html>`. Light flips
+`highlight` to black and makes `shadow` a light grey, so write overlays and recessed
+wells with those roles rather than assuming a dark canvas. The theme list lives in
+[app-preferences.ts](../src/lib/cfg/app-preferences.ts), whose boot script sets
+`data-theme` before first paint; [AppThemeSync](../src/components/core/AppThemeSync.tsx)
+applies later changes. Nested theme previews must reset through
+`data-theme="default"` and use base roles, because derived roles resolve at `<html>`.
 
 `npm run test:theme` checks application source for palette drift. New color roles
 belong in globals with a purpose before use in a component.
@@ -322,6 +332,9 @@ Profit recipe items use the same provider and positioning with their
 recipe-specific card (route, cost, savings); their icons open the item dialog and
 keyboard focus anchors the card. Short text `Tooltip` uses
 [floating-preview.tsx](../src/components/ui/floating-preview.tsx) separately.
+The global **Hover cards** preference suppresses every provider card and stops
+floating previews from opening on hover or focus; explicit clicks (such as profit
+recipe requirements) still open their popover.
 Quest-only pickups stay display-only (`linked={false}`).
 
 For changes here, run [page query tests](../src/server/queries/page-data-queries.test.ts),
