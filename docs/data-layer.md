@@ -47,7 +47,10 @@ advance only for catalog/DTO changes. Catalog ingestion strips monetary offers
 and market data and never overwrites existing price rows.
 
 Current item_details rows store relations, usage and acquisition JSONB without
-prices or embedded monetary offers. Runtime detail reads stay bounded and
+prices or embedded monetary offers. Usage lists recipes that produce the item and,
+separately, recipes that consume it (`usedInBarters`/`usedInCrafts`, including
+tools and craft quest items); rows written before those lists existed read as empty
+until the next catalog update. Runtime detail reads stay bounded and
 hydrate current discovery and trader offers from their owning relations. Flea
 hydration remains optional. Source freshness is assembled from catalog_status.
 See [operations](operations.md) and the [CLI guide](../db-scripts/README.md).

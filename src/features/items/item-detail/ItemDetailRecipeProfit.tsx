@@ -11,6 +11,7 @@ export function ItemDetailRecipeProfit({
 	loading,
 	error,
 	onRetry,
+	linkOnly = false,
 }: {
 	evaluation?: RecipeEvaluation;
 	recipeId: string;
@@ -18,13 +19,15 @@ export function ItemDetailRecipeProfit({
 	loading: boolean;
 	error: string | null;
 	onRetry?: () => void;
+	/** Show only the breakdown link, for recipes whose profit graph is not loaded. */
+	linkOnly?: boolean;
 }) {
 	const route = PROFIT_PAGE_HREFS[kind];
 
 	return (
 		<div className="flex w-full flex-wrap items-end gap-x-4 gap-y-2 sm:ml-auto sm:w-auto sm:flex-nowrap sm:justify-end">
 			<div className="flex flex-wrap items-end gap-x-4 gap-y-2 sm:flex-nowrap">
-				{loading ? (
+				{linkOnly ? null : loading ? (
 					<span className="text-[11px] text-muted-foreground">Calculating profit and ingredient routes…</span>
 				) : error ? (
 					<span className="flex items-center gap-2 text-[11px] text-warning">

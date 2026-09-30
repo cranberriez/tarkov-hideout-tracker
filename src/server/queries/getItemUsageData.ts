@@ -21,11 +21,18 @@ export async function getItemUsageData(
 	const allCrafts = craftsResult.status === "fulfilled" ? craftsResult.value.data : [];
 	const barters = allBarters.filter((barter) => barter.offeredItemId === itemId);
 	const crafts = allCrafts.filter((craft) => craft.productItemId === itemId);
-	const itemIds = dedupeIds([itemId, ...getRecipeGraphItemIds(barters, crafts)]);
-	const stationIds = dedupeIds(crafts.map((craft) => craft.stationId));
+	const consumesItem = (requirement: { itemId: string }) => requirement.itemId === itemId;
+	const usedInBarters = allBarters.filter((barter) => barter.requiredItems.some(consumesItem));
+	const usedInCrafts = allCrafts.filter(
+		(craft) => craft.requiredItems.some(consumesItem) || craft.requiredQuestItems.some(consumesItem),
+	);
+	const listedBarters = [...barters, ...usedInBarters];
+	const listedCrafts = [...crafts, ...usedInCrafts];
+	const itemIds = dedupeIds([itemId, ...getRecipeGraphItemIds(listedBarters, listedCrafts)]);
+	const stationIds = dedupeIds(listedCrafts.map((craft) => craft.stationId));
 	const recipeTaskUnlockIds = dedupeIds([
-		...barters.flatMap((barter) => (barter.taskUnlockId ? [barter.taskUnlockId] : [])),
-		...crafts.flatMap((craft) => (craft.taskUnlockId ? [craft.taskUnlockId] : [])),
+		...listedBarters.flatMap((barter) => (barter.taskUnlockId ? [barter.taskUnlockId] : [])),
+		...listedCrafts.flatMap((craft) => (craft.taskUnlockId ? [craft.taskUnlockId] : [])),
 	]);
 
 	const [itemsResult, pricesResult, stationsResult] = await Promise.allSettled([
@@ -36,7 +43,7 @@ export async function getItemUsageData(
 	const itemRecords = itemsResult.status === "fulfilled" ? itemsResult.value.data : null;
 	const purchaseOffers = itemRecords?.[itemId]?.buyFromTrader ?? [];
 	const traderIds = dedupeIds([
-		...barters.map((barter) => barter.traderId),
+		...listedBarters.map((barter) => barter.traderId),
 		...purchaseOffers.map((offer) => offer.traderId),
 	]);
 	const taskUnlockIds = dedupeIds([
@@ -62,6 +69,8 @@ export async function getItemUsageData(
 	return {
 		barters,
 		crafts,
+		usedInBarters,
+		usedInCrafts,
 		items: merged.items,
 		itemIds,
 		unresolvedItemIds: merged.unresolvedItemIds,

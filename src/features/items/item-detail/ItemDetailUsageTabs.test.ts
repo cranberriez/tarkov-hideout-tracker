@@ -31,6 +31,8 @@ test("usage tab content scrolls independently below a fixed tab bar", () => {
 				itemDetailsById: {},
 				traderOffers: [],
 				crafts: [],
+				usedInBarters: [],
+				usedInCrafts: [],
 				relationsLoading: true,
 				relationsError: null,
 				onRetryRelations: () => {},

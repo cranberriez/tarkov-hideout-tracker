@@ -1,15 +1,19 @@
 import { CornerDownRight, Package } from "lucide-react";
 import type { ReactNode } from "react";
-import type { ItemSummary } from "@/types/items";
+import type { PreviewItem } from "@/components/entities/item-link";
+import { ItemDetailItemChip } from "./ItemDetailItemChip";
 
 export function ItemDetailRecipeFlow({
 	children,
 	outputItem,
 	outputCount,
+	linkOutput = false,
 }: {
 	children: ReactNode;
-	outputItem: Pick<ItemSummary, "name" | "iconLink" | "gridImageLink">;
+	outputItem: PreviewItem;
 	outputCount: number;
+	/** Name and link the output when it is not the item being viewed. */
+	linkOutput?: boolean;
 }) {
 	const outputImageLink = outputItem.iconLink ?? outputItem.gridImageLink;
 
@@ -19,14 +23,20 @@ export function ItemDetailRecipeFlow({
 
 			<div className="mt-1.5 flex min-h-10 w-full items-center gap-2 pl-4">
 				<CornerDownRight size={16} className="ml-0.5 shrink-0 text-foreground/55" aria-hidden="true" />
-				<span className="font-mono text-base font-semibold text-foreground">{outputCount} ×</span>
-				<span className="flex h-9 w-9 shrink-0 items-center justify-center">
-					{outputImageLink ? (
-						<img src={outputImageLink} alt="" className="h-9 w-9 object-contain" />
-					) : (
-						<Package size={18} className="text-muted-foreground" />
-					)}
-				</span>
+				{linkOutput ? (
+					<ItemDetailItemChip item={outputItem} quantityLabel={`${outputCount}`} quantityOverlay />
+				) : (
+					<>
+						<span className="font-mono text-base font-semibold text-foreground">{outputCount} ×</span>
+						<span className="flex h-9 w-9 shrink-0 items-center justify-center">
+							{outputImageLink ? (
+								<img src={outputImageLink} alt="" className="h-9 w-9 object-contain" />
+							) : (
+								<Package size={18} className="text-muted-foreground" />
+							)}
+						</span>
+					</>
+				)}
 			</div>
 		</div>
 	);

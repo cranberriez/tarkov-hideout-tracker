@@ -24,6 +24,8 @@ interface ItemDetailCraftingProps {
 	profitError: string | null;
 	onRetryProfit?: () => void;
 	outputItem: ItemSummary;
+	/** Replace profit metrics with only the breakdown link. */
+	linkOnlyProfit?: boolean;
 }
 
 export function ItemDetailCrafting({
@@ -38,6 +40,7 @@ export function ItemDetailCrafting({
 	profitError,
 	onRetryProfit,
 	outputItem,
+	linkOnlyProfit = false,
 }: ItemDetailCraftingProps) {
 	// Availability ordering depends on the profile; keep level order until it loads.
 	const sorted = [...recipes].sort((a, b) =>
@@ -94,10 +97,15 @@ export function ItemDetailCrafting({
 								loading={profitLoading}
 								error={profitError}
 								onRetry={onRetryProfit}
+								linkOnly={linkOnlyProfit}
 							/>
 						</div>
 
-						<ItemDetailRecipeFlow outputItem={outputItem} outputCount={recipe.productCount}>
+						<ItemDetailRecipeFlow
+							outputItem={recipe.outputItem ?? outputItem}
+							linkOutput={Boolean(recipe.outputItem)}
+							outputCount={recipe.productCount}
+						>
 							{recipe.requiredItems.map((entry, index) => (
 								<Ingredient
 									key={`${entry.item.id}-${index}`}

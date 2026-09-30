@@ -23,6 +23,9 @@ export interface CraftsPayload {
 export interface ItemUsageData {
 	barters: BarterRecord[];
 	crafts: CraftRecord[];
+	/** Recipes that consume the item (including as a tool or quest item). */
+	usedInBarters: BarterRecord[];
+	usedInCrafts: CraftRecord[];
 	items: ItemSummary[];
 	itemIds: string[];
 	unresolvedItemIds: string[];

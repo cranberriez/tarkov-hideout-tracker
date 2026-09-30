@@ -29,6 +29,8 @@ interface ItemTraderOfferBase {
 export interface ItemBarterOffer extends ItemTraderOfferBase {
 	kind: "barter";
 	requiredItems: ItemAmount[];
+	/** Set for recipes that consume the selected item; otherwise the selected item is the output. */
+	outputItem?: ItemSummary;
 }
 
 export interface ItemPurchaseOffer extends ItemTraderOfferBase {
@@ -56,4 +58,6 @@ export interface ItemCraftRecipe {
 	requiredQuestItems: ItemAmount[];
 	gameEditions: string[];
 	productCount: number;
+	/** Set for recipes that consume the selected item; otherwise the selected item is the output. */
+	outputItem?: ItemSummary;
 }

@@ -84,6 +84,8 @@ export function ItemDetailsPage({
 						itemDetailsById={vm.itemDetailsById}
 						traderOffers={vm.traderOffers}
 						crafts={vm.crafts}
+						usedInBarters={vm.usedInBarters}
+						usedInCrafts={vm.usedInCrafts}
 						relationsLoading={vm.relationsLoading}
 						relationsError={vm.relationsError}
 						onRetryRelations={vm.retryRelations}

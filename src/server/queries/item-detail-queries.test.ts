@@ -298,6 +298,60 @@ test("usage includes direct purchase presentation when the item has no recipes",
 	assert.equal(data.taskUnlocksById["unlock-buy"]?.name, "unlock-buy");
 });
 
+test("usage lists recipes that consume the item, including as a tool or quest item", async () => {
+	const barter = (id: string, offeredItemId: string, inputIds: string[]): BarterRecord => ({
+		id,
+		offeredItemId,
+		offeredCount: 1,
+		traderId: `trader-${id}`,
+		minTraderLevel: 1,
+		requiredItems: inputIds.map((itemId) => ({ itemId, count: 1 })),
+	});
+	const craft = (id: string, productItemId: string, overrides: Partial<CraftRecord>): CraftRecord => ({
+		id,
+		productItemId,
+		productCount: 1,
+		stationId: `station-${id}`,
+		level: 1,
+		duration: 60,
+		requiredItems: [],
+		requiredQuestItems: [],
+		gameEditions: [],
+		...overrides,
+	});
+	const repository = createRepository({
+		barters: async () =>
+			result([
+				barter("uses-root", "output-a", ["root-item", "other-input"]),
+				barter("unrelated", "output-x", ["other-input"]),
+			]),
+		crafts: async () =>
+			result([
+				craft("tool-craft", "output-b", { requiredItems: [{ itemId: "root-item", count: 1, isTool: true }] }),
+				craft("quest-craft", "output-c", { requiredQuestItems: [{ itemId: "root-item", count: 1 }] }),
+				craft("unrelated-craft", "output-y", { requiredItems: [{ itemId: "other-input", count: 1 }] }),
+			]),
+		items: async (_mode, ids) => result(Object.fromEntries(ids.map((id) => [id, item(id)]))),
+		prices: async () => result({}),
+		tradersById: async () => result({}),
+		stations: async () => result([]),
+	});
+
+	const data = await getItemUsageData("root-item", "regular", repository);
+
+	assert.deepEqual(data.barters, []);
+	assert.deepEqual(data.crafts, []);
+	assert.deepEqual(
+		data.usedInBarters.map((record) => record.id),
+		["uses-root"],
+	);
+	assert.deepEqual(
+		data.usedInCrafts.map((record) => record.id),
+		["tool-craft", "quest-craft"],
+	);
+	assert.deepEqual(data.itemIds, ["root-item", "output-a", "other-input", "output-b", "output-c"]);
+});
+
 test("usage keeps barter data when craft loading fails", async () => {
 	const repository = createRepository({
 		barters: async () =>

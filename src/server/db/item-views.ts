@@ -75,6 +75,11 @@ export async function getItemView<ViewType extends ItemViewType>(
 			if (viewType === "acquisition") {
 				(dto as ItemAcquisitionTreeData).errors ??= { items: null, prices: null, barters: null, crafts: null };
 			}
+			if (viewType === "usage") {
+				// Rows stored before used-in recipes were projected lack these lists until the next catalog update.
+				(dto as ItemUsageData).usedInBarters ??= [];
+				(dto as ItemUsageData).usedInCrafts ??= [];
+			}
 			return dto;
 		},
 		undefined,

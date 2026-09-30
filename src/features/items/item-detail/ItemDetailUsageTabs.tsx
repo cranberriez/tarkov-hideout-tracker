@@ -35,6 +35,9 @@ interface ItemDetailUsageTabsProps {
 	itemDetailsById: Record<string, ItemSummary>;
 	traderOffers: ItemTraderOffer[];
 	crafts: ItemCraftRecipe[];
+	/** Recipes that consume the item, listed below the ones that produce it. */
+	usedInBarters: ItemTraderOffer[];
+	usedInCrafts: ItemCraftRecipe[];
 	relationsLoading: boolean;
 	relationsError: string | null;
 	onRetryRelations: () => void;
@@ -73,6 +76,8 @@ export function ItemDetailUsageTabs({
 	itemDetailsById,
 	traderOffers,
 	crafts,
+	usedInBarters,
+	usedInCrafts,
 	relationsLoading,
 	relationsError,
 	onRetryRelations,
@@ -103,8 +108,10 @@ export function ItemDetailUsageTabs({
 	);
 	const hideoutEnabled = hideoutCount > 0 || relationsLoading || relationsError !== null;
 	const questsEnabled = questCount > 0 || relationsLoading || relationsError !== null;
-	const tradersEnabled = traderOffers.length > 0 || acquisitionLoading || barterError !== null;
-	const craftingEnabled = crafts.length > 0 || acquisitionLoading || craftError !== null;
+	const traderCount = traderOffers.length + usedInBarters.length;
+	const craftCount = crafts.length + usedInCrafts.length;
+	const tradersEnabled = traderCount > 0 || acquisitionLoading || barterError !== null;
+	const craftingEnabled = craftCount > 0 || acquisitionLoading || craftError !== null;
 	const historyEnabled = showPriceHistory && hasLoadedPriceHistory !== false;
 	const enabledTabs: UsageTab[] = [
 		...(hideoutEnabled ? (["hideout"] as const) : []),
@@ -145,7 +152,7 @@ export function ItemDetailUsageTabs({
 					disabled={!tradersEnabled}
 					onClick={() => setActiveTab("traders")}
 					label="Traders"
-					count={acquisitionLoading ? undefined : traderOffers.length}
+					count={acquisitionLoading ? undefined : traderCount}
 					icon={<ShoppingCart size={13} />}
 				/>
 				<TabButton
@@ -153,7 +160,7 @@ export function ItemDetailUsageTabs({
 					disabled={!craftingEnabled}
 					onClick={() => setActiveTab("crafting")}
 					label="Crafting"
-					count={acquisitionLoading ? undefined : crafts.length}
+					count={acquisitionLoading ? undefined : craftCount}
 					icon={<Wrench size={13} />}
 				/>
 				<TabButton
@@ -167,7 +174,9 @@ export function ItemDetailUsageTabs({
 
 			<div
 				role="tabpanel"
-				className={contained ? "flex flex-col lg:min-h-0 lg:max-h-[700px] lg:flex-1 lg:overflow-y-auto" : "flex flex-1 flex-col"}
+				className={
+					contained ? "flex flex-col lg:min-h-0 lg:max-h-[700px] lg:flex-1 lg:overflow-y-auto" : "flex flex-1 flex-col"
+				}
 			>
 				<UsagePanel active={selectedTab === "hideout"} keep={renderInactivePanels && hideoutEnabled}>
 					<>
@@ -218,21 +227,36 @@ export function ItemDetailUsageTabs({
 						loading={acquisitionLoading}
 						error={barterError}
 						warning={acquisitionWarning}
-						empty={traderOffers.length === 0}
+						empty={traderCount === 0}
 						onRetry={onRetryAcquisition}
 					>
-						<ItemDetailAcquisition
-							offers={traderOffers}
-							profileReady={profileReady}
-							completedQuests={completedQuests}
-							traderLoyaltyLevels={traderLoyaltyLevels}
-							overrides={overrides}
-							evaluationsById={barterEvaluationsById}
-							profitLoading={profitLoading}
-							profitError={profitError}
-							onRetryProfit={onRetryProfit}
-							outputItem={selectedItem}
-						/>
+						<RecipeSection title="Trader offers" tone="produce" show={traderOffers.length > 0}>
+							<ItemDetailAcquisition
+								offers={traderOffers}
+								profileReady={profileReady}
+								completedQuests={completedQuests}
+								traderLoyaltyLevels={traderLoyaltyLevels}
+								overrides={overrides}
+								evaluationsById={barterEvaluationsById}
+								profitLoading={profitLoading}
+								profitError={profitError}
+								onRetryProfit={onRetryProfit}
+								outputItem={selectedItem}
+							/>
+						</RecipeSection>
+						<RecipeSection title="Used in barters" tone="consume" show={usedInBarters.length > 0}>
+							<ItemDetailAcquisition
+								offers={usedInBarters}
+								profileReady={profileReady}
+								completedQuests={completedQuests}
+								traderLoyaltyLevels={traderLoyaltyLevels}
+								evaluationsById={NO_EVALUATIONS}
+								profitLoading={false}
+								profitError={null}
+								outputItem={selectedItem}
+								linkOnlyProfit
+							/>
+						</RecipeSection>
 					</AcquisitionState>
 				</UsagePanel>
 				<UsagePanel active={selectedTab === "crafting"} keep={renderInactivePanels && craftingEnabled}>
@@ -240,22 +264,38 @@ export function ItemDetailUsageTabs({
 						loading={acquisitionLoading}
 						error={craftError}
 						warning={acquisitionWarning}
-						empty={crafts.length === 0}
+						empty={craftCount === 0}
 						onRetry={onRetryAcquisition}
 					>
-						<ItemDetailCrafting
-							recipes={crafts}
-							profileReady={profileReady}
-							completedQuests={completedQuests}
-							stationLevels={stationLevels}
-							gameEdition={gameEdition}
-							overrides={overrides}
-							evaluationsById={craftEvaluationsById}
-							profitLoading={profitLoading}
-							profitError={profitError}
-							onRetryProfit={onRetryProfit}
-							outputItem={selectedItem}
-						/>
+						<RecipeSection title="Crafts" tone="produce" show={crafts.length > 0}>
+							<ItemDetailCrafting
+								recipes={crafts}
+								profileReady={profileReady}
+								completedQuests={completedQuests}
+								stationLevels={stationLevels}
+								gameEdition={gameEdition}
+								overrides={overrides}
+								evaluationsById={craftEvaluationsById}
+								profitLoading={profitLoading}
+								profitError={profitError}
+								onRetryProfit={onRetryProfit}
+								outputItem={selectedItem}
+							/>
+						</RecipeSection>
+						<RecipeSection title="Used in crafts" tone="consume" show={usedInCrafts.length > 0}>
+							<ItemDetailCrafting
+								recipes={usedInCrafts}
+								profileReady={profileReady}
+								completedQuests={completedQuests}
+								stationLevels={stationLevels}
+								gameEdition={gameEdition}
+								evaluationsById={NO_EVALUATIONS}
+								profitLoading={false}
+								profitError={null}
+								outputItem={selectedItem}
+								linkOnlyProfit
+							/>
+						</RecipeSection>
 					</AcquisitionState>
 				</UsagePanel>
 				{selectedTab === "prices" && historyEnabled && (
@@ -266,6 +306,35 @@ export function ItemDetailUsageTabs({
 					/>
 				)}
 			</div>
+		</section>
+	);
+}
+
+const NO_EVALUATIONS: Readonly<Record<string, RecipeEvaluation>> = {};
+
+/** Stacked recipe list with a heading, matching the Quests tab sections; a following section gets a divider. */
+function RecipeSection({
+	title,
+	tone,
+	show,
+	children,
+}: {
+	title: string;
+	tone: "produce" | "consume";
+	show: boolean;
+	children: ReactNode;
+}) {
+	if (!show) return null;
+	return (
+		<section className="border-border-color [section+&]:border-t">
+			<div
+				className={`border-b border-border-color px-3 py-2 text-[10px] font-semibold uppercase tracking-wider ${
+					tone === "produce" ? "bg-brand/[0.04] text-brand/80" : "bg-shadow/20 text-muted-foreground"
+				}`}
+			>
+				{title}
+			</div>
+			{children}
 		</section>
 	);
 }

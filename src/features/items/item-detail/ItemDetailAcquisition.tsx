@@ -22,6 +22,8 @@ interface ItemDetailAcquisitionProps {
 	profitError: string | null;
 	onRetryProfit?: () => void;
 	outputItem: ItemSummary;
+	/** Replace profit metrics with only the breakdown link. */
+	linkOnlyProfit?: boolean;
 }
 
 export function ItemDetailAcquisition({
@@ -35,6 +37,7 @@ export function ItemDetailAcquisition({
 	profitError,
 	onRetryProfit,
 	outputItem,
+	linkOnlyProfit = false,
 }: ItemDetailAcquisitionProps) {
 	// Availability ordering depends on the profile; keep data order until it loads.
 	const sorted = !profileReady
@@ -96,12 +99,17 @@ export function ItemDetailAcquisition({
 									loading={profitLoading}
 									error={profitError}
 									onRetry={onRetryProfit}
+									linkOnly={linkOnlyProfit}
 								/>
 							)}
 						</div>
 
 						{offer.kind === "barter" && (
-							<ItemDetailRecipeFlow outputItem={outputItem} outputCount={offer.offeredCount}>
+							<ItemDetailRecipeFlow
+								outputItem={offer.outputItem ?? outputItem}
+								linkOutput={Boolean(offer.outputItem)}
+								outputCount={offer.offeredCount}
+							>
 								{offer.requiredItems.map((entry) => (
 									<CostItem
 										key={entry.item.id}

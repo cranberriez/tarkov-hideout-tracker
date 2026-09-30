@@ -4,7 +4,8 @@ import { craftingDuration } from "@/lib/price-calculation/crafting-skill";
 import { craftRequiredItems, isTrackedCraft } from "@/lib/price-calculation/craft-rules";
 import { useProfitOptions } from "@/features/profit-pages/useProfitOptions";
 import { useMemo, useState } from "react";
-import type { ItemCraftRecipe, ItemTraderOffer } from "./item-detail-types";
+import type { ItemBarterOffer, ItemCraftRecipe, ItemTraderOffer } from "./item-detail-types";
+import type { BarterRecord, CraftRecord } from "@/types/recipes";
 import type { ItemSummary } from "@/types/items";
 import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -223,7 +224,7 @@ export function useItemDetailsController({
 	}, [itemUsage, recipeCalculator]);
 	const traders = new Map(questAvailabilityQuests.map((quest) => [quest.trader.id, quest.trader]));
 	const quests = new Map(questAvailabilityQuests.map((quest) => [quest.id, quest]));
-	const traderOffers: ItemTraderOffer[] = (itemUsage?.barters ?? []).map((barter) => {
+	const toBarterOffer = (barter: BarterRecord): ItemBarterOffer => {
 		const trader = itemUsage?.tradersById?.[barter.traderId] ?? traders.get(barter.traderId);
 		const unlock = barter.taskUnlockId
 			? (itemUsage?.taskUnlocksById?.[barter.taskUnlockId] ?? quests.get(barter.taskUnlockId))
@@ -252,7 +253,8 @@ export function useItemDetailsController({
 			offeredCount: barter.offeredCount,
 			buyLimit: barter.buyLimit,
 		};
-	});
+	};
+	const traderOffers: ItemTraderOffer[] = (itemUsage?.barters ?? []).map(toBarterOffer);
 	const selectedItemPurchaseOffers: ItemTraderOffer[] = (selectedItem?.buyFromTrader ?? []).map((offer, index) => {
 		const trader = itemUsage?.tradersById?.[offer.traderId] ?? traders.get(offer.traderId);
 		const unlock = offer.taskUnlockId
@@ -283,7 +285,7 @@ export function useItemDetailsController({
 		};
 	});
 	traderOffers.push(...selectedItemPurchaseOffers);
-	const crafts: ItemCraftRecipe[] = (itemUsage?.crafts ?? []).filter(isTrackedCraft).map((craft) => {
+	const toCraftRecipe = (craft: CraftRecord): ItemCraftRecipe => {
 		const station = itemUsage?.stationsById?.[craft.stationId];
 		const unlock = craft.taskUnlockId
 			? (itemUsage?.taskUnlocksById?.[craft.taskUnlockId] ?? quests.get(craft.taskUnlockId))
@@ -312,7 +314,18 @@ export function useItemDetailsController({
 			gameEditions: craft.gameEditions,
 			productCount: craft.productCount,
 		};
-	});
+	};
+	const crafts: ItemCraftRecipe[] = (itemUsage?.crafts ?? []).filter(isTrackedCraft).map(toCraftRecipe);
+	const recipeOutput = (itemId: string): ItemSummary =>
+		itemDetailsById[itemId] ?? { id: itemId, name: "Unknown item", normalizedName: itemId };
+	const usedInBarters: ItemBarterOffer[] = (itemUsage?.usedInBarters ?? []).map((barter) => ({
+		...toBarterOffer(barter),
+		outputItem: recipeOutput(barter.offeredItemId),
+	}));
+	const usedInCrafts: ItemCraftRecipe[] = (itemUsage?.usedInCrafts ?? []).filter(isTrackedCraft).map((craft) => ({
+		...toCraftRecipe(craft),
+		outputItem: recipeOutput(craft.productItemId),
+	}));
 	const usagePresentationError = itemUsage
 		? [itemUsage.itemsError, itemUsage.pricesError, itemUsage.presentationError]
 				.filter((error): error is string => Boolean(error))
@@ -342,6 +355,8 @@ export function useItemDetailsController({
 			usageError: requests.usageError,
 			traderOffers,
 			crafts,
+			usedInBarters,
+			usedInCrafts,
 			tree: acquisitionTree,
 			profitLoading: requests.treeLoading,
 			profitError: requests.treeError,
@@ -364,6 +379,8 @@ export function useItemDetailsController({
 		itemDetailsById,
 		traderOffers,
 		crafts,
+		usedInBarters,
+		usedInCrafts,
 		barterEvaluationsById,
 		craftEvaluationsById,
 		usagePresentationError,
