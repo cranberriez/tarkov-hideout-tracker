@@ -66,7 +66,7 @@ test("round-trips all progression owners and excludes UI, pricing, and planning 
 	assert.deepEqual(backup.profiles.PVP!.progress.itemCounts["consumed-item"], { have: -12, haveFir: -3 });
 	assert.equal(backup.profiles.KORD!.kappa.collector, true);
 	assert.equal(backup.profiles.PVP!.skills.craftingSkillLevel, 31);
-	for (const field of ["hiddenStations", "pinnedQuests", "ignoredQuests", "showFirOnly", "questShowKappa", "gameMode"])
+	for (const field of ["hiddenStations", "pinnedQuests", "ignoredQuests", "showFirOnly", "gameMode"])
 		assert.equal(field in backup.profiles.PVP!.progress, false);
 	assert.equal("profitableOnly" in backup.profiles.PVP!.skills, false);
 	assert.deepEqual(Object.keys(selectBackupProfiles(backup, ["PVE"]).profiles), ["PVE"]);

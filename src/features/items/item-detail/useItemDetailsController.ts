@@ -47,8 +47,6 @@ function selectItemDetailState(state: ReturnType<typeof useUserStore.getState>) 
 		prestigeLevel: state.prestigeLevel,
 		questFaction: state.questFaction,
 		questFenceReputation: state.questFenceReputation,
-		questShowKappa: state.questShowKappa,
-		questShowLightkeeper: state.questShowLightkeeper,
 		questTraderLoyaltyLevels: state.questTraderLoyaltyLevels,
 		stationLevels: state.stationLevels,
 	};
@@ -154,8 +152,6 @@ export function useItemDetailsController({
 		showFutureFir: store.itemShowFutureFir,
 		showIgnored: store.itemShowIgnored,
 		includeCompleted: true,
-		showKappa: store.questShowKappa,
-		showLightkeeper: store.questShowLightkeeper,
 	} as const;
 	const questItemEntry = selectedItem ? questItemIndex.find((entry) => entry.itemId === selectedItem.id) : null;
 	const questItemState = questItemEntry ? deriveQuestItemState(questItemEntry, questDerivationOptions) : null;

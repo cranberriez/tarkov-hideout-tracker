@@ -10,7 +10,7 @@ account for existing users' data.
 
 | Storage key                                     | Owner and scope                                                                                                                                                                                                                                                                    |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tarkov-hideout-profiles-state`                 | [useUserStore](../src/lib/stores/useUserStore.ts), Zustand persist **v23**; profiles, active profile projection, shared preferences and conversion state                                                                                                                           |
+| `tarkov-hideout-profiles-state`                 | [useUserStore](../src/lib/stores/useUserStore.ts), Zustand persist **v24**; profiles, active profile projection, shared preferences and conversion state                                                                                                                           |
 | `tarkov-hideout-user-state`                     | Previous application's save; read-only fallback through [user-state-storage](../src/lib/stores/user-state-storage.ts), never written or removed by the new user store                                                                                                              |
 | `tarkov-kappa-checklist-state`                  | [useKappaStore](../src/lib/stores/useKappaStore.ts), Zustand persist **v1**; `completedItemsByMode` and shared `viewMode`                                                                                                                                                          |
 | `tarkov-profit-price-overrides-v1:{mode}`       | [useManualPriceOverrides](../src/features/profit-pages/useManualPriceOverrides.ts); independent buy/sell overrides and optional empty-container values                                                                                                                             |
@@ -35,7 +35,7 @@ maintain a copied interface in documentation.
 [useUserStore](../src/lib/stores/useUserStore.ts) define character-scoped progress:
 station levels/hidden stations/completed requirements, inventory, quest state
 (including visited objectives and hand-ins), player/prestige level, trader loyalty,
-Fence reputation, faction, goals, edition, and setup state. `profiles` stores
+Fence reputation, faction, edition, and setup state. `profiles` stores
 PVP/PVE/KORD independently. The flat active fields are a projection used by
 existing consumers; the wrapped setter keeps them synchronized with the active
 profile. Shared display and filter preferences live outside the profile shape.
@@ -50,9 +50,10 @@ This avoids alternating mode-cookie writes and refresh loops on missing routes.
 reads it for server queries. Dataset mapping is owned by [data layer](data-layer.md).
 
 The new profile key takes precedence. When it is absent, the storage adapter reads
-the old key without changing its bytes. Existing v19–v23 profile saves retain their
+the old key without changing its bytes. Existing v19–v24 profile saves retain their
 profiles, quests, preferences and conversion flags through the existing migration
-chain. Flat saves (including main's v15 schema) become a retained conversion
+chain. v24 only drops the removed Kappa/Lightkeeper quest-goal flags from
+the top level and each profile. Flat saves (including main's v15 schema) become a retained conversion
 snapshot with fresh conversion flags, even if a branch-switch test left a newer
 version number or stale flags. Mixed saves written by an old build retain their
 profile map and offer their flat progress for explicit conversion.
@@ -68,7 +69,7 @@ alone. The destination's "Has data" badge and overwrite review ignore the automa
 level-1 Stash in an otherwise untouched profile. Higher Stash levels, other station
 upgrades, saved progress, or an explicitly configured profile still require review.
 **Legacy quests are not imported:** completed/failed quests, visited
-objectives, hand-ins, pins, history and quest goals start fresh; ignored quests use
+objectives, hand-ins, pins and history start fresh; ignored quests use
 current defaults. Existing new-profile quests are preserved during key relocation.
 Save failures restore the prior in-memory profile and show an error without reloading.
 
@@ -115,7 +116,7 @@ The explicit [progress allowlist](../src/lib/player-progress.ts) includes invent
 hideout levels/requirements, completed/failed quests, visited objectives, hand-ins,
 history, character levels, traders, Fence reputation, faction, edition and setup
 markers. Backups also include mode-specific Kappa completion and Crafting/Hideout
-Management skills. They exclude hidden/ignored lists, pins, goals, filters, display
+Management skills. They exclude hidden/ignored lists, pins, filters, display
 preferences, craft plans, price overrides, import-file metadata, legacy conversion
 archives, active mode and ephemeral UI state. Setup/edition markers travel with
 progress to prevent onboarding from applying starting bonuses again.

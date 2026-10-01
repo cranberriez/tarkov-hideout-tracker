@@ -21,8 +21,6 @@ function profile(edition: GameEdition | null, stationLevels: Record<string, numb
 		questTraderLoyaltyLevels: {},
 		questFenceReputation: 0,
 		questFaction: "USEC",
-		questShowKappa: false,
-		questShowLightkeeper: false,
 		gameEdition: edition,
 		editionBonusesAppliedFor: edition,
 		hasCompletedSetup: true,

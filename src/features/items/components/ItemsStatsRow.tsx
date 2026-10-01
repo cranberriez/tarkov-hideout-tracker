@@ -57,8 +57,6 @@ export function ItemsStatsRow({
 		itemQuestCustomLevelLookahead,
 		itemShowFutureFir,
 		itemShowIgnored,
-		questShowKappa,
-		questShowLightkeeper,
 		itemShowPinnedQuestOnly,
 		itemSourceFilter,
 		showFirOnly,
@@ -86,8 +84,6 @@ export function ItemsStatsRow({
 			itemQuestCustomLevelLookahead: state.itemQuestCustomLevelLookahead,
 			itemShowFutureFir: state.itemShowFutureFir,
 			itemShowIgnored: state.itemShowIgnored,
-			questShowKappa: state.questShowKappa,
-			questShowLightkeeper: state.questShowLightkeeper,
 			itemShowPinnedQuestOnly: state.itemShowPinnedQuestOnly,
 			itemSourceFilter: state.itemSourceFilter,
 			showFirOnly: state.showFirOnly,
@@ -114,8 +110,6 @@ export function ItemsStatsRow({
 			customLevelLookahead: itemQuestCustomLevelLookahead,
 			showFutureFir: itemShowFutureFir,
 			showIgnored: itemShowIgnored,
-			showKappa: questShowKappa,
-			showLightkeeper: questShowLightkeeper,
 		}),
 		[
 			completedQuests,
@@ -133,8 +127,6 @@ export function ItemsStatsRow({
 			itemQuestCustomLevelLookahead,
 			itemShowFutureFir,
 			itemShowIgnored,
-			questShowKappa,
-			questShowLightkeeper,
 		],
 	);
 

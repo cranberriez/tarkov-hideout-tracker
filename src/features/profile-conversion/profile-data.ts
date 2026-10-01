@@ -27,8 +27,6 @@ export function hasProfileData(profile: PlayerProfileState) {
 		hasItems ||
 		hasQuestProgress ||
 		profile.questChangeHistory.length > 0 ||
-		Object.values(profile.completedQuestObjectives).some((objectives) => Object.values(objectives).some(Boolean)) ||
-		profile.questShowKappa ||
-		profile.questShowLightkeeper
+		Object.values(profile.completedQuestObjectives).some((objectives) => Object.values(objectives).some(Boolean))
 	);
 }

@@ -4,7 +4,6 @@ import { useEffect, useId, useRef, useState, useTransition, type CSSProperties }
 import { Check, LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useShallow } from "zustand/react/shallow";
-import { QuestFlagFilters } from "@/components/core/QuestFlagFilters";
 import { useUserStore, type GameMode, type PlayerProfileState } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import { countCompletedHideoutUpgrades, countCompletedQuests } from "@/lib/utils/profile-summary";
@@ -42,10 +41,6 @@ export function PlayerProfileMenu() {
 		gameMode,
 		profiles,
 		setGameMode,
-		showKappa,
-		setQuestShowKappa,
-		showLightkeeper,
-		setQuestShowLightkeeper,
 	} = useUserStore(
 		useShallow((state) => ({
 			playerLevel: state.playerLevel,
@@ -57,10 +52,6 @@ export function PlayerProfileMenu() {
 			gameMode: state.gameMode,
 			profiles: state.profiles,
 			setGameMode: state.setGameMode,
-			showKappa: state.questShowKappa,
-			setQuestShowKappa: state.setQuestShowKappa,
-			showLightkeeper: state.questShowLightkeeper,
-			setQuestShowLightkeeper: state.setQuestShowLightkeeper,
 		})),
 	);
 
@@ -233,10 +224,6 @@ export function PlayerProfileMenu() {
 							setPrestigeLevel={setPrestigeLevel}
 							faction={faction}
 							setFaction={setQuestFaction}
-							showKappa={showKappa}
-							setShowKappa={setQuestShowKappa}
-							showLightkeeper={showLightkeeper}
-							setShowLightkeeper={setQuestShowLightkeeper}
 						/>
 					) : (
 						<ProfileList activeMode={gameMode} profiles={profiles} isSwitching={isSwitching} onSelect={switchProfile} />
@@ -263,10 +250,6 @@ function CharacterCustomizer({
 	setPrestigeLevel,
 	faction,
 	setFaction,
-	showKappa,
-	setShowKappa,
-	showLightkeeper,
-	setShowLightkeeper,
 }: {
 	playerLevel: number;
 	setPlayerLevel: (level: number) => void;
@@ -274,10 +257,6 @@ function CharacterCustomizer({
 	setPrestigeLevel: (level: number) => void;
 	faction: Faction;
 	setFaction: (faction: Faction) => void;
-	showKappa: boolean;
-	setShowKappa: (show: boolean) => void;
-	showLightkeeper: boolean;
-	setShowLightkeeper: (show: boolean) => void;
 }) {
 	return (
 		<div className="relative z-10 space-y-4">
@@ -325,16 +304,6 @@ function CharacterCustomizer({
 						BEAR
 					</SegmentButton>
 				</div>
-			</ControlGroup>
-
-			<ControlGroup label="Quest Goals">
-				<QuestFlagFilters
-					showKappa={showKappa}
-					showLightkeeper={showLightkeeper}
-					onToggleKappa={() => setShowKappa(!showKappa)}
-					onToggleLightkeeper={() => setShowLightkeeper(!showLightkeeper)}
-					expand
-				/>
 			</ControlGroup>
 		</div>
 	);

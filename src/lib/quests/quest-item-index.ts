@@ -170,8 +170,6 @@ export interface QuestItemDeriveOptions {
 	customLevelLookahead?: number;
 	showFutureFir?: boolean;
 	showIgnored?: boolean;
-	showKappa?: boolean;
-	showLightkeeper?: boolean;
 	includeCompleted?: boolean;
 }
 
@@ -191,8 +189,6 @@ interface QuestItemDeriveContext {
 	customLevelLookahead: number;
 	showFutureFir: boolean;
 	showIgnored: boolean;
-	showKappa: boolean;
-	showLightkeeper: boolean;
 	includeCompleted: boolean;
 	questsById: ReadonlyMap<string, QuestAvailabilityQuest>;
 }
@@ -489,16 +485,9 @@ function getAvailableQuestIds(
 	return availableQuestIds;
 }
 
-function questMatchesBranchFilters(quest: QuestAvailabilityQuest, showKappa: boolean, showLightkeeper: boolean) {
-	if (!showKappa && !showLightkeeper) return true;
-	return (showKappa && !!quest.kappaRequired) || (showLightkeeper && !!quest.lightkeeperRequired);
-}
-
 function getItemDistanceFromAvailable(
 	quests: QuestAvailabilityQuest[],
 	availableQuestIds: ReadonlySet<string>,
-	showKappa: boolean,
-	showLightkeeper: boolean,
 ): Map<string, number> {
 	const questsById = buildQuestAvailabilityMap(quests);
 	const leadsToMap = buildLeadsToMap(quests);
@@ -514,7 +503,6 @@ function getItemDistanceFromAvailable(
 		for (const nextQuestId of leadsToMap.get(current.questId) ?? []) {
 			const nextQuest = questsById.get(nextQuestId);
 			if (!nextQuest) continue;
-			if (!questMatchesBranchFilters(nextQuest, showKappa, showLightkeeper)) continue;
 
 			const nextDistance = current.distance + (nextQuest.hasItemHandIn ? 1 : 0);
 			const previousDistance = distanceMap.get(nextQuestId);
@@ -539,8 +527,6 @@ function getFutureQuestIds(
 	ignoredQuests: Record<string, boolean>,
 	faction: QuestAvailabilityProfile["faction"],
 	showIgnored: boolean,
-	showKappa: boolean,
-	showLightkeeper: boolean,
 ): Set<string> {
 	const futureQuestIds = new Set<string>();
 
@@ -550,18 +536,10 @@ function getFutureQuestIds(
 		if (isQuestDisabledByCompletedFailedRequirement(quest, completedQuests)) continue;
 		if (ignoredQuests[quest.id] && !showIgnored) continue;
 		if (!matchesFactionVisibility(quest.factionName, faction)) continue;
-		if (!questMatchesBranchFilters(quest, showKappa, showLightkeeper)) continue;
 		futureQuestIds.add(quest.id);
 	}
 
 	return futureQuestIds;
-}
-
-function questMatchesItemVisibilityFilters(quest: QuestAvailabilityQuest, context: QuestItemDeriveContext) {
-	return (
-		matchesFactionVisibility(quest.factionName, context.faction) &&
-		questMatchesBranchFilters(quest, context.showKappa, context.showLightkeeper)
-	);
 }
 
 function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestItemDeriveContext {
@@ -572,8 +550,6 @@ function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestIte
 	const customLevelLookahead = Math.max(0, Math.floor(options.customLevelLookahead ?? 5));
 	const showFutureFir = options.showFutureFir ?? false;
 	const showIgnored = options.showIgnored ?? false;
-	const showKappa = options.showKappa ?? false;
-	const showLightkeeper = options.showLightkeeper ?? false;
 	const includeCompleted = options.includeCompleted ?? false;
 	const questsById = buildQuestAvailabilityMap(options.quests);
 
@@ -587,18 +563,8 @@ function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestIte
 		fenceReputation: options.fenceReputation,
 	};
 
-	const availableQuestIds = new Set(
-		Array.from(getAvailableQuestIds(options.quests, availabilityProfile)).filter((questId) => {
-			const quest = questsById.get(questId);
-			return quest ? questMatchesBranchFilters(quest, showKappa, showLightkeeper) : false;
-		}),
-	);
-	const itemDistanceFromAvailable = getItemDistanceFromAvailable(
-		options.quests,
-		availableQuestIds,
-		showKappa,
-		showLightkeeper,
-	);
+	const availableQuestIds = getAvailableQuestIds(options.quests, availabilityProfile);
+	const itemDistanceFromAvailable = getItemDistanceFromAvailable(options.quests, availableQuestIds);
 	const nextLayerQuestIds = new Set<string>();
 
 	for (const [questId, distance] of itemDistanceFromAvailable.entries()) {
@@ -623,8 +589,6 @@ function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestIte
 			ignoredQuests,
 			options.faction,
 			showIgnored,
-			showKappa,
-			showLightkeeper,
 		),
 		itemDistanceFromAvailable,
 		visibilityMode,
@@ -633,8 +597,6 @@ function createQuestItemDeriveContext(options: QuestItemDeriveOptions): QuestIte
 		customLevelLookahead,
 		showFutureFir,
 		showIgnored,
-		showKappa,
-		showLightkeeper,
 		includeCompleted,
 		questsById,
 	};
@@ -651,7 +613,7 @@ function isQuestVisibleByMode(quest: QuestItemLink, context: QuestItemDeriveCont
 	if (isQuestDisabledByCompletedFailedRequirement(availabilityQuest, completedQuests)) {
 		return false;
 	}
-	if (!questMatchesItemVisibilityFilters(availabilityQuest, context)) return false;
+	if (!matchesFactionVisibility(availabilityQuest.factionName, context.faction)) return false;
 
 	if (availableQuestIds.has(quest.questId)) return true;
 
@@ -709,7 +671,7 @@ function deriveQuestItemStateFromContext(
 			const isPinned = !!pinnedQuests[quest.questId];
 			const availabilityQuest = context.questsById.get(quest.questId);
 			const matchesVisibilityFilters =
-				!!availabilityQuest && questMatchesItemVisibilityFilters(availabilityQuest, context);
+				!!availabilityQuest && matchesFactionVisibility(availabilityQuest.factionName, context.faction);
 			const isVisibleByMode = isQuestVisibleByMode(quest, context);
 			const isDisabled =
 				!!availabilityQuest && isQuestDisabledByCompletedFailedRequirement(availabilityQuest, completedQuests);
@@ -820,7 +782,7 @@ export function deriveQuestAnyOfGroups(
 			const isPinned = !!context.pinnedQuests[group.questId];
 			const availabilityQuest = context.questsById.get(group.questId);
 			const matchesVisibilityFilters =
-				!!availabilityQuest && questMatchesItemVisibilityFilters(availabilityQuest, context);
+				!!availabilityQuest && matchesFactionVisibility(availabilityQuest.factionName, context.faction);
 
 			if (!availabilityQuest || !matchesVisibilityFilters) return null;
 			if (isFailed) return null;

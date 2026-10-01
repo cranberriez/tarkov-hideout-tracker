@@ -86,8 +86,6 @@ export function ItemsList({
 		itemQuestCustomLevelLookahead,
 		itemShowFutureFir,
 		itemShowIgnored,
-		questShowKappa,
-		questShowLightkeeper,
 	} = useUserStore(
 		useShallow((state) => ({
 			stationLevels: state.stationLevels,
@@ -116,8 +114,6 @@ export function ItemsList({
 			itemQuestCustomLevelLookahead: state.itemQuestCustomLevelLookahead,
 			itemShowFutureFir: state.itemShowFutureFir,
 			itemShowIgnored: state.itemShowIgnored,
-			questShowKappa: state.questShowKappa,
-			questShowLightkeeper: state.questShowLightkeeper,
 		})),
 	);
 
@@ -138,8 +134,6 @@ export function ItemsList({
 			customLevelLookahead: itemQuestCustomLevelLookahead,
 			showFutureFir: itemShowFutureFir,
 			showIgnored: itemShowIgnored,
-			showKappa: questShowKappa,
-			showLightkeeper: questShowLightkeeper,
 		}),
 		[
 			completedQuests,
@@ -157,8 +151,6 @@ export function ItemsList({
 			itemQuestCustomLevelLookahead,
 			itemShowFutureFir,
 			itemShowIgnored,
-			questShowKappa,
-			questShowLightkeeper,
 		],
 	);
 

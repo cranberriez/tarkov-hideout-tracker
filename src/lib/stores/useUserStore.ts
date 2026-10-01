@@ -109,8 +109,6 @@ export interface PlayerProfileState {
 	questTraderLoyaltyLevels: Record<string, number>;
 	questFenceReputation: number;
 	questFaction: "USEC" | "BEAR" | null;
-	questShowKappa: boolean;
-	questShowLightkeeper: boolean;
 	gameEdition: GameEdition | null;
 	editionBonusesAppliedFor: GameEdition | null;
 	hasCompletedSetup: boolean;
@@ -134,8 +132,6 @@ export function createDefaultPlayerProfile(): PlayerProfileState {
 		questTraderLoyaltyLevels: {},
 		questFenceReputation: 0,
 		questFaction: "USEC",
-		questShowKappa: false,
-		questShowLightkeeper: false,
 		gameEdition: null,
 		editionBonusesAppliedFor: null,
 		hasCompletedSetup: false,
@@ -202,8 +198,6 @@ interface UserState {
 	questSortMode: QuestSortMode;
 	questSelectedTraders: string[];
 	questFaction: "USEC" | "BEAR" | null;
-	questShowKappa: boolean;
-	questShowLightkeeper: boolean;
 	questSelectedMaps: string[];
 	questHideCompleted: boolean;
 	questShowAvailableOnly: boolean;
@@ -297,8 +291,6 @@ interface UserState {
 	setQuestSortMode: (mode: QuestSortMode) => void;
 	setQuestSelectedTraders: (ids: string[]) => void;
 	setQuestFaction: (f: "USEC" | "BEAR" | null) => void;
-	setQuestShowKappa: (v: boolean) => void;
-	setQuestShowLightkeeper: (v: boolean) => void;
 	setQuestSelectedMaps: (maps: string[]) => void;
 	setQuestHideCompleted: (v: boolean) => void;
 	setQuestShowAvailableOnly: (v: boolean) => void;
@@ -407,6 +399,13 @@ function createDefaultUserState(): UserStateData {
 	};
 }
 
+function withoutRemovedQuestGoalKeys(state: Record<string, unknown>): Record<string, unknown> {
+	const next = { ...state };
+	delete next.questShowKappa;
+	delete next.questShowLightkeeper;
+	return next;
+}
+
 function pickPlayerProfile(state: Partial<UserState>): Partial<PlayerProfileState> {
 	const profile: Partial<PlayerProfileState> = {};
 	for (const key of PLAYER_PROFILE_KEYS) {
@@ -434,8 +433,6 @@ function createPlayerProfileFromLegacyState(legacyState: Record<string, unknown>
 		ignoredQuests: { ...DEFAULT_IGNORED_QUESTS },
 		pinnedQuests: {},
 		questChangeHistory: [],
-		questShowKappa: false,
-		questShowLightkeeper: false,
 		itemCounts: Object.fromEntries(
 			Object.entries(profile.itemCounts).map(([itemId, counts]) => [itemId, { ...counts }]),
 		),
@@ -680,8 +677,6 @@ export const useUserStore = create<UserState>()(
 				setQuestSortMode: (mode) => set({ questSortMode: mode }),
 				setQuestSelectedTraders: (ids) => set({ questSelectedTraders: ids }),
 				setQuestFaction: (f) => set({ questFaction: f }),
-				setQuestShowKappa: (v) => set({ questShowKappa: v }),
-				setQuestShowLightkeeper: (v) => set({ questShowLightkeeper: v }),
 				setQuestSelectedMaps: (maps) => set({ questSelectedMaps: maps }),
 				setQuestHideCompleted: (v) => set({ questHideCompleted: v }),
 				setQuestShowAvailableOnly: (v) =>
@@ -882,7 +877,7 @@ export const useUserStore = create<UserState>()(
 		{
 			name: USER_STORE_STORAGE_KEY,
 			storage: createJSONStorage(() => createUserStateStorage(localStorage)),
-			version: 23,
+			version: 24,
 			migrate: (persistedState, version) => {
 				let nextState =
 					persistedState && typeof persistedState === "object"
@@ -1146,6 +1141,21 @@ export const useUserStore = create<UserState>()(
 						completedQuestObjectives: {},
 						profiles,
 					};
+				}
+
+				if (version < 24) {
+					// Kappa/Lightkeeper quest goal filters were removed; drop their dead keys.
+					nextState = withoutRemovedQuestGoalKeys(nextState);
+					if (typeof nextState.profiles === "object" && nextState.profiles !== null) {
+						nextState.profiles = Object.fromEntries(
+							Object.entries(nextState.profiles as Record<string, unknown>).map(([mode, profile]) => [
+								mode,
+								typeof profile === "object" && profile !== null
+									? withoutRemovedQuestGoalKeys(profile as Record<string, unknown>)
+									: profile,
+							]),
+						);
+					}
 				}
 
 				return nextState as unknown as UserState;

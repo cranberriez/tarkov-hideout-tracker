@@ -57,8 +57,6 @@ export function StorageResetCard() {
 			questSortMode: state.questSortMode,
 			questSelectedTraders: state.questSelectedTraders,
 			questFaction: state.questFaction,
-			questShowKappa: state.questShowKappa,
-			questShowLightkeeper: state.questShowLightkeeper,
 			questSelectedMaps: state.questSelectedMaps,
 			questHideCompleted: state.questHideCompleted,
 			questShowAvailableOnly: state.questShowAvailableOnly,

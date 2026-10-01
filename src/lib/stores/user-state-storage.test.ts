@@ -110,8 +110,12 @@ test("existing v23 profiles and their quest progress survive relocation", async 
 	useUserStore.getState().toggleQuestCompletion("new-quest");
 	useUserStore.getState().setHideMoney(true);
 	const saved = JSON.parse(JSON.stringify(useUserStore.getState()));
+	Object.assign(saved, { questShowKappa: true, questShowLightkeeper: true });
+	Object.assign(saved.profiles.KORD, { questShowKappa: true, questShowLightkeeper: true });
 	const { storage, original } = setup(saved, 23);
 	await useUserStore.persist.rehydrate();
+	assert.equal("questShowKappa" in useUserStore.getState(), false);
+	assert.equal("questShowLightkeeper" in useUserStore.getState().profiles.KORD, false);
 	assert.equal(useUserStore.getState().playerLevel, 42);
 	assert.equal(useUserStore.getState().completedQuests["new-quest"], true);
 	assert.equal(useUserStore.getState().hideMoney, true);
