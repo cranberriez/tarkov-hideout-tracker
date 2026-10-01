@@ -3,12 +3,35 @@
 import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { FilterBar, FilterRadioGroup, FilterToggle } from "@/components/ui/filter-bar";
-import { Grid2x2, Rows2 } from "lucide-react";
+import { Eye, EyeOff, Grid2x2, Rows2 } from "lucide-react";
 
 const layoutOptions = [
 	{ value: "expanded", label: "Expanded view", icon: <Rows2 size={14} aria-hidden="true" /> },
 	{ value: "compact", label: "Compact view", icon: <Grid2x2 size={14} aria-hidden="true" /> },
 ] as const;
+
+/** Lit only when changed from the default; the eye shows whether the content is visible. */
+function VisibilityToggle({
+	label,
+	actionLabel,
+	visible,
+	pressed,
+	onPressedChange,
+}: {
+	label: string;
+	actionLabel: string;
+	visible: boolean;
+	pressed: boolean;
+	onPressedChange: (pressed: boolean) => void;
+}) {
+	const Icon = visible ? Eye : EyeOff;
+	return (
+		<FilterToggle checked={pressed} onCheckedChange={onPressedChange} aria-label={actionLabel}>
+			<Icon size={14} aria-hidden="true" />
+			{label}
+		</FilterToggle>
+	);
+}
 
 export function HideoutControls() {
 	const {
@@ -35,15 +58,27 @@ export function HideoutControls() {
 
 	return (
 		<FilterBar className="items-center">
-			<FilterToggle checked={!hideRequirements} onCheckedChange={(checked) => setHideRequirements(!checked)}>
-				Requirements
-			</FilterToggle>
-			<FilterToggle checked={!hideMoney} onCheckedChange={(checked) => setHideMoney(!checked)}>
-				Money
-			</FilterToggle>
-			<FilterToggle checked={showHidden} onCheckedChange={setShowHidden}>
-				Hidden stations
-			</FilterToggle>
+			<VisibilityToggle
+				label="Requirements"
+				actionLabel="Hide requirements"
+				visible={!hideRequirements}
+				pressed={hideRequirements}
+				onPressedChange={setHideRequirements}
+			/>
+			<VisibilityToggle
+				label="Money"
+				actionLabel="Hide money requirements"
+				visible={!hideMoney}
+				pressed={hideMoney}
+				onPressedChange={setHideMoney}
+			/>
+			<VisibilityToggle
+				label="Hidden stations"
+				actionLabel="Show hidden stations"
+				visible={showHidden}
+				pressed={showHidden}
+				onPressedChange={setShowHidden}
+			/>
 			<FilterRadioGroup
 				label="Requirement layout"
 				value={hideoutCompactMode ? "compact" : "expanded"}
