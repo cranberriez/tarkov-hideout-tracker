@@ -68,6 +68,12 @@ export interface ItemAcquisitionTreeData {
 		items: string | null;
 		prices: string | null;
 	};
+	/** Read-time labels for the graph's traders, stations, and unlock quests (recipe breakdowns). */
+	tradersById?: ItemUsageData["tradersById"];
+	stationsById?: ItemUsageData["stationsById"];
+	taskUnlocksById?: ItemUsageData["taskUnlocksById"];
+	/** Labels failed to load; recipe and price data remain usable. */
+	presentationError?: string;
 }
 
 export interface ItemHideoutRequirementRelation {

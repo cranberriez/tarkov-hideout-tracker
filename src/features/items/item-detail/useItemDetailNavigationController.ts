@@ -30,17 +30,17 @@ export function useItemDetailNavigationController() {
 		const unsubscribeNavigation = navigation.subscribe(() => {
 			restoring = true;
 			try {
-				const item = navigation.getSnapshot().item;
+				const entry = navigation.getSnapshot().entry;
 				const store = useUIStore.getState();
-				if (item) store.openItemDetail(item);
+				if (entry) store.showItemDetailEntry(entry);
 				else store.closeItemDetail();
 			} finally {
 				restoring = false;
 			}
 		});
 		const unsubscribeUI = useUIStore.subscribe((state, previous) => {
-			if (restoring || state.itemDetailItem === previous.itemDetailItem) return;
-			if (state.itemDetailItem) navigation.open(state.itemDetailItem);
+			if (restoring || state.itemDetailEntry === previous.itemDetailEntry) return;
+			if (state.itemDetailEntry) navigation.open(state.itemDetailEntry);
 			else navigation.close();
 		});
 		const unsubscribeMode = useUserStore.subscribe((state, previous) => {
@@ -48,8 +48,8 @@ export function useItemDetailNavigationController() {
 		});
 		window.addEventListener("popstate", navigation.restore);
 		window.addEventListener("hashchange", navigation.routeChanged);
-		const initialItem = useUIStore.getState().itemDetailItem;
-		if (initialItem) navigation.open(initialItem);
+		const initialEntry = useUIStore.getState().itemDetailEntry;
+		if (initialEntry) navigation.open(initialEntry);
 		return () => {
 			window.removeEventListener("popstate", navigation.restore);
 			window.removeEventListener("hashchange", navigation.routeChanged);

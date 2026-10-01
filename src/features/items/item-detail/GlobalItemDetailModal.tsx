@@ -4,7 +4,10 @@ import { Suspense } from "react";
 import { ItemDetailModal } from "./LazyItemDetailModal";
 import { useItemDetailNavigationController } from "./useItemDetailNavigationController";
 
-/** The single item-detail dialog. Every item link and search result opens it via `openItemDetail`. */
+/**
+ * The single item-detail dialog. Item links and search results open it via `openItemDetail`;
+ * recipe rows swap in a profit breakdown via `openRecipeBreakdown`.
+ */
 export function GlobalItemDetailModal() {
 	return (
 		<Suspense fallback={null}>
@@ -14,6 +17,6 @@ export function GlobalItemDetailModal() {
 }
 
 function ItemDetailModalHost() {
-	const { item, previousItem, back, close } = useItemDetailNavigationController();
-	return <ItemDetailModal item={item} isOpen={!!item} previousItem={previousItem} onBack={back} onClose={close} />;
+	const { entry, previousEntry, back, close } = useItemDetailNavigationController();
+	return <ItemDetailModal entry={entry} previousEntry={previousEntry} onBack={back} onClose={close} />;
 }

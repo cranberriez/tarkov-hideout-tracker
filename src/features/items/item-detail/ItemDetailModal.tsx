@@ -1,19 +1,20 @@
 "use client";
 
 import { DialogTitle } from "@/components/ui/dialog";
-import Image from "next/image";
-import { ArrowLeft, Bug, PackageOpen, X } from "lucide-react";
+import { Bug, X } from "lucide-react";
 import type { ItemSummary } from "@/types/items";
 import { ItemDetailHeader } from "./ItemDetailHeader";
 import { ItemDetailSidebar } from "./ItemDetailSidebar";
 import { ItemDetailUsageTabs } from "./ItemDetailUsageTabs";
 import { useItemDetailModalController } from "./useItemDetailsController";
 import { ItemDetailLoading, ITEM_DETAIL_LOADING_CLASS } from "./ItemDetailLoading";
+import { BACK_PANEL_HEIGHT_CLASS, ItemDetailBackButton, PANEL_HEIGHT_CLASS } from "./ItemDetailBackButton";
+import type { ItemDetailEntry } from "./item-detail-navigation";
 
 export interface ItemDetailModalProps {
 	item: ItemSummary | null;
 	isOpen: boolean;
-	previousItem: ItemSummary | null;
+	previousEntry: ItemDetailEntry | null;
 	onBack: () => void;
 	onClose: () => void;
 }
@@ -40,31 +41,9 @@ export function ItemDetailModalContent(props: ItemDetailModalProps) {
 				<ItemDetailLoading item={selectedItem} onClose={vm.close} />
 			) : (
 				<>
-					{vm.previousItem && (
-						<button
-							type="button"
-							onClick={vm.back}
-							className="flex h-12 w-full items-center gap-2 border-b border-border-color bg-background px-3 text-left text-sm font-medium text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/70 lg:absolute lg:bottom-full lg:left-0 lg:mb-2 lg:h-10 lg:w-auto lg:rounded-md lg:border-0 lg:shadow-2xl"
-							aria-label="Back to previous item"
-						>
-							<ArrowLeft size={16} aria-hidden="true" />
-							{vm.previousItem.iconLink ? (
-								<Image
-									src={vm.previousItem.iconLink}
-									alt=""
-									width={28}
-									height={28}
-									unoptimized
-									className="h-7 w-7 object-contain"
-								/>
-							) : (
-								<PackageOpen className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-							)}
-							<span>Back</span>
-						</button>
-					)}
+					{vm.previousEntry && <ItemDetailBackButton previousEntry={vm.previousEntry} onBack={vm.back} />}
 					<div
-						className={`flex w-full flex-col bg-background lg:min-h-0 lg:overflow-hidden lg:rounded-lg lg:border lg:border-border-color lg:shadow-2xl ${vm.previousItem ? "min-h-[calc(100dvh-3rem)] lg:max-h-[calc(92vh-3rem)]" : "min-h-dvh lg:max-h-[92vh]"}`}
+						className={`flex w-full flex-col bg-background lg:min-h-0 lg:overflow-hidden lg:rounded-lg lg:border lg:border-border-color lg:shadow-2xl ${vm.previousEntry ? BACK_PANEL_HEIGHT_CLASS : PANEL_HEIGHT_CLASS}`}
 					>
 						{vm.showDebug && vm.isDevelopment ? (
 							<section className="flex min-h-[420px] min-w-0 flex-col overflow-hidden bg-[var(--background)]">

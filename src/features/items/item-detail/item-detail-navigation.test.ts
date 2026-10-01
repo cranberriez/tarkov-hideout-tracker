@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { ItemSummary } from "@/types/items";
-import { createItemDetailNavigation, emptyItemNavigation, type ItemHistoryPort } from "./item-detail-navigation";
+import {
+	createItemDetailNavigation,
+	emptyItemNavigation,
+	itemEntry,
+	type ItemDetailEntry,
+	type ItemHistoryPort,
+} from "./item-detail-navigation";
 
-const itemA: ItemSummary = { id: "a", name: "A", normalizedName: "a" };
-const itemB: ItemSummary = { id: "b", name: "B", normalizedName: "b" };
-const itemC: ItemSummary = { id: "c", name: "C", normalizedName: "c" };
+const itemA = itemEntry({ id: "a", name: "A", normalizedName: "a" });
+const itemB = itemEntry({ id: "b", name: "B", normalizedName: "b" });
+const itemC = itemEntry({ id: "c", name: "C", normalizedName: "c" });
 const page = "https://example.test/items?filter=needed#list";
 
 function fixture() {
@@ -72,7 +77,7 @@ test("opening protects the underlying page immediately, with an unchanged URL an
 	assert.deepEqual(f.entries[2].state.__PRIVATE_NEXTJS_INTERNALS_TREE, f.routerState.__PRIVATE_NEXTJS_INTERNALS_TREE);
 	assert.equal(f.entries[2].state.other, "preserved");
 	assert.equal(JSON.stringify(f.port.state()).includes('"name"'), false);
-	assert.deepEqual(f.navigation.getSnapshot(), { item: itemA, previousItem: null });
+	assert.deepEqual(f.navigation.getSnapshot(), { entry: itemA, previousEntry: null });
 });
 
 test("native Back visits previous items, then closes without leaving the page; the next Back navigates normally", () => {
@@ -81,9 +86,9 @@ test("native Back visits previous items, then closes without leaving the page; t
 	f.navigation.open(itemB);
 	f.navigation.open(itemC);
 	f.native(-1);
-	assert.deepEqual(f.navigation.getSnapshot(), { item: itemB, previousItem: itemA });
+	assert.deepEqual(f.navigation.getSnapshot(), { entry: itemB, previousEntry: itemA });
 	f.native(-1);
-	assert.equal(f.navigation.getSnapshot().item, itemA);
+	assert.equal(f.navigation.getSnapshot().entry, itemA);
 	f.native(-1);
 	assert.deepEqual(f.navigation.getSnapshot(), emptyItemNavigation);
 	assert.equal(f.port.href(), page);
@@ -96,12 +101,12 @@ test("the visible Back action traverses browser history and closes at the first 
 	f.navigation.open(itemA);
 	f.navigation.open(itemB);
 	f.navigation.back();
-	assert.equal(f.navigation.getSnapshot().item, itemB);
+	assert.equal(f.navigation.getSnapshot().entry, itemB);
 	f.flush();
-	assert.equal(f.navigation.getSnapshot().item, itemA);
+	assert.equal(f.navigation.getSnapshot().entry, itemA);
 	f.navigation.back();
 	f.flush();
-	assert.equal(f.navigation.getSnapshot().item, null);
+	assert.equal(f.navigation.getSnapshot().entry, null);
 	assert.equal(f.index(), 1);
 });
 
@@ -114,7 +119,7 @@ test("Close/Escape unwinds all item entries, so the next native Back leaves the 
 	assert.deepEqual(f.traversals, [-3]);
 	f.flush();
 	assert.equal(f.index(), 1);
-	assert.equal(f.navigation.getSnapshot().item, null);
+	assert.equal(f.navigation.getSnapshot().entry, null);
 	f.native(-1);
 	assert.equal(f.index(), 0);
 });
@@ -126,9 +131,9 @@ test("Forward restores session items after native Back or explicit Close", () =>
 	f.navigation.close();
 	f.flush();
 	f.native(1);
-	assert.equal(f.navigation.getSnapshot().item, itemA);
+	assert.equal(f.navigation.getSnapshot().entry, itemA);
 	f.native(1);
-	assert.deepEqual(f.navigation.getSnapshot(), { item: itemB, previousItem: itemA });
+	assert.deepEqual(f.navigation.getSnapshot(), { entry: itemB, previousEntry: itemA });
 });
 
 test("selecting a different item after Back truncates the forward branch", () => {
@@ -138,19 +143,19 @@ test("selecting a different item after Back truncates the forward branch", () =>
 	f.native(-1);
 	f.navigation.open(itemC);
 	assert.equal(f.entries.length, 4);
-	assert.deepEqual(f.navigation.getSnapshot(), { item: itemC, previousItem: itemA });
+	assert.deepEqual(f.navigation.getSnapshot(), { entry: itemC, previousEntry: itemA });
 	f.native(-1);
 	f.native(1);
-	assert.equal(f.navigation.getSnapshot().item, itemC);
+	assert.equal(f.navigation.getSnapshot().entry, itemC);
 });
 
 test("repeated item clicks update its summary without creating duplicate history", () => {
 	const f = fixture();
 	f.navigation.open(itemA);
-	const richer = { ...itemA, iconLink: "a.png" };
+	const richer = itemEntry({ id: "a", name: "A", normalizedName: "a", iconLink: "a.png" });
 	f.navigation.open(richer);
 	assert.equal(f.entries.length, 3);
-	assert.equal(f.navigation.getSnapshot().item, richer);
+	assert.equal(f.navigation.getSnapshot().entry, richer);
 });
 
 test("a new item opened while Close is traversing waits for the base entry", () => {
@@ -161,10 +166,10 @@ test("a new item opened while Close is traversing waits for the base entry", () 
 	f.navigation.open(itemC);
 	f.flush();
 	assert.equal(f.entries.length, 3);
-	assert.deepEqual(f.navigation.getSnapshot(), { item: itemC, previousItem: null });
+	assert.deepEqual(f.navigation.getSnapshot(), { entry: itemC, previousEntry: null });
 	f.native(-1);
 	assert.equal(f.index(), 1);
-	assert.equal(f.navigation.getSnapshot().item, null);
+	assert.equal(f.navigation.getSnapshot().entry, null);
 });
 
 test("rapid Back clicks cannot overrun the modal's history", () => {
@@ -182,18 +187,18 @@ test("route links dismiss without traversing away from the destination; native B
 	f.navigation.open(itemA);
 	f.navigation.open(itemB);
 	f.route("https://example.test/quests/quest-id");
-	assert.equal(f.navigation.getSnapshot().item, null);
+	assert.equal(f.navigation.getSnapshot().entry, null);
 	assert.deepEqual(f.traversals, []);
 	f.native(-1);
 	assert.equal(f.port.href(), page);
-	assert.equal(f.navigation.getSnapshot().item, itemB);
+	assert.equal(f.navigation.getSnapshot().entry, itemB);
 });
 
 test("a route that inherits history state cannot incorrectly reopen an item on the new page", () => {
 	const f = fixture();
 	f.navigation.open(itemA);
 	f.route("https://example.test/quests", true);
-	assert.equal(f.navigation.getSnapshot().item, null);
+	assert.equal(f.navigation.getSnapshot().entry, null);
 	assert.equal("tarkovItemDialog" in (f.port.state() as object), false);
 	assert.equal((f.port.state() as Record<string, unknown>).other, "preserved");
 });
@@ -203,10 +208,10 @@ test("mode changes close and invalidate old summaries without changing player da
 	f.navigation.open(itemA);
 	f.navigation.open(itemB);
 	f.navigation.changeMode("PVE");
-	assert.equal(f.navigation.getSnapshot().item, null);
+	assert.equal(f.navigation.getSnapshot().entry, null);
 	f.flush();
 	f.native(1);
-	assert.equal(f.navigation.getSnapshot().item, null);
+	assert.equal(f.navigation.getSnapshot().entry, null);
 	assert.equal("tarkovItemDialog" in (f.port.state() as object), false);
 });
 
@@ -216,7 +221,7 @@ test("reloads ignore stale markers while preserving framework and unrelated stat
 	const reloaded = createItemDetailNavigation();
 	reloaded.connect(f.port, "PVP");
 	reloaded.restore();
-	assert.equal(reloaded.getSnapshot().item, null);
+	assert.equal(reloaded.getSnapshot().entry, null);
 	assert.deepEqual(f.port.state(), f.routerState);
 });
 
@@ -227,5 +232,20 @@ test("Strict Mode reconnects do not push duplicate entries", () => {
 	f.navigation.open(itemA);
 	f.navigation.routeChanged();
 	assert.equal(f.entries.length, 3);
-	assert.equal(f.navigation.getSnapshot().item, itemA);
+	assert.equal(f.navigation.getSnapshot().entry, itemA);
+});
+
+test("a recipe breakdown is its own entry: Back returns to its item and repeat opens do not duplicate", () => {
+	const f = fixture();
+	const breakdown: ItemDetailEntry = {
+		kind: "recipe",
+		recipe: { kind: "craft", recipeId: "craft-1", outputItem: { id: "b", name: "B", normalizedName: "b" } },
+	};
+	f.navigation.open(itemA);
+	f.navigation.open(breakdown);
+	f.navigation.open({ ...breakdown });
+	assert.equal(f.entries.length, 4);
+	assert.equal(f.navigation.getSnapshot().previousEntry, itemA);
+	f.native(-1);
+	assert.deepEqual(f.navigation.getSnapshot(), { entry: itemA, previousEntry: null });
 });

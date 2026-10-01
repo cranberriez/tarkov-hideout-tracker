@@ -1,4 +1,7 @@
 import type { ItemSummary } from "@/types/items";
+import type { ItemDetailEntry } from "@/lib/stores/useUIStore";
+
+export type { ItemDetailEntry, RecipeBreakdownTarget } from "@/lib/stores/useUIStore";
 
 const HISTORY_KEY = "tarkovItemDialog";
 
@@ -7,10 +10,19 @@ interface HistoryEntry {
 	index: number;
 }
 
+export const itemEntry = (item: ItemSummary): ItemDetailEntry => ({ kind: "item", item });
+
+function sameView(a: ItemDetailEntry, b: ItemDetailEntry) {
+	if (a.kind === "item" && b.kind === "item") return a.item.id === b.item.id;
+	if (a.kind === "recipe" && b.kind === "recipe")
+		return a.recipe.kind === b.recipe.kind && a.recipe.recipeId === b.recipe.recipeId;
+	return false;
+}
+
 interface ItemSession {
 	href: string;
 	mode: string;
-	items: ItemSummary[];
+	entries: ItemDetailEntry[];
 }
 
 /** Browser effects are injected so navigation can be tested without React or a DOM. */
@@ -24,11 +36,11 @@ export interface ItemHistoryPort {
 }
 
 export interface ItemNavigationSnapshot {
-	item: ItemSummary | null;
-	previousItem: ItemSummary | null;
+	entry: ItemDetailEntry | null;
+	previousEntry: ItemDetailEntry | null;
 }
 
-export const emptyItemNavigation: ItemNavigationSnapshot = { item: null, previousItem: null };
+export const emptyItemNavigation: ItemNavigationSnapshot = { entry: null, previousEntry: null };
 
 function stateRecord(state: unknown): Record<string, unknown> {
 	return state && typeof state === "object" && !Array.isArray(state) ? (state as Record<string, unknown>) : {};
@@ -47,13 +59,13 @@ export function createItemDetailNavigation() {
 	let mode = "";
 	let snapshot = emptyItemNavigation;
 	let pendingTraversal = false;
-	let queuedSelection: ItemSummary | null | undefined;
+	let queuedSelection: ItemDetailEntry | null | undefined;
 	const sessions = new Map<string, ItemSession>();
 	const listeners = new Set<() => void>();
 
-	function publish(item: ItemSummary | null, previousItem: ItemSummary | null = null) {
-		if (snapshot.item === item && snapshot.previousItem === previousItem) return;
-		snapshot = item ? { item, previousItem } : emptyItemNavigation;
+	function publish(entry: ItemDetailEntry | null, previousEntry: ItemDetailEntry | null = null) {
+		if (snapshot.entry === entry && snapshot.previousEntry === previousEntry) return;
+		snapshot = entry ? { entry, previousEntry } : emptyItemNavigation;
 		for (const listener of listeners) listener();
 	}
 
@@ -61,7 +73,7 @@ export function createItemDetailNavigation() {
 		if (!port) return null;
 		const entry = readEntry(port.state());
 		const session = entry && sessions.get(entry.session);
-		return entry && session && session.mode === mode && session.href === port.href() && session.items[entry.index - 1]
+		return entry && session && session.mode === mode && session.href === port.href() && session.entries[entry.index - 1]
 			? { entry, session }
 			: null;
 	}
@@ -73,25 +85,26 @@ export function createItemDetailNavigation() {
 		port.replace(state);
 	}
 
-	function open(item: ItemSummary) {
+	function open(view: ItemDetailEntry) {
 		if (!port) return;
 		if (pendingTraversal) {
-			queuedSelection = item;
+			queuedSelection = view;
 			return;
 		}
 		const current = currentEntry();
-		if (current?.session.items[current.entry.index - 1].id === item.id) {
-			current.session.items[current.entry.index - 1] = item;
-			publish(item, current.session.items[current.entry.index - 2] ?? null);
+		const shown = current?.session.entries[current.entry.index - 1];
+		if (current && shown && sameView(shown, view)) {
+			current.session.entries[current.entry.index - 1] = view;
+			publish(view, current.session.entries[current.entry.index - 2] ?? null);
 			return;
 		}
 		const id = current?.entry.session ?? port.newSessionId();
-		const session = current?.session ?? { href: port.href(), mode, items: [] };
-		// Selecting a different item after Back discards that branch's forward entries.
-		const items = [...session.items.slice(0, current?.entry.index ?? 0), item];
-		port.push({ ...stateRecord(port.state()), [HISTORY_KEY]: { session: id, index: items.length } });
-		sessions.set(id, { ...session, items });
-		publish(item, items.at(-2) ?? null);
+		const session = current?.session ?? { href: port.href(), mode, entries: [] };
+		// Selecting a different view after Back discards that branch's forward entries.
+		const entries = [...session.entries.slice(0, current?.entry.index ?? 0), view];
+		port.push({ ...stateRecord(port.state()), [HISTORY_KEY]: { session: id, index: entries.length } });
+		sessions.set(id, { ...session, entries });
+		publish(view, entries.at(-2) ?? null);
 	}
 
 	function close() {
@@ -114,9 +127,12 @@ export function createItemDetailNavigation() {
 		pendingTraversal = false;
 		const current = currentEntry();
 		if (current) {
-			publish(current.session.items[current.entry.index - 1], current.session.items[current.entry.index - 2] ?? null);
+			publish(
+				current.session.entries[current.entry.index - 1],
+				current.session.entries[current.entry.index - 2] ?? null,
+			);
 		} else {
-			// A reload or mode change cannot revive item summaries from an earlier session.
+			// A reload or mode change cannot revive entries from an earlier session.
 			clearUnknownMarker();
 			publish(null);
 		}

@@ -2,19 +2,33 @@
 
 import { lazy, Suspense } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import type { ItemDetailModalProps } from "./ItemDetailModal";
 import { ItemDetailLoading, ITEM_DETAIL_LOADING_CLASS } from "./ItemDetailLoading";
+import type { ItemDetailEntry } from "./item-detail-navigation";
 
 const LoadedItemDetailModal = lazy(() =>
 	import("./ItemDetailModal").then((module) => ({ default: module.ItemDetailModalContent })),
 );
+const LoadedRecipeBreakdown = lazy(() =>
+	import("./RecipeBreakdownModal").then((module) => ({ default: module.RecipeBreakdownContent })),
+);
 
-/** Closed item dialogs must not download or initialize the detail/recipe UI. */
-export function ItemDetailModal(props: ItemDetailModalProps) {
-	if (!props.isOpen || !props.item) return null;
+export interface ItemDetailDialogProps {
+	entry: ItemDetailEntry | null;
+	previousEntry: ItemDetailEntry | null;
+	onBack: () => void;
+	onClose: () => void;
+}
+
+/**
+ * The one item dialog: an item view or a recipe breakdown swaps its content (never stacked).
+ * Closed dialogs must not download or initialize the detail/recipe UI.
+ */
+export function ItemDetailModal({ entry, previousEntry, onBack, onClose }: ItemDetailDialogProps) {
+	if (!entry) return null;
+	const placeholderItem = entry.kind === "item" ? entry.item : entry.recipe.outputItem;
 
 	return (
-		<Dialog open onOpenChange={(open) => !open && props.onClose()}>
+		<Dialog open onOpenChange={(open) => !open && onClose()}>
 			<DialogContent
 				showCloseButton={false}
 				aria-describedby={undefined}
@@ -23,12 +37,28 @@ export function ItemDetailModal(props: ItemDetailModalProps) {
 				<Suspense
 					fallback={
 						<div className={ITEM_DETAIL_LOADING_CLASS} aria-busy="true">
-							<DialogTitle className="sr-only">{props.item.name}</DialogTitle>
-							<ItemDetailLoading item={props.item} onClose={props.onClose} />
+							<DialogTitle className="sr-only">{placeholderItem.name}</DialogTitle>
+							<ItemDetailLoading item={placeholderItem} onClose={onClose} />
 						</div>
 					}
 				>
-					<LoadedItemDetailModal {...props} />
+					{entry.kind === "item" ? (
+						<LoadedItemDetailModal
+							item={entry.item}
+							isOpen
+							previousEntry={previousEntry}
+							onBack={onBack}
+							onClose={onClose}
+						/>
+					) : (
+						<LoadedRecipeBreakdown
+							key={`${entry.recipe.kind}:${entry.recipe.recipeId}`}
+							recipe={entry.recipe}
+							previousEntry={previousEntry}
+							onBack={onBack}
+							onClose={onClose}
+						/>
+					)}
 				</Suspense>
 			</DialogContent>
 		</Dialog>

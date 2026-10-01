@@ -96,6 +96,7 @@ export function ItemDetailAcquisition({
 									evaluation={evaluation}
 									recipeId={offer.id}
 									kind="barter"
+									outputItem={offer.outputItem ?? outputItem}
 									loading={profitLoading}
 									error={profitError}
 									onRetry={onRetryProfit}

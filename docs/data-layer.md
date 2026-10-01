@@ -51,7 +51,9 @@ prices or embedded monetary offers. Usage lists recipes that produce the item an
 separately, recipes that consume it (`usedInBarters`/`usedInCrafts`, including
 tools and craft quest items); rows written before those lists existed read as empty
 until the next catalog update. Runtime detail reads stay bounded and
-hydrate current discovery and trader offers from their owning relations. Flea
+hydrate current discovery and trader offers from their owning relations; acquisition
+reads also attach trader, station and unlock-quest labels for the graph's recipes by
+known ID (a label failure is a nonblocking `presentationError`). Flea
 hydration remains optional. Source freshness is assembled from catalog_status.
 See [operations](operations.md) and the [CLI guide](../db-scripts/README.md).
 

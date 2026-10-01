@@ -1,13 +1,14 @@
-import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { Maximize2 } from "lucide-react";
 import type { RecipeEvaluation } from "@/lib/price-calculation";
 import { formatCompactRoubles } from "@/lib/utils/market-price";
-import { PROFIT_PAGE_HREFS } from "@/lib/entity-routes";
+import { useUIStore } from "@/lib/stores/useUIStore";
+import type { ItemSummary } from "@/types/items";
 
 export function ItemDetailRecipeProfit({
 	evaluation,
 	recipeId,
 	kind,
+	outputItem,
 	loading,
 	error,
 	onRetry,
@@ -16,17 +17,21 @@ export function ItemDetailRecipeProfit({
 	evaluation?: RecipeEvaluation;
 	recipeId: string;
 	kind: "barter" | "craft";
+	/** The recipe's output; its graph backs the breakdown view. */
+	outputItem: ItemSummary;
 	loading: boolean;
 	error: string | null;
 	onRetry?: () => void;
-	/** Show only the breakdown link (no metrics), for recipes whose profit graph is not loaded. */
+	/** Show only the expand action (no metrics), for recipes whose profit graph is not loaded. */
 	linkOnly?: boolean;
 }) {
-	const link = <BreakdownLink href={`${PROFIT_PAGE_HREFS[kind]}?recipe=${encodeURIComponent(recipeId)}`} />;
+	const link = (
+		<ExpandBreakdownButton onClick={() => useUIStore.getState().openRecipeBreakdown({ kind, recipeId, outputItem })} />
+	);
 	if (linkOnly) return <div className="ml-auto shrink-0">{link}</div>;
 
 	return (
-		<div className="flex w-full items-end gap-x-4 sm:ml-auto sm:w-auto sm:justify-end">
+		<div className="flex w-full items-center gap-x-4 sm:ml-auto sm:w-auto sm:justify-end">
 			<div className="flex min-w-0 flex-1 flex-wrap items-end gap-x-4 gap-y-2 sm:flex-none sm:flex-nowrap">
 				{loading ? (
 					<span className="text-[11px] text-muted-foreground">Calculating profit and ingredient routes…</span>
@@ -64,18 +69,18 @@ export function ItemDetailRecipeProfit({
 	);
 }
 
-/** Text link styled like hideout station links; shortened to "Breakdown" below `sm`. */
-function BreakdownLink({ href }: { href: string }) {
+/** Swaps the item dialog to this recipe's profit breakdown (Back returns). */
+function ExpandBreakdownButton({ onClick }: { onClick: () => void }) {
 	return (
-		<Link
-			href={href}
-			aria-label="Profit breakdown"
-			className="inline-flex shrink-0 items-center gap-0.5 rounded-xs text-[11px] font-medium text-muted-foreground transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
+		<button
+			type="button"
+			onClick={onClick}
+			aria-label="Show profit breakdown"
+			title="Profit breakdown"
+			className="flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-highlight/[0.06] hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
 		>
-			<span className="hidden sm:inline">Profit breakdown</span>
-			<span className="sm:hidden">Breakdown</span>
-			<ArrowUpRight size={13} aria-hidden="true" className="shrink-0" />
-		</Link>
+			<Maximize2 size={14} aria-hidden="true" />
+		</button>
 	);
 }
 

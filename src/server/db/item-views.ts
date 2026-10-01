@@ -11,7 +11,7 @@ import { getItemsByIds } from "./domain-data";
 import { getCurrentPriceData, getTraderOffersByItemIds } from "./price-data";
 import { assertCatalogVersion, getCatalogVersion, withStableCatalogRead } from "./postgres-read";
 import { DatabaseDataIntegrityError, DatabaseRecordNotFoundError } from "./errors";
-import { getTraders, getQuests } from "./domain-data";
+import { getTraders, getQuests, getStations } from "./domain-data";
 
 interface ItemViewPayloads {
 	relations: ItemRelationsPayload;
@@ -147,6 +147,49 @@ export async function getItemView<ViewType extends ItemViewType>(
 			taskUnlocksById = usage.taskUnlocksById;
 		}
 	}
+	let acquisitionLabels: Pick<
+		ItemAcquisitionTreeData,
+		"tradersById" | "stationsById" | "taskUnlocksById" | "presentationError"
+	> = {};
+	if (viewType === "acquisition") {
+		const tree = payload as ItemAcquisitionTreeData;
+		const traderIds = [...new Set(tree.barters.map((barter) => barter.traderId))];
+		const stationIds = new Set(tree.crafts.map((craft) => craft.stationId));
+		const unlockIds = [
+			...new Set(
+				[...tree.barters, ...tree.crafts].flatMap((recipe) => (recipe.taskUnlockId ? [recipe.taskUnlockId] : [])),
+			),
+		];
+		try {
+			const db = getPostgresDb();
+			const [traders, stations, quests] = await Promise.all([
+				traderIds.length ? getTraders(mode, db, expectedVersion, traderIds) : Promise.resolve(null),
+				stationIds.size ? getStations(mode, db, expectedVersion) : Promise.resolve(null),
+				unlockIds.length ? getQuests(mode, db, expectedVersion, unlockIds) : Promise.resolve(null),
+			]);
+			acquisitionLabels = {
+				tradersById: Object.fromEntries((traders?.data ?? []).map((trader) => [trader.id, trader])),
+				stationsById: Object.fromEntries(
+					(stations?.data ?? [])
+						.filter((station) => stationIds.has(station.id))
+						.map((station) => [
+							station.id,
+							{
+								id: station.id,
+								name: station.name,
+								normalizedName: station.normalizedName,
+								...(station.imageLink ? { imageLink: station.imageLink } : {}),
+							},
+						]),
+				),
+				taskUnlocksById: Object.fromEntries(
+					(quests?.data ?? []).map((quest) => [quest.id, { id: quest.id, name: quest.name, wikiLink: quest.wikiLink }]),
+				),
+			};
+		} catch {
+			acquisitionLabels = { presentationError: "Recipe source labels are temporarily unavailable" };
+		}
+	}
 	await assertCatalogVersion(mode, expectedVersion);
 	if (viewType === "relations") {
 		const relations = payload as ItemRelationsPayload;
@@ -176,6 +219,7 @@ export async function getItemView<ViewType extends ItemViewType>(
 	}
 	return {
 		...details,
+		...acquisitionLabels,
 		items: hydratedItems,
 		freshness: { ...details.freshness, pricesUpdatedAt: priceResult.updatedAt },
 	} as ItemViewPayloads[ViewType];

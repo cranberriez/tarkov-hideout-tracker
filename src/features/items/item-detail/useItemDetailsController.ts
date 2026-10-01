@@ -419,7 +419,7 @@ export function useItemDetailsController({
 /**
  * Dialog data adapter. The global dialog owns navigation even while this UI loads.
  */
-export function useItemDetailModalController({ item, isOpen, onClose, previousItem, onBack }: ItemDetailModalProps) {
+export function useItemDetailModalController({ item, isOpen, onClose, previousEntry, onBack }: ItemDetailModalProps) {
 	const [debugItemId, setDebugItemId] = useState<string | null>(null);
 	const openedItems = useUIStore((state) => state.itemDetailKnownItems);
 	const knownItems = useMemo(() => [...Object.values(openedItems), ...(item ? [item] : [])], [item, openedItems]);
@@ -427,7 +427,7 @@ export function useItemDetailModalController({ item, isOpen, onClose, previousIt
 	return {
 		...details,
 		showDebug: debugItemId === details.selectedItemId,
-		previousItem,
+		previousEntry,
 		close: onClose,
 		back: onBack,
 		toggleDebug() {

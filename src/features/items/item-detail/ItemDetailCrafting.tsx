@@ -92,6 +92,7 @@ export function ItemDetailCrafting({
 								evaluation={evaluation}
 								recipeId={recipe.id}
 								kind="craft"
+								outputItem={recipe.outputItem ?? outputItem}
 								loading={profitLoading}
 								error={profitError}
 								onRetry={onRetryProfit}
