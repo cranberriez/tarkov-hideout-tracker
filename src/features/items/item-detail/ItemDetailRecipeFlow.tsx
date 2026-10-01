@@ -1,43 +1,39 @@
-import { CornerDownRight, Package } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
 import type { PreviewItem } from "@/components/entities/item-link";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
 
+/**
+ * Inputs followed by `→ output` on one wrapping line inside a single shaded panel; the arrow
+ * and output wrap together. Children should be `flat` chips.
+ */
 export function ItemDetailRecipeFlow({
 	children,
 	outputItem,
 	outputCount,
-	linkOutput = false,
+	outputIsViewedItem,
 }: {
 	children: ReactNode;
 	outputItem: PreviewItem;
 	outputCount: number;
-	/** Name and link the output when it is not the item being viewed. */
-	linkOutput?: boolean;
+	/** The viewed item is tinted (like it is among inputs) and not linked to itself. */
+	outputIsViewedItem: boolean;
 }) {
-	const outputImageLink = outputItem.iconLink ?? outputItem.gridImageLink;
-
 	return (
-		<div className="mt-3">
-			<div className="flex flex-wrap items-center gap-2">{children}</div>
-
-			<div className="mt-1.5 flex min-h-10 w-full items-center gap-2 pl-4">
-				<CornerDownRight size={16} className="ml-0.5 shrink-0 text-foreground/55" aria-hidden="true" />
-				{linkOutput ? (
-					<ItemDetailItemChip item={outputItem} quantityLabel={`${outputCount}`} quantityOverlay />
-				) : (
-					<>
-						<span className="font-mono text-base font-semibold text-foreground">{outputCount} ×</span>
-						<span className="flex h-9 w-9 shrink-0 items-center justify-center">
-							{outputImageLink ? (
-								<img src={outputImageLink} alt="" className="h-9 w-9 object-contain" />
-							) : (
-								<Package size={18} className="text-muted-foreground" />
-							)}
-						</span>
-					</>
-				)}
-			</div>
+		<div className="mt-2.5 flex flex-wrap items-center gap-1 rounded-[4px] bg-highlight/[0.035] p-1">
+			{children}
+			<span className="flex items-center gap-2">
+				<ArrowRight size={16} className="mx-0.5 shrink-0 text-foreground/55" aria-hidden="true" />
+				<ItemDetailItemChip
+					item={outputItem}
+					quantityLabel={`${outputCount}`}
+					quantityOverlay
+					preferShortName
+					flat
+					linked={!outputIsViewedItem}
+					highlighted={outputIsViewedItem}
+				/>
+			</span>
 		</div>
 	);
 }

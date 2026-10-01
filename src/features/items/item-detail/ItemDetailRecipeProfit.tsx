@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import type { RecipeEvaluation } from "@/lib/price-calculation";
 import { formatCompactRoubles } from "@/lib/utils/market-price";
 import { PROFIT_PAGE_HREFS } from "@/lib/entity-routes";
@@ -19,15 +19,16 @@ export function ItemDetailRecipeProfit({
 	loading: boolean;
 	error: string | null;
 	onRetry?: () => void;
-	/** Show only the breakdown link, for recipes whose profit graph is not loaded. */
+	/** Show only the breakdown link (no metrics), for recipes whose profit graph is not loaded. */
 	linkOnly?: boolean;
 }) {
-	const route = PROFIT_PAGE_HREFS[kind];
+	const link = <BreakdownLink href={`${PROFIT_PAGE_HREFS[kind]}?recipe=${encodeURIComponent(recipeId)}`} />;
+	if (linkOnly) return <div className="ml-auto shrink-0">{link}</div>;
 
 	return (
-		<div className="flex w-full flex-wrap items-end gap-x-4 gap-y-2 sm:ml-auto sm:w-auto sm:flex-nowrap sm:justify-end">
-			<div className="flex flex-wrap items-end gap-x-4 gap-y-2 sm:flex-nowrap">
-				{linkOnly ? null : loading ? (
+		<div className="flex w-full items-end gap-x-4 sm:ml-auto sm:w-auto sm:justify-end">
+			<div className="flex min-w-0 flex-1 flex-wrap items-end gap-x-4 gap-y-2 sm:flex-none sm:flex-nowrap">
+				{loading ? (
 					<span className="text-[11px] text-muted-foreground">Calculating profit and ingredient routes…</span>
 				) : error ? (
 					<span className="flex items-center gap-2 text-[11px] text-warning">
@@ -58,15 +59,23 @@ export function ItemDetailRecipeProfit({
 					<span className="text-[11px] text-muted-foreground">Profit data is unavailable.</span>
 				)}
 			</div>
-
-			<Link
-				href={`${route}?recipe=${encodeURIComponent(recipeId)}`}
-				className="inline-flex shrink-0 items-center gap-1.5 rounded border border-highlight/10 bg-highlight/[0.035] px-2.5 py-1.5 text-[11px] font-semibold text-foreground transition-colors hover:border-brand/40 hover:text-brand"
-			>
-				Profit breakdown
-				<ExternalLink size={11} />
-			</Link>
+			{link}
 		</div>
+	);
+}
+
+/** Text link styled like hideout station links; shortened to "Breakdown" below `sm`. */
+function BreakdownLink({ href }: { href: string }) {
+	return (
+		<Link
+			href={href}
+			aria-label="Profit breakdown"
+			className="inline-flex shrink-0 items-center gap-0.5 rounded-xs text-[11px] font-medium text-muted-foreground transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
+		>
+			<span className="hidden sm:inline">Profit breakdown</span>
+			<span className="sm:hidden">Breakdown</span>
+			<ArrowUpRight size={13} aria-hidden="true" className="shrink-0" />
+		</Link>
 	);
 }
 

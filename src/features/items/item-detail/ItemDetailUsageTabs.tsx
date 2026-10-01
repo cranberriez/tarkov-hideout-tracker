@@ -254,7 +254,7 @@ export function ItemDetailUsageTabs({
 								profitLoading={false}
 								profitError={null}
 								outputItem={selectedItem}
-								linkOnlyProfit
+								usedIn
 							/>
 						</RecipeSection>
 					</AcquisitionState>
@@ -293,7 +293,7 @@ export function ItemDetailUsageTabs({
 								profitLoading={false}
 								profitError={null}
 								outputItem={selectedItem}
-								linkOnlyProfit
+								usedIn
 							/>
 						</RecipeSection>
 					</AcquisitionState>

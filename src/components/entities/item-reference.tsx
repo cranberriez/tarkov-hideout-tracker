@@ -20,6 +20,7 @@ export function ItemReference({
 	linked = true,
 	variant = "chip",
 	thumbnailSize,
+	preferShortName = false,
 	className,
 }: {
 	item: PreviewItem;
@@ -32,9 +33,12 @@ export function ItemReference({
 	linked?: boolean;
 	variant?: "chip" | "row";
 	thumbnailSize?: "sm" | "md";
+	/** Chip only: show the short name (full name on hover) for dense layouts such as recipes. */
+	preferShortName?: boolean;
 	className?: string;
 }) {
 	const row = variant === "row";
+	const chipLabel = (preferShortName && item.shortName) || item.name;
 	const content = row ? (
 		<>
 			<ItemThumbnail item={item} size={thumbnailSize ?? "sm"} className="border-r border-highlight/10 bg-highlight/5" />
@@ -51,7 +55,12 @@ export function ItemReference({
 			</ItemThumbnail>
 			<span className="flex min-w-0 flex-1 flex-col">
 				<span className="flex min-w-0 items-center gap-2">
-					<span className="min-w-0 flex-1 truncate text-foreground/80">{item.name}</span>
+					<span
+						className="min-w-0 flex-1 truncate text-foreground/80"
+						title={chipLabel === item.name ? undefined : item.name}
+					>
+						{chipLabel}
+					</span>
 					{quantityLabel && !quantityOverlay && (
 						<span className="shrink-0 font-mono text-xs font-semibold text-foreground">{quantityLabel}</span>
 					)}

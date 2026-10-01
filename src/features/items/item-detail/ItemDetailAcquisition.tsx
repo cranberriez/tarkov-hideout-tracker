@@ -22,8 +22,8 @@ interface ItemDetailAcquisitionProps {
 	profitError: string | null;
 	onRetryProfit?: () => void;
 	outputItem: ItemSummary;
-	/** Replace profit metrics with only the breakdown link. */
-	linkOnlyProfit?: boolean;
+	/** Rows consume the viewed item (`outputItem`): link-only profit and the viewed item highlighted. */
+	usedIn?: boolean;
 }
 
 export function ItemDetailAcquisition({
@@ -37,7 +37,7 @@ export function ItemDetailAcquisition({
 	profitError,
 	onRetryProfit,
 	outputItem,
-	linkOnlyProfit = false,
+	usedIn = false,
 }: ItemDetailAcquisitionProps) {
 	// Availability ordering depends on the profile; keep data order until it loads.
 	const sorted = !profileReady
@@ -61,32 +61,32 @@ export function ItemDetailAcquisition({
 						<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
 							<div className="flex min-w-48 flex-1 items-center gap-2.5">
 								{offer.trader.imageLink ? (
-									<img src={offer.trader.imageLink} alt="" className="h-8 w-8 rounded-full object-cover" />
+									<img src={offer.trader.imageLink} alt="" className="h-7 w-7 rounded-full object-cover" />
 								) : (
-									<span className="flex h-8 w-8 items-center justify-center rounded-full bg-highlight/5">
+									<span className="flex h-7 w-7 items-center justify-center rounded-full bg-highlight/5">
 										<ShoppingCart size={14} />
 									</span>
 								)}
-								<div className="min-w-0">
-									<div className="flex flex-wrap items-center gap-2">
-										<span className="text-sm font-medium text-foreground">{offer.trader.name}</span>
+								<div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+									<span className="text-sm font-medium text-foreground">{offer.trader.name}</span>
+									<span className="text-[11px] text-muted-foreground">
+										LL{offer.minTraderLevel}
+										{offer.buyLimit ? ` · Limit ${offer.buyLimit}` : ""}
+									</span>
+									{!usedIn && (
 										<span className="rounded bg-highlight/5 px-1.5 py-0.5 text-[10px] text-muted-foreground">
 											{offer.kind === "buy" ? "Buy" : "Barter"}
 										</span>
-										{profileReady && <AvailabilityBadge available={available} />}
-										{profileReady && !available && (
-											<LockedReasons
-												offer={offer}
-												loyaltyMet={loyaltyMet}
-												questMet={questMet}
-												currentLoyalty={currentLoyalty}
-											/>
-										)}
-									</div>
-									<div className="mt-0.5 text-[11px] text-muted-foreground">
-										LL{offer.minTraderLevel}
-										{offer.buyLimit ? ` · Limit ${offer.buyLimit}` : ""}
-									</div>
+									)}
+									{profileReady && <AvailabilityBadge available={available} />}
+									{profileReady && !available && (
+										<LockedReasons
+											offer={offer}
+											loyaltyMet={loyaltyMet}
+											questMet={questMet}
+											currentLoyalty={currentLoyalty}
+										/>
+									)}
 								</div>
 							</div>
 							{offer.kind === "buy" ? (
@@ -99,7 +99,7 @@ export function ItemDetailAcquisition({
 									loading={profitLoading}
 									error={profitError}
 									onRetry={onRetryProfit}
-									linkOnly={linkOnlyProfit}
+									linkOnly={usedIn}
 								/>
 							)}
 						</div>
@@ -107,13 +107,14 @@ export function ItemDetailAcquisition({
 						{offer.kind === "barter" && (
 							<ItemDetailRecipeFlow
 								outputItem={offer.outputItem ?? outputItem}
-								linkOutput={Boolean(offer.outputItem)}
+								outputIsViewedItem={!offer.outputItem}
 								outputCount={offer.offeredCount}
 							>
 								{offer.requiredItems.map((entry) => (
 									<CostItem
 										key={entry.item.id}
 										entry={entry}
+										highlighted={usedIn && entry.item.id === outputItem.id}
 										manualBuy={overrides[entry.item.id]?.buy}
 										plan={evaluation?.requiredItems.find((candidate) => candidate.itemId === entry.item.id)}
 									/>
@@ -138,7 +139,17 @@ function isOfferAvailable(
 	);
 }
 
-function CostItem({ entry, manualBuy, plan }: { entry: ItemAmount; manualBuy?: number; plan?: AcquisitionPlan }) {
+function CostItem({
+	entry,
+	highlighted,
+	manualBuy,
+	plan,
+}: {
+	entry: ItemAmount;
+	highlighted: boolean;
+	manualBuy?: number;
+	plan?: AcquisitionPlan;
+}) {
 	const currencySymbol =
 		entry.item.normalizedName === "roubles"
 			? "₽"
@@ -150,6 +161,9 @@ function CostItem({ entry, manualBuy, plan }: { entry: ItemAmount; manualBuy?: n
 	return (
 		<ItemDetailItemChip
 			item={entry.item}
+			highlighted={highlighted}
+			preferShortName
+			flat
 			quantityLabel={currencySymbol ? `${currencySymbol}${entry.count.toLocaleString()}` : `${entry.count}`}
 			quantityOverlay={!currencySymbol}
 			secondary={
