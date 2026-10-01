@@ -9,6 +9,7 @@ import {
 	History,
 	List,
 	Map,
+	Menu,
 	SlidersHorizontal,
 	UserRound,
 	type LucideIcon,
@@ -66,7 +67,7 @@ export function QuestMobileMenu() {
 	const currentFilter = mode === "details" ? FILTERS.find((filter) => filter.section === openFilter) : undefined;
 	const currentViewId: MenuView = mode === "details" ? (listMode === "history" ? "history" : "log") : mode;
 	const currentView = VIEWS.find((view) => view.view === currentViewId) ?? VIEWS[0];
-	const pill = currentFilter ?? currentView;
+	const currentLabel = (currentFilter ?? currentView).label;
 
 	// On mobile the list pane only shows on the index route in Details mode.
 	const showListPane = (nextListMode: "quests" | "history", filter: QuestFilterSection) => {
@@ -87,11 +88,11 @@ export function QuestMobileMenu() {
 			<DropdownMenuTrigger asChild>
 				<button
 					type="button"
-					aria-label={`Quest menu, ${pill.label}${anyFilterModified ? ", filters changed" : ""}`}
+					aria-label={`Quest menu, showing ${currentLabel}${anyFilterModified ? ", filters changed" : ""}`}
 					className="fixed bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] left-1/2 z-40 flex h-11 -translate-x-1/2 items-center gap-2 rounded-full border border-highlight/15 bg-[var(--card-bg)]/95 px-4 text-xs font-semibold text-foreground shadow-2xl backdrop-blur-md lg:hidden"
 				>
-					<pill.icon size={15} className="text-brand" />
-					{pill.label}
+					<Menu size={15} className="text-brand" />
+					Menu
 					{anyFilterModified && <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-warning" />}
 					<ChevronUp size={14} className="text-subtle-foreground" />
 				</button>
