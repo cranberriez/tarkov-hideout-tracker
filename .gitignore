@@ -24,6 +24,7 @@
 /db-scripts/*.db-shm
 /db-scripts/*.db-wal
 /discovery.json
+/trader-reset-log.json*
 
 # misc
 .DS_Store

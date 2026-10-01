@@ -21,6 +21,7 @@
 		"pull-map-overlays": "node scripts/pull-map-overlays.mjs",
 		"quest-series-candidates": "node scripts/generate-quest-series-candidates.mjs",
 		"quest-data-compare": "node scripts/compare-quest-data.mjs",
+		"trader-resets": "node scripts/track-trader-resets.mjs",
 		"db:update": "node db-scripts/update.mjs",
 		"db:migrate": "node db-scripts/migrate.mjs",
 		"db:discovery:export": "node db-scripts/discovery-export.mjs",
