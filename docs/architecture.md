@@ -16,6 +16,7 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 | `/items/[itemId]`                                  | [Item page](<../src/app/(data)/items/[itemId]/page.tsx>): server-rendered item details; not linked yet (items open the dialog)                                                                                                                        |
 | `/hideout/stations/[stationId]`                    | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): level overview and level changes, prerequisites, dependents, remaining items, streamed crafts with profit, and Bitcoin Farm/Generator power panels                         |
 | `/items/kappa-checklist`                           | [Collector checklist](<../src/app/(data)/items/kappa-checklist/page.tsx>); see [quests](quests.md)                                                                                                                                                    |
+| `/items/inventory`                                 | [Inventory](<../src/app/(data)/items/inventory/page.tsx>): owned non-FiR/FiR balances with instant edits; see below                                                                                                                                   |
 | `/items/barter-profits`, `/items/crafting-profits` | Shared [ProfitPage](../src/features/profit-pages/ProfitPage.tsx); see [profits](profits.md)                                                                                                                                                           |
 | `/hideout/craft-planner`                           | Station craft recommendations using the shared profit query; see [profits](profits.md)                                                                                                                                                                |
 | `/settings`                                        | [Player progression backups, import review, legacy tools and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md)                                                                                                  |
@@ -30,7 +31,7 @@ not-found states; failed reads report errors instead of 404s. Pages render publi
 identity from server data; player progress hydrates afterwards. Titles use the root
 `%s · Tarkov Hideout Tracker` template.
 
-Inventory, Keys, and Station Goals routes are placeholders; Bitcoin Farm
+Keys and Station Goals routes are placeholders; Bitcoin Farm
 calculations live on its station page (see [profits](profits.md)). Check
 their [route implementations](<../src/app/(data)/>) before extending them.
 [Navbar](../src/components/core/Navbar.tsx) owns navigation. The desktop Hideout
@@ -207,6 +208,14 @@ against the same manifest with a 10-item limit.
 FiR/non-FiR additions locally, then commits inventory additions through store
 actions. [useUIStore](../src/lib/stores/useUIStore.ts) coordinates its shared open
 state and pending items.
+
+[Inventory](../src/features/items/inventory/InventoryClientPage.tsx) is client-only:
+it lists every nonzero `itemCounts` balance (negative balances included and marked)
+using names and icons from the search manifest, so it adds no server query. IDs
+missing from the manifest render as explicit unknown rows. Edits apply immediately
+through `addItemCounts` deltas; steppers stop at zero. Rows edited to zero, and the
+order of the Count sort, are page-local so rows do not vanish or move while being
+edited; both reset on the next visit or mode change.
 
 The item-detail dialog is the default destination for every item click.
 [GlobalItemDetailModal](../src/features/items/item-detail/GlobalItemDetailModal.tsx)

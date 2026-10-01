@@ -1,5 +1,5 @@
-import { NavPlaceholderPage } from "@/components/core/NavPlaceholderPage";
+import { InventoryClientPage } from "@/features/items/inventory/InventoryClientPage";
 
 export default function InventoryPage() {
-	return <NavPlaceholderPage title="Inventory" />;
+	return <InventoryClientPage />;
 }

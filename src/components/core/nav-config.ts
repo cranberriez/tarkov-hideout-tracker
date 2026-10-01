@@ -35,7 +35,7 @@ export const navMenus: NavMenu[] = [
 		href: "/items",
 		icon: Boxes,
 		children: [
-			{ name: "Inventory", href: "/items/inventory", icon: PackageOpen, disabled: true },
+			{ name: "Inventory", href: "/items/inventory", icon: PackageOpen },
 			{
 				name: "Kappa Checklist",
 				href: "/items/kappa-checklist",
