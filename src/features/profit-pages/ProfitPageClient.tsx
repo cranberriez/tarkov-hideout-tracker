@@ -12,6 +12,7 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ProfitPageData } from "@/types/contracts";
 import type { BarterRecord, CraftRecord } from "@/types/recipes";
 import type { Trader } from "@/types/traders";
+import { BackToTopChip } from "./components/BackToTopChip";
 import { ProfitPageControls } from "./components/ProfitPageControls";
 import { ProfitPageHeader } from "./components/ProfitPageHeader";
 import { ProfitPricingContext } from "./components/ProfitPricingContext";
@@ -314,6 +315,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 					)}
 				</div>
 				<TraderLevelsModal open={traderLevelsOpen} onOpenChange={setTraderLevelsOpen} traders={data.traders} />
+				<BackToTopChip />
 				<ProfitTable
 					kind={kind}
 					evaluations={visibleEvaluations}

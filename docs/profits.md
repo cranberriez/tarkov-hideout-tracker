@@ -263,7 +263,9 @@ recipe-chain toggle and per-ingredient recipe buttons are desktop-only.
 Every collapsed card block has a fixed height so `estimateProfitRowHeight`
 matches the rendered card and window virtualization does not jump while
 scrolling. The Recipe cell has no border accent in cards; output lock
-reasons instead give the entire card an amber border.
+reasons instead give the entire card an amber border. On every width, a small
+**Top** chip floats at the bottom center once the page scrolls past one
+viewport and returns to the top, without smooth scrolling under reduced motion.
 Row actions put the recipe-chain toggle before the pin, so the pin keeps its
 position. On wide screens the toggle expands every barter/craft ingredient in
 place: its nested ingredients render directly beneath it, indented per depth,
