@@ -1,14 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight, Maximize2 } from "lucide-react";
 import { QuestLink } from "@/components/entities/quest-link";
 import { Badge } from "@/components/ui/badge";
 import { buttonClassName } from "@/components/ui/button";
 import type { RecipeEvaluation } from "@/lib/price-calculation";
 import { cn } from "@/lib/utils";
-import { profitRecipeHref } from "@/lib/entity-routes";
+import { useUIStore } from "@/lib/stores/useUIStore";
 import { formatDuration } from "@/lib/utils/format-time";
 import { formatCompactRoubles } from "@/lib/utils/market-price";
 import type { ProfitPageData } from "@/types/contracts";
@@ -123,14 +122,25 @@ export function StationCraftRow({
 					</Metric>
 					{profitMetric("Profit", evaluation?.profit, status, unavailableReason)}
 					{profitMetric("Per hour", evaluation?.profitPerHour, status, unavailableReason)}
-					<Link
-						href={profitRecipeHref("craft", craft.id)}
+					<button
+						type="button"
+						onClick={() =>
+							useUIStore.getState().openRecipeBreakdown({
+								kind: "craft",
+								recipeId: craft.id,
+								outputItem: itemsById[craft.productItemId] ?? {
+									id: craft.productItemId,
+									name: "Unknown item",
+									normalizedName: craft.productItemId,
+								},
+							})
+						}
 						className={buttonClassName({ variant: "ghost", size: "sm", iconOnly: true })}
-						aria-label="Open in Crafting Profits"
-						title="Open in Crafting Profits"
+						aria-label="Show profit breakdown"
+						title="Profit breakdown"
 					>
-						<ExternalLink size={14} />
-					</Link>
+						<Maximize2 size={14} aria-hidden="true" />
+					</button>
 				</div>
 			</div>
 		</li>

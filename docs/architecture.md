@@ -226,8 +226,8 @@ session token and position, preserves the framework's state, and never stores
 player progress or item payloads. Reloaded/stale tokens do not reopen items.
 [The navigation model](../src/features/items/item-detail/item-detail-navigation.ts)
 tests traversal, close/reopen races, route changes, mode changes and forward branches.
-Recipe rows in the dialog's Traders and Crafting tabs open a profit breakdown with
-`openRecipeBreakdown`. The breakdown is its own history entry that swaps the dialog's
+Recipe rows in the dialog's Traders and Crafting tabs, and station craft rows, open a
+profit breakdown with `openRecipeBreakdown`. The breakdown is its own history entry that swaps the dialog's
 content (dialogs are never stacked), so Back returns to the item; nested recipes in
 its chain push further entries. [The breakdown](../src/features/items/item-detail/RecipeBreakdownModal.tsx)
 evaluates the recipe against its output item's acquisition graph with the profit
