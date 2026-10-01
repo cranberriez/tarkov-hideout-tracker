@@ -6,6 +6,7 @@ import type { QuestBranchLine, QuestBranchNode } from "./quest-branch-graph";
 import type { QuestGraphEdgeLayout, QuestGraphNodeLayout } from "./quest-graph-layout";
 import { QUEST_GRAPH_MAX_ZOOM, QUEST_GRAPH_MIN_ZOOM, QUEST_GRAPH_ZOOM_STEP } from "./useQuestGraphViewport";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
+import { QuestMobileMenuSpacer } from "./QuestMobileMenu";
 
 type QuestStatusMap = ReturnType<typeof useQuestWorkspace>["statusByQuestId"];
 
@@ -71,6 +72,7 @@ export function QuestVisualizerLineIndex({ onSelect }: { onSelect: (line: QuestB
 					</section>
 				)}
 			</div>
+			<QuestMobileMenuSpacer />
 		</div>
 	);
 }

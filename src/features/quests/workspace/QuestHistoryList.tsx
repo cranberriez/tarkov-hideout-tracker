@@ -1,6 +1,7 @@
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import { QuestListItem } from "./QuestListItem";
+import { QuestMobileMenuSpacer } from "./QuestMobileMenu";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 export function QuestHistoryList() {
@@ -42,6 +43,7 @@ export function QuestHistoryList() {
 					Quest completion changes will appear here.
 				</div>
 			)}
+			<QuestMobileMenuSpacer />
 		</div>
 	);
 }

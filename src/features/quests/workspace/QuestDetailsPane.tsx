@@ -20,6 +20,7 @@ import { QuestObjectives } from "./details/QuestObjectives";
 import { QuestFailureConditions, QuestMultipleChoiceBanner, QuestUnlocks } from "./details/QuestRelations";
 import { QuestRequirements } from "./details/QuestRequirements";
 import { hasQuestRewards, QuestRewards } from "./details/QuestRewards";
+import { QuestMobileMenuSpacer } from "./QuestMobileMenu";
 
 /** Workspace adapter: store/action wiring around the reusable quest detail sections. */
 export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
@@ -202,6 +203,7 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 						</section>
 						<QuestDataNote quest={quest} />
 					</div>
+					<QuestMobileMenuSpacer />
 				</div>
 
 				<QuestObjectiveMap

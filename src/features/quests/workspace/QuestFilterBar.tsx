@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, CircleDot, Compass, Map, Search, Settings, SlidersHorizontal, UserRound, X } from "lucide-react";
+import { Check, CircleDot, Settings, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FilterGroupTitle, FilterOptionRow, FilterSwitchRow } from "@/components/ui/filter-bar";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -8,6 +8,7 @@ import { GAME_MODE_CONFIG } from "@/lib/game-mode";
 import { hasLoyaltyControl, orderTraders, TraderLoyaltyControl } from "@/components/entities/trader-loyalty";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { useQuestWorkspace, type QuestFilterSection } from "./QuestWorkspaceContext";
+import { QuestMobileMenuSpacer } from "./QuestMobileMenu";
 import { getQuestObjectiveCategories, OBJECTIVE_CATEGORY_LABELS, STATUS_OPTIONS } from "./quest-workspace-utils";
 
 function FilterTrigger({
@@ -98,154 +99,6 @@ export function QuestFilterBar() {
 							: "Customise view"
 				}
 			/>
-		</div>
-	);
-}
-
-function CompactNavButton({
-	label,
-	active = false,
-	modified = false,
-	onClick,
-	children,
-}: {
-	label: string;
-	active?: boolean;
-	modified?: boolean;
-	onClick: () => void;
-	children: React.ReactNode;
-}) {
-	return (
-		<button
-			type="button"
-			aria-label={label}
-			aria-pressed={active}
-			title={label}
-			onClick={onClick}
-			className={cn(
-				"relative flex h-full min-w-0 flex-1 cursor-pointer items-center justify-center text-subtle-foreground transition-colors hover:bg-highlight/7 hover:text-foreground focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand",
-				active && "bg-highlight/7 text-brand",
-			)}
-		>
-			{children}
-			{modified && (
-				<span
-					aria-hidden="true"
-					className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-warning shadow-[0_0_5px_color-mix(in_oklab,_var(--warning)_55%,_transparent)]"
-				/>
-			)}
-		</button>
-	);
-}
-
-export function QuestMobileToolbar({
-	compactSearchOpen,
-	onToggleCompactSearch,
-}: {
-	compactSearchOpen: boolean;
-	onToggleCompactSearch: () => void;
-}) {
-	const {
-		selectedTraderIds,
-		selectedMapKeys,
-		selectedStatuses,
-		selectedObjectiveCategories,
-		filterByTraderRequirements,
-		showHiddenQuests,
-		groupByTrader,
-		groupByLoyaltyLevel,
-		sortMode,
-		openFilter,
-		setOpenFilter,
-		setMode,
-	} = useQuestWorkspace();
-	const traderModified = selectedTraderIds.size > 0;
-	const mapModified = selectedMapKeys.size > 0;
-	const statusModified = selectedStatuses.size !== 1 || !selectedStatuses.has("active");
-	const filtersModified =
-		!filterByTraderRequirements ||
-		showHiddenQuests ||
-		!groupByTrader ||
-		!groupByLoyaltyLevel ||
-		sortMode !== "unlockOrder" ||
-		selectedObjectiveCategories.size > 0;
-	const openSection = (section: Exclude<QuestFilterSection, null>) => {
-		if (compactSearchOpen) onToggleCompactSearch();
-		setOpenFilter(openFilter === section ? null : section);
-	};
-
-	return (
-		<nav
-			aria-label="Quest tools"
-			className="flex h-12 w-full shrink-0 items-stretch divide-x divide-highlight/8 border-t border-highlight/10 bg-[var(--card-bg)] lg:hidden"
-		>
-			<CompactNavButton
-				label="Trader filters and loyalty levels"
-				active={openFilter === "traders"}
-				modified={traderModified}
-				onClick={() => openSection("traders")}
-			>
-				<UserRound className="h-[42%] w-[42%]" aria-hidden="true" />
-			</CompactNavButton>
-			<CompactNavButton
-				label="Map filters"
-				active={openFilter === "maps"}
-				modified={mapModified}
-				onClick={() => openSection("maps")}
-			>
-				<Map className="h-[42%] w-[42%]" aria-hidden="true" />
-			</CompactNavButton>
-			<CompactNavButton
-				label="Quest status filters"
-				active={openFilter === "status"}
-				modified={statusModified}
-				onClick={() => openSection("status")}
-			>
-				<CircleDot className="h-[42%] w-[42%]" aria-hidden="true" />
-			</CompactNavButton>
-			<CompactNavButton
-				label="Quest filters and sorting"
-				active={openFilter === "filters"}
-				modified={filtersModified}
-				onClick={() => openSection("filters")}
-			>
-				<SlidersHorizontal className="h-[42%] w-[42%]" aria-hidden="true" />
-			</CompactNavButton>
-			<CompactNavButton label="Search quests" active={compactSearchOpen} onClick={onToggleCompactSearch}>
-				<Search className="h-[42%] w-[42%]" aria-hidden="true" />
-			</CompactNavButton>
-			<CompactNavButton label="Open raid planner" onClick={() => setMode("planner")}>
-				<Compass className="h-[42%] w-[42%]" aria-hidden="true" />
-			</CompactNavButton>
-		</nav>
-	);
-}
-
-export function QuestCompactSearchBar({ onClose }: { onClose: () => void }) {
-	const { searchQuery, setSearchQuery, setOpenFilter } = useQuestWorkspace();
-
-	return (
-		<div className="flex h-11 w-full shrink-0 items-center gap-3 border-t border-highlight/10 bg-[var(--card-bg)] px-3 lg:hidden">
-			<Search size={16} className="shrink-0 text-subtle-foreground" />
-			<input
-				autoFocus
-				value={searchQuery}
-				onChange={(event) => setSearchQuery(event.target.value)}
-				onFocus={() => setOpenFilter(null)}
-				placeholder="Search quests, traders, objectives…"
-				className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-subtle-foreground"
-			/>
-			<button
-				type="button"
-				aria-label="Close quest search"
-				onClick={() => {
-					onClose();
-					setSearchQuery("");
-				}}
-				className="flex h-8 w-8 items-center justify-center text-subtle-foreground transition-colors hover:text-foreground"
-			>
-				<X size={16} />
-			</button>
 		</div>
 	);
 }
@@ -610,6 +463,7 @@ export function QuestFilterSelectionPane({ section }: { section: Exclude<QuestFi
 					</>
 				)}
 			</div>
+			<QuestMobileMenuSpacer />
 		</div>
 	);
 }

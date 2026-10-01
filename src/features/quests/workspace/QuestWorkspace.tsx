@@ -8,9 +8,10 @@ import type { FullQuest } from "@/types/quests";
 import type { MapViewTransform } from "@/features/maps/map-view-transform";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
-import { QuestCompactSearchBar, QuestFilterBar, QuestMobileToolbar, QuestTraderBar } from "./QuestFilterBar";
+import { QuestFilterBar, QuestTraderBar } from "./QuestFilterBar";
 import { QuestListPane } from "./QuestListPane";
 import { QuestActionBar } from "./QuestActionBar";
+import { QuestMobileMenu } from "./QuestMobileMenu";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 function PaneLoading() {
@@ -24,6 +25,10 @@ function PaneLoading() {
 const RaidPlannerPane = dynamic(() => import("./RaidPlannerPane").then((module) => module.RaidPlannerPane), {
 	loading: PaneLoading,
 });
+const QuestTraderBoardPane = dynamic(
+	() => import("./QuestTraderBoardPane").then((module) => module.QuestTraderBoardPane),
+	{ loading: PaneLoading },
+);
 const QuestVisualizerPane = dynamic(
 	() => import("./QuestVisualizerPane").then((module) => module.QuestVisualizerPane),
 	{ loading: PaneLoading },
@@ -33,7 +38,6 @@ const QuestVisualizerPane = dynamic(
 export function QuestWorkspace({ quests, children }: { quests: FullQuest[]; children: ReactNode }) {
 	const { mode, setMode, plannerMapKey, selectedQuestId, indexHref, markInternalSelection, consumeInternalSelection } =
 		useQuestWorkspace();
-	const [compactSearchOpen, setCompactSearchOpen] = useState(false);
 	const [plannerViews, setPlannerViews] = useState(() => new Map<string, MapViewTransform>());
 	const rememberPlannerView = useCallback((mapKey: string, view: MapViewTransform | null) => {
 		setPlannerViews((current) => {
@@ -85,23 +89,22 @@ export function QuestWorkspace({ quests, children }: { quests: FullQuest[]; chil
 		>
 			<div
 				data-quest-workspace-grid
-				className="grid min-h-0 flex-1 grid-cols-1 grid-rows-1 overflow-hidden bg-[var(--background)] lg:grid-cols-[clamp(380px,34vw,560px)_minmax(0,1fr)]"
+				className={cn(
+					"grid min-h-0 flex-1 grid-cols-1 grid-rows-1 overflow-hidden bg-[var(--background)]",
+					mode !== "board" && "lg:grid-cols-[clamp(380px,34vw,560px)_minmax(0,1fr)]",
+				)}
 			>
 				<section
 					className={cn(
-						"min-h-0 min-w-0 flex-col border-highlight/10 lg:flex lg:border-r",
+						"min-h-0 min-w-0 flex-col border-highlight/10 lg:border-r",
 						mode === "details" && !selectedQuestId ? "flex" : "hidden",
+						mode !== "board" && "lg:flex",
 					)}
 					data-quest-list-pane
 				>
 					<QuestFilterBar />
 					<QuestTraderBar />
 					<QuestListPane />
-					{compactSearchOpen && <QuestCompactSearchBar onClose={() => setCompactSearchOpen(false)} />}
-					<QuestMobileToolbar
-						compactSearchOpen={compactSearchOpen}
-						onToggleCompactSearch={() => setCompactSearchOpen((open) => !open)}
-					/>
 				</section>
 				<section
 					className={cn("min-h-0 min-w-0 flex-col lg:flex", mode !== "details" || selectedQuestId ? "flex" : "hidden")}
@@ -123,6 +126,8 @@ export function QuestWorkspace({ quests, children }: { quests: FullQuest[]; chil
 							rememberedView={plannerMapKey ? (plannerViews.get(plannerMapKey) ?? null) : null}
 							onViewChange={rememberPlannerView}
 						/>
+					) : mode === "board" ? (
+						<QuestTraderBoardPane />
 					) : mode === "visualizer" ? (
 						<QuestVisualizerPane />
 					) : (
@@ -130,6 +135,7 @@ export function QuestWorkspace({ quests, children }: { quests: FullQuest[]; chil
 					)}
 				</section>
 			</div>
+			<QuestMobileMenu />
 		</main>
 	);
 }

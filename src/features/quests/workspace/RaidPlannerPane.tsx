@@ -13,6 +13,7 @@ import { mapOverlaysQueryOptions } from "@/lib/query/maps";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { useQuestActions } from "../QuestActionsContext";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
+import { QuestMobileMenuSpacer } from "./QuestMobileMenu";
 import { buildRaidPlannerMarkers } from "./raid-planner-markers";
 import { OBJECTIVE_CATEGORY_SHORT_LABELS } from "./quest-workspace-utils";
 import {
@@ -129,6 +130,7 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
 							);
 						})}
 					</div>
+					<QuestMobileMenuSpacer />
 				</div>
 			</div>
 		);

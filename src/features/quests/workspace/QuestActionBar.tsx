@@ -1,6 +1,6 @@
 "use client";
 
-import { Compass, GitBranch, History, PanelTopClose, PanelTopOpen, Search, Upload, X } from "lucide-react";
+import { Columns3, Compass, GitBranch, History, PanelTopClose, PanelTopOpen, Search, Upload, X } from "lucide-react";
 import { useState } from "react";
 import type { FullQuest } from "@/types/quests";
 import { useUIStore } from "@/lib/stores/useUIStore";
@@ -61,6 +61,14 @@ export function QuestActionBar({ quests }: { quests: FullQuest[] }) {
 				{!searchOpen && <div className="flex-1" />}
 				<Button onClick={() => setImportOpen(true)}>
 					<Upload size={14} /> <span className="hidden sm:inline">Upload</span>
+				</Button>
+				<Button
+					selected={mode === "board"}
+					aria-pressed={mode === "board"}
+					onClick={() => setMode(mode === "board" ? "details" : "board")}
+					className={mode === "board" ? undefined : "text-foreground"}
+				>
+					<Columns3 size={15} /> Trader board
 				</Button>
 				<Button
 					selected={mode === "visualizer"}

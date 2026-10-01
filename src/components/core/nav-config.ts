@@ -1,7 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import {
 	Boxes,
+	Columns3,
+	Compass,
 	Factory,
+	GitBranch,
 	Goal,
 	HandCoins,
 	House,
@@ -11,6 +14,7 @@ import {
 	ScrollText,
 	Wrench,
 } from "lucide-react";
+import { questViewHref } from "@/lib/entity-routes";
 
 export interface NavItem {
 	name: string;
@@ -69,6 +73,11 @@ export const navMenus: NavMenu[] = [
 		name: "Quests",
 		href: "/quests",
 		icon: ScrollText,
+		children: [
+			{ name: "Trader Board", href: questViewHref("board"), icon: Columns3 },
+			{ name: "Visualizer", href: questViewHref("visualizer"), icon: GitBranch },
+			{ name: "Raid Planner", href: questViewHref("planner"), icon: Compass },
+		],
 	},
 ];
 

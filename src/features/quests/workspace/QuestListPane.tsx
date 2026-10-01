@@ -5,6 +5,7 @@ import { GroupedQuestRows } from "./GroupedQuestRows";
 import { buildSortedQuestListModel } from "./quest-list-model";
 import { QuestFilterSelectionPane } from "./QuestFilterBar";
 import { QuestHistoryList } from "./QuestHistoryList";
+import { QuestMobileMenuSpacer } from "./QuestMobileMenu";
 import { useQuestGroupCollapse } from "./useQuestGroupCollapse";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
@@ -66,6 +67,7 @@ export function QuestListPane() {
 					No quests match these filters.
 				</div>
 			)}
+			<QuestMobileMenuSpacer />
 		</div>
 	);
 }

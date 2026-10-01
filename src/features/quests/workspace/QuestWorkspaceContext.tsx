@@ -1,9 +1,15 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { decodeRouteParam } from "@/lib/utils/route-param";
-import { QUESTS_HREF, questHref as buildQuestHref } from "../quest-routes";
+import {
+	QUEST_VIEW_PARAM,
+	QUEST_VIEWS,
+	QUESTS_HREF,
+	questHref as buildQuestHref,
+	type QuestView,
+} from "../quest-routes";
 import { useShallow } from "zustand/react/shallow";
 import type { FullQuest } from "@/types/quests";
 import type { QuestDataIndex } from "../quest-data-index";
@@ -19,7 +25,7 @@ import { createQuestMarkerStyles, type QuestMarkerStyle } from "./raid-planner-m
 import { buildQuestBranchLines, type QuestBranchLine } from "./quest-branch-graph";
 import { selectWorkspaceQuests } from "./quest-workspace-selector";
 
-export type QuestWorkspaceMode = "details" | "visualizer" | "planner";
+export type QuestWorkspaceMode = "details" | QuestView;
 export type QuestListMode = "quests" | "history";
 export type QuestFilterSection = "traders" | "maps" | "status" | "filters" | null;
 
@@ -112,6 +118,7 @@ export function QuestWorkspaceProvider({
 	children: ReactNode;
 }) {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const params = useParams<{ questId?: string }>();
 	const selectedQuestId = params?.questId ? decodeRouteParam(params.questId) : null;
 	const internalSelection = useRef<{ questId: string | null } | null>(null);
@@ -313,6 +320,30 @@ export function QuestWorkspaceProvider({
 		setVisualizerFocusQuestId(null);
 		setMode("visualizer");
 	};
+
+	// Nav links open a panel via `?view=`; mode stays session state, so the parameter is applied once and removed.
+	const requestedView = searchParams.get(QUEST_VIEW_PARAM);
+	const [appliedView, setAppliedView] = useState<string | null>(null);
+	if (requestedView !== appliedView) {
+		setAppliedView(requestedView);
+		const view = QUEST_VIEWS.find((candidate) => candidate === requestedView);
+		if (view === "visualizer") {
+			setVisualizerLineId(null);
+			setVisualizerFocusQuestId(null);
+		}
+		if (view) setMode(view);
+	}
+	useEffect(() => {
+		if (requestedView === null) return;
+		// Native replaceState avoids a server round trip that could land after a later navigation. Next patches it
+		// to sync the router in its root effect, which runs after this one on a full page load, so defer a task.
+		const timeout = window.setTimeout(() => {
+			const url = new URL(window.location.href);
+			url.searchParams.delete(QUEST_VIEW_PARAM);
+			window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+		});
+		return () => window.clearTimeout(timeout);
+	}, [requestedView]);
 
 	return (
 		<QuestWorkspaceContext.Provider

@@ -1,4 +1,5 @@
-export { QUESTS_HREF, questHref } from "../../lib/entity-routes";
+export { QUEST_VIEW_PARAM, QUEST_VIEWS, QUESTS_HREF, questHref, questViewHref } from "../../lib/entity-routes";
+export type { QuestView } from "../../lib/entity-routes";
 
 /** Legacy `/quests?quest=<id>` links; translated by the quests index route. */
 export const LEGACY_QUEST_QUERY_PARAM = "quest";

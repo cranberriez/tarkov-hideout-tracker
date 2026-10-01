@@ -53,8 +53,15 @@ selection source: list rows are real links, so search, filters, group collapse, 
 list scroll persist across quest navigation, and Back/Forward select the matching
 quest. Workspace-initiated selection keeps an open planner or visualizer; Back/Forward,
 search, and shared links switch to Details. Completing a quest does not navigate.
+Workspace mode (Details, Trader board, Visualizer, Raid planner) is session state. The
+Quests nav entries link to `/quests?view=board|visualizer|planner`; the provider applies
+the parameter to the mode once and strips it with `history.replaceState`, deferred a task
+so Next's history patch is installed on a full page load.
 On mobile the list hides while a quest route is active and "Back to quests" links to
-the index. [quest-routes](../src/features/quests/quest-routes.ts) builds hrefs;
+the index. Below `lg`, [QuestMobileMenu](../src/features/quests/workspace/QuestMobileMenu.tsx)
+replaces the action bar and filter header: a floating pill opens views (including History)
+and filters. Log upload stays desktop-only, and global search replaces quest search. Scrolling panes end
+with `QuestMobileMenuSpacer` so the pill never covers the last row. [quest-routes](../src/features/quests/quest-routes.ts) builds hrefs;
 legacy `?quest=` links redirect permanently ([next.config](../next.config.ts), with a
 page-level fallback) and legacy `#quest-` fragments are translated client-side. The
 development fixture opts in with `?q=dev-test`, which is fetched client-side only.
@@ -72,13 +79,19 @@ components that remain in the feature directory.
 | Status, trader, map, objective and locked-quest filters | [quest-workspace-selector](../src/features/quests/workspace/quest-workspace-selector.ts), [QuestFilterBar](../src/features/quests/workspace/QuestFilterBar.tsx), [workspace context](../src/features/quests/workspace/QuestWorkspaceContext.tsx)                                 |
 | Grouping and list presentation                          | [quest-list-model](../src/features/quests/workspace/quest-list-model.ts), [QuestListPane](../src/features/quests/workspace/QuestListPane.tsx)                                                                                                                                    |
 | Detail selection/actions and objectives                 | [useQuestDetailsController](../src/features/quests/workspace/useQuestDetailsController.ts), [quest-details-model](../src/features/quests/workspace/quest-details-model.ts), [QuestDetailsPane](../src/features/quests/workspace/QuestDetailsPane.tsx)                            |
+| Trader board                                            | [quest-trader-board-model](../src/features/quests/workspace/quest-trader-board-model.ts), [QuestTraderBoardPane](../src/features/quests/workspace/QuestTraderBoardPane.tsx)                                                                                                      |
 | Prerequisite visualizer                                 | [quest-branch-graph](../src/features/quests/workspace/quest-branch-graph.ts), [quest-graph-layout](../src/features/quests/workspace/quest-graph-layout.ts), [QuestVisualizerPane](../src/features/quests/workspace/QuestVisualizerPane.tsx)                                      |
 | Raid Planner                                            | [RaidPlannerPane](../src/features/quests/workspace/RaidPlannerPane.tsx), [raid-planner-summary](../src/features/quests/workspace/raid-planner-summary.ts), [raid-planner-markers](../src/features/quests/workspace/raid-planner-markers.ts); geometry belongs to [maps](maps.md) |
 
 The planner uses profile-active quests independently of the workspace's other
 status filters. Visited positioned objectives are profile state and are filtered
 before marker grouping; whole-quest completion clears that quest's visited records.
-The workspace loads planner and visualizer component code on demand, with a
+The trader board is a full-width overview (the list pane hides): trader columns with
+loyalty-level and Essential sections, completed and failed quests folded behind an
+expandable count. Essential quests are grouped into the same series as the list, in chain
+order. Below `sm` each trader fills the width and snaps on swipe, with an avatar strip to jump. It ignores workspace filters but omits removed, hidden, other-faction,
+and excluded-branch quests; selecting a quest switches to Details.
+The workspace loads board, planner, and visualizer component code on demand, with a
 loading indicator in the selected pane. Shared quest indexes remain available
 for complete prerequisite and filter derivation.
 Pan/zoom and temporary map expansion stay in session memory. Standard items link
