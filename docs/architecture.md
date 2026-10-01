@@ -163,8 +163,9 @@ own state, labels, options, and effects. [ItemsControls](../src/features/items/c
 wires them to existing preferences without changing persistence. Panel triggers
 expose expanded state; panels fade and expand into place, then close when the
 user clicks anywhere outside them; `FilterDrawer` tucks a collapsible strip under a
-bar stacked above it, leaving only its eye toggle when hidden; radios support arrow keys; and toggles expose
-pressed state. Escape from the checklist panel closes it and returns focus to its
+bar stacked above it, leaving only a small eye tab when hidden; `FilterMultiSelect` dropdowns
+open on mouse press but wait for a touch or pen tap to complete, so scrolls starting on them are ignored;
+radios support arrow keys; and toggles expose pressed state. Escape from the checklist panel closes it and returns focus to its
 trigger.
 
 Checklist search is a local, non-persisted input. It filters visible rows and

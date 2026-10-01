@@ -10,7 +10,8 @@ export function FilterBar({ className, ...props }: ComponentProps<"div">) {
 
 /**
  * Collapsible strip tucked under the preceding `FilterBar`, which must stack above it
- * (e.g. `relative z-40`). Hidden leaves only the eye toggle as a tab in the same spot.
+ * (e.g. `relative z-40`). Open, the eye toggle is a full-height column on the right;
+ * hidden leaves only a small tab in the same spot that is clickable as a whole.
  */
 export function FilterDrawer({
 	open,
@@ -31,13 +32,13 @@ export function FilterDrawer({
 	return (
 		<div
 			className={cn(
-				"-mt-[10px] flex items-start gap-2 rounded-b-md border border-t-0 border-highlight/10 bg-shadow/40 pb-2 pl-3 pr-2 pt-[18px]",
-				open ? "w-full" : "ml-auto w-fit pl-2",
+				"-mt-[10px] flex rounded-b-md border border-t-0 border-highlight/10 bg-shadow/40 pt-[10px]",
+				open ? "w-full" : "ml-auto w-fit",
 				className,
 			)}
 		>
 			{open && (
-				<div id={contentId} className={cn("min-w-0 flex-1", contentClassName)}>
+				<div id={contentId} className={cn("min-w-0 flex-1 py-2 pl-3", contentClassName)}>
 					{children}
 				</div>
 			)}
@@ -48,9 +49,12 @@ export function FilterDrawer({
 				aria-label={open ? `Hide ${label}` : `Show ${label}`}
 				title={open ? `Hide ${label}` : `Show ${label}`}
 				onClick={() => onOpenChange(!open)}
-				className="shrink-0 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-brand"
+				className={cn(
+					"flex shrink-0 items-center justify-center text-muted-foreground transition-colors hover:bg-highlight/5 hover:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand",
+					open ? "w-8 rounded-br-md" : "size-5 rounded-b-md",
+				)}
 			>
-				{open ? <EyeOff size={14} /> : <Eye size={14} />}
+				{open ? <EyeOff size={14} /> : <Eye size={10} />}
 			</button>
 		</div>
 	);

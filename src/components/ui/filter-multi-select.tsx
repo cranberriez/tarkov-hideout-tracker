@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ComponentProps, type ReactNode } from "react";
+import { useId, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FilterPanelButton } from "./filter-bar";
@@ -19,10 +19,22 @@ export function FilterMultiSelect({
 	className?: string;
 }) {
 	const [open, setOpen] = useState(false);
+	const openOnRelease = useRef(false);
 	const panelId = useId();
 	return (
 		<DropdownMenu open={open} onOpenChange={setOpen}>
-			<DropdownMenuTrigger asChild>
+			<DropdownMenuTrigger
+				asChild
+				// Radix opens on pointerdown; touch and pen wait for the tap's click so a scroll starting here is ignored.
+				onPointerDown={(event) => {
+					openOnRelease.current = event.pointerType !== "mouse" && !open;
+					if (event.pointerType !== "mouse") event.preventDefault();
+				}}
+				onClick={() => {
+					if (openOnRelease.current) setOpen(true);
+					openOnRelease.current = false;
+				}}
+			>
 				<FilterPanelButton open={open} panelId={panelId} aria-label={label} className={cn("min-w-0", className)}>
 					{summary}
 					<ChevronDown className="size-3.5 shrink-0" aria-hidden />
