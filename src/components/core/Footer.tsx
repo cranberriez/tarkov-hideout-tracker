@@ -1,3 +1,5 @@
+import { Coffee } from "lucide-react";
+import { FEEDBACK_FORM_URL, KOFI_URL } from "@/lib/cfg/support-links";
 import { DataStatusDialog } from "./DataStatusDialog";
 
 export function Footer() {
@@ -37,6 +39,27 @@ export function Footer() {
 							Wiki
 						</a>
 					</span>
+					{FEEDBACK_FORM_URL && (
+						<a
+							href={FEEDBACK_FORM_URL}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="transition-colors text-brand-hover hover:text-brand hover:underline"
+						>
+							Feedback
+						</a>
+					)}
+					{KOFI_URL && (
+						<a
+							href={KOFI_URL}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="inline-flex items-center gap-1 transition-colors text-brand-hover hover:text-brand hover:underline"
+						>
+							<Coffee size={12} aria-hidden />
+							Support on Ko-fi
+						</a>
+					)}
 					<DataStatusDialog />
 				</div>
 				<div>Created by the community for the community. Not affiliated with BSG.</div>

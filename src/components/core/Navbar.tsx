@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, Menu, Plus, Search, Settings2 } from "lucide-react";
+import { ChevronDown, Coffee, Menu, MessageSquare, Plus, Search, Settings2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SearchPalette } from "@/features/search/SearchPalette";
 import { questHref, stationHref } from "@/lib/entity-routes";
 import { isDev } from "@/lib/is-dev";
+import { FEEDBACK_FORM_URL, KOFI_URL } from "@/lib/cfg/support-links";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import {
 	DropdownMenu,
@@ -324,6 +325,28 @@ function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onS
 			))}
 			<DropdownMenuSeparator />
 			<DropdownMenuItem onSelect={onSetup}>Setup</DropdownMenuItem>
+			{(FEEDBACK_FORM_URL || KOFI_URL) && <DropdownMenuSeparator />}
+			{FEEDBACK_FORM_URL && (
+				<DropdownMenuItem asChild>
+					<a
+						href={FEEDBACK_FORM_URL}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="flex w-full items-center gap-2"
+					>
+						<MessageSquare size={16} />
+						Send feedback
+					</a>
+				</DropdownMenuItem>
+			)}
+			{KOFI_URL && (
+				<DropdownMenuItem asChild>
+					<a href={KOFI_URL} target="_blank" rel="noopener noreferrer" className="flex w-full items-center gap-2">
+						<Coffee size={16} />
+						Support on Ko-fi
+					</a>
+				</DropdownMenuItem>
+			)}
 		</>
 	);
 }

@@ -3,7 +3,7 @@ import { PostImage } from "@/features/news/ImagePlaceholder";
 
 export function PostDevelopmentPreview() {
 	return (
-		<NewsPost title="A Look at the Next Update" date="September 9, 2026" version="Next">
+		<NewsPost title="A Look at the Next Update" date="September 9, 2026" version="Next" defaultOpen>
 			<p className="text-lg">
 				A lot has been taking shape in the development branch: a rebuilt questing interface, separate player profiles,
 				more useful item details, and new ways to compare barter and crafting profits.
@@ -23,21 +23,24 @@ export function PostDevelopmentPreview() {
 				The quest visualizer helps you follow prerequisite chains. The Raid Planner brings objectives from your active
 				quests onto a map, so you can see what to work on during your next raid.
 			</p>
-			{/* TEMP SCREENSHOT: Show the desktop Quests page with the quest list and a selected
-                quest's objectives visible side by side. Add src to PostImage, then remove this comment. */}
-			<PostImage label="Quest workspace screenshot" />
-			{/* TEMP SCREENSHOT: Show the Raid Planner with several active quest markers on one
-                map and an objective selected. Add src to PostImage, then remove this comment. */}
-			<PostImage label="Raid Planner screenshot" />
+			<PostImage
+				label="Quest workspace with objectives and requirements"
+				src="/images/news/preview/quests-workspace.png"
+			/>
+			<PostImage
+				label="Raid Planner showing quest objectives on the Customs map"
+				src="/images/news/preview/raid-planner.png"
+			/>
 
 			<h3>Separate player profiles</h3>
 			<p>
 				PVP, PVE, and KORD now have their own profiles. Each keeps its own quest progress, hideout upgrades, tracked
 				inventory, and character settings. Switch profiles to pick up where you left off with that character.
 			</p>
-			{/* TEMP SCREENSHOT: Open the profile selector so PVP, PVE, and KORD are visible,
-                with the active profile clearly marked. Add src to PostImage, then remove this comment. */}
-			<PostImage label="Player profile selector screenshot" />
+			<PostImage
+				label="Player profile selector with PVE, PVP and KORD"
+				src="/images/news/preview/profile-selector.png"
+			/>
 
 			<h3>More information in every item</h3>
 			<p>
@@ -45,12 +48,8 @@ export function PostDevelopmentPreview() {
 				Check trader offers, see where an item is used, and look at how its flea market price has changed without
 				leaving the page.
 			</p>
-			{/* TEMP SCREENSHOT: Open an item with trader offers and related crafts. Show the
-                trader information and crafting tab. Add src to PostImage, then remove this comment. */}
-			<PostImage label="Item details with trader information and crafts screenshot" />
-			{/* TEMP SCREENSHOT: Show the same item's price history with a populated chart.
-                Add src to PostImage, then remove this comment. */}
-			<PostImage label="Item pricing history screenshot" />
+			<PostImage label="Item details showing trader offers" src="/images/news/preview/item-traders.png" />
+			<PostImage label="Item price history chart" src="/images/news/preview/item-price-history.png" />
 
 			<h3>Barter and crafting profit tables</h3>
 			<p>
@@ -62,10 +61,28 @@ export function PostDevelopmentPreview() {
 				Estimates account for your unlocks and flea market selling fees. Prices can change, and costs such as fuel are
 				not included, so use the figures as a guide.
 			</p>
-			{/* TEMP SCREENSHOT: Use a wide desktop view of Crafting Profits showing ingredients,
-                cost, sale proceeds, profit, and profit/hour. Include a Barter Profits capture
-                beside it or as a second image. Add src to PostImage, then remove this comment. */}
-			<PostImage label="Crafting and barter profit tables screenshot" />
+			<PostImage label="Crafting profits table" src="/images/news/preview/crafting-profits.png" />
+
+			<h3>Hideout stations and the Bitcoin Farm</h3>
+			<p>
+				Every hideout station now has its own page with requirements, prerequisites, and the crafts it unlocks, and
+				stations can be found through search. The Bitcoin Farm page adds a calculator that weighs generator fuel costs
+				against what the farm produces.
+			</p>
+			<PostImage
+				label="Bitcoin Farm station page with level requirements and generator costs"
+				src="/images/news/preview/bitcoin-farm.png"
+			/>
+
+			<h3>Trader board and inventory</h3>
+			<p>
+				The trader board lays out every quest by trader and loyalty level, so you can see what is available, upcoming,
+				or locked at a glance. A new Inventory page lists the items you are tracking in one place.
+			</p>
+			<PostImage
+				label="Trader board with quests grouped by trader and loyalty level"
+				src="/images/news/preview/trader-board.png"
+			/>
 
 			<h3>More to come</h3>
 			<p>
