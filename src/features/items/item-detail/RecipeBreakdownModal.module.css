@@ -1,0 +1,13 @@
+/* Grows from the loading card's width, whether or not the loading card was this same element. */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+	.panel {
+		animation: expand 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+	}
+}
+
+@keyframes expand {
+	from {
+		max-width: 24rem;
+		opacity: 0.6;
+	}
+}

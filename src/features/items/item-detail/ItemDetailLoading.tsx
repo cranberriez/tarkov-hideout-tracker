@@ -8,7 +8,15 @@ import styles from "./ItemDetailLoading.module.css";
 export const ITEM_DETAIL_LOADING_CLASS =
 	"pointer-events-auto relative mx-auto w-full max-w-sm overflow-hidden rounded-lg border border-border-color bg-card shadow-2xl transition-[max-width] duration-200 motion-reduce:transition-none max-lg:min-h-dvh max-lg:max-w-none max-lg:rounded-none max-lg:border-0";
 
-export function ItemDetailLoading({ item, onClose }: { item: ItemSummary; onClose: () => void }) {
+export function ItemDetailLoading({
+	item,
+	onClose,
+	label = "Loading item details…",
+}: {
+	item: ItemSummary;
+	onClose: () => void;
+	label?: string;
+}) {
 	const image = item.image512pxLink ?? item.gridImageLink ?? item.iconLink ?? item.baseImageLink;
 	return (
 		<div className="flex flex-col items-center px-8 pb-8 pt-10 text-center">
@@ -32,7 +40,7 @@ export function ItemDetailLoading({ item, onClose }: { item: ItemSummary; onClos
 				<div aria-hidden="true" className={styles.track}>
 					<div className={styles.signal} />
 				</div>
-				<p className="mt-3 text-xs text-muted-foreground">Loading item details…</p>
+				<p className="mt-3 text-xs text-muted-foreground">{label}</p>
 			</div>
 		</div>
 	);

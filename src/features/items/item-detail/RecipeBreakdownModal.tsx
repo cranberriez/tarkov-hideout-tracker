@@ -13,9 +13,11 @@ import { formatDuration } from "@/features/profit-pages/utils/formatters";
 import { acquisitionRouteKey } from "@/features/profit-pages/utils/recipes";
 import { ingredientLockReasons, unpricedIngredientIds } from "@/features/profit-pages/utils/lock-summary";
 import type { RecipeEvaluation } from "@/lib/price-calculation";
+import { ITEM_DETAIL_LOADING_CLASS, ItemDetailLoading } from "./ItemDetailLoading";
 import { BACK_PANEL_HEIGHT_CLASS, ItemDetailBackButton, PANEL_HEIGHT_CLASS } from "./ItemDetailBackButton";
 import type { ItemDetailEntry } from "./item-detail-navigation";
 import { useRecipeBreakdownController } from "./useRecipeBreakdownController";
+import styles from "./RecipeBreakdownModal.module.css";
 
 export interface RecipeBreakdownModalProps {
 	recipe: RecipeBreakdownTarget;
@@ -31,61 +33,73 @@ export function RecipeBreakdownContent({ recipe, previousEntry, onBack, onClose 
 	const KindIcon = recipe.kind === "barter" ? RefreshCw : Wrench;
 
 	return (
-		<div className="pointer-events-auto relative mx-auto w-full max-w-full lg:max-w-3xl">
+		// Same card as the dialog's Suspense fallback while loading, then widens into the full panel (as the item view does).
+		<div
+			aria-busy={vm.loading}
+			className={
+				vm.loading
+					? ITEM_DETAIL_LOADING_CLASS
+					: `${styles.panel} pointer-events-auto relative mx-auto w-full max-w-full lg:max-w-3xl`
+			}
+		>
 			<DialogTitle className="sr-only">{`${kindLabel} breakdown: ${vm.output.name}`}</DialogTitle>
-			{previousEntry && <ItemDetailBackButton previousEntry={previousEntry} onBack={onBack} />}
-			<div
-				className={`flex w-full flex-col bg-background lg:min-h-0 lg:overflow-hidden lg:rounded-lg lg:border lg:border-border-color lg:shadow-2xl ${previousEntry ? BACK_PANEL_HEIGHT_CLASS : PANEL_HEIGHT_CLASS}`}
-			>
-				<header className="flex shrink-0 items-center gap-3 border-b border-border-color bg-gradient-to-br from-card via-card to-background px-3 py-2.5 sm:px-4">
-					<div className="flex min-w-0 items-center gap-2.5">
-						<span
-							className={`flex size-10 shrink-0 items-center justify-center rounded-md ${recipe.kind === "barter" ? "bg-acquisition-barter/10 text-acquisition-barter" : "bg-acquisition-craft/10 text-acquisition-craft"}`}
-						>
-							<KindIcon size={22} aria-hidden="true" />
-						</span>
-						<p className="text-xs font-semibold uppercase tracking-wider text-foreground">{kindLabel} breakdown</p>
-					</div>
-					<div className="ml-auto flex items-center gap-3">
-						<Link
-							href={vm.profitHref}
-							className="inline-flex items-center gap-0.5 rounded-xs text-[11px] font-medium text-muted-foreground transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
-						>
-							Profit page
-							<ArrowUpRight size={13} aria-hidden="true" className="shrink-0" />
-						</Link>
-						<button
-							type="button"
-							onClick={onClose}
-							className="flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:border-border-color hover:bg-shadow/20 hover:text-foreground"
-							aria-label="Close item details"
-						>
-							<X size={18} />
-						</button>
-					</div>
-				</header>
+			{vm.loading ? (
+				<ItemDetailLoading item={vm.output} onClose={onClose} label={`Loading ${kindLabel.toLowerCase()} breakdown…`} />
+			) : (
+				<>
+					{previousEntry && <ItemDetailBackButton previousEntry={previousEntry} onBack={onBack} />}
+					<div
+						className={`flex w-full flex-col bg-background lg:min-h-0 lg:overflow-hidden lg:rounded-lg lg:border lg:border-border-color lg:shadow-2xl ${previousEntry ? BACK_PANEL_HEIGHT_CLASS : PANEL_HEIGHT_CLASS}`}
+					>
+						<header className="flex shrink-0 items-center gap-3 border-b border-border-color bg-gradient-to-br from-card via-card to-background px-3 py-2.5 sm:px-4">
+							<div className="flex min-w-0 items-center gap-2.5">
+								<span
+									className={`flex size-10 shrink-0 items-center justify-center rounded-md ${recipe.kind === "barter" ? "bg-acquisition-barter/10 text-acquisition-barter" : "bg-acquisition-craft/10 text-acquisition-craft"}`}
+								>
+									<KindIcon size={22} aria-hidden="true" />
+								</span>
+								<p className="text-xs font-semibold uppercase tracking-wider text-foreground">{kindLabel} breakdown</p>
+							</div>
+							<div className="ml-auto flex items-center gap-3">
+								<Link
+									href={vm.profitHref}
+									className="inline-flex items-center gap-0.5 rounded-xs text-[11px] font-medium text-muted-foreground transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
+								>
+									Profit page
+									<ArrowUpRight size={13} aria-hidden="true" className="shrink-0" />
+								</Link>
+								<button
+									type="button"
+									onClick={onClose}
+									className="flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:border-border-color hover:bg-shadow/20 hover:text-foreground"
+									aria-label="Close item details"
+								>
+									<X size={18} />
+								</button>
+							</div>
+						</header>
 
-				<div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-					{vm.loading ? (
-						<p className="px-4 py-6 text-sm text-muted-foreground">Calculating profit and ingredient routes…</p>
-					) : vm.error || !vm.evaluation ? (
-						<div className="flex flex-wrap items-center gap-3 px-4 py-6 text-sm text-warning">
-							{vm.error ?? "Profit data is unavailable for this recipe."}
-							<button
-								type="button"
-								onClick={vm.retry}
-								className="rounded border border-warning/30 px-2 py-1 text-xs hover:bg-warning/10"
-							>
-								Try again
-							</button>
+						<div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+							{vm.error || !vm.evaluation ? (
+								<div className="flex flex-wrap items-center gap-3 px-4 py-6 text-sm text-warning">
+									{vm.error ?? "Profit data is unavailable for this recipe."}
+									<button
+										type="button"
+										onClick={vm.retry}
+										className="rounded border border-warning/30 px-2 py-1 text-xs hover:bg-warning/10"
+									>
+										Try again
+									</button>
+								</div>
+							) : (
+								<ProfitPricingContext.Provider value={vm.pricingContext}>
+									<Breakdown vm={vm} evaluation={vm.evaluation} />
+								</ProfitPricingContext.Provider>
+							)}
 						</div>
-					) : (
-						<ProfitPricingContext.Provider value={vm.pricingContext}>
-							<Breakdown vm={vm} evaluation={vm.evaluation} />
-						</ProfitPricingContext.Provider>
-					)}
-				</div>
-			</div>
+					</div>
+				</>
+			)}
 		</div>
 	);
 }
