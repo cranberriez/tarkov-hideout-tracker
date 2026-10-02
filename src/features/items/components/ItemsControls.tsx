@@ -1,5 +1,6 @@
 "use client";
 
+import { type ChecklistSort, type ChecklistSortKey } from "../checklist-sort";
 import { useId } from "react";
 import { FilterPanel } from "@/components/ui/filter-bar";
 import { useShallow } from "zustand/react/shallow";
@@ -8,12 +9,14 @@ import { ItemsFiltersPanel } from "./controls/ItemsFiltersPanel";
 import { ItemsToolbar } from "./controls/ItemsToolbar";
 
 interface ItemsControlsProps {
+	sort: ChecklistSort;
+	onSortSelect: (key: ChecklistSortKey) => void;
 	searchQuery: string;
 	onSearchQueryChange: (query: string) => void;
 	children: React.ReactNode;
 }
 
-export function ItemsControls({ searchQuery, onSearchQueryChange, children }: ItemsControlsProps) {
+export function ItemsControls({ searchQuery, onSearchQueryChange, sort, onSortSelect, children }: ItemsControlsProps) {
 	const panelId = useId();
 	const {
 		itemFiltersOpen,
@@ -86,6 +89,8 @@ export function ItemsControls({ searchQuery, onSearchQueryChange, children }: It
 			<ItemsToolbar
 				filtersOpen={itemFiltersOpen}
 				onToggleFilters={() => setItemFiltersOpen(!itemFiltersOpen)}
+				sort={sort}
+				onSortSelect={onSortSelect}
 				searchQuery={searchQuery}
 				onSearchQueryChange={onSearchQueryChange}
 				panelId={panelId}

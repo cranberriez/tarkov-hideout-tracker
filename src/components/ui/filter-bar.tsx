@@ -4,8 +4,18 @@ import { useEffect, useId, useRef, type ComponentProps, type ReactNode } from "r
 import { Check, CircleDot, Eye, EyeOff, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export const FILTER_MENU_GAP = 12;
+export const FILTER_MENU_SURFACE = "rounded-md border bg-muted p-4 text-xs font-medium text-foreground shadow-sm";
+export const FILTER_MENU_ROW = "gap-2 px-1 py-1 text-xs font-medium text-foreground";
+
 export function FilterBar({ className, ...props }: ComponentProps<"div">) {
-	return <div className={cn("flex flex-wrap gap-1.5 rounded-md border bg-muted px-3 py-2", className)} {...props} />;
+	return (
+		<div
+			data-filter-bar
+			className={cn("flex flex-wrap gap-1.5 rounded-md border bg-muted px-3 py-2", className)}
+			{...props}
+		/>
+	);
 }
 
 /**

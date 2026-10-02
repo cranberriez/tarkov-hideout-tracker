@@ -1,6 +1,6 @@
 "use client";
 
-import { Filter, Grid3X3, LayoutList, List } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Filter, Grid3X3, LayoutList, List } from "lucide-react";
 import {
 	FilterBar,
 	FilterPanelButton,
@@ -8,9 +8,13 @@ import {
 	FilterRadioGroup,
 	FilterToggle,
 } from "@/components/ui/filter-bar";
+import { FilterMenuItem, FilterMultiSelect } from "@/components/ui/filter-multi-select";
+import { CHECKLIST_SORT_OPTIONS, type ChecklistSort, type ChecklistSortKey } from "../../checklist-sort";
 import type { ItemSize, ItemSourceFilter } from "@/lib/stores/useUserStore";
 
 interface ItemsToolbarProps {
+	sort: ChecklistSort;
+	onSortSelect: (key: ChecklistSortKey) => void;
 	filtersOpen: boolean;
 	onToggleFilters: () => void;
 	searchQuery: string;
@@ -27,6 +31,8 @@ interface ItemsToolbarProps {
 }
 
 export function ItemsToolbar({
+	sort,
+	onSortSelect,
 	filtersOpen,
 	onToggleFilters,
 	searchQuery,
@@ -46,6 +52,36 @@ export function ItemsToolbar({
 			<FilterPanelButton open={filtersOpen} panelId={panelId} onClick={onToggleFilters}>
 				<Filter size={14} /> Filters
 			</FilterPanelButton>
+			<FilterMultiSelect
+				label="Sort"
+				contentClassName="w-[260px] p-2"
+				summary={
+					<>
+						<ArrowUpDown size={14} /> Sort
+					</>
+				}
+			>
+				{CHECKLIST_SORT_OPTIONS.map(({ key, label }) => {
+					const active = sort.key === key;
+					const direction = sort.direction === "asc" ? "ascending" : "descending";
+					return (
+						<FilterMenuItem
+							key={key}
+							aria-label={active ? `${label}, ${direction}. Click to reverse` : label}
+							className={`gap-2 px-3 py-2 text-sm ${active ? "bg-brand/8 text-brand focus:text-brand" : ""}`}
+							onSelect={() => onSortSelect(key)}
+						>
+							{label}
+							{active &&
+								(sort.direction === "asc" ? (
+									<ArrowUp className="text-brand" aria-hidden="true" />
+								) : (
+									<ArrowDown className="text-brand" aria-hidden="true" />
+								))}
+						</FilterMenuItem>
+					);
+				})}
+			</FilterMultiSelect>
 			<FilterSearchInput
 				label="Search checklist items"
 				placeholder="Search checklist items..."

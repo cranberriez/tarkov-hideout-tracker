@@ -4,7 +4,7 @@ import { ChevronDown, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FilterCheckbox } from "@/components/ui/FilterCheckbox";
 import { FilterNumberInput } from "@/components/ui/FilterNumberInput";
-import { FilterRadioGroup, FilterSection as PanelSection } from "@/components/ui/filter-bar";
+import { FILTER_MENU_SURFACE, FilterRadioGroup, FilterSection as PanelSection } from "@/components/ui/filter-bar";
 import type { ItemQuestVisibilityMode } from "@/lib/stores/useUserStore";
 
 interface ItemsFiltersPanelProps {
@@ -55,7 +55,7 @@ export function ItemsFiltersPanel({
 	className,
 }: ItemsFiltersPanelProps) {
 	return (
-		<aside className={cn("rounded-md border bg-muted p-4 shadow-sm", className)}>
+		<aside className={cn(FILTER_MENU_SURFACE, className)}>
 			<div className="mb-4 flex items-center justify-between">
 				<div className="text-sm font-semibold text-foreground">Filters</div>
 				<Filter size={15} className="text-subtle-foreground" />

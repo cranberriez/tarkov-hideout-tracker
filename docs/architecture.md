@@ -152,6 +152,27 @@ search, Quick Add, pricing, or generic item details. Quest rewards are informati
 and do not become checklist demand. Any-of groups must not double-count their
 alternatives as individual requirements.
 
+The Sort button beside Filters opens a list of sort options, with a direction
+arrow only on the selected option. It uses the shared filter dropdown shell and dropdown menu rows, including
+outside-click dismissal, Escape, and keyboard navigation. Filter menus share the Filters panel surface (16px padding, 12px medium-weight body text, muted background, border, and small shadow). Dropdowns default to the same 340px desktop width and 12px gap below the toolbar, accounting for wrapped toolbar rows. Simple sort lists use a compact 260px panel with 14px labels, roomier rows, and the direction arrow beside the selected label. Checklist sorting is local to the page and defaults to descending Individual Value.
+Individual Value is the higher of the usable flea price and the best trader sell
+value in roubles. Flea-banned items use trader value. Either source can stand
+alone; items with neither sort last in both directions.
+Selecting another sort uses descending order for Individual Value, Total Value,
+and Quantity Needed, or A-Z for Alphabetic; selecting the active sort reverses it.
+Quantity uses outstanding demand after inventory, with outstanding FiR demand as
+a secondary key in the same direction. Total Value multiplies individual value
+by all outstanding units (including FiR); the row's purchasable non-FiR cost
+estimate remains separate. Numeric ties fall back to A-Z.
+The optional Default sort restores the legacy order: quest groups in their derived
+order first, then items prioritized by pinned quests, available quests, earlier
+prerequisite depth, more related quests, and stable item ID. Non-quest items follow
+alphabetically. Selecting Default again reverses it; initial page sorting remains
+descending individual value.
+Any-of quest groups sort by required quantity/FiR quantity or quest name, with no
+invented value for alternatives. Sorting applies within categories when
+categorization is enabled.
+
 ## Search, Quick Add, and item details
 
 [Filter bar UI kit](../src/components/ui/filter-bar.tsx) provides the shared bar,

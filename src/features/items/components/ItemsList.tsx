@@ -14,13 +14,20 @@ import type {
 	QuestAnyOfGroupEntry,
 	QuestItemIndexEntry,
 } from "@/lib/quests/quest-item-index";
-import { compareQuestItemState, deriveQuestAnyOfGroups, deriveQuestItemStates } from "@/lib/quests/quest-item-index";
+import { deriveQuestAnyOfGroups, deriveQuestItemStates } from "@/lib/quests/quest-item-index";
 import type { QuestAvailabilityQuest } from "@/lib/quests/quest-availability";
 import { getFleaPrice } from "@/lib/utils/market-price";
 import { buildChecklistSearchIds, findOutsideFilterMatches, matchesChecklistSearch } from "../checklist-search";
+import {
+	compareChecklistEntries,
+	itemChecklistSortValues,
+	type ChecklistSort,
+	type ChecklistSortValues,
+} from "../checklist-sort";
 import type { Station } from "@/types/hideout";
 
 interface ItemsListProps {
+	sort: ChecklistSort;
 	searchQuery: string;
 	stations: Station[];
 	itemById: Readonly<Record<string, ItemSummary>>;
@@ -50,6 +57,7 @@ type DisplayEntry =
 	{ type: "item"; key: string; item: DisplayItem } | { type: "group"; key: string; group: DerivedQuestAnyOfGroup };
 
 export function ItemsList({
+	sort,
 	searchQuery,
 	stations,
 	itemById,
@@ -60,6 +68,7 @@ export function ItemsList({
 	const [expandedGroupIds, setExpandedGroupIds] = useState<Record<string, boolean>>({});
 
 	const {
+		itemCounts,
 		stationLevels,
 		hiddenStations,
 		checklistViewMode,
@@ -88,6 +97,7 @@ export function ItemsList({
 		itemShowIgnored,
 	} = useUserStore(
 		useShallow((state) => ({
+			itemCounts: state.itemCounts,
 			stationLevels: state.stationLevels,
 			hiddenStations: state.hiddenStations,
 			checklistViewMode: state.checklistViewMode,
@@ -268,15 +278,24 @@ export function ItemsList({
 		}));
 	}, [allItemDetails, pooledHideoutItems, questStateByItemId]);
 
-	const compareDisplayItems = (a: DisplayItem, b: DisplayItem) => {
-		if (a.questState && b.questState) {
-			const byQuest = compareQuestItemState(a.questState, b.questState);
-			if (byQuest !== 0) return byQuest;
-		} else if (a.questState || b.questState) {
-			return a.questState ? -1 : 1;
-		}
-		return a.details.name.localeCompare(b.details.name);
-	};
+	const getItemSortValues = (item: DisplayItem) => ({
+		...itemChecklistSortValues(item.details, item.count, item.firCount, itemCounts[item.id]),
+		questState: item.questState,
+	});
+	const compareDisplayItems = (a: DisplayItem, b: DisplayItem) =>
+		compareChecklistEntries(getItemSortValues(a), getItemSortValues(b), sort);
+	const getEntrySortValues = (entry: DisplayEntry): ChecklistSortValues =>
+		entry.type === "item"
+			? getItemSortValues(entry.item)
+			: {
+					id: entry.key,
+					groupOrder: activeQuestGroups.indexOf(entry.group),
+					name: entry.group.questName,
+					unitValue: null,
+					totalValue: null,
+					quantity: entry.group.requiredCount,
+					fir: entry.group.requiredFirCount,
+				};
 
 	const finalizeDisplayItems = (
 		itemsToDisplay: Array<MergedItem & { details?: ItemSummary; questState?: DerivedQuestItemState }>,
@@ -393,6 +412,8 @@ export function ItemsList({
 			...groupsToRender.map((group) => ({ type: "group", key: group.groupId, group }) as const),
 			...itemsToRender.map((item) => ({ type: "item", key: item.id, item }) as const),
 		];
+
+		entries.sort((a, b) => compareChecklistEntries(getEntrySortValues(a), getEntrySortValues(b), sort));
 
 		return (
 			<div className={`grid gap-2 ${gridClasses}`}>

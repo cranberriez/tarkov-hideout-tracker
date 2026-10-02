@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsList } from "@/features/items/components/ItemsList";
+import { DEFAULT_CHECKLIST_SORT, selectChecklistSort } from "./checklist-sort";
 import { ItemsControls } from "@/features/items/components/ItemsControls";
 // import { ItemsStatsRow } from "@/features/items/components/ItemsStatsRow";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
@@ -33,6 +34,7 @@ export function ItemsClientPage({ data, dataMode }: ItemsClientPageProps) {
 	} = data;
 	const items = useDeferredPriceItems(initialItems);
 	const [searchQuery, setSearchQuery] = useState("");
+	const [sort, setSort] = useState(DEFAULT_CHECKLIST_SORT);
 
 	const { gameMode, initializeDefaults } = useUserStore(
 		useShallow((state) => ({ gameMode: state.gameMode, initializeDefaults: state.initializeDefaults })),
@@ -84,7 +86,12 @@ export function ItemsClientPage({ data, dataMode }: ItemsClientPageProps) {
 								<DataLoadError title="Quest checklist data is unavailable" messages={[errors.quests]} />
 							</div>
 						)}
-						<ItemsControls searchQuery={searchQuery} onSearchQueryChange={setSearchQuery}>
+						<ItemsControls
+							searchQuery={searchQuery}
+							onSearchQueryChange={setSearchQuery}
+							sort={sort}
+							onSortSelect={(key) => setSort((current) => selectChecklistSort(current, key))}
+						>
 							{/* <ItemsStatsRow
 								stations={stations}
 								items={items}
@@ -93,6 +100,7 @@ export function ItemsClientPage({ data, dataMode }: ItemsClientPageProps) {
 								questAvailabilityQuests={questAvailabilityQuestList}
 							/> */}
 							<ItemsList
+								sort={sort}
 								searchQuery={searchQuery}
 								stations={stations}
 								itemById={itemById}
