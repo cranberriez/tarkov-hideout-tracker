@@ -47,7 +47,7 @@ export function useRecipeBreakdownController(target: RecipeBreakdownTarget) {
 	const { overrides, setItemOverride } = useManualPriceOverrides(user.gameMode);
 	const { craftingSkillLevel, hideoutManagementSkillLevel, useTraderSaleForLockedOutputs, allowCrafts, allowBarters } =
 		useProfitOptions(user.gameMode);
-	const treeQuery = useQuery(itemAcquisitionQueryOptions(mode, target.outputItem.id));
+	const treeQuery = useQuery(itemAcquisitionQueryOptions(mode, target.outputItem.id, { withPrices: true }));
 	const tree = treeQuery.data;
 	const priceIds = useMemo(() => (tree ? tree.items.map((item) => item.id).filter(isPriceItemId) : []), [tree]);
 	const prices = useItemPrices(mode, priceIds);
