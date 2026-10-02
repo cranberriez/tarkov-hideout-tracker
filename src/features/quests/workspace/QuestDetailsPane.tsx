@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import { useMemo } from "react";
 import { Bug } from "lucide-react";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { isDev } from "@/lib/is-dev";
 import { cn } from "@/lib/utils";
 import { getQuestTraderTabLoyaltyLevel } from "@/lib/quests/quest-trader-completion-gates";
 import { buildMultipleChoiceQuestGroups } from "@/lib/quests/quest-failures";
@@ -213,21 +214,25 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 				/>
 			</div>
 
-			{showDebug && <QuestDebugPanel quest={quest} onClose={() => setShowDebug(false)} />}
-			<button
-				type="button"
-				onClick={() => setShowDebug((visible) => !visible)}
-				aria-label={showDebug ? "Hide quest debug data" : "Show quest debug data"}
-				aria-expanded={showDebug}
-				className={cn(
-					"absolute left-2 top-2 z-40 flex h-5 w-5 items-center justify-center rounded-full border bg-[var(--card-bg)] shadow-lg transition-colors",
-					showDebug
-						? "border-brand/50 text-brand"
-						: "border-highlight/12 text-subtle-foreground hover:border-highlight/25 hover:text-foreground",
-				)}
-			>
-				<Bug size={10} />
-			</button>
+			{isDev && (
+				<>
+					{showDebug && <QuestDebugPanel quest={quest} onClose={() => setShowDebug(false)} />}
+					<button
+						type="button"
+						onClick={() => setShowDebug((visible) => !visible)}
+						aria-label={showDebug ? "Hide quest debug data" : "Show quest debug data"}
+						aria-expanded={showDebug}
+						className={cn(
+							"absolute left-2 top-2 z-40 flex h-5 w-5 items-center justify-center rounded-full border bg-[var(--card-bg)] shadow-lg transition-colors",
+							showDebug
+								? "border-brand/50 text-brand"
+								: "border-highlight/12 text-subtle-foreground hover:border-highlight/25 hover:text-foreground",
+						)}
+					>
+						<Bug size={10} />
+					</button>
+				</>
+			)}
 		</div>
 	);
 }

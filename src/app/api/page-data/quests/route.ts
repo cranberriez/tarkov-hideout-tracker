@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isCompleteQuestWorkspacePageData } from "@/lib/query/page-data";
+import { isDev } from "@/lib/is-dev";
 import { SHOW_REMOVED_QUESTS } from "@/features/quests/quest-feature-flags";
 import { DEV_QUEST_FIXTURES, DEV_QUEST_QUERY } from "@/features/quests/dev-quest-fixture";
 import { getQuestWorkspacePageData } from "@/server/queries/getQuestWorkspacePageData";
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
 	if (!modeParam.ok) return modeParam.response;
 	const { mode } = modeParam;
 	const showDevQuest =
-		process.env.NODE_ENV === "development" && request.nextUrl.searchParams.get("q") === DEV_QUEST_QUERY;
+		isDev && request.nextUrl.searchParams.get("q") === DEV_QUEST_QUERY;
 	try {
 		const data = await getQuestWorkspacePageData(mode, await getCurrentPageRepository(mode), {
 			includePrices: false,

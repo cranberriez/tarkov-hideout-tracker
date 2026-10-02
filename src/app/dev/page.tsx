@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GAME_MODE_CONFIG, GAME_MODES, type TarkovJsonGameMode } from "@/lib/game-mode";
+import { isDev } from "@/lib/is-dev";
 import { getCatalogDashboard, getMarketWorkerDashboard } from "@/server/db/postgres-dashboard";
 import { MarketWorkerPanel } from "./MarketWorkerPanel";
 import { ItemImageGallery } from "./ItemImageGallery";
@@ -23,7 +24,7 @@ export default async function DevPage({
 }: {
 	searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-	if (process.env.NODE_ENV !== "development") notFound();
+	if (!isDev) notFound();
 	const params = await searchParams;
 	const mode = MODES.find((entry) => entry.value === params.mode) ?? MODES[0];
 	let dashboard;

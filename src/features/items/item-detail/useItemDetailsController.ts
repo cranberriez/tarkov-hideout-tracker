@@ -1,6 +1,7 @@
 "use client";
 
 import { craftingDuration } from "@/lib/price-calculation/crafting-skill";
+import { isDev } from "@/lib/is-dev";
 import { craftRequiredItems, isTrackedCraft } from "@/lib/price-calculation/craft-rules";
 import { useProfitOptions } from "@/features/profit-pages/useProfitOptions";
 import { useMemo, useState } from "react";
@@ -385,7 +386,7 @@ export function useItemDetailsController({
 		showPriceHistory,
 		showSidebar,
 		debugData,
-		isDevelopment: process.env.NODE_ENV === "development",
+		isDevelopment: isDev,
 		profileReady,
 		stationLevels: store.stationLevels,
 		hiddenStations: store.hiddenStations,

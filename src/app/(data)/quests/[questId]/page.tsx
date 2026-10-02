@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { decodeRouteParam } from "@/lib/utils/route-param";
+import { isDev } from "@/lib/is-dev";
 import { QuestDetailRoute } from "@/features/quests/workspace/QuestDetailRoute";
 import { DEV_QUEST_ID } from "@/features/quests/dev-quest-fixture";
 import { SHOW_REMOVED_QUESTS } from "@/features/quests/quest-feature-flags";
@@ -21,7 +22,7 @@ async function loadQuest(questId: string) {
 }
 
 function isDevQuest(questId: string) {
-	return process.env.NODE_ENV === "development" && questId === DEV_QUEST_ID;
+	return isDev && questId === DEV_QUEST_ID;
 }
 
 export async function generateMetadata({ params }: QuestPageProps): Promise<Metadata> {

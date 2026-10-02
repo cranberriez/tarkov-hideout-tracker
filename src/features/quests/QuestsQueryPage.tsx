@@ -7,6 +7,7 @@ import { DataLoadError, DataQueryRetryProvider, DataRefreshError } from "@/compo
 import { DataNotice } from "@/components/ui/data-notice";
 import { RouteLoader } from "@/components/core/RouteLoader";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
+import { isDev } from "@/lib/is-dev";
 import { useGameDataEnabled, useUserStoreHydrated } from "@/lib/query/game-data";
 import { pageDataFromQuery, questWorkspacePageQueryOptions } from "@/lib/query/page-data";
 import { PartialDataError } from "@/lib/query/request";
@@ -26,7 +27,7 @@ export function QuestsQueryPage({
 	const searchParams = useSearchParams();
 	// The development fixture is opt-in per URL and fetched client-side; it never enters the server prefetch.
 	const devQuery =
-		process.env.NODE_ENV === "development" && searchParams.get("q") === DEV_QUEST_QUERY ? DEV_QUEST_QUERY : null;
+		isDev && searchParams.get("q") === DEV_QUEST_QUERY ? DEV_QUEST_QUERY : null;
 	const hydrated = useUserStoreHydrated();
 	const enabled = useGameDataEnabled(mode);
 	const query = useQuery({

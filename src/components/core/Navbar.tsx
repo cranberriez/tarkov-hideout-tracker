@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SearchPalette } from "@/features/search/SearchPalette";
 import { questHref, stationHref } from "@/lib/entity-routes";
+import { isDev } from "@/lib/is-dev";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import {
 	DropdownMenu,
@@ -304,7 +305,7 @@ function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onS
 	const items: NavItem[] = [
 		{ name: "News", href: "/news" },
 		{ name: "Settings", href: "/settings" },
-		...(process.env.NODE_ENV === "development" ? [devNavItem] : []),
+		...(isDev ? [devNavItem] : []),
 	];
 
 	return (
