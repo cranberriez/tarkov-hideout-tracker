@@ -112,7 +112,9 @@ export function ItemDetailAcquisition({
 								outputCount={offer.offeredCount}
 								outputSecondary={
 									offer.buyLimit ? (
-										<span className="text-[10px] text-muted-foreground">Limit {offer.buyLimit}</span>
+										<span className="text-[11px] font-medium text-muted-foreground">
+										Limit <span className="font-mono font-semibold text-foreground/80">{offer.buyLimit}</span>
+									</span>
 									) : undefined
 								}
 							>
