@@ -9,6 +9,7 @@ import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { FUEL_TANK_ITEM_IDS, GRAPHICS_CARD_ITEM_ID } from "@/lib/cfg/hideout-power";
 import type { AcquisitionAlternative, AcquisitionPlan, LockReason } from "@/lib/price-calculation";
 import type { ProfitPageData } from "@/types/contracts";
+import type { RouteContext } from "../../profit-pages/types";
 import { acquisitionRouteKey, getAcquisitionRoutes, selectAcquisitionRoute } from "../../profit-pages/utils/recipes";
 import type { Station } from "@/types/hideout";
 import type { ItemSummary } from "@/types/items";
@@ -74,13 +75,9 @@ export interface HideoutPower {
 	bitcoin: { item: ItemSummary | undefined; price: number | null; source: string | null };
 	/** Referenced items absent from the recipe item list; they cannot be priced. */
 	missingItemIds: string[];
-	/** Display names for labelling acquisition routes. */
-	routeSources: {
-		traders: Record<string, string>;
-		stations: Record<string, string>;
-		barterTraderIds: Record<string, string>;
-		craftStationIds: Record<string, string>;
-	};
+	/** Sources and quest names for labelling acquisition routes. */
+	routeContext: RouteContext;
+	taskUnlocksById: ProfitPageData["taskUnlocksById"];
 	hideoutManagementSkillLevel: number;
 	stationLevels: Record<string, number>;
 }
@@ -156,12 +153,14 @@ export function useHideoutPower(
 			missingItemIds: data
 				? [GRAPHICS_CARD_ITEM_ID, PHYSICAL_BITCOIN_ITEM_ID, ...FUEL_TANK_ITEM_IDS].filter((id) => !itemsById[id])
 				: [],
-			routeSources: {
-				traders: Object.fromEntries((data?.traders ?? []).map((trader) => [trader.id, trader.name])),
-				stations: Object.fromEntries((data?.stations ?? []).map((station) => [station.id, station.name])),
-				barterTraderIds: Object.fromEntries((data?.barters ?? []).map((barter) => [barter.id, barter.traderId])),
-				craftStationIds: Object.fromEntries((data?.crafts ?? []).map((craft) => [craft.id, craft.stationId])),
+			routeContext: {
+				itemById: itemsById,
+				tradersById: Object.fromEntries((data?.traders ?? []).map((trader) => [trader.id, trader])),
+				stationsById: Object.fromEntries((data?.stations ?? []).map((station) => [station.id, station])),
+				bartersById: Object.fromEntries((data?.barters ?? []).map((barter) => [barter.id, barter])),
+				craftsById: Object.fromEntries((data?.crafts ?? []).map((craft) => [craft.id, craft])),
 			},
+			taskUnlocksById: data?.taskUnlocksById ?? {},
 			hideoutManagementSkillLevel,
 			stationLevels,
 		};

@@ -87,7 +87,7 @@ export function ExpandedItemRequirements({
 									</div>
 								)}
 							</div>
-							<div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+							<div className="flex-1 min-w-0 flex items-center justify-between gap-2 pr-2">
 								<div className="flex flex-col items-start gap-0.5 min-w-0">
 									<div className={`text-xs truncate ${isCompleted ? "text-subtle-foreground" : "text-foreground"}`}>
 										<span
@@ -108,9 +108,7 @@ export function ExpandedItemRequirements({
 										) : (
 											<span className={isCompleted ? "text-success" : "text-brand"}>
 												{formatNumber(needs.effectiveHave)}
-												{owned.haveFir > 0 && (
-													<span className="text-fir">{` (${formatNumber(owned.haveFir)})`}</span>
-												)}
+												{owned.haveFir > 0 && <span className="text-fir">{` (${formatNumber(owned.haveFir)})`}</span>}
 												{` / ${formatNumber(needs.totalRequired)}`}
 											</span>
 										)}

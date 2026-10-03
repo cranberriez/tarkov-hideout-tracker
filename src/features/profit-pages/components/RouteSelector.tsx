@@ -2,24 +2,12 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import Image from "next/image";
-import { Crown } from "lucide-react";
 import type { AcquisitionPlan } from "@/lib/price-calculation";
 import type { ItemSummary } from "@/types/items";
 import type { RouteContext } from "../types";
 import { acquisitionRouteKey, getAcquisitionRoutes, hasCheaperLockedRoute } from "../utils/recipes";
-import { formatCompactPrice } from "../utils/formatters";
-import { LockReasons } from "./LockReasons";
+import { AcquisitionRouteOption, routeLabels } from "./AcquisitionRouteOption";
 import { RouteIcon } from "./RouteIcon";
-
-const routeLabels = {
-	flea: "Flea",
-	trader: "Trader",
-	barter: "Barter",
-	craft: "Craft",
-	sell: "Sell value",
-	empty: "Empty value",
-} as const;
 
 export function RouteSelector({
 	plan,
@@ -155,106 +143,31 @@ export function RouteSelector({
 							{[...routes, ...(plan.lockedAlternatives ?? [])].map((route, index) => {
 								const locked = "lockReasons" in route;
 								const key = acquisitionRouteKey(route);
-								const selected = key === acquisitionRouteKey(plan);
-								const best = key === recommendedRouteKey;
-								const selectRoute = () => {
-									onSelect(key);
-									setPosition(null);
-								};
-								const sourceName =
-									route.method === "trader" && route.traderOffer
-										? routeContext.tradersById[route.traderOffer.traderId]?.name
-										: route.method === "barter" && route.sourceId
-											? routeContext.tradersById[routeContext.bartersById[route.sourceId]?.traderId ?? ""]?.name
-											: route.method === "craft" && route.sourceId
-												? routeContext.stationsById[routeContext.craftsById[route.sourceId]?.stationId ?? ""]?.name
-												: undefined;
-								const requiredLevel =
-									route.method === "trader"
-										? route.traderOffer?.minTraderLevel
-										: route.method === "barter"
-											? routeContext.bartersById[route.sourceId ?? ""]?.minTraderLevel
-											: route.method === "craft"
-												? routeContext.craftsById[route.sourceId ?? ""]?.level
-												: undefined;
 								return (
-									<span
+									<AcquisitionRouteOption
 										key={`${key}:${index}`}
-										className={`block cursor-pointer rounded border transition-colors hover:bg-highlight/[0.07] ${locked ? "border-danger/35" : "border-transparent"} ${selected ? "bg-brand/10" : ""}`}
-										onClick={(event) => {
-											if ((event.target as Element).closest("a, button")) return;
-											selectRoute();
+										route={route}
+										unitPrice={
+											locked
+												? (route.estimatedUnitPrice ?? null)
+												: plan.quantity > 0
+													? route.totalCost / plan.quantity
+													: null
+										}
+										priceTitle={
+											locked && route.estimatedUnitPrice !== undefined
+												? "Estimated unit price; route is locked"
+												: undefined
+										}
+										item={item}
+										routeContext={routeContext}
+										selected={key === acquisitionRouteKey(plan)}
+										best={key === recommendedRouteKey}
+										onSelect={() => {
+											onSelect(key);
+											setPosition(null);
 										}}
-									>
-										{best && (
-											<span className="mb-1 flex items-center gap-1 px-1.5 pt-1 text-[9px] font-bold uppercase tracking-wide text-warning">
-												<Crown aria-hidden="true" className="size-3" />
-												Best
-											</span>
-										)}
-										{locked && <LockReasons reasons={route.lockReasons} />}
-										<button
-											type="button"
-											onClick={(event) => {
-												event.preventDefault();
-												event.stopPropagation();
-												selectRoute();
-											}}
-											className="grid w-full grid-cols-[18px_64px_30px_minmax(0,1fr)_auto] items-center gap-2 rounded px-2 py-1 text-left"
-										>
-											<RouteIcon
-												method={route.method}
-												inline
-												title={locked ? `${routeLabels[route.method]} locked` : routeLabels[route.method]}
-											/>
-											<span className="text-[9px] font-bold uppercase text-foreground">
-												{routeLabels[route.method]}
-											</span>
-											{item?.iconLink ? (
-												<Image
-													src={item.iconLink}
-													alt=""
-													width={28}
-													height={28}
-													className="size-7 object-contain"
-													unoptimized
-												/>
-											) : (
-												<span className="size-7" />
-											)}
-											<span className="min-w-0">
-												<span className="block truncate text-[10px] text-foreground">
-													{item?.shortName ?? item?.name ?? "Unknown item"}
-												</span>
-												{(sourceName || requiredLevel !== undefined) && (
-													<span className="flex gap-1 text-[9px] leading-tight text-muted-foreground">
-														<span className="truncate">{sourceName ?? "Unknown source"}</span>
-														{requiredLevel !== undefined && (
-															<span className="shrink-0">
-																{route.method === "craft" ? `lvl ${requiredLevel}` : `LL${requiredLevel}`}
-															</span>
-														)}
-													</span>
-												)}
-											</span>
-											<span
-												className="font-mono text-[10px] text-brand"
-												title={
-													locked && route.estimatedUnitPrice !== undefined
-														? "Estimated unit price; route is locked"
-														: undefined
-												}
-											>
-												{formatCompactPrice(
-													locked
-														? (route.estimatedUnitPrice ?? null)
-														: plan.quantity > 0
-															? route.totalCost / plan.quantity
-															: null,
-												)}
-											</span>
-										</button>
-									</span>
+									/>
 								);
 							})}
 						</span>
