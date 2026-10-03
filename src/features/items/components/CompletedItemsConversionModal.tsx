@@ -124,7 +124,7 @@ export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItem
 													{totalNonFir > 0 ? totalNonFir : "-"}
 												</td>
 												<td
-													className={`px-3 py-1.5 text-right ${totalFir > 0 ? "text-warning" : "text-muted-foreground"} font-mono`}
+													className={`px-3 py-1.5 text-right ${totalFir > 0 ? "text-fir" : "text-muted-foreground"} font-mono`}
 												>
 													{totalFir > 0 ? totalFir : "-"}
 												</td>

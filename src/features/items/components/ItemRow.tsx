@@ -90,7 +90,7 @@ export function ItemRow({ item, count, firCount = 0, size, isHideout = false, is
 							{isCurrency ? (
 								<span className="text-brand">{formattedCompactCount}</span>
 							) : isAllFir ? (
-								<span className={needs.isSatisfied ? "text-success" : "text-warning"}>
+								<span className={needs.isSatisfied ? "text-success" : "text-fir"}>
 									FiR {formatNumber(owned.haveFir)}
 									<span className="text-muted-foreground mx-[2px]">/</span>
 									{formatNumber(firRequired)}
@@ -102,7 +102,7 @@ export function ItemRow({ item, count, firCount = 0, size, isHideout = false, is
 										<span className="text-muted-foreground mx-[2px]">/</span>
 										{formatNumber(nonFirRequired)}
 									</span>
-									<span className={needs.isSatisfied ? "text-success" : "text-warning"}>
+									<span className={needs.isSatisfied ? "text-success" : "text-fir"}>
 										FiR {formatNumber(owned.haveFir)}
 										<span className="text-muted-foreground mx-[2px]">/</span>
 										{formatNumber(firRequired)}
@@ -193,7 +193,7 @@ export function ItemRow({ item, count, firCount = 0, size, isHideout = false, is
 							</div>
 						) : isAllFir ? (
 							<div className="flex items-baseline justify-between">
-								<span className={needs.isSatisfied ? "text-success" : "text-warning"}>
+								<span className={needs.isSatisfied ? "text-success" : "text-fir"}>
 									{formatNumber(owned.haveFir)}
 									<span className="text-muted-foreground mx-[2px]">/</span>
 									{formatNumber(firRequired)}
@@ -209,7 +209,7 @@ export function ItemRow({ item, count, firCount = 0, size, isHideout = false, is
 									</span>
 								</div>
 								<div className="flex items-baseline justify-between">
-									<span className={needs.isSatisfied ? "text-success" : "text-warning"}>
+									<span className={needs.isSatisfied ? "text-success" : "text-fir"}>
 										FiR {formatNumber(owned.haveFir)}
 										<span className="text-muted-foreground mx-[2px]">/</span>
 										{formatNumber(firRequired)}

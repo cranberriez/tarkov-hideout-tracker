@@ -86,7 +86,7 @@ function SummaryValue({ label, value, accent }: { label: string; value: number; 
 			<dt className="text-[11px] text-muted-foreground lg:text-[10px] lg:font-medium lg:uppercase lg:tracking-[0.12em]">{label}</dt>
 			<dd
 				className={`font-mono text-xs font-semibold lg:mt-0.5 lg:text-base ${
-					accent === "green" ? "text-brand" : accent === "orange" ? "text-warning" : "text-foreground"
+					accent === "green" ? "text-brand" : accent === "orange" ? "text-fir" : "text-foreground"
 				}`}
 			>
 				{value}

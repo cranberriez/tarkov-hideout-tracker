@@ -73,12 +73,12 @@ export function CompactItemRequirements({
 							previewDetails={
 								<PreviewFact label="Required">
 									{formatNumber(req.count)}
-									{req.isFir && <span className="ml-1 text-warning">FiR</span>}
+									{req.isFir && <span className="ml-1 text-fir">FiR</span>}
 									{isCompleted && <span className="ml-1 text-success">· done</span>}
 								</PreviewFact>
 							}
 							className={`relative block w-16 h-16 bg-shadow/40 border group transition-all focus-visible:outline-2 focus-visible:outline-brand ${
-								req.isFir ? "border-warning" : "border-highlight/10"
+								req.isFir ? "border-fir" : "border-highlight/10"
 							} ${isCompleted ? "opacity-50 grayscale" : "hover:border-highlight/30"}`}
 						>
 							{item.iconLink && (
@@ -86,10 +86,10 @@ export function CompactItemRequirements({
 							)}
 							{req.isFir && (
 								<div
-									className="absolute -top-1.5 -right-1.5 bg-shadow rounded-full z-10 text-warning"
+									className="absolute -top-1.5 -right-1.5 bg-shadow rounded-full z-10 text-fir"
 									title="Found In Raid"
 								>
-									<CircleCheckBig className="w-3.5 h-3.5 text-warning" />
+									<CircleCheckBig className="w-3.5 h-3.5 text-fir" />
 								</div>
 							)}
 							{isCompleted && (
@@ -104,7 +104,7 @@ export function CompactItemRequirements({
 											req.isFir
 												? isCompleted
 													? "text-success"
-													: "text-warning"
+													: "text-fir"
 												: isCompleted
 													? "text-success"
 													: "text-brand"
@@ -113,13 +113,13 @@ export function CompactItemRequirements({
 										{formatNumber(req.count)}
 									</div>
 								) : req.isFir ? (
-									<div className={isCompleted ? "text-success" : "text-warning"}>
+									<div className={isCompleted ? "text-success" : "text-fir"}>
 										{formatNumber(needs.haveFirReserved)} / {formatNumber(needs.requiredFir)}
 									</div>
 								) : (
 									<div className={isCompleted ? "text-success" : "text-brand"}>
 										{formatNumber(needs.effectiveHave)}{" "}
-										{owned.haveFir > 0 && <span className="text-warning">{formatNumber(owned.haveFir)}</span>}
+										{owned.haveFir > 0 && <span className="text-fir">{formatNumber(owned.haveFir)}</span>}
 										{` / ${formatNumber(needs.totalRequired)}`}
 									</div>
 								)}

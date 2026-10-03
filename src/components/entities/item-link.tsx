@@ -109,7 +109,7 @@ function ItemPreviewCard({ item, details }: { item: PreviewItem; details?: React
 					<PreviewFact label="In inventory">
 						<span className="font-mono">{owned?.have ?? 0}</span>
 						{(owned?.haveFir ?? 0) > 0 && (
-							<Badge tone="warning" size="xs" className="ml-1.5">
+							<Badge tone="fir" size="xs" className="ml-1.5">
 								{owned?.haveFir} FiR
 							</Badge>
 						)}

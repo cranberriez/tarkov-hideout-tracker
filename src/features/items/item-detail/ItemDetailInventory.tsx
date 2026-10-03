@@ -72,7 +72,7 @@ function CountControl({
 	return (
 		<div className="flex items-center justify-between gap-3 px-1 py-1">
 			<div className="flex items-center gap-2 pl-1 text-sm text-foreground">
-				<span className={`h-2 w-2 rounded-full ${fir ? "bg-warning" : "bg-success"}`} />
+				<span className={`h-2 w-2 rounded-full ${fir ? "bg-fir" : "bg-success"}`} />
 				{label}
 			</div>
 			<div className="flex items-center overflow-hidden rounded-md border border-border-color bg-shadow/35">

@@ -61,7 +61,7 @@ export function InventoryRow({
 			<div className="flex items-center justify-end gap-3">
 				<CountStepper
 					label="FiR"
-					labelClassName="font-bold text-warning"
+					labelClassName="font-bold text-fir"
 					value={row.fir}
 					onChange={(v) => onSetCount("fir", v)}
 				/>

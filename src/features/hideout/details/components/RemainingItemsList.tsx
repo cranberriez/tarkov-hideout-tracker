@@ -58,7 +58,7 @@ export function RemainingItemsList({
 										</span>
 									)}
 									{entry.firCount > 0 && (
-										<span className="text-warning">
+										<span className="text-fir">
 											FiR {formatNumber(needs.haveFirReserved)} / {formatNumber(entry.firCount)}
 										</span>
 									)}

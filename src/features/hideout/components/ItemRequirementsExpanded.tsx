@@ -71,7 +71,7 @@ export function ExpandedItemRequirements({
 								isCompleted ? "opacity-60 hover:bg-shadow/20" : "bg-shadow/40 hover:bg-shadow/60"
 							}`}
 						>
-							<div className={`relative w-10 h-10 shrink-0 ${req.isFir ? "ring-1 ring-warning" : ""}`}>
+							<div className={`relative w-10 h-10 shrink-0 ${req.isFir ? "ring-1 ring-fir" : ""}`}>
 								{item.iconLink && (
 									<Image
 										src={item.iconLink}
@@ -102,14 +102,14 @@ export function ExpandedItemRequirements({
 										{isCurrency ? (
 											<span className="text-brand">{formatNumber(req.count)}</span>
 										) : req.isFir ? (
-											<span className={isCompleted ? "text-success" : "text-warning"}>
+											<span className={isCompleted ? "text-success" : "text-fir"}>
 												FiR {formatNumber(needs.haveFirReserved)} / {formatNumber(needs.requiredFir)}
 											</span>
 										) : (
 											<span className={isCompleted ? "text-success" : "text-brand"}>
 												{formatNumber(needs.effectiveHave)}
 												{owned.haveFir > 0 && (
-													<span className="text-warning">{` (${formatNumber(owned.haveFir)})`}</span>
+													<span className="text-fir">{` (${formatNumber(owned.haveFir)})`}</span>
 												)}
 												{` / ${formatNumber(needs.totalRequired)}`}
 											</span>
@@ -118,7 +118,7 @@ export function ExpandedItemRequirements({
 									</div>
 								</div>
 								{req.isFir && !isCompleted && (
-									<div className="shrink-0 text-warning" title="Found In Raid">
+									<div className="shrink-0 text-fir" title="Found In Raid">
 										<CircleCheckBig className="w-4 h-4" />
 									</div>
 								)}

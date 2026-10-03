@@ -68,7 +68,7 @@ export function ItemThumbnail({
 					aria-label="Found in raid"
 					role="img"
 					strokeWidth={3}
-					className="absolute -right-px -top-px size-3 rounded-full bg-background text-warning"
+					className="absolute -right-px -top-px size-3 rounded-full bg-background text-fir"
 				/>
 			)}
 			{completed && (

@@ -72,6 +72,8 @@ success states. To try the retained Settings tan, set `--brand` to
 
 Use the documented neutral surface/text hierarchy and `warning`, `danger`, `info`
 and `special` roles instead of named Tailwind palettes or local color literals.
+Found-in-raid requirements, counts and markers use the dedicated `fir` orange, not
+`warning`.
 Opacity, `color-mix`, `transparent` and `currentColor` are supported variations.
 Charts and objective groups use the documented chart palette; map navigation has
 separate extract/transit aliases. The route loading illustration keeps its artwork

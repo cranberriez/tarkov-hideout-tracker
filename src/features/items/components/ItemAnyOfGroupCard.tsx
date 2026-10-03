@@ -64,7 +64,7 @@ function ItemPreviewStack({ items, previewIndex, expanded, isIconMode, isFirRequ
 						key={item.id}
 						className={cn(
 							"absolute flex items-center justify-center rounded border bg-shadow/40 transition-all duration-200",
-							isFirRequired ? "border-warning/35" : "border-highlight/10",
+							isFirRequired ? "border-fir/35" : "border-highlight/10",
 							isIconMode ? "size-12" : "size-10",
 							layerClass,
 							index === 0 && "-translate-x-2 rotate-[-4deg]",
@@ -130,7 +130,7 @@ function RequirementSummary({
 		<span className={cn("flex shrink-0 font-medium items-center gap-2", stacked ? "flex-col items-start gap-1" : "")}>
 			<p className="flex items-center gap-2">
 				<span className="text-foreground tabular-nums">{group.requiredCount}x</span>
-				{isFirRequired && <span className="text-warning">FiR</span>}
+				{isFirRequired && <span className="text-fir">FiR</span>}
 			</p>
 			{group.isPartial && (
 				<span className="rounded border border-info/30 bg-info/10 px-1.5 py-0.5 text-[9px] font-medium text-info">
@@ -176,7 +176,7 @@ function GroupItemsGrid({ items, isFirRequired, previewItems }: GroupItemsGridPr
 					<div
 						className={cn(
 							"flex size-10 shrink-0 items-center justify-center rounded border bg-shadow/40",
-							isFirRequired ? "border-warning/35" : "border-highlight/10",
+							isFirRequired ? "border-fir/35" : "border-highlight/10",
 						)}
 					>
 						<ItemImage item={item} className="size-8" />

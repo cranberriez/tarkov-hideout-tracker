@@ -227,7 +227,7 @@ function AnyOfGroupRow({
 						</span>
 						<span className="rounded-md bg-special/10 px-1.5 py-0.5 text-[10px] text-special">Item group</span>
 						{group.requiredFirCount > 0 && (
-							<span className="rounded-md bg-warning/10 px-1.5 py-0.5 text-[10px] text-warning">FiR</span>
+							<span className="rounded-md bg-fir/10 px-1.5 py-0.5 text-[10px] text-fir">FiR</span>
 						)}
 						<QuestStatus status={group.status} />
 					</div>
@@ -300,7 +300,7 @@ function ItemRequirementCount({
 				</span>
 			)}
 			{firCount > 0 && (
-				<span className="whitespace-nowrap font-mono text-xs font-semibold text-warning">FiR ×{firCount}</span>
+				<span className="whitespace-nowrap font-mono text-xs font-semibold text-fir">FiR ×{firCount}</span>
 			)}
 		</div>
 	);

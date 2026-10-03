@@ -180,7 +180,7 @@ export function ObjectiveRow({
 									{isPartialItemList ? `${item.count} of any qualifying item` : `${item.count} of any of these`}
 								</span>
 								{item.foundInRaid && (
-									<span className="rounded border border-warning/30 bg-warning/10 px-1.5 py-0.5 text-[9px] font-medium text-warning">
+									<span className="rounded border border-fir/30 bg-fir/10 px-1.5 py-0.5 text-[9px] font-medium text-fir">
 										FiR
 									</span>
 								)}
@@ -202,12 +202,12 @@ export function ObjectiveRow({
 										<ItemThumbnail
 											item={itm}
 											size="xs"
-											className={item.foundInRaid ? "rounded-sm ring-1 ring-warning" : undefined}
+											className={item.foundInRaid ? "rounded-sm ring-1 ring-fir" : undefined}
 										/>
 										<span className="text-[11px] text-foreground">{itm.name}</span>
 										{!hasItemChoices && <span className="text-[11px] text-subtle-foreground">x{item.count}</span>}
 										{!hasItemChoices && item.foundInRaid && (
-											<Badge tone="warning" size="xs">
+											<Badge tone="fir" size="xs">
 												FiR
 											</Badge>
 										)}
@@ -222,7 +222,7 @@ export function ObjectiveRow({
 						{item && hasItemChoices && (
 							<div className="mb-2.5 flex flex-wrap items-center gap-2 text-xs text-subtle-foreground">
 								<span>{item.count} of any qualifying item</span>
-								{item.foundInRaid && <span className="text-warning">Found in raid</span>}
+								{item.foundInRaid && <span className="text-fir">Found in raid</span>}
 							</div>
 						)}
 						<div className="flex flex-wrap gap-2.5">
@@ -236,10 +236,10 @@ export function ObjectiveRow({
 										thumbnailSize="md"
 										linked={!isQuestSpecific}
 										item={rowItem}
-										className={cn("min-h-11", item?.foundInRaid && "border-warning/40")}
+										className={cn("min-h-11", item?.foundInRaid && "border-fir/40")}
 										badges={
 											item?.foundInRaid ? (
-												<Badge tone="warning" size="xs" className="mr-2">
+												<Badge tone="fir" size="xs" className="mr-2">
 													FiR
 												</Badge>
 											) : undefined

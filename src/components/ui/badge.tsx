@@ -3,16 +3,17 @@ import { cn } from "@/lib/utils";
 
 /**
  * Compact status label. Keep meanings distinct: `success` for completed/satisfied,
- * `warning` for FiR and unmet prerequisites, `danger` for locked/failed, `info`
- * for active states, `special` for milestones, and `brand` for selection/levels.
+ * `fir` for found-in-raid, `warning` for unmet prerequisites, `danger` for locked/failed,
+ * `info` for active states, `special` for milestones, and `brand` for selection/levels.
  */
-export type BadgeTone = "neutral" | "brand" | "success" | "warning" | "danger" | "info" | "special";
+export type BadgeTone = "neutral" | "brand" | "success" | "fir" | "warning" | "danger" | "info" | "special";
 export type BadgeSize = "xs" | "sm" | "md";
 
 const tones: Record<BadgeTone, string> = {
 	neutral: "border-highlight/12 bg-highlight/5 text-muted-foreground",
 	brand: "border-brand/25 bg-brand/8 text-brand",
 	success: "border-success/25 bg-success/8 text-success",
+	fir: "border-fir/25 bg-fir/8 text-fir",
 	warning: "border-warning/25 bg-warning/8 text-warning",
 	danger: "border-danger/25 bg-danger/8 text-danger",
 	info: "border-info/25 bg-info/8 text-info",

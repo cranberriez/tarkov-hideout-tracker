@@ -45,7 +45,7 @@ export function QuickAddItemRow({
 			<div className="flex w-full items-center justify-end gap-3 sm:w-auto">
 				<CountField
 					label="FiR"
-					labelClassName="font-bold text-warning"
+					labelClassName="font-bold text-fir"
 					value={pending.fir}
 					onChange={(value) => onCountChange("fir", value)}
 					onDone={onDone}

@@ -37,8 +37,11 @@
 	/* Success: completed, satisfied, ready, positive profit. Intentionally independent of brand, even while the values match. */
 	--success: oklch(0.8003 0.1821 151.71);
 
-	/* Warning: unmet prerequisites, FiR attention, caution and partial/missing-data notices. */
+	/* Warning: unmet prerequisites, caution and partial/missing-data notices. */
 	--warning: oklch(0.828 0.16 84.429);
+
+	/* Found in raid: Tarkov's FiR orange for FiR requirements, counts and markers. Kept distinct from warning yellow and craft orange. */
+	--fir: oklch(0.77 0.165 64);
 
 	/* Danger: failed/error states, destructive actions and negative profit. */
 	--danger: oklch(0.704 0.191 22.216);
@@ -146,6 +149,7 @@
 	--brand-hover: color-mix(in oklab, var(--brand) 80%, var(--background));
 	--success: oklch(0.62 0.15 150);
 	--warning: oklch(0.6 0.13 65);
+	--fir: oklch(0.6 0.15 52);
 	--danger: oklch(0.59 0.2 27);
 	--info: oklch(0.57 0.13 245);
 	--special: oklch(0.55 0.2 305);
@@ -171,6 +175,7 @@
 	--brand-hover: color-mix(in oklab, var(--brand) 80%, var(--background));
 	--success: oklch(0.84 0.18 150);
 	--warning: oklch(0.87 0.15 88);
+	--fir: oklch(0.82 0.16 66);
 	--danger: oklch(0.76 0.17 22);
 	--info: oklch(0.8 0.12 232);
 	--special: oklch(0.78 0.14 305);
@@ -197,6 +202,7 @@
 	--color-accent-alternate: var(--accent-alternate);
 	--color-success: var(--success);
 	--color-warning: var(--warning);
+	--color-fir: var(--fir);
 	--color-danger: var(--danger);
 	--color-info: var(--info);
 	--color-special: var(--special);
