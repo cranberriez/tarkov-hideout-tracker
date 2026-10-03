@@ -71,7 +71,7 @@ export function ItemDetailAcquisition({
 									<span className="text-sm font-medium text-foreground">{offer.trader.name}</span>
 									<span className="text-[11px] text-muted-foreground">
 										LL{offer.minTraderLevel}
-										{offer.buyLimit ? ` · Limit ${offer.buyLimit}` : ""}
+										{offer.kind === "buy" && offer.buyLimit ? ` · Limit ${offer.buyLimit}` : ""}
 									</span>
 									{!usedIn && (
 										<span className="rounded bg-highlight/5 px-1.5 py-0.5 text-[10px] text-muted-foreground">
@@ -110,6 +110,11 @@ export function ItemDetailAcquisition({
 								outputItem={offer.outputItem ?? outputItem}
 								outputIsViewedItem={!offer.outputItem}
 								outputCount={offer.offeredCount}
+								outputSecondary={
+									offer.buyLimit ? (
+										<span className="text-[10px] text-muted-foreground">Limit {offer.buyLimit}</span>
+									) : undefined
+								}
 							>
 								{offer.requiredItems.map((entry) => (
 									<CostItem

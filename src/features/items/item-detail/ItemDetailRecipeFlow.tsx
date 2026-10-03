@@ -12,10 +12,13 @@ export function ItemDetailRecipeFlow({
 	outputItem,
 	outputCount,
 	outputIsViewedItem,
+	outputSecondary,
 }: {
 	children: ReactNode;
 	outputItem: PreviewItem;
 	outputCount: number;
+	/** Shown under the output item's name, e.g. a barter's per-reset limit. */
+	outputSecondary?: ReactNode;
 	/** The viewed item is tinted (like it is among inputs) and not linked to itself. */
 	outputIsViewedItem: boolean;
 }) {
@@ -32,6 +35,7 @@ export function ItemDetailRecipeFlow({
 					flat
 					linked={!outputIsViewedItem}
 					highlighted={outputIsViewedItem}
+					secondary={outputSecondary}
 				/>
 			</span>
 		</div>
