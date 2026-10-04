@@ -3,6 +3,8 @@
 import type { CurrentPrice } from "@/types/prices";
 import { Check, Clock3, Store, X } from "lucide-react";
 import { PriceChange } from "@/components/entities/price-change";
+import { MarketTimingBanner } from "@/components/entities/market-timing-banner";
+import { describeMarketTiming } from "@/lib/utils/market-timing";
 import { formatRoubles, getFleaPriceEstimate, hasFleaMarketData } from "@/lib/utils/market-price";
 import { ItemDetailSection } from "./ItemDetailSection";
 import { ItemDetailPriceStability } from "./ItemDetailPriceStability";
@@ -40,6 +42,7 @@ export function ItemDetailMarket({
 	const canSellOnFlea = minLevelForFlea != null && playerLevel >= minLevelForFlea;
 	const fleaPrice = getFleaPriceEstimate(marketPrice);
 	const unstable = !isFiat && marketPrice.fleaStability === "unstable";
+	const marketTiming = isFiat ? null : describeMarketTiming(marketPrice);
 	const traderValuationCount = Math.max(1, Math.floor(valuationCount));
 	const topTraderValuations = (marketPrice.sellFor ?? [])
 		.filter((offer) => offer.priceRUB > 0)
@@ -101,6 +104,8 @@ export function ItemDetailMarket({
 					</div>
 				</div>
 			)}
+
+			{marketTiming && <MarketTimingBanner timing={marketTiming} className="mt-2" />}
 
 			{unstable && <ItemDetailPriceStability marketPrice={marketPrice} />}
 

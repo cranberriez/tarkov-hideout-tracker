@@ -116,6 +116,59 @@ export interface ItemPriceHistoryPayload {
 	fetchedAt: number;
 }
 
+/** One item's latest market-analyzer observation; see market-analyzer/README.md for each field. */
+export interface ItemMarketAnalytics {
+	itemId: string;
+	calculatedAt: number;
+	/** Latest upstream observation the analysis covered. */
+	sourceUpdatedAt: number;
+	confidence: "high" | "medium" | "low";
+	confidenceReasons: string[];
+	marketValue: number | null;
+	currentLevel: number | null;
+	livePriceMin: number | null;
+	liveOfferCount: number | null;
+	median24h: number | null;
+	median7d: number | null;
+	median30d: number | null;
+	rangeLow7d: number | null;
+	rangeHigh7d: number | null;
+	/** Fractions (0.1 = +10%). */
+	change6h: number | null;
+	change24h: number | null;
+	change7d: number | null;
+	change24hRub: number | null;
+	change7dRub: number | null;
+	move12h: number | null;
+	/** Share of the last 30 days spent below the market value (0–1). */
+	percentile30d: number | null;
+	volatility7d: number | null;
+	trend: "rising" | "falling" | "stable" | "unknown";
+	persistenceHours: number | null;
+	depthMedian24h: number | null;
+	coverage: { day: number; week: number; month: number };
+	shock: {
+		phase: "holding" | "retracing" | "settled" | "reverted";
+		baseline: number | null;
+		extreme: number | null;
+		at: number | null;
+		retracement: number | null;
+	} | null;
+	basePrice: number | null;
+	traderValue: number | null;
+	traderId: string | null;
+	fleaFee: number | null;
+	fleaNet: number | null;
+	traderBreakEven: number | null;
+	practicalBreakEven: number | null;
+	maxNetPrice: number | null;
+	maxNet: number | null;
+}
+
+export interface ItemMarketAnalyticsPayload {
+	data: ItemMarketAnalytics;
+}
+
 export interface HideoutStationsPayload {
 	stations: Station[];
 }

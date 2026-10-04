@@ -19,6 +19,8 @@ import type { CurrentPrice } from "@/types/prices";
 import { EntityPreview, PreviewFact } from "./entity-preview";
 import { ItemThumbnail } from "./item-thumbnail";
 import { PriceChange } from "./price-change";
+import { MarketTimingBanner } from "./market-timing-banner";
+import { describeMarketTiming } from "@/lib/utils/market-timing";
 import { ItemPreviewNeeds } from "./item-preview-needs";
 import { itemImageUrl } from "@/lib/utils/item-images";
 import { traderImageUrl, traderInfo } from "@/lib/data/traders";
@@ -115,6 +117,8 @@ function ItemPreviewCard({ item, details }: { item: PreviewItem; details?: React
 	const bestTrader = fleaBanned ? getBestTraderOffer({ ...toItemSummary(item), marketPrice: cachedPrice }) : null;
 	const isCurrency =
 		item.normalizedName === "roubles" || item.normalizedName === "dollars" || item.normalizedName === "euros";
+	const marketTiming =
+		!isCurrency && !fleaBanned && priceState.kind === "price" ? describeMarketTiming(cachedPrice) : null;
 	const category = item.category && item.category.normalizedName !== "item" ? item.category.name : null;
 
 	return (
@@ -149,6 +153,7 @@ function ItemPreviewCard({ item, details }: { item: PreviewItem; details?: React
 						</span>
 					</PreviewFact>
 				)}
+				{marketTiming && <MarketTimingBanner timing={marketTiming} compact />}
 				{!isCurrency && fleaBanned && bestTrader && bestTrader.priceRUB > 0 && (
 					<PreviewFact label="Trader sell">
 						<span className="inline-flex items-center gap-1">

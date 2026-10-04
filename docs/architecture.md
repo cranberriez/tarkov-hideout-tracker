@@ -376,7 +376,10 @@ separate Keep for Quests and Keep for Hideout rows, including each source's FiR
 quantity. These show outstanding requirement totals, without subtracting inventory;
 there is no duplicate Still needed row. Inventory totals include both non-FiR and FiR balances.
 The flea estimate includes a compact colored 48-hour trend when available and labels
-unstable values. Entity cards are 280px wide with tighter spacing and a slightly
+unstable values. A one-line [market timing banner](../src/components/entities/market-timing-banner.tsx)
+follows it when the cached price is unusually high or low (see [data layer](data-layer.md));
+the item dialog's Market section shows the same flag with the typical price and 7-day range,
+and its Analytics tab lists the latest stored market observation. Entity cards are 280px wide with tighter spacing and a slightly
 translucent, blurred background. Facts use brighter labels and left-aligned values;
 the hover trend has no chip background. Zero inventory, requirement,
 and flea-value rows are omitted. Explicitly flea-banned items show the highest

@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ChartNoAxesCombined, ClipboardList, Hammer, ShoppingCart, Wrench } from "lucide-react";
+import { Activity, ChartNoAxesCombined, ClipboardList, Hammer, ShoppingCart, Wrench } from "lucide-react";
 import type { DerivedQuestAnyOfGroup, DerivedQuestItemState, QuestRewardLink } from "@/lib/quests/quest-item-index";
 import { ItemDetailHideoutRequirements, type StationRequirementEntry } from "./ItemDetailHideoutRequirements";
 import { ItemDetailQuestRequirements } from "./ItemDetailQuestRequirements";
 import { ItemDetailAcquisition } from "./ItemDetailAcquisition";
 import { ItemDetailCrafting } from "./ItemDetailCrafting";
 import { ItemDetailPriceHistory } from "./ItemDetailPriceHistory";
+import { ItemDetailMarketAnalytics } from "./ItemDetailMarketAnalytics";
 import { getCachedPriceHistoryAvailability } from "./price-history-query";
 import type { ItemCraftRecipe, ItemTraderOffer } from "@/features/items/item-detail/item-detail-types";
 import type { ItemSummary } from "@/types/items";
@@ -16,7 +17,7 @@ import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import type { ManualPriceOverrides, RecipeEvaluation } from "@/lib/price-calculation";
 import { useQueryClient } from "@tanstack/react-query";
 
-type UsageTab = "hideout" | "quests" | "traders" | "crafting" | "prices";
+type UsageTab = "hideout" | "quests" | "traders" | "crafting" | "prices" | "analytics";
 
 interface ItemDetailUsageTabsProps {
 	className?: string;
@@ -113,12 +114,14 @@ export function ItemDetailUsageTabs({
 	const tradersEnabled = traderCount > 0 || acquisitionLoading || barterError !== null;
 	const craftingEnabled = craftCount > 0 || acquisitionLoading || craftError !== null;
 	const historyEnabled = showPriceHistory && hasLoadedPriceHistory !== false;
+	const analyticsEnabled = showPriceHistory;
 	const enabledTabs: UsageTab[] = [
 		...(hideoutEnabled ? (["hideout"] as const) : []),
 		...(questsEnabled ? (["quests"] as const) : []),
 		...(tradersEnabled ? (["traders"] as const) : []),
 		...(craftingEnabled ? (["crafting"] as const) : []),
 		...(historyEnabled ? (["prices"] as const) : []),
+		...(analyticsEnabled ? (["analytics"] as const) : []),
 	];
 	const selectedTab = enabledTabs.includes(activeTab) ? activeTab : enabledTabs[0];
 	const selectedItem = itemDetailsById[selectedItemId] ?? {
@@ -169,6 +172,13 @@ export function ItemDetailUsageTabs({
 					onClick={() => setActiveTab("prices")}
 					label="History"
 					icon={<ChartNoAxesCombined size={13} />}
+				/>
+				<TabButton
+					active={selectedTab === "analytics"}
+					disabled={!analyticsEnabled}
+					onClick={() => setActiveTab("analytics")}
+					label="Analytics"
+					icon={<Activity size={13} />}
 				/>
 			</div>
 
@@ -304,6 +314,9 @@ export function ItemDetailUsageTabs({
 						mode={gameMode}
 						onAvailabilityChange={setHasLoadedPriceHistory}
 					/>
+				)}
+				{selectedTab === "analytics" && analyticsEnabled && (
+					<ItemDetailMarketAnalytics itemId={selectedItemId} mode={gameMode} item={itemDetailsById[selectedItemId]} />
 				)}
 			</div>
 		</section>

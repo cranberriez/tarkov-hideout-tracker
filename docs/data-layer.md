@@ -208,6 +208,7 @@ parameter parsing, database error responses, and the named
 | [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and recipes producing one item, referenced items and source labels; complete: browser 300s, CDN 3600s; partial: no-store                                  |
 | [acquisition-tree](../src/app/api/items/[itemId]/acquisition-tree/route.ts)                                                                                      | Cycle-safe graph bounded by depth/item count with `truncated`; complete: browser 300s, CDN 3600s; partial: no-store                                                               |
 | [price-history](../src/app/api/items/[itemId]/price-history/route.ts)                                                                                            | On-demand provider history for catalog items only; histories and provider 404s cached 7200s (server and CDN); unknown IDs 404 locally, CDN 1 day                                  |
+| [market-analytics](../src/app/api/items/[itemId]/market-analytics/route.ts)                                                                                      | Latest market-analyzer observation for one item; found and not-analyzed (404) answers: browser 300s, CDN 3600s; database errors: no-store                                         |
 | [search](../src/app/api/items/search/route.ts)                                                                                                                   | Mode and `q` up to 80 characters, normalized for matching; 10 results by default or 50 with `limit=50`; `private, no-store`                                                       |
 | [status](../src/app/api/data/status/route.ts)                                                                                                                    | Mode/release identity, hideout/item/quest/craft/barter release freshness, and independent mutable-price change/check timestamps; browser 30s, CDN 60s                             |
 | [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); complete: browser 300s, CDN 3600s; errors: no-store                                    |
@@ -274,8 +275,20 @@ The [market-analyzer worker](../market-analyzer/README.md) writes through this s
 store and lease, reusing the shared normalization and outcome derivation. It keeps
 full upstream histories only in its own disk cache, pushes changed items hourly,
 and does not write not-modified checks. Its derived analytics are append-only rows in
-market_analysis_runs and item_market_observations (migration 0002); only the
-development dashboard reads them so far.
+market_analysis_runs and item_market_observations (migration 0002), read by the
+development dashboard and by [market-analytics.ts](../src/server/db/market-analytics.ts)
+for the two uses below.
+
+Each current price batch also reads the latest observation per item and attaches an
+optional `marketReference` (7-day median and p10–p90 range, with the analysis time)
+only when that observation has medium or high confidence. This enrichment is optional:
+a missing analytics schema or failed read omits it and never fails or alters prices.
+[market-timing.ts](../src/lib/utils/market-timing.ts) compares the current price with
+it: at least the range top and 15% above the median is unusually high; at most the range
+bottom and 13% below is unusually low. Levels more than 36 hours from the price
+observation, stale or unavailable prices, and missing references produce no flag.
+Item hover cards and the item dialog's Market section show the flag. The item dialog's
+Analytics tab loads one item's full latest observation through its own route on demand.
 
 Trader sell offers (`sellFor`) carry only `traderId`; names and images come from the
 bundled [trader list](../src/lib/data/traders.ts), which needs an entry when a new trader

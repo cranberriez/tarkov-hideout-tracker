@@ -173,9 +173,10 @@ function RequirementCell({
 			}`}
 		>
 			<span
-				className={`relative flex shrink-0 items-center justify-center rounded-md bg-highlight/[0.035] ${
+				className={`relative flex shrink-0 items-center justify-center bg-highlight/[0.035] ${
 					isRoomy ? "h-12 w-12" : "h-10 w-10"
 				}`}
+				title={requirement.isFir ? "Found in raid required" : undefined}
 			>
 				{itemImageLink ? (
 					<Image src={itemImageLink} alt="" fill className="object-contain p-0.5" unoptimized />
@@ -183,7 +184,7 @@ function RequirementCell({
 					<PackageOpen size={15} className="text-muted-foreground" />
 				)}
 				{requirement.isFir && (
-					<span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full border border-background bg-warning" />
+					<span aria-hidden="true" className="pointer-events-none absolute inset-0.5 border border-fir" />
 				)}
 				{requirement.isCompleted && (
 					<span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-background bg-success text-inverse shadow-sm">

@@ -8,6 +8,8 @@ import type { ItemSize } from "@/lib/stores/useUserStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
 import { describeFleaPrice, formatFleaPriceState } from "@/lib/utils/market-price";
+import { describeMarketTiming } from "@/lib/utils/market-timing";
+import { MarketTimingMarker } from "@/components/entities/market-timing-banner";
 import { itemImageUrl } from "@/lib/utils/item-images";
 
 interface ItemRowProps {
@@ -45,6 +47,7 @@ export function ItemRow({ item, count, firCount = 0, size, isHideout = false, is
 	// Helper to determine if an item is a currency for display purposes
 	const isCurrency =
 		item.normalizedName === "roubles" || item.normalizedName === "dollars" || item.normalizedName === "euros";
+	const marketTiming = isCurrency ? null : describeMarketTiming(item.marketPrice);
 
 	const needs = computeNeeds({
 		totalRequired: count,
@@ -73,9 +76,12 @@ export function ItemRow({ item, count, firCount = 0, size, isHideout = false, is
 				className={`flex items-center ${isIconOnly ? "gap-1.5" : "gap-3"} bg-card border p-2 rounded hover:bg-shadow/40 hover:border-info transition-colors relative group focus-visible:outline-2 focus-visible:outline-brand`}
 			>
 				<div
-					className={`${isIconOnly ? "w-12 h-12" : "w-10 h-10"} bg-shadow/40 flex items-center justify-center shrink-0 overflow-hidden relative`}
+					className={`${isIconOnly ? "w-12 h-12" : "w-10 h-10"} bg-shadow/40 flex items-center justify-center shrink-0 overflow-visible relative`}
 				>
-					<img src={itemImageUrl(item)} alt={item.name} className="w-full h-full object-contain" />
+					<div className="h-full w-full overflow-hidden">
+						<img src={itemImageUrl(item)} alt={item.name} className="w-full h-full object-contain" />
+					</div>
+					{marketTiming && <MarketTimingMarker timing={marketTiming} />}
 				</div>
 
 				<div className="flex-1 min-w-0">
@@ -139,8 +145,11 @@ export function ItemRow({ item, count, firCount = 0, size, isHideout = false, is
 		>
 			{/* Header: Icon & Name */}
 			<div className="flex items-start gap-3 min-w-0 z-1">
-				<div className="w-12 h-12 bg-shadow/40 flex items-center justify-center shrink-0 overflow-hidden relative">
-					<img src={itemImageUrl(item)} alt={item.name} className="w-full h-full object-contain" />
+				<div className="w-12 h-12 bg-shadow/40 flex items-center justify-center shrink-0 overflow-visible relative">
+					<div className="h-full w-full overflow-hidden">
+						<img src={itemImageUrl(item)} alt={item.name} className="w-full h-full object-contain" />
+					</div>
+					{marketTiming && <MarketTimingMarker timing={marketTiming} />}
 				</div>
 
 				<div className="min-w-0 flex-1">

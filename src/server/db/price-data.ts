@@ -8,6 +8,7 @@ import type { PostgresDatabase } from "../postgres/connection";
 import { itemPrices } from "../postgres/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { boundedReadCache, canonicalIds, mapBatches } from "./read-cache";
+import { readMarketReferences } from "./market-analytics";
 
 function readPoints(value: unknown): PriceHistoryPoint[] {
 	if (!Array.isArray(value) || value.length > 10) return [];
@@ -58,6 +59,11 @@ export async function getCurrentPriceData(
 				.select()
 				.from(itemPrices)
 				.where(and(eq(itemPrices.mode, mode), inArray(itemPrices.itemId, batch)));
+			const references = await readMarketReferences(
+				db,
+				mode,
+				rows.map((row) => row.itemId),
+			);
 			return Object.fromEntries(
 				rows.map((row) => {
 					const points = readPoints(row.recentPoints);
@@ -85,11 +91,13 @@ export async function getCurrentPriceData(
 						current.lastOfferCount = row.latestOfferCount;
 						current.updatedAt = row.latestPointAt;
 					}
+					const reference = references[row.itemId];
+					if (reference) current.marketReference = reference;
 					return [row.itemId, current];
 				}),
 			);
 		};
-		return database ? read() : boundedReadCache(["postgres-prices", "2", mode, JSON.stringify(batch)], read, 300);
+		return database ? read() : boundedReadCache(["postgres-prices", "3", mode, JSON.stringify(batch)], read, 300);
 	});
 	const data = Object.assign({}, ...batches) as Record<string, CurrentPrice>;
 	const updatedAt = Object.values(data).reduce((latest, price) => Math.max(latest, price.updatedAt ?? 0), 0);

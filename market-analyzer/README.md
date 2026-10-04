@@ -2,7 +2,9 @@
 
 A small Dockerized worker for the VPS. It keeps flea prices fresh and records derived
 market analytics in the site's PostgreSQL. The website still owns reads; this worker
-only writes.
+only writes. The website reads each item's latest observation (the 7-day median and
+range for its price flags, the whole row for the item dialog's Analytics tab), so
+renaming or removing columns needs a matching website change.
 
 It bundles the website's own pricing code from [src/](../src/) (history normalization,
 effective price, flea tax, trader comparisons), so both produce identical results for
