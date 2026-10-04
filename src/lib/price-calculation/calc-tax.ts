@@ -1,5 +1,6 @@
-import type { VendorPrice } from "@/types/prices";
+import type { TraderSellOffer } from "@/types/prices";
 import { STATION_IDS } from "../data/static-stations";
+import { traderInfo } from "../data/traders";
 
 export interface TaxOptions {
 	stationLevels?: Readonly<Record<string, number>>;
@@ -20,11 +21,11 @@ const multipliers: Readonly<Record<string, number>> = {
 export const INTELLIGENCE_CENTER_ID = STATION_IDS["intelligence-center"];
 
 /** Catalog buybacks describe full items. Never infer base value from flea/purchase prices. */
-export function itemBasePrice(offers: readonly VendorPrice[] = [], options: TaxOptions = {}): number | null {
+export function itemBasePrice(offers: readonly TraderSellOffer[] = [], options: TaxOptions = {}): number | null {
 	const values = offers.flatMap((offer) => {
-		const name = offer.vendor.normalizedName.toLowerCase();
+		const name = traderInfo(offer.traderId).normalizedName;
 		// Ref's quote requires a known loyalty tier; prefer fixed-multiplier traders.
-		const level = options.traderLoyaltyLevels?.[offer.vendor.id ?? "ref"];
+		const level = options.traderLoyaltyLevels?.[offer.traderId];
 		const multiplier =
 			name === "ref"
 				? level === undefined

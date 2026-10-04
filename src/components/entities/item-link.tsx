@@ -4,7 +4,6 @@ import { useMemo, type ComponentProps, type ReactNode } from "react";
 import { useItemPrices } from "@/features/items/useItemPrices";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
-import { Store } from "lucide-react";
 import { itemRelationsQueryOptions } from "@/features/items/item-detail/item-detail-queries";
 import { getBestTraderOffer } from "@/lib/price-calculation/prices";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +21,7 @@ import { ItemThumbnail } from "./item-thumbnail";
 import { PriceChange } from "./price-change";
 import { ItemPreviewNeeds } from "./item-preview-needs";
 import { itemImageUrl } from "@/lib/utils/item-images";
+import { traderImageUrl, traderInfo } from "@/lib/data/traders";
 
 export type PreviewItem = Pick<ItemSummary, "id" | "name"> &
 	Partial<
@@ -151,21 +151,17 @@ function ItemPreviewCard({ item, details }: { item: PreviewItem; details?: React
 				{!isCurrency && fleaBanned && bestTrader && bestTrader.priceRUB > 0 && (
 					<PreviewFact label="Trader sell">
 						<span className="inline-flex items-center gap-1">
-							{bestTrader.vendor.imageLink ? (
-								<Image
-									src={bestTrader.vendor.imageLink}
-									alt=""
-									width={16}
-									height={16}
-									className="size-4 shrink-0 rounded-full object-cover"
-									unoptimized
-								/>
-							) : (
-								<Store size={14} aria-hidden="true" />
-							)}
+							<Image
+								src={traderImageUrl(bestTrader.traderId)}
+								alt=""
+								width={16}
+								height={16}
+								className="size-4 shrink-0 rounded-full object-cover"
+								unoptimized
+							/>
 							<span className="font-mono">{formatRoubles(bestTrader.priceRUB)}</span>
 						</span>
-						<span className="block text-[11px] text-muted-foreground">{bestTrader.vendor.name}</span>
+						<span className="block text-[11px] text-muted-foreground">{traderInfo(bestTrader.traderId).name}</span>
 					</PreviewFact>
 				)}
 				{!isCurrency && fleaBanned && !bestTrader && (

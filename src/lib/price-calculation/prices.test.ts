@@ -11,9 +11,9 @@ const bitcoin: ItemSummary = {
 	onFleaMarket: false,
 	marketPrice: {
 		sellFor: [
-			{ vendor: { name: "Mechanic", normalizedName: "mechanic" }, priceRUB: 400_000 },
-			{ vendor: { name: "Therapist", normalizedName: "therapist" }, priceRUB: 534_000 },
-			{ vendor: { name: "Fence", normalizedName: "fence" }, priceRUB: 200_000 },
+			{ traderId: "5a7c2eca46aef81a7ca2145d", priceRUB: 400_000 },
+			{ traderId: "54cb57776803fa99248b456e", priceRUB: 534_000 },
+			{ traderId: "579dc571d53a0658a154fbec", priceRUB: 200_000 },
 		],
 	},
 };
@@ -22,8 +22,12 @@ test("Bitcoin's best trader buyback remains available when crafting disables loc
 	assert.equal(getItemSellComparison(bitcoin, {}, { useTraderSaleForLockedOutputs: false }).selectedPrice, null);
 	const offer = getBestTraderOffer(bitcoin);
 	assert.equal(offer?.priceRUB, 534_000);
-	assert.equal(offer?.vendor.name, "Therapist");
-	assert.equal(bitcoin.marketPrice?.sellFor?.[0].vendor.name, "Mechanic", "selection must not reorder shared offers");
+	assert.equal(offer?.traderId, "54cb57776803fa99248b456e");
+	assert.equal(
+		bitcoin.marketPrice?.sellFor?.[0].traderId,
+		"5a7c2eca46aef81a7ca2145d",
+		"selection must not reorder shared offers",
+	);
 });
 
 test("trader-only selection uses the supplied mode's offers and never falls back to flea or manual prices", () => {
@@ -31,7 +35,7 @@ test("trader-only selection uses the supplied mode's offers and never falls back
 	assert.equal(getBestTraderOffer(bitcoin)?.priceRUB, 534_000);
 	const otherMode = {
 		...bitcoin,
-		marketPrice: { sellFor: [{ vendor: { name: "Therapist", normalizedName: "therapist" }, priceRUB: 600_000 }] },
+		marketPrice: { sellFor: [{ traderId: "54cb57776803fa99248b456e", priceRUB: 600_000 }] },
 	};
 	assert.equal(getBestTraderOffer(otherMode)?.priceRUB, 600_000);
 	assert.equal(getBestTraderOffer({ ...bitcoin, marketPrice: { price: 1_000_000 } }), null);
@@ -39,8 +43,7 @@ test("trader-only selection uses the supplied mode's offers and never falls back
 });
 
 test("invalid trader offers cannot win selection; no valid offer stays unavailable", () => {
-	const vendor = { name: "Invalid", normalizedName: "invalid" };
-	const invalid = [NaN, Infinity, -1].map((priceRUB) => ({ vendor, priceRUB }));
+	const invalid = [NaN, Infinity, -1].map((priceRUB) => ({ traderId: "invalid", priceRUB }));
 	assert.equal(getBestTraderOffer({ ...bitcoin, marketPrice: { sellFor: invalid } }), null);
 	assert.equal(
 		getBestTraderOffer({ ...bitcoin, marketPrice: { sellFor: [...invalid, ...bitcoin.marketPrice!.sellFor!] } })

@@ -1,5 +1,5 @@
 import { formatCompactRoubles, formatRoubles } from "../../../lib/utils/market-price";
-import type { VendorPrice } from "@/types/prices";
+import type { TraderSellOffer } from "@/types/prices";
 
 export function formatSignedRoubles(value: number | null) {
 	if (value === null) return "-";
@@ -14,7 +14,7 @@ export function formatCompactPrice(value: number | null) {
 	return value === null ? "-" : `${formatCompactRoubles(Math.round(value))} ₽`;
 }
 
-export function formatTraderOffer(offer: VendorPrice, count: number, includeRoubleComparison: boolean) {
+export function formatTraderOffer(offer: TraderSellOffer, count: number, includeRoubleComparison: boolean) {
 	const amount = (offer.price ?? offer.priceRUB) * count;
 	const formattedAmount = new Intl.NumberFormat("en-US", {
 		maximumFractionDigits: 2,

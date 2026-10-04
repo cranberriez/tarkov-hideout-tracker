@@ -1,4 +1,4 @@
-import type { VendorPrice } from "../../../src/types/prices";
+import type { TraderSellOffer } from "../../../src/types/prices";
 import { calcTax, fleaMaxNetPrice, fleaTargetPrice, itemBasePrice } from "../../../src/lib/price-calculation/calc-tax";
 import { practicalSavingsThreshold } from "../../../src/lib/price-calculation/prices";
 
@@ -22,10 +22,8 @@ export interface MarketEconomics {
 	maxNet: number | null;
 }
 
-export function computeEconomics(marketValue: number | null, sellFor: readonly VendorPrice[]): MarketEconomics {
-	const traderOffers = sellFor.filter(
-		(offer) => offer.vendor.normalizedName !== "flea-market" && Number.isFinite(offer.priceRUB) && offer.priceRUB > 0,
-	);
+export function computeEconomics(marketValue: number | null, sellFor: readonly TraderSellOffer[]): MarketEconomics {
+	const traderOffers = sellFor.filter((offer) => Number.isFinite(offer.priceRUB) && offer.priceRUB > 0);
 	const best = [...traderOffers].sort((left, right) => right.priceRUB - left.priceRUB)[0] ?? null;
 	const traderValue = best?.priceRUB ?? null;
 	// Unrounded, exactly as the website computes fees; rounded only for storage.
@@ -36,7 +34,7 @@ export function computeEconomics(marketValue: number | null, sellFor: readonly V
 	return {
 		basePrice: basePrice === null ? null : Math.round(basePrice),
 		traderValue,
-		traderId: best?.vendor.id ?? best?.vendor.normalizedName ?? null,
+		traderId: best?.traderId ?? null,
 		fleaFee,
 		fleaNet: marketValue !== null && fleaFee !== null ? marketValue - fleaFee : null,
 		traderBreakEven: basePrice !== null && traderValue !== null ? fleaTargetPrice(basePrice, 1, traderValue) : null,

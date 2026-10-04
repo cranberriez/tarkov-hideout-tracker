@@ -277,6 +277,12 @@ and does not write not-modified checks. Its derived analytics are append-only ro
 market_analysis_runs and item_market_observations (migration 0002); only the
 development dashboard reads them so far.
 
+Trader sell offers (`sellFor`) carry only `traderId`; names and images come from the
+bundled [trader list](../src/lib/data/traders.ts), which needs an entry when a new trader
+ships (unknown IDs render as "Unknown trader"). The provider adapter writes this shape,
+and [normalizeTraderSellOffers](../src/lib/data/traders.ts) also accepts rows stored in
+the earlier inline `vendor` form, for both the website and the market-analyzer worker.
+
 [price-data.ts](../src/server/db/price-data.ts) assembles CurrentPrice from catalog
 reference fields and recomputes the existing effective-price/stability model from
 recent samples, including age checks. Unknown remains null; explicit zero-depth

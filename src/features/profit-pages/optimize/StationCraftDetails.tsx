@@ -21,6 +21,7 @@ import {
 } from "./station-board";
 import { StationCraftIngredient } from "./StationCraftIngredient";
 import { StationCraftPriceField } from "./StationCraftPriceField";
+import { traderInfo } from "@/lib/data/traders";
 
 export function StationCraftDetails({
 	craft,
@@ -55,7 +56,9 @@ export function StationCraftDetails({
 		sale.saleDestination === "flea"
 			? "Flea"
 			: sale.saleDestination === "trader"
-				? (sale.bestTraderOffer?.vendor.name ?? "Trader")
+				? sale.bestTraderOffer
+					? traderInfo(sale.bestTraderOffer.traderId).name
+					: "Trader"
 				: "Unavailable";
 	const hasChain = row.requiredItems.some((part) => !part.isTool && part.children.length);
 	const variants = boardVariants.filter((variant, index, all) => {

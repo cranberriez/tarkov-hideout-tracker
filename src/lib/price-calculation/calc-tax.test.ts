@@ -10,7 +10,7 @@ const item: ItemSummary = {
 	normalizedName: "a",
 	marketPrice: {
 		avg24hPrice: 6_000,
-		sellFor: [{ vendor: { name: "Therapist", normalizedName: "therapist" }, priceRUB: 5_100 }],
+		sellFor: [{ traderId: "54cb57776803fa99248b456e", priceRUB: 5_100 }],
 	},
 };
 test("fee at base price, quantity scaling and final rounding", () => {

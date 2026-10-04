@@ -55,7 +55,7 @@ function validCatalogRecord(record: CatalogPriceRecord): boolean {
 		) &&
 		(price.sellFor ?? []).every(
 			(offer) =>
-				Boolean(offer.vendor?.id && offer.vendor?.name && offer.currency) &&
+				Boolean(offer.traderId && offer.currency) &&
 				validNonnegative(offer.priceRUB) &&
 				(offer.price == null || validNonnegative(offer.price)),
 		)

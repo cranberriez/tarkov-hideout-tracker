@@ -21,7 +21,7 @@ test("unstable output sale uses yellow price and an isolated warning icon, with 
 		marketPrice: {
 			price: 120_000,
 			fleaStability: "unstable",
-			sellFor: [{ vendor: { name: "Therapist", normalizedName: "therapist" }, priceRUB: 30_000 }],
+			sellFor: [{ traderId: "54cb57776803fa99248b456e", priceRUB: 30_000 }],
 		},
 	};
 	const props = { item, kind: "sell" as const, totalPrice: 120_000, overrides: {}, onPriceChange: () => {} };
@@ -42,7 +42,7 @@ test("unstable output sale uses yellow price and an isolated warning icon, with 
 				...item,
 				marketPrice: {
 					...item.marketPrice,
-					sellFor: [{ vendor: { name: "Trader", normalizedName: "trader" }, priceRUB: 150_000 }],
+					sellFor: [{ traderId: "trader", priceRUB: 150_000 }],
 				},
 			},
 		},
@@ -89,7 +89,7 @@ test("ingredient opportunity costs are labeled as sell value", () => {
 		name: "Input",
 		normalizedName: "input",
 		onFleaMarket: false,
-		marketPrice: { sellFor: [{ vendor: { name: "Trader", normalizedName: "trader" }, priceRUB: 42 }] },
+		marketPrice: { sellFor: [{ traderId: "trader", priceRUB: 42 }] },
 	};
 	const markup = renderToStaticMarkup(
 		createElement(InlineItemPrice, {

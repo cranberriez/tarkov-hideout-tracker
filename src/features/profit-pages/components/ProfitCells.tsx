@@ -3,6 +3,7 @@ import { getItemSellComparison, type ManualPriceOverride } from "@/lib/price-cal
 import type { ItemSummary } from "@/types/items";
 import { formatCompactPrice, formatRoundedRoubles, formatSignedRoubles, formatTraderOffer } from "../utils/formatters";
 import { InfoHint } from "./InfoHint";
+import { traderInfo } from "@/lib/data/traders";
 
 export function ProfitCell({
 	label,
@@ -91,13 +92,13 @@ export function SellValueCell({
 				<span className="mt-0.5 block max-w-full space-y-0.5 text-[10px] leading-tight text-muted-foreground">
 					<span className="block truncate">Flea {formatCompactPrice(comparison.fleaPrice * count)}</span>
 					<span className="block truncate">
-						{trader.vendor.name} {formatTraderOffer(trader, count, true)}
+						{traderInfo(trader.traderId).name} {formatTraderOffer(trader, count, true)}
 					</span>
 				</span>
 			) : (
 				<span className="mt-0.5 max-w-full truncate text-[10px] text-muted-foreground">
 					{comparison.selectedSource === "trader" && trader
-						? `${trader.vendor.name} · ${formatTraderOffer(trader, count, false)}`
+						? `${traderInfo(trader.traderId).name} · ${formatTraderOffer(trader, count, false)}`
 						: comparison.selectedSource === "flea"
 							? "Flea market"
 							: "No sale price"}
@@ -179,7 +180,8 @@ export function useSellSourceNote(
 	if (sellSourceLabel) return sellSourceLabel;
 	const comparison = getItemSellComparison(item, overrides, pricingContext, count);
 	if (comparison.selectedSource === "manual") return "Manual";
-	if (comparison.selectedSource === "trader") return comparison.bestTraderOffer?.vendor.name;
+	if (comparison.selectedSource === "trader")
+		return comparison.bestTraderOffer ? traderInfo(comparison.bestTraderOffer.traderId).name : undefined;
 	if (comparison.selectedSource === "flea") return "Flea";
 	return undefined;
 }

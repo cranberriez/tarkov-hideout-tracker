@@ -65,7 +65,7 @@ const item = (id: string, price = 100): ItemSummary => ({
 	normalizedName: id,
 	marketPrice: {
 		avg24hPrice: price,
-		sellFor: [{ vendor: { name: "Trader", normalizedName: "trader" }, priceRUB: 40 }],
+		sellFor: [{ traderId: "54cb50c76803fa8b248b4571", priceRUB: 40 }],
 	},
 });
 const craft = (id: string, output: string, input: string): CraftRecord => ({
@@ -144,7 +144,7 @@ test("level and banned outputs use accessible sales, with opt-out and manual pre
 		};
 		const sale = createRecipeCalculator(input).evaluateCraft(recipe);
 		assert.equal(sale.sellValue, 40);
-		assert.equal(sale.sellSourceLabel, "Trader");
+		assert.equal(sale.sellSourceLabel, "Prapor");
 		assert.equal(sale.outputLockReasons.length > 0, true);
 		assert.equal(sale.inputSellValue, 40);
 		const disabled = createRecipeCalculator({ ...input, useTraderSaleForLockedOutputs: false }).evaluateCraft(recipe);
@@ -339,7 +339,10 @@ test("locked recipe estimates use effective ingredient costs and batch rounding 
 	}).evaluateNode("A", 3);
 	for (const method of ["craft", "barter"]) {
 		assert.equal(unavailable.lockedAlternatives?.find((route) => route.method === method)?.estimatedUnitPrice, 8);
-		assert.equal(unavailable.alternatives.some((route) => route.method === method), false);
+		assert.equal(
+			unavailable.alternatives.some((route) => route.method === method),
+			false,
+		);
 	}
 	assert.equal(unavailable.totalCost, 3000);
 });
@@ -356,7 +359,10 @@ test("locked recipe display estimates can use a priced but inaccessible ingredie
 	}).evaluateNode("A", 2);
 
 	assert.equal(plan.lockedAlternatives?.find((route) => route.sourceId === lockedCraft.id)?.estimatedUnitPrice, 25);
-	assert.equal(plan.alternatives.some((route) => route.sourceId === lockedCraft.id), false);
+	assert.equal(
+		plan.alternatives.some((route) => route.sourceId === lockedCraft.id),
+		false,
+	);
 	assert.equal(plan.method, "flea");
 	assert.equal(plan.totalCost, 2000);
 });

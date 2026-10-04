@@ -1,4 +1,4 @@
-import type { PriceHistoryPoint, VendorPrice } from "../../../src/types/prices";
+import type { PriceHistoryPoint, TraderSellOffer } from "../../../src/types/prices";
 import { computeEconomics } from "./economics";
 import { computeMarketMetrics, type Confidence, type Trend } from "./metrics";
 import { detectShock, type ShockPhase } from "./shock";
@@ -62,7 +62,7 @@ function rounded(value: number | null, digits = 4): number | null {
 export function buildObservation(
 	itemId: string,
 	points: readonly PriceHistoryPoint[],
-	sellFor: readonly VendorPrice[],
+	sellFor: readonly TraderSellOffer[],
 	calculatedAt: number,
 ): MarketObservation | null {
 	const metrics = computeMarketMetrics(points, calculatedAt);

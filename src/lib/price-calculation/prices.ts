@@ -1,5 +1,5 @@
 import type { ItemSummary } from "@/types/items";
-import type { VendorPrice } from "@/types/prices";
+import type { TraderSellOffer } from "@/types/prices";
 import { getFleaLockReasons } from "./availability";
 import type { PriceCalculationContext, ManualPriceOverrides } from "./types";
 import { getFleaPrice } from "../utils/market-price";
@@ -12,7 +12,7 @@ function validPrice(value: number | null | undefined) {
 }
 
 /** Highest valid trader buyback, independent of flea access and manual sale preferences. */
-export function getBestTraderOffer(item: ItemSummary | undefined): VendorPrice | null {
+export function getBestTraderOffer(item: ItemSummary | undefined): TraderSellOffer | null {
 	return (
 		[...(item?.marketPrice?.sellFor ?? [])]
 			.filter((offer) => validPrice(offer.priceRUB) !== null)
@@ -35,7 +35,7 @@ export function getItemBuyPrice(
 export interface ItemSellComparison {
 	isEstimate: boolean;
 	fleaPrice: number | null;
-	bestTraderOffer: VendorPrice | null;
+	bestTraderOffer: TraderSellOffer | null;
 	manualPrice: number | null;
 	selectedPrice: number | null;
 	selectedSource: "manual" | "flea" | "trader" | "unavailable";

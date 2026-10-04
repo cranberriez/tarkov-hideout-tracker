@@ -1,6 +1,7 @@
 import type { DataResult, TarkovDataMode } from "@/types/common";
 import type { TraderPurchaseOffer } from "@/types/items";
-import type { CurrentPrice, PriceHistoryPoint, VendorPrice } from "@/types/prices";
+import type { CurrentPrice, PriceHistoryPoint } from "@/types/prices";
+import { normalizeTraderSellOffers } from "../../lib/data/traders";
 import { deriveEffectivePrice } from "../../lib/utils/price-history";
 import { getPostgresDb } from "../postgres/connection";
 import type { PostgresDatabase } from "../postgres/connection";
@@ -45,10 +46,6 @@ function asOffers(value: unknown): TraderPurchaseOffer[] {
 	return Array.isArray(value) ? (value as TraderPurchaseOffer[]) : [];
 }
 
-function asSellOffers(value: unknown): VendorPrice[] {
-	return Array.isArray(value) ? (value as VendorPrice[]) : [];
-}
-
 export async function getCurrentPriceData(
 	mode: TarkovDataMode,
 	itemIds: readonly string[],
@@ -75,7 +72,7 @@ export async function getCurrentPriceData(
 						lastOfferCount: row.latestOfferCount,
 						changeLast48hPercent: asFinite(row.changeLast48hPercent),
 						updatedAt: row.catalogReferenceUpdatedAt,
-						sellFor: asSellOffers(row.traderSellOffers),
+						sellFor: normalizeTraderSellOffers(row.traderSellOffers),
 						fleaStability: "reference",
 					};
 					if (points.length > 0) {
@@ -92,7 +89,7 @@ export async function getCurrentPriceData(
 				}),
 			);
 		};
-		return database ? read() : boundedReadCache(["postgres-prices", mode, JSON.stringify(batch)], read, 300);
+		return database ? read() : boundedReadCache(["postgres-prices", "2", mode, JSON.stringify(batch)], read, 300);
 	});
 	const data = Object.assign({}, ...batches) as Record<string, CurrentPrice>;
 	const updatedAt = Object.values(data).reduce((latest, price) => Math.max(latest, price.updatedAt ?? 0), 0);

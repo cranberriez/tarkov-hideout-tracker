@@ -125,8 +125,8 @@ test("value uses the higher flea or trader buyback in roubles and multiplies rem
 		marketPrice: {
 			price: 100,
 			sellFor: [
-				{ vendor: { name: "Trader A", normalizedName: "trader-a" }, currency: "USD", price: 2, priceRUB: 250 },
-				{ vendor: { name: "Trader B", normalizedName: "trader-b" }, priceRUB: 200 },
+				{ traderId: "trader-a", currency: "USD", price: 2, priceRUB: 250 },
+				{ traderId: "trader-b", priceRUB: 200 },
 			],
 		},
 	};

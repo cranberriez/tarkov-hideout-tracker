@@ -13,7 +13,7 @@ const points: PriceHistoryPoint[] = Array.from({ length: 100 }, (_, index) => ({
 	priceMin: 20_000 + (index % 3) * 500,
 	offerCount: 12,
 }));
-const sellFor = [{ vendor: { id: "t", name: "Therapist", normalizedName: "therapist" }, priceRUB: 5_100 }];
+const sellFor = [{ traderId: "54cb57776803fa99248b456e", priceRUB: 5_100 }];
 
 test("observation combines market and economic state with compact evidence", () => {
 	const observation = buildObservation("relay", points, sellFor, NOW)!;
@@ -23,7 +23,7 @@ test("observation combines market and economic state with compact evidence", () 
 	assert.equal(observation.traderValue, 5_100);
 	assert.equal(observation.basePrice, 10_000);
 	assert.ok(observation.fleaNet! > observation.traderValue!);
-	assert.equal(observation.traderId, "t");
+	assert.equal(observation.traderId, "54cb57776803fa99248b456e");
 	assert.equal(observation.trend, "stable");
 	assert.equal(buildObservation("none", [], sellFor, NOW), null);
 });

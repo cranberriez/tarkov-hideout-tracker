@@ -15,6 +15,7 @@ import type {
 	RecipeCalculatorInput,
 	RecipeEvaluation,
 } from "./types";
+import { traderInfo } from "../data/traders";
 
 interface Candidate {
 	method: AcquisitionAlternative["method"];
@@ -646,7 +647,9 @@ function evaluateTopLevelRecipe(
 
 	const sellSourceLabel =
 		sale.selectedSource === "trader"
-			? sale.bestTraderOffer?.vendor.name
+			? sale.bestTraderOffer
+				? traderInfo(sale.bestTraderOffer.traderId).name
+				: undefined
 			: sale.selectedSource === "manual"
 				? `Manual · ${sale.saleDestination === "trader" ? "Trader" : "Flea market"}`
 				: sale.selectedSource === "flea"

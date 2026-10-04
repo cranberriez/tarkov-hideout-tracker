@@ -7,7 +7,7 @@ export type {
 	TarkovDataMode,
 } from "./common";
 export type { ItemCategory, ItemIdentity, ItemSummary, TraderPurchaseOffer } from "./items";
-export type { CurrentPrice, PriceHistoryPoint, VendorPrice } from "./prices";
+export type { CurrentPrice, PriceHistoryPoint, TraderSellOffer } from "./prices";
 export type { Trader } from "./traders";
 export type {
 	GlobalSkill,

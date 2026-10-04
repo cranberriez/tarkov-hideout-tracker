@@ -32,7 +32,7 @@ function fixture(): RecipeCalculatorInput {
 					normalizedName: String(id),
 					marketPrice: {
 						avg24hPrice: Number(price),
-						sellFor: [{ vendor: { name: "Therapist", normalizedName: "therapist" }, priceRUB: Number(price) * 0.51 }],
+						sellFor: [{ traderId: "54cb57776803fa99248b456e", priceRUB: Number(price) * 0.51 }],
 					},
 				},
 			]),

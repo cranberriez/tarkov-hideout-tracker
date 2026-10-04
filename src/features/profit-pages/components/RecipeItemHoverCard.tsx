@@ -10,6 +10,7 @@ import { describeSelectedLock } from "../utils/lock-summary";
 import { RecipePreviewCard } from "./RecipePreviewCard";
 import { RouteGlyph, routeChipClasses } from "./RouteIcon";
 import { itemImageUrl } from "@/lib/utils/item-images";
+import { traderInfo } from "@/lib/data/traders";
 
 export interface RecipeItemHoverData {
 	pricingContext: ReturnType<typeof useProfitPricingContext>;
@@ -167,7 +168,7 @@ export function RecipeItemHoverCard({
 								<Row label="Flea listing fee">−{formatRoundedRoubles(sale.fee)}</Row>
 							)}
 							{sale.bestTraderOffer && (
-								<Row label={`Best trader (${sale.bestTraderOffer.vendor.name})`}>
+								<Row label={`Best trader (${traderInfo(sale.bestTraderOffer.traderId).name})`}>
 									{formatTraderOffer(sale.bestTraderOffer, 1, true)}
 								</Row>
 							)}

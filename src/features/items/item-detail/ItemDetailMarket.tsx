@@ -6,6 +6,7 @@ import { PriceChange } from "@/components/entities/price-change";
 import { formatRoubles, getFleaPriceEstimate, hasFleaMarketData } from "@/lib/utils/market-price";
 import { ItemDetailSection } from "./ItemDetailSection";
 import { ItemDetailPriceStability } from "./ItemDetailPriceStability";
+import { traderImageUrl, traderInfo } from "@/lib/data/traders";
 
 interface ItemDetailMarketProps {
 	marketPrice: CurrentPrice;
@@ -41,7 +42,7 @@ export function ItemDetailMarket({
 	const unstable = !isFiat && marketPrice.fleaStability === "unstable";
 	const traderValuationCount = Math.max(1, Math.floor(valuationCount));
 	const topTraderValuations = (marketPrice.sellFor ?? [])
-		.filter((offer) => offer.priceRUB > 0 && offer.vendor.normalizedName !== "flea-market")
+		.filter((offer) => offer.priceRUB > 0)
 		.sort((a, b) => b.priceRUB - a.priceRUB)
 		.slice(0, 3);
 	const details = [
@@ -129,14 +130,15 @@ export function ItemDetailMarket({
 						{topTraderValuations.map((offer) => {
 							const totalRoubles = offer.priceRUB * traderValuationCount;
 							return (
-								<div
-									key={offer.vendor.normalizedName}
-									className="flex min-w-0 items-center gap-2 rounded-md px-1 py-1 text-xs"
-								>
-									{offer.vendor.imageLink && (
-										<img src={offer.vendor.imageLink} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover" />
-									)}
-									<span className="min-w-0 flex-1 truncate text-muted-foreground">{offer.vendor.name}</span>
+								<div key={offer.traderId} className="flex min-w-0 items-center gap-2 rounded-md px-1 py-1 text-xs">
+									<img
+										src={traderImageUrl(offer.traderId)}
+										alt=""
+										className="h-5 w-5 shrink-0 rounded-full object-cover"
+									/>
+									<span className="min-w-0 flex-1 truncate text-muted-foreground">
+										{traderInfo(offer.traderId).name}
+									</span>
 									<span className="shrink-0 font-mono text-foreground">{formatRoubles(totalRoubles)}</span>
 								</div>
 							);

@@ -1,10 +1,6 @@
-export interface VendorPrice {
-	vendor: {
-		id?: string;
-		name: string;
-		normalizedName: string;
-		imageLink?: string | null;
-	};
+/** A trader's buyback quote. Trader names and images come from the bundled list in lib/data/traders. */
+export interface TraderSellOffer {
+	traderId: string;
 	currency?: string;
 	price?: number;
 	priceRUB: number;
@@ -26,7 +22,7 @@ export interface CurrentPrice {
 	changeLast48hPercent?: number | null;
 	diff24h?: number | null;
 	updatedAt?: number | null;
-	sellFor?: VendorPrice[];
+	sellFor?: TraderSellOffer[];
 }
 
 export interface PriceHistoryPoint {

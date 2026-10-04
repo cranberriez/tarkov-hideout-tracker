@@ -14,7 +14,7 @@ const item = (id: string, price = 100000): ItemSummary => ({
 	id,
 	name: id,
 	normalizedName: id,
-	marketPrice: { price, sellFor: [{ vendor: { name: "Trader", normalizedName: "therapist" }, priceRUB: 5100 }] },
+	marketPrice: { price, sellFor: [{ traderId: "54cb57776803fa99248b456e", priceRUB: 5100 }] },
 });
 const craft = (id: string, output: string, input: string): CraftRecord => ({
 	id,

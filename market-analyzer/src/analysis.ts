@@ -1,5 +1,5 @@
 import type { TarkovDataMode } from "../../src/types/common";
-import type { PriceHistoryPoint, VendorPrice } from "../../src/types/prices";
+import type { PriceHistoryPoint, TraderSellOffer } from "../../src/types/prices";
 import { buildObservation, type MarketObservation } from "./analytics/observation";
 import type { ModeState } from "./worker-state";
 
@@ -23,7 +23,7 @@ export interface AnalysisRun {
 
 export interface AnalysisDependencies {
 	readHistory(mode: TarkovDataMode, itemId: string): PriceHistoryPoint[] | null;
-	readTraderSellOffers(mode: TarkovDataMode): Promise<Map<string, VendorPrice[]>>;
+	readTraderSellOffers(mode: TarkovDataMode): Promise<Map<string, TraderSellOffer[]>>;
 	writeRun(run: AnalysisRun, observations: readonly MarketObservation[]): Promise<void>;
 	saveState(): void;
 	now(): number;

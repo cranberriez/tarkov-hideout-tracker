@@ -161,11 +161,7 @@ function mapTraderPurchaseOffer(value: unknown, itemId: string): TraderPurchaseO
 	};
 }
 
-function mapMarketPrice(
-	item: JsonCatalogItem,
-	traders: Record<string, JsonTrader>,
-	translateTrader: (key: string | null | undefined) => string,
-): CurrentPrice {
+function mapMarketPrice(item: JsonCatalogItem): CurrentPrice {
 	const lastScan = item.lastScan ? Date.parse(item.lastScan) : Number.NaN;
 	return {
 		avg24hPrice: numberOrNullish(item.avg24hPrice),
@@ -194,14 +190,8 @@ function mapMarketPrice(
 						) {
 							throw new Error(`Tarkov JSON item ${item.id} contains a malformed trader sale offer`);
 						}
-						const trader = traders[offer.trader];
 						return {
-							vendor: {
-								id: offer.trader,
-								name: translateTrader(trader?.name ?? offer.trader),
-								normalizedName: trader?.normalizedName ?? offer.trader,
-								imageLink: trader?.imageLink,
-							},
+							traderId: offer.trader,
 							price: numberOrNullish(offer.price) ?? offer.priceRUB,
 							currency: offer.currency,
 							priceRUB: offer.priceRUB,
@@ -213,9 +203,7 @@ function mapMarketPrice(
 function mapItem(
 	item: JsonCatalogItem,
 	categories: Record<string, JsonItemCategory>,
-	traders: Record<string, JsonTrader>,
 	translateItem: (key: string | null | undefined) => string,
-	translateTrader: (key: string | null | undefined) => string,
 ): ItemSummary | null {
 	if (!item || typeof item.id !== "string" || !item.id.trim() || typeof item.name !== "string" || !item.name.trim())
 		return null;
@@ -254,7 +242,7 @@ function mapItem(
 			: {
 					buyFromTrader: item.buyFromTrader.map((offer) => mapTraderPurchaseOffer(offer, item.id)),
 				}),
-		marketPrice: mapMarketPrice(item, traders, translateTrader),
+		marketPrice: mapMarketPrice(item),
 	};
 }
 
@@ -271,13 +259,7 @@ export async function getGlobalItemList(
 		throw new Error("Tarkov JSON item dataset omitted flea eligibility types");
 	}
 	const items = sourceItems.flatMap((item) => {
-		const mapped = mapItem(
-			item,
-			itemsDataset.data.itemCategories ?? {},
-			tradersDataset.data,
-			itemsDataset.translate,
-			tradersDataset.translate,
-		);
+		const mapped = mapItem(item, itemsDataset.data.itemCategories ?? {}, itemsDataset.translate);
 		if (!mapped) throw new Error("Tarkov JSON item dataset contains an invalid required item record");
 		return [mapped];
 	});

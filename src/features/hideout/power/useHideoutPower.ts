@@ -16,6 +16,7 @@ import type { ItemSummary } from "@/types/items";
 import { useStationCraftData, useStationRecipeCalculator } from "../details/crafts/useStationCraftEvaluations";
 import { useFuelRouteChoices } from "./useFuelRouteChoices";
 import { fuelCostPerHour, fuelMultiplier, fuelRuntimeHours, type FuelMultiplier } from "./hideout-power-model";
+import { traderInfo } from "@/lib/data/traders";
 
 export interface FuelRoute {
 	key: string;
@@ -148,7 +149,7 @@ export function useHideoutPower(
 			bitcoin: {
 				item: bitcoinItem,
 				price: sale?.priceRUB ?? null,
-				source: sale?.vendor.name ?? null,
+				source: sale ? traderInfo(sale.traderId).name : null,
 			},
 			missingItemIds: data
 				? [GRAPHICS_CARD_ITEM_ID, PHYSICAL_BITCOIN_ITEM_ID, ...FUEL_TANK_ITEM_IDS].filter((id) => !itemsById[id])

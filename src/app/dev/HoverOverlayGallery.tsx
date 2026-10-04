@@ -51,15 +51,8 @@ const samples: Array<{ item: ItemSummary; label: string }> = [
 			onFleaMarket: false,
 			marketPrice: {
 				sellFor: [
-					{
-						vendor: {
-							name: "Therapist",
-							normalizedName: "therapist",
-							imageLink: "https://assets.tarkov.dev/54cb57776803fa99248b456e.webp",
-						},
-						priceRUB: 500000,
-					},
-					{ vendor: { name: "Fence", normalizedName: "fence" }, priceRUB: 300000 },
+					{ traderId: "54cb57776803fa99248b456e", priceRUB: 500000 },
+					{ traderId: "579dc571d53a0658a154fbec", priceRUB: 300000 },
 				],
 			},
 		},

@@ -20,7 +20,7 @@ function item(id: string, buy: number, sell = buy): ItemSummary {
 		normalizedName: id.toLowerCase(),
 		marketPrice: {
 			avg24hPrice: buy,
-			sellFor: [{ vendor: { name: "Trader", normalizedName: "trader" }, priceRUB: sell }],
+			sellFor: [{ traderId: "trader", priceRUB: sell }],
 		},
 	};
 }
@@ -54,7 +54,7 @@ test("unstable flea estimates consistently price acquisition, sales, profit and 
 			price: 120_000,
 			referencePrice: 973_333,
 			fleaStability: "unstable",
-			sellFor: [{ vendor: { name: "Mechanic", normalizedName: "mechanic" }, priceRUB: 50_000 }],
+			sellFor: [{ traderId: "5a7c2eca46aef81a7ca2145d", priceRUB: 50_000 }],
 		},
 	};
 	const craft: CraftRecord = {
@@ -98,7 +98,7 @@ test("unstable flea estimates consistently price acquisition, sales, profit and 
 		...unstable,
 		marketPrice: {
 			...unstable.marketPrice,
-			sellFor: [{ vendor: { name: "Trader", normalizedName: "trader" }, priceRUB: 150_000 }],
+			sellFor: [{ traderId: "trader", priceRUB: 150_000 }],
 		},
 	};
 	assert.equal(getItemSellComparison(higherTrader).selectedSource, "trader");
@@ -356,7 +356,7 @@ test("compares flea and trader sales in roubles while retaining trader currency"
 	const pricedItem = item("A", 6_000);
 	pricedItem.marketPrice!.sellFor = [
 		{
-			vendor: { name: "Peacekeeper", normalizedName: "peacekeeper" },
+			traderId: "5935c25fb3acc3127c3d8cd9",
 			price: 53,
 			currency: "USD",
 			priceRUB: 6_622,
@@ -403,7 +403,10 @@ test("cyclic recipes terminate at the locked flea fallback", () => {
 	const plan = optimizer.optimize("X");
 	assert.equal(plan.method, "flea");
 	assert.equal(plan.totalCost, null);
-	assert.equal(plan.lockReasons?.some((reason) => reason.message === "No accessible priced acquisition route"), true);
+	assert.equal(
+		plan.lockReasons?.some((reason) => reason.message === "No accessible priced acquisition route"),
+		true,
+	);
 });
 
 test("zero-input production is not treated as a free ingredient source", () => {
@@ -634,7 +637,7 @@ test("defaults a locked ingredient to flea and keeps sell value as a manual last
 		normalizedName: "found-in-raid-input",
 		onFleaMarket: false,
 		marketPrice: {
-			sellFor: [{ vendor: { name: "Therapist", normalizedName: "therapist" }, priceRUB: 60 }],
+			sellFor: [{ traderId: "54cb57776803fa99248b456e", priceRUB: 60 }],
 		},
 	};
 	const craft: CraftRecord = {
@@ -654,7 +657,10 @@ test("defaults a locked ingredient to flea and keeps sell value as a manual last
 	assert.equal(evaluation.requiredItems[0].method, "flea");
 	assert.equal(evaluation.requiredItems[0].totalCost, null);
 	assert.equal(evaluation.requiredItems[0].lockReasons?.[0]?.message, "Not on flea");
-	assert.deepEqual(evaluation.requiredItems[0].alternatives.map((route) => route.method), ["sell"]);
+	assert.deepEqual(
+		evaluation.requiredItems[0].alternatives.map((route) => route.method),
+		["sell"],
+	);
 	assert.equal(evaluation.cost, null);
 	assert.equal(evaluation.profit, null);
 
@@ -678,7 +684,7 @@ test("offers trader sale value without replacing the locked flea fallback", () =
 		marketPrice: {
 			price: null,
 			fleaStability: "unavailable",
-			sellFor: [{ vendor: { name: "Trader", normalizedName: "trader" }, priceRUB: 75 }],
+			sellFor: [{ traderId: "trader", priceRUB: 75 }],
 		},
 	};
 	const plan = createRecipeCalculator({ itemsById: { A: itemWithNoRoute }, crafts: [], barters: [] }).evaluateNode(
@@ -688,7 +694,10 @@ test("offers trader sale value without replacing the locked flea fallback", () =
 
 	assert.equal(plan.method, "flea");
 	assert.equal(plan.totalCost, null);
-	assert.deepEqual(plan.alternatives.map((route) => [route.method, route.totalCost]), [["sell", 225]]);
+	assert.deepEqual(
+		plan.alternatives.map((route) => [route.method, route.totalCost]),
+		[["sell", 225]],
+	);
 });
 
 test("does not offer sell value when another acquisition method exists but is locked", () => {
@@ -699,7 +708,7 @@ test("does not offer sell value when another acquisition method exists but is lo
 		onFleaMarket: false,
 		marketPrice: {
 			avg24hPrice: 100,
-			sellFor: [{ vendor: { name: "Trader", normalizedName: "trader" }, priceRUB: 75 }],
+			sellFor: [{ traderId: "trader", priceRUB: 75 }],
 		},
 		buyFromTrader: [
 			{
@@ -720,8 +729,14 @@ test("does not offer sell value when another acquisition method exists but is lo
 	}).evaluateNode("A");
 
 	assert.equal(plan.method, "flea");
-	assert.equal(plan.lockedAlternatives?.some((route) => route.method === "trader"), true);
-	assert.equal(plan.alternatives.some((route) => route.method === "sell"), false);
+	assert.equal(
+		plan.lockedAlternatives?.some((route) => route.method === "trader"),
+		true,
+	);
+	assert.equal(
+		plan.alternatives.some((route) => route.method === "sell"),
+		false,
+	);
 });
 
 test("calculator excludes passive Bitcoin production and prices skill-adjusted Superwater filters", () => {

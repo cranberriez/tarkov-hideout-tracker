@@ -1,8 +1,9 @@
 import type { Pool } from "pg";
 import type { TarkovDataMode } from "../../src/types/common";
-import type { VendorPrice } from "../../src/types/prices";
+import type { TraderSellOffer } from "../../src/types/prices";
 import type { AnalysisBaseline, AnalysisRun } from "./analysis";
 import type { MarketObservation } from "./analytics/observation";
+import { normalizeTraderSellOffers } from "../../src/lib/data/traders";
 
 const INSERT_CHUNK_SIZE = 500;
 
@@ -116,14 +117,12 @@ function observationRecord(mode: TarkovDataMode, runId: string, observation: Mar
 export class PostgresAnalyticsStore {
 	constructor(private readonly pool: Pool) {}
 
-	async readTraderSellOffers(mode: TarkovDataMode): Promise<Map<string, VendorPrice[]>> {
-		const result = await this.pool.query<{ item_id: string; trader_sell_offers: VendorPrice[] }>(
+	async readTraderSellOffers(mode: TarkovDataMode): Promise<Map<string, TraderSellOffer[]>> {
+		const result = await this.pool.query<{ item_id: string; trader_sell_offers: unknown }>(
 			"SELECT item_id, trader_sell_offers FROM item_prices WHERE mode = $1",
 			[mode],
 		);
-		return new Map(
-			result.rows.map((row) => [row.item_id, Array.isArray(row.trader_sell_offers) ? row.trader_sell_offers : []]),
-		);
+		return new Map(result.rows.map((row) => [row.item_id, normalizeTraderSellOffers(row.trader_sell_offers)]));
 	}
 
 	async readAnalysisBaseline(mode: TarkovDataMode): Promise<AnalysisBaseline> {
