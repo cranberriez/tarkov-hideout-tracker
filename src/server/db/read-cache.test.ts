@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { boundedReadCache, canonicalIds, ENTITY_BATCH_SIZE, mapBatches, MAX_CACHE_BYTES } from "./read-cache";
+import {
+	boundedReadCache,
+	canonicalIds,
+	ENTITY_BATCH_SIZE,
+	evictMemoizedReads,
+	mapBatches,
+	MAX_CACHE_BYTES,
+	memoizedRead,
+} from "./read-cache";
 
 function memoryCache() {
 	const entries = new Map<string, unknown>();
@@ -90,4 +98,25 @@ test("oversized UTF-8 results are delivered intact and never cached; failures re
 		{ data: [], updatedAt: 1 },
 	);
 	assert.equal(entries.size, 1);
+});
+
+test("compressed entries round-trip and memoized reads never keep rejections", async () => {
+	const { cache, entries } = memoryCache();
+	const value = { items: { a: { id: "a", name: "界" } }, updatedAt: 1 };
+	assert.deepEqual(await boundedReadCache(["domain"], async () => value, false, { compress: true, cache }), value);
+	assert.equal(typeof (entries.values().next().value as { gz?: unknown }).gz, "string");
+	assert.deepEqual(await boundedReadCache(["domain"], async () => ({}), false, { compress: true, cache }), value);
+
+	let reads = 0;
+	const stale = () =>
+		memoizedRead("memo-test", 60_000, async () => {
+			reads++;
+			if (reads === 1) throw new Error("catalog version changed");
+			return reads;
+		});
+	await assert.rejects(stale(), /catalog version changed/);
+	assert.equal(await stale(), 2);
+	assert.equal(await stale(), 2);
+	evictMemoizedReads((key) => key === "memo-test");
+	assert.equal(await stale(), 3);
 });

@@ -6,12 +6,18 @@ import type { ItemAcquisitionTreeData, ItemRelationsPayload, ItemUsageData } fro
 import type { ItemSummary } from "@/types/items";
 import type { CurrentPrice } from "@/types/prices";
 import { itemDetails, catalogStatus } from "@/server/postgres/schema";
-import { getPostgresDb } from "@/server/postgres/connection";
-import { getItemsByIds } from "./domain-data";
-import { getCurrentPriceData, getTraderOffersByItemIds } from "./price-data";
-import { assertCatalogVersion, getCatalogVersion, withStableCatalogRead } from "./postgres-read";
+import { getCurrentPriceData } from "./price-data";
+import { getCatalogVersion, withStableCatalogRead } from "./postgres-read";
 import { DatabaseDataIntegrityError, DatabaseRecordNotFoundError } from "./errors";
-import { getTraders, getQuests, getStations } from "./domain-data";
+import { boundedReadCache } from "./read-cache";
+import {
+	getCachedCatalogItems,
+	getCachedQuests,
+	getCachedStations,
+	getCachedTraderOffers,
+	getCachedTraders,
+	pickById,
+} from "./catalog-cache";
 
 interface ItemViewPayloads {
 	relations: ItemRelationsPayload;
@@ -25,6 +31,14 @@ function validatePayload<T>(payload: unknown, label: string): T {
 	return payload as T;
 }
 
+async function selectCached<T extends { id: string }>(
+	read: Promise<{ data: T[]; updatedAt: number }>,
+	ids: readonly string[],
+): Promise<{ data: T[]; updatedAt: number }> {
+	const result = await read;
+	return { data: pickById(result.data, ids), updatedAt: result.updatedAt };
+}
+
 export async function getItemView<ViewType extends ItemViewType>(
 	mode: TarkovDataMode,
 	itemId: string,
@@ -32,58 +46,67 @@ export async function getItemView<ViewType extends ItemViewType>(
 	includePrices = true,
 ): Promise<ItemViewPayloads[ViewType]> {
 	const expectedVersion = await getCatalogVersion(mode);
-	const { data: payload } = await withStableCatalogRead(
-		mode,
-		async (db) => {
-			const [row] = await db
-				.select({ value: itemDetails[viewType], sourceFreshness: catalogStatus.sourceFreshness })
-				.from(itemDetails)
-				.innerJoin(catalogStatus, eq(catalogStatus.mode, itemDetails.mode))
-				.where(and(eq(itemDetails.mode, mode), eq(itemDetails.itemId, itemId)))
-				.limit(1);
-			if (!row) throw new DatabaseRecordNotFoundError(`No ${viewType} detail view exists for ${mode}/${itemId}`);
-			const dto = validatePayload<ItemViewPayloads[ViewType]>(row.value, `${viewType} view for ${itemId}`);
-			const freshnessDomains: Record<string, string> =
-				viewType === "relations"
-					? { itemsUpdatedAt: "items", stationsUpdatedAt: "stations", questsUpdatedAt: "quests" }
-					: viewType === "usage"
-						? {
-								itemsUpdatedAt: "items",
-								stationsUpdatedAt: "stations",
-								questsUpdatedAt: "quests",
-								taskUnlocksUpdatedAt: "quests",
-								tradersUpdatedAt: "traders",
-								bartersUpdatedAt: "barters",
-								craftsUpdatedAt: "crafts",
-							}
-						: { itemsUpdatedAt: "items", bartersUpdatedAt: "barters", craftsUpdatedAt: "crafts" };
-			const freshness = (dto.freshness ?? {}) as Record<string, number | null | undefined>;
-			for (const key of Object.keys(freshnessDomains)) freshness[key] ??= null;
-			for (const [key, domain] of Object.entries(freshnessDomains)) {
-				const timestamp = (row.sourceFreshness as Record<string, unknown> | null)?.[domain];
-				if (typeof timestamp !== "number" || !Number.isSafeInteger(timestamp) || timestamp <= 0)
-					throw new DatabaseDataIntegrityError(`Item view has invalid ${domain} source freshness`);
-				freshness[key] = timestamp;
-			}
-			if (viewType === "relations") freshness.pricesUpdatedAt ??= null;
-			if (viewType === "usage") freshness.pricesUpdatedAt ??= null;
-			if (viewType === "acquisition") freshness.pricesUpdatedAt ??= null;
-			(dto as { freshness: Record<string, number | null | undefined> }).freshness = freshness;
-			if (viewType === "relations") {
-				(dto as ItemRelationsPayload).errors ??= { items: null, prices: null, stations: null, quests: null };
-			}
-			if (viewType === "acquisition") {
-				(dto as ItemAcquisitionTreeData).errors ??= { items: null, prices: null, barters: null, crafts: null };
-			}
-			if (viewType === "usage") {
-				// Rows stored before used-in recipes were projected lack these lists until the next catalog update.
-				(dto as ItemUsageData).usedInBarters ??= [];
-				(dto as ItemUsageData).usedInCrafts ??= [];
-			}
-			return dto;
-		},
-		undefined,
-		expectedVersion,
+	// The stored view is immutable for a catalog version; offers, prices and labels are layered on below.
+	const payload = await boundedReadCache(
+		["item-view", viewType, mode, expectedVersion, itemId],
+		async () =>
+			(
+				await withStableCatalogRead(
+					mode,
+					async (db) => {
+						const [row] = await db
+							.select({ value: itemDetails[viewType], sourceFreshness: catalogStatus.sourceFreshness })
+							.from(itemDetails)
+							.innerJoin(catalogStatus, eq(catalogStatus.mode, itemDetails.mode))
+							.where(and(eq(itemDetails.mode, mode), eq(itemDetails.itemId, itemId)))
+							.limit(1);
+						if (!row) throw new DatabaseRecordNotFoundError(`No ${viewType} detail view exists for ${mode}/${itemId}`);
+						const dto = validatePayload<ItemViewPayloads[ViewType]>(row.value, `${viewType} view for ${itemId}`);
+						const freshnessDomains: Record<string, string> =
+							viewType === "relations"
+								? { itemsUpdatedAt: "items", stationsUpdatedAt: "stations", questsUpdatedAt: "quests" }
+								: viewType === "usage"
+									? {
+											itemsUpdatedAt: "items",
+											stationsUpdatedAt: "stations",
+											questsUpdatedAt: "quests",
+											taskUnlocksUpdatedAt: "quests",
+											tradersUpdatedAt: "traders",
+											bartersUpdatedAt: "barters",
+											craftsUpdatedAt: "crafts",
+										}
+									: { itemsUpdatedAt: "items", bartersUpdatedAt: "barters", craftsUpdatedAt: "crafts" };
+						const freshness = (dto.freshness ?? {}) as Record<string, number | null | undefined>;
+						for (const key of Object.keys(freshnessDomains)) freshness[key] ??= null;
+						for (const [key, domain] of Object.entries(freshnessDomains)) {
+							const timestamp = (row.sourceFreshness as Record<string, unknown> | null)?.[domain];
+							if (typeof timestamp !== "number" || !Number.isSafeInteger(timestamp) || timestamp <= 0)
+								throw new DatabaseDataIntegrityError(`Item view has invalid ${domain} source freshness`);
+							freshness[key] = timestamp;
+						}
+						if (viewType === "relations") freshness.pricesUpdatedAt ??= null;
+						if (viewType === "usage") freshness.pricesUpdatedAt ??= null;
+						if (viewType === "acquisition") freshness.pricesUpdatedAt ??= null;
+						(dto as { freshness: Record<string, number | null | undefined> }).freshness = freshness;
+						if (viewType === "relations") {
+							(dto as ItemRelationsPayload).errors ??= { items: null, prices: null, stations: null, quests: null };
+						}
+						if (viewType === "acquisition") {
+							(dto as ItemAcquisitionTreeData).errors ??= { items: null, prices: null, barters: null, crafts: null };
+						}
+						if (viewType === "usage") {
+							// Rows stored before used-in recipes were projected lack these lists until the next catalog update.
+							(dto as ItemUsageData).usedInBarters ??= [];
+							(dto as ItemUsageData).usedInCrafts ??= [];
+						}
+						return dto;
+					},
+					undefined,
+					expectedVersion,
+				)
+			).data,
+		7 * 24 * 60 * 60,
+		{ compress: true },
 	);
 
 	const allItems: ItemSummary[] =
@@ -95,11 +118,11 @@ export async function getItemView<ViewType extends ItemViewType>(
 			: (payload as ItemUsageData | ItemAcquisitionTreeData).items;
 	const itemIds = [...new Set(allItems.map((item) => item.id))];
 	const [catalogItems, priceResult, offersById] = await Promise.all([
-		getItemsByIds(mode, itemIds, getPostgresDb(), expectedVersion),
+		getCachedCatalogItems(mode, expectedVersion),
 		includePrices
 			? getCurrentPriceData(mode, itemIds)
 			: Promise.resolve({ data: {} as Record<string, CurrentPrice>, updatedAt: null }),
-		getTraderOffersByItemIds(mode, itemIds),
+		getCachedTraderOffers(mode),
 	]);
 	const hydrate = (item: ItemSummary): ItemSummary => {
 		const stored = catalogItems.data[item.id];
@@ -124,8 +147,8 @@ export async function getItemView<ViewType extends ItemViewType>(
 		];
 		try {
 			const [traders, quests] = await Promise.all([
-				traderIds.length ? getTraders(mode, getPostgresDb(), expectedVersion, traderIds) : Promise.resolve(null),
-				unlockIds.length ? getQuests(mode, getPostgresDb(), expectedVersion, unlockIds) : Promise.resolve(null),
+				traderIds.length ? selectCached(getCachedTraders(mode, expectedVersion), traderIds) : Promise.resolve(null),
+				unlockIds.length ? selectCached(getCachedQuests(mode, expectedVersion), unlockIds) : Promise.resolve(null),
 			]);
 			traderById = {
 				...usage.tradersById,
@@ -161,11 +184,10 @@ export async function getItemView<ViewType extends ItemViewType>(
 			),
 		];
 		try {
-			const db = getPostgresDb();
 			const [traders, stations, quests] = await Promise.all([
-				traderIds.length ? getTraders(mode, db, expectedVersion, traderIds) : Promise.resolve(null),
-				stationIds.size ? getStations(mode, db, expectedVersion) : Promise.resolve(null),
-				unlockIds.length ? getQuests(mode, db, expectedVersion, unlockIds) : Promise.resolve(null),
+				traderIds.length ? selectCached(getCachedTraders(mode, expectedVersion), traderIds) : Promise.resolve(null),
+				stationIds.size ? getCachedStations(mode, expectedVersion) : Promise.resolve(null),
+				unlockIds.length ? selectCached(getCachedQuests(mode, expectedVersion), unlockIds) : Promise.resolve(null),
 			]);
 			acquisitionLabels = {
 				tradersById: Object.fromEntries((traders?.data ?? []).map((trader) => [trader.id, trader])),
@@ -190,7 +212,6 @@ export async function getItemView<ViewType extends ItemViewType>(
 			acquisitionLabels = { presentationError: "Recipe source labels are temporarily unavailable" };
 		}
 	}
-	await assertCatalogVersion(mode, expectedVersion);
 	if (viewType === "relations") {
 		const relations = payload as ItemRelationsPayload;
 		return {

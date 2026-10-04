@@ -115,18 +115,19 @@ export async function getStoredPriceHistoryData(
 	return { data, updatedAt: data.at(-1)?.timestamp ?? 0 };
 }
 
-/** Offer metadata remains available while callers defer flea-price hydration. */
-export async function getTraderOffersByItemIds(
+/** Every item's current trader purchase offers for a mode, omitting items without offers. */
+export async function getAllTraderOffers(
 	mode: TarkovDataMode,
-	itemIds: readonly string[],
 	database: PostgresDatabase = getPostgresDb(),
 ): Promise<Record<string, TraderPurchaseOffer[]>> {
-	const batches = await mapBatches(canonicalIds(itemIds), async (batch) => {
-		const rows = await database
-			.select({ itemId: itemPrices.itemId, offers: itemPrices.traderPurchaseOffers })
-			.from(itemPrices)
-			.where(and(eq(itemPrices.mode, mode), inArray(itemPrices.itemId, batch)));
-		return Object.fromEntries(rows.map((row) => [row.itemId, asOffers(row.offers)]));
-	});
-	return Object.assign({}, ...batches) as Record<string, TraderPurchaseOffer[]>;
+	const rows = await database
+		.select({ itemId: itemPrices.itemId, offers: itemPrices.traderPurchaseOffers })
+		.from(itemPrices)
+		.where(eq(itemPrices.mode, mode));
+	return Object.fromEntries(
+		rows.flatMap((row) => {
+			const offers = asOffers(row.offers);
+			return offers.length ? [[row.itemId, offers]] : [];
+		}),
+	);
 }

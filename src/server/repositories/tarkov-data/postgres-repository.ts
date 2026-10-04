@@ -2,10 +2,16 @@ import "server-only";
 
 import type { TarkovDataMode } from "@/types/common";
 import type { TarkovDataRepository } from "./types";
-import { getItemsByIds, getQuests, getRecipes, getStations, getTraders } from "@/server/db/domain-data";
+import {
+	getCachedItemsByIds,
+	getCachedQuests,
+	getCachedRecipes,
+	getCachedStations,
+	getCachedTraders,
+	pickById,
+} from "@/server/db/catalog-cache";
 import { getCurrentPriceData, getStoredPriceHistoryData } from "@/server/db/price-data";
-import { getCatalogVersion, withStableCatalogRead } from "@/server/db/postgres-read";
-import { getPostgresDb } from "@/server/postgres/connection";
+import { getCatalogVersion } from "@/server/db/postgres-read";
 
 export function createPostgresRepository(scope?: {
 	mode: TarkovDataMode;
@@ -24,55 +30,39 @@ export function createPostgresRepository(scope?: {
 	}
 	return {
 		items: {
-			getByIds: async (mode, ids) => getItemsByIds(mode, ids, getPostgresDb(), await versionFor(mode)),
+			getByIds: async (mode, ids) => getCachedItemsByIds(mode, await versionFor(mode), ids),
 		},
 		hideout: {
-			getStations: async (mode) => getStations(mode, getPostgresDb(), await versionFor(mode)),
+			getStations: async (mode) => getCachedStations(mode, await versionFor(mode)),
 		},
 		quests: {
-			getAll: async (mode) => getQuests(mode, getPostgresDb(), await versionFor(mode)),
+			getAll: async (mode) => getCachedQuests(mode, await versionFor(mode)),
 			getByIds: async (mode, ids) => {
-				const version = await versionFor(mode);
-				const result = await getQuests(mode, getPostgresDb(), version, ids);
-				return { data: Object.fromEntries(result.data.map((quest) => [quest.id, quest])), updatedAt: result.updatedAt };
+				const result = await getCachedQuests(mode, await versionFor(mode));
+				return {
+					data: Object.fromEntries(pickById(result.data, ids).map((quest) => [quest.id, quest])),
+					updatedAt: result.updatedAt,
+				};
 			},
 		},
 		traders: {
-			getAll: async (mode) => getTraders(mode, getPostgresDb(), await versionFor(mode)),
+			getAll: async (mode) => getCachedTraders(mode, await versionFor(mode)),
 			getByIds: async (mode, ids) => {
-				const version = await versionFor(mode);
-				const result = await getTraders(mode, getPostgresDb(), version, ids);
+				const result = await getCachedTraders(mode, await versionFor(mode));
 				return {
-					data: Object.fromEntries(result.data.map((trader) => [trader.id, trader])),
+					data: Object.fromEntries(pickById(result.data, ids).map((trader) => [trader.id, trader])),
 					updatedAt: result.updatedAt,
 				};
 			},
 		},
 		recipes: {
-			getBarters: async (mode) => (await getRecipes(mode, getPostgresDb(), await versionFor(mode))).barters,
-			getCrafts: async (mode) => (await getRecipes(mode, getPostgresDb(), await versionFor(mode))).crafts,
+			getBarters: async (mode) => (await getCachedRecipes(mode, await versionFor(mode))).barters,
+			getCrafts: async (mode) => (await getCachedRecipes(mode, await versionFor(mode))).crafts,
 		},
+		// Prices and stored history are refreshed independently of catalog versions.
 		prices: {
-			getCurrent: async (mode, ids) => {
-				const version = await versionFor(mode);
-				const result = await withStableCatalogRead(
-					mode,
-					async () => getCurrentPriceData(mode, ids),
-					undefined,
-					version,
-				);
-				return result.data;
-			},
-			getHistory: async (mode, itemId) => {
-				const version = await versionFor(mode);
-				const result = await withStableCatalogRead(
-					mode,
-					async () => getStoredPriceHistoryData(mode, itemId),
-					undefined,
-					version,
-				);
-				return result.data;
-			},
+			getCurrent: (mode, ids) => getCurrentPriceData(mode, ids),
+			getHistory: (mode, itemId) => getStoredPriceHistoryData(mode, itemId),
 		},
 	};
 }

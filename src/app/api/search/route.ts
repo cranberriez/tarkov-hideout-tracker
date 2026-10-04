@@ -14,10 +14,13 @@ export async function GET(request: NextRequest) {
 	try {
 		const releaseId = await getCatalogVersion(mode);
 		if (request.nextUrl.searchParams.get("identity") === "1")
-			return NextResponse.json({ v: 1, mode, releaseId }, { headers });
+			return NextResponse.json({ v: 1, mode, releaseId }, { headers: { "Cache-Control": CacheControl.shortLived } });
 		if (request.nextUrl.searchParams.get("releaseId") !== releaseId)
 			return NextResponse.json({ error: "Search revision changed" }, { status: 409, headers });
-		return NextResponse.json(await readSearchManifest(mode, releaseId), { headers });
+		// The URL names its release and a mismatch is rejected above, so this body can never change.
+		return NextResponse.json(await readSearchManifest(mode, releaseId), {
+			headers: { "Cache-Control": CacheControl.immutable },
+		});
 	} catch (error) {
 		if (error instanceof DatabaseTransientReadError)
 			return NextResponse.json({ error: "Search revision changed" }, { status: 409, headers });

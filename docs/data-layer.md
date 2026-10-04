@@ -140,8 +140,7 @@ recreates the in-memory query cache and retries failed price reads; successful
 responses can still come from the browser/CDN cache. The existing 300-second
 server mutable-price cache may also supply a recent snapshot.
 Complete GET responses use browser 300s and CDN 3600s freshness; failed responses
-are no-store. The POST endpoint remains private/no-store for already-open older
-clients. The schema and limits live in [price-contract](../src/lib/query/price-contract.ts).
+are no-store. The schema and limits live in [price-contract](../src/lib/query/price-contract.ts).
 
 [DeferredPriceBoundary](../src/features/items/DeferredPriceBoundary.tsx) supplies
 Hideout/Items/Kappa with per-item pending/error/ready presentation. Profit consumers wait for initial prices before ranking recipes
@@ -160,6 +159,27 @@ or validates database revision IDs. Each API resolves the
 current revision internally. Multi-step stored reads pin that revision for their
 duration; if a catalog update changes it mid-read, the request fails transiently rather
 than mixing datasets or reporting a missing entity.
+
+### Server read caching
+
+The catalog content_version only changes through the nightly
+[catalog cron](../src/app/api/cron/catalog/route.ts). [postgres-read](../src/server/db/postgres-read.ts)
+serves the current version from a 60-second per-instance memo backed by the Next data
+cache under the `postgres-catalog-version` tag; the cron invalidates that tag after a
+committed change, and any read that observes a newer version clears it too. Explicit
+database arguments (tests, scripts) always read PostgreSQL directly. Version updates
+commit atomically with their rows and versions only increase, so
+`withStableCatalogRead` with a caller-pinned version needs only its closing check.
+
+[catalog-cache](../src/server/db/catalog-cache.ts) caches whole items (without trader
+offers), stations, quests, traders and recipes per (mode, content_version) as
+gzip entries in the data cache plus a per-instance memo; repository ID reads filter
+those in memory. Values are shared between requests and deep-frozen outside
+production; consumers must not mutate them. Trader offers are a separate all-items
+cache refreshed every 300 seconds (at most about six minutes stale) and overlaid onto
+item reads. Stored item views are cached per (view, mode, version, item). Prices
+keep their existing 300-second batch cache. Reads that fail or observe a newer
+version are never stored.
 Runtime item-view routes read precomputed [item-views.ts](../src/server/db/item-views.ts)
 records; the similarly named [relations](../src/server/queries/getItemRelationsData.ts),
 [usage](../src/server/queries/getItemUsageData.ts), and
@@ -173,19 +193,19 @@ parameter parsing, database error responses, and the named
 
 | API / owner                                                                                                                                                      | Result and cache policy                                                                                                                                                           |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [prices](../src/app/api/items/prices/route.ts)                                                                                                                   | GET with at most one mode and 1–200 IDs or named checklist/recipes scope; browser 300s, CDN 3600s; legacy POST remains private/no-store                                           |
-| [relations](../src/app/api/items/[itemId]/relations/route.ts)                                                                                                    | Hideout requirements, quest demand/rewards and availability closure; private, no-store; current offers are hydrated on every request                                              |
-| [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and recipes producing one item, referenced items and source labels; private, no-store; current offers are hydrated on every request                       |
-| [acquisition-tree](../src/app/api/items/[itemId]/acquisition-tree/route.ts)                                                                                      | Cycle-safe graph bounded by depth/item count with `truncated`; private, no-store; current offers are hydrated on every request                                                    |
-| [price-history](../src/app/api/items/[itemId]/price-history/route.ts)                                                                                            | On-demand provider history; browser 300s, CDN and upstream Next.js fetch cache 7200s                                                                                              |
+| [prices](../src/app/api/items/prices/route.ts)                                                                                                                   | GET with at most one mode and 1–200 IDs or named checklist/recipes scope; browser 300s, CDN 3600s                                                                                 |
+| [relations](../src/app/api/items/[itemId]/relations/route.ts)                                                                                                    | Hideout requirements, quest demand/rewards and availability closure; complete: browser 60s, CDN 300s; partial: no-store                                                           |
+| [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and recipes producing one item, referenced items and source labels; complete: browser 60s, CDN 300s; partial: no-store                                    |
+| [acquisition-tree](../src/app/api/items/[itemId]/acquisition-tree/route.ts)                                                                                      | Cycle-safe graph bounded by depth/item count with `truncated`; complete: browser 60s, CDN 300s; partial: no-store                                                                 |
+| [price-history](../src/app/api/items/[itemId]/price-history/route.ts)                                                                                            | On-demand provider history for catalog items only; histories and provider 404s cached 7200s (server and CDN); unknown IDs 404 locally, CDN 1 day                                  |
 | [search](../src/app/api/items/search/route.ts)                                                                                                                   | Mode and `q` up to 80 characters, normalized for matching; 10 results by default or 50 with `limit=50`; `private, no-store`                                                       |
-| [status](../src/app/api/data/status/route.ts)                                                                                                                    | Mode/release identity, hideout/item/quest/craft/barter release freshness, and independent mutable-price change/check timestamps; `private, no-store`                              |
-| [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); `private, no-store`                                                                    |
+| [status](../src/app/api/data/status/route.ts)                                                                                                                    | Mode/release identity, hideout/item/quest/craft/barter release freshness, and independent mutable-price change/check timestamps; browser 30s, CDN 60s                             |
+| [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); complete: browser 300s, CDN 3600s; errors: no-store                                    |
 | [page data](../src/app/api/page-data/)                                                                                                                           | Mode-specific Hideout, Items, Quests, Kappa, and shared Profit payloads; unpriced profit: `no-store`; other complete unpriced: browser 300s, CDN 3600s; partial/error: `no-store` |
 | [map APIs](../src/app/api/maps/)                                                                                                                                 | Committed map metadata, navigation overlays, and allow-listed SVG service; see [maps](maps.md)                                                                                    |
-| [catalog cron API](../src/app/api/cron/catalog/route.ts)                                                                                                                   | Protected all-mode catalog update; see [operations](operations.md)                                                                                                                  |
+| [catalog cron API](../src/app/api/cron/catalog/route.ts)                                                                                                         | Protected all-mode catalog update; see [operations](operations.md)                                                                                                                |
 
-All item-view responses use `no-store` so catalog versions cannot freeze current offers; the item-detail queries expose their
+Complete item-view responses are CDN-cached for 300 seconds, matching the trader-offer cache, so offers can lag by minutes but never by catalog version; the item-detail queries expose their
 payload through a typed partial-data error rather than entering it as reusable
 success data. Relations, usage, and acquisition results are fresh for 60 seconds,
 retained inactive for five minutes, share a cap of 60 inactive item-detail queries,
@@ -252,8 +272,8 @@ reference fields and recomputes the existing effective-price/stability model fro
 recent samples, including age checks. Unknown remains null; explicit zero-depth
 history remains unavailable and never revives a reference estimate. Catalog
 averages keep their original meanings and timestamps. Trader purchase unlock
-metadata remains available with prices=none, hydrated at read time so catalog
-caches cannot freeze offers. Price input errors remain explicit.
+metadata remains available with prices=none, overlaid from the 300-second offers
+cache so version-keyed catalog caches cannot freeze offers. Price input errors remain explicit.
 
 The [effective-price model](../src/lib/utils/price-history.ts) and
 [profit rules](profits.md) are unchanged: conservative minimum estimates, depth,
@@ -268,7 +288,7 @@ releaseId field; they are cache identities, not selectable releases. The
 [development dashboard](../src/app/dev/page.tsx) shows current counts and status.
 
 The History tab still fetches [upstream history](../src/server/prices/live-price-history.ts)
-on demand with its two-hour cache. Its chart shows the upstream aggregate reference by
+on demand with its two-hour cache, for catalog items only. Its chart shows the upstream aggregate reference by
 default, with the minimum listing (the series pricing and analytics use) as a toggle.
 1M and All plot 12-hour and daily UTC buckets summarised like Tarkov.dev's own daily
 aggregates (mean aggregate, lowest minimum, mean offers), so both history eras match;
@@ -342,7 +362,9 @@ content_version. No database manifest table is used.
 request/response field. The field now carries the string content version. A
 stale token returns 409. Builds verify their observed content version before
 caching; failed or mixed-version reads never enter the success cache. Pricing
-updates do not invalidate search. HTTP responses remain private, no-store.
+updates do not invalidate search. Identity responses are cached for 60 seconds on the
+CDN; manifest responses for the current releaseId are immutable, and errors and 409s
+stay private, no-store.
 
 [Background search](../src/lib/search/useSearchManifest.tsx) starts after window
 load, browser idle scheduling, and profile hydration. Opening search earlier can

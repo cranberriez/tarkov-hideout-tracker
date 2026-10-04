@@ -72,13 +72,31 @@ function array<T>(value: unknown, label: string): T[] {
 	return value as T[];
 }
 
-export async function getItemsByIds(
+export function getItemsByIds(
 	mode: TarkovDataMode,
 	ids: readonly string[],
 	db: PostgresDatabase,
 	expectedVersion?: string,
 ): Promise<DataResult<Record<string, ItemSummary>>> {
-	const unique = [...new Set(ids)];
+	return readItems(mode, [...new Set(ids)], db, expectedVersion, true);
+}
+
+/** Every item in the mode's catalog, without independently refreshed trader offers. */
+export function getAllCatalogItems(
+	mode: TarkovDataMode,
+	db: PostgresDatabase,
+	expectedVersion?: string,
+): Promise<DataResult<Record<string, ItemSummary>>> {
+	return readItems(mode, null, db, expectedVersion, false);
+}
+
+async function readItems(
+	mode: TarkovDataMode,
+	unique: string[] | null,
+	db: PostgresDatabase,
+	expectedVersion: string | undefined,
+	includeOffers: boolean,
+): Promise<DataResult<Record<string, ItemSummary>>> {
 	const result = await withStableCatalogRead(
 		mode,
 		async (conn) => {
@@ -87,35 +105,36 @@ export async function getItemsByIds(
 				.from(catalogStatus)
 				.where(eq(catalogStatus.mode, mode))
 				.limit(1);
-			const rows = unique.length
-				? await conn
-						.select({
-							id: items.id,
-							name: items.name,
-							normalizedName: items.normalizedName,
-							shortName: items.shortName,
-							iconLink: items.iconLink,
-							gridImageLink: items.gridImageLink,
-							image512pxLink: items.image512pxLink,
-							baseImageLink: items.baseImageLink,
-							link: items.link,
-							wikiLink: items.wikiLink,
-							onFleaMarket: itemModes.onFleaMarket,
-							minLevelForFlea: itemModes.minLevelForFlea,
-							resourceUnits: itemModes.resourceUnits,
-							category: itemModes.category,
-							displayOverride: itemModes.displayOverride,
-							firstSeenAt: itemDiscovery.firstSeenAt,
-							firstSeenPatch: itemDiscovery.firstSeenPatch,
-							firstSeenReleaseId: itemDiscovery.legacyFirstSeenReleaseId,
-							buyFromTrader: itemPrices.traderPurchaseOffers,
-						})
-						.from(items)
-						.innerJoin(itemModes, and(eq(itemModes.itemId, items.id), eq(itemModes.mode, mode)))
-						.leftJoin(itemDiscovery, and(eq(itemDiscovery.itemId, items.id), eq(itemDiscovery.mode, mode)))
-						.leftJoin(itemPrices, and(eq(itemPrices.itemId, items.id), eq(itemPrices.mode, mode)))
-						.where(inArray(items.id, unique))
-				: [];
+			const rows =
+				unique === null || unique.length
+					? await conn
+							.select({
+								id: items.id,
+								name: items.name,
+								normalizedName: items.normalizedName,
+								shortName: items.shortName,
+								iconLink: items.iconLink,
+								gridImageLink: items.gridImageLink,
+								image512pxLink: items.image512pxLink,
+								baseImageLink: items.baseImageLink,
+								link: items.link,
+								wikiLink: items.wikiLink,
+								onFleaMarket: itemModes.onFleaMarket,
+								minLevelForFlea: itemModes.minLevelForFlea,
+								resourceUnits: itemModes.resourceUnits,
+								category: itemModes.category,
+								displayOverride: itemModes.displayOverride,
+								firstSeenAt: itemDiscovery.firstSeenAt,
+								firstSeenPatch: itemDiscovery.firstSeenPatch,
+								firstSeenReleaseId: itemDiscovery.legacyFirstSeenReleaseId,
+								buyFromTrader: itemPrices.traderPurchaseOffers,
+							})
+							.from(items)
+							.innerJoin(itemModes, and(eq(itemModes.itemId, items.id), eq(itemModes.mode, mode)))
+							.leftJoin(itemDiscovery, and(eq(itemDiscovery.itemId, items.id), eq(itemDiscovery.mode, mode)))
+							.leftJoin(itemPrices, and(eq(itemPrices.itemId, items.id), eq(itemPrices.mode, mode)))
+							.where(unique ? inArray(items.id, unique) : undefined)
+					: [];
 			const output: Record<string, ItemSummary> = Object.create(null) as Record<string, ItemSummary>;
 			for (const row of rows) {
 				const firstSeenAt = row.firstSeenAt;
@@ -163,7 +182,7 @@ export async function getItemsByIds(
 						...(firstSeenPatch ? { firstSeenPatch } : {}),
 						...(firstSeenAt !== undefined ? { firstSeenAt } : {}),
 						...(row.firstSeenReleaseId ? { firstSeenReleaseId: row.firstSeenReleaseId } : {}),
-						...(Array.isArray(row.buyFromTrader) && row.buyFromTrader.length
+						...(includeOffers && Array.isArray(row.buyFromTrader) && row.buyFromTrader.length
 							? { buyFromTrader: row.buyFromTrader }
 							: {}),
 					},

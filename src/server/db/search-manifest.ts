@@ -106,13 +106,20 @@ async function build(mode: TarkovDataMode, contentVersion: string, database: Pos
 }
 
 export async function readSearchManifest(mode: TarkovDataMode, contentVersion: string, database?: PostgresDatabase) {
-	const db = database ?? getPostgresDb();
-	if ((await getCatalogVersion(mode, db)) !== contentVersion)
+	if (!database) {
+		// Cached per version; a build verifies its own version before it can be stored.
+		if ((await getCatalogVersion(mode)) !== contentVersion)
+			throw new DatabaseTransientReadError("Search revision changed");
+		const compressed = await boundedReadCache(
+			["compact-search", "1", QUEST_PREPARATION_REVISION, mode, contentVersion],
+			() => build(mode, contentVersion, getPostgresDb()),
+		);
+		return JSON.parse(gunzipSync(Buffer.from(compressed, "base64")).toString("utf8"));
+	}
+	if ((await getCatalogVersion(mode, database)) !== contentVersion)
 		throw new DatabaseTransientReadError("Search revision changed");
-	const compressed = database
-		? await build(mode, contentVersion, db)
-		: await boundedReadCache(["compact-search", "1", QUEST_PREPARATION_REVISION, mode, contentVersion], () => build(mode, contentVersion, db));
-	if ((await getCatalogVersion(mode, db)) !== contentVersion)
+	const compressed = await build(mode, contentVersion, database);
+	if ((await getCatalogVersion(mode, database)) !== contentVersion)
 		throw new DatabaseTransientReadError("Search revision changed");
 	return JSON.parse(gunzipSync(Buffer.from(compressed, "base64")).toString("utf8"));
 }

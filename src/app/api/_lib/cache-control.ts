@@ -8,8 +8,16 @@ export const CacheControl = {
 	publicCdnHour: "public, max-age=300, s-maxage=3600",
 	/** Browser and CDN 5 minutes (priced profit page data). */
 	publicCdnFiveMinutes: "public, max-age=300, s-maxage=300",
-	/** Browser 5 minutes, CDN 15 minutes with background revalidation (complete item details). */
-	itemDetail: "public, max-age=300, s-maxage=900, stale-while-revalidate=300",
+	/** Browser 1 minute, CDN 5 minutes (complete item views; embedded trader offers refresh within minutes). */
+	itemView: "public, max-age=60, s-maxage=300, stale-while-revalidate=300",
+	/** Browser 30 seconds, CDN 1 minute (current catalog identity and data status). */
+	shortLived: "public, max-age=30, s-maxage=60",
+	/** Release-addressed content that can never change (search manifest for a matching releaseId). */
+	immutable: "public, max-age=31536000, immutable",
+	/** Browser 5 minutes, CDN 2 hours (provider price histories and provider misses). */
+	priceHistory: "public, max-age=300, s-maxage=7200, stale-while-revalidate=300",
+	/** Browser 1 hour, CDN 1 day (IDs the current catalog cannot serve). */
+	catalogMiss: "public, max-age=3600, s-maxage=86400",
 	/** Browser 1 hour with day-long background revalidation (map overlays and render data). */
 	mapData: "public, max-age=3600, stale-while-revalidate=86400",
 	/** Browser 1 day with week-long background revalidation (rendered map SVG). */
@@ -20,4 +28,23 @@ export const CacheControl = {
 export function profitPageDataCacheControl(isComplete: boolean, includesPrices: boolean): string {
 	if (!isComplete || !includesPrices) return CacheControl.noStore;
 	return CacheControl.publicCdnFiveMinutes;
+}
+
+/** Item views with source errors or missing labels stay retryable instead of entering shared caches. */
+export function isCompleteItemView(payload: {
+	errors?: Record<string, string | null>;
+	presentationError?: string;
+	bartersError?: string | null;
+	craftsError?: string | null;
+	itemsError?: string | null;
+	pricesError?: string | null;
+}): boolean {
+	return (
+		Object.values(payload.errors ?? {}).every((error) => error === null) &&
+		!payload.presentationError &&
+		!payload.bartersError &&
+		!payload.craftsError &&
+		!payload.itemsError &&
+		!payload.pricesError
+	);
 }

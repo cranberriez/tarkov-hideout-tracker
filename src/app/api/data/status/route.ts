@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 	try {
 		const payload = await getDataStatusView(requestedMode);
 		return NextResponse.json(payload, {
-			headers: { "Cache-Control": CacheControl.privateNoStore },
+			headers: { "Cache-Control": CacheControl.shortLived },
 		});
 	} catch (error) {
 		return itemDatabaseErrorResponse(error, "PostgreSQL data status is temporarily unavailable");

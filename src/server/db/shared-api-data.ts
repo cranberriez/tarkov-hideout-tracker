@@ -11,8 +11,8 @@ import type {
 import type { ItemIdentity } from "@/types/items";
 import { catalogStatus, itemPrices, itemPriceSync } from "@/server/postgres/schema";
 import { getPostgresDb } from "@/server/postgres/connection";
-import { assertCatalogVersion, getCatalogVersion } from "./postgres-read";
-import { getItemsByIds, getStations } from "./domain-data";
+import { getCatalogVersion } from "./postgres-read";
+import { getCachedItemsByIds, getCachedStations } from "./catalog-cache";
 import { DatabaseConfigurationError } from "./errors";
 
 function timestamp(value: unknown): number | null {
@@ -30,7 +30,7 @@ function domainStatus(freshness: Record<string, unknown>, key: string, label: st
 
 export async function getLegacyProfileConversionView(mode: TarkovDataMode): Promise<LegacyProfileConversionData> {
 	try {
-		const stations = await getStations(mode, getPostgresDb());
+		const stations = await getCachedStations(mode, await getCatalogVersion(mode));
 		return {
 			stations: stations.data.map((station): LegacyConversionStation => ({
 				id: station.id,
@@ -51,9 +51,9 @@ export async function getLegacyProfileConversionView(mode: TarkovDataMode): Prom
 
 export async function getCompletedItemsConversionView(mode: TarkovDataMode): Promise<CompletedItemsConversionData> {
 	const contentVersion = await getCatalogVersion(mode);
-	let stations: Awaited<ReturnType<typeof getStations>>;
+	let stations: Awaited<ReturnType<typeof getCachedStations>>;
 	try {
-		stations = await getStations(mode, getPostgresDb(), contentVersion);
+		stations = await getCachedStations(mode, contentVersion);
 	} catch {
 		return {
 			stations: [],
@@ -71,8 +71,7 @@ export async function getCompletedItemsConversionView(mode: TarkovDataMode): Pro
 		),
 	];
 	try {
-		const result = await getItemsByIds(mode, uniqueIds, getPostgresDb(), contentVersion);
-		await assertCatalogVersion(mode, contentVersion);
+		const result = await getCachedItemsByIds(mode, contentVersion, uniqueIds);
 		const items = Object.values(result.data).map(({ id, name, normalizedName }): ItemIdentity => ({
 			id,
 			name,
@@ -97,7 +96,6 @@ export async function getCompletedItemsConversionView(mode: TarkovDataMode): Pro
 			errors: { stations: null, items: null },
 		};
 	} catch {
-		await assertCatalogVersion(mode, contentVersion);
 		return {
 			stations: stations.data.map((station) => ({
 				id: station.id,

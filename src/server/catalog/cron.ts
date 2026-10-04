@@ -5,7 +5,12 @@ async function updateCatalog() {
 	return refreshCatalog();
 }
 
-export async function runCatalogCron(request: NextRequest, update = updateCatalog) {
+async function invalidateCatalog() {
+	const { invalidateCatalogVersion } = await import("../db/postgres-read");
+	await invalidateCatalogVersion();
+}
+
+export async function runCatalogCron(request: NextRequest, update = updateCatalog, invalidate = invalidateCatalog) {
 	const secret = process.env.CRON_SECRET?.trim();
 	if (!secret) {
 		return NextResponse.json({ error: "CRON_SECRET is not configured" }, { status: 503 });
@@ -15,6 +20,8 @@ export async function runCatalogCron(request: NextRequest, update = updateCatalo
 	}
 	try {
 		const result = await update();
+		// Version-keyed caches only need the current version identity to move forward.
+		if (result.changed) await invalidate();
 		return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
 	} catch (error) {
 		console.error("Scheduled catalog update failed", error);

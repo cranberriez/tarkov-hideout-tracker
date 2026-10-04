@@ -132,7 +132,8 @@ test("the runtime repository uses named PostgreSQL reads and current bounded pri
 	const repositoryImports = moduleImports(readFileSync(repositoryPath, "utf8"));
 	const serviceImports = repositoryImports.filter((specifier) => specifier.startsWith("@/server/services/"));
 	assert.deepEqual(serviceImports, []);
-	assert.ok(repositoryImports.includes("@/server/db/domain-data"));
+	// Catalog domains are read through the version-keyed cache over domain-data.
+	assert.ok(repositoryImports.includes("@/server/db/catalog-cache"));
 	assert.ok(repositoryImports.includes("@/server/db/price-data"));
 
 	const queryUtils = readFileSync(path.join(sourceRoot, "server", "queries", "query-utils.ts"), "utf8");

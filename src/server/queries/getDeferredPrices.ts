@@ -14,12 +14,6 @@ async function getPriceRepository(mode: TarkovDataMode) {
 	return getDefaultRepository({ mode, contentVersion: await getCatalogVersion(mode) });
 }
 
-export async function getDeferredPrices(mode: TarkovDataMode, ids: string[]) {
-	const repository = await getPriceRepository(mode);
-	const result = await repository.prices.getCurrent(mode, ids);
-	return result.data;
-}
-
 export async function getItemPriceResponse(
 	request: PriceRequest,
 	repository?: TarkovDataRepository,

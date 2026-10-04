@@ -4,7 +4,7 @@ import test from "node:test";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { itemModes, itemPrices, items, postgresSchema } from "../postgres/schema";
-import { getCurrentPriceData, getStoredPriceHistoryData, getTraderOffersByItemIds } from "./price-data";
+import { getAllTraderOffers, getCurrentPriceData, getStoredPriceHistoryData } from "./price-data";
 
 const require = createRequire(import.meta.url);
 const { postgresFixture } = require("../../../db-scripts/lib/test-postgres.mjs") as {
@@ -87,8 +87,8 @@ test(
 			assert.equal(pve.data["shared-item"].price, undefined);
 			assert.equal(pve.data["shared-item"].fleaStability, "reference");
 			assert.equal(pve.updatedAt, 0, "a null provider timestamp stays unknown instead of appearing fresh");
-			assert.deepEqual((await getTraderOffersByItemIds("regular", ["shared-item"], db))["shared-item"], offers);
-			assert.deepEqual((await getTraderOffersByItemIds("pve", ["shared-item"], db))["shared-item"], []);
+			assert.deepEqual((await getAllTraderOffers("regular", db))["shared-item"], offers);
+			assert.equal((await getAllTraderOffers("pve", db))["shared-item"], undefined);
 			assert.equal((await getStoredPriceHistoryData("regular", "shared-item", db)).data.length, 10);
 			assert.equal((await getStoredPriceHistoryData("pve", "missing-item", db)).updatedAt, 0);
 			assert.equal((await getCurrentPriceData("regular", ["missing-item"], db)).updatedAt, 0);

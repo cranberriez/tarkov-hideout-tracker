@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import {
 	isCompleteItemAcquisition,
@@ -25,10 +26,11 @@ interface ItemPageProps {
 	params: Promise<{ itemId: string }>;
 }
 
-async function loadItem(itemId: string) {
+// Shared by generateMetadata and the page within one render.
+const loadItem = cache(async (itemId: string) => {
 	const gameMode = await getActiveTarkovJsonGameMode();
 	return getItemDetailPageData(gameMode, itemId, await getCurrentPageRepository(gameMode));
-}
+});
 
 export async function generateMetadata({ params }: ItemPageProps): Promise<Metadata> {
 	const { item } = await loadItem(decodeRouteParam((await params).itemId));

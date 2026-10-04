@@ -7,6 +7,7 @@ import { normalizeName } from "@/lib/utils/normalize-name";
 import { items, itemModes } from "@/server/postgres/schema";
 import { getPostgresDb, type PostgresDatabase } from "@/server/postgres/connection";
 import { getItemsByIds } from "./domain-data";
+import { getCachedItemsByIds } from "./catalog-cache";
 import { withStableCatalogRead } from "./postgres-read";
 import { DatabaseDataIntegrityError } from "./errors";
 
@@ -44,7 +45,9 @@ export async function searchItemPreviews(
 		db,
 		contentVersion,
 	);
-	const previews = await getItemsByIds(mode, queryResult.data, db, queryResult.contentVersion);
+	const previews = database
+		? await getItemsByIds(mode, queryResult.data, db, queryResult.contentVersion)
+		: await getCachedItemsByIds(mode, queryResult.contentVersion, queryResult.data);
 	const previewItems = queryResult.data.map((id) => previews.data[id]);
 	if (previewItems.some((item) => !item || item.id.length === 0 || typeof item.normalizedName !== "string")) {
 		throw new DatabaseDataIntegrityError("An item search preview has an invalid shape");

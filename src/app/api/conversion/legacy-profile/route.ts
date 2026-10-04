@@ -9,6 +9,10 @@ export async function GET(request: NextRequest) {
 
 	const payload = await getLegacyProfileConversionView(modeParam.mode);
 	return NextResponse.json(payload, {
-		headers: { "Cache-Control": CacheControl.privateNoStore },
+		headers: {
+			"Cache-Control": Object.values(payload.errors).every((error) => error === null)
+				? CacheControl.publicCdnHour
+				: CacheControl.noStore,
+		},
 	});
 }
