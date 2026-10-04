@@ -3,7 +3,7 @@ import { PostImage } from "@/features/news/ImagePlaceholder";
 
 export function PostDevelopmentPreview() {
 	return (
-		<NewsPost title="A Look at the Next Update" date="September 9, 2026" version="Next" defaultOpen>
+		<NewsPost title="A Look at the Next Update" date="September 9, 2026" version="4.0" defaultOpen>
 			<p className="text-lg">
 				A lot has been taking shape in the development branch: a rebuilt questing interface, separate player profiles,
 				more useful item details, and new ways to compare barter and crafting profits.
