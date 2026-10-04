@@ -96,7 +96,7 @@ test(
 			const data = completeData();
 			const baseline = await readCatalogBaseline(fixture.pool);
 			assert.deepEqual(baseline, { regular: "0", pve: "0", "pvp-season": "0" });
-			const preview = await applyCatalogUpdate(fixture.pool, data, "1.1.5.0", 1000, { dryRun: true, baseline });
+			const preview = await applyCatalogUpdate(fixture.pool, data, 1000, { dryRun: true, baseline });
 			assert.deepEqual(preview.newItems, { regular: [], pve: [], "pvp-season": [] });
 			assert.equal(Number((await fixture.pool.query("SELECT count(*) FROM catalog_status")).rows[0].count), 3);
 			assert.equal(
@@ -105,7 +105,7 @@ test(
 				),
 				0,
 			);
-			await applyCatalogUpdate(fixture.pool, data, "1.1.5.0", 1000, { baseline });
+			await applyCatalogUpdate(fixture.pool, data, 1000, { baseline });
 			const unknown = await fixture.pool.query(
 				"SELECT first_seen_at, first_seen_patch, legacy_first_seen_release_id FROM item_discovery ORDER BY mode",
 			);
@@ -121,19 +121,19 @@ test(
 				"3",
 			);
 			const seenBaseline = await readCatalogBaseline(fixture.pool);
-			const noOp = await applyCatalogUpdate(fixture.pool, data, "1.1.5.0", 1500, { baseline: seenBaseline });
+			const noOp = await applyCatalogUpdate(fixture.pool, data, 1500, { baseline: seenBaseline });
 			assert.equal(noOp.changed, false);
 			const newBaseline = await readCatalogBaseline(fixture.pool);
-			await applyCatalogUpdate(fixture.pool, completeData("-new"), "1.2.0.0", 2000, { baseline: newBaseline });
+			await applyCatalogUpdate(fixture.pool, completeData("-new"), 2000, { baseline: newBaseline });
 			const later = (
 				await fixture.pool.query(
 					"SELECT first_seen_at, first_seen_patch FROM item_discovery WHERE item_id='item-regular-new' AND mode='regular'",
 				)
 			).rows[0];
 			assert.equal(Number(later.first_seen_at), 2000);
-			assert.equal(later.first_seen_patch, "1.2.0.0");
+			assert.equal(later.first_seen_patch, null);
 			const returningBaseline = await readCatalogBaseline(fixture.pool);
-			await applyCatalogUpdate(fixture.pool, data, "1.3.0.0", 3000, { baseline: returningBaseline });
+			await applyCatalogUpdate(fixture.pool, data, 3000, { baseline: returningBaseline });
 			const returned = (
 				await fixture.pool.query(
 					"SELECT first_seen_at, first_seen_patch FROM item_discovery WHERE item_id='item-regular' AND mode='regular'",
@@ -157,7 +157,7 @@ test(
 				await fixture.pool.query("INSERT INTO catalog_status(mode,discovery_initialized) VALUES($1,true)", [mode]);
 			}
 			const data = completeData();
-			const first = await applyCatalogUpdate(fixture.pool, data, "1.1.5.0", 1000);
+			const first = await applyCatalogUpdate(fixture.pool, data, 1000);
 			assert.equal(first.changed, true);
 			assert.equal(
 				(await fixture.pool.query("SELECT jsonb_typeof(objectives) AS kind FROM quest_modes WHERE mode='regular'"))
@@ -174,7 +174,7 @@ test(
 			const firstVersion = (await fixture.pool.query("SELECT content_version FROM catalog_status WHERE mode='regular'"))
 				.rows[0].content_version;
 			data.regular.freshness = { items: 1000, stations: 1000 };
-			const unchanged = await applyCatalogUpdate(fixture.pool, data, "1.1.5.0", 2000);
+			const unchanged = await applyCatalogUpdate(fixture.pool, data, 2000);
 			assert.equal(unchanged.changed, false);
 			assert.equal(
 				(await fixture.pool.query("SELECT content_version FROM catalog_status WHERE mode='regular'")).rows[0]
@@ -196,7 +196,7 @@ test(
 				"1",
 			);
 			data.regular.items[0].name = "Renamed catalog item";
-			await applyCatalogUpdate(fixture.pool, data, "1.2.0.0", 2500);
+			await applyCatalogUpdate(fixture.pool, data, 2500);
 			const firstSeen = (
 				await fixture.pool.query(
 					"SELECT first_seen_at, first_seen_patch FROM item_discovery WHERE item_id=$1 AND mode='regular'",
@@ -204,9 +204,9 @@ test(
 				)
 			).rows[0];
 			assert.equal(Number(firstSeen.first_seen_at), 1000);
-			assert.equal(firstSeen.first_seen_patch, "1.1.5.0");
+			assert.equal(firstSeen.first_seen_patch, null);
 			const changedData = completeData("-updated");
-			await applyCatalogUpdate(fixture.pool, changedData, "1.1.5.0", 3000);
+			await applyCatalogUpdate(fixture.pool, changedData, 3000);
 			assert.equal(
 				Number((await fixture.pool.query("SELECT count(*) FROM item_modes WHERE mode='regular'")).rows[0].count),
 				1,
@@ -236,7 +236,7 @@ test(
 );
 
 test(
-	"verified discovery import is reconciled atomically and new catalog IDs get the current patch",
+	"verified discovery import is reconciled atomically and new catalog IDs record timestamps without a patch",
 	{ skip: !process.env.TEST_DATABASE_URL },
 	async () => {
 		const fixture = await postgresFixture();
@@ -251,7 +251,7 @@ test(
 				first_seen_release_id: "old-release",
 			}));
 			const document = createDiscoveryExport(importedRows, tracking, 1000);
-			await applyCatalogUpdate(fixture.pool, completeData("-new"), "1.2.0.0", 2000, { discoveryDocument: document });
+			await applyCatalogUpdate(fixture.pool, completeData("-new"), 2000, { discoveryDocument: document });
 			const imported = (
 				await fixture.pool.query(
 					"SELECT first_seen_at, first_seen_patch, legacy_first_seen_release_id FROM item_discovery WHERE item_id='imported-regular' AND mode='regular'",
@@ -266,7 +266,7 @@ test(
 				)
 			).rows[0];
 			assert.equal(Number(unseenCurrent.first_seen_at), 2000);
-			assert.equal(unseenCurrent.first_seen_patch, "1.2.0.0");
+			assert.equal(unseenCurrent.first_seen_patch, null);
 		} finally {
 			await fixture.close();
 		}
@@ -305,7 +305,7 @@ test(
 				},
 			];
 			const discoveryDocument = createDiscoveryExport(rows, tracking, 1000);
-			const result = await applyCatalogUpdate(fixture.pool, completeData(), "1.1.5.0", 1000, {
+			const result = await applyCatalogUpdate(fixture.pool, completeData(), 1000, {
 				dryRun: true,
 				discoveryDocument,
 			});
@@ -325,7 +325,7 @@ test(
 		const fixture = await postgresFixture();
 		try {
 			const data = completeData();
-			await applyCatalogUpdate(fixture.pool, data, "1.1.5.0", 1000);
+			await applyCatalogUpdate(fixture.pool, data, 1000);
 			await fixture.pool.query("DELETE FROM item_discovery WHERE item_id='item-regular' AND mode='regular'");
 			const baseline = await readCatalogBaseline(fixture.pool);
 			const modes = ["regular", "pve", "pvp-season"];
@@ -354,7 +354,7 @@ test(
 				},
 			];
 			const document = createDiscoveryExport(rows, tracking, 1000);
-			const result = await applyCatalogUpdate(fixture.pool, data, "1.1.5.0", 2000, {
+			const result = await applyCatalogUpdate(fixture.pool, data, 2000, {
 				baseline,
 				discoveryDocument: document,
 			});
@@ -401,7 +401,7 @@ test(
 			});
 			const conflicting = createDiscoveryExport(rows, tracking, 1000);
 			await assert.rejects(
-				applyCatalogUpdate(fixture.pool, completeData(), "1.1.5.0", 1000, { discoveryDocument: conflicting }),
+				applyCatalogUpdate(fixture.pool, completeData(), 1000, { discoveryDocument: conflicting }),
 				/Discovery conflicts/,
 			);
 			assert.equal(Number((await fixture.pool.query("SELECT count(*) FROM items")).rows[0].count), 0);
@@ -418,7 +418,6 @@ test(
 						},
 					},
 					completeData(),
-					"1.1.5.0",
 					1000,
 					{ discoveryDocument: malformed },
 				),
@@ -442,13 +441,13 @@ test(
 			const baseline = await readCatalogBaseline(fixture.pool);
 			await fixture.pool.query("UPDATE catalog_status SET content_version=content_version+1 WHERE mode='regular'");
 			await assert.rejects(
-				applyCatalogUpdate(fixture.pool, completeData(), "1.1.5.0", 1000, { baseline }),
+				applyCatalogUpdate(fixture.pool, completeData(), 1000, { baseline }),
 				/changed while upstream data was being prepared/,
 			);
 			const data = completeData();
 			data.pve.stations[0].name = "PVE Station";
 			data.pve.stations[0].normalizedName = "pve-station";
-			await applyCatalogUpdate(fixture.pool, data, "1.1.5.0", 2000);
+			await applyCatalogUpdate(fixture.pool, data, 2000);
 			const identity = (await fixture.pool.query("SELECT name FROM stations WHERE id='station-shared'")).rows[0];
 			assert.equal(identity.name, "Station");
 			const override = (
@@ -472,8 +471,8 @@ test(
 			const baseline = await readCatalogBaseline(fixture.pool);
 			assert.deepEqual(baseline, { regular: "0", pve: "0", "pvp-season": "0" });
 			const results = await Promise.allSettled([
-				applyCatalogUpdate(fixture.pool, completeData("-writer-a"), "1.1.5.0", 2000, { baseline }),
-				applyCatalogUpdate(fixture.pool, completeData("-writer-b"), "1.1.5.0", 2001, { baseline }),
+				applyCatalogUpdate(fixture.pool, completeData("-writer-a"), 2000, { baseline }),
+				applyCatalogUpdate(fixture.pool, completeData("-writer-b"), 2001, { baseline }),
 			]);
 			assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
 			assert.equal(
@@ -510,7 +509,7 @@ test(
 				await fixture.pool.query("INSERT INTO catalog_status(mode,discovery_initialized) VALUES($1,true)", [mode]);
 			const data = completeData();
 			data["pvp-season"].quests[0].trader.id = "missing-trader";
-			await assert.rejects(applyCatalogUpdate(fixture.pool, data, "1.1.5.0", 1000), /quest_modes/);
+			await assert.rejects(applyCatalogUpdate(fixture.pool, data, 1000), /quest_modes/);
 			assert.equal(Number((await fixture.pool.query("SELECT count(*) FROM items")).rows[0].count), 0);
 			assert.equal(Number((await fixture.pool.query("SELECT count(*) FROM item_discovery")).rows[0].count), 0);
 			assert.equal(
@@ -534,7 +533,6 @@ test("malformed required catalog input is rejected before opening a write transa
 				},
 			},
 			malformed,
-			"1.1.5.0",
 		),
 		/pve items input is empty/,
 	);
@@ -548,7 +546,6 @@ test("malformed required catalog input is rejected before opening a write transa
 				},
 			},
 			missingDetails,
-			"1.1.5.0",
 		),
 		/regular item detail projections are incomplete/,
 	);

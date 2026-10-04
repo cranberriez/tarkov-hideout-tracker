@@ -43,7 +43,9 @@ writer transaction. It acquires the catalog advisory lock, checks the content
 versions used during preparation, and upserts changed domain rows atomically.
 Absent memberships are removed only after complete valid input; discovery never
 cascades away. Successful checks update catalog freshness, while content versions
-advance only for catalog/DTO changes. Catalog ingestion strips monetary offers
+advance only for catalog/DTO changes. Discovery records new first-seen timestamps without a patch. Item reads derive release
+labels from the [editable timeline](operations.md#release-timeline), preserving stored
+historical provenance and unknown baselines. Catalog ingestion strips monetary offers
 and market data and never overwrites existing price rows.
 
 Current item_details rows store relations, usage and acquisition JSONB without
@@ -181,7 +183,7 @@ parameter parsing, database error responses, and the named
 | [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); `private, no-store`                                                                    |
 | [page data](../src/app/api/page-data/)                                                                                                                           | Mode-specific Hideout, Items, Quests, Kappa, and shared Profit payloads; unpriced profit: `no-store`; other complete unpriced: browser 300s, CDN 3600s; partial/error: `no-store` |
 | [map APIs](../src/app/api/maps/)                                                                                                                                 | Committed map metadata, navigation overlays, and allow-listed SVG service; see [maps](maps.md)                                                                                    |
-| [price cron APIs](../src/app/api/cron/prices/)                                                                                                                   | Protected mutable-price refresh; see [operations](operations.md)                                                                                                                  |
+| [catalog cron API](../src/app/api/cron/catalog/route.ts)                                                                                                                   | Protected all-mode catalog update; see [operations](operations.md)                                                                                                                  |
 
 All item-view responses use `no-store` so catalog versions cannot freeze current offers; the item-detail queries expose their
 payload through a typed partial-data error rather than entering it as reusable
@@ -296,7 +298,8 @@ Metadata additions advance the affected mode's content version when its catalog 
 already ready; importing metadata alone never makes an empty catalog ready.
 
 PostgreSQL item_discovery has no membership FK. New mode/item pairs receive their
-first successful catalog-write timestamp and tracked patch after initialization.
+first successful catalog-write timestamp and a null patch after initialization.
+Release labels are derived from the timeline at read time.
 Without imported history, the first successful update atomically initializes each
 mode's current items with null first-seen date, patch and provenance. This unknown
 baseline does not claim a release date or a pre-1.1.5 origin. Future new IDs receive

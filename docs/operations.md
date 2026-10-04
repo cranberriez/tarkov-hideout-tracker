@@ -14,7 +14,7 @@ PostgreSQL; production switching follows the separate
 | PG_POOL_MAX                    | Connection pool limit (default 10)                      |
 | PG_STATEMENT_TIMEOUT_MS        | Statement timeout (default 30000 ms)                    |
 | TEST_DATABASE_URL              | Separate disposable PostgreSQL test database            |
-| CRON_SECRET                    | Existing bearer secret for scheduled pricing routes     |
+| CRON_SECRET                    | Bearer secret for the scheduled catalog route     |
 | TARKOV_JSON_REQUEST_TIMEOUT_MS | Existing provider per-attempt timeout override          |
 
 Only the optional one-time `db:discovery:export -- --turso discovery.json` command
@@ -116,7 +116,7 @@ cannot spawn child processes, add `--experimental-test-isolation=none`.
 
 ```bash
 npm run db:update -- --dry-run
-npm run db:update -- --patch 1.1.5.0
+npm run db:update
 npm run db:status
 npm run db:status -- --storage
 ```
@@ -124,7 +124,7 @@ npm run db:status -- --storage
 Catalog ingestion fetches/normalizes all three modes, validates complete input,
 composes current item details and atomically applies changed domain rows. All-mode
 updates reconcile shared presentation and variant overrides. Partial-mode catalog
-writes are rejected. The tracked patch is explicit provenance; update it as needed.
+writes are rejected. New discoveries record their observation timestamp without stamping a patch.
 Dry runs validate and report without writing. They do not consume discoveries.
 
 The catalog advisory lock and content-version check reject competing stale writers.
@@ -145,6 +145,48 @@ prior/incoming records are written to `db-scripts/.generated/diagnostics/`.
 Capture complete command output when diagnosing a run, for example in PowerShell:
 `npm run db:update *> db-scripts/.generated/catalog-update.log` (create the output
 directory first). Keep logs and reports local; never include environment values.
+
+## Release timeline
+
+Edit [game-releases.json](../src/lib/data/game-releases.json) to associate first-seen
+observations with game releases. The configured dates were supplied by the project
+owner: 1.0 on November 15, 2025; Seasons on August 3, 2026; Lighthouse/Lightkeeper
+on September 8, 2026; and League System on September 15, 2026. November 15 is
+interpreted as the 1.0/beta boundary. Times were not supplied, so these boundaries
+use midnight UTC and can be refined later.
+
+Numeric patches accept four components plus an optional fifth build number.
+Keep the build numbers to distinguish the two 1.1.5 updates. Optional `name` fields
+explain each entry in the config. A `"patch": "beta", "releasedAt": null` entry
+covers dated observations before 1.0 without inventing a beta start date. It does
+not assign a release to observations whose timestamp is unknown.
+
+```json
+{
+  "releases": [
+    { "patch": "1.1.5.0.47242", "name": "Lighthouse and Lightkeeper Rework", "releasedAt": "2026-09-08T00:00:00Z" }
+  ]
+}
+```
+
+Entries apply to all modes unless `"modes": ["regular", "pve"]` (or
+`"pvp-season"` for KORD) is supplied. Order does not matter. Duplicate patches or
+start times within a mode, malformed dates, and unknown modes are rejected.
+An observation belongs to the most recent release starting at or before its
+first-seen timestamp, until the next release. Add missing releases or correct dates
+and redeploy; associations are calculated on reads, so no database backfill is
+needed. Existing browser/API caches may retain old labels until refreshed/expired.
+
+The database keeps the original observation timestamp; it is never replaced with a
+release date. Unknown bootstrap timestamps remain unknown. Old stored patch labels
+remain in storage for provenance. Imported labels are a fallback when no timeline
+entry covers an observation; old locally stamped labels are not trusted as a fallback.
+The `pre-1.1.5` historical baseline remains intact. An association describes when the
+tracker first saw an item, not proof of when the game introduced it.
+
+`CURRENT_GAME_PATCH` and the CLI `--patch` option are removed. New observations
+store a timestamp with a null patch; discovery exports/imports accept those records
+alongside existing historical records without changing their checksums or history.
 
 ## Current dataset dashboard
 
@@ -173,14 +215,31 @@ chunked guarded writes, current sync state and only the latest run summary.
 The retained recent window has at most ten points per item/mode. The History tab
 continues its independent on-demand upstream fetch.
 
-[vercel.json](../vercel.json) and [cron auth](../src/server/prices/cron.ts) retain
-the existing schedule and CRON_SECRET. Check hosting execution-duration limits
-and external jobs at deployment; none are implicitly provisioned here.
+The Dockerized [market-analyzer worker](../market-analyzer/README.md) owns scheduled
+price refreshes: Seasonal near-live, regular/PVE every six hours, pushed hourly,
+plus derived analytics. Manual price refreshes share its per-mode lease.
 
-The Dockerized [market-analyzer worker](../market-analyzer/README.md) is the frequent
-refresh path: Seasonal near-live, regular/PVE every six hours, pushed hourly, plus
-derived analytics. It shares the per-mode lease, so it and the daily crons never
-write concurrently. Keep the crons until the worker has run reliably on the VPS.
+### Scheduled catalog updates
+
+[vercel.json](../vercel.json) schedules one daily request at 00:15 UTC to
+[/api/cron/catalog](../src/app/api/cron/catalog/route.ts). It requires the existing
+`CRON_SECRET` bearer token and `DATABASE_URL`. No current-patch variable is needed.
+The former price cron endpoints are removed; prices are handled by the worker or
+`db:prices:refresh`.
+
+The route bundles the same adapters and catalog preparation as `db:update`, fetches
+all three modes, prepares item details, and uses the same validated atomic writer.
+It preserves prices and existing discovery. It does not run migrations or import a
+local discovery file; use the CLI for explicit discovery imports and dry runs.
+Missing secrets return 503, unauthorized requests 401, and update failures 500;
+success reports changed/no-op status and per-mode counts. A competing catalog write
+invalidates a stale preparation baseline instead of allowing it to overwrite data.
+
+Deploy to activate the changed schedule. The route requests a 300-second execution
+budget; verify that the hosting configuration permits it and monitor the first run's
+duration and catalog freshness with `db:status`. If a run times out or fails before
+commit, no partial catalog is published. Vercel does not automatically retry failed
+cron invocations; an authenticated retry or `db:update` can recover a failed run.
 
 ### Flea stability evidence and validation
 

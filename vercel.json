@@ -2,11 +2,7 @@
 	"$schema": "https://openapi.vercel.sh/vercel.json",
 	"crons": [
 		{
-			"path": "/api/cron/prices/seasonal",
-			"schedule": "15 0 * * *"
-		},
-		{
-			"path": "/api/cron/prices/daily",
+			"path": "/api/cron/catalog",
 			"schedule": "15 0 * * *"
 		}
 	]

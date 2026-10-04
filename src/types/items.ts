@@ -29,7 +29,7 @@ export interface TraderPurchaseOffer {
 export interface ItemSummary extends ItemIdentity {
 	/** First successful observation; null means an imported or unknown-date baseline. */
 	firstSeenAt?: number | null;
-	/** Patch being tracked when discovered, not a verified game introduction. */
+	/** Release inferred from the editable timeline, or preserved imported provenance; not a verified introduction. */
 	firstSeenPatch?: string;
 	firstSeenReleaseId?: string;
 	shortName?: string;

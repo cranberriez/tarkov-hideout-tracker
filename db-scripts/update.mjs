@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { createJiti } from "jiti";
 import { loadLocalEnv } from "./lib/config.mjs";
 import { applyCatalogUpdate, MODES, readCatalogBaseline } from "./lib/postgres-catalog.mjs";
+import { prepareCatalog, prepareDetails } from "../src/server/catalog/preparation.mjs";
 import { stripCatalogDto } from "./lib/catalog-dto.mjs";
 import { loadDiscoveryInput } from "./lib/discovery-input.mjs";
 import { planDiscoveryReconciliation } from "./lib/discovery.mjs";
@@ -14,14 +15,12 @@ const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDirectory, "..");
 
 function parseArgs(argv) {
-	let patch = process.env.CURRENT_GAME_PATCH ?? "1.1.5.0";
 	let dryRun = false;
 	let fixturePath;
 	let exportFixturePath;
 	let discoveryPath;
 	for (let index = 0; index < argv.length; index++) {
-		if (argv[index] === "--patch") patch = argv[++index];
-		else if (argv[index] === "--dry-run") dryRun = true;
+		if (argv[index] === "--dry-run") dryRun = true;
 		else if (argv[index] === "--fixture") fixturePath = argv[++index];
 		else if (argv[index] === "--export-fixture") exportFixturePath = argv[++index];
 		else if (argv[index] === "--discovery") discoveryPath = argv[++index];
@@ -35,7 +34,6 @@ function parseArgs(argv) {
 			}
 		} else throw new Error(`Unknown argument: ${argv[index]}`);
 	}
-	if (!/^\d+\.\d+\.\d+\.\d+$/.test(patch)) throw new Error("--patch must be a numeric game patch such as 1.1.5.0");
 	if (fixturePath && exportFixturePath) throw new Error("--fixture and --export-fixture cannot be used together");
 	if (exportFixturePath && !dryRun)
 		throw new Error("--export-fixture requires --dry-run so exporting can never publish data");
@@ -48,147 +46,17 @@ function parseArgs(argv) {
 	) {
 		throw new Error("--fixture, --export-fixture and --discovery each require a file path");
 	}
-	return { patch, dryRun, fixturePath, exportFixturePath, discoveryPath };
+	return { dryRun, fixturePath, exportFixturePath, discoveryPath };
 }
 
 async function loadServices() {
 	const jiti = createJiti(pathToFileURL(import.meta.url).href, { alias: { "@": path.join(projectRoot, "src") } });
-	const importSource = (file) => jiti.import(path.join(projectRoot, file));
-	const [
-		itemsService,
-		hideoutService,
-		questsService,
-		tradersService,
-		recipesService,
-		relationsQuery,
-		usageQuery,
-		acquisitionQuery,
-	] = await Promise.all([
-		importSource("src/server/services/itemsJson.ts"),
-		importSource("src/server/services/hideoutJson.ts"),
-		importSource("src/server/services/questsJson.ts"),
-		importSource("src/server/services/tradersJson.ts"),
-		importSource("src/server/services/itemAcquisitionJson.ts"),
-		importSource("src/server/queries/getItemRelationsData.ts"),
-		importSource("src/server/queries/getItemUsageData.ts"),
-		importSource("src/server/queries/getItemAcquisitionTreeData.ts"),
-	]);
-	return {
-		itemsService,
-		hideoutService,
-		questsService,
-		tradersService,
-		recipesService,
-		relationsQuery,
-		usageQuery,
-		acquisitionQuery,
-	};
-}
-
-function makeResult(data, updatedAt) {
-	return { data, updatedAt };
-}
-function byId(records, ids) {
-	const map = new Map(records.map((row) => [row.id, row]));
-	return Object.fromEntries([...new Set(ids)].flatMap((id) => (map.has(id) ? [[id, map.get(id)]] : [])));
-}
-
-function memoryRepository(data) {
-	return {
-		items: {
-			getCatalog: async () => makeResult(data.items, data.freshness.items),
-			getByIds: async (_mode, ids) => makeResult(byId(data.items, ids), data.freshness.items),
-		},
-		hideout: { getStations: async () => makeResult(data.stations, data.freshness.stations) },
-		quests: {
-			getAll: async () => makeResult(data.quests, data.freshness.quests),
-			getByIds: async (_mode, ids) => makeResult(byId(data.quests, ids), data.freshness.quests),
-		},
-		traders: {
-			getAll: async () => makeResult(data.traders, data.freshness.traders),
-			getByIds: async (_mode, ids) => makeResult(byId(data.traders, ids), data.freshness.traders),
-		},
-		recipes: {
-			getBarters: async () => makeResult(data.barters, data.freshness.barters),
-			getCrafts: async () => makeResult(data.crafts, data.freshness.crafts),
-		},
-		prices: {
-			getCurrent: async () => makeResult({}, data.freshness.items),
-			getHistory: async () => {
-				throw new Error("Price history is not part of catalog ingestion");
-			},
-		},
-	};
-}
-
-async function loadModeData(mode, services) {
-	const [itemResult, skillsResult, stationResult, questResult, traderResult, barterResult, craftResult] =
-		await Promise.all([
-			services.itemsService.getGlobalItemList(mode),
-			services.itemsService.getGlobalSkillList(mode),
-			services.hideoutService.getJsonHideoutStations(mode),
-			services.questsService.getCurrentJsonFullQuestData(mode),
-			services.tradersService.getJsonTraders(mode),
-			services.recipesService.getBarterIndex(mode),
-			services.recipesService.getCraftIndex(mode),
-		]);
-	const data = {
-		items: itemResult.data.items.map((sourceItem) => {
-			const item = { ...sourceItem };
-			delete item.marketPrice;
-			delete item.buyFromTrader;
-			return item;
-		}),
-		skills: skillsResult.data.skills,
-		stations: stationResult.data.stations,
-		quests: questResult.data.quests,
-		traders: traderResult.data.traders,
-		barters: Object.values(barterResult.data.bartersByItemId).flat(),
-		crafts: Object.values(craftResult.data.craftsByItemId).flat(),
-		freshness: {
-			items: itemResult.updatedAt,
-			skills: skillsResult.updatedAt,
-			stations: stationResult.updatedAt,
-			quests: questResult.updatedAt,
-			traders: traderResult.updatedAt,
-			barters: barterResult.updatedAt,
-			crafts: craftResult.updatedAt,
-		},
-	};
-	return data;
-}
-
-async function prepareDetails(mode, data, services) {
-	const repo = memoryRepository(data);
-	data.itemDetails = [];
-	const batchSize = 10;
-	for (let offset = 0; offset < data.items.length; offset += batchSize) {
-		const entries = await Promise.all(
-			data.items.slice(offset, offset + batchSize).map(async (item) => {
-				const [relations, usage, acquisition] = await Promise.all([
-					services.relationsQuery.getItemRelationsData(item.id, mode, repo),
-					services.usageQuery.getItemUsageData(item.id, mode, repo),
-					services.acquisitionQuery.getItemAcquisitionTreeData(item.id, mode, repo),
-				]);
-				return {
-					itemId: item.id,
-					relations: stripCatalogDto(relations),
-					usage: stripCatalogDto(usage),
-					acquisition: stripCatalogDto(acquisition),
-				};
-			}),
-		);
-		data.itemDetails.push(...entries);
-		if (offset === 0 || offset + batchSize >= data.items.length || (offset + batchSize) % 500 === 0)
-			console.log(
-				`  ${mode}: prepared item details ${Math.min(offset + batchSize, data.items.length)}/${data.items.length}`,
-			);
-	}
+	return jiti.import(path.join(projectRoot, "src/server/catalog/services.ts"));
 }
 
 async function main() {
 	await loadLocalEnv(projectRoot);
-	const { patch, dryRun, fixturePath, exportFixturePath, discoveryPath } = parseArgs(process.argv.slice(2));
+	const { dryRun, fixturePath, exportFixturePath, discoveryPath } = parseArgs(process.argv.slice(2));
 	const discoveryDocument = await loadDiscoveryInput(projectRoot, discoveryPath);
 	console.log(
 		discoveryDocument
@@ -247,16 +115,7 @@ async function main() {
 			}
 			console.log(`Loaded normalized debug fixture ${source}`);
 		} else {
-			const services = await loadServices();
-			for (const mode of MODES) {
-				console.log(`Fetching normalized ${mode} catalog…`);
-				const data = await loadModeData(mode, services);
-				await prepareDetails(mode, data, services);
-				modesData[mode] = data;
-				console.log(
-					`  ${mode}: ${data.items.length} items, ${data.stations.length} stations, ${data.quests.length} quests`,
-				);
-			}
+			Object.assign(modesData, await prepareCatalog(await loadServices()));
 		}
 		if (exportFixturePath) {
 			const destination = path.resolve(projectRoot, exportFixturePath);
@@ -268,7 +127,7 @@ async function main() {
 			);
 			console.log(`Wrote debug fixture ${destination}`);
 		}
-		const result = await applyCatalogUpdate(pool, modesData, patch, Date.now(), {
+		const result = await applyCatalogUpdate(pool, modesData, Date.now(), {
 			dryRun,
 			baseline,
 			discoveryDocument,

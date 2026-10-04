@@ -45,12 +45,12 @@ The target is a fresh catalog; the only imported business data is item discovery
 
    ```bash
    npm run db:update -- --dry-run
-   npm run db:update -- --patch 1.1.5.0
+   npm run db:update
    npm run db:prices:refresh -- --modes regular,pve,pvp-season
    npm run db:status
    ```
 
-   Use the currently tracked patch explicitly. Catalog updates require all three
+   Configure known release dates in the release timeline. Catalog updates require all three
    modes. A source outage leaves the old application serving. Verify populated
    catalog, detail projections, discovery initialization, and independent price
    reference/offer freshness in all modes before enabling traffic.

@@ -24,6 +24,30 @@ const rows = DISCOVERY_MODES.flatMap((mode, index) => [
 		first_seen_release_id: "later",
 	},
 ]);
+test("timestamp-only observations round trip and remain protected from unknown imports", () => {
+	const observations = DISCOVERY_MODES.map((mode) => ({
+		mode,
+		item_id: "new-item",
+		first_seen_at: 1000,
+		first_seen_patch: null,
+		first_seen_release_id: null,
+	}));
+	const document = createDiscoveryExport(observations, tracking, 2000);
+	assert.deepEqual(validateDiscoveryExport(document).rows, document.rows);
+	const unknown = observations.map((row) => ({ ...row, first_seen_at: null }));
+	assert.equal(buildDiscoveryReconciliation(observations, createDiscoveryExport(unknown, tracking)).preserved, 3);
+	assert.throws(
+		() =>
+			buildDiscoveryReconciliation(
+				observations,
+				createDiscoveryExport(
+					observations.map((row) => ({ ...row, first_seen_at: 1500 })),
+					tracking,
+				),
+			),
+		/Discovery conflicts/,
+	);
+});
 test("discovery exports preserve baseline nulls, mode dates, and removed IDs", () => {
 	const document = createDiscoveryExport(rows, tracking, 1000);
 	assert.deepEqual(validateDiscoveryExport(document), document);

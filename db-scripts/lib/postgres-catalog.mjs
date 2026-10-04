@@ -347,10 +347,15 @@ export async function readCatalogBaseline(pool) {
 	return Object.fromEntries(MODES.map((mode) => [mode, current.get(mode) ?? "0"]));
 }
 
+/**
+ * @param {import("pg").Pool} pool
+ * @param {Record<string, object>} modesData
+ * @param {number} now
+ * @param {{ dryRun?: boolean, baseline?: Record<string, string>, discoveryDocument?: object }} options
+ */
 export async function applyCatalogUpdate(
 	pool,
 	modesData,
-	patch,
 	now = Date.now(),
 	{ dryRun = false, baseline, discoveryDocument } = {},
 ) {
@@ -564,9 +569,9 @@ export async function applyCatalogUpdate(
 			const discovery = initialized
 				? await client.query(
 						`INSERT INTO item_discovery(item_id,mode,first_seen_at,first_seen_patch)
-					SELECT item_id,$1,$2,$3 FROM UNNEST($4::text[]) AS item_id
+					SELECT item_id,$1,$2,NULL FROM UNNEST($3::text[]) AS item_id
 					ON CONFLICT(item_id,mode) DO NOTHING`,
-						[mode, now, patch, items],
+						[mode, now, items],
 					)
 				: await client.query(
 						`INSERT INTO item_discovery(item_id,mode,first_seen_at,first_seen_patch,legacy_first_seen_release_id)

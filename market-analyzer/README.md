@@ -22,7 +22,7 @@ identical inputs.
   in PostgreSQL; Tarkov.dev stays the canonical raw history.
 - **Push**: changed items go through the site's
   [price store](../src/server/prices/price-store.ts) under the same per-mode lease as the
-  Vercel crons, so they never write concurrently. Not-modified checks are not written.
+  manual price refreshes, so they never write concurrently. Not-modified checks are not written.
   The cache is the push buffer (dirty flags), so a restart cannot lose changes.
 - **Exclusions**: items that 404 or have no history since the cutoff are not on the flea
   in that mode. They are skipped on later polls until a recheck is requested.

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { resolveItemRelease } from "@/lib/utils/game-releases";
+
 import { asc, eq, inArray, and } from "drizzle-orm";
 import type { DataResult, TarkovDataMode } from "@/types/common";
 import type { ItemSummary } from "@/types/items";
@@ -117,24 +119,21 @@ export async function getItemsByIds(
 			const output: Record<string, ItemSummary> = Object.create(null) as Record<string, ItemSummary>;
 			for (const row of rows) {
 				const firstSeenAt = row.firstSeenAt;
-				const firstSeenPatch = row.firstSeenPatch;
+				const storedPatch = row.firstSeenPatch;
 				if (
 					firstSeenAt !== null &&
 					firstSeenAt !== undefined &&
 					(!Number.isSafeInteger(firstSeenAt) || firstSeenAt <= 0)
 				)
 					throw new DatabaseDataIntegrityError(`Invalid item discovery metadata for ${row.id}`);
-				if (firstSeenPatch !== null && firstSeenPatch !== undefined && typeof firstSeenPatch !== "string")
+				if (storedPatch !== null && storedPatch !== undefined && typeof storedPatch !== "string")
 					throw new DatabaseDataIntegrityError(`Invalid item discovery metadata for ${row.id}`);
 				if (
-					(firstSeenPatch === "pre-1.1.5" && firstSeenAt !== null) ||
-					(firstSeenPatch !== null &&
-						firstSeenPatch !== undefined &&
-						firstSeenPatch !== "pre-1.1.5" &&
-						(firstSeenAt === null || firstSeenAt === undefined)) ||
-					(firstSeenAt !== null &&
-						firstSeenAt !== undefined &&
-						(firstSeenPatch === null || firstSeenPatch === undefined))
+					(storedPatch === "pre-1.1.5" && firstSeenAt !== null) ||
+					(storedPatch !== null &&
+						storedPatch !== undefined &&
+						storedPatch !== "pre-1.1.5" &&
+						(firstSeenAt === null || firstSeenAt === undefined))
 				) {
 					throw new DatabaseDataIntegrityError(`Invalid item discovery metadata for ${row.id}`);
 				}
@@ -144,6 +143,7 @@ export async function getItemsByIds(
 					typeof row.firstSeenReleaseId !== "string"
 				)
 					throw new DatabaseDataIntegrityError(`Invalid item discovery provenance for ${row.id}`);
+				const firstSeenPatch = resolveItemRelease(row.firstSeenAt, mode, storedPatch, row.firstSeenReleaseId);
 				const summary = override<ItemSummary>(
 					{
 						id: row.id,

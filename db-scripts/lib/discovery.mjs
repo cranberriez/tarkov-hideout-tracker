@@ -13,7 +13,7 @@ function normalizeRows(rows) {
 				!DISCOVERY_MODES.includes(mode) ||
 				typeof item_id !== "string" ||
 				!item_id.trim() ||
-				(!unknownBaseline &&
+				(first_seen_patch !== null &&
 					(typeof first_seen_patch !== "string" || !/^(?:pre-1\.1\.5|\d+\.\d+\.\d+\.\d+)$/.test(first_seen_patch))) ||
 				(first_seen_release_id !== null &&
 					(typeof first_seen_release_id !== "string" || !first_seen_release_id.trim())) ||

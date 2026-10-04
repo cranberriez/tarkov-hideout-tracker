@@ -11,7 +11,6 @@ and the separate [production cutover runbook](../docs/postgresql-cutover.md).
 | npm run db:migrate                                          | Apply checked-in SQL migrations explicitly                                      |
 | npm run db:update                                           | Fetch all modes, normalize/validate, compose details, atomically upsert catalog |
 | npm run db:update -- --dry-run                              | Validate upstream input and report without writes                               |
-| npm run db:update -- --patch 1.1.5.0                        | Record patch provenance for genuinely new discoveries                           |
 | npm run db:prices:refresh -- --modes regular,pve,pvp-season | Independently refresh reference prices/offers and flea observations             |
 | npm run db:prices:refresh -- --concurrency 12               | Limit HTTP concurrency (1–32)                                                   |
 | npm run db:status                                           | Read catalog/discovery/price readiness and latest timestamps                    |
@@ -38,7 +37,8 @@ an explicitly requested missing file is an error. Dry runs preview without writi
 
 Without an import, each uninitialized mode records its current items with unknown
 first-seen date and patch (`null`), then marks discovery initialized. Later updates
-record the observation date and tracked patch for new IDs. Returning IDs retain
+record only the observation date for new IDs. Release associations are derived from
+the editable [release timeline](../docs/operations.md#release-timeline). Returning IDs retain
 their original metadata, and existing discovery is never reset. The initial catalog
 is not labeled as newly released or assumed to predate a particular patch.
 
@@ -94,7 +94,9 @@ purchase/unlock metadata even for unpriced item-detail requests.
 
 - [Schema](../src/server/postgres/schema.ts), [SQL migrations](migrations/), and
   [shared connection](../src/server/postgres/connection.ts).
-- [Catalog command](update.mjs) and [atomic writer](lib/postgres-catalog.mjs).
+- [Catalog command](update.mjs), shared [preparation](../src/server/catalog/preparation.mjs),
+  and [atomic writer](lib/postgres-catalog.mjs). The Vercel catalog cron uses the
+  same preparation and writer; see [scheduled updates](../docs/operations.md#scheduled-catalog-updates).
 - [Discovery validation/import](lib/discovery.mjs).
 - [Price workflow](../src/server/prices/refresh-prices.ts) and
   [PostgreSQL store](../src/server/prices/price-store.ts).
