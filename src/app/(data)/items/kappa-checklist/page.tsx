@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { HydrationBoundary } from "@tanstack/react-query";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
 import { KappaQueryPage } from "@/features/items/kappa/KappaQueryPage";
@@ -9,6 +10,12 @@ import {
 } from "@/lib/query/page-data";
 import { prefetchPageData } from "@/server/queries/prefetchPageData";
 import { getCurrentPageRepository } from "@/server/queries/currentPageRepository";
+
+export const metadata: Metadata = {
+	title: "Kappa Collector Item Checklist",
+	description: "Track Escape from Tarkov Collector quest items for the Kappa container, including Found in Raid items and your collection progress.",
+	alternates: { canonical: "/items/kappa-checklist" },
+};
 
 export default async function KappaChecklistPage() {
 	const gameMode = await getActiveTarkovJsonGameMode();

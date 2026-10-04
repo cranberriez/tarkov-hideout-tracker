@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { PreferencesCard } from "@/features/settings/PreferencesCard";
 import { PlayerProgressCard } from "@/features/settings/PlayerProgressCard";
 import { StorageResetCard } from "@/features/settings/StorageResetCard";
@@ -53,3 +54,6 @@ export default function SettingsPage() {
 		</div>
 	);
 }
+
+
+export const metadata: Metadata = { title: "Settings", robots: { index: false, follow: true } };

@@ -32,7 +32,7 @@ async function loadItem(itemId: string) {
 
 export async function generateMetadata({ params }: ItemPageProps): Promise<Metadata> {
 	const { item } = await loadItem(decodeRouteParam((await params).itemId));
-	if (!item) return { title: "Item" };
+	if (!item) return { title: "Item unavailable", robots: { index: false, follow: true } };
 	const label = item.shortName && item.shortName !== item.name ? `${item.name} (${item.shortName})` : item.name;
 	return {
 		title: label,

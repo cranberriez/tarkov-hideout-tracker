@@ -28,7 +28,7 @@ const loadHideout = cache(async () => {
 export async function generateMetadata({ params }: StationPageProps): Promise<Metadata> {
 	const stationId = decodeRouteParam((await params).stationId);
 	const station = (await loadHideout()).data.stations?.find((entry) => entry.id === stationId);
-	if (!station) return { title: "Hideout station" };
+	if (!station) return { title: "Hideout station unavailable", robots: { index: false, follow: true } };
 	return {
 		title: `${station.name} (Hideout)`,
 		description: `Escape from Tarkov ${station.name}: requirements for all ${station.levels.length} levels, station dependencies, construction times, and crafts.`,

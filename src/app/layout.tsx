@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
+import { isIndexableHost, SITE_URL } from "@/lib/seo";
 import "./globals.css";
 import { Navbar } from "@/components/core/Navbar";
 import { SetupModal } from "../features/setup/SetupModal";
@@ -17,10 +19,15 @@ export const viewport: Viewport = {
 	initialScale: 1,
 };
 
-export const metadata: Metadata = {
-	title: { default: "Tarkov Hideout Tracker", template: "%s · Tarkov Hideout Tracker" },
-	description: "Track your Escape from Tarkov hideout progress",
-};
+export async function generateMetadata(): Promise<Metadata> {
+	const index = isIndexableHost((await headers()).get("host"));
+	return {
+		metadataBase: new URL(SITE_URL),
+		title: { default: "Tarkov Hideout Tracker", template: "%s · Tarkov Hideout Tracker" },
+		description: "Track Escape from Tarkov hideout upgrades, quests, required items, and progress for PVP, PVE, and KORD.",
+		robots: { index, follow: true },
+	};
+}
 
 export default function RootLayout({
 	children,

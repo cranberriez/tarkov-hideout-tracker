@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { TarkovDataRepository } from "@/server/repositories/tarkov-data/types";
-import type { DataResult } from "@/types/common";
-import type { Station } from "@/types/hideout";
-import type { ItemSummary } from "@/types/items";
-import type { FullQuest } from "@/types/quests";
+import type { TarkovDataRepository } from "../../server/repositories/tarkov-data/types";
+import type { DataResult } from "../../types/common";
+import type { Station } from "../../types/hideout";
+import type { ItemSummary } from "../../types/items";
+import type { FullQuest } from "../../types/quests";
 import { getHideoutPageData } from "./getHideoutPageData";
 import { getItemChecklistPageData } from "./getItemChecklistPageData";
 import { getProfitPageData } from "./getProfitPageData";
@@ -13,6 +13,8 @@ import { getQuestDetailPageData } from "./getQuestDetailPageData";
 import { getItemDetailPageData } from "./getItemDetailPageData";
 import { getKappaChecklistPageData, COLLECTOR_QUEST_ID_BY_MODE } from "./getKappaChecklistPageData";
 import { getItemPriceResponse } from "./getDeferredPrices";
+import { getSitemapPaths } from "./getSitemapPaths";
+import { isIndexableHost } from "../../lib/seo";
 
 function result<T>(data: T, updatedAt = 1): DataResult<T> {
 	return { data, updatedAt, diagnostics: { provider: "json" } };
@@ -89,6 +91,39 @@ function createRepository(
 		prices: { getCurrent: overrides.prices ?? forbidden, getHistory: forbidden },
 	};
 }
+
+test("only public production hosts are indexable", () => {
+	for (const host of [
+		null,
+		"localhost:3000",
+		"dev.tarkovhideout.com",
+		"preview.vercel.app",
+		"tarkovhideout.com.example.org",
+	]) {
+		assert.equal(isIndexableHost(host), false);
+	}
+	assert.equal(isIndexableHost("tarkovhideout.com"), true);
+	assert.equal(isIndexableHost("www.tarkovhideout.com"), true);
+});
+
+test("sitemap reads only default-mode quests and stations, and propagates read failures", async () => {
+	const repository = createRepository({
+		quests: async (mode) => {
+			assert.equal(mode, "regular");
+			return result([quest, quest]);
+		},
+		stations: async (mode) => {
+			assert.equal(mode, "regular");
+			return result([station]);
+		},
+	});
+	const paths = await getSitemapPaths(repository);
+	assert.ok(paths.includes("/quests/quest-1"));
+	assert.ok(paths.includes("/hideout/stations/workbench"));
+	assert.equal(paths.filter((path) => path === "/quests/quest-1").length, 1);
+	assert.ok(!paths.includes("/settings"));
+	await assert.rejects(getSitemapPaths(createRepository({ stations: repository.hideout.getStations })));
+});
 
 test("unpriced page reads finish without calling prices and retain unresolved requirements", async () => {
 	let priceCalls = 0;

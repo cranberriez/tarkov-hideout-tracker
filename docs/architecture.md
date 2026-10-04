@@ -31,6 +31,14 @@ not-found states; failed reads report errors instead of 404s. Pages render publi
 identity from server data; player progress hydrates afterwards. Titles use the root
 `%s · Tarkov Hideout Tracker` template.
 
+Search metadata uses `https://tarkovhideout.com` as the canonical origin.
+The root marks all other hosts (including dev and previews) `noindex`; settings
+are always `noindex`. Robots allows page crawling so engines can read that directive.
+Only production hosts advertise the sitemap. The sitemap query lists public overview
+pages plus prepared quests and stations from the default PVP dataset, matching
+cookie-free visits; read failures propagate rather than publishing a partial sitemap.
+Individual items remain outside the sitemap. No artificial modification dates are emitted.
+
 Keys and Station Goals routes are placeholders; Bitcoin Farm
 calculations live on its station page (see [profits](profits.md)). Check
 their [route implementations](<../src/app/(data)/>) before extending them.

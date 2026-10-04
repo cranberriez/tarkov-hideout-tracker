@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { decodeRouteParam } from "@/lib/utils/route-param";
 import { isDev } from "@/lib/is-dev";
@@ -14,12 +15,12 @@ interface QuestPageProps {
 	params: Promise<{ questId: string }>;
 }
 
-async function loadQuest(questId: string) {
+const loadQuest = cache(async (questId: string) => {
 	const gameMode = await getActiveTarkovJsonGameMode();
 	return getQuestDetailPageData(gameMode, questId, await getCurrentPageRepository(gameMode), {
 		showRemovedQuests: SHOW_REMOVED_QUESTS,
 	});
-}
+});
 
 function isDevQuest(questId: string) {
 	return isDev && questId === DEV_QUEST_ID;
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: QuestPageProps): Promise<Meta
 	const questId = decodeRouteParam((await params).questId);
 	if (isDevQuest(questId)) return { title: "Development quest" };
 	const { quest } = await loadQuest(questId);
-	if (!quest) return { title: "Quest" };
+	if (!quest) return { title: "Quest unavailable", robots: { index: false, follow: true } };
 	const facts = [
 		`${quest.traderName} quest`,
 		quest.mapName ? `on ${quest.mapName}` : null,
@@ -39,8 +40,8 @@ export async function generateMetadata({ params }: QuestPageProps): Promise<Meta
 		.join(" ");
 	const objectives = quest.objectiveDescriptions.slice(0, 3).join(" ");
 	return {
-		title: `${quest.name} (${quest.traderName})`,
-		description: `${quest.name}: ${facts}.${objectives ? ` ${objectives}` : ""}`.slice(0, 300),
+		title: `${quest.name} – ${quest.traderName} Quest`,
+		description: `Escape from Tarkov ${quest.name}: ${facts}.${objectives ? ` ${objectives}` : ""}`.slice(0, 300),
 		alternates: { canonical: questHref(quest.id) },
 	};
 }
