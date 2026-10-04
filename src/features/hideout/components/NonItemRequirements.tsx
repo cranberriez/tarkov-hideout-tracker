@@ -2,7 +2,6 @@
 
 import type { Station } from "@/types/hideout";
 import Image from "next/image";
-import { StationLink } from "@/components/entities/station-link";
 import { RequirementChip } from "@/components/ui/requirement";
 
 export interface NonItemRequirementsProps {
@@ -10,6 +9,29 @@ export interface NonItemRequirementsProps {
 	nextLevelData: Station["levels"][number];
 	stations: Station[] | null;
 	stationLevels: Record<string, number>;
+}
+
+function scrollToStation(stationId: string) {
+	const card = document.getElementById(`hideout-station-${stationId}`);
+	if (!card) return;
+
+	const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	card.scrollIntoView({ behavior: reducedMotion ? "instant" : "smooth", block: "nearest" });
+	for (const animation of card.getAnimations()) {
+		if (animation.id === "station-border-pulse") animation.cancel();
+	}
+	const borderColor = getComputedStyle(card).borderColor;
+	card.animate(
+		reducedMotion
+			? [{ borderColor: "var(--success)" }, { borderColor: "var(--success)" }]
+			: [
+					{ borderColor, offset: 0 },
+					{ borderColor: "var(--success)", offset: 0.2 },
+					{ borderColor: "var(--success)", offset: 0.6 },
+					{ borderColor, offset: 1 },
+				],
+		{ id: "station-border-pulse", duration: 1800, easing: "ease-in-out" },
+	);
 }
 
 export function NonItemRequirements({ station, nextLevelData, stations, stationLevels }: NonItemRequirementsProps) {
@@ -32,13 +54,14 @@ export function NonItemRequirements({ station, nextLevelData, stations, stationL
 						</RequirementChip>
 					);
 					return reqStation ? (
-						<StationLink
+						<button
 							key={`st-${idx}`}
-							station={reqStation}
-							className="group/station rounded-sm focus-visible:outline-2 focus-visible:outline-brand"
+							type="button"
+							onClick={() => scrollToStation(reqStation.id)}
+							className="group/station cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-brand"
 						>
 							{chip}
-						</StationLink>
+						</button>
 					) : (
 						<span key={`st-${idx}`}>{chip}</span>
 					);

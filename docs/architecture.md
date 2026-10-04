@@ -124,6 +124,9 @@ in [stationOrder.ts](../src/lib/cfg/stationOrder.ts). Rules code references stat
 through `STATION_IDS` in [static-stations.ts](../src/lib/data/static-stations.ts)
 rather than inlining IDs or matching slugs. Edition starting levels are applied
 through setup/store actions; see [user state](user-state.md).
+Required-station chips on Hideout cards smoothly scroll to the corresponding visible
+card and briefly pulse its border green without opening station details. Reduced-motion
+preferences use an instant scroll and a temporary solid green border instead.
 
 [station-model](../src/features/hideout/station-model.ts) owns the pure upgrade
 status (`ready`/`missing`/`illegal`), default viewed level, and reverse dependencies

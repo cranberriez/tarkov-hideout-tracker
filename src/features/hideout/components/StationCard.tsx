@@ -71,6 +71,7 @@ export function StationCard({ station, stations, itemById, isLocked = false, poo
 
 	return (
 		<div
+			id={`hideout-station-${station.id}`}
 			className={`bg-card border border-border-color rounded overflow-hidden flex flex-col transition-opacity ${
 				isHidden ? "opacity-50 grayscale" : ""
 			}`}
