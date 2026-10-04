@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { AcquisitionPlan } from "@/lib/price-calculation";
 import type { ItemSummary } from "@/types/items";
@@ -28,6 +28,10 @@ export function RouteSelector({
 }) {
 	const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
 	const buttonRef = useRef<HTMLButtonElement>(null);
+	const layerRef = useRef<HTMLSpanElement>(null);
+	// Inside a modal dialog the picker must render within it: the dialog blocks pointer
+	// events outside its own DOM and closes on outside presses.
+	const [portalContainer, setPortalContainer] = useState<Element | null>(null);
 	const descriptionId = useId();
 	const routes = getAcquisitionRoutes(plan);
 	const alternativeCount = plan.alternatives.length;
@@ -45,6 +49,16 @@ export function RouteSelector({
 		...(automaticFallback ? ["Using this route because a cheaper source is locked"] : []),
 		"Open to compare sources",
 	].join(". ");
+
+	// A transformed ancestor (the centred dialog) re-anchors `position: fixed`; shift the
+	// layer back so it covers the viewport and picker coordinates stay viewport-relative.
+	useLayoutEffect(() => {
+		const layer = layerRef.current;
+		if (!position || !layer) return;
+		layer.style.translate = "";
+		const rect = layer.getBoundingClientRect();
+		if (rect.left !== 0 || rect.top !== 0) layer.style.translate = `${-rect.left}px ${-rect.top}px`;
+	}, [position, portalContainer]);
 
 	useEffect(() => {
 		if (!position) return;
@@ -92,6 +106,7 @@ export function RouteSelector({
 					const rect = buttonRef.current?.getBoundingClientRect();
 					if (!rect) return;
 					onOpen?.();
+					setPortalContainer(buttonRef.current?.closest('[role="dialog"]') ?? document.body);
 					setPosition({
 						left: Math.min(rect.right + 6, window.innerWidth - 330),
 						top: Math.max(
@@ -117,13 +132,14 @@ export function RouteSelector({
 				/>
 			</button>
 			{position &&
+				portalContainer &&
 				createPortal(
-					<>
+					<span ref={layerRef} className="pointer-events-none fixed left-0 top-0 z-[129] block h-dvh w-screen">
 						<button
 							type="button"
 							data-isolated-hover="true"
 							aria-label="Close acquisition route picker"
-							className="fixed inset-0 z-[129] cursor-default bg-transparent"
+							className="pointer-events-auto absolute inset-0 cursor-default bg-transparent"
 							onMouseDown={(event) => {
 								event.preventDefault();
 								event.stopPropagation();
@@ -133,7 +149,7 @@ export function RouteSelector({
 						<span
 							data-route-selector
 							data-isolated-hover="true"
-							className="fixed z-130 space-y-1 block w-[320px] overflow-y-auto overscroll-contain rounded-md border border-highlight/15 bg-[var(--background)] p-1 shadow-[0_18px_55px_color-mix(in_oklab,_var(--shadow)_80%,_transparent)]"
+							className="pointer-events-auto absolute z-[1] space-y-1 block w-[320px] overflow-y-auto overscroll-contain rounded-md border border-highlight/15 bg-[var(--background)] p-1 shadow-[0_18px_55px_color-mix(in_oklab,_var(--shadow)_80%,_transparent)]"
 							style={{
 								left: Math.max(8, position.left),
 								top: position.top,
@@ -171,8 +187,8 @@ export function RouteSelector({
 								);
 							})}
 						</span>
-					</>,
-					document.body,
+					</span>,
+					portalContainer,
 				)}
 		</>
 	);

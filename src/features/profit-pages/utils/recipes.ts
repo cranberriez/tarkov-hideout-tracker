@@ -7,6 +7,7 @@ import type {
 	RecipeEvaluation,
 } from "@/lib/price-calculation";
 import { craftRequiredItems } from "../../../lib/price-calculation/craft-rules";
+import { traderInfo } from "../../../lib/data/traders";
 import { emptyIngredientPlan } from "../../../lib/price-calculation/empty-value";
 import type { TaxOptions } from "@/lib/price-calculation/calc-tax";
 import { getItemBuyPrice, practicalSavingsThreshold } from "../../../lib/price-calculation/prices";
@@ -410,7 +411,8 @@ export function describeChainRoute(plan: AcquisitionPlan, context: RouteContext)
 	if (plan.method === "flea") return "Flea market";
 	if (plan.method === "sell") return "Sell value";
 	if (plan.method === "trader" && plan.traderOffer) {
-		return `Trader LL${plan.traderOffer.minTraderLevel}`;
+		const traderId = plan.traderOffer.traderId;
+		return `${context.tradersById[traderId]?.name ?? traderInfo(traderId).name} LL${plan.traderOffer.minTraderLevel}`;
 	}
 	if (plan.method === "unavailable") return "No priced route";
 	if (plan.method === "barter" && plan.sourceId) {
