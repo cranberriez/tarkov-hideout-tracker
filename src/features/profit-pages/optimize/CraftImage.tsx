@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Package } from "lucide-react";
 import { useState } from "react";
 import type { ItemSummary } from "@/types/items";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 export function CraftImage({
 	item,
@@ -16,7 +17,7 @@ export function CraftImage({
 	size?: number;
 	className?: string;
 }) {
-	const url = src ?? item?.iconLink ?? item?.gridImageLink ?? item?.image512pxLink;
+	const url = src ?? (item ? itemImageUrl(item) : undefined);
 	const [failed, setFailed] = useState<string | null>(null);
 	return (
 		<span

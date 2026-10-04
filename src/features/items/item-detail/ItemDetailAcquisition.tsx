@@ -10,6 +10,7 @@ import { ItemDetailRecipeFlow } from "./ItemDetailRecipeFlow";
 import { ItemDetailRecipeProfit } from "./ItemDetailRecipeProfit";
 import type { AcquisitionPlan, ManualPriceOverrides, RecipeEvaluation } from "@/lib/price-calculation";
 import { formatCompactRoubles } from "@/lib/utils/market-price";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 interface ItemDetailAcquisitionProps {
 	offers: ItemTraderOffer[];
@@ -113,8 +114,8 @@ export function ItemDetailAcquisition({
 								outputSecondary={
 									offer.buyLimit ? (
 										<span className="text-[11px] font-medium text-muted-foreground">
-										Limit <span className="font-mono font-semibold text-foreground/80">{offer.buyLimit}</span>
-									</span>
+											Limit <span className="font-mono font-semibold text-foreground/80">{offer.buyLimit}</span>
+										</span>
 									) : undefined
 								}
 							>
@@ -199,7 +200,7 @@ function DirectPurchaseSummary({
 	offer: Extract<ItemTraderOffer, { kind: "buy" }>;
 	outputItem: ItemSummary;
 }) {
-	const outputImageLink = outputItem.iconLink ?? outputItem.gridImageLink;
+	const outputImageLink = itemImageUrl(outputItem);
 	const currency = offer.currency.toLowerCase();
 	const currencySymbol =
 		currency === "roubles" || currency === "rub"

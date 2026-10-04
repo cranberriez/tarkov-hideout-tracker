@@ -1,6 +1,7 @@
 import "server-only";
 
 import { resolveItemRelease } from "@/lib/utils/game-releases";
+import { compactItemLinks } from "@/lib/utils/item-images";
 
 import { asc, eq, inArray, and } from "drizzle-orm";
 import type { DataResult, TarkovDataMode } from "@/types/common";
@@ -199,7 +200,7 @@ async function readItems(
 						"wikiLink",
 					],
 				);
-				output[row.id] = summary;
+				output[row.id] = compactItemLinks(summary);
 			}
 			return { items: output, freshness: status?.sourceFreshness };
 		},

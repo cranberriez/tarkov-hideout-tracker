@@ -5,6 +5,7 @@ import { HelpCircle, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/utils/format-number";
 import type { InventoryRow as InventoryRowData } from "./inventory-model";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 export function InventoryRow({
 	row,
@@ -27,8 +28,8 @@ export function InventoryRow({
 		>
 			<div className="flex min-w-0 flex-1 items-center gap-3">
 				<div className="relative flex h-10 w-10 min-w-10 items-center justify-center overflow-hidden rounded border border-highlight/5 bg-shadow/40">
-					{row.item?.iconLink ? (
-						<Image src={row.item.iconLink} alt="" fill className="object-contain" />
+					{row.item ? (
+						<Image src={itemImageUrl(row.item)} alt="" fill className="object-contain" unoptimized />
 					) : (
 						!row.item && <HelpCircle size={18} className="text-muted-foreground" aria-hidden="true" />
 					)}

@@ -19,6 +19,7 @@ import { formatRoubles, formatSignedRoubles, formatSpan, useNow } from "./power-
 import { StationPowerRow } from "./StationPowerRow";
 import { useBitcoinFarmCards } from "./useBitcoinFarmCards";
 import { useHideoutPower, type FuelTank } from "./useHideoutPower";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 function Stat({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
 	return (
@@ -43,12 +44,7 @@ function ItemValue({
 }) {
 	const content = (
 		<>
-			{item && (
-				<ItemThumbnail
-					item={{ ...item, iconLink: item.image512pxLink ?? item.gridImageLink ?? item.iconLink ?? item.baseImageLink }}
-					size={28}
-				/>
-			)}
+			{item && <ItemThumbnail item={{ ...item, iconLink: itemImageUrl(item, "512") }} size={28} />}
 			<Stat label={label} hint={loading ? "Loading…" : price === null ? "Unavailable" : undefined}>
 				{loading ? "…" : formatRoubles(price)}
 			</Stat>

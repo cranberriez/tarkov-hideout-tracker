@@ -4,6 +4,7 @@ import Image from "next/image";
 import { PackageOpen, X } from "lucide-react";
 import type { ItemSummary } from "@/types/items";
 import styles from "./ItemDetailLoading.module.css";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 export const ITEM_DETAIL_LOADING_CLASS =
 	"pointer-events-auto relative mx-auto w-full max-w-sm overflow-hidden rounded-lg border border-border-color bg-card shadow-2xl transition-[max-width] duration-200 motion-reduce:transition-none max-lg:min-h-dvh max-lg:max-w-none max-lg:rounded-none max-lg:border-0";
@@ -17,7 +18,7 @@ export function ItemDetailLoading({
 	onClose: () => void;
 	label?: string;
 }) {
-	const image = item.image512pxLink ?? item.gridImageLink ?? item.iconLink ?? item.baseImageLink;
+	const image = itemImageUrl(item, "512");
 	return (
 		<div className="flex flex-col items-center px-8 pb-8 pt-10 text-center">
 			<button

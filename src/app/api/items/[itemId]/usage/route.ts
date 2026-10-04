@@ -12,7 +12,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ ite
 	try {
 		const response = await getItemUsageView(mode, itemId, request.nextUrl.searchParams.get("prices") !== "none");
 		return NextResponse.json(response, {
-			headers: { "Cache-Control": isCompleteItemView(response) ? CacheControl.itemView : CacheControl.noStore },
+			headers: { "Cache-Control": isCompleteItemView(response) ? CacheControl.publicCdnHour : CacheControl.noStore },
 		});
 	} catch (error) {
 		return itemDatabaseErrorResponse(error, "Item usage is temporarily unavailable");

@@ -5,6 +5,7 @@ import type { Trader } from "../../types/traders";
 import { prepareQuestDataForMode } from "../quests/quest-preparation";
 import { excludeRemovedQuests } from "../quests/removed-quests";
 import { validateSearchManifest } from "./manifest";
+import { standardItemImageUrl } from "../utils/item-images";
 
 export function buildSearchManifest(
 	mode: TarkovJsonGameMode,
@@ -21,7 +22,8 @@ export function buildSearchManifest(
 				nn: item.normalizedName,
 				n: item.name,
 				...(item.shortName ? { sn: item.shortName } : {}),
-				...(item.iconLink ? { ic: item.iconLink } : {}),
+				// Standard icon URLs are derived from the ID on the client.
+				...(item.iconLink && item.iconLink !== standardItemImageUrl(item.id, "icon") ? { ic: item.iconLink } : {}),
 			})),
 			quests: excludeRemovedQuests(prepareQuestDataForMode(quests, mode)).map((quest) => ({
 				id: quest.id,

@@ -2,6 +2,7 @@ import { stationPortraitSrc, type SetupStation } from "../../lib/data/static-sta
 import type { decodeSearchManifest } from "../../lib/search/manifest";
 import { normalizeName } from "../../lib/utils/normalize-name";
 import type { ItemSummary } from "../../types/items";
+import { itemImageUrl } from "../../lib/utils/item-images";
 
 export type SearchResult =
 	| { kind: "item"; id: string; name: string; iconLink?: string; item: ItemSummary; fields: string[] }
@@ -20,7 +21,7 @@ export function buildPaletteIndex(
 			kind: "item" as const,
 			id: item.id,
 			name: item.name,
-			iconLink: item.iconLink,
+			iconLink: itemImageUrl(item),
 			item,
 			fields,
 		})),

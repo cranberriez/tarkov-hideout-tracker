@@ -12,6 +12,7 @@ import { useUserStoreHydrated } from "@/lib/query/game-data";
 import { hasDisplayQuestLevel } from "@/lib/quests/quest-display";
 import type { ItemSummary } from "@/types/items";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 interface ItemDetailQuestRequirementsProps {
 	selectedItemId: string;
@@ -237,7 +238,7 @@ function AnyOfGroupRow({
 					</div>
 				</div>
 				<ItemRequirementCount
-					imageLink={selectedItem?.iconLink ?? selectedItem?.gridImageLink}
+					imageLink={selectedItem ? itemImageUrl(selectedItem) : undefined}
 					standardCount={group.requiredCount}
 					firCount={0}
 				/>

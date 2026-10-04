@@ -24,6 +24,7 @@ import { preloadHoverImage, useHoverPreview } from "@/components/ui/hover-previe
 import { RecipeItemHoverCard } from "./RecipeItemHoverCard";
 import { RouteIcon } from "./RouteIcon";
 import { RouteSelector } from "./RouteSelector";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 export function RecipeItem({
 	item,
@@ -138,7 +139,7 @@ export function RecipeItem({
 			clientX,
 			clientY,
 			width: resolvedRecipePreview ? 660 : 320,
-			prepare: () => preloadHoverImage(item?.iconLink),
+			prepare: () => preloadHoverImage(item ? itemImageUrl(item) : null),
 		});
 	}
 	const hasDuration = (plan?.durationSeconds ?? 0) > 0;
@@ -203,9 +204,9 @@ export function RecipeItem({
 							linkProps={itemLinkProps}
 							className="relative ml-0.5 flex size-8 shrink-0 items-center justify-center transition hover:bg-highlight/10"
 						>
-							{item?.iconLink ? (
+							{item ? (
 								<Image
-									src={item.iconLink}
+									src={itemImageUrl(item)}
 									alt=""
 									width={32}
 									height={32}
@@ -328,9 +329,9 @@ export function RecipeItem({
 									tool
 								</span>
 							)}
-							{item?.iconLink ? (
+							{item ? (
 								<Image
-									src={item.iconLink}
+									src={itemImageUrl(item)}
 									alt=""
 									width={48}
 									height={48}

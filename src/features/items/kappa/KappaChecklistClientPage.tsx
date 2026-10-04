@@ -12,6 +12,7 @@ import { useKappaStore, type KappaViewMode } from "@/lib/stores/useKappaStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ItemSummary } from "@/types/items";
 import type { KappaChecklistPageData } from "@/types/contracts";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 interface KappaChecklistClientPageProps extends Pick<
 	KappaChecklistPageData,
@@ -165,21 +166,15 @@ export function KappaChecklistClientPage({
 											className="group relative aspect-square min-w-0 flex-1 overflow-hidden bg-shadow/35 transition-colors hover:bg-shadow/55 focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
 											aria-label={`Open ${item.name} details`}
 										>
-											{item.iconLink || item.gridImageLink ? (
-												<span className="absolute -inset-[3px] flex items-center justify-center overflow-hidden">
-													<img
-														src={item.iconLink ?? item.gridImageLink}
-														alt=""
-														className={`h-full w-full object-contain transition-opacity ${
-															isCompleted ? "opacity-45" : "group-hover:opacity-90"
-														}`}
-													/>
-												</span>
-											) : (
-												<span className="flex h-full items-center justify-center text-xl text-subtle-foreground">
-													?
-												</span>
-											)}
+											<span className="absolute -inset-[3px] flex items-center justify-center overflow-hidden">
+												<img
+													src={itemImageUrl(item)}
+													alt=""
+													className={`h-full w-full object-contain transition-opacity ${
+														isCompleted ? "opacity-45" : "group-hover:opacity-90"
+													}`}
+												/>
+											</span>
 										</ItemLink>
 										<button
 											type="button"

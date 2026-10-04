@@ -3,6 +3,7 @@
 import type { ItemSummary } from "@/types/items";
 import type { NeedBreakdown } from "@/lib/utils/item-needs";
 import { ExternalLink, PackageOpen } from "lucide-react";
+import { itemImageUrl, itemTarkovDevUrl } from "@/lib/utils/item-images";
 
 interface ItemDetailHeaderProps {
 	item: ItemSummary;
@@ -21,7 +22,7 @@ export function ItemDetailHeader({
 	hideoutRequiredCount,
 	questRequiredCount,
 }: ItemDetailHeaderProps) {
-	const imageLink = item.image512pxLink ?? item.gridImageLink ?? item.iconLink ?? item.baseImageLink;
+	const imageLink = itemImageUrl(item, "512");
 	const categoryLabel = item.category?.normalizedName !== "item" ? item.category?.name.replace(/\s+item$/i, "") : null;
 
 	return (
@@ -54,16 +55,14 @@ export function ItemDetailHeader({
 								Wiki <ExternalLink size={10} />
 							</a>
 						)}
-						{item.link && (
-							<a
-								href={item.link}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="flex items-center gap-1 transition-colors hover:text-brand"
-							>
-								Tarkov.dev <ExternalLink size={10} />
-							</a>
-						)}
+						<a
+							href={itemTarkovDevUrl(item)}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="flex items-center gap-1 transition-colors hover:text-brand"
+						>
+							Tarkov.dev <ExternalLink size={10} />
+						</a>
 					</div>
 				</div>
 			</div>
@@ -83,7 +82,9 @@ export function ItemDetailHeader({
 function SummaryValue({ label, value, accent }: { label: string; value: number; accent?: "green" | "orange" }) {
 	return (
 		<div className="flex flex-wrap items-baseline gap-x-1 lg:block lg:border-r lg:border-border-color lg:px-3 lg:py-2.5 lg:last:border-r-0">
-			<dt className="text-[11px] text-muted-foreground lg:text-[10px] lg:font-medium lg:uppercase lg:tracking-[0.12em]">{label}</dt>
+			<dt className="text-[11px] text-muted-foreground lg:text-[10px] lg:font-medium lg:uppercase lg:tracking-[0.12em]">
+				{label}
+			</dt>
 			<dd
 				className={`font-mono text-xs font-semibold lg:mt-0.5 lg:text-base ${
 					accent === "green" ? "text-brand" : accent === "orange" ? "text-fir" : "text-foreground"

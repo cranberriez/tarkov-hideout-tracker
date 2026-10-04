@@ -10,6 +10,7 @@ import { useItemDetailModalController } from "./useItemDetailsController";
 import { ItemDetailLoading, ITEM_DETAIL_LOADING_CLASS } from "./ItemDetailLoading";
 import { BACK_PANEL_HEIGHT_CLASS, ItemDetailBackButton, PANEL_HEIGHT_CLASS } from "./ItemDetailBackButton";
 import type { ItemDetailEntry } from "./item-detail-navigation";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 export interface ItemDetailModalProps {
 	item: ItemSummary | null;
@@ -108,7 +109,7 @@ export function ItemDetailModalContent(props: ItemDetailModalProps) {
 											key={`usage-${vm.selectedItemId}`}
 											className=""
 											selectedItemId={selectedItem.id}
-											selectedItemImageLink={selectedItem.iconLink ?? selectedItem.gridImageLink}
+											selectedItemImageLink={itemImageUrl(selectedItem)}
 											stationRequirements={vm.stationRequirements}
 											stationLevels={vm.stationLevels}
 											hiddenStations={vm.hiddenStations}

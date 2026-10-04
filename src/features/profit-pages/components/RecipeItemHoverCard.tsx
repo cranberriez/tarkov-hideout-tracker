@@ -9,6 +9,7 @@ import { formatDuration, formatQuantity, formatRoundedRoubles, formatTraderOffer
 import { describeSelectedLock } from "../utils/lock-summary";
 import { RecipePreviewCard } from "./RecipePreviewCard";
 import { RouteGlyph, routeChipClasses } from "./RouteIcon";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 export interface RecipeItemHoverData {
 	pricingContext: ReturnType<typeof useProfitPricingContext>;
@@ -125,8 +126,15 @@ export function RecipeItemHoverCard({
 			<span className="relative block w-80 max-w-full shrink-0 p-3">
 				<span className={`flex items-center gap-3 ${recipePreview ? "" : "pr-5"}`}>
 					<span className="relative flex size-12 shrink-0 items-center justify-center bg-highlight/[0.035]">
-						{item?.iconLink && (
-							<Image src={item.iconLink} alt="" width={48} height={48} className="size-12 object-contain" unoptimized />
+						{item && (
+							<Image
+								src={itemImageUrl(item)}
+								alt=""
+								width={48}
+								height={48}
+								className="size-12 object-contain"
+								unoptimized
+							/>
 						)}
 					</span>
 					<span className="min-w-0">

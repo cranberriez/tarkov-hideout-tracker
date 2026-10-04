@@ -21,6 +21,7 @@ import { EntityPreview, PreviewFact } from "./entity-preview";
 import { ItemThumbnail } from "./item-thumbnail";
 import { PriceChange } from "./price-change";
 import { ItemPreviewNeeds } from "./item-preview-needs";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 export type PreviewItem = Pick<ItemSummary, "id" | "name"> &
 	Partial<
@@ -66,7 +67,7 @@ export function ItemLink({
 	previewDetails?: ReactNode;
 }) {
 	const openItemDetail = useUIStore((state) => state.openItemDetail);
-	const previewImage = item.image512pxLink ?? item.iconLink ?? item.gridImageLink;
+	const previewImage = itemImageUrl(item, "512");
 	return (
 		<EntityPreview
 			disabled={!preview}
@@ -118,7 +119,7 @@ function ItemPreviewCard({ item, details }: { item: PreviewItem; details?: React
 	return (
 		<div>
 			<div className="flex items-center gap-2">
-				<ItemThumbnail item={{ ...item, iconLink: item.image512pxLink ?? item.iconLink }} size={40} framed />
+				<ItemThumbnail item={{ ...item, iconLink: itemImageUrl(item, "512") }} size={40} framed />
 				<div className="min-w-0">
 					{category && <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand">{category}</p>}
 					<p className="text-[13px] font-semibold leading-snug text-foreground">{item.name}</p>

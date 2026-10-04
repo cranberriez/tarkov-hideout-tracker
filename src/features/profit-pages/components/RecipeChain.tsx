@@ -5,6 +5,7 @@ import type { GoToRecipeHandler, RouteContext } from "../types";
 import { formatDuration, formatQuantity, formatRoundedRoubles } from "../utils/formatters";
 import { describeChainRoute, getPlanRecipePreview } from "../utils/recipes";
 import { routeChipClasses } from "./RouteIcon";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 /** Nested ingredients of one recipe-routed ingredient, rendered directly under its line. */
 export function RecipeChainBranch({
@@ -59,9 +60,9 @@ function RecipeChainNode({
 				style={{ paddingLeft: `${8 + Math.min(depth - 1, 6) * 18}px` }}
 			>
 				<CornerDownRight className="size-3.5 shrink-0 text-foreground/25" />
-				{item?.iconLink ? (
+				{item ? (
 					<Image
-						src={item.iconLink}
+						src={itemImageUrl(item)}
 						alt=""
 						width={28}
 						height={28}

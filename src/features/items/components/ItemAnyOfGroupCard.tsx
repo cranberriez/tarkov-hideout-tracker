@@ -8,6 +8,7 @@ import type { DerivedQuestAnyOfGroup } from "@/lib/quests/quest-item-index";
 import { cn } from "@/lib/utils";
 import { ItemLink } from "@/components/entities/item-link";
 import { QuestLink } from "@/components/entities/quest-link";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 const MAX_PREVIEW_ITEMS = 3;
 
@@ -43,13 +44,7 @@ interface GroupItemsGridProps {
 }
 
 function ItemImage({ item, className }: { item: AnyOfGroupItem; className: string }) {
-	const imageSrc = item.iconLink ?? item.gridImageLink;
-
-	if (!imageSrc) {
-		return <span className="text-xs text-subtle-foreground">?</span>;
-	}
-
-	return <img src={imageSrc} alt={item.name} className={cn("object-contain", className)} />;
+	return <img src={itemImageUrl(item)} alt={item.name} className={cn("object-contain", className)} />;
 }
 
 function ItemPreviewStack({ items, previewIndex, expanded, isIconMode, isFirRequired }: ItemPreviewStackProps) {

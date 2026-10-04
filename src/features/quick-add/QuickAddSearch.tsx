@@ -8,6 +8,7 @@ import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { cn } from "@/lib/utils";
 import { ITEM_SEARCH_MAX_QUERY_LENGTH, ITEM_SEARCH_QUICK_RESULT_LIMIT } from "@/types/contracts";
 import { useItemSearchController } from "@/features/items/useItemSearchController";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 export function QuickAddSearch({
 	mode,
@@ -123,7 +124,7 @@ export function QuickAddSearch({
 								)}
 							>
 								<div className="relative h-8 w-8 min-w-8 overflow-hidden rounded bg-shadow/40">
-									{item.iconLink && <Image src={item.iconLink} alt="" fill className="object-contain" />}
+									<Image src={itemImageUrl(item)} alt="" fill className="object-contain" unoptimized />
 								</div>
 								<span className="truncate text-sm text-foreground">{item.name}</span>
 							</div>

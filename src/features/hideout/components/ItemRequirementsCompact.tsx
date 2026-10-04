@@ -9,6 +9,7 @@ import { formatNumber } from "@/lib/utils/format-number";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
 import { describeFleaPrice, formatFleaPriceState } from "@/lib/utils/market-price";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 export function CompactItemRequirements({
 	nextLevelData,
@@ -81,9 +82,7 @@ export function CompactItemRequirements({
 								req.isFir ? "border-fir" : "border-highlight/10"
 							} ${isCompleted ? "opacity-50 grayscale" : "hover:border-highlight/30"}`}
 						>
-							{item.iconLink && (
-								<Image src={item.iconLink} alt={item.name} fill className="object-contain p-1" unoptimized />
-							)}
+							<Image src={itemImageUrl(item)} alt={item.name} fill className="object-contain p-1" unoptimized />
 							{req.isFir && (
 								<div
 									className="absolute -top-1.5 -right-1.5 bg-shadow rounded-full z-10 text-fir"

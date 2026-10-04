@@ -1,6 +1,7 @@
 import Image from "next/image";
-import { ArrowLeft, PackageOpen } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import type { ItemDetailEntry } from "./item-detail-navigation";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 /** Height the Back button takes from the dialog panel (full width on mobile, floating on desktop). */
 export const BACK_PANEL_HEIGHT_CLASS = "min-h-[calc(100dvh-3rem)] lg:max-h-[calc(92vh-3rem)]";
@@ -23,11 +24,7 @@ export function ItemDetailBackButton({
 			aria-label={previousEntry.kind === "item" ? "Back to previous item" : "Back to recipe breakdown"}
 		>
 			<ArrowLeft size={16} aria-hidden="true" />
-			{item.iconLink ? (
-				<Image src={item.iconLink} alt="" width={28} height={28} unoptimized className="h-7 w-7 object-contain" />
-			) : (
-				<PackageOpen className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-			)}
+			<Image src={itemImageUrl(item)} alt="" width={28} height={28} unoptimized className="h-7 w-7 object-contain" />
 			<span>Back</span>
 		</button>
 	);

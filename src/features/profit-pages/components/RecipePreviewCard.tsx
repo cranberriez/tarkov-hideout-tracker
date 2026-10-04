@@ -3,6 +3,7 @@ import { Clock3 } from "lucide-react";
 import type { RecipePreviewData, RouteContext } from "../types";
 import { formatDuration, formatQuantity, formatRoundedRoubles } from "../utils/formatters";
 import { RouteIcon, routeChipClasses } from "./RouteIcon";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 export function RecipePreviewCard({
 	preview,
@@ -58,9 +59,9 @@ export function RecipePreviewCard({
 								key={`${requirement.itemId}:${requirement.isTool === true}:${index}`}
 								className="flex h-9 items-center gap-2 border-t border-highlight/5 first:border-t-0"
 							>
-								{item?.iconLink ? (
+								{item ? (
 									<Image
-										src={item.iconLink}
+										src={itemImageUrl(item)}
 										alt=""
 										width={30}
 										height={30}

@@ -23,6 +23,7 @@ import {
 	getActiveRaidPlannerQuests,
 	getRaidPlannerMarkerKeys,
 } from "./raid-planner-summary";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 interface RaidPlannerPaneProps {
 	rememberedView: MapViewTransform | null;
@@ -360,7 +361,7 @@ function RaidPlannerMapCard({
 }
 
 function RaidPlannerKey({ item }: { item: ItemSummary }) {
-	const image = item.gridImageLink ?? item.iconLink;
+	const image = itemImageUrl(item, "grid");
 
 	return (
 		<span

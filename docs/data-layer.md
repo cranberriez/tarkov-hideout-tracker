@@ -180,6 +180,16 @@ cache refreshed every 300 seconds (at most about six minutes stale) and overlaid
 item reads. Stored item views are cached per (view, mode, version, item). Prices
 keep their existing 300-second batch cache. Reads that fail or observe a newer
 version are never stored.
+
+### Item image links
+
+Item `iconLink`, `gridImageLink`, `image512pxLink`, `baseImageLink` and `link`
+follow fixed tarkov.dev patterns for all but ~2% of items (placeholders and shared
+artwork). The item read boundary drops values equal to the pattern
+([compactItemLinks](../src/lib/utils/item-images.ts)) and the search manifest sends
+`ic` only for non-standard icons, so payloads carry exceptions only. Client code must
+read these through `itemImageUrl` / `itemTarkovDevUrl`, never the raw fields; a
+missing field means "standard", not "no image".
 Runtime item-view routes read precomputed [item-views.ts](../src/server/db/item-views.ts)
 records; the similarly named [relations](../src/server/queries/getItemRelationsData.ts),
 [usage](../src/server/queries/getItemUsageData.ts), and
@@ -194,9 +204,9 @@ parameter parsing, database error responses, and the named
 | API / owner                                                                                                                                                      | Result and cache policy                                                                                                                                                           |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [prices](../src/app/api/items/prices/route.ts)                                                                                                                   | GET with at most one mode and 1–200 IDs or named checklist/recipes scope; browser 300s, CDN 3600s                                                                                 |
-| [relations](../src/app/api/items/[itemId]/relations/route.ts)                                                                                                    | Hideout requirements, quest demand/rewards and availability closure; complete: browser 60s, CDN 300s; partial: no-store                                                           |
-| [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and recipes producing one item, referenced items and source labels; complete: browser 60s, CDN 300s; partial: no-store                                    |
-| [acquisition-tree](../src/app/api/items/[itemId]/acquisition-tree/route.ts)                                                                                      | Cycle-safe graph bounded by depth/item count with `truncated`; complete: browser 60s, CDN 300s; partial: no-store                                                                 |
+| [relations](../src/app/api/items/[itemId]/relations/route.ts)                                                                                                    | Hideout requirements, quest demand/rewards and availability closure; complete: browser 300s, CDN 3600s; partial: no-store                                                         |
+| [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and recipes producing one item, referenced items and source labels; complete: browser 300s, CDN 3600s; partial: no-store                                  |
+| [acquisition-tree](../src/app/api/items/[itemId]/acquisition-tree/route.ts)                                                                                      | Cycle-safe graph bounded by depth/item count with `truncated`; complete: browser 300s, CDN 3600s; partial: no-store                                                               |
 | [price-history](../src/app/api/items/[itemId]/price-history/route.ts)                                                                                            | On-demand provider history for catalog items only; histories and provider 404s cached 7200s (server and CDN); unknown IDs 404 locally, CDN 1 day                                  |
 | [search](../src/app/api/items/search/route.ts)                                                                                                                   | Mode and `q` up to 80 characters, normalized for matching; 10 results by default or 50 with `limit=50`; `private, no-store`                                                       |
 | [status](../src/app/api/data/status/route.ts)                                                                                                                    | Mode/release identity, hideout/item/quest/craft/barter release freshness, and independent mutable-price change/check timestamps; browser 30s, CDN 60s                             |
@@ -205,7 +215,7 @@ parameter parsing, database error responses, and the named
 | [map APIs](../src/app/api/maps/)                                                                                                                                 | Committed map metadata, navigation overlays, and allow-listed SVG service; see [maps](maps.md)                                                                                    |
 | [catalog cron API](../src/app/api/cron/catalog/route.ts)                                                                                                         | Protected all-mode catalog update; see [operations](operations.md)                                                                                                                |
 
-Complete item-view responses are CDN-cached for 300 seconds, matching the trader-offer cache, so offers can lag by minutes but never by catalog version; the item-detail queries expose their
+Complete item-view responses use the same browser 300s / CDN 3600s policy as page data, which embeds the same hourly-refreshed trader offers; the item-detail queries expose their
 payload through a typed partial-data error rather than entering it as reusable
 success data. Relations, usage, and acquisition results are fresh for 60 seconds,
 retained inactive for five minutes, share a cap of 60 inactive item-detail queries,

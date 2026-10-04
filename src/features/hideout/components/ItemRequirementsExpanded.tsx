@@ -8,6 +8,7 @@ import { formatNumber } from "@/lib/utils/format-number";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
 import { describeFleaPrice, formatFleaPriceState } from "@/lib/utils/market-price";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 export function ExpandedItemRequirements({
 	nextLevelData,
@@ -72,15 +73,13 @@ export function ExpandedItemRequirements({
 							}`}
 						>
 							<div className={`relative w-10 h-10 shrink-0 ${req.isFir ? "ring-1 ring-fir" : ""}`}>
-								{item.iconLink && (
-									<Image
-										src={item.iconLink}
-										alt={item.name}
-										fill
-										className={`object-contain ${isCompleted ? "grayscale" : ""}`}
-										unoptimized
-									/>
-								)}
+								<Image
+									src={itemImageUrl(item)}
+									alt={item.name}
+									fill
+									className={`object-contain ${isCompleted ? "grayscale" : ""}`}
+									unoptimized
+								/>
 								{isCompleted && (
 									<div className="absolute inset-0 flex items-center justify-center text-success">
 										<Check size={24} strokeWidth={2} />

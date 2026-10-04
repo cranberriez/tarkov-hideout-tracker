@@ -4,17 +4,15 @@ import Image from "next/image";
 import { useState, type ReactNode } from "react";
 import { Check, CircleCheckBig, PackageOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { itemImageCandidates, type ItemImageSource } from "@/lib/utils/item-images";
 
 export type ItemThumbnailSize = "xs" | "sm" | "md" | "lg";
 
 const pixels: Record<ItemThumbnailSize, number> = { xs: 20, sm: 32, md: 44, lg: 64 };
 
-export interface ThumbnailItem {
+/** Name-only items (unknown references) render the missing-image placeholder. */
+export interface ThumbnailItem extends Partial<ItemImageSource> {
 	name: string;
-	iconLink?: string | null;
-	gridImageLink?: string | null;
-	image512pxLink?: string | null;
-	baseImageLink?: string | null;
 }
 
 export interface ItemImageAppearance {
@@ -45,13 +43,11 @@ export function ItemThumbnail({
 	quantity,
 }: ItemImageAppearance) {
 	const edge = typeof size === "number" ? size : pixels[size];
-	const sources = [
-		...new Set(
-			[item.iconLink, item.image512pxLink, item.gridImageLink, item.baseImageLink].filter((src): src is string =>
+	const sources = item.id
+		? itemImageCandidates(item as ItemImageSource, ["icon", "512", "grid", "base"])
+		: [item.iconLink, item.image512pxLink, item.gridImageLink, item.baseImageLink].filter((src): src is string =>
 				Boolean(src?.trim()),
-			),
-		),
-	];
+			);
 	return (
 		<span
 			style={{ width: edge, height: edge }}

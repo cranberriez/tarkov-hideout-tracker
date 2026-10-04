@@ -10,6 +10,7 @@ import { ItemDetailHeader } from "./ItemDetailHeader";
 import { ItemDetailSidebar } from "./ItemDetailSidebar";
 import { ItemDetailUsageTabs } from "./ItemDetailUsageTabs";
 import { useItemDetailsController } from "./useItemDetailsController";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 /**
  * `/items/[itemId]` composition. Reuses the item-detail sections without dialog
@@ -74,7 +75,7 @@ export function ItemDetailsPage({
 						renderInactivePanels
 						className="min-h-80"
 						selectedItemId={selectedItem.id}
-						selectedItemImageLink={selectedItem.iconLink ?? selectedItem.gridImageLink}
+						selectedItemImageLink={itemImageUrl(selectedItem)}
 						stationRequirements={vm.stationRequirements}
 						stationLevels={vm.stationLevels}
 						hiddenStations={vm.hiddenStations}
