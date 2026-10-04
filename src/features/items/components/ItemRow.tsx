@@ -70,13 +70,20 @@ export function ItemRow({ item, count, firCount = 0, size, isHideout = false, is
 				item={item}
 				preview={false}
 				aria-label={isIconOnly ? item.name : undefined}
-				className="flex items-center gap-3 bg-card border p-2 rounded hover:bg-shadow/40 hover:border-info transition-colors relative group focus-visible:outline-2 focus-visible:outline-brand"
+				className={`flex items-center ${isIconOnly ? "gap-1.5" : "gap-3"} bg-card border p-2 rounded hover:bg-shadow/40 hover:border-info transition-colors relative group focus-visible:outline-2 focus-visible:outline-brand`}
 			>
-				<div className="w-10 h-10 bg-shadow/40 flex items-center justify-center shrink-0 overflow-hidden relative">
+				<div
+					className={`${isIconOnly ? "w-12 h-12" : "w-10 h-10"} bg-shadow/40 flex items-center justify-center shrink-0 overflow-hidden relative`}
+				>
 					<img src={itemImageUrl(item)} alt={item.name} className="w-full h-full object-contain" />
 				</div>
 
 				<div className="flex-1 min-w-0">
+					{isIconOnly && (
+						<div className="truncate text-xs font-medium text-foreground leading-tight mb-0.5" title={item.name}>
+							{item.shortName || item.name}
+						</div>
+					)}
 					<div className="flex items-baseline justify-between">
 						{!isIconOnly && (
 							<span className="flex-1 text-sm font-medium text-foreground text-wrap mr-2" title={item.name}>
