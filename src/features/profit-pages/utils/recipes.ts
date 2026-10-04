@@ -70,11 +70,11 @@ export function isRecipeAvailable(
 
 export function passesLockFilters(evaluation: RecipeEvaluation, availableOnly: boolean, filters: ProfitLockFilters) {
 	const inputReasons = (plan: AcquisitionPlan): LockReason[] => [
-		...(plan.method === "unavailable"
-			? plan.lockReasons?.length
-				? plan.lockReasons
-				: [{ kind: "unavailable" as const, message: "No acquisition route available" }]
-			: []),
+		...(plan.lockReasons?.length
+			? plan.lockReasons
+			: plan.method === "unavailable"
+				? [{ kind: "unavailable" as const, message: "No acquisition route available" }]
+				: []),
 		...plan.children.flatMap(inputReasons),
 	];
 	const reasons = [...(evaluation.lockReasons ?? []), ...(evaluation.outputLockReasons ?? [])];
@@ -226,6 +226,26 @@ function selectLockedAcquisitionRoute(
 		children: selected.children ?? [],
 		alternatives: accessibleRoutes,
 	};
+}
+
+/** Apply an opt-in hypothetical route preference without changing optimizer eligibility. */
+export function preferLockedRecipeRoutes(evaluation: RecipeEvaluation, enabled: boolean): RecipeEvaluation {
+	if (!enabled) return evaluation;
+	return evaluation.requiredItems.reduce((current, plan, index) => {
+		if (plan.isTool || plan.method === "empty") return current;
+		const best = (plan.lockedAlternatives ?? [])
+			.filter((route) => {
+				if (route.method !== "craft" && route.method !== "barter") return false;
+				const cost = (route.estimatedUnitPrice ?? Number.NaN) * plan.quantity;
+				if (!Number.isFinite(cost) || cost < 0) return false;
+				if (plan.totalCost === null) return true;
+				const threshold =
+					plan.method === "flea" || plan.method === "trader" ? practicalSavingsThreshold(plan.totalCost) : 0;
+				return plan.totalCost - cost > threshold;
+			})
+			.sort((left, right) => left.estimatedUnitPrice! - right.estimatedUnitPrice!)[0];
+		return best ? withRequiredItemRoute(current, index, acquisitionRouteKey(best)) : current;
+	}, evaluation);
 }
 
 export function withRequiredItemRoute(

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { AcquisitionPlan, RecipeEvaluation } from "@/lib/price-calculation";
 import {
+	preferLockedRecipeRoutes,
 	passesLockFilters,
 	acquisitionRouteKey,
 	compareEvaluations,
@@ -417,4 +418,65 @@ test("compact card height counts ingredient lines and only the figures that have
 	// One figure plus the unpriced warning line and a divider between them.
 	assert.equal(estimateProfitRowHeight(unpriced, true), 120 + 65 + 5 + 24 + 40 + 1);
 	assert.equal(estimateProfitRowHeight(barter), 89);
+});
+
+test("locked route preference selects priced recipes, preserves locks and recalculates profit", () => {
+	const plan: AcquisitionPlan = {
+		itemId: "input",
+		quantity: 2,
+		method: "flea",
+		batches: 1,
+		totalCost: 200,
+		theoreticalCost: 200,
+		theoreticalMethod: "flea",
+		directBuyCost: 200,
+		directBuyMethod: "flea",
+		durationSeconds: 0,
+		children: [],
+		alternatives: [],
+		lockedAlternatives: [
+			{
+				method: "trader",
+				sourceId: "vendor",
+				estimatedUnitPrice: 1,
+				lockReasons: [{ kind: "vendor", message: "Locked" }],
+			},
+			{
+				method: "craft",
+				sourceId: "craft",
+				estimatedUnitPrice: 50,
+				durationSeconds: 3600,
+				lockReasons: [{ kind: "station", message: "Station locked" }],
+			},
+			{
+				method: "barter",
+				sourceId: "barter",
+				estimatedUnitPrice: 60,
+				lockReasons: [{ kind: "quest", message: "Quest locked" }],
+			},
+		],
+	};
+	const original = { ...evaluation("root", { cost: 200, sellValue: 500, profit: 300 }), requiredItems: [plan] };
+	assert.equal(preferLockedRecipeRoutes(original, false), original);
+	const preferred = preferLockedRecipeRoutes(original, true);
+	assert.equal(preferred.requiredItems[0].sourceId, "craft");
+	assert.equal(preferred.requiredItems[0].lockReasons?.[0].kind, "station");
+	assert.equal(preferred.cost, 100);
+	const filters = { flea: false, quest: false, vendor: false, station: false };
+	assert.equal(passesLockFilters(preferred, true, filters), false);
+	assert.equal(passesLockFilters(preferred, false, { ...filters, station: true }), false);
+	assert.equal(preferred.profit, 400);
+	assert.equal(preferred.profitPerHour, 400);
+	assert.equal(withRequiredItemRoute(preferred, 0, "flea:direct").cost, 200);
+	for (const price of [undefined, NaN, -1, 95, 100]) {
+		const input = {
+			...original,
+			requiredItems: [{ ...plan, lockedAlternatives: [{ ...plan.lockedAlternatives![1], estimatedUnitPrice: price }] }],
+		};
+		assert.equal(preferLockedRecipeRoutes(input, true), input);
+	}
+	const barterOnly = { ...original, requiredItems: [{ ...plan, lockedAlternatives: [plan.lockedAlternatives![2]] }] };
+	assert.equal(preferLockedRecipeRoutes(barterOnly, true).requiredItems[0].method, "barter");
+	const unpriced = { ...barterOnly, requiredItems: [{ ...barterOnly.requiredItems[0], totalCost: null }] };
+	assert.equal(preferLockedRecipeRoutes(unpriced, true).cost, 120);
 });

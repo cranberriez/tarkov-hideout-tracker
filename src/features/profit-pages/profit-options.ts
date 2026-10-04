@@ -8,6 +8,7 @@ export interface ProfitOptions {
 	availableOnly: boolean;
 	profitableOnly: boolean;
 	useTraderSaleForLockedOutputs: boolean;
+	preferBestLockedRoute: boolean;
 	allowCrafts: boolean;
 	allowBarters: boolean;
 	lockFilters: {
@@ -24,6 +25,7 @@ export const DEFAULT_PROFIT_OPTIONS: ProfitOptions = {
 	availableOnly: false,
 	profitableOnly: false,
 	useTraderSaleForLockedOutputs: true,
+	preferBestLockedRoute: false,
 	allowCrafts: true,
 	allowBarters: true,
 	lockFilters: {
@@ -53,6 +55,7 @@ export function parseProfitOptions(raw: string | null): ProfitOptions {
 		"availableOnly",
 		"profitableOnly",
 		"useTraderSaleForLockedOutputs",
+		"preferBestLockedRoute",
 		"allowCrafts",
 		"allowBarters",
 	] as const) {

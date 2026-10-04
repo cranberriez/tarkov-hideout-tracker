@@ -51,6 +51,7 @@ test("reads never overwrite saved modes and every option survives page remounts"
 		},
 	};
 	const saved = {
+		preferBestLockedRoute: false,
 		craftingSkillLevel: 0,
 		hideoutManagementSkillLevel: 0,
 		availableOnly: false,
@@ -151,4 +152,24 @@ test("Hideout Management defaults safely and persists independently by mode", ()
 	pvp.setOption("hideoutManagementSkillLevel", 51);
 	assert.equal(createProfitOptionsStore("PVP", () => storage).getSnapshot().hideoutManagementSkillLevel, 51);
 	assert.equal(createProfitOptionsStore("PVE", () => storage).getSnapshot().hideoutManagementSkillLevel, 0);
+});
+
+test("locked recipe preference defaults off for old saves and persists per mode", () => {
+	const old = '{"allowCrafts":false,"profitableOnly":true}';
+	assert.equal(parseProfitOptions(old).preferBestLockedRoute, false);
+	assert.equal(parseProfitOptions('{"preferBestLockedRoute":"true"}').preferBestLockedRoute, false);
+	const values = new Map([[profitOptionsStorageKey("PVE"), old]]);
+	const storage = {
+		getItem: (key: string) => values.get(key) ?? null,
+		setItem: (key: string, value: string) => {
+			values.set(key, value);
+		},
+	};
+	createProfitOptionsStore("PVE", () => storage).setOption("preferBestLockedRoute", true);
+	const reloaded = createProfitOptionsStore("PVE", () => storage).getSnapshot();
+	assert.equal(reloaded.preferBestLockedRoute, true);
+	assert.equal(reloaded.allowCrafts, false);
+	assert.equal(reloaded.profitableOnly, true);
+	for (const mode of ["PVP", "KORD"] as const)
+		assert.equal(createProfitOptionsStore(mode, () => storage).getSnapshot().preferBestLockedRoute, false);
 });

@@ -14,6 +14,8 @@ export function CalculationSettings({
 	onUseTraderSaleForLockedOutputsChange,
 	profitableOnly,
 	onProfitableOnlyChange,
+	preferBestLockedRoute,
+	onPreferBestLockedRouteChange,
 	allowCrafts,
 	onAllowCraftsChange,
 	allowBarters,
@@ -23,6 +25,8 @@ export function CalculationSettings({
 	onAvailableOnlyChange: (value: boolean) => void;
 	profitableOnly: boolean;
 	onProfitableOnlyChange: (value: boolean) => void;
+	preferBestLockedRoute: boolean;
+	onPreferBestLockedRouteChange: (value: boolean) => void;
 	allowCrafts: boolean;
 	onAllowCraftsChange: (value: boolean) => void;
 	allowBarters: boolean;
@@ -79,6 +83,11 @@ export function CalculationSettings({
 					/>
 				</FilterSection>
 				<FilterSection title="Ingredient sources">
+					<Toggle
+						checked={preferBestLockedRoute}
+						onChange={onPreferBestLockedRouteChange}
+						label="Prefer best craft/barter route even if locked"
+					/>
 					<Toggle checked={allowCrafts} onChange={onAllowCraftsChange} label="Use crafts for ingredients" />
 					<Toggle checked={allowBarters} onChange={onAllowBartersChange} label="Use barters for ingredients" />
 					<p className="mt-2 text-[11px] font-semibold leading-relaxed text-muted-foreground">

@@ -152,7 +152,9 @@ actions with resets of other owners. Its current behavior is:
 Section resets preserve unrelated settings/profiles except the explicitly
 all-mode Kappa reset above. Despite its label, Delete ALL data does **not** remove
 the separate profit overrides, craft pins, import seen-files key, or app preferences. Do not broaden
-that action implicitly. Profit options also remain independent of these resets.
+that action implicitly. Profit options also remain independent of these resets. The locked craft/barter
+route preference defaults to false for older saves, preserves existing options,
+and uses the same mode-scoped key without a migration.
 The old user-state key remains untouched by every new-app reset, including Delete
 ALL data. That action clears the new conversion snapshot/flags along with new
 profiles, but the now-present new key prevents silently importing the old key again.

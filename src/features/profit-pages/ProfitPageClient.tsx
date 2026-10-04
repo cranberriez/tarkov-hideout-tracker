@@ -23,7 +23,13 @@ import { profitRecipeHref } from "@/lib/entity-routes";
 import type { ProfitPageKind, ProfitStationSource, SortDirection, SortKey } from "./types";
 import { PROFIT_KINDS } from "./profit-kinds";
 import { FLEA_UNLOCK_LEVEL, getProfileLockGaps } from "./utils/lock-summary";
-import { compareEvaluationsByBaseline, getRecipeSourceId, isRecipeAvailable, passesLockFilters } from "./utils/recipes";
+import {
+	preferLockedRecipeRoutes,
+	compareEvaluationsByBaseline,
+	getRecipeSourceId,
+	isRecipeAvailable,
+	passesLockFilters,
+} from "./utils/recipes";
 import { useManualPriceOverrides } from "./useManualPriceOverrides";
 import { usePinnedCrafts } from "./usePinnedCrafts";
 import { useProfitOptions } from "./useProfitOptions";
@@ -70,6 +76,8 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 		setUseTraderSaleForLockedOutputs,
 		profitableOnly,
 		setProfitableOnly,
+		preferBestLockedRoute,
+		setPreferBestLockedRoute,
 		allowCrafts,
 		setAllowCrafts,
 		allowBarters,
@@ -117,16 +125,22 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 		],
 	);
 	const baselineEvaluations = useMemo(
-		() => PROFIT_KINDS[kind].evaluate(createRecipeCalculator(calculatorInput)),
-		[calculatorInput, kind],
+		() =>
+			PROFIT_KINDS[kind]
+				.evaluate(createRecipeCalculator(calculatorInput))
+				.map((evaluation) => preferLockedRecipeRoutes(evaluation, preferBestLockedRoute)),
+		[calculatorInput, kind, preferBestLockedRoute],
 	);
 	const baselineEvaluationsById = useMemo(
 		() => Object.fromEntries(baselineEvaluations.map((evaluation) => [evaluation.id, evaluation])),
 		[baselineEvaluations],
 	);
 	const evaluations = useMemo(
-		() => PROFIT_KINDS[kind].evaluate(createRecipeCalculator({ ...calculatorInput, overrides })),
-		[calculatorInput, kind, overrides],
+		() =>
+			PROFIT_KINDS[kind]
+				.evaluate(createRecipeCalculator({ ...calculatorInput, overrides }))
+				.map((evaluation) => preferLockedRecipeRoutes(evaluation, preferBestLockedRoute)),
+		[calculatorInput, kind, overrides, preferBestLockedRoute],
 	);
 	const tradersById = useMemo(
 		() => Object.fromEntries(data.traders.map((trader) => [trader.id, trader])) as Record<string, Trader>,
@@ -293,6 +307,8 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 						onAvailableOnlyChange={setAvailableOnly}
 						profitableOnly={profitableOnly}
 						onProfitableOnlyChange={setProfitableOnly}
+						preferBestLockedRoute={preferBestLockedRoute}
+						onPreferBestLockedRouteChange={setPreferBestLockedRoute}
 						allowCrafts={allowCrafts}
 						onAllowCraftsChange={setAllowCrafts}
 						allowBarters={allowBarters}

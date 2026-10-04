@@ -61,6 +61,7 @@ export function useProfitOptions(gameMode: GameMode) {
 		setAvailableOnly: (value: boolean) => setOption("availableOnly", value),
 		setProfitableOnly: (value: boolean) => setOption("profitableOnly", value),
 		setUseTraderSaleForLockedOutputs: (value: boolean) => setOption("useTraderSaleForLockedOutputs", value),
+		setPreferBestLockedRoute: (value: boolean) => setOption("preferBestLockedRoute", value),
 		setAllowCrafts: (value: boolean) => setOption("allowCrafts", value),
 		setAllowBarters: (value: boolean) => setOption("allowBarters", value),
 		setLockFilters: (value: ProfitOptions["lockFilters"]) => setOption("lockFilters", value),

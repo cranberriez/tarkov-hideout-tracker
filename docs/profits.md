@@ -141,6 +141,12 @@ options persist per app mode and are shared by both profit pages, independently
 of saved progress and price overrides. The menu groups list filters, availability,
 output valuation, and ingredient sources. **Hide locked recipes** is off by
 default; an explicitly saved per-mode choice is retained.
+**Prefer best craft/barter route even if locked** is off by default. Enabling it
+selects cheaper priced locked ingredient recipes using the existing practical savings
+threshold, retaining their lock reasons and hypothetical costs. Explicit ingredient
+route selections still take precedence; disabling the option restores accessible
+automatic recommendations. This page preference does not change recursive optimizer
+eligibility.
 An explicitly linked recipe remains visible with its lock reasons so its profit
 breakdown can still be inspected.
 

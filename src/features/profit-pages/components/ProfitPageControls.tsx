@@ -39,6 +39,8 @@ export function ProfitPageControls({
 	onUseTraderSaleForLockedOutputsChange,
 	profitableOnly,
 	onProfitableOnlyChange,
+	preferBestLockedRoute,
+	onPreferBestLockedRouteChange,
 	allowCrafts,
 	onAllowCraftsChange,
 	allowBarters,
@@ -64,6 +66,8 @@ export function ProfitPageControls({
 	onAvailableOnlyChange: (value: boolean) => void;
 	profitableOnly: boolean;
 	onProfitableOnlyChange: (value: boolean) => void;
+	preferBestLockedRoute: boolean;
+	onPreferBestLockedRouteChange: (value: boolean) => void;
 	allowCrafts: boolean;
 	onAllowCraftsChange: (value: boolean) => void;
 	allowBarters: boolean;
@@ -112,6 +116,8 @@ export function ProfitPageControls({
 				onAvailableOnlyChange={onAvailableOnlyChange}
 				profitableOnly={profitableOnly}
 				onProfitableOnlyChange={onProfitableOnlyChange}
+				preferBestLockedRoute={preferBestLockedRoute}
+				onPreferBestLockedRouteChange={onPreferBestLockedRouteChange}
 				allowCrafts={allowCrafts}
 				onAllowCraftsChange={onAllowCraftsChange}
 				allowBarters={allowBarters}
