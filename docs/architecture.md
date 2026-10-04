@@ -368,18 +368,44 @@ ignores every show request (including emulated mouse events from profit recipe
 rows) while the latest pointer input is touch, and closes any open card on a
 tap. Mouse movement or a key press re-enables previews. Cards use
 supplied data, saved progress, and already-cached prices, workspace quests, or
-Hideout stations; they never start detail requests. Quest previews use the
+Hideout stations. Visible item previews additionally load the item's unpriced
+relations through the mode-scoped dialog relations cache, without loading recipes
+or price history. They show loading/unavailable demand explicitly, and reuse the
+dialog's quest visibility, FiR, completion, and alternative-item demand rules for
+separate Keep for Quests and Keep for Hideout rows, including each source's FiR
+quantity. These show outstanding requirement totals, without subtracting inventory;
+there is no duplicate Still needed row. Inventory totals include both non-FiR and FiR balances.
+The flea estimate includes a compact colored 48-hour trend when available and labels
+unstable values. Entity cards are 280px wide with tighter spacing and a slightly
+translucent, blurred background. Facts use brighter labels and left-aligned values;
+the hover trend has no chip background. Zero inventory, requirement,
+and flea-value rows are omitted. Explicitly flea-banned items show the highest
+positive trader sell value with its portrait/name, loading that item's scoped
+prices when needed. Missing offers, stale prices, and player-level flea locks
+do not trigger a trader fallback. Quest previews use the
 mode-scoped compact search manifest for a trader portrait when the full quest is
 not already available. Items checklist rows do not open item hover cards in Icon,
 Compact, or Expanded sizes. Alternatives inside an expanded any-of group likewise
 omit hover cards in Icon and Compact sizes; the Expanded layout retains them. Item
 previews prefer the square 512px image over the labeled grid image.
-Hideout station names show a small outbound arrow. Station previews show only
-the saved level; item previews omit short names. Entity previews have no
+Hideout station names show a small outbound arrow. Station previews show the
+saved level and missing requirements for the immediate next upgrade, using
+supplied/cached Hideout data and the search manifest. They reuse the station
+detail shortage calculation with FiR reserved only within that next upgrade,
+so later levels, other stations, and checklist filters cannot inflate shortages.
+Negative saved inventory balances count as zero owned for this preview and never
+increase the upgrade's required quantity. They omit covered or
+manually completed items and met station/trader gates, and show at most five
+requirements plus an overflow count. Currency and character skills are explicitly
+untracked; missing records remain unresolved. Maxed stations show Fully upgraded.
+Item previews omit short names. Entity previews have no
 instruction footer. Quest previews show the issuing trader loyalty tier and
 required objective items or keys when their names are available in the cached
 workspace payload, falling back to objective descriptions when item data is
 missing.
+The development page includes item trend/error examples plus live quest and
+station hover examples for the active profile's mode. Sample prices are labeled;
+the gallery never writes player progress.
 Profit recipe items use the same provider and positioning with their
 recipe-specific card (route, cost, savings); their icons open the item dialog and
 keyboard focus anchors the card. Short text `Tooltip` uses

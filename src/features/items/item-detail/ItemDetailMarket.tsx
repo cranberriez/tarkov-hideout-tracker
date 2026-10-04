@@ -1,7 +1,8 @@
 "use client";
 
 import type { CurrentPrice } from "@/types/prices";
-import { ArrowDownRight, ArrowUpRight, Check, Clock3, Store, X } from "lucide-react";
+import { Check, Clock3, Store, X } from "lucide-react";
+import { PriceChange } from "@/components/entities/price-change";
 import { formatRoubles, getFleaPriceEstimate, hasFleaMarketData } from "@/lib/utils/market-price";
 import { ItemDetailSection } from "./ItemDetailSection";
 import { ItemDetailPriceStability } from "./ItemDetailPriceStability";
@@ -144,20 +145,5 @@ export function ItemDetailMarket({
 				</div>
 			)}
 		</ItemDetailSection>
-	);
-}
-
-function PriceChange({ value }: { value: number }) {
-	const positive = value >= 0;
-	const Icon = positive ? ArrowUpRight : ArrowDownRight;
-	return (
-		<span
-			className={`flex items-center gap-1 rounded-md px-2 py-1 font-mono text-xs ${
-				positive ? "bg-success/10 text-success" : "bg-danger/10 text-danger"
-			}`}
-		>
-			<Icon size={13} />
-			{Math.abs(value).toFixed(2)}%
-		</span>
 	);
 }

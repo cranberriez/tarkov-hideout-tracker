@@ -38,12 +38,13 @@ export function EntityPreview({
 			key,
 			clientX,
 			clientY,
+			width: 280,
 			prepare,
 			content: (
 				<div
 					role="tooltip"
 					className={cn(
-						"pointer-events-auto max-h-[calc(100vh-16px)] w-80 max-w-full overflow-y-auto rounded-md border border-highlight/15 bg-background p-3 shadow-[0_18px_55px_color-mix(in_oklab,_var(--shadow)_80%,_transparent)]",
+						"pointer-events-auto max-h-[calc(100vh-16px)] w-full overflow-y-auto rounded-sm border border-highlight/15 bg-background/95 p-2 backdrop-blur-md shadow-[0_12px_35px_color-mix(in_oklab,_var(--shadow)_65%,_transparent)]",
 						className,
 					)}
 				>
@@ -81,9 +82,9 @@ export function EntityPreview({
 /** Label/value line inside a preview card. */
 export function PreviewFact({ label, children }: { label: ReactNode; children: ReactNode }) {
 	return (
-		<div className="flex items-baseline justify-between gap-3 text-xs">
-			<span className="text-subtle-foreground">{label}</span>
-			<span className="min-w-0 text-right text-foreground">{children}</span>
+		<div className="grid grid-cols-2 items-baseline gap-2 text-xs leading-4">
+			<span className="text-foreground/75">{label}</span>
+			<span className="min-w-0 text-left text-foreground">{children}</span>
 		</div>
 	);
 }

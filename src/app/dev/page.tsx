@@ -5,6 +5,7 @@ import { isDev } from "@/lib/is-dev";
 import { getCatalogDashboard, getMarketWorkerDashboard } from "@/server/db/postgres-dashboard";
 import { MarketWorkerPanel } from "./MarketWorkerPanel";
 import { ItemImageGallery } from "./ItemImageGallery";
+import { HoverOverlayGallery } from "./HoverOverlayGallery";
 
 const MODES: Array<{ value: TarkovJsonGameMode; label: string }> = GAME_MODES.map((mode) => ({
 	value: GAME_MODE_CONFIG[mode].dataMode,
@@ -50,6 +51,7 @@ export default async function DevPage({
 					Current PostgreSQL catalog status for the selected game mode.
 				</p>
 			</header>
+			<HoverOverlayGallery />
 			<ItemImageGallery />
 			<nav aria-label="Dataset game mode" className="flex gap-2">
 				{MODES.map((entry) => (

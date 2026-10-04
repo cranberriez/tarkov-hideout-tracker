@@ -130,9 +130,14 @@ function QuestPreviewCard({
 	const traderImage = quest?.trader.image4xLink ?? quest?.trader.imageLink ?? trader?.iconLink;
 	const traderName = quest?.trader.name ?? trader?.name;
 	const itemLines = quest ? objectiveItemLines(quest.objectives, itemNames) : [];
-	const objectives = quest?.objectives.filter((objective) =>
-		objective.description && objective.type !== "giveItem" && objective.type !== "plantItem" && objective.type !== "findItem",
-	) ?? [];
+	const objectives =
+		quest?.objectives.filter(
+			(objective) =>
+				objective.description &&
+				objective.type !== "giveItem" &&
+				objective.type !== "plantItem" &&
+				objective.type !== "findItem",
+		) ?? [];
 	const prerequisites = quest?.taskRequirements ?? [];
 
 	return (
@@ -143,14 +148,14 @@ function QuestPreviewCard({
 					<img
 						src={traderImage}
 						alt=""
-						className="size-9 shrink-0 rounded-full border border-highlight/10 object-cover"
+						className="size-8 shrink-0 rounded-full border border-highlight/10 object-cover"
 					/>
 				)}
 				<div className="min-w-0">
 					{traderName && (
 						<p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-subtle-foreground">{traderName}</p>
 					)}
-					<p className="text-sm font-semibold leading-snug text-foreground">{quest?.name ?? name ?? "Quest"}</p>
+					<p className="text-xs font-semibold leading-snug text-foreground">{quest?.name ?? name ?? "Quest"}</p>
 				</div>
 			</div>
 			<div className="mt-2 flex flex-wrap gap-1">
@@ -177,7 +182,7 @@ function QuestPreviewCard({
 				)}
 			</div>
 			{quest && (
-				<div className="mt-3 space-y-1.5">
+				<div className="mt-2 space-y-1">
 					{(quest.minPlayerLevel ?? 0) > 0 && <PreviewFact label="Level">{quest.minPlayerLevel}</PreviewFact>}
 					<PreviewFact label="Trader loyalty">LL{getQuestIssuingTraderLoyaltyLevel(quest)}</PreviewFact>
 					{quest.map && (
@@ -206,16 +211,20 @@ function QuestPreviewCard({
 				</div>
 			)}
 			{itemLines.length > 0 && (
-				<div className="mt-3 text-xs text-muted-foreground">
+				<div className="mt-2 text-[11px] text-muted-foreground">
 					<p className="mb-1 font-semibold text-subtle-foreground">Required items</p>
 					<ul className="space-y-1">
-						{itemLines.slice(0, 3).map((line, index) => <li key={`${index}-${line}`} className="line-clamp-2">{line}</li>)}
+						{itemLines.slice(0, 3).map((line, index) => (
+							<li key={`${index}-${line}`} className="line-clamp-2">
+								{line}
+							</li>
+						))}
 						{itemLines.length > 3 && <li className="text-subtle-foreground">+{itemLines.length - 3} more</li>}
 					</ul>
 				</div>
 			)}
 			{objectives.length > 0 && (
-				<ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+				<ul className="mt-2 space-y-1 text-[11px] text-muted-foreground">
 					{objectives.slice(0, 3).map((objective) => (
 						<li key={objective.id} className="line-clamp-2">
 							{objective.description}
