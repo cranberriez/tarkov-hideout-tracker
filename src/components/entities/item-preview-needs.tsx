@@ -5,6 +5,7 @@ import { useShallow } from "zustand/react/shallow";
 import { itemRelationsQueryOptions } from "@/features/items/item-detail/item-detail-queries";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { useGameDataEnabled } from "@/lib/query/game-data";
+import { useHoverDataIntent } from "@/components/ui/hover-preview-provider";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { deriveItemPreviewDemand } from "./item-preview-demand";
 import { PreviewFact } from "./entity-preview";
@@ -35,7 +36,8 @@ export function ItemPreviewNeeds({ itemId }: { itemId: string }) {
 	);
 	const mode = toTarkovJsonGameMode(state.gameMode);
 	const enabled = useGameDataEnabled(mode);
-	const request = useQuery({ ...itemRelationsQueryOptions(mode, itemId), enabled });
+	const intent = useHoverDataIntent();
+	const request = useQuery({ ...itemRelationsQueryOptions(mode, itemId), enabled: enabled && intent });
 	const needs = request.data ? deriveItemPreviewDemand(itemId, request.data, state, state) : null;
 	if (request.isError || (request.data && !needs))
 		return (

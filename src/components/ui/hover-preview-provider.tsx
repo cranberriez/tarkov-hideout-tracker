@@ -36,6 +36,23 @@ interface HoverPreviewController {
 
 const HoverPreviewContext = createContext<HoverPreviewController | null>(null);
 
+/** Cards show static details quickly; anything that reaches the API waits for sustained hover intent. */
+export const HOVER_SHOW_DELAY_MS = 50;
+export const HOVER_DATA_DELAY_MS = 300;
+
+/**
+ * True once the pointer has rested on the trigger for HOVER_DATA_DELAY_MS. Call inside preview
+ * content, which mounts when the card shows; sweeping across links never reaches the API.
+ */
+export function useHoverDataIntent(): boolean {
+	const [ready, setReady] = useState(false);
+	useEffect(() => {
+		const timer = setTimeout(() => setReady(true), HOVER_DATA_DELAY_MS - HOVER_SHOW_DELAY_MS);
+		return () => clearTimeout(timer);
+	}, []);
+	return ready;
+}
+
 function positionPreview(
 	clientX: number,
 	clientY: number,
@@ -136,12 +153,12 @@ export function HoverPreviewProvider({ children }: { children: ReactNode }) {
 							next.ready = true;
 							publish();
 						});
-				}, 50);
+				}, HOVER_SHOW_DELAY_MS);
 			}
 			next.showTimer = setTimeout(() => {
 				next.minimumElapsed = true;
 				publish();
-			}, 200);
+			}, HOVER_SHOW_DELAY_MS);
 		},
 		[cancelClose, hoverCards],
 	);

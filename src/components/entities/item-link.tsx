@@ -7,7 +7,7 @@ import Image from "next/image";
 import { itemRelationsQueryOptions } from "@/features/items/item-detail/item-detail-queries";
 import { getBestTraderOffer } from "@/lib/price-calculation/prices";
 import { Badge } from "@/components/ui/badge";
-import { preloadHoverImage } from "@/components/ui/hover-preview-provider";
+import { preloadHoverImage, useHoverDataIntent } from "@/components/ui/hover-preview-provider";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { gameDataKey } from "@/lib/query/scope";
 import { useUIStore } from "@/lib/stores/useUIStore";
@@ -101,9 +101,10 @@ function ItemPreviewCard({ item, details }: { item: PreviewItem; details?: React
 	// Observe metadata loaded by the demand row; this observer starts no request.
 	const relations = useQuery({ ...itemRelationsQueryOptions(mode, item.id), enabled: false });
 	const fleaBanned = (item.onFleaMarket ?? relations.data?.item?.onFleaMarket) === false;
+	const intent = useHoverDataIntent();
 	const traderPriceIds = useMemo(
-		() => (fleaBanned && !item.marketPrice ? [item.id] : []),
-		[fleaBanned, item.id, item.marketPrice],
+		() => (intent && fleaBanned && !item.marketPrice ? [item.id] : []),
+		[intent, fleaBanned, item.id, item.marketPrice],
 	);
 	const traderPrices = useItemPrices(mode, traderPriceIds);
 	const cachedPrice =
