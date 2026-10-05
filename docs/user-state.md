@@ -166,6 +166,13 @@ not every localStorage key.
 
 ## Ephemeral and server state
 
+Uploader decisions remain ephemeral. Its explicit Send required/Send all actions
+use `addItemCounts` with deltas that raise each saved FIR/non-FIR balance to at
+least the reviewed quantity, preserving higher balances and untouched signed
+balances. Repeating an action or sending all after required is idempotent against
+current inventory. Unknown FIR quantities block the corresponding send. No schema,
+storage key, migration, or reset behavior changes.
+
 [useUIStore](../src/lib/stores/useUIStore.ts) is not persisted. Dialog navigation,
 draft inputs, and Raid Planner viewport state are session state. Fetched entities,
 prices, and item relations come from route contracts/lazy requests; they do not

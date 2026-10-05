@@ -13,22 +13,6 @@
 	animation: next-step 300ms 550ms ease-out both;
 }
 
-.summaryPage {
-	animation: expand-summary 350ms ease-out both;
-}
-.summaryContent {
-	animation: next-step 250ms 200ms ease-out both;
-}
-@keyframes expand-summary {
-	from {
-		clip-path: inset(0 0 0 calc(100% - 20rem));
-		opacity: 0.5;
-	}
-	to {
-		clip-path: inset(0);
-		opacity: 1;
-	}
-}
 @keyframes complete-review {
 	from {
 		opacity: 0;
@@ -75,9 +59,7 @@
 
 @media (prefers-reduced-motion: reduce) {
 	.complete,
-	.nextStep,
-	.summaryPage,
-	.summaryContent {
+	.nextStep {
 		animation: none;
 	}
 	.scan {

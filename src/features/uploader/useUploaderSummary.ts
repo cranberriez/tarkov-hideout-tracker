@@ -44,10 +44,7 @@ export function useUploaderSummary(entries: readonly ReviewEntry[], items: reado
 		() => (query.data ? buildUploaderSummary(entries, items, query.data, profile) : null),
 		[entries, items, query.data, profile],
 	);
-	const priceIds = useMemo(
-		() => entries.flatMap((entry) => entry.itemId ? [entry.itemId] : []),
-		[entries],
-	);
+	const priceIds = useMemo(() => entries.flatMap((entry) => (entry.itemId ? [entry.itemId] : [])), [entries]);
 	const prices = useItemPrices(mode, priceIds);
 	return { summary, prices, error: query.error, retry: query.refetch, loading: query.isFetching };
 }

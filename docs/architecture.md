@@ -329,8 +329,9 @@ and removal of manual additions. Additions stay separate from screenshot boxes
 and survive returning to classification. Ignore unknowns allows continuing with
 identified items only; it preserves unknown boxes for later review and reports
 the excluded count. Missing-item entry precedes the next-step buttons, with a centered View item list link below Keep reviewing. This link opens the grouped item list. Show summary
-expands the right panel across the workspace into the requirement summary;
-its top-left Back button restores the review and manual additions.
+switches the existing workspace into decision mode without replacing the screenshot
+canvas, zoom, scroll position, or sidebar frame. Back to review restores the
+classification controls and manual additions without a page transition.
 The [summary model](../src/features/uploader/summary-model.ts) combines scanned
 and manually added entries, attaches all remaining hideout/quest reasons, and
 splits quantities into FIR reserves, replaceable needs, review decisions, and
@@ -340,24 +341,36 @@ ignored, or faction-ineligible quests. Non-FIR copies cannot satisfy FIR demand;
 unknown FIR and quest alternatives remain explicit review decisions. Reusable
 tools use the maximum future tool quantity, separately from consumed items.
 Broad quest alternatives carry an incomplete-coverage warning. Saved inventory
-is neither subtracted (it may overlap the screenshot) nor modified.
-The summary loads requirement metadata on demand through
+is not subtracted from demand because it may overlap the screenshot.
+The review preloads requirement metadata through
 [getUploaderSummaryData](../src/server/queries/getUploaderSummaryData.ts), with
 mode-scoped caching. Both requirement sources must succeed before recommendations
-appear. Only pricing-candidate IDs are sent to the existing mode-scoped
-[batch price hook](../src/features/items/useItemPrices.ts). Their rows show flea
-unit prices before fees, best trader offers in rouble equivalents, stack values,
-48-hour percentage changes when available, freshness, and unstable/stale labels.
-Loading, missing-price, and retryable error states are explicit. Full histories
-are not loaded, and price data is not a sell-and-rebuy recommendation.
-Categories stack inside a centered, 56rem maximum-width summary with compact rows.
-Action labels appear once in section headings; subgroups separate different uses
-and FIR statuses. Rows show the item image, name, quantity, and expansion control,
-with a compact price-data line for pricing candidates.
-Review decisions are split into Confirm found-in-raid status and Optional
-quest hand-ins, with empty review sections omitted. Each row expands
-to show only its hideout and quest uses, with required quantities and FIR requirements;
-the same single-column layout adapts to narrow screens.
+appear. Recognized item IDs enter the existing mode-scoped
+[batch price hook](../src/features/items/useItemPrices.ts) during review, before
+opening the summary. Manual additions join the price batch when summary opens.
+The [decision view](../src/features/uploader/UploaderDecisionView.tsx) supplies
+the existing sidebar's decision contents. The original screenshot buttons change
+to borderless color overlays with bookmark (KEEP), clock (HOLD), or coins-in-hand
+(SELL) corner icons. Only highlight colors transition, over 200ms; reduced-motion
+users skip that transition. Markers aggregate copies by item ID and FIR status;
+mixed quantities show KEEP in the image and separate decisions in the panel.
+The sidebar selector also exposes manual additions; there is no bottom item strip.
+Prices update markers as requests settle.
+The panel includes all uses, quantity decisions, flea prices before fees, trader
+offers, stack values, 48-hour changes, and loading/error states. The
+decision rows show short labels with expandable explanations; uses stay visible
+and prices/trend details expand separately. Inventory actions share a compact row.
+The
+[decision model](../src/features/uploader/decision-model.ts) keeps required copies,
+holds uncertain cases, and suggests selling surplus only with a stable, non-stale
+price no older than 72 hours and a decline of at least 5% over 48 hours. Rising
+or flat prices hold; flat means no strong signal, not a prediction. Incomplete
+quest alternatives suppress sell suggestions. Full histories and sell-and-rebuy
+fee projections are not loaded.
+Explicit inventory buttons send required quantities or all reviewed quantities.
+They only raise saved FIR/non-FIR counts to the reviewed amount, using existing
+store actions; repeated sends cannot duplicate additions. Unknown FIR quantities
+block the corresponding send. No automatic inventory write occurs.
 The seen-items list groups scanned and manual items
 by stable item ID and FIR status, explicitly retaining unknown detected FIR.
 [Found-in-raid detection](../src/features/uploader/found-in-raid.ts) compares a small

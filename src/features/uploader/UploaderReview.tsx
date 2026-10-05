@@ -4,7 +4,10 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ItemSummary } from "@/types/items";
 import type { ReviewEntry } from "./review-model";
-import { UploaderSummary } from "./UploaderSummary";
+import { UploaderDecisionView } from "./UploaderDecisionView";
+import { useUploaderSummary } from "./useUploaderSummary";
+import { useUploaderDecisions, decisionKey } from "./useUploaderDecisions";
+import { DecisionMarker, decisionAppearance } from "./DecisionMarker";
 import { itemImageUrl } from "@/lib/utils/item-images";
 import { cn } from "@/lib/utils";
 import type { Screenshot } from "./image-recognition";
@@ -13,7 +16,7 @@ import { buildLabelIndex, type ItemDetection } from "./recognition-model";
 import { seedReviewBoxes, suggestReviewGrid, type ReviewBox } from "./review-model";
 import { nextUnknownId, selectReviewBoxes, selectionSuggestions, supportsQuantity } from "./selection-model";
 import styles from "./UploaderReview.module.css";
-import { ArrowLeft, Undo2 } from "lucide-react";
+import { Undo2 } from "lucide-react";
 import { UploaderCompletion } from "./UploaderCompletion";
 
 const control =
@@ -66,6 +69,8 @@ export function UploaderReview({
 	const [ignoreUnknowns, setIgnoreUnknowns] = useState(false);
 	const [summaryOpen, setSummaryOpen] = useState(false);
 	const [summaryEntries, setSummaryEntries] = useState<ReviewEntry[]>([]);
+	const summaryData = useUploaderSummary(summaryOpen ? summaryEntries : boxes, items);
+	const decisions = useUploaderDecisions(summaryData);
 	const summaryBack = useRef<HTMLButtonElement>(null);
 	useEffect(() => {
 		if (summaryOpen) summaryBack.current?.focus();
@@ -173,13 +178,7 @@ export function UploaderReview({
 			className="relative grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] grid-cols-[minmax(0,1fr)_20rem] overflow-hidden max-sm:grid-cols-[minmax(0,1fr)_15rem]"
 			aria-label="Review scanned items"
 		>
-			<div
-				inert={summaryOpen}
-				aria-hidden={summaryOpen}
-				ref={canvas}
-				tabIndex={-1}
-				className="min-h-0 overflow-auto bg-shadow/30 p-3 outline-none"
-			>
+			<div ref={canvas} tabIndex={-1} className="min-h-0 overflow-auto bg-shadow/30 p-3 outline-none">
 				<div
 					role="group"
 					aria-label="Screenshot review canvas"
@@ -189,15 +188,21 @@ export function UploaderReview({
 					<img src={image.url} alt="Uploaded stash screenshot" draggable={false} className="block h-auto w-full" />
 					{boxes.map((box, number) => {
 						const item = box.itemId ? byId.get(box.itemId) : undefined;
-						const picked = selected.includes(box.id);
+						const key = decisionKey(box.itemId ?? box.id, box.foundInRaid);
+						const action = decisions.actionFor(key);
+						const picked = summaryOpen ? decisions.activeKey === key : selected.includes(box.id);
 						return (
 							<button
 								key={box.id}
 								type="button"
 								data-box-index={number}
-								aria-label={`Box ${number + 1}: ${item?.name ?? "Unknown item"}`}
+								aria-label={`Box ${number + 1}: ${item?.name ?? "Unknown item"}${summaryOpen ? ` · ${item ? (decisions.pendingFor(key) ? "Loading decision" : action) : "Excluded"}` : ""}`}
 								aria-pressed={picked}
 								onClick={(event) => {
+									if (summaryOpen) {
+										if (item) decisions.select(key);
+										return;
+									}
 									if (item && (event.ctrlKey || event.metaKey || event.shiftKey)) return;
 									setKeepReviewing(true);
 									setIgnoreUnknowns(false);
@@ -217,11 +222,16 @@ export function UploaderReview({
 									canvas.current?.focus({ preventScroll: true });
 								}}
 								className={cn(
-									"absolute cursor-pointer border text-left focus-visible:outline-2 focus-visible:outline-foreground",
-									item
-										? "border-transparent bg-shadow/65 hover:bg-shadow/40"
-										: "border-warning/80 bg-warning/20 hover:bg-warning/30",
-									picked && "z-10 bg-brand/25 ring-2 ring-foreground",
+									"absolute cursor-pointer text-left transition-colors duration-200 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-foreground",
+									summaryOpen
+										? item
+											? decisionAppearance[action].overlay
+											: "bg-shadow/65"
+										: item
+											? "border-transparent bg-shadow/65 hover:bg-shadow/40"
+											: "border-warning/80 bg-warning/20 hover:bg-warning/30",
+									!summaryOpen && "border",
+									picked && (summaryOpen ? "z-10 brightness-125" : "z-10 bg-brand/25 ring-2 ring-foreground"),
 								)}
 								style={{
 									left: `${box.bounds.left * 100}%`,
@@ -231,6 +241,7 @@ export function UploaderReview({
 								}}
 							>
 								<span
+									hidden={summaryOpen}
 									aria-hidden="true"
 									className={cn(
 										"pointer-events-none absolute inset-0",
@@ -239,21 +250,36 @@ export function UploaderReview({
 									)}
 									style={{ animationDelay: `${number * Math.min(65, 1800 / Math.max(1, boxes.length))}ms` }}
 								/>
-								<span className="absolute left-0 top-0 bg-card/90 px-1 text-[10px] leading-tight text-foreground">
-									{number + 1}
-									{!item ? " ?" : box.confirmed ? " ✓" : ""}
-								</span>
+								{summaryOpen ? (
+									item && (
+										<span className="absolute left-0.5 top-0.5">
+											<DecisionMarker action={action} pending={decisions.pendingFor(key)} />
+										</span>
+									)
+								) : (
+									<span className="absolute left-0 top-0 bg-card/90 px-1 text-[10px] leading-tight text-foreground">
+										{number + 1}
+										{!item ? " ?" : box.confirmed ? " ✓" : ""}
+									</span>
+								)}
 							</button>
 						);
 					})}
 				</div>
 			</div>
-			<aside
-				inert={summaryOpen}
-				aria-hidden={summaryOpen}
-				className="col-start-2 row-start-1 row-span-2 flex min-h-0 flex-col overflow-hidden border-l border-border-color bg-card p-4"
-			>
-				<div className="-mx-4 -mt-4 min-h-0 flex-1 overflow-y-auto px-4 pt-4">
+			<aside className="col-start-2 row-start-1 row-span-2 flex min-h-0 flex-col overflow-hidden border-l border-border-color bg-card p-4">
+				{summaryOpen && (
+					<div data-uploader-summary className="-mx-4 -mt-4 min-h-0 flex-1 overflow-y-auto px-4 pt-4">
+						<UploaderDecisionView
+							data={summaryData}
+							decisions={decisions}
+							ignoredCount={ignoreUnknowns ? unknowns.length : 0}
+							onReview={() => setSummaryOpen(false)}
+							backRef={summaryBack}
+						/>
+					</div>
+				)}
+				<div hidden={summaryOpen} className="-mx-4 -mt-4 min-h-0 flex-1 overflow-y-auto px-4 pt-4">
 					<div className="-mx-4 -mt-4 bg-brand/10 p-4">
 						<p className="text-[10px] uppercase tracking-widest text-brand">Current goal</p>
 						<h1 className="mt-1 text-lg font-semibold text-foreground">
@@ -459,30 +485,12 @@ export function UploaderReview({
 					{imageActions}
 				</div>
 			</aside>
-			{bottomBar}
-			{summaryOpen && (
-				<div
-					data-uploader-summary
-					className={cn("absolute inset-0 z-20 flex flex-col overflow-y-auto bg-card p-4 sm:p-6", styles.summaryPage)}
-				>
-					<button
-						ref={summaryBack}
-						onClick={() => {
-							setSummaryOpen(false);
-						}}
-						className="flex w-fit items-center gap-2 rounded-md border border-border-color px-3 py-2 text-sm text-foreground hover:bg-surface-raised"
-					>
-						<ArrowLeft size={16} aria-hidden="true" />
-						Back to review
-					</button>
-					<div className={styles.summaryContent}>
-						<UploaderSummary
-							entries={summaryEntries}
-							items={items}
-							ignoredCount={ignoreUnknowns ? unknowns.length : 0}
-						/>
-					</div>
+			{summaryOpen ? (
+				<div className="col-start-1 row-start-2 min-w-0 border-t border-border-color bg-surface-raised/40 px-3 py-2 text-[11px] text-muted-foreground">
+					Select an item to see its uses and price evidence.
 				</div>
+			) : (
+				bottomBar
 			)}
 		</section>
 	);
