@@ -13,6 +13,7 @@ import { refineWithIcons, type IconLoader } from "./icon-matching";
 import { dropContainedBoxes, seedReviewBoxes, suggestReviewGrid, type ReviewBox } from "./review-model";
 import type { ItemSummary } from "../../types/items";
 import { isMoney } from "./selection-model";
+import { assessScan, type ScanHint } from "./scan-quality";
 
 /** Grayscale ink on white, one byte per pixel. */
 export interface GrayImage {
@@ -48,6 +49,13 @@ function offsetLines(lines: LabelLine[], left: number, top: number): LabelLine[]
 	}));
 }
 
+export interface ScanResult {
+	detections: ItemDetection[];
+	boxes: ReviewBox[];
+	/** Why the scan may have gone badly; a blocking hint means nothing was recognized. */
+	hints: ScanHint[];
+}
+
 /**
  * Reads labels, then footprints and FIR badges, from a screenshot scaled for OCR, and seeds
  * review boxes. Catalog artwork then settles same-name and misread labels where it can.
@@ -56,13 +64,15 @@ export async function scanLabels(
 	rgba: Uint8ClampedArray<ArrayBuffer>,
 	width: number,
 	height: number,
+	/** OCR canvas pixels per source pixel, so hints can describe the original screenshot. */
+	scale: number,
 	reader: LabelReader,
 	items: readonly ItemSummary[],
 	index: ReturnType<typeof buildLabelIndex>,
 	loadIcon: IconLoader,
 	signal: AbortSignal,
 	onProgress: (label: string, progress: number) => void,
-): Promise<{ detections: ItemDetection[]; boxes: ReviewBox[] }> {
+): Promise<ScanResult> {
 	const originalPixels = rgba.slice();
 	// Invert light stash labels into dark text on a light background for OCR.
 	const masks = prepareLabelPixels(rgba);
@@ -71,6 +81,9 @@ export async function scanLabels(
 	const firstMatches = recognizeLabels(lines, index, width, height);
 	let detections = firstMatches;
 	const grid = inferLabelGrid(firstMatches, height);
+	const assess = (boxes: ReviewBox[]) => assessScan({ width, height, scale, firstMatches, grid, boxes });
+	const early = assess([]);
+	if (early.some((hint) => hint.severity === "blocking")) return { detections: [], boxes: [], hints: early };
 	if (grid) {
 		onProgress("Refining grid labels", 0);
 		// Isolate label-sized ink regions so grid borders and neighboring item art cannot
@@ -127,8 +140,6 @@ export async function scanLabels(
 		);
 	}
 	// Money is entered more easily by hand than read from stack text, so it is left out.
-	return {
-		detections,
-		boxes: dropContainedBoxes(boxes).filter((box) => !isMoney(box.itemId ? byId.get(box.itemId) : undefined)),
-	};
+	boxes = dropContainedBoxes(boxes).filter((box) => !isMoney(box.itemId ? byId.get(box.itemId) : undefined));
+	return { detections, boxes, hints: assess(boxes) };
 }

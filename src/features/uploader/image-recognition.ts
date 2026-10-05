@@ -1,8 +1,7 @@
 import type { ItemSummary } from "@/types/items";
 import type { IconImage } from "./icon-matching";
-import type { buildLabelIndex, ItemDetection, LabelLine } from "./recognition-model";
-import type { ReviewBox } from "./review-model";
-import { labelVocabulary, scanLabels, type LabelReader } from "./scan-pipeline";
+import type { buildLabelIndex, LabelLine } from "./recognition-model";
+import { labelVocabulary, scanLabels, type LabelReader, type ScanResult } from "./scan-pipeline";
 
 export interface Screenshot {
 	url: string;
@@ -47,7 +46,7 @@ export async function readImageLabels(
 	onProgress: (label: string, progress: number) => void,
 	items: readonly ItemSummary[],
 	index: ReturnType<typeof buildLabelIndex>,
-): Promise<{ detections: ItemDetection[]; boxes: ReviewBox[] }> {
+): Promise<ScanResult> {
 	onProgress("Loading recognition tools", 0);
 	const { createWorker, PSM, OEM } = await abortable(import("tesseract.js"), signal);
 	signal.throwIfAborted();
@@ -134,6 +133,7 @@ export async function readImageLabels(
 			pixels.data,
 			canvas.width,
 			canvas.height,
+			scale,
 			reader,
 			items,
 			index,

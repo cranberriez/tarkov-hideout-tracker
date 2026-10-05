@@ -17,6 +17,7 @@ export function useUploaderController(items: readonly ItemSummary[] | undefined)
 	const index = useMemo(() => buildLabelIndex(items ?? []), [items]);
 	const detections = useMemo(() => labels?.detections ?? [], [labels]);
 	const boxes = useMemo(() => labels?.boxes ?? [], [labels]);
+	const hints = useMemo(() => labels?.hints ?? [], [labels]);
 	const groups = useMemo(() => summarizeDetections(detections), [detections]);
 
 	useEffect(
@@ -111,6 +112,9 @@ export function useUploaderController(items: readonly ItemSummary[] | undefined)
 		detections,
 		boxes,
 		groups,
+		hints,
+		/** Nothing was recognized, so there is nothing to review. */
+		blocked: hints.find((hint) => hint.severity === "blocking") ?? null,
 		error,
 		status,
 		finished: !!labels,

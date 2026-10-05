@@ -32,7 +32,7 @@ export function UploaderClientPage() {
 function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 	const catalog = useSearchManifest(mode, true);
 	const controller = useUploaderController(catalog.data?.items);
-	const { image, boxes, status, error, finished, supplyImage } = controller;
+	const { image, boxes, hints, blocked, status, error, finished, supplyImage } = controller;
 	const input = useRef<HTMLInputElement>(null);
 	const [dragging, setDragging] = useState(false);
 	const reviewDirty = useRef(false);
@@ -56,7 +56,7 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 		window.addEventListener("paste", paste);
 		return () => window.removeEventListener("paste", paste);
 	}, [replaceImage]);
-	const reviewing = image && !status && (finished || error) && catalog.data;
+	const reviewing = image && !status && (finished || error) && !blocked && catalog.data;
 	const actions = (
 		<div className="flex items-center gap-2 text-xs text-muted-foreground">
 			<button
@@ -167,6 +167,7 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 					key={image.url}
 					image={image}
 					boxes={boxes}
+					hints={hints}
 					items={catalog.data.items}
 					onNewScan={() => input.current?.click()}
 					dirtyRef={reviewDirty}
@@ -176,7 +177,7 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 				<div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] grid-cols-[minmax(0,1fr)_20rem] max-sm:grid-cols-[minmax(0,1fr)_15rem]">
 					<div
 						className="relative flex min-h-0 items-center justify-center overflow-hidden bg-shadow/30 p-4"
-						aria-busy={!!image && !error && !catalog.error}
+						aria-busy={!!image && !error && !blocked && !catalog.error}
 					>
 						{image ? (
 							<img src={image.url} alt="Uploaded stash screenshot" className="max-h-full max-w-full object-contain" />
@@ -186,7 +187,22 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 								<p className="text-sm">Drop a screenshot or paste with Ctrl+V</p>
 							</div>
 						)}
-						{image && !error && !catalog.error && (
+						{blocked && (
+							<div role="alert" className="absolute inset-0 flex items-center justify-center bg-shadow/60 p-4">
+								<div className="max-w-sm rounded-md border border-danger/50 bg-card p-4 text-center shadow-lg">
+									<p className="text-sm font-medium text-danger">{blocked.title}</p>
+									<p className="mt-1 text-xs text-muted-foreground">{blocked.detail}</p>
+									<button
+										onClick={controller.clear}
+										className="mt-3 inline-flex items-center gap-2 rounded-md border border-border-color px-3 py-1.5 text-xs hover:border-danger/50 hover:bg-danger/10 hover:text-danger"
+									>
+										<Trash2 size={14} aria-hidden="true" />
+										Clear image
+									</button>
+								</div>
+							</div>
+						)}
+						{image && !error && !blocked && !catalog.error && (
 							<div className="pointer-events-none absolute inset-0 overflow-hidden bg-shadow/50">
 								<div
 									aria-hidden="true"
@@ -201,8 +217,14 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 					<aside className="col-start-2 row-start-1 row-span-2 flex min-h-0 flex-col overflow-y-auto border-l border-border-color bg-card p-4">
 						<UploaderSidebarHeader
 							step={0}
-							title={image ? "Reading screenshot" : "Upload screenshot"}
-							detail={image ? "Matching item labels in your browser" : "A stash, junkbox, or fresh loot"}
+							title={blocked ? "Nothing recognized" : image ? "Reading screenshot" : "Upload screenshot"}
+							detail={
+								blocked
+									? "Try another screenshot"
+									: image
+										? "Matching item labels in your browser"
+										: "A stash, junkbox, or fresh loot"
+							}
 						/>
 						<button
 							onClick={() => input.current?.click()}

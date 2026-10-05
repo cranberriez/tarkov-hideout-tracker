@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- Local screenshot crops and catalog previews. */
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
-import { ImagePlus, Undo2 } from "lucide-react";
+import { ImagePlus, Info, TriangleAlert, Undo2, X } from "lucide-react";
 import type { ItemSummary } from "@/types/items";
 import { itemImageUrl } from "@/lib/utils/item-images";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ import { DecisionMarker, decisionAppearance } from "./DecisionMarker";
 import type { SentCounts } from "./inventory-model";
 import { KeyHint, UploaderSidebarHeader, UploaderStepNav, sectionLabel } from "./UploaderSidebarHeader";
 import type { Screenshot } from "./image-recognition";
+import type { ScanHint } from "./scan-quality";
 import { suggestLabelCandidates } from "./label-suggestions";
 import { buildLabelIndex } from "./recognition-model";
 import { summarizeReview, type ReviewBox, type ReviewEntry } from "./review-model";
@@ -29,6 +30,7 @@ const FILTERS: DecisionFilter[] = ["ALL", "KEEP", "SELL", "HOLD"];
 export function UploaderReview({
 	image,
 	boxes: initialBoxes,
+	hints,
 	items,
 	onNewScan,
 	dirtyRef,
@@ -37,6 +39,8 @@ export function UploaderReview({
 	image: Screenshot;
 	/** Recognized boxes; the review history starts from these. */
 	boxes: ReviewBox[];
+	/** Reasons the scan may have gone badly, shown over the screenshot until dismissed. */
+	hints: ScanHint[];
 	items: ItemSummary[];
 	/** Opens the image picker for a replacement scan. */
 	onNewScan: () => void;
@@ -63,6 +67,7 @@ export function UploaderReview({
 		return () => observer.disconnect();
 	}, [image.width, image.height]);
 	const [zoom, setZoom] = useState(100);
+	const [hintsDismissed, setHintsDismissed] = useState(false);
 	const [query, setQuery] = useState("");
 	const [highlight, setHighlight] = useState({ key: "", index: 0 });
 	const [keepReviewing, setKeepReviewing] = useState(false);
@@ -325,7 +330,11 @@ export function UploaderReview({
 			className="relative grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] grid-cols-[minmax(0,1fr)_20rem] overflow-hidden max-sm:grid-cols-[minmax(0,1fr)_15rem]"
 			aria-label="Review scanned items"
 		>
-			<div ref={canvas} tabIndex={-1} className="min-h-0 overflow-auto bg-shadow/30 p-3 outline-none">
+			<div
+				ref={canvas}
+				tabIndex={-1}
+				className="col-start-1 row-start-1 min-h-0 overflow-auto bg-shadow/30 p-3 outline-none"
+			>
 				<div
 					role="group"
 					aria-label="Screenshot review canvas"
@@ -435,6 +444,37 @@ export function UploaderReview({
 					})}
 				</div>
 			</div>
+			{classifying && !hintsDismissed && hints.length > 0 && (
+				<div className="pointer-events-none col-start-1 row-start-1 z-20 self-start p-5">
+					<div
+						role="status"
+						className="pointer-events-auto mx-auto flex max-w-lg items-start gap-3 rounded-md border border-warning/50 bg-card/95 p-3 shadow-lg"
+					>
+						<ul className="min-w-0 flex-1 space-y-2">
+							{hints.map((hint) => {
+								const Icon = hint.severity === "info" ? Info : TriangleAlert;
+								return (
+									<li key={hint.id} className="flex gap-2">
+										<Icon size={16} className="mt-px shrink-0 text-warning" aria-hidden="true" />
+										<div>
+											<p className="text-sm font-medium text-foreground">{hint.title}</p>
+											<p className="text-xs text-muted-foreground">{hint.detail}</p>
+										</div>
+									</li>
+								);
+							})}
+						</ul>
+						<button
+							onClick={() => setHintsDismissed(true)}
+							aria-label="Dismiss scan hints"
+							title="Dismiss"
+							className="rounded-sm p-1 text-muted-foreground hover:bg-highlight/10 hover:text-foreground"
+						>
+							<X size={14} aria-hidden="true" />
+						</button>
+					</div>
+				</div>
+			)}
 			<aside className="col-start-2 row-start-1 row-span-2 flex min-h-0 flex-col overflow-hidden border-l border-border-color bg-card p-4">
 				<div className="-mx-4 -mt-4 min-h-0 flex-1 overflow-y-auto px-4 pt-4">
 					{summaryOpen ? (

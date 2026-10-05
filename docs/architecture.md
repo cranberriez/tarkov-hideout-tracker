@@ -282,6 +282,12 @@ heights, so a single tooltip caption between rows cannot halve the lattice.
 The model combines complementary passes, deduplicates overlapping labels, and
 keeps conflicting exact identifications ambiguous. The worker/core/language resources download from the
 library's default CDNs on first use; screenshot pixels are never uploaded.
+[Scan quality](../src/features/uploader/scan-quality.ts) explains poor scans from
+signals the pipeline already has. These are first-pass label confidence, cell size in
+source pixels, image extent in cells, and the unresolved share. It returns at most two
+hints, which the review shows over the screenshot. When there is no grid and no
+catalog match, the hint is blocking: the review does not open and the page offers to
+clear the image.
 [The pure matching model](../src/features/uploader/recognition-model.ts) matches
 visible short names exactly after case, spacing, punctuation, accent (Pâté) and
 Cyrillic look-alike (ТТ, С-1) normalization. Exact reads with moderate OCR confidence are retained;
