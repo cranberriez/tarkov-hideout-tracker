@@ -58,12 +58,12 @@ export function UploaderCompletion({
 		search.current?.focus();
 	};
 	return (
-		<div className="pt-4">
+		<div className="flex flex-1 flex-col pt-4">
 			<p role="status" className={cn("flex items-center gap-2 text-sm font-semibold text-success", styles.complete)}>
 				<Check size={16} aria-hidden="true" />
 				Review done
 			</p>
-			<div className={styles.nextStep}>
+			<div className={cn("flex flex-1 flex-col", styles.nextStep)}>
 				{firUnknown > 0 && (
 					<section className="flex items-center justify-between gap-3 border-b border-border-color py-3">
 						<p className="text-xs text-muted-foreground">
@@ -79,7 +79,15 @@ export function UploaderCompletion({
 				)}
 				{showSeenItems ? (
 					<section className="border-b border-border-color py-4" aria-label="Item list">
-						<h3 className={cn(sectionLabel, "mb-3")}>Item list</h3>
+						<div className="mb-3 flex items-center justify-between gap-2">
+							<h3 className={sectionLabel}>Item list</h3>
+							<button
+								onClick={() => setShowSeenItems(false)}
+								className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+							>
+								Close item list
+							</button>
+						</div>
 						{!summary.totals.length && (
 							<p className="text-xs text-muted-foreground">
 								No identified items yet. Add missing items or keep reviewing.
@@ -103,15 +111,9 @@ export function UploaderCompletion({
 								<span className="text-sm tabular-nums text-foreground">×{quantity}</span>
 							</div>
 						))}
-						<button
-							onClick={() => setShowSeenItems(false)}
-							className="mt-3 w-full rounded-sm border border-border-color px-3 py-2 text-xs text-foreground hover:bg-surface-raised"
-						>
-							Close item list
-						</button>
 					</section>
 				) : (
-					<section className="py-4" aria-label="Missing items">
+					<section className="flex flex-1 flex-col py-4" aria-label="Missing items">
 						<h3 className={sectionLabel}>Add missing items</h3>
 						<p className="mb-2 mt-1 text-xs leading-relaxed text-muted-foreground">
 							Look for items on the screenshot that aren&apos;t darkened, even partly. The scan likely missed them, so
@@ -226,11 +228,12 @@ export function UploaderCompletion({
 						>
 							View item list
 						</button>
+						<div className="min-h-3 flex-1" />
 						<button
 							role="switch"
 							aria-checked={showIcons}
 							onClick={onToggleIcons}
-							className="mt-3 flex w-full items-center justify-between gap-2 rounded-sm border border-border-color px-3 py-2 text-xs text-foreground hover:bg-surface-raised"
+							className="flex w-full items-center justify-between gap-2 rounded-sm border border-border-color px-3 py-2 text-xs text-foreground hover:bg-surface-raised"
 						>
 							Show item icons on screenshot
 							<span

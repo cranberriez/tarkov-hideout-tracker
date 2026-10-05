@@ -487,7 +487,13 @@ export function UploaderReview({
 				</div>
 			)}
 			<aside className="col-start-2 row-start-1 row-span-2 flex min-h-0 flex-col overflow-hidden border-l border-border-color bg-card p-4">
-				<div className="-mx-4 -mt-4 min-h-0 flex-1 overflow-y-auto px-4 pt-4">
+				<div
+					className={cn(
+						"-mx-4 -mt-4 min-h-0 flex-1 overflow-y-auto px-4 pt-4",
+						// Lets the missing-items section fill the panel so its icon toggle sits at the bottom.
+						completing && !summaryOpen && !firMode && "flex flex-col",
+					)}
+				>
 					{summaryOpen ? (
 						<UploaderDecisionView
 							data={summaryData}
@@ -774,16 +780,16 @@ export function UploaderReview({
 				<UploaderStepNav {...nav} backRef={summaryBack} />
 				<div className="-mx-4 -mb-4 flex shrink-0 items-center justify-between gap-2 border-t border-border-color bg-surface-raised/40 px-3 py-2 text-xs text-muted-foreground">
 					{confirmingNewScan ? (
-						<span className="flex items-center gap-2">
-							<span className="text-warning">Discard this review?</span>
+						<span className="flex items-center gap-3">
 							<button
 								onClick={() => {
 									setConfirmingNewScan(false);
 									onNewScan();
 								}}
-								className="font-semibold text-warning underline"
+								aria-label="Discard this review and start a new scan"
+								className="font-semibold uppercase text-danger hover:underline"
 							>
-								New scan
+								Discard
 							</button>
 							<button onClick={() => setConfirmingNewScan(false)} className="hover:text-foreground">
 								Cancel
