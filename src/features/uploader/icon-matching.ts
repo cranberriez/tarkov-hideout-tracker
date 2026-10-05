@@ -1,4 +1,5 @@
 import type { ItemSummary } from "../../types/items";
+import { closerFaction, DOGTAG_IDS, hasLevelNumber } from "./dogtag";
 import { clampBox, overlapFraction, type BoxBounds, type ReviewBox, type ReviewGrid } from "./review-model";
 
 /** RGBA pixels of a catalog grid image: 64 px for one cell, about 63.5 px per extra cell. */
@@ -204,6 +205,8 @@ const UNLABELED_LEAD = 0.06;
 const UNLABELED_FLOOR = 0.8;
 /** A read's identity is only replaced when another candidate's artwork is far closer. */
 const OVERRIDE_LEAD = 0.07;
+/** Dogtag art needed, alongside a level number, before a cell is called a dogtag. */
+const DOGTAG_FLOOR = 0.5;
 const SUGGESTIONS = 5;
 
 function luminanceSpread(shot: IconImage, region: BoxBounds) {
@@ -275,10 +278,28 @@ export async function refineWithIcons(
 			})
 			.sort((a, b) => b.score - a.score);
 	};
+	const tags = [DOGTAG_IDS.bear, DOGTAG_IDS.usec].flatMap((id) => barterItems.filter((item) => item.id === id));
+	/**
+	 * Dogtag labels are player names, which can spell an item's short name exactly. A level
+	 * number in the corner plus dogtag art at least as close as the read item's settles it,
+	 * as the generic faction tag. Prestige and event variants are left to the player.
+	 */
+	const dogtag = async (cell: BoxBounds, readScore: number | null) => {
+		if (tags.length < 2 || !hasLevelNumber(shot, cell)) return null;
+		const [best] = await score(cell, false, tags);
+		if (!best || best.score < DOGTAG_FLOOR || (readScore !== null && best.score < readScore)) return null;
+		const [bear, usec] = await Promise.all(tags.map(icon));
+		const item = bear && usec ? tags[closerFaction(shot, cell, [bear, usec])] : best.item;
+		return { item, candidates: [item, ...tags.filter((tag) => tag.id !== item.id)] };
+	};
+	const oneCell = (bounds: BoxBounds) =>
+		Math.abs(bounds.width - grid.cellWidth) < grid.cellWidth * 0.3 &&
+		Math.abs(bounds.height - grid.cellHeight) < grid.cellHeight * 0.3;
 	const result: ReviewBox[] = [];
 	for (const [index, box] of boxes.entries()) {
 		onProgress(index / (boxes.length + 1));
 		let { itemId, candidates, bounds } = box;
+		let readScore: number | null = null;
 		if (candidates.length) {
 			const scored = await score(box.bounds, measured.has(box.id), candidates.slice(0, 40));
 			const best = leader(scored);
@@ -291,6 +312,7 @@ export async function refineWithIcons(
 			)
 				itemId = best.item.id;
 			const chosen = scored.find((entry) => entry.item.id === itemId);
+			readScore = chosen?.score ?? null;
 			// An unmeasured box only guessed its size; the matched art knows it.
 			if (chosen && !measured.has(box.id) && chosen.score >= CANDIDATE_FLOOR) bounds = placement(box.bounds, chosen);
 			const order = new Map(scored.map((entry, rank) => [entry.item.id, rank]));
@@ -301,6 +323,7 @@ export async function refineWithIcons(
 			const best = leader(scored);
 			if (best && best.lead >= SEARCH_LEAD && best.score >= SEARCH_FLOOR) {
 				itemId = best.item.id;
+				readScore = best.score;
 				if (!measured.has(box.id)) bounds = placement(box.bounds, best);
 			}
 			candidates = [
@@ -308,6 +331,21 @@ export async function refineWithIcons(
 					[...scored.slice(0, SUGGESTIONS).map((entry) => entry.item), ...candidates].map((item) => [item.id, item]),
 				).values(),
 			];
+		}
+		// Dogtags are one cell; a measured larger footprint is some other item.
+		if (!measured.has(box.id) || oneCell(box.bounds)) {
+			const cell = {
+				left: bounds.left + bounds.width - grid.cellWidth,
+				top: bounds.top,
+				width: grid.cellWidth,
+				height: grid.cellHeight,
+			};
+			const tag = await dogtag(cell, readScore);
+			if (tag) {
+				itemId = tag.item.id;
+				bounds = clampBox(cell);
+				candidates = [...tag.candidates, ...candidates.filter((item) => !tags.includes(item))];
+			}
 		}
 		result.push({ ...box, itemId, candidates, bounds });
 	}
@@ -332,10 +370,17 @@ export async function refineWithIcons(
 			const cell = { left, top, width: grid.cellWidth, height: grid.cellHeight };
 			// Empty stash cells are a nearly flat background.
 			if (luminanceSpread(shot, cell) < 18) continue;
-			const scored = await score(cell, false, barterItems);
-			const best = leader(scored);
-			if (!best || best.lead < UNLABELED_LEAD || best.score < UNLABELED_FLOOR) continue;
-			const bounds = placement(cell, best);
+			let match: { item: ItemSummary; across: number; down: number; candidates: ItemSummary[] } | null = null;
+			const tag = await dogtag(cell, null);
+			if (tag) match = { item: tag.item, across: 1, down: 1, candidates: tag.candidates };
+			else {
+				const scored = await score(cell, false, barterItems);
+				const best = leader(scored);
+				if (best && best.lead >= UNLABELED_LEAD && best.score >= UNLABELED_FLOOR)
+					match = { ...best, candidates: scored.slice(0, SUGGESTIONS).map((entry) => entry.item) };
+			}
+			if (!match) continue;
+			const bounds = placement(cell, match);
 			// An unresolved fragment of this item's label (e.g. half its name) is the same item.
 			for (let i = result.length - 1; i >= 0; i--) {
 				const other = result[i];
@@ -345,8 +390,8 @@ export async function refineWithIcons(
 				id: `cell:${top.toFixed(4)}:${left.toFixed(4)}`,
 				bounds,
 				text: "",
-				candidates: scored.slice(0, SUGGESTIONS).map((entry) => entry.item),
-				itemId: best.item.id,
+				candidates: match.candidates,
+				itemId: match.item.id,
 				quantity: 1,
 				confirmed: false,
 				foundInRaid: "unknown",

@@ -329,7 +329,12 @@ the item; a clear text identity is only replaced when another candidate's art is
 closer. Boxes still unresolved are compared with every barter item: a clear winner is
 assigned and otherwise the closest items become suggestions. Finally, non-empty lattice
 cells no box covers (labels OCR missed entirely) gain an assigned box only for a strong,
-clear barter match, absorbing unresolved fragments of the same item. A matched icon
+clear barter match, absorbing unresolved fragments of the same item.
+[Dogtag checks](../src/features/uploader/dogtag.ts) cover labels that are player names,
+which can spell an item's short name exactly. A one-cell box or cell with a bottom-left
+level number, whose dogtag art is at least as close as the read item's, becomes the
+generic BEAR or USEC tag. A finer grayscale comparison of the tag body picks the faction.
+Prestige and event variants are left to the player. A matched icon
 also sets the size of a box whose footprint was not measured. Thresholds were
 calibrated on stash screenshots and are relative scores, not probabilities. The first
 barter-wide comparison downloads the barter grid icons (about 3.4 MB, browser-cached).
