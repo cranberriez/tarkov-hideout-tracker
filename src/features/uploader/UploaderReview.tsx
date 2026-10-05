@@ -33,6 +33,7 @@ export function UploaderReview({
 	hints,
 	items,
 	onNewScan,
+	onDiscard,
 	dirtyRef,
 	bottomBar,
 }: {
@@ -44,6 +45,8 @@ export function UploaderReview({
 	items: ItemSummary[];
 	/** Opens the image picker for a replacement scan. */
 	onNewScan: () => void;
+	/** Drops the screenshot and review, returning to the upload step. */
+	onDiscard: () => void;
 	/** Lets the page confirm before a paste or drop discards review progress. */
 	dirtyRef: RefObject<boolean>;
 	bottomBar: ReactNode;
@@ -784,9 +787,9 @@ export function UploaderReview({
 							<button
 								onClick={() => {
 									setConfirmingNewScan(false);
-									onNewScan();
+									onDiscard();
 								}}
-								aria-label="Discard this review and start a new scan"
+								aria-label="Discard this review and return to upload"
 								className="font-semibold uppercase text-danger hover:underline"
 							>
 								Discard

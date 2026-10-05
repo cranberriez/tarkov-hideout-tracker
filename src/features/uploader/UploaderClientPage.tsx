@@ -170,6 +170,7 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 					hints={hints}
 					items={catalog.data.items}
 					onNewScan={() => input.current?.click()}
+					onDiscard={controller.clear}
 					dirtyRef={reviewDirty}
 					bottomBar={bottomBar}
 				/>
