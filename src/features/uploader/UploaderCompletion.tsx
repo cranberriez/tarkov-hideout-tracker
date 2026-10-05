@@ -23,6 +23,8 @@ export function UploaderCompletion({
 	onRemove,
 	firUnknown,
 	onSetFir,
+	showIcons,
+	onToggleIcons,
 }: {
 	boxes: readonly ReviewEntry[];
 	items: ItemSummary[];
@@ -32,6 +34,9 @@ export function UploaderCompletion({
 	onRemove: (id: number) => void;
 	firUnknown: number;
 	onSetFir: () => void;
+	/** Catalog icons drawn over identified boxes, for checking matches at a glance. */
+	showIcons: boolean;
+	onToggleIcons: () => void;
 }) {
 	const [query, setQuery] = useState("");
 	const [highlight, setHighlight] = useState({ query: "", index: 0 });
@@ -220,6 +225,22 @@ export function UploaderCompletion({
 							className="mt-4 w-full py-1 text-center text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
 						>
 							View item list
+						</button>
+						<button
+							role="switch"
+							aria-checked={showIcons}
+							onClick={onToggleIcons}
+							className="mt-3 flex w-full items-center justify-between gap-2 rounded-sm border border-border-color px-3 py-2 text-xs text-foreground hover:bg-surface-raised"
+						>
+							Show item icons on screenshot
+							<span
+								className={cn(
+									"flex h-4 w-7 shrink-0 rounded-full p-0.5",
+									showIcons ? "justify-end bg-brand" : "justify-start bg-surface-raised",
+								)}
+							>
+								<span className="h-3 w-3 rounded-full bg-foreground" />
+							</span>
 						</button>
 					</section>
 				)}

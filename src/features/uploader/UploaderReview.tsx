@@ -68,6 +68,7 @@ export function UploaderReview({
 	}, [image.width, image.height]);
 	const [zoom, setZoom] = useState(100);
 	const [hintsDismissed, setHintsDismissed] = useState(false);
+	const [showIcons, setShowIcons] = useState(false);
 	const [query, setQuery] = useState("");
 	const [highlight, setHighlight] = useState({ key: "", index: 0 });
 	const [keepReviewing, setKeepReviewing] = useState(false);
@@ -439,6 +440,16 @@ export function UploaderReview({
 													{!item ? " ?" : box.confirmed ? " ✓" : ""}
 												</span>
 											)}
+								{completing && showIcons && item && (
+									<span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+										<img
+											src={itemImageUrl(item)}
+											alt=""
+											decoding="async"
+											className="max-h-[55%] max-w-[55%] object-contain"
+										/>
+									</span>
+								)}
 							</button>
 						);
 					})}
@@ -572,6 +583,8 @@ export function UploaderReview({
 									onRemove={(id) => setAdded((previous) => previous.filter((entry) => entry.id !== id))}
 									firUnknown={firUnknown}
 									onSetFir={openFirMode}
+									showIcons={showIcons}
+									onToggleIcons={() => setShowIcons((value) => !value)}
 								/>
 							) : (
 								<>
