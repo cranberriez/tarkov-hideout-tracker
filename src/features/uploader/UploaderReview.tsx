@@ -162,6 +162,15 @@ export function UploaderReview({
 			else clearSelection();
 		}
 	};
+	/** Removes selected boxes that are not items, such as a stray label or tooltip read. Undoable. */
+	const discard = () => {
+		if (!chosen.length) return;
+		setHistory((previous) => [
+			...previous.slice(-29),
+			previous[previous.length - 1].filter((box) => !selected.includes(box.id)),
+		]);
+		clearSelection();
+	};
 	const navigateUnknown = (direction: 1 | -1) => {
 		if (!unknowns.length) return;
 		const next = nextUnknownId(
@@ -253,6 +262,9 @@ export function UploaderReview({
 			if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
 				event.preventDefault();
 				navigateUnknown(event.key === "ArrowRight" ? 1 : -1);
+			} else if (event.key === "Delete") {
+				event.preventDefault();
+				discard();
 			} else if (event.key.toLowerCase() === "f") {
 				event.preventDefault();
 				toggleFir();
@@ -538,6 +550,9 @@ export function UploaderReview({
 											Set found in raid
 											<span className="text-xs tabular-nums text-fir">{firUnknown || ""}</span>
 										</button>
+										<button className={control} disabled={!active} onClick={discard}>
+											Not an item <KeyHint>Del</KeyHint>
+										</button>
 										<UndoButton
 											disabled={history.length < 2}
 											onUndo={() => setHistory((previous) => previous.slice(0, -1))}
@@ -624,6 +639,9 @@ export function UploaderReview({
 														} else if (event.key === "Enter" && suggestions[highlighted]) {
 															event.preventDefault();
 															assign(suggestions[highlighted], true);
+														} else if (event.key === "Delete" && !query) {
+															event.preventDefault();
+															discard();
 														} else if ((event.key === "ArrowRight" || event.key === "ArrowLeft") && !query) {
 															event.preventDefault();
 															navigateUnknown(event.key === "ArrowRight" ? 1 : -1);

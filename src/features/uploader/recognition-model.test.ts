@@ -5,6 +5,7 @@ import {
 	buildLabelIndex,
 	inferLabelGrid,
 	mergeLabelPasses,
+	normalizeLabel,
 	recognizeLabels,
 	summarizeDetections,
 	type LabelWord,
@@ -256,4 +257,9 @@ test("contradictory exact identities at the same position remain ambiguous", () 
 		["gpu", "intel"],
 	);
 	assert.deepEqual(summarizeDetections(merged), []);
+});
+
+test("accented and Cyrillic look-alike short names match plain OCR reads", () => {
+	assert.equal(normalizeLabel("Pâté"), "pate");
+	assert.equal(normalizeLabel("ТТ 855A1"), normalizeLabel("TT 855A1"));
 });

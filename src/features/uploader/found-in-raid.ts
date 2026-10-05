@@ -43,7 +43,8 @@ export function scoreFoundInRaid(
 	for (const scale of [0.21, 0.235, 0.26]) {
 		const size = cellPixels * scale;
 		for (let dx = -0.05; dx <= 0.05; dx += 0.025)
-			for (let dy = -0.05; dy <= 0.05; dy += 0.025) {
+			// A stack count or durability line sits under the badge, lifting it about one text row.
+			for (const dy of [-0.05, -0.025, 0, 0.025, 0.05, -0.2, -0.175, -0.15]) {
 				const left = right - size - cellPixels * 0.015 + dx * cellPixels;
 				const top = bottom - size - cellPixels * 0.015 + dy * cellPixels;
 				if (left < bounds.left * width || top < bounds.top * height || left + size >= width || top + size >= height)
@@ -65,7 +66,11 @@ export function scoreFoundInRaid(
 	return best;
 }
 
-export const FIR_MATCH = 0.82;
+/**
+ * Calibrated on stash screenshots: corners without a badge scored at most 0.52 (artwork,
+ * transfer symbols, weapons), badges over plain or dark art 0.58-0.98.
+ */
+export const FIR_MATCH = 0.67;
 
 export function detectFoundInRaid(data: Uint8ClampedArray, width: number, height: number, detections: ItemDetection[]) {
 	const grid = suggestReviewGrid(detections, width, height);

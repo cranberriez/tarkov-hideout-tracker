@@ -203,7 +203,7 @@ const SEARCH_FLOOR = 0.75;
 const UNLABELED_LEAD = 0.06;
 const UNLABELED_FLOOR = 0.8;
 /** A read's identity is only replaced when another candidate's artwork is far closer. */
-const OVERRIDE_LEAD = 0.1;
+const OVERRIDE_LEAD = 0.07;
 const SUGGESTIONS = 5;
 
 function luminanceSpread(shot: IconImage, region: BoxBounds) {
@@ -280,7 +280,7 @@ export async function refineWithIcons(
 		onProgress(index / (boxes.length + 1));
 		let { itemId, candidates, bounds } = box;
 		if (candidates.length) {
-			const scored = await score(box.bounds, measured.has(box.id), candidates.slice(0, 8));
+			const scored = await score(box.bounds, measured.has(box.id), candidates.slice(0, 40));
 			const best = leader(scored);
 			const current = scored.find((entry) => entry.item.id === itemId);
 			if (

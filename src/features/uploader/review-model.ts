@@ -157,6 +157,24 @@ export function seedReviewBoxes(
 	return boxes.sort((a, b) => a.bounds.top - b.bounds.top || a.bounds.left - b.bounds.left);
 }
 
+/**
+ * Stash items never overlap, so a smaller box mostly inside a larger identified one is part
+ * of it, such as a long name's label read as a second item.
+ */
+export function dropContainedBoxes(boxes: readonly ReviewBox[]): ReviewBox[] {
+	const area = (box: ReviewBox) => box.bounds.width * box.bounds.height;
+	return boxes.filter(
+		(box) =>
+			!boxes.some(
+				(other) =>
+					other !== box &&
+					other.itemId &&
+					area(other) > area(box) * 1.5 &&
+					overlapFraction(box.bounds, other.bounds) > 0.6,
+			),
+	);
+}
+
 export function overlapFraction(a: BoxBounds, b: BoxBounds) {
 	const area =
 		Math.max(0, Math.min(a.left + a.width, b.left + b.width) - Math.max(a.left, b.left)) *

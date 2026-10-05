@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import samples from "./fir-samples.json";
-import { scoreFoundInRaid, detectFoundInRaid } from "./found-in-raid";
+import { detectFoundInRaid, FIR_MATCH, scoreFoundInRaid } from "./found-in-raid";
 
 test("independent screenshot corners distinguish FIR badges from artwork and transfer symbols", () => {
 	for (const sample of samples)
@@ -22,7 +22,7 @@ test("independent screenshot corners distinguish FIR badges from artwork and tra
 				{ left: 0.03, top: 0.03, width: 0.84, height: 0.84 },
 				84 * scale,
 			);
-			assert.equal(score >= 0.82, sample.detected, `${sample.name}, scale ${scale}, score ${score}`);
+			assert.equal(score >= FIR_MATCH, sample.detected, `${sample.name}, scale ${scale}, score ${score}`);
 		}
 });
 test("missing geometry, tiny icons, and flat corners remain unknown", () => {

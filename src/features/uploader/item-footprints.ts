@@ -69,8 +69,9 @@ export function detectItemFootprints(
 				other.match === "exact" &&
 				other.confidence >= 70 &&
 				other.candidates.length > 0 &&
-				other.bounds.left * width > left + pitch * 0.1 &&
-				(other.bounds.left + other.bounds.width) * width < right - pitch * 0.1 &&
+				// Labels are right-aligned, so one in a lower row of the same column ends at this right edge.
+				other.bounds.left * width > left - pitch * 0.1 &&
+				(other.bounds.left + other.bounds.width) * width < right + pitch * 0.1 &&
 				other.bounds.top * height >= top &&
 				other.bounds.top * height < top + rows * pitch - pitch * 0.1 &&
 				(Math.abs(other.bounds.top - b.top) * height > pitch * 0.4 ||

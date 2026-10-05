@@ -283,7 +283,8 @@ The model combines complementary passes, deduplicates overlapping labels, and
 keeps conflicting exact identifications ambiguous. The worker/core/language resources download from the
 library's default CDNs on first use; screenshot pixels are never uploaded.
 [The pure matching model](../src/features/uploader/recognition-model.ts) matches
-visible short names exactly after case/spacing/punctuation normalization. Exact reads with moderate OCR confidence are retained;
+visible short names exactly after case, spacing, punctuation, accent (Pâté) and
+Cyrillic look-alike (ТТ, С-1) normalization. Exact reads with moderate OCR confidence are retained;
 isolated reads below 35 confidence appear as review candidates and do not count
 as recognized items. Separate border
 punctuation cannot expand a matched label's bounds or lower its confidence.
@@ -326,7 +327,10 @@ clear barter match, absorbing unresolved fragments of the same item. A matched i
 also sets the size of a box whose footprint was not measured. Thresholds were
 calibrated on stash screenshots and are relative scores, not probabilities. The first
 barter-wide comparison downloads the barter grid icons (about 3.4 MB, browser-cached).
-Money is excluded from scan results; players enter it more easily by hand.
+Stash items never overlap, so a smaller box mostly inside a larger identified one (such
+as a long name's label read as its own item) is dropped. Money is excluded from scan
+results; players enter it more easily by hand. In review, "Not an item" (Delete)
+removes selected boxes, undoably.
 Each box starts at quantity one, independent of visible stack text.
 
 [The review workspace](../src/features/uploader/UploaderReview.tsx) fills the viewport
@@ -423,7 +427,10 @@ by stable item ID and FIR status, explicitly retaining unknown detected FIR.
 grayscale badge reference against the bottom-right corner of measured footprints, and
 again on final boxes once icon matching has settled their sizes,
 across nearby positions and scales. The badge remains upright regardless of item
-rotation. Only strong matches produce FIR; missing geometry, low resolution, and
+rotation, and one text row higher where a stack count or durability line sits under
+it. The threshold is calibrated on stash screenshots: corners without a badge scored at
+most 0.52, badges over plain or dark art 0.58 to 0.98; badges over bright art (soap,
+bleach) can still be missed. Only strong matches produce FIR; missing geometry, low resolution, and
 weak/absent matches remain unknown, never automatically non-FIR. Screenshot-corner
 fixtures cover actual badges, artwork, and the separate bottom-left transfer symbol.
 The player can toggle FIR/non-FIR and undo that choice; unconfirmed detections

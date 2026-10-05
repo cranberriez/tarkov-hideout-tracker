@@ -10,7 +10,7 @@ import {
 } from "./recognition-model";
 import { buildLabelTasks, prepareLabelPixels } from "./label-preprocessing";
 import { refineWithIcons, type IconLoader } from "./icon-matching";
-import { seedReviewBoxes, suggestReviewGrid, type ReviewBox } from "./review-model";
+import { dropContainedBoxes, seedReviewBoxes, suggestReviewGrid, type ReviewBox } from "./review-model";
 import type { ItemSummary } from "../../types/items";
 import { isMoney } from "./selection-model";
 
@@ -127,5 +127,8 @@ export async function scanLabels(
 		);
 	}
 	// Money is entered more easily by hand than read from stack text, so it is left out.
-	return { detections, boxes: boxes.filter((box) => !isMoney(box.itemId ? byId.get(box.itemId) : undefined)) };
+	return {
+		detections,
+		boxes: dropContainedBoxes(boxes).filter((box) => !isMoney(box.itemId ? byId.get(box.itemId) : undefined)),
+	};
 }

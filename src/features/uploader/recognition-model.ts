@@ -25,8 +25,30 @@ export interface ItemDetection {
 	bounds: { left: number; top: number; width: number; height: number };
 }
 
+// Cyrillic letters that render identically to Latin ones in short names (ТТ, С-1).
+const HOMOGLYPHS: Record<string, string> = {
+	а: "a",
+	в: "b",
+	е: "e",
+	к: "k",
+	м: "m",
+	н: "h",
+	о: "o",
+	р: "p",
+	с: "c",
+	т: "t",
+	у: "y",
+	х: "x",
+};
+
+/** Case, spacing, punctuation, accents (Pâté) and Cyrillic look-alikes do not distinguish labels. */
 export function normalizeLabel(text: string): string {
-	return text.toLowerCase().replace(/[^a-z0-9]/g, "");
+	return text
+		.normalize("NFD")
+		.replace(/\p{M}/gu, "")
+		.toLowerCase()
+		.replace(/[авекмнорстух]/g, (letter) => HOMOGLYPHS[letter])
+		.replace(/[^a-z0-9]/g, "");
 }
 
 export function buildLabelIndex(items: readonly ItemSummary[]) {
