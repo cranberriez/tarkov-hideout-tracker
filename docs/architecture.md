@@ -17,6 +17,7 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 | `/hideout/stations/[stationId]`                    | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): level overview and level changes, prerequisites, dependents, remaining items, streamed crafts with profit, and Bitcoin Farm/Generator power panels                         |
 | `/items/kappa-checklist`                           | [Collector checklist](<../src/app/(data)/items/kappa-checklist/page.tsx>); see [quests](quests.md)                                                                                                                                                    |
 | `/items/inventory`                                 | [Inventory](<../src/app/(data)/items/inventory/page.tsx>): owned non-FiR/FiR balances with instant edits; see below                                                                                                                                   |
+| `/uploader`                                        | [Screenshot testing page](<../src/app/(data)/uploader/page.tsx>): browser OCR, item-label matching, and relative-position overlays; see below                                                                                                         |
 | `/items/barter-profits`, `/items/crafting-profits` | Shared [ProfitPage](../src/features/profit-pages/ProfitPage.tsx); see [profits](profits.md)                                                                                                                                                           |
 | `/hideout/craft-planner`                           | Station craft recommendations using the shared profit query; see [profits](profits.md)                                                                                                                                                                |
 | `/settings`                                        | [Player progression backups, import review, legacy tools and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md)                                                                                                  |
@@ -251,6 +252,83 @@ missing from the manifest render as explicit unknown rows. Edits apply immediate
 through `addItemCounts` deltas; steppers stop at zero. Rows edited to zero, and the
 order of the Count sort, are page-local so rows do not vanish or move while being
 edited; both reset on the next visit or mode change.
+
+[Uploader](../src/features/uploader/UploaderClientPage.tsx) is a standalone,
+noindex testing page, reachable directly at `/uploader`. It accepts one PNG,
+JPEG, or WebP by file picker, drop, or clipboard paste (20 MB and 24 megapixel
+limits). It reuses the active-mode search manifest rather than adding a catalog
+API or preloading data in the shared layout. Screenshots and results remain
+ephemeral; it never changes inventory or saved player data. Switching profiles
+clears the image and results and cancels recognition.
+
+[The controller](../src/features/uploader/useUploaderController.ts) owns image
+decoding, recognition lifecycle, cancellation, retries, and timeout handling.
+Completed scans are not automatically rerun on background catalog refreshes,
+so those refreshes cannot discard a player's review edits.
+[Image recognition](../src/features/uploader/image-recognition.ts) lazily loads
+Tesseract.js and runs English sparse-text OCR in a browser worker on an upscaled,
+inverted screenshot. If enough recognized labels establish regular rows,
+[label preprocessing](../src/features/uploader/label-preprocessing.ts) builds
+complementary contrast and neutral-color masks, then isolates individual labels
+for single-line OCR. Pixel-identical crops across masks are read once, so
+complementary contrast passes do not exhaust the region budget with duplicate work. Tight crops use text-height padding to keep nearby artwork
+out; complementary wider crops preserve labels offset from the fitted row.
+Row spacing is fitted
+across high-confidence label rows to prevent crop drift toward the bottom of a stash.
+The model combines complementary passes, deduplicates overlapping labels, and
+keeps conflicting exact identifications ambiguous. This infers label-row spacing,
+not complete grid geometry. The worker/core/language resources download from the
+library's default CDNs on first use; screenshot pixels are never uploaded.
+[The pure matching model](../src/features/uploader/recognition-model.ts) matches
+visible short names exactly after case/spacing/punctuation normalization; full
+names and fuzzy spelling corrections are not automatic recognition aliases. Shared short
+names remain ambiguous. Exact reads with moderate OCR confidence are retained;
+isolated reads below 35 confidence appear as review candidates and do not count
+as recognized items. Two-character labels such as EC require 85 confidence for
+automatic assignment; reads from 35 to 84 remain reviewable candidates instead
+of disappearing. A stronger matching pass can resolve them. Separate border
+punctuation cannot expand a matched label's bounds or lower its confidence.
+[The review model](../src/features/uploader/review-model.ts) turns detections into
+selectable boxes. Regular label rows and aligned right edges suggest a square
+cell lattice. [Footprint detection](../src/features/uploader/item-footprints.ts)
+examines sustained, uniform-color borders in the original pixels to expand short
+labels into multi-cell rectangles, including rotated items. Weak or missing border
+evidence falls back to label-based estimates. At a tightly cropped image edge,
+a missing outer stroke may use the frame when the top and another side are
+visible; these footprints are marked as frame-inferred, so future size filtering
+must not treat them as fully measured. Missing interior borders still cannot be
+invented. Candidate-free text becomes an
+unknown box, with overlapping OCR fragments deduplicated. Exact matches start
+assigned; uncertain and ambiguous matches require a player choice.
+[Label suggestions](../src/features/uploader/label-suggestions.ts) rank nearby
+short-name spellings for unknown reads and typed review searches. Suggestions
+never assign an identity automatically. Each box starts at quantity one,
+independent of visible stack text.
+
+[The review workspace](../src/features/uploader/UploaderReview.tsx) uses click-only
+selection: players cannot draw, move, resize, or add boxes. Fill boxes makes gaps
+more visible, and Show successes can hide assigned overlays and rows without
+changing the reviewed list. Zoom supports dense images. Selecting a box shows its
+screenshot crop, candidate items, and active-mode catalog search for corrections.
+Players can adjust quantities, remove false positives, and undo review changes.
+[Found-in-raid detection](../src/features/uploader/found-in-raid.ts) compares a small
+grayscale badge reference against the bottom-right corner of measured footprints,
+across nearby positions and scales. The badge remains upright regardless of item
+rotation. Only strong matches produce FIR; missing geometry, low resolution, and
+weak/absent matches remain unknown, never automatically non-FIR. Screenshot-corner
+fixtures cover actual badges, artwork, and the separate bottom-left transfer symbol.
+The player can set FIR, non-FIR, or unknown and undo that choice. FIR uncertainty
+does not block finishing; it is retained for downstream decisions.
+Finish review requires a nonempty list with valid catalog IDs, positive integer
+quantities, and no unassigned boxes. It holds a detached list of stable item IDs and
+quantities grouped by both item ID and FIR status in page-local memory for a later
+recommendations step. FIR, non-FIR, and unknown instances of the same item never merge. Back
+to editing retains the boxes. Leaving the page, changing the image, or switching
+profiles discards the review; there is no inventory write or persistent import.
+Items with no detected label can still be missed; a clearer screenshot may be needed.
+Hidden container contents are not inferred. Catalog slot dimensions are not currently
+retained by the item adapter, storage, or search manifest; footprint detection still
+uses screenshot evidence rather than hardcoded sizes.
 
 The item-detail dialog is the default destination for every item click.
 [GlobalItemDetailModal](../src/features/items/item-detail/GlobalItemDetailModal.tsx)
