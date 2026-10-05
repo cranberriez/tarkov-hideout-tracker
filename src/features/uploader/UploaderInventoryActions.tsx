@@ -12,11 +12,13 @@ export function UploaderInventoryActions({
 	rows,
 	sent,
 	onSent,
+	onSetFir,
 	disabled,
 }: {
 	rows: readonly SummaryRow[];
 	sent: SentCounts;
 	onSent: (deltas: { itemId: string; have: number; haveFir: number }[]) => void;
+	onSetFir: () => void;
 	disabled: boolean;
 }) {
 	const mode = useUserStore((state) => state.gameMode);
@@ -63,10 +65,15 @@ export function UploaderInventoryActions({
 				{button("Everything", all, false, false)}
 			</div>
 			{all.unknown > 0 ? (
-				<p className="text-[11px] text-warning">Confirm FIR for {all.unknown} copies in review before adding them.</p>
-			) : (
-				<p className="text-[11px] text-subtle-foreground">Adds this scan on top of your saved counts, once.</p>
-			)}
+				<div className="flex items-center justify-between gap-2 rounded-sm bg-fir/10 px-2 py-1.5">
+					<p className="text-[11px] text-fir">
+						{all.unknown} {all.unknown === 1 ? "copy needs" : "copies need"} a found-in-raid choice first.
+					</p>
+					<button onClick={onSetFir} className="shrink-0 text-[11px] font-semibold text-fir underline">
+						Set FIR
+					</button>
+				</div>
+			) : null}
 			{message && (
 				<p role="status" className="text-[11px] text-foreground">
 					{message}

@@ -316,23 +316,39 @@ selectable. A staggered first-reveal flash fades known boxes to a dark overlay;
 unknown boxes retain their warning fill. Reduced-motion users skip the animation.
 The default Fit zoom contains the entire image within the available canvas.
 Assignment and FIR changes
-apply to the entire selection and can be undone. Left arrow selects the previous unknown (with wraparound); Right arrow selects the next
-unknown, Enter uses the suggested item and advances to the next remaining unknown, and F toggles FIR; typing fields retain
-normal keyboard behavior. The bottom strip shows scan progress, then control hints with keycap badges.
+apply to the entire selection and can be undone. Each new selection focuses the match search so typing starts
+immediately; Up/Down move the highlighted match, Enter uses it and advances to the next remaining unknown, and
+Left/Right step through unknowns while the search is empty (with wraparound). Escape leaves the search, after which
+arrows, Enter, and F (toggle FIR) work from the canvas. The bottom strip shows scan progress, then control hints with keycap badges.
 During recognition, the image has a dimmed overlay and moving scan band (static for reduced motion); stage and progress appear only in the bottom strip. Undo sits with review actions;
-zoom and image replacement/clear controls share a Screenshot section at the foot of the full-height sidebar. The bottom strip ends at the canvas edge; both areas use a matching subtle background and divider.
+after the scan, a compact sidebar footer keeps only zoom and New scan. Once there are any review edits, manual
+additions, or sends, New scan asks for an inline confirmation and a pasted or dropped image asks before
+replacing the screenshot. The bottom strip ends at the canvas edge; both areas use a matching subtle background and divider.
 Quantity editing is available only for a single currency or GP coin selection.
-The workspace does not expose scanned-box removal. Once every detected box is
-classified, a brief reduced-motion-aware completion animation introduces Show
-summary and Keep reviewing. The missing-items section supports repeated catalog
+The workspace does not expose scanned-box removal. Every step shares a bottom
+navigation row above the Screenshot section: Back on the left and the primary forward
+step, with arrows, on the right. Classification moves forward with Continue, or Skip
+unknowns and continue while unknowns remain (they stay available for later review).
+Once every detected box is classified, a brief reduced-motion-aware completion
+animation introduces the missing-items step, whose navigation is Review and Sort loot.
+In that step every box is darkened and unselectable, and any selection is cleared,
+so undetected items stay bright on the screenshot. Its search takes focus on entry; Up/Down
+move the highlighted match and Enter adds it. A short note asks the player to look for items that
+aren't darkened, even partly, since the scan likely missed them. The missing-items section supports repeated catalog
 search, manual additions with quantity for any item, FIR toggles (initially off),
 and removal of manual additions. Additions stay separate from screenshot boxes
 and survive returning to classification. Ignore unknowns allows continuing with
 identified items only; it preserves unknown boxes for later review and reports
-the excluded count. Missing-item entry precedes the next-step buttons, with a centered View item list link below Keep reviewing. This link opens the grouped item list. Show summary
+the excluded count. A centered View item list link opens the grouped item list. Sort loot
 switches the existing workspace into decision mode without replacing the screenshot
 canvas, zoom, scroll position, or sidebar frame. Back to review restores the
 classification controls and manual additions without a page transition.
+Set found in raid opens a FIR mode from classification, the missing-items step, or the
+sort step's send warning. Known items with unknown FIR stay bright with an outline;
+everything else is darkened with an FIR/Not FIR tag. Clicking a known item switches it
+between found in raid and not found in raid, and All FIR / All not FIR set the remaining
+unknowns; changes are undoable. Done (or Escape) returns to the step that opened it,
+re-snapshotting the summary when it came from sorting.
 The [summary model](../src/features/uploader/summary-model.ts) combines scanned
 and manually added entries with all remaining hideout/quest demand: future station
 levels and eligible future quests, excluding completed requirements/objectives and
@@ -365,10 +381,11 @@ The sort step reuses the review sidebar frame. A shared
 [sidebar header](../src/features/uploader/UploaderSidebarHeader.tsx) shows Upload,
 Classify, and Sort progress, the current goal, and one status line in every phase.
 The [decision view](../src/features/uploader/UploaderDecisionView.tsx) has an
-All/Keep/Sell/Hold filter with counts (keys 1–4) that dims non-matching boxes,
+All/Keep/Sell/Hold filter with counts (keys 1–4) that darkens non-matching boxes,
 Keep/Sell/Hold tiles (kept count, sell and hold value), manual additions as small
 icons, and an inspector for the clicked item: Keep/Sell/Hold split, owned versus
-needed, the surplus reason, uses with Now/level labels (any-of uses show filled
+needed, where to sell (flea market or the best trader, with the unit price before flea fees) under the Sell or Hold
+quantity, a plain-language reason built from the item's needs plus a price-timing note, uses with Now/level labels (any-of uses show filled
 quantity and accepted option count), and prices. Left/Right arrows step through
 visible items. Boxes become borderless overlays with bookmark (Keep), coins-in-hand
 (Sell), or clock (Hold) markers in success, sell-value, and info colors.

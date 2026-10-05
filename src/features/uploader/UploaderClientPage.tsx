@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- Local screenshot preview. */
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, Trash2, Upload } from "lucide-react";
 import { toTarkovJsonGameMode, type TarkovJsonGameMode } from "@/lib/game-mode";
 import { useUserStoreHydrated } from "@/lib/query/game-data";
@@ -9,9 +9,9 @@ import { useSearchManifest } from "@/lib/search/useSearchManifest";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import { useUploaderController } from "./useUploaderController";
-import { KeyHint, UploaderReview } from "./UploaderReview";
+import { UploaderReview } from "./UploaderReview";
 import styles from "./UploaderReview.module.css";
-import { UploaderSidebarHeader } from "./UploaderSidebarHeader";
+import { KeyHint, UploaderSidebarHeader } from "./UploaderSidebarHeader";
 
 export function UploaderClientPage() {
 	const hydrated = useUserStoreHydrated();
@@ -35,6 +35,15 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 	const { image, detections, status, error, finished, supplyImage } = controller;
 	const input = useRef<HTMLInputElement>(null);
 	const [dragging, setDragging] = useState(false);
+	const reviewDirty = useRef(false);
+	// A replacement image discards review edits, so paste and drop confirm first once there are any.
+	const replaceImage = useCallback(
+		(file: File) => {
+			if (reviewDirty.current && !window.confirm("Replace this screenshot? Your review progress will be lost.")) return;
+			void supplyImage(file);
+		},
+		[supplyImage],
+	);
 	useEffect(() => {
 		const paste = (event: ClipboardEvent) => {
 			const file = Array.from(event.clipboardData?.items ?? [])
@@ -42,11 +51,11 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 				?.getAsFile();
 			if (!file) return;
 			event.preventDefault();
-			void supplyImage(file);
+			replaceImage(file);
 		};
 		window.addEventListener("paste", paste);
 		return () => window.removeEventListener("paste", paste);
-	}, [supplyImage]);
+	}, [replaceImage]);
 	const reviewing = image && !status && (finished || error) && catalog.data;
 	const actions = (
 		<div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -108,8 +117,9 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 						Click any item · <KeyHint>Ctrl / ⌘</KeyHint> + click to multi-select unknowns · <KeyHint>Shift</KeyHint> +
 						click for unknowns in range{" "}
 						<span className="ml-4">
-							<KeyHint>→</KeyHint> Next unknown · <KeyHint>Enter</KeyHint> Use suggestion · <KeyHint>F</KeyHint> Toggle
-							FIR
+							<KeyHint>↑</KeyHint> <KeyHint>↓</KeyHint> Choose match · <KeyHint>Enter</KeyHint> Use match ·{" "}
+							<KeyHint>←</KeyHint> <KeyHint>→</KeyHint> Unknowns · <KeyHint>Esc</KeyHint> then <KeyHint>F</KeyHint>{" "}
+							Toggle FIR
 						</span>
 					</p>
 				) : image && !catalog.data && !catalog.error ? (
@@ -137,7 +147,7 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 				event.preventDefault();
 				setDragging(false);
 				const file = event.dataTransfer.files[0];
-				if (file) void supplyImage(file);
+				if (file) replaceImage(file);
 			}}
 		>
 			<input
@@ -158,7 +168,8 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 					image={image}
 					detections={detections}
 					items={catalog.data.items}
-					imageActions={actions}
+					onNewScan={() => input.current?.click()}
+					dirtyRef={reviewDirty}
 					bottomBar={bottomBar}
 				/>
 			) : (

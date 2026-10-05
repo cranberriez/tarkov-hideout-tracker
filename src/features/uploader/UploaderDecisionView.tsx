@@ -1,8 +1,6 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- Catalog previews. */
-import { ArrowLeft } from "lucide-react";
-import type { Ref } from "react";
 import { FilterRadioGroup } from "@/components/ui/filter-bar";
 import { itemImageUrl } from "@/lib/utils/item-images";
 import { formatRoubles } from "@/lib/utils/market-price";
@@ -17,7 +15,9 @@ import { UploaderItemPrice } from "./UploaderItemPrice";
 import { UploaderInventoryActions } from "./UploaderInventoryActions";
 import { UploaderSidebarHeader, sectionLabel } from "./UploaderSidebarHeader";
 import { foundInRaidLabel } from "./found-in-raid";
-import type { ItemAction } from "./decision-model";
+import { bestSellOffer, type ItemAction } from "./decision-model";
+import type { CurrentPrice } from "@/types/prices";
+import { traderImageUrl, traderInfo } from "@/lib/data/traders";
 
 const ACTIONS = ["KEEP", "SELL", "HOLD"] as const;
 const tile = "rounded bg-shadow/30 p-2";
@@ -27,28 +27,23 @@ export function UploaderDecisionView({
 	data,
 	decisions,
 	extras,
-	ignoredCount,
-	onReview,
-	backRef,
 	sent,
 	onSent,
+	onSetFir,
 }: {
 	data: ReturnType<typeof useUploaderSummary>;
 	decisions: ReturnType<typeof useUploaderDecisions>;
 	/** Manual additions, which have no box on the screenshot. */
 	extras: readonly ReviewEntry[];
-	ignoredCount: number;
-	onReview: () => void;
-	backRef: Ref<HTMLButtonElement>;
 	sent: SentCounts;
 	onSent: Parameters<typeof UploaderInventoryActions>[0]["onSent"];
+	onSetFir: () => void;
 }) {
 	const { summary, prices, error, retry, loading } = data;
 	const { counts, values, filter, setFilter, activeKey, select, groups } = decisions;
 	const active = activeKey ? groups.get(activeKey) : undefined;
 	const notices = [
 		!!summary?.unresolved && "Some entries have missing data or invalid quantities. Return to review to fix them.",
-		ignoredCount > 0 && `${ignoredCount} unidentified ${ignoredCount === 1 ? "box" : "boxes"} excluded.`,
 	].filter(Boolean);
 	return (
 		<div aria-label="Sort scanned items" className="flex min-h-full flex-col gap-4">
@@ -63,14 +58,6 @@ export function UploaderDecisionView({
 							: `${counts.KEEP} keep · ${counts.SELL} sell · ${counts.HOLD} hold`
 				}
 			/>
-			<button
-				ref={backRef}
-				onClick={onReview}
-				className="-mt-1 flex items-center gap-1.5 self-start text-xs text-muted-foreground hover:text-foreground"
-			>
-				<ArrowLeft size={13} aria-hidden="true" />
-				Back to review
-			</button>
 			{error ? (
 				<p role="alert" className="rounded-sm bg-danger/10 px-3 py-2 text-xs text-danger">
 					Hideout and quest requirements couldn&apos;t load, so nothing can be sorted.{" "}
@@ -160,11 +147,12 @@ export function UploaderDecisionView({
 					)}
 				</section>
 			)}
-			<div className="-mx-4 mt-auto border-t border-border-color px-4 pt-3">
+			<div className="-mx-4 mt-auto border-t border-border-color px-4 py-3">
 				<UploaderInventoryActions
 					rows={summary?.rows ?? []}
 					sent={sent}
 					onSent={onSent}
+					onSetFir={onSetFir}
 					disabled={!summary || !!error || summary.unresolved > 0}
 				/>
 			</div>
@@ -221,20 +209,22 @@ function Inspector({
 					</p>
 				</div>
 			</div>
-			<div className="flex flex-wrap gap-1.5">
+			<div className="space-y-2">
 				{ACTIONS.filter((action) => split.has(action)).map((action) => (
-					<span
-						key={action}
-						className={cn(
-							"rounded-sm px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide",
-							decisionAppearance[action].chip,
-						)}
-					>
-						{decisionAppearance[action].label} ×{split.get(action)}
-					</span>
+					<div key={action}>
+						<span
+							className={cn(
+								"inline-block rounded-sm px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide",
+								decisionAppearance[action].chip,
+							)}
+						>
+							{decisionAppearance[action].label} ×{split.get(action)}
+						</span>
+						{action !== "KEEP" && <SellAt price={data.prices.prices[item.id]} />}
+					</div>
 				))}
 			</div>
-			<div className="space-y-1 text-xs text-muted-foreground">
+			<div className="space-y-1.5 text-xs leading-relaxed text-foreground/80">
 				{need && need.required > 0 && (
 					<p>
 						Needs {need.required} · you own {need.owned} ·{" "}
@@ -242,9 +232,20 @@ function Inspector({
 					</p>
 				)}
 				{kept > 0 && rows.some((row) => row.firUnconfirmed) && (
-					<p className="text-warning">Kept in case it&apos;s FIR. Confirm the badge in review.</p>
+					<p className="text-warning">Kept in case it&apos;s FIR. Use Set FIR to confirm.</p>
 				)}
-				{surplus && split.size > (kept ? 1 : 0) && <p>{surplus.why}</p>}
+				{surplus && split.size > (kept ? 1 : 0) && (
+					<p>
+						{!need?.required
+							? "No hideout or quest needs this item."
+							: need.remaining > 0 && foundInRaid !== "yes"
+								? "What's still needed must be found in raid, so these copies don't count."
+								: kept > 0
+									? "The other copies cover what's still needed."
+									: "What you own already covers what's needed."}{" "}
+						{surplus.why}
+					</p>
+				)}
 			</div>
 			{reasons.length > 0 && (
 				<section>
@@ -269,7 +270,7 @@ function Inspector({
 				</section>
 			)}
 			<section className="border-t border-highlight/10 pt-2">
-				<h3 className={sectionLabel}>Prices</h3>
+				<h3 className={sectionLabel}>Other prices</h3>
 				<UploaderItemPrice
 					price={data.prices.prices[item.id]}
 					state={data.prices.states[item.id]}
@@ -277,6 +278,28 @@ function Inspector({
 				/>
 			</section>
 		</div>
+	);
+}
+
+function SellAt({ price }: { price: CurrentPrice | undefined }) {
+	const offer = bestSellOffer(price);
+	if (!offer) return <p className="mt-1 text-xs text-muted-foreground">No sell price available</p>;
+	return (
+		<p className="mt-1.5 flex items-center justify-between gap-3 text-lg font-bold leading-tight">
+			<span className="flex min-w-0 items-center gap-2 text-foreground">
+				{offer.venue === "trader" && (
+					<img
+						src={traderImageUrl(offer.traderId!)}
+						alt=""
+						className="size-7 shrink-0 rounded-full bg-shadow/40 object-cover"
+					/>
+				)}
+				<span className="truncate">{offer.venue === "flea" ? "Flea market" : traderInfo(offer.traderId!).name}</span>
+			</span>
+			<span className="shrink-0 font-mono tabular-nums text-acquisition-sell-value">
+				{formatRoubles(Math.round(offer.unit))}
+			</span>
+		</p>
 	);
 }
 
