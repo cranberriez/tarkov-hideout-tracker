@@ -16,6 +16,7 @@ export function useUploaderController(items: readonly ItemSummary[] | undefined)
 	const completedScan = useRef<string | null>(null);
 	const index = useMemo(() => buildLabelIndex(items ?? []), [items]);
 	const detections = useMemo(() => labels?.detections ?? [], [labels]);
+	const boxes = useMemo(() => labels?.boxes ?? [], [labels]);
 	const groups = useMemo(() => summarizeDetections(detections), [detections]);
 
 	useEffect(
@@ -76,6 +77,7 @@ export function useUploaderController(items: readonly ItemSummary[] | undefined)
 					setLabels(null);
 				}
 			},
+			items,
 			index,
 		)
 			.then((result) => {
@@ -107,6 +109,7 @@ export function useUploaderController(items: readonly ItemSummary[] | undefined)
 	return {
 		image,
 		detections,
+		boxes,
 		groups,
 		error,
 		status,

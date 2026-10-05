@@ -62,7 +62,7 @@ export function buildLabelTasks(
 					const task = { top: start, mask, region };
 					tasks.push(task);
 					seen.set(key, [...previous, task]);
-					if (tasks.length > 800)
+					if (tasks.length > 2500)
 						throw new Error("There are too many text regions. Crop the screenshot to one container.");
 				}
 			}

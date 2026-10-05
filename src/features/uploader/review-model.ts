@@ -1,5 +1,11 @@
 import type { FoundInRaidStatus } from "./found-in-raid";
-import { suggestLabelCandidates } from "./label-suggestions";
+import {
+	extendedCandidates,
+	preferredCandidate,
+	rankCandidates,
+	scoreLabelCandidates,
+	suggestLabelCandidates,
+} from "./label-suggestions";
 import type { ItemSummary } from "../../types/items";
 import { buildLabelIndex, inferLabelGrid, normalizeLabel, type ItemDetection } from "./recognition-model";
 
@@ -66,6 +72,48 @@ export function suggestReviewGrid(
 	};
 }
 
+/** A detection's footprint, or the cell(s) its label suggests when no footprint was measured. */
+export function detectionBounds(detection: ItemDetection, grid: ReviewGrid | null): BoxBounds {
+	const bounds = detection.bounds;
+	if (detection.footprint) return detection.footprint;
+	if (grid) {
+		const right = grid.left + Math.round((bounds.left + bounds.width - grid.left) / grid.cellWidth) * grid.cellWidth;
+		const columns = Math.max(1, Math.ceil((bounds.width - grid.cellWidth * 0.12) / grid.cellWidth));
+		return clampBox({
+			left: right - columns * grid.cellWidth,
+			top: grid.top + Math.round((bounds.top - grid.top) / grid.cellHeight) * grid.cellHeight,
+			width: columns * grid.cellWidth,
+			height: grid.cellHeight,
+		});
+	}
+	return clampBox({
+		left: bounds.left - bounds.height,
+		top: bounds.top - bounds.height * 0.4,
+		width: Math.max(bounds.width + bounds.height, bounds.height * 5),
+		height: bounds.height * 5,
+	});
+}
+
+/** The only barter item among same-spelling candidates, as junk-box screenshots favor them. */
+function soleBarter(candidates: readonly ItemSummary[]) {
+	const barter = candidates.filter((item) => item.barter);
+	return barter.length === 1 ? barter[0].id : null;
+}
+
+function initialItem(
+	detection: ItemDetection,
+	candidates: readonly ItemSummary[],
+	index: ReturnType<typeof buildLabelIndex>,
+) {
+	if (detection.match === "unmatched")
+		return preferredCandidate(scoreLabelCandidates(detection.text, index))?.id ?? null;
+	if (candidates.length > 1) return soleBarter(candidates);
+	// Low-confidence reads of an exact spelling start assigned, except two-letter
+	// labels, which artwork fragments reproduce too easily.
+	if (detection.match === "uncertain" && normalizeLabel(detection.text).length < 3) return null;
+	return candidates[0]?.id ?? null;
+}
+
 export function seedReviewBoxes(
 	detections: readonly ItemDetection[],
 	grid: ReviewGrid | null,
@@ -78,41 +126,28 @@ export function seedReviewBoxes(
 	for (const detection of ordered) {
 		if (detection.match === "unmatched" && (detection.confidence < 35 || normalizeLabel(detection.text).length < 3))
 			continue;
-		let bounds = detection.bounds;
-		if (detection.footprint) {
-			bounds = detection.footprint;
-		} else if (grid) {
-			const right = grid.left + Math.round((bounds.left + bounds.width - grid.left) / grid.cellWidth) * grid.cellWidth;
-			const columns = Math.max(1, Math.ceil((bounds.width - grid.cellWidth * 0.12) / grid.cellWidth));
-			bounds = clampBox({
-				left: right - columns * grid.cellWidth,
-				top: grid.top + Math.round((bounds.top - grid.top) / grid.cellHeight) * grid.cellHeight,
-				width: columns * grid.cellWidth,
-				height: grid.cellHeight,
-			});
-		} else {
-			bounds = clampBox({
-				left: bounds.left - bounds.height,
-				top: bounds.top - bounds.height * 0.4,
-				width: Math.max(bounds.width + bounds.height, bounds.height * 5),
-				height: bounds.height * 5,
-			});
-		}
+		const bounds = detectionBounds(detection, grid);
 		const existing = boxes.find((box) => overlapFraction(box.bounds, bounds) > 0.7);
 		if (existing) {
 			if (detection.candidates.length) {
 				const candidates = new Map([...existing.candidates, ...detection.candidates].map((item) => [item.id, item]));
-				existing.candidates = [...candidates.values()];
-				if (candidates.size > 1) existing.itemId = null;
+				existing.candidates = rankCandidates([...candidates.values()]);
+				if (candidates.size > 1) existing.itemId = soleBarter(existing.candidates);
 			}
 			continue;
 		}
+		const read = detection.candidates.length
+			? rankCandidates(detection.candidates)
+			: suggestLabelCandidates(detection.text, index);
+		const candidates = [
+			...new Map([...read, ...extendedCandidates(detection.text, index)].map((item) => [item.id, item])).values(),
+		];
 		boxes.push({
 			id: detection.id,
 			bounds,
 			text: detection.text,
-			candidates: detection.candidates.length ? detection.candidates : suggestLabelCandidates(detection.text, index),
-			itemId: detection.match === "exact" ? (detection.candidates[0]?.id ?? null) : null,
+			candidates,
+			itemId: initialItem(detection, read, index),
 			quantity: 1,
 			confirmed: false,
 			foundInRaid: detection.foundInRaid ?? "unknown",

@@ -6,6 +6,7 @@ import { prepareQuestDataForMode } from "../quests/quest-preparation";
 import { excludeRemovedQuests } from "../quests/removed-quests";
 import { validateSearchManifest } from "./manifest";
 import { standardItemImageUrl } from "../utils/item-images";
+import { isBarterCategory } from "../data/barter-categories";
 
 export function buildSearchManifest(
 	mode: TarkovJsonGameMode,
@@ -24,6 +25,7 @@ export function buildSearchManifest(
 				...(item.shortName ? { sn: item.shortName } : {}),
 				// Standard icon URLs are derived from the ID on the client.
 				...(item.iconLink && item.iconLink !== standardItemImageUrl(item.id, "icon") ? { ic: item.iconLink } : {}),
+				...(isBarterCategory(item.category?.id) ? { b: 1 as const } : {}),
 			})),
 			quests: excludeRemovedQuests(prepareQuestDataForMode(quests, mode)).map((quest) => ({
 				id: quest.id,

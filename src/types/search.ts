@@ -4,7 +4,8 @@ import type { TarkovJsonGameMode } from "../lib/game-mode";
 export interface CompactSearchManifest {
 	v: 1;
 	mode: TarkovJsonGameMode;
-	items: { id: string; nn: string; n: string; sn?: string; ic?: string }[];
+	/** `b`: barter-item (junk box) category. */
+	items: { id: string; nn: string; n: string; sn?: string; ic?: string; b?: 1 }[];
 	quests: { id: string; nn: string; n: string; ti: string }[];
 	traders: Record<string, { n: string; ic?: string }>;
 }

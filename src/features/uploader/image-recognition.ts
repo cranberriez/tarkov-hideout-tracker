@@ -1,14 +1,8 @@
-import { detectFoundInRaid } from "./found-in-raid";
-import { detectItemFootprints } from "./item-footprints";
-import {
-	inferLabelGrid,
-	mergeLabelPasses,
-	recognizeLabels,
-	type buildLabelIndex,
-	type ItemDetection,
-	type LabelLine,
-} from "./recognition-model";
-import { buildLabelTasks, prepareLabelPixels } from "./label-preprocessing";
+import type { ItemSummary } from "@/types/items";
+import type { IconImage } from "./icon-matching";
+import type { buildLabelIndex, ItemDetection, LabelLine } from "./recognition-model";
+import type { ReviewBox } from "./review-model";
+import { labelVocabulary, scanLabels, type LabelReader } from "./scan-pipeline";
 
 export interface Screenshot {
 	url: string;
@@ -51,8 +45,9 @@ export async function readImageLabels(
 	screenshot: Screenshot,
 	signal: AbortSignal,
 	onProgress: (label: string, progress: number) => void,
+	items: readonly ItemSummary[],
 	index: ReturnType<typeof buildLabelIndex>,
-): Promise<{ detections: ItemDetection[] }> {
+): Promise<{ detections: ItemDetection[]; boxes: ReviewBox[] }> {
 	onProgress("Loading recognition tools", 0);
 	const { createWorker, PSM, OEM } = await abortable(import("tesseract.js"), signal);
 	signal.throwIfAborted();
@@ -77,24 +72,17 @@ export async function readImageLabels(
 	} finally {
 		scaled.close();
 	}
-	// Invert light stash labels into dark text on a light background for OCR.
 	const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
-	const originalPixels = pixels.data.slice();
-	const masks = prepareLabelPixels(pixels.data);
-	context.putImageData(pixels, 0, 0);
-	onProgress("Loading recognition tools", 0);
-	let readingLabel = "Reading item labels";
-	let completedRows = 0;
-	let totalRows = 1;
+	let pageRead = true;
 	const workerPromise = createWorker(
 		"eng",
 		OEM.LSTM_ONLY,
 		{
 			logger: ({ status, progress }) => {
-				if (!signal.aborted)
+				if (!signal.aborted && pageRead)
 					onProgress(
-						status === "recognizing text" ? readingLabel : "Loading recognition tools",
-						status === "recognizing text" ? (completedRows + progress) / totalRows : 0,
+						status === "recognizing text" ? "Reading item labels" : "Loading recognition tools",
+						status === "recognizing text" ? progress : 0,
 					);
 			},
 			// Surface worker failures through the returned promise, rather than throwing globally.
@@ -106,89 +94,95 @@ export async function readImageLabels(
 		void workerPromise.then((worker) => worker.terminate()).catch(() => {});
 	};
 	signal.addEventListener("abort", stop, { once: true });
+	const strip = document.createElement("canvas");
 	try {
 		const worker = await abortable(workerPromise, signal);
-		const vocabulary = [
-			...new Set(
-				[...index.values()].flatMap((items) =>
-					items.flatMap((item) => (item.shortName ?? "").split(/\s+/).filter(Boolean)),
-				),
-			),
-		];
-		await abortable(worker.writeText("/uploader-words.txt", vocabulary.join("\n")), signal);
+		await abortable(worker.writeText("/uploader-words.txt", labelVocabulary(index).join("\n")), signal);
 		const vocabularyConfig = { load_system_dawg: "0", load_freq_dawg: "0", user_words_file: "/uploader-words.txt" };
 		await abortable(worker.reinitialize("eng", OEM.LSTM_ONLY, vocabularyConfig), signal);
-		await abortable(worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT, user_defined_dpi: "300" }), signal);
-		const { data } = await abortable(worker.recognize(canvas, {}, { blocks: true, text: true }), signal);
-		const collect = (blocks: typeof data.blocks, left = 0, top = 0): LabelLine[] =>
-			(blocks ?? []).flatMap((block) =>
-				block.paragraphs.flatMap((paragraph) =>
-					paragraph.lines.map((line) => ({
-						words: line.words.map(({ text, confidence, bbox }) => ({
-							text,
-							confidence,
-							bbox: { x0: bbox.x0 + left, x1: bbox.x1 + left, y0: bbox.y0 + top, y1: bbox.y1 + top },
-						})),
-					})),
-				),
-			);
-		const lines = collect(data.blocks);
-		const firstMatches = recognizeLabels(lines, index, canvas.width, canvas.height);
-		let detections = firstMatches;
-		const grid = inferLabelGrid(firstMatches, canvas.height);
-		if (grid) {
-			onProgress("Refining grid labels", 0);
-			// Isolate label-sized ink regions so grid borders and neighboring item art cannot
-			// become prefixes on the label. A neutral-color pass also removes tinted outlines.
-			await abortable(worker.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_LINE }), signal);
-			const tasks = buildLabelTasks(masks, canvas.width, canvas.height, grid);
-			const strip = document.createElement("canvas");
-			const margin = Math.max(8, Math.round(grid.textHeight / 2));
-			const refinedLines: LabelLine[] = [];
-			readingLabel = "Reading isolated item labels";
-			totalRows = tasks.length || 1;
-			try {
-				for (const [row, task] of tasks.entries()) {
-					signal.throwIfAborted();
-					completedRows = row;
-					onProgress(readingLabel, row / totalRows);
-					strip.width = task.region.width + margin * 2;
-					strip.height = task.region.height + margin * 2;
-					const stripContext = strip.getContext("2d");
-					if (!stripContext) throw new Error("Your browser could not prepare a label row.");
-					const ink = stripContext.createImageData(strip.width, strip.height);
-					ink.data.fill(255);
-					for (let y = 0; y < task.region.height; y++)
-						for (let x = 0; x < task.region.width; x++) {
-							const source = (y + task.region.top) * canvas.width + x + task.region.left;
-							const target = ((y + margin) * strip.width + x + margin) * 4;
-							ink.data[target] = ink.data[target + 1] = ink.data[target + 2] = task.mask[source];
-						}
-					stripContext.putImageData(ink, 0, 0);
-					const refined = await abortable(worker.recognize(strip, {}, { blocks: true, text: true }), signal);
-					refinedLines.push(
-						...collect(refined.data.blocks, task.region.left - margin, task.top + task.region.top - margin),
-					);
-				}
-			} finally {
-				strip.width = strip.height = 0;
-			}
-			// Keep low-confidence exact spellings visible for review, but do not count them
-			// as certain identities unless another pass produces a stronger matching read.
-			const refinedMatches = recognizeLabels(refinedLines, index, canvas.width, canvas.height, 0);
-			detections = mergeLabelPasses(firstMatches, refinedMatches, grid, canvas.height);
-		}
-		return {
-			detections: detectFoundInRaid(
-				originalPixels,
-				canvas.width,
-				canvas.height,
-				detectItemFootprints(originalPixels, canvas.width, canvas.height, detections),
-			),
+		const read = async (target: HTMLCanvasElement) => {
+			const { data } = await abortable(worker.recognize(target, {}, { blocks: true, text: true }), signal);
+			return collectLines(data.blocks);
 		};
+		const reader: LabelReader = {
+			async readPage(rgba, width, height) {
+				context.putImageData(new ImageData(rgba, width, height), 0, 0);
+				await abortable(
+					worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT, user_defined_dpi: "300" }),
+					signal,
+				);
+				const lines = await read(canvas);
+				pageRead = false;
+				await abortable(worker.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_LINE }), signal);
+				return lines;
+			},
+			async readStrip(gray) {
+				strip.width = gray.width;
+				strip.height = gray.height;
+				const stripContext = strip.getContext("2d");
+				if (!stripContext) throw new Error("Your browser could not prepare a label row.");
+				const ink = stripContext.createImageData(gray.width, gray.height);
+				for (let i = 0; i < gray.data.length; i++) {
+					ink.data[i * 4] = ink.data[i * 4 + 1] = ink.data[i * 4 + 2] = gray.data[i];
+					ink.data[i * 4 + 3] = 255;
+				}
+				stripContext.putImageData(ink, 0, 0);
+				return read(strip);
+			},
+		};
+		return await scanLabels(
+			pixels.data,
+			canvas.width,
+			canvas.height,
+			reader,
+			items,
+			index,
+			(item) => loadGridIcon(item, signal),
+			signal,
+			onProgress,
+		);
 	} finally {
 		signal.removeEventListener("abort", stop);
 		stop();
+		strip.width = strip.height = 0;
 		canvas.width = canvas.height = 0;
+	}
+}
+
+type OcrBlocks = Awaited<
+	ReturnType<Awaited<ReturnType<typeof import("tesseract.js").createWorker>>["recognize"]>
+>["data"]["blocks"];
+
+export function collectLines(blocks: OcrBlocks): LabelLine[] {
+	return (blocks ?? []).flatMap((block) =>
+		block.paragraphs.flatMap((paragraph) =>
+			paragraph.lines.map((line) => ({
+				words: line.words.map(({ text, confidence, bbox }) => ({
+					text,
+					confidence,
+					bbox: { x0: bbox.x0, x1: bbox.x1, y0: bbox.y0, y1: bbox.y1 },
+				})),
+			})),
+		),
+	);
+}
+
+/**
+ * Catalog grid art through the same-origin `/item-assets` rewrite (next.config), since the
+ * asset host sends no CORS headers and cross-origin pixels cannot be read from a canvas.
+ */
+async function loadGridIcon(item: ItemSummary, signal: AbortSignal): Promise<IconImage | null> {
+	const response = await fetch(`/item-assets/${encodeURIComponent(item.id)}-grid-image.webp`, { signal });
+	if (!response.ok) return null;
+	const bitmap = await createImageBitmap(await response.blob());
+	try {
+		const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+		const context = canvas.getContext("2d", { willReadFrequently: true });
+		if (!context) return null;
+		context.drawImage(bitmap, 0, 0);
+		const { data } = context.getImageData(0, 0, bitmap.width, bitmap.height);
+		return { data, width: bitmap.width, height: bitmap.height };
+	} finally {
+		bitmap.close();
 	}
 }

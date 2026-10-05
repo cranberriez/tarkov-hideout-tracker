@@ -30,10 +30,11 @@ export function searchIdentityOptions(mode: TarkovJsonGameMode) {
 
 export function searchManifestOptions(mode: TarkovJsonGameMode, releaseId: string) {
 	return queryOptions({
-		queryKey: gameDataKey(mode, "search-manifest", 1, releaseId),
+		queryKey: gameDataKey(mode, "search-manifest", 2, releaseId),
 		queryFn: async ({ signal }) =>
 			decodeSearchManifest(
-				await fetchJson<unknown>(`/api/search?${new URLSearchParams({ mode, releaseId })}`, { signal }),
+				// `format` only separates CDN entries when the immutable body gains fields.
+				await fetchJson<unknown>(`/api/search?${new URLSearchParams({ mode, releaseId, format: "2" })}`, { signal }),
 				mode,
 				releaseId,
 			),

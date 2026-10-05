@@ -65,6 +65,8 @@ export function scoreFoundInRaid(
 	return best;
 }
 
+export const FIR_MATCH = 0.82;
+
 export function detectFoundInRaid(data: Uint8ClampedArray, width: number, height: number, detections: ItemDetection[]) {
 	const grid = suggestReviewGrid(detections, width, height);
 	return detections.map((detection) => ({
@@ -72,7 +74,7 @@ export function detectFoundInRaid(data: Uint8ClampedArray, width: number, height
 		foundInRaid:
 			grid &&
 			detection.footprint &&
-			scoreFoundInRaid(data, width, height, detection.footprint, grid.cellWidth * width) >= 0.82
+			scoreFoundInRaid(data, width, height, detection.footprint, grid.cellWidth * width) >= FIR_MATCH
 				? ("yes" as const)
 				: ("unknown" as const),
 	}));

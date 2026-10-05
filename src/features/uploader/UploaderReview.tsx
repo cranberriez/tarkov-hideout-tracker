@@ -14,8 +14,8 @@ import type { SentCounts } from "./inventory-model";
 import { KeyHint, UploaderSidebarHeader, UploaderStepNav, sectionLabel } from "./UploaderSidebarHeader";
 import type { Screenshot } from "./image-recognition";
 import { suggestLabelCandidates } from "./label-suggestions";
-import { buildLabelIndex, type ItemDetection } from "./recognition-model";
-import { seedReviewBoxes, suggestReviewGrid, summarizeReview, type ReviewBox, type ReviewEntry } from "./review-model";
+import { buildLabelIndex } from "./recognition-model";
+import { summarizeReview, type ReviewBox, type ReviewEntry } from "./review-model";
 import { nextUnknownId, selectReviewBoxes, selectionSuggestions, supportsQuantity } from "./selection-model";
 import { UploaderCompletion, type AddedItem } from "./UploaderCompletion";
 import styles from "./UploaderReview.module.css";
@@ -28,14 +28,15 @@ const FILTERS: DecisionFilter[] = ["ALL", "KEEP", "SELL", "HOLD"];
 
 export function UploaderReview({
 	image,
-	detections,
+	boxes: initialBoxes,
 	items,
 	onNewScan,
 	dirtyRef,
 	bottomBar,
 }: {
 	image: Screenshot;
-	detections: ItemDetection[];
+	/** Recognized boxes; the review history starts from these. */
+	boxes: ReviewBox[];
 	items: ItemSummary[];
 	/** Opens the image picker for a replacement scan. */
 	onNewScan: () => void;
@@ -43,11 +44,7 @@ export function UploaderReview({
 	dirtyRef: RefObject<boolean>;
 	bottomBar: ReactNode;
 }) {
-	const grid = useMemo(
-		() => suggestReviewGrid(detections, image.width, image.height),
-		[detections, image.width, image.height],
-	);
-	const [history, setHistory] = useState<ReviewBox[][]>(() => [seedReviewBoxes(detections, grid, items)]);
+	const [history, setHistory] = useState<ReviewBox[][]>(() => [initialBoxes]);
 	const boxes = history[history.length - 1];
 	const [selected, setSelected] = useState<string[]>([]);
 	const anchor = useRef<string | null>(null);

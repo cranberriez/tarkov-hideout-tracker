@@ -160,19 +160,29 @@ export function inferLabelGrid(detections: readonly ItemDetection[], height: num
 	if (textHeight <= 0) return null;
 	const tolerance = Math.max(2, textHeight * 0.45);
 	const rows: number[] = [];
+	// Labels per row: a tooltip or stray caption is one read, a real stash row is many.
+	const support: number[] = [];
 	for (const top of exact.map((entry) => entry.bounds.top * height).sort((a, b) => a - b)) {
-		if (!rows.some((row) => Math.abs(row - top) <= tolerance)) rows.push(top);
+		const row = rows.findIndex((value) => Math.abs(value - top) <= tolerance);
+		if (row === -1) {
+			rows.push(top);
+			support.push(1);
+		} else support[row]++;
 	}
 	if (rows.length < 4) return null;
-	let best: { pitch: number; firstTop: number; rows: number[]; error: number } | null = null;
+	let best: { pitch: number; firstTop: number; rows: number[]; weight: number; error: number } | null = null;
 	for (let i = 0; i < rows.length; i++) {
 		for (let j = i + 1; j < rows.length; j++) {
 			for (let divisor = 1; divisor <= 6; divisor++) {
 				const pitch = (rows[j] - rows[i]) / divisor;
-				if (pitch < textHeight * 3 || pitch > Math.min(textHeight * 12, height / 3)) continue;
-				const aligned = rows.filter(
+				// A cell is roughly seven label heights tall; half that is a misread lattice
+				// (for example, a tooltip caption between two rows), never a real cell.
+				if (pitch < textHeight * 4.5 || pitch > Math.min(textHeight * 12, height / 3)) continue;
+				const fits = rows.map(
 					(row) => Math.abs(row - rows[i] - Math.round((row - rows[i]) / pitch) * pitch) <= tolerance,
 				);
+				const aligned = rows.filter((_, row) => fits[row]);
+				const weight = support.reduce((sum, count, row) => sum + (fits[row] ? count : 0), 0);
 				if (aligned.length < 4 || aligned.length / rows.length < 0.75) continue;
 				const adjacentPairs = aligned
 					.slice(1)
@@ -193,11 +203,17 @@ export function inferLabelGrid(detections: readonly ItemDetection[], height: num
 					aligned.length;
 				if (
 					!best ||
-					aligned.length > best.rows.length ||
-					(aligned.length === best.rows.length &&
+					weight > best.weight ||
+					(weight === best.weight &&
 						(error < best.error - 0.01 || (Math.abs(error - best.error) <= 0.01 && fittedPitch > best.pitch)))
 				)
-					best = { pitch: fittedPitch, firstTop: origin + Math.min(...positions) * fittedPitch, rows: aligned, error };
+					best = {
+						pitch: fittedPitch,
+						firstTop: origin + Math.min(...positions) * fittedPitch,
+						rows: aligned,
+						weight,
+						error,
+					};
 			}
 		}
 	}

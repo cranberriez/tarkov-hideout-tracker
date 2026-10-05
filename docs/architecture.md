@@ -267,8 +267,9 @@ decoding, recognition lifecycle, cancellation, retries, and timeout handling.
 Completed scans are not automatically rerun on background catalog refreshes,
 so those refreshes cannot discard a player's review edits.
 [Image recognition](../src/features/uploader/image-recognition.ts) lazily loads
-Tesseract.js and runs English sparse-text OCR in a browser worker on an upscaled,
-inverted screenshot. If enough recognized labels establish regular rows,
+Tesseract.js and supplies a browser OCR reader and icon loader to the DOM-free
+[scan pipeline](../src/features/uploader/scan-pipeline.ts), which runs English
+sparse-text OCR on an upscaled, inverted screenshot. If enough recognized labels establish regular rows,
 [label preprocessing](../src/features/uploader/label-preprocessing.ts) builds
 complementary contrast and neutral-color masks, then isolates individual labels
 for single-line OCR. Pixel-identical crops across masks are read once, so
@@ -276,18 +277,15 @@ complementary contrast passes do not exhaust the region budget with duplicate wo
 out; complementary wider crops preserve labels offset from the fitted row.
 Row spacing is fitted
 across high-confidence label rows to prevent crop drift toward the bottom of a stash.
+Rows are weighted by how many labels they hold and the pitch must be at least 4.5 label
+heights, so a single tooltip caption between rows cannot halve the lattice.
 The model combines complementary passes, deduplicates overlapping labels, and
-keeps conflicting exact identifications ambiguous. This infers label-row spacing,
-not complete grid geometry. The worker/core/language resources download from the
+keeps conflicting exact identifications ambiguous. The worker/core/language resources download from the
 library's default CDNs on first use; screenshot pixels are never uploaded.
 [The pure matching model](../src/features/uploader/recognition-model.ts) matches
-visible short names exactly after case/spacing/punctuation normalization; full
-names and fuzzy spelling corrections are not automatic recognition aliases. Shared short
-names remain ambiguous. Exact reads with moderate OCR confidence are retained;
+visible short names exactly after case/spacing/punctuation normalization. Exact reads with moderate OCR confidence are retained;
 isolated reads below 35 confidence appear as review candidates and do not count
-as recognized items. Two-character labels such as EC require 85 confidence for
-automatic assignment; reads from 35 to 84 remain reviewable candidates instead
-of disappearing. A stronger matching pass can resolve them. Separate border
+as recognized items. Separate border
 punctuation cannot expand a matched label's bounds or lower its confidence.
 [The review model](../src/features/uploader/review-model.ts) turns detections into
 selectable boxes. Regular label rows and aligned right edges suggest a square
@@ -296,15 +294,40 @@ examines sustained, uniform-color borders in the original pixels to expand short
 labels into multi-cell rectangles, including rotated items. Weak or missing border
 evidence falls back to label-based estimates. At a tightly cropped image edge,
 a missing outer stroke may use the frame when the top and another side are
-visible; these footprints are marked as frame-inferred, so future size filtering
-must not treat them as fully measured. Missing interior borders still cannot be
-invented. Candidate-free text becomes an
-unknown box, with overlapping OCR fragments deduplicated. Exact matches start
-assigned; uncertain and ambiguous matches require a player choice.
-[Label suggestions](../src/features/uploader/label-suggestions.ts) rank nearby
-short-name spellings for unknown reads and typed review searches. Suggestions
-never assign an identity automatically. Each box starts at quantity one,
-independent of visible stack text.
+visible; these footprints are marked as frame-inferred and are not treated as
+measured sizes. Missing interior borders still cannot be invented.
+Overlapping OCR fragments are deduplicated.
+
+Reducing manual input is the priority, so boxes start assigned whenever the evidence
+favors one identity. Junk-box screenshots are the main use, so barter-item
+categories (the search manifest's `b` flag) rank first among same-name candidates, and
+a shared short name with exactly one barter item (Skull, Strike, Fleece) assigns it.
+Exact single matches start assigned, including low-confidence reads of three or more
+characters. [Label suggestions](../src/features/uploader/label-suggestions.ts) score
+other reads with a weighted edit distance in which common OCR glyph confusions
+(o/d, e/c, i/l, …) cost half an edit, and treat a read that is a prefix of a longer
+short name as an in-game truncation ("Toothpast"). A unique best spelling, or the only
+barter item at the best score, starts assigned when no other spelling is within one
+edit. Longer short names containing a read ("CPU" of "CPU fan") join the candidates
+without changing the text identity.
+
+[Icon matching](../src/features/uploader/icon-matching.ts) then compares catalog grid
+art with the screenshot, read through a same-origin `/item-assets` rewrite of
+assets.tarkov.dev (see [next.config](../next.config.ts)) because the asset host sends no
+CORS headers. Each icon is placed at its own size and orientation from the box's labeled
+top-right cell; label, badge, stack-count and transfer/SPEC overlays are masked, and a
+small position search absorbs lattice error. The score averages RGB correlation with a
+brightness-matched difference. Among a read's candidates, a clear artwork lead assigns
+the item; a clear text identity is only replaced when another candidate's art is far
+closer. Boxes still unresolved are compared with every barter item: a clear winner is
+assigned and otherwise the closest items become suggestions. Finally, non-empty lattice
+cells no box covers (labels OCR missed entirely) gain an assigned box only for a strong,
+clear barter match, absorbing unresolved fragments of the same item. A matched icon
+also sets the size of a box whose footprint was not measured. Thresholds were
+calibrated on stash screenshots and are relative scores, not probabilities. The first
+barter-wide comparison downloads the barter grid icons (about 3.4 MB, browser-cached).
+Money is excluded from scan results; players enter it more easily by hand.
+Each box starts at quantity one, independent of visible stack text.
 
 [The review workspace](../src/features/uploader/UploaderReview.tsx) fills the viewport
 below the navbar, without the global footer. A flat right panel holds the current goal,
@@ -397,7 +420,8 @@ FIR quantities block sending. No automatic inventory write occurs.
 The seen-items list groups scanned and manual items
 by stable item ID and FIR status, explicitly retaining unknown detected FIR.
 [Found-in-raid detection](../src/features/uploader/found-in-raid.ts) compares a small
-grayscale badge reference against the bottom-right corner of measured footprints,
+grayscale badge reference against the bottom-right corner of measured footprints, and
+again on final boxes once icon matching has settled their sizes,
 across nearby positions and scales. The badge remains upright regardless of item
 rotation. Only strong matches produce FIR; missing geometry, low resolution, and
 weak/absent matches remain unknown, never automatically non-FIR. Screenshot-corner
@@ -405,10 +429,10 @@ fixtures cover actual badges, artwork, and the separate bottom-left transfer sym
 The player can toggle FIR/non-FIR and undo that choice; unconfirmed detections
 retain unknown status. Leaving the page, changing the image, or switching game
 modes discards the review; there is no automatic inventory write or persistent import.
-Items with no detected label can still be missed; a clearer screenshot may be needed.
-Hidden container contents are not inferred. Catalog slot dimensions are not currently
-retained by the item adapter, storage, or search manifest; footprint detection still
-uses screenshot evidence rather than hardcoded sizes.
+Items with no detected label are only found when their art clearly matches a barter
+item; others can still be missed. Hidden container contents are not inferred. Catalog
+slot dimensions are not retained by the item adapter or search manifest; sizes come
+from measured borders or matched grid-icon dimensions.
 
 The item-detail dialog is the default destination for every item click.
 [GlobalItemDetailModal](../src/features/items/item-detail/GlobalItemDetailModal.tsx)

@@ -32,7 +32,7 @@ export function UploaderClientPage() {
 function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 	const catalog = useSearchManifest(mode, true);
 	const controller = useUploaderController(catalog.data?.items);
-	const { image, detections, status, error, finished, supplyImage } = controller;
+	const { image, boxes, status, error, finished, supplyImage } = controller;
 	const input = useRef<HTMLInputElement>(null);
 	const [dragging, setDragging] = useState(false);
 	const reviewDirty = useRef(false);
@@ -166,7 +166,7 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 				<UploaderReview
 					key={image.url}
 					image={image}
-					detections={detections}
+					boxes={boxes}
 					items={catalog.data.items}
 					onNewScan={() => input.current?.click()}
 					dirtyRef={reviewDirty}

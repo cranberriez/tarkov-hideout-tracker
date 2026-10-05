@@ -42,6 +42,8 @@ export interface ItemSummary extends ItemIdentity {
 	minLevelForFlea?: number | null;
 	onFleaMarket?: boolean;
 	category?: ItemCategory;
+	/** Barter-item (junk box) category; the compact search manifest carries this instead of `category`. */
+	barter?: boolean;
 	/** Resource capacity from the provider's resource properties (fuel tank units). */
 	resourceUnits?: number;
 	buyFromTrader?: TraderPurchaseOffer[];

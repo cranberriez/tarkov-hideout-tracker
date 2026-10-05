@@ -26,8 +26,13 @@ const detection = (id: string, match: ItemDetection["match"], left = 0.1, top = 
 });
 
 test("unknown and ambiguous detections become editable unassigned boxes", () => {
+	const other = { ...gpu, id: "other", name: "Other item" };
 	const boxes = seedReviewBoxes(
-		[detection("a", "exact"), detection("b", "ambiguous", 0.3), detection("c", "unmatched", 0.5)],
+		[
+			detection("a", "exact"),
+			{ ...detection("b", "ambiguous", 0.3), candidates: [gpu, other] },
+			detection("c", "unmatched", 0.5),
+		],
 		null,
 	);
 	assert.equal(boxes.length, 3);

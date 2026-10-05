@@ -35,6 +35,7 @@ async function build(mode: TarkovDataMode, contentVersion: string, database: Pos
 						sql`case when ${itemModes.displayOverride} is null then ${items.iconLink} else ${itemModes.displayOverride}->>'iconLink' end`.as(
 							"icon_link",
 						),
+					categoryId: sql<string | null>`${itemModes.category}->>'id'`.as("category_id"),
 				})
 				.from(items)
 				.innerJoin(itemModes, and(eq(itemModes.itemId, items.id), eq(itemModes.mode, mode)))
@@ -86,10 +87,11 @@ async function build(mode: TarkovDataMode, contentVersion: string, database: Pos
 				trader: { id: quest.traderId ?? "", name: quest.traderName, normalizedName: quest.traderNormalizedName },
 				lightkeeperRequired: quest.lightkeeperRequired,
 			})) as never;
-			const compactItems = itemRows.map((item) => ({
+			const compactItems = itemRows.map(({ categoryId, ...item }) => ({
 				...item,
 				shortName: item.shortName ?? undefined,
 				iconLink: item.iconLink ?? undefined,
+				category: categoryId ? { id: categoryId, name: "", normalizedName: "" } : undefined,
 			})) as never;
 			const compactTraders = traderRows.map((trader) => ({
 				id: trader.id,
@@ -111,7 +113,7 @@ export async function readSearchManifest(mode: TarkovDataMode, contentVersion: s
 		if ((await getCatalogVersion(mode)) !== contentVersion)
 			throw new DatabaseTransientReadError("Search revision changed");
 		const compressed = await boundedReadCache(
-			["compact-search", "2", QUEST_PREPARATION_REVISION, mode, contentVersion],
+			["compact-search", "3", QUEST_PREPARATION_REVISION, mode, contentVersion],
 			() => build(mode, contentVersion, getPostgresDb()),
 		);
 		return JSON.parse(gunzipSync(Buffer.from(compressed, "base64")).toString("utf8"));

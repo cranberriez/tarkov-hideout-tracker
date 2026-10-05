@@ -42,9 +42,11 @@ export function selectReviewBoxes(
 		: [clicked];
 }
 
-export function supportsQuantity(item: ItemSummary | undefined) {
+export function isMoney(item: ItemSummary | undefined) {
 	return !!item && ["roubles", "dollars", "euros", "gp-coin"].includes(item.normalizedName);
 }
+
+export const supportsQuantity = isMoney;
 
 /** Combine evidence across the selection, retaining candidate rank and preferring repeated matches. */
 export function selectionSuggestions(boxes: readonly ReviewBox[], items: readonly ItemSummary[]) {

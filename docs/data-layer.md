@@ -413,6 +413,11 @@ previous mode, including in-flight responses. Failures expose explicit retry;
 valid same-revision data can remain usable after an identity-check failure.
 No player persistence changes are involved.
 
+Items carry `b: 1` when their leaf category is under Barter item (the junk-box
+categories in [barter-categories](../src/lib/data/barter-categories.ts)); the screenshot
+uploader ranks those first. Adding a field changes the immutable body for an existing
+releaseId, so the server cache key and the client's `format` query parameter are bumped
+to keep CDN and in-memory entries from serving the old shape.
 The compact payload intentionally excludes prices, discovery metadata, objectives,
 requirements, and recipes. Images are URLs only, requested when result rows render.
 Existing `/api/items/search` remains available for compatibility; current item
