@@ -129,7 +129,9 @@ export function overlapFraction(a: BoxBounds, b: BoxBounds) {
 	return area / Math.min(a.width * a.height, b.width * b.height);
 }
 
-export function summarizeReview(boxes: readonly ReviewBox[], items: readonly ItemSummary[]) {
+export type ReviewEntry = Pick<ReviewBox, "itemId" | "quantity" | "foundInRaid">;
+
+export function summarizeReview(boxes: readonly ReviewEntry[], items: readonly ItemSummary[]) {
 	const catalog = new Map(items.map((item) => [item.id, item]));
 	const totals = new Map<string, { item: ItemSummary; quantity: number; foundInRaid: FoundInRaidStatus }>();
 	let unresolved = 0;
@@ -149,7 +151,7 @@ export function summarizeReview(boxes: readonly ReviewBox[], items: readonly Ite
 }
 
 /** Stable IDs and reviewed quantities for a later recommendations step; never writes inventory. */
-export function finishReview(boxes: readonly ReviewBox[], items: readonly ItemSummary[]) {
+export function finishReview(boxes: readonly ReviewEntry[], items: readonly ItemSummary[]) {
 	const result = summarizeReview(boxes, items);
 	if (!boxes.length || result.unresolved) return null;
 	return result.totals.map(({ item, quantity, foundInRaid }) => ({ itemId: item.id, quantity, foundInRaid }));

@@ -305,26 +305,45 @@ short-name spellings for unknown reads and typed review searches. Suggestions
 never assign an identity automatically. Each box starts at quantity one,
 independent of visible stack text.
 
-[The review workspace](../src/features/uploader/UploaderReview.tsx) uses click-only
-selection: players cannot draw, move, resize, or add boxes. Fill boxes makes gaps
-more visible, and Show successes can hide assigned overlays and rows without
-changing the reviewed list. Zoom supports dense images. Selecting a box shows its
-screenshot crop, candidate items, and active-mode catalog search for corrections.
-Players can adjust quantities, remove false positives, and undo review changes.
+[The review workspace](../src/features/uploader/UploaderReview.tsx) fills the viewport
+below the navbar, without the global footer. A flat right panel holds the current goal,
+selection details, five ranked matches, catalog search, and compact zoom controls.
+Click selects one box; Ctrl/Command-click toggles individual boxes; Shift-click
+selects unknown boxes within the inclusive numbered range from the anchor. Known
+boxes are excluded from Ctrl/Command and Shift selections but remain individually
+selectable. A staggered first-reveal flash fades known boxes to a dark overlay;
+unknown boxes retain their warning fill. Reduced-motion users skip the animation.
+The default Fit zoom contains the entire image within the available canvas.
+Assignment and FIR changes
+apply to the entire selection and can be undone. Left arrow selects the previous unknown (with wraparound); Right arrow selects the next
+unknown, Enter uses the suggested item and advances to the next remaining unknown, and F toggles FIR; typing fields retain
+normal keyboard behavior. The bottom strip shows scan progress, then control hints with keycap badges.
+During recognition, the image has a dimmed overlay and moving scan band (static for reduced motion); stage and progress appear only in the bottom strip. Undo sits with review actions;
+zoom and image replacement/clear controls share a Screenshot section at the foot of the full-height sidebar. The bottom strip ends at the canvas edge; both areas use a matching subtle background and divider.
+Quantity editing is available only for a single currency or GP coin selection.
+The workspace does not expose scanned-box removal. Once every detected box is
+classified, a brief reduced-motion-aware completion animation introduces Show
+summary and Keep reviewing. The missing-items section supports repeated catalog
+search, manual additions with quantity for any item, FIR toggles (initially off),
+and removal of manual additions. Additions stay separate from screenshot boxes
+and survive returning to classification. Ignore unknowns allows continuing with
+identified items only; it preserves unknown boxes for later review and reports
+the excluded count. Missing-item entry precedes the next-step buttons, with a centered View item list link below Keep reviewing. This link opens the grouped item list. Show summary
+expands the right panel across the workspace with a fade into a placeholder
+section; its top-left Back button restores the review and manual additions.
+The seen-items list groups scanned and manual items
+by stable item ID and FIR status, explicitly retaining unknown detected FIR.
 [Found-in-raid detection](../src/features/uploader/found-in-raid.ts) compares a small
 grayscale badge reference against the bottom-right corner of measured footprints,
 across nearby positions and scales. The badge remains upright regardless of item
 rotation. Only strong matches produce FIR; missing geometry, low resolution, and
 weak/absent matches remain unknown, never automatically non-FIR. Screenshot-corner
 fixtures cover actual badges, artwork, and the separate bottom-left transfer symbol.
-The player can set FIR, non-FIR, or unknown and undo that choice. FIR uncertainty
-does not block finishing; it is retained for downstream decisions.
-Finish review requires a nonempty list with valid catalog IDs, positive integer
-quantities, and no unassigned boxes. It holds a detached list of stable item IDs and
-quantities grouped by both item ID and FIR status in page-local memory for a later
-recommendations step. FIR, non-FIR, and unknown instances of the same item never merge. Back
-to editing retains the boxes. Leaving the page, changing the image, or switching
-profiles discards the review; there is no inventory write or persistent import.
+The player can toggle FIR/non-FIR and undo that choice; unconfirmed detections
+retain unknown status. The pure review model retains grouping and finalization
+helpers for a later recommendations step. A read-only seen-items list is currently
+exposed. Leaving the page, changing the image, or switching game modes discards
+the review; there is no inventory write or persistent import.
 Items with no detected label can still be missed; a clearer screenshot may be needed.
 Hidden container contents are not inferred. Catalog slot dimensions are not currently
 retained by the item adapter, storage, or search manifest; footprint detection still

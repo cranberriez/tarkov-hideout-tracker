@@ -1,45 +1,41 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- Local screenshot crops and catalog previews. */
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ItemSummary } from "@/types/items";
-import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import { QuickAddSearch } from "@/features/quick-add/QuickAddSearch";
 import { itemImageUrl } from "@/lib/utils/item-images";
 import { cn } from "@/lib/utils";
-import { foundInRaidLabel, type FoundInRaidStatus } from "./found-in-raid";
 import type { Screenshot } from "./image-recognition";
 import { suggestLabelCandidates } from "./label-suggestions";
-import { buildLabelIndex } from "./recognition-model";
-import type { ItemDetection } from "./recognition-model";
-import {
-	finishReview,
-	seedReviewBoxes,
-	suggestReviewGrid,
-	summarizeReview,
-	type BoxBounds,
-	type ReviewBox,
-} from "./review-model";
+import { buildLabelIndex, type ItemDetection } from "./recognition-model";
+import { seedReviewBoxes, suggestReviewGrid, type ReviewBox } from "./review-model";
+import { nextUnknownId, selectReviewBoxes, selectionSuggestions, supportsQuantity } from "./selection-model";
+import styles from "./UploaderReview.module.css";
+import { ArrowLeft, Undo2 } from "lucide-react";
+import { UploaderCompletion } from "./UploaderCompletion";
 
 const control =
-	"rounded border border-border-color bg-surface-raised px-3 py-2 text-sm text-foreground disabled:opacity-40";
-const position = (b: BoxBounds) => ({
-	left: `${b.left * 100}%`,
-	top: `${b.top * 100}%`,
-	width: `${b.width * 100}%`,
-	height: `${b.height * 100}%`,
-});
+	"flex items-center justify-between gap-2 rounded-md border border-border-color bg-surface-raised px-3 py-2.5 text-sm text-foreground transition-colors hover:border-brand/50 hover:bg-brand/15 disabled:opacity-40";
+export function KeyHint({ children }: { children: ReactNode }) {
+	return (
+		<kbd className="inline-flex min-h-5 min-w-5 items-center justify-center rounded border border-b-2 border-border-color bg-background px-1.5 font-mono text-[10px] leading-4 text-muted-foreground shadow-sm">
+			{children}
+		</kbd>
+	);
+}
 
 export function UploaderReview({
 	image,
 	detections,
 	items,
-	mode,
+	imageActions,
+	bottomBar,
 }: {
 	image: Screenshot;
 	detections: ItemDetection[];
 	items: ItemSummary[];
-	mode: TarkovJsonGameMode;
+	imageActions: ReactNode;
+	bottomBar: ReactNode;
 }) {
 	const grid = useMemo(
 		() => suggestReviewGrid(detections, image.width, image.height),
@@ -47,318 +43,438 @@ export function UploaderReview({
 	);
 	const [history, setHistory] = useState<ReviewBox[][]>(() => [seedReviewBoxes(detections, grid, items)]);
 	const boxes = history[history.length - 1];
-	const [selected, setSelected] = useState<string | null>(null);
-	const [filled, setFilled] = useState(false);
-	const [showSuccesses, setShowSuccesses] = useState(true);
+	const [selected, setSelected] = useState<string[]>([]);
+	const anchor = useRef<string | null>(null);
+	const canvas = useRef<HTMLDivElement>(null);
+	const [fitWidth, setFitWidth] = useState(0);
+	useEffect(() => {
+		const element = canvas.current;
+		if (!element) return;
+		const observer = new ResizeObserver(([entry]) => {
+			setFitWidth(
+				Math.max(0, Math.min(entry.contentRect.width, (entry.contentRect.height * image.width) / image.height)),
+			);
+		});
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, [image.width, image.height]);
 	const [zoom, setZoom] = useState(100);
 	const [query, setQuery] = useState("");
-	const [reviewedList, setReviewedList] = useState<ReturnType<typeof finishReview>>(null);
-	const complete = reviewedList !== null;
-	const searchInput = useRef<HTMLInputElement>(null);
-	const summary = useMemo(() => summarizeReview(boxes, items), [boxes, items]);
+	const [keepReviewing, setKeepReviewing] = useState(false);
+	const [ignoreUnknowns, setIgnoreUnknowns] = useState(false);
+	const [summaryOpen, setSummaryOpen] = useState(false);
+	const summaryBack = useRef<HTMLButtonElement>(null);
+	useEffect(() => {
+		if (summaryOpen) summaryBack.current?.focus();
+	}, [summaryOpen]);
 	const byId = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
-	const heldTotals =
-		reviewedList?.map(({ itemId, quantity, foundInRaid }) => ({
-			itemId,
-			item: byId.get(itemId),
-			quantity,
-			foundInRaid,
-		})) ?? [];
-	const active = boxes.find((box) => box.id === selected);
-	const suggestionIndex = useMemo(() => buildLabelIndex(items), [items]);
-	const suggestions = query ? suggestLabelCandidates(query, suggestionIndex) : (active?.candidates ?? []);
+	const chosen = useMemo(() => boxes.filter((box) => selected.includes(box.id)), [boxes, selected]);
+	const active = chosen[0];
+	const activeItem = active?.itemId ? byId.get(active.itemId) : undefined;
+	const index = useMemo(() => buildLabelIndex(items), [items]);
+	const suggestions = useMemo(() => {
+		if (!query.trim()) return selectionSuggestions(chosen, items);
+		const text = query.trim().toLowerCase();
+		const matches = items.filter((item) => `${item.name} ${item.shortName ?? ""}`.toLowerCase().includes(text));
+		return [
+			...new Map([...matches, ...suggestLabelCandidates(query, index)].map((item) => [item.id, item])).values(),
+		].slice(0, 5);
+	}, [query, chosen, items, index]);
 	const unknowns = boxes.filter((box) => !box.itemId || !byId.has(box.itemId));
-	const change = (next: ReviewBox[]) => {
-		setHistory((previous) => [...previous.slice(-29), next]);
-		setReviewedList(null);
+	const classified = boxes.length > 0 && unknowns.length === 0;
+	const completing = (classified || ignoreUnknowns) && !keepReviewing;
+	const included = ignoreUnknowns ? boxes.filter((box) => box.itemId && byId.has(box.itemId)) : boxes;
+	const focusBox = (id: string) => {
+		setSelected([id]);
+		anchor.current = id;
+		canvas.current
+			?.querySelector<HTMLButtonElement>(`[data-box-index="${boxes.findIndex((box) => box.id === id)}"]`)
+			?.scrollIntoView({ block: "nearest", inline: "nearest" });
+		canvas.current?.focus({ preventScroll: true });
 	};
-	const patch = (id: string, update: Partial<ReviewBox>) =>
-		change(boxes.map((box) => (box.id === id ? { ...box, ...update } : box)));
-	const select = (id: string) => {
-		setSelected(id);
+	const patch = (update: Partial<ReviewBox>) =>
+		setHistory((previous) => [
+			...previous.slice(-29),
+			previous[previous.length - 1].map((box) => (selected.includes(box.id) ? { ...box, ...update } : box)),
+		]);
+	const assign = (item: ItemSummary, advance = false) => {
+		if (!chosen.length) return;
+		setHistory((previous) => [
+			...previous.slice(-29),
+			previous[previous.length - 1].map((box) =>
+				selected.includes(box.id)
+					? { ...box, itemId: item.id, confirmed: true, quantity: supportsQuantity(item) ? box.quantity : 1 }
+					: box,
+			),
+		]);
+		setQuery("");
+		setKeepReviewing(false);
+		if (advance) {
+			const next = nextUnknownId(
+				boxes.map((box) => box.id),
+				unknowns.filter((box) => !selected.includes(box.id)).map((box) => box.id),
+				anchor.current,
+			);
+			if (next) focusBox(next);
+			else setSelected([]);
+		}
+	};
+	const navigateUnknown = (direction: 1 | -1) => {
+		if (!unknowns.length) return;
+		const next = nextUnknownId(
+			boxes.map((box) => box.id),
+			unknowns.map((box) => box.id),
+			anchor.current,
+			direction,
+		);
+		if (next) focusBox(next);
 		setQuery("");
 	};
-	const assign = (item: ItemSummary) => {
-		if (active) patch(active.id, { itemId: item.id, confirmed: true });
-		setQuery("");
+	const nextUnknown = () => navigateUnknown(1);
+	const allFir = chosen.length > 0 && chosen.every((box) => box.foundInRaid === "yes");
+	const firStatus = chosen.every((box) => box.foundInRaid === active?.foundInRaid) ? active?.foundInRaid : "mixed";
+	const toggleFir = () => {
+		if (chosen.length) patch({ foundInRaid: allFir ? "no" : "yes", firConfirmed: true });
 	};
-	const nextUnknown = () => {
-		const index = unknowns.findIndex((box) => box.id === selected);
-		if (unknowns.length) select(unknowns[(index + 1) % unknowns.length].id);
-	};
+	useEffect(() => {
+		const keydown = (event: KeyboardEvent) => {
+			if (completing || summaryOpen) return;
+			if (
+				event.defaultPrevented ||
+				event.repeat ||
+				event.isComposing ||
+				event.ctrlKey ||
+				event.metaKey ||
+				event.altKey ||
+				event.shiftKey
+			)
+				return;
+			const target = event.target as HTMLElement;
+			if (target.closest("input, textarea, select, [contenteditable=true], [role=dialog]")) return;
+			if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+				event.preventDefault();
+				navigateUnknown(event.key === "ArrowRight" ? 1 : -1);
+			} else if (event.key.toLowerCase() === "f") {
+				event.preventDefault();
+				toggleFir();
+			} else if (event.key === "Enter" && !target.closest("button, a") && suggestions[0]) {
+				event.preventDefault();
+				assign(suggestions[0], true);
+			}
+		};
+		window.addEventListener("keydown", keydown);
+		return () => window.removeEventListener("keydown", keydown);
+	});
 	return (
-		<section aria-label="Review scanned items">
-			<div className="flex flex-wrap items-center gap-2 border-b border-border-color p-3">
-				{complete ? (
-					<button className={control} onClick={() => setReviewedList(null)}>
-						Back to editing
-					</button>
-				) : (
-					<>
-						<button
-							className={control}
-							disabled={history.length < 2}
-							onClick={() => {
-								setHistory((h) => h.slice(0, -1));
-							}}
-						>
-							Undo
-						</button>
-						<button className={control} disabled={!unknowns.length} onClick={nextUnknown}>
-							Next unknown ({unknowns.length})
-						</button>
-					</>
-				)}
-				<label className="flex items-center gap-2 text-sm text-muted-foreground">
-					<input type="checkbox" checked={filled} onChange={(e) => setFilled(e.target.checked)} />
-					Fill boxes
-				</label>
-				<label className="flex items-center gap-2 text-sm text-muted-foreground">
-					<input
-						type="checkbox"
-						checked={showSuccesses}
-						onChange={(e) => {
-							setShowSuccesses(e.target.checked);
-							setSelected(null);
-						}}
-					/>
-					Show successes
-				</label>
-				<label className="ml-auto text-xs text-muted-foreground">
-					Zoom{" "}
-					<select
-						aria-label="Screenshot zoom"
-						className={control}
-						value={zoom}
-						onChange={(e) => setZoom(Number(e.target.value))}
-					>
-						{[100, 150, 200].map((v) => (
-							<option key={v} value={v}>
-								{v}%
-							</option>
-						))}
-					</select>
-				</label>
-			</div>
-			<p className="px-4 py-2 text-xs text-muted-foreground">
-				{complete
-					? "Reviewed list held for this screenshot. Inventory has not changed."
-					: "Click a box to identify or correct it. Hide successes to focus on yellow issues; fill boxes to spot gaps."}
-			</p>
-			<div className="grid items-start lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
-				<div className="max-h-[78vh] overflow-auto p-3">
-					<div
-						role="group"
-						aria-label="Screenshot review canvas"
-						className="relative isolate select-none"
-						style={{ width: `${zoom}%` }}
-					>
-						<img
-							src={image.url}
-							alt="Uploaded stash screenshot"
-							draggable={false}
-							className="block h-auto w-full rounded"
-						/>
-						{boxes.map((box, index) => {
-							const item = box.itemId ? byId.get(box.itemId) : null;
-							if (item && !showSuccesses) return null;
-							return (
-								<button
-									key={box.id}
-									type="button"
-									disabled={complete}
-									aria-label={`Box ${index + 1}: ${item?.name ?? "Unknown item"}`}
-									aria-pressed={box.id === selected}
-									title={box.text ? `Read: ${box.text}` : "Manually selected box"}
-									onClick={() => select(box.id)}
-									className={cn(
-										"absolute cursor-pointer border-2 text-left focus:outline-none focus:ring-2 focus:ring-brand",
-										item ? "border-brand/70 hover:bg-brand/15" : "border-warning/80 hover:bg-warning/15",
-										filled && (item ? "bg-brand/35" : "bg-warning/35"),
-										selected === box.id && "z-10 ring-2 ring-foreground",
-									)}
-									style={position(box.bounds)}
-								>
-									<span className="absolute left-0 top-0 max-w-full truncate bg-card/90 px-1 text-[10px] leading-tight text-foreground">
-										{index + 1}
-										{!item ? " ?" : ""}
-										{box.confirmed ? " ✓" : ""}
-									</span>
-								</button>
-							);
-						})}
-					</div>
-				</div>
-				<aside className="min-w-0 border-t border-border-color p-4 lg:border-l lg:border-t-0">
-					<h2 className="font-semibold text-foreground">
-						{complete ? "Reviewed list" : active ? `Edit box ${boxes.indexOf(active) + 1}` : "Review items"}
-					</h2>
-					<p className="mt-1 text-xs text-muted-foreground" aria-live="polite">
-						{new Set(summary.totals.map((total) => total.item.id)).size} item types · {boxes.length} boxes ·{" "}
-						{summary.unresolved} unassigned
-					</p>
-					{!complete && active && (
-						<div className="mt-4 space-y-3">
-							<div
-								className="relative mx-auto overflow-hidden rounded border border-border-color"
+		<section
+			className="relative grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] grid-cols-[minmax(0,1fr)_20rem] overflow-hidden max-sm:grid-cols-[minmax(0,1fr)_15rem]"
+			aria-label="Review scanned items"
+		>
+			<div
+				inert={summaryOpen}
+				aria-hidden={summaryOpen}
+				ref={canvas}
+				tabIndex={-1}
+				className="min-h-0 overflow-auto bg-shadow/30 p-3 outline-none"
+			>
+				<div
+					role="group"
+					aria-label="Screenshot review canvas"
+					className="relative isolate mx-auto select-none"
+					style={{ width: (fitWidth * zoom) / 100 }}
+				>
+					<img src={image.url} alt="Uploaded stash screenshot" draggable={false} className="block h-auto w-full" />
+					{boxes.map((box, number) => {
+						const item = box.itemId ? byId.get(box.itemId) : undefined;
+						const picked = selected.includes(box.id);
+						return (
+							<button
+								key={box.id}
+								type="button"
+								data-box-index={number}
+								aria-label={`Box ${number + 1}: ${item?.name ?? "Unknown item"}`}
+								aria-pressed={picked}
+								onClick={(event) => {
+									if (item && (event.ctrlKey || event.metaKey || event.shiftKey)) return;
+									setKeepReviewing(true);
+									setIgnoreUnknowns(false);
+									setSelected(
+										selectReviewBoxes(
+											boxes.map((box) => box.id),
+											selected,
+											anchor.current,
+											box.id,
+											event.ctrlKey || event.metaKey,
+											event.shiftKey,
+											unknowns.map((box) => box.id),
+										),
+									);
+									if (!event.shiftKey || !anchor.current) anchor.current = box.id;
+									setQuery("");
+									canvas.current?.focus({ preventScroll: true });
+								}}
+								className={cn(
+									"absolute cursor-pointer border text-left focus-visible:outline-2 focus-visible:outline-foreground",
+									item
+										? "border-transparent bg-shadow/65 hover:bg-shadow/40"
+										: "border-warning/80 bg-warning/20 hover:bg-warning/30",
+									picked && "z-10 bg-brand/25 ring-2 ring-foreground",
+								)}
 								style={{
-									width: Math.min(
-										180,
-										(180 * active.bounds.width * image.width) / (active.bounds.height * image.height),
-									),
-									aspectRatio: `${active.bounds.width * image.width}/${active.bounds.height * image.height}`,
+									left: `${box.bounds.left * 100}%`,
+									top: `${box.bounds.top * 100}%`,
+									width: `${box.bounds.width * 100}%`,
+									height: `${box.bounds.height * 100}%`,
 								}}
 							>
-								<img
-									src={image.url}
-									alt="Selected item crop"
-									className="absolute max-w-none"
-									style={{
-										width: `${100 / active.bounds.width}%`,
-										left: `${(-active.bounds.left / active.bounds.width) * 100}%`,
-										top: `${(-active.bounds.top / active.bounds.height) * 100}%`,
-									}}
+								<span
+									aria-hidden="true"
+									className={cn(
+										"pointer-events-none absolute inset-0",
+										styles.reveal,
+										item ? "bg-success/80" : "bg-warning/80",
+									)}
+									style={{ animationDelay: `${number * Math.min(65, 1800 / Math.max(1, boxes.length))}ms` }}
 								/>
-							</div>
-							<p className="text-sm text-foreground">
-								{active.itemId ? byId.get(active.itemId)?.name : "Unknown item"}
-								{active.text && <span className="block text-xs text-muted-foreground">Read: {active.text}</span>}
-							</p>
-							<QuickAddSearch
-								mode={mode}
-								query={query}
-								onQueryChange={setQuery}
-								onPick={assign}
-								inputRef={searchInput}
-							/>
-							{suggestions.length > 0 && (
-								<div className="max-h-48 space-y-1 overflow-y-auto" aria-label="Suggested items">
-									<p className="text-xs text-muted-foreground">{query ? "Close label matches" : "Suggested items"}</p>
-									{suggestions.map((item) => (
+								<span className="absolute left-0 top-0 bg-card/90 px-1 text-[10px] leading-tight text-foreground">
+									{number + 1}
+									{!item ? " ?" : box.confirmed ? " ✓" : ""}
+								</span>
+							</button>
+						);
+					})}
+				</div>
+			</div>
+			<aside
+				inert={summaryOpen}
+				aria-hidden={summaryOpen}
+				className="col-start-2 row-start-1 row-span-2 flex min-h-0 flex-col overflow-hidden border-l border-border-color bg-card p-4"
+			>
+				<div className="-mx-4 -mt-4 min-h-0 flex-1 overflow-y-auto px-4 pt-4">
+					<div className="-mx-4 -mt-4 bg-brand/10 p-4">
+						<p className="text-[10px] uppercase tracking-widest text-brand">Current goal</p>
+						<h1 className="mt-1 text-lg font-semibold text-foreground">
+							{completing ? "Complete your review" : "Classify items"}
+						</h1>
+						<p className="mt-1 text-xs text-muted-foreground" aria-live="polite">
+							{unknowns.length
+								? `${unknowns.length} unknown remaining`
+								: boxes.length
+									? "All items classified"
+									: "No items detected — try another image"}
+						</p>
+					</div>
+					<UploaderCompletion
+						visible={completing}
+						boxes={included}
+						items={items}
+						ignoredCount={ignoreUnknowns ? unknowns.length : 0}
+						onSummary={() => setSummaryOpen(true)}
+						onReview={() => {
+							setKeepReviewing(true);
+							setIgnoreUnknowns(false);
+						}}
+					/>
+					<div hidden={completing}>
+						<div className="grid gap-2 border-b border-border-color py-4">
+							{classified && (
+								<button className={cn(control, "border-brand text-brand")} onClick={() => setKeepReviewing(false)}>
+									Continue to summary <span aria-hidden="true">→</span>
+								</button>
+							)}
+							<button className={control} disabled={!unknowns.length} onClick={nextUnknown}>
+								Next unknown <KeyHint>→</KeyHint>
+							</button>
+							<button
+								className={control}
+								disabled={!active || !suggestions.length}
+								onClick={() => suggestions[0] && assign(suggestions[0], true)}
+							>
+								Use suggested item <KeyHint>Enter</KeyHint>
+							</button>
+							{unknowns.length > 0 && (
+								<button
+									className="rounded-md border border-border-color px-3 py-2 text-xs text-muted-foreground hover:bg-surface-raised"
+									onClick={() => {
+										setIgnoreUnknowns(true);
+										setKeepReviewing(false);
+									}}
+								>
+									Ignore unknowns and continue
+								</button>
+							)}
+							<button
+								disabled={history.length < 2}
+								onClick={() => setHistory((previous) => previous.slice(0, -1))}
+								className="flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs text-muted-foreground hover:bg-surface-raised hover:text-foreground disabled:opacity-40"
+							>
+								<Undo2 size={13} aria-hidden="true" />
+								Undo last change
+							</button>
+						</div>
+						{active ? (
+							<div className="mt-4 space-y-4">
+								<div className="flex items-center gap-3">
+									<div
+										className="relative shrink-0 overflow-hidden"
+										style={{
+											width: Math.min(
+												72,
+												(72 * active.bounds.width * image.width) / (active.bounds.height * image.height),
+											),
+											aspectRatio: `${active.bounds.width * image.width}/${active.bounds.height * image.height}`,
+										}}
+									>
+										<img
+											src={image.url}
+											alt="Selected item crop"
+											className="absolute max-w-none"
+											style={{
+												width: `${100 / active.bounds.width}%`,
+												left: `${(-active.bounds.left / active.bounds.width) * 100}%`,
+												top: `${(-active.bounds.top / active.bounds.height) * 100}%`,
+											}}
+										/>
+									</div>
+									<div className="min-w-0">
+										<p className="text-xs text-muted-foreground">
+											{chosen.length > 1 ? `${chosen.length} items selected` : `Item ${boxes.indexOf(active) + 1}`}
+										</p>
+										<p className="mt-1 text-sm text-foreground">
+											{chosen.length > 1 ? "Assign one type to all selected" : (activeItem?.name ?? "Unknown item")}
+										</p>
+									</div>
+								</div>
+								<button
+									onClick={toggleFir}
+									aria-pressed={allFir}
+									aria-keyshortcuts="f"
+									className={cn(
+										"flex w-full items-center justify-between rounded-md border border-border-color px-3 py-3 text-sm font-semibold",
+										allFir ? "bg-fir/20 text-fir" : "bg-surface-raised text-foreground",
+									)}
+								>
+									<span>
+										{allFir
+											? "✓ Found in raid"
+											: firStatus === "no"
+												? "Not found in raid"
+												: firStatus === "mixed"
+													? "FIR · Mixed"
+													: "FIR · Unknown"}
+									</span>
+									<KeyHint>F</KeyHint>
+								</button>
+								<div>
+									<label htmlFor="review-search" className="sr-only">
+										Search item matches
+									</label>
+									<input
+										id="review-search"
+										type="search"
+										placeholder="Search items…"
+										value={query}
+										onChange={(event) => setQuery(event.target.value)}
+										onKeyDown={(event) => {
+											if (event.key === "Enter" && !event.nativeEvent.isComposing && suggestions[0]) {
+												event.preventDefault();
+												assign(suggestions[0], true);
+												canvas.current?.focus({ preventScroll: true });
+											}
+										}}
+										className="w-full bg-surface-raised px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-brand"
+									/>
+								</div>
+								<div aria-label="Suggested items" className="border-t border-border-color pt-4">
+									<p className="mb-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+										{query ? "Search matches" : "Best matches"}
+									</p>
+									{suggestions.map((item, rank) => (
 										<button
 											key={item.id}
-											className="flex w-full items-center gap-2 rounded border border-border-color p-2 text-left text-xs text-foreground hover:bg-surface-raised"
 											onClick={() => assign(item)}
+											className="mb-1 flex w-full items-center gap-2 border border-border-color px-2 py-2 text-left text-sm text-foreground hover:bg-surface-raised"
 										>
 											<img src={itemImageUrl(item)} alt="" className="h-8 w-8 object-contain" />
-											{item.name}
+											<span className="flex-1">{item.name}</span>
+											{rank === 0 && <KeyHint>↵</KeyHint>}
 										</button>
 									))}
+									{!suggestions.length && (
+										<p className="py-2 text-xs text-muted-foreground">No matches. Try searching by name.</p>
+									)}
 								</div>
-							)}
-							<label className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-								Found in raid
-								<select
-									aria-label="Found in raid status"
-									className={control}
-									value={active.foundInRaid}
-									onChange={(event) =>
-										patch(active.id, { foundInRaid: event.target.value as FoundInRaidStatus, firConfirmed: true })
-									}
-								>
-									<option value="unknown">Unknown</option>
-									<option value="yes">Found in raid</option>
-									<option value="no">Not found in raid</option>
-								</select>
-							</label>
-							<p className="text-xs text-muted-foreground">
-								{active.firConfirmed
-									? "FIR status set by you."
-									: active.foundInRaid === "yes"
-										? "FIR badge detected. You can correct this."
-										: "FIR badge not confirmed. This does not mean the item is non-FIR."}
-							</p>
-							<label className="flex items-center justify-between text-sm text-muted-foreground">
-								Quantity{" "}
-								<input
-									key={`${active.id}:${active.quantity}`}
-									aria-label="Box quantity"
-									type="number"
-									min={1}
-									max={999999}
-									defaultValue={active.quantity}
-									className={cn(control, "w-24")}
-									onBlur={(e) => {
-										const value = Number(e.target.value);
-										if (Number.isSafeInteger(value) && value > 0 && value <= 999999)
-											patch(active.id, { quantity: value });
-										else e.target.value = String(active.quantity);
-									}}
-								/>
-							</label>
-							<div className="flex flex-wrap gap-2">
-								<button
-									className={control}
-									onClick={() => {
-										change(boxes.filter((box) => box.id !== active.id));
-										setSelected(null);
-									}}
-								>
-									Remove box
-								</button>
-							</div>
-						</div>
-					)}
-					{!complete && !active && (
-						<p className="mt-4 text-sm text-muted-foreground">
-							Select a box. Assign or remove unknowns before finishing. Quantities start at one per box.
-						</p>
-					)}
-					{!complete && (
-						<button
-							className={cn(control, "mt-5 w-full border-brand bg-brand text-inverse")}
-							disabled={!boxes.length || !!summary.unresolved}
-							onClick={() => {
-								setReviewedList(finishReview(boxes, items));
-								setSelected(null);
-							}}
-						>
-							Finish review
-						</button>
-					)}
-					{complete && (
-						<p className="mt-3 text-sm text-muted-foreground">
-							Ready for the next step. This list stays on this page until you change the screenshot or leave.
-						</p>
-					)}
-					<div className="mt-5 max-h-[45vh] space-y-1 overflow-y-auto">
-						{complete
-							? heldTotals.map(({ item, itemId, quantity, foundInRaid }) => (
-									<div
-										key={`${itemId}:${foundInRaid}`}
-										className="flex items-center gap-2 border-b border-border-color py-2 text-sm text-foreground"
-									>
-										{item && <img src={itemImageUrl(item)} alt="" className="h-8 w-8 object-contain" />}
-										<span className="flex-1">
-											{item?.name ?? `Missing catalog item: ${itemId}`}
-											<span className="block text-xs text-muted-foreground">{foundInRaidLabel(foundInRaid)}</span>
-										</span>
-										<span>×{quantity}</span>
-									</div>
-								))
-							: boxes.map((box, index) =>
-									!showSuccesses && box.itemId && byId.has(box.itemId) ? null : (
-										<button
-											key={box.id}
-											className={cn(
-												"flex w-full gap-2 rounded px-2 py-1 text-left text-xs hover:bg-surface-raised",
-												box.itemId ? "text-muted-foreground" : "text-warning",
-												selected === box.id && "bg-brand/10",
-											)}
-											onClick={() => select(box.id)}
-										>
-											<span>{index + 1}.</span>
-											<span className="flex-1">
-												{box.itemId ? byId.get(box.itemId)?.name : "Unknown item"}
-												<span className="block text-subtle-foreground">{foundInRaidLabel(box.foundInRaid)}</span>
-											</span>
-											<span>×{box.quantity}</span>
-										</button>
-									),
+								{chosen.length === 1 && supportsQuantity(activeItem) && (
+									<label className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+										Quantity
+										<input
+											key={`${active.id}:${active.quantity}`}
+											aria-label="Item quantity"
+											type="number"
+											min={1}
+											max={999999}
+											defaultValue={active.quantity}
+											className="w-24 bg-surface-raised px-2 py-1 text-foreground"
+											onBlur={(event) => {
+												const quantity = Number(event.target.value);
+												if (Number.isSafeInteger(quantity) && quantity > 0 && quantity <= 999999) patch({ quantity });
+												else event.target.value = String(active.quantity);
+											}}
+										/>
+									</label>
 								)}
+							</div>
+						) : (
+							<p className="my-6 text-sm text-muted-foreground">
+								Select an item in the screenshot to review its matches.
+							</p>
+						)}
 					</div>
-				</aside>
-			</div>
+				</div>
+				<div className="-mx-4 -mb-4 mt-3 shrink-0 border-t border-border-color bg-surface-raised/40 p-3">
+					<div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+						<span className="text-[10px] uppercase tracking-widest">Screenshot</span>
+						<label>
+							Zoom{" "}
+							<select
+								aria-label="Screenshot zoom"
+								value={zoom}
+								onChange={(event) => setZoom(Number(event.target.value))}
+								className="rounded border border-border-color bg-surface-raised px-1 py-1 text-xs text-foreground"
+							>
+								{[50, 75, 100, 150, 200].map((value) => (
+									<option key={value} value={value}>
+										{value === 100 ? "Fit" : `${value}%`}
+									</option>
+								))}
+							</select>
+						</label>
+					</div>
+					{imageActions}
+				</div>
+			</aside>
+			{bottomBar}
+			{summaryOpen && (
+				<div
+					data-uploader-summary
+					className={cn("absolute inset-0 z-20 flex flex-col bg-card p-6", styles.summaryPage)}
+				>
+					<button
+						ref={summaryBack}
+						onClick={() => {
+							setSummaryOpen(false);
+						}}
+						className="flex w-fit items-center gap-2 rounded-md border border-border-color px-3 py-2 text-sm text-foreground hover:bg-surface-raised"
+					>
+						<ArrowLeft size={16} aria-hidden="true" />
+						Back to review
+					</button>
+					<div className={cn("flex flex-1 flex-col items-center justify-center text-center", styles.summaryContent)}>
+						<h1 className="text-2xl font-semibold text-foreground">Summary</h1>
+						<p className="mt-3 text-sm text-muted-foreground">The next section will appear here.</p>
+					</div>
+				</div>
+			)}
 		</section>
 	);
 }

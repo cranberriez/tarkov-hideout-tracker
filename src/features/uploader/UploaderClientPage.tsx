@@ -2,20 +2,29 @@
 
 /* eslint-disable @next/next/no-img-element -- Local screenshot preview. */
 import { useEffect, useRef, useState } from "react";
-import { ImagePlus, Upload, X } from "lucide-react";
-import { RouteLoader } from "@/components/core/RouteLoader";
+import { ImagePlus, Trash2, Upload } from "lucide-react";
 import { toTarkovJsonGameMode, type TarkovJsonGameMode } from "@/lib/game-mode";
 import { useUserStoreHydrated } from "@/lib/query/game-data";
 import { useSearchManifest } from "@/lib/search/useSearchManifest";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import { useUploaderController } from "./useUploaderController";
-import { UploaderReview } from "./UploaderReview";
+import { KeyHint, UploaderReview } from "./UploaderReview";
+import styles from "./UploaderReview.module.css";
 
 export function UploaderClientPage() {
 	const hydrated = useUserStoreHydrated();
 	const gameMode = useUserStore((state) => state.gameMode);
-	if (!hydrated) return <RouteLoader page="items" title="Screenshot uploader" />;
+	useEffect(() => {
+		document.body.classList.add("uploader-workspace-active");
+		return () => document.body.classList.remove("uploader-workspace-active");
+	}, []);
+	if (!hydrated)
+		return (
+			<main className="flex min-h-0 flex-1 items-end bg-background p-3 text-xs text-muted-foreground" role="status">
+				Loading uploader…
+			</main>
+		);
 	return <UploaderView key={gameMode} mode={toTarkovJsonGameMode(gameMode)} />;
 }
 
@@ -37,13 +46,99 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 		window.addEventListener("paste", paste);
 		return () => window.removeEventListener("paste", paste);
 	}, [supplyImage]);
+	const reviewing = image && !status && (finished || error) && catalog.data;
+	const actions = (
+		<div className="flex items-center gap-2 text-xs text-muted-foreground">
+			<button
+				onClick={() => input.current?.click()}
+				className="flex flex-1 items-center justify-center gap-2 rounded-md border border-border-color bg-surface-raised px-3 py-2 hover:border-brand/50 hover:text-foreground"
+			>
+				<Upload size={14} aria-hidden="true" />
+				{image ? "Change image" : "Choose image"}
+			</button>
+			{image && (
+				<button
+					onClick={controller.clear}
+					aria-label="Clear screenshot"
+					title="Clear screenshot"
+					className="rounded-md border border-border-color p-2 hover:border-danger/50 hover:bg-danger/10 hover:text-danger"
+				>
+					<Trash2 size={16} aria-hidden="true" />
+				</button>
+			)}
+		</div>
+	);
+	const bottomBar = (
+		<div className="col-start-1 row-start-2 min-w-0 border-t border-border-color bg-surface-raised/40">
+			{(error || catalog.error) && (
+				<div role="alert" className="bg-danger/10 px-3 py-2 text-xs text-danger">
+					{error}
+					{catalog.error && (
+						<>
+							{" "}
+							Item catalog unavailable. {catalog.error.message}{" "}
+							<button onClick={() => void catalog.retry()} className="underline">
+								Retry catalog
+							</button>
+						</>
+					)}
+					{error && image && (
+						<button onClick={controller.retry} className="ml-2 underline">
+							Retry scan
+						</button>
+					)}
+				</div>
+			)}
+			<footer className="shrink-0 px-3 py-2 text-[11px] text-muted-foreground" aria-live="polite">
+				{status ? (
+					<div className="flex items-center gap-3">
+						<span>
+							{status.label} · {Math.round(status.progress * 100)}%
+						</span>
+						<progress
+							value={status.progress}
+							max={1}
+							aria-label="Recognition progress"
+							className="h-1 min-w-12 flex-1 accent-brand"
+						/>
+					</div>
+				) : reviewing ? (
+					<p>
+						Click any item · <KeyHint>Ctrl / ⌘</KeyHint> + click to multi-select unknowns · <KeyHint>Shift</KeyHint> +
+						click for unknowns in range{" "}
+						<span className="ml-4">
+							<KeyHint>→</KeyHint> Next unknown · <KeyHint>Enter</KeyHint> Use suggestion · <KeyHint>F</KeyHint> Toggle
+							FIR
+						</span>
+					</p>
+				) : image && !catalog.data && !catalog.error ? (
+					"Loading item catalog…"
+				) : (
+					"Ctrl+V Paste screenshot · Drop an image anywhere"
+				)}
+			</footer>
+		</div>
+	);
 	return (
-		<main className="container mx-auto max-w-7xl px-4 py-8 sm:px-6">
-			<h1 className="text-2xl font-semibold tracking-tight text-foreground">Screenshot uploader</h1>
-			<p className="mt-2 text-sm text-muted-foreground">Scan your stash, review the items, then finish your list.</p>
-			<p className="mb-6 mt-1 text-xs text-subtle-foreground">
-				Image processing stays in your browser · Inventory is unchanged · Reviews stay on this page
-			</p>
+		<main
+			className={cn(
+				"flex min-h-0 flex-1 flex-col overflow-hidden bg-background",
+				dragging && "ring-2 ring-inset ring-brand",
+			)}
+			onDragOver={(event) => {
+				event.preventDefault();
+				setDragging(true);
+			}}
+			onDragLeave={(event) => {
+				if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
+			}}
+			onDrop={(event) => {
+				event.preventDefault();
+				setDragging(false);
+				const file = event.dataTransfer.files[0];
+				if (file) void supplyImage(file);
+			}}
+		>
 			<input
 				ref={input}
 				type="file"
@@ -56,112 +151,62 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 					event.target.value = "";
 				}}
 			/>
-			<div
-				onDragOver={(event) => {
-					event.preventDefault();
-					setDragging(true);
-				}}
-				onDragLeave={(event) => {
-					if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
-				}}
-				onDrop={(event) => {
-					event.preventDefault();
-					setDragging(false);
-					const file = event.dataTransfer.files[0];
-					if (file) void supplyImage(file);
-				}}
-				className={cn(
-					"rounded-lg border bg-card",
-					dragging ? "border-brand ring-2 ring-brand/30" : "border-border-color",
-				)}
-			>
-				{!image ? (
-					<div className="flex min-h-64 flex-col items-center justify-center gap-4 p-8 text-center">
-						<ImagePlus size={32} className="text-muted-foreground" aria-hidden="true" />
-						<p className="text-sm text-muted-foreground">Paste with Ctrl+V, drop an image here, or</p>
-						<button
-							type="button"
-							onClick={() => input.current?.click()}
-							className="inline-flex items-center gap-2 rounded bg-brand px-4 py-2 text-sm font-medium text-inverse hover:bg-brand-hover"
-						>
-							<Upload size={16} aria-hidden="true" />
-							Choose image
-						</button>
-						<p className="text-xs text-subtle-foreground">
-							PNG, JPEG, WebP · Up to 20 MB · Crop to one container for better results
-						</p>
-					</div>
-				) : (
-					<>
-						<div className="flex flex-wrap items-center gap-3 border-b border-border-color px-4 py-3">
-							<span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{image.name}</span>
-							<button
-								type="button"
-								onClick={() => input.current?.click()}
-								className="text-xs text-brand hover:underline"
-							>
-								Change image (new review)
-							</button>
-							<button
-								type="button"
-								onClick={controller.clear}
-								aria-label="Clear image and review"
-								className="rounded p-1 text-muted-foreground hover:bg-surface-raised hover:text-foreground"
-							>
-								<X size={16} />
-							</button>
-						</div>
-						{!status && (finished || error) && catalog.data ? (
-							<UploaderReview image={image} detections={detections} items={catalog.data.items} mode={mode} />
+			{reviewing && catalog.data ? (
+				<UploaderReview
+					key={image.url}
+					image={image}
+					detections={detections}
+					items={catalog.data.items}
+					imageActions={actions}
+					bottomBar={bottomBar}
+				/>
+			) : (
+				<div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] grid-cols-[minmax(0,1fr)_20rem] max-sm:grid-cols-[minmax(0,1fr)_15rem]">
+					<div
+						className="relative flex min-h-0 items-center justify-center overflow-hidden bg-shadow/30 p-4"
+						aria-busy={!!image && !error && !catalog.error}
+					>
+						{image ? (
+							<img src={image.url} alt="Uploaded stash screenshot" className="max-h-full max-w-full object-contain" />
 						) : (
-							<div className="p-4">
-								<img
-									src={image.url}
-									alt="Uploaded stash screenshot"
-									className="mx-auto max-h-[65vh] max-w-full rounded"
-								/>
-								<p className="mt-3 text-sm text-muted-foreground">
-									{status ? "Reading screenshot…" : "Waiting for item catalog…"}
-								</p>
+							<div className="text-center text-muted-foreground">
+								<ImagePlus size={32} className="mx-auto mb-4" aria-hidden="true" />
+								<p className="text-sm">Drop a screenshot or paste with Ctrl+V</p>
 							</div>
 						)}
-					</>
-				)}
-			</div>
-			<div className="mt-4 space-y-3" aria-live="polite">
-				{status && (
-					<div>
-						<p className="text-sm text-muted-foreground">
-							{status.label}
-							{status.progress > 0 ? ` · ${Math.round(status.progress * 100)}%` : "…"}
-						</p>
-						<progress
-							value={status.progress}
-							max={1}
-							aria-label="Recognition progress"
-							className="mt-2 h-1 w-full accent-brand"
-						/>
+						{image && !error && !catalog.error && (
+							<div className="pointer-events-none absolute inset-0 overflow-hidden bg-shadow/50">
+								<div
+									aria-hidden="true"
+									className={cn(
+										"absolute inset-x-0 top-0 h-24 border-b border-brand/60 bg-gradient-to-b from-transparent to-brand/15",
+										styles.scan,
+									)}
+								/>
+							</div>
+						)}
 					</div>
-				)}
-				{error && (
-					<p role="alert" className="text-sm text-danger">
-						{error}
-						{image && " Try another screenshot if no reviewable items were found."}
-					</p>
-				)}
-				{catalog.error && (
-					<p role="alert" className="text-sm text-danger">
-						Item catalog unavailable. {catalog.error.message}{" "}
-						<button type="button" onClick={() => void catalog.retry()} className="underline">
-							Retry catalog
+					<aside className="col-start-2 row-start-1 row-span-2 flex min-h-0 flex-col overflow-y-auto border-l border-border-color bg-card p-4">
+						<div className="-mx-4 -mt-4 bg-brand/10 p-4">
+							<p className="text-[10px] uppercase tracking-widest text-brand">Current goal</p>
+							<h1 className="mt-1 text-lg font-semibold text-foreground">
+								{image ? "Read screenshot" : "Upload screenshot"}
+							</h1>
+						</div>
+						<button
+							onClick={() => input.current?.click()}
+							className="mt-4 rounded-md border border-brand bg-brand px-3 py-2 text-sm font-medium text-inverse hover:bg-brand-hover"
+						>
+							Choose image
 						</button>
-					</p>
-				)}
-			</div>
-			<p className="mt-6 text-xs text-subtle-foreground">
-				Check the entire screenshot before finishing. Filled boxes help reveal missed items; try a clearer screenshot if
-				gaps remain. Stack quantities are not read automatically. FIR badge detections can be corrected during review.
-			</p>
+						<p className="mt-3 text-xs text-muted-foreground">PNG, JPEG or WebP · Up to 20 MB</p>
+						{image && (
+							<div className="-mx-4 -mb-4 mt-auto border-t border-border-color bg-surface-raised/40 p-4">{actions}</div>
+						)}
+					</aside>
+					{bottomBar}
+				</div>
+			)}
 		</main>
 	);
 }

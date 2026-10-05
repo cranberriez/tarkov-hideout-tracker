@@ -108,3 +108,24 @@ test("suggested cells require repeated row evidence and scale with image aspect 
 	assert.ok(Math.abs(grid.cellWidth - 0.05) < 1e-8);
 	assert.ok(Math.abs(grid.cellHeight - 0.1) < 1e-8);
 });
+
+test("manual additions combine with scanned items without inventing screenshot bounds", () => {
+	const result = summarizeReview(
+		[
+			box("scan", "gpu", 2),
+			{ itemId: "gpu", quantity: 3, foundInRaid: "yes" },
+			{ itemId: "gpu", quantity: 4, foundInRaid: "yes" },
+		],
+		[gpu],
+	);
+	assert.equal(result.unresolved, 0);
+	assert.deepEqual(
+		result.totals.map(({ quantity, foundInRaid }) => ({ quantity, foundInRaid })),
+		[
+			{ quantity: 2, foundInRaid: "unknown" },
+			{ quantity: 7, foundInRaid: "yes" },
+		],
+	);
+	assert.equal(summarizeReview([{ itemId: "missing", quantity: 1, foundInRaid: "no" }], [gpu]).unresolved, 1);
+	assert.equal(summarizeReview([{ itemId: "gpu", quantity: 0, foundInRaid: "no" }], [gpu]).unresolved, 1);
+});

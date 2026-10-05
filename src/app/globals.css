@@ -257,10 +257,15 @@ body {
 	font-family: var(--font-sans), sans-serif;
 }
 
-body.quest-workspace-active {
+body.quest-workspace-active,
+body.uploader-workspace-active {
 	height: 100dvh;
 	min-height: 0;
 	overflow: hidden;
+}
+
+body.uploader-workspace-active [data-main-nav] {
+	flex-shrink: 0;
 }
 
 @media (width >= 64rem) {

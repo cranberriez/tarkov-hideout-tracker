@@ -5,6 +5,6 @@ import { Footer } from "./Footer";
 
 export function RouteAwareFooter() {
 	const pathname = usePathname();
-	if (pathname === "/quests" || pathname.startsWith("/quests/")) return null;
+	if (pathname === "/uploader" || pathname === "/quests" || pathname.startsWith("/quests/")) return null;
 	return <Footer />;
 }
