@@ -31,32 +31,54 @@ async function readCatalogVersion(mode: TarkovDataMode, db: PostgresDatabase): P
 }
 
 /**
+ * Modes ("*" for all) whose tagged version entry is known to be stale but could not be invalidated
+ * where the mismatch was observed. Version reads for them bypass the data cache until revalidation succeeds.
+ */
+function staleCatalogVersions(): Set<TarkovDataMode | "*"> {
+	const g = globalThis as typeof globalThis & { __tarkovStaleCatalogVersions?: Set<TarkovDataMode | "*"> };
+	return (g.__tarkovStaleCatalogVersions ??= new Set());
+}
+
+async function revalidateCatalogVersionTag(): Promise<boolean> {
+	try {
+		const { revalidateTag } = await import("next/cache");
+		revalidateTag(CATALOG_VERSION_TAG, { expire: 0 });
+		return true;
+	} catch {
+		// Next rejects revalidation during render, inside cached functions (closing checks run inside the
+		// cached builds that call them), and outside a request scope.
+		return false;
+	}
+}
+
+/**
  * The current catalog version. Without an explicit database this is served from a per-instance memo
  * backed by the tagged data cache, so steady-state requests do not query PostgreSQL for it.
  */
 export async function getCatalogVersion(mode: TarkovDataMode, db?: PostgresDatabase): Promise<string> {
 	if (db) return readCatalogVersion(mode, db);
-	return memoizedRead(`catalog-version:${mode}`, VERSION_MEMO_MS, () =>
-		boundedReadCache(
+	return memoizedRead(`catalog-version:${mode}`, VERSION_MEMO_MS, async () => {
+		const stale = staleCatalogVersions();
+		if (stale.has(mode) || stale.has("*")) {
+			// The tag covers every mode, so one successful revalidation repairs all of them.
+			if (await revalidateCatalogVersionTag()) stale.clear();
+			return readCatalogVersion(mode, getPostgresDb());
+		}
+		return boundedReadCache(
 			["catalog-version", mode],
 			() => readCatalogVersion(mode, getPostgresDb()),
 			VERSION_REVALIDATE_SECONDS,
 			{
 				tags: [CATALOG_VERSION_TAG],
 			},
-		),
-	);
+		);
+	});
 }
 
 /** Drop cached version identities so the next read observes the committed catalog. */
 export async function invalidateCatalogVersion(mode?: TarkovDataMode): Promise<void> {
 	evictMemoizedReads((key) => (mode ? key === `catalog-version:${mode}` : key.startsWith("catalog-version:")));
-	try {
-		const { revalidateTag } = await import("next/cache");
-		revalidateTag(CATALOG_VERSION_TAG, { expire: 0 });
-	} catch {
-		// Outside a request scope (tests, scripts, render) only the local memo can be cleared.
-	}
+	if (!(await revalidateCatalogVersionTag())) staleCatalogVersions().add(mode ?? "*");
 }
 
 /** Assert that a composed read still belongs to the catalog version selected by its caller. */

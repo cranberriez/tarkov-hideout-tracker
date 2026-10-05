@@ -166,7 +166,11 @@ The catalog content_version only changes through the nightly
 [catalog cron](../src/app/api/cron/catalog/route.ts). [postgres-read](../src/server/db/postgres-read.ts)
 serves the current version from a 60-second per-instance memo backed by the Next data
 cache under the `postgres-catalog-version` tag; the cron invalidates that tag after a
-committed change, and any read that observes a newer version clears it too. Explicit
+committed change, and any read that observes a newer version clears it too. Next rejects
+tag revalidation during render and inside cached functions (where closing checks usually
+run), so a mismatch seen there marks the mode stale: its version reads bypass the data
+cache and read PostgreSQL until a request scope that allows revalidation clears the tag.
+Explicit
 database arguments (tests, scripts) always read PostgreSQL directly. Version updates
 commit atomically with their rows and versions only increase, so
 `withStableCatalogRead` with a caller-pinned version needs only its closing check.
