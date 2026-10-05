@@ -3,6 +3,8 @@
 /* eslint-disable @next/next/no-img-element -- Local screenshot crops and catalog previews. */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ItemSummary } from "@/types/items";
+import type { ReviewEntry } from "./review-model";
+import { UploaderSummary } from "./UploaderSummary";
 import { itemImageUrl } from "@/lib/utils/item-images";
 import { cn } from "@/lib/utils";
 import type { Screenshot } from "./image-recognition";
@@ -63,6 +65,7 @@ export function UploaderReview({
 	const [keepReviewing, setKeepReviewing] = useState(false);
 	const [ignoreUnknowns, setIgnoreUnknowns] = useState(false);
 	const [summaryOpen, setSummaryOpen] = useState(false);
+	const [summaryEntries, setSummaryEntries] = useState<ReviewEntry[]>([]);
 	const summaryBack = useRef<HTMLButtonElement>(null);
 	useEffect(() => {
 		if (summaryOpen) summaryBack.current?.focus();
@@ -269,7 +272,10 @@ export function UploaderReview({
 						boxes={included}
 						items={items}
 						ignoredCount={ignoreUnknowns ? unknowns.length : 0}
-						onSummary={() => setSummaryOpen(true)}
+						onSummary={(entries) => {
+							setSummaryEntries(entries);
+							setSummaryOpen(true);
+						}}
 						onReview={() => {
 							setKeepReviewing(true);
 							setIgnoreUnknowns(false);
@@ -457,7 +463,7 @@ export function UploaderReview({
 			{summaryOpen && (
 				<div
 					data-uploader-summary
-					className={cn("absolute inset-0 z-20 flex flex-col bg-card p-6", styles.summaryPage)}
+					className={cn("absolute inset-0 z-20 flex flex-col overflow-y-auto bg-card p-4 sm:p-6", styles.summaryPage)}
 				>
 					<button
 						ref={summaryBack}
@@ -469,9 +475,12 @@ export function UploaderReview({
 						<ArrowLeft size={16} aria-hidden="true" />
 						Back to review
 					</button>
-					<div className={cn("flex flex-1 flex-col items-center justify-center text-center", styles.summaryContent)}>
-						<h1 className="text-2xl font-semibold text-foreground">Summary</h1>
-						<p className="mt-3 text-sm text-muted-foreground">The next section will appear here.</p>
+					<div className={styles.summaryContent}>
+						<UploaderSummary
+							entries={summaryEntries}
+							items={items}
+							ignoredCount={ignoreUnknowns ? unknowns.length : 0}
+						/>
 					</div>
 				</div>
 			)}

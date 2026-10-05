@@ -248,6 +248,13 @@ repository composition, not a reason to import provider adapters into features.
 
 ## Prices, history, and freshness
 
+The uploader summary lazily reads `/api/page-data/uploader` through
+[getUploaderSummaryData](../src/server/queries/getUploaderSummaryData.ts).
+It returns mode-prepared station requirements and compact quests with availability
+metadata and item-demand objectives (including objective IDs for saved hand-ins).
+It does not load item records or prices. Either source failing returns an error,
+so incomplete requirements cannot be presented as surplus items.
+
 [price-store.ts](../src/server/prices/price-store.ts) owns PostgreSQL item_prices,
 item_price_sync, and price_refresh_state. Pricing refreshes independently of catalog
 content and never change catalog content_version. The workflow fetches catalog

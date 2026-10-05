@@ -329,8 +329,35 @@ and removal of manual additions. Additions stay separate from screenshot boxes
 and survive returning to classification. Ignore unknowns allows continuing with
 identified items only; it preserves unknown boxes for later review and reports
 the excluded count. Missing-item entry precedes the next-step buttons, with a centered View item list link below Keep reviewing. This link opens the grouped item list. Show summary
-expands the right panel across the workspace with a fade into a placeholder
-section; its top-left Back button restores the review and manual additions.
+expands the right panel across the workspace into the requirement summary;
+its top-left Back button restores the review and manual additions.
+The [summary model](../src/features/uploader/summary-model.ts) combines scanned
+and manually added entries, attaches all remaining hideout/quest reasons, and
+splits quantities into FIR reserves, replaceable needs, review decisions, and
+pricing candidates. It considers all future station levels and eligible future
+quests, excluding completed requirements/objectives and completed, failed,
+ignored, or faction-ineligible quests. Non-FIR copies cannot satisfy FIR demand;
+unknown FIR and quest alternatives remain explicit review decisions. Reusable
+tools use the maximum future tool quantity, separately from consumed items.
+Broad quest alternatives carry an incomplete-coverage warning. Saved inventory
+is neither subtracted (it may overlap the screenshot) nor modified.
+The summary loads requirement metadata on demand through
+[getUploaderSummaryData](../src/server/queries/getUploaderSummaryData.ts), with
+mode-scoped caching. Both requirement sources must succeed before recommendations
+appear. Only pricing-candidate IDs are sent to the existing mode-scoped
+[batch price hook](../src/features/items/useItemPrices.ts). Their rows show flea
+unit prices before fees, best trader offers in rouble equivalents, stack values,
+48-hour percentage changes when available, freshness, and unstable/stale labels.
+Loading, missing-price, and retryable error states are explicit. Full histories
+are not loaded, and price data is not a sell-and-rebuy recommendation.
+Categories stack inside a centered, 56rem maximum-width summary with compact rows.
+Action labels appear once in section headings; subgroups separate different uses
+and FIR statuses. Rows show the item image, name, quantity, and expansion control,
+with a compact price-data line for pricing candidates.
+Review decisions are split into Confirm found-in-raid status and Optional
+quest hand-ins, with empty review sections omitted. Each row expands
+to show only its hideout and quest uses, with required quantities and FIR requirements;
+the same single-column layout adapts to narrow screens.
 The seen-items list groups scanned and manual items
 by stable item ID and FIR status, explicitly retaining unknown detected FIR.
 [Found-in-raid detection](../src/features/uploader/found-in-raid.ts) compares a small

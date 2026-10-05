@@ -24,7 +24,7 @@ export function UploaderCompletion({
 	boxes: readonly ReviewEntry[];
 	items: ItemSummary[];
 	onReview: () => void;
-	onSummary: () => void;
+	onSummary: (entries: ReviewEntry[]) => void;
 	ignoredCount: number;
 }) {
 	const [added, setAdded] = useState<AddedItem[]>([]);
@@ -196,7 +196,7 @@ export function UploaderCompletion({
 						<section className="space-y-2 border-t border-border-color py-4" aria-label="Next step">
 							<button
 								disabled={summary.unresolved > 0 || summary.totals.length === 0}
-								onClick={onSummary}
+								onClick={() => onSummary([...boxes, ...added])}
 								className="flex w-full items-center justify-between rounded-md border border-brand bg-brand px-3 py-2.5 text-sm font-semibold text-inverse hover:bg-brand-hover disabled:opacity-40"
 							>
 								Show summary <ArrowRight size={16} aria-hidden="true" />
