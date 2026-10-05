@@ -6,7 +6,9 @@ import type { ItemSummary } from "@/types/items";
 import type { ReviewEntry } from "./review-model";
 import { UploaderDecisionView } from "./UploaderDecisionView";
 import { useUploaderSummary } from "./useUploaderSummary";
-import { useUploaderDecisions, decisionKey } from "./useUploaderDecisions";
+import { useUploaderDecisions, type DecisionFilter } from "./useUploaderDecisions";
+import type { SentCounts } from "./inventory-model";
+import { UploaderSidebarHeader } from "./UploaderSidebarHeader";
 import { DecisionMarker, decisionAppearance } from "./DecisionMarker";
 import { itemImageUrl } from "@/lib/utils/item-images";
 import { cn } from "@/lib/utils";
@@ -69,8 +71,11 @@ export function UploaderReview({
 	const [ignoreUnknowns, setIgnoreUnknowns] = useState(false);
 	const [summaryOpen, setSummaryOpen] = useState(false);
 	const [summaryEntries, setSummaryEntries] = useState<ReviewEntry[]>([]);
-	const summaryData = useUploaderSummary(summaryOpen ? summaryEntries : boxes, items);
-	const decisions = useUploaderDecisions(summaryData);
+	// Sends are tracked per scan so repeats add only the difference and kept copies stay kept.
+	const [sent, setSent] = useState<SentCounts>({});
+	const decisionEntries = summaryOpen ? summaryEntries : boxes;
+	const summaryData = useUploaderSummary(decisionEntries, items, sent);
+	const decisions = useUploaderDecisions(summaryData, decisionEntries);
 	const summaryBack = useRef<HTMLButtonElement>(null);
 	useEffect(() => {
 		if (summaryOpen) summaryBack.current?.focus();
@@ -144,9 +149,37 @@ export function UploaderReview({
 	const toggleFir = () => {
 		if (chosen.length) patch({ foundInRaid: allFir ? "no" : "yes", firConfirmed: true });
 	};
+	const filters: DecisionFilter[] = ["ALL", "KEEP", "SELL", "HOLD"];
+	const sortKeydown = (event: KeyboardEvent) => {
+		if (event.defaultPrevented || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
+		if (event.target instanceof Element && event.target.closest("input, textarea, select, [contenteditable=true]"))
+			return;
+		const filter = filters[Number(event.key) - 1];
+		if (filter) {
+			event.preventDefault();
+			decisions.setFilter(filter);
+		} else if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+			const keys = [
+				...new Set(
+					boxes.flatMap((box) => {
+						const decision = decisions.decisionFor(box);
+						return decision && (decisions.filter === "ALL" || decision.action === decisions.filter)
+							? [decision.key]
+							: [];
+					}),
+				),
+			];
+			if (!keys.length) return;
+			event.preventDefault();
+			const current = decisions.activeKey ? keys.indexOf(decisions.activeKey) : -1;
+			const next = event.key === "ArrowRight" ? current + 1 : current <= 0 ? keys.length - 1 : current - 1;
+			decisions.select(keys[next % keys.length]);
+		}
+	};
 	useEffect(() => {
 		const keydown = (event: KeyboardEvent) => {
-			if (completing || summaryOpen) return;
+			if (summaryOpen) return sortKeydown(event);
+			if (completing) return;
 			if (
 				event.defaultPrevented ||
 				event.repeat ||
@@ -188,19 +221,19 @@ export function UploaderReview({
 					<img src={image.url} alt="Uploaded stash screenshot" draggable={false} className="block h-auto w-full" />
 					{boxes.map((box, number) => {
 						const item = box.itemId ? byId.get(box.itemId) : undefined;
-						const key = decisionKey(box.itemId ?? box.id, box.foundInRaid);
-						const action = decisions.actionFor(key);
-						const picked = summaryOpen ? decisions.activeKey === key : selected.includes(box.id);
+						const decision = summaryOpen ? decisions.decisionFor(box) : undefined;
+						const shown = !!decision && (decisions.filter === "ALL" || decisions.filter === decision.action);
+						const picked = summaryOpen ? !!decision && decisions.activeKey === decision.key : selected.includes(box.id);
 						return (
 							<button
 								key={box.id}
 								type="button"
 								data-box-index={number}
-								aria-label={`Box ${number + 1}: ${item?.name ?? "Unknown item"}${summaryOpen ? ` · ${item ? (decisions.pendingFor(key) ? "Loading decision" : action) : "Excluded"}` : ""}`}
+								aria-label={`Box ${number + 1}: ${item?.name ?? "Unknown item"}${summaryOpen ? ` · ${decision ? (decision.pending ? "Loading decision" : decisionAppearance[decision.action].label) : item && decisions.loading ? "Loading decision" : "Excluded"}` : ""}`}
 								aria-pressed={picked}
 								onClick={(event) => {
 									if (summaryOpen) {
-										if (item) decisions.select(key);
+										if (decision) decisions.select(decision.key);
 										return;
 									}
 									if (item && (event.ctrlKey || event.metaKey || event.shiftKey)) return;
@@ -224,14 +257,14 @@ export function UploaderReview({
 								className={cn(
 									"absolute cursor-pointer text-left transition-colors duration-200 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-foreground",
 									summaryOpen
-										? item
-											? decisionAppearance[action].overlay
+										? decision
+											? cn(decisionAppearance[decision.action].overlay, !shown && "opacity-15")
 											: "bg-shadow/65"
 										: item
 											? "border-transparent bg-shadow/65 hover:bg-shadow/40"
 											: "border-warning/80 bg-warning/20 hover:bg-warning/30",
 									!summaryOpen && "border",
-									picked && (summaryOpen ? "z-10 brightness-125" : "z-10 bg-brand/25 ring-2 ring-foreground"),
+									picked && (summaryOpen ? "z-10 ring-2 ring-foreground" : "z-10 bg-brand/25 ring-2 ring-foreground"),
 								)}
 								style={{
 									left: `${box.bounds.left * 100}%`,
@@ -251,9 +284,9 @@ export function UploaderReview({
 									style={{ animationDelay: `${number * Math.min(65, 1800 / Math.max(1, boxes.length))}ms` }}
 								/>
 								{summaryOpen ? (
-									item && (
+									(decision ? shown : !!item && decisions.loading) && (
 										<span className="absolute left-0.5 top-0.5">
-											<DecisionMarker action={action} pending={decisions.pendingFor(key)} />
+											<DecisionMarker action={decision?.action} pending={!decision || decision.pending} />
 										</span>
 									)
 								) : (
@@ -273,26 +306,36 @@ export function UploaderReview({
 						<UploaderDecisionView
 							data={summaryData}
 							decisions={decisions}
+							extras={summaryEntries.filter((entry) => !boxes.includes(entry as ReviewBox))}
 							ignoredCount={ignoreUnknowns ? unknowns.length : 0}
 							onReview={() => setSummaryOpen(false)}
 							backRef={summaryBack}
+							sent={sent}
+							onSent={(deltas) =>
+								setSent((previous) => {
+									const next = { ...previous };
+									for (const delta of deltas) {
+										const current = next[delta.itemId] ?? { have: 0, haveFir: 0 };
+										next[delta.itemId] = { have: current.have + delta.have, haveFir: current.haveFir + delta.haveFir };
+									}
+									return next;
+								})
+							}
 						/>
 					</div>
 				)}
 				<div hidden={summaryOpen} className="-mx-4 -mt-4 min-h-0 flex-1 overflow-y-auto px-4 pt-4">
-					<div className="-mx-4 -mt-4 bg-brand/10 p-4">
-						<p className="text-[10px] uppercase tracking-widest text-brand">Current goal</p>
-						<h1 className="mt-1 text-lg font-semibold text-foreground">
-							{completing ? "Complete your review" : "Classify items"}
-						</h1>
-						<p className="mt-1 text-xs text-muted-foreground" aria-live="polite">
-							{unknowns.length
-								? `${unknowns.length} unknown remaining`
+					<UploaderSidebarHeader
+						step={1}
+						title={completing ? "Add anything missed" : "Classify items"}
+						detail={
+							unknowns.length
+								? `${unknowns.length} of ${boxes.length} still unknown`
 								: boxes.length
-									? "All items classified"
-									: "No items detected — try another image"}
-						</p>
-					</div>
+									? `All ${boxes.length} items classified`
+									: "No items detected — try another image"
+						}
+					/>
 					<UploaderCompletion
 						visible={completing}
 						boxes={included}
@@ -487,7 +530,8 @@ export function UploaderReview({
 			</aside>
 			{summaryOpen ? (
 				<div className="col-start-1 row-start-2 min-w-0 border-t border-border-color bg-surface-raised/40 px-3 py-2 text-[11px] text-muted-foreground">
-					Select an item to see its uses and price evidence.
+					Click an item for details · <KeyHint>1</KeyHint>–<KeyHint>4</KeyHint> Filter · <KeyHint>←</KeyHint>{" "}
+					<KeyHint>→</KeyHint> Previous / next item
 				</div>
 			) : (
 				bottomBar

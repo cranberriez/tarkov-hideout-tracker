@@ -17,17 +17,35 @@ export interface SaveReason {
 	count: number;
 	firCount: number;
 	tool?: boolean;
-	choice?: boolean;
+	/** Accepted item types of an any-of hand-in; absent for specific requirements. */
+	options?: number;
+	/** Scanned copies assigned to this any-of hand-in. */
+	filled?: number;
+	/** The next station level, or a quest that is available now. */
+	now: boolean;
+	minPlayerLevel?: number | null;
 }
 
-export type SummaryCategory = "save" | "needed" | "review" | "pricing";
+/** Remaining specific demand for one item after saved inventory is applied. */
+export interface ItemNeed {
+	reasons: SaveReason[];
+	required: number;
+	owned: number;
+	remaining: number;
+}
+
+export type SummaryCategory = "keep" | "surplus";
 export interface SummaryRow {
 	item: ItemSummary;
 	quantity: number;
 	foundInRaid: ReviewEntry["foundInRaid"];
 	category: SummaryCategory;
-	reasons: SaveReason[];
+	/** Kept for FIR demand although the FIR badge was not confirmed. */
+	firUnconfirmed?: boolean;
 }
+
+type OwnedCounts = Readonly<Record<string, { have: number; haveFir: number } | undefined>>;
+type Stack = { item: ItemSummary; quantity: number; foundInRaid: ReviewEntry["foundInRaid"] };
 
 export function buildUploaderSummary(
 	entries: readonly ReviewEntry[],
@@ -47,14 +65,18 @@ export function buildUploaderSummary(
 		| "questTraderLoyaltyLevels"
 		| "questFenceReputation"
 	>,
+	owned: OwnedCounts = {},
+	/** Per-unit value used to spend the cheapest accepted option first. */
+	unitValue: (itemId: string) => number | undefined = () => undefined,
 ) {
 	const summary = summarizeReview(entries, items);
 	const reasons = new Map<string, SaveReason[]>();
 	const add = (itemId: string, reason: SaveReason) => reasons.set(itemId, [...(reasons.get(itemId) ?? []), reason]);
 	const catalog = new Map(items.map((item) => [item.id, item]));
 	for (const station of data.stations) {
+		const current = profile.stationLevels[station.id] ?? 0;
 		for (const level of station.levels) {
-			if (level.level <= (profile.stationLevels[station.id] ?? 0)) continue;
+			if (level.level <= current) continue;
 			for (const requirement of level.itemRequirements) {
 				if (profile.completedRequirements[requirement.id]) continue;
 				add(requirement.itemId, {
@@ -64,6 +86,7 @@ export function buildUploaderSummary(
 					count: requirement.count,
 					firCount: requirement.isFir && !isCurrencyItem(catalog.get(requirement.itemId)) ? requirement.count : 0,
 					tool: requirement.isTool,
+					now: level.level === current + 1,
 				});
 			}
 		}
@@ -86,65 +109,148 @@ export function buildUploaderSummary(
 		visibilityMode: "allFuture" as const,
 	};
 	for (const state of deriveQuestItemStates(buildQuestItemIndex(quests), options)) {
-		for (const quest of state.relatedQuests)
+		for (const quest of state.relatedQuests) {
+			if (quest.status === "ignored" || quest.status === "completed") continue;
 			add(state.itemId, {
 				id: quest.questId,
 				kind: "quest",
 				label: quest.questName,
 				count: quest.requiredCount,
 				firCount: quest.requiredFirCount,
+				now: quest.status === "available",
+				minPlayerLevel: quest.minPlayerLevel,
 			});
+		}
 	}
-	// Alternatives are reasons to review, never independent mandatory item counts.
-	const groups = deriveQuestAnyOfGroups(buildQuestAnyOfGroups(quests), options);
+
+	// Specific demand first, covered by saved inventory before any scanned copy.
+	const needs = new Map<string, ItemNeed>();
+	const spare = new Map<string, { fir: number; other: number }>();
+	const demand = new Map<string, { fir: number; other: number }>();
+	const resolve = (itemId: string) => {
+		const known = demand.get(itemId);
+		if (known) return known;
+		const tags = reasons.get(itemId) ?? [];
+		const consumed = tags.filter((reason) => !reason.tool);
+		const tools = tags.filter((reason) => reason.tool);
+		const firNeed =
+			consumed.reduce((sum, reason) => sum + reason.firCount, 0) +
+			Math.max(0, ...tools.map((reason) => reason.firCount));
+		const otherNeed =
+			consumed.reduce((sum, reason) => sum + reason.count - reason.firCount, 0) +
+			Math.max(0, ...tools.map((reason) => reason.count - reason.firCount));
+		const ownedFir = Math.max(0, owned[itemId]?.haveFir ?? 0);
+		const ownedOther = Math.max(0, owned[itemId]?.have ?? 0);
+		const firUsed = Math.min(ownedFir, firNeed);
+		const otherFromOther = Math.min(ownedOther, otherNeed);
+		const otherFromFir = Math.min(ownedFir - firUsed, otherNeed - otherFromOther);
+		const remaining = { fir: firNeed - firUsed, other: otherNeed - otherFromOther - otherFromFir };
+		demand.set(itemId, remaining);
+		spare.set(itemId, { fir: ownedFir - firUsed - otherFromFir, other: ownedOther - otherFromOther });
+		needs.set(itemId, {
+			reasons: tags,
+			required: firNeed + otherNeed,
+			owned: firUsed + otherFromOther + otherFromFir,
+			remaining: remaining.fir + remaining.other,
+		});
+		return remaining;
+	};
+
+	const rows: SummaryRow[] = [];
+	const keep = (stack: Stack, quantity: number, firUnconfirmed = false) => {
+		if (quantity <= 0) return;
+		rows.push({ ...stack, quantity, category: "keep", ...(firUnconfirmed && { firUnconfirmed }) });
+		stack.quantity -= quantity;
+	};
+	const pool: Stack[] = summary.totals.map((stack) => ({ ...stack }));
+	for (const itemId of new Set(pool.map(({ item }) => item.id))) {
+		const need = resolve(itemId);
+		const stacks = pool.filter(({ item }) => item.id === itemId);
+		const fill = (status: Stack["foundInRaid"], fir: boolean) => {
+			for (const stack of stacks.filter((stack) => stack.foundInRaid === status)) {
+				const amount = Math.min(stack.quantity, fir ? need.fir : need.other);
+				keep(stack, amount, fir && status === "unknown");
+				if (fir) need.fir -= amount;
+				else need.other -= amount;
+			}
+		};
+		fill("yes", true);
+		fill("no", false);
+		// Unconfirmed FIR copies cover replaceable demand first, then any FIR demand left rather than risk a sale.
+		fill("unknown", false);
+		fill("unknown", true);
+		fill("yes", false);
+	}
+
+	// Any-of hand-ins take the cheapest accepted copies left over; narrow choices go first.
+	// The shared builder trims broad groups to a display preview; demand needs every accepted item.
+	const objectiveItems = new Map<string, string[]>(
+		quests.flatMap((quest) =>
+			quest.objectives.map((objective): [string, string[]] => [
+				`${quest.id}:${objective.id}`,
+				[...new Set(objective.itemIds)],
+			]),
+		),
+	);
+	const groups = deriveQuestAnyOfGroups(
+		buildQuestAnyOfGroups(quests).map((group) => ({
+			...group,
+			itemIds: objectiveItems.get(group.groupId) ?? group.itemIds,
+			isPartial: false,
+		})),
+		options,
+	)
+		.filter((group) => group.status !== "ignored" && group.status !== "completed")
+		.sort((a, b) => a.itemIds.length - b.itemIds.length);
+	const value = (itemId: string) => unitValue(itemId) ?? Number.POSITIVE_INFINITY;
 	for (const group of groups) {
-		for (const itemId of group.itemIds)
-			add(itemId, {
+		const firOnly = group.requiredFirCount > 0;
+		const accepted = new Set(group.itemIds);
+		let need = group.requiredCount;
+		for (const itemId of group.itemIds) {
+			if (need <= 0) break;
+			resolve(itemId);
+			const left = spare.get(itemId)!;
+			const other = firOnly ? 0 : Math.min(need, left.other);
+			left.other -= other;
+			const fir = Math.min(need - other, left.fir);
+			left.fir -= fir;
+			need -= other + fir;
+		}
+		const candidates = pool
+			.filter((stack) => stack.quantity > 0 && accepted.has(stack.item.id) && (!firOnly || stack.foundInRaid !== "no"))
+			.sort(
+				(a, b) =>
+					value(a.item.id) - value(b.item.id) ||
+					Number(a.foundInRaid === "yes") - Number(b.foundInRaid === "yes") ||
+					a.item.id.localeCompare(b.item.id),
+			);
+		for (const stack of candidates) {
+			if (need <= 0) break;
+			const amount = Math.min(stack.quantity, need);
+			keep(stack, amount, firOnly && stack.foundInRaid === "unknown");
+			need -= amount;
+			needs.get(stack.item.id)!.reasons.push({
 				id: group.groupId,
 				kind: "quest",
-				label: `${group.questName} · One of several options`,
+				label: group.questName,
 				count: group.requiredCount,
 				firCount: group.requiredFirCount,
-				choice: true,
+				options: group.itemIds.length,
+				filled: amount,
+				now: group.status === "available",
+				minPlayerLevel: group.minPlayerLevel,
 			});
-	}
-	const rows: SummaryRow[] = [];
-	const itemIds = [...new Set(summary.totals.map(({ item }) => item.id))];
-	for (const itemId of itemIds) {
-		const tags = reasons.get(itemId) ?? [];
-		const required = tags.filter((reason) => !reason.choice && !reason.tool);
-		const tools = tags.filter((reason) => reason.tool);
-		let firNeed =
-			required.reduce((sum, reason) => sum + reason.firCount, 0) +
-			Math.max(0, ...tools.map((reason) => reason.firCount));
-		let otherNeed =
-			required.reduce((sum, reason) => sum + reason.count - reason.firCount, 0) +
-			Math.max(0, ...tools.map((reason) => reason.count - reason.firCount));
-		const stacks = summary.totals.filter(({ item }) => item.id === itemId).map((stack) => ({ ...stack }));
-		const take = (stack: (typeof stacks)[number], quantity: number, category: SummaryCategory) => {
-			if (quantity <= 0) return;
-			rows.push({ ...stack, quantity, category, reasons: tags });
-			stack.quantity -= quantity;
-		};
-		for (const stack of stacks.filter((stack) => stack.foundInRaid === "yes")) {
-			const amount = Math.min(stack.quantity, firNeed);
-			take(stack, amount, "save");
-			firNeed -= amount;
-		}
-		for (const status of ["no", "unknown", "yes"] as const) {
-			for (const stack of stacks.filter((stack) => stack.foundInRaid === status)) {
-				// Do not spend an unverified FIR stack on replaceable demand while FIR demand remains.
-				if (status === "unknown" && firNeed > 0) {
-					take(stack, stack.quantity, "review");
-					continue;
-				}
-				const amount = Math.min(stack.quantity, otherNeed);
-				take(stack, amount, "needed");
-				otherNeed -= amount;
-				const hasChoice = tags.some((reason) => reason.choice && (reason.firCount === 0 || status !== "no"));
-				take(stack, stack.quantity, hasChoice ? "review" : "pricing");
-			}
 		}
 	}
-	return { rows, unresolved: summary.unresolved, hasPartialChoices: groups.some((group) => group.isPartial) };
+	for (const stack of pool) if (stack.quantity > 0) rows.push({ ...stack, category: "surplus" });
+
+	const merged = new Map<string, SummaryRow>();
+	for (const row of rows) {
+		const key = `${row.item.id}:${row.foundInRaid}:${row.category}:${!!row.firUnconfirmed}`;
+		const existing = merged.get(key);
+		if (existing) existing.quantity += row.quantity;
+		else merged.set(key, { ...row });
+	}
+	return { rows: [...merged.values()], needs, unresolved: summary.unresolved };
 }

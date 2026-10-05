@@ -11,9 +11,11 @@ import type { UploaderSummaryData } from "@/types/uploader";
 import type { ItemSummary } from "@/types/items";
 import type { ReviewEntry } from "./review-model";
 import { buildUploaderSummary } from "./summary-model";
+import { unitSellValue } from "./decision-model";
+import { inventoryBeforeSends, type SentCounts } from "./inventory-model";
 import { useItemPrices } from "../items/useItemPrices";
 
-export function useUploaderSummary(entries: readonly ReviewEntry[], items: readonly ItemSummary[]) {
+export function useUploaderSummary(entries: readonly ReviewEntry[], items: readonly ItemSummary[], sent: SentCounts) {
 	const profile = useUserStore(
 		useShallow((state) => ({
 			gameMode: state.gameMode,
@@ -30,6 +32,7 @@ export function useUploaderSummary(entries: readonly ReviewEntry[], items: reado
 			questFenceReputation: state.questFenceReputation,
 		})),
 	);
+	const counts = useUserStore((state) => state.itemCounts);
 	const mode = toTarkovJsonGameMode(profile.gameMode);
 	const enabled = useGameDataEnabled(mode);
 	const query = useQuery({
@@ -40,11 +43,16 @@ export function useUploaderSummary(entries: readonly ReviewEntry[], items: reado
 		retry: false,
 		meta: { retentionGroup: "page-data", inactiveQueryLimit: 12 },
 	});
-	const summary = useMemo(
-		() => (query.data ? buildUploaderSummary(entries, items, query.data, profile) : null),
-		[entries, items, query.data, profile],
-	);
 	const priceIds = useMemo(() => entries.flatMap((entry) => (entry.itemId ? [entry.itemId] : [])), [entries]);
 	const prices = useItemPrices(mode, priceIds);
+	// This scan's own sends must not turn its kept copies into surplus.
+	const owned = useMemo(() => inventoryBeforeSends(counts, sent), [counts, sent]);
+	const summary = useMemo(
+		() =>
+			query.data
+				? buildUploaderSummary(entries, items, query.data, profile, owned, (id) => unitSellValue(prices.prices[id]))
+				: null,
+		[entries, items, query.data, profile, owned, prices.prices],
+	);
 	return { summary, prices, error: query.error, retry: query.refetch, loading: query.isFetching };
 }

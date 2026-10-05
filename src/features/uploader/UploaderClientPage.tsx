@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useUploaderController } from "./useUploaderController";
 import { KeyHint, UploaderReview } from "./UploaderReview";
 import styles from "./UploaderReview.module.css";
+import { UploaderSidebarHeader } from "./UploaderSidebarHeader";
 
 export function UploaderClientPage() {
 	const hydrated = useUserStoreHydrated();
@@ -187,12 +188,11 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 						)}
 					</div>
 					<aside className="col-start-2 row-start-1 row-span-2 flex min-h-0 flex-col overflow-y-auto border-l border-border-color bg-card p-4">
-						<div className="-mx-4 -mt-4 bg-brand/10 p-4">
-							<p className="text-[10px] uppercase tracking-widest text-brand">Current goal</p>
-							<h1 className="mt-1 text-lg font-semibold text-foreground">
-								{image ? "Read screenshot" : "Upload screenshot"}
-							</h1>
-						</div>
+						<UploaderSidebarHeader
+							step={0}
+							title={image ? "Reading screenshot" : "Upload screenshot"}
+							detail={image ? "Matching item labels in your browser" : "A stash, junkbox, or fresh loot"}
+						/>
 						<button
 							onClick={() => input.current?.click()}
 							className="mt-4 rounded-md border border-brand bg-brand px-3 py-2 text-sm font-medium text-inverse hover:bg-brand-hover"

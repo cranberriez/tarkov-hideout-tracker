@@ -166,12 +166,13 @@ not every localStorage key.
 
 ## Ephemeral and server state
 
-Uploader decisions remain ephemeral. Its explicit Send required/Send all actions
-use `addItemCounts` with deltas that raise each saved FIR/non-FIR balance to at
-least the reviewed quantity, preserving higher balances and untouched signed
-balances. Repeating an action or sending all after required is idempotent against
-current inventory. Unknown FIR quantities block the corresponding send. No schema,
-storage key, migration, or reset behavior changes.
+Uploader decisions remain ephemeral. The uploader reads saved item counts to
+decide which scanned copies are still needed. Its explicit Kept only/Everything
+actions add the scan's FIR/non-FIR quantities through `addItemCounts`. Sends are
+tracked per scan in page state, so repeating an action adds nothing and sending
+everything after kept items adds only the remainder; a new scan starts fresh.
+Unknown FIR quantities block the corresponding send. No schema, storage key,
+migration, or reset behavior changes.
 
 [useUIStore](../src/lib/stores/useUIStore.ts) is not persisted. Dialog navigation,
 draft inputs, and Raid Planner viewport state are session state. Fetched entities,

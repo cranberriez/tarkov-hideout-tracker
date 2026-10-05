@@ -1,65 +1,51 @@
 import type { CurrentPrice } from "../../types/prices";
-import type { SummaryRow } from "./summary-model";
 
-export type ItemAction = "KEEP" | "HOLD" | "SELL";
-export function decideUploaderRow(
-	row: SummaryRow,
+export type ItemAction = "KEEP" | "SELL" | "HOLD";
+export interface SurplusDecision {
+	action: Exclude<ItemAction, "KEEP">;
+	why: string;
+	pending?: boolean;
+}
+
+const HOUR = 60 * 60 * 1000;
+const fresh = (timestamp: number | null | undefined, now: number) =>
+	!!timestamp && Number.isFinite(timestamp) && timestamp <= now + 5 * 60 * 1000 && now - timestamp <= 72 * HOUR;
+
+/** Best per-unit return before flea fees: flea estimate or the highest trader offer. */
+export function unitSellValue(price: CurrentPrice | undefined) {
+	const values = [price?.price, ...(price?.sellFor ?? []).map((offer) => offer.priceRUB)].filter(
+		(value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0,
+	);
+	return values.length ? Math.max(...values) : undefined;
+}
+
+/** Copies nothing reserves are sold unless a reliable flea price sits below its usual range. */
+export function decideSurplus(
 	price: CurrentPrice | undefined,
 	state: string | undefined,
-	partial: boolean,
 	now: number,
-): { action: ItemAction; why: string; pending?: boolean } {
-	if (row.category === "save")
-		return { action: "KEEP", why: "These FIR copies are reserved for remaining hideout or quest requirements." };
-	if (row.category === "needed")
-		return {
-			action: "KEEP",
-			why: "Needed for progression. Non-FIR replacements are accepted, but selling and rebuying has not been evaluated.",
-		};
-	if (row.category === "review")
-		return {
-			action: "HOLD",
-			why:
-				row.foundInRaid === "unknown"
-					? "Confirm the FIR badge in review before deciding what to do with these copies."
-					: "This is a quest hand-in alternative. Choose which accepted item to keep.",
-		};
-	if (partial)
-		return {
-			action: "HOLD",
-			why: "Some quest alternatives are only partially listed. Check those objectives before selling.",
-		};
-	if (state === "pending")
-		return { action: "HOLD", why: "Loading prices before making a market suggestion.", pending: true };
-	if (state === "error") return { action: "HOLD", why: "Price loading failed. Retry prices before deciding." };
-	const change = price?.changeLast48hPercent;
-	if (
-		!price ||
-		price.fleaStability !== "stable" ||
-		!price.price ||
-		price.price <= 0 ||
-		!Number.isFinite(price.price) ||
-		!price.updatedAt ||
-		!Number.isFinite(price.updatedAt) ||
-		price.updatedAt > now + 5 * 60 * 1000 ||
-		now - price.updatedAt > 72 * 60 * 60 * 1000 ||
-		price.fleaPriceReasons?.includes("stale") ||
-		typeof change !== "number" ||
-		!Number.isFinite(change)
-	)
-		return { action: "HOLD", why: "Not enough reliable current price data for a sell suggestion." };
-	if (change <= -5)
-		return {
-			action: "SELL",
-			why: `No eligible requirement reserves these copies, and the price fell ${Math.abs(change).toFixed(1)}% over 48 hours. Selling is a suggestion for surplus only; compare offers and fees before listing. The decline may not continue.`,
-		};
-	if (change >= 5)
+): SurplusDecision {
+	if (state === "pending") return { action: "SELL", why: "Loading prices…", pending: true };
+	if (state === "error") return { action: "SELL", why: "Nothing needs these copies. Prices failed to load." };
+	const reference = price?.marketReference;
+	const current = price?.price;
+	const reliable =
+		!!reference &&
+		typeof current === "number" &&
+		Number.isFinite(current) &&
+		current > 0 &&
+		price?.fleaStability === "stable" &&
+		!price.fleaPriceReasons?.includes("stale") &&
+		fresh(price.updatedAt, now) &&
+		fresh(reference.calculatedAt, now);
+	if (!reliable)
+		return { action: "SELL", why: "Nothing needs these copies. No reliable price range to time the sale." };
+	if (current < reference.rangeLow)
 		return {
 			action: "HOLD",
-			why: `The price rose ${change.toFixed(1)}% over 48 hours. Consider holding surplus; further increases are not guaranteed.`,
+			why: "Nothing needs these copies, but the flea price is below its usual 7-day range. Low prices have tended to recover.",
 		};
-	return {
-		action: "HOLD",
-		why: "The 48-hour change is within ±5%. No strong price signal—keeping or selling surplus is your choice.",
-	};
+	if (current >= reference.rangeHigh)
+		return { action: "SELL", why: "Nothing needs these copies, and the flea price is above its usual 7-day range." };
+	return { action: "SELL", why: "Nothing needs these copies. The flea price is within its usual 7-day range." };
 }

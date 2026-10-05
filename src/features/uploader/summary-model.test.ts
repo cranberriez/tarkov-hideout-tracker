@@ -60,7 +60,10 @@ const data: UploaderSummaryData = {
 	],
 };
 
-test("reserves FIR for future quests, allocates non-FIR first, and splits surplus without double counting", () => {
+const shape = (rows: ReturnType<typeof buildUploaderSummary>["rows"]) =>
+	rows.map((row) => [row.item.id, row.category, row.foundInRaid, row.quantity]);
+
+test("keeps FIR for future quests, spends non-FIR on replaceable demand, and leaves the rest as surplus", () => {
 	const result = buildUploaderSummary(
 		[
 			{ itemId: item.id, quantity: 4, foundInRaid: "yes" },
@@ -70,16 +73,27 @@ test("reserves FIR for future quests, allocates non-FIR first, and splits surplu
 		data,
 		profile,
 	);
+	assert.deepEqual(shape(result.rows), [
+		["bolt", "keep", "yes", 2],
+		["bolt", "keep", "no", 3],
+		["bolt", "surplus", "yes", 2],
+		["bolt", "surplus", "no", 1],
+	]);
+	assert.equal(result.needs.get(item.id)?.reasons.length, 2);
+});
+
+test("saved inventory covers demand before scanned copies, with spare FIR covering non-FIR needs", () => {
+	const result = buildUploaderSummary([{ itemId: item.id, quantity: 4, foundInRaid: "no" }], [item], data, profile, {
+		bolt: { have: 1, haveFir: 3 },
+	});
+	assert.deepEqual(shape(result.rows), [
+		["bolt", "keep", "no", 1],
+		["bolt", "surplus", "no", 3],
+	]);
 	assert.deepEqual(
-		result.rows.map((row) => [row.category, row.foundInRaid, row.quantity]),
-		[
-			["save", "yes", 2],
-			["needed", "no", 3],
-			["pricing", "no", 1],
-			["pricing", "yes", 2],
-		],
+		{ ...result.needs.get(item.id), reasons: undefined },
+		{ reasons: undefined, required: 5, owned: 4, remaining: 1 },
 	);
-	assert.equal(result.rows[0].reasons.length, 2);
 });
 
 test("completed station requirements and handed-in objectives no longer reserve copies", () => {
@@ -88,8 +102,8 @@ test("completed station requirements and handed-in objectives no longer reserve 
 		completedRequirements: { req: true },
 		completedQuestObjectives: { quest: { objective: true } },
 	});
-	assert.equal(result.rows[0].category, "pricing");
-	assert.deepEqual(result.rows[0].reasons, []);
+	assert.equal(result.rows[0].category, "surplus");
+	assert.deepEqual(result.needs.get(item.id)?.reasons, []);
 });
 
 test("built stations and completed, failed, ignored, or opposite faction quests are excluded", () => {
@@ -103,21 +117,18 @@ test("built stations and completed, failed, ignored, or opposite faction quests 
 			stationLevels: { station: 2 },
 			...override,
 		});
-		assert.deepEqual(result.rows[0].reasons, []);
+		assert.deepEqual(result.needs.get(item.id)?.reasons, []);
 	}
 	const result = buildUploaderSummary(
 		[{ itemId: item.id, quantity: 1, foundInRaid: "yes" }],
 		[item],
-		{
-			stations: [],
-			quests: [{ ...quest, factionName: "BEAR" }],
-		},
+		{ stations: [], quests: [{ ...quest, factionName: "BEAR" }] },
 		profile,
 	);
-	assert.equal(result.rows[0].category, "pricing");
+	assert.equal(result.rows[0].category, "surplus");
 });
 
-test("unknown FIR cannot satisfy FIR needs and non-FIR still shows its ineligible reasons", () => {
+test("unconfirmed FIR is kept for FIR demand; confirmed non-FIR cannot satisfy it", () => {
 	const result = buildUploaderSummary(
 		[
 			{ itemId: item.id, quantity: 1, foundInRaid: "unknown" },
@@ -127,23 +138,35 @@ test("unknown FIR cannot satisfy FIR needs and non-FIR still shows its ineligibl
 		{ ...data, stations: [] },
 		profile,
 	);
-	assert.equal(result.rows.find((row) => row.foundInRaid === "unknown")?.category, "review");
-	assert.equal(result.rows.find((row) => row.foundInRaid === "no")?.category, "pricing");
-	assert.equal(result.rows[0].reasons[0].firCount, 2);
+	const unknown = result.rows.find((row) => row.foundInRaid === "unknown");
+	assert.equal(unknown?.category, "keep");
+	assert.equal(unknown?.firUnconfirmed, true);
+	assert.equal(result.rows.find((row) => row.foundInRaid === "no")?.category, "surplus");
+	assert.equal(result.needs.get(item.id)?.reasons[0].firCount, 2);
 });
 
-test("quest alternatives require a choice rather than reserving each candidate", () => {
-	const alternative = { ...item, id: "nut", name: "Nut" };
+test("any-of hand-ins keep the cheapest accepted copies, including items beyond the display preview", () => {
+	const filler = Array.from({ length: 20 }, (_, index) => `filler-${index}`);
+	const nut = { ...item, id: "nut", name: "Nut" };
 	const result = buildUploaderSummary(
-		[item, alternative].map((entry) => ({ itemId: entry.id, quantity: 2, foundInRaid: "yes" as const })),
-		[item, alternative],
+		[item, nut].map((entry) => ({ itemId: entry.id, quantity: 2, foundInRaid: "yes" as const })),
+		[item, nut],
 		{
 			stations: [],
-			quests: [{ ...quest, objectives: [{ ...quest.objectives[0], itemIds: [item.id, alternative.id] }] }],
+			quests: [{ ...quest, objectives: [{ ...quest.objectives[0], itemIds: [...filler, item.id, nut.id] }] }],
 		},
 		profile,
+		{},
+		(id) => (id === nut.id ? 50 : 100),
 	);
-	assert.ok(result.rows.every((row) => row.category === "review" && row.reasons[0].choice));
+	assert.deepEqual(shape(result.rows), [
+		["nut", "keep", "yes", 2],
+		["bolt", "surplus", "yes", 2],
+	]);
+	assert.deepEqual(
+		result.needs.get(nut.id)?.reasons.map(({ options, filled }) => [options, filled]),
+		[[22, 2]],
+	);
 });
 
 test("reusable tools reserve the maximum future requirement instead of summing every upgrade", () => {
@@ -167,13 +190,10 @@ test("reusable tools reserve the maximum future requirement instead of summing e
 		},
 		profile,
 	);
-	assert.deepEqual(
-		result.rows.map((row) => [row.category, row.quantity]),
-		[
-			["needed", 3],
-			["pricing", 3],
-		],
-	);
+	assert.deepEqual(shape(result.rows), [
+		["bolt", "keep", "no", 3],
+		["bolt", "surplus", "no", 3],
+	]);
 });
 
 test("missing catalog records and invalid quantities are explicit unresolved entries", () => {

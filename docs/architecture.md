@@ -258,7 +258,8 @@ noindex testing page, reachable directly at `/uploader`. It accepts one PNG,
 JPEG, or WebP by file picker, drop, or clipboard paste (20 MB and 24 megapixel
 limits). It reuses the active-mode search manifest rather than adding a catalog
 API or preloading data in the shared layout. Screenshots and results remain
-ephemeral; it never changes inventory or saved player data. Switching profiles
+ephemeral; saved inventory changes only through the explicit send actions in
+decision mode, and no other player data is written. Switching profiles
 clears the image and results and cancels recognition.
 
 [The controller](../src/features/uploader/useUploaderController.ts) owns image
@@ -333,44 +334,49 @@ switches the existing workspace into decision mode without replacing the screens
 canvas, zoom, scroll position, or sidebar frame. Back to review restores the
 classification controls and manual additions without a page transition.
 The [summary model](../src/features/uploader/summary-model.ts) combines scanned
-and manually added entries, attaches all remaining hideout/quest reasons, and
-splits quantities into FIR reserves, replaceable needs, review decisions, and
-pricing candidates. It considers all future station levels and eligible future
-quests, excluding completed requirements/objectives and completed, failed,
-ignored, or faction-ineligible quests. Non-FIR copies cannot satisfy FIR demand;
-unknown FIR and quest alternatives remain explicit review decisions. Reusable
-tools use the maximum future tool quantity, separately from consumed items.
-Broad quest alternatives carry an incomplete-coverage warning. Saved inventory
-is not subtracted from demand because it may overlap the screenshot.
+and manually added entries with all remaining hideout/quest demand: future station
+levels and eligible future quests, excluding completed requirements/objectives and
+completed, failed, ignored, or faction-ineligible quests. Saved inventory covers
+demand first (spare FIR copies may cover non-FIR demand); scanned copies are kept
+only up to what is still missing, and the rest are surplus. Non-FIR copies cannot
+satisfy FIR demand. Copies with unconfirmed FIR cover replaceable demand first,
+then any remaining FIR demand, and are flagged rather than sold. Reusable tools use
+the maximum future tool quantity. Any-of hand-ins use every accepted item (the
+shared quest index trims broad groups to a display preview, so the summary restores
+full objective lists): saved spare copies fill them first, then the cheapest
+remaining scanned copies by best sell value, narrow groups before broad ones.
+Each requirement records whether it applies now (next station level or an
+available quest) or later, with the quest's minimum level.
 The review preloads requirement metadata through
 [getUploaderSummaryData](../src/server/queries/getUploaderSummaryData.ts), with
 mode-scoped caching. Both requirement sources must succeed before recommendations
 appear. Recognized item IDs enter the existing mode-scoped
 [batch price hook](../src/features/items/useItemPrices.ts) during review, before
 opening the summary. Manual additions join the price batch when summary opens.
-The [decision view](../src/features/uploader/UploaderDecisionView.tsx) supplies
-the existing sidebar's decision contents. The original screenshot buttons change
-to borderless color overlays with bookmark (KEEP), clock (HOLD), or coins-in-hand
-(SELL) corner icons. Only highlight colors transition, over 200ms; reduced-motion
-users skip that transition. Markers aggregate copies by item ID and FIR status;
-mixed quantities show KEEP in the image and separate decisions in the panel.
-The sidebar selector also exposes manual additions; there is no bottom item strip.
-Prices update markers as requests settle.
-The panel includes all uses, quantity decisions, flea prices before fees, trader
-offers, stack values, 48-hour changes, and loading/error states. The
-decision rows show short labels with expandable explanations; uses stay visible
-and prices/trend details expand separately. Inventory actions share a compact row.
-The
-[decision model](../src/features/uploader/decision-model.ts) keeps required copies,
-holds uncertain cases, and suggests selling surplus only with a stable, non-stale
-price no older than 72 hours and a decline of at least 5% over 48 hours. Rising
-or flat prices hold; flat means no strong signal, not a prediction. Incomplete
-quest alternatives suppress sell suggestions. Full histories and sell-and-rebuy
-fee projections are not loaded.
-Explicit inventory buttons send required quantities or all reviewed quantities.
-They only raise saved FIR/non-FIR counts to the reviewed amount, using existing
-store actions; repeated sends cannot duplicate additions. Unknown FIR quantities
-block the corresponding send. No automatic inventory write occurs.
+The [decision model](../src/features/uploader/decision-model.ts) sells surplus by
+default and holds it only when a stable, non-stale flea price (no older than 72
+hours) is below the market analyzer's 7-day p10 range; prices above the range are
+labeled a good time to sell. Missing or unreliable prices still sell, with that
+stated. Values use the better of the flea estimate (before fees) and trader offers.
+[Decisions](../src/features/uploader/useUploaderDecisions.ts) hand kept units to
+screenshot boxes in reading order, then to manual additions, so only the needed
+number of copies is flagged Keep on the image.
+The sort step reuses the review sidebar frame. A shared
+[sidebar header](../src/features/uploader/UploaderSidebarHeader.tsx) shows Upload,
+Classify, and Sort progress, the current goal, and one status line in every phase.
+The [decision view](../src/features/uploader/UploaderDecisionView.tsx) has an
+All/Keep/Sell/Hold filter with counts (keys 1–4) that dims non-matching boxes,
+Keep/Sell/Hold tiles (kept count, sell and hold value), manual additions as small
+icons, and an inspector for the clicked item: Keep/Sell/Hold split, owned versus
+needed, the surplus reason, uses with Now/level labels (any-of uses show filled
+quantity and accepted option count), and prices. Left/Right arrows step through
+visible items. Boxes become borderless overlays with bookmark (Keep), coins-in-hand
+(Sell), or clock (Hold) markers in success, sell-value, and info colors.
+Explicit Kept only and Everything buttons add this scan's quantities on top of
+saved FIR/non-FIR counts through `addItemCounts`. Sends are tracked per scan, so a
+repeat adds nothing and Everything after Kept only adds the remainder; the summary
+subtracts this scan's sends from saved inventory so kept copies stay kept. Unknown
+FIR quantities block sending. No automatic inventory write occurs.
 The seen-items list groups scanned and manual items
 by stable item ID and FIR status, explicitly retaining unknown detected FIR.
 [Found-in-raid detection](../src/features/uploader/found-in-raid.ts) compares a small
@@ -380,10 +386,8 @@ rotation. Only strong matches produce FIR; missing geometry, low resolution, and
 weak/absent matches remain unknown, never automatically non-FIR. Screenshot-corner
 fixtures cover actual badges, artwork, and the separate bottom-left transfer symbol.
 The player can toggle FIR/non-FIR and undo that choice; unconfirmed detections
-retain unknown status. The pure review model retains grouping and finalization
-helpers for a later recommendations step. A read-only seen-items list is currently
-exposed. Leaving the page, changing the image, or switching game modes discards
-the review; there is no inventory write or persistent import.
+retain unknown status. Leaving the page, changing the image, or switching game
+modes discards the review; there is no automatic inventory write or persistent import.
 Items with no detected label can still be missed; a clearer screenshot may be needed.
 Hidden container contents are not inferred. Catalog slot dimensions are not currently
 retained by the item adapter, storage, or search manifest; footprint detection still
