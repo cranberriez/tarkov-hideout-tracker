@@ -39,6 +39,21 @@ test("renders zone and possible quest-item locations by default", () => {
 	assert.deepEqual(markers[0].descriptions, ["Visit the marked place", "Inspect the same marked place"]);
 });
 
+test("Lab planner retains Dark Lab markers with their original IDs", () => {
+	const dark = { id: "dark-map-id", name: "The Lab (Dark)", normalizedName: "the-lab-dark" };
+	const darkQuest = {
+		...quest,
+		objectives: quest.objectives.map((objective) => ({
+			...objective,
+			locations: objective.locations?.map((location) => ({ ...location, map: dark })),
+		})),
+	};
+	const markers = buildRaidPlannerMarkers([darkQuest], "the-lab", createQuestMarkerStyles([darkQuest]));
+	assert.equal(markers.length, 3);
+	assert.equal(markers[0].mapId, dark.id);
+	assert.deepEqual(markers[0].objectiveIds, ["objective-1", "objective-2"]);
+});
+
 test("renders loaded detail markers using styles assigned before objectives are loaded", () => {
 	const styles = createQuestMarkerStyles([{ id: quest.id }]);
 	const markers = buildRaidPlannerMarkers([quest], "customs", styles);

@@ -10,7 +10,7 @@ import type { MapOverlayMarker } from "@/types/maps";
 import type { ItemSummary } from "@/types/items";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { mapOverlaysQueryOptions } from "@/lib/query/maps";
-import { getQuestMapGroupsForQuest } from "../quest-map-groups";
+import { buildRaidPlannerMapGroups, getRaidPlannerMapKey, isQuestOnRaidPlannerMap } from "./raid-planner-maps";
 import { useQuestDetails } from "../useQuestDetails";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 import { QuestMobileMenuSpacer } from "./QuestMobileMenu";
@@ -41,7 +41,7 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
 	const toggleQuestObjectiveCompletion = useUserStore((state) => state.toggleQuestObjectiveCompletion);
 	const {
 		quests,
-		maps,
+		maps: workspaceMaps,
 		plannerMapKey,
 		selectPlannerMap,
 		clearPlannerMap,
@@ -58,7 +58,11 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
 		setMode("details");
 	};
 	const activeQuests = useMemo(() => getActiveRaidPlannerQuests(quests, statusByQuestId), [quests, statusByQuestId]);
-	const selectedMap = useMemo(() => maps.find((map) => map.key === plannerMapKey) ?? null, [maps, plannerMapKey]);
+	const maps = useMemo(() => buildRaidPlannerMapGroups(workspaceMaps), [workspaceMaps]);
+	const selectedMap = useMemo(
+		() => maps.find((map) => map.key === getRaidPlannerMapKey(plannerMapKey ?? "")) ?? null,
+		[maps, plannerMapKey],
+	);
 	const selectedMapKey = selectedMap?.key;
 	const navigationQuery = useQuery({
 		...mapOverlaysQueryOptions(selectedMapKey ?? ""),
@@ -66,10 +70,7 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
 	});
 	const navigationMarkers = navigationQuery.data?.markers ?? EMPTY_NAVIGATION_MARKERS;
 	const plannerQuestSummaries = useMemo(
-		() =>
-			selectedMap
-				? activeQuests.filter((quest) => getQuestMapGroupsForQuest(quest).some((map) => map.key === selectedMap.key))
-				: [],
+		() => (selectedMap ? activeQuests.filter((quest) => isQuestOnRaidPlannerMap(quest, selectedMap.key)) : []),
 		[activeQuests, selectedMap],
 	);
 	const details = useQuestDetails(
@@ -380,18 +381,18 @@ function RaidPlannerMapCard({
 		>
 			{artworkAvailable && (
 				<Image
-					src={`/api/maps/render/${encodeURIComponent(mapKey)}/svg`}
+					src={`/images/maps/${encodeURIComponent(mapKey)}.webp`}
 					alt=""
 					aria-hidden="true"
-					width={224}
-					height={176}
+					width={480}
+					height={288}
 					unoptimized
 					onError={() => setArtworkAvailable(false)}
-					className="pointer-events-none absolute -right-8 -top-8 h-44 w-56 object-contain opacity-20 grayscale transition-all duration-300 group-hover:scale-105 group-hover:opacity-30 group-hover:grayscale-0"
+					className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-60 transition-all duration-300 group-hover:scale-105 group-hover:opacity-80"
 				/>
 			)}
-			<span className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,var(--card-bg)_18%,color-mix(in_oklab,_var(--card-bg)_90%,_transparent)_52%,color-mix(in_oklab,_var(--card-bg)_35%,_transparent))]" />
-			<span className="relative flex h-full min-h-28 flex-col pb-5 lg:min-h-32">
+			<span className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,color-mix(in_oklab,_var(--card-bg)_90%,_transparent),color-mix(in_oklab,_var(--card-bg)_65%,_transparent)_52%,color-mix(in_oklab,_var(--card-bg)_20%,_transparent))]" />
+			<span className="relative flex h-full min-h-28 flex-col pb-8 lg:min-h-32">
 				<span className="block pr-16 text-base font-semibold text-foreground group-hover:text-foreground">
 					{mapName}
 				</span>
@@ -423,7 +424,7 @@ function RaidPlannerMapCard({
 					<span className="mt-3 text-xs text-subtle-foreground lg:mt-4">No active objectives on this map.</span>
 				)}
 
-				<span className="absolute bottom-0 right-0 flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-subtle-foreground transition-colors group-hover:text-brand">
+				<span className="absolute bottom-0 right-0 flex items-center gap-1 rounded-sm bg-[var(--card-bg)] px-2 py-1 text-[9px] font-semibold tracking-[0.14em] text-[color-mix(in_oklab,var(--subtle-foreground)_80%,var(--foreground))] shadow-sm transition-colors group-hover:text-brand">
 					Plan this map <ChevronRight size={11} />
 				</span>
 			</span>

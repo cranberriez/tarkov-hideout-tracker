@@ -1,6 +1,6 @@
 import type { FullQuest, FullQuestObjective, QuestWorkspaceQuest } from "@/types/quests";
 import type { QuestObjectiveCategory, QuestWorkspaceStatusInfo } from "./quest-workspace-utils";
-import { getQuestMapGroupsForQuest } from "../quest-map-groups";
+import { isQuestOnRaidPlannerMap } from "./raid-planner-maps";
 import { getObjectiveCategory } from "./quest-workspace-utils";
 
 const CATEGORY_ORDER: QuestObjectiveCategory[] = [
@@ -45,7 +45,7 @@ export function getActiveRaidPlannerQuests<T extends QuestWorkspaceQuest>(
 }
 
 export function buildRaidPlannerMapSummary(quests: QuestWorkspaceQuest[], mapKey: string): RaidPlannerMapSummary {
-	const mapQuests = quests.filter((quest) => getQuestMapGroupsForQuest(quest).some((map) => map.key === mapKey));
+	const mapQuests = quests.filter((quest) => isQuestOnRaidPlannerMap(quest, mapKey));
 	const questIdsByCategory = new Map<QuestObjectiveCategory, Set<string>>();
 	const keyedQuestIdsByCategory = new Map<QuestObjectiveCategory, Set<string>>();
 	const requiredKeyIds = new Set<string>();

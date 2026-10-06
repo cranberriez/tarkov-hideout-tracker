@@ -3,6 +3,7 @@ import test from "node:test";
 import type { FullQuest } from "@/types/quests";
 import { toQuestSummary } from "../../../lib/quests/quest-summary";
 import { getQuestWorkspaceItemIds } from "../../../lib/quests/quest-item-ids";
+import { buildRaidPlannerMapGroups, isQuestOnRaidPlannerMap } from "./raid-planner-maps";
 import {
 	buildRaidPlannerKillList,
 	buildRaidPlannerMapSummary,
@@ -13,6 +14,27 @@ import {
 import type { QuestWorkspaceStatusInfo } from "./quest-workspace-utils";
 
 const customs = { id: "customs", name: "Customs", normalizedName: "customs" };
+
+test("planner combines Lab variants without double-counting quests or dropping dark-only keys", () => {
+	const lab = { id: "lab", name: "The Lab", normalizedName: "the-lab" };
+	const dark = { id: "dark", name: "The Lab (Dark)", normalizedName: "the-lab-dark" };
+	const both = {
+		...quest("both", "visit"),
+		map: lab,
+		objectives: [{ ...quest("both", "visit").objectives[0], maps: [lab, dark] }],
+	};
+	const darkOnly = { ...quest("dark-only", "visit", [["dark-key"]]), map: dark };
+	assert.deepEqual(
+		buildRaidPlannerMapGroups(
+			[dark, lab].map((map) => ({ key: map.normalizedName, name: map.name, aliases: [map.normalizedName] })),
+		),
+		[{ key: "the-lab", name: "The Lab", aliases: ["the-lab-dark", "the-lab"] }],
+	);
+	assert.equal(isQuestOnRaidPlannerMap(darkOnly, "the-lab"), true);
+	const summary = buildRaidPlannerMapSummary([both, darkOnly], "the-lab");
+	assert.equal(summary.questCount, 2);
+	assert.deepEqual(summary.requiredKeyIds, ["dark-key"]);
+});
 const key = {
 	id: "key-1",
 	name: "Dorm room 206 key",

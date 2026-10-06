@@ -19,6 +19,14 @@ The browser receives the selected definition and SVG, not the complete source
 metadata or raster tile paths. This static map service is an explicit exception
 to the Tarkov repository; it is not a model for general page data access.
 
+Raid Planner selection cards use local scenic WebP thumbnails in
+[public/images/maps](../public/images/maps/README.md), not the render API or full
+SVGs. Thumbnails are at most 480 × 288. The Lab and The Lab (Dark) share one planner
+card and Lab geometry; their quest counts, keys, and markers are combined without
+changing source IDs or the quest workspace's map filters.
+The asset directory records sources and attribution. The interactive map still
+loads its detailed SVG only after selection.
+
 [pull-map-overlays.mjs](../scripts/pull-map-overlays.mjs) reduces upstream regular
 map data into committed [map-overlays](../src/lib/data/map-overlays/) chunks.
 [map-navigation-overlays](../src/server/services/map-navigation-overlays.ts) and
