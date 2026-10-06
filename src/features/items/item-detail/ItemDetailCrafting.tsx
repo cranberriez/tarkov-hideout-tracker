@@ -1,0 +1,248 @@
+"use client";
+
+import { Clock3, Hammer } from "lucide-react";
+import type { ItemAmount, ItemCraftRecipe } from "@/features/items/item-detail/item-detail-types";
+import type { ItemSummary } from "@/types/items";
+import type { GameEdition } from "@/lib/stores/useUserStore";
+import { QuestLink } from "@/components/entities/quest-link";
+import { AvailabilityBadge, RecommendationBadge, ToolBadge } from "./ItemDetailBadges";
+import { ItemDetailItemChip } from "./ItemDetailItemChip";
+import { ItemDetailRecipeFlow } from "./ItemDetailRecipeFlow";
+import { ItemDetailRecipeProfit } from "./ItemDetailRecipeProfit";
+import type { AcquisitionPlan, ManualPriceOverrides, RecipeEvaluation } from "@/lib/price-calculation";
+import { formatDuration } from "@/lib/utils/format-time";
+
+interface ItemDetailCraftingProps {
+	recipes: ItemCraftRecipe[];
+	profileReady: boolean;
+	completedQuests: Record<string, boolean>;
+	stationLevels: Record<string, number>;
+	gameEdition: GameEdition | null;
+	evaluationsById: Readonly<Record<string, RecipeEvaluation>>;
+	overrides?: ManualPriceOverrides;
+	profitLoading: boolean;
+	profitError: string | null;
+	onRetryProfit?: () => void;
+	outputItem: ItemSummary;
+	/** Rows consume the viewed item (`outputItem`): link-only profit and the viewed item highlighted. */
+	usedIn?: boolean;
+}
+
+export function ItemDetailCrafting({
+	recipes,
+	profileReady,
+	completedQuests,
+	stationLevels,
+	gameEdition,
+	evaluationsById,
+	overrides = {},
+	profitLoading,
+	profitError,
+	onRetryProfit,
+	outputItem,
+	usedIn = false,
+}: ItemDetailCraftingProps) {
+	// Availability ordering depends on the profile; keep level order until it loads.
+	const sorted = [...recipes].sort((a, b) =>
+		!profileReady
+			? a.level - b.level
+			: Number(isCraftAvailable(b, completedQuests, stationLevels, gameEdition)) -
+					Number(isCraftAvailable(a, completedQuests, stationLevels, gameEdition)) || a.level - b.level,
+	);
+	return (
+		<div className="divide-y divide-border-color">
+			{sorted.map((recipe) => {
+				const evaluation = evaluationsById[recipe.id];
+				const currentLevel = stationLevels[recipe.station.id] ?? 0;
+				const stationMet = currentLevel >= recipe.level;
+				const questMet = !recipe.taskUnlock || completedQuests[recipe.taskUnlock.id] === true;
+				const editionMet = isEditionAllowed(recipe.gameEditions, gameEdition);
+				const available = stationMet && questMet && editionMet;
+				return (
+					<div key={recipe.id} className="bg-shadow/10 px-3 py-3">
+						<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+							<div className="flex min-w-48 flex-1 items-center gap-2.5">
+								{recipe.station.imageLink ? (
+									<img src={recipe.station.imageLink} alt="" className="h-7 w-7 rounded-md object-contain" />
+								) : (
+									<span className="flex h-7 w-7 items-center justify-center rounded-md bg-highlight/5">
+										<Hammer size={14} />
+									</span>
+								)}
+								<div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+									<span className="text-sm font-medium text-foreground">
+										{recipe.station.name} level {recipe.level}
+									</span>
+									<span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+										<Clock3 size={10} /> {formatDuration(recipe.duration)}
+									</span>
+									{profileReady && <AvailabilityBadge available={available} />}
+									{profileReady && !available && (
+										<LockedReasons
+											recipe={recipe}
+											stationMet={stationMet}
+											questMet={questMet}
+											editionMet={editionMet}
+											currentLevel={currentLevel}
+										/>
+									)}
+								</div>
+							</div>
+							<ItemDetailRecipeProfit
+								evaluation={evaluation}
+								recipeId={recipe.id}
+								kind="craft"
+								outputItem={recipe.outputItem ?? outputItem}
+								loading={profitLoading}
+								error={profitError}
+								onRetry={onRetryProfit}
+								linkOnly={usedIn}
+							/>
+						</div>
+
+						<ItemDetailRecipeFlow
+							outputItem={recipe.outputItem ?? outputItem}
+							outputIsViewedItem={!recipe.outputItem}
+							outputCount={recipe.productCount}
+						>
+							{recipe.requiredItems.map((entry, index) => (
+								<Ingredient
+									key={`${entry.item.id}-${index}`}
+									entry={entry}
+									highlighted={usedIn && entry.item.id === outputItem.id}
+									manualBuy={overrides[entry.item.id]?.buy}
+									plan={evaluation?.requiredItems.find((candidate) => candidate.itemId === entry.item.id)}
+								/>
+							))}
+							{recipe.requiredQuestItems.map((entry, index) => (
+								<Ingredient
+									key={`quest-${entry.item.id}-${index}`}
+									entry={entry}
+									highlighted={usedIn && entry.item.id === outputItem.id}
+									questItem
+								/>
+							))}
+						</ItemDetailRecipeFlow>
+					</div>
+				);
+			})}
+		</div>
+	);
+}
+
+function isCraftAvailable(
+	recipe: ItemCraftRecipe,
+	completedQuests: Record<string, boolean>,
+	stationLevels: Record<string, number>,
+	gameEdition: GameEdition | null,
+) {
+	return (
+		(stationLevels[recipe.station.id] ?? 0) >= recipe.level &&
+		(!recipe.taskUnlock || completedQuests[recipe.taskUnlock.id] === true) &&
+		isEditionAllowed(recipe.gameEditions, gameEdition)
+	);
+}
+
+function isEditionAllowed(required: string[], edition: GameEdition | null) {
+	if (required.length === 0) return true;
+	if (!edition) return false;
+	const editionKeys: Record<GameEdition, string[]> = {
+		Standard: ["standard"],
+		"Left Behind": ["left_behind"],
+		"Prepare for Escape": ["prepare_for_escape"],
+		"Edge of Darkness": ["edge_of_darkness"],
+		Unheard: ["eod_tue_edition", "the_unheard_edition", "unheard"],
+	};
+	return editionKeys[edition].some((key) => required.includes(key));
+}
+
+function formatEdition(value: string) {
+	return value
+		.replace("eod_tue_edition", "Unheard")
+		.replaceAll("_", " ")
+		.replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function Ingredient({
+	entry,
+	highlighted,
+	manualBuy,
+	plan,
+	questItem = false,
+}: {
+	entry: ItemAmount;
+	highlighted: boolean;
+	manualBuy?: number;
+	plan?: AcquisitionPlan;
+	questItem?: boolean;
+}) {
+	return (
+		<ItemDetailItemChip
+			item={entry.item}
+			highlighted={highlighted}
+			preferShortName
+			flat
+			linked={!questItem}
+			quantityLabel={`${entry.count}`}
+			quantityOverlay
+			secondary={
+				entry.isTool ? (
+					<ToolBadge />
+				) : plan ? (
+					<RecommendationBadge
+						plan={plan}
+						unstable={
+							entry.item.marketPrice?.fleaStability === "unstable" &&
+							entry.item.normalizedName !== "roubles" &&
+							!(typeof manualBuy === "number" && Number.isFinite(manualBuy) && manualBuy >= 0)
+						}
+					/>
+				) : undefined
+			}
+			badges={<>{questItem && <span className="text-[9px] uppercase text-special">quest item</span>}</>}
+		/>
+	);
+}
+
+function LockedReasons({
+	recipe,
+	stationMet,
+	questMet,
+	editionMet,
+	currentLevel,
+}: {
+	recipe: ItemCraftRecipe;
+	stationMet: boolean;
+	questMet: boolean;
+	editionMet: boolean;
+	currentLevel: number;
+}) {
+	return (
+		<span className="flex flex-wrap items-center gap-x-1 text-[10px] text-warning">
+			{!stationMet && (
+				<>
+					<span>Current level {currentLevel}</span>
+					{(!questMet || !editionMet) && <span className="text-muted-foreground">·</span>}
+				</>
+			)}
+			{!questMet && recipe.taskUnlock && (
+				<>
+					<span>
+						Needs{" "}
+						<QuestLink
+							questId={recipe.taskUnlock.id}
+							name={recipe.taskUnlock.name}
+							className="underline decoration-warning/30 underline-offset-2 hover:text-foreground"
+						/>
+					</span>
+					{!editionMet && <span className="text-muted-foreground">·</span>}
+				</>
+			)}
+			{!editionMet && (
+				<>
+					<span>Needs {recipe.gameEditions.map(formatEdition).join(" or ")}</span>
+				</>
+			)}
+		</span>
+	);
+}

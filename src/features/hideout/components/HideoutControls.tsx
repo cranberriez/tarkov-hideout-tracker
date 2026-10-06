@@ -1,81 +1,91 @@
 "use client";
 
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { Grid2x2, Rows2 } from "lucide-react";
+import { FilterBar, FilterRadioGroup, FilterToggle } from "@/components/ui/filter-bar";
+import { Eye, EyeOff, Grid2x2, Rows2 } from "lucide-react";
+
+const layoutOptions = [
+	{ value: "expanded", label: "Expanded view", icon: <Rows2 size={14} aria-hidden="true" /> },
+	{ value: "compact", label: "Compact view", icon: <Grid2x2 size={14} aria-hidden="true" /> },
+] as const;
+
+/** Lit only when changed from the default; the eye shows whether the content is visible. */
+function VisibilityToggle({
+	label,
+	actionLabel,
+	visible,
+	pressed,
+	onPressedChange,
+}: {
+	label: string;
+	actionLabel: string;
+	visible: boolean;
+	pressed: boolean;
+	onPressedChange: (pressed: boolean) => void;
+}) {
+	const Icon = visible ? Eye : EyeOff;
+	return (
+		<FilterToggle checked={pressed} onCheckedChange={onPressedChange} aria-label={actionLabel}>
+			<Icon size={14} aria-hidden="true" />
+			{label}
+		</FilterToggle>
+	);
+}
 
 export function HideoutControls() {
-    const {
-        showHidden,
-        setShowHidden,
-        hideoutCompactMode,
-        setHideoutCompactMode,
-        hideMoney,
-        setHideMoney,
-        hideRequirements,
-        setHideRequirements,
-    } = useUserStore();
+	const {
+		showHidden,
+		setShowHidden,
+		hideoutCompactMode,
+		setHideoutCompactMode,
+		hideMoney,
+		setHideMoney,
+		hideRequirements,
+		setHideRequirements,
+	} = useUserStore(
+		useShallow((state) => ({
+			showHidden: state.showHidden,
+			setShowHidden: state.setShowHidden,
+			hideoutCompactMode: state.hideoutCompactMode,
+			setHideoutCompactMode: state.setHideoutCompactMode,
+			hideMoney: state.hideMoney,
+			setHideMoney: state.setHideMoney,
+			hideRequirements: state.hideRequirements,
+			setHideRequirements: state.setHideRequirements,
+		})),
+	);
 
-    return (
-        <div className="flex flex-col gap-2 bg-muted p-2 rounded-lg border">
-            <div className="flex flex-wrap items-center gap-2">
-                <button
-                    onClick={() => setHideRequirements(!hideRequirements)}
-                    className={`text-xs font-bold font-mono border border-border-color px-3 py-2 rounded uppercase tracking-widest transition-colors ${
-                        hideRequirements
-                            ? "bg-white/10 text-white border-white/20"
-                            : "text-gray-400 hover:bg-white/5"
-                    }`}
-                >
-                    {hideRequirements ? "Show Reqs" : "Hide Reqs"}
-                </button>
-
-                <button
-                    onClick={() => setHideMoney(!hideMoney)}
-                    className={`text-xs font-bold font-mono border border-border-color px-3 py-2 rounded uppercase tracking-widest transition-colors ${
-                        hideMoney
-                            ? "bg-white/10 text-white border-white/20"
-                            : "text-gray-400 hover:bg-white/5"
-                    }`}
-                >
-                    {hideMoney ? "Show Money" : "Hide Money"}
-                </button>
-
-                <button
-                    onClick={() => setShowHidden(!showHidden)}
-                    className={`text-xs font-bold font-mono border border-border-color px-3 py-2 rounded uppercase tracking-widest transition-colors ${
-                        showHidden
-                            ? "bg-white/10 text-white border-white/20"
-                            : "text-gray-400 hover:bg-white/5"
-                    }`}
-                >
-                    {showHidden ? "Hide Hidden" : "Show Hidden"}
-                </button>
-
-                <div className="flex items-center border border-border-color rounded overflow-hidden">
-                    <button
-                        onClick={() => setHideoutCompactMode(false)}
-                        className={`px-3 py-2 text-xs font-bold font-mono uppercase tracking-widest transition-colors ${
-                            !hideoutCompactMode
-                                ? "bg-white/10 text-white"
-                                : "text-gray-400 hover:bg-white/5"
-                        }`}
-                        title="Expanded View"
-                    >
-                        <Rows2 size={16} />
-                    </button>
-                    <button
-                        onClick={() => setHideoutCompactMode(true)}
-                        className={`px-3 py-2 text-xs font-bold uppercase tracking-widest transition-colors ${
-                            hideoutCompactMode
-                                ? "bg-white/10 text-white"
-                                : "text-gray-400 hover:bg-white/5"
-                        }`}
-                        title="Compact View"
-                    >
-                        <Grid2x2 size={16} />
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
+	return (
+		<FilterBar className="items-center">
+			<VisibilityToggle
+				label="Requirements"
+				actionLabel="Hide requirements"
+				visible={!hideRequirements}
+				pressed={hideRequirements}
+				onPressedChange={setHideRequirements}
+			/>
+			<VisibilityToggle
+				label="Money"
+				actionLabel="Hide money requirements"
+				visible={!hideMoney}
+				pressed={hideMoney}
+				onPressedChange={setHideMoney}
+			/>
+			<VisibilityToggle
+				label="Hidden stations"
+				actionLabel="Show hidden stations"
+				visible={showHidden}
+				pressed={showHidden}
+				onPressedChange={setShowHidden}
+			/>
+			<FilterRadioGroup
+				label="Requirement layout"
+				value={hideoutCompactMode ? "compact" : "expanded"}
+				onValueChange={(value) => setHideoutCompactMode(value === "compact")}
+				options={layoutOptions}
+				className="min-w-20"
+			/>
+		</FilterBar>
+	);
 }

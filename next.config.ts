@@ -15,6 +15,27 @@ const nextConfig: NextConfig = {
 			},
 		],
 	},
+	allowedDevOrigins: ["192.168.2.13"],
+	async rewrites() {
+		return [
+			{
+				// Same-origin item art, so the screenshot uploader can compare icon pixels on a canvas.
+				source: "/item-assets/:path*",
+				destination: "https://assets.tarkov.dev/:path*",
+			},
+		];
+	},
+	async redirects() {
+		return [
+			{
+				// Legacy quest deep links; the quests index keeps a client fallback for streamed responses.
+				source: "/quests",
+				has: [{ type: "query", key: "quest", value: "(?<questId>[^&]+)" }],
+				destination: "/quests/:questId",
+				permanent: true,
+			},
+		];
+	},
 };
 
 export default nextConfig;

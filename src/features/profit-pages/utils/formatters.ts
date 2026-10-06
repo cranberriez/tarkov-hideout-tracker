@@ -1,0 +1,40 @@
+import { formatCompactRoubles, formatRoubles } from "../../../lib/utils/market-price";
+import type { TraderSellOffer } from "@/types/prices";
+
+export function formatSignedRoubles(value: number | null) {
+	if (value === null) return "-";
+	return `${value > 0 ? "+" : ""}${formatRoubles(Math.round(value))}`;
+}
+
+export function formatRoundedRoubles(value: number | null) {
+	return formatRoubles(value === null ? null : Math.round(value));
+}
+
+export function formatCompactPrice(value: number | null) {
+	return value === null ? "-" : `${formatCompactRoubles(Math.round(value))} ₽`;
+}
+
+export function formatTraderOffer(offer: TraderSellOffer, count: number, includeRoubleComparison: boolean) {
+	const amount = (offer.price ?? offer.priceRUB) * count;
+	const formattedAmount = new Intl.NumberFormat("en-US", {
+		maximumFractionDigits: 2,
+	}).format(amount);
+	const original =
+		offer.currency === "USD"
+			? `$${formattedAmount}`
+			: offer.currency === "EUR"
+				? `€${formattedAmount}`
+				: offer.currency === "RUB" || !offer.currency
+					? `${formattedAmount} ₽`
+					: `${formattedAmount} ${offer.currency}`;
+	if (!includeRoubleComparison || offer.currency === "RUB" || !offer.currency) return original;
+	return `${original} (${formatCompactPrice(offer.priceRUB * count)})`;
+}
+
+export function formatQuantity(value: number) {
+	return Number.isInteger(value)
+		? value.toLocaleString()
+		: value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+export { formatDuration } from "../../../lib/utils/format-time";

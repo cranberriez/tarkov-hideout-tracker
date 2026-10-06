@@ -1,41 +1,41 @@
 "use client";
 
 import { useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { CompletedItemsConversionModal } from "@/features/items/components/CompletedItemsConversionModal";
-import { useDataContext } from "@/app/(data)/_dataContext";
+import type { Station } from "@/types/hideout";
 
-export function HideoutConversionGate() {
-    const { stations } = useDataContext();
-    const {
-        stationLevels,
-        completedRequirements,
-        hasSeenItemConversionModal,
-        setHasSeenItemConversionModal,
-    } = useUserStore();
+interface HideoutConversionGateProps {
+	stations: Station[];
+}
 
-    const hasConvertible = useMemo(() => {
-        if (!stations) return false;
+export function HideoutConversionGate({ stations }: HideoutConversionGateProps) {
+	const { stationLevels, completedRequirements, hasSeenItemConversionModal, setHasSeenItemConversionModal } =
+		useUserStore(
+			useShallow((state) => ({
+				stationLevels: state.stationLevels,
+				completedRequirements: state.completedRequirements,
+				hasSeenItemConversionModal: state.hasSeenItemConversionModal,
+				setHasSeenItemConversionModal: state.setHasSeenItemConversionModal,
+			})),
+		);
 
-        return stations.some((station) => {
-            const currentLevel = stationLevels[station.id] ?? 0;
+	const hasConvertible = useMemo(() => {
+		return stations.some((station) => {
+			const currentLevel = stationLevels[station.id] ?? 0;
 
-            return station.levels.some((level) => {
-                if (currentLevel >= level.level) return false;
+			return station.levels.some((level) => {
+				if (currentLevel >= level.level) return false;
 
-                return level.itemRequirements.some((req) => completedRequirements[req.id]);
-            });
-        });
-    }, [stations, stationLevels, completedRequirements]);
+				return level.itemRequirements.some((req) => completedRequirements[req.id]);
+			});
+		});
+	}, [stations, stationLevels, completedRequirements]);
 
-    const isOpen = hasConvertible && !hasSeenItemConversionModal;
+	const isOpen = hasConvertible && !hasSeenItemConversionModal;
 
-    if (!isOpen) return null;
+	if (!isOpen) return null;
 
-    return (
-        <CompletedItemsConversionModal
-            isOpen={true}
-            onClose={() => setHasSeenItemConversionModal(true)}
-        />
-    );
+	return <CompletedItemsConversionModal isOpen={true} onClose={() => setHasSeenItemConversionModal(true)} />;
 }

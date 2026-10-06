@@ -1,539 +1,575 @@
 "use client";
 
+import { ItemLink } from "@/components/entities/item-link";
 import { useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemRow } from "./ItemRow";
 import { ItemAnyOfGroupCard } from "./ItemAnyOfGroupCard";
 import { poolItems } from "@/lib/utils/item-pooling";
-import type { ItemDetails } from "@/types";
+import type { ItemSummary } from "@/types/items";
 import type {
-    DerivedQuestAnyOfGroup,
-    DerivedQuestItemState,
-    QuestAnyOfGroupEntry,
-    QuestItemIndexEntry,
-} from "@/lib/utils/quest-item-index";
-import {
-    compareQuestItemState,
-    deriveQuestAnyOfGroups,
-    deriveQuestItemStates,
-} from "@/lib/utils/quest-item-index";
-import { useDataContext } from "@/app/(data)/_dataContext";
-import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
-import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
+	DerivedQuestAnyOfGroup,
+	DerivedQuestItemState,
+	QuestAnyOfGroupEntry,
+	QuestItemIndexEntry,
+} from "@/lib/quests/quest-item-index";
+import { deriveQuestAnyOfGroups, deriveQuestItemStates } from "@/lib/quests/quest-item-index";
+import type { QuestAvailabilityQuest } from "@/lib/quests/quest-availability";
 import { getFleaPrice } from "@/lib/utils/market-price";
+import { buildChecklistSearchIds, findOutsideFilterMatches, matchesChecklistSearch } from "../checklist-search";
+import {
+	compareChecklistEntries,
+	itemChecklistSortValues,
+	type ChecklistSort,
+	type ChecklistSortValues,
+} from "../checklist-sort";
+import type { Station } from "@/types/hideout";
+import { ITEM_GROUPS, itemGroup } from "@/lib/data/item-groups";
+
+/** Jewelry leaf category; split out of Barter so high-value items get their own section. */
+const VALUABLES_CATEGORY_ID = "57864a3d24597754843f8721";
+const CATEGORY_SECTIONS = ITEM_GROUPS.flatMap((group) =>
+	group.key === "barter" ? [{ key: "valuables", label: "Valuables" }, group] : [group],
+);
+
+function categorySection(item: ItemSummary): string {
+	if ((item.categoryId ?? item.category?.id) === VALUABLES_CATEGORY_ID) return "valuables";
+	return itemGroup(item);
+}
 
 interface ItemsListProps {
-    onClickItem: (item: ItemDetails) => void;
-    questItemIndex: QuestItemIndexEntry[];
-    questAnyOfGroups: QuestAnyOfGroupEntry[];
-    questAvailabilityQuests: QuestAvailabilityQuest[];
+	sort: ChecklistSort;
+	searchQuery: string;
+	stations: Station[];
+	itemById: Readonly<Record<string, ItemSummary>>;
+	questItemIndex: QuestItemIndexEntry[];
+	questAnyOfGroups: QuestAnyOfGroupEntry[];
+	questAvailabilityQuests: QuestAvailabilityQuest[];
 }
 
 type MergedItem = {
-    id: string;
-    count: number;
-    firCount: number;
-    isTool: boolean;
-    isHideout: boolean;
-    isQuest: boolean;
-    hideoutCount: number;
-    hideoutFirCount: number;
-    questCount: number;
-    questFirCount: number;
-    details?: ItemDetails;
-    questState?: DerivedQuestItemState;
+	id: string;
+	count: number;
+	firCount: number;
+	isTool: boolean;
+	isHideout: boolean;
+	isQuest: boolean;
+	hideoutCount: number;
+	hideoutFirCount: number;
+	questCount: number;
+	questFirCount: number;
+	details?: ItemSummary;
+	questState?: DerivedQuestItemState;
 };
 
-type DisplayItem = MergedItem & { details: ItemDetails };
+type DisplayItem = MergedItem & { details: ItemSummary };
 type QuestSlice = "all" | "pinned" | "unpinned" | "none";
 type DisplayEntry =
-    | { type: "item"; key: string; item: DisplayItem }
-    | { type: "group"; key: string; group: DerivedQuestAnyOfGroup };
+	{ type: "item"; key: string; item: DisplayItem } | { type: "group"; key: string; group: DerivedQuestAnyOfGroup };
 
 export function ItemsList({
-    onClickItem,
-    questItemIndex,
-    questAnyOfGroups,
-    questAvailabilityQuests,
+	sort,
+	searchQuery,
+	stations,
+	itemById,
+	questItemIndex,
+	questAnyOfGroups,
+	questAvailabilityQuests,
 }: ItemsListProps) {
-    const { stations, items } = useDataContext();
-    const { marketPricesByMode } = usePriceDataContext();
-    const [expandedGroupIds, setExpandedGroupIds] = useState<Record<string, boolean>>({});
+	const [expandedGroupIds, setExpandedGroupIds] = useState<Record<string, boolean>>({});
 
-    const {
-        stationLevels,
-        hiddenStations,
-        checklistViewMode,
-        showHidden,
-        hideCheap,
-        cheapPriceThreshold,
-        itemsSize,
-        useCategorization,
-        showFirOnly,
-        itemSourceFilter,
-        gameMode,
-        completedRequirements,
-        completedQuests,
-        failedQuests,
-        ignoredQuests,
-        pinnedQuests,
-        playerLevel,
-        prestigeLevel,
-        questTraderLoyaltyLevels,
-        questFaction,
-        itemShowPinnedQuestOnly,
-        itemQuestVisibilityMode,
-        itemQuestCustomLookahead,
-        itemQuestCustomLevelLookahead,
-        itemShowFutureFir,
-        itemShowIgnored,
-        questShowKappa,
-        questShowLightkeeper,
-    } = useUserStore();
+	const {
+		itemCounts,
+		stationLevels,
+		hiddenStations,
+		checklistViewMode,
+		showHidden,
+		hideCheap,
+		cheapPriceThreshold,
+		itemsSize,
+		useCategorization,
+		showFirOnly,
+		itemSourceFilter,
+		completedRequirements,
+		completedQuests,
+		failedQuests,
+		ignoredQuests,
+		pinnedQuests,
+		playerLevel,
+		prestigeLevel,
+		questTraderLoyaltyLevels,
+		questFenceReputation,
+		questFaction,
+		itemShowPinnedQuestOnly,
+		itemQuestVisibilityMode,
+		itemQuestCustomLookahead,
+		itemQuestCustomLevelLookahead,
+		itemShowFutureFir,
+		itemShowIgnored,
+	} = useUserStore(
+		useShallow((state) => ({
+			itemCounts: state.itemCounts,
+			stationLevels: state.stationLevels,
+			hiddenStations: state.hiddenStations,
+			checklistViewMode: state.checklistViewMode,
+			showHidden: state.showHidden,
+			hideCheap: state.hideCheap,
+			cheapPriceThreshold: state.cheapPriceThreshold,
+			itemsSize: state.itemsSize,
+			useCategorization: state.useCategorization,
+			showFirOnly: state.showFirOnly,
+			itemSourceFilter: state.itemSourceFilter,
+			completedRequirements: state.completedRequirements,
+			completedQuests: state.completedQuests,
+			failedQuests: state.failedQuests,
+			ignoredQuests: state.ignoredQuests,
+			pinnedQuests: state.pinnedQuests,
+			playerLevel: state.playerLevel,
+			prestigeLevel: state.prestigeLevel,
+			questTraderLoyaltyLevels: state.questTraderLoyaltyLevels,
+			questFenceReputation: state.questFenceReputation,
+			questFaction: state.questFaction,
+			itemShowPinnedQuestOnly: state.itemShowPinnedQuestOnly,
+			itemQuestVisibilityMode: state.itemQuestVisibilityMode,
+			itemQuestCustomLookahead: state.itemQuestCustomLookahead,
+			itemQuestCustomLevelLookahead: state.itemQuestCustomLevelLookahead,
+			itemShowFutureFir: state.itemShowFutureFir,
+			itemShowIgnored: state.itemShowIgnored,
+		})),
+	);
 
-    const deriveOptions = useMemo(
-        () => ({
-            completedQuests,
-            failedQuests,
-            ignoredQuests,
-            pinnedQuests,
-            playerLevel,
-            prestigeLevel,
-            faction: questFaction,
-            traderLoyaltyLevels: questTraderLoyaltyLevels,
-            quests: questAvailabilityQuests,
-            visibilityMode: itemQuestVisibilityMode,
-            customLookahead: itemQuestCustomLookahead,
-            customLevelLookahead: itemQuestCustomLevelLookahead,
-            showFutureFir: itemShowFutureFir,
-            showIgnored: itemShowIgnored,
-            showKappa: questShowKappa,
-            showLightkeeper: questShowLightkeeper,
-        }),
-        [
-            completedQuests,
-            failedQuests,
-            ignoredQuests,
-            pinnedQuests,
-            playerLevel,
-            prestigeLevel,
-            questFaction,
-            questTraderLoyaltyLevels,
-            questAvailabilityQuests,
-            itemQuestVisibilityMode,
-            itemQuestCustomLookahead,
-            itemQuestCustomLevelLookahead,
-            itemShowFutureFir,
-            itemShowIgnored,
-            questShowKappa,
-            questShowLightkeeper,
-        ],
-    );
+	const deriveOptions = useMemo(
+		() => ({
+			completedQuests,
+			failedQuests,
+			ignoredQuests,
+			pinnedQuests,
+			playerLevel,
+			prestigeLevel,
+			faction: questFaction,
+			traderLoyaltyLevels: questTraderLoyaltyLevels,
+			fenceReputation: questFenceReputation,
+			quests: questAvailabilityQuests,
+			visibilityMode: itemQuestVisibilityMode,
+			customLookahead: itemQuestCustomLookahead,
+			customLevelLookahead: itemQuestCustomLevelLookahead,
+			showFutureFir: itemShowFutureFir,
+			showIgnored: itemShowIgnored,
+		}),
+		[
+			completedQuests,
+			failedQuests,
+			ignoredQuests,
+			pinnedQuests,
+			playerLevel,
+			prestigeLevel,
+			questFaction,
+			questTraderLoyaltyLevels,
+			questFenceReputation,
+			questAvailabilityQuests,
+			itemQuestVisibilityMode,
+			itemQuestCustomLookahead,
+			itemQuestCustomLevelLookahead,
+			itemShowFutureFir,
+			itemShowIgnored,
+		],
+	);
 
-    const itemsById = useMemo(() => {
-        if (!items) return null;
-        const map: Record<string, ItemDetails> = {};
-        for (const item of items) {
-            map[item.id] = item;
-        }
-        return map;
-    }, [items]);
+	const activeQuestStates = useMemo(
+		() => deriveQuestItemStates(questItemIndex, deriveOptions),
+		[deriveOptions, questItemIndex],
+	);
 
-    const activeQuestStates = useMemo(
-        () => deriveQuestItemStates(questItemIndex, deriveOptions),
-        [deriveOptions, questItemIndex],
-    );
+	const activeQuestGroups = useMemo(
+		() => deriveQuestAnyOfGroups(questAnyOfGroups, deriveOptions),
+		[deriveOptions, questAnyOfGroups],
+	);
 
-    const activeQuestGroups = useMemo(
-        () => deriveQuestAnyOfGroups(questAnyOfGroups, deriveOptions),
-        [deriveOptions, questAnyOfGroups],
-    );
+	const groupedQuestDeductionsByItemId = useMemo(() => {
+		const deductions = new Map<string, { count: number; firCount: number }>();
+		for (const group of activeQuestGroups) {
+			for (const itemId of group.itemIds) {
+				const existing = deductions.get(itemId) ?? { count: 0, firCount: 0 };
+				deductions.set(itemId, {
+					count: existing.count + group.requiredCount,
+					firCount: existing.firCount + group.requiredFirCount,
+				});
+			}
+		}
+		return deductions;
+	}, [activeQuestGroups]);
 
-    const groupedQuestDeductionsByItemId = useMemo(() => {
-        const deductions = new Map<string, { count: number; firCount: number }>();
-        for (const group of activeQuestGroups) {
-            for (const item of group.items) {
-                const existing = deductions.get(item.id) ?? { count: 0, firCount: 0 };
-                deductions.set(item.id, {
-                    count: existing.count + group.requiredCount,
-                    firCount: existing.firCount + group.requiredFirCount,
-                });
-            }
-        }
-        return deductions;
-    }, [activeQuestGroups]);
+	const questStateByItemId = useMemo(
+		() =>
+			new Map(
+				activeQuestStates.map((state) => {
+					const deduction = groupedQuestDeductionsByItemId.get(state.itemId);
+					const requiredCount = Math.max(0, state.requiredCount - (deduction?.count ?? 0));
+					const requiredFirCount = Math.max(0, state.requiredFirCount - (deduction?.firCount ?? 0));
+					const pinnedRequiredCount = Math.max(0, state.pinnedRequiredCount - (deduction?.count ?? 0));
+					const pinnedRequiredFirCount = Math.max(0, state.pinnedRequiredFirCount - (deduction?.firCount ?? 0));
+					return [
+						state.itemId,
+						{
+							...state,
+							requiredCount,
+							requiredFirCount,
+							pinnedRequiredCount,
+							pinnedRequiredFirCount,
+						},
+					] as const;
+				}),
+			),
+		[activeQuestStates, groupedQuestDeductionsByItemId],
+	);
 
-    const questStateByItemId = useMemo(
-        () =>
-            new Map(
-                activeQuestStates.map((state) => {
-                    const deduction = groupedQuestDeductionsByItemId.get(state.itemId);
-                    const requiredCount = Math.max(0, state.requiredCount - (deduction?.count ?? 0));
-                    const requiredFirCount = Math.max(
-                        0,
-                        state.requiredFirCount - (deduction?.firCount ?? 0),
-                    );
-                    const pinnedRequiredCount = Math.max(
-                        0,
-                        state.pinnedRequiredCount - (deduction?.count ?? 0),
-                    );
-                    const pinnedRequiredFirCount = Math.max(
-                        0,
-                        state.pinnedRequiredFirCount - (deduction?.firCount ?? 0),
-                    );
-                    return [
-                        state.itemId,
-                        {
-                            ...state,
-                            requiredCount,
-                            requiredFirCount,
-                            pinnedRequiredCount,
-                            pinnedRequiredFirCount,
-                        },
-                    ] as const;
-                }),
-            ),
-        [activeQuestStates, groupedQuestDeductionsByItemId],
-    );
+	const allItemDetails = itemById;
 
-    const allItemDetails = useMemo(() => {
-        const details: Record<string, ItemDetails> = { ...(itemsById ?? {}) };
-        for (const entry of questItemIndex) {
-            if (!details[entry.itemId]) {
-                details[entry.itemId] = {
-                    id: entry.itemId,
-                    name: entry.name,
-                    normalizedName: entry.normalizedName,
-                    iconLink: entry.iconLink,
-                    gridImageLink: entry.gridImageLink,
-                };
-            }
-        }
-        for (const group of questAnyOfGroups) {
-            for (const item of group.items) {
-                if (!details[item.id]) {
-                    details[item.id] = {
-                        id: item.id,
-                        name: item.name,
-                        normalizedName: item.normalizedName,
-                        iconLink: item.iconLink,
-                        gridImageLink: item.gridImageLink,
-                    };
-                }
-            }
-        }
-        return details;
-    }, [itemsById, questAnyOfGroups, questItemIndex]);
+	const pooledHideoutItems = useMemo(() => {
+		return poolItems({
+			stations,
+			stationLevels,
+			hiddenStations,
+			showHidden,
+			viewMode: checklistViewMode,
+			completedRequirements,
+		});
+	}, [checklistViewMode, completedRequirements, hiddenStations, showHidden, stationLevels, stations]);
 
-    const mode = gameMode === "PVE" ? "PVE" : "PVP";
-    const priceBucket = marketPricesByMode[mode];
-    const getPrice = (normalizedName: string) => priceBucket?.prices[normalizedName];
+	const mergedPool = useMemo(() => {
+		const merged = new Map<string, MergedItem>(
+			pooledHideoutItems.map((item) => [
+				item.id,
+				{
+					...item,
+					hideoutCount: item.count,
+					hideoutFirCount: item.firCount,
+					questCount: 0,
+					questFirCount: 0,
+					questState: questStateByItemId.get(item.id),
+				},
+			]),
+		);
 
-    const pooledHideoutItems = useMemo(() => {
-        if (!stations) return [];
-        return poolItems({
-            stations,
-            stationLevels,
-            hiddenStations,
-            showHidden,
-            viewMode: checklistViewMode,
-            completedRequirements,
-        });
-    }, [
-        checklistViewMode,
-        completedRequirements,
-        hiddenStations,
-        showHidden,
-        stationLevels,
-        stations,
-    ]);
+		for (const questState of questStateByItemId.values()) {
+			if (questState.requiredCount <= 0 && questState.requiredFirCount <= 0) continue;
+			const existing = merged.get(questState.itemId);
+			if (existing) {
+				merged.set(questState.itemId, {
+					...existing,
+					count: existing.count + questState.requiredCount,
+					firCount: existing.firCount + questState.requiredFirCount,
+					questCount: questState.requiredCount,
+					questFirCount: questState.requiredFirCount,
+					isQuest: questState.requiredCount > 0,
+					questState,
+				});
+			} else {
+				merged.set(questState.itemId, {
+					id: questState.itemId,
+					count: questState.requiredCount,
+					firCount: questState.requiredFirCount,
+					isTool: false,
+					isHideout: false,
+					isQuest: questState.requiredCount > 0,
+					hideoutCount: 0,
+					hideoutFirCount: 0,
+					questCount: questState.requiredCount,
+					questFirCount: questState.requiredFirCount,
+					details: allItemDetails[questState.itemId],
+					questState,
+				});
+			}
+		}
 
-    const mergedPool = useMemo(() => {
-        const merged = new Map<string, MergedItem>(
-            pooledHideoutItems.map((item) => [
-                item.id,
-                {
-                    ...item,
-                    hideoutCount: item.count,
-                    hideoutFirCount: item.firCount,
-                    questCount: 0,
-                    questFirCount: 0,
-                    questState: questStateByItemId.get(item.id),
-                },
-            ]),
-        );
+		return Array.from(merged.values()).map((item) => ({
+			...item,
+			details: allItemDetails[item.id],
+			questState: item.questState ?? questStateByItemId.get(item.id),
+		}));
+	}, [allItemDetails, pooledHideoutItems, questStateByItemId]);
 
-        for (const questState of questStateByItemId.values()) {
-            if (questState.requiredCount <= 0 && questState.requiredFirCount <= 0) continue;
-            const existing = merged.get(questState.itemId);
-            if (existing) {
-                merged.set(questState.itemId, {
-                    ...existing,
-                    count: existing.count + questState.requiredCount,
-                    firCount: existing.firCount + questState.requiredFirCount,
-                    questCount: questState.requiredCount,
-                    questFirCount: questState.requiredFirCount,
-                    isQuest: questState.requiredCount > 0,
-                    questState,
-                });
-            } else {
-                merged.set(questState.itemId, {
-                    id: questState.itemId,
-                    count: questState.requiredCount,
-                    firCount: questState.requiredFirCount,
-                    isTool: false,
-                    isHideout: false,
-                    isQuest: questState.requiredCount > 0,
-                    hideoutCount: 0,
-                    hideoutFirCount: 0,
-                    questCount: questState.requiredCount,
-                    questFirCount: questState.requiredFirCount,
-                    details: allItemDetails[questState.itemId],
-                    questState,
-                });
-            }
-        }
+	const getItemSortValues = (item: DisplayItem) => ({
+		...itemChecklistSortValues(item.details, item.count, item.firCount, itemCounts[item.id]),
+		questState: item.questState,
+	});
+	const compareDisplayItems = (a: DisplayItem, b: DisplayItem) =>
+		compareChecklistEntries(getItemSortValues(a), getItemSortValues(b), sort);
+	const getEntrySortValues = (entry: DisplayEntry): ChecklistSortValues =>
+		entry.type === "item"
+			? getItemSortValues(entry.item)
+			: {
+					id: entry.key,
+					groupOrder: activeQuestGroups.indexOf(entry.group),
+					name: entry.group.questName,
+					unitValue: null,
+					totalValue: null,
+					quantity: entry.group.requiredCount,
+					fir: entry.group.requiredFirCount,
+				};
 
-        return Array.from(merged.values()).map((item) => ({
-            ...item,
-            details: allItemDetails[item.id],
-            questState: item.questState ?? questStateByItemId.get(item.id),
-        }));
-    }, [allItemDetails, pooledHideoutItems, questStateByItemId]);
+	const finalizeDisplayItems = (
+		itemsToDisplay: Array<MergedItem & { details?: ItemSummary; questState?: DerivedQuestItemState }>,
+	): DisplayItem[] => {
+		let finalItems = itemsToDisplay.filter((item): item is DisplayItem => !!item.details);
 
-    const compareDisplayItems = (a: DisplayItem, b: DisplayItem) => {
-        if (a.questState && b.questState) {
-            const byQuest = compareQuestItemState(a.questState, b.questState);
-            if (byQuest !== 0) return byQuest;
-        } else if (a.questState || b.questState) {
-            return a.questState ? -1 : 1;
-        }
-        return a.details.name.localeCompare(b.details.name);
-    };
+		if (showFirOnly) {
+			finalItems = finalItems.filter((item) => (item.firCount || 0) > 0);
+		}
 
-    const finalizeDisplayItems = (
-        itemsToDisplay: Array<MergedItem & { details?: ItemDetails; questState?: DerivedQuestItemState }>,
-    ): DisplayItem[] => {
-        let finalItems = itemsToDisplay.filter((item): item is DisplayItem => !!item.details);
+		if (hideCheap) {
+			finalItems = finalItems.filter((item) => {
+				if ((item.firCount || 0) > 0) return true;
+				const norm = item.details.normalizedName;
+				if (norm === "roubles" || norm === "dollars" || norm === "euros") return true;
+				const marketPrice = item.details.marketPrice;
+				if (!marketPrice) return true;
+				const unitPrice = getFleaPrice(marketPrice);
+				if (unitPrice == null) return true;
+				return unitPrice >= cheapPriceThreshold;
+			});
+		}
 
-        if (showFirOnly) {
-            finalItems = finalItems.filter((item) => (item.firCount || 0) > 0);
-        }
+		finalItems.sort(compareDisplayItems);
+		return finalItems;
+	};
 
-        if (hideCheap) {
-            finalItems = finalItems.filter((item) => {
-                if ((item.firCount || 0) > 0) return true;
-                const norm = item.details.normalizedName;
-                if (norm === "roubles" || norm === "dollars" || norm === "euros") return true;
-                const marketPrice = getPrice(norm);
-                if (!marketPrice) return true;
-                const unitPrice = getFleaPrice(marketPrice);
-                if (unitPrice == null) return true;
-                return unitPrice >= cheapPriceThreshold;
-            });
-        }
+	const buildVisibleItems = (includeHideout: boolean, questSlice: QuestSlice, requirePinnedQuest = false) =>
+		finalizeDisplayItems(
+			mergedPool
+				.map((item) => {
+					const pinnedQuestCount = item.questState?.pinnedRequiredCount ?? 0;
+					const pinnedQuestFirCount = item.questState?.pinnedRequiredFirCount ?? 0;
+					const visibleQuestCount =
+						questSlice === "none"
+							? 0
+							: questSlice === "pinned"
+								? pinnedQuestCount
+								: questSlice === "unpinned"
+									? Math.max(item.questCount - pinnedQuestCount, 0)
+									: item.questCount;
+					const visibleQuestFirCount =
+						questSlice === "none"
+							? 0
+							: questSlice === "pinned"
+								? pinnedQuestFirCount
+								: questSlice === "unpinned"
+									? Math.max(item.questFirCount - pinnedQuestFirCount, 0)
+									: item.questFirCount;
+					const hideoutCount = includeHideout ? item.hideoutCount : 0;
+					const hideoutFirCount = includeHideout ? item.hideoutFirCount : 0;
+					const count = hideoutCount + visibleQuestCount;
+					const firCount = hideoutFirCount + visibleQuestFirCount;
 
-        finalItems.sort(compareDisplayItems);
-        return finalItems;
-    };
+					return {
+						...item,
+						count,
+						firCount,
+						isHideout: includeHideout && item.isHideout,
+						isQuest: visibleQuestCount > 0,
+					};
+				})
+				.filter((item) => !requirePinnedQuest || (item.questState?.pinnedRequiredCount ?? 0) > 0)
+				.filter((item) => item.count > 0),
+		);
 
-    const buildVisibleItems = (
-        includeHideout: boolean,
-        questSlice: QuestSlice,
-        requirePinnedQuest = false,
-    ) =>
-        finalizeDisplayItems(
-            mergedPool
-                .map((item) => {
-                    const pinnedQuestCount = item.questState?.pinnedRequiredCount ?? 0;
-                    const pinnedQuestFirCount = item.questState?.pinnedRequiredFirCount ?? 0;
-                    const visibleQuestCount =
-                        questSlice === "none"
-                            ? 0
-                            : questSlice === "pinned"
-                              ? pinnedQuestCount
-                              : questSlice === "unpinned"
-                                ? Math.max(item.questCount - pinnedQuestCount, 0)
-                                : item.questCount;
-                    const visibleQuestFirCount =
-                        questSlice === "none"
-                            ? 0
-                            : questSlice === "pinned"
-                              ? pinnedQuestFirCount
-                              : questSlice === "unpinned"
-                                ? Math.max(item.questFirCount - pinnedQuestFirCount, 0)
-                                : item.questFirCount;
-                    const hideoutCount = includeHideout ? item.hideoutCount : 0;
-                    const hideoutFirCount = includeHideout ? item.hideoutFirCount : 0;
-                    const count = hideoutCount + visibleQuestCount;
-                    const firCount = hideoutFirCount + visibleQuestFirCount;
+	const visibleQuestGroups = useMemo(() => {
+		let groups = activeQuestGroups;
+		if (itemSourceFilter === "hideout") groups = [];
+		if (itemShowPinnedQuestOnly) groups = groups.filter((group) => group.isPinnedOverride);
+		if (showFirOnly) groups = groups.filter((group) => group.requiredFirCount > 0);
+		return groups;
+	}, [activeQuestGroups, itemShowPinnedQuestOnly, itemSourceFilter, showFirOnly]);
 
-                    return {
-                        ...item,
-                        count,
-                        firCount,
-                        isHideout: includeHideout && item.isHideout,
-                        isQuest: visibleQuestCount > 0,
-                    };
-                })
-                .filter(
-                    (item) =>
-                        !requirePinnedQuest || (item.questState?.pinnedRequiredCount ?? 0) > 0,
-                )
-                .filter((item) => item.count > 0),
-        );
+	const sourceItems =
+		itemSourceFilter === "hideout"
+			? buildVisibleItems(true, "pinned", itemShowPinnedQuestOnly)
+			: itemSourceFilter === "quest"
+				? buildVisibleItems(false, itemShowPinnedQuestOnly ? "pinned" : "all", itemShowPinnedQuestOnly)
+				: buildVisibleItems(true, itemShowPinnedQuestOnly ? "pinned" : "all", itemShowPinnedQuestOnly);
 
-    const visibleQuestGroups = useMemo(() => {
-        let groups = activeQuestGroups;
-        if (itemSourceFilter === "hideout") groups = [];
-        if (itemShowPinnedQuestOnly) groups = groups.filter((group) => group.isPinnedOverride);
-        if (showFirOnly) groups = groups.filter((group) => group.requiredFirCount > 0);
-        return groups;
-    }, [activeQuestGroups, itemShowPinnedQuestOnly, itemSourceFilter, showFirOnly]);
+	const searchIds = useMemo(
+		() => buildChecklistSearchIds(stations, questItemIndex, questAnyOfGroups, itemSourceFilter),
+		[stations, questItemIndex, questAnyOfGroups, itemSourceFilter],
+	);
+	const searching = searchQuery.trim().length > 0;
+	const matchingItems = searching
+		? sourceItems.filter((item) => matchesChecklistSearch(item.details, searchQuery))
+		: sourceItems;
+	const matchingGroups = searching
+		? visibleQuestGroups.filter((group) =>
+				group.itemIds.some((id) => matchesChecklistSearch(itemById[id], searchQuery)),
+			)
+		: visibleQuestGroups;
+	const outsideMatches = findOutsideFilterMatches({
+		query: searchQuery,
+		sourceIds: searchIds,
+		visibleIds: new Set([
+			...sourceItems.map((item) => item.id),
+			...visibleQuestGroups.flatMap((group) => group.itemIds),
+		]),
+		itemById,
+	});
 
-    const sourceItems =
-        itemSourceFilter === "hideout"
-            ? buildVisibleItems(true, "pinned", itemShowPinnedQuestOnly)
-            : itemSourceFilter === "quest"
-              ? buildVisibleItems(
-                    false,
-                    itemShowPinnedQuestOnly ? "pinned" : "all",
-                    itemShowPinnedQuestOnly,
-                )
-              : buildVisibleItems(
-                    true,
-                    itemShowPinnedQuestOnly ? "pinned" : "all",
-                    itemShowPinnedQuestOnly,
-                );
+	const gridClassesBySize: Record<string, string> = {
+		Icon: "grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8",
+		Compact: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+		Expanded: "grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6",
+	};
+	const gridClasses = gridClassesBySize[itemsSize] ?? gridClassesBySize.Expanded;
 
-    const gridClassesBySize: Record<string, string> = {
-        Icon: "grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8",
-        Compact: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
-        Expanded: "grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6",
-    };
-    const gridClasses = gridClassesBySize[itemsSize] ?? gridClassesBySize.Expanded;
+	const renderMixedGrid = (itemsToRender: DisplayItem[], groupsToRender: DerivedQuestAnyOfGroup[]) => {
+		const entries: DisplayEntry[] = [
+			...groupsToRender.map((group) => ({ type: "group", key: group.groupId, group }) as const),
+			...itemsToRender.map((item) => ({ type: "item", key: item.id, item }) as const),
+		];
 
-    const renderMixedGrid = (itemsToRender: DisplayItem[], groupsToRender: DerivedQuestAnyOfGroup[]) => {
-        const entries: DisplayEntry[] = [
-            ...groupsToRender.map((group) => ({ type: "group", key: group.groupId, group }) as const),
-            ...itemsToRender.map((item) => ({ type: "item", key: item.id, item }) as const),
-        ];
+		entries.sort((a, b) => compareChecklistEntries(getEntrySortValues(a), getEntrySortValues(b), sort));
 
-        return (
-            <div className={`grid gap-2 ${gridClasses}`}>
-                {entries.map((entry) => {
-                    if (entry.type === "group") {
-                        return (
-                            <ItemAnyOfGroupCard
-                                key={entry.key}
-                                group={entry.group}
-                                expanded={!!expandedGroupIds[entry.group.groupId]}
-                                size={itemsSize}
-                                onToggleExpanded={() =>
-                                    setExpandedGroupIds((current) => ({
-                                        ...current,
-                                        [entry.group.groupId]: !current[entry.group.groupId],
-                                    }))
-                                }
-                                onClickItem={onClickItem}
-                            />
-                        );
-                    }
+		return (
+			<div className={`grid gap-2 ${gridClasses}`}>
+				{entries.map((entry) => {
+					if (entry.type === "group") {
+						return (
+							<ItemAnyOfGroupCard
+								key={entry.key}
+								group={entry.group}
+								items={entry.group.itemIds
+									.map((itemId) => allItemDetails[itemId])
+									.filter((item): item is ItemSummary => !!item)}
+								expanded={!!expandedGroupIds[entry.group.groupId]}
+								size={itemsSize}
+								onToggleExpanded={() =>
+									setExpandedGroupIds((current) => ({
+										...current,
+										[entry.group.groupId]: !current[entry.group.groupId],
+									}))
+								}
+							/>
+						);
+					}
 
-                    const { id, count, firCount, isHideout, isQuest, details } = entry.item;
-                    return (
-                        <ItemRow
-                            key={id}
-                            item={details}
-                            count={count}
-                            firCount={firCount}
-                            size={itemsSize}
-                            isHideout={isHideout}
-                            isQuest={isQuest}
-                            onClick={() => onClickItem(details)}
-                        />
-                    );
-                })}
-            </div>
-        );
-    };
+					const { id, count, firCount, isHideout, isQuest, details } = entry.item;
+					return (
+						<ItemRow
+							key={id}
+							item={details}
+							count={count}
+							firCount={firCount}
+							size={itemsSize}
+							isHideout={isHideout}
+							isQuest={isQuest}
+						/>
+					);
+				})}
+			</div>
+		);
+	};
 
-    const renderItems = (itemsToRender: DisplayItem[], groupsToRender: DerivedQuestAnyOfGroup[]) => {
-        if (!useCategorization) {
-            return renderMixedGrid(itemsToRender, groupsToRender);
-        }
+	const renderItems = (itemsToRender: DisplayItem[], groupsToRender: DerivedQuestAnyOfGroup[]) => {
+		if (!useCategorization) {
+			return renderMixedGrid(itemsToRender, groupsToRender);
+		}
 
-        const categoryGroups: Record<string, DisplayItem[]> = {};
-        for (const item of itemsToRender) {
-            const category = item.details.category?.name ?? "Other";
-            if (!categoryGroups[category]) categoryGroups[category] = [];
-            categoryGroups[category].push(item);
-        }
+		const categoryGroups: Record<string, DisplayItem[]> = {};
+		for (const item of itemsToRender) {
+			const section = categorySection(item.details);
+			(categoryGroups[section] ??= []).push(item);
+		}
+		const sections = CATEGORY_SECTIONS.filter((section) => categoryGroups[section.key]);
 
-        const sortedCategories = Object.keys(categoryGroups).sort((a, b) => {
-            if (a === "Other") return 1;
-            if (b === "Other") return -1;
-            return a.localeCompare(b);
-        });
+		return (
+			<div className="space-y-8">
+				{groupsToRender.length > 0 && (
+					<div>
+						<h2 className="mb-4 border-b border-highlight/10 pb-2 text-xl font-bold text-brand">
+							Quest Groups{" "}
+							<span className="ml-2 text-sm font-normal text-subtle-foreground">({groupsToRender.length})</span>
+						</h2>
+						{renderMixedGrid([], groupsToRender)}
+					</div>
+				)}
+				{sections.map(({ key, label }) => (
+					<div key={key}>
+						<h2 className="mb-4 border-b border-highlight/10 pb-2 text-xl font-bold text-brand">
+							{label}{" "}
+							<span className="ml-2 text-sm font-normal text-subtle-foreground">
+								({categoryGroups[key].length})
+							</span>
+						</h2>
+						<div className={`grid gap-4 ${gridClasses}`}>
+							{categoryGroups[key].map(({ id, count, firCount, isHideout, isQuest, details }) => (
+								<ItemRow
+									key={id}
+									item={details}
+									count={count}
+									firCount={firCount}
+									size={itemsSize}
+									isHideout={isHideout}
+									isQuest={isQuest}
+								/>
+							))}
+						</div>
+					</div>
+				))}
+			</div>
+		);
+	};
 
-        return (
-            <div className="space-y-8">
-                {groupsToRender.length > 0 && (
-                    <div>
-                        <h2 className="mb-4 border-b border-white/10 pb-2 text-xl font-bold text-tarkov-green">
-                            Quest Groups{" "}
-                            <span className="ml-2 text-sm font-normal text-gray-500">
-                                ({groupsToRender.length})
-                            </span>
-                        </h2>
-                        {renderMixedGrid([], groupsToRender)}
-                    </div>
-                )}
-                {sortedCategories.map((category) => (
-                    <div key={category}>
-                        <h2 className="mb-4 border-b border-white/10 pb-2 text-xl font-bold text-tarkov-green">
-                            {category}{" "}
-                            <span className="ml-2 text-sm font-normal text-gray-500">
-                                ({categoryGroups[category].length})
-                            </span>
-                        </h2>
-                        <div className={`grid gap-4 ${gridClasses}`}>
-                            {categoryGroups[category].map(
-                                ({ id, count, firCount, isHideout, isQuest, details }) => (
-                                    <ItemRow
-                                        key={id}
-                                        item={details}
-                                        count={count}
-                                        firCount={firCount}
-                                        size={itemsSize}
-                                        isHideout={isHideout}
-                                        isQuest={isQuest}
-                                        onClick={() => onClickItem(details)}
-                                    />
-                                ),
-                            )}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        );
-    };
+	if (!searching && sourceItems.length === 0 && visibleQuestGroups.length === 0) {
+		return (
+			<div className="py-20 text-center text-subtle-foreground">
+				<div className="mb-2 text-xl">No items needed!</div>
+				<div className="text-sm">
+					You might have maxed out your hideout, completed your visible quests, or filtered everything out.
+				</div>
+			</div>
+		);
+	}
 
-    if (!stations || !itemsById) {
-        return null;
-    }
-
-    if (sourceItems.length === 0 && visibleQuestGroups.length === 0) {
-        return (
-            <div className="py-20 text-center text-gray-500">
-                <div className="mb-2 text-xl">No items needed!</div>
-                <div className="text-sm">
-                    You might have maxed out your hideout, completed your visible quests, or filtered
-                    everything out.
-                </div>
-            </div>
-        );
-    }
-
-    return <div className="space-y-8">{renderItems(sourceItems, visibleQuestGroups)}</div>;
+	return (
+		<div className="space-y-8">
+			{searching && (
+				<p role="status" className="text-sm text-muted-foreground">
+					{matchingItems.length + matchingGroups.length} visible matches &middot; {outsideMatches.items.length} outside
+					current filters
+				</p>
+			)}
+			{matchingItems.length + matchingGroups.length > 0 ? (
+				renderItems(matchingItems, matchingGroups)
+			) : (
+				<p className="py-8 text-center text-muted-foreground">No matching items in the current filtered list.</p>
+			)}
+			{outsideMatches.items.length > 0 && (
+				<section aria-labelledby="outside-filter-results">
+					<h2 id="outside-filter-results" className="text-xl font-bold text-brand">
+						Outside current filters
+					</h2>
+					<p className="mb-4 mt-1 text-sm text-muted-foreground">
+						Matches from the full {itemSourceFilter === "all" ? "hideout and quest" : itemSourceFilter} checklist,
+						including past and future requirements. Open an item for details.
+					</p>
+					<div className={`grid gap-2 ${gridClasses}`}>
+						{outsideMatches.items.map((item) => (
+							<ItemLink
+								key={item.id}
+								item={item}
+								className="rounded-md border border-highlight/10 bg-shadow/20 p-3 text-left text-sm text-foreground hover:border-brand/50 focus-visible:outline-2 focus-visible:outline-brand"
+							>
+								<span className="block font-medium">{item.name}</span>
+								{item.shortName && <span className="text-xs text-subtle-foreground">{item.shortName}</span>}
+							</ItemLink>
+						))}
+					</div>
+				</section>
+			)}
+			{outsideMatches.missingIds.length > 0 && (
+				<details className="text-sm text-warning">
+					<summary>Search is incomplete: {outsideMatches.missingIds.length} checklist items have no item data.</summary>
+					<p className="mt-2 break-all text-xs">Missing IDs: {outsideMatches.missingIds.join(", ")}</p>
+				</details>
+			)}
+		</div>
+	);
 }

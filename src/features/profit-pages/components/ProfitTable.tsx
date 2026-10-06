@@ -1,0 +1,230 @@
+"use client";
+
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import type { ManualPriceOverride, RecipeEvaluation } from "@/lib/price-calculation";
+import type { BarterRecord, CraftRecord } from "@/types/recipes";
+import type { ItemSummary } from "@/types/items";
+import type { ProfitStationSource } from "../types";
+import type { Trader } from "@/types/traders";
+import type { GoToRecipeHandler, PriceChangeHandler, ProfitPageKind, SortDirection, SortKey } from "../types";
+import { estimateProfitRowHeight } from "../utils/recipes";
+import { PROFIT_KINDS } from "../profit-kinds";
+import styles from "./ProfitTable.module.css";
+import { ProfitRow } from "./ProfitRow";
+import { useCompactCards } from "./useCompactCards";
+
+export function ProfitTable({
+	kind,
+	evaluations,
+	baselineEvaluationsById,
+	itemById,
+	tradersById,
+	stationsById,
+	bartersById,
+	craftsById,
+	overrides,
+	onPriceChange,
+	onGoToRecipe,
+	targetRecipeId,
+	scrollRequestId,
+	pinnedCrafts,
+	onTogglePinnedCraft,
+	showPinnedOnly,
+	ingredientRouteSelections,
+	sortKey,
+	sortDirection,
+	onSortChange,
+	onIngredientRouteChange,
+}: {
+	kind: ProfitPageKind;
+	evaluations: RecipeEvaluation[];
+	baselineEvaluationsById: Readonly<Record<string, RecipeEvaluation>>;
+	itemById: Readonly<Record<string, ItemSummary>>;
+	tradersById: Readonly<Record<string, Trader>>;
+	stationsById: Readonly<Record<string, ProfitStationSource>>;
+	bartersById: Readonly<Record<string, BarterRecord>>;
+	craftsById: Readonly<Record<string, CraftRecord>>;
+	overrides: Record<string, ManualPriceOverride>;
+	onPriceChange: PriceChangeHandler;
+	onGoToRecipe: GoToRecipeHandler;
+	targetRecipeId: string | null;
+	scrollRequestId: number;
+	pinnedCrafts: Record<string, boolean>;
+	onTogglePinnedCraft: (recipeId: string) => void;
+	showPinnedOnly: boolean;
+	ingredientRouteSelections: Record<string, Record<number, string>>;
+	sortKey: SortKey;
+	sortDirection: SortDirection;
+	onSortChange: (sortKey: SortKey) => void;
+	onIngredientRouteChange: (recipeId: string, requirementIndex: number, routeKey: string) => void;
+}) {
+	const { supportsPinning } = PROFIT_KINDS[kind];
+	const listRef = useRef<HTMLDivElement>(null);
+	const lastScrollRequestRef = useRef<string | null>(null);
+	const [scrollMargin, setScrollMargin] = useState(0);
+	useLayoutEffect(() => {
+		const updateScrollMargin = () => {
+			if (listRef.current) setScrollMargin(listRef.current.getBoundingClientRect().top + window.scrollY);
+		};
+		updateScrollMargin();
+		window.addEventListener("resize", updateScrollMargin);
+		return () => window.removeEventListener("resize", updateScrollMargin);
+	}, [kind]);
+	const compact = useCompactCards();
+	const virtualizer = useWindowVirtualizer({
+		count: evaluations.length,
+		estimateSize: (index) => estimateProfitRowHeight(evaluations[index], compact),
+		getItemKey: (index) => evaluations[index]?.id ?? index,
+		overscan: 8,
+		scrollMargin,
+	});
+	// Cached measurements belong to the previous layout.
+	useEffect(() => virtualizer.measure(), [compact, virtualizer]);
+	useEffect(() => {
+		const requestKey = targetRecipeId ? `${targetRecipeId}:${scrollRequestId}` : null;
+		if (!requestKey || scrollMargin <= 0 || lastScrollRequestRef.current === requestKey) return;
+		const targetIndex = evaluations.findIndex((evaluation) => evaluation.id === targetRecipeId);
+		if (targetIndex < 0) return;
+		virtualizer.scrollToIndex(targetIndex, { align: "center" });
+		lastScrollRequestRef.current = requestKey;
+	}, [evaluations, scrollMargin, scrollRequestId, targetRecipeId, virtualizer]);
+	return (
+		<div className={styles.table}>
+			<div className={styles.header}>
+				<span className={styles.sortLabel}>Sort by</span>
+				<span className={styles.columnLabel}>Recipe</span>
+				<span className={styles.columnLabel}>Required items</span>
+				<SortableHeader
+					label="Cost"
+					sortKey="cost"
+					activeSortKey={sortKey}
+					direction={sortDirection}
+					onSortChange={onSortChange}
+				/>
+				<SortableHeader
+					label="Sale proceeds"
+					sortKey="sellValue"
+					activeSortKey={sortKey}
+					direction={sortDirection}
+					onSortChange={onSortChange}
+				/>
+				<SortableHeader
+					label="Profit"
+					sortKey="profit"
+					activeSortKey={sortKey}
+					direction={sortDirection}
+					onSortChange={onSortChange}
+				/>
+				<SortableHeader
+					label="Profit / hour"
+					sortKey="profitPerHour"
+					activeSortKey={sortKey}
+					direction={sortDirection}
+					onSortChange={onSortChange}
+				/>
+			</div>
+			<div ref={listRef} className="w-full min-w-0">
+				{evaluations.length > 0 ? (
+					<div
+						style={{
+							height: `${virtualizer.getTotalSize()}px`,
+							position: "relative",
+							width: "100%",
+						}}
+					>
+						{virtualizer.getVirtualItems().map((virtualRow) => {
+							const evaluation = evaluations[virtualRow.index];
+							const translateY = virtualRow.start - virtualizer.options.scrollMargin;
+							return (
+								<div
+									key={virtualRow.key}
+									data-index={virtualRow.index}
+									ref={virtualizer.measureElement}
+									className={`absolute left-0 top-0 w-full ${styles.virtualRow}`}
+									style={{ transform: `translateY(${translateY}px)` }}
+								>
+									<ProfitRow
+										evaluation={evaluation}
+										baselineEvaluation={baselineEvaluationsById[evaluation.id]}
+										itemById={itemById}
+										sourceName={
+											kind === "barter"
+												? tradersById[evaluation.barter?.traderId ?? ""]?.name
+												: stationsById[evaluation.craft?.stationId ?? ""]?.name
+										}
+										source={
+											kind === "barter"
+												? tradersById[evaluation.barter?.traderId ?? ""]
+												: stationsById[evaluation.craft?.stationId ?? ""]
+										}
+										overrides={overrides}
+										onPriceChange={onPriceChange}
+										bartersById={bartersById}
+										craftsById={craftsById}
+										tradersById={tradersById}
+										stationsById={stationsById}
+										onGoToRecipe={onGoToRecipe}
+										highlighted={evaluation.id === targetRecipeId}
+										pinned={supportsPinning && Boolean(pinnedCrafts[evaluation.id])}
+										onTogglePinned={supportsPinning ? () => onTogglePinnedCraft(evaluation.id) : undefined}
+										routeSelections={ingredientRouteSelections[evaluation.id] ?? {}}
+										onRouteChange={(index, routeKey) => onIngredientRouteChange(evaluation.id, index, routeKey)}
+									/>
+								</div>
+							);
+						})}
+					</div>
+				) : (
+					<div className="px-4 py-14 text-center text-sm text-muted-foreground">
+						{supportsPinning && showPinnedOnly
+							? Object.keys(pinnedCrafts).length === 0
+								? "No pinned crafts yet. Pin a craft from the actions column to add it here."
+								: "No pinned crafts match these filters."
+							: "No recipes match these filters."}
+					</div>
+				)}
+			</div>
+		</div>
+	);
+}
+
+function SortableHeader({
+	label,
+	sortKey,
+	activeSortKey,
+	direction,
+	onSortChange,
+}: {
+	label: string;
+	sortKey: SortKey;
+	activeSortKey: SortKey;
+	direction: SortDirection;
+	onSortChange: (sortKey: SortKey) => void;
+}) {
+	const active = sortKey === activeSortKey;
+	const nextDirection = active
+		? direction === "descending"
+			? "ascending"
+			: "descending"
+		: sortKey === "cost"
+			? "ascending"
+			: "descending";
+	const SortIcon = !active ? ArrowUpDown : direction === "ascending" ? ArrowUp : ArrowDown;
+	return (
+		<span className={styles.sortControl}>
+			<button
+				type="button"
+				onClick={() => onSortChange(sortKey)}
+				aria-pressed={active}
+				aria-label={`Sort by ${label} ${nextDirection}`}
+				title={`Sort by ${label} ${nextDirection}`}
+				className={`flex h-full w-full items-center gap-1 rounded px-2 text-left transition hover:bg-highlight/[0.06] hover:text-foreground ${active ? "text-brand" : "text-muted-foreground"}`}
+			>
+				<span>{label}</span>
+				<SortIcon className={`size-3.5 ${active ? "opacity-100" : "opacity-45"}`} />
+			</button>
+		</span>
+	);
+}

@@ -1,0 +1,11 @@
+# Allowlist relative to the build context (repository root).
+**
+!package.json
+!package-lock.json
+!tsconfig.json
+!src/**
+!market-analyzer/package.json
+!market-analyzer/package-lock.json
+!market-analyzer/build.mjs
+!market-analyzer/tsconfig.json
+!market-analyzer/src/**

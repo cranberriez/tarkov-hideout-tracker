@@ -1,23 +1,35 @@
-import { orderQuestsByPrerequisites } from "@/server/services/quests";
-import { getCachedFullQuestData } from "@/server/services/tarkovData";
-import { toQuestAvailabilityQuest } from "@/lib/utils/quest-availability";
-import { buildQuestAnyOfGroups, buildQuestItemIndex } from "@/lib/utils/quest-item-index";
-import { ItemsClientPage } from "@/features/items/ItemsClientPage";
+import type { Metadata } from "next";
+import { HydrationBoundary } from "@tanstack/react-query";
+import { ItemsQueryPage } from "@/features/items/ItemsQueryPage";
+import {
+	isCompleteItemChecklistPageData,
+	itemChecklistPageQueryOptions,
+	PAGE_DATA_STALE_TIME,
+} from "@/lib/query/page-data";
+import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
+import { getItemChecklistPageData } from "@/server/queries/getItemChecklistPageData";
+import { prefetchPageData } from "@/server/queries/prefetchPageData";
+import { getCurrentPageRepository } from "@/server/queries/currentPageRepository";
 
-export const revalidate = false; // Frozen during the Tarkov 1.1 transition
+export const metadata: Metadata = {
+	title: "Hideout & Quest Item Checklist",
+	description: "Track the items you need for Escape from Tarkov hideout upgrades and quest hand-ins, including Found in Raid requirements and remaining quantities.",
+	alternates: { canonical: "/items" },
+};
 
 export default async function ItemsPage() {
-    const questsResponse = await getCachedFullQuestData();
-    const orderedQuests = orderQuestsByPrerequisites(questsResponse.data.quests);
-    const questItemIndex = buildQuestItemIndex(orderedQuests);
-    const questAnyOfGroups = buildQuestAnyOfGroups(orderedQuests);
-    const questAvailabilityQuests = orderedQuests.map(toQuestAvailabilityQuest);
+	const gameMode = await getActiveTarkovJsonGameMode();
+	const options = itemChecklistPageQueryOptions(gameMode);
+	const { state, fallbackData } = await prefetchPageData(
+		options.queryKey,
+		PAGE_DATA_STALE_TIME,
+		async () => getItemChecklistPageData(gameMode, await getCurrentPageRepository(gameMode), { includePrices: false }),
+		isCompleteItemChecklistPageData,
+	);
 
-    return (
-        <ItemsClientPage
-            questItemIndex={questItemIndex}
-            questAnyOfGroups={questAnyOfGroups}
-            questAvailabilityQuests={questAvailabilityQuests}
-        />
-    );
+	return (
+		<HydrationBoundary state={state}>
+			<ItemsQueryPage mode={gameMode} fallbackData={fallbackData} />
+		</HydrationBoundary>
+	);
 }

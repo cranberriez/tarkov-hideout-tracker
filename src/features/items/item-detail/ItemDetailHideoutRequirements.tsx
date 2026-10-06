@@ -1,114 +1,198 @@
 "use client";
 
-interface StationRequirementEntry {
-    stationName: string;
-    stationNormalizedName: string;
-    stationId: string;
-    level: number;
-    count: number;
-    isFir: boolean;
-    isCompleted: boolean;
-    isStationMaxed: boolean;
-    requirementId: string;
+import Image from "next/image";
+import { Check, EyeOff, PackageOpen } from "lucide-react";
+
+export interface StationRequirementEntry {
+	stationName: string;
+	stationNormalizedName: string;
+	stationId: string;
+	stationImageLink?: string;
+	stationMaxLevel: number;
+	level: number;
+	count: number;
+	isFir: boolean;
+	isCompleted: boolean;
+	isStationMaxed: boolean;
+	requirementId: string;
 }
 
 interface ItemDetailHideoutRequirementsProps {
-    stationRequirements: [string, StationRequirementEntry[]][];
-    stationLevels: Record<string, number>;
-    hiddenStations: Record<string, boolean>;
+	selectedItemImageLink?: string;
+	stationRequirements: [string, StationRequirementEntry[]][];
+	profileReady: boolean;
+	stationLevels: Record<string, number>;
+	hiddenStations: Record<string, boolean>;
 }
 
 export function ItemDetailHideoutRequirements({
-    stationRequirements,
-    stationLevels,
-    hiddenStations,
+	selectedItemImageLink,
+	stationRequirements,
+	profileReady,
+	stationLevels,
+	hiddenStations,
 }: ItemDetailHideoutRequirementsProps) {
-    return (
-        <div className="lg:col-span-2">
-            <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2 sm:mb-3">
-                Hideout Requirements
-            </h3>
-            <div className="space-y-3">
-                {stationRequirements.length > 0 ? (
-                    stationRequirements.map(([stationName, reqs]) => {
-                        const stationId = reqs[0].stationId;
-                        const currentLevel = stationLevels[stationId] ?? 0;
-                        const isHidden = hiddenStations[stationId];
+	if (stationRequirements.length === 0) return null;
 
-                        return (
-                            <div
-                                key={stationName}
-                                className="bg-card border border-border-color rounded-sm overflow-hidden"
-                            >
-                                <div className="bg-muted/30 px-3 py-1.5 border-b border-border-color flex justify-between items-center gap-2">
-                                    <div className="font-bold text-foreground text-sm truncate">
-                                        {stationName}
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs shrink-0">
-                                        {isHidden && (
-                                            <span className="text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-sm font-medium">
-                                                Hidden
-                                            </span>
-                                        )}
-                                        <span className="text-muted-foreground font-medium">
-                                            Current Lvl {currentLevel}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="divide-y divide-border-color">
-                                    {reqs.map((req, idx) => (
-                                        <div
-                                            key={idx}
-                                            className={`px-3 py-2 flex items-center justify-between transition-colors ${
-                                                req.isCompleted
-                                                    ? "bg-muted/20 text-muted-foreground"
-                                                    : "hover:bg-muted/10"
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <span
-                                                    className={`text-xs sm:text-sm ${
-                                                        req.isCompleted
-                                                            ? "text-muted-foreground line-through opacity-70"
-                                                            : "text-muted-foreground"
-                                                    }`}
-                                                >
-                                                    Lvl {req.level}
-                                                </span>
-                                                {req.isCompleted && (
-                                                    <span className="text-[10px] text-tarkov-green font-bold bg-tarkov-green/10 px-1.5 py-0.5 rounded-sm">
-                                                        Done
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                {req.isFir && (
-                                                    <span className="px-1.5 py-0.5 text-[10px] bg-orange-500/15 text-orange-500 border border-orange-500/30 rounded-sm font-bold uppercase tracking-wide">
-                                                        FIR
-                                                    </span>
-                                                )}
-                                                <span
-                                                    className={`font-mono font-semibold text-sm ${
-                                                        req.isCompleted
-                                                            ? "text-muted-foreground"
-                                                            : "text-foreground"
-                                                    }`}
-                                                >
-                                                    {req.count}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        );
-                    })
-                ) : (
-                    <div className="p-8 text-center text-muted-foreground bg-card border border-border-color rounded-sm">
-                        No hideout stations require this item.
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+	const maxStationLevel = Math.max(...stationRequirements.map(([, reqs]) => reqs[0]?.stationMaxLevel ?? 0));
+	const levels = Array.from({ length: maxStationLevel }, (_, index) => index + 1);
+	const isRoomyLayout = maxStationLevel <= 3;
+	const precedingLevelColumns = maxStationLevel > 1 ? `repeat(${maxStationLevel - 1}, minmax(76px, 1fr)) ` : "";
+	const precedingStationRows =
+		stationRequirements.length > 1 ? `repeat(${stationRequirements.length - 1}, max-content) ` : "";
+
+	return (
+		<div className="min-h-0 flex-1 overflow-x-auto">
+			<div
+				role="table"
+				aria-label="Hideout station item requirements"
+				className="grid min-h-full w-full"
+				style={{
+					gridTemplateColumns: `minmax(156px, 240px) ${precedingLevelColumns}minmax(80px, 1.05fr)`,
+					gridTemplateRows: `auto ${precedingStationRows}minmax(max-content, 1fr)`,
+				}}
+			>
+				<div
+					role="row"
+					className="col-span-full grid grid-cols-subgrid border-b border-border-color bg-shadow/15 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+				>
+					<div role="columnheader" className="p-2">
+						Station
+					</div>
+					{levels.map((level) => (
+						<div
+							key={level}
+							role="columnheader"
+							className={`p-2 text-left ${level % 2 !== 0 ? "bg-highlight/[0.035]" : ""}`}
+						>
+							Level {level}
+						</div>
+					))}
+				</div>
+
+				{stationRequirements.map(([stationName, reqs], stationIndex) => {
+					const station = reqs[0];
+					const isLastStation = stationIndex === stationRequirements.length - 1;
+					const currentLevel = stationLevels[station.stationId] ?? 0;
+					const isHidden = hiddenStations[station.stationId];
+					const isComplete = reqs.every((req) => req.isCompleted);
+					const requirementsByLevel = new Map<number, StationRequirementEntry[]>();
+					reqs.forEach((requirement) => {
+						const levelRequirements = requirementsByLevel.get(requirement.level) ?? [];
+						levelRequirements.push(requirement);
+						requirementsByLevel.set(requirement.level, levelRequirements);
+					});
+
+					return (
+						<div
+							key={station.stationId}
+							role="row"
+							className={`col-span-full grid grid-cols-subgrid border-b border-border-color last:border-b-0 ${
+								isComplete ? "bg-success/[0.025]" : ""
+							}`}
+						>
+							<div
+								role="cell"
+								className={`flex min-h-14 min-w-0 gap-2.5 p-2 ${isLastStation ? "items-start" : "items-center"}`}
+							>
+								<span
+									className={`relative shrink-0 overflow-hidden rounded-md bg-highlight/5 ${
+										isRoomyLayout ? "h-10 w-10" : "h-8 w-8"
+									}`}
+								>
+									<Image
+										src={station.stationImageLink ?? `/images/hideout/${station.stationNormalizedName}_Portrait.webp`}
+										alt=""
+										fill
+										className="object-cover"
+										unoptimized={Boolean(station.stationImageLink)}
+									/>
+								</span>
+								<div className="min-w-0">
+									<div
+										className={`truncate font-medium ${isRoomyLayout ? "text-base" : "text-sm"} ${
+											isComplete ? "text-muted-foreground" : "text-foreground"
+										}`}
+									>
+										{stationName}
+									</div>
+									<div
+										className={`flex items-center gap-1.5 text-muted-foreground ${
+											isRoomyLayout ? "text-xs" : "text-[10px]"
+										}`}
+									>
+										{profileReady && <span>Current {currentLevel}</span>}
+										{profileReady && isHidden && (
+											<span className="flex items-center gap-0.5 text-danger">
+												<EyeOff size={9} /> Hidden
+											</span>
+										)}
+									</div>
+								</div>
+							</div>
+
+							{levels.map((level) => (
+								<div
+									key={level}
+									role="cell"
+									className={`flex min-h-14 min-w-0 flex-col items-start p-2 ${
+										isLastStation ? "justify-start" : "justify-center"
+									} ${level % 2 !== 0 ? "bg-highlight/[0.035]" : ""}`}
+								>
+									{(requirementsByLevel.get(level) ?? []).map((requirement) => (
+										<RequirementCell
+											key={requirement.requirementId}
+											requirement={requirement}
+											itemImageLink={selectedItemImageLink}
+											isRoomy={isRoomyLayout}
+										/>
+									))}
+								</div>
+							))}
+						</div>
+					);
+				})}
+			</div>
+		</div>
+	);
+}
+
+function RequirementCell({
+	requirement,
+	itemImageLink,
+	isRoomy,
+}: {
+	requirement: StationRequirementEntry;
+	itemImageLink?: string;
+	isRoomy: boolean;
+}) {
+	return (
+		<div
+			className={`flex items-center justify-start ${isRoomy ? "h-13 gap-2 text-base" : "h-11 gap-1.5 text-sm"} ${
+				requirement.isCompleted ? "text-muted-foreground" : "text-foreground"
+			}`}
+		>
+			<span
+				className={`relative flex shrink-0 items-center justify-center bg-highlight/[0.035] ${
+					isRoomy ? "h-12 w-12" : "h-10 w-10"
+				}`}
+				title={requirement.isFir ? "Found in raid required" : undefined}
+			>
+				{itemImageLink ? (
+					<Image src={itemImageLink} alt="" fill className="object-contain p-0.5" unoptimized />
+				) : (
+					<PackageOpen size={15} className="text-muted-foreground" />
+				)}
+				{requirement.isFir && (
+					<span aria-hidden="true" className="pointer-events-none absolute inset-0.5 border border-fir" />
+				)}
+				{requirement.isCompleted && (
+					<span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-background bg-success text-inverse shadow-sm">
+						<Check size={10} strokeWidth={3} />
+					</span>
+				)}
+			</span>
+			<span className="text-left font-mono font-semibold tabular-nums">×{requirement.count}</span>
+		</div>
+	);
 }

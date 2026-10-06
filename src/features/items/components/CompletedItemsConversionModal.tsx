@@ -1,172 +1,161 @@
 "use client";
 
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { toTarkovJsonGameMode } from "@/lib/game-mode";
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { useDataContext } from "@/app/(data)/_dataContext";
-import type { ItemDetails } from "@/types";
+import { completedItemsConversionQueryOptions } from "@/lib/query/conversions";
+import type { CompletedItemsConversionData } from "@/types/contracts";
+import { buildCompletedItemConversions, removeConvertedRequirements } from "./completed-items-conversion";
+
+const EMPTY_STATIONS: CompletedItemsConversionData["stations"] = [];
+const EMPTY_ITEMS: CompletedItemsConversionData["items"] = [];
 
 interface CompletedItemsConversionModalProps {
-    isOpen: boolean;
-    onClose: () => void;
+	isOpen: boolean;
+	onClose: () => void;
 }
 
 export function CompletedItemsConversionModal({ isOpen, onClose }: CompletedItemsConversionModalProps) {
-    const { stations, items } = useDataContext();
-    const { stationLevels, completedRequirements, addItemCounts } = useUserStore();
+	const { gameMode, stationLevels, completedRequirements, addItemCounts } = useUserStore(
+		useShallow((state) => ({
+			gameMode: state.gameMode,
+			stationLevels: state.stationLevels,
+			completedRequirements: state.completedRequirements,
+			addItemCounts: state.addItemCounts,
+		})),
+	);
+	const requestedMode = toTarkovJsonGameMode(gameMode);
+	const conversionQuery = useQuery({
+		...completedItemsConversionQueryOptions(requestedMode),
+		enabled: isOpen,
+	});
+	const data = conversionQuery.data ?? null;
+	const requestError = conversionQuery.error ? "Conversion data could not be loaded." : null;
+	const isLoading = isOpen && conversionQuery.isPending;
+	const itemNameWarning =
+		data?.errors.items ?? (data && data.unresolvedItemIds.length > 0 ? "Some item names are unavailable." : null);
+	const stations = data?.stations ?? EMPTY_STATIONS;
+	const items = data?.items ?? EMPTY_ITEMS;
 
-    const conversions = useMemo(() => {
-        if (!stations) return [] as {
-            itemId: string;
-            itemName: string;
-            total: number;
-            totalFir: number;
-        }[];
+	const { conversions, convertedRequirementIds } = useMemo(
+		() => buildCompletedItemConversions(stations, items, stationLevels, completedRequirements),
+		[stations, items, stationLevels, completedRequirements],
+	);
 
-        const itemsById: Record<string, ItemDetails> | null = (() => {
-            if (!items) return null;
-            const m: Record<string, ItemDetails> = {};
-            items.forEach((item) => {
-                m[item.id] = item;
-            });
-            return m;
-        })();
+	const handleApply = () => {
+		if (conversionQuery.isError) return;
+		conversions.forEach(({ itemId, total, totalFir }) => {
+			const nonFir = total - totalFir;
+			addItemCounts(itemId, nonFir, totalFir);
+		});
 
-        const map = new Map<
-            string,
-            {
-                itemId: string;
-                itemName: string;
-                total: number;
-                totalFir: number;
-            }
-        >();
+		const currentCompletedRequirements = useUserStore.getState().completedRequirements;
+		useUserStore.getState().applyProfilePatch({
+			completedRequirements: removeConvertedRequirements(currentCompletedRequirements, convertedRequirementIds),
+		});
 
-        stations.forEach((station) => {
-            const currentLevel = stationLevels[station.id] ?? 0;
+		onClose();
+	};
 
-            station.levels.forEach((level) => {
-                // Ignore requirements for levels that are already reached or surpassed
-                if (currentLevel >= level.level) return;
+	if (!isOpen) return null;
 
-                level.itemRequirements.forEach((req) => {
-                    if (!completedRequirements[req.id]) return;
+	return (
+		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+			<DialogContent className="max-w-xl p-4">
+				<DialogTitle className="text-sm font-semibold tracking-[0.2em] text-muted-foreground mb-2">
+					ITEM PROGRESS UPDATE
+				</DialogTitle>
+				<div className="text-xs text-muted-foreground mb-4 space-y-2">
+					<p className="font-medium text-foreground">Some things have changed.</p>
+					<p>
+						We now track how many items you have, including how many are Found in Raid. Any hideout requirements you
+						previously marked as completed (for future levels) can be converted into item counts here.
+					</p>
+					<p>Requirements for station levels you have already reached are ignored.</p>
+				</div>
 
-                    const quantity = req.count ?? req.quantity ?? 0;
-                    if (quantity <= 0) return;
+				{isLoading ? (
+					<div className="text-xs text-subtle-foreground">Loading conversion data…</div>
+				) : requestError || data?.errors.stations ? (
+					<div className="text-xs text-danger">
+						{requestError ?? data?.errors.stations}
+						{requestError && (
+							<button type="button" onClick={() => void conversionQuery.refetch()} className="ml-2 underline">
+								Retry
+							</button>
+						)}
+					</div>
+				) : conversions.length === 0 ? (
+					<div className="text-xs text-subtle-foreground">
+						There are currently no eligible completed hideout requirements to convert. Once you mark future-level
+						requirements as completed, they will appear here so you can turn them into item counts.
+					</div>
+				) : (
+					<div>
+						{itemNameWarning && (
+							<div className="mb-2 text-xs text-warning">
+								{itemNameWarning} Item IDs are shown where names are unavailable.
+							</div>
+						)}
+						<div className="max-h-64 overflow-y-auto border border-border-color rounded-sm mb-4">
+							<table className="w-full text-xs">
+								<thead className="bg-shadow/40 text-muted-foreground border-b border-border-color">
+									<tr>
+										<th className="text-left px-3 py-2 font-medium">Item</th>
+										<th className="text-right px-3 py-2 font-medium">Add</th>
+										<th className="text-right px-3 py-2 font-medium">Add FiR</th>
+									</tr>
+								</thead>
+								<tbody>
+									{conversions.map(({ itemId, itemName, total, totalFir }) => {
+										const totalNonFir = total - totalFir;
 
-                    const isFir = req.attributes.some(
-                        (attr) => attr.name === "found_in_raid" && attr.value === "true"
-                    );
+										return (
+											<tr key={itemId} className="border-t border-border-color/40">
+												<td className="px-3 py-1.5 text-foreground truncate" title={itemName}>
+													{itemName}
+												</td>
+												<td
+													className={`px-3 py-1.5 text-right ${totalNonFir > 0 ? "text-success" : "text-muted-foreground"} font-mono`}
+												>
+													{totalNonFir > 0 ? totalNonFir : "-"}
+												</td>
+												<td
+													className={`px-3 py-1.5 text-right ${totalFir > 0 ? "text-fir" : "text-muted-foreground"} font-mono`}
+												>
+													{totalFir > 0 ? totalFir : "-"}
+												</td>
+											</tr>
+										);
+									})}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				)}
 
-                    const existing = map.get(req.item.id) ?? {
-                        itemId: req.item.id,
-                        itemName: itemsById?.[req.item.id]?.name ?? req.item.name ?? req.item.id,
-                        total: 0,
-                        totalFir: 0,
-                    };
-
-                    existing.total += quantity;
-                    if (isFir) {
-                        existing.totalFir += quantity;
-                    }
-
-                    map.set(req.item.id, existing);
-                });
-            });
-        });
-
-        return Array.from(map.values()).sort((a, b) => a.itemName.localeCompare(b.itemName));
-    }, [stations, stationLevels, completedRequirements, items]);
-
-    const handleApply = () => {
-        conversions.forEach(({ itemId, total, totalFir }) => {
-            const nonFir = total - totalFir;
-            addItemCounts(itemId, nonFir, totalFir);
-        });
-
-        useUserStore.setState({ completedRequirements: {} });
-
-        onClose();
-    };
-
-    if (!isOpen) return null;
-
-    return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-xl p-4">
-                <DialogTitle className="text-sm font-semibold tracking-[0.2em] text-gray-400 mb-2">
-                    ITEM PROGRESS UPDATE
-                </DialogTitle>
-                <div className="text-xs text-gray-400 mb-4 space-y-2">
-                    <p className="font-medium text-gray-300">Some things have changed.</p>
-                    <p>
-                        We now track how many items you have, including how many are Found in Raid. Any hideout
-                        requirements you previously marked as completed (for future levels) can be converted into
-                        item counts here.
-                    </p>
-                    <p>
-                        Requirements for station levels you have already reached are ignored.
-                    </p>
-                </div>
-
-                {conversions.length === 0 ? (
-                    <div className="text-xs text-gray-500">
-                        There are currently no eligible completed hideout requirements to convert. Once you
-                        mark future-level requirements as completed, they will appear here so you can turn
-                        them into item counts.
-                    </div>
-                ) : (
-                    <div className="max-h-64 overflow-y-auto border border-border-color rounded-sm mb-4">
-                        <table className="w-full text-xs">
-                            <thead className="bg-black/40 text-gray-400 border-b border-border-color">
-                                <tr>
-                                    <th className="text-left px-3 py-2 font-medium">Item</th>
-                                    <th className="text-right px-3 py-2 font-medium">Add</th>
-                                    <th className="text-right px-3 py-2 font-medium">Add FiR</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {conversions.map(({ itemId, itemName, total, totalFir }) => {
-                                    const totalNonFir = total - totalFir;
-
-                                    return (
-                                    <tr key={itemId} className="border-t border-border-color/40">
-                                        <td className="px-3 py-1.5 text-gray-200 truncate" title={itemName}>
-                                            {itemName}
-                                        </td>
-                                        <td className={`px-3 py-1.5 text-right ${totalNonFir > 0 ? "text-tarkov-green" : "text-gray-400"} font-mono`}>
-                                            {totalNonFir > 0 ? totalNonFir : "-"}
-                                        </td>
-                                        <td className={`px-3 py-1.5 text-right ${totalFir > 0 ? "text-orange-400" : "text-gray-400"} font-mono`}>
-                                            {totalFir > 0 ? totalFir : "-"}
-                                        </td>
-                                    </tr>
-                                )})}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-
-                <div className="flex justify-end gap-2 mt-2">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-3 py-1.5 text-xs rounded-sm border border-border-color text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-                    >
-                        Close
-                    </button>
-                    {conversions.length > 0 && (
-                        <button
-                            type="button"
-                            onClick={handleApply}
-                            className="px-4 py-1.5 text-xs rounded-sm font-semibold bg-tarkov-green text-black hover:bg-lime-300 transition-colors"
-                        >
-                            Apply Conversion
-                        </button>
-                    )}
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
+				<div className="flex justify-end gap-2 mt-2">
+					<button
+						type="button"
+						onClick={onClose}
+						className="px-3 py-1.5 text-xs rounded-sm border border-border-color text-muted-foreground hover:text-foreground hover:bg-highlight/5 transition-colors"
+					>
+						Close
+					</button>
+					{conversions.length > 0 && !conversionQuery.isError && (
+						<button
+							type="button"
+							onClick={handleApply}
+							className="px-4 py-1.5 text-xs rounded-sm font-semibold bg-brand text-inverse hover:bg-brand-hover transition-colors"
+						>
+							Apply Conversion
+						</button>
+					)}
+				</div>
+			</DialogContent>
+		</Dialog>
+	);
 }

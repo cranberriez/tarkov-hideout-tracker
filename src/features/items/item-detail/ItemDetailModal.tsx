@@ -1,601 +1,165 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import type { ItemDetails, Station } from "@/types";
-import { X, Pin, CircleSlash, CheckCircle, Circle, ExternalLink } from "lucide-react";
-import Link from "next/link";
-import { stationOrder } from "@/lib/cfg/stationOrder";
-import { useUserStore } from "@/lib/stores/useUserStore";
-import { formatRelativeUpdatedAt } from "@/lib/utils/format-time";
-import { computeNeeds } from "@/lib/utils/item-needs";
+import { DialogTitle } from "@/components/ui/dialog";
+import { Bug, X } from "lucide-react";
+import type { ItemSummary } from "@/types/items";
 import { ItemDetailHeader } from "./ItemDetailHeader";
-import { ItemDetailInventoryAndMarket } from "./ItemDetailInventoryAndMarket";
-import { ItemDetailHideoutRequirements } from "./ItemDetailHideoutRequirements";
-import { usePriceDataContext } from "@/app/(data)/_priceDataContext";
-import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
-import { deriveQuestAnyOfGroups, deriveQuestItemState } from "@/lib/utils/quest-item-index";
-import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
-import { getQuestDeepLinkHref } from "@/features/quests/quest-deep-link";
-import { formatRoubles } from "@/lib/utils/market-price";
+import { ItemDetailSidebar } from "./ItemDetailSidebar";
+import { ItemDetailUsageTabs } from "./ItemDetailUsageTabs";
+import { useItemDetailModalController } from "./useItemDetailsController";
+import { ItemDetailLoading, ITEM_DETAIL_LOADING_CLASS } from "./ItemDetailLoading";
+import { BACK_PANEL_HEIGHT_CLASS, ItemDetailBackButton, PANEL_HEIGHT_CLASS } from "./ItemDetailBackButton";
+import type { ItemDetailEntry } from "./item-detail-navigation";
+import { itemImageUrl } from "@/lib/utils/item-images";
 
 export interface ItemDetailModalProps {
-    item: ItemDetails | null;
-    isOpen: boolean;
-    onClose: () => void;
-    stations: Station[] | null;
-    stationLevels: Record<string, number>;
-    hiddenStations: Record<string, boolean>;
-    completedRequirements: Record<string, boolean>;
-    questItemIndex?: QuestItemIndexEntry[];
-    questAnyOfGroups?: QuestAnyOfGroupEntry[];
-    questAvailabilityQuests?: QuestAvailabilityQuest[];
+	item: ItemSummary | null;
+	isOpen: boolean;
+	previousEntry: ItemDetailEntry | null;
+	onBack: () => void;
+	onClose: () => void;
 }
 
-export function ItemDetailModal({
-    item,
-    isOpen,
-    onClose,
-    stations,
-    stationLevels,
-    hiddenStations,
-    completedRequirements,
-    questItemIndex = [],
-    questAnyOfGroups = [],
-    questAvailabilityQuests = [],
-}: ItemDetailModalProps) {
-    const selectedItem = item;
-    const selectedItemId = selectedItem?.id ?? "";
-    const selectedNormalizedName = selectedItem?.normalizedName ?? "";
+export function ItemDetailModalContent(props: ItemDetailModalProps) {
+	const vm = useItemDetailModalController(props);
+	const { selectedItem } = vm;
+	if (!selectedItem) return null;
+	// Expand after the initial detail domains settle. Errors must remain visible;
+	// acquisition/profit requests retain their own loading states in the full UI.
+	const loading = vm.initialDetailLoading;
 
-    const stationRequirements = useMemo(() => {
-        if (!selectedItem || !stations) return [];
+	return (
+		<div
+			aria-busy={loading}
+			className={
+				loading
+					? ITEM_DETAIL_LOADING_CLASS
+					: "pointer-events-auto relative mx-auto w-full max-w-full transition-[max-width] duration-200 motion-reduce:transition-none"
+			}
+		>
+			<DialogTitle className="sr-only">{selectedItem.name}</DialogTitle>
+			{loading ? (
+				<ItemDetailLoading item={selectedItem} onClose={vm.close} />
+			) : (
+				<>
+					{vm.previousEntry && <ItemDetailBackButton previousEntry={vm.previousEntry} onBack={vm.back} />}
+					<div
+						className={`flex w-full flex-col bg-background lg:min-h-0 lg:overflow-hidden lg:rounded-lg lg:border lg:border-border-color lg:shadow-2xl ${vm.previousEntry ? BACK_PANEL_HEIGHT_CLASS : PANEL_HEIGHT_CLASS}`}
+					>
+						{vm.showDebug && vm.isDevelopment ? (
+							<section className="flex min-h-[420px] min-w-0 flex-col overflow-hidden bg-[var(--background)]">
+								<header className="flex items-center justify-between border-b border-border-color px-4 py-3">
+									<div>
+										<p className="text-xs font-semibold text-foreground">Item debug data</p>
+										<p className="mt-0.5 text-[10px] text-muted-foreground">Item and related modal data</p>
+									</div>
+									<button
+										type="button"
+										onClick={vm.close}
+										className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-highlight/5 hover:text-foreground"
+										aria-label="Close item details"
+									>
+										<X size={18} />
+									</button>
+								</header>
+								<pre className="min-h-0 flex-1 overflow-auto p-4 text-[10px] leading-relaxed text-muted-foreground">
+									{JSON.stringify(vm.debugData, null, 2)}
+								</pre>
+							</section>
+						) : (
+							<>
+								<header className="relative shrink-0 border-b border-border-color bg-gradient-to-br from-card via-card to-background py-3 pl-3 pr-20 sm:py-4 sm:pl-4 sm:pr-24">
+									<ItemDetailHeader
+										item={selectedItem}
+										totalRequiredCount={vm.demandSummary.totalRequiredCount}
+										needsBreakdown={vm.needsBreakdown}
+										hideoutRequiredCount={vm.demandSummary.hideoutRequiredCount}
+										questRequiredCount={vm.demandSummary.questRequiredCount}
+									/>
+									<button
+										type="button"
+										onClick={vm.close}
+										className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:border-border-color hover:bg-shadow/20 hover:text-foreground sm:right-4 sm:top-4"
+										aria-label="Close item details"
+									>
+										<X size={18} />
+									</button>
+								</header>
 
-        const reqs: {
-            stationName: string;
-            stationNormalizedName: string;
-            stationId: string;
-            level: number;
-            count: number;
-            isFir: boolean;
-            isCompleted: boolean;
-            isStationMaxed: boolean;
-            requirementId: string;
-        }[] = [];
-
-        stations.forEach((station) => {
-            const currentLevel = stationLevels[station.id] ?? 0;
-            const maxLevel =
-                station.levels.length > 0 ? station.levels[station.levels.length - 1].level : 0;
-            const isStationMaxed = currentLevel >= maxLevel;
-
-            station.levels.forEach((level) => {
-                level.itemRequirements.forEach((req) => {
-                    if (req.item.id === selectedItem.id) {
-                        const isFir = req.attributes.some(
-                            (attr) => attr.name === "found_in_raid" && attr.value === "true",
-                        );
-                        reqs.push({
-                            stationName: station.name,
-                            stationNormalizedName: station.normalizedName,
-                            stationId: station.id,
-                            level: level.level,
-                            count: req.count ?? req.quantity ?? 0,
-                            isFir,
-                            isCompleted: currentLevel >= level.level,
-                            isStationMaxed,
-                            requirementId: req.id,
-                        });
-                    }
-                });
-            });
-        });
-
-        const grouped: Record<string, typeof reqs> = {};
-        reqs.forEach((req) => {
-            if (!grouped[req.stationName]) {
-                grouped[req.stationName] = [];
-            }
-            grouped[req.stationName].push(req);
-        });
-
-        const orderMap = new Map(stationOrder.map((name, index) => [name, index] as const));
-        const getOrder = (normalizedName: string) => orderMap.get(normalizedName) ?? 999;
-
-        return Object.entries(grouped).sort((a, b) => {
-            const reqA = a[1][0];
-            const reqB = b[1][0];
-
-            if (reqA.isStationMaxed && !reqB.isStationMaxed) return 1;
-            if (!reqA.isStationMaxed && reqB.isStationMaxed) return -1;
-
-            return getOrder(reqA.stationNormalizedName) - getOrder(reqB.stationNormalizedName);
-        });
-    }, [selectedItem, stations, stationLevels]);
-
-    const { marketPricesByMode, loading: pricesLoading } = usePriceDataContext();
-    const {
-        completedQuests,
-        failedQuests,
-        ignoredQuests,
-        pinnedQuests,
-        gameMode,
-        playerLevel,
-        prestigeLevel,
-        questTraderLoyaltyLevels,
-        questFaction,
-        itemQuestVisibilityMode,
-        itemQuestCustomLookahead,
-        itemQuestCustomLevelLookahead,
-        itemShowFutureFir,
-        itemShowIgnored,
-        questShowKappa,
-        questShowLightkeeper,
-        itemCounts,
-        addItemCounts,
-        toggleQuestCompletion,
-        toggleIgnoredQuest,
-        togglePinnedQuest,
-    } = useUserStore();
-    const mode = gameMode === "PVE" ? "PVE" : "PVP";
-    const priceBucket = marketPricesByMode[mode];
-    const loading = pricesLoading || !priceBucket || priceBucket.updatedAt === null;
-    const marketPrice = selectedItem ? priceBucket?.prices[selectedNormalizedName] : undefined;
-
-    const formatPrice = (price?: number | null) => {
-        return formatRoubles(price);
-    };
-
-    const renderMarketValue = (value?: number | null) => {
-        if (loading && !marketPrice) return "...";
-        if (!loading && (!marketPrice || value == null)) return "-";
-        return formatPrice(value);
-    };
-
-    const renderPercentChange = (value?: number | null) => {
-        if (loading && !marketPrice) return "...";
-        if (!loading && (!marketPrice || value == null)) return "-";
-        if (value == null) return "-";
-        return `${value.toFixed(2)}%`;
-    };
-
-    const { totalCount, totalFir } = useMemo(() => {
-        let nextTotalCount = 0;
-        let nextTotalFir = 0;
-
-        stationRequirements.forEach(([, reqs]) => {
-            reqs.forEach((req) => {
-                const isManuallyCompleted = completedRequirements[req.requirementId];
-                if (req.isCompleted || isManuallyCompleted) {
-                    return;
-                }
-
-                nextTotalCount += req.count;
-                if (req.isFir) {
-                    nextTotalFir += req.count;
-                }
-            });
-        });
-
-        return { totalCount: nextTotalCount, totalFir: nextTotalFir };
-    }, [stationRequirements, completedRequirements]);
-
-    const isRouble = selectedNormalizedName === "roubles";
-    const isDollar = selectedNormalizedName === "dollars";
-    const isEuro = selectedNormalizedName === "euros";
-    const isFiat = isDollar || isEuro;
-
-    const relativeUpdatedAt = formatRelativeUpdatedAt(priceBucket?.updatedAt ?? null);
-    const owned = itemCounts[selectedItemId] ?? { have: 0, haveFir: 0 };
-
-    const needsBreakdown = useMemo(() => {
-        if (totalCount === 0) {
-            return null;
-        }
-
-        return computeNeeds({
-            totalRequired: totalCount,
-            requiredFir: totalFir,
-            haveNonFir: owned.have,
-            haveFir: owned.haveFir,
-        });
-    }, [totalCount, totalFir, owned.have, owned.haveFir]);
-
-    const questItemState = useMemo(() => {
-        if (!selectedItem) return null;
-
-        const entry = questItemIndex.find((questEntry) => questEntry.itemId === selectedItem.id);
-        if (!entry) return null;
-
-        return deriveQuestItemState(entry, {
-            completedQuests,
-            failedQuests,
-            ignoredQuests,
-            pinnedQuests,
-            playerLevel,
-            prestigeLevel,
-            faction: questFaction,
-            traderLoyaltyLevels: questTraderLoyaltyLevels,
-            quests: questAvailabilityQuests,
-            visibilityMode: itemQuestVisibilityMode,
-            customLookahead: itemQuestCustomLookahead,
-            customLevelLookahead: itemQuestCustomLevelLookahead,
-            showFutureFir: itemShowFutureFir,
-            showIgnored: itemShowIgnored,
-            showKappa: questShowKappa,
-            showLightkeeper: questShowLightkeeper,
-        });
-    }, [
-        selectedItem,
-        questItemIndex,
-        completedQuests,
-        failedQuests,
-        ignoredQuests,
-        pinnedQuests,
-        playerLevel,
-        prestigeLevel,
-        questFaction,
-        questTraderLoyaltyLevels,
-        questAvailabilityQuests,
-        itemQuestVisibilityMode,
-        itemQuestCustomLookahead,
-        itemQuestCustomLevelLookahead,
-        itemShowFutureFir,
-        itemShowIgnored,
-        questShowKappa,
-        questShowLightkeeper,
-    ]);
-
-    const questAnyOfGroupState = useMemo(() => {
-        if (!selectedItem) return [];
-
-        return deriveQuestAnyOfGroups(questAnyOfGroups, {
-            completedQuests,
-            failedQuests,
-            ignoredQuests,
-            pinnedQuests,
-            playerLevel,
-            prestigeLevel,
-            faction: questFaction,
-            traderLoyaltyLevels: questTraderLoyaltyLevels,
-            quests: questAvailabilityQuests,
-            visibilityMode: itemQuestVisibilityMode,
-            customLookahead: itemQuestCustomLookahead,
-            customLevelLookahead: itemQuestCustomLevelLookahead,
-            showFutureFir: itemShowFutureFir,
-            showIgnored: itemShowIgnored,
-            showKappa: questShowKappa,
-            showLightkeeper: questShowLightkeeper,
-        }).filter((group) => group.items.some((groupItem) => groupItem.id === selectedItem.id));
-    }, [
-        selectedItem,
-        questAnyOfGroups,
-        completedQuests,
-        failedQuests,
-        ignoredQuests,
-        pinnedQuests,
-        playerLevel,
-        prestigeLevel,
-        questFaction,
-        questTraderLoyaltyLevels,
-        questAvailabilityQuests,
-        itemQuestVisibilityMode,
-        itemQuestCustomLookahead,
-        itemQuestCustomLevelLookahead,
-        itemShowFutureFir,
-        itemShowIgnored,
-        questShowKappa,
-        questShowLightkeeper,
-    ]);
-
-    const hasQuestRequirements =
-        (questItemState?.relatedQuests.length ?? 0) > 0 || questAnyOfGroupState.length > 0;
-
-    const [draftNonFir, setDraftNonFir] = useState(owned.have);
-    const [draftFir, setDraftFir] = useState(owned.haveFir);
-
-    const hasInventoryChanges = draftNonFir !== owned.have || draftFir !== owned.haveFir;
-
-    const handleCancelInventoryChanges = () => {
-        setDraftNonFir(owned.have);
-        setDraftFir(owned.haveFir);
-    };
-
-    const handleConfirmInventoryChanges = () => {
-        if (!selectedItem || !hasInventoryChanges) return;
-
-        const haveDelta = draftNonFir - owned.have;
-        const haveFirDelta = draftFir - owned.haveFir;
-
-        if (haveDelta !== 0 || haveFirDelta !== 0) {
-            addItemCounts(selectedItem.id, haveDelta, haveFirDelta);
-        }
-    };
-
-    if (!selectedItem) {
-        return null;
-    }
-
-    return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent
-                showCloseButton={false}
-                className="flex max-h-[90vh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl md:max-w-5xl"
-            >
-                <DialogTitle className="sr-only">{selectedItem.name}</DialogTitle>
-                <div className="flex items-start justify-between border-b border-border-color bg-card p-3 sm:p-5">
-                    <ItemDetailHeader
-                        item={selectedItem}
-                        totalCount={totalCount}
-                        owned={owned}
-                        needsBreakdown={needsBreakdown}
-                    />
-                    <button
-                        onClick={onClose}
-                        className="shrink-0 rounded-full p-2 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
-                    >
-                        <X size={24} />
-                    </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto bg-background p-3 sm:p-5">
-                    <div
-                        className={`grid grid-cols-1 gap-5 ${
-                            !isRouble && stationRequirements.length > 0
-                                ? "lg:grid-cols-3"
-                                : isRouble && stationRequirements.length > 0
-                                  ? "lg:grid-cols-2"
-                                  : ""
-                        }`}
-                    >
-                        {!isRouble && (
-                            <ItemDetailInventoryAndMarket
-                                isFiat={isFiat}
-                                marketPrice={marketPrice}
-                                loading={loading}
-                                relativeUpdatedAt={relativeUpdatedAt}
-                                draftNonFir={draftNonFir}
-                                draftFir={draftFir}
-                                setDraftNonFir={setDraftNonFir}
-                                setDraftFir={setDraftFir}
-                                hasInventoryChanges={hasInventoryChanges}
-                                onCancelChanges={handleCancelInventoryChanges}
-                                onConfirmChanges={handleConfirmInventoryChanges}
-                                valuationCount={draftNonFir + draftFir}
-                                renderMarketValue={renderMarketValue}
-                                renderPercentChange={renderPercentChange}
-                            />
-                        )}
-
-                        {stationRequirements.length > 0 && (
-                            <ItemDetailHideoutRequirements
-                                stationRequirements={stationRequirements}
-                                stationLevels={stationLevels}
-                                hiddenStations={hiddenStations}
-                            />
-                        )}
-                    </div>
-
-                    {hasQuestRequirements && (
-                        <section className="mt-5 rounded-md border border-white/10 bg-card p-4">
-                            <div className="mb-3 flex items-center justify-between gap-3">
-                                <div>
-                                    <h3 className="text-sm font-semibold text-white">
-                                        Quest Hand-Ins
-                                    </h3>
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        Uses the same quest visibility rules as the items page,
-                                        including pinned and FiR overrides.
-                                    </p>
-                                </div>
-                                <div className="text-right text-xs text-gray-500">
-                                    <div>
-                                        {(questItemState?.relatedQuestCount ?? 0) +
-                                            questAnyOfGroupState.length}{" "}
-                                        active quests
-                                    </div>
-                                    <div>{questItemState?.pinnedQuestCount ?? 0} pinned</div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                {questItemState?.relatedQuests.map((quest) => {
-                                    const isCompleted = !!completedQuests[quest.questId];
-                                    const isIgnored = !!ignoredQuests[quest.questId];
-                                    const isPinned = !!pinnedQuests[quest.questId];
-                                    return (
-                                        <div
-                                            key={quest.questId}
-                                            className="rounded-md border border-white/8 bg-black/20 px-3 py-2 space-y-1.5"
-                                        >
-                                            {/* Row 1: completion + name + status */}
-                                            <div className="flex items-center gap-2 min-w-0">
-                                                <span
-                                                    className={`flex-1 min-w-0 truncate text-sm font-medium ${isCompleted ? "line-through text-gray-600" : "text-white"}`}
-                                                >
-                                                    {quest.questName}
-                                                </span>
-                                                <span
-                                                    className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] ${
-                                                        quest.status === "available"
-                                                            ? "border-blue-400/20 bg-blue-400/10 text-blue-300"
-                                                            : quest.status === "future"
-                                                              ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
-                                                              : quest.status === "completed"
-                                                                ? "border-tarkov-green/20 bg-tarkov-green/10 text-tarkov-green"
-                                                                : "border-white/10 bg-black/30 text-gray-400"
-                                                    }`}
-                                                >
-                                                    {quest.status}
-                                                </span>
-                                            </div>
-
-                                            {/* Row 2: meta + badges + actions */}
-                                            <div className="flex items-center justify-between gap-2 min-w-0">
-                                                <span className="truncate text-xs text-gray-500">
-                                                    {quest.traderName}
-                                                    {quest.minPlayerLevel != null
-                                                        ? ` · Lv. ${quest.minPlayerLevel}`
-                                                        : ""}
-                                                </span>
-                                                <div className="flex shrink-0 items-center gap-1">
-                                                    {quest.requiredCount - quest.requiredFirCount >
-                                                        0 && (
-                                                        <span className="rounded border border-white/10 bg-black/30 px-1.5 py-0.5 text-[10px] text-gray-400">
-                                                            x
-                                                            {quest.requiredCount -
-                                                                quest.requiredFirCount}
-                                                        </span>
-                                                    )}
-                                                    {quest.requiredFirCount > 0 && (
-                                                        <span className="rounded border border-orange-500/20 bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-bold text-orange-200">
-                                                            FiR x{quest.requiredFirCount}
-                                                        </span>
-                                                    )}
-                                                    <button
-                                                        onClick={() =>
-                                                            togglePinnedQuest(quest.questId)
-                                                        }
-                                                        className={`rounded p-1 transition-colors ${isPinned ? "text-sky-300" : "text-gray-600 hover:text-sky-300"}`}
-                                                        title={
-                                                            isPinned ? "Unpin quest" : "Pin quest"
-                                                        }
-                                                    >
-                                                        <Pin
-                                                            size={12}
-                                                            className={
-                                                                isPinned ? "fill-current" : ""
-                                                            }
-                                                        />
-                                                    </button>
-                                                    <button
-                                                        onClick={() =>
-                                                            toggleIgnoredQuest(quest.questId)
-                                                        }
-                                                        className={`rounded p-1 transition-colors ${isIgnored ? "text-red-300" : "text-gray-600 hover:text-red-300"}`}
-                                                        title={
-                                                            isIgnored
-                                                                ? "Stop ignoring"
-                                                                : "Ignore quest"
-                                                        }
-                                                    >
-                                                        <CircleSlash size={12} />
-                                                    </button>
-                                                    <Link
-                                                        href={getQuestDeepLinkHref(quest.questId)}
-                                                        className="rounded p-1 text-gray-600 hover:text-gray-300 transition-colors"
-                                                        title="View on quests page"
-                                                    >
-                                                        <ExternalLink size={12} />
-                                                    </Link>
-
-                                                    {quest.questWikiLink && (
-                                                        <Link
-                                                            href={quest.questWikiLink}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="rounded p-1 text-gray-600 hover:text-gray-300 transition-colors text-xs hover:underline"
-                                                            title="View quest details"
-                                                        >
-                                                            Wiki
-                                                        </Link>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                                {questAnyOfGroupState.map((group) => (
-                                    <div
-                                        key={group.groupId}
-                                        className="space-y-1.5 rounded-md border border-white/8 bg-black/20 px-3 py-2"
-                                    >
-                                        <div className="flex items-center gap-2 min-w-0">
-                                            <span className="flex-1 min-w-0 truncate text-sm font-medium text-white">
-                                                {group.questName}
-                                            </span>
-                                            <span className="shrink-0 rounded border border-purple-400/20 bg-purple-400/10 px-1.5 py-0.5 text-[10px] text-purple-200">
-                                                item group
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between gap-2 min-w-0">
-                                            <span className="truncate text-xs text-gray-500">
-                                                {group.traderName}
-                                                {group.minPlayerLevel != null
-                                                    ? ` - Lv. ${group.minPlayerLevel}`
-                                                    : ""}
-                                                {" - "}
-                                                {group.objectiveLabel}
-                                            </span>
-                                            <div className="flex shrink-0 items-center gap-1">
-                                                <span className="rounded border border-white/10 bg-black/30 px-1.5 py-0.5 text-[10px] text-gray-400">
-                                                    Needs x{group.requiredCount}
-                                                </span>
-                                                {group.requiredFirCount > 0 && (
-                                                    <span className="rounded border border-orange-500/20 bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-bold text-orange-200">
-                                                        FiR
-                                                    </span>
-                                                )}
-                                                <Link
-                                                    href={getQuestDeepLinkHref(group.questId)}
-                                                    className="rounded p-1 text-gray-600 hover:text-gray-300 transition-colors"
-                                                    title="View on quests page"
-                                                >
-                                                    <ExternalLink size={12} />
-                                                </Link>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-1 pt-1">
-                                            {group.items.map((groupItem) => {
-                                                const isSelected = groupItem.id === selectedItem.id;
-                                                return (
-                                                    <div
-                                                        key={groupItem.id}
-                                                        className={`flex max-w-full items-center gap-1.5 rounded border px-1.5 py-0.5 ${
-                                                            isSelected
-                                                                ? "border-tarkov-green/40 bg-tarkov-green/10 text-white"
-                                                                : "border-white/10 bg-black/30 text-gray-300"
-                                                        }`}
-                                                        title={groupItem.name}
-                                                    >
-                                                        {(groupItem.iconLink ??
-                                                            groupItem.gridImageLink) && (
-                                                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-black/35">
-                                                                <img
-                                                                    src={
-                                                                        groupItem.iconLink ??
-                                                                        groupItem.gridImageLink ??
-                                                                        ""
-                                                                    }
-                                                                    alt={groupItem.name}
-                                                                    className="h-5 w-5 object-contain"
-                                                                />
-                                                            </span>
-                                                        )}
-                                                        <span className="max-w-36 truncate text-xs leading-snug">
-                                                            {groupItem.name}
-                                                        </span>
-                                                    </div>
-                                                );
-                                            })}
-                                            {group.isPartial && (
-                                                <span className="rounded border border-blue-400/20 bg-blue-400/10 px-1.5 py-0.5 text-xs text-blue-200">
-                                                    +
-                                                    {Math.max(
-                                                        group.totalItemCount - group.items.length,
-                                                        0,
-                                                    )}{" "}
-                                                    more
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-                    )}
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
+								<div className="flex flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+									<div
+										className={`grid shrink-0 grid-cols-1 gap-0 lg:min-h-0 lg:flex-1 lg:shrink ${vm.showSidebar ? "lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]" : ""}`}
+									>
+										{vm.showSidebar && (
+											<ItemDetailSidebar
+												key={vm.selectedItemId}
+												itemId={vm.selectedItemId}
+												owned={vm.owned}
+												marketPrice={vm.marketPrice}
+												priceLoadState={selectedItem.priceLoadState}
+												relativeUpdatedAt={vm.relativeUpdatedAt}
+												isFiat={vm.isFiat}
+												showMarket={vm.showMarket}
+												minLevelForFlea={selectedItem.minLevelForFlea}
+												playerLevel={vm.playerLevel}
+												onAddItemCounts={vm.addItemCounts}
+											/>
+										)}
+										<ItemDetailUsageTabs
+											key={`usage-${vm.selectedItemId}`}
+											className=""
+											selectedItemId={selectedItem.id}
+											selectedItemImageLink={itemImageUrl(selectedItem)}
+											stationRequirements={vm.stationRequirements}
+											stationLevels={vm.stationLevels}
+											hiddenStations={vm.hiddenStations}
+											questItemState={vm.questItemState}
+											questRewards={vm.questRewards}
+											anyOfGroups={vm.questAnyOfGroupState}
+											itemDetailsById={vm.itemDetailsById}
+											traderOffers={vm.traderOffers}
+											crafts={vm.crafts}
+											usedInBarters={vm.usedInBarters}
+											usedInCrafts={vm.usedInCrafts}
+											relationsLoading={vm.relationsLoading}
+											relationsError={vm.relationsError}
+											onRetryRelations={vm.retryRelations}
+											acquisitionLoading={vm.usageLoading}
+											barterError={vm.barterError}
+											craftError={vm.craftError}
+											onRetryAcquisition={vm.retryUsage}
+											acquisitionWarning={vm.usagePresentationError}
+											profileReady={vm.profileReady}
+											completedQuests={vm.completedQuests}
+											traderLoyaltyLevels={vm.traderLoyaltyLevels}
+											gameEdition={vm.gameEdition}
+											gameMode={vm.tarkovMode}
+											showPriceHistory={vm.showPriceHistory}
+											barterEvaluationsById={vm.barterEvaluationsById}
+											craftEvaluationsById={vm.craftEvaluationsById}
+											overrides={vm.overrides}
+											profitLoading={vm.profitLoading}
+											profitError={vm.profitError}
+											onRetryProfit={vm.retryProfit}
+										/>
+									</div>
+								</div>
+							</>
+						)}
+					</div>
+					{vm.isDevelopment && (
+						<button
+							type="button"
+							onClick={vm.toggleDebug}
+							aria-label={vm.showDebug ? "Hide item debug data" : "Show item debug data"}
+							aria-expanded={vm.showDebug}
+							className={`absolute bottom-2 right-2 z-[60] flex h-6 w-6 items-center justify-center rounded-full border bg-[var(--card-bg)] shadow-xl transition-colors lg:-bottom-2.5 lg:-right-2.5 ${vm.showDebug ? "border-brand/50 text-brand" : "border-highlight/15 text-subtle-foreground hover:border-highlight/30 hover:text-foreground"}`}
+						>
+							<Bug size={11} />
+						</button>
+					)}
+				</>
+			)}
+		</div>
+	);
 }

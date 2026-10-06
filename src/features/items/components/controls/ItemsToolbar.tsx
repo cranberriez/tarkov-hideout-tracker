@@ -1,132 +1,121 @@
 "use client";
 
-import { Filter, Grid3X3, LayoutList, List, Search } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ItemsSegmentedButton } from "./ItemsSegmentedButton";
+import { ArrowDown, ArrowUp, ArrowUpDown, Filter, Grid3X3, LayoutList, List } from "lucide-react";
+import {
+	FilterBar,
+	FilterPanelButton,
+	FilterSearchInput,
+	FilterRadioGroup,
+	FilterToggle,
+} from "@/components/ui/filter-bar";
+import { FilterMenuItem, FilterMultiSelect } from "@/components/ui/filter-multi-select";
+import { CHECKLIST_SORT_OPTIONS, type ChecklistSort, type ChecklistSortKey } from "../../checklist-sort";
 import type { ItemSize, ItemSourceFilter } from "@/lib/stores/useUserStore";
 
 interface ItemsToolbarProps {
-    filtersOpen: boolean;
-    onToggleFilters: () => void;
-    onOpenSearch: () => void;
-    itemSourceFilter: ItemSourceFilter;
-    onItemSourceFilterChange: (value: ItemSourceFilter) => void;
-    itemsSize: ItemSize;
-    onItemsSizeChange: (value: ItemSize) => void;
-    showFirOnly: boolean;
-    onShowFirOnlyChange: (value: boolean) => void;
-    useCategorization: boolean;
-    onUseCategorizationChange: (value: boolean) => void;
+	sort: ChecklistSort;
+	onSortSelect: (key: ChecklistSortKey) => void;
+	filtersOpen: boolean;
+	onToggleFilters: () => void;
+	searchQuery: string;
+	onSearchQueryChange: (query: string) => void;
+	panelId: string;
+	itemSourceFilter: ItemSourceFilter;
+	onItemSourceFilterChange: (value: ItemSourceFilter) => void;
+	itemsSize: ItemSize;
+	onItemsSizeChange: (value: ItemSize) => void;
+	showFirOnly: boolean;
+	onShowFirOnlyChange: (value: boolean) => void;
+	useCategorization: boolean;
+	onUseCategorizationChange: (value: boolean) => void;
 }
 
 export function ItemsToolbar({
-    filtersOpen,
-    onToggleFilters,
-    onOpenSearch,
-    itemSourceFilter,
-    onItemSourceFilterChange,
-    itemsSize,
-    onItemsSizeChange,
-    showFirOnly,
-    onShowFirOnlyChange,
-    useCategorization,
-    onUseCategorizationChange,
+	sort,
+	onSortSelect,
+	filtersOpen,
+	onToggleFilters,
+	searchQuery,
+	onSearchQueryChange,
+	panelId,
+	itemSourceFilter,
+	onItemSourceFilterChange,
+	itemsSize,
+	onItemsSizeChange,
+	showFirOnly,
+	onShowFirOnlyChange,
+	useCategorization,
+	onUseCategorizationChange,
 }: ItemsToolbarProps) {
-    return (
-        <div className="flex flex-wrap gap-1.5 rounded-md border bg-muted px-3 py-2">
-            <button
-                type="button"
-                onClick={onToggleFilters}
-                className={cn(
-                    "flex items-center gap-2 rounded-sm border px-3 py-2 text-xs font-medium transition-all",
-                    filtersOpen
-                        ? "border-tarkov-green bg-tarkov-green/10 text-tarkov-green"
-                        : "border-white/10 bg-black/20 text-gray-400 hover:border-white/30 hover:bg-black/40",
-                )}
-            >
-                <Filter size={14} />
-                Filters
-            </button>
-
-            <button
-                type="button"
-                onClick={onOpenSearch}
-                className="group flex min-w-[140px] flex-1 items-center gap-2 rounded-sm border border-white/10 bg-black/40 px-3 py-1.5 text-gray-400 transition-all hover:border-tarkov-green/50 hover:bg-black/60 hover:text-white"
-            >
-                <Search
-                    size={14}
-                    className="shrink-0 text-gray-500 transition-colors group-hover:text-tarkov-green"
-                />
-                <span className="text-xs">Search items...</span>
-            </button>
-
-            <div className="flex min-w-[160px] flex-1 rounded-sm border border-white/10 bg-black/40 p-1">
-                <ItemsSegmentedButton
-                    active={itemSourceFilter === "all"}
-                    onClick={() => onItemSourceFilterChange("all")}
-                    grow
-                >
-                    All
-                </ItemsSegmentedButton>
-                <ItemsSegmentedButton
-                    active={itemSourceFilter === "hideout"}
-                    onClick={() => onItemSourceFilterChange("hideout")}
-                    grow
-                >
-                    Hideout
-                </ItemsSegmentedButton>
-                <ItemsSegmentedButton
-                    active={itemSourceFilter === "quest"}
-                    onClick={() => onItemSourceFilterChange("quest")}
-                    grow
-                >
-                    Quests
-                </ItemsSegmentedButton>
-            </div>
-
-            <div className="flex shrink-0 rounded-sm border border-white/10 bg-black/40 p-1">
-                <ItemsSegmentedButton
-                    active={itemsSize === "Icon"}
-                    onClick={() => onItemsSizeChange("Icon")}
-                    icon={<Grid3X3 size={13} />}
-                />
-                <ItemsSegmentedButton
-                    active={itemsSize === "Compact"}
-                    onClick={() => onItemsSizeChange("Compact")}
-                    icon={<List size={13} />}
-                />
-                <ItemsSegmentedButton
-                    active={itemsSize === "Expanded"}
-                    onClick={() => onItemsSizeChange("Expanded")}
-                    icon={<LayoutList size={13} />}
-                />
-            </div>
-
-            <button
-                type="button"
-                onClick={() => onShowFirOnlyChange(!showFirOnly)}
-                className={cn(
-                    "flex items-center gap-2 rounded-sm border px-3 py-2 text-xs font-medium transition-all",
-                    showFirOnly
-                        ? "border-tarkov-green bg-tarkov-green/10 text-tarkov-green"
-                        : "border-white/10 bg-black/20 text-gray-400 hover:border-white/30 hover:bg-black/40",
-                )}
-            >
-                FiR Only
-            </button>
-
-            <button
-                type="button"
-                onClick={() => onUseCategorizationChange(!useCategorization)}
-                className={cn(
-                    "flex items-center gap-2 rounded-sm border px-3 py-2 text-xs font-medium transition-all",
-                    useCategorization
-                        ? "border-tarkov-green bg-tarkov-green/10 text-tarkov-green"
-                        : "border-white/10 bg-black/20 text-gray-400 hover:border-white/30 hover:bg-black/40",
-                )}
-            >
-                Categorize
-            </button>
-        </div>
-    );
+	return (
+		<FilterBar aria-label="Item filters">
+			<FilterPanelButton open={filtersOpen} panelId={panelId} onClick={onToggleFilters}>
+				<Filter size={14} /> Filters
+			</FilterPanelButton>
+			<FilterMultiSelect
+				label="Sort"
+				contentClassName="w-[260px] p-2"
+				summary={
+					<>
+						<ArrowUpDown size={14} /> Sort
+					</>
+				}
+			>
+				{CHECKLIST_SORT_OPTIONS.map(({ key, label }) => {
+					const active = sort.key === key;
+					const direction = sort.direction === "asc" ? "ascending" : "descending";
+					return (
+						<FilterMenuItem
+							key={key}
+							aria-label={active ? `${label}, ${direction}. Click to reverse` : label}
+							className={`gap-2 px-3 py-2 text-sm ${active ? "bg-brand/8 text-brand focus:text-brand" : ""}`}
+							onSelect={() => onSortSelect(key)}
+						>
+							{label}
+							{active &&
+								(sort.direction === "asc" ? (
+									<ArrowUp className="text-brand" aria-hidden="true" />
+								) : (
+									<ArrowDown className="text-brand" aria-hidden="true" />
+								))}
+						</FilterMenuItem>
+					);
+				})}
+			</FilterMultiSelect>
+			<FilterSearchInput
+				label="Search checklist items"
+				placeholder="Search checklist items..."
+				value={searchQuery}
+				onValueChange={onSearchQueryChange}
+			/>
+			<FilterRadioGroup
+				label="Item source"
+				value={itemSourceFilter}
+				onValueChange={onItemSourceFilterChange}
+				className="min-w-[160px] flex-1"
+				options={[
+					{ value: "all", label: "All" },
+					{ value: "hideout", label: "Hideout" },
+					{ value: "quest", label: "Quests" },
+				]}
+			/>
+			<FilterRadioGroup
+				label="Item size"
+				value={itemsSize}
+				onValueChange={onItemsSizeChange}
+				className="shrink-0"
+				options={[
+					{ value: "Icon", label: "Icon", icon: <Grid3X3 size={13} /> },
+					{ value: "Compact", label: "Compact", icon: <List size={13} /> },
+					{ value: "Expanded", label: "Expanded", icon: <LayoutList size={13} /> },
+				]}
+			/>
+			<FilterToggle checked={showFirOnly} onCheckedChange={onShowFirOnlyChange}>
+				FiR Only
+			</FilterToggle>
+			<FilterToggle checked={useCategorization} onCheckedChange={onUseCategorizationChange}>
+				Categorize
+			</FilterToggle>
+		</FilterBar>
+	);
 }

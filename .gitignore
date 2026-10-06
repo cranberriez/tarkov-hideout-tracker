@@ -19,6 +19,12 @@
 
 # production
 /build
+/db-scripts/.generated/
+/db-scripts/*.db
+/db-scripts/*.db-shm
+/db-scripts/*.db-wal
+/discovery.json
+/trader-reset-log.json*
 
 # misc
 .DS_Store
@@ -40,3 +46,17 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 docs/notes.txt
+
+# codex and my random notes and shit
+.codex-analysis/
+plans/
+
+# Large data sources for comparisons
+src/lib/data/quests-full.json
+src/lib/data/tasks-pve.json
+src/lib/data/tasks-regular.json
+
+# Test databases
+tarkov-hideout-test1.db
+tarkov-hideout-test1.db-shm
+tarkov-hideout-test1.db-wal

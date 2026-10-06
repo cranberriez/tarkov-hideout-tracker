@@ -1,0 +1,16 @@
+{
+	"name": "tarkov-market-analyzer",
+	"version": "0.1.0",
+	"private": true,
+	"description": "VPS price worker: conditional Tarkov.dev polling, hourly PostgreSQL pushes and market analytics.",
+	"scripts": {
+		"build": "node build.mjs",
+		"start": "node build.mjs && node --enable-source-maps dist/worker.cjs",
+		"once": "node build.mjs && node --enable-source-maps dist/worker.cjs once",
+		"test": "node --test --import jiti/register src/errors.test.ts src/log.test.ts src/run-spec.test.ts src/analytics/metrics.test.ts src/analytics/economics.test.ts src/analytics/shock.test.ts src/analytics/observation.test.ts src/worker-state.test.ts src/poll.test.ts src/flush.test.ts src/schedule.test.ts",
+		"typecheck": "tsc --noEmit -p ."
+	},
+	"devDependencies": {
+		"esbuild": "^0.25.0"
+	}
+}
