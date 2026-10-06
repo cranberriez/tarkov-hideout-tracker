@@ -20,8 +20,17 @@ import { QuestLogImportDialog } from "../import/QuestLogImportDialog";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 export function QuestActionBar({ quests }: { quests: QuestWorkspaceQuest[] }) {
-	const { searchQuery, setSearchQuery, mode, setMode, listMode, setListMode, showQuestVisualizerIndex } =
-		useQuestWorkspace();
+	const {
+		searchQuery,
+		setSearchQuery,
+		mode,
+		setMode,
+		listMode,
+		setListMode,
+		showQuestVisualizerIndex,
+		showPinnedOnly,
+		setShowPinnedOnly,
+	} = useQuestWorkspace();
 	const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
 	const setMainNavHidden = useUIStore((state) => state.setMainNavHidden);
 	const [searchOpen, setSearchOpen] = useState(false);
