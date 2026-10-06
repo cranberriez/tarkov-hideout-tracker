@@ -1,9 +1,11 @@
 import type { StoryChapter, StoryChapterRef } from "@/types/story";
 import { ACCIDENTAL_WITNESS } from "./accidental-witness";
+import { BATYA } from "./batya";
 import { BLUE_FIRE } from "./blue-fire";
 import { FALLING_SKIES } from "./falling-skies";
 import { THE_TICKET } from "./the-ticket";
 import { THE_UNHEARD } from "./the-unheard";
+import { THEY_ARE_ALREADY_HERE } from "./they-are-already-here";
 import { TOUR } from "./tour";
 
 export { STORY_DECISION_BY_ID, STORY_DECISIONS, STORY_ENDING_BY_ID, STORY_ENDINGS } from "./endings";
@@ -14,8 +16,10 @@ export const STORY_CHAPTERS: readonly StoryChapter[] = [
 	TOUR,
 	FALLING_SKIES,
 	ACCIDENTAL_WITNESS,
+	BATYA,
 	BLUE_FIRE,
 	THE_UNHEARD,
+	THEY_ARE_ALREADY_HERE,
 	THE_TICKET,
 ];
 
