@@ -1,6 +1,6 @@
 "use client";
 
-import { useImperativeHandle, useState, type Ref } from "react";
+import { useEffect, useImperativeHandle, useState, type Ref } from "react";
 import {
 	Check,
 	ChevronDown,
@@ -56,6 +56,21 @@ export function StoryStepList({
 }: StoryStepListProps) {
 	const decisionProps = { chapterId, resolved, targetEnding, onDecision };
 	const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
+	// Evidence links arrive after the chapter's progress has hydrated and its steps mount.
+	useEffect(() => {
+		const jumpToEvidence = () => {
+			if (!window.location.hash.startsWith("#step-")) return;
+			const target = document.getElementById(window.location.hash.slice(1));
+			target?.focus({ preventScroll: true });
+			target?.scrollIntoView({ block: "center", behavior: "instant" });
+		};
+		const frame = requestAnimationFrame(jumpToEvidence);
+		window.addEventListener("hashchange", jumpToEvidence);
+		return () => {
+			cancelAnimationFrame(frame);
+			window.removeEventListener("hashchange", jumpToEvidence);
+		};
+	}, [chapterId]);
 	const toggleSection = (sectionId: string) =>
 		setCollapsed((current) => {
 			const next = new Set(current);
@@ -94,7 +109,9 @@ export function StoryStepList({
 				));
 				if (!view) {
 					return bars.length ? (
-						<li key={sectionId} className="space-y-4">{controls}</li>
+						<li key={sectionId} className="space-y-4">
+							{controls}
+						</li>
 					) : null;
 				}
 				const { section, state, decisionIds, pendingOn, steps } = view;
@@ -216,6 +233,7 @@ function StepRow({
 	return (
 		<li
 			id={`step-${step.id}`}
+			tabIndex={-1}
 			className={cn(
 				"flex scroll-mt-24 gap-3 px-3 py-3",
 				nested ? "py-1.5 pl-0" : "border-b border-highlight/8 last:border-b-0",

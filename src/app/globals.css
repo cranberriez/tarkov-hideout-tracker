@@ -45,6 +45,8 @@
 
 	/* Danger: failed/error states, destructive actions and negative profit. */
 	--danger: oklch(0.704 0.191 22.216);
+	/* Fixed black ink for solid danger banners in every theme. */
+	--danger-foreground: #000000;
 
 	/* Information: active/in-progress states, pinned quests, informational links and notices. */
 	--info: oklch(0.746 0.16 232.661);
@@ -204,6 +206,7 @@
 	--color-warning: var(--warning);
 	--color-fir: var(--fir);
 	--color-danger: var(--danger);
+	--color-danger-foreground: var(--danger-foreground);
 	--color-info: var(--info);
 	--color-special: var(--special);
 	--color-success-surface: var(--success-surface);

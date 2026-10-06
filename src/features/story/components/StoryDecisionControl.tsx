@@ -40,6 +40,9 @@ export function StoryDecisionControl({
 	const shownOption = decision.options.find((option) => option.id === current?.optionId);
 	const source = decision.chapterId !== chapterId ? storyChapterLink(decision.chapterId) : null;
 	const tinted = highlighted || layout === "bar";
+	const conflictsWithTarget = Boolean(
+		current?.source === "chosen" && targetEnding && shownOption?.endings && !shownOption.endings.includes(targetEnding),
+	);
 	return (
 		<div
 			id={id}
@@ -47,9 +50,20 @@ export function StoryDecisionControl({
 			className={cn(
 				"scroll-mt-24 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info",
 				tinted && "bg-info/10 px-3 py-3",
+				conflictsWithTarget && !tinted && "rounded-none border-l-4 border-danger pl-3",
 				className,
 			)}
 		>
+			{conflictsWithTarget && targetEnding && (
+				<p
+					className={cn(
+						"mb-2 text-xs font-bold",
+						tinted ? "-mx-3 -mt-3 rounded-t-md bg-danger px-3 py-2 text-danger-foreground" : "text-danger",
+					)}
+				>
+					This choice rules out {STORY_ENDING_BY_ID[targetEnding].name}.
+				</p>
+			)}
 			<div
 				className={cn(
 					"flex flex-col gap-2",

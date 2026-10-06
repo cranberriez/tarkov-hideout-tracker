@@ -178,7 +178,21 @@ needs, live in [the evidence list](../src/lib/data/story/evidence.ts). Each piec
 names the chapter where it is found; that chapter's steps are matched to it by item
 ID, or by name for items missing from the catalog, and marked as evidence. The story
 index shows each chapter's evidence count when the target ending needs evidence.
+Below the chapters, a responsive evidence grid lists only major items in three
+columns on wide screens, two on medium screens and one on narrow screens, with
+purple-filled cards for completed acquisition objectives and links to those
+objectives. A small line below counts minor evidence found, without a completion
+target. Items without a tracked acquisition objective remain explicitly
+untracked. The chapter sidebar shows the total major evidence collected across
+the active profile's chapters, out of nine (or two for Debtor), beside its heading.
 Only chapters whose sections vary by ending show the target ending on their card.
+The index shows the target ending's evidence requirement beside the evidence
+heading. When recorded choices rule out endings, yellow Unavailable tabs beneath
+the ending buttons toggle a full-width explanation above the chapters for that
+ending, with links to review the choices. The explanation starts hidden and closes
+with its close button, by toggling the tab again, or when the target ending or profile changes.
+Completed chapter cards show a blue gradient and DONE label on the right, using
+the same route-aware completion state as the chapter's completion action.
 
 Choices appear where they matter: a decision made at a step renders inline there,
 and sections that depend on it link back to it. Decisions made in other chapters
@@ -186,6 +200,8 @@ render as a flat row above the heading of the first section they shape. These
 controls keep their authored position and stay visible when the section is
 collapsed or hidden by a choice. The sidebar lists them all.
 Inline objective choices share the banners' rounded blue, borderless treatment.
+Recorded choices that rule out the selected target ending have a solid red header
+with black text inline, and a square red left border plus explanation in the sidebar.
 Sidebar choices with a location in the current objective list have a jump icon;
 it expands the containing section, focuses the choice and smoothly scrolls to it
 (instant scrolling for reduced motion). Choices hidden by the route have no jump

@@ -1,8 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { endingBlockers } from "./story-model";
 import { MAJOR_EVIDENCE, MINOR_EVIDENCE, STORY_CHAPTERS, STORY_DECISIONS, STORY_ENDINGS } from "../../lib/data/story";
 import { THE_TICKET } from "../../lib/data/story/the-ticket";
-import { buildChapterView, chapterDecisionTargets, chapterEvidence, chapterStepGroups, reachableEndings, resolveDecisions } from "./story-model";
+import {
+	buildChapterView,
+	chapterDecisionTargets,
+	chapterEvidence,
+	chapterStepGroups,
+	reachableEndings,
+	resolveDecisions,
+} from "./story-model";
 import {
 	emptyStoryProgress,
 	parseStoryProgress,
@@ -10,6 +18,32 @@ import {
 	setStoryStepDone,
 	toggleStoryDecision,
 } from "./story-progress";
+
+test("ending blockers explain faded coins and ignore unknown or inapplicable choices", () => {
+	const endings = STORY_ENDINGS.map((ending) => ending.id);
+	assert.deepEqual(endingBlockers(STORY_DECISIONS, {}, endings), []);
+	assert.deepEqual(endingBlockers(STORY_DECISIONS, { "ticket-kerman-offer": "unknown" }, endings), []);
+	const accepted = endingBlockers(STORY_DECISIONS, { "ticket-kerman-offer": "accept" }, endings);
+	assert.deepEqual(
+		accepted.map(({ decision, option, endings }) => [decision.id, option.label, endings]),
+		[["ticket-kerman-offer", "Accept", ["survivor"]]],
+	);
+	const choices = {
+		"ticket-kerman-offer": "refuse",
+		"ticket-kerman-evidence": "agree",
+		"ticket-major-evidence": "deliver-all",
+	};
+	const blockers = endingBlockers(STORY_DECISIONS, choices, endings);
+	assert.deepEqual(
+		blockers.map(({ decision }) => decision.id),
+		["ticket-kerman-offer"],
+	);
+	const ruledOut = new Set(blockers.flatMap((blocker) => blocker.endings));
+	assert.deepEqual(
+		endings.filter((ending) => !ruledOut.has(ending)),
+		[...reachableEndings(STORY_DECISIONS, choices, endings)],
+	);
+});
 
 test("stored progress keeps valid fields and unknown IDs, dropping only malformed values", () => {
 	const progress = parseStoryProgress(

@@ -33,6 +33,7 @@ import {
 	reachableEndings,
 } from "./story-model";
 import { setStoryStepDone, toggleStoryDecision } from "./story-progress";
+import { majorEvidenceFound } from "./story-evidence";
 import { useStoryProgress } from "./useStoryProgress";
 
 const ENDING_IDS = STORY_ENDINGS.map((ending) => ending.id);
@@ -98,10 +99,14 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 			</Link>
 
 			<header className="relative mb-6 overflow-hidden rounded-md border border-highlight/10 bg-shadow/40">
-				<img src={chapter.banner} alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
+				<img
+					src={chapter.banner}
+					alt=""
+					className="absolute inset-0 h-full w-full object-cover opacity-65 [[data-theme=light]_&]:opacity-100"
+				/>
 				<div
 					aria-hidden="true"
-					className="absolute inset-0 bg-linear-to-r from-shadow/70 via-shadow/35 to-transparent"
+					className="absolute inset-0 bg-linear-to-r from-background/55 via-background/15 to-transparent [[data-theme=light]_&]:from-background/75 [[data-theme=light]_&]:via-background/10"
 				/>
 				<div className="relative flex flex-col gap-3 p-5 sm:flex-row sm:items-end sm:justify-between">
 					<div className="flex items-center gap-3">
@@ -167,6 +172,7 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 						{evidence.entries.length > 0 && (
 							<StoryEvidencePanel
 								entries={evidence.entries}
+								majorFound={majorEvidenceFound(progress)}
 								completed={completed}
 								targetEnding={progress.targetEnding}
 							/>

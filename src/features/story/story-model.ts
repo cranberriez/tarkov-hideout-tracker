@@ -74,20 +74,30 @@ export function resolveDecisions(
 	return resolved;
 }
 
+/** Recorded, applicable choices that rule out endings. */
+export function endingBlockers(
+	decisions: readonly StoryDecision[],
+	chosen: Readonly<Record<string, string>>,
+	endings: readonly StoryEndingId[],
+) {
+	const resolved = resolveDecisions(decisions, chosen, null);
+	return decisions.flatMap((decision) => {
+		const option = decision.options.find((candidate) => candidate.id === resolved[decision.id]?.optionId);
+		const allowed = option?.endings;
+		if (!option || !allowed) return [];
+		const blocked = endings.filter((ending) => !allowed.includes(ending));
+		return blocked.length ? [{ decision, option, endings: blocked }] : [];
+	});
+}
+
 /** Endings still possible given the player's own choices. */
 export function reachableEndings(
 	decisions: readonly StoryDecision[],
 	chosen: Readonly<Record<string, string>>,
 	endings: readonly StoryEndingId[],
 ): Set<StoryEndingId> {
-	const resolved = resolveDecisions(decisions, chosen, null);
-	const reachable = new Set(endings);
-	for (const decision of decisions) {
-		const option = decision.options.find((candidate) => candidate.id === resolved[decision.id]?.optionId);
-		if (!option?.endings) continue;
-		for (const ending of endings) if (!option.endings.includes(ending)) reachable.delete(ending);
-	}
-	return reachable;
+	const blocked = new Set(endingBlockers(decisions, chosen, endings).flatMap((blocker) => blocker.endings));
+	return new Set(endings.filter((ending) => !blocked.has(ending)));
 }
 
 export interface StepView {
