@@ -1,4 +1,5 @@
 import type { ItemSummary } from "@/types/items";
+import type { DemandStack, SaveReason } from "../demand/item-demand-model";
 
 export type InventoryCounts = Record<string, { have: number; haveFir: number }>;
 export type InventorySort = "name" | "total";
@@ -54,4 +55,31 @@ export function filterAndSortInventoryRows(
 	const byName = (a: InventoryRow, b: InventoryRow) =>
 		Number(!a.item) - Number(!b.item) || (a.item?.name ?? a.id).localeCompare(b.item?.name ?? b.id);
 	return [...filtered].sort(sort === "total" ? (a, b) => total(b) - total(a) || byName(a, b) : byName);
+}
+
+/** Longer names fall back to the short name so the card stays one line. */
+export const inventoryDisplayName = (item: ItemSummary) =>
+	item.name.length > 24 && item.shortName ? item.shortName : item.name;
+
+/**
+ * Every known row as FIR and non-FIR demand stacks. Rows at or below zero still get a
+ * zero stack so their hideout and quest uses resolve.
+ */
+export function inventoryDemandStacks(rows: readonly InventoryRow[]): DemandStack[] {
+	return rows.flatMap(({ item, fir, nonFir }) =>
+		item
+			? [
+					{ item, quantity: Math.max(0, fir), foundInRaid: "yes" as const },
+					{ item, quantity: Math.max(0, nonFir), foundInRaid: "no" as const },
+				]
+			: [],
+	);
+}
+
+/** Longer lists show two uses and collapse the rest. */
+export function previewReasons(reasons: readonly SaveReason[], expanded: boolean) {
+	// Uses that apply now come first; the model order is kept otherwise.
+	const ordered = [...reasons].sort((a, b) => Number(b.now) - Number(a.now));
+	if (expanded || ordered.length <= 3) return { visible: ordered, hidden: 0 };
+	return { visible: ordered.slice(0, 2), hidden: ordered.length - 2 };
 }

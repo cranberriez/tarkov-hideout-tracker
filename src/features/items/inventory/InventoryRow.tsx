@@ -1,39 +1,59 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { HelpCircle, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatNumber } from "@/lib/utils/format-number";
-import type { InventoryRow as InventoryRowData } from "./inventory-model";
+import { DemandReasonLine } from "../demand/DemandReasonLine";
+import type { SaveReason } from "../demand/item-demand-model";
+import { inventoryDisplayName, previewReasons, type InventoryRow as InventoryRowData } from "./inventory-model";
 import { itemImageUrl } from "@/lib/utils/item-images";
 
 export function InventoryRow({
 	row,
 	onSetCount,
 	onOpenItem,
+	reasons,
 }: {
 	row: InventoryRowData;
 	onSetCount: (key: "fir" | "nonFir", value: number) => void;
 	onOpenItem?: () => void;
+	/** Undefined until requirements load. */
+	reasons?: readonly SaveReason[];
 }) {
 	const name = row.item?.name ?? "Unknown item";
-	const total = row.fir + row.nonFir;
+	const label = row.item ? inventoryDisplayName(row.item) : name;
 	const isEmpty = row.fir === 0 && row.nonFir === 0;
+	const image = row.item ? (
+		<Image src={itemImageUrl(row.item)} alt="" fill className="object-contain" unoptimized />
+	) : (
+		<HelpCircle size={18} className="text-muted-foreground" aria-hidden="true" />
+	);
+	const imageClass =
+		"relative flex size-12 shrink-0 items-center justify-center overflow-hidden border border-highlight/5 bg-shadow/40";
+	const hasUses = !!row.item && !isEmpty && !!reasons;
 	return (
 		<li
 			className={cn(
-				"flex flex-col gap-3 rounded-md border border-border-color bg-secondary/20 p-3 transition-opacity sm:flex-row sm:items-center",
+				// Below sm everything stacks; sm puts uses under the item; md+ gives uses their own column.
+				"grid gap-3 rounded-md border border-border-color bg-secondary/20 p-3 transition-opacity sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center md:grid-cols-[10rem_minmax(0,1fr)_auto] lg:grid-cols-[16rem_minmax(0,1fr)_auto]",
 				isEmpty && "opacity-60",
 			)}
 		>
-			<div className="flex min-w-0 flex-1 items-center gap-3">
-				<div className="relative flex h-10 w-10 min-w-10 items-center justify-center overflow-hidden rounded border border-highlight/5 bg-shadow/40">
-					{row.item ? (
-						<Image src={itemImageUrl(row.item)} alt="" fill className="object-contain" unoptimized />
-					) : (
-						!row.item && <HelpCircle size={18} className="text-muted-foreground" aria-hidden="true" />
-					)}
-				</div>
+			<div className="flex min-w-0 items-center gap-3 sm:col-start-1 sm:row-start-1">
+				{onOpenItem ? (
+					<button
+						type="button"
+						onClick={onOpenItem}
+						aria-label={`Open ${name}`}
+						title={name}
+						className={cn(imageClass, "transition-colors hover:border-brand/50")}
+					>
+						{image}
+					</button>
+				) : (
+					<div className={imageClass}>{image}</div>
+				)}
 				<div className="min-w-0">
 					{onOpenItem ? (
 						<button
@@ -42,24 +62,28 @@ export function InventoryRow({
 							title={name}
 							className="block max-w-full truncate text-left text-sm font-medium text-foreground hover:text-brand"
 						>
-							{name}
+							{label}
 						</button>
 					) : (
 						<div className="truncate text-sm font-medium text-foreground" title={name}>
-							{name}
+							{label}
 						</div>
 					)}
-					<div className="truncate text-[11px] text-muted-foreground">
-						{!row.item
-							? `Not in current game data · ${row.id}`
-							: isEmpty
-								? "None left · hidden next visit"
-								: row.item.shortName}
-					</div>
+					{(!row.item || isEmpty) && (
+						<div className="truncate text-[11px] text-muted-foreground">
+							{!row.item ? `Not in current game data · ${row.id}` : "None left · hidden next visit"}
+						</div>
+					)}
 				</div>
 			</div>
 
-			<div className="flex items-center justify-end gap-3">
+			{hasUses && (
+				<div className="min-w-0 sm:col-span-2 sm:row-start-2 sm:pl-15 md:col-span-1 md:col-start-2 md:row-start-1 md:pl-0">
+					<ItemUses reasons={reasons} />
+				</div>
+			)}
+
+			<div className="flex items-center justify-end gap-3 sm:col-start-2 sm:row-start-1 md:col-start-3">
 				<CountStepper
 					label="FiR"
 					labelClassName="font-bold text-fir"
@@ -72,14 +96,33 @@ export function InventoryRow({
 					value={row.nonFir}
 					onChange={(v) => onSetCount("nonFir", v)}
 				/>
-				<div className="flex w-14 flex-col items-end gap-1">
-					<span className="text-[10px] tracking-wider text-muted-foreground uppercase">Total</span>
-					<span className={cn("h-8 font-mono text-sm leading-8 font-semibold", total < 0 && "text-danger")}>
-						{formatNumber(total)}
-					</span>
-				</div>
 			</div>
 		</li>
+	);
+}
+
+function ItemUses({ reasons }: { reasons: readonly SaveReason[] }) {
+	const [expanded, setExpanded] = useState(false);
+	if (!reasons.length) return <p className="text-[11px] text-muted-foreground">Not needed for hideout or quests</p>;
+	const { visible, hidden } = previewReasons(reasons, expanded);
+	return (
+		<div className="leading-tight">
+			<ul>
+				{visible.map((reason) => (
+					<DemandReasonLine key={`${reason.kind}:${reason.id}`} reason={reason} compact linked />
+				))}
+			</ul>
+			{(hidden > 0 || expanded) && (
+				<button
+					type="button"
+					aria-expanded={expanded}
+					onClick={() => setExpanded(!expanded)}
+					className="ml-12 text-[11px] text-muted-foreground hover:text-foreground"
+				>
+					{expanded ? "Show less" : `+ ${hidden} more`}
+				</button>
+			)}
+		</div>
 	);
 }
 

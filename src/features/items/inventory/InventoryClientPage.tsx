@@ -13,7 +13,14 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/utils/format-number";
 import type { ItemSummary } from "@/types/items";
-import { buildInventoryRows, filterAndSortInventoryRows, type InventorySort } from "./inventory-model";
+import { buildItemDemand } from "../demand/item-demand-model";
+import { useDemandRequirements } from "../demand/useDemandRequirements";
+import {
+	buildInventoryRows,
+	filterAndSortInventoryRows,
+	inventoryDemandStacks,
+	type InventorySort,
+} from "./inventory-model";
 import { InventoryRow } from "./InventoryRow";
 
 export function InventoryClientPage() {
@@ -43,6 +50,23 @@ function InventoryView({ mode }: { mode: TarkovJsonGameMode }) {
 	const visibleRows = useMemo(
 		() => filterAndSortInventoryRows(rows, query, sort, orderCounts),
 		[rows, query, sort, orderCounts],
+	);
+	const requirements = useDemandRequirements();
+	// The inventory is the pool itself, so nothing else is owned ahead of it.
+	const demand = useMemo(
+		() =>
+			requirements.query.data && manifest.data
+				? buildItemDemand(
+						inventoryDemandStacks(rows),
+						manifest.data.items,
+						requirements.query.data,
+						requirements.profile,
+						{},
+						undefined,
+						requirements.kappa,
+					)
+				: null,
+		[rows, manifest.data, requirements.query.data, requirements.profile, requirements.kappa],
 	);
 	const totalCount = rows.reduce((sum, row) => sum + row.fir + row.nonFir, 0);
 
@@ -163,6 +187,18 @@ function InventoryView({ mode }: { mode: TarkovJsonGameMode }) {
 						</div>
 					</div>
 
+					{requirements.query.error && (
+						<p role="alert" className="mb-3 text-xs text-warning">
+							Hideout and quest uses could not be loaded.{" "}
+							<button
+								type="button"
+								onClick={() => void requirements.query.refetch()}
+								className="underline underline-offset-2 hover:text-foreground"
+							>
+								Retry
+							</button>
+						</p>
+					)}
 					{visibleRows.length === 0 ? (
 						<p role="status" className="px-6 py-10 text-center text-sm text-muted-foreground">
 							No inventory items match “{query}”.
@@ -175,6 +211,7 @@ function InventoryView({ mode }: { mode: TarkovJsonGameMode }) {
 									row={{ item, ...row }}
 									onSetCount={(key, value) => setCount(row.id, key, value)}
 									onOpenItem={item ? () => openItemDetail(item) : undefined}
+									reasons={demand ? (demand.needs.get(row.id)?.reasons ?? []) : undefined}
 								/>
 							))}
 						</ul>

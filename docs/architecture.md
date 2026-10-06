@@ -247,8 +247,16 @@ state and pending items.
 
 [Inventory](../src/features/items/inventory/InventoryClientPage.tsx) is client-only:
 it lists every nonzero `itemCounts` balance (negative balances included and marked)
-using names and icons from the search manifest, so it adds no server query. IDs
-missing from the manifest render as explicit unknown rows. Edits apply immediately
+using names and icons from the search manifest. Names longer than 24 characters show
+the short name. IDs missing from the manifest render as explicit unknown rows. Each
+row lists the item's hideout, quest, and Kappa uses from the shared
+[item demand model](../src/features/items/demand/item-demand-model.ts), with saved
+counts as the pool (so any-of hand-ins appear only where copies are assigned); uses
+that apply now come first, and more than three collapse to two plus "+ N more". Kappa
+uses follow the uploader's Kappa toggle. The
+requirement metadata comes from the same `/api/page-data/uploader` query as the
+uploader; until it loads rows show no uses, and a failure shows a retry notice
+rather than "not needed". Edits apply immediately
 through `addItemCounts` deltas; steppers stop at zero. Rows edited to zero, and the
 order of the Count sort, are page-local so rows do not vanish or move while being
 edited; both reset on the next visit or mode change. The header and empty state
@@ -410,7 +418,9 @@ everything else is darkened with an FIR/Not FIR tag. Clicking a known item switc
 between found in raid and not found in raid, and All FIR / All not FIR set the remaining
 unknowns; changes are undoable. Done (or Escape) returns to the step that opened it,
 re-snapshotting the summary when it came from sorting.
-The [summary model](../src/features/uploader/summary-model.ts) combines scanned
+The [summary model](../src/features/uploader/summary-model.ts) feeds scanned
+entries to the shared [item demand model](../src/features/items/demand/item-demand-model.ts),
+which combines scanned
 and manually added entries with all remaining hideout/quest demand: future station
 levels and eligible future quests, excluding completed requirements/objectives and
 completed, failed, ignored, or faction-ineligible quests. Saved inventory covers

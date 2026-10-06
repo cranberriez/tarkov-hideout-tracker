@@ -252,7 +252,7 @@ repository composition, not a reason to import provider adapters into features.
 
 ## Prices, history, and freshness
 
-The uploader summary lazily reads `/api/page-data/uploader` through
+The uploader summary and the inventory page lazily read `/api/page-data/uploader` through
 [getUploaderSummaryData](../src/server/queries/getUploaderSummaryData.ts).
 It returns mode-prepared station requirements and compact quests with availability
 metadata and item-demand objectives (including objective IDs for saved hand-ins).

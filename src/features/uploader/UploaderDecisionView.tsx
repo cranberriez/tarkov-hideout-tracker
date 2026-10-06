@@ -7,12 +7,12 @@ import { itemImageUrl } from "@/lib/utils/item-images";
 import { formatRoubles } from "@/lib/utils/market-price";
 import { cn } from "@/lib/utils";
 import type { ReviewEntry } from "./review-model";
-import type { SaveReason } from "./summary-model";
 import type { SentCounts } from "./inventory-model";
 import type { useUploaderSummary } from "./useUploaderSummary";
 import type { DecisionFilter, useUploaderDecisions } from "./useUploaderDecisions";
 import { DecisionMarker, appearanceFor, decisionAppearance, kappaAppearance } from "./DecisionMarker";
 import { UploaderItemPrice } from "./UploaderItemPrice";
+import { DemandReasonLine } from "../items/demand/DemandReasonLine";
 import { UploaderInventoryActions } from "./UploaderInventoryActions";
 import { UploaderSidebarHeader, sectionLabel } from "./UploaderSidebarHeader";
 import { foundInRaidLabel } from "./found-in-raid";
@@ -304,7 +304,7 @@ function Inspector({
 					<h3 className={cn(sectionLabel, "mb-1")}>Used for</h3>
 					<ul className="space-y-1">
 						{reasons.slice(0, 6).map((reason) => (
-							<Use key={`${reason.kind}:${reason.id}`} reason={reason} />
+							<DemandReasonLine key={`${reason.kind}:${reason.id}`} reason={reason} />
 						))}
 					</ul>
 					{reasons.length > 6 && (
@@ -314,7 +314,7 @@ function Inspector({
 							</summary>
 							<ul className="mt-1 space-y-1">
 								{reasons.slice(6).map((reason) => (
-									<Use key={`${reason.kind}:${reason.id}`} reason={reason} />
+									<DemandReasonLine key={`${reason.kind}:${reason.id}`} reason={reason} />
 								))}
 							</ul>
 						</details>
@@ -352,29 +352,5 @@ function SellAt({ price }: { price: CurrentPrice | undefined }) {
 				{formatRoubles(Math.round(offer.unit))}
 			</span>
 		</p>
-	);
-}
-
-function Use({ reason }: { reason: SaveReason }) {
-	return (
-		<li className="flex items-baseline justify-between gap-2 text-xs">
-			<span className={cn("min-w-0", reason.kind === "kappa" ? kappaAppearance.ink : "text-foreground")}>
-				{reason.label}
-				<span className="ml-1.5 text-[11px] text-muted-foreground">
-					{reason.options
-						? `${reason.filled} of ${reason.count} · any of ${reason.options}`
-						: `×${reason.count}${reason.tool ? " · tool" : ""}`}
-					{reason.firCount > 0 && <span className="text-fir"> · FIR</span>}
-				</span>
-			</span>
-			<span
-				className={cn(
-					"shrink-0 text-[10px] font-semibold uppercase tracking-wide",
-					reason.now ? "text-brand" : "text-subtle-foreground",
-				)}
-			>
-				{reason.now ? "Now" : reason.minPlayerLevel ? `Lvl ${reason.minPlayerLevel}` : "Later"}
-			</span>
-		</li>
 	);
 }
