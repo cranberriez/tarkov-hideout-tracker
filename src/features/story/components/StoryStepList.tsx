@@ -132,7 +132,7 @@ export function StoryStepList({
 									title={STORY_DECISION_BY_ID[decisionId]?.prompt}
 									className="inline-flex"
 								>
-									<Badge tone="info" size="xs" className="hover:border-info/50">
+									<Badge tone="info" variant="flat" size="sm" className="hover:bg-info/20">
 										<GitBranch aria-hidden="true" />
 										{label}
 									</Badge>
@@ -225,7 +225,7 @@ function StepRow({
 			<div className="min-w-0 flex-1">
 				<div className="flex flex-wrap items-center gap-1.5">
 					{optional && (
-						<Badge tone="info" size="xs">
+						<Badge tone="info" variant="flat" size="sm">
 							Optional
 						</Badge>
 					)}
@@ -238,24 +238,24 @@ function StepRow({
 						{step.text}
 					</span>
 					{step.map && (
-						<Badge size="xs">
+						<Badge variant="flat" size="sm">
 							<MapPin aria-hidden="true" />
 							{step.map}
 						</Badge>
 					)}
 					{evidence === "major" && (
-						<Badge tone="special" size="sm" title="Major evidence for Mr. Kerman in The Ticket">
+						<Badge tone="special" variant="flat" size="md" title="Major evidence for Mr. Kerman in The Ticket">
 							<FileSearch aria-hidden="true" />
 							Major evidence
 						</Badge>
 					)}
 					{evidence === "minor" && (
-						<Badge size="xs" title="Optional minor evidence for Mr. Kerman in The Ticket">
+						<Badge variant="flat" size="sm" title="Optional minor evidence for Mr. Kerman in The Ticket">
 							Minor evidence
 						</Badge>
 					)}
 					{step.requiresLightkeeper && (
-						<Badge tone={lightkeeperBlocked ? "danger" : "neutral"} size="xs">
+						<Badge tone={lightkeeperBlocked ? "danger" : "neutral"} variant="flat" size="sm">
 							{lightkeeperBlocked ? <TriangleAlert aria-hidden="true" /> : null}
 							Lightkeeper
 						</Badge>

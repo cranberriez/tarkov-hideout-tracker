@@ -45,7 +45,7 @@ export function StoryDecisionControl({
 				<div className="flex flex-wrap items-center gap-1.5">
 					<span className="text-[15px] leading-6 font-medium text-foreground">{decision.prompt}</span>
 					{decision.pointOfNoReturn && (
-						<Badge tone="warning" size="xs" title="Point of no return">
+						<Badge tone="warning" variant="flat" size="sm" title="Point of no return">
 							<Lock aria-hidden="true" />
 							Final
 						</Badge>
@@ -112,7 +112,7 @@ export function StoryDecisionControl({
 export function ChapterBadge({ name, href }: { name: string; href: string }) {
 	return (
 		<Link href={href} className="inline-flex">
-			<Badge size="xs" className="hover:border-brand/40 hover:text-foreground">
+			<Badge variant="flat" size="sm" className="hover:bg-highlight/16 hover:text-foreground">
 				{name}
 			</Badge>
 		</Link>

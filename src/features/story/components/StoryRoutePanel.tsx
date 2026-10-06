@@ -76,7 +76,7 @@ export function StoryRoutePanel({
 												: `${summary.remaining} steps left`}
 								</span>
 								{summary.needsLightkeeper && isReachable && (
-									<Badge tone={lightkeeperConflict ? "danger" : "neutral"} size="xs">
+									<Badge tone={lightkeeperConflict ? "danger" : "neutral"} variant="flat" size="sm">
 										{lightkeeperConflict ? <TriangleAlert aria-hidden="true" /> : null}
 										Lightkeeper
 									</Badge>
