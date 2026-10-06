@@ -6,9 +6,16 @@ import type { ItemSummary, TraderPurchaseOffer } from "@/types/items";
 import type { FullQuest } from "@/types/quests";
 import type { Trader } from "@/types/traders";
 import { getPostgresDb } from "@/server/postgres/connection";
-import { getAllCatalogItems, getQuests, getRecipes, getStations, getTraders } from "./domain-data";
-import { getAllTraderOffers } from "./price-data";
-import { boundedReadCache, evictMemoizedReads, memoizedRead } from "./read-cache";
+import {
+	getAllCatalogItems,
+	getCatalogItemsByIds,
+	getQuests,
+	getRecipes,
+	getStations,
+	getTraders,
+} from "./domain-data";
+import { getAllTraderOffers, getTraderOffersByIds } from "./price-data";
+import { boundedReadCache, canonicalIds, evictMemoizedReads, mapBatches, memoizedRead } from "./read-cache";
 
 /*
  * Whole-domain catalog reads keyed by (mode, content version). A version's rows never change, so entries
@@ -65,21 +72,42 @@ export function getCachedTraderOffers(mode: TarkovDataMode): Promise<Record<stri
 	);
 }
 
-/** Catalog items for the requested IDs with current trader offers, matching `getItemsByIds`. */
+/** Catalog items for the requested IDs, optionally overlaid with current trader offers. */
 export async function getCachedItemsByIds(
 	mode: TarkovDataMode,
 	version: string,
 	ids: readonly string[],
+	options: { includeOffers?: boolean } = {},
 ): Promise<DataResult<Record<string, ItemSummary>>> {
-	const [catalog, offers] = await Promise.all([getCachedCatalogItems(mode, version), getCachedTraderOffers(mode)]);
+	const canonical = canonicalIds(ids);
+	if (canonical.length === 0) return { data: {}, updatedAt: 0 };
+	const batches = await mapBatches(canonical, async (batch) => {
+		const key = JSON.stringify(batch);
+		const catalog = versioned(mode, version, `items:${key}`, () =>
+			getCatalogItemsByIds(mode, batch, getPostgresDb(), version),
+		);
+		if (options.includeOffers === false) return [await catalog, {} as Record<string, TraderPurchaseOffer[]>] as const;
+		return Promise.all([
+			catalog,
+			memoizedRead(`offers:${mode}:${version}:${key}`, OFFERS_MEMO_MS, () =>
+				boundedReadCache(
+					["trader-offers", mode, version, key],
+					() => getTraderOffersByIds(mode, batch),
+					OFFERS_REVALIDATE_SECONDS,
+				),
+			),
+		]) as Promise<readonly [DataResult<Record<string, ItemSummary>>, Record<string, TraderPurchaseOffer[]>]>;
+	});
 	const data = Object.create(null) as Record<string, ItemSummary>;
-	for (const id of new Set(ids)) {
-		const item = catalog.data[id];
-		if (!item) continue;
-		const buyFromTrader = offers[id];
-		data[id] = buyFromTrader?.length ? { ...item, buyFromTrader } : item;
+	let updatedAt = 0;
+	for (const [catalog, offers] of batches) {
+		updatedAt = Math.max(updatedAt, catalog.updatedAt);
+		for (const [id, item] of Object.entries(catalog.data)) {
+			const buyFromTrader = offers[id];
+			data[id] = buyFromTrader?.length ? { ...item, buyFromTrader } : item;
+		}
 	}
-	return { data, updatedAt: catalog.updatedAt };
+	return { data, updatedAt };
 }
 
 /** Quests or traders selected by ID, preserving the catalog's name ordering. */

@@ -58,6 +58,26 @@ export function hideoutPageQueryOptions(mode: TarkovJsonGameMode) {
 	);
 }
 
+export function stationDetailQueryOptions(mode: TarkovJsonGameMode, stationId: string) {
+	return pageQueryOptions<HideoutPageData>(
+		mode,
+		"station-detail",
+		`/api/page-data/station?${new URLSearchParams({ mode, stationId })}`,
+		isCompleteHideoutPageData,
+		[stationId],
+	);
+}
+
+export function stationRecipeQueryOptions(mode: TarkovJsonGameMode, stationId: string) {
+	return pageQueryOptions<ProfitPageData>(
+		mode,
+		"station-recipes",
+		`/api/page-data/station?${new URLSearchParams({ mode, stationId, view: "recipes" })}`,
+		isCompleteProfitPageData,
+		[stationId],
+	);
+}
+
 export function itemChecklistPageQueryOptions(mode: TarkovJsonGameMode) {
 	return pageQueryOptions<ItemChecklistPageData>(
 		mode,

@@ -6,7 +6,7 @@ import { getDefaultRepository, getStationItemIds, mergePricedItems } from "./que
 export async function getHideoutPageData(
 	mode: TarkovDataMode,
 	repository?: TarkovDataRepository,
-	options: { includePrices?: boolean } = {},
+	options: { includePrices?: boolean; stationId?: string } = {},
 ): Promise<HideoutPageData> {
 	const dataRepository = repository ?? (await getDefaultRepository());
 	const stationsResult = await Promise.allSettled([dataRepository.hideout.getStations(mode)]).then(
@@ -33,9 +33,12 @@ export async function getHideoutPageData(
 	}
 
 	const stations = stationsResult.value.data;
-	const itemIds = getStationItemIds(stations);
+	const itemIds = getStationItemIds(
+		options.stationId ? stations.filter((station) => station.id === options.stationId) : stations,
+	).sort();
+	// Station definitions remain complete for FiR pooling, dependency previews and power bonuses.
 	const [itemsResult, pricesResult] = await Promise.allSettled([
-		dataRepository.items.getByIds(mode, itemIds),
+		dataRepository.items.getByIds(mode, itemIds, { includeOffers: false }),
 		options.includePrices === false
 			? Promise.resolve({ data: {}, updatedAt: null })
 			: dataRepository.prices.getCurrent(mode, itemIds),

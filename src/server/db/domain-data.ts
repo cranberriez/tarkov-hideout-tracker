@@ -82,6 +82,16 @@ export function getItemsByIds(
 	return readItems(mode, [...new Set(ids)], db, expectedVersion, true);
 }
 
+/** Requested catalog items without independently refreshed trader offers. */
+export function getCatalogItemsByIds(
+	mode: TarkovDataMode,
+	ids: readonly string[],
+	db: PostgresDatabase,
+	expectedVersion?: string,
+): Promise<DataResult<Record<string, ItemSummary>>> {
+	return readItems(mode, [...new Set(ids)], db, expectedVersion, false);
+}
+
 /** Every item in the mode's catalog, without independently refreshed trader offers. */
 export function getAllCatalogItems(
 	mode: TarkovDataMode,
@@ -106,35 +116,41 @@ async function readItems(
 				.from(catalogStatus)
 				.where(eq(catalogStatus.mode, mode))
 				.limit(1);
+			const itemSelection = {
+				id: items.id,
+				name: items.name,
+				normalizedName: items.normalizedName,
+				shortName: items.shortName,
+				iconLink: items.iconLink,
+				gridImageLink: items.gridImageLink,
+				image512pxLink: items.image512pxLink,
+				baseImageLink: items.baseImageLink,
+				link: items.link,
+				wikiLink: items.wikiLink,
+				onFleaMarket: itemModes.onFleaMarket,
+				minLevelForFlea: itemModes.minLevelForFlea,
+				resourceUnits: itemModes.resourceUnits,
+				category: itemModes.category,
+				displayOverride: itemModes.displayOverride,
+				firstSeenAt: itemDiscovery.firstSeenAt,
+				firstSeenPatch: itemDiscovery.firstSeenPatch,
+				firstSeenReleaseId: itemDiscovery.legacyFirstSeenReleaseId,
+			};
+			const baseQuery = conn
+				.select({
+					...itemSelection,
+					...(includeOffers ? { buyFromTrader: itemPrices.traderPurchaseOffers } : {}),
+				})
+				.from(items)
+				.innerJoin(itemModes, and(eq(itemModes.itemId, items.id), eq(itemModes.mode, mode)))
+				.leftJoin(itemDiscovery, and(eq(itemDiscovery.itemId, items.id), eq(itemDiscovery.mode, mode)));
 			const rows =
 				unique === null || unique.length
-					? await conn
-							.select({
-								id: items.id,
-								name: items.name,
-								normalizedName: items.normalizedName,
-								shortName: items.shortName,
-								iconLink: items.iconLink,
-								gridImageLink: items.gridImageLink,
-								image512pxLink: items.image512pxLink,
-								baseImageLink: items.baseImageLink,
-								link: items.link,
-								wikiLink: items.wikiLink,
-								onFleaMarket: itemModes.onFleaMarket,
-								minLevelForFlea: itemModes.minLevelForFlea,
-								resourceUnits: itemModes.resourceUnits,
-								category: itemModes.category,
-								displayOverride: itemModes.displayOverride,
-								firstSeenAt: itemDiscovery.firstSeenAt,
-								firstSeenPatch: itemDiscovery.firstSeenPatch,
-								firstSeenReleaseId: itemDiscovery.legacyFirstSeenReleaseId,
-								buyFromTrader: itemPrices.traderPurchaseOffers,
-							})
-							.from(items)
-							.innerJoin(itemModes, and(eq(itemModes.itemId, items.id), eq(itemModes.mode, mode)))
-							.leftJoin(itemDiscovery, and(eq(itemDiscovery.itemId, items.id), eq(itemDiscovery.mode, mode)))
-							.leftJoin(itemPrices, and(eq(itemPrices.itemId, items.id), eq(itemPrices.mode, mode)))
-							.where(unique ? inArray(items.id, unique) : undefined)
+					? includeOffers
+						? await baseQuery
+								.leftJoin(itemPrices, and(eq(itemPrices.itemId, items.id), eq(itemPrices.mode, mode)))
+								.where(unique ? inArray(items.id, unique) : undefined)
+						: await baseQuery.where(unique ? inArray(items.id, unique) : undefined)
 					: [];
 			const output: Record<string, ItemSummary> = Object.create(null) as Record<string, ItemSummary>;
 			for (const row of rows) {
@@ -183,7 +199,7 @@ async function readItems(
 						...(firstSeenPatch ? { firstSeenPatch } : {}),
 						...(firstSeenAt !== undefined ? { firstSeenAt } : {}),
 						...(row.firstSeenReleaseId ? { firstSeenReleaseId: row.firstSeenReleaseId } : {}),
-						...(includeOffers && Array.isArray(row.buyFromTrader) && row.buyFromTrader.length
+						...(includeOffers && "buyFromTrader" in row && Array.isArray(row.buyFromTrader) && row.buyFromTrader.length
 							? { buyFromTrader: row.buyFromTrader }
 							: {}),
 					},

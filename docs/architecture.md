@@ -26,7 +26,7 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 
 Detail routes use bounded reads: [getItemDetailPageData](../src/server/queries/getItemDetailPageData.ts)
 reads one item, [getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts)
-one quest, and station pages reuse the mode-keyed Hideout page query. Each sets
+one quest, and station pages use mode/station-keyed metadata and recipe queries. Each sets
 entity-specific titles, descriptions, and canonical URLs. Missing IDs render
 not-found states; failed reads report errors instead of 404s. Pages render public
 identity from server data; player progress hydrates afterwards. Titles use the root

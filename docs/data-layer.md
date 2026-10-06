@@ -107,6 +107,19 @@ which still select mode from the cookie and prefetch queries directly. Explicit 
 IDs stay in successful payloads and visible warnings; domain errors produce usable
 partial payloads that remain retryable rather than reusable complete cache entries.
 
+Station details use `/api/page-data/station?mode=...&stationId=...`, with `view=recipes`
+for the separate recipe payload. Metadata contains only the selected station's item
+summaries. The small station-definition collection remains complete for cross-station
+FiR allocation, dependency hover previews and power bonuses. Upgrade metadata omits
+trader offers. Recipe reads use
+[getStationRecipePageData](../src/server/queries/getStationRecipePageData.ts) and
+[indexed graph traversal](../src/server/db/station-recipes.ts), returning only station
+crafts and their recursive input acquisition alternatives, including tools. Power panels
+add explicit fuel/GPU/Bitcoin inputs. Recipe responses use `no-store` because they include
+mutable trader offers; complete upgrade metadata uses the usual public page cache.
+Both queries have independent mode/station browser keys and never populate the full
+Hideout or Profit query entries. Prices use explicit graph item IDs, not the recipes scope.
+
 Hideout, Items, Quests, Kappa, Profit, and Craft Planner server pages request
 unpriced metadata. Quests does not mount a price consumer: opening the workspace,
 changing filters, or navigating quests makes no current-price requests. Opening an
@@ -175,13 +188,17 @@ database arguments (tests, scripts) always read PostgreSQL directly. Version upd
 commit atomically with their rows and versions only increase, so
 `withStableCatalogRead` with a caller-pinned version needs only its closing check.
 
-[catalog-cache](../src/server/db/catalog-cache.ts) caches whole items (without trader
-offers), stations, quests, traders and recipes per (mode, content_version) as
+[catalog-cache](../src/server/db/catalog-cache.ts) caches item metadata in sorted,
+deduplicated ID batches, and whole stations, quests, traders and recipes per (mode, content_version) as
 gzip entries in the data cache plus a per-instance memo; repository ID reads filter
 those in memory. Values are shared between requests and deep-frozen outside
-production; consumers must not mutate them. Trader offers are a separate all-items
-cache refreshed every 300 seconds (at most about six minutes stale) and overlaid onto
-item reads. Stored item views are cached per (view, mode, version, item). Prices
+production; consumers must not mutate them. Repository item lookups issue bounded SQL
+reads for their requested IDs rather than loading the catalog. Trader offers are separate
+ID-batch reads cached for 300 seconds with a 60-second instance memo, and are omitted
+when the caller requests metadata only. Metadata-only SQL does not select or join price
+rows. Existing whole-domain readers remain available for consumers that need them.
+Station recipe graphs are compressed and cached by mode, catalog version, station and
+canonical extra input IDs. Stored item views are cached per (view, mode, version, item). Prices
 keep their existing 300-second batch cache. Reads that fail or observe a newer
 version are never stored.
 

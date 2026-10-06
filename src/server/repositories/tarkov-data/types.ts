@@ -8,7 +8,11 @@ import type { Trader } from "@/types/traders";
 
 export interface TarkovDataRepository {
 	items: {
-		getByIds(mode: TarkovDataMode, ids: readonly string[]): Promise<DataResult<Record<string, ItemSummary>>>;
+		getByIds(
+			mode: TarkovDataMode,
+			ids: readonly string[],
+			options?: { includeOffers?: boolean },
+		): Promise<DataResult<Record<string, ItemSummary>>>;
 	};
 	hideout: {
 		getStations(mode: TarkovDataMode): Promise<DataResult<Station[]>>;
@@ -22,6 +26,11 @@ export interface TarkovDataRepository {
 		getByIds(mode: TarkovDataMode, ids: readonly string[]): Promise<DataResult<Record<string, Trader>>>;
 	};
 	recipes: {
+		getForStation?(
+			mode: TarkovDataMode,
+			stationId: string,
+			extraItemIds: readonly string[],
+		): Promise<{ crafts: DataResult<CraftRecord[]>; barters: DataResult<BarterRecord[]> }>;
 		getBarters(mode: TarkovDataMode): Promise<DataResult<BarterRecord[]>>;
 		getCrafts(mode: TarkovDataMode): Promise<DataResult<CraftRecord[]>>;
 	};

@@ -12,6 +12,7 @@ import {
 } from "@/server/db/catalog-cache";
 import { getCurrentPriceData, getStoredPriceHistoryData } from "@/server/db/price-data";
 import { getCatalogVersion } from "@/server/db/postgres-read";
+import { getStationRecipeGraph } from "@/server/db/station-recipes";
 
 export function createPostgresRepository(scope?: {
 	mode: TarkovDataMode;
@@ -30,7 +31,7 @@ export function createPostgresRepository(scope?: {
 	}
 	return {
 		items: {
-			getByIds: async (mode, ids) => getCachedItemsByIds(mode, await versionFor(mode), ids),
+			getByIds: async (mode, ids, options) => getCachedItemsByIds(mode, await versionFor(mode), ids, options),
 		},
 		hideout: {
 			getStations: async (mode) => getCachedStations(mode, await versionFor(mode)),
@@ -56,6 +57,8 @@ export function createPostgresRepository(scope?: {
 			},
 		},
 		recipes: {
+			getForStation: async (mode, stationId, extraItemIds) =>
+				getStationRecipeGraph(mode, stationId, await versionFor(mode), extraItemIds),
 			getBarters: async (mode) => (await getCachedRecipes(mode, await versionFor(mode))).barters,
 			getCrafts: async (mode) => (await getCachedRecipes(mode, await versionFor(mode))).crafts,
 		},
