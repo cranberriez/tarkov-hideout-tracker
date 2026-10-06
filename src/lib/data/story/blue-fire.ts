@@ -1,22 +1,12 @@
-import type { StoryChapter, StoryImage, StoryItemRef } from "@/types/story";
+import type { StoryChapter } from "@/types/story";
+import { chapterImage, item } from "./helpers";
 
 /**
  * Blue Fire, reviewed against the EFT wiki on 2026-10-06. Items without an `id`
  * are story items absent from the item catalog. Step images are wiki screenshots.
  */
 
-const item = (name: string, id?: string, count?: number, extra: Pick<StoryItemRef, "chapterId" | "note"> = {}) => ({
-	name,
-	...(id ? { id } : {}),
-	...(count ? { count } : {}),
-	...extra,
-});
-
-const image = (file: string, caption: string): StoryImage => ({
-	src: `/images/story/blue-fire/steps/${file}.webp`,
-	thumb: `/images/story/blue-fire/steps/thumbs/${file}.webp`,
-	caption,
-});
+const image = chapterImage("blue-fire");
 
 const DEVICE_FRAGMENT = item("Unknown device fragment", "68e6394e658d876c930977b1");
 const RUS_POST_CAR_KEY = item("Rus Post car key", "68e63b56ad8cba49190ea529");

@@ -23,7 +23,7 @@ function Thumbnail({ image, onOpen }: { image: StoryImage; onOpen: () => void })
 				aria-label={`View image: ${image.caption}`}
 				className="overflow-hidden rounded border border-highlight/15 transition-colors hover:border-brand/50"
 			>
-				<Image src={image.thumb} alt="" width={80} height={48} unoptimized className="h-12 w-20 object-cover" />
+				<Image src={image.thumb} alt="" width={100} height={60} unoptimized className="h-15 w-25 object-cover" />
 			</button>
 			<FloatingPortal
 				open={preview.open}

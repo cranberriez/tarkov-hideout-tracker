@@ -201,7 +201,7 @@ function StepRow({
 		<li
 			id={`step-${step.id}`}
 			className={cn(
-				"flex scroll-mt-24 gap-3 px-3 py-2.5",
+				"flex scroll-mt-24 gap-3 px-3 py-3",
 				nested ? "py-1.5 pl-0" : "border-b border-highlight/8 last:border-b-0",
 				state === "pending" && !nested && "opacity-70",
 			)}
@@ -231,7 +231,7 @@ function StepRow({
 					)}
 					<span
 						className={cn(
-							nested ? "text-xs" : "text-sm",
+							nested ? "text-[13px] leading-5" : "text-[15px] leading-6",
 							done ? "text-muted-foreground line-through" : optional ? "text-muted-foreground" : "text-foreground",
 						)}
 					>
@@ -261,10 +261,10 @@ function StepRow({
 						</Badge>
 					)}
 				</div>
-				{step.note && <p className="mt-0.5 text-xs text-muted-foreground">{step.note}</p>}
+				{step.note && <p className="mt-1 text-[13px] leading-5 text-muted-foreground">{step.note}</p>}
 				{step.warning && (
-					<p className="mt-0.5 flex items-start gap-1 text-xs text-danger">
-						<TriangleAlert aria-hidden="true" className="mt-px size-3 shrink-0" />
+					<p className="mt-1 flex items-start gap-1.5 text-[13px] leading-5 text-danger">
+						<TriangleAlert aria-hidden="true" className="mt-[3px] size-3.5 shrink-0" />
 						{step.warning}
 					</p>
 				)}
@@ -275,7 +275,7 @@ function StepRow({
 								key={quest.id}
 								questId={quest.id}
 								name={quest.name}
-								className="inline-flex items-center gap-1 text-xs text-brand hover:underline"
+								className="inline-flex items-center gap-1 text-[13px] text-brand hover:underline"
 							>
 								<ScrollText aria-hidden="true" className="size-3" />
 								{quest.name}
@@ -284,8 +284,8 @@ function StepRow({
 					</div>
 				)}
 				{step.rewards && step.rewards.length > 0 && (
-					<p className="mt-1 flex items-start gap-1 text-xs text-success">
-						<Gift aria-hidden="true" className="mt-px size-3 shrink-0" />
+					<p className="mt-1 flex items-start gap-1.5 text-[13px] leading-5 text-success">
+						<Gift aria-hidden="true" className="mt-[3px] size-3.5 shrink-0" />
 						{step.rewards.join(" · ")}
 					</p>
 				)}
@@ -337,11 +337,11 @@ function StepItems({ items, nested }: { items: StoryItemRef[]; nested: boolean }
 					<li key={item.id ?? item.name} className="flex items-center gap-2">
 						<StoryItemChip item={item} size="xs" />
 						<div className="min-w-0">
-							<div className="flex flex-wrap items-center gap-1.5 text-xs text-foreground">
+							<div className="flex flex-wrap items-center gap-1.5 text-[13px] text-foreground">
 								{item.name}
 								{source && <ChapterBadge {...source} />}
 							</div>
-							{item.note && <p className="text-[11px] text-muted-foreground">{item.note}</p>}
+							{item.note && <p className="text-xs leading-5 text-muted-foreground">{item.note}</p>}
 						</div>
 					</li>
 				);

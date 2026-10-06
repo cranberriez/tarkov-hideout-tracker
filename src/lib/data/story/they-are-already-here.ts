@@ -1,22 +1,12 @@
-import type { StoryChapter, StoryImage, StoryItemRef } from "@/types/story";
+import type { StoryChapter } from "@/types/story";
+import { chapterImage, item } from "./helpers";
 
 /**
  * They Are Already Here, reviewed against the EFT wiki on 2026-10-06. Items without
  * an `id` are story items absent from the item catalog. Step images are wiki screenshots.
  */
 
-const item = (name: string, id?: string, count?: number, extra: Pick<StoryItemRef, "chapterId" | "note"> = {}) => ({
-	name,
-	...(id ? { id } : {}),
-	...(count ? { count } : {}),
-	...extra,
-});
-
-const image = (file: string, caption: string): StoryImage => ({
-	src: `/images/story/they-are-already-here/steps/${file}.webp`,
-	thumb: `/images/story/they-are-already-here/steps/thumbs/${file}.webp`,
-	caption,
-});
+const image = chapterImage("they-are-already-here");
 
 const DORM_314_KEY = item("Dorm room 314 marked key", "5780cf7f2459777de4559322");
 const ABANDONED_FACTORY_KEY = item("Abandoned factory marked key", "63a3a93f8a56922e82001f5d");

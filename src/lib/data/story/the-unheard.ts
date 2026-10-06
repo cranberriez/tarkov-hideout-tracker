@@ -1,22 +1,12 @@
-import type { StoryChapter, StoryImage, StoryItemRef } from "@/types/story";
+import type { StoryChapter } from "@/types/story";
+import { chapterImage, item } from "./helpers";
 
 /**
  * The Unheard, reviewed against the EFT wiki on 2026-10-06. Items without an `id`
  * are story items absent from the item catalog. Step images are wiki screenshots.
  */
 
-const item = (name: string, id?: string, count?: number, extra: Pick<StoryItemRef, "chapterId" | "note"> = {}) => ({
-	name,
-	...(id ? { id } : {}),
-	...(count ? { count } : {}),
-	...extra,
-});
-
-const image = (file: string, caption: string): StoryImage => ({
-	src: `/images/story/the-unheard/steps/${file}.webp`,
-	thumb: `/images/story/the-unheard/steps/thumbs/${file}.webp`,
-	caption,
-});
+const image = chapterImage("the-unheard");
 
 const RZHEVSKY_DRIVE = item("Hard drive from Rzhevsky's car");
 const AP_FLASH_DRIVE = item("Sliderkey flash drive marked with A.P.");

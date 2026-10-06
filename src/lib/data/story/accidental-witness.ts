@@ -1,22 +1,12 @@
-import type { StoryChapter, StoryImage, StoryItemRef } from "@/types/story";
+import type { StoryChapter } from "@/types/story";
+import { chapterImage, item } from "./helpers";
 
 /**
  * Accidental Witness, reviewed against the EFT wiki on 2026-10-06. Items without an `id`
  * are story items absent from the item catalog. Step images are wiki screenshots.
  */
 
-const item = (name: string, id?: string, count?: number, extra: Pick<StoryItemRef, "chapterId" | "note"> = {}) => ({
-	name,
-	...(id ? { id } : {}),
-	...(count ? { count } : {}),
-	...extra,
-});
-
-const image = (file: string, caption: string): StoryImage => ({
-	src: `/images/story/accidental-witness/steps/${file}.webp`,
-	thumb: `/images/story/accidental-witness/steps/thumbs/${file}.webp`,
-	caption,
-});
+const image = chapterImage("accidental-witness");
 
 const KOZLOV_KEY = item("Dorm room 110 key", "59136e1e86f774432f15d133");
 const ZMEISKY_KEY = item("Zmeisky 3 apartment key", "68e960db934bf7b02d005dab");

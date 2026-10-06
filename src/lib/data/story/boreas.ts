@@ -1,22 +1,12 @@
-import type { StoryChapter, StoryCondition, StoryImage, StoryItemRef, StoryQuestRef } from "@/types/story";
+import type { StoryChapter, StoryCondition, StoryQuestRef } from "@/types/story";
+import { chapterImage, item } from "./helpers";
 
 /**
  * Boreas, reviewed against the EFT wiki on 2026-10-06. Items without an `id`
  * are story items absent from the item catalog. Step images are wiki screenshots.
  */
 
-const item = (name: string, id?: string, count?: number, extra: Pick<StoryItemRef, "chapterId" | "note"> = {}) => ({
-	name,
-	...(id ? { id } : {}),
-	...(count ? { count } : {}),
-	...extra,
-});
-
-const image = (file: string, caption: string): StoryImage => ({
-	src: `/images/story/boreas/steps/${file}.webp`,
-	thumb: `/images/story/boreas/steps/thumbs/${file}.webp`,
-	caption,
-});
+const image = chapterImage("boreas");
 
 const fallingSkiesDone: StoryCondition = { decision: "boreas-falling-skies-progress", is: "completed" };
 const fallingSkiesPending: StoryCondition = { decision: "boreas-falling-skies-progress", is: "not-completed" };

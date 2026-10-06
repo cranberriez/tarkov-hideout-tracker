@@ -1,22 +1,12 @@
-import type { StoryChapter, StoryImage, StoryItemRef } from "@/types/story";
+import type { StoryChapter } from "@/types/story";
+import { chapterImage, item } from "./helpers";
 
 /**
  * Falling Skies, reviewed against the EFT wiki on 2026-10-06. Items without an `id`
  * are story items absent from the item catalog. Step images are wiki screenshots.
  */
 
-const item = (name: string, id?: string, count?: number, extra: Pick<StoryItemRef, "chapterId" | "note"> = {}) => ({
-	name,
-	...(id ? { id } : {}),
-	...(count ? { count } : {}),
-	...extra,
-});
-
-const image = (file: string, caption: string): StoryImage => ({
-	src: `/images/story/falling-skies/steps/${file}.webp`,
-	thumb: `/images/story/falling-skies/steps/thumbs/${file}.webp`,
-	caption,
-});
+const image = chapterImage("falling-skies");
 
 // The catalog has two "Armored case" items, so this one stays unlinked.
 const ARMORED_CASE = item("Armored case");

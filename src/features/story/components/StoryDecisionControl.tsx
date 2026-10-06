@@ -43,7 +43,7 @@ export function StoryDecisionControl({
 				)}
 			>
 				<div className="flex flex-wrap items-center gap-1.5">
-					<span className="text-sm font-medium text-foreground">{decision.prompt}</span>
+					<span className="text-[15px] leading-6 font-medium text-foreground">{decision.prompt}</span>
 					{decision.pointOfNoReturn && (
 						<Badge tone="warning" size="xs" title="Point of no return">
 							<Lock aria-hidden="true" />
@@ -100,7 +100,7 @@ export function StoryDecisionControl({
 				</div>
 			</div>
 			{shownOption?.description && (
-				<p className="mt-1.5 text-xs text-muted-foreground">
+				<p className="mt-1.5 text-[13px] leading-5 text-muted-foreground">
 					{current?.source === "implied" ? "If chosen: " : ""}
 					{shownOption.description}
 				</p>

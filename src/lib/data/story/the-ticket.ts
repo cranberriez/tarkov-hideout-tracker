@@ -1,17 +1,11 @@
 import type { StoryChapter, StoryCondition, StoryItemRef, StoryQuestRef } from "@/types/story";
+import { item } from "./helpers";
 import { MAJOR_EVIDENCE, MINOR_EVIDENCE } from "./evidence";
 
 /**
  * The Ticket, reviewed against the EFT wiki on 2026-10-06. Items without an `id`
  * are story items absent from the item catalog.
  */
-
-const item = (name: string, id?: string, count?: number, extra: Pick<StoryItemRef, "chapterId" | "note"> = {}) => ({
-	name,
-	...(id ? { id } : {}),
-	...(count ? { count } : {}),
-	...extra,
-});
 
 const caseGiven: StoryCondition = { decision: "falling-skies-armored-case", is: "gave-prapor" };
 const caseKept: StoryCondition = { decision: "falling-skies-armored-case", is: "kept" };
