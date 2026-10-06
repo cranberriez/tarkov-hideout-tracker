@@ -33,10 +33,8 @@ export function StoryEvidenceRow({ progress }: { progress: StoryProgress | null 
 					const chapter = item.chapterId ? findStoryChapterRef(item.chapterId) : null;
 					const href = chapter && stepId ? `/story/${chapter.id}#step-${stepId}` : null;
 					const className = cn(
-						"flex h-full items-center gap-3 rounded-md border border-special/50 p-3",
-						found ? "bg-special/20" : "bg-card",
-						href &&
-							"transition-colors hover:border-special hover:bg-special/10 focus-visible:outline-2 focus-visible:outline-special",
+						"flex h-full items-center gap-3 rounded-md bg-card p-3",
+						href && "transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-special",
 					);
 					const content = (
 						<>
@@ -44,10 +42,12 @@ export function StoryEvidenceRow({ progress }: { progress: StoryProgress | null 
 							<div className="flex min-w-0 flex-1 flex-col gap-1">
 								<span className="text-xs font-semibold text-foreground">{item.name}</span>
 								<span className="text-xs text-muted-foreground">{chapter?.name ?? "Outside story chapters"}</span>
-								<span className="mt-auto flex items-center gap-1 text-xs text-special">
-									{found && <Check aria-hidden="true" className="size-3" />}
-									{!progress ? "Loading progress…" : found ? "Found" : !href ? "No tracked objective" : "Not found"}
-								</span>
+								{(!progress || found || !href) && (
+									<span className="mt-auto flex items-center gap-1 text-xs text-special">
+										{found && <Check aria-hidden="true" className="size-3" />}
+										{!progress ? "Loading progress…" : found ? "Found" : "No tracked objective"}
+									</span>
+								)}
 							</div>
 						</>
 					);
