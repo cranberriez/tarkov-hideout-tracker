@@ -1,4 +1,4 @@
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import type { RaidMode } from "@/lib/game-mode";
 
 export type ParsedRaidMode = RaidMode | "unknown";
@@ -38,7 +38,7 @@ export interface AggregatedQuestEvent {
 }
 
 export interface ResolvedAggregatedQuestEvent extends AggregatedQuestEvent {
-	quest: FullQuest | null;
+	quest: QuestWorkspaceQuest | null;
 }
 
 export interface QuestLogParseTotals {
@@ -192,7 +192,7 @@ function parseQuestLogFileWithCutoffStats(
 	};
 }
 
-export function parseQuestLogFiles(files: QuestLogFileInput[], quests: FullQuest[]): QuestLogParseResult {
+export function parseQuestLogFiles(files: QuestLogFileInput[], quests: QuestWorkspaceQuest[]): QuestLogParseResult {
 	const { matched, ignored } = filterQuestLogFiles(files);
 	const parsedFiles = matched.map((file) => {
 		const result = parseQuestLogFileWithCutoffStats(file.text, file.name, file.webkitRelativePath || file.name);
@@ -333,7 +333,7 @@ export function aggregateQuestEvents(events: ParsedQuestEvent[]): AggregatedQues
 	});
 }
 
-export function resolveQuestEventGroups(groups: AggregatedQuestEvent[], quests: FullQuest[]) {
+export function resolveQuestEventGroups(groups: AggregatedQuestEvent[], quests: QuestWorkspaceQuest[]) {
 	const questsById = new Map(quests.map((quest) => [quest.id, quest]));
 	const resolved: ResolvedAggregatedQuestEvent[] = [];
 	const unresolved: ResolvedAggregatedQuestEvent[] = [];

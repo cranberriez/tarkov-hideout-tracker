@@ -1,4 +1,4 @@
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import type {
 	QuestObjectiveCategory,
 	QuestWorkspaceLockedFilterSettings,
@@ -76,9 +76,9 @@ export const OBJECTIVE_CATEGORY_SHORT_LABELS: Record<QuestObjectiveCategory, str
 const OBJECTIVE_CATEGORY_ORDER = Object.keys(OBJECTIVE_CATEGORY_LABELS) as QuestObjectiveCategory[];
 
 function isTaskRequirementMet(
-	requirement: FullQuest["taskRequirements"][number],
+	requirement: QuestWorkspaceQuest["taskRequirements"][number],
 	profile: QuestWorkspaceProfile,
-	questsById: ReadonlyMap<string, FullQuest>,
+	questsById: ReadonlyMap<string, QuestWorkspaceQuest>,
 ) {
 	const statuses = requirement.status.map((status) => status.trim().toLowerCase());
 	const prerequisiteComplete = !!profile.completedQuests[requirement.task.id];
@@ -123,7 +123,7 @@ function getEssentialQuestSeriesTitle(rootQuestName: string) {
  * Cross-trader and non-Essential links deliberately terminate a series.
  */
 export function buildEssentialQuestSeries(
-	essentialQuests: FullQuest[],
+	essentialQuests: QuestWorkspaceQuest[],
 	curatedSeries: EssentialQuestSeries[] = CURATED_ESSENTIAL_QUEST_SERIES,
 ): EssentialQuestSeries[] {
 	const questById = new Map(essentialQuests.map((quest) => [quest.id, quest]));
@@ -197,14 +197,14 @@ export function buildEssentialQuestSeries(
 }
 
 function getMissingPrerequisiteQuestIds(
-	quest: FullQuest,
+	quest: QuestWorkspaceQuest,
 	profile: QuestWorkspaceProfile,
-	questsById: ReadonlyMap<string, FullQuest>,
+	questsById: ReadonlyMap<string, QuestWorkspaceQuest>,
 ) {
 	const missingIds = new Set<string>();
 	const visiting = new Set<string>();
 
-	const visit = (current: FullQuest) => {
+	const visit = (current: QuestWorkspaceQuest) => {
 		if (visiting.has(current.id)) return;
 		visiting.add(current.id);
 
@@ -224,9 +224,9 @@ function getMissingPrerequisiteQuestIds(
 }
 
 export function getQuestWorkspaceStatus(
-	quest: FullQuest,
+	quest: QuestWorkspaceQuest,
 	profile: QuestWorkspaceProfile,
-	questsById: ReadonlyMap<string, FullQuest>,
+	questsById: ReadonlyMap<string, QuestWorkspaceQuest>,
 ): QuestWorkspaceStatusInfo {
 	const terminal = profile.completedQuests[quest.id] ? "completed" : profile.failedQuests[quest.id] ? "failed" : null;
 	const reasons: QuestLockReason[] = [];
@@ -428,16 +428,18 @@ export function getObjectiveCategory(type: string): QuestObjectiveCategory {
 	}
 }
 
-export function getQuestObjectiveCategories(quest: FullQuest) {
-	return new Set(quest.objectives.map((objective) => getObjectiveCategory(objective.type)));
+export function getQuestObjectiveCategories(quest: QuestWorkspaceQuest) {
+	const objectiveTypes =
+		"objectives" in quest ? quest.objectives.map((objective) => objective.type) : quest.objectiveTypes;
+	return new Set(objectiveTypes.map(getObjectiveCategory));
 }
 
-export function getAvailableObjectiveCategories(quests: FullQuest[]) {
+export function getAvailableObjectiveCategories(quests: QuestWorkspaceQuest[]) {
 	const present = new Set<QuestObjectiveCategory>();
 	quests.forEach((quest) => getQuestObjectiveCategories(quest).forEach((category) => present.add(category)));
 	return OBJECTIVE_CATEGORY_ORDER.filter((category) => present.has(category));
 }
 
-export function getQuestMapKeys(quest: FullQuest) {
+export function getQuestMapKeys(quest: QuestWorkspaceQuest) {
 	return new Set(getQuestMapGroupsForQuest(quest).map((group) => group.key));
 }

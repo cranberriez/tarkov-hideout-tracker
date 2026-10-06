@@ -1,4 +1,4 @@
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import type { QuestSortMode } from "@/lib/stores/useUserStore";
 import { getQuestTraderTabLoyaltyLevel } from "../../../lib/quests/quest-trader-completion-gates";
 import { isEssentialQuest } from "../../../lib/quests/quest-series";
@@ -39,8 +39,8 @@ export interface QuestListModel {
 }
 
 export interface BuildQuestListModelOptions {
-	quests: FullQuest[];
-	allQuests: FullQuest[];
+	quests: QuestWorkspaceQuest[];
+	allQuests: QuestWorkspaceQuest[];
 	statusByQuestId: ReadonlyMap<string, QuestWorkspaceStatusInfo>;
 	groupByTrader: boolean;
 	groupByLoyaltyLevel: boolean;
@@ -85,13 +85,13 @@ export function buildQuestListModel({
 	}
 
 	const buildEssentialCategory = (
-		essentialQuests: FullQuest[],
+		essentialQuests: QuestWorkspaceQuest[],
 		parentId: string,
 	): QuestListEssentialCategory | null => {
 		if (essentialQuests.length === 0) return null;
 
-		const questsBySeriesId = new Map<string, FullQuest[]>();
-		const ungroupedQuests: FullQuest[] = [];
+		const questsBySeriesId = new Map<string, QuestWorkspaceQuest[]>();
+		const ungroupedQuests: QuestWorkspaceQuest[] = [];
 		for (const quest of essentialQuests) {
 			const series = essentialSeriesByQuestId.get(quest.id);
 			if (!series) {
@@ -126,7 +126,7 @@ export function buildQuestListModel({
 		};
 	};
 
-	const buildRowsWithEssential = (groupQuests: FullQuest[], parentId: string) => {
+	const buildRowsWithEssential = (groupQuests: QuestWorkspaceQuest[], parentId: string) => {
 		const regularEntries = groupQuests.filter((quest) => !isEssentialQuest(quest.id)).map(toQuestEntry);
 		const category = buildEssentialCategory(
 			groupQuests.filter((quest) => isEssentialQuest(quest.id)),
@@ -135,8 +135,8 @@ export function buildQuestListModel({
 		return category ? [...regularEntries, category] : regularEntries;
 	};
 
-	const buildLoyaltyGroups = (groupQuests: FullQuest[], parentId = "all") => {
-		const groups = new Map<number | "essential", FullQuest[]>();
+	const buildLoyaltyGroups = (groupQuests: QuestWorkspaceQuest[], parentId = "all") => {
+		const groups = new Map<number | "essential", QuestWorkspaceQuest[]>();
 		for (const quest of groupQuests) {
 			const key = isEssentialQuest(quest.id) ? "essential" : getQuestTraderTabLoyaltyLevel(quest);
 			groups.set(key, [...(groups.get(key) ?? []), quest]);
@@ -169,7 +169,7 @@ export function buildQuestListModel({
 
 	let entries: QuestListEntry[];
 	if (groupByTrader) {
-		const traders = new Map<string, FullQuest[]>();
+		const traders = new Map<string, QuestWorkspaceQuest[]>();
 		for (const quest of quests) {
 			traders.set(quest.trader.id, [...(traders.get(quest.trader.id) ?? []), quest]);
 		}
@@ -194,6 +194,6 @@ export function buildQuestListModel({
 	return { entries, questCount: quests.length };
 }
 
-function toQuestEntry(quest: FullQuest): QuestListEntry {
+function toQuestEntry(quest: QuestWorkspaceQuest): QuestListEntry {
 	return { kind: "quest", questId: quest.id };
 }

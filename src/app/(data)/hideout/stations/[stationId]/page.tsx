@@ -6,7 +6,7 @@ import { StationCraftsSkeleton } from "@/features/hideout/details/crafts/Station
 import { prefetchStationCrafts, StationCraftsStream } from "@/features/hideout/details/crafts/StationCraftsStream";
 import { StationDetailQueryPage } from "@/features/hideout/details/StationDetailQueryPage";
 import { stationHref } from "@/lib/entity-routes";
-import { hideoutPageQueryOptions, isCompleteHideoutPageData, PAGE_DATA_STALE_TIME } from "@/lib/query/page-data";
+import { stationDetailQueryOptions, isCompleteHideoutPageData, PAGE_DATA_STALE_TIME } from "@/lib/query/page-data";
 import { decodeRouteParam } from "@/lib/utils/route-param";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
 import { getHideoutPageData } from "@/server/queries/getHideoutPageData";
@@ -18,16 +18,16 @@ interface StationPageProps {
 }
 
 /** Metadata and the page share one request-scoped Hideout read. */
-const loadHideout = cache(async () => {
+const loadHideout = cache(async (stationId: string) => {
 	const gameMode = await getActiveTarkovJsonGameMode();
 	const load = async () =>
-		getHideoutPageData(gameMode, await getCurrentPageRepository(gameMode), { includePrices: false });
+		getHideoutPageData(gameMode, await getCurrentPageRepository(gameMode), { includePrices: false, stationId });
 	return { gameMode, data: await load() };
 });
 
 export async function generateMetadata({ params }: StationPageProps): Promise<Metadata> {
 	const stationId = decodeRouteParam((await params).stationId);
-	const station = (await loadHideout()).data.stations?.find((entry) => entry.id === stationId);
+	const station = (await loadHideout(stationId)).data.stations?.find((entry) => entry.id === stationId);
 	if (!station) return { title: "Hideout station unavailable", robots: { index: false, follow: true } };
 	return {
 		title: `${station.name} (Hideout)`,
@@ -40,11 +40,11 @@ export default async function StationPage({ params }: StationPageProps) {
 	const stationId = decodeRouteParam((await params).stationId);
 	const activeMode = await getActiveTarkovJsonGameMode();
 	// Starts before the Hideout await so the recipe read overlaps it; resolved by the Suspense slot.
-	const craftsPrefetch = prefetchStationCrafts(activeMode);
-	const { gameMode, data } = await loadHideout();
+	const craftsPrefetch = prefetchStationCrafts(activeMode, stationId);
+	const { gameMode, data } = await loadHideout(stationId);
 	// Missing stations 404 only when the station list itself loaded.
 	if (data.stations && !data.stations.some((entry) => entry.id === stationId)) notFound();
-	const options = hideoutPageQueryOptions(gameMode);
+	const options = stationDetailQueryOptions(gameMode, stationId);
 	const { state, fallbackData } = await prefetchPageData(
 		options.queryKey,
 		PAGE_DATA_STALE_TIME,
@@ -55,15 +55,15 @@ export default async function StationPage({ params }: StationPageProps) {
 	return (
 		<HydrationBoundary state={state}>
 			<StationDetailQueryPage
-					mode={gameMode}
-					stationId={stationId}
-					fallbackData={fallbackData}
-					crafts={
-						<Suspense fallback={<StationCraftsSkeleton />}>
-							<StationCraftsStream mode={activeMode} prefetch={craftsPrefetch} />
-						</Suspense>
-					}
-				/>
+				mode={gameMode}
+				stationId={stationId}
+				fallbackData={fallbackData}
+				crafts={
+					<Suspense fallback={<StationCraftsSkeleton />}>
+						<StationCraftsStream mode={activeMode} prefetch={craftsPrefetch} />
+					</Suspense>
+				}
+			/>
 		</HydrationBoundary>
 	);
 }

@@ -11,7 +11,7 @@ import {
 	type QuestView,
 } from "../quest-routes";
 import { useShallow } from "zustand/react/shallow";
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import type { QuestDataIndex } from "../quest-data-index";
 import { useUserStore, type QuestSortMode, type QuestWorkspaceLockedFilterSettings } from "@/lib/stores/useUserStore";
 import {
@@ -30,11 +30,11 @@ export type QuestListMode = "quests" | "history";
 export type QuestFilterSection = "traders" | "maps" | "status" | "filters" | null;
 
 interface QuestWorkspaceContextValue {
-	quests: FullQuest[];
+	quests: QuestWorkspaceQuest[];
 	questDataIndex: QuestDataIndex;
-	questsById: Map<string, FullQuest>;
-	filteredQuests: FullQuest[];
-	traders: FullQuest["trader"][];
+	questsById: Map<string, QuestWorkspaceQuest>;
+	filteredQuests: QuestWorkspaceQuest[];
+	traders: QuestWorkspaceQuest["trader"][];
 	maps: QuestDataIndex["maps"];
 	objectiveCategories: QuestObjectiveCategory[];
 	statusByQuestId: Map<string, QuestWorkspaceStatusInfo>;
@@ -43,7 +43,6 @@ interface QuestWorkspaceContextValue {
 	branchLineByQuestId: Map<string, QuestBranchLine>;
 	branchLinesByQuestId: Map<string, QuestBranchLine[]>;
 	selectedQuestId: string | null;
-	selectedQuest: FullQuest | null;
 	selectedTraderIds: Set<string>;
 	filterByTraderRequirements: boolean;
 	selectedMapKeys: Set<string>;
@@ -112,7 +111,7 @@ export function QuestWorkspaceProvider({
 	devQuery = null,
 	children,
 }: {
-	quests: FullQuest[];
+	quests: QuestWorkspaceQuest[];
 	questDataIndex: QuestDataIndex;
 	devQuery?: string | null;
 	children: ReactNode;
@@ -259,7 +258,8 @@ export function QuestWorkspaceProvider({
 				plannerMapKey
 					? quests.filter(
 							(quest) =>
-								statusByQuestId.get(quest.id)?.status === "active" && getQuestMapKeys(quest).has(plannerMapKey),
+								statusByQuestId.get(quest.id)?.status === "active" &&
+								getQuestMapKeys(quest).has(plannerMapKey),
 						)
 					: [],
 			),
@@ -361,7 +361,6 @@ export function QuestWorkspaceProvider({
 				branchLineByQuestId,
 				branchLinesByQuestId,
 				selectedQuestId,
-				selectedQuest: selectedQuestId ? (questsById.get(selectedQuestId) ?? null) : null,
 				selectedTraderIds,
 				filterByTraderRequirements,
 				selectedMapKeys,

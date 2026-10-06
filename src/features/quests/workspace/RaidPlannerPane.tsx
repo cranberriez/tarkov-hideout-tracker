@@ -11,7 +11,7 @@ import type { ItemSummary } from "@/types/items";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { mapOverlaysQueryOptions } from "@/lib/query/maps";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
-import { useQuestActions } from "../QuestActionsContext";
+import { useQuestDetails } from "../useQuestDetails";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 import { QuestMobileMenuSpacer } from "./QuestMobileMenu";
 import { buildRaidPlannerMarkers } from "./raid-planner-markers";
@@ -33,7 +33,6 @@ interface RaidPlannerPaneProps {
 const EMPTY_NAVIGATION_MARKERS: MapOverlayMarker[] = [];
 
 export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPaneProps) {
-	const { itemById } = useQuestActions();
 	const [isKillListOpen, setIsKillListOpen] = useState(false);
 	const [isFullScreen, setIsFullScreen] = useState(false);
 	const completedQuestObjectives = useUserStore((state) => state.completedQuestObjectives);
@@ -64,13 +63,19 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
 		enabled: Boolean(selectedMapKey),
 	});
 	const navigationMarkers = navigationQuery.data?.markers ?? EMPTY_NAVIGATION_MARKERS;
-	const plannerQuests = useMemo(
+	const plannerQuestSummaries = useMemo(
 		() =>
 			selectedMap
 				? activeQuests.filter((quest) => getQuestMapGroupsForQuest(quest).some((map) => map.key === selectedMap.key))
 				: [],
 		[activeQuests, selectedMap],
 	);
+	const details = useQuestDetails(
+		plannerQuestSummaries.map((quest) => quest.id),
+		!!selectedMap,
+	);
+	const plannerQuests = details.quests;
+	const itemById = Object.fromEntries(details.items.map((item) => [item.id, item]));
 	const markers = useMemo(
 		() =>
 			selectedMap
@@ -139,6 +144,23 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
 
 	return (
 		<div className="relative min-h-0 flex-1 overflow-hidden bg-[var(--card-bg)]">
+			{(details.pending ||
+				details.error ||
+				details.missingQuestIds.length > 0 ||
+				details.unresolvedItemIds.length > 0) && (
+				<div
+					role={details.error ? "alert" : "status"}
+					className="absolute left-3 top-3 z-40 bg-[var(--card-bg)] p-3 text-xs"
+				>
+					{details.error ??
+						(details.pending ? "Loading quest objectives…" : "Some quest or item details are unavailable.")}
+					{details.error && (
+						<button onClick={details.retry} className="ml-2 underline">
+							Retry
+						</button>
+					)}
+				</div>
+			)}
 			{navigationQuery.isError && (
 				<div
 					role="alert"
@@ -336,6 +358,9 @@ function RaidPlannerMapCard({
 					<span className="mt-3 text-xs text-subtle-foreground lg:mt-4">No active objectives on this map.</span>
 				)}
 
+				{summary.keysDeferred && summary.objectiveGroups.some((group) => group.keyedQuestCount > 0) && (
+					<span className="mt-3 text-xs text-warning/80">Select this map to see required keys.</span>
+				)}
 				{summary.requiredKeyIds.length > 0 && (
 					<span className="mt-2.5 block lg:mt-4">
 						<span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-warning/70">

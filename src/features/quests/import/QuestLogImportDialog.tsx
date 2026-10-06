@@ -14,7 +14,7 @@ import {
 	TriangleAlert,
 	Upload,
 } from "lucide-react";
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import { IMPORT_GAME_MODES, type ImportGameMode, type QuestImportBuckets } from "@/lib/quests/quest-log-import";
@@ -29,7 +29,7 @@ import { useQuestLogImportController } from "./useQuestLogImportController";
 interface QuestLogImportDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	quests: FullQuest[];
+	quests: QuestWorkspaceQuest[];
 }
 
 const secondaryButton =

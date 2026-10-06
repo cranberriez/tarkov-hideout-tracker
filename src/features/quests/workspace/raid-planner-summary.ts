@@ -1,4 +1,4 @@
-import type { FullQuest, FullQuestObjective } from "@/types/quests";
+import type { FullQuest, FullQuestObjective, QuestWorkspaceQuest } from "@/types/quests";
 import type { QuestObjectiveCategory, QuestWorkspaceStatusInfo } from "./quest-workspace-utils";
 import { getQuestMapGroupsForQuest } from "../quest-map-groups";
 import { getObjectiveCategory } from "./quest-workspace-utils";
@@ -25,6 +25,7 @@ export interface RaidPlannerMapSummary {
 	questCount: number;
 	objectiveGroups: RaidPlannerObjectiveGroup[];
 	requiredKeyIds: string[];
+	keysDeferred: boolean;
 }
 
 export interface RaidPlannerKillObjective {
@@ -36,38 +37,49 @@ export interface RaidPlannerKillObjective {
 	optional: boolean;
 }
 
-export function getActiveRaidPlannerQuests(
-	quests: FullQuest[],
+export function getActiveRaidPlannerQuests<T extends QuestWorkspaceQuest>(
+	quests: T[],
 	statusByQuestId: ReadonlyMap<string, QuestWorkspaceStatusInfo>,
 ) {
 	return quests.filter((quest) => statusByQuestId.get(quest.id)?.status === "active");
 }
 
-export function buildRaidPlannerMapSummary(quests: FullQuest[], mapKey: string): RaidPlannerMapSummary {
+export function buildRaidPlannerMapSummary(quests: QuestWorkspaceQuest[], mapKey: string): RaidPlannerMapSummary {
 	const mapQuests = quests.filter((quest) => getQuestMapGroupsForQuest(quest).some((map) => map.key === mapKey));
 	const questIdsByCategory = new Map<QuestObjectiveCategory, Set<string>>();
 	const keyedQuestIdsByCategory = new Map<QuestObjectiveCategory, Set<string>>();
 	const requiredKeyIds = new Set<string>();
 
 	for (const quest of mapQuests) {
-		for (const objective of quest.objectives) {
-			const category = getObjectiveCategory(objective.type);
+		const types = "objectives" in quest ? quest.objectives.map((objective) => objective.type) : quest.objectiveTypes;
+		const keyedTypes = new Set(
+			"objectives" in quest
+				? quest.objectives
+						.filter((objective) => objective.requiredKeyIds?.some((group) => group.length))
+						.map((objective) => objective.type)
+				: quest.keyedObjectiveTypes,
+		);
+		for (const type of types) {
+			const category = getObjectiveCategory(type);
 			const questIds = questIdsByCategory.get(category) ?? new Set<string>();
 			questIds.add(quest.id);
 			questIdsByCategory.set(category, questIds);
 
-			const objectiveKeys = (objective.requiredKeyIds ?? []).flat();
-			if (objectiveKeys.length > 0) {
+			if (keyedTypes.has(type)) {
 				const keyedQuestIds = keyedQuestIdsByCategory.get(category) ?? new Set<string>();
 				keyedQuestIds.add(quest.id);
 				keyedQuestIdsByCategory.set(category, keyedQuestIds);
 			}
-			objectiveKeys.forEach((itemId) => requiredKeyIds.add(itemId));
 		}
+		if ("objectives" in quest)
+			for (const objective of quest.objectives) {
+				for (const id of (objective.requiredKeyIds ?? []).flat()) requiredKeyIds.add(id);
+			}
 	}
 
 	return {
 		questCount: mapQuests.length,
+		keysDeferred: mapQuests.some((quest) => !("objectives" in quest)),
 		objectiveGroups: CATEGORY_ORDER.flatMap((category) => {
 			const questCount = questIdsByCategory.get(category)?.size ?? 0;
 			return questCount > 0

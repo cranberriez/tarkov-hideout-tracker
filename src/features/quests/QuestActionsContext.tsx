@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import type { ItemSummary } from "@/types/items";
 import type { QuestDataIndex } from "./quest-data-index";
 import { useUIStore } from "@/lib/stores/useUIStore";
@@ -11,7 +11,7 @@ import { getAutoFailedQuestIds, questCanFail } from "@/lib/quests/quest-failures
 
 interface QuestActionsContextValue {
 	itemById: Readonly<Record<string, ItemSummary>>;
-	questsById: Map<string, FullQuest>;
+	questsById: Map<string, QuestWorkspaceQuest>;
 	leadsToByQuestId: Map<string, string[]>;
 
 	requestToggleQuestCompletion: (questId: string) => void;
@@ -25,6 +25,19 @@ export function useQuestActions() {
 	const ctx = useContext(QuestActionsContext);
 	if (!ctx) throw new Error("useQuestActions must be used within QuestActionsProvider");
 	return ctx;
+}
+
+/** Overrides the item presentation index for a detail/planner subtree while preserving quest actions. */
+export function QuestItemsProvider({
+	itemById,
+	children,
+}: {
+	itemById: Readonly<Record<string, ItemSummary>>;
+	children: ReactNode;
+}) {
+	const actions = useQuestActions();
+	const value = useMemo<QuestActionsContextValue>(() => ({ ...actions, itemById }), [actions, itemById]);
+	return <QuestActionsContext.Provider value={value}>{children}</QuestActionsContext.Provider>;
 }
 
 export function QuestActionsProvider({

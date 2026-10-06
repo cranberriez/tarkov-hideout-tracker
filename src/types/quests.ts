@@ -270,3 +270,24 @@ export interface FullQuest {
 	failureTraderStandingRewards?: QuestTraderStandingReward[];
 	objectives: FullQuestObjective[];
 }
+
+/** List/progression metadata. Full objectives and rewards are fetched by quest ID on demand. */
+export interface QuestSummary extends Omit<
+	FullQuest,
+	| "objectives"
+	| "finishItemRewards"
+	| "finishTraderStandingRewards"
+	| "failureTraderStandingRewards"
+	| "wikiLink"
+	| "customSource"
+> {
+	objectiveTypes: string[];
+	objectiveCount: number;
+	objectiveSearchText: string;
+	objectiveMaps: QuestMap[];
+	hasRequiredKeys: boolean;
+	keyedObjectiveTypes: string[];
+}
+
+/** Shared read models accept either a summary or a loaded detail record. */
+export type QuestWorkspaceQuest = QuestSummary | FullQuest;

@@ -24,7 +24,7 @@ import {
 	parseQuestLogFiles,
 	selectionLooksLikeEftLogsFolder,
 } from "@/lib/quests/quest-log-parser";
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import {
 	buildCompletionMessage,
 	buildModeImportViewModels,
@@ -42,8 +42,8 @@ type DirectoryInputAttributes = InputHTMLAttributes<HTMLInputElement> & {
 };
 
 export function useQuestLogImportController(input: {
-	quests: FullQuest[];
-	questsById: ReadonlyMap<string, FullQuest>;
+	quests: QuestWorkspaceQuest[];
+	questsById: ReadonlyMap<string, QuestWorkspaceQuest>;
 	gameMode: ImportGameMode;
 	profiles: Record<ImportGameMode, PlayerProfileState>;
 	availableQuestIdsByMode: Record<ImportGameMode, Set<string>>;

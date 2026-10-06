@@ -1,4 +1,4 @@
-import type { FullQuest, QuestMapLocation } from "@/types/quests";
+import type { QuestMapLocation, QuestWorkspaceQuest } from "@/types/quests";
 
 export const NO_QUEST_MAP_GROUP_KEY = "__no-map";
 
@@ -36,7 +36,7 @@ export function isLocationOnMap(location: QuestMapLocation, mapKey: string) {
 	);
 }
 
-export function getQuestMapGroup(map: FullQuest["map"]): QuestMapGroup {
+export function getQuestMapGroup(map: QuestWorkspaceQuest["map"]): QuestMapGroup {
 	if (!map) {
 		return { key: NO_QUEST_MAP_GROUP_KEY, name: "Any Map", aliases: [] };
 	}
@@ -55,7 +55,7 @@ export function getQuestMapGroup(map: FullQuest["map"]): QuestMapGroup {
 	return { key: normalizedNameKey, name: map.name, aliases: [map.normalizedName] };
 }
 
-export function getQuestMapGroupsForQuest(quest: FullQuest): QuestMapGroup[] {
+export function getQuestMapGroupsForQuest(quest: QuestWorkspaceQuest): QuestMapGroup[] {
 	const groups = new Map<string, QuestMapGroup>();
 
 	const addGroup = (group: QuestMapGroup) => {
@@ -72,10 +72,10 @@ export function getQuestMapGroupsForQuest(quest: FullQuest): QuestMapGroup[] {
 
 	if (quest.map) addGroup(getQuestMapGroup(quest.map));
 
-	for (const objective of quest.objectives) {
-		for (const map of objective.maps ?? []) {
-			addGroup(getQuestMapGroup(map));
-		}
+	const objectiveMaps =
+		"objectives" in quest ? quest.objectives.flatMap((objective) => objective.maps ?? []) : quest.objectiveMaps;
+	for (const map of objectiveMaps) {
+		addGroup(getQuestMapGroup(map));
 	}
 
 	if (groups.size === 0) {
@@ -89,7 +89,7 @@ export function getQuestMapGroupsForQuest(quest: FullQuest): QuestMapGroup[] {
 	});
 }
 
-export function formatQuestMapSummary(quest: FullQuest, allMapGroups: readonly QuestMapGroup[]) {
+export function formatQuestMapSummary(quest: QuestWorkspaceQuest, allMapGroups: readonly QuestMapGroup[]) {
 	const questGroups = getQuestMapGroupsForQuest(quest);
 	if (questGroups.some((group) => group.key === NO_QUEST_MAP_GROUP_KEY)) return "ANY";
 
@@ -111,7 +111,7 @@ export function formatQuestMapSummary(quest: FullQuest, allMapGroups: readonly Q
 	return questGroups.map((group) => group.name).join(" · ");
 }
 
-export function questMatchesSelectedMapGroups(quest: FullQuest, selectedMaps: ReadonlySet<string>) {
+export function questMatchesSelectedMapGroups(quest: QuestWorkspaceQuest, selectedMaps: ReadonlySet<string>) {
 	if (selectedMaps.size === 0) return true;
 
 	const groups = getQuestMapGroupsForQuest(quest);
@@ -120,7 +120,7 @@ export function questMatchesSelectedMapGroups(quest: FullQuest, selectedMaps: Re
 	return groups.some((group) => selectedMaps.has(group.key));
 }
 
-export function buildQuestMapGroups(quests: FullQuest[], includeNoMap = false) {
+export function buildQuestMapGroups(quests: QuestWorkspaceQuest[], includeNoMap = false) {
 	const groups = new Map<string, QuestMapGroup>();
 
 	for (const quest of quests) {

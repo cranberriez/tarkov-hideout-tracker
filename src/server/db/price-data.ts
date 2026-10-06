@@ -136,3 +136,23 @@ export async function getAllTraderOffers(
 		}),
 	);
 }
+
+/** Current trader purchase offers for only the requested items, omitting items without offers. */
+export async function getTraderOffersByIds(
+	mode: TarkovDataMode,
+	itemIds: readonly string[],
+	database: PostgresDatabase = getPostgresDb(),
+): Promise<Record<string, TraderPurchaseOffer[]>> {
+	const ids = canonicalIds(itemIds);
+	if (ids.length === 0) return {};
+	const rows = await database
+		.select({ itemId: itemPrices.itemId, offers: itemPrices.traderPurchaseOffers })
+		.from(itemPrices)
+		.where(and(eq(itemPrices.mode, mode), inArray(itemPrices.itemId, ids)));
+	return Object.fromEntries(
+		rows.flatMap((row) => {
+			const offers = asOffers(row.offers);
+			return offers.length ? [[row.itemId, offers]] : [];
+		}),
+	);
+}

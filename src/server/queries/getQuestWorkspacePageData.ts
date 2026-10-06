@@ -5,7 +5,8 @@ import type { TarkovDataRepository } from "@/server/repositories/tarkov-data/typ
 import type { TarkovDataMode } from "@/types/common";
 import type { QuestWorkspacePageData } from "@/types/contracts";
 import type { FullQuest } from "@/types/quests";
-import { getDefaultRepository, getQuestReferencedItemIds, mergePricedItems } from "./query-utils";
+import { getDefaultRepository, mergePricedItems } from "./query-utils";
+import { getQuestWorkspaceItemIds, toQuestWorkspaceItem } from "./quest-workspace-items";
 
 export interface QuestWorkspaceQueryOptions {
 	showRemovedQuests?: boolean;
@@ -13,6 +14,7 @@ export interface QuestWorkspaceQueryOptions {
 	displayQuestAdditions?: readonly FullQuest[];
 }
 
+/** Legacy expanded query. Page entry uses getQuestWorkspaceIndex and scoped details instead. */
 export async function getQuestWorkspacePageData(
 	mode: TarkovDataMode,
 	repository?: TarkovDataRepository,
@@ -45,9 +47,9 @@ export async function getQuestWorkspacePageData(
 		...prepareQuestsForDisplay(preparedQuests, options.showRemovedQuests ?? false),
 		...(options.displayQuestAdditions ?? []),
 	]);
-	const itemIds = getQuestReferencedItemIds(displayQuests);
+	const itemIds = getQuestWorkspaceItemIds(displayQuests);
 	const [itemsResult, pricesResult] = await Promise.allSettled([
-		dataRepository.items.getByIds(mode, itemIds),
+		dataRepository.items.getByIds(mode, itemIds, { includeOffers: false }),
 		options.includePrices === false
 			? Promise.resolve({ data: {}, updatedAt: null })
 			: dataRepository.prices.getCurrent(mode, itemIds),
@@ -60,7 +62,7 @@ export async function getQuestWorkspacePageData(
 
 	return {
 		quests: displayQuests,
-		items: merged.items,
+		items: merged.items?.map(toQuestWorkspaceItem) ?? null,
 		itemIds,
 		unresolvedItemIds: merged.unresolvedItemIds,
 		freshness: {

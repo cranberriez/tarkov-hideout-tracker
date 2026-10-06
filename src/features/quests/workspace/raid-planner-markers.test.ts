@@ -39,6 +39,14 @@ test("renders zone and possible quest-item locations by default", () => {
 	assert.deepEqual(markers[0].descriptions, ["Visit the marked place", "Inspect the same marked place"]);
 });
 
+test("renders loaded detail markers using styles assigned before objectives are loaded", () => {
+	const styles = createQuestMarkerStyles([{ id: quest.id }]);
+	const markers = buildRaidPlannerMarkers([quest], "customs", styles);
+
+	assert.equal(markers.length, 3);
+	assert.deepEqual(markers, buildRaidPlannerMarkers([quest], "customs", createQuestMarkerStyles([quest])));
+});
+
 test("possible quest-item spawns reuse one quest symbol at every known spawn", () => {
 	const styles = createQuestMarkerStyles([quest]);
 	const markers = buildRaidPlannerMarkers([quest], "customs", styles);

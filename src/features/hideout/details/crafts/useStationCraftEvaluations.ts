@@ -9,27 +9,33 @@ import { useProfitOptions } from "@/features/profit-pages/useProfitOptions";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { createRecipeCalculator, type RecipeEvaluation } from "@/lib/price-calculation";
 import { useGameDataEnabled } from "@/lib/query/game-data";
-import { pageDataFromQuery, profitPageQueryOptions } from "@/lib/query/page-data";
+import { pageDataFromQuery, stationRecipeQueryOptions } from "@/lib/query/page-data";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ProfitPageData } from "@/types/contracts";
+import { useStationDetails } from "../StationDetailsContext";
 import type { CraftRecord } from "@/types/recipes";
 
-/** Shared unpriced recipe graphs (same cache as the profit pages); hydrated by StationCraftsStream. */
+/** Station-scoped unpriced recipe graph; hydrated by StationCraftsStream. */
 export function useStationCraftData(mode: TarkovJsonGameMode, fallbackData: ProfitPageData | null) {
+	const { station } = useStationDetails();
 	const enabled = useGameDataEnabled(mode);
-	const query = useQuery({ ...profitPageQueryOptions(mode), enabled, placeholderData: fallbackData ?? undefined });
+	const query = useQuery({
+		...stationRecipeQueryOptions(mode, station.id),
+		enabled,
+		placeholderData: fallbackData ?? undefined,
+	});
 	return { query, enabled, data: pageDataFromQuery(query.data, query.error, fallbackData) };
 }
 
 export type CraftProfitStatus = "loading" | "ready" | "unavailable";
 
 /**
- * The profit pages' calculator over the shared recipe graphs, with the "recipes" price scope,
+ * The shared calculator over the station dependency graph, with explicit price IDs,
  * saved skills and manual overrides. Null until both graphs and prices are ready.
  */
 export function useStationRecipeCalculator(mode: TarkovJsonGameMode, data: ProfitPageData | null) {
 	const priceIds = useMemo(() => data?.itemIds ?? [], [data]);
-	const prices = useItemPrices(mode, priceIds, "recipes");
+	const prices = useItemPrices(mode, priceIds);
 	const store = useUserStore(
 		useShallow((state) => ({
 			gameMode: state.gameMode,

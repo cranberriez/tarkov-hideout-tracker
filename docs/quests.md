@@ -9,17 +9,29 @@ and progression without duplicating every display field. Standard objective and
 reward items use IDs; task-owned quest-specific pickups are inline display data.
 They do not enter standard inventory or item demand.
 
-[getQuestWorkspacePageData](../src/server/queries/getQuestWorkspacePageData.ts)
-loads/prepares quests and referenced standard items through the repository. The
+[getQuestWorkspaceIndex](../src/server/queries/getQuestWorkspaceIndex.ts) loads a
+metadata-only database projection and prepares mode-specific quest summaries.
+It includes identity, progression gates, prerequisite/failure relationships, and
+derived map/category/key flags plus objective search text. It excludes full
+objectives, item lists, rewards, and geometry, and performs no item or price reads.
+The summary type cannot be passed as a full detail record. The
 [quests layout](<../src/app/(data)/quests/layout.tsx>) prefetches that mode-keyed
 Query once for the segment and the client wrapper consumes and refetches the same
 payload; parent layouts still load nothing. See [data layer](data-layer.md) for
 route delivery and release regeneration.
 
-[getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts) is the
-bounded one-quest read used by `/quests/[questId]` for metadata and not-found
-resolution. It applies the same mode preparation and removed-quest policy. A failed
-read does not 404; the workspace reports its own data errors.
+[getQuestDetailsData](../src/server/queries/getQuestDetailsData.ts) reads only
+requested quest IDs (plus custom-correction anchors/prerequisites), prepares them,
+and reads only their rendered objective/reward/key item presentations without
+prices or trader offers. `/quests/[questId]` shares this read between metadata,
+not-found resolution and hydration of that quest's detail cache. A failed read
+does not 404. Missing quests/items and independent read errors remain explicit.
+
+[Detail queries](../src/lib/query/quest-details.ts) cache each quest by mode and ID,
+coalescing simultaneous misses into requests of at most 50 IDs. Details, sustained
+hover previews and the planner reuse those entries. List/board links disable route
+prefetch so displaying a list does not eagerly fetch every quest's details. The
+earlier dictionary packing layer is no longer needed.
 
 | Change                                                     | Source owner                                                                                                                                                                                                                                 |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -47,8 +59,8 @@ The [quests layout](<../src/app/(data)/quests/layout.tsx>) renders
 [QuestWorkspaceContext](../src/features/quests/workspace/QuestWorkspaceContext.tsx).
 The routed page is the workspace's detail outlet: `/quests` shows a selection prompt
 and `/quests/[questId]` renders [QuestDetailRoute](../src/features/quests/workspace/QuestDetailRoute.tsx),
-which reuses the loaded workspace quest (independent of list filters) and shows an
-in-pane not-found state when the quest is absent. The route parameter is the only
+which uses the selected quest's scoped detail query (independent of list filters),
+with loading/retry and in-pane not-found states. The route parameter is the only
 selection source: list rows are real links, so search, filters, group collapse, and
 list scroll persist across quest navigation, and Back/Forward select the matching
 quest. Workspace-initiated selection keeps an open planner or visualizer; Back/Forward,
@@ -84,7 +96,11 @@ components that remain in the feature directory.
 | Raid Planner                                            | [RaidPlannerPane](../src/features/quests/workspace/RaidPlannerPane.tsx), [raid-planner-summary](../src/features/quests/workspace/raid-planner-summary.ts), [raid-planner-markers](../src/features/quests/workspace/raid-planner-markers.ts); geometry belongs to [maps](maps.md) |
 
 The planner uses profile-active quests independently of the workspace's other
-status filters. Visited positioned objectives are profile state and are filtered
+status filters. Its map-selection cards use summary counts/categories. Selecting
+a map requests full details only for active quests associated with that map;
+required key presentations and geometry load then. Loading, missing data, and
+partial failures are shown explicitly rather than appearing as an empty plan.
+Visited positioned objectives are profile state and are filtered
 before marker grouping; whole-quest completion clears that quest's visited records.
 The trader board is a full-width overview (the list pane hides): trader columns with
 loyalty-level and Essential sections, completed and failed quests folded behind an

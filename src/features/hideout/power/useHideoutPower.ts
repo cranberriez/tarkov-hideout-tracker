@@ -6,7 +6,7 @@ import { PHYSICAL_BITCOIN_ITEM_ID } from "@/lib/price-calculation";
 import { getBestTraderOffer } from "@/lib/price-calculation/prices";
 import { getEmptySale, getEmptyValue } from "@/lib/price-calculation/empty-value";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import { FUEL_TANK_ITEM_IDS, GRAPHICS_CARD_ITEM_ID } from "@/lib/cfg/hideout-power";
+import { FUEL_TANK_ITEM_IDS, GRAPHICS_CARD_ITEM_ID, GENERATOR_STATION_ID } from "@/lib/cfg/hideout-power";
 import type { AcquisitionAlternative, AcquisitionPlan, LockReason } from "@/lib/price-calculation";
 import type { ProfitPageData } from "@/types/contracts";
 import type { RouteContext } from "../../profit-pages/types";
@@ -14,6 +14,7 @@ import { acquisitionRouteKey, getAcquisitionRoutes, selectAcquisitionRoute } fro
 import type { Station } from "@/types/hideout";
 import type { ItemSummary } from "@/types/items";
 import { useStationCraftData, useStationRecipeCalculator } from "../details/crafts/useStationCraftEvaluations";
+import { useStationDetails } from "../details/StationDetailsContext";
 import { useFuelRouteChoices } from "./useFuelRouteChoices";
 import { fuelCostPerHour, fuelMultiplier, fuelRuntimeHours, type FuelMultiplier } from "./hideout-power-model";
 import { traderInfo } from "@/lib/data/traders";
@@ -92,6 +93,7 @@ export function useHideoutPower(
 	fallbackData: ProfitPageData | null,
 	stations: readonly Station[],
 ): HideoutPower {
+	const { station } = useStationDetails();
 	const { data } = useStationCraftData(mode, fallbackData);
 	const recipe = useStationRecipeCalculator(mode, data);
 	const stationLevels = useUserStore((state) => state.stationLevels);
@@ -152,7 +154,10 @@ export function useHideoutPower(
 				source: sale ? traderInfo(sale.traderId).name : null,
 			},
 			missingItemIds: data
-				? [GRAPHICS_CARD_ITEM_ID, PHYSICAL_BITCOIN_ITEM_ID, ...FUEL_TANK_ITEM_IDS].filter((id) => !itemsById[id])
+				? (station.id === GENERATOR_STATION_ID
+						? [...FUEL_TANK_ITEM_IDS]
+						: [GRAPHICS_CARD_ITEM_ID, PHYSICAL_BITCOIN_ITEM_ID, ...FUEL_TANK_ITEM_IDS]
+					).filter((id) => !itemsById[id])
 				: [],
 			routeContext: {
 				itemById: itemsById,
@@ -167,6 +172,7 @@ export function useHideoutPower(
 		};
 	}, [
 		stations,
+		station.id,
 		stationLevels,
 		traderLoyaltyLevels,
 		hideoutManagementSkillLevel,

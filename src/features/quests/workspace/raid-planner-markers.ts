@@ -7,7 +7,7 @@ export interface QuestMarkerStyle {
 	color: string;
 }
 
-export function createQuestMarkerStyles(quests: FullQuest[]) {
+export function createQuestMarkerStyles(quests: readonly Pick<FullQuest, "id">[]) {
 	const styles = new Map<string, QuestMarkerStyle>();
 	quests.forEach((quest, index) => {
 		styles.set(quest.id, {
