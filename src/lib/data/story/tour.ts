@@ -1,8 +1,8 @@
-import type { StoryChapter, StoryItemRef } from "@/types/story";
+import type { StoryChapter, StoryImage, StoryItemRef } from "@/types/story";
 
 /**
  * Tour, reviewed against the EFT wiki on 2026-10-06. Items without an `id`
- * are story items absent from the item catalog.
+ * are story items absent from the item catalog. Step images are wiki screenshots.
  */
 
 const item = (name: string, id?: string, count?: number, extra: Pick<StoryItemRef, "chapterId" | "note"> = {}) => ({
@@ -10,6 +10,12 @@ const item = (name: string, id?: string, count?: number, extra: Pick<StoryItemRe
 	...(id ? { id } : {}),
 	...(count ? { count } : {}),
 	...extra,
+});
+
+const image = (file: string, caption: string): StoryImage => ({
+	src: `/images/story/tour/steps/${file}.webp`,
+	thumb: `/images/story/tour/steps/thumbs/${file}.webp`,
+	caption,
 });
 
 const LABS_ACCESS = item("TerraGroup Labs access keycard", "5c94bbff86f7747ee735c08f");
@@ -36,6 +42,7 @@ export const TOUR: StoryChapter = {
 					text: "Escape Ground Zero",
 					map: "Ground Zero",
 					note: "Tutorial raid: extract at Klimov Street behind the Skyside business center. The hints are optional.",
+					images: [image("ground-zero-tutorial-map", "Tutorial map with the Klimov Street extract (map by xTycho)")],
 				},
 			],
 		},
@@ -137,6 +144,11 @@ export const TOUR: StoryChapter = {
 					text: "Find a way to contact the soldiers at the Terminal",
 					map: "Shoreline",
 					note: "The intercom is on the watchtower in front of the Terminal.",
+					images: [
+						image("tour-shoreline-map", "Intercom location marked on the map"),
+						image("tour-shoreline-tower", "The watchtower with the intercom"),
+						image("tour-shoreline-intercom", "The intercom"),
+					],
 				},
 				{
 					id: "use-intercom",
@@ -144,6 +156,7 @@ export const TOUR: StoryChapter = {
 					map: "Shoreline",
 					warning:
 						"The guards kill anyone near the Terminal wall, anyone shooting at them, and anyone who keeps using the intercom after being told to leave.",
+					images: [image("tour-shoreline-intercom", "The intercom")],
 				},
 				{ id: "learn-escape", text: "Learn how to escape Tarkov" },
 			],
@@ -205,6 +218,11 @@ export const TOUR: StoryChapter = {
 							optional: true,
 							map: "Factory",
 							note: "In the sewer tunnel connected to the flooded underground area.",
+							images: [
+								image("factory-transit-to-labs-map", "Transit location marked on the map"),
+								image("factory-transit-to-the-lab-2", "The way to the sewer tunnel"),
+								image("factory-transit-to-the-lab", "The transit gate in the sewer tunnel"),
+							],
 						},
 						{
 							id: "lab-entrance-streets",
@@ -212,6 +230,11 @@ export const TOUR: StoryChapter = {
 							optional: true,
 							map: "Streets of Tarkov",
 							note: "Underground entrance in front of Klimova 16A, the building with the Cosmonaut painting.",
+							images: [
+								image("streets-transit-to-labs-map", "Transit location marked on the map"),
+								image("streets-transit-to-labs-upstairs", "The basement entrance"),
+								image("streets-transit-to-labs-downstairs", "The transit door in the basement"),
+							],
 						},
 					],
 				},
@@ -220,12 +243,20 @@ export const TOUR: StoryChapter = {
 					text: "Search the top management offices",
 					map: "The Lab",
 					note: "Laboratory manager's office (O21) on the second level.",
+					images: [
+						image("lab-managers-location-map", "Office location marked on the map"),
+						image("lab-managers-bridge", "The top management offices"),
+					],
 				},
 				{
 					id: "search-lab-servers",
 					text: "Search the server room",
 					map: "The Lab",
 					note: "Next to the hangar on the first level.",
+					images: [
+						image("labs-server-room-map", "Server room location marked on the map"),
+						image("labs-server-room", "The server room"),
+					],
 				},
 				{
 					id: "lab-drainage",
@@ -233,6 +264,11 @@ export const TOUR: StoryChapter = {
 					map: "The Lab",
 					note: "In the basement at the Sewage Conduit extract. You don't need to activate the extract or survive.",
 					rewards: ["Unlocks The Lab", '"Pathfinder" achievement'],
+					images: [
+						image("tour-the-lab-escape-path-map", "Escape path location marked on the map"),
+						image("tour-the-lab-escape-path-1", "One of the doors into the sewers"),
+						image("tour-the-lab-escape-path-2", "The escape path at the end of the sewers"),
+					],
 				},
 			],
 		},

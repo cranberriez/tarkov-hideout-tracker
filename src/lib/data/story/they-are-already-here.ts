@@ -1,8 +1,8 @@
-import type { StoryChapter, StoryItemRef } from "@/types/story";
+import type { StoryChapter, StoryImage, StoryItemRef } from "@/types/story";
 
 /**
  * They Are Already Here, reviewed against the EFT wiki on 2026-10-06. Items without
- * an `id` are story items absent from the item catalog.
+ * an `id` are story items absent from the item catalog. Step images are wiki screenshots.
  */
 
 const item = (name: string, id?: string, count?: number, extra: Pick<StoryItemRef, "chapterId" | "note"> = {}) => ({
@@ -10,6 +10,12 @@ const item = (name: string, id?: string, count?: number, extra: Pick<StoryItemRe
 	...(id ? { id } : {}),
 	...(count ? { count } : {}),
 	...extra,
+});
+
+const image = (file: string, caption: string): StoryImage => ({
+	src: `/images/story/they-are-already-here/steps/${file}.webp`,
+	thumb: `/images/story/they-are-already-here/steps/thumbs/${file}.webp`,
+	caption,
 });
 
 const DORM_314_KEY = item("Dorm room 314 marked key", "5780cf7f2459777de4559322");
@@ -50,12 +56,27 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 						RB_PKPM_KEY,
 					],
 					note: "Starts the chapter. Customs: dorm marked room (314). Reserve: the RB-BK, RB-VO or RB-PKPM marked rooms. Woods: marked circle in the dilapidated northern village. Shoreline: the house on the island.",
+					images: [
+						image("customs-activation-location", "Customs: the note on a stack of books in dorm 314"),
+						image("reserve-activation-location-1", "Reserve: RB-BK, on the table with the pig carcass"),
+						image("reserve-activation-location-2", "Reserve: RB-VO, on the table with the pig carcass"),
+						image("reserve-activation-location-3", "Reserve: RB-PKPM, on the desk"),
+						image("woods-activation-location-map", "Woods: marked circle on the map"),
+						image("woods-ritual-spot", "Woods: the marked circle"),
+						image("woods-activation-location", "Woods: the note next to the burning candles"),
+						image("shoreline-island-map", "Shoreline: island marked on the map"),
+						image("shoreline-activation-location", "Shoreline: the note on the floor in the house"),
+					],
 				},
 				{
 					id: "locate-eye-place",
 					text: "Locate a place connected to the Eye of the World",
 					map: "Lighthouse",
 					note: "The cultists' torture house.",
+					images: [
+						image("torture-house-map", "House location marked on the map"),
+						image("torture-house", "The torture house"),
+					],
 				},
 				{
 					id: "torture-room-victim",
@@ -63,6 +84,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					map: "Lighthouse",
 					items: [item("Cult victim audio tape #2", "688893c5a030f9346505e6d5")],
 					note: "On the chair; pick it up and listen. Must be found in raid.",
+					images: [image("cult-victim-audio-tape-2-spawn", "The tape on the chair")],
 				},
 			],
 		},
@@ -76,6 +98,11 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					map: "Streets of Tarkov",
 					items: [VICTIM_APARTMENT_KEY],
 					note: "Apartment 5, third floor of the old building behind the Klimov mall.",
+					images: [
+						image("cult-victims-apartment-map", "Building location marked on the map"),
+						image("cult-victims-apartment-building", "The old apartment building"),
+						image("cult-victims-apartment-door", "Door to apartment 5"),
+					],
 					substeps: [
 						{
 							id: "obtain-victim-apartment-key",
@@ -84,6 +111,12 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 							map: "Lighthouse",
 							items: [VICTIM_APARTMENT_KEY],
 							note: "Four spawns in the torture house: fallen shelf, chair, wooden table or metal table.",
+							images: [
+								image("cult-victims-apartment-key-spawn-4", "Spawn 1: on the fallen shelf"),
+								image("cult-victims-apartment-key-spawn-1", "Spawn 2: on the chair"),
+								image("cult-victims-apartment-key-spawn-2", "Spawn 3: on the wooden table"),
+								image("cult-victims-apartment-key-spawn-3", "Spawn 4: on the metal table"),
+							],
 						},
 					],
 				},
@@ -93,6 +126,10 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					map: "Streets of Tarkov",
 					items: [item("Note on preparations for the Arrival", "6877c834b52f568d4b0ea5a5")],
 					note: "Breach the office door; the note is on the desk. Must be found in raid.",
+					images: [
+						image("cult-victim-apartment-office", "Door to the office"),
+						image("note-on-preparations-for-the-arrival-spawn", "The note on the desk"),
+					],
 				},
 				{
 					id: "victim-first-tape",
@@ -100,6 +137,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					map: "Streets of Tarkov",
 					items: [item("Cult victim audio tape #1", "6811e9119b009e592c07a59e")],
 					note: "On the office desk; listen to it. Must be found in raid.",
+					images: [image("cult-victim-audio-tape-1-spawn", "The tape on the desk")],
 				},
 				{
 					id: "book-of-arrival",
@@ -107,6 +145,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					map: "Streets of Tarkov",
 					items: [item("Book of the Arrival", "689b53222c175da5bf083ba3")],
 					note: "On the office bookshelf. Must be found in raid.",
+					images: [image("book-of-the-arrival-spawn", "The book on the bookshelf")],
 				},
 			],
 		},
@@ -133,6 +172,23 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 						RB_VO_KEY,
 					],
 					note: "In any one marked room: Customs dorm 314, the Streets abandoned factory, or Reserve RB-BK, RB-PKPM or RB-VO. It only spawns after the priest kill. Must be found in raid.",
+					images: [
+						image("customs-dorm-314-map", "Customs: dorm 314 marked on the map"),
+						image("customs-dorm-314-door", "Customs: door to dorm 314"),
+						image("cultist-priest-note-customs-spawn", "Customs: the note on a stack of books"),
+						image("streets-abandoned-factory-map", "Streets of Tarkov: marked room location on the map"),
+						image("streets-abandoned-factory-door", "Streets of Tarkov: door to the marked room"),
+						image("cultist-priest-note-streets-spawn", "Streets of Tarkov: the note on the floor"),
+						image("rb-bk-map", "Reserve: RB-BK marked on the map"),
+						image("rb-bk-door", "Reserve: door to RB-BK"),
+						image("cultist-priest-note-rb-bk-spawn", "Reserve: RB-BK, the note on the bookshelf"),
+						image("rb-pkpm-map", "Reserve: RB-PKPM marked on the underground map"),
+						image("rb-pkpm-door", "Reserve: door to RB-PKPM"),
+						image("cultist-priest-note-rb-pkpm-spawn", "Reserve: RB-PKPM, the note on the fallen bookshelf"),
+						image("rb-vo-map", "Reserve: RB-VO marked on the map"),
+						image("rb-vo-door", "Reserve: door to RB-VO"),
+						image("cultist-priest-note-rb-vo-spawn", "Reserve: RB-VO, the note on the bookshelf"),
+					],
 				},
 			],
 		},
@@ -145,6 +201,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					text: "Locate the place marked with the Eye of the World on Lighthouse",
 					map: "Lighthouse",
 					note: "Small southern bedroom, second floor of the northern blue chalet.",
+					images: [image("blue-chalet-map", "Chalet location marked on the map")],
 				},
 				{
 					id: "ransacked-chalet-room",
@@ -158,6 +215,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 							map: "Lighthouse",
 							items: [item("Victim's note", "689b53952b1ac3b0810b7fe0")],
 							note: "On the adjacent balcony. Must be found in raid.",
+							images: [image("victims-note-spawn", "The note on the balcony")],
 						},
 					],
 				},
@@ -167,12 +225,17 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					map: "Lighthouse",
 					items: [DAMAGED_PASS],
 					note: "On the ATV in front of the garage opposite the chalet. Must be found in raid.",
+					images: [image("damaged-pass-spawn", "The pass on the ATV")],
 				},
 				{
 					id: "eye-woods",
 					text: "Locate the place marked with the Eye of the World on Woods",
 					map: "Woods",
 					note: "A house in the dilapidated northern village.",
+					images: [
+						image("woods-cultists-house-map", "House location marked on the map"),
+						image("woods-cultists-house", "The house"),
+					],
 				},
 				{
 					id: "cultists-house",
@@ -180,12 +243,18 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					map: "Woods",
 					items: [item("Newspaper clipping from the cultists' house", "689b53b7127673bbd40706d3")],
 					note: "On the whiteboard next to the desk. Must be found in raid.",
+					images: [image("woods-cultists-house-newspaper", "The clipping on the whiteboard")],
 				},
 				{
 					id: "eye-shoreline",
 					text: "Locate the place marked with the Eye of the World on Shoreline",
 					map: "Shoreline",
 					note: 'Red metal shack at the radio tower near the "Road to Customs" extract.',
+					images: [
+						image("shoreline-radio-tower-map", "Radio tower location marked on the map"),
+						image("shoreline-radio-tower", "The radio tower"),
+						image("shoreline-radio-tower-shack", "The shack"),
+					],
 				},
 				{
 					id: "sordi-tower-area",
@@ -193,6 +262,10 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					map: "Shoreline",
 					items: [item("Programmer's note", "689b536a4b553916720119aa")],
 					note: "At the right hand of a body next to the tower. Must be found in raid.",
+					images: [
+						image("shoreline-dead-body-location", "Location of the body"),
+						image("programmers-note-spawn", "The note at the body's right hand"),
+					],
 				},
 				{
 					id: "repair-sordi-tower",
@@ -200,6 +273,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					map: "Shoreline",
 					items: [item("Toolset", "590c2e1186f77425357b6124")],
 					note: "Use the toolset inside the shack; it is consumed.",
+					images: [image("sordi-tower-repair-location", "Repair spot in the shack")],
 				},
 			],
 		},
@@ -224,6 +298,12 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					map: "Interchange",
 					items: [RESTORED_PASS],
 					note: "Basement of the power station.",
+					images: [
+						image("power-station-map", "Power station marked on the map"),
+						image("interchange-power-station", "The power station"),
+						image("power-station-stairs-door", "Door to the basement stairs"),
+						image("station-kord-door", "Door to the secret facility"),
+					],
 				},
 				{
 					id: "restore-station-power",
@@ -231,12 +311,17 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					map: "Interchange",
 					items: [RESTORED_PASS],
 					note: "Swipe the pass at the panel next to the entrance door.",
+					images: [image("station-kord-keycard-reader", "The keycard panel")],
 				},
 				{
 					id: "turn-on-cooling",
 					text: "Turn on the cooling system in the server room",
 					map: "Interchange",
 					note: "Flip the lever at the back, behind the grate door.",
+					images: [
+						image("station-kord-grate-door", "The grate door"),
+						image("station-kord-cooling-lever", "The lever"),
+					],
 				},
 				{
 					id: "install-flash-drive",
@@ -244,6 +329,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					map: "Interchange",
 					items: [item("Secure Flash drive", "590c621186f774138d11ea29")],
 					note: "Stash it to the left of the cooling lever.",
+					images: [image("station-kord-flash-drive-plant", "The stash spot")],
 				},
 				{
 					id: "investigate-kord",
@@ -251,6 +337,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					map: "Interchange",
 					items: [item("Mysterious audio tape", "688895322f6b5b76380e6af5")],
 					note: "In the safe next to the entrance; it opens once cooling is on. Must be found in raid.",
+					images: [image("mysterious-audio-tape-spawn", "The tape in the safe")],
 				},
 				{
 					id: "extract-interchange-1",
@@ -270,12 +357,14 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					map: "Interchange",
 					items: [item("ARRS station mechanic's notes")],
 					note: "Return to the facility; the notes are on the big desk. Must be found in raid.",
+					images: [image("arrs-mechanic-notes-spawn", "The notes on the desk")],
 				},
 				{
 					id: "restore-backup-settings",
 					text: "Restore the ARRS station to backup settings",
 					map: "Interchange",
 					note: "Turn the power on again and press the button under the server room table. Only one player per raid can press it; if you can't interact, try a new raid.",
+					images: [image("arrs-disconnect-button", "The button")],
 					substeps: [{ id: "check-station-power", text: "Check that the station power is turned on", optional: true }],
 				},
 				{
@@ -287,6 +376,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					warning:
 						"Collecting it before restoring the backup settings loses the ARRS system specifications major evidence.",
 					decision: "they-are-already-here-evidence",
+					images: [image("arrs-flash-drive-spawn", "The flash drive")],
 				},
 				{
 					id: "extract-interchange-2",

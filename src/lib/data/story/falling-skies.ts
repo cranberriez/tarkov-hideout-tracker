@@ -1,8 +1,8 @@
-import type { StoryChapter, StoryItemRef } from "@/types/story";
+import type { StoryChapter, StoryImage, StoryItemRef } from "@/types/story";
 
 /**
  * Falling Skies, reviewed against the EFT wiki on 2026-10-06. Items without an `id`
- * are story items absent from the item catalog.
+ * are story items absent from the item catalog. Step images are wiki screenshots.
  */
 
 const item = (name: string, id?: string, count?: number, extra: Pick<StoryItemRef, "chapterId" | "note"> = {}) => ({
@@ -12,9 +12,24 @@ const item = (name: string, id?: string, count?: number, extra: Pick<StoryItemRe
 	...extra,
 });
 
+const image = (file: string, caption: string): StoryImage => ({
+	src: `/images/story/falling-skies/steps/${file}.webp`,
+	thumb: `/images/story/falling-skies/steps/thumbs/${file}.webp`,
+	caption,
+});
+
 // The catalog has two "Armored case" items, so this one stays unlinked.
 const ARMORED_CASE = item("Armored case");
 const PRAPOR_ROUBLE_REWARD = "300,000 roubles (315,000 with Intelligence Center level 1, 345,000 with level 2)";
+
+const PLANE_IMAGES = [
+	image("falling-skies-map", "Plane location marked on the map"),
+	image("woods-showcase-12", "The fallen plane"),
+];
+const CHAIRMAN_HOUSE_IMAGES = [
+	image("falling-skies-elektroniks-usb-map", "House location marked on the map"),
+	image("chairman-house", "The chairman's house"),
+];
 
 export const FALLING_SKIES: StoryChapter = {
 	id: "falling-skies",
@@ -30,7 +45,13 @@ export const FALLING_SKIES: StoryChapter = {
 			id: "fallen-plane",
 			title: "Find the fallen plane",
 			steps: [
-				{ id: "locate-plane", text: "Locate the fallen plane", map: "Woods", note: "On the eastern side of Woods." },
+				{
+					id: "locate-plane",
+					text: "Locate the fallen plane",
+					map: "Woods",
+					note: "On the eastern side of Woods.",
+					images: PLANE_IMAGES,
+				},
 				{
 					id: "prapor-ll2",
 					text: "Reach Loyalty Level 2 with Prapor",
@@ -60,6 +81,10 @@ export const FALLING_SKIES: StoryChapter = {
 					map: "Shoreline",
 					items: [item("G-Wagon flash drive")],
 					note: "Driver-side running board of the G-Wagon next to the Tunnel extract. Must be found in raid.",
+					images: [
+						image("falling-skies-g-wagon-usb-map", "SUV location marked on the map"),
+						image("falling-skies-g-wagon-usb-spawn", "The flash drive on the SUV's running board"),
+					],
 				},
 				{ id: "handover-gwagon-drive", text: "Hand over the flash drive to Prapor" },
 				{
@@ -79,12 +104,21 @@ export const FALLING_SKIES: StoryChapter = {
 					map: "Woods",
 					items: [item("Crashed plane's flight recorder")],
 					note: "In the broken section near the back, on the right side of the plane. Must be found in raid.",
+					images: [
+						...PLANE_IMAGES,
+						image("falling-skies-flight-recorder-spawn", "The broken section with the recorder"),
+						image("falling-skies-flight-recorder-spawn-close-up", "The recorder"),
+					],
 				},
 				{
 					id: "stash-flight-recorder",
 					text: "Leave the flight recorder in the specified spot",
 					map: "Shoreline",
 					note: "In the destroyed room of the house on the island.",
+					images: [
+						image("falling-skies-flight-recorder-stash-map", "House location marked on the map"),
+						image("falling-skies-flight-recorder-stash-location", "The stash spot"),
+					],
 				},
 				{ id: "visit-prapor", text: "Visit Prapor" },
 				{
@@ -118,6 +152,10 @@ export const FALLING_SKIES: StoryChapter = {
 					map: "Shoreline",
 					items: [item("Plane crew transcript")],
 					note: "Chairman's house: under the mattress of the overturned bed. Must be found in raid.",
+					images: [
+						...CHAIRMAN_HOUSE_IMAGES,
+						image("falling-skies-elektroniks-transcript", "The transcript under the mattress of the overturned bed"),
+					],
 				},
 				{
 					id: "handover-elektronik-drive",
@@ -126,6 +164,10 @@ export const FALLING_SKIES: StoryChapter = {
 					items: [item("Elektronik's flash drive")],
 					note: "Chairman's house: on the shelf next to the bed. Must be found in raid. The reward needs both items.",
 					rewards: [PRAPOR_ROUBLE_REWARD],
+					images: [
+						...CHAIRMAN_HOUSE_IMAGES,
+						image("falling-skies-elektroniks-flash-drive", "The flash drive on the shelf next to the bed"),
+					],
 				},
 				{
 					id: "wait-prapor-3",
@@ -145,6 +187,7 @@ export const FALLING_SKIES: StoryChapter = {
 					map: "Woods",
 					items: [ARMORED_CASE],
 					note: "Behind the cockpit of the fallen plane. Must be found in raid.",
+					images: [image("falling-skies-armored-case-spawn", "The armored case")],
 					substeps: [
 						{
 							id: "find-kerman-note",
@@ -153,6 +196,7 @@ export const FALLING_SKIES: StoryChapter = {
 							map: "Woods",
 							items: [item("Note from Mr. Kerman", "689b4ed2987b304021088e8f")],
 							note: "On the pilot seat.",
+							images: [image("falling-skies-kerman-note-spawn", "The note on the pilot seat")],
 						},
 					],
 				},
