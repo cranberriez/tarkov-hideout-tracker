@@ -193,25 +193,32 @@ export function UploaderCompletion({
 							View item list
 						</button>
 						<div className="min-h-3 flex-1" />
-						<button
-							role="switch"
-							aria-checked={showIcons}
-							onClick={onToggleIcons}
-							className="flex w-full items-center justify-between gap-2 rounded-sm border border-border-color px-3 py-2 text-xs text-foreground hover:bg-surface-raised"
-						>
-							Show item icons on screenshot
-							<span
-								className={cn(
-									"flex h-4 w-7 shrink-0 rounded-full p-0.5",
-									showIcons ? "justify-end bg-brand" : "justify-start bg-surface-raised",
-								)}
-							>
-								<span className="h-3 w-3 rounded-full bg-foreground" />
-							</span>
-						</button>
+						<IconsToggle checked={showIcons} onToggle={onToggleIcons} />
 					</section>
 				)}
 			</div>
 		</div>
+	);
+}
+
+/** Draws catalog icons over identified boxes, for checking matches at a glance. */
+export function IconsToggle({ checked, onToggle }: { checked: boolean; onToggle: () => void }) {
+	return (
+		<button
+			role="switch"
+			aria-checked={checked}
+			onClick={onToggle}
+			className="flex w-full items-center justify-between gap-2 rounded-sm border border-border-color px-3 py-2 text-xs text-foreground hover:bg-surface-raised"
+		>
+			Show item icons on screenshot
+			<span
+				className={cn(
+					"flex h-4 w-7 shrink-0 rounded-full p-0.5",
+					checked ? "justify-end bg-brand" : "justify-start bg-surface-raised",
+				)}
+			>
+				<span className="h-3 w-3 rounded-full bg-foreground" />
+			</span>
+		</button>
 	);
 }

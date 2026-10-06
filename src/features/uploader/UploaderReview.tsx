@@ -18,7 +18,7 @@ import { suggestLabelCandidates } from "./label-suggestions";
 import { buildLabelIndex } from "./recognition-model";
 import { summarizeReview, type ReviewBox, type ReviewEntry } from "./review-model";
 import { nextUnknownId, selectReviewBoxes, selectionSuggestions, supportsQuantity } from "./selection-model";
-import { UploaderCompletion, type AddedItem } from "./UploaderCompletion";
+import { IconsToggle, UploaderCompletion, type AddedItem } from "./UploaderCompletion";
 import { UploaderItemSearch, useItemSearch } from "./UploaderItemSearch";
 import type { ItemGroupKey } from "./item-groups";
 import styles from "./UploaderReview.module.css";
@@ -77,7 +77,8 @@ export function UploaderReview({
 	const [query, setQuery] = useState("");
 	// Narrows both the classifier and missing-item searches until removed.
 	const [group, setGroup] = useState<ItemGroupKey | null>(null);
-	const [keepReviewing, setKeepReviewing] = useState(false);
+	/** Set only by Continue, so classifying the last unknown never skips ahead on its own. */
+	const [continued, setContinued] = useState(false);
 	const [ignoreUnknowns, setIgnoreUnknowns] = useState(false);
 	const [summaryOpen, setSummaryOpen] = useState(false);
 	// FIR mode returns to the step that opened it.
@@ -116,7 +117,7 @@ export function UploaderReview({
 	const unknowns = boxes.filter((box) => !box.itemId || !byId.has(box.itemId));
 	const classified = boxes.length > 0 && unknowns.length === 0;
 	// The missing-items step only while neither sorting nor setting FIR.
-	const completing = (classified || ignoreUnknowns) && !keepReviewing && !summaryOpen && !firMode;
+	const completing = continued && !summaryOpen && !firMode;
 	const classifying = !completing && !summaryOpen && !firMode;
 	const included = ignoreUnknowns ? boxes.filter((box) => box.itemId && byId.has(box.itemId)) : boxes;
 	const nextEntries = [...included, ...added];
@@ -165,7 +166,6 @@ export function UploaderReview({
 				: box,
 		);
 		setQuery("");
-		setKeepReviewing(false);
 		const remaining = unknowns.filter((box) => !selected.includes(box.id)).map((box) => box.id);
 		if (!remaining.length) return clearSelection();
 		if (advance) {
@@ -219,11 +219,11 @@ export function UploaderReview({
 		);
 	const continueFromClassify = () => {
 		setIgnoreUnknowns(unknowns.length > 0);
-		setKeepReviewing(false);
+		setContinued(true);
 		clearSelection();
 	};
 	const backToClassify = () => {
-		setKeepReviewing(true);
+		setContinued(false);
 		setIgnoreUnknowns(false);
 	};
 	const openSummary = () => {
@@ -395,7 +395,7 @@ export function UploaderReview({
 										return;
 									}
 									if (item && (event.ctrlKey || event.metaKey || event.shiftKey)) return;
-									setKeepReviewing(true);
+									setContinued(false);
 									setIgnoreUnknowns(false);
 									setSelected(
 										selectReviewBoxes(
@@ -470,7 +470,7 @@ export function UploaderReview({
 													{!item ? " ?" : box.confirmed ? " ✓" : ""}
 												</span>
 											)}
-								{completing && showIcons && item && (
+								{(completing || classifying) && showIcons && item && (
 									<span className="pointer-events-none absolute inset-0 flex items-center justify-center">
 										<img
 											src={itemImageUrl(item)}
@@ -520,8 +520,8 @@ export function UploaderReview({
 				<div
 					className={cn(
 						"-mx-4 -mt-4 min-h-0 flex-1 overflow-y-auto px-4 pt-4",
-						// Lets the missing-items section fill the panel so its icon toggle sits at the bottom.
-						completing && !summaryOpen && !firMode && "flex flex-col",
+						// Lets classification and the missing-items section fill the panel so the icon toggle sits at the bottom.
+						(completing || classifying) && "flex flex-col",
 					)}
 				>
 					{summaryOpen ? (
@@ -764,6 +764,10 @@ export function UploaderReview({
 											Select an item in the screenshot to review its matches.
 										</p>
 									)}
+									<div className="min-h-3 flex-1" />
+									<div className="pb-4">
+										<IconsToggle checked={showIcons} onToggle={() => setShowIcons((value) => !value)} />
+									</div>
 								</>
 							)}
 						</>

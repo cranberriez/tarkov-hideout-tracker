@@ -383,8 +383,11 @@ The workspace does not expose scanned-box removal. Every step shares a bottom
 navigation row above the Screenshot section: Back on the left and the primary forward
 step, with arrows, on the right. Classification moves forward with Continue, or Skip
 unknowns and continue while unknowns remain (they stay available for later review).
-Once every detected box is classified, a brief reduced-motion-aware completion
-animation introduces the missing-items step, whose navigation is Review and Sort loot.
+Classifying the last unknown never advances on its own; after Continue, a brief
+reduced-motion-aware completion animation introduces the missing-items step, whose
+navigation is Review and Sort loot. Both classification and the missing-items step
+offer a Show item icons switch that draws catalog icons over identified boxes
+without blocking clicks.
 In that step every box is darkened and unselectable, and any selection is cleared,
 so undetected items stay bright on the screenshot. Its search takes focus on entry; Up/Down
 move the highlighted match and Enter adds it. A short note asks the player to look for items that
