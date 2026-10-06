@@ -78,6 +78,8 @@ export interface StoryStep {
 	/** Something that fails this route. */
 	warning?: string;
 	rewards?: string[];
+	/** Awarded items, displayed separately from items needed for the step. */
+	rewardItems?: StoryItemRef[];
 	quests?: StoryQuestRef[];
 	images?: StoryImage[];
 	/** The step where this decision is made. */

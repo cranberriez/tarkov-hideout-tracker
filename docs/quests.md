@@ -170,6 +170,8 @@ chapter so those always link to `/story/[chapterId]`; untracked chapters render 
 placeholder that links to the wiki and is not indexed.
 Steps may also carry rewards, warnings for route-failing actions, quest links and
 wiki screenshots, stored under `public/images/story/<chapter-id>/steps/`.
+Catalog-linked rewards use `rewardItems`, which render item chips alongside the
+reward text and are excluded from the remaining-step item requirements.
 
 Mr. Kerman's major and minor evidence, and how much major evidence each ending
 needs, live in [the evidence list](../src/lib/data/story/evidence.ts). Each piece

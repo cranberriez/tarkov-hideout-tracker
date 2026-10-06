@@ -290,6 +290,11 @@ function StepRow({
 					</p>
 				)}
 				{step.items && step.items.length > 0 && <StepItems items={step.items} nested={nested} />}
+				{step.rewardItems && step.rewardItems.length > 0 && (
+					<div aria-label="Reward items">
+						<StepItems items={step.rewardItems} nested={nested} />
+					</div>
+				)}
 				{step.images && step.images.length > 0 && <StoryStepImages images={step.images} stepText={step.text} />}
 				{decision && (
 					<StoryDecisionControl

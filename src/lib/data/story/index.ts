@@ -4,6 +4,7 @@ import { BATYA } from "./batya";
 import { BLUE_FIRE } from "./blue-fire";
 import { BOREAS } from "./boreas";
 import { FALLING_SKIES } from "./falling-skies";
+import { THE_LABYRINTH } from "./the-labyrinth";
 import { THE_TICKET } from "./the-ticket";
 import { THE_UNHEARD } from "./the-unheard";
 import { THEY_ARE_ALREADY_HERE } from "./they-are-already-here";
@@ -20,6 +21,7 @@ export const STORY_CHAPTERS: readonly StoryChapter[] = [
 	BATYA,
 	BLUE_FIRE,
 	BOREAS,
+	THE_LABYRINTH,
 	THE_UNHEARD,
 	THEY_ARE_ALREADY_HERE,
 	THE_TICKET,
