@@ -6,9 +6,11 @@ import { ImagePlus, Trash2, Upload } from "lucide-react";
 import { toTarkovJsonGameMode, type TarkovJsonGameMode } from "@/lib/game-mode";
 import { useUserStoreHydrated } from "@/lib/query/game-data";
 import { useSearchManifest } from "@/lib/search/useSearchManifest";
+import { useAppPreferencesStore } from "@/lib/stores/useAppPreferencesStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 import { useUploaderController } from "./useUploaderController";
+import { UploaderIntro } from "./UploaderIntro";
 import { UploaderReview } from "./UploaderReview";
 import styles from "./UploaderReview.module.css";
 import { KeyHint, UploaderSidebarHeader } from "./UploaderSidebarHeader";
@@ -33,6 +35,7 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 	const catalog = useSearchManifest(mode, true);
 	const controller = useUploaderController(catalog.data?.items);
 	const { image, boxes, hints, blocked, status, error, finished, supplyImage } = controller;
+	const introSeen = useAppPreferencesStore((state) => state.uploaderIntroSeen);
 	const input = useRef<HTMLInputElement>(null);
 	const [dragging, setDragging] = useState(false);
 	const reviewDirty = useRef(false);
@@ -182,6 +185,8 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 					>
 						{image ? (
 							<img src={image.url} alt="Uploaded stash screenshot" className="max-h-full max-w-full object-contain" />
+						) : !introSeen ? (
+							<UploaderIntro dragging={dragging} onChooseImage={() => input.current?.click()} />
 						) : (
 							<div className="text-center text-muted-foreground">
 								<ImagePlus size={32} className="mx-auto mb-4" aria-hidden="true" />

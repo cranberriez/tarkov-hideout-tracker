@@ -234,9 +234,7 @@ export function UploaderReview({
 		clearSelection();
 		setFirPending(
 			new Set(
-				boxes
-					.filter((box) => box.itemId && byId.has(box.itemId) && box.foundInRaid === "unknown")
-					.map((box) => box.id),
+				boxes.filter((box) => box.itemId && byId.has(box.itemId) && box.foundInRaid === "unknown").map((box) => box.id),
 			),
 		);
 		setFirMode(summaryOpen ? "summary" : "review");
@@ -543,6 +541,10 @@ export function UploaderReview({
 									return next;
 								});
 								if (kappa.length) setKappaSent((previous) => [...previous, ...kappa]);
+							}}
+							onUndoSent={() => {
+								setSent({});
+								setKappaSent([]);
 							}}
 							onSetFir={openFirMode}
 						/>

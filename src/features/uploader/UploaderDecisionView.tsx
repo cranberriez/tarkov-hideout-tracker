@@ -1,6 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- Catalog previews. */
+import { useEffect } from "react";
 import { FilterRadioGroup } from "@/components/ui/filter-bar";
 import { itemImageUrl } from "@/lib/utils/item-images";
 import { formatRoubles } from "@/lib/utils/market-price";
@@ -19,6 +20,7 @@ import { bestSellOffer, type ItemAction } from "./decision-model";
 import type { CurrentPrice } from "@/types/prices";
 import { traderImageUrl, traderInfo } from "@/lib/data/traders";
 import { useKappaStore } from "@/lib/stores/useKappaStore";
+import { useAppPreferencesStore } from "@/lib/stores/useAppPreferencesStore";
 
 const ACTIONS = ["KEEP", "SELL", "HOLD"] as const;
 const tile = "rounded bg-shadow/30 p-2";
@@ -31,6 +33,7 @@ export function UploaderDecisionView({
 	sent,
 	kappaSent,
 	onSent,
+	onUndoSent,
 	onSetFir,
 }: {
 	data: ReturnType<typeof useUploaderSummary>;
@@ -40,6 +43,7 @@ export function UploaderDecisionView({
 	sent: SentCounts;
 	kappaSent: readonly string[];
 	onSent: Parameters<typeof UploaderInventoryActions>[0]["onSent"];
+	onUndoSent: () => void;
 	onSetFir: () => void;
 }) {
 	const { summary, prices, error, retry, loading } = data;
@@ -47,6 +51,9 @@ export function UploaderDecisionView({
 	const active = activeKey ? groups.get(activeKey) : undefined;
 	const ignoreKappa = useKappaStore((state) => state.ignoreInUploader);
 	const setIgnoreKappa = useKappaStore((state) => state.setIgnoreInUploader);
+	const markIntroSeen = useAppPreferencesStore((state) => state.markUploaderIntroSeen);
+	// Reaching Sort means the player has completed a scan, so the first-run tutorial is no longer needed.
+	useEffect(markIntroSeen, [markIntroSeen]);
 	const notices = [
 		!!summary?.unresolved && "Some entries have missing data or invalid quantities. Return to review to fix them.",
 	].filter(Boolean);
@@ -175,6 +182,7 @@ export function UploaderDecisionView({
 					sent={sent}
 					kappaSent={kappaSent}
 					onSent={onSent}
+					onUndo={onUndoSent}
 					onSetFir={onSetFir}
 					disabled={!summary || !!error || summary.unresolved > 0}
 				/>

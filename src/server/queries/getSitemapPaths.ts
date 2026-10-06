@@ -15,7 +15,7 @@ export async function getSitemapPaths(repository: TarkovDataRepository): Promise
 	// Let read failures propagate instead of publishing a truncated successful sitemap.
 	const visibleQuests = prepareQuestsForDisplay(prepareQuestDataForMode(quests.data, mode), SHOW_REMOVED_QUESTS);
 	return [...new Set([
-		"/hideout", "/quests", "/items", "/items/kappa-checklist",
+		"/hideout", "/quests", "/items", "/items/kappa-checklist", "/uploader",
 		...visibleQuests.map((quest) => questHref(quest.id)),
 		...stations.data.map((station) => stationHref(station.id)),
 	])];

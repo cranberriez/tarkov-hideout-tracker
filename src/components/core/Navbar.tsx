@@ -206,6 +206,15 @@ function NavItemIcon({ item, size = 16 }: { item: NavItem; size?: number }) {
 	return Icon ? <Icon size={size} /> : null;
 }
 
+function NavItemBadge({ item }: { item: NavItem }) {
+	if (!item.badge) return null;
+	return (
+		<span className="ml-auto rounded-sm border border-brand/40 bg-brand/10 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-brand">
+			{item.badge}
+		</span>
+	);
+}
+
 function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: string }) {
 	const visibleChildren = menu.children?.filter((item) => !item.disabled) ?? [];
 	const hasChildren = visibleChildren.length > 0 || !!menu.panel;
@@ -248,6 +257,7 @@ function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: str
 							>
 								<NavItemIcon item={item} />
 								{item.name}
+								<NavItemBadge item={item} />
 							</Link>
 						))}
 						{menu.panel === "hideout-stations" && (
@@ -295,6 +305,7 @@ function MobileNavSection({
 					<Link href={item.href} className="flex w-full items-center gap-2">
 						<NavItemIcon item={item} />
 						{item.name}
+						<NavItemBadge item={item} />
 					</Link>
 				</DropdownMenuItem>
 			))}

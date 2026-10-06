@@ -17,7 +17,7 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 | `/hideout/stations/[stationId]`                    | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): level overview and level changes, prerequisites, dependents, remaining items, streamed crafts with profit, and Bitcoin Farm/Generator power panels                         |
 | `/items/kappa-checklist`                           | [Collector checklist](<../src/app/(data)/items/kappa-checklist/page.tsx>); see [quests](quests.md)                                                                                                                                                    |
 | `/items/inventory`                                 | [Inventory](<../src/app/(data)/items/inventory/page.tsx>): owned non-FiR/FiR balances with instant edits; see below                                                                                                                                   |
-| `/uploader`                                        | [Screenshot testing page](<../src/app/(data)/uploader/page.tsx>): browser OCR, item-label matching, and relative-position overlays; see below                                                                                                         |
+| `/uploader`                                        | [Loot Scanner](<../src/app/(data)/uploader/page.tsx>) (beta): browser OCR, item-label matching, and keep/sell sorting; see below                                                                                                                      |
 | `/items/barter-profits`, `/items/crafting-profits` | Shared [ProfitPage](../src/features/profit-pages/ProfitPage.tsx); see [profits](profits.md)                                                                                                                                                           |
 | `/hideout/craft-planner`                           | Station craft recommendations using the shared profit query; see [profits](profits.md)                                                                                                                                                                |
 | `/settings`                                        | [Player progression backups, import review, legacy tools and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md)                                                                                                  |
@@ -251,10 +251,17 @@ using names and icons from the search manifest, so it adds no server query. IDs
 missing from the manifest render as explicit unknown rows. Edits apply immediately
 through `addItemCounts` deltas; steppers stop at zero. Rows edited to zero, and the
 order of the Count sort, are page-local so rows do not vanish or move while being
-edited; both reset on the next visit or mode change.
+edited; both reset on the next visit or mode change. The header and empty state
+link to the uploader.
 
-[Uploader](../src/features/uploader/UploaderClientPage.tsx) is a standalone,
-noindex testing page, reachable directly at `/uploader`. It accepts one PNG,
+[Uploader](../src/features/uploader/UploaderClientPage.tsx) is the indexed Loot
+Scanner page, linked with a Beta chip from the Items menu (`badge` in
+[nav-config](../src/components/core/nav-config.ts)) and the Inventory page. Until
+a scan first reaches the Sort step, the empty drop area shows a
+[first-run tutorial](../src/features/uploader/UploaderIntro.tsx) with good/bad
+example screenshots from `public/images/uploader/` and a dashed drop zone that also
+opens the file picker; reaching Sort sets the global `uploaderIntroSeen`
+preference, after which the plain drop prompt returns. It accepts one PNG,
 JPEG, or WebP by file picker, drop, or clipboard paste (20 MB and 24 megapixel
 limits). It reuses the active-mode search manifest rather than adding a catalog
 API or preloading data in the shared layout. Screenshots and results remain
@@ -437,10 +444,12 @@ quantity and accepted option count), and prices. Left/Right arrows step through
 visible items. Boxes become borderless overlays with bookmark (Keep), coins-in-hand
 (Sell), or clock (Hold) markers in success, sell-value, and info colors.
 Explicit Kept only and Everything buttons add this scan's quantities on top of
-saved FIR/non-FIR counts through `addItemCounts`. Sends are tracked per scan, so a
-repeat adds nothing and Everything after Kept only adds the remainder; the summary
-subtracts this scan's sends from saved inventory so kept copies stay kept. Unknown
-FIR quantities block sending. No automatic inventory write occurs.
+saved FIR/non-FIR counts through `addItemCounts`. Sends are tracked per scan; the
+summary subtracts this scan's sends from saved inventory so kept copies stay kept.
+After a send, the buttons become Undo, which reverses every send from this scan
+(negative `addItemCounts` deltas, and unchecks Kappa items it checked off), and
+Done, which opens the Inventory page. Unknown FIR quantities block sending. No
+automatic inventory write occurs.
 The seen-items list groups scanned and manual items
 by stable item ID and FIR status, explicitly retaining unknown detected FIR.
 [Found-in-raid detection](../src/features/uploader/found-in-raid.ts) compares a small

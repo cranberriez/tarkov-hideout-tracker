@@ -11,6 +11,7 @@ import {
 	KeyRound,
 	ListChecks,
 	PackageOpen,
+	ScanSearch,
 	ScrollText,
 	Wrench,
 } from "lucide-react";
@@ -21,6 +22,8 @@ export interface NavItem {
 	href: string;
 	icon?: LucideIcon;
 	disabled?: boolean;
+	/** Short status chip, such as "Beta". */
+	badge?: string;
 }
 
 export interface NavMenu extends NavItem {
@@ -36,6 +39,7 @@ export const navMenus: NavMenu[] = [
 		icon: Boxes,
 		children: [
 			{ name: "Inventory", href: "/items/inventory", icon: PackageOpen },
+			{ name: "Loot Scanner", href: "/uploader", icon: ScanSearch, badge: "Beta" },
 			{
 				name: "Kappa Checklist",
 				href: "/items/kappa-checklist",
