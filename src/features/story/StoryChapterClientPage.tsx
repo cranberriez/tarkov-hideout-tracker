@@ -117,7 +117,7 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 						href={chapter.wikiLink}
 						target="_blank"
 						rel="noreferrer"
-						className="inline-flex items-center gap-1 self-start text-xs text-muted-foreground hover:text-foreground sm:self-auto"
+						className="inline-flex items-center gap-1 self-start rounded-full bg-shadow/60 px-2 py-0.5 text-xs text-muted-foreground shadow-[0_0_4px_1px_color-mix(in_oklab,_var(--shadow)_60%,_transparent)] hover:text-foreground sm:self-auto"
 					>
 						Wiki
 						<ExternalLink aria-hidden="true" className="size-3" />
