@@ -339,6 +339,61 @@ test("quest workspace requests only standard IDs referenced by delivered quests"
 	assert.equal("questAvailabilityQuests" in data, false);
 });
 
+test("quest workspace excludes unused item reads and monetary offers without trimming the quest graph", async () => {
+	const scopedQuest: FullQuest = {
+		...quest,
+		objectives: [
+			...quest.objectives,
+			{
+				id: "use",
+				type: "useItem",
+				description: "Use",
+				optional: false,
+				useAnyItemIds: ["unused-item"],
+				compareMethod: ">=",
+				count: 1,
+				zoneNames: [],
+			},
+		],
+	};
+	for (const mode of ["regular", "pve", "pvp-season"] as const) {
+		const repository = createRepository({
+			quests: async () => result([scopedQuest]),
+			items: async (requestedMode, ids, options) => {
+				assert.equal(requestedMode, mode);
+				assert.equal(options?.includeOffers, false);
+				assert.deepEqual(ids, ["item-b", "item-c", "item-a"]);
+				return result({
+					"item-a": {
+						id: "item-a",
+						name: "A",
+						normalizedName: "a",
+						wikiLink: "unused",
+						iconLink: "custom-icon",
+						image512pxLink: "custom-preview",
+						onFleaMarket: false,
+						firstSeenPatch: "unused",
+						buyFromTrader: [],
+					},
+				});
+			},
+		});
+		const data = await getQuestWorkspacePageData(mode, repository, { includePrices: false });
+		assert.deepEqual(data.unresolvedItemIds, ["item-b", "item-c"]);
+		assert.deepEqual(data.quests?.[0].objectives, scopedQuest.objectives);
+		assert.equal(data.errors.prices, null);
+		const item = JSON.parse(JSON.stringify(data.items?.[0]));
+		assert.deepEqual(item, {
+			id: "item-a",
+			name: "A",
+			normalizedName: "a",
+			iconLink: "custom-icon",
+			image512pxLink: "custom-preview",
+			onFleaMarket: false,
+		});
+	}
+});
+
 test("profit keeps the craft graph when barter and trader domains fail", async () => {
 	const requestedIds: string[][] = [];
 	const repository = createRepository({

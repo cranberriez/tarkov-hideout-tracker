@@ -87,6 +87,7 @@ function NavbarContent() {
 											src="/images/hideout/Hideout_icon.webp"
 											alt="Tarkov Hideout Icon"
 											fill
+											sizes="32px"
 											className="object-contain"
 											loading="eager"
 										/>

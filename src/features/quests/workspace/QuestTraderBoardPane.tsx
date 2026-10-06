@@ -270,6 +270,7 @@ function BoardQuest({ questId }: { questId: string }) {
 						: "bg-subtle-foreground/40";
 	return (
 		<Link
+			prefetch={false}
 			href={questHref(questId)}
 			scroll={false}
 			// Same-route clicks never trigger the workspace's route effect, so switch to details directly.

@@ -1,4 +1,4 @@
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import { statusRequiresCompletion } from "./quest-failures";
 
 export interface SensitiveBackfillQuest {
@@ -35,7 +35,7 @@ export function getSensitiveBackfillQuest(questId: string) {
 	return SENSITIVE_BACKFILL_QUESTS_BY_ID.get(questId) ?? null;
 }
 
-export function getSensitiveBackfillQuestName(questId: string, questsById?: ReadonlyMap<string, FullQuest>) {
+export function getSensitiveBackfillQuestName(questId: string, questsById?: ReadonlyMap<string, QuestWorkspaceQuest>) {
 	return questsById?.get(questId)?.name ?? getSensitiveBackfillQuest(questId)?.name ?? questId;
 }
 
@@ -65,7 +65,7 @@ export function denySensitiveBackfillQuest(
 
 export function collectTransitivePrerequisiteIds(
 	rootQuestIds: Iterable<string>,
-	questsById: ReadonlyMap<string, FullQuest>,
+	questsById: ReadonlyMap<string, QuestWorkspaceQuest>,
 	options: {
 		allowedSensitiveQuestIds?: ReadonlySet<string>;
 		deniedSensitiveQuestIds?: ReadonlySet<string>;

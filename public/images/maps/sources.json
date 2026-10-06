@@ -1,0 +1,62 @@
+[
+	{
+		"source": "https://static.wikia.nocookie.net/escapefromtarkov_gamepedia/images/9/9f/Customs_Banner.png",
+		"key": "customs",
+		"page": "https://escapefromtarkov.fandom.com/wiki/File:Customs_Banner.png"
+	},
+	{
+		"source": "https://static.wikia.nocookie.net/escapefromtarkov_gamepedia/images/1/1a/Factory-Day_Banner.png",
+		"key": "factory",
+		"page": "https://escapefromtarkov.fandom.com/wiki/File:Factory-Day_Banner.png"
+	},
+	{
+		"source": "https://static.wikia.nocookie.net/escapefromtarkov_gamepedia/images/3/3e/Banner_woods.png",
+		"key": "woods",
+		"page": "https://escapefromtarkov.fandom.com/wiki/File:Banner_woods.png"
+	},
+	{
+		"source": "https://static.wikia.nocookie.net/escapefromtarkov_gamepedia/images/d/d5/Banner_shoreline.png",
+		"key": "shoreline",
+		"page": "https://escapefromtarkov.fandom.com/wiki/File:Banner_shoreline.png"
+	},
+	{
+		"source": "https://static.wikia.nocookie.net/escapefromtarkov_gamepedia/images/3/3e/Banner_interchange.png",
+		"key": "interchange",
+		"page": "https://escapefromtarkov.fandom.com/wiki/File:Banner_interchange.png"
+	},
+	{
+		"source": "https://static.wikia.nocookie.net/escapefromtarkov_gamepedia/images/d/dc/Banner_lighthouse.png",
+		"key": "lighthouse",
+		"page": "https://escapefromtarkov.fandom.com/wiki/File:Banner_lighthouse.png"
+	},
+	{
+		"source": "https://static.wikia.nocookie.net/escapefromtarkov_gamepedia/images/4/41/Banner_streets.png",
+		"key": "streets-of-tarkov",
+		"page": "https://escapefromtarkov.fandom.com/wiki/File:Banner_streets.png"
+	},
+	{
+		"source": "https://static.wikia.nocookie.net/escapefromtarkov_gamepedia/images/4/4d/Ground_Zero_Banner.png",
+		"key": "ground-zero",
+		"page": "https://escapefromtarkov.fandom.com/wiki/File:Ground_Zero_Banner.png"
+	},
+	{
+		"source": "https://static.wikia.nocookie.net/escapefromtarkov_gamepedia/images/b/b0/The_Labyrinth_Banner.png",
+		"key": "the-labyrinth",
+		"page": "https://escapefromtarkov.fandom.com/wiki/File:The_Labyrinth_Banner.png"
+	},
+	{
+		"source": "https://static.wikia.nocookie.net/escapefromtarkov_gamepedia/images/0/06/Icebreaker_Banner.png",
+		"key": "icebreaker",
+		"page": "https://escapefromtarkov.fandom.com/wiki/File:Icebreaker_Banner.png"
+	},
+	{
+		"source": "https://static.wikia.nocookie.net/escapefromtarkov_gamepedia/images/f/f4/Reserve.png",
+		"key": "reserve",
+		"page": "https://escapefromtarkov.fandom.com/wiki/File:Reserve.png"
+	},
+	{
+		"source": "https://mohilabs.com/mohikov/map-banners/the-lab.webp",
+		"key": "the-lab",
+		"page": "https://mohilabs.com/mohikov/legacy-app"
+	}
+]

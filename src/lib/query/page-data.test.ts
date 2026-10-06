@@ -3,6 +3,7 @@ import test from "node:test";
 import { createQueryClient } from "./client";
 import { PartialDataError } from "./request";
 import { hideoutPageQueryOptions, profitPageQueryOptions, questWorkspacePageQueryOptions } from "./page-data";
+import type { QuestWorkspaceIndexData } from "../../types/quest-workspace";
 
 const completeHideout = {
 	stations: [],
@@ -52,6 +53,40 @@ test("complete page requests reuse cache and preserve explicitly missing item ID
 		const partial = { ...completeHideout, errors: { ...completeHideout.errors, items: "Item data failed." } };
 		globalThis.fetch = async () => Response.json(partial);
 		await assert.rejects(client.fetchQuery(options), PartialDataError);
+		assert.equal(client.getQueryData(options.queryKey), undefined);
+	} finally {
+		client.clear();
+		globalThis.fetch = originalFetch;
+	}
+});
+
+test("quest requests cache the lean index and retain retryable failures", async () => {
+	const data: QuestWorkspaceIndexData = {
+		quests: [],
+		updatedAt: 1,
+		error: null,
+	};
+	const originalFetch = globalThis.fetch;
+	const client = createQueryClient({ gcTime: Infinity });
+	try {
+		globalThis.fetch = async (input) => {
+			const url = new URL(String(input), "http://localhost");
+			assert.equal(url.searchParams.get("mode"), "pve");
+			assert.equal(url.searchParams.get("format"), "index-v1");
+			return Response.json(data);
+		};
+		const options = questWorkspacePageQueryOptions("pve");
+		const packed = await client.fetchQuery(options);
+		assert.deepEqual(packed, data);
+		assert.equal(client.getQueryData(options.queryKey), packed);
+		client.removeQueries({ queryKey: options.queryKey });
+		const partial = { ...data, quests: null, error: "Unavailable" };
+		globalThis.fetch = async () => Response.json(partial);
+		await assert.rejects(client.fetchQuery(options), (error: unknown) => {
+			assert.ok(error instanceof PartialDataError);
+			assert.deepEqual(error.payload, partial);
+			return true;
+		});
 		assert.equal(client.getQueryData(options.queryKey), undefined);
 	} finally {
 		client.clear();

@@ -1,4 +1,4 @@
-import type { FullQuest, QuestFailConditionTaskStatus } from "../../../types";
+import type { QuestFailConditionTaskStatus, QuestWorkspaceQuest } from "@/types/quests";
 import { getQuestRelationTiming, type QuestRelationTiming } from "../../../lib/quests/quest-relations";
 import { statusIncludesComplete } from "../../../lib/quests/quest-failures";
 
@@ -59,7 +59,7 @@ export interface QuestBranchEdge {
 }
 
 export interface QuestBranchNode {
-	quest: FullQuest;
+	quest: QuestWorkspaceQuest;
 	rank: number;
 	lane: number;
 	canFail: boolean;
@@ -74,7 +74,7 @@ export interface QuestBranchLine {
 }
 
 function isTaskStatusCondition(
-	condition: NonNullable<FullQuest["failConditions"]>[number],
+	condition: NonNullable<QuestWorkspaceQuest["failConditions"]>[number],
 ): condition is QuestFailConditionTaskStatus {
 	return condition.type === "taskStatus" && "task" in condition && "status" in condition;
 }
@@ -92,7 +92,7 @@ function timingLabel(timing: QuestRelationTiming) {
 	}
 }
 
-function buildEdges(quests: readonly FullQuest[]) {
+function buildEdges(quests: readonly QuestWorkspaceQuest[]) {
 	const questIds = new Set(quests.map((quest) => quest.id));
 	const requirementEdges: QuestBranchEdge[] = [];
 	const failurePairs = new Map<string, QuestBranchEdge>();
@@ -150,7 +150,7 @@ function buildEdges(quests: readonly FullQuest[]) {
 	return [...requirementEdges, ...failureEdges];
 }
 
-function connectedComponents(quests: readonly FullQuest[], edges: readonly QuestBranchEdge[]) {
+function connectedComponents(quests: readonly QuestWorkspaceQuest[], edges: readonly QuestBranchEdge[]) {
 	const neighbors = new Map(quests.map((quest) => [quest.id, new Set<string>()]));
 	for (const edge of edges) {
 		neighbors.get(edge.sourceId)?.add(edge.targetId);
@@ -179,7 +179,7 @@ function connectedComponents(quests: readonly FullQuest[], edges: readonly Quest
 }
 
 function layoutNodes(
-	quests: readonly FullQuest[],
+	quests: readonly QuestWorkspaceQuest[],
 	componentIds: ReadonlySet<string>,
 	componentEdges: readonly QuestBranchEdge[],
 	centeredQuestId?: string,
@@ -207,7 +207,7 @@ function layoutNodes(
 
 	const componentQuests = quests.filter((quest) => componentIds.has(quest.id));
 	const originalOrder = new Map(componentQuests.map((quest, index) => [quest.id, index]));
-	const nodesByRank = new Map<number, FullQuest[]>();
+	const nodesByRank = new Map<number, QuestWorkspaceQuest[]>();
 	const rankById = new Map<string, number>();
 	for (const quest of componentQuests) {
 		const rank = getRank(quest.id);
@@ -304,7 +304,7 @@ function layoutNodes(
 	}));
 }
 
-export function buildQuestBranchLines(quests: readonly FullQuest[]): QuestBranchLine[] {
+export function buildQuestBranchLines(quests: readonly QuestWorkspaceQuest[]): QuestBranchLine[] {
 	const edges = buildEdges(quests);
 	const questsById = new Map(quests.map((quest) => [quest.id, quest]));
 	const components = connectedComponents(quests, edges);

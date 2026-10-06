@@ -4,7 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import type { MapViewTransform } from "@/features/maps/map-view-transform";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
@@ -35,7 +35,7 @@ const QuestVisualizerPane = dynamic(
 );
 
 /** `children` is the routed detail outlet: the selection prompt or `/quests/[questId]`. */
-export function QuestWorkspace({ quests, children }: { quests: FullQuest[]; children: ReactNode }) {
+export function QuestWorkspace({ quests, children }: { quests: QuestWorkspaceQuest[]; children: ReactNode }) {
 	const { mode, setMode, plannerMapKey, selectedQuestId, indexHref, markInternalSelection, consumeInternalSelection } =
 		useQuestWorkspace();
 	const [plannerViews, setPlannerViews] = useState(() => new Map<string, MapViewTransform>());
@@ -135,7 +135,7 @@ export function QuestWorkspace({ quests, children }: { quests: FullQuest[]; chil
 					)}
 				</section>
 			</div>
-			<QuestMobileMenu />
+			{!(mode === "planner" && plannerMapKey) && <QuestMobileMenu />}
 		</main>
 	);
 }

@@ -1,4 +1,4 @@
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import { getQuestTraderTabLoyaltyLevel } from "./quest-trader-completion-gates";
 import { isQuestTraderLoyaltyRequirement } from "./quest-trader-gates";
 import { getQuestLoyaltyLevelOverride } from "./quest-trader-tab-overrides";
@@ -49,7 +49,10 @@ export interface QuestOrganizationResult {
 	validationIssues: QuestOrganizationValidationIssue[];
 }
 
-function getOwnTraderTier(quest: FullQuest, validationIssues: QuestOrganizationValidationIssue[]): 1 | 2 | 3 | 4 {
+function getOwnTraderTier(
+	quest: QuestWorkspaceQuest,
+	validationIssues: QuestOrganizationValidationIssue[],
+): 1 | 2 | 3 | 4 {
 	const override = getQuestLoyaltyLevelOverride(quest.id);
 	if (override !== null) return override;
 
@@ -84,7 +87,7 @@ function getOwnTraderTier(quest: FullQuest, validationIssues: QuestOrganizationV
 }
 
 export function validateQuestSeriesManifest(
-	quests: FullQuest[],
+	quests: QuestWorkspaceQuest[],
 	manifest: QuestSeriesManifest = QUEST_SERIES_MANIFEST,
 ): QuestOrganizationValidationIssue[] {
 	const issues: QuestOrganizationValidationIssue[] = [];
@@ -171,7 +174,7 @@ export function validateQuestSeriesManifest(
 }
 
 export function deriveQuestOrganization(
-	quests: FullQuest[],
+	quests: QuestWorkspaceQuest[],
 	manifest: QuestSeriesManifest = QUEST_SERIES_MANIFEST,
 ): QuestOrganizationResult {
 	const validationIssues = validateQuestSeriesManifest(quests, manifest);

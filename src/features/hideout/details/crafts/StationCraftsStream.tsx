@@ -1,18 +1,18 @@
 import { HydrationBoundary } from "@tanstack/react-query";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import { isCompleteProfitPageData, PAGE_DATA_STALE_TIME, profitPageQueryOptions } from "@/lib/query/page-data";
+import { isCompleteProfitPageData, PAGE_DATA_STALE_TIME, stationRecipeQueryOptions } from "@/lib/query/page-data";
 import { getCurrentPageRepository } from "@/server/queries/currentPageRepository";
-import { getProfitPageData } from "@/server/queries/getProfitPageData";
+import { getStationRecipePageData } from "@/server/queries/getStationRecipePageData";
 import { prefetchPageData } from "@/server/queries/prefetchPageData";
 import { StationRecipeSections } from "./StationRecipeSections";
 
 /** Start early (before other awaits) so the recipe read overlaps the Hideout read. Never rejects. */
-export function prefetchStationCrafts(mode: TarkovJsonGameMode) {
-	const options = profitPageQueryOptions(mode);
+export function prefetchStationCrafts(mode: TarkovJsonGameMode, stationId: string) {
+	const options = stationRecipeQueryOptions(mode, stationId);
 	return prefetchPageData(
 		options.queryKey,
 		PAGE_DATA_STALE_TIME,
-		async () => getProfitPageData(mode, await getCurrentPageRepository(mode), { includePrices: false }),
+		async () => getStationRecipePageData(mode, stationId, await getCurrentPageRepository(mode)),
 		isCompleteProfitPageData,
 	);
 }

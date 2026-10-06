@@ -13,24 +13,15 @@ import {
 	X,
 } from "lucide-react";
 import { useState } from "react";
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { Button } from "@/components/ui/button";
 import { QuestLogImportDialog } from "../import/QuestLogImportDialog";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
-export function QuestActionBar({ quests }: { quests: FullQuest[] }) {
-	const {
-		searchQuery,
-		setSearchQuery,
-		mode,
-		setMode,
-		listMode,
-		setListMode,
-		showQuestVisualizerIndex,
-		showPinnedOnly,
-		setShowPinnedOnly,
-	} = useQuestWorkspace();
+export function QuestActionBar({ quests }: { quests: QuestWorkspaceQuest[] }) {
+	const { searchQuery, setSearchQuery, mode, setMode, listMode, setListMode, showQuestVisualizerIndex } =
+		useQuestWorkspace();
 	const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
 	const setMainNavHidden = useUIStore((state) => state.setMainNavHidden);
 	const [searchOpen, setSearchOpen] = useState(false);

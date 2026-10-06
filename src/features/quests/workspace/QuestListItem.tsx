@@ -100,6 +100,7 @@ export function QuestListItem({
 					>
 						{/* Stretched link: the whole row navigates; action buttons sit above it. */}
 						<Link
+							prefetch={false}
 							href={questHref(quest.id)}
 							scroll={false}
 							aria-current={selected ? "page" : undefined}
@@ -223,9 +224,9 @@ export function QuestListItem({
 						</span>
 					)}
 					{(quest.minPlayerLevel ?? 0) > 0 && <span className="shrink-0">Lv {quest.minPlayerLevel}</span>}
-					{quest.objectives.some((objective) => objective.requiredKeyIds?.length) && (
-						<KeyRound size={10} className="shrink-0 text-warning/70" />
-					)}
+					{("objectives" in quest
+						? quest.objectives.some((objective) => objective.requiredKeyIds?.length)
+						: quest.hasRequiredKeys) && <KeyRound size={10} className="shrink-0 text-warning/70" />}
 				</div>
 
 				<div className="mt-1 flex min-w-0 items-center gap-2 text-[10px] font-medium text-subtle-foreground">

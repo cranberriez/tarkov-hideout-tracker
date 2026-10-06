@@ -5,7 +5,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { preloadHoverImage } from "@/components/ui/hover-preview-provider";
+import { preloadHoverImage, useHoverDataIntent } from "@/components/ui/hover-preview-provider";
 import { questHref } from "@/lib/entity-routes";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { getQuestIssuingTraderLoyaltyLevel } from "@/lib/quests/quest-trader-gates";
@@ -13,8 +13,8 @@ import { questWorkspacePageQueryOptions } from "@/lib/query/page-data";
 import { decodeSearchManifest } from "@/lib/search/manifest";
 import { searchIdentityOptions, searchManifestOptions } from "@/lib/search/query";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import type { QuestWorkspacePageData } from "@/types/contracts";
-import type { FullQuest, FullQuestObjective } from "@/types/quests";
+import type { QuestWorkspaceQuest, FullQuestObjective } from "@/types/quests";
+import { useQuestDetails } from "@/features/quests/useQuestDetails";
 import { EntityPreview, PreviewFact } from "./entity-preview";
 
 type LinkProps = Omit<ComponentProps<typeof Link>, "href" | "children">;
@@ -33,7 +33,7 @@ export function QuestLink({
 	...props
 }: LinkProps & {
 	questId: string;
-	quest?: FullQuest | null;
+	quest?: QuestWorkspaceQuest | null;
 	/** Fallback label when the quest record is not supplied. */
 	name?: string;
 	children?: ReactNode;
@@ -42,11 +42,8 @@ export function QuestLink({
 	const client = useQueryClient();
 	const mode = toTarkovJsonGameMode(useUserStore((state) => state.gameMode));
 	const prepare = async () => {
-		const cachedQuest =
-			quest ??
-			client
-				.getQueryData<QuestWorkspacePageData>(questWorkspacePageQueryOptions(mode).queryKey)
-				?.quests?.find((entry) => entry.id === questId);
+		const workspace = client.getQueryData(questWorkspacePageQueryOptions(mode).queryKey);
+		const cachedQuest = quest ?? workspace?.quests?.find((entry) => entry.id === questId);
 		const suppliedImage = cachedQuest?.trader.image4xLink ?? cachedQuest?.trader.imageLink;
 		if (suppliedImage) return preloadHoverImage(suppliedImage);
 		const identity = await client.ensureQueryData(searchIdentityOptions(mode));
@@ -61,7 +58,7 @@ export function QuestLink({
 			renderPreview={() => <QuestPreviewCard questId={questId} quest={quest} name={name} />}
 		>
 			{(triggerProps) => (
-				<Link {...props} {...triggerProps} href={questHref(questId)} className={className}>
+				<Link {...props} {...triggerProps} prefetch={false} href={questHref(questId)} className={className}>
 					{children ?? quest?.name ?? name ?? "Quest"}
 				</Link>
 			)}
@@ -69,11 +66,11 @@ export function QuestLink({
 	);
 }
 
-function useCachedQuest(questId: string, quest: FullQuest | null | undefined) {
+function useCachedQuest(questId: string, quest: QuestWorkspaceQuest | null | undefined) {
 	const client = useQueryClient();
 	const mode = toTarkovJsonGameMode(useUserStore((state) => state.gameMode));
 	if (quest) return quest;
-	const data = client.getQueryData<QuestWorkspacePageData>(questWorkspacePageQueryOptions(mode).queryKey);
+	const data = client.getQueryData(questWorkspacePageQueryOptions(mode).queryKey);
 	return data?.quests?.find((entry) => entry.id === questId) ?? null;
 }
 
@@ -110,10 +107,13 @@ function QuestPreviewCard({
 	name,
 }: {
 	questId: string;
-	quest?: FullQuest | null;
+	quest?: QuestWorkspaceQuest | null;
 	name?: string;
 }) {
-	const quest = useCachedQuest(questId, suppliedQuest);
+	const cachedQuest = useCachedQuest(questId, suppliedQuest);
+	const intent = useHoverDataIntent();
+	const details = useQuestDetails([questId], intent);
+	const quest = details.quests[0] ?? cachedQuest;
 	const client = useQueryClient();
 	const mode = toTarkovJsonGameMode(useUserStore((state) => state.gameMode));
 	const releaseId = client.getQueryData<{ releaseId: string }>(searchIdentityOptions(mode).queryKey)?.releaseId;
@@ -122,16 +122,16 @@ function QuestPreviewCard({
 		: undefined;
 	const traderId = quest?.trader.id ?? manifest?.quests.find((entry) => entry.id === questId)?.traderId;
 	const trader = traderId ? manifest?.traders[traderId] : undefined;
-	const workspace = client.getQueryData<QuestWorkspacePageData>(questWorkspacePageQueryOptions(mode).queryKey);
-	const itemNames = new Map((workspace?.items ?? []).map((item) => [item.id, item.name]));
+	const itemNames = new Map(details.items.map((item) => [item.id, item.name]));
 	const completed = useUserStore((state) => !!state.completedQuests[questId]);
 	const failed = useUserStore((state) => !!state.failedQuests[questId]);
 	const completedQuests = useUserStore((state) => state.completedQuests);
 	const traderImage = quest?.trader.image4xLink ?? quest?.trader.imageLink ?? trader?.iconLink;
 	const traderName = quest?.trader.name ?? trader?.name;
-	const itemLines = quest ? objectiveItemLines(quest.objectives, itemNames) : [];
+	const fullQuest = quest && "objectives" in quest ? quest : null;
+	const itemLines = fullQuest ? objectiveItemLines(fullQuest.objectives, itemNames) : [];
 	const objectives =
-		quest?.objectives.filter(
+		fullQuest?.objectives.filter(
 			(objective) =>
 				objective.description &&
 				objective.type !== "giveItem" &&
@@ -142,6 +142,25 @@ function QuestPreviewCard({
 
 	return (
 		<div>
+			{intent && details.pending && (
+				<p role="status" className="text-xs text-muted-foreground">
+					Loading objectives…
+				</p>
+			)}
+			{details.error && (
+				<p role="alert" className="text-xs text-danger">
+					{details.error}{" "}
+					<button onClick={details.retry} className="underline">
+						Retry
+					</button>
+				</p>
+			)}
+			{details.missingQuestIds.length > 0 && (
+				<p className="text-xs text-muted-foreground">Quest details are unavailable in this mode.</p>
+			)}
+			{details.unresolvedItemIds.length > 0 && (
+				<p className="text-xs text-muted-foreground">Some referenced items are unavailable.</p>
+			)}
 			<div className="flex items-center gap-2.5">
 				{traderImage && (
 					// eslint-disable-next-line @next/next/no-img-element -- trader portraits come from the data provider

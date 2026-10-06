@@ -3,11 +3,18 @@
 Both profit routes enter [ProfitPage](../src/features/profit-pages/ProfitPage.tsx),
 which loads [getProfitPageData](../src/server/queries/getProfitPageData.ts) and
 renders [ProfitPageClient](../src/features/profit-pages/ProfitPageClient.tsx).
-Craft Planner consumes the same mode-keyed `recipes-crafts-barters` Query cache. Station pages stream the same payload and evaluate their station's crafts with the shared calculator, skills and overrides.
+Craft Planner consumes the same mode-keyed `recipes-crafts-barters` Query cache.
+Station pages use a separate mode/station query containing that station's crafts and
+their complete backwards acquisition dependencies, evaluated with the shared calculator,
+skills and overrides. Indexed station/output reads build the graph without reading all
+recipes; visited item IDs stop cycles without silently truncating dependencies. Generator
+adds fuel acquisition dependencies; Bitcoin Farm adds fuel, GPU and Bitcoin inputs.
+Stations without crafts or power inputs receive an empty graph and request no recipe prices.
 Server pages prefetch and hydrate that payload, and client refetches update every
 consumer without duplicating the graph arrays. The metadata query supplies both normalized recipe graphs, referenced items, and
 compact trader/station presentation without prices. The shared mode/item price
-cache loads the named recipes scope in one GET, reusing prices from other pages.
+cache loads the named recipes scope for profit lists and Craft Planner, reusing prices
+from other pages. Station pages request only their graph's explicit item IDs in bounded batches.
 Initial figures wait for prices; one-hour freshness and manual refresh are owned
 by [the shared price layer](data-layer.md). Metadata refetches do not refresh prices. Both graphs are required because acquisition
 can cross between crafts and barters; either graph error blocks profit figures.

@@ -26,7 +26,7 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 
 Detail routes use bounded reads: [getItemDetailPageData](../src/server/queries/getItemDetailPageData.ts)
 reads one item, [getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts)
-one quest, and station pages reuse the mode-keyed Hideout page query. Each sets
+one quest, and station pages use mode/station-keyed metadata and recipe queries. Each sets
 entity-specific titles, descriptions, and canonical URLs. Missing IDs render
 not-found states; failed reads report errors instead of 404s. Pages render public
 identity from server data; player progress hydrates afterwards. Titles use the root
@@ -631,7 +631,10 @@ positive trader sell value with its portrait/name, loading that item's scoped
 prices when needed. Missing offers, stale prices, and player-level flea locks
 do not trigger a trader fallback. Quest previews use the
 mode-scoped compact search manifest for a trader portrait when the full quest is
-not already available. Items checklist rows do not open item hover cards in Icon,
+not already available. After sustained hover intent, they request that quest's
+full details and referenced item presentations through the shared per-quest cache;
+they show loading, missing-data and retry states. Quest links disable route prefetch,
+so merely listing links does not preload full quest records. Items checklist rows do not open item hover cards in Icon,
 Compact, or Expanded sizes. Alternatives inside an expanded any-of group likewise
 omit hover cards in Icon and Compact sizes; the Expanded layout retains them. Item
 previews prefer the square 512px image over the labeled grid image.

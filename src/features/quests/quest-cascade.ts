@@ -1,4 +1,4 @@
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import { getSensitiveBackfillQuest } from "../../lib/quests/sensitive-quest-backfill";
 import { statusRequiresCompletion } from "../../lib/quests/quest-failures";
 
@@ -9,7 +9,7 @@ export interface QuestCascadeCompleteResult {
 }
 
 export interface CollectCompleteCascadeContext {
-	questsById: ReadonlyMap<string, FullQuest>;
+	questsById: ReadonlyMap<string, QuestWorkspaceQuest>;
 	completedQuests: Record<string, boolean>;
 }
 
@@ -71,7 +71,7 @@ export interface QuestCascadeUncompleteResult {
 }
 
 export interface CollectUncompleteCascadeContext {
-	questsById: ReadonlyMap<string, FullQuest>;
+	questsById: ReadonlyMap<string, QuestWorkspaceQuest>;
 	completedQuests: Record<string, boolean>;
 	leadsToByQuestId: ReadonlyMap<string, ReadonlySet<string> | readonly string[]>;
 }

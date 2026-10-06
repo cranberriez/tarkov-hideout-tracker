@@ -11,20 +11,20 @@ import {
 	type QuestOrganizationResult,
 	type QuestSeriesManifest,
 } from "../../lib/quests/quest-organization";
-import type { FullQuest } from "../../types";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import { buildQuestMapGroups, type QuestMapGroup } from "./quest-map-groups";
 import { buildQuestUnlockImpactMap } from "./quest-sorting";
 
 export interface QuestDataIndex {
 	/** The original manifest array. Quest objects are never copied or hydrated. */
-	quests: FullQuest[];
-	questsById: Map<string, FullQuest>;
+	quests: QuestWorkspaceQuest[];
+	questsById: Map<string, QuestWorkspaceQuest>;
 	questOrderById: Map<string, number>;
 	prerequisiteIdsByQuestId: Map<string, string[]>;
-	prerequisitesByQuestId: Map<string, FullQuest[]>;
+	prerequisitesByQuestId: Map<string, QuestWorkspaceQuest[]>;
 	leadsToByQuestId: Map<string, string[]>;
-	unlocksByQuestId: Map<string, FullQuest[]>;
-	traders: FullQuest["trader"][];
+	unlocksByQuestId: Map<string, QuestWorkspaceQuest[]>;
+	traders: QuestWorkspaceQuest["trader"][];
 	maps: QuestMapGroup[];
 	organization: QuestOrganizationResult;
 	unlockImpactById: Map<string, number>;
@@ -37,13 +37,13 @@ export interface QuestDataIndex {
  * Every quest-valued lookup points at the canonical object from `quests`.
  */
 export function buildQuestDataIndex(
-	quests: FullQuest[],
+	quests: QuestWorkspaceQuest[],
 	seriesManifest: QuestSeriesManifest = QUEST_SERIES_MANIFEST,
 ): QuestDataIndex {
 	const questsById = new Map(quests.map((quest) => [quest.id, quest]));
 	const questOrderById = new Map(quests.map((quest, index) => [quest.id, index]));
 	const prerequisiteIdsByQuestId = new Map<string, string[]>();
-	const prerequisitesByQuestId = new Map<string, FullQuest[]>();
+	const prerequisitesByQuestId = new Map<string, QuestWorkspaceQuest[]>();
 	const leadsToByQuestId = new Map<string, string[]>();
 
 	for (const quest of quests) {
@@ -61,7 +61,7 @@ export function buildQuestDataIndex(
 		}
 	}
 
-	const unlocksByQuestId = new Map<string, FullQuest[]>();
+	const unlocksByQuestId = new Map<string, QuestWorkspaceQuest[]>();
 	for (const quest of quests) {
 		unlocksByQuestId.set(
 			quest.id,
@@ -69,7 +69,7 @@ export function buildQuestDataIndex(
 		);
 	}
 
-	const tradersById = new Map<string, FullQuest["trader"]>();
+	const tradersById = new Map<string, QuestWorkspaceQuest["trader"]>();
 	for (const quest of quests) {
 		if (!tradersById.has(quest.trader.id)) tradersById.set(quest.trader.id, quest.trader);
 	}

@@ -2,19 +2,19 @@
 
 import { useMemo, type ReactNode } from "react";
 import { compareQuestTradersByOrder } from "@/lib/cfg/questTraderOrder";
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 
 interface QuestListByTraderProps {
 	questIds: string[];
-	questsById: ReadonlyMap<string, FullQuest>;
+	questsById: ReadonlyMap<string, QuestWorkspaceQuest>;
 	highlightQuestIds?: ReadonlySet<string>;
-	itemPrefix?: (quest: FullQuest) => ReactNode;
+	itemPrefix?: (quest: QuestWorkspaceQuest) => ReactNode;
 	emptyMessage?: string;
 }
 
 interface TraderGroup {
-	trader: FullQuest["trader"];
-	quests: FullQuest[];
+	trader: QuestWorkspaceQuest["trader"];
+	quests: QuestWorkspaceQuest[];
 }
 
 export function QuestListByTrader({

@@ -7,12 +7,12 @@ import { RouteLoader } from "@/components/core/RouteLoader";
 import { DeferredPriceBoundary } from "@/features/items/DeferredPriceBoundary";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { useGameDataEnabled, useUserStoreHydrated } from "@/lib/query/game-data";
-import { hideoutPageQueryOptions, pageDataFromQuery } from "@/lib/query/page-data";
+import { stationDetailQueryOptions, pageDataFromQuery } from "@/lib/query/page-data";
 import { PartialDataError } from "@/lib/query/request";
 import type { HideoutPageData } from "@/types/contracts";
 import { StationDetailsPage } from "./StationDetailsPage";
 
-/** Station pages share the Hideout page query; only the viewed station's items are priced. */
+/** Station metadata and prices are scoped to the viewed station. */
 export function StationDetailQueryPage({
 	mode,
 	stationId,
@@ -26,7 +26,11 @@ export function StationDetailQueryPage({
 }) {
 	const hydrated = useUserStoreHydrated();
 	const enabled = useGameDataEnabled(mode);
-	const query = useQuery({ ...hideoutPageQueryOptions(mode), enabled, placeholderData: fallbackData ?? undefined });
+	const query = useQuery({
+		...stationDetailQueryOptions(mode, stationId),
+		enabled,
+		placeholderData: fallbackData ?? undefined,
+	});
 	const data = pageDataFromQuery(query.data, query.error, fallbackData);
 	const station = data?.stations?.find((entry) => entry.id === stationId) ?? null;
 	const itemIds = useMemo(

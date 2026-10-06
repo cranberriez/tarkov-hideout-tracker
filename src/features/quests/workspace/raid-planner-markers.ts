@@ -1,13 +1,13 @@
 import type { FullQuest } from "@/types/quests";
 import type { MapOverlayMarker } from "@/types/maps";
 import { getVisualizationColor } from "../../../lib/cfg/visualization-colors";
-import { isLocationOnMap } from "../quest-map-groups";
+import { isLocationOnRaidPlannerMap } from "./raid-planner-maps";
 
 export interface QuestMarkerStyle {
 	color: string;
 }
 
-export function createQuestMarkerStyles(quests: FullQuest[]) {
+export function createQuestMarkerStyles(quests: readonly Pick<FullQuest, "id">[]) {
 	const styles = new Map<string, QuestMarkerStyle>();
 	quests.forEach((quest, index) => {
 		styles.set(quest.id, {
@@ -31,7 +31,7 @@ export function buildRaidPlannerMarkers(
 		for (const objective of quest.objectives) {
 			if (completedQuestObjectives[quest.id]?.[objective.id]) continue;
 			(objective.locations ?? []).forEach((location, locationIndex) => {
-				if (!isLocationOnMap(location, mapKey) || !location.position) return;
+				if (!isLocationOnRaidPlannerMap(location, mapKey) || !location.position) return;
 				const positionKey = [location.position.x, location.position.y, location.position.z]
 					.map((coordinate) => coordinate.toFixed(2))
 					.join(":");

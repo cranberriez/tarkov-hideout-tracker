@@ -74,7 +74,7 @@ keyed records, and omit missing IDs; query contracts report those omissions in
 | ------------ | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | Hideout      | [getHideoutPageData](../src/server/queries/getHideoutPageData.ts)               | Stations and only their referenced item summaries/prices                      |
 | Items        | [getItemChecklistPageData](../src/server/queries/getItemChecklistPageData.ts)   | Independently settled stations/quests, demand metadata, demand items/prices   |
-| Quests       | [getQuestWorkspacePageData](../src/server/queries/getQuestWorkspacePageData.ts) | Prepared full quests and their referenced standard item summaries (no prices) |
+| Quests       | [getQuestWorkspaceIndex](../src/server/queries/getQuestWorkspaceIndex.ts) | Quest summaries for lists, progression and filters; full details/items are scoped reads |
 | Kappa        | [getKappaChecklistPageData](../src/server/queries/getKappaChecklistPageData.ts) | One mode-specific Collector quest and its hand-in items/prices                |
 | Profit pages | [getProfitPageData](../src/server/queries/getProfitPageData.ts)                 | Both recipe graphs, referenced items/prices, full trader catalog, stations    |
 
@@ -106,6 +106,36 @@ include prices use 300 seconds for both. Partial responses and HTTP errors use
 which still select mode from the cookie and prefetch queries directly. Explicit unresolved
 IDs stay in successful payloads and visible warnings; domain errors produce usable
 partial payloads that remain retryable rather than reusable complete cache entries.
+
+Quest workspace hydration and `/api/page-data/quests?mode=...&format=index-v1`
+deliver only the quest index (unversioned requests also return the index).
+The SQL index projection excludes objective details, geometry and reward groups;
+the query performs no item reads. The format is part of the URL/query key to avoid
+reusing earlier full-workspace caches. [Quest contracts](../src/types/quest-workspace.ts)
+separate summaries from full detail records.
+
+`/api/quests/details?mode=...&ids=...` accepts 1–50 unique quest IDs and returns only
+their full details and referenced item presentations, with missing IDs and partial
+errors. Complete single-ID responses use public page caching; batches and partial
+responses use `no-store`. Batch combinations are transport only: the browser caches
+individual mode/quest entries, and server catalog caching uses mode/content-version/
+quest-ID entries. Concurrent cold server misses coalesce into bounded SQL batches.
+The planner requests active quests for the selected map; sustained hover previews
+and direct quest routes use the same per-quest cache. No player profile data enters
+the endpoint or its cache key.
+
+Station details use `/api/page-data/station?mode=...&stationId=...`, with `view=recipes`
+for the separate recipe payload. Metadata contains only the selected station's item
+summaries. The small station-definition collection remains complete for cross-station
+FiR allocation, dependency hover previews and power bonuses. Upgrade metadata omits
+trader offers. Recipe reads use
+[getStationRecipePageData](../src/server/queries/getStationRecipePageData.ts) and
+[indexed graph traversal](../src/server/db/station-recipes.ts), returning only station
+crafts and their recursive input acquisition alternatives, including tools. Power panels
+add explicit fuel/GPU/Bitcoin inputs. Recipe responses use `no-store` because they include
+mutable trader offers; complete upgrade metadata uses the usual public page cache.
+Both queries have independent mode/station browser keys and never populate the full
+Hideout or Profit query entries. Prices use explicit graph item IDs, not the recipes scope.
 
 Hideout, Items, Quests, Kappa, Profit, and Craft Planner server pages request
 unpriced metadata. Quests does not mount a price consumer: opening the workspace,
@@ -175,13 +205,17 @@ database arguments (tests, scripts) always read PostgreSQL directly. Version upd
 commit atomically with their rows and versions only increase, so
 `withStableCatalogRead` with a caller-pinned version needs only its closing check.
 
-[catalog-cache](../src/server/db/catalog-cache.ts) caches whole items (without trader
-offers), stations, quests, traders and recipes per (mode, content_version) as
+[catalog-cache](../src/server/db/catalog-cache.ts) caches item metadata in sorted,
+deduplicated ID batches, and whole stations, quests, traders and recipes per (mode, content_version) as
 gzip entries in the data cache plus a per-instance memo; repository ID reads filter
 those in memory. Values are shared between requests and deep-frozen outside
-production; consumers must not mutate them. Trader offers are a separate all-items
-cache refreshed every 300 seconds (at most about six minutes stale) and overlaid onto
-item reads. Stored item views are cached per (view, mode, version, item). Prices
+production; consumers must not mutate them. Repository item lookups issue bounded SQL
+reads for their requested IDs rather than loading the catalog. Trader offers are separate
+ID-batch reads cached for 300 seconds with a 60-second instance memo, and are omitted
+when the caller requests metadata only. Metadata-only SQL does not select or join price
+rows. Existing whole-domain readers remain available for consumers that need them.
+Station recipe graphs are compressed and cached by mode, catalog version, station and
+canonical extra input IDs. Stored item views are cached per (view, mode, version, item). Prices
 keep their existing 300-second batch cache. Reads that fail or observe a newer
 version are never stored.
 
