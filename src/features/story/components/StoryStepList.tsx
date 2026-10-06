@@ -20,6 +20,7 @@ import type { StoryEndingId, StoryItemRef } from "@/types/story";
 import type { DecisionLocation, EvidenceKind, ResolvedDecisions, SectionView, StepView } from "../story-model";
 import { ChapterBadge, StoryDecisionControl } from "./StoryDecisionControl";
 import { StoryItemChip } from "./StoryItemChip";
+import { StoryStepImages } from "./StoryStepImages";
 
 interface StoryStepListProps {
 	chapterId: string;
@@ -289,6 +290,7 @@ function StepRow({
 					</p>
 				)}
 				{step.items && step.items.length > 0 && <StepItems items={step.items} nested={nested} />}
+				{step.images && step.images.length > 0 && <StoryStepImages images={step.images} stepText={step.text} />}
 				{decision && (
 					<StoryDecisionControl
 						id={`decision-${decision.id}`}

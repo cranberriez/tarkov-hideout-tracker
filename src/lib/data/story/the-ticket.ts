@@ -731,7 +731,7 @@ export const THE_TICKET: StoryChapter = {
 							id: "terminal-fuel-depot",
 							text: "Locate the way into the fuel depot",
 							optional: true,
-							items: [item("SZ-1 explosive charge", "69a0174087a75d2cbd0842e8")],
+							items: [item("SZ-1 explosive charge", "6819f8df28294ec0730db6b4")],
 							note: "Blow the gate with a nearby SZ-1 charge, or push it with Elite Strength or a second player.",
 						},
 						{

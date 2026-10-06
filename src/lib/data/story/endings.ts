@@ -55,6 +55,34 @@ export const STORY_DECISIONS: readonly StoryDecision[] = [
 		],
 	},
 	{
+		id: "boreas-falling-skies-progress",
+		prompt: "Had you completed Falling Skies when you asked Prapor for transport in Boreas?",
+		chapterId: "boreas",
+		options: [
+			{ id: "completed", label: "Completed it", description: "Prapor's price depends on the armored case." },
+			{ id: "not-completed", label: "Not yet", description: "Prapor asks for 30 kills and a yellow flare on Reserve." },
+		],
+	},
+	{
+		id: "boreas-btr-quests",
+		prompt: "Which of the BTR Driver's quests had you completed when you asked him for transport in Boreas?",
+		chapterId: "boreas",
+		options: [
+			{
+				id: "price-of-independence",
+				label: "The Price of Independence",
+				description: "Return to the hideout, then to the driver.",
+			},
+			{
+				id: "choose-your-friends",
+				label: "Choose Your Friends Wisely",
+				endings: ["debtor", "survivor", "fallen"],
+				description: "Burn Skier's reports and clear the smugglers' territories. Rules out Savior.",
+			},
+			{ id: "neither", label: "Neither", description: "Eliminate 10 targets at the smugglers' territories." },
+		],
+	},
+	{
 		id: "blue-fire-fragment",
 		prompt: "Keep the fragment of Item 1156 or hand it over to Mechanic?",
 		chapterId: "blue-fire",

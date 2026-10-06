@@ -161,14 +161,15 @@ than adding them to inventory. Its "Ignore Kappa items" switch drops that demand
 
 The provider has no story-chapter records, so chapters are hand-authored in
 [src/lib/data/story](../src/lib/data/story/) and reviewed against the wiki (Tour,
-Falling Skies, Accidental Witness, Batya, Blue Fire, The Unheard, They Are Already Here and The Ticket so far). Decisions are global because a choice in one chapter changes
+Falling Skies, Accidental Witness, Batya, Blue Fire, Boreas, The Unheard, They Are Already Here and The Ticket so far). Decisions are global because a choice in one chapter changes
 later routes, for example the Falling Skies armored case. Step and decision IDs
 are persisted: never rename or reuse them. Items carry catalog IDs where the item
 exists; story-only items are name-only references. Items and decisions may name
 another chapter; [the chapter index](../src/lib/data/story/index.ts) lists every
 chapter so those always link to `/story/[chapterId]`; untracked chapters render a
 placeholder that links to the wiki and is not indexed.
-Steps may also carry rewards, warnings for route-failing actions and quest links.
+Steps may also carry rewards, warnings for route-failing actions, quest links and
+wiki screenshots, stored under `public/images/story/<chapter-id>/steps/`.
 
 Mr. Kerman's major and minor evidence, and how much major evidence each ending
 needs, live in [the evidence list](../src/lib/data/story/evidence.ts). Each piece

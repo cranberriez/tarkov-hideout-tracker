@@ -2,6 +2,7 @@ import type { StoryChapter, StoryChapterRef } from "@/types/story";
 import { ACCIDENTAL_WITNESS } from "./accidental-witness";
 import { BATYA } from "./batya";
 import { BLUE_FIRE } from "./blue-fire";
+import { BOREAS } from "./boreas";
 import { FALLING_SKIES } from "./falling-skies";
 import { THE_TICKET } from "./the-ticket";
 import { THE_UNHEARD } from "./the-unheard";
@@ -18,6 +19,7 @@ export const STORY_CHAPTERS: readonly StoryChapter[] = [
 	ACCIDENTAL_WITNESS,
 	BATYA,
 	BLUE_FIRE,
+	BOREAS,
 	THE_UNHEARD,
 	THEY_ARE_ALREADY_HERE,
 	THE_TICKET,

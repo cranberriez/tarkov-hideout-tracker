@@ -36,6 +36,12 @@ export interface StoryItemRef {
 	note?: string;
 }
 
+/** A wiki screenshot or map that shows where a step happens. */
+export interface StoryImage {
+	src: string;
+	caption: string;
+}
+
 export interface StoryDecisionOption {
 	id: string;
 	label: string;
@@ -71,6 +77,7 @@ export interface StoryStep {
 	warning?: string;
 	rewards?: string[];
 	quests?: StoryQuestRef[];
+	images?: StoryImage[];
 	/** The step where this decision is made. */
 	decision?: string;
 	requiresLightkeeper?: boolean;
