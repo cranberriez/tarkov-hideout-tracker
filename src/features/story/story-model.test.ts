@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { MAJOR_EVIDENCE, MINOR_EVIDENCE, STORY_CHAPTERS, STORY_DECISIONS, STORY_ENDINGS } from "../../lib/data/story";
 import { THE_TICKET } from "../../lib/data/story/the-ticket";
-import { buildChapterView, chapterEvidence, reachableEndings, resolveDecisions } from "./story-model";
+import { buildChapterView, chapterEvidence, chapterStepGroups, reachableEndings, resolveDecisions } from "./story-model";
 import {
 	emptyStoryProgress,
 	parseStoryProgress,
@@ -72,6 +72,23 @@ test("unresolved branches stay pending and out of the remaining count", () => {
 	const survivorSteps = survivor.sections.find((section) => section.section.id === "survivor-prapor")!.steps;
 	assert.ok(survivorSteps.some((view) => view.step.id === "cash-prapor-300m"));
 	assert.ok(!survivorSteps.some((view) => view.step.id === "cash-prapor-500m"));
+});
+
+test("Ticket case selector stays at the recovery position when its branch disappears", () => {
+	for (const targetEnding of [null, ...STORY_ENDINGS.map((ending) => ending.id)]) {
+		for (const option of [undefined, "kept", "gave-prapor"]) {
+			const view = buildChapterView(THE_TICKET, STORY_DECISIONS, {
+				...emptyStoryProgress(),
+				targetEnding,
+				decisions: option ? { "falling-skies-armored-case": option } : {},
+			});
+			const groups = chapterStepGroups(THE_TICKET, view);
+			const selectors = groups.filter((group) => group.bars.includes("falling-skies-armored-case"));
+			assert.equal(selectors.length, 1);
+			assert.equal(selectors[0].sectionId, "recover-case");
+			assert.equal(Boolean(selectors[0].view), option !== "kept");
+		}
+	}
 });
 
 test("completing a step completes earlier required steps; clearing one clears later steps", () => {

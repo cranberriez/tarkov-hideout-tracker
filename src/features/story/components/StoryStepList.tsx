@@ -17,14 +17,14 @@ import { Badge } from "@/components/ui/badge";
 import { STORY_DECISION_BY_ID, STORY_ENDING_BY_ID, storyChapterLink } from "@/lib/data/story";
 import { cn } from "@/lib/utils";
 import type { StoryEndingId, StoryItemRef } from "@/types/story";
-import type { DecisionLocation, EvidenceKind, ResolvedDecisions, SectionView, StepView } from "../story-model";
+import type { chapterStepGroups, DecisionLocation, EvidenceKind, ResolvedDecisions, StepView } from "../story-model";
 import { ChapterBadge, StoryDecisionControl } from "./StoryDecisionControl";
 import { StoryItemChip } from "./StoryItemChip";
 import { StoryStepImages } from "./StoryStepImages";
 
 interface StoryStepListProps {
 	chapterId: string;
-	sections: SectionView[];
+	groups: ReturnType<typeof chapterStepGroups>;
 	resolved: ResolvedDecisions;
 	targetEnding: StoryEndingId | null;
 	locations: ReadonlyMap<string, DecisionLocation>;
@@ -39,7 +39,7 @@ const COLLAPSE_ITEMS_AFTER = 12;
 
 export function StoryStepList({
 	chapterId,
-	sections,
+	groups,
 	resolved,
 	targetEnding,
 	locations,
@@ -62,15 +62,28 @@ export function StoryStepList({
 			document.getElementById(`decision-${decisionId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }),
 		);
 	};
-	// Choices made outside this chapter render once, above the first expanded section they shape.
-	const placedBars = new Map<string, string>();
 	return (
 		<ol className="flex flex-col gap-6">
-			{sections.map(({ section, state, decisionIds, pendingOn, steps }) => {
+			{groups.map(({ sectionId, bars, view }) => {
+				const controls = bars.map((decisionId) => (
+					<StoryDecisionControl
+						key={decisionId}
+						id={`decision-${decisionId}`}
+						decision={STORY_DECISION_BY_ID[decisionId]}
+						layout="bar"
+						className="rounded-md bg-info/10 px-3 py-3"
+						{...decisionProps}
+					/>
+				));
+				if (!view) {
+					return bars.length ? (
+						<li key={sectionId} className="space-y-4">{controls}</li>
+					) : null;
+				}
+				const { section, state, decisionIds, pendingOn, steps } = view;
 				const isCollapsed = collapsed.has(section.id);
 				const required = steps.filter((view) => !view.step.optional);
 				const complete = required.length > 0 && required.every((view) => view.done);
-				const bars: string[] = [];
 				const links: Array<{ decisionId: string; label: string; sectionId?: string }> = [];
 				for (const decisionId of decisionIds) {
 					const location = locations.get(decisionId);
@@ -83,16 +96,13 @@ export function StoryStepList({
 								sectionId: location.sectionId,
 							});
 						}
-					} else if (!placedBars.has(decisionId)) {
-						if (isCollapsed) continue;
-						placedBars.set(decisionId, section.id);
-						bars.push(decisionId);
-					} else if (pendingOn.includes(decisionId)) {
+					} else if (!bars.includes(decisionId) && pendingOn.includes(decisionId)) {
 						links.push({ decisionId, label: "Choose above" });
 					}
 				}
 				return (
 					<li key={section.id}>
+						{bars.length > 0 && <div className="mb-4 space-y-4">{controls}</div>}
 						<div className="mb-2 flex flex-wrap items-center gap-2">
 							<h2>
 								<button
@@ -127,7 +137,7 @@ export function StoryStepList({
 									href={`#decision-${decisionId}`}
 									onClick={(event) => {
 										event.preventDefault();
-										revealDecision(decisionId, sectionId ?? placedBars.get(decisionId));
+										revealDecision(decisionId, sectionId);
 									}}
 									title={STORY_DECISION_BY_ID[decisionId]?.prompt}
 									className="inline-flex"
@@ -139,17 +149,6 @@ export function StoryStepList({
 								</a>
 							))}
 						</div>
-						{!isCollapsed &&
-							bars.map((decisionId) => (
-								<StoryDecisionControl
-									key={decisionId}
-									id={`decision-${decisionId}`}
-									decision={STORY_DECISION_BY_ID[decisionId]}
-									layout="bar"
-									className="mb-2 rounded-md border border-info/25 bg-info/5 px-3 py-2.5"
-									{...decisionProps}
-								/>
-							))}
 						{!isCollapsed && (
 							<ol
 								className={cn(

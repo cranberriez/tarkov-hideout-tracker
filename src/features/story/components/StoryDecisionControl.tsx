@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Lock } from "lucide-react";
+import { ArrowUpRight, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { STORY_ENDING_BY_ID, storyChapterLink } from "@/lib/data/story";
 import { cn } from "@/lib/utils";
@@ -79,6 +79,14 @@ export function StoryDecisionControl({
 											? "border-dashed border-brand/70 bg-brand/8 text-brand hover:bg-brand/15"
 											: "border-highlight/15 bg-shadow/30 text-muted-foreground hover:border-brand/40 hover:text-foreground",
 									leadsAway && !chosen && "opacity-45",
+									layout === "bar" && [
+										"rounded-sm border-0",
+										chosen
+											? "bg-info text-inverse"
+											: implied
+												? "bg-info/15 text-info hover:bg-info/25"
+												: "bg-transparent text-info hover:bg-info/15 hover:text-info",
+									],
 								)}
 							>
 								{option.label}
@@ -100,7 +108,12 @@ export function StoryDecisionControl({
 				</div>
 			</div>
 			{shownOption?.description && (
-				<p className="mt-1.5 text-[13px] leading-5 text-muted-foreground">
+				<p
+					className={cn(
+						"mt-1.5 text-[13px] leading-5 text-muted-foreground",
+						layout === "bar" && "text-sm leading-6 text-foreground/85",
+					)}
+				>
 					{current?.source === "implied" ? "If chosen: " : ""}
 					{shownOption.description}
 				</p>
@@ -114,6 +127,7 @@ export function ChapterBadge({ name, href }: { name: string; href: string }) {
 		<Link href={href} className="inline-flex">
 			<Badge variant="flat" size="sm" className="hover:bg-highlight/16 hover:text-foreground">
 				{name}
+				<ArrowUpRight aria-hidden="true" />
 			</Badge>
 		</Link>
 	);

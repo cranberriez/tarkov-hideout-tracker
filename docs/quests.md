@@ -182,7 +182,9 @@ Only chapters whose sections vary by ending show the target ending on their card
 
 Choices appear where they matter: a decision made at a step renders inline there,
 and sections that depend on it link back to it. Decisions made in other chapters
-render as a bar above the first section they shape. The sidebar lists them all.
+render as a flat row above the heading of the first section they shape. These
+controls keep their authored position and stay visible when the section is
+collapsed or hidden by a choice. The sidebar lists them all.
 
 Completing a step also completes the earlier active, required steps on the
 route; un-completing one clears every later step. Sub-objectives toggle alone.

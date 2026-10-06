@@ -238,6 +238,27 @@ export function decisionLocations(chapter: StoryChapter): Map<string, DecisionLo
 	return locations;
 }
 
+/** Keep cross-chapter controls at their first authored section, even when that section is hidden. */
+export function chapterStepGroups(chapter: StoryChapter, view: ChapterView) {
+	const locations = decisionLocations(chapter);
+	const placed = new Set<string>();
+	const visible = new Map(view.sections.map((section) => [section.section.id, section]));
+	return chapter.sections.map((section) => {
+		const referenced = conditionDecisionIds(section.when, new Set<string>());
+		const collect = (step: StoryStep) => {
+			conditionDecisionIds(step.when, referenced);
+			step.substeps?.forEach(collect);
+		};
+		section.steps.forEach(collect);
+		const bars = [...referenced].filter((id) => {
+			if (locations.has(id) || placed.has(id) || view.resolved[id]?.source === "inapplicable") return false;
+			placed.add(id);
+			return true;
+		});
+		return { sectionId: section.id, bars, view: visible.get(section.id) };
+	});
+}
+
 /** Per-ending summary for the ending picker, using the player's choices plus that ending's implications. */
 export function endingRouteStats(
 	chapter: StoryChapter,

@@ -24,6 +24,7 @@ import { StoryStepList } from "./components/StoryStepList";
 import {
 	buildChapterView,
 	chapterEvidence,
+	chapterStepGroups,
 	decisionLocations,
 	endingRouteStats,
 	evaluateCondition,
@@ -207,7 +208,7 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 						chapterId={chapter.id}
 						locations={locations}
 						evidenceByStep={evidence.byStep}
-						sections={view.sections}
+						groups={chapterStepGroups(chapter, view)}
 						resolved={view.resolved}
 						targetEnding={progress.targetEnding}
 						onToggleStep={(stepId, done) =>
