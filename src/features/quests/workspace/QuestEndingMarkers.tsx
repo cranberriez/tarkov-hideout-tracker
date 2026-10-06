@@ -3,7 +3,42 @@
 import Link from "next/link";
 import { STORY_ENDINGS, STORY_ENDING_BY_ID } from "@/lib/data/story/endings";
 import { cn } from "@/lib/utils";
-import { storyQuestRequirements, useQuestWorkspace } from "./QuestWorkspaceContext";
+import { storyQuestFailures, storyQuestRequirements, useQuestWorkspace } from "./QuestWorkspaceContext";
+
+export function QuestEndingFailureBanner({ questId }: { questId: string }) {
+	const failures = storyQuestFailures.get(questId);
+	if (!failures?.length) return null;
+	return (
+		<aside aria-label="Story ending failure warning" className="mb-8 space-y-3 rounded-sm bg-danger/10 px-4 py-3">
+			{failures.map((entry) => (
+				<div key={`${entry.chapterId}:${entry.stepId}`} className="flex items-center gap-3">
+					<div className="flex shrink-0 -space-x-3">
+						{entry.endings.map((id) => (
+							<img
+								key={id}
+								src={STORY_ENDING_BY_ID[id].image}
+								alt={STORY_ENDING_BY_ID[id].name}
+								className="size-10 object-contain drop-shadow-[0_2px_3px_var(--shadow)]"
+							/>
+						))}
+					</div>
+					<p className="text-sm text-danger">
+						Completing this quest fails the{" "}
+						<strong>{entry.endings.map((id) => STORY_ENDING_BY_ID[id].name).join(", ")}</strong>
+						{entry.endings.length === 1 ? " ending" : " endings"}. See{" "}
+						<Link
+							href={`/story/${entry.chapterId}#step-${entry.stepId}`}
+							className="font-medium text-foreground underline underline-offset-2 hover:text-muted-foreground"
+						>
+							{entry.chapterName}
+						</Link>
+						.
+					</p>
+				</div>
+			))}
+		</aside>
+	);
+}
 
 export function QuestEndingMarker({ questId, compact = false }: { questId: string; compact?: boolean }) {
 	const { targetEnding, endingQuestIds } = useQuestWorkspace();

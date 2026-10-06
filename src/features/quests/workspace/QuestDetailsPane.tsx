@@ -22,7 +22,7 @@ import { QuestFailureConditions, QuestMultipleChoiceBanner, QuestUnlocks } from 
 import { QuestRequirements } from "./details/QuestRequirements";
 import { hasQuestRewards, QuestRewards } from "./details/QuestRewards";
 import { QuestMobileMenuSpacer } from "./QuestMobileMenu";
-import { QuestEndingBanner } from "./QuestEndingMarkers";
+import { QuestEndingBanner, QuestEndingFailureBanner } from "./QuestEndingMarkers";
 
 /** Workspace adapter: store/action wiring around the reusable quest detail sections. */
 export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
@@ -167,6 +167,7 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 					<div className="max-w-6xl px-6 py-10 sm:px-9">
 						<section>
 							<QuestEndingBanner questId={quest.id} />
+							<QuestEndingFailureBanner questId={quest.id} />
 							{(hasRequirements || leadsTo.length > 0 || hasFailureDetails) && (
 								<div className="mb-12 flex flex-wrap gap-x-10 gap-y-8">
 									{hasRequirements && (

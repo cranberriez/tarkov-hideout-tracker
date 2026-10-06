@@ -25,6 +25,8 @@ export interface StoryQuestRef {
 	name: string;
 	/** Explicit ending requirements only; ordinary quest links may be optional or rewards. */
 	requiredForEndings?: StoryEndingId[];
+	/** Completing this quest rules out these endings. */
+	failsEndings?: StoryEndingId[];
 	/** Explains alternatives or conditional requirements in the quest banner. */
 	requirementNote?: string;
 }
@@ -81,6 +83,8 @@ export interface StoryStep {
 	note?: string;
 	/** Something that fails this route. */
 	warning?: string;
+	/** Quest named in the warning, rendered as an inline hover-preview link. */
+	warningQuest?: StoryQuestRef;
 	rewards?: string[];
 	/** Awarded items, displayed separately from items needed for the step. */
 	rewardItems?: StoryItemRef[];

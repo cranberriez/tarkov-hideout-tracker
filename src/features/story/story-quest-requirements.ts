@@ -14,19 +14,29 @@ export interface StoryQuestRequirement {
 
 /** Only explicitly reviewed requirements qualify, never incidental story quest links. */
 export function buildStoryQuestRequirements(chapters: readonly StoryChapter[]) {
+	return buildStoryQuestRelations(chapters, "requiredForEndings");
+}
+
+/** Failure notices are informational even when the player has selected another ending. */
+export function buildStoryQuestFailures(chapters: readonly StoryChapter[]) {
+	return buildStoryQuestRelations(chapters, "failsEndings");
+}
+
+function buildStoryQuestRelations(chapters: readonly StoryChapter[], field: "requiredForEndings" | "failsEndings") {
 	const byQuest = new Map<string, StoryQuestRequirement[]>();
 	for (const chapter of chapters) {
 		const visit = (step: StoryStep, conditions: StoryCondition[]) => {
 			const nextConditions = step.when ? [...conditions, step.when] : conditions;
-			for (const quest of step.quests ?? []) {
-				if (!quest.requiredForEndings?.length) continue;
+			for (const quest of [...(step.quests ?? []), ...(step.warningQuest ? [step.warningQuest] : [])]) {
+				const endings = quest[field];
+				if (!endings?.length) continue;
 				const entries = byQuest.get(quest.id) ?? [];
 				entries.push({
 					questId: quest.id,
 					chapterId: chapter.id,
 					chapterName: chapter.name,
 					stepId: step.id,
-					endings: quest.requiredForEndings,
+					endings,
 					conditions: nextConditions,
 					note: quest.requirementNote,
 				});

@@ -2,7 +2,26 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { STORY_CHAPTERS, STORY_DECISIONS } from "../../lib/data/story";
 import { emptyStoryProgress } from "./story-progress";
-import { buildStoryQuestRequirements, questRequiresSelectedEnding } from "./story-quest-requirements";
+import {
+	buildStoryQuestFailures,
+	buildStoryQuestRequirements,
+	questRequiresSelectedEnding,
+} from "./story-quest-requirements";
+
+test("Choose Your Friends Wisely fails Savior and links to the authored warning, never a required marker", () => {
+	const failures = buildStoryQuestFailures(STORY_CHAPTERS);
+	const id = "67460662d0fbbc74ca0f7229";
+	const entries = failures.get(id)!;
+	assert.equal(entries.length, 1);
+	assert.deepEqual(entries[0].endings, ["savior"]);
+	assert.equal(entries[0].chapterId, "the-ticket");
+	assert.equal(entries[0].stepId, "btr-standing");
+	const step = STORY_CHAPTERS.find((chapter) => chapter.id === entries[0].chapterId)!
+		.sections.flatMap((section) => section.steps)
+		.find((step) => step.id === entries[0].stepId)!;
+	assert.ok(step.warning?.includes(step.warningQuest!.name));
+	assert.equal(buildStoryQuestRequirements(STORY_CHAPTERS).has(id), false);
+});
 
 const requirements = buildStoryQuestRequirements(STORY_CHAPTERS);
 const priceIds = ["6744af0969a58fceba101fed", "6745cbee909d2013670a4a55"];

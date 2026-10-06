@@ -28,9 +28,14 @@ import { STORY_CHAPTERS, STORY_DECISIONS } from "@/lib/data/story";
 import type { StoryEndingId } from "@/types/story";
 import { useStoryProgress } from "@/features/story/useStoryProgress";
 import { useUserStoreHydrated } from "@/lib/query/game-data";
-import { buildStoryQuestRequirements, questRequiresSelectedEnding } from "@/features/story/story-quest-requirements";
+import {
+	buildStoryQuestRequirements,
+	buildStoryQuestFailures,
+	questRequiresSelectedEnding,
+} from "@/features/story/story-quest-requirements";
 
 export const storyQuestRequirements = buildStoryQuestRequirements(STORY_CHAPTERS);
+export const storyQuestFailures = buildStoryQuestFailures(STORY_CHAPTERS);
 
 export type QuestWorkspaceMode = "details" | QuestView;
 export type QuestListMode = "quests" | "history";

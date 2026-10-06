@@ -1,17 +1,7 @@
 "use client";
 
 import { useEffect, useImperativeHandle, useState, type Ref } from "react";
-import {
-	Check,
-	ChevronDown,
-	CircleCheck,
-	FileSearch,
-	Gift,
-	GitBranch,
-	MapPin,
-	ScrollText,
-	TriangleAlert,
-} from "lucide-react";
+import { Check, ChevronDown, CircleCheck, FileSearch, Gift, GitBranch, MapPin, TriangleAlert } from "lucide-react";
 import { QuestLink } from "@/components/entities/quest-link";
 import { Badge } from "@/components/ui/badge";
 import { STORY_DECISION_BY_ID, STORY_ENDING_BY_ID, storyChapterLink } from "@/lib/data/story";
@@ -299,19 +289,35 @@ function StepRow({
 				{step.warning && (
 					<p className="mt-1 flex items-start gap-1.5 text-[13px] leading-5 text-danger">
 						<TriangleAlert aria-hidden="true" className="mt-[3px] size-3.5 shrink-0" />
-						{step.warning}
+						<span>
+							{step.warningQuest
+								? step.warning.split(step.warningQuest.name).map((part, index) => (
+										<span key={index}>
+											{index > 0 && (
+												<QuestLink
+													questId={step.warningQuest!.id}
+													name={step.warningQuest!.name}
+													className="font-semibold text-foreground underline underline-offset-2 hover:text-muted-foreground"
+												>
+													{step.warningQuest!.name}
+												</QuestLink>
+											)}
+											{part}
+										</span>
+									))
+								: step.warning}
+						</span>
 					</p>
 				)}
 				{step.quests && step.quests.length > 0 && (
-					<div className="mt-1 flex flex-wrap items-center gap-1.5">
+					<div className="mt-2 flex flex-wrap items-center gap-2">
 						{step.quests.map((quest) => (
 							<QuestLink
 								key={quest.id}
 								questId={quest.id}
 								name={quest.name}
-								className="inline-flex items-center gap-1 text-[13px] text-brand hover:underline"
+								className="inline-flex items-center rounded-sm bg-highlight/10 px-3 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-highlight/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
 							>
-								<ScrollText aria-hidden="true" className="size-3" />
 								{quest.name}
 							</QuestLink>
 						))}

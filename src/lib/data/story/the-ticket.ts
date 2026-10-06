@@ -713,6 +713,7 @@ export const THE_TICKET: StoryChapter = {
 					})),
 					note: "Complete The Price of Independence.",
 					warning: "Completing Choose Your Friends Wisely fails this objective and ends the Savior route.",
+					warningQuest: { ...QUESTS.chooseYourFriends, failsEndings: ["savior"] },
 				},
 				{ id: "tell-fence-complete", text: "Tell Fence that the assignment is complete" },
 				{

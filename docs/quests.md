@@ -183,6 +183,12 @@ retain the conditional marker. Quest details always show all annotated endings
 above requirements, with stacked icons, the selected icon emphasized, and links
 to the requiring chapter objectives. This is informational and does not change
 quest availability, completion, ignored flags, or item demand.
+Story quest references render as neutral buttons with foreground text and retain
+the shared quest hover preview. A step's `warningQuest` links the named quest inline
+in its warning; explicit `failsEndings` metadata supplies a separate danger notice
+above requirements on that quest's detail page, even without an ending selected.
+Choose Your Friends Wisely is marked as failing Savior and links back to The Ticket.
+Failure references never become required-quest markers or mutate story decisions.
 Catalog-linked rewards use `rewardItems`, which render item chips alongside the
 reward text and are excluded from the remaining-step item requirements.
 
