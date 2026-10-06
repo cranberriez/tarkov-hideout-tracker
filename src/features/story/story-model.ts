@@ -259,6 +259,20 @@ export function chapterStepGroups(chapter: StoryChapter, view: ChapterView) {
 	});
 }
 
+/** Only rendered choices are jump targets; collapsed sections can be reopened. */
+export function chapterDecisionTargets(groups: ReturnType<typeof chapterStepGroups>) {
+	const targets = new Map<string, string | null>();
+	for (const group of groups) {
+		for (const id of group.bars) targets.set(id, null);
+		const collect = (step: StepView) => {
+			if (step.step.decision) targets.set(step.step.decision, group.sectionId);
+			step.substeps.forEach(collect);
+		};
+		group.view?.steps.forEach(collect);
+	}
+	return targets;
+}
+
 /** Per-ending summary for the ending picker, using the player's choices plus that ending's implications. */
 export function endingRouteStats(
 	chapter: StoryChapter,

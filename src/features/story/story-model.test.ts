@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { MAJOR_EVIDENCE, MINOR_EVIDENCE, STORY_CHAPTERS, STORY_DECISIONS, STORY_ENDINGS } from "../../lib/data/story";
 import { THE_TICKET } from "../../lib/data/story/the-ticket";
-import { buildChapterView, chapterEvidence, chapterStepGroups, reachableEndings, resolveDecisions } from "./story-model";
+import { buildChapterView, chapterDecisionTargets, chapterEvidence, chapterStepGroups, reachableEndings, resolveDecisions } from "./story-model";
 import {
 	emptyStoryProgress,
 	parseStoryProgress,
@@ -89,6 +89,19 @@ test("Ticket case selector stays at the recovery position when its branch disapp
 			assert.equal(Boolean(selectors[0].view), option !== "kept");
 		}
 	}
+});
+
+test("decision jumps target visible inline choices and retained banners, excluding hidden objectives", () => {
+	const view = buildChapterView(THE_TICKET, STORY_DECISIONS, {
+		...emptyStoryProgress(),
+		targetEnding: "survivor",
+		decisions: { "falling-skies-armored-case": "kept" },
+	});
+	const targets = chapterDecisionTargets(chapterStepGroups(THE_TICKET, view));
+	assert.equal(targets.get("ticket-kerman-offer"), "unlock-case");
+	assert.equal(targets.get("falling-skies-armored-case"), null);
+	assert.equal(targets.has("ticket-kerman-evidence"), false);
+	assert.equal(targets.has("ticket-major-evidence"), false);
 });
 
 test("completing a step completes earlier required steps; clearing one clears later steps", () => {

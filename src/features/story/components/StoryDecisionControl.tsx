@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Lock } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { STORY_ENDING_BY_ID, storyChapterLink } from "@/lib/data/story";
 import { cn } from "@/lib/utils";
 import type { StoryDecision, StoryEndingId } from "@/types/story";
@@ -17,6 +18,8 @@ interface StoryDecisionControlProps {
 	onDecision: (decisionId: string, optionId: string) => void;
 	/** Prompt beside the options on wide screens, for full-width bars. */
 	layout?: "stacked" | "bar";
+	highlighted?: boolean;
+	onJump?: () => void;
 	id?: string;
 	className?: string;
 }
@@ -28,14 +31,25 @@ export function StoryDecisionControl({
 	targetEnding,
 	onDecision,
 	layout = "stacked",
+	highlighted = false,
+	onJump,
 	id,
 	className,
 }: StoryDecisionControlProps) {
 	const current = resolved[decision.id];
 	const shownOption = decision.options.find((option) => option.id === current?.optionId);
 	const source = decision.chapterId !== chapterId ? storyChapterLink(decision.chapterId) : null;
+	const tinted = highlighted || layout === "bar";
 	return (
-		<div id={id} className={cn("scroll-mt-24", className)}>
+		<div
+			id={id}
+			tabIndex={id ? -1 : undefined}
+			className={cn(
+				"scroll-mt-24 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info",
+				tinted && "bg-info/10 px-3 py-3",
+				className,
+			)}
+		>
 			<div
 				className={cn(
 					"flex flex-col gap-2",
@@ -52,7 +66,7 @@ export function StoryDecisionControl({
 					)}
 					{source && <ChapterBadge {...source} />}
 				</div>
-				<div className="flex flex-wrap gap-2">
+				<div className="flex flex-wrap items-center gap-2">
 					{decision.options.map((option) => {
 						const chosen = current?.source === "chosen" && current.optionId === option.id;
 						const implied = current?.source === "implied" && current.optionId === option.id;
@@ -79,7 +93,7 @@ export function StoryDecisionControl({
 											? "border-dashed border-brand/70 bg-brand/8 text-brand hover:bg-brand/15"
 											: "border-highlight/15 bg-shadow/30 text-muted-foreground hover:border-brand/40 hover:text-foreground",
 									leadsAway && !chosen && "opacity-45",
-									layout === "bar" && [
+									tinted && [
 										"rounded-sm border-0",
 										chosen
 											? "bg-info text-inverse"
@@ -105,13 +119,26 @@ export function StoryDecisionControl({
 							</button>
 						);
 					})}
+					{onJump && (
+						<Button
+							variant="ghost"
+							tone="info"
+							size="md"
+							iconOnly
+							aria-label={`Jump to choice in objectives: ${decision.prompt}`}
+							title="Jump to choice in objectives"
+							onClick={onJump}
+						>
+							<ArrowRight aria-hidden="true" className="size-4" />
+						</Button>
+					)}
 				</div>
 			</div>
 			{shownOption?.description && (
 				<p
 					className={cn(
 						"mt-1.5 text-[13px] leading-5 text-muted-foreground",
-						layout === "bar" && "text-sm leading-6 text-foreground/85",
+						tinted && "text-sm leading-6 text-foreground/85",
 					)}
 				>
 					{current?.source === "implied" ? "If chosen: " : ""}

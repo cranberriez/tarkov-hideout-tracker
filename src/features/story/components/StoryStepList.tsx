@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useImperativeHandle, useState, type Ref } from "react";
 import {
 	Check,
 	ChevronDown,
@@ -18,11 +18,13 @@ import { STORY_DECISION_BY_ID, STORY_ENDING_BY_ID, storyChapterLink } from "@/li
 import { cn } from "@/lib/utils";
 import type { StoryEndingId, StoryItemRef } from "@/types/story";
 import type { chapterStepGroups, DecisionLocation, EvidenceKind, ResolvedDecisions, StepView } from "../story-model";
+import { chapterDecisionTargets } from "../story-model";
 import { ChapterBadge, StoryDecisionControl } from "./StoryDecisionControl";
 import { StoryItemChip } from "./StoryItemChip";
 import { StoryStepImages } from "./StoryStepImages";
 
 interface StoryStepListProps {
+	ref?: Ref<StoryStepListHandle>;
 	chapterId: string;
 	groups: ReturnType<typeof chapterStepGroups>;
 	resolved: ResolvedDecisions;
@@ -34,10 +36,15 @@ interface StoryStepListProps {
 	onDecision: (decisionId: string, optionId: string) => void;
 }
 
+export interface StoryStepListHandle {
+	jumpToDecision: (decisionId: string) => void;
+}
+
 /** Long item lists, such as evidence, start collapsed. */
 const COLLAPSE_ITEMS_AFTER = 12;
 
 export function StoryStepList({
+	ref,
 	chapterId,
 	groups,
 	resolved,
@@ -58,10 +65,21 @@ export function StoryStepList({
 	/** Expands the section holding a choice before jumping to it. */
 	const revealDecision = (decisionId: string, sectionId: string | undefined) => {
 		if (sectionId && collapsed.has(sectionId)) toggleSection(sectionId);
-		requestAnimationFrame(() =>
-			document.getElementById(`decision-${decisionId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }),
-		);
+		requestAnimationFrame(() => {
+			const target = document.getElementById(`decision-${decisionId}`);
+			target?.focus({ preventScroll: true });
+			target?.scrollIntoView({
+				behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+				block: "center",
+			});
+		});
 	};
+	useImperativeHandle(ref, () => ({
+		jumpToDecision(decisionId) {
+			const targets = chapterDecisionTargets(groups);
+			if (targets.has(decisionId)) revealDecision(decisionId, targets.get(decisionId) ?? undefined);
+		},
+	}));
 	return (
 		<ol className="flex flex-col gap-6">
 			{groups.map(({ sectionId, bars, view }) => {
@@ -71,7 +89,6 @@ export function StoryStepList({
 						id={`decision-${decisionId}`}
 						decision={STORY_DECISION_BY_ID[decisionId]}
 						layout="bar"
-						className="rounded-md bg-info/10 px-3 py-3"
 						{...decisionProps}
 					/>
 				));
@@ -299,6 +316,7 @@ function StepRow({
 					<StoryDecisionControl
 						id={`decision-${decision.id}`}
 						decision={decision}
+						highlighted
 						className="mt-2.5"
 						{...decisionProps}
 					/>

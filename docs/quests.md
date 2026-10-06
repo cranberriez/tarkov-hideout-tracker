@@ -185,9 +185,20 @@ and sections that depend on it link back to it. Decisions made in other chapters
 render as a flat row above the heading of the first section they shape. These
 controls keep their authored position and stay visible when the section is
 collapsed or hidden by a choice. The sidebar lists them all.
+Inline objective choices share the banners' rounded blue, borderless treatment.
+Sidebar choices with a location in the current objective list have a jump icon;
+it expands the containing section, focuses the choice and smoothly scrolls to it
+(instant scrolling for reduced motion). Choices hidden by the route have no jump
+control until their objective is available.
 
 Completing a step also completes the earlier active, required steps on the
 route; un-completing one clears every later step. Sub-objectives toggle alone.
+The progress card's **Complete chapter** action waits for relevant route choices
+to be chosen or implied by the target ending, then completes visible required
+steps only. Hidden branches, optional steps and sub-objectives are untouched.
+Once complete, the action is disabled. An adjacent undo arrow reverses only the
+steps added by that click, preserving earlier progress and choices. Undo is local
+to the current chapter/profile visit and is unavailable after later step edits.
 
 The [story model](../src/features/story/story-model.ts) resolves each decision from
 the player's choice, else the single option compatible with the target ending.
@@ -204,6 +215,7 @@ Progress persistence is described in [user state](user-state.md).
 node --test --import jiti/register src/lib/quests/quest-availability.test.ts src/lib/quests/quest-item-index.test.ts src/server/queries/getKappaChecklistPageData.test.ts
 node --test --import jiti/register src/features/quests/workspace/quest-workspace-selector.test.ts src/features/quests/workspace/quest-details-model.test.ts src/features/quests/import/quest-log-import-model.test.ts src/features/quests/quest-routes.test.ts
 node --test --import jiti/register src/features/story/story-model.test.ts
+node --test --import jiti/register src/features/story/chapter-completion.test.ts
 ```
 
 Run the adjacent tests for any correction, graph, marker, or import utility you

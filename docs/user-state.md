@@ -26,6 +26,11 @@ account for existing users' data.
 | `tarkov-active-game-mode` cookie                | [game-mode.ts](../src/lib/game-mode.ts); active profile selection for server reads                                                                                                                                                                                                                      |
 
 Profit key suffixes are app modes `PVP`, `PVE`, and `KORD`, not dataset names.
+Story chapter completion uses the existing mode-scoped progress writer and adds
+only active required step IDs after route choices resolve. Its undo receipt is
+ephemeral, scoped to the chapter/profile visit, and removes only IDs added by
+that action if the chapter's completed steps have not since changed. Stored
+choices, unknown IDs, other chapters, keys and the save version are preserved.
 The user/Kappa stores are separate persistent owners; neither owns the profit
 keys or import-file metadata. Store definitions are the field inventory; do not
 maintain a copied interface in documentation.

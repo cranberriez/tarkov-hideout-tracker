@@ -25,6 +25,8 @@ interface StoryRoutePanelProps {
 	onTargetEnding: (ending: StoryEndingId) => void;
 	onLightkeeperAccess: (access: boolean) => void;
 	onDecision: (decisionId: string, optionId: string) => void;
+	decisionTargets: ReadonlyMap<string, string | null>;
+	onJumpDecision: (decisionId: string) => void;
 }
 
 export function StoryRoutePanel({
@@ -38,6 +40,8 @@ export function StoryRoutePanel({
 	onTargetEnding,
 	onLightkeeperAccess,
 	onDecision,
+	decisionTargets,
+	onJumpDecision,
 }: StoryRoutePanelProps) {
 	return (
 		<div className="flex flex-col gap-4">
@@ -129,6 +133,7 @@ export function StoryRoutePanel({
 									resolved={resolved}
 									targetEnding={targetEnding}
 									onDecision={onDecision}
+									onJump={decisionTargets.has(decision.id) ? () => onJumpDecision(decision.id) : undefined}
 								/>
 							</li>
 						))}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import Link from "next/link";
 import { ChevronLeft, ExternalLink } from "lucide-react";
 import {
@@ -17,14 +17,16 @@ import { useUserStoreHydrated } from "@/lib/query/game-data";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { StoryEndingId } from "@/types/story";
 import { ChapterBadge } from "./components/StoryDecisionControl";
+import { StoryChapterCompletion } from "./components/StoryChapterCompletion";
 import { StoryEvidencePanel } from "./components/StoryEvidencePanel";
 import { StoryItemChip } from "./components/StoryItemChip";
 import { StoryRoutePanel, type EndingSummary } from "./components/StoryRoutePanel";
-import { StoryStepList } from "./components/StoryStepList";
+import { StoryStepList, type StoryStepListHandle } from "./components/StoryStepList";
 import {
 	buildChapterView,
 	chapterEvidence,
 	chapterStepGroups,
+	chapterDecisionTargets,
 	decisionLocations,
 	endingRouteStats,
 	evaluateCondition,
@@ -42,6 +44,9 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 	const [progress, update] = useStoryProgress(gameMode);
 
 	const view = useMemo(() => buildChapterView(chapter, STORY_DECISIONS, progress), [chapter, progress]);
+	const stepGroups = useMemo(() => chapterStepGroups(chapter, view), [chapter, view]);
+	const decisionTargets = useMemo(() => chapterDecisionTargets(stepGroups), [stepGroups]);
+	const stepListRef = useRef<StoryStepListHandle>(null);
 	const reachable = useMemo(
 		() => reachableEndings(STORY_DECISIONS, progress.decisions, ENDING_IDS),
 		[progress.decisions],
@@ -144,13 +149,13 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 							<div className="mt-2 h-1.5 overflow-hidden rounded-full bg-highlight/10">
 								<div className="h-full bg-brand transition-all" style={{ width: `${percent}%` }} />
 							</div>
-							{stats.pendingRequired > 0 && (
-								<p className="mt-2 text-xs text-info">
-									Up to {stats.pendingRequired} more step{stats.pendingRequired === 1 ? "" : "s"}, depending on choices
-									you haven&apos;t recorded.
-									{progress.targetEnding ? "" : " Pick a target ending to narrow them down."}
-								</p>
-							)}
+							<StoryChapterCompletion
+								key={`${gameMode}:${chapter.id}`}
+								chapter={chapter}
+								view={view}
+								progress={progress}
+								update={update}
+							/>
 							{stats.lightkeeperRemaining > 0 && progress.lightkeeperAccess === false && (
 								<p className="mt-2 text-xs text-danger">
 									{stats.lightkeeperRemaining} remaining step{stats.lightkeeperRemaining === 1 ? " needs" : "s need"}{" "}
@@ -188,6 +193,8 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 								}))
 							}
 							onDecision={onDecision}
+							decisionTargets={decisionTargets}
+							onJumpDecision={(id) => stepListRef.current?.jumpToDecision(id)}
 						/>
 
 						{stats.itemsNeeded.length > 0 && (
@@ -205,10 +212,11 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 					</aside>
 
 					<StoryStepList
+						ref={stepListRef}
 						chapterId={chapter.id}
 						locations={locations}
 						evidenceByStep={evidence.byStep}
-						groups={chapterStepGroups(chapter, view)}
+						groups={stepGroups}
 						resolved={view.resolved}
 						targetEnding={progress.targetEnding}
 						onToggleStep={(stepId, done) =>
