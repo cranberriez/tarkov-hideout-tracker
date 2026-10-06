@@ -30,6 +30,33 @@ function status(value: QuestWorkspaceStatusInfo["status"], reasons: QuestLockRea
 	return { status: value, label: value, reasons, terminal };
 }
 
+test("pinned-only removes unpinned columns and keeps resolved pins and visibility rules", () => {
+	const quests = [
+		makeQuest("active", prapor),
+		makeQuest("done", prapor),
+		makeQuest("hidden", prapor),
+		makeQuest("unpinned", therapist),
+	];
+	const options = {
+		quests,
+		statusByQuestId: new Map(quests.map((quest) => [quest.id, status(quest.id === "done" ? "completed" : "active")])),
+		upcomingLockedQuestIds: new Set<string>(),
+		hiddenQuests: { hidden: true },
+		questOrderById: new Map(quests.map((quest, index) => [quest.id, index])),
+		showPinnedOnly: true,
+		pinnedQuests: { active: true, done: true, hidden: true, unpinned: false },
+	};
+	const board = buildQuestTraderBoard(options);
+	assert.deepEqual(
+		board.map((column) => [column.trader.id, column.totalCount, column.doneCount]),
+		[["prapor", 2, 1]],
+	);
+	assert.deepEqual(board[0].sections[0].groups[0].questIds, ["active", "done"]);
+	assert.deepEqual(board[0].sections[0].doneQuestIds, ["done"]);
+	assert.deepEqual(buildQuestTraderBoard({ ...options, pinnedQuests: {} }), []);
+	assert.equal(buildQuestTraderBoard({ ...options, showPinnedOnly: false }).length, 2);
+});
+
 test("groups by trader and loyalty level, folds resolved quests, and orders open quests by status", () => {
 	const quests = [
 		makeQuest("therapist-one", therapist),

@@ -23,7 +23,8 @@ const LEGEND = [
 ];
 
 export function QuestTraderBoardPane() {
-	const { quests, questDataIndex, statusByQuestId, upcomingLockedQuestIds } = useQuestWorkspace();
+	const { quests, questDataIndex, statusByQuestId, upcomingLockedQuestIds, pinnedQuests, showPinnedOnly } =
+		useQuestWorkspace();
 	const hiddenQuests = useUserStore((state) => state.ignoredQuests);
 	const [expandedSectionIds, setExpandedSectionIds] = useState<Set<string>>(() => new Set());
 	const [activeColumnIndex, setActiveColumnIndex] = useState(0);
@@ -36,9 +37,19 @@ export function QuestTraderBoardPane() {
 				statusByQuestId,
 				upcomingLockedQuestIds,
 				hiddenQuests,
+				pinnedQuests,
+				showPinnedOnly,
 				questOrderById: questDataIndex.questOrderById,
 			}),
-		[hiddenQuests, questDataIndex.questOrderById, quests, statusByQuestId, upcomingLockedQuestIds],
+		[
+			hiddenQuests,
+			pinnedQuests,
+			showPinnedOnly,
+			questDataIndex.questOrderById,
+			quests,
+			statusByQuestId,
+			upcomingLockedQuestIds,
+		],
 	);
 	const toggleSection = (sectionId: string) =>
 		setExpandedSectionIds((current) => {
@@ -75,6 +86,11 @@ export function QuestTraderBoardPane() {
 					</span>
 				))}
 			</div>
+			{columns.length === 0 && (
+				<p className="px-5 py-14 text-center text-sm text-subtle-foreground">
+					{showPinnedOnly ? "No pinned quests to show." : "No quests to show."}
+				</p>
+			)}
 			<div
 				ref={traderStripRef}
 				aria-label="Traders"

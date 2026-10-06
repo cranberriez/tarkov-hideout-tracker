@@ -4,6 +4,7 @@ import test from "node:test";
 import type { FullQuest } from "../../../types";
 import type { QuestWorkspaceLockedFilterSettings } from "../../../lib/stores/useUserStore";
 import { selectWorkspaceQuests, type QuestProfileSnapshot } from "./quest-workspace-selector";
+import type { QuestWorkspaceSelectionOptions } from "./quest-workspace-selector";
 
 const trader = { id: "trader", name: "Trader", normalizedName: "trader" };
 
@@ -43,6 +44,46 @@ const lockedFilters: QuestWorkspaceLockedFilterSettings = {
 	prerequisiteLookahead: 1,
 	showFaction: false,
 };
+
+test("pinned-only intersects existing filters and responds to profile pin changes", () => {
+	const quests = [
+		makeQuest("alpha", "Alpha Run"),
+		makeQuest("bravo", "Bravo Run"),
+		makeQuest("charlie", "Charlie Run"),
+	];
+	const index = new Map(quests.map((quest) => [quest.id, quest]));
+	const options: QuestWorkspaceSelectionOptions = {
+		selectedTraderIds: new Set(),
+		filterByTraderRequirements: false,
+		selectedMapKeys: new Set(),
+		selectedStatuses: new Set(["active"]),
+		lockedFilters,
+		selectedObjectiveCategories: new Set(),
+		hiddenQuests: { bravo: true },
+		showHiddenQuests: false,
+		retainedCompletedQuestIds: new Set(),
+		searchQuery: "",
+		showPinnedOnly: true,
+		pinnedQuests: { alpha: true, bravo: true, charlie: false },
+	};
+	assert.deepEqual(selectWorkspaceQuests(quests, index, profile, options).filteredQuestIds, ["alpha"]);
+	assert.deepEqual(
+		selectWorkspaceQuests(quests, index, profile, { ...options, searchQuery: "charlie" }).filteredQuestIds,
+		[],
+	);
+	assert.deepEqual(
+		selectWorkspaceQuests(quests, index, profile, { ...options, pinnedQuests: {} }).filteredQuestIds,
+		[],
+	);
+	assert.deepEqual(
+		selectWorkspaceQuests(quests, index, profile, { ...options, pinnedQuests: { charlie: true } }).filteredQuestIds,
+		["charlie"],
+	);
+	assert.deepEqual(
+		selectWorkspaceQuests(quests, index, profile, { ...options, showPinnedOnly: false }).filteredQuestIds,
+		["alpha", "charlie"],
+	);
+});
 
 test("returns canonical quest IDs after hidden and search filters", () => {
 	const quests = [makeQuest("alpha", "Alpha Run"), makeQuest("bravo", "Bravo Run")];

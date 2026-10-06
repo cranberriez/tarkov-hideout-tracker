@@ -52,6 +52,8 @@ interface QuestWorkspaceContextValue {
 	upcomingLockedQuestIds: Set<string>;
 	selectedObjectiveCategories: Set<QuestObjectiveCategory>;
 	showHiddenQuests: boolean;
+	showPinnedOnly: boolean;
+	pinnedQuests: Record<string, boolean>;
 	groupByTrader: boolean;
 	groupByLoyaltyLevel: boolean;
 	sortMode: QuestSortMode;
@@ -82,6 +84,7 @@ interface QuestWorkspaceContextValue {
 	toggleObjectiveCategory: (category: QuestObjectiveCategory) => void;
 	clearObjectiveCategories: () => void;
 	setShowHiddenQuests: (enabled: boolean) => void;
+	setShowPinnedOnly: (enabled: boolean) => void;
 	setGroupByTrader: (enabled: boolean) => void;
 	setGroupByLoyaltyLevel: (enabled: boolean) => void;
 	setSortMode: (mode: QuestSortMode) => void;
@@ -143,6 +146,9 @@ export function QuestWorkspaceProvider({
 			completedQuests: state.completedQuests,
 			failedQuests: state.failedQuests,
 			hiddenQuests: state.ignoredQuests,
+			pinnedQuests: state.pinnedQuests,
+			showPinnedOnly: state.questShowPinnedOnly,
+			setShowPinnedOnly: state.setQuestShowPinnedOnly,
 			showHiddenQuests: state.questShowIgnored,
 			selectedTraderIds: state.questWorkspaceSelectedTraders,
 			filterByTraderRequirements: state.questWorkspaceFilterByTraderRequirements,
@@ -229,6 +235,8 @@ export function QuestWorkspaceProvider({
 				selectedObjectiveCategories,
 				hiddenQuests: store.hiddenQuests,
 				showHiddenQuests: store.showHiddenQuests,
+				pinnedQuests: store.pinnedQuests,
+				showPinnedOnly: store.showPinnedOnly,
 				retainedCompletedQuestIds,
 				searchQuery,
 			}),
@@ -246,6 +254,8 @@ export function QuestWorkspaceProvider({
 			store.hiddenQuests,
 			store.lockedFilters,
 			store.showHiddenQuests,
+			store.pinnedQuests,
+			store.showPinnedOnly,
 		],
 	);
 	const { statusByQuestId, upcomingLockedQuestIds } = selection;
@@ -370,6 +380,8 @@ export function QuestWorkspaceProvider({
 				upcomingLockedQuestIds,
 				selectedObjectiveCategories,
 				showHiddenQuests: store.showHiddenQuests,
+				pinnedQuests: store.pinnedQuests,
+				showPinnedOnly: store.showPinnedOnly,
 				groupByTrader,
 				groupByLoyaltyLevel,
 				sortMode: store.sortMode,
@@ -437,6 +449,11 @@ export function QuestWorkspaceProvider({
 					store.setShowHiddenQuests(enabled);
 				},
 				setGroupByTrader,
+				setShowPinnedOnly: (enabled) => {
+					store.setShowPinnedOnly(enabled);
+					setListMode("quests");
+					setOpenFilter(null);
+				},
 				setGroupByLoyaltyLevel,
 				setSortMode: store.setSortMode,
 				setOpenFilter,

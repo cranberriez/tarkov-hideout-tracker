@@ -35,11 +35,13 @@ export interface BuildQuestTraderBoardOptions {
 	statusByQuestId: ReadonlyMap<string, QuestWorkspaceStatusInfo>;
 	upcomingLockedQuestIds: ReadonlySet<string>;
 	hiddenQuests: Readonly<Record<string, boolean>>;
+	pinnedQuests?: Readonly<Record<string, boolean>>;
+	showPinnedOnly?: boolean;
 	questOrderById: ReadonlyMap<string, number>;
 }
 
 /**
- * Whole-profile overview: ignores workspace filters, but leaves out quests the player can never
+ * Whole-profile overview: honors pinned-only visibility, but otherwise ignores workspace filters and leaves out quests the player can never
  * take (removed, other faction, excluded branch) or chose to hide.
  */
 export function buildQuestTraderBoard({
@@ -47,6 +49,8 @@ export function buildQuestTraderBoard({
 	statusByQuestId,
 	upcomingLockedQuestIds,
 	hiddenQuests,
+	pinnedQuests,
+	showPinnedOnly,
 	questOrderById,
 }: BuildQuestTraderBoardOptions): TraderBoardColumn[] {
 	const isDone = (questId: string) => !!statusByQuestId.get(questId)?.terminal;
@@ -63,6 +67,7 @@ export function buildQuestTraderBoard({
 	const questsByTraderId = new Map<string, FullQuest[]>();
 
 	for (const quest of quests) {
+		if (showPinnedOnly && !pinnedQuests?.[quest.id]) continue;
 		const status = statusByQuestId.get(quest.id);
 		if (!status || quest.removed || hiddenQuests[quest.id]) continue;
 		const unreachable =

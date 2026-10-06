@@ -90,7 +90,11 @@ The trader board is a full-width overview (the list pane hides): trader columns 
 loyalty-level and Essential sections, completed and failed quests folded behind an
 expandable count. Essential quests are grouped into the same series as the list, in chain
 order. Below `sm` each trader fills the width and snaps on swipe, with an avatar strip to jump. It ignores workspace filters but omits removed, hidden, other-faction,
-and excluded-branch quests; selecting a quest switches to Details.
+and excluded-branch quests; selecting a quest switches to Details. The Pinned toggle
+between History and Search limits both the list and trader board to the active
+profile's pinned quests, using the existing shared `questShowPinnedOnly` preference.
+The list still applies its other filters; the board still folds resolved quests.
+Mobile exposes the same toggle as Pinned only in the quest menu.
 The workspace loads board, planner, and visualizer component code on demand, with a
 loading indicator in the selected pane. Shared quest indexes remain available
 for complete prerequisite and filter derivation.

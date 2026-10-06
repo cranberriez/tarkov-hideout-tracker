@@ -10,6 +10,7 @@ import {
 	List,
 	Map,
 	Menu,
+	Pin,
 	SlidersHorizontal,
 	UserRound,
 	type LucideIcon,
@@ -63,7 +64,7 @@ export function QuestMobileMenu() {
 			workspace.sortMode !== "unlockOrder" ||
 			workspace.selectedObjectiveCategories.size > 0,
 	};
-	const anyFilterModified = Object.values(modifiedFilters).some(Boolean);
+	const anyFilterModified = workspace.showPinnedOnly || Object.values(modifiedFilters).some(Boolean);
 	const currentFilter = mode === "details" ? FILTERS.find((filter) => filter.section === openFilter) : undefined;
 	const currentViewId: MenuView = mode === "details" ? (listMode === "history" ? "history" : "log") : mode;
 	const currentView = VIEWS.find((view) => view.view === currentViewId) ?? VIEWS[0];
@@ -116,6 +117,12 @@ export function QuestMobileMenu() {
 				))}
 				<DropdownMenuSeparator />
 				<MenuLabel>Filter</MenuLabel>
+				<MenuItem
+					icon={Pin}
+					label="Pinned only"
+					current={workspace.showPinnedOnly}
+					onSelect={() => workspace.setShowPinnedOnly(!workspace.showPinnedOnly)}
+				/>
 				{FILTERS.map((filter) => (
 					<MenuItem
 						key={filter.section}

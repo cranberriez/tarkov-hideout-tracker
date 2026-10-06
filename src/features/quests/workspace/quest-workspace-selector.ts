@@ -25,6 +25,8 @@ export interface QuestWorkspaceSelectionOptions {
 	selectedObjectiveCategories: ReadonlySet<QuestObjectiveCategory>;
 	hiddenQuests: Readonly<Record<string, boolean>>;
 	showHiddenQuests: boolean;
+	pinnedQuests?: Readonly<Record<string, boolean>>;
+	showPinnedOnly?: boolean;
 	retainedCompletedQuestIds: ReadonlySet<string>;
 	searchQuery: string;
 }
@@ -59,6 +61,7 @@ export function selectWorkspaceQuests(
 
 	const filteredQuestIds = quests
 		.filter((quest) => {
+			if (options.showPinnedOnly && !options.pinnedQuests?.[quest.id]) return false;
 			if (!options.showHiddenQuests && options.hiddenQuests[quest.id]) return false;
 			if (options.selectedTraderIds.size > 0 && !options.selectedTraderIds.has(quest.trader.id)) return false;
 			if (options.filterByTraderRequirements && !questMatchesTraderRequirementProfile(quest, profile)) return false;
