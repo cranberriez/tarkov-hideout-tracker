@@ -8,6 +8,7 @@ import { useUserStore, type GameMode, type PlayerProfileState } from "@/lib/stor
 import { cn } from "@/lib/utils";
 import { countCompletedHideoutUpgrades, countCompletedQuests } from "@/lib/utils/profile-summary";
 import { PROFILE_BASE_COLORS } from "@/lib/cfg/profile-colors";
+import { PlayerEndingSelector } from "@/features/story/components/PlayerEndingSelector";
 
 const PRESTIGE_LEVELS = [1, 2, 3, 4, 5, 6];
 const PROFILE_ORDER: GameMode[] = ["PVE", "PVP", "KORD"];
@@ -250,6 +251,7 @@ export function PlayerProfileMenu() {
 
 					{activePanel === "character" ? (
 						<CharacterCustomizer
+							gameMode={gameMode}
 							levelInputValue={levelInputValue}
 							onLevelInputChange={changePlayerLevel}
 							prestigeLevel={prestigeLevel}
@@ -276,6 +278,7 @@ export function PlayerProfileMenu() {
 }
 
 function CharacterCustomizer({
+	gameMode,
 	levelInputValue,
 	onLevelInputChange,
 	prestigeLevel,
@@ -283,6 +286,7 @@ function CharacterCustomizer({
 	faction,
 	setFaction,
 }: {
+	gameMode: GameMode;
 	levelInputValue: string;
 	onLevelInputChange: (value: string) => void;
 	prestigeLevel: number;
@@ -336,6 +340,9 @@ function CharacterCustomizer({
 						BEAR
 					</SegmentButton>
 				</div>
+			</ControlGroup>
+			<ControlGroup label="Ending">
+				<PlayerEndingSelector gameMode={gameMode} />
 			</ControlGroup>
 		</div>
 	);
