@@ -11,7 +11,7 @@ import {
 	type QuestView,
 } from "../quest-routes";
 import { useShallow } from "zustand/react/shallow";
-import type { FullQuest, QuestWorkspaceQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import type { QuestDataIndex } from "../quest-data-index";
 import { useUserStore, type QuestSortMode, type QuestWorkspaceLockedFilterSettings } from "@/lib/stores/useUserStore";
 import {
@@ -257,8 +257,7 @@ export function QuestWorkspaceProvider({
 			createQuestMarkerStyles(
 				plannerMapKey
 					? quests.filter(
-							(quest): quest is FullQuest =>
-								"objectives" in quest &&
+							(quest) =>
 								statusByQuestId.get(quest.id)?.status === "active" &&
 								getQuestMapKeys(quest).has(plannerMapKey),
 						)
