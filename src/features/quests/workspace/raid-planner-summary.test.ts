@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { FullQuest } from "@/types/quests";
+import { toQuestSummary } from "../../../lib/quests/quest-summary";
+import { getQuestWorkspaceItemIds } from "../../../lib/quests/quest-item-ids";
 import {
 	buildRaidPlannerKillList,
 	buildRaidPlannerMapSummary,
@@ -62,6 +64,20 @@ test("map summary groups unique quests by objective type and deduplicates requir
 		{ category: "plant", questCount: 1, keyedQuestCount: 1 },
 	]);
 	assert.deepEqual(summary.requiredKeyIds, ["key-1"]);
+});
+
+test("lazy planner summaries defer keys until selected-map details supply IDs and item reads", () => {
+	const quests = [quest("visit", "visit", [[key.id]]), quest("plant", "plantItem", [[key.id], ["missing-key"]])];
+	const cards = buildRaidPlannerMapSummary(quests.map(toQuestSummary), "customs");
+	assert.equal(cards.keysDeferred, true);
+	assert.deepEqual(cards.requiredKeyIds, []);
+	assert.equal(cards.objectiveGroups[0].keyedQuestCount, 1);
+
+	const selectedMap = buildRaidPlannerMapSummary(quests, "customs");
+	assert.equal(selectedMap.keysDeferred, false);
+	assert.deepEqual(selectedMap.requiredKeyIds, [key.id, "missing-key"]);
+	assert.deepEqual(getQuestWorkspaceItemIds(quests).sort(), selectedMap.requiredKeyIds);
+	assert.deepEqual(buildRaidPlannerMapSummary(quests, "woods").requiredKeyIds, []);
 });
 
 test("kill list includes every shooting objective with a compact description", () => {

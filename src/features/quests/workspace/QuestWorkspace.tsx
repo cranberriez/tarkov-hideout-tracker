@@ -135,7 +135,7 @@ export function QuestWorkspace({ quests, children }: { quests: QuestWorkspaceQue
 					)}
 				</section>
 			</div>
-			<QuestMobileMenu />
+			{!(mode === "planner" && plannerMapKey) && <QuestMobileMenu />}
 		</main>
 	);
 }

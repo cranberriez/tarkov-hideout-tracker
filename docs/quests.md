@@ -98,7 +98,13 @@ components that remain in the feature directory.
 The planner uses profile-active quests independently of the workspace's other
 status filters. Its map-selection cards use summary counts/categories. Selecting
 a map requests full details only for active quests associated with that map;
-required key presentations and geometry load then. Loading, missing data, and
+required key presentations and geometry load then. The selected map's Keys button
+lists deduplicated keys for its active quests, including quests without positioned
+markers, and opens item details. Map cards retain key requirement counts; marker
+previews retain objective-specific keys. Unresolved keys remain visible by ID.
+The Keys button hides when a complete read has no required keys. The floating
+mobile quest menu hides while a planner map is open; Back and Exit remain available.
+Loading, missing data, and
 partial failures are shown explicitly rather than appearing as an empty plan.
 Visited positioned objectives are profile state and are filtered
 before marker grouping; whole-quest completion clears that quest's visited records.

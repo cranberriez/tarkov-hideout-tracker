@@ -24,6 +24,7 @@ import {
 	getRaidPlannerMarkerKeys,
 } from "./raid-planner-summary";
 import { itemImageUrl } from "@/lib/utils/item-images";
+import { ItemLink } from "@/components/entities/item-link";
 
 interface RaidPlannerPaneProps {
 	rememberedView: MapViewTransform | null;
@@ -34,6 +35,7 @@ const EMPTY_NAVIGATION_MARKERS: MapOverlayMarker[] = [];
 
 export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPaneProps) {
 	const [isKillListOpen, setIsKillListOpen] = useState(false);
+	const [isKeysOpen, setIsKeysOpen] = useState(false);
 	const [isFullScreen, setIsFullScreen] = useState(false);
 	const completedQuestObjectives = useUserStore((state) => state.completedQuestObjectives);
 	const toggleQuestObjectiveCompletion = useUserStore((state) => state.toggleQuestObjectiveCompletion);
@@ -88,6 +90,12 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
 	);
 	const killObjectives = useMemo(() => buildRaidPlannerKillList(plannerQuests), [plannerQuests]);
 	const objectiveKeyIndex = useMemo(() => buildRaidPlannerObjectiveKeyIndex(plannerQuests), [plannerQuests]);
+	const requiredKeyIds = useMemo(
+		() => (selectedMapKey ? buildRaidPlannerMapSummary(plannerQuests, selectedMapKey).requiredKeyIds : []),
+		[plannerQuests, selectedMapKey],
+	);
+	const keysIncomplete = details.pending || !!details.error || details.missingQuestIds.length > 0;
+	const showKeys = keysIncomplete || requiredKeyIds.length > 0;
 	const completableQuestIds = useMemo(
 		() => new Set(plannerQuests.filter((quest) => quest.objectives.length > 1).map((quest) => quest.id)),
 		[plannerQuests],
@@ -130,7 +138,6 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
 									mapKey={map.key}
 									mapName={map.name}
 									summary={summary}
-									itemById={itemById}
 									onSelect={() => selectPlannerMap(map.key)}
 								/>
 							);
@@ -239,6 +246,7 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
 					onClick={() => {
 						setIsFullScreen(false);
 						setIsKillListOpen(false);
+						setIsKeysOpen(false);
 						clearPlannerMap();
 					}}
 					className="inline-flex items-center gap-2 border border-highlight/12 bg-shadow/80 px-3 py-2 text-xs font-medium text-foreground shadow-xl backdrop-blur-sm transition-colors hover:border-brand/40 hover:text-brand"
@@ -249,13 +257,72 @@ export function RaidPlannerPane({ rememberedView, onViewChange }: RaidPlannerPan
 					type="button"
 					aria-expanded={isKillListOpen}
 					aria-controls="raid-planner-kill-list"
-					onClick={() => setIsKillListOpen((open) => !open)}
+					onClick={() => {
+						setIsKillListOpen((open) => !open);
+						setIsKeysOpen(false);
+					}}
 					className="inline-flex items-center gap-2 border border-danger/25 bg-danger-surface/75 px-3 py-2 text-xs font-medium text-danger shadow-xl backdrop-blur-sm transition-colors hover:border-danger/45 hover:bg-danger-surface/90"
 				>
 					<Crosshair size={14} className="text-danger/80" />
 					Kill List
 					<span className="text-[10px] text-danger/50">{killObjectives.length}</span>
 				</button>
+				{showKeys && (
+					<button
+						type="button"
+						aria-expanded={isKeysOpen}
+						aria-controls="raid-planner-keys"
+						onClick={() => {
+							setIsKeysOpen((open) => !open);
+							setIsKillListOpen(false);
+						}}
+						className="inline-flex items-center gap-2 border border-warning/25 bg-shadow/80 px-3 py-2 text-xs font-medium text-warning shadow-xl backdrop-blur-sm transition-colors hover:border-warning/45"
+					>
+						<KeyRound size={14} /> Keys
+						<span className="text-[10px] text-warning/70">{keysIncomplete ? "…" : requiredKeyIds.length}</span>
+					</button>
+				)}
+				{showKeys && isKeysOpen && (
+					<div
+						id="raid-planner-keys"
+						className="max-h-[min(60vh,32rem)] w-full overflow-y-auto border border-warning/20 bg-[var(--card-bg)]/95 p-3 shadow-2xl backdrop-blur-md"
+					>
+						{keysIncomplete && (
+							<p role="status" className="mt-2 text-xs text-subtle-foreground">
+								{details.pending
+									? "Loading required keys…"
+									: "Some quest details are unavailable; this list may be incomplete."}
+							</p>
+						)}
+						{requiredKeyIds.length > 0 ? (
+							<ul className="space-y-2">
+								{requiredKeyIds.map((itemId) => {
+									const item = itemById[itemId];
+									return (
+										<li key={itemId}>
+											{item ? (
+												<ItemLink
+													item={item}
+													preview={false}
+													className="flex w-full items-center gap-2 text-xs text-foreground hover:text-brand"
+												>
+													<RaidPlannerKey item={item} />
+													<span>{item.name}</span>
+												</ItemLink>
+											) : (
+												<p className="break-all text-xs text-warning">Key details unavailable ({itemId})</p>
+											)}
+										</li>
+									);
+								})}
+							</ul>
+						) : (
+							!keysIncomplete && (
+								<p className="mt-2 text-xs text-subtle-foreground">No required keys for active quests on this map.</p>
+							)
+						)}
+					</div>
+				)}
 				{isKillListOpen && (
 					<div
 						id="raid-planner-kill-list"
@@ -296,13 +363,11 @@ function RaidPlannerMapCard({
 	mapKey,
 	mapName,
 	summary,
-	itemById,
 	onSelect,
 }: {
 	mapKey: string;
 	mapName: string;
 	summary: ReturnType<typeof buildRaidPlannerMapSummary>;
-	itemById: Readonly<Record<string, ItemSummary>>;
 	onSelect: () => void;
 }) {
 	const [artworkAvailable, setArtworkAvailable] = useState(true);
@@ -311,7 +376,7 @@ function RaidPlannerMapCard({
 		<button
 			type="button"
 			onClick={onSelect}
-			className="group relative min-h-44 overflow-hidden border border-highlight/8 bg-[var(--card-bg)] p-3 text-left transition-all hover:border-brand/40 hover:bg-[var(--accent)] lg:min-h-56 lg:p-4"
+			className="group relative min-h-36 overflow-hidden border border-highlight/8 bg-[var(--card-bg)] p-3 text-left transition-all hover:border-brand/40 hover:bg-[var(--accent)] lg:min-h-40 lg:p-4"
 		>
 			{artworkAvailable && (
 				<Image
@@ -326,7 +391,7 @@ function RaidPlannerMapCard({
 				/>
 			)}
 			<span className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,var(--card-bg)_18%,color-mix(in_oklab,_var(--card-bg)_90%,_transparent)_52%,color-mix(in_oklab,_var(--card-bg)_35%,_transparent))]" />
-			<span className="relative flex h-full min-h-36 flex-col pb-5 lg:min-h-48 lg:pb-0">
+			<span className="relative flex h-full min-h-28 flex-col pb-5 lg:min-h-32">
 				<span className="block pr-16 text-base font-semibold text-foreground group-hover:text-foreground">
 					{mapName}
 				</span>
@@ -356,25 +421,6 @@ function RaidPlannerMapCard({
 					</span>
 				) : (
 					<span className="mt-3 text-xs text-subtle-foreground lg:mt-4">No active objectives on this map.</span>
-				)}
-
-				{summary.keysDeferred && summary.objectiveGroups.some((group) => group.keyedQuestCount > 0) && (
-					<span className="mt-3 text-xs text-warning/80">Select this map to see required keys.</span>
-				)}
-				{summary.requiredKeyIds.length > 0 && (
-					<span className="mt-2.5 block lg:mt-4">
-						<span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-warning/70">
-							<KeyRound size={10} /> Required keys
-						</span>
-						<span className="mt-1.5 flex flex-wrap gap-1.5 lg:mt-2">
-							{summary.requiredKeyIds
-								.map((itemId) => itemById[itemId])
-								.filter(Boolean)
-								.map((key) => (
-									<RaidPlannerKey key={key.id} item={key} />
-								))}
-						</span>
-					</span>
 				)}
 
 				<span className="absolute bottom-0 right-0 flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-subtle-foreground transition-colors group-hover:text-brand">
