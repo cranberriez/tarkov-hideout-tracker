@@ -1,6 +1,6 @@
 import { FIR_TEMPLATE } from "./fir-template";
 import type { ItemDetection } from "./recognition-model";
-import { suggestReviewGrid } from "./review-model";
+import type { ReviewGrid } from "./review-model";
 
 export type FoundInRaidStatus = "yes" | "no" | "unknown";
 export const foundInRaidLabel = (status: FoundInRaidStatus) =>
@@ -44,7 +44,7 @@ export function scoreFoundInRaid(
 		const size = cellPixels * scale;
 		for (let dx = -0.05; dx <= 0.05; dx += 0.025)
 			// A stack count or durability line sits under the badge, lifting it about one text row.
-			for (const dy of [-0.05, -0.025, 0, 0.025, 0.05, -0.2, -0.175, -0.15]) {
+			for (const dy of [-0.05, -0.025, 0, 0.025, 0.05, -0.225, -0.2, -0.175, -0.15]) {
 				const left = right - size - cellPixels * 0.015 + dx * cellPixels;
 				const top = bottom - size - cellPixels * 0.015 + dy * cellPixels;
 				if (left < bounds.left * width || top < bounds.top * height || left + size >= width || top + size >= height)
@@ -72,8 +72,13 @@ export function scoreFoundInRaid(
  */
 export const FIR_MATCH = 0.67;
 
-export function detectFoundInRaid(data: Uint8ClampedArray, width: number, height: number, detections: ItemDetection[]) {
-	const grid = suggestReviewGrid(detections, width, height);
+export function detectFoundInRaid(
+	data: Uint8ClampedArray,
+	width: number,
+	height: number,
+	detections: ItemDetection[],
+	grid: ReviewGrid | null,
+) {
 	return detections.map((detection) => ({
 		...detection,
 		foundInRaid:

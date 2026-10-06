@@ -1,5 +1,5 @@
 import { detectFoundInRaid, FIR_MATCH, scoreFoundInRaid } from "./found-in-raid";
-import { detectItemFootprints } from "./item-footprints";
+import { alignGridToBorders, detectItemFootprints } from "./item-footprints";
 import {
 	inferLabelGrid,
 	mergeLabelPasses,
@@ -13,7 +13,7 @@ import { refineWithIcons, type IconLoader } from "./icon-matching";
 import { dropContainedBoxes, seedReviewBoxes, suggestReviewGrid, type ReviewBox } from "./review-model";
 import type { ItemSummary } from "../../types/items";
 import { isMoney } from "./selection-model";
-import { assessScan, type ScanHint } from "./scan-quality";
+import { assessScan, fitsOneContainer, type ScanHint } from "./scan-quality";
 
 /** Grayscale ink on white, one byte per pixel. */
 export interface GrayImage {
@@ -39,6 +39,9 @@ export function labelVocabulary(index: ReturnType<typeof buildLabelIndex>) {
 		),
 	];
 }
+
+/** Blank OCR canvas pixels around the screenshot. */
+const PAGE_MARGIN = 16;
 
 function offsetLines(lines: LabelLine[], left: number, top: number): LabelLine[] {
 	return lines.map((line) => ({
@@ -76,7 +79,12 @@ export async function scanLabels(
 	const originalPixels = rgba.slice();
 	// Invert light stash labels into dark text on a light background for OCR.
 	const masks = prepareLabelPixels(rgba);
-	const lines = await reader.readPage(rgba, width, height);
+	// OCR drops text touching the image edge, such as a crop through the top row's labels.
+	const page = { width: width + PAGE_MARGIN * 2, height: height + PAGE_MARGIN * 2 };
+	const framed = new Uint8ClampedArray(page.width * page.height * 4).fill(255);
+	for (let y = 0; y < height; y++)
+		framed.set(rgba.subarray(y * width * 4, (y + 1) * width * 4), ((y + PAGE_MARGIN) * page.width + PAGE_MARGIN) * 4);
+	const lines = offsetLines(await reader.readPage(framed, page.width, page.height), -PAGE_MARGIN, -PAGE_MARGIN);
 	signal.throwIfAborted();
 	const firstMatches = recognizeLabels(lines, index, width, height);
 	let detections = firstMatches;
@@ -108,13 +116,19 @@ export async function scanLabels(
 		const refinedMatches = recognizeLabels(refinedLines, index, width, height, 0);
 		detections = mergeLabelPasses(firstMatches, refinedMatches, grid, height);
 	}
+	const labelGrid = suggestReviewGrid(detections, width, height);
+	// Several containers in one capture do not share a lattice, so their borders cannot refine it.
+	const reviewGrid =
+		labelGrid && fitsOneContainer(width, height, labelGrid.cellWidth * width)
+			? alignGridToBorders(originalPixels, width, height, labelGrid)
+			: labelGrid;
 	detections = detectFoundInRaid(
 		originalPixels,
 		width,
 		height,
-		detectItemFootprints(originalPixels, width, height, detections),
+		detectItemFootprints(originalPixels, width, height, detections, reviewGrid),
+		reviewGrid,
 	);
-	const reviewGrid = suggestReviewGrid(detections, width, height);
 	const byId = new Map(items.map((item) => [item.id, item]));
 	let boxes = seedReviewBoxes(detections, reviewGrid, items);
 	if (reviewGrid) {

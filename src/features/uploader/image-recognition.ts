@@ -105,6 +105,8 @@ export async function readImageLabels(
 		};
 		const reader: LabelReader = {
 			async readPage(rgba, width, height) {
+				canvas.width = width;
+				canvas.height = height;
 				context.putImageData(new ImageData(rgba, width, height), 0, 0);
 				await abortable(
 					worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT, user_defined_dpi: "300" }),

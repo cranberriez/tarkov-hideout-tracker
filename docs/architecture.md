@@ -269,12 +269,16 @@ so those refreshes cannot discard a player's review edits.
 [Image recognition](../src/features/uploader/image-recognition.ts) lazily loads
 Tesseract.js and supplies a browser OCR reader and icon loader to the DOM-free
 [scan pipeline](../src/features/uploader/scan-pipeline.ts), which runs English
-sparse-text OCR on an upscaled, inverted screenshot. If enough recognized labels establish regular rows,
+sparse-text OCR on an upscaled, inverted screenshot framed by a small blank margin, since
+OCR drops labels that touch the image edge. If enough recognized labels establish regular rows,
 [label preprocessing](../src/features/uploader/label-preprocessing.ts) builds
 complementary contrast and neutral-color masks, then isolates individual labels
 for single-line OCR. Pixel-identical crops across masks are read once, so
 complementary contrast passes do not exhaust the region budget with duplicate work. Tight crops use text-height padding to keep nearby artwork
-out; complementary wider crops preserve labels offset from the fitted row.
+out; complementary wider crops preserve labels offset from the fitted row. Rows above the
+first fitted row are read too, so a top row cut off by the crop is not lost.
+Any confident read of a real short name places rows, including names several items share
+(ammo calibers, weapons and their parts), so six labels in four agreeing rows suffice.
 Row spacing is fitted
 across high-confidence label rows to prevent crop drift toward the bottom of a stash.
 Rows are weighted by how many labels they hold and the pitch must be at least 4.5 label
@@ -296,7 +300,9 @@ as recognized items. Separate border
 punctuation cannot expand a matched label's bounds or lower its confidence.
 [The review model](../src/features/uploader/review-model.ts) turns detections into
 selectable boxes. Regular label rows and aligned right edges suggest a square
-cell lattice. [Footprint detection](../src/features/uploader/item-footprints.ts)
+cell lattice. Labels place it a few pixels high, so for a single container it then moves
+onto a clear peak of the light cell-border strokes nearby; captures spanning several
+containers, which do not share one lattice, keep the label estimate. [Footprint detection](../src/features/uploader/item-footprints.ts)
 examines sustained, uniform-color borders in the original pixels to expand short
 labels into multi-cell rectangles, including rotated items. Weak or missing border
 evidence falls back to label-based estimates. At a tightly cropped image edge,
@@ -327,7 +333,10 @@ small position search absorbs lattice error. The score averages RGB correlation 
 brightness-matched difference. Among a read's candidates, a clear artwork lead assigns
 the item; a clear text identity is only replaced when another candidate's art is far
 closer. Boxes still unresolved are compared with every barter item: a clear winner is
-assigned and otherwise the closest items become suggestions. Finally, non-empty lattice
+assigned and otherwise the closest items become suggestions. A complete label of three or
+more characters that spells only non-barter names, and no barter name begins with, skips
+this search: a weapon or part stays unassigned with its own candidates, because modded
+weapons do not match catalog art and the junk-box search would otherwise invent an item. Finally, non-empty lattice
 cells no box covers (labels OCR missed entirely) gain an assigned box only for a strong,
 clear barter match, absorbing unresolved fragments of the same item.
 [Dogtag checks](../src/features/uploader/dogtag.ts) cover labels that are player names,

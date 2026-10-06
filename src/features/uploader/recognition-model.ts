@@ -173,10 +173,19 @@ export function summarizeDetections(detections: readonly ItemDetection[]) {
 	return [...groups.values()];
 }
 
+/**
+ * A confident read of a real short name marks a cell's top-right corner. Shared names (ammo
+ * calibers, weapons and their parts) still place the grid; only identity needs them settled.
+ */
+export function anchorsGrid(entry: ItemDetection) {
+	return entry.match !== "unmatched" && entry.confidence >= 70;
+}
+
 /** Infer repeated label rows only when enough independent rows agree. */
 export function inferLabelGrid(detections: readonly ItemDetection[], height: number) {
-	const exact = detections.filter((entry) => entry.match === "exact" && entry.confidence >= 70);
-	if (exact.length < 8 || !Number.isFinite(height) || height <= 0) return null;
+	const exact = detections.filter(anchorsGrid);
+	// Large items such as weapons leave few labels, so row agreement below carries the evidence.
+	if (exact.length < 6 || !Number.isFinite(height) || height <= 0) return null;
 	const heights = exact.map((entry) => entry.bounds.height * height).sort((a, b) => a - b);
 	const textHeight = heights[Math.floor(heights.length / 2)];
 	if (textHeight <= 0) return null;
@@ -257,9 +266,9 @@ export function mergeLabelPasses(
 	] as const) {
 		for (const detection of detections) {
 			const top = detection.bounds.top * height;
+			// Rows above the first agreed row count too, such as a top row cut off by the crop.
 			const row = Math.round((top - grid.firstTop) / grid.pitch);
 			if (
-				row < 0 ||
 				Math.abs(top - grid.firstTop - row * grid.pitch) > grid.tolerance * 1.5 ||
 				detection.bounds.height * height > grid.textHeight * 1.8
 			)

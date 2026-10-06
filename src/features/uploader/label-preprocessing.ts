@@ -34,13 +34,15 @@ export function buildLabelTasks(
 	// Grid tolerance measures row alignment, not a safe OCR crop margin. Using it
 	// here includes borders and artwork that swallow or distort the small labels.
 	const tightPadding = Math.max(1, Math.round(grid.textHeight * 0.1));
+	// Rows above the first agreed row are read too while half a label could still be in frame.
+	const firstTop = grid.firstTop - Math.floor((grid.firstTop + grid.textHeight / 2) / grid.pitch) * grid.pitch;
 	// A second, wider crop retains ascenders/descenders on rows with imperfect
 	// alignment. It complements the tight crop; it never replaces its evidence.
 	for (const [padding, sources] of [
 		[tightPadding, masks],
 		[grid.tolerance, masks.slice(0, 2)],
 	] as const) {
-		for (let top = grid.firstTop; top < height; top += grid.pitch) {
+		for (let top = firstTop; top < height; top += grid.pitch) {
 			const start = Math.max(0, Math.floor(top - padding));
 			const end = Math.min(height, Math.ceil(top + grid.textHeight + padding));
 			for (const source of sources) {

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { detectItemFootprints } from "./item-footprints";
 import type { ItemDetection } from "./recognition-model";
-import { seedReviewBoxes } from "./review-model";
+import { seedReviewBoxes, suggestReviewGrid } from "./review-model";
 
 test("visible borders enclose wide and tall items despite short labels", () => {
 	const width = 400,
@@ -39,14 +39,17 @@ test("visible borders enclose wide and tall items despite short labels", () => {
 		const offset = (50 * width + x) * 4;
 		data[offset] = data[offset + 1] = data[offset + 2] = x % 2 ? 90 : 210;
 	}
-	const result = detectItemFootprints(data, width, height, detections);
+	const grid = suggestReviewGrid(detections, width, height);
+	const result = detectItemFootprints(data, width, height, detections, grid);
 	assert.ok(result[0].footprint);
 	assert.ok(result[1].footprint);
 	assert.ok(Math.abs(result[0].footprint.width - 0.2) < 0.001);
 	assert.ok(Math.abs(result[1].footprint.height - 0.2) < 0.001);
 	assert.deepEqual(seedReviewBoxes(result, null)[0].bounds, result[0].footprint);
 	assert.ok(
-		detectItemFootprints(new Uint8ClampedArray(data.length), width, height, detections).every((d) => !d.footprint),
+		detectItemFootprints(new Uint8ClampedArray(data.length), width, height, detections, grid).every(
+			(d) => !d.footprint,
+		),
 	);
 });
 
@@ -85,7 +88,7 @@ test("missing outer strokes can use the image frame, but missing interior border
 				bounds: { left: (x + w - 22) / width, top: (y + 2) / width, width: 20 / width, height: 5 / width },
 			};
 		});
-		const result = detectItemFootprints(data, width, width, detections)[0];
+		const result = detectItemFootprints(data, width, width, detections, suggestReviewGrid(detections, width, width))[0];
 		assert.equal(!!result.footprint, scenario.recovered, JSON.stringify(scenario));
 		if (result.footprint) {
 			assert.equal(result.footprintTouchesFrame, true);

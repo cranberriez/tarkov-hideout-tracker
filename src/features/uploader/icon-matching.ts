@@ -1,5 +1,6 @@
 import type { ItemSummary } from "../../types/items";
 import { closerFaction, DOGTAG_IDS, hasLevelNumber } from "./dogtag";
+import { normalizeLabel } from "./recognition-model";
 import { clampBox, overlapFraction, type BoxBounds, type ReviewBox, type ReviewGrid } from "./review-model";
 
 /** RGBA pixels of a catalog grid image: 64 px for one cell, about 63.5 px per extra cell. */
@@ -14,7 +15,7 @@ const SAMPLES = 16;
 /** Cell borders differ between the game and catalog renders. */
 const INSET = 0.05;
 /** Label rows and fitted cells can sit a few pixels off the true cell. */
-const SHIFTS = [-0.04, 0, 0.04];
+const SHIFTS = [-0.04, -0.02, 0, 0.02, 0.04];
 
 export function iconCells(icon: Pick<IconImage, "width" | "height">) {
 	return { columns: Math.max(1, Math.round(icon.width / 63.5)), rows: Math.max(1, Math.round(icon.height / 63.5)) };
@@ -241,8 +242,8 @@ export interface IconRefinement {
 
 /**
  * Re-rank candidates by catalog artwork. A read's candidates are compared first; boxes still
- * unresolved are compared with every barter item, which can assign a clear winner and
- * otherwise supplies the closest matches as suggestions. Finally, occupied cells no box
+ * unresolved, unless their label spells another item, are compared with every barter item, which
+ * can assign a clear winner and otherwise supplies the closest matches as suggestions. Finally, occupied cells no box
  * covers (labels OCR missed entirely) gain a box when one barter item clearly matches.
  */
 export async function refineWithIcons(
@@ -292,6 +293,22 @@ export async function refineWithIcons(
 		const item = bear && usec ? tags[closerFaction(shot, cell, [bear, usec])] : best.item;
 		return { item, candidates: [item, ...tags.filter((tag) => tag.id !== item.id)] };
 	};
+	const barterNames = barterItems.map((item) => normalizeLabel(item.shortName ?? ""));
+	/**
+	 * A complete label spelling only non-barter names, such as a weapon and its parts, is no
+	 * junk item, and modded weapons do not match catalog art either, so the player picks. Short
+	 * fragments (Soap read as "ap") and truncated junk names ("Car" for Car battery) still search.
+	 */
+	const spellsOtherItem = (text: string, candidates: readonly ItemSummary[]) => {
+		const label = normalizeLabel(text);
+		const spelled = candidates.filter((item) => normalizeLabel(item.shortName ?? "") === label);
+		return (
+			label.length >= 3 &&
+			spelled.length > 0 &&
+			!spelled.some((item) => item.barter) &&
+			!barterNames.some((name) => name.startsWith(label))
+		);
+	};
 	const oneCell = (bounds: BoxBounds) =>
 		Math.abs(bounds.width - grid.cellWidth) < grid.cellWidth * 0.3 &&
 		Math.abs(bounds.height - grid.cellHeight) < grid.cellHeight * 0.3;
@@ -318,7 +335,7 @@ export async function refineWithIcons(
 			const order = new Map(scored.map((entry, rank) => [entry.item.id, rank]));
 			candidates = [...candidates].sort((a, b) => (order.get(a.id) ?? Infinity) - (order.get(b.id) ?? Infinity));
 		}
-		if (!itemId && barterItems.length) {
+		if (!itemId && barterItems.length && !spellsOtherItem(box.text, candidates)) {
 			const scored = await score(box.bounds, measured.has(box.id), barterItems);
 			const best = leader(scored);
 			if (best && best.lead >= SEARCH_LEAD && best.score >= SEARCH_FLOOR) {

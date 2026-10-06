@@ -29,15 +29,21 @@ test("missing geometry, tiny icons, and flat corners remain unknown", () => {
 	const data = new Uint8ClampedArray(100 * 100 * 4).fill(80);
 	assert.equal(scoreFoundInRaid(data, 100, 100, { left: 0, top: 0, width: 0.9, height: 0.9 }, 25), 0);
 	assert.equal(scoreFoundInRaid(data, 100, 100, { left: 0, top: 0, width: 0.9, height: 0.9 }, 84), 0);
-	const result = detectFoundInRaid(data, 100, 100, [
-		{
-			id: "x",
-			text: "item",
-			confidence: 95,
-			match: "exact",
-			candidates: [],
-			bounds: { left: 0.1, top: 0.1, width: 0.1, height: 0.01 },
-		},
-	]);
+	const result = detectFoundInRaid(
+		data,
+		100,
+		100,
+		[
+			{
+				id: "x",
+				text: "item",
+				confidence: 95,
+				match: "exact",
+				candidates: [],
+				bounds: { left: 0.1, top: 0.1, width: 0.1, height: 0.01 },
+			},
+		],
+		null,
+	);
 	assert.equal(result[0].foundInRaid, "unknown");
 });

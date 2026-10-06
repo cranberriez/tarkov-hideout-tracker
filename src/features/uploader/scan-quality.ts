@@ -18,6 +18,11 @@ const WIDE_CELLS = 18;
 const TALL_CELLS = 20;
 const HARD_TO_READ_SHARE = 0.1;
 
+/** Whether a screenshot of this many cells can be one stash or container, with one shared lattice. */
+export function fitsOneContainer(width: number, height: number, pitch: number) {
+	return width / pitch <= WIDE_CELLS && height / pitch <= TALL_CELLS;
+}
+
 /**
  * Explains a poor scan from signals the pipeline already has. Only the first page read is
  * used for confidence, since isolated strips are cleaner than the screenshot as a whole.
@@ -67,7 +72,7 @@ export function assessScan({
 				title: "Screenshot is too small",
 				detail: `Cells are about ${Math.round(cellPx)} px. Use a full-resolution screenshot without resizing it.`,
 			});
-		if (width / grid.pitch > WIDE_CELLS || height / grid.pitch > TALL_CELLS)
+		if (!fitsOneContainer(width, height, grid.pitch))
 			hints.push({
 				id: "too-wide",
 				severity: "warning",

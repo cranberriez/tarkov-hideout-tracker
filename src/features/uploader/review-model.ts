@@ -7,7 +7,7 @@ import {
 	suggestLabelCandidates,
 } from "./label-suggestions";
 import type { ItemSummary } from "../../types/items";
-import { buildLabelIndex, inferLabelGrid, normalizeLabel, type ItemDetection } from "./recognition-model";
+import { anchorsGrid, buildLabelIndex, inferLabelGrid, normalizeLabel, type ItemDetection } from "./recognition-model";
 
 export type BoxBounds = ItemDetection["bounds"];
 export interface ReviewBox {
@@ -49,7 +49,7 @@ export function suggestReviewGrid(
 	if (!rows || width <= 0) return null;
 	const cellWidth = rows.pitch / width;
 	const rightEdges = detections
-		.filter((d) => d.match === "exact" && d.confidence >= 70)
+		.filter(anchorsGrid)
 		.map((d) => d.bounds.left + d.bounds.width + (rows.textHeight * 0.2) / width);
 	let phase = 0,
 		best = 0;
