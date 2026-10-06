@@ -34,6 +34,9 @@ interface UIState {
 
 	isLegacyProfileConversionOpen: boolean;
 	setLegacyProfileConversionOpen: (isOpen: boolean) => void;
+	/** The pending conversion dialog was closed without Skip/Confirm; stops auto-open until reload. */
+	isLegacyProfileConversionDeferred: boolean;
+	deferLegacyProfileConversion: () => void;
 
 	/** View shown by the global item-detail dialog; opening another while open pushes dialog history. */
 	itemDetailEntry: ItemDetailEntry | null;
@@ -73,6 +76,9 @@ export const useUIStore = create<UIState>((set) => ({
 
 	isLegacyProfileConversionOpen: false,
 	setLegacyProfileConversionOpen: (isOpen) => set({ isLegacyProfileConversionOpen: isOpen }),
+	isLegacyProfileConversionDeferred: false,
+	deferLegacyProfileConversion: () =>
+		set({ isLegacyProfileConversionOpen: false, isLegacyProfileConversionDeferred: true }),
 
 	itemDetailEntry: null,
 	itemDetailKnownItems: {},

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { LegacyProfileConversionBanner } from "@/features/profile-conversion/LegacyProfileConversionBanner";
 import { LegacyProfileConversionDialog } from "@/features/profile-conversion/LegacyProfileConversionDialog";
 import { RouteAwareFooter } from "@/components/core/RouteAwareFooter";
 
@@ -9,6 +10,7 @@ interface DataLayoutProps {
 export default function DataLayout({ children }: DataLayoutProps) {
 	return (
 		<>
+			<LegacyProfileConversionBanner />
 			{children}
 			<RouteAwareFooter />
 			<LegacyProfileConversionDialog />

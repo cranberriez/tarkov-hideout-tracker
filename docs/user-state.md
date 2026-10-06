@@ -74,7 +74,10 @@ current defaults. Existing new-profile quests are preserved during key relocatio
 Save failures restore the prior in-memory profile and show an error without reloading.
 
 Conversion/dismissal flags and the retained snapshot live only in the new key.
-Settings can reopen conversion after dismissal or completion. Subsequent changes
+Only Skip (or Ignore on the follow-up banner) sets the dismissal flag; outside clicks
+do not close the dialog, and Escape/close defers it for the page session while a
+banner under the nav offers to reopen it. Settings can reopen conversion after
+dismissal or completion. Subsequent changes
 made by an old build do not overwrite the new profiles. Global legacy preferences
 are not copied from flat saves. The old `v1-` export code remains unsupported because
 it contains station levels only, not inventory; use the retained save for migration

@@ -125,16 +125,19 @@ export function LegacyProfileConversionDialog() {
 			dismiss: state.dismissDeprecatedLegacyState,
 		})),
 	);
-	const { isOpenFromSettings, setOpenFromSettings } = useUIStore(
+	const { isOpenFromSettings, setOpenFromSettings, isDeferred, defer } = useUIStore(
 		useShallow((state) => ({
 			isOpenFromSettings: state.isLegacyProfileConversionOpen,
 			setOpenFromSettings: state.setLegacyProfileConversionOpen,
+			isDeferred: state.isLegacyProfileConversionDeferred,
+			defer: state.deferLegacyProfileConversion,
 		})),
 	);
 	const [selectedModeOverride, setSelectedModeOverride] = useState<GameMode | null>(null);
 	const [step, setStep] = useState<DialogStep>("select");
 	const [saveError, setSaveError] = useState<string | null>(null);
-	const shouldOpenAutomatically = store.deprecatedLegacyState !== null && !store.hasConverted && !store.hasDismissed;
+	const isPending = store.deprecatedLegacyState !== null && !store.hasConverted && !store.hasDismissed;
+	const shouldOpenAutomatically = isPending && !isDeferred;
 	const isOpen = hydrated && store.deprecatedLegacyState !== null && (shouldOpenAutomatically || isOpenFromSettings);
 	const selectedMode = selectedModeOverride ?? store.gameMode;
 	const requestedMode = toTarkovJsonGameMode(selectedMode);
@@ -158,11 +161,20 @@ export function LegacyProfileConversionDialog() {
 
 	if (!store.deprecatedLegacyState || !oldStats) return null;
 
-	const handleCancel = () => {
-		if (!store.hasConverted) store.dismiss();
-		setOpenFromSettings(false);
+	const resetDialog = () => {
 		setSelectedModeOverride(null);
 		setStep("select");
+	};
+	const handleSkip = () => {
+		if (!store.hasConverted) store.dismiss();
+		setOpenFromSettings(false);
+		resetDialog();
+	};
+	// Escape and the close button leave the choice pending; the banner offers it again.
+	const handleClose = () => {
+		if (isPending) defer();
+		else setOpenFromSettings(false);
+		resetDialog();
 	};
 	const completeConversion = () => {
 		setSaveError(null);
@@ -179,8 +191,11 @@ export function LegacyProfileConversionDialog() {
 	const handleContinue = () => (destinationHasData ? setStep("replace") : completeConversion());
 
 	return (
-		<Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
-			<DialogContent className="max-h-[90dvh] overflow-hidden p-0 md:max-w-4xl">
+		<Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+			<DialogContent
+				className="max-h-[90dvh] overflow-hidden p-0 md:max-w-4xl"
+				onInteractOutside={(event) => event.preventDefault()}
+			>
 				<DialogHeader className="border-b border-border-color bg-shadow/60 px-6 py-5">
 					<div className="flex items-center gap-3">
 						<span className="flex h-10 w-10 items-center justify-center rounded-full border border-brand/25 bg-brand/10 text-brand">
@@ -304,10 +319,10 @@ export function LegacyProfileConversionDialog() {
 				<div className="flex flex-col-reverse gap-3 border-t border-border-color bg-shadow/70 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
 					<button
 						type="button"
-						onClick={handleCancel}
+						onClick={handleSkip}
 						className="px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-highlight/5 hover:text-foreground"
 					>
-						Cancel
+						{store.hasConverted ? "Cancel" : "Skip"}
 					</button>
 					<div className="flex items-center justify-end gap-2">
 						{step === "replace" && (
