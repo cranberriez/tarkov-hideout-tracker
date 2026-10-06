@@ -26,6 +26,11 @@ export const BLUE_FIRE: StoryChapter = {
 			title: "Ask Mechanic about the EMP blast",
 			steps: [
 				{
+					simplified:
+						"Read the leaflet at Woods’ Scav base or Interchange’s EMERCOM sites, or the note by the Labyrinth prototype.",
+					simplifiedRequirements: [
+						"Woods: green container • Interchange: medical unit or tents near highway / Path to River",
+					],
 					id: "read-emp-lead",
 					text: "Read the EMERCOM leaflet or the Note by Item 1156",
 					items: [
@@ -54,10 +59,18 @@ export const BLUE_FIRE: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Ask Mechanic about the EMP blast.",
 					id: "talk-mechanic-emp",
 					text: "Talk to Mechanic about the EMP blast",
 					note: "Through the trader screen.",
-					substeps: [{ id: "mechanic-access", text: "Gain access to Mechanic", optional: true }],
+					substeps: [
+						{
+							simplified: false,
+							id: "mechanic-access",
+							text: "Gain access to Mechanic",
+							optional: true,
+						},
+					],
 				},
 			],
 		},
@@ -66,6 +79,8 @@ export const BLUE_FIRE: StoryChapter = {
 			title: "Recover the device fragment",
 			steps: [
 				{
+					simplified: "Loot the fragment in LexOs’ upstairs closed section or Chekannaya 13’s marked room.",
+					simplifiedRequirements: ["Found in raid • Either key works • Claymores at LexOs"],
 					id: "obtain-device-fragment",
 					text: "Locate and obtain the device fragment",
 					map: "Streets of Tarkov",
@@ -90,7 +105,12 @@ export const BLUE_FIRE: StoryChapter = {
 						image("blue-fire-device-fragment-chekannaya-13", "Chekannaya 13: the fragment in the flower pot"),
 					],
 				},
-				{ id: "handover-device-fragment", text: "Hand over the device fragment to Mechanic", items: [DEVICE_FRAGMENT] },
+				{
+					simplified: "Give the fragment to Mechanic.",
+					id: "handover-device-fragment",
+					text: "Hand over the device fragment to Mechanic",
+					items: [DEVICE_FRAGMENT],
+				},
 			],
 		},
 		{
@@ -98,6 +118,8 @@ export const BLUE_FIRE: StoryChapter = {
 			title: "Hack the Lab's network",
 			steps: [
 				{
+					simplified: "Plant the device in The Lab’s first-floor server room.",
+					simplifiedRequirements: ["Already planted in Boreas counts • Mechanic supplies the device"],
 					id: "plant-hacking-device",
 					text: "Plant the hacking device in the server room in the Lab",
 					map: "The Lab",
@@ -108,8 +130,13 @@ export const BLUE_FIRE: StoryChapter = {
 						image("labs-server-room-plant-location-2", "Stashing location next to the office chairs"),
 					],
 				},
-				{ id: "talk-mechanic-fragment", text: "Talk to Mechanic" },
 				{
+					simplified: "Talk to Mechanic",
+					id: "talk-mechanic-fragment",
+					text: "Talk to Mechanic",
+				},
+				{
+					simplified: "Keep the fragment of Item 1156 for yourself or hand it over to Mechanic",
 					id: "decide-fragment",
 					text: "Keep the fragment of Item 1156 for yourself or hand it over to Mechanic",
 					decision: "blue-fire-fragment",
@@ -122,6 +149,9 @@ export const BLUE_FIRE: StoryChapter = {
 			title: "Recover the Item 1156 blueprint",
 			steps: [
 				{
+					simplified:
+						"Read the Item 1156 note in Ground Zero office 4, the northern Lighthouse chalet or Lab office O22.",
+					simplifiedRequirements: ["Found in raid • Ground Zero level 21+ and science office key"],
 					id: "find-1156-lead",
 					text: "Find a lead on Item 1156",
 					items: [
@@ -142,6 +172,8 @@ export const BLUE_FIRE: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Listen to all three tapes in Rus Post.",
+					simplifiedRequirements: ["Found in raid • Bring an Audio recorder"],
 					id: "investigate-rus-post",
 					text: "Investigate the Rus Post office",
 					map: "Streets of Tarkov",
@@ -164,6 +196,7 @@ export const BLUE_FIRE: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Find the car outside Rus Post and take the key beside its rear-right wheel.",
 					id: "locate-rus-post-car",
 					text: "Locate the Rus Post car",
 					map: "Streets of Tarkov",
@@ -172,6 +205,8 @@ export const BLUE_FIRE: StoryChapter = {
 					images: [image("rus-post-car", "The post car"), image("rus-post-car-key-spawn", "The key next to the wheel")],
 				},
 				{
+					simplified: "Take the blueprint from the back of the car.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "obtain-1156-blueprint",
 					text: "Obtain the blueprint for Item 1156",
 					map: "Streets of Tarkov",

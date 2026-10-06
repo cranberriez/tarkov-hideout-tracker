@@ -239,11 +239,34 @@ export const THE_TICKET: StoryChapter = {
 			id: "opening",
 			title: "Contact Mr. Kerman",
 			steps: [
-				{ id: "intel-center-1", text: "Obtain Intelligence Center level 1" },
-				{ id: "talk-kerman-1", text: "Talk to Mr. Kerman", note: "Use the Intelligence Center laptop." },
-				{ id: "wait-kerman-1", text: "Wait for Mr. Kerman to reach out", note: "Takes 2–6 hours." },
-				{ id: "talk-prapor-1", text: "Talk to Prapor", note: "Through the trader screen." },
-				{ id: "talk-kerman-2", text: "Talk to Mr. Kerman" },
+				{
+					simplified: "Obtain Intelligence Center level 1",
+					id: "intel-center-1",
+					text: "Obtain Intelligence Center level 1",
+				},
+				{
+					simplified: "Contact Kerman on the Intelligence Center laptop.",
+					id: "talk-kerman-1",
+					text: "Talk to Mr. Kerman",
+					note: "Use the Intelligence Center laptop.",
+				},
+				{
+					simplified: "Wait 2–6 hours for Kerman.",
+					id: "wait-kerman-1",
+					text: "Wait for Mr. Kerman to reach out",
+					note: "Takes 2–6 hours.",
+				},
+				{
+					simplified: "Talk to Prapor.",
+					id: "talk-prapor-1",
+					text: "Talk to Prapor",
+					note: "Through the trader screen.",
+				},
+				{
+					simplified: "Talk to Mr. Kerman",
+					id: "talk-kerman-2",
+					text: "Talk to Mr. Kerman",
+				},
 			],
 		},
 		{
@@ -252,6 +275,7 @@ export const THE_TICKET: StoryChapter = {
 			when: caseGiven,
 			steps: [
 				{
+					simplified: "Locate the camp of Prapor's people",
 					id: "locate-prapor-camp",
 					images: [
 						image("bogatyrs-patch-lighthouse-map", "Prapor's camp on Lighthouse"),
@@ -261,6 +285,8 @@ export const THE_TICKET: StoryChapter = {
 					map: "Lighthouse",
 				},
 				{
+					simplified: "Read the note in Prapor’s camp.",
+					simplifiedRequirements: ["Two possible spawns"],
 					id: "find-prapor-clues",
 					images: [
 						image("note-from-prapors-men-spawn1", "Note on the medical boxes"),
@@ -271,8 +297,14 @@ export const THE_TICKET: StoryChapter = {
 					items: [item("Note from Prapor's men", "689b5093987b304021088e91")],
 					note: "The note is in one of two places in the camp.",
 				},
-				{ id: "talk-kerman-3", text: "Talk to Mr. Kerman" },
 				{
+					simplified: "Talk to Mr. Kerman",
+					id: "talk-kerman-3",
+					text: "Talk to Mr. Kerman",
+				},
+				{
+					simplified: "Visit Lightkeeper on the lighthouse’s third floor.",
+					simplifiedRequirements: ["Encoded transmitter for safe access"],
 					id: "lightkeeper-access",
 					images: [
 						image("lightkeeper-map", "Lighthouse island location"),
@@ -293,21 +325,35 @@ export const THE_TICKET: StoryChapter = {
 					note: "Third floor of the lighthouse. An encoded transmitter disarms the bridge claymores and stops Zryachiy shooting.",
 					warning: "Harming Zryachiy, his followers or an acquainted PMC decodes your transmitter.",
 				},
-				{ id: "talk-lightkeeper-1", text: "Talk to Lightkeeper", requiresLightkeeper: true },
 				{
+					simplified: "Talk to Lightkeeper",
+					id: "talk-lightkeeper-1",
+					text: "Talk to Lightkeeper",
+					requiresLightkeeper: true,
+				},
+				{
+					simplified: "Stay on good terms with Lightkeeper until he returns the case.",
 					id: "lightkeeper-good-terms",
 					text: "Stay on good terms with Lightkeeper",
 					requiresLightkeeper: true,
 					note: "Until he returns the armored case.",
 				},
-				{ id: "obtain-blue-folders", text: 'Obtain 3 TerraGroup "Blue Folders" materials', items: [BLUE_FOLDERS] },
 				{
+					simplified: "Collect the Blue Folders.",
+					id: "obtain-blue-folders",
+					text: 'Obtain 3 TerraGroup "Blue Folders" materials',
+					items: [BLUE_FOLDERS],
+				},
+				{
+					simplified: "Give Lightkeeper the folders.",
 					id: "handover-blue-folders",
 					text: "Bring the Blue Folders to Lightkeeper",
 					requiresLightkeeper: true,
 					items: [BLUE_FOLDERS],
 				},
 				{
+					simplified: "Fire a yellow flare in front of ULTRA.",
+					simplifiedRequirements: ["RSP-30 or signal pistol with yellow cartridge"],
 					id: "interchange-flare",
 					images: [image("the-ticket-ultraflare-yellow-map", "Yellow flare location outside ULTRA")],
 					text: "Launch a yellow signal flare in front of ULTRA's main entrance",
@@ -320,6 +366,8 @@ export const THE_TICKET: StoryChapter = {
 					note: "Use an RSP-30 or a signal pistol with a yellow cartridge.",
 				},
 				{
+					simplified: "Kill 15 targets on Interchange in one raid.",
+					simplifiedRequirements: ["Transits allowed"],
 					id: "interchange-kills",
 					text: "Eliminate any 15 targets in one raid",
 					map: "Interchange",
@@ -327,6 +375,8 @@ export const THE_TICKET: StoryChapter = {
 					warning: "Extracting without the kills means redoing the flare as well.",
 				},
 				{
+					simplified: "Talk to Lightkeeper.",
+					simplifiedRequirements: ["Free special slot for the case"],
 					id: "talk-lightkeeper-2",
 					text: "Talk to Lightkeeper",
 					requiresLightkeeper: true,
@@ -339,8 +389,13 @@ export const THE_TICKET: StoryChapter = {
 			id: "unlock-case",
 			title: "Unlock the armored case",
 			steps: [
-				{ id: "ask-mechanic-help", text: "Ask Mechanic for help" },
 				{
+					simplified: "Ask Mechanic for help",
+					id: "ask-mechanic-help",
+					text: "Ask Mechanic for help",
+				},
+				{
+					simplified: "Obtain the experimental signal jammer",
 					id: "obtain-signal-jammer",
 					images: [
 						image("the-ticket-experimental-signal-jammer-map", "Signal jammer spawn locations in The Lab"),
@@ -352,8 +407,14 @@ export const THE_TICKET: StoryChapter = {
 					map: "The Lab",
 					items: [item("Experimental signal jammer")],
 					substeps: [
-						{ id: "jammer-lab-access", text: "Gain access to The Lab", optional: true },
 						{
+							simplified: false,
+							id: "jammer-lab-access",
+							text: "Gain access to The Lab",
+							optional: true,
+						},
+						{
+							simplified: "Bring a Labs access keycard.",
 							id: "jammer-labs-keycard",
 							text: "Obtain the TerraGroup Labs access keycard",
 							optional: true,
@@ -362,20 +423,33 @@ export const THE_TICKET: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Craft the unlocked case with the jammer.",
+					simplifiedRequirements: ["Workbench 1"],
 					id: "unlock-armored-case",
 					text: "Use the jammer to unlock the armored case",
 					items: [ARMORED_CASE],
 					note: "Craft at Workbench level 1.",
 				},
 				{
+					simplified: "Right-click the unlocked case and unpack it.",
 					id: "obtain-ticket",
 					text: 'Obtain the "Ticket"',
 					items: [KRUGLOV_KEYCARD],
 					note: "Right-click the unlocked case and unpack it. The RFID card manual goes to your Handbook.",
 					rewards: ["Unlocks the Armored case craft at Workbench level 1"],
 				},
-				{ id: "read-rfid-manual", text: "Read the RFID card manual", note: "It is a note in your Handbook." },
-				{ id: "contact-kerman", text: "Contact Mr. Kerman", decision: "ticket-kerman-offer" },
+				{
+					simplified: "Read the RFID manual in your Handbook.",
+					id: "read-rfid-manual",
+					text: "Read the RFID card manual",
+					note: "It is a note in your Handbook.",
+				},
+				{
+					simplified: "Contact Mr. Kerman",
+					id: "contact-kerman",
+					text: "Contact Mr. Kerman",
+					decision: "ticket-kerman-offer",
+				},
 			],
 		},
 		{
@@ -385,6 +459,8 @@ export const THE_TICKET: StoryChapter = {
 			when: acceptedOffer,
 			steps: [
 				{
+					simplified: "Open the safe in Kruglov’s R22 office and move the master pass to quest inventory.",
+					simplifiedRequirements: ["Two Black keycard swipes"],
 					id: "obtain-master-keycard",
 					images: [
 						image("kruglov-s-office-map", "Kruglov's office in The Lab"),
@@ -396,26 +472,60 @@ export const THE_TICKET: StoryChapter = {
 					map: "The Lab",
 					items: [item("TerraGroup Labs master keycard"), LABS_BLACK],
 					note: "Safe in Kruglov's office (R22); two Black keycard swipes open it. Move it to the quest inventory so you don't lose it.",
-					substeps: [{ id: "master-lab-access", text: "Gain access to The Lab", optional: true }],
+					substeps: [
+						{
+							simplified: false,
+							id: "master-lab-access",
+							text: "Gain access to The Lab",
+							optional: true,
+						},
+					],
 				},
 				{
+					simplified: "Spend 30 minutes alive in The Lab, then speak to Kerman.",
+					simplifiedRequirements: ["Cumulative across raids • Scripted failed search"],
 					id: "encryption-device-attempt",
 					text: "Obtain an RFID card encryption device",
 					map: "The Lab",
 					note: "Scripted to fail: survive 30 minutes in total on The Lab, over any number of raids. Mr. Kerman then points you to Mechanic.",
 				},
-				{ id: "talk-kerman-4", text: "Talk to Mr. Kerman" },
-				{ id: "talk-mechanic-2", text: "Talk to Mechanic", note: "He needs to contact a friend." },
-				{ id: "wait-mechanic", text: "Wait for a response from Mechanic", note: "Takes 6–12 hours." },
 				{
+					simplified: "Talk to Mr. Kerman",
+					id: "talk-kerman-4",
+					text: "Talk to Mr. Kerman",
+				},
+				{
+					simplified: "Talk to Mechanic",
+					id: "talk-mechanic-2",
+					text: "Talk to Mechanic",
+					note: "He needs to contact a friend.",
+				},
+				{
+					simplified: "Wait 6–12 hours for Mechanic.",
+					id: "wait-mechanic",
+					text: "Wait for a response from Mechanic",
+					note: "Takes 6–12 hours.",
+				},
+				{
+					simplified: "Give Mechanic the Bitcoins.",
+					simplifiedRequirements: ["All 40 in stash together • Found in raid not required"],
 					id: "handover-bitcoin",
 					text: "Hand over 40 Physical Bitcoins to Mechanic",
 					items: [item("Physical Bitcoin", "59faff1d86f7746c51718c9c", 40)],
 					note: "Not found-in-raid, but all 40 must be in your stash at once.",
 					rewards: ["Elektronik's key", "Unlocks the Elektronik's key barter at Mechanic LL2"],
-					substeps: [{ id: "bitcoin-farm-1", text: "Obtain Bitcoin Farm level 1", optional: true }],
+					substeps: [
+						{
+							simplified: false,
+							id: "bitcoin-farm-1",
+							text: "Obtain Bitcoin Farm level 1",
+							optional: true,
+						},
+					],
 				},
 				{
+					simplified: "Take the device beneath the coffee table in Elektronik’s living room.",
+					simplifiedRequirements: ["Spawns after Bitcoin hand-in"],
 					id: "collect-encryption-device",
 					images: [
 						image("elektroniks-key-map", "Elektronik's apartment location"),
@@ -428,8 +538,14 @@ export const THE_TICKET: StoryChapter = {
 					items: [item("Elektronik's key", "68e95d71a3d110355b03e529"), item("RFID keycard encryption device")],
 					note: "Under the coffee table in Elektronik's living room. It only spawns after the Bitcoin hand-in.",
 					substeps: [
-						{ id: "streets-access", text: "Gain access to Streets of Tarkov", optional: true },
 						{
+							simplified: false,
+							id: "streets-access",
+							text: "Gain access to Streets of Tarkov",
+							optional: true,
+						},
+						{
+							simplified: "Access Kruglov's apartment",
 							id: "kruglov-apartment",
 							text: "Access Kruglov's apartment",
 							optional: true,
@@ -439,13 +555,21 @@ export const THE_TICKET: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Craft the activated keycard.",
+					simplifiedRequirements: ["Intelligence Center 1"],
 					id: "activate-kruglov-keycard",
 					text: "Activate Kruglov's RFID keycard",
 					items: [ACTIVATED_KEYCARD],
 					note: "Craft at Intelligence Center level 1.",
 					substeps: [
-						{ id: "activate-solar-1", text: "Obtain Solar Power level 1", optional: true },
 						{
+							simplified: "Build Solar Power.",
+							id: "activate-solar-1",
+							text: "Obtain Solar Power level 1",
+							optional: true,
+						},
+						{
+							simplified: "Obtain a blank RFID card.",
 							id: "activate-blank-rfid",
 							text: "Obtain a Blank RFID keycard",
 							optional: true,
@@ -454,12 +578,14 @@ export const THE_TICKET: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Arrive at the entrance pathway to the port Terminal",
 					id: "arrive-terminal-1",
 					images: TERMINAL_APPROACH_IMAGES,
 					text: "Arrive at the entrance pathway to the port Terminal",
 					map: "Shoreline",
 				},
 				{
+					simplified: "Swipe the keycard, then speak to Kerman.",
 					id: "swipe-keycard-1",
 					images: TERMINAL_INTERCOM_IMAGES,
 					text: "Swipe the keycard at the intercom reader",
@@ -467,7 +593,12 @@ export const THE_TICKET: StoryChapter = {
 					items: [ACTIVATED_KEYCARD],
 					note: "Entry is refused; Mr. Kerman wants to talk.",
 				},
-				{ id: "talk-kerman-evidence", text: "Talk to Mr. Kerman", decision: "ticket-kerman-evidence" },
+				{
+					simplified: "Talk to Mr. Kerman",
+					id: "talk-kerman-evidence",
+					text: "Talk to Mr. Kerman",
+					decision: "ticket-kerman-evidence",
+				},
 			],
 		},
 		{
@@ -477,12 +608,15 @@ export const THE_TICKET: StoryChapter = {
 			when: refusedOffer,
 			steps: [
 				{
+					simplified: "Arrive at the entrance pathway to the port Terminal",
 					id: "arrive-terminal-survivor",
 					images: TERMINAL_APPROACH_IMAGES,
 					text: "Arrive at the entrance pathway to the port Terminal",
 					map: "Shoreline",
 				},
 				{
+					simplified: "Swipe the keycard at the intercom.",
+					simplifiedRequirements: ["Entry refused"],
 					id: "swipe-keycard-survivor",
 					images: TERMINAL_INTERCOM_IMAGES,
 					text: "Swipe the keycard at the intercom reader",
@@ -491,23 +625,28 @@ export const THE_TICKET: StoryChapter = {
 					note: "Entry is refused.",
 				},
 				{
+					simplified: "Talk to Prapor",
 					id: "talk-prapor-survivor",
 					text: "Talk to Prapor",
 					rewards: ['"Easy Way" achievement'],
 				},
 				{
+					simplified: "Pay Prapor.",
 					id: "cash-prapor-300m",
 					text: "Hand over 300,000,000 roubles to Prapor",
 					when: caseGiven,
 					items: [item("Roubles", "5449016a4bdc2d6f028b456f", 300_000_000)],
 				},
 				{
+					simplified: "Pay Prapor.",
 					id: "cash-prapor-500m",
 					text: "Hand over 500,000,000 roubles to Prapor",
 					when: caseKept,
 					items: [item("Roubles", "5449016a4bdc2d6f028b456f", 500_000_000)],
 				},
 				{
+					simplified: "Craft the evidence SSD.",
+					simplifiedRequirements: ["Intelligence Center 1 • Prapor’s three tasks: 72-hour deadline"],
 					id: "prapor-evidence-ssd",
 					text: "Save the evidence folders to an SSD",
 					when: caseKept,
@@ -515,6 +654,7 @@ export const THE_TICKET: StoryChapter = {
 					note: "Prapor's three tasks run in order with a 72-hour limit. The SSD craft unlocks at Intelligence Center level 1.",
 					substeps: [
 						{
+							simplified: "Obtain the Folder with TerraGroup Labs evidence (Reports)",
 							id: "folder-reports",
 							images: [
 								image("the-ticket-folder-with-evidence-reports-map", "Reports folder locations in The Lab"),
@@ -531,6 +671,7 @@ export const THE_TICKET: StoryChapter = {
 							items: [item("Folder with TerraGroup Labs evidence (Reports)")],
 						},
 						{
+							simplified: "Obtain the Folder with TerraGroup evidence (Staff)",
 							id: "folder-staff",
 							images: [
 								image("the-ticket-folder-with-evidence-staff-map", "Staff folder locations in The Lab"),
@@ -549,6 +690,7 @@ export const THE_TICKET: StoryChapter = {
 							items: [item("Folder with TerraGroup evidence (Staff)")],
 						},
 						{
+							simplified: "Obtain the Folder with TerraGroup Labs evidence (Developments)",
 							id: "folder-developments",
 							images: [
 								image("the-ticket-folder-with-evidence-developments-map", "Developments folder locations in The Lab"),
@@ -570,6 +712,7 @@ export const THE_TICKET: StoryChapter = {
 							items: [item("Folder with TerraGroup Labs evidence (Developments)")],
 						},
 						{
+							simplified: "Obtain the Folder with TerraGroup evidence (Finances)",
 							id: "folder-finances",
 							images: [
 								image("the-ticket-folder-with-evidence-finances-map", "Finances folder locations in The Lab"),
@@ -587,6 +730,8 @@ export const THE_TICKET: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Kill 50 targets on Streets.",
+					simplifiedRequirements: ["Across any number of raids"],
 					id: "prapor-streets-kills",
 					text: "Eliminate any 50 targets",
 					map: "Streets of Tarkov",
@@ -594,6 +739,8 @@ export const THE_TICKET: StoryChapter = {
 					note: "Across any number of raids.",
 				},
 				{
+					simplified: "Kill 4 PMCs in one raid.",
+					simplifiedRequirements: ["Any map • Transits allowed"],
 					id: "prapor-pmc-kills",
 					text: "Eliminate 4 PMC operatives in one raid",
 					when: caseKept,
@@ -602,12 +749,15 @@ export const THE_TICKET: StoryChapter = {
 					decision: "ticket-prapor-deadline",
 				},
 				{
+					simplified: "Give Prapor the container.",
 					id: "prapor-kappa",
 					text: "Hand over Secure container Kappa to Prapor",
 					when: { decision: "ticket-prapor-deadline", is: "missed" },
 					items: [item("Secure container Kappa", "5c093ca986f7740a1867ab12")],
 				},
 				{
+					simplified: "Report to Prapor.",
+					simplifiedRequirements: ["Replacement letter: 5M roubles, twice per restock"],
 					id: "report-prapor-survivor",
 					text: "Report to Prapor",
 					rewards: ["Prapor's letter for the port checkpoint"],
@@ -621,13 +771,23 @@ export const THE_TICKET: StoryChapter = {
 			endings: ["savior", "debtor"],
 			when: agreedEvidence,
 			steps: [
-				{ id: "intel-center-3", text: "Obtain Intelligence Center level 3", note: "Needed to send evidence." },
 				{
+					simplified: "Build Intelligence Center 3.",
+					id: "intel-center-3",
+					text: "Obtain Intelligence Center level 3",
+					note: "Needed to send evidence.",
+				},
+				{
+					simplified: "Do not waste Kerman’s second chance.",
 					id: "second-chance",
 					text: "Don't waste the second chance from Mr. Kerman",
 					when: { decision: "they-are-already-here-evidence", is: "missed" },
 				},
 				{
+					simplified: "Send Kerman the major evidence and choose when to stop.",
+					simplifiedRequirements: [
+						"Savior: 8 of 9 • Debtor: stop after 2 • One in Cardinal safe, another from a different chapter",
+					],
 					id: "deliver-major-evidence",
 					images: [
 						image("cardinal-apartment-complex-map", "Ms. A. transcript: Cardinal apartment complex location"),
@@ -641,6 +801,8 @@ export const THE_TICKET: StoryChapter = {
 					note: "Nine exist and Savior needs eight. Debtor stops after two: one is in the Cardinal apartment safe, the other needs another chapter.",
 				},
 				{
+					simplified: "Send Kerman any optional minor evidence before confirming major evidence.",
+					simplifiedRequirements: ["No longer accepted after confirmation"],
 					id: "deliver-minor-evidence",
 					images: [
 						image("kruglov-s-office-map", "Norvinsk facilities intelligence: Kruglov's office location"),
@@ -663,27 +825,50 @@ export const THE_TICKET: StoryChapter = {
 			endings: ["savior"],
 			when: deliveredAll,
 			steps: [
-				{ id: "negotiate-kerman", text: "Negotiate with Mr. Kerman" },
 				{
+					simplified: "Negotiate with Mr. Kerman",
+					id: "negotiate-kerman",
+					text: "Negotiate with Mr. Kerman",
+				},
+				{
+					simplified: "Confirm with Mr. Kerman that all the evidence has been delivered",
 					id: "confirm-evidence",
 					text: "Confirm with Mr. Kerman that all the evidence has been delivered",
 					rewards: [ALPHA_1.name],
 					warning: "Minor evidence can no longer be handed in after confirming.",
 				},
 				{
+					simplified: "Wait 12–24 hours for Fence.",
 					id: "wait-kerman-contact",
 					text: "Wait for Mr. Kerman's trusted contact to get in touch",
 					note: "Fence contacts you after 12–24 hours.",
 				},
-				{ id: "talk-fence", text: "Talk to Fence" },
-				{ id: "fence-rep-4", text: "Reach 4.0 reputation with Fence" },
-				{ id: "fence-assignments", text: "Complete Fence's assignments" },
 				{
+					simplified: "Talk to Fence",
+					id: "talk-fence",
+					text: "Talk to Fence",
+				},
+				{
+					simplified: "Reach 4.0 reputation with Fence",
+					id: "fence-rep-4",
+					text: "Reach 4.0 reputation with Fence",
+				},
+				{
+					simplified: "Complete Fence's assignments",
+					id: "fence-assignments",
+					text: "Complete Fence's assignments",
+				},
+				{
+					simplified: "Keep Fence reputation above 4.0 throughout the assignments.",
 					id: "keep-fence-rep",
 					text: "Keep the standing with Fence above 4.0",
 					note: "For the entire duration of the assignments.",
 				},
 				{
+					simplified: "Use Friendship Bridge co-op extract.",
+					simplifiedRequirements: [
+						"Do not kill Scavs or Goons • PvE: kill 5 PMCs on Interchange in one raid without killing Scavs",
+					],
 					id: "woods-coop-extract",
 					images: [
 						image("friendship-bridge-map", "Friendship Bridge extraction on Woods"),
@@ -694,6 +879,10 @@ export const THE_TICKET: StoryChapter = {
 					note: "Don't kill Scavs or the Goons; smoke grenades help lure Scavs to the extract. PvE: eliminate 5 PMCs on Interchange in one raid without killing Scavs.",
 				},
 				{
+					simplified: "Use Scav Lands co-op extract.",
+					simplifiedRequirements: [
+						"Do not kill Scavs or Goons • PvE: kill 5 PMCs on Shoreline in one raid without killing Scavs",
+					],
 					id: "reserve-coop-extract",
 					images: [
 						image("scav-lands-map", "Scav Lands extraction on Reserve"),
@@ -704,6 +893,8 @@ export const THE_TICKET: StoryChapter = {
 					note: "Don't kill Scavs or the Goons. PvE: eliminate 5 PMCs on Shoreline in one raid without killing Scavs.",
 				},
 				{
+					simplified: "Raise BTR Driver standing.",
+					simplifiedRequirements: ["0.4 standing • Complete either linked quest"],
 					id: "btr-standing",
 					text: "Reach 0.4 standing with the BTR Driver",
 					quests: [QUESTS.priceOfIndependenceA, QUESTS.priceOfIndependenceB].map((quest) => ({
@@ -715,14 +906,20 @@ export const THE_TICKET: StoryChapter = {
 					warning: "Completing Choose Your Friends Wisely fails this objective and ends the Savior route.",
 					warningQuest: { ...QUESTS.chooseYourFriends, failsEndings: ["savior"] },
 				},
-				{ id: "tell-fence-complete", text: "Tell Fence that the assignment is complete" },
 				{
+					simplified: "Tell Fence that the assignment is complete",
+					id: "tell-fence-complete",
+					text: "Tell Fence that the assignment is complete",
+				},
+				{
+					simplified: "Talk to Fence and collect the mailed drive.",
 					id: "talk-fence-hash",
 					text: "Talk to Fence",
 					items: [item("Flash drive with Mr. Kerman's hash codes", "67c0345b354fca26a0008036")],
 					note: "Fence mails you the flash drive.",
 				},
 				{
+					simplified: "Obtain Solar Power level 1",
 					id: "solar-power-savior",
 					text: "Obtain Solar Power level 1",
 					rewards: [
@@ -738,6 +935,7 @@ export const THE_TICKET: StoryChapter = {
 			when: stoppedAfterTwo,
 			steps: [
 				{
+					simplified: "Ask every trader how to leave; visit Lightkeeper last.",
 					id: "ask-traders-debtor",
 					text: "Ask the traders how to leave Tarkov",
 					requiresLightkeeper: true,
@@ -746,6 +944,8 @@ export const THE_TICKET: StoryChapter = {
 					rewards: ["Unlocks the Military flash drive with topographic intel craft at Intelligence Center level 1"],
 				},
 				{
+					simplified: "Craft the intel drive and deliver it to Lightkeeper.",
+					simplifiedRequirements: ["Intelligence Center 1 • Recraft if lost in raid"],
 					id: "topographic-flash-drive",
 					text: "Hand over the military flash drive with compiled data to Lightkeeper",
 					requiresLightkeeper: true,
@@ -753,6 +953,7 @@ export const THE_TICKET: StoryChapter = {
 					note: "Craft at Intelligence Center level 1. Recraft it if you die carrying it.",
 					substeps: [
 						{
+							simplified: false,
 							id: "record-flash-drive",
 							text: "Record the compiled data to a military flash drive",
 							optional: true,
@@ -760,6 +961,7 @@ export const THE_TICKET: StoryChapter = {
 						},
 						...TOPOGRAPHIC_MAPS.map((topo) => ({
 							id: `topographic-${topo.id}`,
+							simplified: `Collect the ${topo.name}.`,
 							text: `Obtain the ${topo.name}`,
 							optional: true,
 							map: topo.map,
@@ -768,8 +970,14 @@ export const THE_TICKET: StoryChapter = {
 						})),
 					],
 				},
-				{ id: "woods-pmc-kills", text: "Eliminate 30 PMCs", map: "Woods" },
 				{
+					simplified: "Eliminate 30 PMCs",
+					id: "woods-pmc-kills",
+					text: "Eliminate 30 PMCs",
+					map: "Woods",
+				},
+				{
+					simplified: "Give Lightkeeper the dogtags.",
 					id: "handover-dogtags",
 					text: "Hand over 100 PMC dogtags to Lightkeeper",
 					requiresLightkeeper: true,
@@ -777,6 +985,7 @@ export const THE_TICKET: StoryChapter = {
 				},
 				...AMULETS.map((amulet) => ({
 					id: `stash-amulet-${amulet.id}`,
+					simplified: `Stash the ${amulet.ordinal} amulet on Lighthouse island.`,
 					text: `Stash the ${amulet.ordinal} amulet in the stash room`,
 					map: "Lighthouse",
 					items: [STASH_KEY],
@@ -784,6 +993,7 @@ export const THE_TICKET: StoryChapter = {
 					substeps: [
 						{
 							id: `obtain-amulet-${amulet.id}`,
+							simplified: `Take the amulet from the ${amulet.key.name} room.`,
 							text: `Obtain the ${amulet.amulet}`,
 							optional: true,
 							map: amulet.map,
@@ -794,6 +1004,8 @@ export const THE_TICKET: StoryChapter = {
 					],
 				})),
 				{
+					simplified: "Report to Lightkeeper.",
+					simplifiedRequirements: ["Free special slot • Replacement card: 1 Blue Folders, once per raid"],
 					id: "report-lightkeeper-debtor",
 					text: "Report to Lightkeeper",
 					requiresLightkeeper: true,
@@ -808,8 +1020,15 @@ export const THE_TICKET: StoryChapter = {
 			endings: ["fallen"],
 			when: refusedEvidence,
 			steps: [
-				{ id: "ask-traders-fallen", text: "Ask the traders how to leave Tarkov", note: "Then talk to Prapor." },
 				{
+					simplified: "Ask the traders how to leave, then speak to Prapor.",
+					id: "ask-traders-fallen",
+					text: "Ask the traders how to leave Tarkov",
+					note: "Then talk to Prapor.",
+				},
+				{
+					simplified: "Give Prapor the electronics.",
+					simplifiedRequirements: ["50 total • Any mix of listed items"],
 					id: "prapor-electronics",
 					text: "Hand over 50 military or advanced electronics to Prapor",
 					when: caseKept,
@@ -817,6 +1036,8 @@ export const THE_TICKET: StoryChapter = {
 					note: "Any mix of the items below.",
 				},
 				{
+					simplified: "Give Prapor a secure container.",
+					simplifiedRequirements: ["Any one listed container"],
 					id: "prapor-secure-container",
 					text: "Hand over Secure container Theta, Epsilon or Kappa to Prapor",
 					when: caseKept,
@@ -828,6 +1049,8 @@ export const THE_TICKET: StoryChapter = {
 					note: "Any one of these.",
 				},
 				{
+					simplified: "Give Prapor repair kits.",
+					simplifiedRequirements: ["40 total • Any mix • Any durability"],
 					id: "prapor-repair-kits",
 					text: "Hand over 40 weapon or armor repair kits to Prapor",
 					when: caseKept,
@@ -838,6 +1061,7 @@ export const THE_TICKET: StoryChapter = {
 					note: "Any mix; despite the in-game hint, durability does not matter.",
 				},
 				{
+					simplified: "Take the case from RB-PKPTS and give it to Prapor.",
 					id: "dangerous-cargo",
 					images: [
 						image("rb-pkpts-key-map", "RB-PKPTS room on Reserve"),
@@ -850,16 +1074,28 @@ export const THE_TICKET: StoryChapter = {
 					items: [item("Case with dangerous cargo"), item("RB-PKPTS key", "68e9654d72488961110dbf69")],
 					note: "Inside the RB-PKPTS room.",
 				},
-				{ id: "report-prapor-fallen", text: "Report to Prapor" },
 				{
+					simplified: "Report to Prapor",
+					id: "report-prapor-fallen",
+					text: "Report to Prapor",
+				},
+				{
+					simplified: "Pay Prapor.",
+					simplifiedRequirements: ["Full amount needed before hand-over appears"],
 					id: "usd-prapor",
 					text: "Hand over 1,000,000 dollars to Prapor",
 					items: [item("Dollars", "5696686a4bdc2da3298b456a", 1_000_000)],
 					note: "The hand-over only appears once you have the full amount.",
 					rewards: ['"Will It Blow?" achievement'],
 				},
-				{ id: "wait-prapor-fallen", text: "Wait for the info from Prapor", note: "Takes 18–24 hours." },
 				{
+					simplified: "Wait 18–24 hours for Prapor.",
+					id: "wait-prapor-fallen",
+					text: "Wait for the info from Prapor",
+					note: "Takes 18–24 hours.",
+				},
+				{
+					simplified: "Collect the updated hash codes from Prapor",
 					id: "collect-hash-codes",
 					text: "Collect the updated hash codes from Prapor",
 					items: [item("Flash drive with Prapor's hash codes", "67c04a9bd98287be7b0923d8")],
@@ -867,7 +1103,11 @@ export const THE_TICKET: StoryChapter = {
 						"Unlocks the Reprogrammed RFID keycard with Prapor's hash codes craft at Intelligence Center level 1",
 					],
 				},
-				{ id: "solar-power-fallen", text: "Obtain Solar Power level 1" },
+				{
+					simplified: "Obtain Solar Power level 1",
+					id: "solar-power-fallen",
+					text: "Obtain Solar Power level 1",
+				},
 			],
 		},
 		{
@@ -875,6 +1115,7 @@ export const THE_TICKET: StoryChapter = {
 			title: "Escape through the Terminal",
 			steps: [
 				{
+					simplified: "Reach Terminal and call the watchtower intercom between 21:00 and 06:00.",
 					id: "arrive-terminal-final",
 					images: TERMINAL_APPROACH_IMAGES,
 					text: "Arrive at the entrance pathway to the port Terminal",
@@ -882,6 +1123,7 @@ export const THE_TICKET: StoryChapter = {
 					note: "The intercom on the watchtower only answers between 21:00 and 06:00.",
 					substeps: [
 						{
+							simplified: "Bring the Reprogrammed RFID keycard with Mr. Kerman's hash codes",
 							id: "access-item-kerman",
 							text: "Bring the Reprogrammed RFID keycard with Mr. Kerman's hash codes",
 							optional: true,
@@ -889,6 +1131,7 @@ export const THE_TICKET: StoryChapter = {
 							items: [item("Reprogrammed RFID keycard with Mr. Kerman's hash codes", "67c033fd0610e91bea056998")],
 						},
 						{
+							simplified: "Bring the RFID keycard with unknown name",
 							id: "access-item-unknown-name",
 							text: "Bring the RFID keycard with unknown name",
 							optional: true,
@@ -896,6 +1139,7 @@ export const THE_TICKET: StoryChapter = {
 							items: [item("RFID keycard with unknown name", "67c04dac9320f644db06f45c")],
 						},
 						{
+							simplified: "Bring Prapor’s letter and press the intercom call button.",
 							id: "access-item-prapor-letter",
 							text: "Bring Prapor's letter for the port checkpoint",
 							optional: true,
@@ -904,6 +1148,7 @@ export const THE_TICKET: StoryChapter = {
 							note: "Use the intercom call button.",
 						},
 						{
+							simplified: "Bring the Reprogrammed RFID keycard with Prapor's hash codes",
 							id: "access-item-prapor-hash",
 							text: "Bring the Reprogrammed RFID keycard with Prapor's hash codes",
 							optional: true,
@@ -913,12 +1158,14 @@ export const THE_TICKET: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Swipe the keycard at the intercom reader",
 					id: "swipe-keycard-final",
 					images: TERMINAL_INTERCOM_IMAGES,
 					text: "Swipe the keycard at the intercom reader",
 					map: "Shoreline",
 				},
 				{
+					simplified: "Follow the left road into Terminal’s transit area.",
 					id: "access-terminal",
 					images: [
 						image("path-to-terminal-transit-1", "Pass through the checkpoint blockade"),
@@ -931,6 +1178,8 @@ export const THE_TICKET: StoryChapter = {
 						"Passing the first anti-tank barrier without an access item, leaving the road, or drawing a weapon gets you shot.",
 					substeps: [
 						{
+							simplified: "Bring Alpha-1 in your task inventory.",
+							simplifiedRequirements: ["Required for Savior transit • Replacement mailed if lost"],
 							id: "bring-alpha-1",
 							text: "Bring the Secure container Alpha-1 with TerraGroup evidence",
 							optional: true,
@@ -940,14 +1189,23 @@ export const THE_TICKET: StoryChapter = {
 						},
 					],
 				},
-				{ id: "pass-security-check", text: "Pass the security check", note: "A cinematic plays." },
 				{
+					simplified: "Pass the security check.",
+					id: "pass-security-check",
+					text: "Pass the security check",
+					note: "A cinematic plays.",
+				},
+				{
+					simplified: "Escape from Tarkov.",
+					simplifiedRequirements: ["Death or extraction restores pre-Terminal state, except the access item"],
 					id: "escape-tarkov",
 					text: "Escape from Tarkov",
 					map: "Terminal",
 					note: "Dying or extracting restores your pre-Terminal state, minus the access item.",
 					substeps: [
 						{
+							simplified: "Find the key on a RUAF body or table, then recover your gear from a locker.",
+							simplifiedRequirements: ["Black Division attack on exit"],
 							id: "terminal-armory",
 							images: [
 								image("armory-key-map", "Terminal armory location"),
@@ -963,6 +1221,7 @@ export const THE_TICKET: StoryChapter = {
 							note: "The Armory key is on a dead RUAF soldier or a table along the way; gear is in a random locker. Black Division attacks as you leave.",
 						},
 						{
+							simplified: "Take Alpha-1 from the desk under the armory window.",
 							id: "terminal-retrieve-alpha-1",
 							images: [image("secure-container-alpha-1-spawn", "Alpha-1 on the armory desk below the window")],
 							text: "Retrieve the Secure container Alpha-1",
@@ -971,6 +1230,8 @@ export const THE_TICKET: StoryChapter = {
 							note: "On the desk under the armory window.",
 						},
 						{
+							simplified: "Take the keycard from the weapon box on the tipped ATM in building MS.",
+							simplifiedRequirements: ["Black Division guards"],
 							id: "terminal-black-division-keycard",
 							images: [
 								image("seaport-terminal-building-map", "Seaport building MS on the map"),
@@ -984,11 +1245,13 @@ export const THE_TICKET: StoryChapter = {
 							note: "Weapon box on a tipped-over ATM in the seaport building (MS), guarded by Black Division.",
 						},
 						{
+							simplified: false,
 							id: "terminal-loading-zone-exit",
 							text: "Locate the exit leading to the Terminal loading zone",
 							optional: true,
 						},
 						{
+							simplified: "Clear the D3 entrance and swipe the keycard inside.",
 							id: "terminal-service-passage",
 							images: [
 								image("black-division-keycard-lock-map", "Administration building D3 on the map"),
@@ -999,8 +1262,15 @@ export const THE_TICKET: StoryChapter = {
 							optional: true,
 							note: "Swipe the keycard in the admin building (D3) after clearing Black Division at the entrance.",
 						},
-						{ id: "terminal-loading-zone", text: "Access the Terminal loading zone", optional: true },
 						{
+							simplified: "Reach the loading zone.",
+							id: "terminal-loading-zone",
+							text: "Access the Terminal loading zone",
+							optional: true,
+						},
+						{
+							simplified: "Blow the gate with a nearby SZ-1, or push it open.",
+							simplifiedRequirements: ["Elite Strength or a second player to push"],
 							id: "terminal-fuel-depot",
 							images: [
 								image("terminal-metal-gate-map", "Fuel depot gate location"),
@@ -1020,6 +1290,8 @@ export const THE_TICKET: StoryChapter = {
 							note: "Blow the gate with a nearby SZ-1 charge, or push it with Elite Strength or a second player.",
 						},
 						{
+							simplified: "Repair the electrical panels.",
+							simplifiedRequirements: ["1 solo, up to 5 in a group • Toolset guarantees repair; two beyond gate"],
 							id: "terminal-restore-power",
 							images: [
 								image("terminal-electrical-panels-map", "Electrical panel locations across Terminal"),
@@ -1042,8 +1314,14 @@ export const THE_TICKET: StoryChapter = {
 							items: [item("Toolset", "590c2e1186f77425357b6124")],
 							note: "Repair 1–5 electrical panels (one for solo players). A toolset guarantees the repair; two spawn past the gate.",
 						},
-						{ id: "terminal-panel-diagram", text: "Obtain the diagram of the electrical panels", optional: true },
 						{
+							simplified: false,
+							id: "terminal-panel-diagram",
+							text: "Obtain the diagram of the electrical panels",
+							optional: true,
+						},
+						{
+							simplified: "Drain the water in the pumping station",
 							id: "terminal-drain-water",
 							images: [
 								image("terminal-pumping-station-map", "Pumping station location"),
@@ -1054,6 +1332,7 @@ export const THE_TICKET: StoryChapter = {
 							optional: true,
 						},
 						{
+							simplified: "Drain the station and take the pier key from its safe.",
 							id: "terminal-pier-key",
 							images: [
 								image("terminal-pier-door-key-rooom", "Pumping station room containing the key safe"),
@@ -1065,6 +1344,7 @@ export const THE_TICKET: StoryChapter = {
 							note: "In the pumping station safe, after draining the water.",
 						},
 						{
+							simplified: false,
 							id: "terminal-pier-exit",
 							images: [
 								image("terminal-pier-building-map", "Pier door location"),
@@ -1075,6 +1355,7 @@ export const THE_TICKET: StoryChapter = {
 							optional: true,
 						},
 						{
+							simplified: "Open the pier door and reach the Zubr boat within 3 minutes.",
 							id: "terminal-evacuation",
 							images: [image("zubr-boat", "Zubr boat evacuation area")],
 							text: "Reach the evacuation area at the pier",

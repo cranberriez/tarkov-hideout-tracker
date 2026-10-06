@@ -170,6 +170,21 @@ chapter so those always link to `/story/[chapterId]`; untracked chapters render 
 placeholder that links to the wiki and is not indexed.
 Steps may also carry rewards, warnings for route-failing actions, quest links and
 wiki screenshots, stored under `public/images/story/<chapter-id>/steps/`.
+Every tracked chapter offers a local Simplified toggle in its progress panel. Condensed
+step copy contains actions, locations, timers and dialogue choices. Display-only
+`simplifiedItems` and `simplifiedRequirements` keep combined item quantities and
+requirements in the supporting row alongside images and rewards; they do not
+change demand or progress. Both views use the original step text sizing.
+A step’s `simplified` string replaces its copy; `false` hides it and its substeps
+in Simplified only. Guides omit redundant checklist entries while preserving
+route choices, warnings, evidence locations, keys, radio codes and time limits.
+Falling Skies also combines supply turn-ins into a later checkpoint. Long item
+lists retain their collapse control and source-chapter links in either view.
+Hidden required actions remain in the full progression order and totals; they
+are not completed by switching views. Images buttons open the same gallery.
+Both views use the same step and decision
+controls, and switching views does not write player progress or preferences.
+
 Quest links explicitly marked `requiredForEndings` feed the quest workspace's
 ending markers through [story-quest-requirements](../src/features/story/story-quest-requirements.ts).
 Ordinary links (including optional quests and unlocked side quests) do not imply

@@ -36,6 +36,8 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 			title: "Follow the Eye of the World",
 			steps: [
 				{
+					simplified:
+						"Visit a marked site: Customs 314, Reserve RB-BK / RB-VO / RB-PKPM, Woods’ northern village or Shoreline’s island house.",
 					id: "learn-hooded-men",
 					text: "Learn more about the people leaving strange symbols in Tarkov",
 					items: [
@@ -59,6 +61,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Find the cultists’ torture house.",
 					id: "locate-eye-place",
 					text: "Locate a place connected to the Eye of the World",
 					map: "Lighthouse",
@@ -69,6 +72,8 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Take the tape from the chair and listen.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "torture-room-victim",
 					text: "Learn more about the cultist's victim from the torture room",
 					map: "Lighthouse",
@@ -83,6 +88,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 			title: "Investigate the victim's apartment",
 			steps: [
 				{
+					simplified: "Find apartment 5 on the third floor behind Klimov mall.",
 					id: "locate-victim-apartment",
 					text: "Locate the cult victim's apartment",
 					map: "Streets of Tarkov",
@@ -95,6 +101,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					],
 					substeps: [
 						{
+							simplified: "Take the key from the torture house’s fallen shelf, chair or tables.",
 							id: "obtain-victim-apartment-key",
 							text: "Obtain the key to the apartment",
 							optional: true,
@@ -111,6 +118,8 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Breach the office door and read the desk note.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "investigate-victim-apartment",
 					text: "Investigate the victim's apartment",
 					map: "Streets of Tarkov",
@@ -122,6 +131,8 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Take the tape from the office desk and listen.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "victim-first-tape",
 					text: "Obtain the victim's first audio tape",
 					map: "Streets of Tarkov",
@@ -130,6 +141,8 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					images: [image("cult-victim-audio-tape-1-spawn", "The tape on the desk")],
 				},
 				{
+					simplified: "Read the book on the office bookshelf.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "book-of-arrival",
 					text: "Obtain and read the book that the cultists planted with Igor",
 					map: "Streets of Tarkov",
@@ -144,13 +157,29 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 			title: "Track down the cultists",
 			steps: [
 				{
+					simplified: "Ask Mechanic about the Eye of the World.",
 					id: "ask-mechanic-eye",
 					text: "Ask Mechanic about the Eye of the World",
 					note: "Through the trader screen.",
-					substeps: [{ id: "mechanic-access", text: "Gain access to Mechanic", optional: true }],
+					substeps: [
+						{
+							simplified: false,
+							id: "mechanic-access",
+							text: "Gain access to Mechanic",
+							optional: true,
+						},
+					],
 				},
-				{ id: "kill-cultist-priest", text: "Locate and neutralize a Cultist priest", note: "Any map." },
 				{
+					simplified: "Kill a Cultist priest on any map.",
+					id: "kill-cultist-priest",
+					text: "Locate and neutralize a Cultist priest",
+					note: "Any map.",
+				},
+				{
+					simplified:
+						"After killing the priest, read the note in Customs 314, Streets’ abandoned factory or Reserve RB-BK / RB-PKPM / RB-VO.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "cultist-priest-note",
 					text: "Obtain more information about the Eye of the World",
 					items: [
@@ -187,6 +216,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 			title: "Visit the places marked with the Eye of the World",
 			steps: [
 				{
+					simplified: "Find the small south bedroom upstairs in the northern blue chalet.",
 					id: "eye-lighthouse",
 					text: "Locate the place marked with the Eye of the World on Lighthouse",
 					map: "Lighthouse",
@@ -194,11 +224,14 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					images: [image("blue-chalet-map", "Chalet location marked on the map")],
 				},
 				{
+					simplified: "Search the chalet bedroom.",
 					id: "ransacked-chalet-room",
 					text: "Investigate the ransacked cultist room in the chalet",
 					map: "Lighthouse",
 					substeps: [
 						{
+							simplified: "Take the belongings from the adjoining balcony.",
+							simplifiedRequirements: ["Found in raid"],
 							id: "victim-belongings",
 							text: "Locate the victim's belongings",
 							optional: true,
@@ -210,6 +243,8 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Take the pass from the ATV by the garage opposite the chalet.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "obtain-damaged-pass",
 					text: "Locate and obtain the key mentioned in the victim's note",
 					map: "Lighthouse",
@@ -218,6 +253,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					images: [image("damaged-pass-spawn", "The pass on the ATV")],
 				},
 				{
+					simplified: "Find the marked house in the ruined northern village.",
 					id: "eye-woods",
 					text: "Locate the place marked with the Eye of the World on Woods",
 					map: "Woods",
@@ -228,6 +264,8 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read the note on the whiteboard beside the desk.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "cultists-house",
 					text: "Investigate the cultists' house marked with the Eye of the World",
 					map: "Woods",
@@ -236,6 +274,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					images: [image("woods-cultists-house-newspaper", "The clipping on the whiteboard")],
 				},
 				{
+					simplified: "Find the red shack at the radio tower near Road to Customs.",
 					id: "eye-shoreline",
 					text: "Locate the place marked with the Eye of the World on Shoreline",
 					map: "Shoreline",
@@ -247,6 +286,8 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Take the document beside the body’s right hand.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "sordi-tower-area",
 					text: "Investigate the area around the Sordi communications tower",
 					map: "Shoreline",
@@ -258,6 +299,8 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Repair the tower inside the shack.",
+					simplifiedRequirements: ["Toolset consumed"],
 					id: "repair-sordi-tower",
 					text: "Repair the Sordi tower",
 					map: "Shoreline",
@@ -272,17 +315,21 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 			title: "Infiltrate Station 14-4 KORD",
 			steps: [
 				{
+					simplified: "Ask Mechanic about the Eye again.",
 					id: "ask-mechanic-kord",
 					text: "Learn more about Station 14-4 KORD from Mechanic",
 					note: "Ask him about the Eye of the World again.",
 				},
 				{
+					simplified: "Craft the restored pass.",
+					simplifiedRequirements: ["Intelligence Center 1 • Continuous power"],
 					id: "restore-arshavin-pass",
 					text: "Restore Arshavin's keycard",
 					items: [RESTORED_PASS, DAMAGED_PASS],
 					note: "Craft at Intelligence Center level 1; the craft stops if power goes out.",
 				},
 				{
+					simplified: "Enter the power-station basement.",
 					id: "access-cobalt-facility",
 					text: "Gain access to NGO Cobalt's secret facility",
 					map: "Interchange",
@@ -296,6 +343,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Swipe the pass at the entrance panel.",
 					id: "restore-station-power",
 					text: "Restore power at the station",
 					map: "Interchange",
@@ -304,6 +352,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					images: [image("station-kord-keycard-reader", "The keycard panel")],
 				},
 				{
+					simplified: "Flip the cooling lever behind the grate door.",
 					id: "turn-on-cooling",
 					text: "Turn on the cooling system in the server room",
 					map: "Interchange",
@@ -314,6 +363,7 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Stash the drive left of the cooling lever.",
 					id: "install-flash-drive",
 					text: "Install a flash drive to download the data",
 					map: "Interchange",
@@ -322,6 +372,8 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					images: [image("station-kord-flash-drive-plant", "The stash spot")],
 				},
 				{
+					simplified: "Read the document in the entrance safe after turning on cooling.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "investigate-kord",
 					text: "Investigate ARRS Station 14-4 KORD thoroughly",
 					map: "Interchange",
@@ -330,6 +382,8 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					images: [image("mysterious-audio-tape-spawn", "The tape in the safe")],
 				},
 				{
+					simplified: "Extract from Interchange.",
+					simplifiedRequirements: ["Survived or Run-Through counts"],
 					id: "extract-interchange-1",
 					text: "Survive and extract from Interchange",
 					map: "Interchange",
@@ -342,6 +396,8 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 			title: "Disconnect the ARRS station",
 			steps: [
 				{
+					simplified: "Return to the facility and read the notes on the large desk.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "arrs-mechanic-notes",
 					text: "Find a way to disconnect the station from external agents",
 					map: "Interchange",
@@ -350,14 +406,25 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					images: [image("arrs-mechanic-notes-spawn", "The notes on the desk")],
 				},
 				{
+					simplified: "Turn power on and press the button under the server-room table.",
+					simplifiedRequirements: ["One player per raid • Retry in a new raid if unavailable"],
 					id: "restore-backup-settings",
 					text: "Restore the ARRS station to backup settings",
 					map: "Interchange",
 					note: "Turn the power on again and press the button under the server room table. Only one player per raid can press it; if you can't interact, try a new raid.",
 					images: [image("arrs-disconnect-button", "The button")],
-					substeps: [{ id: "check-station-power", text: "Check that the station power is turned on", optional: true }],
+					substeps: [
+						{
+							simplified: false,
+							id: "check-station-power",
+							text: "Check that the station power is turned on",
+							optional: true,
+						},
+					],
 				},
 				{
+					simplified: "Take the drive from the server beside the cooling lever.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "collect-arrs-flash-drive",
 					text: "Collect the flash drive from the ARRS station",
 					map: "Interchange",
@@ -369,17 +436,21 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					images: [image("arrs-flash-drive-spawn", "The flash drive")],
 				},
 				{
+					simplified: "Extract from Interchange.",
+					simplifiedRequirements: ["Survived or Run-Through counts"],
 					id: "extract-interchange-2",
 					text: "Survive and extract from Interchange",
 					map: "Interchange",
 					note: EXTRACT_NOTE,
 				},
 				{
+					simplified: "Hand over the flash drive with data to Mechanic",
 					id: "handover-arrs-flash-drive",
 					text: "Hand over the flash drive with data to Mechanic",
 					items: [ARRS_FLASH_DRIVE],
 				},
 				{
+					simplified: "Read the specifications in your Handbook.",
 					id: "read-arrs-specs",
 					text: "Read the ARRS station specifications",
 					items: [item("ARRS system specifications", "689b53ef987b304021088e95")],

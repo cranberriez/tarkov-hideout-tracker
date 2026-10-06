@@ -37,6 +37,7 @@ export const FALLING_SKIES: StoryChapter = {
 			steps: [
 				{
 					id: "locate-plane",
+					simplified: "Find the plane in eastern Woods.",
 					text: "Locate the fallen plane",
 					map: "Woods",
 					note: "On the eastern side of Woods.",
@@ -44,11 +45,14 @@ export const FALLING_SKIES: StoryChapter = {
 				},
 				{
 					id: "prapor-ll2",
+					simplified: false,
 					text: "Reach Loyalty Level 2 with Prapor",
 					note: "Ask Prapor about the plane, then ask again at LL2.",
 				},
 				{
 					id: "ask-traders-plane",
+					simplifiedRequirements: ["Prapor LL2 for the second conversation"],
+					simplified: "Ask Prapor about the plane twice, then speak to Therapist, Skier, Mechanic and Jaeger.",
 					text: "Ask the traders about the fallen plane",
 					note: "Prapor, Therapist, Skier, Mechanic and Jaeger, through the trader screen.",
 				},
@@ -60,6 +64,7 @@ export const FALLING_SKIES: StoryChapter = {
 			steps: [
 				{
 					id: "therapist-suv-info",
+					simplified: false,
 					text: "Hand over 2,000 dollars to Therapist to learn details about the SUV",
 					optional: true,
 					items: [item("Dollars", "5696686a4bdc2da3298b456a", 2_000)],
@@ -67,6 +72,8 @@ export const FALLING_SKIES: StoryChapter = {
 				},
 				{
 					id: "retrieve-gwagon-drive",
+					simplifiedRequirements: ["Found in raid"],
+					simplified: "Loot the flash drive: G-Wagon by Tunnel, driver-side running board.",
 					text: "Retrieve the flash drive from one of the G-Wagon SUVs",
 					map: "Shoreline",
 					items: [item("G-Wagon flash drive")],
@@ -76,9 +83,10 @@ export const FALLING_SKIES: StoryChapter = {
 						image("falling-skies-g-wagon-usb-spawn", "The flash drive on the SUV's running board"),
 					],
 				},
-				{ id: "handover-gwagon-drive", text: "Hand over the flash drive to Prapor" },
+				{ id: "handover-gwagon-drive", simplified: false, text: "Hand over the flash drive to Prapor" },
 				{
 					id: "wait-prapor-1",
+					simplified: "Give Prapor the drive. Wait 1 hour, then ask about the plane.",
 					text: "Wait for information from Prapor",
 					note: "Takes 1 hour; then ask him about the plane again.",
 				},
@@ -90,6 +98,8 @@ export const FALLING_SKIES: StoryChapter = {
 			steps: [
 				{
 					id: "retrieve-flight-recorder",
+					simplifiedRequirements: ["Found in raid"],
+					simplified: "Loot the recorder: broken rear section, right side of the plane.",
 					text: "Retrieve the plane's flight recorder",
 					map: "Woods",
 					items: [item("Crashed plane's flight recorder")],
@@ -102,6 +112,7 @@ export const FALLING_SKIES: StoryChapter = {
 				},
 				{
 					id: "stash-flight-recorder",
+					simplified: "Stash it in the island house’s destroyed room.",
 					text: "Leave the flight recorder in the specified spot",
 					map: "Shoreline",
 					note: "In the destroyed room of the house on the island.",
@@ -110,26 +121,40 @@ export const FALLING_SKIES: StoryChapter = {
 						image("falling-skies-flight-recorder-stash-location", "The stash spot"),
 					],
 				},
-				{ id: "visit-prapor", text: "Visit Prapor" },
+				{ id: "visit-prapor", simplified: false, text: "Visit Prapor" },
 				{
 					id: "handover-batteries",
+					simplified: false,
 					text: "Hand over 3 found in raid Rechargeable batteries",
 					items: [item("Rechargeable battery", "590a358486f77429692b2790", 3)],
 					note: "Craftable at Workbench level 2.",
 				},
 				{
 					id: "handover-circuit-boards",
+					simplified: false,
 					text: "Hand over 5 found in raid Printed circuit boards",
 					items: [item("Printed circuit board", "590a3b0486f7743954552bdb", 5)],
 					note: "Craftable at Workbench level 1.",
 				},
 				{
 					id: "handover-toolsets",
+					simplifiedRequirements: ["Found in raid"],
+					simplifiedItems: [
+						item("Rechargeable battery", "590a358486f77429692b2790", 3),
+						item("Printed circuit board", "590a3b0486f7743954552bdb", 5),
+						item("Toolset", "590c2e1186f77425357b6124", 2),
+					],
+					simplified: "Visit Prapor and hand over the supplies.",
 					text: "Hand over 2 found in raid Toolsets",
 					items: [item("Toolset", "590c2e1186f77425357b6124", 2)],
 					note: "Craftable at Workbench level 1.",
 				},
-				{ id: "wait-prapor-2", text: "Wait for information from Prapor", note: "Takes 3–5 hours." },
+				{
+					id: "wait-prapor-2",
+					simplified: "Wait 3–5 hours.",
+					text: "Wait for information from Prapor",
+					note: "Takes 3–5 hours.",
+				},
 			],
 		},
 		{
@@ -138,6 +163,8 @@ export const FALLING_SKIES: StoryChapter = {
 			steps: [
 				{
 					id: "handover-crew-transcript",
+					simplifiedRequirements: ["Found in raid"],
+					simplified: "Chairman’s house: loot the transcript under the overturned bed’s mattress. Give it to Prapor.",
 					text: "Hand over the flight crew's transcript to Prapor",
 					map: "Shoreline",
 					items: [item("Plane crew transcript")],
@@ -149,6 +176,8 @@ export const FALLING_SKIES: StoryChapter = {
 				},
 				{
 					id: "handover-elektronik-drive",
+					simplifiedRequirements: ["Found in raid"],
+					simplified: "Same house: loot the drive on the bedside shelf. Give it to Prapor.",
 					text: "Hand over Elektronik's secure flash drive to Prapor",
 					map: "Shoreline",
 					items: [item("Elektronik's flash drive")],
@@ -161,6 +190,7 @@ export const FALLING_SKIES: StoryChapter = {
 				},
 				{
 					id: "wait-prapor-3",
+					simplified: "Wait 1–3 hours. Tell Prapor you read the transcript.",
 					text: "Wait for information from Prapor",
 					note: "Takes 1–3 hours. Say yes when he asks if you read the transcript; no forfeits the reward.",
 					rewards: [PRAPOR_ROUBLE_REWARD],
@@ -173,6 +203,8 @@ export const FALLING_SKIES: StoryChapter = {
 			steps: [
 				{
 					id: "retrieve-armored-case",
+					simplifiedRequirements: ["Found in raid"],
+					simplified: "Loot the armored case behind the cockpit.",
 					text: "Retrieve the armored case",
 					map: "Woods",
 					items: [ARMORED_CASE],
@@ -181,6 +213,7 @@ export const FALLING_SKIES: StoryChapter = {
 					substeps: [
 						{
 							id: "find-kerman-note",
+							simplified: false,
 							text: "Find any additional clues",
 							optional: true,
 							map: "Woods",
@@ -192,6 +225,7 @@ export const FALLING_SKIES: StoryChapter = {
 				},
 				{
 					id: "decide-armored-case",
+					simplified: "Keep the armored case or give it to Prapor.",
 					text: "Keep the armored case for yourself or hand it over to Prapor",
 					decision: "falling-skies-armored-case",
 					items: [ARMORED_CASE],

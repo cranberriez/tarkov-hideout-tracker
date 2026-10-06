@@ -27,6 +27,7 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 			title: "Investigate Kozlov's room",
 			steps: [
 				{
+					simplified: "Find the scribbled-on white car in the dorms courtyard.",
 					id: "locate-car",
 					text: "Locate the scribbled-on white car in the dorms courtyard",
 					map: "Customs",
@@ -37,6 +38,7 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Find room 110 on the ground floor of two-story dorms.",
 					id: "kozlov-home",
 					text: "Figure out where Kozlov lived",
 					map: "Customs",
@@ -47,6 +49,8 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read the note below the room number.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "read-door-note",
 					text: "Read the note on Kozlov's door",
 					map: "Customs",
@@ -55,6 +59,8 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 					images: [image("room-110-door", "The door to room 110, with the note on the wall")],
 				},
 				{
+					simplified: "Unlock room 110 and read the letter on the nightstand.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "kozlov-involvement",
 					text: "Find out what Kozlov was involved in",
 					map: "Customs",
@@ -62,8 +68,15 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 					note: "Read the letter on the nightstand. Must be found in raid.",
 					images: [image("letter-from-kozlovs-room-spawn", "The letter on the nightstand")],
 					substeps: [
-						{ id: "access-kozlov-room", text: "Access Kozlov's room", optional: true, items: [KOZLOV_KEY] },
 						{
+							simplified: false,
+							id: "access-kozlov-room",
+							text: "Access Kozlov's room",
+							optional: true,
+							items: [KOZLOV_KEY],
+						},
+						{
+							simplified: "Read the key-location note on the kitchen wall by room 110.",
 							id: "repair-shop-note",
 							text: "Figure out where to get Kozlov's key",
 							optional: true,
@@ -71,7 +84,12 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 							note: "On the kitchen wall next to room 110.",
 							images: [image("accidental-witness-kozlov-optional-note", "The note on the kitchen wall")],
 						},
-						{ id: "investigate-kozlov-room", text: "Investigate Kozlov's room", optional: true },
+						{
+							simplified: false,
+							id: "investigate-kozlov-room",
+							text: "Investigate Kozlov's room",
+							optional: true,
+						},
 					],
 				},
 			],
@@ -81,11 +99,13 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 			title: "Search Skier's accomplice's apartment",
 			steps: [
 				{
+					simplified: "Ask Skier about Anastasia.",
 					id: "ask-traders-anastasia",
 					text: "Ask the traders about Anastasia",
 					note: "Ask Skier through the trader screen.",
 				},
 				{
+					simplified: "Enter the ground-floor apartment at Zmeisky 3 through the backyard.",
 					id: "access-accomplice-apartment",
 					text: "Access Skier's accomplice's apartment",
 					map: "Streets of Tarkov",
@@ -97,16 +117,32 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 						image("zmeevsky-3-door-2", "The apartment door"),
 					],
 					substeps: [
-						{ id: "find-zmeisky-key", text: "Find the key to the apartment", optional: true, items: [ZMEISKY_KEY] },
+						{
+							simplified: false,
+							id: "find-zmeisky-key",
+							text: "Find the key to the apartment",
+							optional: true,
+							items: [ZMEISKY_KEY],
+						},
 					],
 				},
 				{
+					simplified: "Read the accomplice’s documents.",
 					id: "learn-accomplice",
 					text: "Learn more about Skier's accomplice",
 					map: "Streets of Tarkov",
-					substeps: [{ id: "investigate-accomplice-apartment", text: "Investigate the apartment", optional: true }],
+					substeps: [
+						{
+							simplified: false,
+							id: "investigate-accomplice-apartment",
+							text: "Investigate the apartment",
+							optional: true,
+						},
+					],
 				},
 				{
+					simplified: "Read the documents around the living room and kitchen.",
+					simplifiedRequirements: ["Found in raid • 2–3 spawns each"],
 					id: "read-accomplice-documents",
 					text: "Read the documents in Skier's accomplice's apartment",
 					map: "Streets of Tarkov",
@@ -133,20 +169,31 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Extract from Streets.",
+					simplifiedRequirements: ["Survived or Run-Through counts"],
 					id: "extract-streets",
 					text: "Survive and extract from Streets of Tarkov",
 					map: "Streets of Tarkov",
 					note: 'A "Survived" or "Run-Through" extract counts.',
 				},
-				{ id: "report-skier-1", text: "Report to Skier" },
+				{
+					simplified: "Report to Skier",
+					id: "report-skier-1",
+					text: "Report to Skier",
+				},
 			],
 		},
 		{
 			id: "anastasia",
 			title: "Trace Anastasia and courier Pasha",
 			steps: [
-				{ id: "talk-ragman", text: "Talk to Ragman" },
 				{
+					simplified: "Talk to Ragman",
+					id: "talk-ragman",
+					text: "Talk to Ragman",
+				},
+				{
+					simplified: "Find apartment 7, Chekannaya 13, second floor.",
 					id: "locate-anastasia-apartment",
 					text: "Locate Anastasia's apartment",
 					map: "Streets of Tarkov",
@@ -157,8 +204,15 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 						image("accidental-witness-anastasia-apartment-door", "The door to apartment 7"),
 					],
 				},
-				{ id: "learn-anastasia", text: "Learn more about Anastasia", map: "Streets of Tarkov" },
 				{
+					simplified: false,
+					id: "learn-anastasia",
+					text: "Learn more about Anastasia",
+					map: "Streets of Tarkov",
+				},
+				{
+					simplified: "Read both documents in the downstairs mailbox.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "investigate-anastasia-entrance",
 					text: "Investigate the entrance of Anastasia's building",
 					map: "Streets of Tarkov",
@@ -173,6 +227,7 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Find Pasha’s ambush site beside two-story dorms.",
 					id: "locate-pasha",
 					text: "Locate courier Pasha",
 					map: "Customs",
@@ -183,6 +238,8 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read the envelope next to the bicycle.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "search-ambush-spot",
 					text: "Search the ambush spot",
 					map: "Customs",
@@ -190,7 +247,11 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 					note: "Next to the bicycle. Must be found in raid.",
 					images: [image("accidental-witness-pasha-note", "The envelope")],
 				},
-				{ id: "talk-skier-2", text: "Talk to Skier" },
+				{
+					simplified: "Talk to Skier",
+					id: "talk-skier-2",
+					text: "Talk to Skier",
+				},
 			],
 		},
 		{
@@ -198,6 +259,7 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 			title: "Investigate Reshala's bunkhouse",
 			steps: [
 				{
+					simplified: "Unlock Reshala’s bunkhouse.",
 					id: "locate-reshala-stash",
 					text: "Locate Reshala's stash",
 					map: "Customs",
@@ -208,8 +270,15 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 						image("reshalas-bunkhouse", "The bunkhouse door"),
 					],
 					substeps: [
-						{ id: "neutralize-reshala", text: "Locate and neutralize Reshala", optional: true, map: "Customs" },
 						{
+							simplified: "Locate and neutralize Reshala",
+							id: "neutralize-reshala",
+							text: "Locate and neutralize Reshala",
+							optional: true,
+							map: "Customs",
+						},
+						{
+							simplified: false,
 							id: "obtain-reshala-key",
 							text: "Obtain the key to Reshala's stash",
 							optional: true,
@@ -218,6 +287,8 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read the address note in the bunkhouse.",
+					simplifiedRequirements: ["Found in raid • Check both walls and the stool"],
 					id: "investigate-reshala-bunkhouse",
 					text: "Investigate Reshala's bunkhouse",
 					map: "Customs",
@@ -230,12 +301,14 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 					],
 					substeps: [
 						{
+							simplified: "Collect the warning note.",
 							id: "reshala-work-notes",
 							text: "Obtain Reshala's work notes",
 							optional: true,
 							items: [item("Note with a warning", "68d2f302be7c1493b90cd3f5")],
 						},
 						{
+							simplified: "Collect Pasha’s letter.",
 							id: "pasha-belongings",
 							text: "Obtain courier Pasha's belongings",
 							optional: true,
@@ -250,6 +323,7 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 			title: "Recover Kozlov's evidence",
 			steps: [
 				{
+					simplified: "Find house 3 in the east of the west village.",
 					id: "locate-kozlov-hideout",
 					text: "Locate Kozlov's hideout",
 					map: "Shoreline",
@@ -261,6 +335,8 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Take the audio tape from the flower bed by the entrance.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "obtain-kozlov-evidence",
 					text: "Locate and obtain Kozlov's evidence",
 					map: "Shoreline",

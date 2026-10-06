@@ -16,6 +16,7 @@ import { StoryStepImages } from "./StoryStepImages";
 interface StoryStepListProps {
 	ref?: Ref<StoryStepListHandle>;
 	chapterId: string;
+	simplified?: boolean;
 	groups: ReturnType<typeof chapterStepGroups>;
 	resolved: ResolvedDecisions;
 	targetEnding: StoryEndingId | null;
@@ -35,6 +36,7 @@ const COLLAPSE_ITEMS_AFTER = 12;
 
 export function StoryStepList({
 	ref,
+	simplified = false,
 	chapterId,
 	groups,
 	resolved,
@@ -105,6 +107,8 @@ export function StoryStepList({
 					) : null;
 				}
 				const { section, state, decisionIds, pendingOn, steps } = view;
+				const visibleSteps = simplified ? steps.filter(({ step }) => step.simplified !== false) : steps;
+				if (!visibleSteps.length && !bars.length) return null;
 				const isCollapsed = collapsed.has(section.id);
 				const required = steps.filter((view) => !view.step.optional);
 				const complete = required.length > 0 && required.every((view) => view.done);
@@ -180,9 +184,10 @@ export function StoryStepList({
 									state === "pending" && "opacity-60",
 								)}
 							>
-								{steps.map((view) => (
+								{visibleSteps.map((view) => (
 									<StepRow
 										key={view.step.id}
+										simplified={simplified}
 										view={view}
 										decisionProps={decisionProps}
 										evidenceByStep={evidenceByStep}
@@ -209,23 +214,33 @@ function StepRow({
 	evidenceByStep,
 	onToggleStep,
 	nested = false,
+	simplified = false,
 }: {
 	view: StepView;
 	decisionProps: DecisionProps;
 	evidenceByStep: ReadonlyMap<string, EvidenceKind>;
 	onToggleStep: (stepId: string, done: boolean) => void;
 	nested?: boolean;
+	simplified?: boolean;
 }) {
 	const { step, done, state, lightkeeperBlocked, substeps } = view;
 	const decision = step.decision ? STORY_DECISION_BY_ID[step.decision] : undefined;
 	const optional = Boolean(step.optional);
 	const evidence = evidenceByStep.get(step.id);
+	const displayItems = simplified ? (step.simplifiedItems ?? step.items) : step.items;
+	const detailedItems =
+		!simplified ||
+		(displayItems?.length ?? 0) > COLLAPSE_ITEMS_AFTER ||
+		displayItems?.some((item) => item.note || item.chapterId);
+	const displayText = simplified && typeof step.simplified === "string" ? step.simplified : step.text;
+	const visibleSubsteps = simplified ? substeps.filter(({ step }) => step.simplified !== false) : substeps;
 	return (
 		<li
 			id={`step-${step.id}`}
 			tabIndex={-1}
 			className={cn(
 				"flex scroll-mt-24 gap-3 px-3 py-3",
+				simplified && "py-2",
 				nested ? "py-1.5 pl-0" : "border-b border-highlight/8 last:border-b-0",
 				state === "pending" && !nested && "opacity-70",
 			)}
@@ -234,7 +249,7 @@ function StepRow({
 				type="button"
 				onClick={() => onToggleStep(step.id, !done)}
 				aria-pressed={done}
-				aria-label={`${done ? "Mark as not done" : "Mark as done"}: ${step.text}`}
+				aria-label={`${done ? "Mark as not done" : "Mark as done"}: ${displayText}`}
 				className={cn(
 					"mt-0.5 flex shrink-0 items-center justify-center rounded-full border transition-colors",
 					nested ? "size-4" : "size-5",
@@ -259,7 +274,7 @@ function StepRow({
 							done ? "text-muted-foreground line-through" : optional ? "text-muted-foreground" : "text-foreground",
 						)}
 					>
-						{step.text}
+						{displayText}
 					</span>
 					{step.map && (
 						<Badge variant="flat" size="sm">
@@ -285,7 +300,9 @@ function StepRow({
 						</Badge>
 					)}
 				</div>
-				{step.note && <p className="mt-1 text-[13px] leading-5 text-muted-foreground">{step.note}</p>}
+				{(!simplified || !step.simplified) && step.note && (
+					<p className="mt-1 text-[13px] leading-5 text-muted-foreground">{step.note}</p>
+				)}
 				{step.warning && (
 					<p className="mt-1 flex items-start gap-1.5 text-[13px] leading-5 text-danger">
 						<TriangleAlert aria-hidden="true" className="mt-[3px] size-3.5 shrink-0" />
@@ -323,19 +340,34 @@ function StepRow({
 						))}
 					</div>
 				)}
-				{step.rewards && step.rewards.length > 0 && (
-					<p className="mt-1 flex items-start gap-1.5 text-[13px] leading-5 text-success">
-						<Gift aria-hidden="true" className="mt-[3px] size-3.5 shrink-0" />
-						{step.rewards.join(" · ")}
-					</p>
-				)}
-				{step.items && step.items.length > 0 && <StepItems items={step.items} nested={nested} />}
-				{step.rewardItems && step.rewardItems.length > 0 && (
-					<div aria-label="Reward items">
-						<StepItems items={step.rewardItems} nested={nested} />
-					</div>
-				)}
-				{step.images && step.images.length > 0 && <StoryStepImages images={step.images} stepText={step.text} />}
+				<div className="mt-1.5 flex flex-wrap items-center gap-2">
+					{simplified &&
+						step.simplifiedRequirements?.map((requirement) => (
+							<Badge key={requirement} variant="flat" size="sm" className="max-w-full shrink whitespace-normal">
+								{requirement}
+							</Badge>
+						))}
+					{detailedItems && displayItems && <StepItems items={displayItems} nested={nested} />}
+					{!detailedItems &&
+						displayItems?.map((item) => (
+							<StoryItemChip key={item.id ?? item.name} item={item} size={nested ? "xs" : "sm"} />
+						))}
+					{step.images && step.images.length > 0 && (
+						<StoryStepImages images={step.images} stepText={step.text} compact={simplified} />
+					)}
+					{step.rewardItems && step.rewardItems.length > 0 && (
+						<div aria-label="Reward items" className="flex flex-wrap items-center gap-1.5 text-success">
+							<Gift aria-hidden="true" className="size-3.5" />
+							<StepItems items={step.rewardItems} nested={nested} />
+						</div>
+					)}
+					{step.rewards && step.rewards.length > 0 && (
+						<p className="flex items-start gap-1.5 text-[13px] leading-5 text-success">
+							<Gift aria-hidden="true" className="mt-[3px] size-3.5 shrink-0" />
+							{step.rewards.join(" · ")}
+						</p>
+					)}
+				</div>
 				{decision && (
 					<StoryDecisionControl
 						id={`decision-${decision.id}`}
@@ -345,11 +377,12 @@ function StepRow({
 						{...decisionProps}
 					/>
 				)}
-				{substeps.length > 0 && (
+				{visibleSubsteps.length > 0 && (
 					<ol className="mt-1.5 flex flex-col">
-						{substeps.map((substep) => (
+						{visibleSubsteps.map((substep) => (
 							<StepRow
 								key={substep.step.id}
+								simplified={simplified}
 								view={substep}
 								decisionProps={decisionProps}
 								evidenceByStep={evidenceByStep}

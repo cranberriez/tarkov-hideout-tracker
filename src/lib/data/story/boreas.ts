@@ -89,17 +89,22 @@ export const BOREAS: StoryChapter = {
 			title: "Trace the distress signal",
 			steps: [
 				{
+					simplified: "Read the Paradigm poster or check the radio’s distress signal.",
+					simplifiedRequirements: ["Radio: Intelligence Center 3"],
 					id: "start-signal",
 					text: "Find the Paradigm Shipping poster or check the distress signal on the radio",
 					items: [item("Paradigm Shipping poster", "699f0b877c23862b4b0ee19c")],
 					note: "Starts the chapter. The radio needs Intelligence Center level 3.",
 				},
 				{
+					simplified:
+						"Ask Mechanic about the signal, or the traders about TerraGroup and Paradigm if you started with the poster.",
 					id: "ask-signal-origin",
 					text: "Ask Mechanic where the distress signal came from",
 					note: "Through the trader screen. Starting from the poster, you ask the traders about TerraGroup and Paradigm Shipping instead.",
 				},
 				{
+					simplified: "Find the tower equipment at the Scav bunker.",
 					id: "locate-tower-equipment",
 					text: "Locate the equipment under the cellular tower",
 					map: "Woods",
@@ -107,6 +112,8 @@ export const BOREAS: StoryChapter = {
 					images: [image("thirsty-delivery-woods-map", "Scav bunker location marked on the map")],
 				},
 				{
+					simplified: "Repair the tower equipment.",
+					simplifiedRequirements: ["Toolset consumed"],
 					id: "repair-tower-equipment",
 					text: "Repair the equipment under the cellular tower",
 					map: "Woods",
@@ -114,8 +121,14 @@ export const BOREAS: StoryChapter = {
 					note: "The toolset is used up.",
 					images: [image("boreas-equipment", "The equipment")],
 				},
-				{ id: "report-mechanic-tower", text: "Report back to Mechanic" },
 				{
+					simplified: "Report back to Mechanic",
+					id: "report-mechanic-tower",
+					text: "Report back to Mechanic",
+				},
+				{
+					simplified: "Read the directive beside the lamp in the northern freight-yard warehouse.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "obtain-paradigm-directive",
 					text: "Locate and obtain the Paradigm Shipping documentation",
 					map: "Lighthouse",
@@ -126,7 +139,11 @@ export const BOREAS: StoryChapter = {
 						image("boreas-paradigm-shipping-directive", "The directive on the table next to the lamp"),
 					],
 				},
-				{ id: "tell-mechanic-boreas", text: "Tell Mechanic about “Boreas”" },
+				{
+					simplified: "Tell Mechanic about “Boreas”",
+					id: "tell-mechanic-boreas",
+					text: "Tell Mechanic about “Boreas”",
+				},
 			],
 		},
 		{
@@ -134,18 +151,22 @@ export const BOREAS: StoryChapter = {
 			title: "Arrange transport with Prapor",
 			steps: [
 				{
+					simplified: "Ask Prapor for transport to the icebreaker.",
 					id: "ask-prapor-transport",
 					text: "Arrange a transport to the icebreaker",
 					note: "Ask Prapor through the trader screen. His price depends on Falling Skies.",
 					decision: "boreas-falling-skies-progress",
 				},
 				{
+					simplified: "Eliminate any 30 targets",
 					id: "reserve-kills",
 					text: "Eliminate any 30 targets",
 					map: "Reserve",
 					when: fallingSkiesPending,
 				},
 				{
+					simplified: "Fire a yellow flare upward at the Woods transit.",
+					simplifiedRequirements: ["RSP-30 or signal pistol with yellow cartridge • Keep it in front of you"],
 					id: "reserve-yellow-flare",
 					text: "Launch a yellow signal flare at the Woods transit",
 					map: "Reserve",
@@ -163,6 +184,8 @@ export const BOREAS: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Give Prapor the power filters.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "handover-power-filters",
 					text: "Hand over 3 Military power filters to Prapor",
 					when: { all: [fallingSkiesDone, caseKept] },
@@ -170,6 +193,9 @@ export const BOREAS: StoryChapter = {
 					note: "Must be found in raid.",
 				},
 				{
+					simplified:
+						"Find the quest fluid in black bishop’s northern basement storage or around the helicopter; give it to Prapor.",
+					simplifiedRequirements: ["Found in raid • Barter fluid does not count"],
 					id: "handover-amg-fluid",
 					text: "Hand over the AMG-10 fluid to Prapor",
 					map: "Reserve",
@@ -190,8 +216,13 @@ export const BOREAS: StoryChapter = {
 			id: "btr-transport",
 			title: "Find another way with the BTR Driver",
 			steps: [
-				{ id: "find-alternative-transport", text: "Find an alternative transport to the icebreaker" },
 				{
+					simplified: false,
+					id: "find-alternative-transport",
+					text: "Find an alternative transport to the icebreaker",
+				},
+				{
+					simplified: "Ask the BTR Driver for transport.",
 					id: "talk-btr-transport",
 					text: "Talk to the BTR Driver",
 					note: "His tasks depend on which of his quests you have completed.",
@@ -199,13 +230,21 @@ export const BOREAS: StoryChapter = {
 					decision: "boreas-btr-quests",
 				},
 				{
+					simplified: "Return to the Hideout by extracting or dying.",
 					id: "return-hideout-btr",
 					text: "Return to the Hideout",
 					when: priceOfIndependence,
 					note: "Extract or die.",
 				},
-				{ id: "return-btr-independence", text: "Return to the BTR Driver", when: priceOfIndependence },
 				{
+					simplified: "Return to the BTR Driver",
+					id: "return-btr-independence",
+					text: "Return to the BTR Driver",
+					when: priceOfIndependence,
+				},
+				{
+					simplified: "Give the BTR Driver the ammunition.",
+					simplifiedRequirements: ["Found in raid not required"],
 					id: "handover-bt-gzh",
 					text: "Hand over 200 7.62x54mm R BT gzh rounds",
 					when: chooseYourFriends,
@@ -213,6 +252,8 @@ export const BOREAS: StoryChapter = {
 					note: "Not found-in-raid.",
 				},
 				{
+					simplified: "Take Skier’s reports from the ditch between the Scav base and laboratory.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "obtain-skier-reports",
 					text: "Locate and obtain Skier's reports",
 					map: "Customs",
@@ -225,6 +266,7 @@ export const BOREAS: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Burn the reports at a fire barrel in the Scav base living quarters.",
 					id: "burn-skier-reports",
 					text: "Burn Skier's reports",
 					map: "Customs",
@@ -238,6 +280,7 @@ export const BOREAS: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Kill 15 targets at smuggler bases.",
 					id: "smuggler-kills-15",
 					text: "Eliminate any 15 targets at the smugglers' territories",
 					map: "Shoreline or Interchange",
@@ -245,8 +288,14 @@ export const BOREAS: StoryChapter = {
 					note: "At the smuggler bases.",
 					images: SMUGGLER_BASE_IMAGES,
 				},
-				{ id: "report-btr-friends", text: "Report back to the BTR Driver", when: chooseYourFriends },
 				{
+					simplified: "Report back to the BTR Driver",
+					id: "report-btr-friends",
+					text: "Report back to the BTR Driver",
+					when: chooseYourFriends,
+				},
+				{
+					simplified: "Kill 10 targets at smuggler bases.",
 					id: "smuggler-kills-10",
 					text: "Eliminate any 10 targets at the smugglers' territories",
 					map: "Shoreline or Interchange",
@@ -254,8 +303,17 @@ export const BOREAS: StoryChapter = {
 					note: "At the smuggler bases.",
 					images: SMUGGLER_BASE_IMAGES,
 				},
-				{ id: "report-btr-neither", text: "Report back to the BTR Driver", when: neitherBtrQuest },
-				{ id: "tell-mechanic-transport", text: "Tell Mechanic that you found transport to the icebreaker" },
+				{
+					simplified: "Report back to the BTR Driver",
+					id: "report-btr-neither",
+					text: "Report back to the BTR Driver",
+					when: neitherBtrQuest,
+				},
+				{
+					simplified: "Tell Mechanic that you found transport to the icebreaker",
+					id: "tell-mechanic-transport",
+					text: "Tell Mechanic that you found transport to the icebreaker",
+				},
 			],
 		},
 		{
@@ -263,6 +321,8 @@ export const BOREAS: StoryChapter = {
 			title: "Board the icebreaker",
 			steps: [
 				{
+					simplified: "Board the hovercraft at the piers.",
+					simplifiedRequirements: ["Marine repair kit to board"],
 					id: "board-hovercraft",
 					text: "Board the smuggler hovercraft",
 					map: "Shoreline or Lighthouse",
@@ -275,12 +335,14 @@ export const BOREAS: StoryChapter = {
 					],
 					substeps: [
 						{
+							simplified: "Bring the repair kit for boarding.",
 							id: "bring-marine-repair-kit",
 							text: "Bring a marine repair kit",
 							optional: true,
 							items: [item("Sudak-Tudak marine repair kit", "6a8c4c7999baf8bd5802f7fe")],
 						},
 						{
+							simplified: "Pack a green flare for extraction.",
 							id: "bring-green-flare",
 							text: "Bring a green RSP signal flare",
 							optional: true,
@@ -288,6 +350,7 @@ export const BOREAS: StoryChapter = {
 							note: "Needed to extract from the icebreaker.",
 						},
 						{
+							simplified: "Pack the evacuation fare.",
 							id: "bring-euros",
 							text: "Bring 2,500 Euros to pay for the evacuation from the icebreaker",
 							optional: true,
@@ -295,8 +358,14 @@ export const BOREAS: StoryChapter = {
 						},
 					],
 				},
-				{ id: "arrive-icebreaker-1", text: "Arrive at the icebreaker", map: "Icebreaker" },
 				{
+					simplified: "Arrive at the icebreaker",
+					id: "arrive-icebreaker-1",
+					text: "Arrive at the icebreaker",
+					map: "Icebreaker",
+				},
+				{
+					simplified: "Speak to the scientist on the east-side level 1 intercom.",
 					id: "check-crew-survivors",
 					text: "Check if any crew members survived on the ship",
 					map: "Icebreaker",
@@ -304,6 +373,8 @@ export const BOREAS: StoryChapter = {
 					images: INTERCOM_IMAGES,
 				},
 				{
+					simplified: "Enter the engine room.",
+					simplifiedRequirements: ["Black Division on the catwalks"],
 					id: "access-engine-room-1",
 					text: "Access the engine room",
 					map: "Icebreaker",
@@ -311,6 +382,7 @@ export const BOREAS: StoryChapter = {
 					note: "Black Division come out on the catwalks halfway through the room.",
 					substeps: [
 						{
+							simplified: "Take the keycard beside the engineer in level 1’s central medical room.",
 							id: "engine-keycard-1",
 							text: "Locate and obtain the engine room keycard",
 							optional: true,
@@ -319,6 +391,8 @@ export const BOREAS: StoryChapter = {
 							images: ENGINE_KEYCARD_IMAGES,
 						},
 						{
+							simplified:
+								"Open the east-side level 0 door, climb to level 1, unseal the doors and descend to level −2.",
 							id: "reach-engine-room-1",
 							text: "Reach the engine room",
 							optional: true,
@@ -328,6 +402,9 @@ export const BOREAS: StoryChapter = {
 					],
 				},
 				{
+					simplified:
+						"From the extract, descend two levels, circle the helipad and climb to the level 3 chained door. Try it, then extract.",
+					simplifiedRequirements: ["Black Division around the helipad"],
 					id: "find-superstructure-way",
 					text: "Find a way into the icebreaker superstructure",
 					map: "Icebreaker",
@@ -348,20 +425,32 @@ export const BOREAS: StoryChapter = {
 			id: "explosives",
 			title: "Blow the chained door",
 			steps: [
-				{ id: "ask-mechanic-explosives", text: "Ask Mechanic about explosives" },
 				{
+					simplified: "Ask Mechanic about explosives",
+					id: "ask-mechanic-explosives",
+					text: "Ask Mechanic about explosives",
+				},
+				{
+					simplified: "Ask Prapor about explosives",
 					id: "ask-prapor-explosives",
 					text: "Ask Prapor about explosives",
 					rewards: ["Unlocks buying the SZ-1 explosive charge (Icebreaker) at Prapor LL1"],
 				},
-				{ id: "arrive-icebreaker-2", text: "Arrive at the icebreaker", map: "Icebreaker" },
 				{
+					simplified: "Arrive at the icebreaker",
+					id: "arrive-icebreaker-2",
+					text: "Arrive at the icebreaker",
+					map: "Icebreaker",
+				},
+				{
+					simplified: "Return to the chained door above the engine room.",
 					id: "reach-damaged-door-1",
 					text: "Reach the damaged door on the roof of the engine room",
 					map: "Icebreaker",
 					images: DAMAGED_DOOR_IMAGES,
 				},
 				{
+					simplified: "Place the SZ-1 charge on the chain.",
 					id: "break-chain-1",
 					text: "Break the chain on the door with the SZ-1 charge",
 					map: "Icebreaker",
@@ -370,6 +459,8 @@ export const BOREAS: StoryChapter = {
 					images: [image("stick-to-it-activation-chained-door", "The chained door")],
 				},
 				{
+					simplified: "Enter the crew quarters.",
+					simplifiedRequirements: ["The Wedge inside • Tear-gas tripwire at entrance"],
 					id: "enter-superstructure",
 					text: "Enter the icebreaker superstructure from the roof of the engine room",
 					map: "Icebreaker",
@@ -377,6 +468,7 @@ export const BOREAS: StoryChapter = {
 					images: [image("boreas-enter-icebreaker-superstructure", "The crew quarters entrance")],
 					substeps: [
 						{
+							simplified: "Take the diary from crew room 18.",
 							id: "inspect-crew-quarters",
 							text: "Inspect the crew living quarters",
 							optional: true,
@@ -389,6 +481,7 @@ export const BOREAS: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Clear the quarters, go to level 5, then outside and up to the code door.",
 					id: "find-upper-decks-way",
 					text: "Find a way to the upper decks of the superstructure",
 					map: "Icebreaker",
@@ -402,14 +495,21 @@ export const BOREAS: StoryChapter = {
 			title: "Get the code for the level 6 door",
 			steps: [
 				{
+					simplified: "Ask the scientist at the east-side level 1 intercom for the door code.",
 					id: "ask-scientist-code",
 					text: "Ask the surviving scientist how to open the code-locked door on level 6",
 					map: "Icebreaker",
 					note: "Intercom on level 1, east side of the ship.",
 					images: INTERCOM_IMAGES,
 				},
-				{ id: "ask-mechanic-code", text: "Ask Mechanic for help with finding the second part of the code" },
 				{
+					simplified: "Ask Mechanic for help with finding the second part of the code",
+					id: "ask-mechanic-code",
+					text: "Ask Mechanic for help with finding the second part of the code",
+				},
+				{
+					simplified: "Plant the device beside the chairs in The Lab’s first-floor server room.",
+					simplifiedRequirements: ["Already planted in Blue Fire counts • Mechanic supplies the device"],
 					id: "plant-hacking-device",
 					text: "Plant the hacking device in the server room in the Lab",
 					map: "The Lab",
@@ -420,7 +520,11 @@ export const BOREAS: StoryChapter = {
 						image("labs-server-room-plant-location-2", "Stash location next to the office chairs"),
 					],
 				},
-				{ id: "return-mechanic-code", text: "Return to Mechanic" },
+				{
+					simplified: "Return to Mechanic",
+					id: "return-mechanic-code",
+					text: "Return to Mechanic",
+				},
 			],
 		},
 		{
@@ -428,12 +532,14 @@ export const BOREAS: StoryChapter = {
 			title: "Reach the bridge and compartment C-1",
 			steps: [
 				{
+					simplified: "Return via the Shoreline transit or menu.",
 					id: "arrive-icebreaker-3",
 					text: "Arrive at the icebreaker",
 					map: "Icebreaker",
 					note: "Through the Shoreline transit or from the menu.",
 				},
 				{
+					simplified: "Reach the engine room",
 					id: "reach-engine-room-2",
 					text: "Reach the engine room",
 					map: "Icebreaker",
@@ -441,6 +547,7 @@ export const BOREAS: StoryChapter = {
 					images: ENGINE_ROOM_IMAGES,
 					substeps: [
 						{
+							simplified: "Take the keycard beside the engineer in level 1’s central medical room.",
 							id: "engine-keycard-2",
 							text: "Locate and obtain the engine room keycard",
 							optional: true,
@@ -451,12 +558,14 @@ export const BOREAS: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Reach the damaged door on the roof of the engine room",
 					id: "reach-damaged-door-2",
 					text: "Reach the damaged door on the roof of the engine room",
 					map: "Icebreaker",
 					images: DAMAGED_DOOR_IMAGES,
 				},
 				{
+					simplified: false,
 					id: "return-btr-side-quest",
 					text: "Return to the BTR Driver",
 					optional: true,
@@ -464,6 +573,7 @@ export const BOREAS: StoryChapter = {
 					note: "Only appears after you complete Stick to It or A Bitter Victory.",
 				},
 				{
+					simplified: "Break the chain on the door with the SZ-1 charge",
 					id: "break-chain-2",
 					text: "Break the chain on the door with the SZ-1 charge",
 					map: "Icebreaker",
@@ -471,6 +581,7 @@ export const BOREAS: StoryChapter = {
 					images: [image("stick-to-it-activation-chained-door", "The chained door")],
 				},
 				{
+					simplified: "Cross the crew quarters to level 5, then go outside and upstairs.",
 					id: "reach-code-door",
 					text: "Reach the code-locked door",
 					map: "Icebreaker",
@@ -478,6 +589,7 @@ export const BOREAS: StoryChapter = {
 					images: CODE_DOOR_IMAGES,
 				},
 				{
+					simplified: "Enter 3-1-2-2-2-0.",
 					id: "use-access-code",
 					text: "Use the correct access code",
 					map: "Icebreaker",
@@ -485,6 +597,7 @@ export const BOREAS: StoryChapter = {
 					images: [image("boreas-upper-decks-code-locked-door", "The code-locked door")],
 				},
 				{
+					simplified: "Find C-1 beside the level 7 outside exit; read the log by the door.",
 					id: "locate-compartment-c1",
 					text: "Locate compartment C-1",
 					map: "Icebreaker",
@@ -493,17 +606,29 @@ export const BOREAS: StoryChapter = {
 					images: C1_IMAGES,
 					substeps: [
 						{
+							simplified: "Take the keycard from the captain’s left hand on the level 9 bridge.",
 							id: "obtain-c1-keycard",
 							text: "Locate and obtain the keycard with access to compartment C-1",
 							optional: true,
 							items: [C1_KEYCARD],
 							note: "In the left hand of the captain's body on the bridge, level 9.",
 						},
-						{ id: "locate-bridge-entrance", text: "Locate the entrance to the bridge", optional: true },
-						{ id: "locate-bridge-alternative", text: "Locate an alternative path to the bridge", optional: true },
+						{
+							simplified: false,
+							id: "locate-bridge-entrance",
+							text: "Locate the entrance to the bridge",
+							optional: true,
+						},
+						{
+							simplified: false,
+							id: "locate-bridge-alternative",
+							text: "Locate an alternative path to the bridge",
+							optional: true,
+						},
 					],
 				},
 				{
+					simplified: "Use the code to leave level 7 and climb to the bridge.",
 					id: "reach-upper-decks",
 					text: "Reach the upper decks",
 					map: "Icebreaker",
@@ -511,6 +636,7 @@ export const BOREAS: StoryChapter = {
 					images: [image("boreas-bridge-doors", "The door to the bridge")],
 				},
 				{
+					simplified: "Thaw the hatch and lever above the bridge.",
 					id: "thaw-bridge-hatch",
 					text: "Thaw the hatch on the roof of the bridge",
 					map: "Icebreaker",
@@ -519,6 +645,7 @@ export const BOREAS: StoryChapter = {
 					images: [image("gas-torch-apply-icebreaker", "The hatch to thaw")],
 					substeps: [
 						{
+							simplified: "Take the torch from the level 3 kitchen.",
 							id: "find-gas-torch",
 							text: "Find something to thaw the hatch",
 							optional: true,
@@ -532,6 +659,7 @@ export const BOREAS: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Reach the captain’s body on the level 9 bridge.",
 					id: "rescue-captain",
 					text: "Rescue the icebreaker captain",
 					map: "Icebreaker",
@@ -539,6 +667,7 @@ export const BOREAS: StoryChapter = {
 					images: [image("compartment-c-1-keycard-spawn", "The captain's body, holding the C-1 keycard")],
 				},
 				{
+					simplified: "Access compartment C-1",
 					id: "access-compartment-c1",
 					text: "Access compartment C-1",
 					map: "Icebreaker",
@@ -546,6 +675,8 @@ export const BOREAS: StoryChapter = {
 					images: C1_IMAGES,
 				},
 				{
+					simplified: "Take the drive from the keyboard shelf left of C-1’s entrance.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "search-c1-shelves",
 					text: "Search the shelves in compartment C-1",
 					map: "Icebreaker",
@@ -554,6 +685,8 @@ export const BOREAS: StoryChapter = {
 					images: [image("boreas-hdd1-spawn", "On the shelf with the keyboard")],
 				},
 				{
+					simplified: "Take the drive from the PC blocks beneath the desk.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "search-c1-workstation",
 					text: "Search the area near the workstation in compartment C-1",
 					map: "Icebreaker",
@@ -562,6 +695,8 @@ export const BOREAS: StoryChapter = {
 					images: [image("boreas-hdd2-spawn", "On top of the PC blocks under the desk")],
 				},
 				{
+					simplified: "Take the drive from the servers on the floor.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "search-c1-servers",
 					text: "Search the servers in compartment C-1",
 					map: "Icebreaker",
@@ -576,6 +711,7 @@ export const BOREAS: StoryChapter = {
 			title: "Decode the hard drives with Mechanic",
 			steps: [
 				{
+					simplified: "Give Mechanic all three hard drives.",
 					id: "handover-hard-drives",
 					text: "Ask Mechanic for help decoding the hard drives",
 					items: HARD_DRIVES,
@@ -583,24 +719,40 @@ export const BOREAS: StoryChapter = {
 					note: "Hand over the three drives. This unlocks four side quests that the chapter doesn't need.",
 				},
 				{
+					simplified: "Give Mechanic the satellite modules.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "handover-ultralink",
 					text: "Hand over 3 Ultralink satellite modules to Mechanic",
 					items: [item("Ultralink satellite communication module", "69bb41c03b5fb75517065960", 3)],
 					note: "Must be found in raid.",
 					substeps: [
-						{ id: "find-ultralink", text: "Locate and obtain Ultralink modules on the icebreaker", optional: true },
+						{
+							simplified: false,
+							id: "find-ultralink",
+							text: "Locate and obtain Ultralink modules on the icebreaker",
+							optional: true,
+						},
 					],
 				},
 				{
+					simplified: "Give Mechanic the RAM modules.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "handover-server-ram",
 					text: "Hand over 4 server RAM modules to Mechanic",
 					items: [item("Memento Server RAM Module", "69bb424e99f3fda8f107247d", 4)],
 					note: "Must be found in raid.",
 					substeps: [
-						{ id: "find-server-ram", text: "Locate and obtain server RAM modules on the icebreaker", optional: true },
+						{
+							simplified: false,
+							id: "find-server-ram",
+							text: "Locate and obtain server RAM modules on the icebreaker",
+							optional: true,
+						},
 					],
 				},
 				{
+					simplified: "Give Mechanic the processors.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "handover-crypto-processors",
 					text: "Hand over 2 cryptographic processors to Mechanic",
 					items: [item("IBX Gigachad cryptographic processor", "69bb4203f94327bc0f0230cd", 2)],
@@ -608,6 +760,7 @@ export const BOREAS: StoryChapter = {
 					rewards: ["Icebreaker archive data"],
 					substeps: [
 						{
+							simplified: false,
 							id: "find-crypto-processors",
 							text: "Locate and obtain cryptographic processors on the icebreaker",
 							optional: true,
@@ -615,6 +768,7 @@ export const BOREAS: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read the mailed archive data in your Handbook.",
 					id: "analyse-archive-data",
 					text: "Analyse the data from the icebreaker",
 					items: [item("Icebreaker archive data", "69bb45b89c92ecd910059159")],
@@ -627,22 +781,39 @@ export const BOREAS: StoryChapter = {
 			title: "Evacuate the scientist",
 			steps: [
 				{
+					simplified: "Tell the scientist about the captain at the east-side level 1 intercom.",
 					id: "inform-scientist-captain",
 					text: "Inform the scientist about the captain's death",
 					map: "Icebreaker",
 					note: "Intercom on level 1, east side of the ship.",
 					images: INTERCOM_IMAGES,
 				},
-				{ id: "ask-btr-evacuation", text: "Ask the BTR Driver if he can help evacuate the scientist" },
 				{
+					simplified: "Ask the BTR Driver if he can help evacuate the scientist",
+					id: "ask-btr-evacuation",
+					text: "Ask the BTR Driver if he can help evacuate the scientist",
+				},
+				{
+					simplified: "Help the smugglers against the Rogues.",
 					id: "assist-smugglers",
 					text: "Assist the smugglers with their conflict against the Rogues",
 					quests: [QUESTS.hangover],
 					note: "Complete Hangover.",
 				},
-				{ id: "return-btr-evacuation", text: "Return to the BTR Driver" },
-				{ id: "icebreaker-kills", text: "Eliminate 20 targets on the icebreaker", map: "Icebreaker" },
 				{
+					simplified: "Return to the BTR Driver",
+					id: "return-btr-evacuation",
+					text: "Return to the BTR Driver",
+				},
+				{
+					simplified: "Eliminate 20 targets on the icebreaker",
+					id: "icebreaker-kills",
+					text: "Eliminate 20 targets on the icebreaker",
+					map: "Icebreaker",
+				},
+				{
+					simplified: "Give the BTR Driver respirators.",
+					simplifiedRequirements: ["5 total • Any listed type • Found in raid not required"],
 					id: "handover-respirators",
 					text: "Hand over 5 respirators to the BTR Driver",
 					items: [
@@ -653,22 +824,48 @@ export const BOREAS: StoryChapter = {
 						item("Avon M53A1 gas mask", "689b880fff8b4adc420f5b56"),
 					],
 					note: "Any of these; not found-in-raid.",
-					substeps: [{ id: "obtain-respirators", text: "Obtain respirators for the BTR Driver", optional: true }],
+					substeps: [
+						{
+							simplified: false,
+							id: "obtain-respirators",
+							text: "Obtain respirators for the BTR Driver",
+							optional: true,
+						},
+					],
 				},
 				{
+					simplified: "Give the BTR Driver ballistic plates.",
+					simplifiedRequirements: ["2 class 5+ plates fitting Kirasa-N • Found in raid not required"],
 					id: "handover-ballistic-plates",
 					text: "Hand over 2 class 5 or higher ballistic plates to the BTR Driver",
 					note: "Any class 5+ plate that fits the Kirasa-N; not found-in-raid.",
-					substeps: [{ id: "obtain-ballistic-plates", text: "Obtain class 5+ ballistic plates", optional: true }],
+					substeps: [
+						{
+							simplified: false,
+							id: "obtain-ballistic-plates",
+							text: "Obtain class 5+ ballistic plates",
+							optional: true,
+						},
+					],
 				},
 				{
+					simplified: "Give the BTR Driver the armor.",
+					simplifiedRequirements: ["Found in raid not required"],
 					id: "handover-kirasa",
 					text: "Hand over the Kirasa-N body armor to the BTR Driver",
 					items: [item("BNTI Kirasa-N body armor", "5b44d22286f774172b0c9de8")],
 					note: "Not found-in-raid.",
-					substeps: [{ id: "obtain-kirasa", text: "Obtain the Kirasa-N body armor", optional: true }],
+					substeps: [
+						{
+							simplified: false,
+							id: "obtain-kirasa",
+							text: "Obtain the Kirasa-N body armor",
+							optional: true,
+						},
+					],
 				},
 				{
+					simplified: "Tell the scientist he can evacuate at the east-side level 1 intercom.",
 					id: "inform-scientist-ready",
 					text: "Inform the scientist that everything is ready for his evacuation",
 					map: "Icebreaker",
@@ -676,12 +873,15 @@ export const BOREAS: StoryChapter = {
 					images: INTERCOM_IMAGES,
 				},
 				{
+					simplified: "Ask the BTR Driver how the scientist's rescue went",
 					id: "ask-btr-rescue",
 					text: "Ask the BTR Driver how the scientist's rescue went",
 					map: "Woods or Streets of Tarkov",
 					rewards: ["160,000 EXP", "Compartment C-3 keycard"],
 					substeps: [
 						{
+							simplified: "Take the tape from the level 1 lab.",
+							simplifiedRequirements: ["C-3 keycard"],
 							id: "scientist-audio-tape",
 							text: "Find the Boreas scientist audio tape",
 							optional: true,

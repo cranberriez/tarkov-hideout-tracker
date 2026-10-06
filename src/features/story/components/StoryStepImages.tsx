@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Images } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { FloatingPortal, useFloatingPreview } from "@/components/ui/floating-preview";
 import { cn } from "@/lib/utils";
@@ -46,17 +46,35 @@ function Thumbnail({ image, onOpen }: { image: StoryImage; onOpen: () => void })
 }
 
 /** Step thumbnails that open full size, with arrows between the step's images. */
-export function StoryStepImages({ images, stepText }: { images: StoryImage[]; stepText: string }) {
+export function StoryStepImages({
+	images,
+	stepText,
+	compact = false,
+}: {
+	images: StoryImage[];
+	stepText: string;
+	compact?: boolean;
+}) {
 	const [openIndex, setOpenIndex] = useState<number | null>(null);
 	const current = openIndex === null ? null : images[openIndex];
 	const step = (delta: number) =>
 		setOpenIndex((index) => (index === null ? null : (index + delta + images.length) % images.length));
 	return (
 		<>
-			<div className="mt-1.5 flex flex-wrap gap-1.5">
-				{images.map((image, index) => (
-					<Thumbnail key={image.src} image={image} onOpen={() => setOpenIndex(index)} />
-				))}
+			<div className="flex flex-wrap gap-1.5">
+				{compact ? (
+					<button
+						type="button"
+						onClick={() => setOpenIndex(0)}
+						aria-label={`Images for ${stepText}`}
+						className="inline-flex items-center gap-1.5 rounded border border-highlight/15 px-2 py-1 text-xs text-muted-foreground hover:border-brand/50 hover:text-foreground"
+					>
+						<Images aria-hidden="true" className="size-3.5" /> Images{" "}
+						<span className="tabular-nums">{images.length}</span>
+					</button>
+				) : (
+					images.map((image, index) => <Thumbnail key={image.src} image={image} onOpen={() => setOpenIndex(index)} />)
+				)}
 			</div>
 			<Dialog open={current !== null} onOpenChange={(open) => !open && setOpenIndex(null)}>
 				<DialogContent

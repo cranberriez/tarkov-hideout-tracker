@@ -37,6 +37,9 @@ export const THE_UNHEARD: StoryChapter = {
 			title: "Investigate The Unheard",
 			steps: [
 				{
+					simplified:
+						"Search the TerraGroup security surveillance room or office on Streets, or office 4 on Ground Zero.",
+					simplifiedRequirements: ["Ground Zero level 21+ • Science office key"],
 					id: "learn-unheard",
 					text: "Learn more about The Unheard",
 					items: [
@@ -62,6 +65,8 @@ export const THE_UNHEARD: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read the document on the laboratory’s first floor beside the dome.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "learn-tg-activities",
 					text: "Learn more about TerraGroup's activities",
 					map: "The Lab",
@@ -74,6 +79,8 @@ export const THE_UNHEARD: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read the fuel document in office O23, level 2.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "learn-fuel",
 					text: 'Learn more about the "fuel" mentioned in the note',
 					map: "The Lab",
@@ -85,6 +92,8 @@ export const THE_UNHEARD: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read the catalyst shipment documents.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "catalyst-shipment",
 					text: "Find more information about the special catalyst shipment",
 					map: "Factory",
@@ -102,6 +111,8 @@ export const THE_UNHEARD: StoryChapter = {
 			title: "Recover Rzhevsky's data",
 			steps: [
 				{
+					simplified: "Take Rzhevsky’s belongings from his car’s center console near LexOs.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "rzhevsky-vehicle",
 					text: "Locate Rzhevsky's service vehicle and obtain his personal belongings",
 					map: "Streets of Tarkov",
@@ -114,12 +125,15 @@ export const THE_UNHEARD: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Craft the hard-drive printout.",
+					simplifiedRequirements: ["Intelligence Center 1 • Continuous power"],
 					id: "retrieve-hard-drive-data",
 					text: "Retrieve the data from the hard drive in Rzhevsky's car",
 					items: [item("Hard drive printout", "689b512b075404ce7e09ec12")],
 					note: IC_CRAFT_NOTE,
 				},
 				{
+					simplified: "Read the printout in your quest inventory.",
 					id: "read-hard-drive-printout",
 					text: "Read the transcript of Rzhevsky's conversation",
 					note: "Read the printout from the quest inventory.",
@@ -131,6 +145,8 @@ export const THE_UNHEARD: StoryChapter = {
 			title: "Search the Factory storage room",
 			steps: [
 				{
+					simplified: "Take the research report from the TerraGroup tunnel storage room by Camera Bunker Door.",
+					simplifiedRequirements: ["Found in raid • Multiple spawns"],
 					id: "catalyst-test-report",
 					text: "Locate and obtain the documents on the Blue Ice fuel catalyst research",
 					map: "Factory",
@@ -146,6 +162,8 @@ export const THE_UNHEARD: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read the other document in the same storage room.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "unheard-plans",
 					text: "Find as much information as possible about the plans of The Unheard",
 					map: "Factory",
@@ -164,6 +182,8 @@ export const THE_UNHEARD: StoryChapter = {
 			title: "Trace A.P. through The Lab",
 			steps: [
 				{
+					simplified: "Read the documents about A.P.’s activities.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "ap-activities",
 					text: "Learn more about A.P.'s activities",
 					map: "The Lab",
@@ -175,6 +195,8 @@ export const THE_UNHEARD: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read the documents about A.P.’s role.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "ap-role",
 					text: "Learn more about A.P.'s role",
 					map: "The Lab",
@@ -186,6 +208,7 @@ export const THE_UNHEARD: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Find either whiteboard mentioning A.P.",
 					id: "search-ap-lab",
 					text: "Search for any mention of A.P. in The Lab",
 					map: "The Lab",
@@ -203,6 +226,7 @@ export const THE_UNHEARD: StoryChapter = {
 			title: "Search A.P.'s Health Resort room",
 			steps: [
 				{
+					simplified: "Find Resort east wing room 305.",
 					id: "locate-ap-room",
 					text: "Locate A.P.'s room in the Health Resort",
 					map: "Shoreline",
@@ -210,6 +234,7 @@ export const THE_UNHEARD: StoryChapter = {
 					images: [image("health-resort-east-wing-map", "East wing location marked on the map")],
 					substeps: [
 						{
+							simplified: false,
 							id: "guard-post-note",
 							text: "Find out which room A.P. was assigned to",
 							optional: true,
@@ -221,6 +246,7 @@ export const THE_UNHEARD: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Take A.P.’s belongings from the right nightstand.",
 					id: "ap-belongings",
 					text: "Obtain A.P.'s personal belongings",
 					map: "Shoreline",
@@ -232,6 +258,8 @@ export const THE_UNHEARD: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Take the drive from the laptop on the table.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "ap-flash-drive",
 					text: "Obtain A.P.'s data storage device",
 					map: "Shoreline",
@@ -246,23 +274,34 @@ export const THE_UNHEARD: StoryChapter = {
 			title: "Decrypt A.P.'s flash drive",
 			steps: [
 				{
+					simplified: "Craft the decrypted drive.",
+					simplifiedRequirements: ["Intelligence Center 1 • Continuous power"],
 					id: "decrypt-ap-drive",
 					text: "Decrypt the flash drive from A.P.'s room",
 					items: [AP_DECRYPTED_DRIVE],
 					note: IC_CRAFT_NOTE,
 				},
 				{
+					simplified: "Ask Mechanic to contact Elektronik.",
 					id: "ask-mechanic-help",
 					text: "Ask Mechanic for help",
 					note: "He can't help, but Elektronik can for a fee.",
 				},
 				{
+					simplified: "Pay Mechanic.",
 					id: "handover-roubles-mechanic",
 					text: "Hand over 5,000,000 roubles to Mechanic",
 					items: [item("Roubles", "5449016a4bdc2d6f028b456f", 5_000_000)],
 				},
-				{ id: "handover-ap-drive", text: "Hand over the A.P. flash drive to Mechanic", items: [AP_DECRYPTED_DRIVE] },
 				{
+					simplified: "Give Mechanic the drive.",
+					id: "handover-ap-drive",
+					text: "Hand over the A.P. flash drive to Mechanic",
+					items: [AP_DECRYPTED_DRIVE],
+				},
+				{
+					simplified: "Wait 6–12 hours, then speak to Mechanic.",
+					simplifiedRequirements: ["About 1.5 hours if already in contact with Kerman"],
 					id: "wait-elektronik",
 					text: "Wait for the news from Elektronik",
 					note: "Takes 6–12 hours, then talk to Mechanic. If you have already been in contact with Mr. Kerman, he reaches out after about 1.5 hours instead.",
@@ -274,12 +313,15 @@ export const THE_UNHEARD: StoryChapter = {
 			title: "Search A.P.'s apartment",
 			steps: [
 				{
+					simplified: "Craft the keycard using A.P.’s tech files.",
+					simplifiedRequirements: ["Intelligence Center 1 • Continuous power • Blue and red keycards do not work"],
 					id: "integrate-ap-keycard",
 					text: "Integrate the tech files from A.P.'s flash drive into a TerraGroup keycard",
 					items: [AP_GREEN_KEYCARD],
 					note: `${IC_CRAFT_NOTE} The blue and red keycards are false leads.`,
 				},
 				{
+					simplified: "Enter Cardinal apartment 1 on the second floor.",
 					id: "access-ap-apartment",
 					text: "Access A.P.'s corporate apartment",
 					map: "Streets of Tarkov",
@@ -291,8 +333,15 @@ export const THE_UNHEARD: StoryChapter = {
 						image("ap-apartment-door", "Door to apartment 1"),
 					],
 				},
-				{ id: "investigate-ap-apartment", text: "Investigate A.P.'s apartment", map: "Streets of Tarkov" },
 				{
+					simplified: false,
+					id: "investigate-ap-apartment",
+					text: "Investigate A.P.'s apartment",
+					map: "Streets of Tarkov",
+				},
+				{
+					simplified: "Open the hidden room down the hallway.",
+					simplifiedRequirements: ["Four documents inside • Found in raid"],
 					id: "access-ap-hidden-room",
 					text: "Access the hidden room in A.P.'s apartment",
 					map: "Streets of Tarkov",
@@ -301,24 +350,28 @@ export const THE_UNHEARD: StoryChapter = {
 					images: [image("ap-hidden-room-door", "Door to the hidden room")],
 				},
 				{
+					simplified: "Read the TerraGroup documents in the office.",
 					id: "study-tg-documentation",
 					text: "Study the TerraGroup documentation in A.P.'s office",
 					items: [item("Order from TerraGroup Worldwide headquarters", "6877c866ae5d3a06a30d7f3f")],
 					images: [image("order-from-terragroup-worldwide-spawn", "On the floor next to the packages")],
 				},
 				{
+					simplified: "Read the Blue Ice catalyst document.",
 					id: "study-blue-ice-role",
 					text: "Study the role of the Blue Ice catalyst in The Unheard's protocol",
 					items: [item("Copy of report for TG Worldwide", "689b52892c175da5bf083ba1")],
 					images: [image("copy-of-report-for-tg-worldwide-spawn", "On the left end of the desk")],
 				},
 				{
+					simplified: "Read the protocol document.",
 					id: "learn-unheard-protocol",
 					text: "Learn more about The Unheard's protocol",
 					items: [item("Document mentioning a protocol", "689b5256147eeab4410ecd14")],
 					images: [image("document-mentioning-a-protocol-spawn", "On the pile of documents")],
 				},
 				{
+					simplified: "Read the document connecting The Unheard to Tarkov.",
 					id: "unheard-tarkov-link",
 					text: "Figure out how The Unheard are connected to Tarkov",
 					items: [item("Document mentioning the Warden", "689b5218533aa51a060f810a")],

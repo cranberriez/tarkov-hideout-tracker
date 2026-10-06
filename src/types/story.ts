@@ -76,6 +76,11 @@ export type StoryCondition =
 export interface StoryStep {
 	id: string;
 	text: string;
+	/** Condensed guide copy; false hides this step (and its substeps) only in Simplified. */
+	simplified?: string | false;
+	/** Display-only details for condensed checkpoints; never used for progress or demand. */
+	simplifiedItems?: StoryItemRef[];
+	simplifiedRequirements?: string[];
 	optional?: boolean;
 	map?: string;
 	items?: StoryItemRef[];

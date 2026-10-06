@@ -44,6 +44,11 @@ export const BATYA: StoryChapter = {
 			title: "Find the Bogatyr squad's trail",
 			steps: [
 				{
+					simplified:
+						"Visit a Bogatyr camp: Customs Scav base, Reserve radar station, Shoreline bunker or Woods USEC camp.",
+					simplifiedRequirements: [
+						"Customs: upstairs mattress • Reserve: radome • Shoreline: north of resort • Woods: big rock",
+					],
 					id: "visit-start-location",
 					text: "Visit a place the BEAR special squad passed through",
 					note: 'Starts the chapter. Customs: mattress under the "жопа" writing, Scav base second floor. Reserve: radome on the white queen radar station. Shoreline: bunker north of the health resort. Woods: mattresses on the big rock at the USEC camp.',
@@ -60,6 +65,10 @@ export const BATYA: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Pick up and read a Bogatyr patch.",
+					simplifiedRequirements: [
+						"Found in raid • Customs: hilltop cabin couch • Woods: convoy BRDM • Reserve: white king roof • Lighthouse: BEAR camp sleeping bag",
+					],
 					id: "locate-bear-traces",
 					text: "Locate the traces of the BEAR special squad",
 					items: [PATCH],
@@ -79,6 +88,7 @@ export const BATYA: StoryChapter = {
 					],
 					substeps: [
 						{
+							simplified: "Move the patch to your quest inventory for Lightkeeper.",
 							id: "obtain-bogatyr-patch",
 							text: "Locate and obtain the Bogatyr squad patch",
 							optional: true,
@@ -88,6 +98,7 @@ export const BATYA: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Ask Jaeger about the patch.",
 					id: "ask-jaeger",
 					text: "Learn more about the Bogatyr squad from the traders",
 					note: "Ask Jaeger about the patch.",
@@ -99,6 +110,7 @@ export const BATYA: StoryChapter = {
 			title: "Search the Ryabina outpost",
 			steps: [
 				{
+					simplified: "Find Ryabina north of the sawmill.",
 					id: "locate-ryabina",
 					text: "Locate the Ryabina outpost",
 					map: "Woods",
@@ -109,6 +121,8 @@ export const BATYA: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read the report on the pallet beside the bottle.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "ryabina-information",
 					text: "Find more information about the Bogatyr squad",
 					map: "Woods",
@@ -117,6 +131,7 @@ export const BATYA: StoryChapter = {
 					images: [image("hostage-evacuation-report-spawn", "The report on a pallet next to a bottle")],
 					substeps: [
 						{
+							simplified: "Take the amulet from the sniper nest’s green crate; save it for Lightkeeper.",
 							id: "obtain-strelets-amulet",
 							text: "Locate and obtain a keepsake of one of the Bogatyrs",
 							optional: true,
@@ -137,6 +152,7 @@ export const BATYA: StoryChapter = {
 			title: "Search the Carousel outpost",
 			steps: [
 				{
+					simplified: "Find Carousel opposite the IDEA checkouts.",
 					id: "locate-carousel",
 					text: "Locate the Carousel outpost",
 					map: "Interchange",
@@ -147,6 +163,8 @@ export const BATYA: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read Strelets’ note by the upstairs armchair.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "bogatyr-personal-notes",
 					text: "Find the Bogatyr squad's personal notes",
 					map: "Interchange",
@@ -155,6 +173,8 @@ export const BATYA: StoryChapter = {
 					images: [image("strelets-note-spawn", "The note next to the bottles by the armchair")],
 				},
 				{
+					simplified: "Read the file on the upstairs armchair.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "learn-strelets",
 					text: "Learn more about Strelets",
 					map: "Interchange",
@@ -163,6 +183,8 @@ export const BATYA: StoryChapter = {
 					images: [image("strelets-personnel-file-spawn", "The file on the armchair")],
 				},
 				{
+					simplified: "Read the file between the beds.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "learn-taran",
 					text: "Learn more about Taran",
 					map: "Interchange",
@@ -171,6 +193,7 @@ export const BATYA: StoryChapter = {
 					images: [image("taran-personnel-file-spawn", "The file between the beds")],
 					substeps: [
 						{
+							simplified: "Take the postcard beside the beds; save it for Lightkeeper.",
 							id: "obtain-taran-postcard",
 							text: "Locate and obtain a personal item of one of the Bogatyrs",
 							optional: true,
@@ -182,6 +205,8 @@ export const BATYA: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read the file on the upstairs desk.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "learn-voevoda",
 					text: "Learn more about Voevoda",
 					map: "Interchange",
@@ -190,6 +215,8 @@ export const BATYA: StoryChapter = {
 					images: [image("voevoda-personnel-file-spawn", "The file on a desk")],
 				},
 				{
+					simplified: "Listen to the tape on the radio table.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "voevoda-belongings",
 					text: "Find Voevoda's personal belongings",
 					map: "Interchange",
@@ -198,6 +225,7 @@ export const BATYA: StoryChapter = {
 					images: [image("voevoda-thoughts-audio-tape-spawn", "The tape on the table with the radio system")],
 					substeps: [
 						{
+							simplified: "Take the recorder from the radio table; save it for Lightkeeper.",
 							id: "obtain-voevoda-recorder",
 							text: "Locate and obtain the squad commander's recorder",
 							optional: true,
@@ -215,6 +243,7 @@ export const BATYA: StoryChapter = {
 			title: "Search the Gnezdo outpost",
 			steps: [
 				{
+					simplified: "Find Gnezdo east of ULTRA.",
 					id: "locate-gnezdo",
 					text: "Locate the Gnezdo outpost",
 					map: "Interchange",
@@ -225,6 +254,8 @@ export const BATYA: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read the note on the green-covered pallet and listen to the tape on the tent’s radio table.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "search-gnezdo",
 					text: "Search the Gnezdo outpost",
 					map: "Interchange",
@@ -239,6 +270,8 @@ export const BATYA: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read the note on the blue chair beside the fire barrel.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "bogatyr-fate",
 					text: "Figure out what happened to the Bogatyr squad",
 					map: "Interchange",
@@ -247,6 +280,8 @@ export const BATYA: StoryChapter = {
 					images: [image("gnezdo-bear-note", "The note on the blue chair next to the fire barrel")],
 				},
 				{
+					simplified: "Read the map on the sleeping bag under the rock.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "ambush-location",
 					text: "Figure out where the Bogatyr squad got ambushed",
 					map: "Interchange",
@@ -255,6 +290,8 @@ export const BATYA: StoryChapter = {
 					images: [image("gnezdo-map-with-triangulated-signal", "The map in the sleeping bag under the rock")],
 				},
 				{
+					simplified: "Read the report beside the guitar under the rock.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "bogatyr-activities",
 					text: "Learn more about the Bogatyr squad's activities",
 					map: "Interchange",
@@ -263,6 +300,8 @@ export const BATYA: StoryChapter = {
 					images: [image("gnezdo-bogatyr-squad-operations-report", "The report next to the guitar under the rock")],
 				},
 				{
+					simplified: "Read the file on a bed in the tent.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "bogatyr-members",
 					text: "Learn more about the Bogatyr squad's members",
 					map: "Interchange",
@@ -277,6 +316,7 @@ export const BATYA: StoryChapter = {
 			title: "Find the ambush spot",
 			steps: [
 				{
+					simplified: "Find Moreman’s grave near ZB-016.",
 					id: "locate-ambush",
 					text: "Locate the ambush spot",
 					map: "Woods",
@@ -287,12 +327,15 @@ export const BATYA: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Read the grave’s note and take Moreman’s phone and dogtag.",
 					id: "ambush-information",
 					text: "Obtain more information about the Bogatyr squad",
 					map: "Woods",
 					note: "Read the note and take the phone and dogtag from the grave.",
 				},
 				{
+					simplified: "Read the code note in a boot.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "inspect-moreman",
 					text: "Inspect Moreman's body",
 					map: "Woods",
@@ -301,6 +344,7 @@ export const BATYA: StoryChapter = {
 					images: [image("second-piece-of-code-note-spawn", "The note in one of the boots")],
 					substeps: [
 						{
+							simplified: "Take the phone from the ground beside the cross.",
 							id: "obtain-moreman-phone",
 							text: "Locate and obtain Moreman's phone",
 							optional: true,
@@ -310,6 +354,7 @@ export const BATYA: StoryChapter = {
 							images: [image("moreman-phone-spawn", "The phone next to the cross")],
 						},
 						{
+							simplified: "Take the dogtag from the sleeping bag; save it for Lightkeeper.",
 							id: "obtain-moreman-dogtag",
 							text: "Locate and obtain a dogtag of one of the Bogatyrs",
 							optional: true,
@@ -321,6 +366,8 @@ export const BATYA: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Craft and listen to both Moreman tapes.",
+					simplifiedRequirements: ["Workbench 1 • Continuous power"],
 					id: "moreman-phone-recordings",
 					text: "Retrieve more information about the ambush from Moreman's phone",
 					items: [item("Moreman's audio tape #1"), item("Moreman's audio tape #2")],
@@ -332,14 +379,21 @@ export const BATYA: StoryChapter = {
 			id: "contact-bogatyrs",
 			title: "Contact the Bogatyr squad",
 			steps: [
-				{ id: "intel-center-3", text: "Obtain Intelligence Center level 3" },
 				{
+					simplified: "Obtain Intelligence Center level 3",
+					id: "intel-center-3",
+					text: "Obtain Intelligence Center level 3",
+				},
+				{
+					simplified: "Use the radio: frequency 35.70, code 27.893.2000.",
 					id: "radio-bogatyrs",
 					text: "Contact the Bogatyr squad",
 					note: `${RADIO_NOTE} The codes come from the two code notes and Strelets' note.`,
 					images: RADIO_IMAGES,
 				},
 				{
+					simplified: "Visit Lightkeeper on the lighthouse’s third floor.",
+					simplifiedRequirements: ["Encoded transmitter for safe access"],
 					id: "lightkeeper-access",
 					text: "Gain access to Lightkeeper",
 					map: "Lighthouse",
@@ -353,8 +407,15 @@ export const BATYA: StoryChapter = {
 						image("lightkeeper-area-door", "The locked area door"),
 					],
 				},
-				{ id: "lightkeeper-good-terms", text: "Stay on good terms with Lightkeeper", requiresLightkeeper: true },
 				{
+					simplified: "Stay on good terms with Lightkeeper.",
+					id: "lightkeeper-good-terms",
+					text: "Stay on good terms with Lightkeeper",
+					requiresLightkeeper: true,
+				},
+				{
+					simplified: "Give Lightkeeper the squad’s belongings.",
+					simplifiedRequirements: ["Found in raid • Carry in raid quest inventory"],
 					id: "handover-bogatyr-items",
 					text: "Bring all the Bogatyr squad's items to Lightkeeper",
 					map: "Lighthouse",
@@ -363,6 +424,7 @@ export const BATYA: StoryChapter = {
 					note: "Carry them in the in-raid quest inventory. Must be found in raid.",
 				},
 				{
+					simplified: "Wait 6–12 hours, then radio 35.70 with code 27.893.2000.",
 					id: "wait-voevoda",
 					text: "Wait for Voevoda to reach out",
 					note: `Takes 6–12 hours, then use the radio again. ${RADIO_NOTE}`,
@@ -374,13 +436,43 @@ export const BATYA: StoryChapter = {
 			id: "voevoda-tasks",
 			title: "Complete Voevoda's tasks",
 			steps: [
-				{ id: "skill-lmg-5", text: "Reach Light Machine Guns skill level 5" },
-				{ id: "skill-assault-10", text: "Reach Assault Rifles skill level 10" },
-				{ id: "skill-stress-10", text: "Reach Stress Resistance skill level 10" },
-				{ id: "skill-strength-15", text: "Reach Strength skill level 15" },
-				{ id: "kills-no-death", text: "Eliminate any 15 targets without dying" },
-				{ id: "pmc-kills-no-death", text: "Eliminate 4 PMC operatives without dying" },
-				{ id: "contact-voevoda", text: "Contact Voevoda", note: RADIO_NOTE, images: RADIO_IMAGES },
+				{
+					simplified: "Reach Light Machine Guns skill level 5",
+					id: "skill-lmg-5",
+					text: "Reach Light Machine Guns skill level 5",
+				},
+				{
+					simplified: "Reach Assault Rifles skill level 10",
+					id: "skill-assault-10",
+					text: "Reach Assault Rifles skill level 10",
+				},
+				{
+					simplified: "Reach Stress Resistance skill level 10",
+					id: "skill-stress-10",
+					text: "Reach Stress Resistance skill level 10",
+				},
+				{
+					simplified: "Reach Strength skill level 15",
+					id: "skill-strength-15",
+					text: "Reach Strength skill level 15",
+				},
+				{
+					simplified: "Eliminate any 15 targets without dying",
+					id: "kills-no-death",
+					text: "Eliminate any 15 targets without dying",
+				},
+				{
+					simplified: "Eliminate 4 PMC operatives without dying",
+					id: "pmc-kills-no-death",
+					text: "Eliminate 4 PMC operatives without dying",
+				},
+				{
+					simplified: "Radio Voevoda on 35.70 with code 27.893.2000.",
+					id: "contact-voevoda",
+					text: "Contact Voevoda",
+					note: RADIO_NOTE,
+					images: RADIO_IMAGES,
+				},
 			],
 		},
 		{
@@ -388,6 +480,8 @@ export const BATYA: StoryChapter = {
 			title: "Hunt the traitors",
 			steps: [
 				{
+					simplified: "Read the note on the Lighthouse BEAR camp’s radio table.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "traitor-traces",
 					text: "Locate the traces of the traitors",
 					map: "Lighthouse",
@@ -400,18 +494,21 @@ export const BATYA: StoryChapter = {
 					],
 					substeps: [
 						{
+							simplified: false,
 							id: "investigate-reserve-bunker",
 							text: "Investigate the command bunker",
 							optional: true,
 							map: "Reserve",
 						},
 						{
+							simplified: false,
 							id: "investigate-lighthouse-camp",
 							text: "Investigate the BEAR camp",
 							optional: true,
 							map: "Lighthouse",
 						},
 						{
+							simplified: false,
 							id: "investigate-interchange-camp",
 							text: "Investigate the BEAR camp east of ULTRA",
 							optional: true,
@@ -419,8 +516,16 @@ export const BATYA: StoryChapter = {
 						},
 					],
 				},
-				{ id: "interrogate-prapor", text: "Interrogate Prapor", note: "Through the trader screen." },
 				{
+					simplified: "Interrogate Prapor.",
+					id: "interrogate-prapor",
+					text: "Interrogate Prapor",
+					note: "Through the trader screen.",
+				},
+				{
+					simplified:
+						"Read the photo in the Shoreline island house and the General note at Woods’ west marked circle or Customs dorm 314.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "cultists-general",
 					text: "Figure out how the cultists are connected to the General",
 					items: [
@@ -440,8 +545,16 @@ export const BATYA: StoryChapter = {
 						image("note-mentioning-general-customs-spawn", "Customs: the note on the wall"),
 					],
 				},
-				{ id: "talk-lightkeeper", text: "Talk to Lightkeeper", map: "Lighthouse", requiresLightkeeper: true },
 				{
+					simplified: "Talk to Lightkeeper",
+					id: "talk-lightkeeper",
+					text: "Talk to Lightkeeper",
+					map: "Lighthouse",
+					requiresLightkeeper: true,
+				},
+				{
+					simplified: "Enter a new raid and read the report on Lightkeeper’s red box. Wait 6 hours.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "unheard-documents",
 					text: "Wait for Lightkeeper to prepare the documents on The Unheard",
 					map: "Lighthouse",

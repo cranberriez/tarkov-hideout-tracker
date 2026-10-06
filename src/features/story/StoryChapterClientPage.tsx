@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ExternalLink } from "lucide-react";
 import {
@@ -40,6 +40,10 @@ const ENDING_IDS = STORY_ENDINGS.map((ending) => ending.id);
 
 export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 	const chapter = findStoryChapter(chapterId)!;
+	const [simplified, setSimplified] = useState(false);
+	const supportsSimplified = chapter.sections.some((section) =>
+		section.steps.some((step) => step.simplified !== undefined),
+	);
 	const hydrated = useUserStoreHydrated();
 	const gameMode = useUserStore((state) => state.gameMode);
 	const [progress, update] = useStoryProgress(gameMode);
@@ -144,9 +148,29 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 						<section className="rounded-md border border-highlight/10 bg-card p-4" aria-label="Progress">
 							<div className="flex items-baseline justify-between gap-2">
 								<span className="text-2xl font-bold text-foreground">{remaining}</span>
-								<span className="text-xs text-muted-foreground">
-									{stats.requiredDone} of {stats.requiredTotal} steps done
-								</span>
+								{supportsSimplified ? (
+									<button
+										type="button"
+										role="switch"
+										aria-checked={simplified}
+										onClick={() => setSimplified((value) => !value)}
+										className="inline-flex items-center gap-2 rounded px-2 py-1 text-xs text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-brand"
+									>
+										Simplified
+										<span
+											aria-hidden="true"
+											className={`flex h-4 w-7 items-center rounded-full p-0.5 ${simplified ? "bg-brand" : "bg-highlight/20"}`}
+										>
+											<span
+												className={`size-3 rounded-full bg-foreground transition-transform ${simplified ? "translate-x-3" : ""}`}
+											/>
+										</span>
+									</button>
+								) : (
+									<span className="text-xs text-muted-foreground">
+										{stats.requiredDone} of {stats.requiredTotal} steps done
+									</span>
+								)}
 							</div>
 							<p className="text-sm text-muted-foreground">
 								steps left{progress.targetEnding ? ` to ${STORY_ENDING_BY_ID[progress.targetEnding].name}` : ""}
@@ -219,6 +243,7 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 
 					<StoryStepList
 						ref={stepListRef}
+						simplified={supportsSimplified && simplified}
 						chapterId={chapter.id}
 						locations={locations}
 						evidenceByStep={evidence.byStep}

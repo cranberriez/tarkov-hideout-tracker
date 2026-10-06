@@ -36,6 +36,7 @@ export const THE_LABYRINTH: StoryChapter = {
 			title: "Find the entrance and contact Jaeger",
 			steps: [
 				{
+					simplified: "Find the locked transit door in the Resort’s west-wing basement.",
 					id: "locate-transit",
 					text: "Locate the transit to The Labyrinth",
 					map: "Shoreline",
@@ -44,14 +45,21 @@ export const THE_LABYRINTH: StoryChapter = {
 					images: TRANSIT_IMAGES,
 				},
 				{
+					simplified: "Ask Jaeger about the facility.",
 					id: "ask-traders",
 					text: "Ask the traders about the underground facility",
 					note: "Speak to Jaeger through the trader screen.",
 					substeps: [
-						{ id: "ask-therapist", text: "Ask Therapist how to access the underground facility", optional: true },
+						{
+							simplified: false,
+							id: "ask-therapist",
+							text: "Ask Therapist how to access the underground facility",
+							optional: true,
+						},
 					],
 				},
 				{
+					simplified: "Wait 12–24 hours, ask Jaeger again and collect the mailed keycards.",
 					id: "wait-jaeger-keycards",
 					text: "Wait for Jaeger to gather the keycards",
 					rewardItems: [{ ...LABRYS_KEYCARD, count: 2 }],
@@ -65,12 +73,14 @@ export const THE_LABYRINTH: StoryChapter = {
 			title: "Investigate the BEAR squad",
 			steps: [
 				{
+					simplified: "Follow the BEAR squad’s trail through the facility.",
 					id: "investigate-bear-squad",
 					text: "Figure out what happened to the BEAR squad",
 					map: "The Labyrinth",
 					note: "Follow the squad's trail through the facility. The diary and five scientists' notes are minor evidence for Mr. Kerman in The Ticket.",
 					substeps: [
 						{
+							simplified: false,
 							id: "locate-facility-entrance",
 							text: "Locate the entrance beneath the Health Resort",
 							optional: true,
@@ -79,6 +89,8 @@ export const THE_LABYRINTH: StoryChapter = {
 							images: TRANSIT_IMAGES,
 						},
 						{
+							simplified: "Transit from the west-wing basement and clear your spawn chamber’s hazard.",
+							simplifiedRequirements: ["Labrys keycard • No insurance returns • Traps throughout"],
 							id: "access-facility",
 							text: "Access the underground facility",
 							optional: true,
@@ -87,6 +99,8 @@ export const THE_LABYRINTH: StoryChapter = {
 							note: "Enter by transiting from the west wing basement with a Labrys access keycard. Each spawn chamber has a hazard to resolve before leaving. Insurance does not return equipment lost in The Labyrinth; watch for tripwires, poisoned barbed wire and spike pits.",
 						},
 						{
+							simplified: "Read the orders in the food container in front of spawn chamber 2.",
+							simplifiedRequirements: ["Found in raid"],
 							id: "find-leshy-orders",
 							text: "Locate the traces of the BEAR squad",
 							optional: true,
@@ -100,6 +114,7 @@ export const THE_LABYRINTH: StoryChapter = {
 							],
 						},
 						{
+							simplified: "Search the prototype weapon area.",
 							id: "investigate-regroup-spot",
 							text: "Investigate the BEAR squad regroup spot at Item 1156",
 							optional: true,
@@ -108,6 +123,7 @@ export const THE_LABYRINTH: StoryChapter = {
 							images: [image("labryrinth-missile-area-map", "Prototype weapon area marked on the map")],
 						},
 						{
+							simplified: "Find the leader beside the torture room.",
 							id: "locate-squad-leader",
 							text: "Locate the squad leader",
 							optional: true,
@@ -119,6 +135,8 @@ export const THE_LABYRINTH: StoryChapter = {
 							],
 						},
 						{
+							simplified: "Read the diary beside the leader.",
+							simplifiedRequirements: ["Found in raid"],
 							id: "find-leshy-diary",
 							text: "Gather more information about the squad",
 							optional: true,
@@ -128,6 +146,8 @@ export const THE_LABYRINTH: StoryChapter = {
 							images: [image("leshy-s-diary-location-close", "The diary beside the squad leader")],
 						},
 						{
+							simplified: "Read the five notes beside the scientists’ bodies.",
+							simplifiedRequirements: ["Found in raid • Body 4 behind observation room door"],
 							id: "investigate-scientists",
 							text: "Investigate the 5 lab staff bodies",
 							optional: true,
@@ -152,6 +172,7 @@ export const THE_LABYRINTH: StoryChapter = {
 							],
 						},
 						{
+							simplified: "Unlock the observation room.",
 							id: "access-observation-room",
 							text: "Access the locked office",
 							optional: true,
@@ -172,6 +193,8 @@ export const THE_LABYRINTH: StoryChapter = {
 			title: "Recover the scientist's audio tape",
 			steps: [
 				{
+					simplified: "Take the tape beneath the scientist’s right hand in the observation room and listen.",
+					simplifiedRequirements: ["Found in raid"],
 					id: "listen-scientist-tape",
 					text: "Listen to the audio tape from the office",
 					map: "The Labyrinth",
@@ -183,6 +206,7 @@ export const THE_LABYRINTH: StoryChapter = {
 					],
 				},
 				{
+					simplified: "Give Jaeger the tape.",
 					id: "handover-scientist-tape",
 					text: "Hand over the audio tape to Jaeger",
 					items: [AUDIO_TAPE],
@@ -206,6 +230,7 @@ export const THE_LABYRINTH: StoryChapter = {
 			title: "Read the Labyrinth research report",
 			steps: [
 				{
+					simplified: "Read the research report.",
 					id: "read-research-report",
 					text: "Read the Labyrinth facility research report",
 					items: [RESEARCH_REPORT],
@@ -213,6 +238,8 @@ export const THE_LABYRINTH: StoryChapter = {
 					rewards: ["160,000 EXP", '"Theseus" achievement'],
 					substeps: [
 						{
+							simplified: "Take the report by the drain pipe beside the pier.",
+							simplifiedRequirements: ["Found in raid"],
 							id: "obtain-research-report",
 							text: "Locate and obtain the Labyrinth facility research report",
 							optional: true,
