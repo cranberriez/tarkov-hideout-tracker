@@ -21,9 +21,8 @@ export function CraftPlannerClient({ data }: { data: ProfitPageData }) {
 			traderLoyaltyLevels: state.questTraderLoyaltyLevels,
 		})),
 	);
-	const { craftingSkillLevel, hideoutManagementSkillLevel, useTraderSaleForLockedOutputs } = useProfitOptions(
-		profile.gameMode,
-	);
+	const { craftingSkillLevel, hideoutManagementSkillLevel, useTraderSaleForLockedOutputs, ignorePlayerLevel } =
+		useProfitOptions(profile.gameMode);
 	const { overrides, setItemOverride } = useManualPriceOverrides(profile.gameMode);
 	const itemsById = useMemo(() => Object.fromEntries((data.items ?? []).map((item) => [item.id, item])), [data.items]);
 	const stations = useMemo(
@@ -35,6 +34,7 @@ export function CraftPlannerClient({ data }: { data: ProfitPageData }) {
 	const input = useMemo(
 		() => ({
 			...profile,
+			playerLevel: ignorePlayerLevel ? undefined : profile.playerLevel,
 			itemsById,
 			crafts,
 			barters: data.barters,
@@ -45,6 +45,7 @@ export function CraftPlannerClient({ data }: { data: ProfitPageData }) {
 		}),
 		[
 			profile,
+			ignorePlayerLevel,
 			itemsById,
 			crafts,
 			data.barters,

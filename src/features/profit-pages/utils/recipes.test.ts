@@ -7,6 +7,7 @@ import {
 	acquisitionRouteKey,
 	compareEvaluations,
 	compareEvaluationsByBaseline,
+	topEvaluationsPerSource,
 	estimateProfitRowHeight,
 	describeRoute,
 	getPlanRecipePreview,
@@ -75,6 +76,79 @@ function evaluation(
 		isPracticallyWorthwhile: null,
 		...values,
 	};
+}
+
+for (const kind of ["craft", "barter"] as const) {
+	test(`top ${kind} recipes are limited per station/trader across different output items`, () => {
+		const row = (
+			id: string,
+			outputItemId: string,
+			sourceId: string,
+			profit: number | null,
+			profitPerHour = profit,
+		): RecipeEvaluation => ({
+			...evaluation(id, { profit, profitPerHour }),
+			kind,
+			outputItemId,
+			...(kind === "craft"
+				? {
+						craft: {
+							id,
+							productItemId: outputItemId,
+							productCount: 1,
+							stationId: sourceId,
+							level: 1,
+							duration: 60,
+							requiredItems: [],
+							requiredQuestItems: [],
+							gameEditions: [],
+						},
+					}
+				: {
+						barter: {
+							id,
+							offeredItemId: outputItemId,
+							offeredCount: 1,
+							traderId: sourceId,
+							minTraderLevel: 1,
+							requiredItems: [],
+						},
+					}),
+		});
+		const rows = [
+			row("low", "a", "first", 1),
+			row("best", "b", "first", 30),
+			row("second", "c", "first", 20),
+			row("unknown", "d", "first", null),
+			row("other", "b", "second", 10),
+		];
+		const baseline = Object.fromEntries(rows.map((row) => [row.id, row]));
+		const custom = rows.map((row) => (row.id === "low" ? { ...row, profit: 100 } : row));
+		assert.deepEqual(
+			topEvaluationsPerSource(custom, 2, "profit", baseline, {}).map((row) => row.id),
+			["best", "second", "other"],
+		);
+		assert.deepEqual(
+			topEvaluationsPerSource(custom, 1, "profit", baseline, {}, "low").map((row) => row.id),
+			["low", "best", "other"],
+		);
+		assert.deepEqual(
+			topEvaluationsPerSource(
+				rows.filter((row) => row.id !== "best"),
+				1,
+				"profit",
+				baseline,
+				{},
+			).map((row) => row.id),
+			["second", "other"],
+		);
+		assert.equal(topEvaluationsPerSource(rows, 5, "profit", baseline, {}).length, 5);
+		const hourly = [row("batch", "a", "first", 100, 10), row("hourly", "b", "first", 50, 20)];
+		assert.deepEqual(
+			topEvaluationsPerSource(hourly, 1, "profitPerHour", {}, {}).map((row) => row.id),
+			["hourly"],
+		);
+	});
 }
 
 test("profit table metrics sort in either direction with unknown values last", () => {

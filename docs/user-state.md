@@ -166,6 +166,10 @@ payloads and are normalized to integers from 0 to 51; existing saved preferences
 are retained without changing the storage key.
 The Settings usage meter counts the two Zustand payloads,
 not every localStorage key.
+The top-per-station/trader filter defaults off, its count defaults to 2 and accepts integers
+1–5, and ignore-player-level defaults off for older profit-option payloads. They
+use the existing mode-scoped profit key and preserve all other saved preferences.
+Ignoring player level only changes pricing inputs; it never rewrites profile levels.
 
 ## Ephemeral and server state
 

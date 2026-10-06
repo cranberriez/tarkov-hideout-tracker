@@ -29,6 +29,7 @@ import {
 	getRecipeSourceId,
 	isRecipeAvailable,
 	passesLockFilters,
+	topEvaluationsPerSource,
 } from "./utils/recipes";
 import { useManualPriceOverrides } from "./useManualPriceOverrides";
 import { usePinnedCrafts } from "./usePinnedCrafts";
@@ -74,8 +75,14 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 		setLockFilters,
 		useTraderSaleForLockedOutputs,
 		setUseTraderSaleForLockedOutputs,
+		showTopOnly,
+		topCount,
+		ignorePlayerLevel,
 		profitableOnly,
 		setProfitableOnly,
+		setShowTopOnly,
+		setTopCount,
+		setIgnorePlayerLevel,
 		preferBestLockedRoute,
 		setPreferBestLockedRoute,
 		allowCrafts,
@@ -94,11 +101,12 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 	const [scrollRequestId, setScrollRequestId] = useState(0);
 	const [sortKey, setSortKey] = useState<SortKey>(kindConfig.defaultSortKey);
 	const [sortDirection, setSortDirection] = useState<SortDirection>("descending");
+	const pricingPlayerLevel = ignorePlayerLevel ? undefined : playerLevel;
 	const calculatorInput = useMemo(
 		() => ({
 			craftingSkillLevel,
 			hideoutManagementSkillLevel,
-			playerLevel,
+			playerLevel: pricingPlayerLevel,
 			stationLevels,
 			useTraderSaleForLockedOutputs,
 			itemsById: itemById,
@@ -112,7 +120,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 		[
 			craftingSkillLevel,
 			hideoutManagementSkillLevel,
-			playerLevel,
+			pricingPlayerLevel,
 			stationLevels,
 			useTraderSaleForLockedOutputs,
 			allowBarters,
@@ -170,8 +178,11 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 		[stationsById, tradersById],
 	);
 	const profileLockGaps = useMemo(
-		() => getProfileLockGaps(kind, { playerLevel, stationLevels, traderLoyaltyLevels }),
-		[kind, playerLevel, stationLevels, traderLoyaltyLevels],
+		() =>
+			getProfileLockGaps(kind, { playerLevel, stationLevels, traderLoyaltyLevels }).filter(
+				(gap) => !ignorePlayerLevel || gap.key !== "player",
+			),
+		[kind, playerLevel, stationLevels, traderLoyaltyLevels, ignorePlayerLevel],
 	);
 	const sources = useMemo(() => {
 		const ids =
@@ -192,7 +203,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 	}, [data.barters, crafts, kind, stationLevels, stationsById, tradersById]);
 	const visibleEvaluations = useMemo(() => {
 		const normalizedSearch = search.trim().toLowerCase();
-		return evaluations
+		const filtered = evaluations
 			.filter((evaluation) => {
 				if (PROFIT_KINDS[kind].supportsPinning && showPinnedOnly && !pinnedCrafts[evaluation.id]) return false;
 				if (evaluation.id === targetRecipeId) return true;
@@ -217,14 +228,27 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 				return true;
 			})
 			.sort((a, b) => compareEvaluationsByBaseline(a, b, sortKey, sortDirection, itemById, baselineEvaluationsById));
+		return showTopOnly
+			? topEvaluationsPerSource(
+					filtered,
+					topCount,
+					kindConfig.defaultSortKey,
+					baselineEvaluationsById,
+					itemById,
+					targetRecipeId,
+				)
+			: filtered;
 	}, [
 		availableOnly,
 		baselineEvaluationsById,
+		kindConfig.defaultSortKey,
 		lockFilters,
 		completedQuests,
 		evaluations,
 		itemById,
 		kind,
+		showTopOnly,
+		topCount,
 		profitableOnly,
 		pinnedCrafts,
 		search,
@@ -264,7 +288,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 	return (
 		<ProfitPricingContext.Provider
 			value={{
-				playerLevel,
+				playerLevel: pricingPlayerLevel,
 				stationLevels,
 				hideoutManagementSkillLevel,
 				traderLoyaltyLevels,
@@ -305,6 +329,12 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 						onUseTraderSaleForLockedOutputsChange={setUseTraderSaleForLockedOutputs}
 						availableOnly={availableOnly}
 						onAvailableOnlyChange={setAvailableOnly}
+						showTopOnly={showTopOnly}
+						onShowTopOnlyChange={setShowTopOnly}
+						topCount={topCount}
+						onTopCountChange={setTopCount}
+						ignorePlayerLevel={ignorePlayerLevel}
+						onIgnorePlayerLevelChange={setIgnorePlayerLevel}
 						profitableOnly={profitableOnly}
 						onProfitableOnlyChange={setProfitableOnly}
 						preferBestLockedRoute={preferBestLockedRoute}

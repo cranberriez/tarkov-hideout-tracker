@@ -244,6 +244,15 @@ from the shared [filter bar kit](../src/components/ui/filter-bar.tsx): local out
 search, trader multi-selection, Options/Skills triggers, and the pinned-crafts toggle.
 Options uses shared panel sections and checkboxes; Skills retains its specialized
 validation and dialog. Escape closes Options and restores trigger focus.
+Options also offers **Show top only**, with a 1–5 per-station (crafts) or per-trader (barters) limit (default 2;
+the filter starts off). It ranks filtered barters by baseline profit and crafts
+by baseline profit/hour, independently of display sorting and manual overrides.
+Direct recipe links remain visible even outside the limit. **Ignore player level**
+omits player-level gates from recipe calculations and sale/ingredient details;
+flea item bans, quests, trader loyalty and station requirements still apply.
+The navbar level input keeps a local draft and writes through the existing profile
+action after 500 ms without another edit. Empty drafts do not change saved levels;
+profile changes or external level updates cancel pending writes.
 The [multi-select dropdown](../src/components/ui/filter-multi-select.tsx) supplies
 the trigger/menu and checkbox-row interactions, including keyboard navigation,
 disabled rows, and remaining open after selection. The profits feature supplies

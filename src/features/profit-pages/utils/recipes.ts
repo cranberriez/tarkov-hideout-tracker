@@ -138,6 +138,30 @@ export function compareEvaluationsByBaseline(
 	);
 }
 
+/** Limit already-filtered recipes per station/trader, independent of the table's display sort. */
+export function topEvaluationsPerSource(
+	evaluations: readonly RecipeEvaluation[],
+	count: number,
+	rankKey: SortKey,
+	baselineById: Readonly<Record<string, RecipeEvaluation>>,
+	itemsById: Readonly<Record<string, ItemSummary>>,
+	targetRecipeId?: string | null,
+): RecipeEvaluation[] {
+	const counts = new Map<string, number>();
+	const selected = new Set<string>();
+	for (const evaluation of [...evaluations].sort((a, b) =>
+		compareEvaluationsByBaseline(a, b, rankKey, "descending", itemsById, baselineById),
+	)) {
+		const sourceId = `${evaluation.kind}:${getRecipeSourceId(evaluation)}`;
+		const seen = counts.get(sourceId) ?? 0;
+		if (seen >= count) continue;
+		counts.set(sourceId, seen + 1);
+		selected.add(evaluation.id);
+	}
+	// Keep direct recipe links usable even when the destination is outside the top N.
+	return evaluations.filter((evaluation) => selected.has(evaluation.id) || evaluation.id === targetRecipeId);
+}
+
 export function hasRecipeRoute(plan: AcquisitionPlan): boolean {
 	return plan.method === "barter" || plan.method === "craft" || plan.children.some(hasRecipeRoute);
 }

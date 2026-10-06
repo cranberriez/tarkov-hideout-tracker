@@ -3,9 +3,16 @@ import { FilterPanel, FilterPanelButton, FilterSection } from "@/components/ui/f
 import { FilterCheckbox } from "@/components/ui/FilterCheckbox";
 import { Settings2 } from "lucide-react";
 
-import type { ProfitLockOptionsProps } from "../types";
+import type { ProfitPageKind, ProfitLockOptionsProps } from "../types";
 
 export function CalculationSettings({
+	kind,
+	showTopOnly,
+	onShowTopOnlyChange,
+	topCount,
+	onTopCountChange,
+	ignorePlayerLevel,
+	onIgnorePlayerLevelChange,
 	availableOnly,
 	onAvailableOnlyChange,
 	lockFilters,
@@ -21,6 +28,13 @@ export function CalculationSettings({
 	allowBarters,
 	onAllowBartersChange,
 }: {
+	kind: ProfitPageKind;
+	showTopOnly: boolean;
+	onShowTopOnlyChange: (value: boolean) => void;
+	topCount: number;
+	onTopCountChange: (value: number) => void;
+	ignorePlayerLevel: boolean;
+	onIgnorePlayerLevelChange: (value: boolean) => void;
 	availableOnly: boolean;
 	onAvailableOnlyChange: (value: boolean) => void;
 	profitableOnly: boolean;
@@ -53,9 +67,28 @@ export function CalculationSettings({
 				className="left-auto right-0 top-full mt-2 max-h-[min(26rem,55dvh)] w-80 max-w-full origin-top-right overflow-y-auto overscroll-contain rounded-md border bg-muted p-4 shadow-2xl"
 			>
 				<FilterSection title="List filters">
+					<div className="flex items-center justify-between gap-3">
+						<Toggle checked={showTopOnly} onChange={onShowTopOnlyChange} label="Show top only" />
+						<label className="flex items-center gap-2 text-xs text-muted-foreground">
+							{kind === "craft" ? "Per station" : "Per trader"}
+							<select
+								aria-label={kind === "craft" ? "Top recipes per station" : "Top recipes per trader"}
+								value={topCount}
+								onChange={(event) => onTopCountChange(Number(event.target.value))}
+								className="h-7 rounded border border-highlight/15 bg-card px-2 text-foreground focus-visible:outline-2 focus-visible:outline-brand"
+							>
+								{[1, 2, 3, 4, 5].map((count) => (
+									<option key={count} value={count}>
+										{count}
+									</option>
+								))}
+							</select>
+						</label>
+					</div>
 					<Toggle checked={profitableOnly} onChange={onProfitableOnlyChange} label="Profitable recipes only" />
 				</FilterSection>
 				<FilterSection title="Availability">
+					<Toggle checked={ignorePlayerLevel} onChange={onIgnorePlayerLevelChange} label="Ignore player level" />
 					<Toggle checked={availableOnly} onChange={onAvailableOnlyChange} label="Hide locked recipes" />
 					<div className="ml-3 border-l border-highlight/10 pl-2">
 						{(

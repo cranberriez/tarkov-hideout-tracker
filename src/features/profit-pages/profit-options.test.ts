@@ -51,6 +51,7 @@ test("reads never overwrite saved modes and every option survives page remounts"
 		},
 	};
 	const saved = {
+		...DEFAULT_PROFIT_OPTIONS,
 		preferBestLockedRoute: false,
 		craftingSkillLevel: 0,
 		hideoutManagementSkillLevel: 0,
@@ -82,6 +83,38 @@ test("reads never overwrite saved modes and every option survives page remounts"
 	otherPage.setOption("lockFilters", DEFAULT_PROFIT_OPTIONS.lockFilters);
 	assert.deepEqual(pve.getSnapshot().lockFilters, DEFAULT_PROFIT_OPTIONS.lockFilters);
 	assert.equal(writes, 4);
+});
+
+test("top limit and ignored player level preserve old preferences and stay mode-scoped", () => {
+	const old = JSON.stringify({ allowBarters: false, craftingSkillLevel: 17 });
+	assert.equal(parseProfitOptions(old).showTopOnly, false);
+	assert.equal(parseProfitOptions(old).topCount, 2);
+	assert.equal(parseProfitOptions(old).ignorePlayerLevel, false);
+	for (const topCount of [0, 6, 2.5, "3", null]) {
+		assert.equal(parseProfitOptions(JSON.stringify({ topCount })).topCount, 2);
+	}
+	for (const topCount of [1, 2, 3, 4, 5]) {
+		assert.equal(parseProfitOptions(JSON.stringify({ topCount })).topCount, topCount);
+	}
+	const values = new Map([[profitOptionsStorageKey("PVE"), old]]);
+	const storage = {
+		getItem: (key: string) => values.get(key) ?? null,
+		setItem: (key: string, value: string) => {
+			values.set(key, value);
+		},
+	};
+	const store = createProfitOptionsStore("PVE", () => storage);
+	store.setOption("showTopOnly", true);
+	store.setOption("topCount", 3);
+	store.setOption("ignorePlayerLevel", true);
+	const reloaded = createProfitOptionsStore("PVE", () => storage).getSnapshot();
+	assert.equal(reloaded.showTopOnly, true);
+	assert.equal(reloaded.topCount, 3);
+	assert.equal(reloaded.ignorePlayerLevel, true);
+	assert.equal(reloaded.allowBarters, false);
+	assert.equal(reloaded.craftingSkillLevel, 17);
+	for (const mode of ["PVP", "KORD"] as const)
+		assert.deepEqual(createProfitOptionsStore(mode, () => storage).getSnapshot(), DEFAULT_PROFIT_OPTIONS);
 });
 
 test("storage failures retain edits in memory without affecting another mode", () => {

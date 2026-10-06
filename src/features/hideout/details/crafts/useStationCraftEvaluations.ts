@@ -55,6 +55,7 @@ export function useStationRecipeCalculator(mode: TarkovJsonGameMode, data: Profi
 		: prices.state === "error"
 			? "Some prices could not be loaded."
 			: null;
+	const pricingPlayerLevel = options.ignorePlayerLevel ? undefined : store.playerLevel;
 	const calculator = useMemo(() => {
 		if (status !== "ready" || !data) return null;
 		return createRecipeCalculator({
@@ -64,7 +65,7 @@ export function useStationRecipeCalculator(mode: TarkovJsonGameMode, data: Profi
 			overrides,
 			craftingSkillLevel: options.craftingSkillLevel,
 			hideoutManagementSkillLevel: options.hideoutManagementSkillLevel,
-			playerLevel: store.playerLevel,
+			playerLevel: pricingPlayerLevel,
 			stationLevels: store.stationLevels,
 			useTraderSaleForLockedOutputs: options.useTraderSaleForLockedOutputs,
 			allowCrafts: options.allowCrafts,
@@ -82,14 +83,14 @@ export function useStationRecipeCalculator(mode: TarkovJsonGameMode, data: Profi
 		options.useTraderSaleForLockedOutputs,
 		options.allowCrafts,
 		options.allowBarters,
-		store.playerLevel,
+		pricingPlayerLevel,
 		store.stationLevels,
 		store.traderLoyaltyLevels,
 		store.completedQuests,
 	]);
 	const saleContext = useMemo(
-		() => ({ playerLevel: store.playerLevel, useTraderSaleForLockedOutputs: options.useTraderSaleForLockedOutputs }),
-		[store.playerLevel, options.useTraderSaleForLockedOutputs],
+		() => ({ playerLevel: pricingPlayerLevel, useTraderSaleForLockedOutputs: options.useTraderSaleForLockedOutputs }),
+		[pricingPlayerLevel, options.useTraderSaleForLockedOutputs],
 	);
 	return {
 		calculator,

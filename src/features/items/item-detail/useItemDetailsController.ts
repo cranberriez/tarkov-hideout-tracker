@@ -81,7 +81,7 @@ export function useItemDetailsController({
 		? liveStore
 		: { ...selectItemDetailState(useUserStore.getInitialState()), addItemCounts: liveStore.addItemCounts };
 	const { overrides } = useManualPriceOverrides(store.gameMode);
-	const { craftingSkillLevel, hideoutManagementSkillLevel } = useProfitOptions(store.gameMode);
+	const { craftingSkillLevel, hideoutManagementSkillLevel, ignorePlayerLevel } = useProfitOptions(store.gameMode);
 	const tarkovMode = mode ?? toTarkovJsonGameMode(store.gameMode);
 	const requests = useItemDetailRequestController({ activeItemId, isOpen, mode: tarkovMode, initial: initialViews });
 	const itemRelations = requests.relations;
@@ -177,6 +177,7 @@ export function useItemDetailsController({
 					haveNonFir: owned.have,
 					haveFir: owned.haveFir,
 				});
+	const pricingPlayerLevel = ignorePlayerLevel ? undefined : store.playerLevel;
 	const recipeCalculator = useMemo(
 		() =>
 			acquisitionTree && pricesReady
@@ -189,7 +190,7 @@ export function useItemDetailsController({
 						hideoutManagementSkillLevel,
 						traderLoyaltyLevels: store.questTraderLoyaltyLevels,
 						completedQuests: store.completedQuests,
-						playerLevel: store.playerLevel,
+						playerLevel: pricingPlayerLevel,
 						stationLevels: store.stationLevels,
 					})
 				: null,
@@ -202,7 +203,7 @@ export function useItemDetailsController({
 			overrides,
 			store.completedQuests,
 			store.questTraderLoyaltyLevels,
-			store.playerLevel,
+			pricingPlayerLevel,
 			store.stationLevels,
 		],
 	);

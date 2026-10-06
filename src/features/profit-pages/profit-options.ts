@@ -7,6 +7,9 @@ export interface ProfitOptions {
 	hideoutManagementSkillLevel: number;
 	availableOnly: boolean;
 	profitableOnly: boolean;
+	showTopOnly: boolean;
+	topCount: number;
+	ignorePlayerLevel: boolean;
 	useTraderSaleForLockedOutputs: boolean;
 	preferBestLockedRoute: boolean;
 	allowCrafts: boolean;
@@ -24,6 +27,9 @@ export const DEFAULT_PROFIT_OPTIONS: ProfitOptions = {
 	hideoutManagementSkillLevel: 0,
 	availableOnly: false,
 	profitableOnly: false,
+	showTopOnly: false,
+	topCount: 2,
+	ignorePlayerLevel: false,
 	useTraderSaleForLockedOutputs: true,
 	preferBestLockedRoute: false,
 	allowCrafts: true,
@@ -54,6 +60,8 @@ export function parseProfitOptions(raw: string | null): ProfitOptions {
 	for (const key of [
 		"availableOnly",
 		"profitableOnly",
+		"showTopOnly",
+		"ignorePlayerLevel",
 		"useTraderSaleForLockedOutputs",
 		"preferBestLockedRoute",
 		"allowCrafts",
@@ -62,6 +70,13 @@ export function parseProfitOptions(raw: string | null): ProfitOptions {
 		if (typeof value[key] === "boolean") options[key] = value[key];
 	}
 	options.craftingSkillLevel = normalizeCraftingSkillLevel(value.craftingSkillLevel);
+	if (
+		typeof value.topCount === "number" &&
+		Number.isInteger(value.topCount) &&
+		value.topCount >= 1 &&
+		value.topCount <= 5
+	)
+		options.topCount = value.topCount;
 	options.hideoutManagementSkillLevel = normalizeHideoutManagementSkillLevel(value.hideoutManagementSkillLevel);
 	const filters = record(value.lockFilters);
 	for (const key of ["flea", "quest", "vendor", "station"] as const) {

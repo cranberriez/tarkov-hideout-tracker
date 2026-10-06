@@ -55,6 +55,38 @@ export function PlayerProfileMenu() {
 		})),
 	);
 
+	const [levelDraft, setLevelDraft] = useState<{ mode: GameMode; level: number; value: string } | null>(null);
+	const levelTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	if (levelDraft && (levelDraft.mode !== gameMode || levelDraft.level !== playerLevel)) {
+		setLevelDraft(null);
+	}
+	const levelInputValue =
+		levelDraft?.mode === gameMode && levelDraft.level === playerLevel ? levelDraft.value : String(playerLevel);
+
+	useEffect(
+		() => () => {
+			if (levelTimer.current !== null) clearTimeout(levelTimer.current);
+			levelTimer.current = null;
+		},
+		[gameMode, playerLevel],
+	);
+
+	function changePlayerLevel(value: string) {
+		setLevelDraft({ mode: gameMode, level: playerLevel, value });
+		if (levelTimer.current !== null) clearTimeout(levelTimer.current);
+		const parsed = Number(value);
+		if (!value.trim() || !Number.isFinite(parsed)) return;
+		const level = Math.min(100, Math.max(1, Math.trunc(parsed)));
+		levelTimer.current = setTimeout(() => {
+			const current = useUserStore.getState();
+			if (current.gameMode === gameMode && current.playerLevel === playerLevel) {
+				setPlayerLevel(level);
+				setLevelDraft(null);
+			}
+			levelTimer.current = null;
+		}, 500);
+	}
+
 	useEffect(() => {
 		if (!activePanel) return;
 
@@ -218,8 +250,8 @@ export function PlayerProfileMenu() {
 
 					{activePanel === "character" ? (
 						<CharacterCustomizer
-							playerLevel={playerLevel}
-							setPlayerLevel={setPlayerLevel}
+							levelInputValue={levelInputValue}
+							onLevelInputChange={changePlayerLevel}
 							prestigeLevel={prestigeLevel}
 							setPrestigeLevel={setPrestigeLevel}
 							faction={faction}
@@ -244,15 +276,15 @@ export function PlayerProfileMenu() {
 }
 
 function CharacterCustomizer({
-	playerLevel,
-	setPlayerLevel,
+	levelInputValue,
+	onLevelInputChange,
 	prestigeLevel,
 	setPrestigeLevel,
 	faction,
 	setFaction,
 }: {
-	playerLevel: number;
-	setPlayerLevel: (level: number) => void;
+	levelInputValue: string;
+	onLevelInputChange: (value: string) => void;
 	prestigeLevel: number;
 	setPrestigeLevel: (level: number) => void;
 	faction: Faction;
@@ -269,8 +301,8 @@ function CharacterCustomizer({
 					type="number"
 					min={1}
 					max={100}
-					value={playerLevel}
-					onChange={(event) => setPlayerLevel(Math.min(100, Math.max(1, Number(event.target.value) || 1)))}
+					value={levelInputValue}
+					onChange={(event) => onLevelInputChange(event.target.value)}
 					className="h-8 w-16 rounded border border-highlight/10 bg-shadow/40 px-2 text-right font-mono text-xs text-foreground outline-none transition-colors focus:border-brand/50"
 				/>
 			</div>
