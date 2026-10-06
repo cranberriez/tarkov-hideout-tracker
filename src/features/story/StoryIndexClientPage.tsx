@@ -230,7 +230,7 @@ function TrackedChapterCard({
 					{evidence}
 				</div>
 				{ending && <img src={ending.image} alt={ending.name} title={`Target: ${ending.name}`} className="size-10" />}
-				{complete && <span className="shrink-0 text-sm font-extrabold tracking-widest text-info">DONE</span>}
+				{complete && <span className="shrink-0 text-lg font-extrabold tracking-widest text-background">DONE</span>}
 			</div>
 		</Link>
 	);
