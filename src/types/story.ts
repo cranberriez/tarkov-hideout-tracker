@@ -23,6 +23,10 @@ export interface StoryChapterRef {
 export interface StoryQuestRef {
 	id: string;
 	name: string;
+	/** Explicit ending requirements only; ordinary quest links may be optional or rewards. */
+	requiredForEndings?: StoryEndingId[];
+	/** Explains alternatives or conditional requirements in the quest banner. */
+	requirementNote?: string;
 }
 
 /** A catalog item when `id` is present; name-only references are story items missing from the catalog. */

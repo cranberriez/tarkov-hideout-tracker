@@ -13,6 +13,7 @@ import {
 } from "./quest-trader-board-model";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 import { QuestMobileMenuSpacer } from "./QuestMobileMenu";
+import { QuestEndingMarker } from "./QuestEndingMarkers";
 
 const LEGEND = [
 	{ label: "Available", className: "bg-info" },
@@ -283,6 +284,7 @@ function BoardQuest({ questId }: { questId: string }) {
 		>
 			<i className={cn("h-1.5 w-1.5 shrink-0 rounded-full", dotClassName)} />
 			<span className="min-w-0 truncate">{quest.name}</span>
+			<QuestEndingMarker questId={questId} compact />
 		</Link>
 	);
 }

@@ -170,6 +170,19 @@ chapter so those always link to `/story/[chapterId]`; untracked chapters render 
 placeholder that links to the wiki and is not indexed.
 Steps may also carry rewards, warnings for route-failing actions, quest links and
 wiki screenshots, stored under `public/images/story/<chapter-id>/steps/`.
+Quest links explicitly marked `requiredForEndings` feed the quest workspace's
+ending markers through [story-quest-requirements](../src/features/story/story-quest-requirements.ts).
+Ordinary links (including optional quests and unlocked side quests) do not imply
+requirements. Initial coverage is The Ticket's Lightkeeper case-recovery quest,
+both Price of Independence branches for Savior, and Getting Acquainted for Debtor;
+prerequisite chains are not inferred. Conditional and alternative requirements
+carry explanatory notes. The list overlays only the active profile's selected
+ending on the quest image; the trader board shows the same marker at the right.
+No selection or a known inapplicable route hides those markers. Unresolved choices
+retain the conditional marker. Quest details always show all annotated endings
+above requirements, with stacked icons, the selected icon emphasized, and links
+to the requiring chapter objectives. This is informational and does not change
+quest availability, completion, ignored flags, or item demand.
 Catalog-linked rewards use `rewardItems`, which render item chips alongside the
 reward text and are excluded from the remaining-step item requirements.
 

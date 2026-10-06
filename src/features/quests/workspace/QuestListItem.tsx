@@ -21,6 +21,7 @@ import { useQuestActions } from "../QuestActionsContext";
 import { getQuestObjectiveCategories } from "./quest-workspace-utils";
 import { QuestObjectiveTypeTag } from "./QuestObjectiveTypeTag";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
+import { QuestEndingMarker } from "./QuestEndingMarkers";
 
 export function QuestListItem({
 	questId,
@@ -88,6 +89,7 @@ export function QuestListItem({
 					</span>
 				)}
 				<div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[var(--card-bg)]/80" />
+				<QuestEndingMarker questId={questId} />
 			</div>
 
 			<div className="min-w-0 px-3 py-2.5">

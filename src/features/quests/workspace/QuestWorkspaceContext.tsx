@@ -24,6 +24,13 @@ import {
 import { createQuestMarkerStyles, type QuestMarkerStyle } from "./raid-planner-markers";
 import { buildQuestBranchLines, type QuestBranchLine } from "./quest-branch-graph";
 import { selectWorkspaceQuests } from "./quest-workspace-selector";
+import { STORY_CHAPTERS, STORY_DECISIONS } from "@/lib/data/story";
+import type { StoryEndingId } from "@/types/story";
+import { useStoryProgress } from "@/features/story/useStoryProgress";
+import { useUserStoreHydrated } from "@/lib/query/game-data";
+import { buildStoryQuestRequirements, questRequiresSelectedEnding } from "@/features/story/story-quest-requirements";
+
+export const storyQuestRequirements = buildStoryQuestRequirements(STORY_CHAPTERS);
 
 export type QuestWorkspaceMode = "details" | QuestView;
 export type QuestListMode = "quests" | "history";
@@ -31,6 +38,8 @@ export type QuestFilterSection = "traders" | "maps" | "status" | "filters" | nul
 
 interface QuestWorkspaceContextValue {
 	quests: QuestWorkspaceQuest[];
+	targetEnding: StoryEndingId | null;
+	endingQuestIds: ReadonlySet<string>;
 	questDataIndex: QuestDataIndex;
 	questsById: Map<string, QuestWorkspaceQuest>;
 	filteredQuests: QuestWorkspaceQuest[];
@@ -120,6 +129,21 @@ export function QuestWorkspaceProvider({
 	children: ReactNode;
 }) {
 	const router = useRouter();
+	const gameMode = useUserStore((state) => state.gameMode);
+	const hydrated = useUserStoreHydrated();
+	const [storyProgress] = useStoryProgress(gameMode);
+	const targetEnding = hydrated ? storyProgress.targetEnding : null;
+	const endingQuestIds = useMemo(
+		() =>
+			new Set(
+				targetEnding
+					? [...storyQuestRequirements]
+							.filter(([, requirements]) => questRequiresSelectedEnding(requirements, storyProgress, STORY_DECISIONS))
+							.map(([questId]) => questId)
+					: [],
+			),
+		[targetEnding, storyProgress],
+	);
 	const searchParams = useSearchParams();
 	const params = useParams<{ questId?: string }>();
 	const selectedQuestId = params?.questId ? decodeRouteParam(params.questId) : null;
@@ -268,8 +292,7 @@ export function QuestWorkspaceProvider({
 				plannerMapKey
 					? quests.filter(
 							(quest) =>
-								statusByQuestId.get(quest.id)?.status === "active" &&
-								getQuestMapKeys(quest).has(plannerMapKey),
+								statusByQuestId.get(quest.id)?.status === "active" && getQuestMapKeys(quest).has(plannerMapKey),
 						)
 					: [],
 			),
@@ -358,6 +381,8 @@ export function QuestWorkspaceProvider({
 	return (
 		<QuestWorkspaceContext.Provider
 			value={{
+				targetEnding,
+				endingQuestIds,
 				quests,
 				questDataIndex,
 				questsById,

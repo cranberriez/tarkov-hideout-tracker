@@ -282,7 +282,14 @@ export const THE_TICKET: StoryChapter = {
 					map: "Lighthouse",
 					requiresLightkeeper: true,
 					items: [item("Digital secure DSP radio transmitter", "62e910aaf957f2915e0a5e36")],
-					quests: [QUESTS.trustButVerify],
+					quests: [
+						{
+							...QUESTS.trustButVerify,
+							requiredForEndings: ["savior", "debtor", "survivor", "fallen"],
+							requirementNote:
+								"Required when you gave the armored case to Prapor and need to recover it through Lightkeeper.",
+						},
+					],
 					note: "Third floor of the lighthouse. An encoded transmitter disarms the bridge claymores and stops Zryachiy shooting.",
 					warning: "Harming Zryachiy, his followers or an acquainted PMC decodes your transmitter.",
 				},
@@ -699,7 +706,11 @@ export const THE_TICKET: StoryChapter = {
 				{
 					id: "btr-standing",
 					text: "Reach 0.4 standing with the BTR Driver",
-					quests: [QUESTS.priceOfIndependenceA, QUESTS.priceOfIndependenceB],
+					quests: [QUESTS.priceOfIndependenceA, QUESTS.priceOfIndependenceB].map((quest) => ({
+						...quest,
+						requiredForEndings: ["savior"],
+						requirementNote: "Complete the version of The Price of Independence on your quest branch.",
+					})),
 					note: "Complete The Price of Independence.",
 					warning: "Completing Choose Your Friends Wisely fails this objective and ends the Savior route.",
 				},
@@ -729,7 +740,7 @@ export const THE_TICKET: StoryChapter = {
 					id: "ask-traders-debtor",
 					text: "Ask the traders how to leave Tarkov",
 					requiresLightkeeper: true,
-					quests: [QUESTS.gettingAcquainted],
+					quests: [{ ...QUESTS.gettingAcquainted, requiredForEndings: ["debtor"] }],
 					note: "Ask every trader, visiting Lightkeeper last.",
 					rewards: ["Unlocks the Military flash drive with topographic intel craft at Intelligence Center level 1"],
 				},
