@@ -147,6 +147,7 @@ function TrackedChapterCard({
 				alt=""
 				className="absolute inset-0 h-full w-full object-cover opacity-35 transition-opacity group-hover:opacity-50"
 			/>
+			<div aria-hidden="true" className="absolute inset-0 bg-linear-to-r from-shadow/70 via-shadow/35 to-transparent" />
 			<div className="relative flex flex-1 items-center gap-3 p-4">
 				<img src={chapter.icon} alt="" className="h-9 w-auto" />
 				<div className="min-w-0 flex-1">

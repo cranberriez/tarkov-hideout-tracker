@@ -93,6 +93,10 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 
 			<header className="relative mb-6 overflow-hidden rounded-md border border-highlight/10 bg-shadow/40">
 				<img src={chapter.banner} alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
+				<div
+					aria-hidden="true"
+					className="absolute inset-0 bg-linear-to-r from-shadow/70 via-shadow/35 to-transparent"
+				/>
 				<div className="relative flex flex-col gap-3 p-5 sm:flex-row sm:items-end sm:justify-between">
 					<div className="flex items-center gap-3">
 						<img src={chapter.icon} alt="" className="h-10 w-auto" />
