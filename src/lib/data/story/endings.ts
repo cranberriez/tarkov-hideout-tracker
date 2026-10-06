@@ -55,6 +55,15 @@ export const STORY_DECISIONS: readonly StoryDecision[] = [
 		],
 	},
 	{
+		id: "blue-fire-fragment",
+		prompt: "Keep the fragment of Item 1156 or hand it over to Mechanic?",
+		chapterId: "blue-fire",
+		options: [
+			{ id: "keep", label: "Keep it", description: 'Unlocks the "Better Served" achievement.' },
+			{ id: "hand-over", label: "Hand it to Mechanic", description: "Pays 1,500,000 roubles." },
+		],
+	},
+	{
 		id: "ticket-kerman-offer",
 		prompt: "Accept Mr. Kerman's offer to activate the keycard?",
 		chapterId: "the-ticket",

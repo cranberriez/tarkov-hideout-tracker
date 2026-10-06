@@ -1,12 +1,22 @@
 import type { StoryChapter, StoryChapterRef } from "@/types/story";
+import { ACCIDENTAL_WITNESS } from "./accidental-witness";
+import { BLUE_FIRE } from "./blue-fire";
 import { FALLING_SKIES } from "./falling-skies";
 import { THE_TICKET } from "./the-ticket";
+import { THE_UNHEARD } from "./the-unheard";
 import { TOUR } from "./tour";
 
 export { STORY_DECISION_BY_ID, STORY_DECISIONS, STORY_ENDING_BY_ID, STORY_ENDINGS } from "./endings";
 
 /** Chapters with tracked data. */
-export const STORY_CHAPTERS: readonly StoryChapter[] = [TOUR, FALLING_SKIES, THE_TICKET];
+export const STORY_CHAPTERS: readonly StoryChapter[] = [
+	TOUR,
+	FALLING_SKIES,
+	ACCIDENTAL_WITNESS,
+	BLUE_FIRE,
+	THE_UNHEARD,
+	THE_TICKET,
+];
 
 const wiki = (page: string) => `https://escapefromtarkov.fandom.com/wiki/${page}`;
 
