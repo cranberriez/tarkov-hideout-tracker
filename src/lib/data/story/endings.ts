@@ -6,51 +6,24 @@ export const STORY_ENDINGS: readonly StoryEnding[] = [
 		name: "Savior",
 		image: "/images/story/endings/savior.webp",
 		summary: "Help Mr. Kerman expose TerraGroup and deliver the major evidence.",
-		rewards: [
-			"Savior dogtag, armband and achievement",
-			"For Humanity poster and Savior hideout styles",
-			'"Peaceful Sky" main menu background',
-			"200,000 dollars (40,000 in PvE)",
-			"Item, weapon, ammunition, magazine, medicine, money and plate cases",
-			"3× each of AS VAL MOD.4, PKP, M32A1, Mk-18, Saiga-12K and TKPD, with ammunition",
-		],
 	},
 	{
 		id: "debtor",
 		name: "Debtor",
 		image: "/images/story/endings/debtor.webp",
 		summary: "Stop feeding Mr. Kerman evidence and leave through Lightkeeper.",
-		rewards: [
-			"Debtor dogtag, Lighthouse armband and achievement",
-			"Lighthouse poster and Mercenary hideout styles",
-			'"Storm Front" main menu background',
-			"120,000 euros (30,000 in PvE)",
-			"Weapon, ammunition, magazine, money and plate cases",
-			"3× each of AXMC, AA-12, RShG-2, MCX-SPEAR, TRG M10 and M60E6, with ammunition",
-		],
 	},
 	{
 		id: "survivor",
 		name: "Survivor",
 		image: "/images/story/endings/survivor.webp",
 		summary: "Refuse Mr. Kerman and buy your way out through Prapor.",
-		rewards: [
-			"Survivor dogtag, armband and achievement",
-			"Survivor poster and Survivor hideout styles",
-			'"Bleak Horizon" main menu background',
-		],
 	},
 	{
 		id: "fallen",
 		name: "Fallen",
 		image: "/images/story/endings/fallen.webp",
 		summary: "Take Mr. Kerman's keycard help, then side with Prapor instead.",
-		rewards: [
-			"Fallen dogtag, To Fall in the Darkness armband and achievement",
-			"To Fall in the Darkness poster and hideout styles",
-			'"Dusk of Humanity" main menu background',
-			"10,000,000 roubles (3,000,000 in PvE) and a money case",
-		],
 	},
 ];
 

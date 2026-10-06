@@ -11,7 +11,6 @@ export interface StoryEnding {
 	name: string;
 	image: string;
 	summary: string;
-	rewards: string[];
 }
 
 /** Every chapter in the game, tracked or not, so cross-chapter references can link. */

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { STORY_ENDING_BY_ID, storyChapterLink } from "@/lib/data/story";
 import { cn } from "@/lib/utils";
@@ -109,21 +109,12 @@ export function StoryDecisionControl({
 	);
 }
 
-export function ChapterBadge({ name, href, external }: { name: string; href: string; external: boolean }) {
-	const className = "inline-flex";
-	const badge = (
-		<Badge size="xs" className="hover:border-brand/40 hover:text-foreground">
-			{name}
-			{external && <ExternalLink aria-hidden="true" />}
-		</Badge>
-	);
-	return external ? (
-		<a href={href} target="_blank" rel="noreferrer" className={className} title={`${name} on the wiki`}>
-			{badge}
-		</a>
-	) : (
-		<Link href={href} className={className}>
-			{badge}
+export function ChapterBadge({ name, href }: { name: string; href: string }) {
+	return (
+		<Link href={href} className="inline-flex">
+			<Badge size="xs" className="hover:border-brand/40 hover:text-foreground">
+				{name}
+			</Badge>
 		</Link>
 	);
 }

@@ -2,7 +2,7 @@
 
 import { TriangleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { STORY_ENDING_BY_ID, STORY_ENDINGS } from "@/lib/data/story";
+import { STORY_ENDINGS } from "@/lib/data/story";
 import { cn } from "@/lib/utils";
 import type { StoryDecision, StoryEndingId } from "@/types/story";
 import type { ResolvedDecisions } from "../story-model";
@@ -39,7 +39,6 @@ export function StoryRoutePanel({
 	onLightkeeperAccess,
 	onDecision,
 }: StoryRoutePanelProps) {
-	const target = targetEnding ? STORY_ENDING_BY_ID[targetEnding] : null;
 	return (
 		<div className="flex flex-col gap-4">
 			<section className="rounded-md border border-highlight/10 bg-card p-4">
@@ -91,22 +90,9 @@ export function StoryRoutePanel({
 						Your recorded choices rule out this ending.
 					</p>
 				)}
-				{target && (
-					<div className="mt-3 border-t border-highlight/8 pt-3">
-						<p className="text-xs text-muted-foreground">{target.summary}</p>
-						<h3 className="mt-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-							{target.name} rewards
-						</h3>
-						<ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-foreground">
-							{target.rewards.map((reward) => (
-								<li key={reward}>{reward}</li>
-							))}
-						</ul>
-					</div>
-				)}
 			</section>
 
-			<section className="flex items-center justify-between gap-3 rounded-md border border-highlight/10 bg-card p-4">
+			<section className="flex items-center justify-between gap-3 rounded-md border border-highlight/10 bg-card px-4 py-1.5">
 				<h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Lightkeeper access</h2>
 				<div className="inline-flex rounded-md border border-highlight/10 bg-shadow/30 p-1">
 					{[
@@ -133,9 +119,6 @@ export function StoryRoutePanel({
 
 			<section className="rounded-md border border-highlight/10 bg-card p-4">
 				<h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Choices</h2>
-				<p className="mt-1 text-xs text-muted-foreground">
-					Record what you chose. Your target ending fills in the rest.
-				</p>
 				<ul className="mt-3 flex flex-col gap-4">
 					{decisions.map((decision) => (
 						<li key={decision.id}>

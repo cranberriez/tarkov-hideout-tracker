@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
 import { findStoryChapter, STORY_CHAPTER_REFS, STORY_DECISIONS, STORY_ENDING_BY_ID } from "@/lib/data/story";
 import { useUserStoreHydrated } from "@/lib/query/game-data";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -27,25 +26,20 @@ export function StoryIndexClientPage() {
 				Pick an ending, record your choices, and see what is left for your route.
 			</p>
 			<ul className="mt-6 grid gap-3 md:grid-cols-2">
-				{TRACKED_FIRST.map(({ id, name, wikiLink }) => {
+				{TRACKED_FIRST.map(({ id, name }) => {
 					const chapter = findStoryChapter(id);
 					return (
 						<li key={id}>
 							{chapter ? (
 								<TrackedChapterCard chapter={chapter} progress={hydrated ? progress : null} />
 							) : (
-								<a
-									href={wikiLink}
-									target="_blank"
-									rel="noreferrer"
+								<Link
+									href={`/story/${id}`}
 									className="flex h-full items-center justify-between rounded-md border border-highlight/8 bg-shadow/20 px-4 py-3 transition-colors hover:border-highlight/20"
 								>
 									<span className="text-sm font-semibold text-muted-foreground">{name}</span>
-									<span className="inline-flex items-center gap-1 text-xs text-subtle-foreground">
-										Not tracked yet · Wiki
-										<ExternalLink aria-hidden="true" className="size-3" />
-									</span>
-								</a>
+									<span className="text-xs text-subtle-foreground">Not tracked yet</span>
+								</Link>
 							)}
 						</li>
 					);

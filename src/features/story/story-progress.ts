@@ -60,18 +60,44 @@ export function serializeStoryProgress(progress: StoryProgress): string {
 	return JSON.stringify({ version: STORY_PROGRESS_VERSION, ...progress });
 }
 
-export function toggleStoryStep(progress: StoryProgress, chapterId: string, stepId: string): StoryProgress {
-	const current = progress.completedSteps[chapterId] ?? [];
-	const next = current.includes(stepId) ? current.filter((id) => id !== stepId) : [...current, stepId];
-	const completedSteps = { ...progress.completedSteps, [chapterId]: next };
-	if (next.length === 0) delete completedSteps[chapterId];
-	return { ...progress, completedSteps };
-}
-
 /** Choosing the selected option again clears the decision. */
 export function toggleStoryDecision(progress: StoryProgress, decisionId: string, optionId: string): StoryProgress {
 	const decisions = { ...progress.decisions };
 	if (decisions[decisionId] === optionId) delete decisions[decisionId];
 	else decisions[decisionId] = optionId;
 	return { ...progress, decisions };
+}
+
+export interface StepOrderEntry {
+	id: string;
+	/** Only active, required steps are completed automatically. */
+	autoComplete: boolean;
+}
+
+/**
+ * Completing a step also completes the earlier required steps on the route;
+ * un-completing one also clears every later step. Steps outside `order`
+ * (sub-objectives) toggle on their own.
+ */
+export function setStoryStepDone(
+	progress: StoryProgress,
+	chapterId: string,
+	order: readonly StepOrderEntry[],
+	stepId: string,
+	done: boolean,
+): StoryProgress {
+	const index = order.findIndex((entry) => entry.id === stepId);
+	const current = new Set(progress.completedSteps[chapterId] ?? []);
+	if (index === -1) {
+		if (done) current.add(stepId);
+		else current.delete(stepId);
+	} else if (done) {
+		current.add(stepId);
+		for (const entry of order.slice(0, index)) if (entry.autoComplete) current.add(entry.id);
+	} else {
+		for (const entry of order.slice(index)) current.delete(entry.id);
+	}
+	const completedSteps = { ...progress.completedSteps, [chapterId]: [...current] };
+	if (current.size === 0) delete completedSteps[chapterId];
+	return { ...progress, completedSteps };
 }

@@ -166,12 +166,16 @@ later routes, for example the Falling Skies armored case. Step and decision IDs
 are persisted: never rename or reuse them. Items carry catalog IDs where the item
 exists; story-only items are name-only references. Items and decisions may name
 another chapter; [the chapter index](../src/lib/data/story/index.ts) lists every
-chapter so those link to the tracker page when tracked, otherwise to the wiki.
+chapter so those always link to `/story/[chapterId]`; untracked chapters render a
+placeholder that links to the wiki and is not indexed.
 Steps may also carry rewards, warnings for route-failing actions and quest links.
 
 Choices appear where they matter: a decision made at a step renders inline there,
 and sections that depend on it link back to it. Decisions made in other chapters
 render as a bar above the first section they shape. The sidebar lists them all.
+
+Completing a step also completes the earlier active, required steps on the
+route; un-completing one clears every later step. Sub-objectives toggle alone.
 
 The [story model](../src/features/story/story-model.ts) resolves each decision from
 the player's choice, else the single option compatible with the target ending.

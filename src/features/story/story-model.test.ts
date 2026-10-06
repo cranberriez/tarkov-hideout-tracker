@@ -3,7 +3,13 @@ import test from "node:test";
 import { STORY_DECISIONS, STORY_ENDINGS } from "../../lib/data/story";
 import { THE_TICKET } from "../../lib/data/story/the-ticket";
 import { buildChapterView, reachableEndings, resolveDecisions } from "./story-model";
-import { emptyStoryProgress, parseStoryProgress, serializeStoryProgress, toggleStoryDecision } from "./story-progress";
+import {
+	emptyStoryProgress,
+	parseStoryProgress,
+	serializeStoryProgress,
+	setStoryStepDone,
+	toggleStoryDecision,
+} from "./story-progress";
 
 test("stored progress keeps valid fields and unknown IDs, dropping only malformed values", () => {
 	const progress = parseStoryProgress(
@@ -66,4 +72,22 @@ test("unresolved branches stay pending and out of the remaining count", () => {
 	const survivorSteps = survivor.sections.find((section) => section.section.id === "survivor-prapor")!.steps;
 	assert.ok(survivorSteps.some((view) => view.step.id === "cash-prapor-300m"));
 	assert.ok(!survivorSteps.some((view) => view.step.id === "cash-prapor-500m"));
+});
+
+test("completing a step completes earlier required steps; clearing one clears later steps", () => {
+	const order = [
+		{ id: "a", autoComplete: true },
+		{ id: "optional", autoComplete: false },
+		{ id: "b", autoComplete: true },
+		{ id: "c", autoComplete: true },
+	];
+	const done = setStoryStepDone(emptyStoryProgress(), "ch", order, "c", true);
+	assert.deepEqual(new Set(done.completedSteps.ch), new Set(["a", "b", "c"]));
+
+	const cleared = setStoryStepDone(done, "ch", order, "b", false);
+	assert.deepEqual(cleared.completedSteps.ch, ["a"]);
+	assert.deepEqual(setStoryStepDone(cleared, "ch", order, "a", false).completedSteps, {});
+
+	const substep = setStoryStepDone(cleared, "ch", order, "sub", true);
+	assert.deepEqual(new Set(substep.completedSteps.ch), new Set(["a", "sub"]));
 });

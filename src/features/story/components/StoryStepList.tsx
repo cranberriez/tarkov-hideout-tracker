@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { Check, Gift, GitBranch, MapPin, ScrollText, TriangleAlert } from "lucide-react";
+import { useState } from "react";
+import { Check, ChevronDown, CircleCheck, Gift, GitBranch, MapPin, ScrollText, TriangleAlert } from "lucide-react";
+import { QuestLink } from "@/components/entities/quest-link";
 import { Badge } from "@/components/ui/badge";
 import { STORY_DECISION_BY_ID, STORY_ENDING_BY_ID, storyChapterLink } from "@/lib/data/story";
-import { questHref } from "@/lib/entity-routes";
 import { cn } from "@/lib/utils";
 import type { StoryEndingId, StoryItemRef } from "@/types/story";
 import type { DecisionLocation, ResolvedDecisions, SectionView, StepView } from "../story-model";
@@ -17,7 +17,7 @@ interface StoryStepListProps {
 	resolved: ResolvedDecisions;
 	targetEnding: StoryEndingId | null;
 	locations: ReadonlyMap<string, DecisionLocation>;
-	onToggleStep: (stepId: string) => void;
+	onToggleStep: (stepId: string, done: boolean) => void;
 	onDecision: (decisionId: string, optionId: string) => void;
 }
 
@@ -34,22 +34,44 @@ export function StoryStepList({
 	onDecision,
 }: StoryStepListProps) {
 	const decisionProps = { chapterId, resolved, targetEnding, onDecision };
-	// Choices made outside this chapter render once, above the first section they shape.
-	const placedBars = new Set<string>();
+	const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
+	const toggleSection = (sectionId: string) =>
+		setCollapsed((current) => {
+			const next = new Set(current);
+			if (!next.delete(sectionId)) next.add(sectionId);
+			return next;
+		});
+	/** Expands the section holding a choice before jumping to it. */
+	const revealDecision = (decisionId: string, sectionId: string | undefined) => {
+		if (sectionId && collapsed.has(sectionId)) toggleSection(sectionId);
+		requestAnimationFrame(() =>
+			document.getElementById(`decision-${decisionId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }),
+		);
+	};
+	// Choices made outside this chapter render once, above the first expanded section they shape.
+	const placedBars = new Map<string, string>();
 	return (
 		<ol className="flex flex-col gap-6">
 			{sections.map(({ section, state, decisionIds, pendingOn, steps }) => {
+				const isCollapsed = collapsed.has(section.id);
+				const required = steps.filter((view) => !view.step.optional);
+				const complete = required.length > 0 && required.every((view) => view.done);
 				const bars: string[] = [];
-				const links: Array<{ decisionId: string; label: string }> = [];
+				const links: Array<{ decisionId: string; label: string; sectionId?: string }> = [];
 				for (const decisionId of decisionIds) {
 					const location = locations.get(decisionId);
 					if (location?.sectionId === section.id) continue;
 					if (location) {
 						if (pendingOn.includes(decisionId)) {
-							links.push({ decisionId, label: `Choose at “${location.stepText}”` });
+							links.push({
+								decisionId,
+								label: `Choose at “${location.stepText}”`,
+								sectionId: location.sectionId,
+							});
 						}
 					} else if (!placedBars.has(decisionId)) {
-						placedBars.add(decisionId);
+						if (isCollapsed) continue;
+						placedBars.set(decisionId, section.id);
 						bars.push(decisionId);
 					} else if (pendingOn.includes(decisionId)) {
 						links.push({ decisionId, label: "Choose above" });
@@ -58,13 +80,23 @@ export function StoryStepList({
 				return (
 					<li key={section.id}>
 						<div className="mb-2 flex flex-wrap items-center gap-2">
-							<h2
-								className={cn(
-									"text-base font-semibold",
-									state === "pending" ? "text-muted-foreground" : "text-foreground",
-								)}
-							>
-								{section.title}
+							<h2>
+								<button
+									type="button"
+									onClick={() => toggleSection(section.id)}
+									aria-expanded={!isCollapsed}
+									className={cn(
+										"inline-flex items-center gap-1.5 text-base font-semibold transition-colors hover:text-brand",
+										state === "pending" ? "text-muted-foreground" : "text-foreground",
+									)}
+								>
+									<ChevronDown
+										aria-hidden="true"
+										className={cn("size-4 transition-transform", isCollapsed && "-rotate-90")}
+									/>
+									{section.title}
+									{isCollapsed && complete && <CircleCheck aria-label="Complete" className="size-4 text-success" />}
+								</button>
 							</h2>
 							{section.endings?.map((ending) => (
 								<img
@@ -75,10 +107,14 @@ export function StoryStepList({
 									className="size-5 object-contain"
 								/>
 							))}
-							{links.map(({ decisionId, label }) => (
+							{links.map(({ decisionId, label, sectionId }) => (
 								<a
 									key={decisionId}
 									href={`#decision-${decisionId}`}
+									onClick={(event) => {
+										event.preventDefault();
+										revealDecision(decisionId, sectionId ?? placedBars.get(decisionId));
+									}}
 									title={STORY_DECISION_BY_ID[decisionId]?.prompt}
 									className="inline-flex"
 								>
@@ -89,26 +125,29 @@ export function StoryStepList({
 								</a>
 							))}
 						</div>
-						{bars.map((decisionId) => (
-							<StoryDecisionControl
-								key={decisionId}
-								id={`decision-${decisionId}`}
-								decision={STORY_DECISION_BY_ID[decisionId]}
-								layout="bar"
-								className="mb-2 rounded-md border border-info/25 bg-info/5 px-3 py-2.5"
-								{...decisionProps}
-							/>
-						))}
-						<ol
-							className={cn(
-								"flex flex-col rounded-md border border-highlight/10 bg-card",
-								state === "pending" && "opacity-60",
-							)}
-						>
-							{steps.map((view) => (
-								<StepRow key={view.step.id} view={view} decisionProps={decisionProps} onToggleStep={onToggleStep} />
+						{!isCollapsed &&
+							bars.map((decisionId) => (
+								<StoryDecisionControl
+									key={decisionId}
+									id={`decision-${decisionId}`}
+									decision={STORY_DECISION_BY_ID[decisionId]}
+									layout="bar"
+									className="mb-2 rounded-md border border-info/25 bg-info/5 px-3 py-2.5"
+									{...decisionProps}
+								/>
 							))}
-						</ol>
+						{!isCollapsed && (
+							<ol
+								className={cn(
+									"flex flex-col rounded-md border border-highlight/10 bg-card",
+									state === "pending" && "opacity-60",
+								)}
+							>
+								{steps.map((view) => (
+									<StepRow key={view.step.id} view={view} decisionProps={decisionProps} onToggleStep={onToggleStep} />
+								))}
+							</ol>
+						)}
 					</li>
 				);
 			})}
@@ -129,7 +168,7 @@ function StepRow({
 }: {
 	view: StepView;
 	decisionProps: DecisionProps;
-	onToggleStep: (stepId: string) => void;
+	onToggleStep: (stepId: string, done: boolean) => void;
 	nested?: boolean;
 }) {
 	const { step, done, state, lightkeeperBlocked, substeps } = view;
@@ -146,7 +185,7 @@ function StepRow({
 		>
 			<button
 				type="button"
-				onClick={() => onToggleStep(step.id)}
+				onClick={() => onToggleStep(step.id, !done)}
 				aria-pressed={done}
 				aria-label={`${done ? "Mark as not done" : "Mark as done"}: ${step.text}`}
 				className={cn(
@@ -198,14 +237,15 @@ function StepRow({
 				{step.quests && step.quests.length > 0 && (
 					<div className="mt-1 flex flex-wrap items-center gap-1.5">
 						{step.quests.map((quest) => (
-							<Link
+							<QuestLink
 								key={quest.id}
-								href={questHref(quest.id)}
+								questId={quest.id}
+								name={quest.name}
 								className="inline-flex items-center gap-1 text-xs text-brand hover:underline"
 							>
 								<ScrollText aria-hidden="true" className="size-3" />
 								{quest.name}
-							</Link>
+							</QuestLink>
 						))}
 					</div>
 				)}

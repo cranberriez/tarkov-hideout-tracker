@@ -26,11 +26,12 @@ export function findStoryChapter(id: string): StoryChapter | undefined {
 	return STORY_CHAPTERS.find((chapter) => chapter.id === id);
 }
 
-/** Internal page for tracked chapters, otherwise the wiki. */
-export function storyChapterLink(id: string): { name: string; href: string; external: boolean } | null {
-	const ref = STORY_CHAPTER_REFS.find((chapter) => chapter.id === id);
-	if (!ref) return null;
-	return findStoryChapter(id)
-		? { name: ref.name, href: `/story/${id}`, external: false }
-		: { name: ref.name, href: ref.wikiLink, external: true };
+export function findStoryChapterRef(id: string): StoryChapterRef | undefined {
+	return STORY_CHAPTER_REFS.find((chapter) => chapter.id === id);
+}
+
+/** Every chapter has a page; untracked ones show a placeholder with the wiki link. */
+export function storyChapterLink(id: string): { name: string; href: string } | null {
+	const ref = findStoryChapterRef(id);
+	return ref ? { name: ref.name, href: `/story/${id}` } : null;
 }

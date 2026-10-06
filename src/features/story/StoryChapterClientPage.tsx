@@ -25,7 +25,7 @@ import {
 	evaluateCondition,
 	reachableEndings,
 } from "./story-model";
-import { toggleStoryDecision, toggleStoryStep } from "./story-progress";
+import { setStoryStepDone, toggleStoryDecision } from "./story-progress";
 import { useStoryProgress } from "./useStoryProgress";
 
 const ENDING_IDS = STORY_ENDINGS.map((ending) => ending.id);
@@ -57,6 +57,16 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 	);
 
 	const locations = useMemo(() => decisionLocations(chapter), [chapter]);
+	const stepOrder = useMemo(
+		() =>
+			view.sections.flatMap((section) =>
+				section.steps.map((step) => ({
+					id: step.step.id,
+					autoComplete: step.state === "active" && !step.step.optional,
+				})),
+			),
+		[view.sections],
+	);
 	const previousChapters = chapter.previousChapterIds.map((id) => storyChapterLink(id)).filter((link) => link !== null);
 
 	const { stats } = view;
@@ -109,7 +119,7 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 				<p className="text-sm text-muted-foreground">Loading your progress…</p>
 			) : (
 				<div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-					<aside className="flex flex-col gap-4 lg:sticky lg:top-20 lg:order-last lg:max-h-[calc(100dvh-6rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1 [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]">
+					<aside className="flex flex-col gap-4 lg:sticky lg:top-6 lg:order-last lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1 [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]">
 						<section className="rounded-md border border-highlight/10 bg-card p-4" aria-label="Progress">
 							<div className="flex items-baseline justify-between gap-2">
 								<span className="text-2xl font-bold text-foreground">{remaining}</span>
@@ -181,7 +191,9 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 						sections={view.sections}
 						resolved={view.resolved}
 						targetEnding={progress.targetEnding}
-						onToggleStep={(stepId) => update((current) => toggleStoryStep(current, chapter.id, stepId))}
+						onToggleStep={(stepId, done) =>
+							update((current) => setStoryStepDone(current, chapter.id, stepOrder, stepId, done))
+						}
 						onDecision={onDecision}
 					/>
 				</div>
