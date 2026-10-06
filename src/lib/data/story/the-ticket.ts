@@ -1,11 +1,26 @@
-import type { StoryChapter, StoryCondition, StoryItemRef, StoryQuestRef } from "@/types/story";
-import { item } from "./helpers";
+import type { StoryChapter, StoryCondition, StoryImage, StoryItemRef, StoryQuestRef } from "@/types/story";
+import { chapterImage, item } from "./helpers";
 import { MAJOR_EVIDENCE, MINOR_EVIDENCE } from "./evidence";
 
 /**
  * The Ticket, reviewed against the EFT wiki on 2026-10-06. Items without an `id`
- * are story items absent from the item catalog.
+ * are story items absent from the item catalog. Step images are wiki screenshots.
  */
+
+const image = chapterImage("the-ticket");
+
+const TERMINAL_APPROACH_IMAGES = [
+	image("tour-shoreline-map", "Terminal checkpoint on Shoreline"),
+	image("tour-shoreline-tower", "Watchtower at the checkpoint"),
+];
+
+const TERMINAL_INTERCOM_IMAGES = [image("tour-shoreline-intercom", "Checkpoint intercom and keycard reader")];
+
+const AMULET_STASH_IMAGES = [
+	image("lighthouse-island-stash-map", "Amulet stash room on Lighthouse island"),
+	image("lighthouse-island-stash-door", "Stash room entrance on the second floor"),
+	image("lighthouse-island-stash-inside", "Inside the amulet stash room"),
+];
 
 const caseGiven: StoryCondition = { decision: "falling-skies-armored-case", is: "gave-prapor" };
 const caseKept: StoryCondition = { decision: "falling-skies-armored-case", is: "kept" };
@@ -48,9 +63,22 @@ const MILITARY_ELECTRONICS: StoryItemRef[] = [
 	item("Virtex programmable processor", "5c05308086f7746b2101e90b"),
 ];
 
-const AMULETS: Array<{ id: string; ordinal: string; amulet: string; key: StoryItemRef; map: string }> = [
+const AMULETS: Array<{
+	id: string;
+	ordinal: string;
+	amulet: string;
+	key: StoryItemRef;
+	map: string;
+	images: StoryImage[];
+}> = [
 	{
 		id: "room-314",
+		images: [
+			image("the-cult-part2-dorms-map", "Dorm room 314 on Customs"),
+			image("the-ticket-amulet1-spawn1", "Amulet between the candles and books on the left"),
+			image("the-ticket-amulet1-spawn2", "Amulet on the books beside the right candle"),
+			image("the-ticket-amulet1-spawn3", "Amulet above the bookshelf on the left wall"),
+		],
 		ordinal: "first",
 		amulet: "Sacred Amulet from room 314",
 		key: item("Dorm room 314 marked key", "5780cf7f2459777de4559322"),
@@ -58,6 +86,12 @@ const AMULETS: Array<{ id: string; ordinal: string; amulet: string; key: StoryIt
 	},
 	{
 		id: "mysterious-room",
+		images: [
+			image("abandoned-factory-northern-building", "Abandoned factory marked room on Streets"),
+			image("the-ticket-amulet2-spawn1", "Amulet on the skull beneath the pillar"),
+			image("the-ticket-amulet2-spawn2", "Amulet on the skull's left antler"),
+			image("the-ticket-amulet2-spawn3", "Amulet on the pillar's lower right branch"),
+		],
 		ordinal: "second",
 		amulet: "Sacred Amulet from the mysterious room",
 		key: item("Abandoned factory marked key", "63a3a93f8a56922e82001f5d"),
@@ -65,6 +99,13 @@ const AMULETS: Array<{ id: string; ordinal: string; amulet: string; key: StoryIt
 	},
 	{
 		id: "abandoned-factory",
+		images: [
+			image("mysterious-marked-key-onmap", "Mysterious marked room on Streets"),
+			image("the-ticket-amulet3-spawn1", "Amulet on the skull's right antler"),
+			image("the-ticket-amulet3-spawn2", "Amulet on the book beside the sacrificial bowl"),
+			image("the-ticket-amulet3-spawn3", "Amulet inside the sacrificial bowl"),
+			image("the-ticket-amulet3-spawn4", "Amulet on the cross"),
+		],
 		ordinal: "third",
 		amulet: "Sacred Amulet from the abandoned factory",
 		key: item("Mysterious room marked key", "64ccc25f95763a1ae376e447"),
@@ -72,6 +113,13 @@ const AMULETS: Array<{ id: string; ordinal: string; amulet: string; key: StoryIt
 	},
 	{
 		id: "rb-vo",
+		images: [
+			image("rb-vo-lock-location", "RB-VO marked room on Reserve"),
+			image("the-ticket-amulet4-spawn1", "Amulet beneath the knife on the candle table"),
+			image("the-ticket-amulet4-spawn2", "Amulet inside the pig corpse"),
+			image("the-ticket-amulet4-spawn4", "Amulet beneath the knife on the pig table"),
+			image("the-ticket-amulet4-spawn3", "Amulet in the ritual circle"),
+		],
 		ordinal: "fourth",
 		amulet: "Sacred Amulet from RB-VO",
 		key: item("RB-VO marked key", "5d80c62a86f7744036212b3f"),
@@ -79,6 +127,12 @@ const AMULETS: Array<{ id: string; ordinal: string; amulet: string; key: StoryIt
 	},
 	{
 		id: "rb-pkpm",
+		images: [
+			image("rb-pkpm", "RB-PKPM marked room on Reserve"),
+			image("the-ticket-amulet5-spawn1", "Amulet on the desk beside the candles"),
+			image("the-ticket-amulet5-spawn2", "Amulet on the overturned shelf's open door"),
+			image("the-ticket-amulet5-spawn3", "Amulet in the ritual circle"),
+		],
 		ordinal: "fifth",
 		amulet: "Sacred Amulet from RB-PKPM",
 		key: item("RB-PKPM marked key", "5ede7a8229445733cb4c18e2"),
@@ -86,6 +140,13 @@ const AMULETS: Array<{ id: string; ordinal: string; amulet: string; key: StoryIt
 	},
 	{
 		id: "rb-bk",
+		images: [
+			image("rb-bk-lock-location", "RB-BK marked room on Reserve"),
+			image("the-ticket-amulet6-spawn1", "Amulet beneath the knife on the pig table"),
+			image("the-ticket-amulet6-spawn2", "Amulet inside the pig corpse"),
+			image("the-ticket-amulet6-spawn3", "Amulet in the ritual circle"),
+			image("the-ticket-amulet6-spawn4", "Amulet beside the open book on the candle table"),
+		],
 		ordinal: "sixth",
 		amulet: "Sacred Amulet from RB-BK",
 		key: item("RB-BK marked key", "5d80c60f86f77440373c4ece"),
@@ -93,12 +154,68 @@ const AMULETS: Array<{ id: string; ordinal: string; amulet: string; key: StoryIt
 	},
 ];
 
-const TOPOGRAPHIC_MAPS: Array<{ id: string; name: string; map: string; key?: StoryItemRef }> = [
-	{ id: "lighthouse", name: "Lighthouse topographic intel maps", map: "Lighthouse" },
-	{ id: "woods", name: "Nature reserve topographic intel maps", map: "Woods" },
-	{ id: "customs", name: "Customs topographic intel maps", map: "Customs" },
-	{ id: "ground-zero", name: "City topographic intel maps", map: "Ground Zero" },
-	{ id: "factory", name: "Factory plant topographic intel maps", map: "Factory" },
+const TOPOGRAPHIC_MAPS: Array<{ id: string; name: string; map: string; key?: StoryItemRef; images: StoryImage[] }> = [
+	{
+		id: "lighthouse",
+		images: [
+			image("black-chalet-map", "Black chalet on Lighthouse"),
+			image("ticket-debtor-lighthouse-topographic-map-spawn1", "Intel on a basement chair near the fireplace"),
+			image("ticket-debtor-lighthouse-topographic-map-spawn2", "Intel at the foot of a black chalet bedroom bed"),
+			image("blue-chalet-map-ktt", "Blue chalet on Lighthouse"),
+			image("ticket-debtor-lighthouse-topographic-map-spawn3", "Intel beside a vase in the third-floor bedroom"),
+			image("ticket-debtor-lighthouse-topographic-map-spawn4", "Intel by the displaced mattress in the left bedroom"),
+		],
+		name: "Lighthouse topographic intel maps",
+		map: "Lighthouse",
+	},
+	{
+		id: "woods",
+		images: [
+			image("ticket-debtor-woods-topographic-map", "Topographic intel locations on Woods"),
+			image("ticket-debtor-woods-topographic-map-spawn1", "Intel on the driver's seat of the USEC Checkpoint SUV"),
+			image("ticket-debtor-woods-topographic-map-spawn2", "Intel inside the partly open Sawmill SUV door"),
+			image(
+				"ticket-debtor-woods-topographic-map-spawn3",
+				"Intel inside the USEC Camp SUV door; close the door to collect it",
+			),
+		],
+		name: "Nature reserve topographic intel maps",
+		map: "Woods",
+	},
+	{
+		id: "customs",
+		images: [
+			image("boiler-building-map", "Company director's office on Customs"),
+			image("ticket-debtor-customs-topographic-map-spawn1", "Intel on the shelf facing the entrance"),
+			image("ticket-debtor-customs-topographic-map-spawn2", "Intel in the cabinet beside the desk"),
+			image("ticket-debtor-customs-topographic-map-spawn3", "Intel on the director's desk"),
+		],
+		name: "Customs topographic intel maps",
+		map: "Customs",
+	},
+	{
+		id: "ground-zero",
+		images: [
+			image("saving-the-mole-map", "TerraGroup science office on Ground Zero"),
+			image("ticket-debtor-gztopographic-map-spawn1", "Intel inside the far corner desk"),
+			image("ticket-debtor-gztopographic-map-spawn2", "Intel inside the desk to the left of the entrance"),
+			image("ticket-debtor-gztopographic-map-spawn3", "Intel on the overturned shelf near the windows"),
+			image("ticket-debtor-gztopographic-map-spawn4", "Intel behind the printer on the floor"),
+		],
+		name: "City topographic intel maps",
+		map: "Ground Zero",
+	},
+	{
+		id: "factory",
+		images: [
+			image("terra-group-storage-room-keycard-map", "TerraGroup storage room on Factory"),
+			image("ticket-debtor-factory-topographic-map-spawn1", "Intel on the upper shelf behind the storage room door"),
+			image("ticket-debtor-factory-topographic-map-spawn2", "Intel on the lower shelf behind the storage room door"),
+			image("ticket-debtor-factory-topographic-map-spawn3", "Intel on the table beside the beer bottles"),
+		],
+		name: "Factory plant topographic intel maps",
+		map: "Factory",
+	},
 ];
 
 export const THE_TICKET: StoryChapter = {
@@ -134,9 +251,21 @@ export const THE_TICKET: StoryChapter = {
 			title: "Recover the armored case from Lightkeeper",
 			when: caseGiven,
 			steps: [
-				{ id: "locate-prapor-camp", text: "Locate the camp of Prapor's people", map: "Lighthouse" },
+				{
+					id: "locate-prapor-camp",
+					images: [
+						image("bogatyrs-patch-lighthouse-map", "Prapor's camp on Lighthouse"),
+						image("bogatyrs-patch-lighthouse-bear-camp", "The camp in the rocks"),
+					],
+					text: "Locate the camp of Prapor's people",
+					map: "Lighthouse",
+				},
 				{
 					id: "find-prapor-clues",
+					images: [
+						image("note-from-prapors-men-spawn1", "Note on the medical boxes"),
+						image("note-from-prapors-men-spawn2", "Note inside the supply crate"),
+					],
 					text: "Find clues about Prapor's people's intentions",
 					map: "Lighthouse",
 					items: [item("Note from Prapor's men", "689b5093987b304021088e91")],
@@ -145,6 +274,10 @@ export const THE_TICKET: StoryChapter = {
 				{ id: "talk-kerman-3", text: "Talk to Mr. Kerman" },
 				{
 					id: "lightkeeper-access",
+					images: [
+						image("lightkeeper-map", "Lighthouse island location"),
+						image("lightkeeper-area-door", "Door to Lightkeeper's restricted area"),
+					],
 					text: "Gain access to Lightkeeper",
 					map: "Lighthouse",
 					requiresLightkeeper: true,
@@ -169,6 +302,7 @@ export const THE_TICKET: StoryChapter = {
 				},
 				{
 					id: "interchange-flare",
+					images: [image("the-ticket-ultraflare-yellow-map", "Yellow flare location outside ULTRA")],
 					text: "Launch a yellow signal flare in front of ULTRA's main entrance",
 					map: "Interchange",
 					items: [
@@ -201,6 +335,12 @@ export const THE_TICKET: StoryChapter = {
 				{ id: "ask-mechanic-help", text: "Ask Mechanic for help" },
 				{
 					id: "obtain-signal-jammer",
+					images: [
+						image("the-ticket-experimental-signal-jammer-map", "Signal jammer spawn locations in The Lab"),
+						image("experimental-signal-jammer-spawn-1", "Jammer on the middle desks in the containment laboratory"),
+						image("experimental-signal-jammer-spawn-2", "Jammer on the round table in the R21 recreation area"),
+						image("experimental-signal-jammer-spawn-3", "Jammer on a desk in the R16 lecture hall"),
+					],
 					text: "Obtain the experimental signal jammer",
 					map: "The Lab",
 					items: [item("Experimental signal jammer")],
@@ -239,6 +379,12 @@ export const THE_TICKET: StoryChapter = {
 			steps: [
 				{
 					id: "obtain-master-keycard",
+					images: [
+						image("kruglov-s-office-map", "Kruglov's office in The Lab"),
+						image("kruglov-s-office-door", "Entrance to Kruglov's office"),
+						image("kruglov-s-office-safe", "Safe opened with a Black keycard"),
+						image("labs-master-keycard-safe-spawn", "Master keycard inside the safe"),
+					],
 					text: "Obtain the Laboratory master pass",
 					map: "The Lab",
 					items: [item("TerraGroup Labs master keycard"), LABS_BLACK],
@@ -264,6 +410,12 @@ export const THE_TICKET: StoryChapter = {
 				},
 				{
 					id: "collect-encryption-device",
+					images: [
+						image("elektroniks-key-map", "Elektronik's apartment location"),
+						image("elektroniks-key-building", "The Klimova 14A apartment building"),
+						image("rfid-keycard-encryption-doorway", "Living room opposite the entrance"),
+						image("rfid-keycard-encryption-device-the-ticket", "Encryption device beneath the coffee table"),
+					],
 					text: "Collect the RFID card encryption device",
 					map: "Streets of Tarkov",
 					items: [item("Elektronik's key", "68e95d71a3d110355b03e529"), item("RFID keycard encryption device")],
@@ -294,9 +446,15 @@ export const THE_TICKET: StoryChapter = {
 						},
 					],
 				},
-				{ id: "arrive-terminal-1", text: "Arrive at the entrance pathway to the port Terminal", map: "Shoreline" },
+				{
+					id: "arrive-terminal-1",
+					images: TERMINAL_APPROACH_IMAGES,
+					text: "Arrive at the entrance pathway to the port Terminal",
+					map: "Shoreline",
+				},
 				{
 					id: "swipe-keycard-1",
+					images: TERMINAL_INTERCOM_IMAGES,
 					text: "Swipe the keycard at the intercom reader",
 					map: "Shoreline",
 					items: [ACTIVATED_KEYCARD],
@@ -313,11 +471,13 @@ export const THE_TICKET: StoryChapter = {
 			steps: [
 				{
 					id: "arrive-terminal-survivor",
+					images: TERMINAL_APPROACH_IMAGES,
 					text: "Arrive at the entrance pathway to the port Terminal",
 					map: "Shoreline",
 				},
 				{
 					id: "swipe-keycard-survivor",
+					images: TERMINAL_INTERCOM_IMAGES,
 					text: "Swipe the keycard at the intercom reader",
 					map: "Shoreline",
 					items: [ACTIVATED_KEYCARD],
@@ -349,6 +509,15 @@ export const THE_TICKET: StoryChapter = {
 					substeps: [
 						{
 							id: "folder-reports",
+							images: [
+								image("the-ticket-folder-with-evidence-reports-map", "Reports folder locations in The Lab"),
+								image("the-ticket-folder-with-evidence-reports-spawn1", "Reports on the R23 Red keycard room desk"),
+								image(
+									"the-ticket-folder-with-evidence-reports-spawn2",
+									"Reports in the G21 office shelf opposite Cargo Elevator",
+								),
+								image("the-ticket-folder-with-evidence-reports-spawn3", "Reports on the O23 desk shelf near the sofas"),
+							],
 							text: "Obtain the Folder with TerraGroup Labs evidence (Reports)",
 							optional: true,
 							map: "The Lab",
@@ -356,18 +525,54 @@ export const THE_TICKET: StoryChapter = {
 						},
 						{
 							id: "folder-staff",
+							images: [
+								image("the-ticket-folder-with-evidence-staff-map", "Staff folder locations in The Lab"),
+								image(
+									"the-ticket-folder-with-evidence-staff-spawn1",
+									"Staff folder on the R22 shelf beside Kruglov's office",
+								),
+								image(
+									"the-ticket-folder-with-evidence-staff-spawn2",
+									"Staff folder in the Y21 parking extraction control room",
+								),
+								image("the-ticket-folder-with-evidence-staff-spawn3", "Staff folder on the O11 round table"),
+							],
 							text: "Obtain the Folder with TerraGroup evidence (Staff)",
 							optional: true,
 							items: [item("Folder with TerraGroup evidence (Staff)")],
 						},
 						{
 							id: "folder-developments",
+							images: [
+								image("the-ticket-folder-with-evidence-developments-map", "Developments folder locations in The Lab"),
+								image(
+									"the-ticket-folder-with-evidence-developments-spawn1",
+									"Developments on the back row of the R16 lecture hall",
+								),
+								image(
+									"the-ticket-folder-with-evidence-developments-spawn2",
+									"Developments on the residential unit table",
+								),
+								image(
+									"the-ticket-folder-with-evidence-developments-spawn3",
+									"Developments beneath the conference table near O21",
+								),
+							],
 							text: "Obtain the Folder with TerraGroup Labs evidence (Developments)",
 							optional: true,
 							items: [item("Folder with TerraGroup Labs evidence (Developments)")],
 						},
 						{
 							id: "folder-finances",
+							images: [
+								image("the-ticket-folder-with-evidence-finances-map", "Finances folder locations in The Lab"),
+								image("the-ticket-folder-with-evidence-finances-spawn1", "Finances on the middle desk beside R23"),
+								image(
+									"the-ticket-folder-with-evidence-finances-spawn2",
+									"Finances beside the printer in the O21 manager's office",
+								),
+								image("the-ticket-folder-with-evidence-finances-spawn3", "Finances on the B22 server room desk"),
+							],
 							text: "Obtain the Folder with TerraGroup evidence (Finances)",
 							optional: true,
 							items: [item("Folder with TerraGroup evidence (Finances)")],
@@ -417,6 +622,12 @@ export const THE_TICKET: StoryChapter = {
 				},
 				{
 					id: "deliver-major-evidence",
+					images: [
+						image("cardinal-apartment-complex-map", "Ms. A. transcript: Cardinal apartment complex location"),
+						image("cardinal-apartment-key-inside-5", "Ms. A. transcript: locked bedroom"),
+						image("cardinal-apartment-keycard-safe", "Ms. A. transcript: safe keypad behind the painting"),
+						image("the-ticket-transcript-of-conversation-with-ms-a-spawn", "Ms. A. transcript inside the bedroom safe"),
+					],
 					text: "Deliver major TerraGroup evidence to Mr. Kerman",
 					decision: "ticket-major-evidence",
 					items: [...MAJOR_EVIDENCE],
@@ -424,6 +635,13 @@ export const THE_TICKET: StoryChapter = {
 				},
 				{
 					id: "deliver-minor-evidence",
+					images: [
+						image("kruglov-s-office-map", "Norvinsk facilities intelligence: Kruglov's office location"),
+						image(
+							"folder-with-intelligence-on-norvinsk-region-facilities-spawn",
+							"Norvinsk facilities intelligence folder behind the office safe",
+						),
+					],
 					text: "Deliver the 36 minor TerraGroup evidence",
 					optional: true,
 					items: [...MINOR_EVIDENCE],
@@ -460,12 +678,20 @@ export const THE_TICKET: StoryChapter = {
 				},
 				{
 					id: "woods-coop-extract",
+					images: [
+						image("friendship-bridge-map", "Friendship Bridge extraction on Woods"),
+						image("scav-bridge", "Friendship Bridge co-op extraction"),
+					],
 					text: "Extract through the Friendship Bridge (Co-Op)",
 					map: "Woods",
 					note: "Don't kill Scavs or the Goons; smoke grenades help lure Scavs to the extract. PvE: eliminate 5 PMCs on Interchange in one raid without killing Scavs.",
 				},
 				{
 					id: "reserve-coop-extract",
+					images: [
+						image("scav-lands-map", "Scav Lands extraction on Reserve"),
+						image("scav-lands", "Scav Lands co-op extraction"),
+					],
 					text: "Extract through the Scav Lands (Co-Op)",
 					map: "Reserve",
 					note: "Don't kill Scavs or the Goons. PvE: eliminate 5 PMCs on Shoreline in one raid without killing Scavs.",
@@ -526,6 +752,7 @@ export const THE_TICKET: StoryChapter = {
 							optional: true,
 							map: topo.map,
 							items: [item(topo.name)],
+							images: topo.images,
 						})),
 					],
 				},
@@ -541,6 +768,7 @@ export const THE_TICKET: StoryChapter = {
 					text: `Stash the ${amulet.ordinal} amulet in the stash room`,
 					map: "Lighthouse",
 					items: [STASH_KEY],
+					images: AMULET_STASH_IMAGES,
 					substeps: [
 						{
 							id: `obtain-amulet-${amulet.id}`,
@@ -548,6 +776,7 @@ export const THE_TICKET: StoryChapter = {
 							optional: true,
 							map: amulet.map,
 							items: [item(amulet.amulet), amulet.key],
+							images: amulet.images,
 							note: `Inside the ${amulet.key.name} room.`,
 						},
 					],
@@ -598,6 +827,12 @@ export const THE_TICKET: StoryChapter = {
 				},
 				{
 					id: "dangerous-cargo",
+					images: [
+						image("rb-pkpts-key-map", "RB-PKPTS room on Reserve"),
+						image("the-ticket-dangerous-case-spawn1", "Cargo case beside the jerrycan on the left shelf"),
+						image("the-ticket-dangerous-case-spawn2", "Cargo case behind the yellow can on the rear shelf"),
+						image("the-ticket-dangerous-case-spawn3", "Cargo case on the chair to the right"),
+					],
 					text: "Hand over the Case with dangerous cargo to Prapor",
 					map: "Reserve",
 					items: [item("Case with dangerous cargo"), item("RB-PKPTS key", "68e9654d72488961110dbf69")],
@@ -629,6 +864,7 @@ export const THE_TICKET: StoryChapter = {
 			steps: [
 				{
 					id: "arrive-terminal-final",
+					images: TERMINAL_APPROACH_IMAGES,
 					text: "Arrive at the entrance pathway to the port Terminal",
 					map: "Shoreline",
 					note: "The intercom on the watchtower only answers between 21:00 and 06:00.",
@@ -664,9 +900,19 @@ export const THE_TICKET: StoryChapter = {
 						},
 					],
 				},
-				{ id: "swipe-keycard-final", text: "Swipe the keycard at the intercom reader", map: "Shoreline" },
+				{
+					id: "swipe-keycard-final",
+					images: TERMINAL_INTERCOM_IMAGES,
+					text: "Swipe the keycard at the intercom reader",
+					map: "Shoreline",
+				},
 				{
 					id: "access-terminal",
+					images: [
+						image("path-to-terminal-transit-1", "Pass through the checkpoint blockade"),
+						image("path-to-terminal-transit-2", "Follow the road and move onto the left branch"),
+						image("path-to-terminal-transit-3", "Enter the Terminal transit zone"),
+					],
 					text: "Access the port Terminal",
 					note: "Follow the left road to the transit area; your weapon is lowered automatically.",
 					warning:
@@ -691,12 +937,22 @@ export const THE_TICKET: StoryChapter = {
 					substeps: [
 						{
 							id: "terminal-armory",
+							images: [
+								image("armory-key-map", "Terminal armory location"),
+								image("armory-key-spawn-map", "Armory key spawn locations"),
+								image("armory-key-spawn-4", "Key in a soldier's right hand outside the starting building"),
+								image("armory-key-spawn-3", "Key in a soldier's left hand on the route to the armory"),
+								image("armory-key-spawn-1", "Key on the soldier outside the armory"),
+								image("armory-key-spawn-2", "Key on a table inside the armory building"),
+								image("armory-equipment-locker", "Search the lockers for your confiscated equipment"),
+							],
 							text: "Locate the armory with the confiscated equipment",
 							optional: true,
 							note: "The Armory key is on a dead RUAF soldier or a table along the way; gear is in a random locker. Black Division attacks as you leave.",
 						},
 						{
 							id: "terminal-retrieve-alpha-1",
+							images: [image("secure-container-alpha-1-spawn", "Alpha-1 on the armory desk below the window")],
 							text: "Retrieve the Secure container Alpha-1",
 							optional: true,
 							when: deliveredAll,
@@ -704,6 +960,12 @@ export const THE_TICKET: StoryChapter = {
 						},
 						{
 							id: "terminal-black-division-keycard",
+							images: [
+								image("seaport-terminal-building-map", "Seaport building MS on the map"),
+								image("seaport-terminal-building-outer", "Exterior of the seaport building"),
+								image("seaport-terminal-building-interior", "Weapon box inside the seaport building"),
+								image("black-division-keycard-spawn", "Keycard in the weapon box on the fallen ATM"),
+							],
 							text: "Obtain the keycard to unlock the service passage",
 							optional: true,
 							items: [item("Black Division keycard", "6866ad3853330f9b83064cf9")],
@@ -716,6 +978,11 @@ export const THE_TICKET: StoryChapter = {
 						},
 						{
 							id: "terminal-service-passage",
+							images: [
+								image("black-division-keycard-lock-map", "Administration building D3 on the map"),
+								image("terminal-administration-building", "Administration building entrance"),
+								image("black-division-keycard-lock", "Service passage door and keycard reader"),
+							],
 							text: "Unlock the service passage inside the seaport building",
 							optional: true,
 							note: "Swipe the keycard in the admin building (D3) after clearing Black Division at the entrance.",
@@ -723,6 +990,18 @@ export const THE_TICKET: StoryChapter = {
 						{ id: "terminal-loading-zone", text: "Access the Terminal loading zone", optional: true },
 						{
 							id: "terminal-fuel-depot",
+							images: [
+								image("terminal-metal-gate-map", "Fuel depot gate location"),
+								image("terminalexplosivegate", "Gate into the fuel depot"),
+								image("terminal-explosive-spawns-map", "SZ-1 charge spawn locations"),
+								image("terminalexplosivespawn6close", "Charge 1 inside an open crate"),
+								image("terminalexplosivespawn3close", "Charge 2 on a desk in a tent"),
+								image("terminalexplosivespawn5close", "Charge 3 on barrels"),
+								image("terminalexplosivespawn7close", "Charge 4 on a table"),
+								image("terminalexplosivespawn2close", "Charge 5 on crates"),
+								image("terminalexplosivespawn4close", "Charge 6 on a desk beneath a canopy"),
+								image("terminalexplosivespawn1close", "Charge 7 on a trailer corner"),
+							],
 							text: "Locate the way into the fuel depot",
 							optional: true,
 							items: [item("SZ-1 explosive charge", "6819f8df28294ec0730db6b4")],
@@ -730,23 +1009,62 @@ export const THE_TICKET: StoryChapter = {
 						},
 						{
 							id: "terminal-restore-power",
+							images: [
+								image("terminal-electrical-panels-map", "Electrical panel locations across Terminal"),
+								image("terminal-panel-no1", "Panel 1 near the collapsed crane, left of the starting room"),
+								image("terminal-panel-no2", "Panel 2 beside the tower east of the armory"),
+								image("terminal-panel-no3", "Panel 3 outside the alley east of the armory"),
+								image("terminal-panel-no4", "Panel 4 at the east road's end near two towers"),
+								image("terminal-panel-no5", "Panel 5 beside the tower in front of D3"),
+								image("terminal-panel-no6", "Panel 6 along the buildings beyond the keycard door"),
+								image("terminal-panel-no7", "Panel 7 farther along the buildings beyond the keycard door"),
+								image("terminal-panel-no8", "Panel 8 beside the tower to the right beyond the metal gate"),
+								image("terminal-panel-no9", "Panel 9 behind the first building to the right past the metal gate"),
+								image("terminal-panel-no10", "Panel 10 outside the pumping station door"),
+								image("termina-toolsets-map", "Guaranteed toolset spawn locations"),
+								image("terminal-toolset-spawn1", "Toolset on the concrete barrier in front of the BRDM"),
+								image("terminal-toolset-spawn2", "Toolset on barrels beside the fuel pumps"),
+							],
 							text: "Restore power to the pumping station",
 							optional: true,
 							items: [item("Toolset", "590c2e1186f77425357b6124")],
 							note: "Repair 1–5 electrical panels (one for solo players). A toolset guarantees the repair; two spawn past the gate.",
 						},
 						{ id: "terminal-panel-diagram", text: "Obtain the diagram of the electrical panels", optional: true },
-						{ id: "terminal-drain-water", text: "Drain the water in the pumping station", optional: true },
+						{
+							id: "terminal-drain-water",
+							images: [
+								image("terminal-pumping-station-map", "Pumping station location"),
+								image("terminal-pumping-station", "Pumping station building"),
+								image("terminal-impumping-station-button", "Button to drain the pumping station"),
+							],
+							text: "Drain the water in the pumping station",
+							optional: true,
+						},
 						{
 							id: "terminal-pier-key",
+							images: [
+								image("terminal-pier-door-key-rooom", "Pumping station room containing the key safe"),
+								image("pier-door-key-spawn", "Pier key safe after the water is drained"),
+							],
 							text: "Obtain the key to the gate blocking the road to the pier",
 							optional: true,
 							items: [item("Pier door key", "6866adbe09b973bf45094339")],
 							note: "In the pumping station safe, after draining the water.",
 						},
-						{ id: "terminal-pier-exit", text: "Locate the exit leading to the pier", optional: true },
+						{
+							id: "terminal-pier-exit",
+							images: [
+								image("terminal-pier-building-map", "Pier door location"),
+								image("pier-door-key-door", "Locked door leading to the pier"),
+								image("the-ticket-terminal-reaching-pier-path-map", "Alternative routes to the pier door"),
+							],
+							text: "Locate the exit leading to the pier",
+							optional: true,
+						},
 						{
 							id: "terminal-evacuation",
+							images: [image("zubr-boat", "Zubr boat evacuation area")],
 							text: "Reach the evacuation area at the pier",
 							optional: true,
 							note: "Opening the pier door starts a 3-minute timer to reach the Zubr boat.",
