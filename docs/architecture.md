@@ -337,15 +337,17 @@ assets.tarkov.dev (see [next.config](../next.config.ts)) because the asset host 
 CORS headers. Each icon is placed at its own size and orientation from the box's labeled
 top-right cell; label, badge, stack-count and transfer/SPEC overlays are masked, and a
 small position search absorbs lattice error. The score averages RGB correlation with a
-brightness-matched difference. Among a read's candidates, a clear artwork lead assigns
+brightness-matched difference, minus a penalty when the background tint of the cell's side
+bands differs from the icon's (same art on a yellow quest or blue loot background). Among a read's candidates, a clear artwork lead assigns
 the item; a clear text identity is only replaced when another candidate's art is far
-closer. Boxes still unresolved are compared with every barter item: a clear winner is
-assigned and otherwise the closest items become suggestions. A complete label of three or
-more characters that spells only non-barter names, and no barter name begins with, skips
+closer. Boxes still unresolved are compared with every loot item (barter items plus the Info
+category, such as flash drives and diaries): a clear winner is assigned and otherwise the
+closest items become suggestions. A complete label of three or more characters that spells
+only non-loot names, and no loot name begins with, skips
 this search: a weapon or part stays unassigned with its own candidates, because modded
 weapons do not match catalog art and the junk-box search would otherwise invent an item. Finally, non-empty lattice
 cells no box covers (labels OCR missed entirely) gain an assigned box only for a strong,
-clear barter match, absorbing unresolved fragments of the same item.
+clear loot match, absorbing unresolved fragments of the same item.
 [Dogtag checks](../src/features/uploader/dogtag.ts) cover labels that are player names,
 which can spell an item's short name exactly. A one-cell box or cell with a bottom-left
 level number, whose dogtag art is at least as close as the read item's, becomes the
@@ -353,7 +355,9 @@ generic BEAR or USEC tag. A finer grayscale comparison of the tag body picks the
 Prestige and event variants are left to the player. A matched icon
 also sets the size of a box whose footprint was not measured. Thresholds were
 calibrated on stash screenshots and are relative scores, not probabilities. The first
-barter-wide comparison downloads the barter grid icons (about 3.4 MB, browser-cached).
+loot-wide comparison downloads the loot grid icons (about 3.4 MB, browser-cached).
+[The uploader catalog](../src/features/uploader/uploader-catalog.ts) drops retired items that
+share art and labels with a live one (Encrypted flash drive) from matching and search.
 Stash items never overlap, so a smaller box mostly inside a larger identified one (such
 as a long name's label read as its own item) is dropped. Money is excluded from scan
 results; players enter it more easily by hand. In review, "Not an item" (Delete)
@@ -468,7 +472,7 @@ fixtures cover actual badges, artwork, and the separate bottom-left transfer sym
 The player can toggle FIR/non-FIR and undo that choice; unconfirmed detections
 retain unknown status. Leaving the page, changing the image, or switching game
 modes discards the review; there is no automatic inventory write or persistent import.
-Items with no detected label are only found when their art clearly matches a barter
+Items with no detected label are only found when their art clearly matches a loot
 item; others can still be missed. Hidden container contents are not inferred. Catalog
 slot dimensions are not retained by the item adapter or search manifest; sizes come
 from measured borders or matched grid-icon dimensions.

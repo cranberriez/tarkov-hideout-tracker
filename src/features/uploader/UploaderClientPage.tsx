@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- Local screenshot preview. */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ImagePlus, Trash2, Upload } from "lucide-react";
 import { toTarkovJsonGameMode, type TarkovJsonGameMode } from "@/lib/game-mode";
 import { useUserStoreHydrated } from "@/lib/query/game-data";
@@ -9,6 +9,7 @@ import { useSearchManifest } from "@/lib/search/useSearchManifest";
 import { useAppPreferencesStore } from "@/lib/stores/useAppPreferencesStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
+import { uploaderCatalog } from "./uploader-catalog";
 import { useUploaderController } from "./useUploaderController";
 import { UploaderIntro } from "./UploaderIntro";
 import { UploaderReview } from "./UploaderReview";
@@ -33,7 +34,8 @@ export function UploaderClientPage() {
 
 function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 	const catalog = useSearchManifest(mode, true);
-	const controller = useUploaderController(catalog.data?.items);
+	const items = useMemo(() => (catalog.data ? uploaderCatalog(catalog.data.items) : undefined), [catalog.data]);
+	const controller = useUploaderController(items);
 	const { image, boxes, hints, blocked, status, error, finished, supplyImage } = controller;
 	const introSeen = useAppPreferencesStore((state) => state.uploaderIntroSeen);
 	const input = useRef<HTMLInputElement>(null);
@@ -59,7 +61,7 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 		window.addEventListener("paste", paste);
 		return () => window.removeEventListener("paste", paste);
 	}, [replaceImage]);
-	const reviewing = image && !status && (finished || error) && !blocked && catalog.data;
+	const reviewing = image && !status && (finished || error) && !blocked && items;
 	const actions = (
 		<div className="flex items-center gap-2 text-xs text-muted-foreground">
 			<button
@@ -165,13 +167,13 @@ function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {
 					event.target.value = "";
 				}}
 			/>
-			{reviewing && catalog.data ? (
+			{reviewing && items ? (
 				<UploaderReview
 					key={image.url}
 					image={image}
 					boxes={boxes}
 					hints={hints}
-					items={catalog.data.items}
+					items={items}
 					onNewScan={() => input.current?.click()}
 					onDiscard={controller.clear}
 					dirtyRef={reviewDirty}

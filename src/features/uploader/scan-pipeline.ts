@@ -9,7 +9,7 @@ import {
 	type LabelLine,
 } from "./recognition-model";
 import { buildLabelTasks, prepareLabelPixels } from "./label-preprocessing";
-import { refineWithIcons, type IconLoader } from "./icon-matching";
+import { isArtworkSearchItem, refineWithIcons, type IconLoader } from "./icon-matching";
 import { dropContainedBoxes, seedReviewBoxes, suggestReviewGrid, type ReviewBox } from "./review-model";
 import type { ItemSummary } from "../../types/items";
 import { isMoney } from "./selection-model";
@@ -140,7 +140,7 @@ export async function scanLabels(
 			shot: { data: originalPixels, width, height },
 			grid: reviewGrid,
 			measured,
-			barterItems: items.filter((item) => item.barter),
+			lootItems: items.filter(isArtworkSearchItem),
 			load: loadIcon,
 			signal,
 			onProgress: (progress) => onProgress("Comparing item artwork", progress),

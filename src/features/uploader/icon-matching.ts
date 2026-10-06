@@ -16,6 +16,18 @@ const SAMPLES = 16;
 const INSET = 0.05;
 /** Label rows and fitted cells can sit a few pixels off the true cell. */
 const SHIFTS = [-0.04, -0.02, 0, 0.02, 0.04];
+/**
+ * Same artwork on a different background (a quest flash drive's yellow, a Secure Flash drive's
+ * blue) scores alike once brightness is matched, so background tint distance beyond this is penalized.
+ */
+const TINT_TOLERANCE = 0.06;
+const TINT_WEIGHT = 0.5;
+const INFO_CATEGORY_ID = "5448ecbe4bdc2d60728b4568";
+
+/** Loose loot compared by artwork when no label settles it: junk-box items plus Info items such as flash drives. */
+export function isArtworkSearchItem(item: ItemSummary) {
+	return !!item.barter || (item.categoryId ?? item.category?.id) === INFO_CATEGORY_ID;
+}
 
 export function iconCells(icon: Pick<IconImage, "width" | "height">) {
 	return { columns: Math.max(1, Math.round(icon.width / 63.5)), rows: Math.max(1, Math.round(icon.height / 63.5)) };
@@ -105,6 +117,31 @@ function similarity(a: Float32Array, b: Float32Array, keep: Uint8Array) {
 	return (correlation + 1 - difference / count / 64) / 2;
 }
 
+/**
+ * Red and blue shares of the side bands' mean color, below the label and above the corner badges.
+ * Items rarely reach the cell's sides, so this is mostly the background tint.
+ */
+function edgeTint(values: Float32Array, across: number, down: number) {
+	const band = Math.max(1, Math.round(SAMPLES * 0.1));
+	let r = 0,
+		g = 0,
+		b = 0;
+	for (let y = Math.floor(down * 0.35); y < Math.ceil(down * 0.75); y++)
+		for (let x = 0; x < across; x++) {
+			if (x >= band && x < across - band) continue;
+			const offset = (y * across + x) * 3;
+			r += values[offset];
+			g += values[offset + 1];
+			b += values[offset + 2];
+		}
+	const total = r + g + b || 1;
+	return [r / total, b / total] as const;
+}
+
+function tintPenalty(a: readonly [number, number], b: readonly [number, number]) {
+	return TINT_WEIGHT * Math.max(0, Math.hypot(a[0] - b[0], a[1] - b[1]) - TINT_TOLERANCE);
+}
+
 /** Screenshot samples depend only on placement, so a catalog-wide search reuses them. */
 type ShotSamples = Map<string, Float32Array>;
 
@@ -150,6 +187,7 @@ function matchIcon(
 			sampleDown,
 			turn,
 		);
+		const referenceTint = edgeTint(reference, sampleAcross, sampleDown);
 		for (const dx of SHIFTS)
 			for (const dy of SHIFTS) {
 				const region = {
@@ -161,7 +199,8 @@ function matchIcon(
 				const key = `${region.left}:${region.top}:${across}:${down}`;
 				let values = cache.get(key);
 				if (!values) cache.set(key, (values = sample(shot, region, sampleAcross, sampleDown, 0)));
-				const raw = similarity(values, reference, keep);
+				const raw =
+					similarity(values, reference, keep) - tintPenalty(edgeTint(values, sampleAcross, sampleDown), referenceTint);
 				const score = measured && !fits ? raw - 0.3 : raw;
 				if (score > best.score) best = { score, across, down };
 			}
@@ -198,10 +237,10 @@ function leader(scored: readonly Scored[]) {
 /** Among a read's candidates. */
 const CANDIDATE_LEAD = 0.03;
 const CANDIDATE_FLOOR = 0.7;
-/** Among all barter items, for a box whose label did not settle an identity. */
+/** Among all loot items, for a box whose label did not settle an identity. */
 const SEARCH_LEAD = 0.05;
 const SEARCH_FLOOR = 0.75;
-/** Among all barter items, for a cell without any read label. */
+/** Among all loot items, for a cell without any read label. */
 const UNLABELED_LEAD = 0.06;
 const UNLABELED_FLOOR = 0.8;
 /** A read's identity is only replaced when another candidate's artwork is far closer. */
@@ -234,7 +273,8 @@ export interface IconRefinement {
 	grid: ReviewGrid;
 	/** Box IDs whose footprint was measured from borders, so its size is evidence. */
 	measured: ReadonlySet<string>;
-	barterItems: readonly ItemSummary[];
+	/** Items compared by artwork alone; see `isArtworkSearchItem`. */
+	lootItems: readonly ItemSummary[];
 	load: IconLoader;
 	signal: AbortSignal;
 	onProgress?: (progress: number) => void;
@@ -242,13 +282,13 @@ export interface IconRefinement {
 
 /**
  * Re-rank candidates by catalog artwork. A read's candidates are compared first; boxes still
- * unresolved, unless their label spells another item, are compared with every barter item, which
+ * unresolved, unless their label spells another item, are compared with every loot item, which
  * can assign a clear winner and otherwise supplies the closest matches as suggestions. Finally, occupied cells no box
- * covers (labels OCR missed entirely) gain a box when one barter item clearly matches.
+ * covers (labels OCR missed entirely) gain a box when one loot item clearly matches.
  */
 export async function refineWithIcons(
 	boxes: readonly ReviewBox[],
-	{ shot, grid, measured, barterItems, load, signal, onProgress = () => {} }: IconRefinement,
+	{ shot, grid, measured, lootItems, load, signal, onProgress = () => {} }: IconRefinement,
 ): Promise<ReviewBox[]> {
 	const cellPixels = grid.cellWidth * shot.width;
 	/** The matched icon's footprint, anchored at the box's labeled top-right cell. */
@@ -279,7 +319,7 @@ export async function refineWithIcons(
 			})
 			.sort((a, b) => b.score - a.score);
 	};
-	const tags = [DOGTAG_IDS.bear, DOGTAG_IDS.usec].flatMap((id) => barterItems.filter((item) => item.id === id));
+	const tags = [DOGTAG_IDS.bear, DOGTAG_IDS.usec].flatMap((id) => lootItems.filter((item) => item.id === id));
 	/**
 	 * Dogtag labels are player names, which can spell an item's short name exactly. A level
 	 * number in the corner plus dogtag art at least as close as the read item's settles it,
@@ -293,9 +333,10 @@ export async function refineWithIcons(
 		const item = bear && usec ? tags[closerFaction(shot, cell, [bear, usec])] : best.item;
 		return { item, candidates: [item, ...tags.filter((tag) => tag.id !== item.id)] };
 	};
-	const barterNames = barterItems.map((item) => normalizeLabel(item.shortName ?? ""));
+	const lootIds = new Set(lootItems.map((item) => item.id));
+	const lootNames = lootItems.map((item) => normalizeLabel(item.shortName ?? ""));
 	/**
-	 * A complete label spelling only non-barter names, such as a weapon and its parts, is no
+	 * A complete label spelling only non-loot names, such as a weapon and its parts, is no
 	 * junk item, and modded weapons do not match catalog art either, so the player picks. Short
 	 * fragments (Soap read as "ap") and truncated junk names ("Car" for Car battery) still search.
 	 */
@@ -305,8 +346,8 @@ export async function refineWithIcons(
 		return (
 			label.length >= 3 &&
 			spelled.length > 0 &&
-			!spelled.some((item) => item.barter) &&
-			!barterNames.some((name) => name.startsWith(label))
+			!spelled.some((item) => lootIds.has(item.id)) &&
+			!lootNames.some((name) => name.startsWith(label))
 		);
 	};
 	const oneCell = (bounds: BoxBounds) =>
@@ -335,8 +376,8 @@ export async function refineWithIcons(
 			const order = new Map(scored.map((entry, rank) => [entry.item.id, rank]));
 			candidates = [...candidates].sort((a, b) => (order.get(a.id) ?? Infinity) - (order.get(b.id) ?? Infinity));
 		}
-		if (!itemId && barterItems.length && !spellsOtherItem(box.text, candidates)) {
-			const scored = await score(box.bounds, measured.has(box.id), barterItems);
+		if (!itemId && lootItems.length && !spellsOtherItem(box.text, candidates)) {
+			const scored = await score(box.bounds, measured.has(box.id), lootItems);
 			const best = leader(scored);
 			if (best && best.lead >= SEARCH_LEAD && best.score >= SEARCH_FLOOR) {
 				itemId = best.item.id;
@@ -366,7 +407,7 @@ export async function refineWithIcons(
 		}
 		result.push({ ...box, itemId, candidates, bounds });
 	}
-	if (!barterItems.length) return result;
+	if (!lootItems.length) return result;
 
 	const occupied = (x: number, y: number) =>
 		result.some(
@@ -391,7 +432,7 @@ export async function refineWithIcons(
 			const tag = await dogtag(cell, null);
 			if (tag) match = { item: tag.item, across: 1, down: 1, candidates: tag.candidates };
 			else {
-				const scored = await score(cell, false, barterItems);
+				const scored = await score(cell, false, lootItems);
 				const best = leader(scored);
 				if (best && best.lead >= UNLABELED_LEAD && best.score >= UNLABELED_FLOOR)
 					match = { ...best, candidates: scored.slice(0, SUGGESTIONS).map((entry) => entry.item) };
