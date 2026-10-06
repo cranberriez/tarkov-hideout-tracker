@@ -153,7 +153,14 @@ the shared unpriced profit query; profit uses the profit pages' calculator and p
 
 [item-pooling.ts](../src/lib/utils/item-pooling.ts) aggregates stable requirement
 IDs and item IDs across remaining levels or just the next level. Hidden stations
-and individually completed requirements affect demand. [item-needs.ts](../src/lib/utils/item-needs.ts)
+and individually completed requirements affect demand. Station goals cap each
+station's counted levels: [station-goals.ts](../src/lib/utils/station-goals.ts)
+resolves a saved goal (unset means max level, 0 means ignore) and raises it to cover
+unbuilt station prerequisites of other goal levels. The Hideout page's Goals toggle
+swaps card bodies for the level picker (page-local state). Goals cap the Hideout
+FiR pool, the Items checklist and stats (unless the Items filter Ignore Station Goals
+is on), and Inventory/uploader keep-or-sell demand; item and station detail pages
+are not capped. [item-needs.ts](../src/lib/utils/item-needs.ts)
 computes outstanding counts against inventory. Missing item presentation must
 remain an explicit unresolved requirement: it cannot enable an upgrade or discard
 an ID-based refund.

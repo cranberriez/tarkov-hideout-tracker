@@ -8,6 +8,8 @@ import type { ItemSummary } from "@/types/items";
 import { useStationLevelChange } from "../useStationLevelChange";
 import { StationCardHeader } from "./StationCardHeader";
 import { StationRequirementsSection } from "./StationRequirementsSection";
+import { StationGoalPicker } from "./StationGoalPicker";
+import type { ResolvedStationGoal } from "@/lib/utils/station-goals";
 
 interface StationCardProps {
 	station: Station;
@@ -15,13 +17,24 @@ interface StationCardProps {
 	itemById: Readonly<Record<string, ItemSummary>>;
 	isLocked?: boolean;
 	pooledFirByItem: Record<string, number>;
+	goal: ResolvedStationGoal | undefined;
+	goalsMode: boolean;
 }
 
-export function StationCard({ station, stations, itemById, isLocked = false, pooledFirByItem }: StationCardProps) {
+export function StationCard({
+	station,
+	stations,
+	itemById,
+	isLocked = false,
+	pooledFirByItem,
+	goal,
+	goalsMode,
+}: StationCardProps) {
 	const {
 		stationLevels,
 		hiddenStations,
 		toggleHiddenStation,
+		setStationGoal,
 		hideoutCompactMode,
 		showHidden,
 		completedRequirements,
@@ -34,6 +47,7 @@ export function StationCard({ station, stations, itemById, isLocked = false, poo
 			stationLevels: state.stationLevels,
 			hiddenStations: state.hiddenStations,
 			toggleHiddenStation: state.toggleHiddenStation,
+			setStationGoal: state.setStationGoal,
 			hideoutCompactMode: state.hideoutCompactMode,
 			showHidden: state.showHidden,
 			completedRequirements: state.completedRequirements,
@@ -89,24 +103,34 @@ export function StationCard({ station, stations, itemById, isLocked = false, poo
 				onLevelUp={handleLevelUp}
 				upgradeStatus={upgradeStatus}
 				hasUnresolvedItemData={hasUnresolvedNextLevelItem}
+				goalCap={goal && goal.cap < maxLevel ? goal.cap : undefined}
 			/>
 
 			{/* Content */}
-			{!hideRequirements && (
-				<StationRequirementsSection
+			{goalsMode && goal ? (
+				<StationGoalPicker
 					station={station}
-					isMaxed={isMaxed}
-					nextLevelData={nextLevelData}
-					stations={stations}
-					stationLevels={stationLevels}
-					completedRequirements={completedRequirements}
-					toggleRequirement={toggleRequirement}
-					hideMoney={hideMoney}
-					hideoutCompactMode={hideoutCompactMode}
-					pooledFirByItem={pooledFirByItem}
-					itemById={itemById}
-					upgradeStatus={upgradeStatus}
+					currentLevel={currentLevel}
+					goal={goal}
+					onGoalChange={(level) => setStationGoal(station.id, level)}
 				/>
+			) : (
+				!hideRequirements && (
+					<StationRequirementsSection
+						station={station}
+						isMaxed={isMaxed}
+						nextLevelData={nextLevelData}
+						stations={stations}
+						stationLevels={stationLevels}
+						completedRequirements={completedRequirements}
+						toggleRequirement={toggleRequirement}
+						hideMoney={hideMoney}
+						hideoutCompactMode={hideoutCompactMode}
+						pooledFirByItem={pooledFirByItem}
+						itemById={itemById}
+						upgradeStatus={upgradeStatus}
+					/>
+				)
 			)}
 		</div>
 	);

@@ -7,6 +7,7 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemRow } from "./ItemRow";
 import { ItemAnyOfGroupCard } from "./ItemAnyOfGroupCard";
 import { poolItems } from "@/lib/utils/item-pooling";
+import { useStationGoals } from "@/features/hideout/useStationGoals";
 import type { ItemSummary } from "@/types/items";
 import type {
 	DerivedQuestAnyOfGroup,
@@ -107,11 +108,13 @@ export function ItemsList({
 		itemQuestCustomLevelLookahead,
 		itemShowFutureFir,
 		itemShowIgnored,
+		itemIgnoreStationGoals,
 	} = useUserStore(
 		useShallow((state) => ({
 			itemCounts: state.itemCounts,
 			stationLevels: state.stationLevels,
 			hiddenStations: state.hiddenStations,
+			itemIgnoreStationGoals: state.itemIgnoreStationGoals,
 			checklistViewMode: state.checklistViewMode,
 			showHidden: state.showHidden,
 			hideCheap: state.hideCheap,
@@ -138,6 +141,7 @@ export function ItemsList({
 			itemShowIgnored: state.itemShowIgnored,
 		})),
 	);
+	const { caps: goalCaps } = useStationGoals(stations, { ignore: itemIgnoreStationGoals });
 
 	const deriveOptions = useMemo(
 		() => ({
@@ -234,8 +238,9 @@ export function ItemsList({
 			showHidden,
 			viewMode: checklistViewMode,
 			completedRequirements,
+			goalCaps,
 		});
-	}, [checklistViewMode, completedRequirements, hiddenStations, showHidden, stationLevels, stations]);
+	}, [checklistViewMode, completedRequirements, goalCaps, hiddenStations, showHidden, stationLevels, stations]);
 
 	const mergedPool = useMemo(() => {
 		const merged = new Map<string, MergedItem>(
@@ -494,9 +499,7 @@ export function ItemsList({
 					<div key={key}>
 						<h2 className="mb-4 border-b border-highlight/10 pb-2 text-xl font-bold text-brand">
 							{label}{" "}
-							<span className="ml-2 text-sm font-normal text-subtle-foreground">
-								({categoryGroups[key].length})
-							</span>
+							<span className="ml-2 text-sm font-normal text-subtle-foreground">({categoryGroups[key].length})</span>
 						</h2>
 						<div className={`grid gap-4 ${gridClasses}`}>
 							{categoryGroups[key].map(({ id, count, firCount, isHideout, isQuest, details }) => (

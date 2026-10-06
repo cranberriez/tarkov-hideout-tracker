@@ -18,6 +18,8 @@ export interface StationCardHeaderProps {
 	onLevelUp: () => void;
 	upgradeStatus: "ready" | "missing" | "illegal";
 	hasUnresolvedItemData: boolean;
+	/** The goal's level when it stops short of the max. */
+	goalCap?: number;
 }
 
 export function StationCardHeader({
@@ -33,6 +35,7 @@ export function StationCardHeader({
 	onLevelUp,
 	upgradeStatus,
 	hasUnresolvedItemData,
+	goalCap,
 }: StationCardHeaderProps) {
 	const iconBorderClass =
 		upgradeStatus === "ready"
@@ -52,6 +55,7 @@ export function StationCardHeader({
 				currentLevel={currentLevel}
 				maxLevel={maxLevel}
 				locked={isLocked}
+				goalLevel={goalCap}
 				imageClassName={iconBorderClass}
 				name={
 					<Link

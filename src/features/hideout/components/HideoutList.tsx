@@ -9,15 +9,17 @@ import type { Station } from "@/types/hideout";
 import type { ItemSummary } from "@/types/items";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { poolItems } from "@/lib/utils/item-pooling";
+import { useStationGoals } from "../useStationGoals";
 
 interface HideoutListProps {
 	stations: Station[];
 	itemById: Readonly<Record<string, ItemSummary>>;
 	stationsUpdatedAt: number | null;
 	itemsUpdatedAt: number | null;
+	goalsMode: boolean;
 }
 
-export function HideoutList({ stations, itemById, stationsUpdatedAt, itemsUpdatedAt }: HideoutListProps) {
+export function HideoutList({ stations, itemById, stationsUpdatedAt, itemsUpdatedAt, goalsMode }: HideoutListProps) {
 	const { stationLevels, hiddenStations, checklistViewMode, showHidden, completedRequirements } = useUserStore(
 		useShallow((state) => ({
 			stationLevels: state.stationLevels,
@@ -27,6 +29,8 @@ export function HideoutList({ stations, itemById, stationsUpdatedAt, itemsUpdate
 			completedRequirements: state.completedRequirements,
 		})),
 	);
+
+	const { resolved: goals, caps: goalCaps } = useStationGoals(stations);
 
 	// 2. Helper to check if station is locked
 	const isStationLocked = (station: Station) => {
@@ -62,8 +66,9 @@ export function HideoutList({ stations, itemById, stationsUpdatedAt, itemsUpdate
 			showHidden,
 			viewMode: checklistViewMode,
 			completedRequirements,
+			goalCaps,
 		});
-	}, [stations, stationLevels, hiddenStations, checklistViewMode, showHidden, completedRequirements]);
+	}, [stations, stationLevels, hiddenStations, checklistViewMode, showHidden, completedRequirements, goalCaps]);
 
 	const pooledFirByItem = useMemo(() => {
 		const map: Record<string, number> = {};
@@ -84,6 +89,8 @@ export function HideoutList({ stations, itemById, stationsUpdatedAt, itemsUpdate
 						itemById={itemById}
 						isLocked={isStationLocked(station)}
 						pooledFirByItem={pooledFirByItem}
+						goal={goals[station.id]}
+						goalsMode={goalsMode}
 					/>
 				))}
 			</div>

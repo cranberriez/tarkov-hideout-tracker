@@ -10,7 +10,7 @@ account for existing users' data.
 
 | Storage key                                     | Owner and scope                                                                                                                                                                                                                                                                                         |
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tarkov-hideout-profiles-state`                 | [useUserStore](../src/lib/stores/useUserStore.ts), Zustand persist **v24**; profiles, active profile projection, shared preferences and conversion state                                                                                                                                                |
+| `tarkov-hideout-profiles-state`                 | [useUserStore](../src/lib/stores/useUserStore.ts), Zustand persist **v25**; profiles, active profile projection, shared preferences and conversion state                                                                                                                                                |
 | `tarkov-hideout-user-state`                     | Previous application's save; read-only fallback through [user-state-storage](../src/lib/stores/user-state-storage.ts), never written or removed by the new user store                                                                                                                                   |
 | `tarkov-kappa-checklist-state`                  | [useKappaStore](../src/lib/stores/useKappaStore.ts), Zustand persist **v1**; `completedItemsByMode`, shared `viewMode`, and uploader `ignoreInUploader` (reset with `viewMode`)                                                                                                                         |
 | `tarkov-profit-price-overrides-v1:{mode}`       | [useManualPriceOverrides](../src/features/profit-pages/useManualPriceOverrides.ts); independent buy/sell overrides and optional empty-container values                                                                                                                                                  |
@@ -33,7 +33,7 @@ maintain a copied interface in documentation.
 
 `PlayerProfileState` and `createDefaultPlayerProfile` in
 [useUserStore](../src/lib/stores/useUserStore.ts) define character-scoped progress:
-station levels/hidden stations/completed requirements, inventory, quest state
+station levels/hidden stations/station goals/completed requirements, inventory, quest state
 (including visited objectives and hand-ins), player/prestige level, trader loyalty,
 Fence reputation, faction, edition, and setup state. `profiles` stores
 PVP/PVE/KORD independently. The flat active fields are a projection used by
@@ -50,10 +50,11 @@ This avoids alternating mode-cookie writes and refresh loops on missing routes.
 reads it for server queries. Dataset mapping is owned by [data layer](data-layer.md).
 
 The new profile key takes precedence. When it is absent, the storage adapter reads
-the old key without changing its bytes. Existing v19–v24 profile saves retain their
+the old key without changing its bytes. Existing v19–v25 profile saves retain their
 profiles, quests, preferences and conversion flags through the existing migration
 chain. v24 only drops the removed Kappa/Lightkeeper quest-goal flags from
-the top level and each profile. Flat saves (including main's v15 schema) become a retained conversion
+the top level and each profile. v25 adds empty `stationGoals` to the top level and
+each profile (keeping any present) and the shared `itemIgnoreStationGoals` off. Flat saves (including main's v15 schema) become a retained conversion
 snapshot with fresh conversion flags, even if a branch-switch test left a newer
 version number or stale flags. Mixed saves written by an old build retain their
 profile map and offer their flat progress for explicit conversion.
@@ -119,7 +120,7 @@ The explicit [progress allowlist](../src/lib/player-progress.ts) includes invent
 hideout levels/requirements, completed/failed quests, visited objectives, hand-ins,
 history, character levels, traders, Fence reputation, faction, edition and setup
 markers. Backups also include mode-specific Kappa completion and Crafting/Hideout
-Management skills. They exclude hidden/ignored lists, pins, filters, display
+Management skills. They exclude hidden/ignored lists, station goals, pins, filters, display
 preferences, craft plans, price overrides, import-file metadata, legacy conversion
 archives, active mode and ephemeral UI state. Setup/edition markers travel with
 progress to prevent onboarding from applying starting bonuses again.
@@ -147,7 +148,7 @@ actions with resets of other owners. Its current behavior is:
 
 | Settings action | Actual scope                                                                                                                                             |
 | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Hideout reset   | Active profile's station levels, hidden stations, and completed requirements                                                                             |
+| Hideout reset   | Active profile's station levels, hidden stations, station goals, and completed requirements                                                              |
 | Item reset      | Active profile's inventory; Kappa completion for **all modes**, retaining Kappa view preference                                                          |
 | Quest reset     | Active profile's completed/failed/visited-objective/hand-in/ignored/pinned/history state; removes the shared import seen-files key                       |
 | Delete ALL data | Resets the entire user store and all three profiles to defaults, selects PVP and updates its cookie; resets all Kappa completion and its view preference |

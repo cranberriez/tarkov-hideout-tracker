@@ -25,6 +25,8 @@ export function ItemsControls({ searchQuery, onSearchQueryChange, sort, onSortSe
 		setChecklistViewMode,
 		showHidden,
 		setShowHidden,
+		itemIgnoreStationGoals,
+		setItemIgnoreStationGoals,
 		hideCheap,
 		setHideCheap,
 		itemsSize,
@@ -57,6 +59,8 @@ export function ItemsControls({ searchQuery, onSearchQueryChange, sort, onSortSe
 			setChecklistViewMode: state.setChecklistViewMode,
 			showHidden: state.showHidden,
 			setShowHidden: state.setShowHidden,
+			itemIgnoreStationGoals: state.itemIgnoreStationGoals,
+			setItemIgnoreStationGoals: state.setItemIgnoreStationGoals,
 			hideCheap: state.hideCheap,
 			setHideCheap: state.setHideCheap,
 			itemsSize: state.itemsSize,
@@ -121,6 +125,8 @@ export function ItemsControls({ searchQuery, onSearchQueryChange, sort, onSortSe
 						onChecklistViewModeChange={setChecklistViewMode}
 						showHidden={showHidden}
 						onShowHiddenChange={setShowHidden}
+						ignoreStationGoals={itemIgnoreStationGoals}
+						onIgnoreStationGoalsChange={setItemIgnoreStationGoals}
 						itemQuestVisibilityMode={itemQuestVisibilityMode}
 						onItemQuestVisibilityModeChange={setItemQuestVisibilityMode}
 						itemQuestCustomLookahead={itemQuestCustomLookahead}

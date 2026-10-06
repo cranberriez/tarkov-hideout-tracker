@@ -9,6 +9,7 @@ import type { Station } from "@/types/hideout";
 import type { ItemSummary } from "@/types/items";
 import type { UploaderSummaryData } from "@/types/uploader";
 import { isCurrencyItem } from "../../hideout/station-model";
+import { resolveStationGoals } from "../../../lib/utils/station-goals";
 
 export type DemandFoundInRaid = "yes" | "no" | "unknown";
 
@@ -67,6 +68,7 @@ export type DemandStack = { item: ItemSummary; quantity: number; foundInRaid: De
 export type DemandProfile = Pick<
 	PlayerProfileState,
 	| "stationLevels"
+	| "stationGoals"
 	| "completedRequirements"
 	| "completedQuests"
 	| "completedQuestObjectives"
@@ -97,10 +99,12 @@ export function buildItemDemand(
 	const reasons = new Map<string, SaveReason[]>();
 	const add = (itemId: string, reason: SaveReason) => reasons.set(itemId, [...(reasons.get(itemId) ?? []), reason]);
 	const catalog = new Map(items.map((item) => [item.id, item]));
+	const goals = resolveStationGoals(data.stations, profile.stationLevels, profile.stationGoals ?? {});
 	for (const station of data.stations) {
 		const current = profile.stationLevels[station.id] ?? 0;
+		const cap = goals[station.id]?.cap ?? Infinity;
 		for (const level of station.levels) {
-			if (level.level <= current) continue;
+			if (level.level <= current || level.level > cap) continue;
 			for (const requirement of level.itemRequirements) {
 				if (profile.completedRequirements[requirement.id]) continue;
 				add(requirement.itemId, {

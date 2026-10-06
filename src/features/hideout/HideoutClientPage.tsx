@@ -2,7 +2,7 @@
 
 import { useDeferredPriceItems } from "@/features/items/DeferredPriceBoundary";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { HideoutControls } from "@/features/hideout/components/HideoutControls";
@@ -25,6 +25,7 @@ export function HideoutClientPage({ data, dataMode }: HideoutClientPageProps) {
 	const items = useDeferredPriceItems(initialItems);
 	const itemById = useMemo(() => Object.fromEntries((items ?? []).map((item) => [item.id, item])), [items]);
 	const hydrated = useUserStoreHydrated();
+	const [goalsMode, setGoalsMode] = useState(false);
 	const { gameMode, initializeDefaults, hasSeenHideoutLevelWarning, setHasSeenHideoutLevelWarning } = useUserStore(
 		useShallow((state) => ({
 			gameMode: state.gameMode,
@@ -47,7 +48,7 @@ export function HideoutClientPage({ data, dataMode }: HideoutClientPageProps) {
 					<h1 className="text-3xl font-bold text-foreground tracking-tight">HIDEOUT STATIONS</h1>
 				</div>
 				<div className="flex flex-col w-full md:w-auto">
-					<HideoutControls />
+					<HideoutControls goalsMode={goalsMode} onGoalsModeChange={setGoalsMode} />
 					{stations && <HideoutConversionGate stations={stations} />}
 				</div>
 			</div>
@@ -64,6 +65,23 @@ export function HideoutClientPage({ data, dataMode }: HideoutClientPageProps) {
 						className="ml-2 text-[10px] uppercase tracking-wide font-mono text-warning hover:text-warning hover:bg-warning/20 rounded px-2 py-1"
 					>
 						Close
+					</button>
+				</div>
+			)}
+
+			{goalsMode && (
+				<div className="mb-4 flex items-center gap-3 rounded border border-brand/40 bg-brand/10 px-3 py-2 text-xs text-foreground">
+					<div className="flex-1">
+						<span className="font-semibold">Station goals.</span> Pick the level you want each station to reach. Items
+						for levels above a goal are ignored on the Items checklist and Inventory, and Ignore drops the station
+						entirely. Levels another goal depends on are counted automatically. King (the default) tracks every level.
+					</div>
+					<button
+						type="button"
+						onClick={() => setGoalsMode(false)}
+						className="ml-2 rounded px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-brand hover:bg-brand/20"
+					>
+						Done
 					</button>
 				</div>
 			)}
@@ -92,6 +110,7 @@ export function HideoutClientPage({ data, dataMode }: HideoutClientPageProps) {
 						itemById={itemById}
 						stationsUpdatedAt={freshness.stationsUpdatedAt}
 						itemsUpdatedAt={freshness.itemsUpdatedAt}
+						goalsMode={goalsMode}
 					/>
 				</>
 			)}

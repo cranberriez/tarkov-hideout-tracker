@@ -210,7 +210,8 @@ export function FilterRadioGroup<T extends string>({
 	label: string;
 	value: T;
 	onValueChange: (value: T) => void;
-	options: readonly { value: T; label: string; icon?: ReactNode }[];
+	/** `title` names a shortened label in the tooltip and accessible name. */
+	options: readonly { value: T; label: string; title?: string; icon?: ReactNode }[];
 	className?: string;
 }) {
 	const name = useId();
@@ -221,7 +222,7 @@ export function FilterRadioGroup<T extends string>({
 			className={cn("flex rounded-sm border border-highlight/10 bg-shadow/40 p-1", className)}
 		>
 			{options.map((option) => (
-				<label key={option.value} title={option.label} className="relative flex flex-1 cursor-pointer">
+				<label key={option.value} title={option.title ?? option.label} className="relative flex flex-1 cursor-pointer">
 					<input
 						type="radio"
 						name={name}
@@ -229,7 +230,7 @@ export function FilterRadioGroup<T extends string>({
 						checked={value === option.value}
 						onChange={() => onValueChange(option.value)}
 						className="peer sr-only"
-						aria-label={option.label}
+						aria-label={option.title ?? option.label}
 					/>
 					<span
 						className={cn(

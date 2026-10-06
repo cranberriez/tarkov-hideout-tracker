@@ -95,6 +95,8 @@ export interface CompletedSetup {
 export interface PlayerProfileState {
 	stationLevels: Record<string, number>;
 	hiddenStations: Record<string, boolean>;
+	/** stationId -> highest level wanted; absent means the max level. */
+	stationGoals: Record<string, number>;
 	completedRequirements: Record<string, boolean>;
 	completedQuests: Record<string, boolean>;
 	completedQuestObjectives: Record<string, Record<string, boolean>>;
@@ -118,6 +120,7 @@ export function createDefaultPlayerProfile(): PlayerProfileState {
 	return {
 		stationLevels: {},
 		hiddenStations: {},
+		stationGoals: {},
 		completedRequirements: {},
 		completedQuests: {},
 		completedQuestObjectives: {},
@@ -155,6 +158,7 @@ interface UserState {
 	// Per-station progress and visibility
 	stationLevels: Record<string, number>; // stationId -> current level
 	hiddenStations: Record<string, boolean>; // stationId -> hidden?
+	stationGoals: Record<string, number>; // stationId -> goal level (absent = max)
 	completedRequirements: Record<string, boolean>; // requirementId -> completed?
 	completedQuests: Record<string, boolean>; // questId -> completed?
 	completedQuestObjectives: Record<string, Record<string, boolean>>; // questId -> objectiveId -> visited?
@@ -227,6 +231,7 @@ interface UserState {
 	itemQuestCustomLevelLookahead: number;
 	itemShowFutureFir: boolean;
 	itemShowIgnored: boolean;
+	itemIgnoreStationGoals: boolean;
 
 	// Onboarding / feature flags
 	hasSeenItemConversionModal: boolean;
@@ -244,6 +249,8 @@ interface UserState {
 	setStationLevel: (stationId: string, level: number) => void;
 	incrementStationLevel: (stationId: string) => void;
 	toggleHiddenStation: (stationId: string) => void;
+	/** `null` clears the goal, so the station counts to its max level. */
+	setStationGoal: (stationId: string, level: number | null) => void;
 	toggleRequirement: (requirementId: string) => void;
 	toggleQuestCompletion: (questId: string) => void;
 	toggleQuestObjectiveCompletion: (questId: string, objectiveId: string) => void;
@@ -318,6 +325,7 @@ interface UserState {
 	setItemQuestCustomLevelLookahead: (value: number) => void;
 	setItemShowFutureFir: (value: boolean) => void;
 	setItemShowIgnored: (value: boolean) => void;
+	setItemIgnoreStationGoals: (value: boolean) => void;
 
 	importStationLevels: (levels: Record<string, number>) => void;
 	importPlayerProgress: (profiles: Partial<Record<GameMode, import("../player-progress").PlayerProgress>>) => void;
@@ -393,6 +401,7 @@ function createDefaultUserState(): UserStateData {
 		itemQuestCustomLevelLookahead: 5,
 		itemShowFutureFir: false,
 		itemShowIgnored: false,
+		itemIgnoreStationGoals: false,
 
 		gameMode: DEFAULT_GAME_MODE,
 		isSetupOpen: false,
@@ -425,6 +434,7 @@ function createPlayerProfileFromLegacyState(legacyState: Record<string, unknown>
 		...profile,
 		stationLevels: { ...profile.stationLevels },
 		hiddenStations: { ...profile.hiddenStations },
+		stationGoals: { ...profile.stationGoals },
 		completedRequirements: { ...profile.completedRequirements },
 		completedQuests: {},
 		completedQuestObjectives: {},
@@ -488,6 +498,14 @@ export const useUserStore = create<UserState>()(
 							[stationId]: !state.hiddenStations[stationId],
 						},
 					})),
+
+				setStationGoal: (stationId, level) =>
+					set((state) => {
+						const stationGoals = { ...state.stationGoals };
+						if (level === null || !Number.isFinite(level)) delete stationGoals[stationId];
+						else stationGoals[stationId] = Math.max(0, Math.floor(level));
+						return { stationGoals };
+					}),
 
 				toggleRequirement: (requirementId) => {
 					set((state) => {
@@ -747,6 +765,7 @@ export const useUserStore = create<UserState>()(
 					}),
 				setItemShowFutureFir: (value) => set({ itemShowFutureFir: value }),
 				setItemShowIgnored: (value) => set({ itemShowIgnored: value }),
+				setItemIgnoreStationGoals: (value) => set({ itemIgnoreStationGoals: value }),
 
 				setHasSeenItemConversionModal: (value) => set({ hasSeenItemConversionModal: value }),
 				setHasSeenHideoutLevelWarning: (value) => set({ hasSeenHideoutLevelWarning: value }),
@@ -811,6 +830,7 @@ export const useUserStore = create<UserState>()(
 					set(() => ({
 						stationLevels: {},
 						hiddenStations: {},
+						stationGoals: {},
 						completedRequirements: {},
 					}));
 				},
@@ -877,7 +897,7 @@ export const useUserStore = create<UserState>()(
 		{
 			name: USER_STORE_STORAGE_KEY,
 			storage: createJSONStorage(() => createUserStateStorage(localStorage)),
-			version: 24,
+			version: 25,
 			migrate: (persistedState, version) => {
 				let nextState =
 					persistedState && typeof persistedState === "object"
@@ -1152,6 +1172,26 @@ export const useUserStore = create<UserState>()(
 								mode,
 								typeof profile === "object" && profile !== null
 									? withoutRemovedQuestGoalKeys(profile as Record<string, unknown>)
+									: profile,
+							]),
+						);
+					}
+				}
+
+				if (version < 25) {
+					// Station goals are new per-profile data; existing saves start with none.
+					const withGoals = (profile: Record<string, unknown>) => ({
+						...profile,
+						stationGoals:
+							typeof profile.stationGoals === "object" && profile.stationGoals !== null ? profile.stationGoals : {},
+					});
+					nextState = { ...withGoals(nextState), itemIgnoreStationGoals: false };
+					if (typeof nextState.profiles === "object" && nextState.profiles !== null) {
+						nextState.profiles = Object.fromEntries(
+							Object.entries(nextState.profiles as Record<string, unknown>).map(([mode, profile]) => [
+								mode,
+								typeof profile === "object" && profile !== null
+									? withGoals(profile as Record<string, unknown>)
 									: profile,
 							]),
 						);

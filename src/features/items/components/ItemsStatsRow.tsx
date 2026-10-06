@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { poolItems } from "@/lib/utils/item-pooling";
+import { useStationGoals } from "@/features/hideout/useStationGoals";
 import { getFleaPrice } from "@/lib/utils/market-price";
 import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/quests/quest-item-index";
 import { deriveQuestAnyOfGroups, deriveQuestItemStates } from "@/lib/quests/quest-item-index";
@@ -63,10 +64,12 @@ export function ItemsStatsRow({
 		hideCheap,
 		cheapPriceThreshold,
 		itemCounts,
+		itemIgnoreStationGoals,
 	} = useUserStore(
 		useShallow((state) => ({
 			stationLevels: state.stationLevels,
 			hiddenStations: state.hiddenStations,
+			itemIgnoreStationGoals: state.itemIgnoreStationGoals,
 			checklistViewMode: state.checklistViewMode,
 			showHidden: state.showHidden,
 			completedRequirements: state.completedRequirements,
@@ -92,6 +95,7 @@ export function ItemsStatsRow({
 			itemCounts: state.itemCounts,
 		})),
 	);
+	const { caps: goalCaps } = useStationGoals(stations, { ignore: itemIgnoreStationGoals });
 
 	const deriveOptions = useMemo(
 		() => ({
@@ -163,6 +167,7 @@ export function ItemsStatsRow({
 			showHidden,
 			viewMode: checklistViewMode,
 			completedRequirements,
+			goalCaps,
 		});
 
 		const merged = new Map<string, MergedStatItem>();
@@ -203,6 +208,7 @@ export function ItemsStatsRow({
 		activeQuestItems,
 		checklistViewMode,
 		completedRequirements,
+		goalCaps,
 		groupedQuestDeductionsByItemId,
 		hiddenStations,
 		items,

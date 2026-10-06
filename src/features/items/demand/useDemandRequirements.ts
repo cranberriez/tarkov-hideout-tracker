@@ -18,6 +18,7 @@ export function useDemandRequirements() {
 		useShallow((state) => ({
 			gameMode: state.gameMode,
 			stationLevels: state.stationLevels,
+			stationGoals: state.stationGoals,
 			completedRequirements: state.completedRequirements,
 			completedQuests: state.completedQuests,
 			completedQuestObjectives: state.completedQuestObjectives,
