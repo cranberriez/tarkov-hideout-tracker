@@ -1,7 +1,7 @@
 import { isBarterCategory } from "@/lib/data/barter-categories";
 import type { ItemSummary } from "@/types/items";
 
-/** Broad item groups for narrowing uploader searches, in picker order. */
+/** Broad item groups for narrowing uploader searches and sectioning the Items page, in display order. */
 export const ITEM_GROUPS = [
 	{ key: "weapons", label: "Weapons" },
 	{ key: "mods", label: "Weapon mods" },
@@ -108,7 +108,7 @@ const GROUP_BY_CATEGORY: Record<string, ItemGroupKey> = {
 };
 
 export function itemGroup(item: ItemSummary): ItemGroupKey {
-	const category = item.categoryId;
+	const category = item.categoryId ?? item.category?.id;
 	if (isBarterCategory(category)) return "barter";
 	return (category && GROUP_BY_CATEGORY[category]) || "other";
 }

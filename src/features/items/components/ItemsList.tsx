@@ -25,6 +25,18 @@ import {
 	type ChecklistSortValues,
 } from "../checklist-sort";
 import type { Station } from "@/types/hideout";
+import { ITEM_GROUPS, itemGroup } from "@/lib/data/item-groups";
+
+/** Jewelry leaf category; split out of Barter so high-value items get their own section. */
+const VALUABLES_CATEGORY_ID = "57864a3d24597754843f8721";
+const CATEGORY_SECTIONS = ITEM_GROUPS.flatMap((group) =>
+	group.key === "barter" ? [{ key: "valuables", label: "Valuables" }, group] : [group],
+);
+
+function categorySection(item: ItemSummary): string {
+	if ((item.categoryId ?? item.category?.id) === VALUABLES_CATEGORY_ID) return "valuables";
+	return itemGroup(item);
+}
 
 interface ItemsListProps {
 	sort: ChecklistSort;
@@ -462,16 +474,10 @@ export function ItemsList({
 
 		const categoryGroups: Record<string, DisplayItem[]> = {};
 		for (const item of itemsToRender) {
-			const category = item.details.category?.name ?? "Other";
-			if (!categoryGroups[category]) categoryGroups[category] = [];
-			categoryGroups[category].push(item);
+			const section = categorySection(item.details);
+			(categoryGroups[section] ??= []).push(item);
 		}
-
-		const sortedCategories = Object.keys(categoryGroups).sort((a, b) => {
-			if (a === "Other") return 1;
-			if (b === "Other") return -1;
-			return a.localeCompare(b);
-		});
+		const sections = CATEGORY_SECTIONS.filter((section) => categoryGroups[section.key]);
 
 		return (
 			<div className="space-y-8">
@@ -484,16 +490,16 @@ export function ItemsList({
 						{renderMixedGrid([], groupsToRender)}
 					</div>
 				)}
-				{sortedCategories.map((category) => (
-					<div key={category}>
+				{sections.map(({ key, label }) => (
+					<div key={key}>
 						<h2 className="mb-4 border-b border-highlight/10 pb-2 text-xl font-bold text-brand">
-							{category}{" "}
+							{label}{" "}
 							<span className="ml-2 text-sm font-normal text-subtle-foreground">
-								({categoryGroups[category].length})
+								({categoryGroups[key].length})
 							</span>
 						</h2>
 						<div className={`grid gap-4 ${gridClasses}`}>
-							{categoryGroups[category].map(({ id, count, firCount, isHideout, isQuest, details }) => (
+							{categoryGroups[key].map(({ id, count, firCount, isHideout, isQuest, details }) => (
 								<ItemRow
 									key={id}
 									item={details}

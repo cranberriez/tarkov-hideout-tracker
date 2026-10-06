@@ -185,7 +185,9 @@ alphabetically. Selecting Default again reverses it; initial page sorting remain
 descending individual value.
 Any-of quest groups sort by required quantity/FiR quantity or quest name, with no
 invented value for alternatives. Sorting applies within categories when
-categorization is enabled.
+categorization is enabled. Categories are the broad
+[item groups](../src/lib/data/item-groups.ts) shared with the uploader, with
+Jewelry split out of Barter as Valuables.
 
 ## Search, Quick Add, and item details
 

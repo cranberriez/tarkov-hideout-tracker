@@ -20,7 +20,7 @@ import { summarizeReview, type ReviewBox, type ReviewEntry } from "./review-mode
 import { nextUnknownId, selectReviewBoxes, selectionSuggestions, supportsQuantity } from "./selection-model";
 import { IconsToggle, UploaderCompletion, type AddedItem } from "./UploaderCompletion";
 import { UploaderItemSearch, useItemSearch } from "./UploaderItemSearch";
-import type { ItemGroupKey } from "./item-groups";
+import type { ItemGroupKey } from "@/lib/data/item-groups";
 import styles from "./UploaderReview.module.css";
 
 const control =

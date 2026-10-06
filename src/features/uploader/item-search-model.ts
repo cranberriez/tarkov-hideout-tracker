@@ -1,5 +1,5 @@
 import type { ItemSummary } from "@/types/items";
-import { itemGroup, type ItemGroupKey } from "./item-groups";
+import { itemGroup, type ItemGroupKey } from "@/lib/data/item-groups";
 
 export const ITEM_SEARCH_LIMIT = 50;
 

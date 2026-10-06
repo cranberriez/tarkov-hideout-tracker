@@ -10,7 +10,7 @@ import { summarizeReview, type ReviewEntry } from "./review-model";
 import { foundInRaidLabel } from "./found-in-raid";
 import { sectionLabel } from "./UploaderSidebarHeader";
 import { UploaderItemSearch, useItemSearch } from "./UploaderItemSearch";
-import type { ItemGroupKey } from "./item-groups";
+import type { ItemGroupKey } from "@/lib/data/item-groups";
 import styles from "./UploaderReview.module.css";
 
 export type AddedItem = ReviewEntry & { id: number; itemId: string };

@@ -6,7 +6,7 @@ import { ListFilter, X } from "lucide-react";
 import type { ItemSummary } from "@/types/items";
 import { itemImageUrl } from "@/lib/utils/item-images";
 import { cn } from "@/lib/utils";
-import { ITEM_GROUPS, itemGroupLabel, type ItemGroupKey } from "./item-groups";
+import { ITEM_GROUPS, itemGroupLabel, type ItemGroupKey } from "@/lib/data/item-groups";
 import { searchUploaderItems } from "./item-search-model";
 import { KeyHint, sectionLabel } from "./UploaderSidebarHeader";
 
