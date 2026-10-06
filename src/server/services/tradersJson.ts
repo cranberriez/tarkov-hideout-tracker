@@ -1,60 +1,35 @@
-import { unstable_cache } from "next/cache";
-import { cacheWhenEnabled } from "@/server/cache";
-import { CACHE_VERSIONS } from "@/lib/cfg/cacheVersions";
-import { redis } from "@/server/redis";
-import { fetchTarkovJsonDataset } from "@/server/services/tarkovJson/client";
-import {
-    isProgressionCacheUsable,
-    parseNonEmptyTimedResponse,
-} from "@/server/services/tarkovJson/cache";
-import type { TimedResponse, Trader, TradersPayload } from "@/types";
+import { DEFAULT_TARKOV_JSON_GAME_MODE } from "../../lib/game-mode";
+import { fetchTarkovJsonDataset, type TarkovJsonGameMode } from "@/server/services/tarkovJson/client";
+import type { DataResult } from "@/types/common";
+import type { Trader } from "@/types/traders";
+import type { TradersPayload } from "@/types/contracts";
 
-const REDIS_KEY = `traders:all:v${CACHE_VERSIONS.traders}`;
-const REDIS_KEY_META = `${REDIS_KEY}:meta`;
-
-interface JsonTrader extends Trader {
-    name: string;
+interface JsonTrader {
+	id: string;
+	name: string;
+	normalizedName: string;
+	imageLink?: string | null;
+	image4xLink?: string | null;
 }
 
-export async function getJsonTraders(): Promise<TimedResponse<TradersPayload>> {
-    const [cachedBody, cachedMeta] = await redis.mget<[unknown, unknown]>(
-        REDIS_KEY,
-        REDIS_KEY_META,
-    );
-    const cached = parseNonEmptyTimedResponse<TradersPayload>(
-        cachedBody,
-        (payload) => payload.traders,
-    );
-    if (cached && isProgressionCacheUsable(cachedMeta)) return cached;
+export async function getJsonTraders(
+	gameMode: TarkovJsonGameMode = DEFAULT_TARKOV_JSON_GAME_MODE,
+): Promise<DataResult<TradersPayload>> {
+	const dataset = await fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders", gameMode);
+	const traders: Trader[] = Object.values(dataset.data).map((trader) => ({
+		id: trader.id,
+		name: dataset.translate(trader.name),
+		normalizedName: trader.normalizedName,
+		imageLink: trader.imageLink,
+		image4xLink: trader.image4xLink,
+	}));
+	if (traders.length === 0) {
+		throw new Error("Tarkov JSON response contained no traders");
+	}
 
-    try {
-        const dataset = await fetchTarkovJsonDataset<Record<string, JsonTrader>>("traders");
-        const traders: Trader[] = Object.values(dataset.data).map((trader) => ({
-            id: trader.id,
-            name: dataset.translate(trader.name),
-            normalizedName: trader.normalizedName,
-            imageLink: trader.imageLink,
-            image4xLink: trader.image4xLink,
-        }));
-        if (traders.length === 0) throw new Error("Tarkov JSON response contained no traders");
-
-        const updatedAt = Date.now();
-        const body: TimedResponse<TradersPayload> = { data: { traders }, updatedAt };
-        await redis.mset({
-            [REDIS_KEY]: JSON.stringify(body),
-            [REDIS_KEY_META]: { updatedAt },
-        });
-        return body;
-    } catch (error) {
-        console.error("Failed to refresh traders from Tarkov JSON", error);
-        if (cached) return cached;
-        throw error;
-    }
+	return {
+		data: { traders },
+		updatedAt: Date.now(),
+		diagnostics: { provider: "json", upstreamStatus: "ok" },
+	};
 }
-
-const cachedJsonTraders = unstable_cache(getJsonTraders, ["json-traders"], {
-    revalidate: false,
-    tags: ["traders"],
-});
-
-export const getCachedJsonTraders = cacheWhenEnabled(getJsonTraders, cachedJsonTraders);

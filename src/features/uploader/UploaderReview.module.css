@@ -1,0 +1,71 @@
+.reveal {
+	animation: reveal-item 700ms ease-out both;
+}
+
+.scan {
+	animation: scan-image 2.8s ease-in-out infinite alternate;
+}
+
+.complete {
+	animation: complete-review 550ms ease-out;
+}
+.nextStep {
+	animation: next-step 300ms 550ms ease-out both;
+}
+
+@keyframes complete-review {
+	from {
+		opacity: 0;
+		transform: translateY(6px) scale(0.96);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+@keyframes next-step {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes scan-image {
+	from {
+		top: -6rem;
+	}
+	to {
+		top: 100%;
+	}
+}
+
+@keyframes reveal-item {
+	0% {
+		opacity: 0.4;
+	}
+	25% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.complete,
+	.nextStep {
+		animation: none;
+	}
+	.scan {
+		animation: none;
+		display: none;
+	}
+	.reveal {
+		animation: none;
+		opacity: 0;
+	}
+}

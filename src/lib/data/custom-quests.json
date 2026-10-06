@@ -1,0 +1,209 @@
+{
+	"version": 1,
+	"quests": [
+		{
+			"id": "custom-ttl-trust-but-verify",
+			"anchor": "625d700cc48e6c62a440fab5",
+			"name": "To the Light - Trust but Verify",
+			"trader": "mechanic",
+			"source": "https://escapefromtarkov.fandom.com/wiki/To_the_Light_-_Trust_but_Verify",
+			"note": "Also requires the Tour story chapter and asking Mechanic about working with Lightkeeper; neither is modelled.",
+			"experience": 35000,
+			"lightkeeperRequired": true,
+			"loyaltyLevels": { "prapor": 3, "therapist": 3, "skier": 3, "peacekeeper": 3, "mechanic": 3, "ragman": 3, "jaeger": 3 },
+			"objectives": [
+				{ "type": "visit", "description": "Stash the Hard drive with false data in the server room near the weapon testing area in The Lab", "maps": ["the-lab"] },
+				{ "type": "extract", "description": "Extract from The Lab through the Ventilation Shaft", "maps": ["the-lab"], "exitName": "Ventilation Shaft" }
+			]
+		},
+		{
+			"id": "custom-ttl-false-call",
+			"anchor": "625d700cc48e6c62a440fab5",
+			"name": "To the Light - False Call",
+			"trader": "mechanic",
+			"source": "https://escapefromtarkov.fandom.com/wiki/To_the_Light_-_False_Call",
+			"note": "Unlocks 10-30 minutes after Trust but Verify.",
+			"experience": 30000,
+			"lightkeeperRequired": true,
+			"requires": ["custom-ttl-trust-but-verify"],
+			"objectives": [
+				{ "type": "shoot", "description": "Eliminate Scavs during 21:00-06:00 on Customs", "count": 5, "maps": ["customs"], "targetNames": ["Scav"] },
+				{ "type": "shoot", "description": "Eliminate PMC operatives during 21:00-06:00 on Customs", "count": 1, "maps": ["customs"], "targetNames": ["any PMC operatives"] },
+				{ "type": "plantItem", "description": "Hide a Wi-Fi camera at the AC unit at the convenience store near the bridge on Customs", "maps": ["customs"], "itemIds": ["5b4391a586f7745321235ab2"] },
+				{ "type": "useItem", "description": "Launch a yellow signal flare at the Shoreline transit on Customs", "maps": ["customs"], "itemIds": ["624c0b3340357b5f566e8766"] }
+			]
+		},
+		{
+			"id": "custom-ttl-someone-called",
+			"anchor": "625d700cc48e6c62a440fab5",
+			"name": "To the Light - Someone Called?",
+			"trader": "mechanic",
+			"source": "https://escapefromtarkov.fandom.com/wiki/To_the_Light_-_Someone_Called%3F",
+			"experience": 10000,
+			"lightkeeperRequired": true,
+			"requires": ["custom-ttl-false-call"],
+			"objectives": [{ "type": "visit", "description": "Return to the Hideout" }]
+		},
+		{
+			"id": "custom-ttl-clip-their-wings",
+			"anchor": "625d700cc48e6c62a440fab5",
+			"name": "To the Light - Clip Their Wings",
+			"trader": "mechanic",
+			"source": "https://escapefromtarkov.fandom.com/wiki/To_the_Light_-_Clip_Their_Wings",
+			"note": "Unlocks 10-15 minutes after False Call.",
+			"experience": 45000,
+			"lightkeeperRequired": true,
+			"requires": ["custom-ttl-false-call"],
+			"objectives": [
+				{ "type": "plantItem", "description": "Plant a Signal jammer at the weather station on the mountain on Woods", "maps": ["woods"], "itemIds": ["5ac78a9b86f7741cca0bbd8d"] },
+				{ "type": "plantItem", "description": "Plant a Signal jammer at the sawmill guardhouse on Woods", "maps": ["woods"], "itemIds": ["5ac78a9b86f7741cca0bbd8d"] },
+				{ "type": "visit", "description": "Use the transit from Woods to Customs", "maps": ["woods"] },
+				{ "type": "plantItem", "description": "Plant a Signal jammer on the second floor of the roadside construction site on Customs", "maps": ["customs"], "itemIds": ["5ac78a9b86f7741cca0bbd8d"] },
+				{ "type": "visit", "description": "Use the transit from Customs to Shoreline", "maps": ["customs"] },
+				{ "type": "plantItem", "description": "Plant a Signal jammer at the second floor archives in the Health Resort admin building on Shoreline", "maps": ["shoreline"], "itemIds": ["5ac78a9b86f7741cca0bbd8d"] }
+			]
+		},
+		{
+			"id": "custom-ttl-fallen-bird",
+			"anchor": "625d700cc48e6c62a440fab5",
+			"name": "To the Light - Fallen Bird",
+			"trader": "mechanic",
+			"source": "https://escapefromtarkov.fandom.com/wiki/To_the_Light_-_Fallen_Bird",
+			"experience": 10000,
+			"lightkeeperRequired": true,
+			"requires": ["custom-ttl-clip-their-wings"],
+			"objectives": [{ "type": "visit", "description": "Return to the Hideout" }]
+		},
+		{
+			"id": "custom-ttl-dangerous-ambitions",
+			"anchor": "625d700cc48e6c62a440fab5",
+			"name": "To the Light - Dangerous Ambitions",
+			"trader": "mechanic",
+			"source": "https://escapefromtarkov.fandom.com/wiki/To_the_Light_-_Dangerous_Ambitions",
+			"experience": 10000,
+			"requires": ["custom-ttl-fallen-bird"],
+			"objectives": [{ "type": "visit", "description": "Hand over the Amulet from Lightkeeper to Peacekeeper" }]
+		},
+		{
+			"id": "custom-ttl-bite-the-dust",
+			"anchor": "625d700cc48e6c62a440fab5",
+			"name": "To the Light - Bite the Dust",
+			"trader": "peacekeeper",
+			"source": "https://escapefromtarkov.fandom.com/wiki/To_the_Light_-_Bite_the_Dust",
+			"experience": 10000,
+			"lightkeeperRequired": true,
+			"requires": ["custom-ttl-fallen-bird"],
+			"objectives": [{ "type": "visit", "description": "Hand over the evidence implicating the person behind the disruptions" }]
+		},
+		{
+			"id": "custom-ttl-a-time-to-throw-stones",
+			"anchor": "625d700cc48e6c62a440fab5",
+			"name": "To the Light - A Time to Throw Stones",
+			"trader": "mechanic",
+			"source": "https://escapefromtarkov.fandom.com/wiki/To_the_Light_-_A_Time_to_Throw_Stones",
+			"experience": 55000,
+			"lightkeeperRequired": true,
+			"requires": ["custom-ttl-bite-the-dust"],
+			"objectives": [
+				{ "type": "shoot", "description": "Eliminate PMC operatives within one raid in The Lab", "count": 2, "maps": ["the-lab"], "targetNames": ["any PMC operatives"] }
+			]
+		},
+		{
+			"id": "custom-ttl-a-time-to-gather-stones",
+			"anchor": "625d700cc48e6c62a440fab5",
+			"name": "To the Light - A Time to Gather Stones",
+			"trader": "mechanic",
+			"source": "https://escapefromtarkov.fandom.com/wiki/To_the_Light_-_A_Time_to_Gather_Stones",
+			"experience": 25000,
+			"lightkeeperRequired": true,
+			"requires": ["custom-ttl-a-time-to-throw-stones"],
+			"objectives": [
+				{
+					"type": "giveItem",
+					"description": "Hand over found in raid PMC dogtags (Level 30 or higher)",
+					"count": 3,
+					"foundInRaid": true,
+					"itemIds": ["59f32bb586f774757e1e8442", "59f32c3b86f77472a31742f0"]
+				}
+			]
+		},
+		{
+			"id": "custom-ttl-the-other-side",
+			"anchor": "625d700cc48e6c62a440fab5",
+			"name": "To the Light - The Other Side",
+			"trader": "mechanic",
+			"source": "https://escapefromtarkov.fandom.com/wiki/To_the_Light_-_The_Other_Side",
+			"experience": 65000,
+			"lightkeeperRequired": true,
+			"requires": ["custom-ttl-a-time-to-gather-stones"],
+			"objectives": [
+				{ "type": "plantItem", "description": "Stash the TerraGroup \"Blue Folders\" materials in any marked room on Reserve", "maps": ["reserve"], "itemIds": ["6389c8c5dbfd5e4b95197e6b"] },
+				{ "type": "plantItem", "description": "Stash the TerraGroup \"Blue Folders\" materials in any marked room on Streets of Tarkov", "maps": ["streets-of-tarkov"], "itemIds": ["6389c8c5dbfd5e4b95197e6b"] },
+				{ "type": "plantItem", "description": "Stash the TerraGroup \"Blue Folders\" materials in any marked room on Customs", "maps": ["customs"], "itemIds": ["6389c8c5dbfd5e4b95197e6b"] }
+			]
+		},
+		{
+			"id": "625d700cc48e6c62a440fab5",
+			"name": "To the Light - Getting Acquainted",
+			"trader": "mechanic",
+			"source": "https://escapefromtarkov.fandom.com/wiki/To_the_Light_-_Getting_Acquainted",
+			"note": "Provider ID kept from the old Getting Acquainted so Make Amends - Buyout and saved progress stay linked; the wiki does not list IDs.",
+			"experience": 32000,
+			"lightkeeperRequired": true,
+			"requires": ["custom-ttl-the-other-side"],
+			"objectives": [
+				{ "type": "visit", "description": "Obtain the V3 Flash drive on Lighthouse", "maps": ["lighthouse"] },
+				{ "type": "visit", "description": "Reflash the Radio transmitter using the V3 Flash drive", "maps": ["lighthouse"] },
+				{ "type": "visit", "description": "Hand over the flash drive", "maps": ["lighthouse"] },
+				{ "type": "visit", "description": "Visit the Lighthouse building", "maps": ["lighthouse"] }
+			]
+		},
+		{
+			"id": "63966faeea19ac7ed845db2c",
+			"name": "Information Source",
+			"source": "https://escapefromtarkov.fandom.com/wiki/Information_Source",
+			"note": "Follows To the Light - Getting Acquainted. Lightkeeper's later quests unlock 10 hours apart; not modelled.",
+			"requires": ["625d700cc48e6c62a440fab5"],
+			"objectives": [
+				{ "type": "extract", "description": "Survive and extract from Woods through Bridge V-Ex", "maps": ["woods"], "exitName": "Bridge V-Ex" },
+				{ "type": "extract", "description": "Survive and extract from Customs through Dorms V-Ex", "maps": ["customs"], "exitName": "Dorms V-Ex" },
+				{ "type": "extract", "description": "Survive and extract from Interchange through Power Station V-Ex", "maps": ["interchange"], "exitName": "Power Station V-Ex" },
+				{ "type": "extract", "description": "Survive and extract from Streets of Tarkov through Primorsky Ave Taxi V-Ex", "maps": ["streets-of-tarkov"], "exitName": "Primorsky Ave Taxi V-Ex" },
+				{ "type": "extract", "description": "Survive and extract from Ground Zero through Police Cordon V-Ex", "exitName": "Police Cordon V-Ex" },
+				{ "type": "extract", "description": "Survive and extract from Lighthouse through Road to Military Base V-Ex", "maps": ["lighthouse"], "exitName": "Road to Military Base V-Ex" },
+				{ "type": "extract", "description": "Survive and extract from Shoreline through Road to North V-Ex", "maps": ["shoreline"], "exitName": "Road to North V-Ex" }
+			]
+		},
+		{
+			"id": "63966fd9ea19ac7ed845db30",
+			"name": "Payback",
+			"source": "https://escapefromtarkov.fandom.com/wiki/Payback",
+			"objectives": [
+				{ "type": "shoot", "description": "Locate and neutralize Glukhar or his guards for 4 kills total on Reserve", "count": 4, "maps": ["reserve"], "targetNames": ["Glukhar", "Glukhar Guard"] },
+				{ "type": "useItem", "description": "Shoot a yellow signal flare at the radar station on Reserve", "optional": true, "maps": ["reserve"], "itemIds": ["624c0b3340357b5f566e8766"] },
+				{ "type": "extract", "description": "Survive and extract from Reserve through Cliff Descent", "maps": ["reserve"], "exitName": "Cliff Descent" }
+			]
+		},
+		{
+			"id": "6396701b9113f06a7c3b2379",
+			"name": "Make an Impression",
+			"source": "https://escapefromtarkov.fandom.com/wiki/Make_an_Impression",
+			"objectives": [
+				{ "type": "skill", "description": "Reach the required Bolt-action Rifles skill level of 10" },
+				{ "type": "shoot", "description": "Eliminate Sniper Scavs from over 200 meters away", "count": 10, "targetNames": ["Sniper"] }
+			]
+		},
+		{
+			"id": "63967028c4a91c5cb76abd81",
+			"name": "Trouble in the Big City",
+			"source": "https://escapefromtarkov.fandom.com/wiki/Trouble_in_the_Big_City",
+			"objectives": [
+				{ "type": "visit", "description": "Locate the armored convoy holding the cargo on Streets of Tarkov", "maps": ["streets-of-tarkov"] },
+				{ "type": "shoot", "description": "Eliminate PMC operatives on Streets of Tarkov", "count": 10, "maps": ["streets-of-tarkov"], "targetNames": ["any PMC operatives"] },
+				{ "type": "shoot", "description": "Locate and neutralize any Boss or their guards for 20 kills total on Streets of Tarkov", "count": 20, "maps": ["streets-of-tarkov"], "targetNames": ["any boss or guard"] },
+				{ "type": "visit", "description": "Mark the cargo area with an MS2000 Marker", "maps": ["streets-of-tarkov"] },
+				{ "type": "useItem", "description": "Launch a yellow flare near the armored convoy", "maps": ["streets-of-tarkov"], "itemIds": ["624c0b3340357b5f566e8766"] }
+			]
+		}
+	]
+}

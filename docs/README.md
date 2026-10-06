@@ -1,86 +1,26 @@
-# Tarkov Hideout Tracker - Docs
+# Project documentation
 
-Design and architecture reference for the Tarkov Hideout Tracker.
+Use this index when you need to locate a behavior reference. Start with the files
+involved in the task and read only the relevant documentation sections; there is
+no required documentation sequence. Source code is authoritative when a document
+disagrees; correct affected documentation in the same change.
+[AGENTS.md](../AGENTS.md) supplies project constraints and task-based doc routing.
 
-Docs are grouped by purpose:
+| Document                        | Owns                                                                                    |
+| ------------------------------- | --------------------------------------------------------------------------------------- |
+| [Architecture](architecture.md) | Routes, dependency direction, Hideout, Items, Quick Add, and client composition         |
+| [Data layer](data-layer.md)     | Ingestion, repository/query contracts, API reads, releases, current prices, and caching |
+| [User state](user-state.md)     | Persistent owners, profiles, migrations, setup, and reset scope                         |
+| [Quests](quests.md)             | Progression, demand, workspace, log import, and Kappa                                   |
+| [Maps](maps.md)                 | Objective geometry, projection, floors, overlays, and SVG delivery                      |
+| [Profits](profits.md)           | Acquisition optimization, recipe availability, price inputs, and profit UI              |
+| [Operations](operations.md)     | Setup, validation commands, release/price operations, and diagnostics                   |
 
-- **Current architecture**: authoritative references for existing code.
-- **Feature spec**: current feature behavior and implementation notes.
-- **Historical plan**: older planning docs kept for context; verify against source before using.
-- **Notes**: informal ideas or cleanup lists.
-
----
-
-## Architecture
-
-- **[overview.md](overview.md)** - Current architecture
-  High-level goals, core concepts (FiR, game editions, game mode, filters), pages, and data sources.
-
-- **[state-management.md](state-management.md)** - Current architecture
-  Zustand stores (`useUserStore`, `useUIStore`) - full state shapes, actions, and separation from server-fetched data.
-
-- **[data-and-price-context-architecture.md](data-and-price-context-architecture.md)** - Current architecture
-  How server services, React contexts (`DataContext`, `PriceDataContext`), and `<Suspense>` work together to deliver station/item/price data.
-
-- **[api-routes.md](api-routes.md)** - Current architecture
-  The only public route (cron endpoint) and the internal server services that replace old public API routes.
-
-- **[caching-architecture.md](caching-architecture.md)** - Current architecture
-  Redis keys, Next.js `unstable_cache` wrappers, cache invalidation strategy, and how to add a new cached data source.
-
----
-
-## Features
-
-- **[hideout-page.md](hideout-page.md)** - Feature spec
-  Behavior and data requirements for the Hideout station list page.
-
-- **[item-checklist-page.md](item-checklist-page.md)** - Feature spec
-  Behavior and data requirements for the pooled item checklist page.
-
-- **[quests-page.md](quests-page.md)** - Feature spec
-  Quests page - quest item requirements, trader/map views, prerequisite ordering, manual sync, and caching.
-
-- **[quick-add-feature.md](quick-add-feature.md)** - Feature spec
-  Quick Add modal - post-raid item input, fuzzy search, FiR/non-FiR counts.
-
-- **[setup-feature.md](setup-feature.md)** - Feature spec
-  Onboarding flow - game mode (PVP/PVE) and game edition selection; edition bonus logic.
-
-- **[item-source-filtering.md](item-source-filtering.md)** - Historical plan
-  Original planning notes for hideout vs quest item source filtering. Verify against `item-checklist-page.md` and source before using.
-
-- **[quest-completion-filtering.md](quest-completion-filtering.md)** - Historical plan
-  Original refactor plan for quest completion filtering. Verify against `item-checklist-page.md`, `quests-page.md`, and source before using.
-
----
-
-## External APIs & Integrations
-
-- **[tarkov-json-api.md](tarkov-json-api.md)** - Current architecture
-  Reversible JSON/GraphQL provider selection, JSON record hydration, translations, and cache-safety behavior.
-
-- **[graphql-queries.md](graphql-queries.md)** - Current architecture
-  Tarkov.dev GraphQL queries used for hideout station structure, item metadata, and flea prices.
-
-- **[hideoutQL.md](hideoutQL.md)** - Notes
-  Minimal reference GraphQL query for hideout stations.
-
-- **[tasks-graphql.md](tasks-graphql.md)** - Current architecture
-  Live schema findings for the `tasks` and `traders` queries - full field reference, objective type breakdown, and service implementation notes.
-
-- **[cron-jobs.md](cron-jobs.md)** - Current architecture
-  Vercel cron setup, Tarkov.dev flea price refresh, manual trigger instructions, and troubleshooting.
-
-- **[tarkov-market-protection.md](tarkov-market-protection.md)** - Historical note
-  Old Tarkov Market integration context. Current price data comes from Tarkov.dev GraphQL.
-
----
-
-## Maintenance
-
-- **[deprecatedFiles.md](deprecatedFiles.md)** - Notes
-  Files that have been superseded and are candidates for removal.
-
-- **[notes.txt](notes.txt)** - Notes
-  Informal feature ideas and development notes.
+These eight files (including this index) are the current behavior reference set.
+The [PostgreSQL migration](postgresql-migration.md) records the agreed architecture.
+The [production cutover runbook](postgresql-cutover.md) separates deployment,
+readiness and rollback from implementation. The [database tooling README](../db-scripts/README.md) owns detailed ingestion CLI
+usage. The [market-analyzer README](../market-analyzer/README.md) owns the VPS price
+worker and its analytics. Research notes and [wiki source](../wiki-src/) are non-authoritative working
+material; verify against source before using them. Git history retains superseded
+documentation.

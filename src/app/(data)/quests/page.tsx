@@ -1,28 +1,30 @@
-import { Suspense } from "react";
-import { orderQuestsByPrerequisites } from "@/server/services/quests";
-import { getCachedFullQuestData } from "@/server/services/tarkovData";
-import { buildQuestAnyOfGroups, buildQuestItemIndex } from "@/lib/utils/quest-item-index";
-import { toQuestAvailabilityQuest } from "@/lib/utils/quest-availability";
-import { QuestsClientPage } from "@/features/quests/QuestsClientPage";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { isDev } from "@/lib/is-dev";
+import { QuestSelectionPrompt } from "@/features/quests/workspace/QuestSelectionPrompt";
+import { DEV_QUEST_ID, DEV_QUEST_QUERY } from "@/features/quests/dev-quest-fixture";
+import { LEGACY_QUEST_QUERY_PARAM, questHref } from "@/features/quests/quest-routes";
 
-export const revalidate = false; // Frozen during the Tarkov 1.1 transition
+export const metadata: Metadata = {
+	title: "Escape from Tarkov Quests & Required Items",
+	description: "Find Escape from Tarkov quests by trader or map. Track objectives, required items, prerequisites, unlocks, and quest progress.",
+	alternates: { canonical: "/quests" },
+};
 
-export default async function QuestsPage() {
-    const questsResponse = await getCachedFullQuestData();
-    const quests = orderQuestsByPrerequisites(questsResponse.data.quests);
-    const questItemIndex = buildQuestItemIndex(quests);
-    const questAnyOfGroups = buildQuestAnyOfGroups(quests);
-    const questAvailabilityQuests = quests.map(toQuestAvailabilityQuest);
+interface QuestsPageProps {
+	searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
 
-    return (
-        <Suspense fallback={null}>
-            <QuestsClientPage
-                quests={quests}
-                updatedAt={questsResponse.updatedAt}
-                questItemIndex={questItemIndex}
-                questAnyOfGroups={questAnyOfGroups}
-                questAvailabilityQuests={questAvailabilityQuests}
-            />
-        </Suspense>
-    );
+function first(value: string | string[] | undefined) {
+	return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function QuestsPage({ searchParams }: QuestsPageProps) {
+	const params = await searchParams;
+	const legacyQuestId = first(params[LEGACY_QUEST_QUERY_PARAM]);
+	if (legacyQuestId) redirect(questHref(legacyQuestId));
+	if (isDev && first(params.q) === DEV_QUEST_QUERY) {
+		redirect(questHref(DEV_QUEST_ID, DEV_QUEST_QUERY));
+	}
+	return <QuestSelectionPrompt />;
 }

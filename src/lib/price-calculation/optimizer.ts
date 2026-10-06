@@ -1,0 +1,692 @@
+import { craftingDuration } from "./crafting-skill";
+import { emptyIngredientPlan, getEmptySale } from "./empty-value";
+import { craftRequiredItems, isTrackedCraft } from "./craft-rules";
+import { getFleaLockReasons, getRecipeLockReasons, getTraderLockReasons } from "./availability";
+import { getFleaPrice } from "../utils/market-price";
+import type { BarterRecord, CraftRecord, ItemAmountRef } from "@/types/recipes";
+import type { TraderPurchaseOffer } from "@/types/items";
+import { getItemBuyPrice, getItemSellComparison, practicalSavingsThreshold } from "./prices";
+import type {
+	LockReason,
+	LockedAcquisitionAlternative,
+	AcquisitionAlternative,
+	AcquisitionPlan,
+	PriceCalculationContext,
+	RecipeCalculatorInput,
+	RecipeEvaluation,
+} from "./types";
+import { traderInfo } from "../data/traders";
+
+interface Candidate {
+	method: AcquisitionAlternative["method"];
+	sourceId?: string;
+	traderOffer?: TraderPurchaseOffer;
+	batches: number;
+	totalCost: number;
+	theoreticalCost: number;
+	durationSeconds: number;
+	children: AcquisitionPlan[];
+}
+
+/** Preserve first-seen order while bounding diagnostics shared by nested routes. */
+function uniqueLockReasons(reasons: LockReason[]): LockReason[] {
+	const seen = new Set<string>();
+	return reasons.filter((reason) => {
+		const key = JSON.stringify([reason.kind, reason.message, reason.questId, reason.sourceId, reason.requiredLevel]);
+		if (seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
+}
+
+function aggregateRequirements(requirements: ItemAmountRef[], multiplier: number) {
+	const totals = new Map<string, ItemAmountRef>();
+	for (const requirement of requirements) {
+		const key = `${requirement.itemId}:${requirement.isTool === true ? "tool" : "item"}`;
+		const current = totals.get(key);
+		totals.set(key, {
+			itemId: requirement.itemId,
+			count: (current?.count ?? 0) + requirement.count * multiplier,
+			...(requirement.isTool ? { isTool: true } : {}),
+		});
+	}
+	return [...totals.values()];
+}
+
+function sumPlanCost(plans: AcquisitionPlan[], field: "totalCost" | "theoreticalCost") {
+	let total = 0;
+	for (const plan of plans) {
+		if (plan.isTool) continue;
+		const value = plan[field];
+		if (value === null) return null;
+		total += value;
+	}
+	return total;
+}
+
+/** Cheapest known display-only cost without treating a locked route as eligible. */
+function displayPlanCost(plan: AcquisitionPlan): number | null {
+	if (isAccessiblePlan(plan)) return plan.totalCost;
+	const knownCosts = [
+		plan.totalCost,
+		...(plan.lockedAlternatives ?? []).map((route) =>
+			route.estimatedUnitPrice === undefined ? null : route.estimatedUnitPrice * plan.quantity,
+		),
+	].filter((cost): cost is number => cost !== null && Number.isFinite(cost) && cost >= 0);
+	return knownCosts.length > 0 ? Math.min(...knownCosts) : null;
+}
+
+function sumDisplayPlanCost(plans: AcquisitionPlan[]) {
+	let total = 0;
+	for (const plan of plans) {
+		if (plan.isTool) continue;
+		const cost = displayPlanCost(plan);
+		if (cost === null) return null;
+		total += cost;
+	}
+	return total;
+}
+
+function sumRequirementSellValue(requirements: ItemAmountRef[], context: PriceCalculationContext) {
+	let total = 0;
+	for (const requirement of requirements) {
+		if (requirement.isTool) continue;
+		const emptySale = getEmptySale(context.itemsById[requirement.itemId], context.overrides, context);
+		if (emptySale !== null) {
+			if (emptySale.net === null) return null;
+			total += emptySale.net * requirement.count;
+			continue;
+		}
+		const sale = getItemSellComparison(
+			context.itemsById[requirement.itemId],
+			context.overrides,
+			{ ...context, useTraderSaleForLockedOutputs: true },
+			requirement.count,
+		);
+		if (sale.netTotal === null) return null;
+		total += sale.netTotal;
+	}
+	return total;
+}
+
+export function createAcquisitionOptimizer(context: PriceCalculationContext) {
+	const maxDepth = context.maxDepth ?? 16;
+	const overrides = context.overrides ?? {};
+	const memo = new Map<string, AcquisitionPlan>();
+
+	function optimize(
+		itemId: string,
+		quantity = 1,
+		blocked = new Set<string>(),
+		depth = 0,
+		estimateLockedRecipes = true,
+		asIngredient = false,
+	): AcquisitionPlan {
+		const normalizedQuantity = Math.max(0, quantity);
+		if (asIngredient) {
+			const empty = emptyIngredientPlan(context.itemsById[itemId], normalizedQuantity, overrides, context);
+			if (empty) return empty;
+		}
+		const memoKey = `${asIngredient}:${estimateLockedRecipes}:${depth}:${itemId}:${normalizedQuantity}:${[...blocked].sort().join(",")}`;
+		const cached = memo.get(memoKey);
+		if (cached) return cached;
+
+		if (normalizedQuantity === 0) {
+			return {
+				itemId,
+				quantity: 0,
+				method: "flea",
+				batches: 0,
+				totalCost: 0,
+				selectedRouteTheoreticalCost: 0,
+				theoreticalCost: 0,
+				theoreticalMethod: "flea",
+				directBuyCost: 0,
+				directBuyMethod: "flea",
+				durationSeconds: 0,
+				children: [],
+				alternatives: [],
+			};
+		}
+
+		if (depth >= maxDepth || blocked.has(itemId)) {
+			return unavailablePlan(itemId, normalizedQuantity);
+		}
+
+		const nextBlocked = new Set(blocked).add(itemId);
+		const candidates: Candidate[] = [];
+		const lockedAlternatives: LockedAcquisitionAlternative[] = [];
+		candidates.push(...getDirectCandidates(itemId, normalizedQuantity, context, overrides, lockedAlternatives));
+
+		if (context.allowBarters !== false) {
+			for (const barter of context.bartersByItemId[itemId] ?? []) {
+				const candidate = evaluateAcquisitionRecipe(
+					"barter",
+					barter,
+					normalizedQuantity,
+					nextBlocked,
+					depth,
+					lockedAlternatives,
+					estimateLockedRecipes,
+				);
+				if (candidate) candidates.push(candidate);
+			}
+		}
+		if (context.allowCrafts !== false) {
+			for (const craft of context.craftsByItemId[itemId] ?? []) {
+				const candidate = evaluateAcquisitionRecipe(
+					"craft",
+					craft,
+					normalizedQuantity,
+					nextBlocked,
+					depth,
+					lockedAlternatives,
+					estimateLockedRecipes,
+				);
+				if (candidate) candidates.push(candidate);
+			}
+		}
+
+		// Sell value is a manual opportunity-cost option only for items that have
+		// no trader, barter, or craft acquisition method. Flea remains the default
+		// fallback below, including when that flea route is locked.
+		if (candidates.length === 0 && !lockedAlternatives.some((candidate) => candidate.method !== "flea")) {
+			const sale = getItemSellComparison(
+				context.itemsById[itemId],
+				overrides,
+				{ ...context, useTraderSaleForLockedOutputs: true },
+				normalizedQuantity,
+			);
+			if (sale.netTotal !== null && Number.isFinite(sale.netTotal) && sale.netTotal >= 0) {
+				const totalCost = sale.netTotal;
+				if (Number.isFinite(totalCost)) {
+					candidates.push({
+						method: "sell",
+						batches: 1,
+						totalCost,
+						theoreticalCost: totalCost,
+						durationSeconds: 0,
+						children: [],
+					});
+				}
+			}
+		}
+
+		if (!candidates.some((candidate) => candidate.method !== "sell")) {
+			const lockedFlea = lockedAlternatives.find((candidate) => candidate.method === "flea");
+			if (lockedFlea) {
+				const plan = lockedFleaFallbackPlan(itemId, normalizedQuantity, lockedFlea, lockedAlternatives, candidates);
+				memo.set(memoKey, plan);
+				return plan;
+			}
+		}
+
+		if (candidates.length === 0) return unavailablePlan(itemId, normalizedQuantity, lockedAlternatives);
+
+		const theoretical = [...candidates].sort((left, right) => left.theoreticalCost - right.theoreticalCost)[0];
+		let recommended = [...candidates].sort((left, right) => left.totalCost - right.totalCost)[0];
+		const cheapestDirect = candidates
+			.filter(isDirectCandidate)
+			.sort((left, right) => left.totalCost - right.totalCost)[0];
+		if (cheapestDirect && !isDirectCandidate(recommended)) {
+			const savings = cheapestDirect.totalCost - recommended.totalCost;
+			if (savings <= practicalSavingsThreshold(cheapestDirect.totalCost)) {
+				recommended = cheapestDirect;
+			}
+		}
+
+		const plan: AcquisitionPlan = {
+			itemId,
+			quantity: normalizedQuantity,
+			lockedAlternatives,
+			method: recommended.method,
+			sourceId: recommended.sourceId,
+			traderOffer: recommended.traderOffer,
+			batches: recommended.batches,
+			totalCost: recommended.totalCost,
+			selectedRouteTheoreticalCost: recommended.theoreticalCost,
+			theoreticalCost: theoretical.theoreticalCost,
+			theoreticalMethod: theoretical.method,
+			directBuyCost: cheapestDirect?.totalCost ?? null,
+			directBuyMethod:
+				cheapestDirect?.method === "flea" || cheapestDirect?.method === "trader" ? cheapestDirect.method : null,
+			durationSeconds: recommended.durationSeconds,
+			children: recommended.children,
+			alternatives: candidates
+				.filter((candidate) => !isSameCandidate(candidate, recommended))
+				.sort((left, right) => left.totalCost - right.totalCost)
+				.map(toAcquisitionAlternative),
+		};
+		memo.set(memoKey, plan);
+		return plan;
+	}
+
+	function evaluateAcquisitionRecipe(
+		kind: "barter" | "craft",
+		recipe: BarterRecord | CraftRecord,
+		quantity: number,
+		blocked: Set<string>,
+		depth: number,
+		lockedAlternatives: LockedAcquisitionAlternative[],
+		estimateLockedRecipes: boolean,
+	): Candidate | null {
+		const lockReasons = getRecipeLockReasons(recipe, context);
+		const recipeLocked = lockReasons.length > 0;
+		const reject = (
+			message?: string,
+			estimatedUnitPrice?: number,
+			details?: Pick<Candidate, "batches" | "durationSeconds" | "children">,
+		) => {
+			if (message) lockReasons.push({ kind: "unavailable", message });
+			lockedAlternatives.push({
+				method: kind,
+				sourceId: recipe.id,
+				lockReasons: uniqueLockReasons(lockReasons),
+				...(estimatedUnitPrice !== undefined && Number.isFinite(estimatedUnitPrice) && estimatedUnitPrice >= 0
+					? { estimatedUnitPrice }
+					: {}),
+				...details,
+			});
+			return null;
+		};
+		if (recipeLocked && !estimateLockedRecipes) return reject();
+		const outputCount =
+			kind === "barter" ? (recipe as BarterRecord).offeredCount : (recipe as CraftRecord).productCount;
+		if (!(outputCount > 0)) return reject("Invalid recipe output quantity");
+		// Passive/zero-input production has operational costs outside this
+		// dataset and must not become a free recursive ingredient source.
+		if (recipe.requiredItems.length === 0) return reject("Production input costs unavailable");
+		if (kind === "craft" && (recipe as CraftRecord).requiredQuestItems.length > 0) {
+			return reject("Quest item input costs unavailable");
+		}
+		const batches = Math.ceil(quantity / outputCount);
+		const recipeRequirements =
+			kind === "craft"
+				? craftRequiredItems(recipe as CraftRecord, context.hideoutManagementSkillLevel)
+				: recipe.requiredItems;
+		const requirements = aggregateRequirements(recipeRequirements, batches);
+		const children = requirements.map((requirement) => ({
+			// Locked sources remain ineligible, but their known costs can contribute
+			// to a recursively calculated display estimate for this route.
+			...optimize(
+				requirement.itemId,
+				requirement.count,
+				blocked,
+				depth + 1,
+				estimateLockedRecipes,
+				!requirement.isTool,
+			),
+			...(requirement.isTool ? { isTool: true } : {}),
+		}));
+		const durationSeconds =
+			(kind === "craft"
+				? craftingDuration(recipe as CraftRecord, context.craftingSkillLevel) * (quantity / outputCount)
+				: 0) + children.reduce((total, child) => total + (child.isTool ? 0 : child.durationSeconds), 0);
+		const displayCost = sumDisplayPlanCost(children);
+		const displayDetails = {
+			batches,
+			durationSeconds,
+			children,
+		};
+		// Tools must be obtainable to execute a nested craft, even though their
+		// acquisition cost is excluded from recurring production costs.
+		const unavailableTools =
+			kind === "craft" ? children.filter((child) => child.isTool && !isAccessiblePlan(child)) : [];
+		if (unavailableTools.length) {
+			lockReasons.push(...unavailableTools.flatMap((tool) => tool.lockReasons ?? []));
+			return reject(
+				"Required reusable tool has no accessible acquisition route",
+				displayCost === null ? undefined : displayCost / quantity,
+				displayDetails,
+			);
+		}
+		const hasUnavailableIngredients = children.some((child) => !child.isTool && !isAccessiblePlan(child));
+		const totalCost = hasUnavailableIngredients ? null : sumPlanCost(children, "totalCost");
+		const theoreticalCost = hasUnavailableIngredients ? null : sumPlanCost(children, "theoreticalCost");
+		if (totalCost === null || theoreticalCost === null) {
+			lockReasons.push(
+				...children
+					.filter((child) => !child.isTool && !isAccessiblePlan(child))
+					.flatMap((child) => child.lockReasons ?? []),
+			);
+			return reject(
+				"Recipe ingredients have no accessible priced route",
+				displayCost === null ? undefined : displayCost / quantity,
+				displayDetails,
+			);
+		}
+		if (recipeLocked) return reject(undefined, totalCost / quantity, displayDetails);
+		return {
+			method: kind,
+			sourceId: recipe.id,
+			batches,
+			totalCost,
+			theoreticalCost,
+			durationSeconds,
+			children,
+		};
+	}
+
+	return { optimize };
+}
+
+function isSameCandidate(left: Candidate, right: Candidate) {
+	return left.method === right.method && left.sourceId === right.sourceId;
+}
+
+function isDirectCandidate(candidate: Candidate) {
+	return candidate.method === "flea" || candidate.method === "trader";
+}
+
+function isAccessiblePlan(plan: AcquisitionPlan) {
+	return plan.method !== "unavailable" && plan.totalCost !== null && !plan.lockReasons?.length;
+}
+
+function traderCandidateId(itemId: string, offer: TraderPurchaseOffer, index: number) {
+	return [
+		"trader",
+		itemId,
+		index,
+		offer.traderId,
+		offer.minTraderLevel,
+		offer.taskUnlockId ?? "",
+		offer.currencyItemId,
+		offer.price,
+		offer.priceRUB,
+	].join(":");
+}
+
+function getDirectCandidates(
+	itemId: string,
+	quantity: number,
+	context: PriceCalculationContext,
+	overrides: NonNullable<PriceCalculationContext["overrides"]>,
+	lockedAlternatives: LockedAcquisitionAlternative[] = [],
+): Candidate[] {
+	const candidates: Candidate[] = [];
+	const unitBuyPrice = getItemBuyPrice(context.itemsById[itemId], overrides, context);
+	if (unitBuyPrice !== null && Number.isFinite(unitBuyPrice) && unitBuyPrice >= 0) {
+		candidates.push({
+			method: "flea",
+			batches: 1,
+			totalCost: unitBuyPrice * quantity,
+			theoreticalCost: unitBuyPrice * quantity,
+			durationSeconds: 0,
+			children: [],
+		});
+	}
+	if (unitBuyPrice === null) {
+		const lockReasons = getFleaLockReasons(context.itemsById[itemId], context.playerLevel);
+		const estimate = getFleaPrice(context.itemsById[itemId]?.marketPrice);
+		lockedAlternatives.push({
+			method: "flea",
+			lockReasons: lockReasons.length
+				? lockReasons
+				: [{ kind: "unavailable", message: "Flea purchase price unavailable" }],
+			...(estimate !== null && Number.isFinite(estimate) && estimate >= 0 ? { estimatedUnitPrice: estimate } : {}),
+		});
+	}
+	if (context.allowTraderPurchases !== false) {
+		for (const [index, offer] of (context.itemsById[itemId]?.buyFromTrader ?? []).entries()) {
+			const lockReasons = getTraderLockReasons(offer, context);
+			const sourceId = traderCandidateId(itemId, offer, index);
+			if (lockReasons.length) {
+				lockedAlternatives.push({
+					method: "trader",
+					sourceId,
+					traderOffer: offer,
+					lockReasons,
+					estimatedUnitPrice:
+						Number.isFinite(offer.price) && offer.price > 0 && Number.isFinite(offer.priceRUB) && offer.priceRUB > 0
+							? offer.priceRUB
+							: undefined,
+				});
+				continue;
+			}
+			if (!Number.isFinite(offer.price) || offer.price <= 0 || !Number.isFinite(offer.priceRUB) || offer.priceRUB <= 0)
+				continue;
+			const totalCost = offer.priceRUB * quantity;
+			if (!Number.isFinite(totalCost)) continue;
+			candidates.push({
+				method: "trader",
+				sourceId: traderCandidateId(itemId, offer, index),
+				traderOffer: offer,
+				batches: 1,
+				totalCost,
+				theoreticalCost: totalCost,
+				durationSeconds: 0,
+				children: [],
+			});
+		}
+	}
+	return candidates;
+}
+
+function toAcquisitionAlternative(candidate: Candidate): AcquisitionAlternative {
+	return {
+		method: candidate.method,
+		sourceId: candidate.sourceId,
+		traderOffer: candidate.traderOffer,
+		batches: candidate.batches,
+		totalCost: candidate.totalCost,
+		theoreticalCost: candidate.theoreticalCost,
+		durationSeconds: candidate.durationSeconds,
+		children: candidate.children,
+	};
+}
+
+function lockedFleaFallbackPlan(
+	itemId: string,
+	quantity: number,
+	lockedFlea: LockedAcquisitionAlternative,
+	lockedAlternatives: LockedAcquisitionAlternative[],
+	alternatives: Candidate[],
+): AcquisitionPlan {
+	const totalCost = lockedFlea.estimatedUnitPrice === undefined ? null : lockedFlea.estimatedUnitPrice * quantity;
+	return {
+		itemId,
+		quantity,
+		lockedAlternatives,
+		lockReasons: uniqueLockReasons([
+			...lockedAlternatives.flatMap((route) => route.lockReasons),
+			{ kind: "unavailable", message: "No accessible priced acquisition route" },
+		]),
+		method: "flea",
+		batches: 1,
+		totalCost,
+		selectedRouteTheoreticalCost: totalCost ?? undefined,
+		theoreticalCost: totalCost,
+		theoreticalMethod: "flea",
+		directBuyCost: null,
+		directBuyMethod: null,
+		durationSeconds: 0,
+		children: [],
+		alternatives: alternatives.map(toAcquisitionAlternative),
+	};
+}
+
+function unavailablePlan(
+	itemId: string,
+	quantity: number,
+	lockedAlternatives: LockedAcquisitionAlternative[] = [],
+): AcquisitionPlan {
+	return {
+		itemId,
+		quantity,
+		lockedAlternatives,
+		lockReasons: uniqueLockReasons([
+			...lockedAlternatives.flatMap((route) => route.lockReasons),
+			{ kind: "unavailable", message: "No accessible priced acquisition route" },
+		]),
+		method: "unavailable",
+		batches: 0,
+		totalCost: null,
+		theoreticalCost: null,
+		theoreticalMethod: "unavailable",
+		directBuyCost: null,
+		directBuyMethod: null,
+		durationSeconds: 0,
+		children: [],
+		alternatives: [],
+	};
+}
+
+function indexRecipesByOutput<T>(records: readonly T[], getItemId: (record: T) => string): Record<string, T[]> {
+	const result: Record<string, T[]> = Object.create(null) as Record<string, T[]>;
+	for (const record of records) (result[getItemId(record)] ??= []).push(record);
+	return result;
+}
+
+/**
+ * Creates one pricing calculator over an already-loaded acquisition graph.
+ * The graph remains price-independent; this instance owns the current price
+ * context and shares one recursive memoization cache across every evaluation.
+ */
+export function createRecipeCalculator(input: RecipeCalculatorInput) {
+	const trackedCrafts = input.crafts.filter(isTrackedCraft);
+	const context: PriceCalculationContext = {
+		itemsById: input.itemsById,
+		bartersByItemId: indexRecipesByOutput(input.barters, (barter) => barter.offeredItemId),
+		craftsByItemId: indexRecipesByOutput(trackedCrafts, (craft) => craft.productItemId),
+		craftingSkillLevel: input.craftingSkillLevel,
+		hideoutManagementSkillLevel: input.hideoutManagementSkillLevel,
+		playerLevel: input.playerLevel,
+		stationLevels: input.stationLevels,
+		useTraderSaleForLockedOutputs: input.useTraderSaleForLockedOutputs,
+		overrides: input.overrides,
+		maxDepth: input.maxDepth,
+		allowBarters: input.allowBarters,
+		allowCrafts: input.allowCrafts,
+		allowTraderPurchases: input.allowTraderPurchases,
+		traderLoyaltyLevels: input.traderLoyaltyLevels,
+		completedQuests: input.completedQuests,
+	};
+	const optimizer = createAcquisitionOptimizer(context);
+
+	return {
+		evaluateNode: optimizer.optimize,
+		evaluateRecipe(kind: "barter" | "craft", recipe: BarterRecord | CraftRecord) {
+			return evaluateTopLevelRecipe(kind, recipe, context, optimizer);
+		},
+		evaluateBarter(barter: BarterRecord) {
+			return evaluateTopLevelRecipe("barter", barter, context, optimizer);
+		},
+		evaluateCraft(craft: CraftRecord) {
+			return evaluateTopLevelRecipe("craft", craft, context, optimizer);
+		},
+		evaluateBarters(barters: readonly BarterRecord[] = input.barters) {
+			return barters.map((barter) => evaluateTopLevelRecipe("barter", barter, context, optimizer));
+		},
+		evaluateCrafts(crafts: readonly CraftRecord[] = trackedCrafts) {
+			return crafts.filter(isTrackedCraft).map((craft) => evaluateTopLevelRecipe("craft", craft, context, optimizer));
+		},
+	};
+}
+
+export function evaluateBarter(barter: BarterRecord, context: PriceCalculationContext): RecipeEvaluation {
+	return evaluateTopLevelRecipe("barter", barter, context);
+}
+
+export function evaluateCraft(craft: CraftRecord, context: PriceCalculationContext): RecipeEvaluation {
+	return evaluateTopLevelRecipe("craft", craft, context);
+}
+
+export function evaluateBarters(barters: BarterRecord[], context: PriceCalculationContext) {
+	const optimizer = createAcquisitionOptimizer(context);
+	return barters.map((barter) => evaluateTopLevelRecipe("barter", barter, context, optimizer));
+}
+
+export function evaluateCrafts(crafts: CraftRecord[], context: PriceCalculationContext) {
+	const optimizer = createAcquisitionOptimizer(context);
+	return crafts.filter(isTrackedCraft).map((craft) => evaluateTopLevelRecipe("craft", craft, context, optimizer));
+}
+
+function evaluateTopLevelRecipe(
+	kind: "barter" | "craft",
+	recipe: BarterRecord | CraftRecord,
+	context: PriceCalculationContext,
+	optimizer = createAcquisitionOptimizer(context),
+): RecipeEvaluation {
+	const outputItemId =
+		kind === "barter" ? (recipe as BarterRecord).offeredItemId : (recipe as CraftRecord).productItemId;
+	const outputCount = kind === "barter" ? (recipe as BarterRecord).offeredCount : (recipe as CraftRecord).productCount;
+	const blocked = new Set([outputItemId]);
+	const recipeRequirements =
+		kind === "craft"
+			? craftRequiredItems(recipe as CraftRecord, context.hideoutManagementSkillLevel)
+			: recipe.requiredItems;
+	const aggregatedRequirements = aggregateRequirements(recipeRequirements, 1);
+	const requiredItems = aggregatedRequirements.map((requirement) => ({
+		...optimizer.optimize(requirement.itemId, requirement.count, blocked, 0, true, !requirement.isTool),
+		...(requirement.isTool ? { isTool: true } : {}),
+	}));
+	const lockReasons = getRecipeLockReasons(recipe, context);
+	const hasNoInputs = recipe.requiredItems.length === 0;
+	const hasQuestInputs = kind === "craft" && (recipe as CraftRecord).requiredQuestItems.length > 0;
+	if (hasNoInputs) lockReasons.push({ kind: "unavailable", message: "Production input costs unavailable" });
+	if (hasQuestInputs) lockReasons.push({ kind: "unavailable", message: "Quest item input costs unavailable" });
+	const hasUnpricedRequirements = hasNoInputs || hasQuestInputs;
+	const cost = hasUnpricedRequirements ? null : sumPlanCost(requiredItems, "totalCost");
+	const theoreticalCost = hasUnpricedRequirements ? null : sumPlanCost(requiredItems, "theoreticalCost");
+	const sale = getItemSellComparison(context.itemsById[outputItemId], context.overrides, context, outputCount);
+	const sellValue = sale.netTotal;
+	const cheapestDirect = getDirectCandidates(outputItemId, outputCount, context, context.overrides ?? {}).sort(
+		(left, right) => left.totalCost - right.totalCost,
+	)[0];
+	const directBuyCost = cheapestDirect?.totalCost ?? null;
+	const profit = cost === null || sellValue === null ? null : sellValue - cost;
+	const inputSellValue = hasUnpricedRequirements ? null : sumRequirementSellValue(aggregatedRequirements, context);
+	const profitVsSellingInputs = inputSellValue === null || sellValue === null ? null : sellValue - inputSellValue;
+	const durationSeconds =
+		(kind === "craft" ? craftingDuration(recipe as CraftRecord, context.craftingSkillLevel) : 0) +
+		requiredItems.reduce((total, plan) => total + (plan.isTool ? 0 : plan.durationSeconds), 0);
+	const profitPerHour = profit === null || durationSeconds <= 0 ? null : profit / (durationSeconds / 3_600);
+	const savings = directBuyCost === null || cost === null ? null : directBuyCost - cost;
+	const meaningfulSavings =
+		savings === null || directBuyCost === null ? null : savings > practicalSavingsThreshold(directBuyCost);
+
+	const sellSourceLabel =
+		sale.selectedSource === "trader"
+			? sale.bestTraderOffer
+				? traderInfo(sale.bestTraderOffer.traderId).name
+				: undefined
+			: sale.selectedSource === "manual"
+				? `Manual · ${sale.saleDestination === "trader" ? "Trader" : "Flea market"}`
+				: sale.selectedSource === "flea"
+					? "Flea market"
+					: "No sale price";
+
+	return {
+		lockReasons: uniqueLockReasons(lockReasons),
+		outputLockReasons: getFleaLockReasons(context.itemsById[outputItemId], context.playerLevel),
+		sellValueIsEstimate: sale.isEstimate,
+		sellSourceLabel,
+		id: recipe.id,
+		kind,
+		outputItemId,
+		outputCount,
+		requiredItems,
+		cost,
+		theoreticalCost,
+		sellValue,
+		grossSellValue: sale.grossTotal,
+		sellFee: sale.fee,
+		profit,
+		inputSellValue,
+		profitVsSellingInputs,
+		durationSeconds,
+		profitPerHour,
+		directBuyCost,
+		directBuyMethod:
+			cheapestDirect?.method === "flea" || cheapestDirect?.method === "trader" ? cheapestDirect.method : null,
+		isPracticallyWorthwhile: meaningfulSavings,
+		...(kind === "barter"
+			? { barter: recipe as BarterRecord }
+			: {
+					craft: {
+						...(recipe as CraftRecord),
+						duration: craftingDuration(recipe as CraftRecord, context.craftingSkillLevel),
+					},
+				}),
+	};
+}

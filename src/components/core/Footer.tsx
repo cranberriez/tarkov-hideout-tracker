@@ -1,43 +1,69 @@
+import { Coffee } from "lucide-react";
+import { FEEDBACK_FORM_URL, KOFI_URL } from "@/lib/cfg/support-links";
+import { DataStatusDialog } from "./DataStatusDialog";
+
 export function Footer() {
-    return (
-        <footer className="border-t border-border-color bg-card py-6 mt-10">
-            <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-                <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3">
-                    <span>
-                        <a
-                            href="https://github.com/cranberriez/tarkov-hideout-tracker"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="transition-colors text-tarkov-green-dim hover:text-tarkov-green hover:underline"
-                        >
-                            GitHub
-                        </a>
-                    </span>
-                    <span>
-                        Data provided by{" "}
-                        <a
-                            href="https://tarkov.dev/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="transition-colors text-tarkov-green-dim hover:text-tarkov-green hover:underline"
-                        >
-                            tarkov.dev
-                        </a>
-                    </span>
-                    <span>
-                        Escape from Tarkov{" "}
-                        <a
-                            href="https://escapefromtarkov.fandom.com/wiki/Escape_from_Tarkov_Wiki"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="transition-colors text-tarkov-green-dim hover:text-tarkov-green hover:underline"
-                        >
-                            Wiki
-                        </a>
-                    </span>
-                </div>
-                <div>Created by the community for the community. Not affiliated with BSG.</div>
-            </div>
-        </footer>
-    );
+	return (
+		<footer className="border-t border-border-color bg-card py-6 mt-10">
+			<div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-subtle-foreground">
+				<div className="flex flex-col md:flex-row items-center gap-2 md:gap-3">
+					<span>
+						<a
+							href="https://github.com/cranberriez/tarkov-hideout-tracker"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="transition-colors text-brand-hover hover:text-brand hover:underline"
+						>
+							GitHub
+						</a>
+					</span>
+					<span>
+						Data provided by{" "}
+						<a
+							href="https://tarkov.dev/"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="transition-colors text-brand-hover hover:text-brand hover:underline"
+						>
+							tarkov.dev
+						</a>
+					</span>
+					<span>
+						Escape from Tarkov{" "}
+						<a
+							href="https://escapefromtarkov.fandom.com/wiki/Escape_from_Tarkov_Wiki"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="transition-colors text-brand-hover hover:text-brand hover:underline"
+						>
+							Wiki
+						</a>
+					</span>
+					{FEEDBACK_FORM_URL && (
+						<a
+							href={FEEDBACK_FORM_URL}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="transition-colors text-brand-hover hover:text-brand hover:underline"
+						>
+							Feedback
+						</a>
+					)}
+					{KOFI_URL && (
+						<a
+							href={KOFI_URL}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="inline-flex items-center gap-1 transition-colors text-brand-hover hover:text-brand hover:underline"
+						>
+							<Coffee size={12} aria-hidden />
+							Support on Ko-fi
+						</a>
+					)}
+					<DataStatusDialog />
+				</div>
+				<div>Created by the community for the community. Not affiliated with BSG.</div>
+			</div>
+		</footer>
+	);
 }

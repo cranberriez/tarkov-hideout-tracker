@@ -1,162 +1,119 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { ItemDetails } from "@/types";
+import { useDeferredPriceItems } from "@/features/items/DeferredPriceBoundary";
+
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsList } from "@/features/items/components/ItemsList";
+import { DEFAULT_CHECKLIST_SORT, selectChecklistSort } from "./checklist-sort";
 import { ItemsControls } from "@/features/items/components/ItemsControls";
-import { ItemsStatsRow } from "@/features/items/components/ItemsStatsRow";
-import { ItemSearchModal } from "@/features/items/components/ItemSearchModal";
-import { ItemDetailModal } from "@/features/items/item-detail/ItemDetailModal";
+// import { ItemsStatsRow } from "@/features/items/components/ItemsStatsRow";
 import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
-import { useDataContext } from "@/app/(data)/_dataContext";
-import type { QuestAnyOfGroupEntry, QuestItemIndexEntry } from "@/lib/utils/quest-item-index";
-import type { QuestAvailabilityQuest } from "@/lib/utils/quest-availability";
+import { DataLoadError } from "@/components/core/DataLoadError";
+import type { ItemChecklistPageData } from "@/types/contracts";
+import { PROFILE_BASE_COLORS } from "@/lib/cfg/profile-colors";
+import type { TarkovJsonGameMode } from "@/lib/game-mode";
+import { toTarkovJsonGameMode } from "@/lib/game-mode";
+import { useUserStoreHydrated } from "@/lib/query/game-data";
 
 interface ItemsClientPageProps {
-    questItemIndex: QuestItemIndexEntry[];
-    questAnyOfGroups: QuestAnyOfGroupEntry[];
-    questAvailabilityQuests: QuestAvailabilityQuest[];
+	data: ItemChecklistPageData;
+	dataMode: TarkovJsonGameMode;
 }
 
-export function ItemsClientPage({
-    questItemIndex,
-    questAnyOfGroups,
-    questAvailabilityQuests,
-}: ItemsClientPageProps) {
-    const { stations, stationsUpdatedAt, items, itemsUpdatedAt } = useDataContext();
-    const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [selectedItem, setSelectedItem] = useState<ItemDetails | null>(null);
+export function ItemsClientPage({ data, dataMode }: ItemsClientPageProps) {
+	const {
+		stations,
+		items: initialItems,
+		questItemIndex,
+		questAnyOfGroups,
+		questAvailabilityQuests,
+		freshness,
+		errors,
+	} = data;
+	const items = useDeferredPriceItems(initialItems);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [sort, setSort] = useState(DEFAULT_CHECKLIST_SORT);
 
-    const {
-        stationLevels,
-        hiddenStations,
-        completedRequirements,
-        gameMode,
-        setGameMode,
-        initializeDefaults,
-    } = useUserStore();
+	const { gameMode, initializeDefaults } = useUserStore(
+		useShallow((state) => ({ gameMode: state.gameMode, initializeDefaults: state.initializeDefaults })),
+	);
+	const hydrated = useUserStoreHydrated();
 
-    useEffect(() => {
-        if (stations && stations.length > 0) {
-            initializeDefaults(stations);
-        }
-    }, [stations, stationsUpdatedAt, initializeDefaults]);
+	useEffect(() => {
+		if (hydrated && toTarkovJsonGameMode(gameMode) === dataMode && stations && stations.length > 0) {
+			initializeDefaults(stations);
+		}
+	}, [dataMode, gameMode, hydrated, stations, freshness.stationsUpdatedAt, initializeDefaults]);
 
-    useEffect(() => {
-        if (items && items.length > 0) {
-            const itemsMap: Record<string, ItemDetails> = {};
-            items.forEach((item) => {
-                itemsMap[item.id] = item;
-            });
-        }
-    }, [items, itemsUpdatedAt]);
+	const itemById = useMemo(() => Object.fromEntries((items ?? []).map((item) => [item.id, item])), [items]);
 
-    const questAvailabilityQuestList = useMemo(
-        () => questAvailabilityQuests,
-        [questAvailabilityQuests],
-    );
+	const questAvailabilityQuestList = useMemo(() => questAvailabilityQuests, [questAvailabilityQuests]);
 
-    // Merged pool: hideout items + any quest-only items not already present
-    const allSearchableItems = useMemo(() => {
-        const pool: Record<string, ItemDetails> = {};
-        for (const item of items ?? []) {
-            pool[item.id] = item;
-        }
-        for (const entry of questItemIndex) {
-            if (!pool[entry.itemId]) {
-                pool[entry.itemId] = {
-                    id: entry.itemId,
-                    name: entry.name,
-                    normalizedName: entry.normalizedName,
-                    iconLink: entry.iconLink,
-                    gridImageLink: entry.gridImageLink,
-                };
-            }
-        }
-        for (const group of questAnyOfGroups) {
-            for (const item of group.items) {
-                if (!pool[item.id]) {
-                    pool[item.id] = {
-                        id: item.id,
-                        name: item.name,
-                        normalizedName: item.normalizedName,
-                        iconLink: item.iconLink,
-                        gridImageLink: item.gridImageLink,
-                    };
-                }
-            }
-        }
-        return Object.values(pool);
-    }, [items, questAnyOfGroups, questItemIndex]);
+	return (
+		<main className="container mx-auto px-6 py-8">
+			<div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+				<div>
+					<h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight text-foreground">ITEM CHECKLIST</h1>
+				</div>
+				<div className="flex items-center gap-3 self-start rounded-sm border border-highlight/10 bg-shadow/20 px-3 py-2 text-xs text-muted-foreground sm:self-auto">
+					<span>Active profile prices</span>
+					<span
+						style={{ "--profile-color": PROFILE_BASE_COLORS[gameMode] } as CSSProperties}
+						className="inline-flex items-center gap-2 rounded-sm border border-[color-mix(in_srgb,var(--profile-color)_80%,transparent)] bg-[color-mix(in_srgb,var(--profile-color)_18%,var(--background))] px-3 py-1.5 font-mono font-semibold tracking-wide text-[color-mix(in_srgb,var(--profile-color)_55%,var(--foreground))] shadow-md shadow-[color-mix(in_srgb,var(--profile-color)_45%,transparent)] transition-all"
+					>
+						<span>{gameMode}</span>
+					</span>
+				</div>
+			</div>
 
-    return (
-        <main className="container mx-auto px-6 py-8">
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-                        ITEM CHECKLIST
-                    </h1>
-                </div>
-                <div className="flex items-center gap-3 self-start rounded-sm border border-white/10 bg-black/20 px-3 py-2 text-xs text-gray-400 sm:self-auto">
-                    <span>Show prices for</span>
-                    <button
-                        type="button"
-                        onClick={() => setGameMode(gameMode === "PVP" ? "PVE" : "PVP")}
-                        className={`inline-flex items-center gap-2 rounded-sm border px-3 py-1.5 font-mono font-semibold tracking-wide transition-all shadow-md ${
-                            gameMode === "PVP"
-                                ? "border-red-500/70 bg-red-900/60 text-red-200 shadow-[0_0_18px_rgba(248,113,113,0.45)]"
-                                : "border-sky-400/80 bg-sky-900/70 text-sky-100 shadow-[0_0_20px_rgba(56,189,248,0.7)]"
-                        }`}
-                        title="Click to switch between PVP and PVE prices"
-                    >
-                        <span>{gameMode}</span>
-                    </button>
-                </div>
-            </div>
+			<div className="mb-8">
+				{errors.stations || errors.items || !stations || !items ? (
+					<DataLoadError
+						title="Hideout item data is unavailable"
+						messages={[
+							...(errors.stations ? [errors.stations] : []),
+							...(errors.items ? [errors.items] : []),
+							...(!stations && !errors.stations ? ["Hideout station data could not be loaded."] : []),
+							...(!items && !errors.items ? ["Hideout item data could not be loaded."] : []),
+						]}
+					/>
+				) : (
+					<>
+						{errors.quests && (
+							<div className="mb-4">
+								<DataLoadError title="Quest checklist data is unavailable" messages={[errors.quests]} />
+							</div>
+						)}
+						<ItemsControls
+							searchQuery={searchQuery}
+							onSearchQueryChange={setSearchQuery}
+							sort={sort}
+							onSortSelect={(key) => setSort((current) => selectChecklistSort(current, key))}
+						>
+							{/* <ItemsStatsRow
+								stations={stations}
+								items={items}
+								questItemIndex={questItemIndex}
+								questAnyOfGroups={questAnyOfGroups}
+								questAvailabilityQuests={questAvailabilityQuestList}
+							/> */}
+							<ItemsList
+								sort={sort}
+								searchQuery={searchQuery}
+								stations={stations}
+								itemById={itemById}
+								questItemIndex={questItemIndex}
+								questAnyOfGroups={questAnyOfGroups}
+								questAvailabilityQuests={questAvailabilityQuestList}
+							/>
+						</ItemsControls>
+					</>
+				)}
+			</div>
 
-            <div className="mb-8">
-                <ItemsControls onOpenSearch={() => setIsSearchOpen(true)}>
-                    <ItemsStatsRow
-                        questItemIndex={questItemIndex}
-                        questAnyOfGroups={questAnyOfGroups}
-                        questAvailabilityQuests={questAvailabilityQuestList}
-                    />
-                    <ItemsList
-                        onClickItem={setSelectedItem}
-                        questItemIndex={questItemIndex}
-                        questAnyOfGroups={questAnyOfGroups}
-                        questAvailabilityQuests={questAvailabilityQuestList}
-                    />
-                </ItemsControls>
-            </div>
-
-            <DataLastUpdated />
-
-            <ItemSearchModal
-                isOpen={isSearchOpen}
-                onClose={() => setIsSearchOpen(false)}
-                onSelect={(item) => {
-                    setSelectedItem(item);
-                    setIsSearchOpen(false);
-                }}
-                itemPool={allSearchableItems}
-            />
-
-            {selectedItem && (
-                <ItemDetailModal
-                    item={selectedItem}
-                    isOpen={!!selectedItem}
-                    onClose={() => setSelectedItem(null)}
-                    stations={stations ?? []}
-                    stationLevels={stationLevels}
-                    hiddenStations={hiddenStations}
-                    completedRequirements={completedRequirements}
-                    questItemIndex={questItemIndex}
-                    questAnyOfGroups={questAnyOfGroups}
-                    questAvailabilityQuests={questAvailabilityQuestList}
-                />
-            )}
-        </main>
-    );
+			<DataLastUpdated stationsUpdatedAt={freshness.stationsUpdatedAt} itemsUpdatedAt={freshness.itemsUpdatedAt} />
+		</main>
+	);
 }

@@ -5,22 +5,28 @@ quest progress, quest hand-ins, and item requirements.
 
 ## Features
 
--   **Quests page**: Browse Tarkov.dev quest data by tree, trader, map, or list.
--   **Quest progress**: Track completed, failed, pinned, ignored, and item-ready quests.
--   **Manual quest sync**: Rebuild quest progress trader by trader from the quests currently visible in game.
--   **Quest log import**: Semi-automated log importing helps keep quest state closer to your character.
--   **Character settings**: Adjust level, faction, prestige, trader loyalty, game edition, and game mode in one place.
--   **Quest items on Items**: Include quest hand-ins and quest item groups alongside hideout requirements.
--   **Item filtering**: Filter by hideout items, quest items, available/future quest demand, FiR, pinned quests, Kappa, and Lightkeeper.
--   **Hideout tracking**: Manage station levels, hidden stations, upgrade readiness, and missing requirements.
--   **Inventory management**: Track collected item counts, including separate Found in Raid and non-FiR counts.
--   **Price data**: View Tarkov.dev flea market prices for PVP and PVE.
+- **Quests page**: Browse Tarkov.dev quest data by tree, trader, map, or list.
+- **Quest progress**: Track completed, failed, pinned, ignored, and item-ready quests.
+- **Manual quest sync**: Rebuild quest progress trader by trader from the quests currently visible in game.
+- **Quest log import**: Semi-automated log importing helps keep quest state closer to your character.
+- **Character settings**: Adjust level, faction, prestige, trader loyalty, game edition, and game mode in one place.
+- **Quest items on Items**: Include quest hand-ins and quest item groups alongside hideout requirements.
+- **Item filtering**: Filter by hideout items, quest items, available/future quest demand, FiR, pinned quests, Kappa, and Lightkeeper.
+- **Hideout tracking**: Manage station levels, hidden stations, upgrade readiness, and missing requirements.
+- **Inventory management**: Track collected item counts, including separate Found in Raid and non-FiR counts.
+- **Price data**: View current flea and trader values, recipe acquisition costs, and price history.
+- **Raid Planner**: Plan active quests on interactive objective maps with required keys, PMC extracts, and transits.
+- **Profit pages**: Compare barter and crafting routes with profile-aware availability and manual price overrides.
+- **Kappa checklist**: Track Collector items separately for each game mode.
 
-## Current Limitations
+## Profiles and saved progress
 
-Only one character profile is currently supported. Switching between PVP and PVE
-changes pricing and quest visibility, but it does not create a separate account
-or separate quest progress.
+PVP, PVE, and KORD have independent character progress, inventory, quests, and
+edition/setup state. KORD uses the seasonal dataset. Progress is saved locally in
+your browser; some display preferences are shared between profiles. See
+[user state](docs/user-state.md) for storage and reset details.
+
+Inventory, Keys, Station Goals, and Bitcoin Farm currently have placeholder routes.
 
 ## Other Tarkov Trackers
 
@@ -28,9 +34,9 @@ This site started as a pet project and learning tool for an early-career web
 developer. If you want more features, deeper progression tools, or probably more
 active development, check out these excellent sites:
 
--   [ttracker.org](https://ttracker.org/)
--   [tarkovtracker.org](https://tarkovtracker.org/)
--   [kappas.pages.dev](https://kappas.pages.dev/)
+- [ttracker.org](https://ttracker.org/)
+- [tarkovtracker.org](https://tarkovtracker.org/)
+- [kappas.pages.dev](https://kappas.pages.dev/)
 
 ## Development Setup
 
@@ -38,40 +44,35 @@ To set up the project locally, you will need a few prerequisites.
 
 ### 1. Storage
 
-The hosted project runs on Vercel and uses a linked Vercel/Upstash Redis storage
-database for cached server data and daily price snapshots.
-
-For local development, copy the linked storage environment variables from Vercel
-or provide equivalent Upstash Redis REST credentials. The Redis client currently
-expects REST-style variables, so a local Redis connection string may require code
-tweaks if you are not using Vercel/Upstash.
+The application reads normalized game data from PostgreSQL. Provision a target,
+apply migrations and bootstrap catalog/prices. Discovery history import is optional,
+as described in [operations](docs/operations.md). Production switching follows the
+separate [cutover runbook](docs/postgresql-cutover.md).
 
 ### 2. Environment Variables
 
-Copy the `.sample.env` file to `.env` and fill in your details:
+Copy [.sample.env](.sample.env) to `.env` if you do not already have a local
+environment file, then fill in your details:
 
 ```bash
 cp .sample.env .env
 ```
 
-Typical variables:
+Required variables:
 
 ```env
-KV_REST_API_URL="..."
-KV_REST_API_TOKEN="..."
-CRON_SECRET="your_secret_here"
+DATABASE_URL="postgresql://user:password@localhost:5432/tarkov"
 ```
 
-Depending on how storage is linked, Vercel/Upstash may provide `KV_*` variables
-or `UPSTASH_REDIS_REST_*` variables. Use whichever pair your environment
-provides. `CRON_SECRET` is only needed for the protected price refresh endpoint.
+`CRON_SECRET` protects scheduled price refreshes. [Operations](docs/operations.md)
+covers connection settings, catalog updates, and independent price maintenance.
 
 ### 3. Run the Development Server
 
 Install dependencies:
 
 ```bash
-npm install
+npm ci
 ```
 
 Start the dev server:
@@ -87,15 +88,15 @@ Run production checks:
 ```bash
 npm run lint
 npm run build
-```
-
-Refresh local price data:
-
-```bash
-npm run pull-prices
+npm run docs:check
+npm run test:architecture
+npm run test:contracts
 ```
 
 ## Learn More
 
--   [Next.js Documentation](https://nextjs.org/docs)
--   [Tarkov.dev API](https://api.tarkov.dev/)
+- [Project documentation](docs/README.md)
+- [Contributor and AI agent guidance](AGENTS.md)
+- [Focused tests and operations](docs/operations.md)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Tarkov.dev API](https://api.tarkov.dev/)

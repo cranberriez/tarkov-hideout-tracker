@@ -1,0 +1,403 @@
+import { randomUUID } from "node:crypto";
+import fs from "node:fs";
+import type { TarkovDataMode } from "../../src/types/common";
+import { closePostgresPool, getPostgresDb, getPostgresPool } from "../../src/server/postgres/connection";
+import { PostgresPriceRefreshStore } from "../../src/server/prices/price-store";
+import { fetchNormalizedCatalogPrices } from "../../src/server/prices/refresh-prices";
+import { fetchJsonPriceHistory } from "../../src/server/services/priceHistory";
+import { analyzeMode, seedAnalysisState } from "./analysis";
+import { PostgresAnalyticsStore } from "./analytics-store";
+import { loadConfig, parseModes, type WorkerConfig } from "./config";
+import { flushMode } from "./flush";
+import { log, parseLogFormat, setLogFormat } from "./log";
+import { pollMode } from "./poll";
+import {
+	describeRunRequest,
+	mergeRunRequests,
+	parseRunSpec,
+	specArgument,
+	UsageError,
+	type RunRequest,
+	type Step,
+} from "./run-spec";
+import { intervalDue, periodDue } from "./schedule";
+import { databaseHint, describeDatabaseTarget, describeError } from "./errors";
+import {
+	clearExclusions,
+	newLockRecord,
+	setEligible,
+	WorkerStateStore,
+	type LockRecord,
+	type ModeState,
+} from "./worker-state";
+
+const TICK_MS = 60 * 1000;
+/** How often a sleeping worker looks for run-now requests. */
+const REQUEST_CHECK_MS = 5 * 1000;
+const NOTHING_FORCED: ReadonlySet<Step> = new Set();
+const ANALYSIS_RETRY_MS = 15 * 60 * 1000;
+/** A failing mode is retried at this pace instead of every tick. */
+const MODE_ERROR_BACKOFF_MS = 5 * 60 * 1000;
+/** The container reports unhealthy once every mode has failed for this long. */
+const UNHEALTHY_AFTER_MS = 15 * 60 * 1000;
+const HEARTBEAT_STALE_MS = 10 * 60 * 1000;
+/** A state-directory lock whose holder has not refreshed it for this long is abandoned. */
+const LOCK_STALE_MS = 10 * 60 * 1000;
+
+interface Heartbeat {
+	at: number;
+	modes: TarkovDataMode[];
+	failing: Partial<Record<TarkovDataMode, { since: number; lastAttemptAt: number; error: string }>>;
+}
+
+class MarketWorker {
+	private stopping = false;
+	private wake: (() => void) | null = null;
+	private readonly states = new Map<TarkovDataMode, ModeState>();
+	/** In-memory retry pacing so a failing database is not hit every tick. */
+	private readonly attempts = new Map<string, number>();
+	private readonly seeded = new Set<TarkovDataMode>();
+	private readonly failing: Heartbeat["failing"] = {};
+	private readonly lock: LockRecord = newLockRecord();
+	/** Steps to run at the next tick regardless of schedule (start-up option and run-now requests). */
+	private readonly forced: RunRequest = new Map();
+	private readonly priceStore = new PostgresPriceRefreshStore(getPostgresDb());
+	private readonly analyticsStore = new PostgresAnalyticsStore(getPostgresPool());
+
+	constructor(
+		private readonly config: WorkerConfig,
+		private readonly local: WorkerStateStore,
+	) {}
+
+	stop() {
+		this.stopping = true;
+		this.wake?.();
+	}
+
+	/** Claims the state directory; false (with the holder logged) when another worker owns it. */
+	claimStateDirectory(): boolean {
+		const holder = this.local.acquireLock(this.lock, LOCK_STALE_MS);
+		if (!holder) return true;
+		log("state-directory-locked", {
+			stateDirectory: this.config.stateDirectory,
+			holder: { hostname: holder.hostname, pid: holder.pid, heartbeatAt: new Date(holder.heartbeatAt).toISOString() },
+			hint: "Another worker is using this volume. Stop it first; only one worker may share a state directory.",
+		});
+		return false;
+	}
+
+	releaseStateDirectory() {
+		this.local.releaseLock(this.lock);
+	}
+
+	/** Keeps our claim fresh during long work; stops the worker if another instance took over. */
+	private keepStateDirectory() {
+		if (this.stopping || this.local.refreshLock(this.lock)) return;
+		log("state-directory-lost", { hint: "Another worker claimed this volume; stopping to avoid corrupting it." });
+		this.stop();
+	}
+
+	private sleep(ms: number): Promise<void> {
+		// A stop requested during work must not start another uninterruptible sleep.
+		if (this.stopping) return Promise.resolve();
+		return new Promise((resolve) => {
+			const done = () => {
+				clearTimeout(timer);
+				clearInterval(check);
+				this.wake = null;
+				resolve();
+			};
+			const timer = setTimeout(done, ms);
+			// run-now requests should not wait for the full tick.
+			const check = setInterval(() => {
+				if (this.local.hasRunRequests()) done();
+			}, REQUEST_CHECK_MS);
+			this.wake = done;
+		});
+	}
+
+	private state(mode: TarkovDataMode): ModeState {
+		let state = this.states.get(mode);
+		if (!state) {
+			state = this.local.loadMode(mode);
+			this.states.set(mode, state);
+		}
+		return state;
+	}
+
+	/** Logs whether PostgreSQL is reachable, with the real driver error and a hint when it is not. */
+	async checkDatabase(): Promise<boolean> {
+		const target = describeDatabaseTarget(process.env.DATABASE_URL);
+		try {
+			await getPostgresPool().query("SELECT 1");
+			log("database-ok", { target });
+			return true;
+		} catch (error) {
+			log("database-unreachable", {
+				target,
+				error: describeError(error),
+				hint: databaseHint(process.env.DATABASE_URL, fs.existsSync("/.dockerenv")),
+			});
+			return false;
+		}
+	}
+
+	/** Queues steps to run at the next tick, whatever the schedule says. */
+	queueRun(request: RunRequest, source: string) {
+		mergeRunRequests(this.forced, request);
+		log("run-requested", { source, request: describeRunRequest(request) });
+	}
+
+	private collectRunRequests() {
+		for (const spec of this.local.consumeRunRequests()) {
+			try {
+				this.queueRun(parseRunSpec(spec, this.config.modes), "run-now");
+			} catch (error) {
+				log("run-request-invalid", { spec, error: describeError(error) });
+			}
+		}
+	}
+
+	async runForever() {
+		log("worker-started", {
+			modes: this.config.modes,
+			stateDirectory: this.config.stateDirectory,
+			schedules: this.config.schedules,
+			flushMs: this.config.flushMs,
+		});
+		// Keep running when the database is down: modes back off and recover on their own.
+		await this.checkDatabase();
+		while (!this.stopping) {
+			this.collectRunRequests();
+			for (const mode of this.config.modes) {
+				if (this.stopping) break;
+				const forced = this.forced.get(mode) ?? NOTHING_FORCED;
+				this.forced.delete(mode);
+				const failure = this.failing[mode];
+				// An explicit request is attempted even while the mode is backing off.
+				if (!forced.size && failure && Date.now() - failure.lastAttemptAt < MODE_ERROR_BACKOFF_MS) continue;
+				const attemptAt = Date.now();
+				try {
+					if (forced.size) log("run-now-started", { mode, steps: [...forced] });
+					await this.tick(mode, forced);
+					if (failure) log("mode-recovered", { mode, failingSince: new Date(failure.since).toISOString() });
+					delete this.failing[mode];
+				} catch (error) {
+					const message = describeError(error);
+					this.failing[mode] = { since: failure?.since ?? attemptAt, lastAttemptAt: attemptAt, error: message };
+					log("mode-error", { mode, error: message, retryInSeconds: MODE_ERROR_BACKOFF_MS / 1000 });
+				}
+			}
+			this.keepStateDirectory();
+			const heartbeat: Omit<Heartbeat, "at"> = { modes: this.config.modes, failing: this.failing };
+			this.local.heartbeat(heartbeat);
+			await this.sleep(TICK_MS);
+		}
+		log("worker-stopped");
+	}
+
+	/** Runs whichever steps are due for a mode, plus any forced steps regardless of schedule. */
+	async tick(mode: TarkovDataMode, forced: ReadonlySet<Step>) {
+		const state = this.state(mode);
+		const schedule = this.config.schedules[mode];
+		const save = () => this.local.saveMode(mode, state);
+		const now = Date.now();
+
+		if (this.local.consumeRecheck(mode)) {
+			log("exclusions-cleared", { mode, count: clearExclusions(state) });
+			save();
+		}
+		if (forced.has("poll") || intervalDue(state.eligibleAt, this.config.eligibleRefreshMs, now)) {
+			const itemIds = await this.priceStore.getEligibleItemIds(mode);
+			if (!itemIds.length) throw new Error(`No eligible items for ${mode}; is the catalog initialized?`);
+			setEligible(state, itemIds, now);
+			save();
+			log("eligible-refreshed", { mode, count: itemIds.length });
+		}
+
+		if (forced.has("poll") || intervalDue(state.lastPollAt, schedule.pollMs, now)) {
+			const startedAt = Date.now();
+			const counts = await pollMode(mode, state, {
+				fetchHistory: fetchJsonPriceHistory,
+				writeHistory: (m, itemId, points, etag) => this.local.writeHistory(m, itemId, points, etag),
+				saveState: save,
+				now: Date.now,
+				concurrency: this.config.concurrency,
+				shouldStop: () => {
+					this.keepStateDirectory();
+					return this.stopping;
+				},
+			});
+			log("poll", { mode, ...counts, durationMs: Date.now() - startedAt });
+		}
+		if (this.stopping) return;
+
+		const flushKey = `${mode}:flush`;
+		if (forced.has("push") || intervalDue(this.attempts.get(flushKey) ?? state.lastFlushAt, this.config.flushMs, now)) {
+			this.attempts.set(flushKey, now);
+			const startedAt = Date.now();
+			try {
+				const result = await flushMode(mode, state, {
+					store: this.priceStore,
+					readHistory: (m, itemId) => this.local.readHistory(m, itemId),
+					fetchCatalogPrices: fetchNormalizedCatalogPrices,
+					saveState: save,
+					now: Date.now,
+					newRunId: randomUUID,
+					catalogDue: forced.has("push") || intervalDue(state.lastCatalogAt, schedule.catalogMs, now),
+				});
+				log("flush", {
+					...(result.status === "completed"
+						? { ...result.summary, supersededCount: result.supersededCount }
+						: { mode, status: result.status }),
+					durationMs: Date.now() - startedAt,
+				});
+			} catch (error) {
+				log("flush-failed", { mode, error: describeError(error) });
+			}
+		}
+		if (this.stopping) return;
+
+		if (state.lastAnalysisAt === null && state.lastPollAt !== null && !this.seeded.has(mode)) {
+			const restored = seedAnalysisState(state, await this.analyticsStore.readAnalysisBaseline(mode));
+			this.seeded.add(mode);
+			save();
+			log("analysis-baseline", { mode, lastAnalysisAt: state.lastAnalysisAt, restoredItems: restored });
+		}
+		const analysisKey = `${mode}:analysis`;
+		if (
+			forced.has("analyze") ||
+			forced.has("reanalyze") ||
+			(state.lastPollAt !== null &&
+				periodDue(state.lastAnalysisAt, schedule.analysisMs, now) &&
+				intervalDue(this.attempts.get(analysisKey), ANALYSIS_RETRY_MS, now))
+		) {
+			this.attempts.set(analysisKey, now);
+			const run = await analyzeMode(
+				mode,
+				state,
+				{
+					readHistory: (m, itemId) => this.local.readHistory(m, itemId),
+					readTraderSellOffers: (m) => this.analyticsStore.readTraderSellOffers(m),
+					writeRun: (analysisRun, observations) => this.analyticsStore.writeRun(analysisRun, observations),
+					saveState: save,
+					now: Date.now,
+					newRunId: randomUUID,
+				},
+				{ includeUnchanged: forced.has("reanalyze") },
+			);
+			const { summary, ...fields } = run;
+			log("analysis", { ...fields, trend: summary.trend, confidence: summary.confidence, failed: summary.failed });
+		}
+	}
+}
+
+function statusReport(config: WorkerConfig, local: WorkerStateStore) {
+	return config.modes.map((mode) => {
+		const state = local.loadMode(mode);
+		const items = Object.values(state.items);
+		const excluded: Record<string, number> = {};
+		for (const item of items)
+			if (item.excluded) excluded[item.excluded.reason] = (excluded[item.excluded.reason] ?? 0) + 1;
+		const iso = (value: number | null) => (value === null ? null : new Date(value).toISOString());
+		return {
+			mode,
+			eligible: state.eligibleIds.length,
+			cached: items.filter((item) => item.latestTimestamp !== null).length,
+			dirty: items.filter((item) => item.dirty).length,
+			pendingFailures: Object.keys(state.pendingFailures).length,
+			excluded,
+			sinceFlush: state.sinceFlush,
+			lastPollAt: iso(state.lastPollAt),
+			lastFlushAt: iso(state.lastFlushAt),
+			lastCatalogAt: iso(state.lastCatalogAt),
+			lastAnalysisAt: iso(state.lastAnalysisAt),
+		};
+	});
+}
+
+/** Container health: the loop is alive and at least one mode is working. */
+function healthCheck(config: WorkerConfig): boolean {
+	let heartbeat: Heartbeat;
+	try {
+		heartbeat = JSON.parse(fs.readFileSync(`${config.stateDirectory}/heartbeat.json`, "utf8")) as Heartbeat;
+	} catch {
+		return false;
+	}
+	const now = Date.now();
+	if (now - heartbeat.at > HEARTBEAT_STALE_MS) return false;
+	const failures = heartbeat.modes.map((mode) => heartbeat.failing?.[mode]);
+	return !failures.every((failure) => failure && now - failure.since > UNHEALTHY_AFTER_MS);
+}
+
+function modesArgument(args: readonly string[]): TarkovDataMode[] | null {
+	const index = args.indexOf("--modes");
+	return index === -1 ? null : parseModes(args[index + 1]);
+}
+
+async function main() {
+	if (fs.existsSync(".env")) process.loadEnvFile(".env");
+	setLogFormat(parseLogFormat(process.env.MARKET_LOG_FORMAT));
+	const [command = "run", ...args] = process.argv.slice(2);
+	const config = loadConfig();
+	config.modes = modesArgument(args) ?? config.modes;
+	const local = new WorkerStateStore(config.stateDirectory);
+
+	if (command === "health") {
+		process.exitCode = healthCheck(config) ? 0 : 1;
+		return;
+	}
+	if (command === "status") {
+		console.log(JSON.stringify(statusReport(config, local), null, 2));
+		return;
+	}
+	if (command === "recheck-excluded") {
+		for (const mode of config.modes) local.requestRecheck(mode);
+		log("recheck-requested", { modes: config.modes });
+		return;
+	}
+	if (command === "run-now") {
+		const spec = specArgument(args);
+		if (!spec) throw new UsageError("run-now needs a spec, e.g. run-now pvp-season:analyze");
+		const request = parseRunSpec(spec, config.modes);
+		local.requestRun(spec);
+		log("run-requested", { source: "run-now command", request: describeRunRequest(request) });
+		return;
+	}
+	if (command !== "run" && command !== "once")
+		throw new UsageError(`Unknown command ${command}; use run, once, run-now, status, recheck-excluded or health`);
+
+	const worker = new MarketWorker(config, local);
+	for (const signal of ["SIGINT", "SIGTERM"] as const)
+		process.once(signal, () => {
+			log("stop-requested", { signal });
+			worker.stop();
+		});
+	if (!worker.claimStateDirectory()) {
+		process.exitCode = 1;
+		await closePostgresPool();
+		return;
+	}
+	try {
+		if (command === "once") {
+			if (!(await worker.checkDatabase())) throw new Error("PostgreSQL is unreachable; see database-unreachable above");
+			const spec = specArgument(args);
+			const request = spec ? parseRunSpec(spec, config.modes) : parseRunSpec("all:all", config.modes);
+			for (const [mode, steps] of request) await worker.tick(mode, steps);
+		} else {
+			const onStart = process.env.MARKET_RUN_ON_START?.trim();
+			if (onStart) worker.queueRun(parseRunSpec(onStart, config.modes), "MARKET_RUN_ON_START");
+			await worker.runForever();
+		}
+	} finally {
+		worker.releaseStateDirectory();
+		await closePostgresPool();
+	}
+}
+
+main().catch((error) => {
+	// Usage mistakes are not crashes: no stack trace.
+	const usage = error instanceof UsageError;
+	log("fatal", { error: describeError(error), stack: !usage && error instanceof Error ? error.stack : undefined });
+	process.exitCode = 1;
+});

@@ -1,0 +1,342 @@
+"use client";
+
+import { ArrowRight, CheckCircle, Circle, ExternalLink, Gift, PackageOpen } from "lucide-react";
+import type {
+	DerivedQuestAnyOfGroup,
+	DerivedQuestItemQuest,
+	DerivedQuestItemState,
+	QuestRewardLink,
+} from "@/lib/quests/quest-item-index";
+import { QuestLink } from "@/components/entities/quest-link";
+import { useUserStoreHydrated } from "@/lib/query/game-data";
+import { hasDisplayQuestLevel } from "@/lib/quests/quest-display";
+import type { ItemSummary } from "@/types/items";
+import { ItemDetailItemChip } from "./ItemDetailItemChip";
+import { itemImageUrl } from "@/lib/utils/item-images";
+
+interface ItemDetailQuestRequirementsProps {
+	selectedItemId: string;
+	selectedItemImageLink?: string;
+	questItemState: DerivedQuestItemState | null;
+	questRewards: QuestRewardLink[];
+	anyOfGroups: DerivedQuestAnyOfGroup[];
+	itemDetailsById: Record<string, ItemSummary>;
+	completedQuests: Record<string, boolean>;
+}
+
+export function ItemDetailQuestRequirements({
+	selectedItemId,
+	selectedItemImageLink,
+	questItemState,
+	questRewards,
+	anyOfGroups,
+	itemDetailsById,
+	completedQuests,
+}: ItemDetailQuestRequirementsProps) {
+	const requiredQuestCount = (questItemState?.relatedQuestCount ?? 0) + anyOfGroups.length;
+	const totalQuests = requiredQuestCount + questRewards.length;
+	if (totalQuests === 0) return null;
+
+	const relatedQuests = [...(questItemState?.relatedQuests ?? [])].sort(
+		(a, b) => Number(a.status === "completed") - Number(b.status === "completed"),
+	);
+	const sortedGroups = [...anyOfGroups].sort(
+		(a, b) => Number(a.status === "completed") - Number(b.status === "completed"),
+	);
+
+	return (
+		<div>
+			{requiredQuestCount > 0 && (
+				<section>
+					<div className="border-b border-border-color bg-shadow/20 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+						Required for quests
+					</div>
+					<div className="divide-y divide-border-color">
+						{relatedQuests.map((quest) => (
+							<QuestRow key={quest.questId} quest={quest} itemImageLink={selectedItemImageLink} />
+						))}
+						{sortedGroups.map((group) => (
+							<AnyOfGroupRow
+								key={group.groupId}
+								group={group}
+								selectedItemId={selectedItemId}
+								itemDetailsById={itemDetailsById}
+							/>
+						))}
+					</div>
+				</section>
+			)}
+			{questRewards.length > 0 && (
+				<section className={requiredQuestCount > 0 ? "border-t border-border-color" : ""}>
+					<div className="border-b border-border-color bg-brand/[0.04] px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-brand/80">
+						Quest rewards
+					</div>
+					<div className="divide-y divide-border-color">
+						{questRewards.map((reward) => (
+							<QuestRewardRow
+								key={reward.questId}
+								reward={reward}
+								itemImageLink={selectedItemImageLink}
+								completed={!!completedQuests[reward.questId]}
+							/>
+						))}
+					</div>
+				</section>
+			)}
+		</div>
+	);
+}
+
+function QuestRewardRow({
+	reward,
+	itemImageLink,
+	completed,
+}: {
+	reward: QuestRewardLink;
+	itemImageLink?: string;
+	completed: boolean;
+}) {
+	return (
+		<div className="bg-shadow/10 px-3 py-2.5 hover:bg-highlight/[0.02]">
+			<div className="flex min-w-0 items-center gap-2.5">
+				<Gift size={15} className="shrink-0 text-brand" />
+				{reward.traderImageLink ? (
+					<img
+						src={reward.traderImage4xLink ?? reward.traderImageLink}
+						alt=""
+						className="h-6 w-6 shrink-0 rounded-full object-cover"
+					/>
+				) : (
+					<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-highlight/10 text-[10px] text-muted-foreground">
+						{reward.traderName[0]}
+					</span>
+				)}
+				<div className="min-w-0 flex-1">
+					<div className="flex flex-wrap items-center gap-2">
+						<span className="truncate text-sm font-medium text-foreground">{reward.questName}</span>
+						{completed && (
+							<span className="rounded-md bg-success/10 px-1.5 py-0.5 text-[10px] text-success">Completed</span>
+						)}
+					</div>
+					<div className="mt-1 text-xs text-muted-foreground">
+						{reward.traderName}
+						{hasDisplayQuestLevel(reward.minPlayerLevel) ? ` · Level ${reward.minPlayerLevel}` : ""}
+					</div>
+				</div>
+				<ItemRequirementCount imageLink={itemImageLink} standardCount={reward.count} firCount={0} />
+				<QuestActions questId={reward.questId} questName={reward.questName} wikiLink={reward.questWikiLink} />
+			</div>
+		</div>
+	);
+}
+
+function QuestRow({ quest, itemImageLink }: { quest: DerivedQuestItemQuest; itemImageLink?: string }) {
+	const standardCount = quest.requiredCount - quest.requiredFirCount;
+	const isCompleted = useUserStoreHydrated() && quest.status === "completed";
+
+	return (
+		<div className="bg-shadow/10 px-3 py-2.5 hover:bg-highlight/[0.02]">
+			<div className="flex min-w-0 items-center gap-2.5">
+				{isCompleted ? (
+					<CheckCircle size={15} className="shrink-0 text-success" />
+				) : (
+					<Circle size={15} className="shrink-0 text-subtle-foreground" />
+				)}
+				{quest.traderImageLink ? (
+					<img
+						src={quest.traderImage4xLink ?? quest.traderImageLink}
+						alt=""
+						className="h-6 w-6 shrink-0 rounded-full object-cover"
+					/>
+				) : (
+					<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-highlight/10 text-[10px] text-muted-foreground">
+						{quest.traderName[0]}
+					</span>
+				)}
+				<div className="min-w-0 flex-1">
+					<div className="flex flex-wrap items-center gap-2">
+						<span
+							className={`truncate text-sm font-medium ${
+								isCompleted ? "text-muted-foreground line-through" : "text-foreground"
+							}`}
+						>
+							{quest.questName}
+						</span>
+						<QuestStatus status={quest.status} />
+					</div>
+					<div className="mt-1 text-xs text-muted-foreground">
+						{quest.traderName}
+						{hasDisplayQuestLevel(quest.minPlayerLevel) ? ` · Level ${quest.minPlayerLevel}` : ""}
+					</div>
+				</div>
+				<ItemRequirementCount
+					imageLink={itemImageLink}
+					standardCount={standardCount}
+					firCount={quest.requiredFirCount}
+				/>
+				<QuestActions questId={quest.questId} questName={quest.questName} wikiLink={quest.questWikiLink} />
+			</div>
+		</div>
+	);
+}
+
+function AnyOfGroupRow({
+	group,
+	selectedItemId,
+	itemDetailsById,
+}: {
+	group: DerivedQuestAnyOfGroup;
+	selectedItemId: string;
+	itemDetailsById: Record<string, ItemSummary>;
+}) {
+	const isCompleted = useUserStoreHydrated() && group.status === "completed";
+	const groupItems = group.itemIds
+		.map((itemId) => itemDetailsById[itemId])
+		.filter((item): item is ItemSummary => !!item);
+	const selectedItem = groupItems.find((item) => item.id === selectedItemId);
+	const otherItems = groupItems.filter((item) => item.id !== selectedItemId);
+	const previewItems = selectedItem ? [selectedItem, ...otherItems.slice(0, 5)] : groupItems.slice(0, 6);
+	const hiddenItemCount = Math.max(group.totalItemCount - previewItems.length, 0);
+
+	return (
+		<div className="bg-shadow/10 px-3 py-2.5 hover:bg-highlight/[0.02]">
+			<div className="flex min-w-0 items-center gap-2.5">
+				{isCompleted ? (
+					<CheckCircle size={15} className="shrink-0 text-success" />
+				) : (
+					<Circle size={15} className="shrink-0 text-subtle-foreground" />
+				)}
+				{group.traderImageLink ? (
+					<img
+						src={group.traderImage4xLink ?? group.traderImageLink}
+						alt=""
+						className="h-6 w-6 shrink-0 rounded-full object-cover"
+					/>
+				) : (
+					<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-highlight/10 text-[10px] text-muted-foreground">
+						{group.traderName[0]}
+					</span>
+				)}
+				<div className="min-w-0 flex-1">
+					<div className="flex flex-wrap items-center gap-2">
+						<span
+							className={`truncate text-sm font-medium ${
+								isCompleted ? "text-muted-foreground line-through" : "text-foreground"
+							}`}
+						>
+							{group.questName}
+						</span>
+						<span className="rounded-md bg-special/10 px-1.5 py-0.5 text-[10px] text-special">Item group</span>
+						{group.requiredFirCount > 0 && (
+							<span className="rounded-md bg-fir/10 px-1.5 py-0.5 text-[10px] text-fir">FiR</span>
+						)}
+						<QuestStatus status={group.status} />
+					</div>
+					<div className="mt-1 text-xs text-muted-foreground">
+						{group.traderName}
+						{hasDisplayQuestLevel(group.minPlayerLevel) ? ` · Level ${group.minPlayerLevel}` : ""}
+					</div>
+				</div>
+				<ItemRequirementCount
+					imageLink={selectedItem ? itemImageUrl(selectedItem) : undefined}
+					standardCount={group.requiredCount}
+					firCount={0}
+				/>
+				<QuestActions questId={group.questId} questName={group.questName} wikiLink={group.questWikiLink} />
+			</div>
+			<div className="mt-2 text-[11px] text-muted-foreground">
+				<span className="font-semibold text-foreground">Any x{group.requiredCount}: </span>
+				{group.objectiveLabel}
+			</div>
+			<div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+				{previewItems.map((item) => (
+					<ItemDetailItemChip
+						key={item.id}
+						item={item}
+						className={`text-[11px] ${item.id === selectedItemId ? "ring-1 ring-brand/25" : "opacity-75"}`}
+					/>
+				))}
+				{hiddenItemCount > 0 && (
+					<span className="px-1.5 text-[11px] text-muted-foreground">+{hiddenItemCount} more</span>
+				)}
+			</div>
+		</div>
+	);
+}
+
+/** Profile-dependent status: hidden until the saved profile loads (and in server HTML). */
+function QuestStatus({ status }: { status: DerivedQuestItemQuest["status"] }) {
+	const profileReady = useUserStoreHydrated();
+	const styles = {
+		available: "bg-info/10 text-info",
+		future: "bg-warning/10 text-warning",
+		completed: "bg-success/10 text-success",
+		ignored: "bg-highlight/5 text-muted-foreground",
+	};
+	if (!profileReady) return null;
+	return <span className={`rounded-md px-1.5 py-0.5 text-[10px] capitalize ${styles[status]}`}>{status}</span>;
+}
+
+function ItemRequirementCount({
+	imageLink,
+	standardCount,
+	firCount,
+}: {
+	imageLink?: string;
+	standardCount: number;
+	firCount: number;
+}) {
+	return (
+		<div className="flex min-w-[4.75rem] shrink-0 items-center justify-end gap-1.5 px-2">
+			<span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-md bg-highlight/5">
+				{imageLink ? (
+					<img src={imageLink} alt="" className="h-6 w-6 object-contain" />
+				) : (
+					<PackageOpen size={13} className="text-muted-foreground" />
+				)}
+			</span>
+			{standardCount > 0 && (
+				<span className="min-w-6 text-right font-mono text-sm font-semibold tabular-nums text-foreground">
+					×{standardCount}
+				</span>
+			)}
+			{firCount > 0 && (
+				<span className="whitespace-nowrap font-mono text-xs font-semibold text-fir">FiR ×{firCount}</span>
+			)}
+		</div>
+	);
+}
+
+function QuestActions({
+	questId,
+	questName,
+	wikiLink,
+}: {
+	questId: string;
+	questName: string;
+	wikiLink?: string | null;
+}) {
+	return (
+		<div className="flex shrink-0 items-center gap-3 text-[11px]">
+			<QuestLink
+				questId={questId}
+				name={questName}
+				aria-label={`View quest: ${questName}`}
+				className="flex items-center gap-1 font-medium text-foreground transition-colors hover:text-brand"
+				preview={false}
+			>
+				View <ArrowRight size={12} />
+			</QuestLink>
+			{wikiLink && (
+				<a
+					href={wikiLink}
+					target="_blank"
+					rel="noopener noreferrer"
+					className="flex items-center gap-1 text-muted-foreground underline decoration-highlight/25 underline-offset-2 transition-colors hover:text-foreground"
+				>
+					Wiki <ExternalLink size={10} />
+				</a>
+			)}
+		</div>
+	);
+}
