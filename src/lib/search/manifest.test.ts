@@ -16,7 +16,15 @@ const quest = (id: string, lightkeeperRequired = false) =>
 		trader: { id: "trader", name: "Trader", normalizedName: "trader" },
 		lightkeeperRequired,
 	}) as FullQuest;
-const items = [{ id: "gpu", name: "Graphics card", normalizedName: "graphics-card", shortName: "GPU" }];
+const items = [
+	{
+		id: "gpu",
+		name: "Graphics card",
+		normalizedName: "graphics-card",
+		shortName: "GPU",
+		category: { id: "electronics", name: "Electronics", normalizedName: "electronics" },
+	},
+];
 const traders = [{ id: "trader", name: "Trader", normalizedName: "trader" }];
 const fixture = () => ({
 	...buildSearchManifest("regular", items, [quest("quest")], traders),
@@ -27,6 +35,7 @@ test("round trip keeps identities and short names, omits optional images and exc
 	const value = fixture();
 	const decoded = decodeSearchManifest(JSON.parse(JSON.stringify(value)), "regular", "revision-a");
 	assert.equal(decoded.items[0].iconLink, undefined);
+	assert.equal(decoded.items[0].categoryId, "electronics");
 	assert.equal(searchManifestItems(decoded.itemIndex, "GPU", 10)[0].id, "gpu");
 	assert.equal(searchManifestItems(decoded.itemIndex, "graphicscard", 10)[0].id, "gpu");
 	const seasonal = buildSearchManifest(
@@ -51,6 +60,7 @@ test("malformed, empty, duplicate and cross-scope manifests are rejected", () =>
 		{ ...value, items: [value.items[0], value.items[0]] },
 		{ ...value, traders: {} },
 		{ ...value, items: [{ ...value.items[0], ic: 3 }] },
+		{ ...value, items: [{ ...value.items[0], c: 1 }] },
 	]) {
 		assert.throws(() => validateSearchManifest(bad, "regular"));
 	}

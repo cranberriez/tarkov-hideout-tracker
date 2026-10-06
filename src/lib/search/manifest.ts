@@ -13,6 +13,9 @@ export function validateSearchManifest(value: unknown, mode: TarkovJsonGameMode)
 		throw new ResponseValidationError("Invalid compact search manifest");
 	};
 	if (!object(value) || value.v !== 1 || value.mode !== mode) return fail();
+	const categories = value.categories;
+	if (!Array.isArray(categories) || !categories.every(nonempty) || new Set(categories).size !== categories.length)
+		return fail();
 	for (const kind of ["items", "quests"] as const) {
 		const rows = value[kind];
 		if (!Array.isArray(rows) || !rows.length) return fail();
@@ -23,6 +26,8 @@ export function validateSearchManifest(value: unknown, mode: TarkovJsonGameMode)
 			if (kind === "quests" && !nonempty(row.ti)) return fail();
 			for (const key of ["sn", "ic"]) if (row[key] !== undefined && !nonempty(row[key])) return fail();
 			if (row.b !== undefined && row.b !== 1) return fail();
+			if (row.c !== undefined && !(Number.isInteger(row.c) && Number(row.c) >= 0 && Number(row.c) < categories.length))
+				return fail();
 		}
 	}
 	if (!object(value.traders) || !Object.keys(value.traders).length) return fail();
@@ -40,13 +45,14 @@ export function decodeSearchManifest(value: unknown, mode: TarkovJsonGameMode, r
 	if ((value as SearchManifestPayload).releaseId !== releaseId || !nonempty(releaseId)) {
 		throw new ResponseValidationError("Search manifest release changed");
 	}
-	const items: ItemSummary[] = manifest.items.map(({ id, nn, n, sn, ic, b }) => ({
+	const items: ItemSummary[] = manifest.items.map(({ id, nn, n, sn, ic, b, c }) => ({
 		id,
 		normalizedName: nn,
 		name: n,
 		shortName: sn,
 		iconLink: ic,
 		...(b ? { barter: true } : {}),
+		...(c !== undefined ? { categoryId: manifest.categories[c] } : {}),
 	}));
 	const quests = manifest.quests.map(({ id, nn, n, ti }) => ({ id, normalizedName: nn, name: n, traderId: ti }));
 	const traders = Object.fromEntries(

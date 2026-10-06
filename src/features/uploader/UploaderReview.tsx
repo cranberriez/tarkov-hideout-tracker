@@ -19,6 +19,8 @@ import { buildLabelIndex } from "./recognition-model";
 import { summarizeReview, type ReviewBox, type ReviewEntry } from "./review-model";
 import { nextUnknownId, selectReviewBoxes, selectionSuggestions, supportsQuantity } from "./selection-model";
 import { UploaderCompletion, type AddedItem } from "./UploaderCompletion";
+import { UploaderItemSearch, useItemSearch } from "./UploaderItemSearch";
+import type { ItemGroupKey } from "./item-groups";
 import styles from "./UploaderReview.module.css";
 
 const control =
@@ -73,7 +75,8 @@ export function UploaderReview({
 	const [hintsDismissed, setHintsDismissed] = useState(false);
 	const [showIcons, setShowIcons] = useState(false);
 	const [query, setQuery] = useState("");
-	const [highlight, setHighlight] = useState({ key: "", index: 0 });
+	// Narrows both the classifier and missing-item searches until removed.
+	const [group, setGroup] = useState<ItemGroupKey | null>(null);
 	const [keepReviewing, setKeepReviewing] = useState(false);
 	const [ignoreUnknowns, setIgnoreUnknowns] = useState(false);
 	const [summaryOpen, setSummaryOpen] = useState(false);
@@ -96,16 +99,17 @@ export function UploaderReview({
 	const active = chosen[0];
 	const activeItem = active?.itemId ? byId.get(active.itemId) : undefined;
 	const index = useMemo(() => buildLabelIndex(items), [items]);
-	const suggestions = useMemo(() => {
-		if (!query.trim()) return selectionSuggestions(chosen, items);
-		const text = query.trim().toLowerCase();
-		const matches = items.filter((item) => `${item.name} ${item.shortName ?? ""}`.toLowerCase().includes(text));
-		return [
-			...new Map([...matches, ...suggestLabelCandidates(query, index)].map((item) => [item.id, item])).values(),
-		].slice(0, 5);
-	}, [query, chosen, items, index]);
-	const highlightKey = `${query}|${selected.join(",")}`;
-	const highlighted = highlight.key === highlightKey ? Math.min(highlight.index, suggestions.length - 1) : 0;
+	const bestMatches = useMemo(() => selectionSuggestions(chosen, items), [chosen, items]);
+	const labelMatches = useMemo(() => (query.trim() ? suggestLabelCandidates(query, index) : []), [query, index]);
+	const matches = useItemSearch({
+		idPrefix: "review",
+		items,
+		query,
+		group,
+		baseline: bestMatches,
+		extra: labelMatches,
+		resetKey: selected.join(","),
+	});
 	const unknowns = boxes.filter((box) => !box.itemId || !byId.has(box.itemId));
 	const classified = boxes.length > 0 && unknowns.length === 0;
 	// The missing-items step only while neither sorting nor setting FIR.
@@ -191,10 +195,6 @@ export function UploaderReview({
 		if (next) focusBox(next);
 		setQuery("");
 	};
-	const moveHighlight = (step: 1 | -1) => {
-		if (!suggestions.length) return;
-		setHighlight({ key: highlightKey, index: (highlighted + step + suggestions.length) % suggestions.length });
-	};
 	const allFir = chosen.length > 0 && chosen.every((box) => box.foundInRaid === "yes");
 	const firStatus = chosen.every((box) => box.foundInRaid === active?.foundInRaid) ? active?.foundInRaid : "mixed";
 	const toggleFir = () => {
@@ -277,9 +277,9 @@ export function UploaderReview({
 			} else if (event.key.toLowerCase() === "f") {
 				event.preventDefault();
 				toggleFir();
-			} else if (event.key === "Enter" && !target?.closest("button, a") && suggestions[highlighted]) {
+			} else if (event.key === "Enter" && !target?.closest("button, a") && matches.current) {
 				event.preventDefault();
-				assign(suggestions[highlighted], true);
+				assign(matches.current, true);
 			}
 		};
 		window.addEventListener("keydown", keydown);
@@ -594,6 +594,8 @@ export function UploaderReview({
 									onSetFir={openFirMode}
 									showIcons={showIcons}
 									onToggleIcons={() => setShowIcons((value) => !value)}
+									group={group}
+									onGroupChange={setGroup}
 								/>
 							) : (
 								<>
@@ -603,8 +605,8 @@ export function UploaderReview({
 										</button>
 										<button
 											className={control}
-											disabled={!active || !suggestions.length}
-											onClick={() => suggestions[highlighted] && assign(suggestions[highlighted], true)}
+											disabled={!active || !matches.current}
+											onClick={() => matches.current && assign(matches.current, true)}
 										>
 											Use highlighted match <KeyHint>Enter</KeyHint>
 										</button>
@@ -677,78 +679,32 @@ export function UploaderReview({
 												</span>
 												<KeyHint>F</KeyHint>
 											</button>
-											<div>
-												<label htmlFor="review-search" className="sr-only">
-													Search item matches
-												</label>
-												<input
-													ref={search}
-													id="review-search"
-													type="search"
-													placeholder="Type to search items…"
-													value={query}
-													autoComplete="off"
-													aria-controls="review-matches"
-													aria-activedescendant={
-														suggestions[highlighted] ? `review-match-${suggestions[highlighted].id}` : undefined
+											<UploaderItemSearch
+												search={matches}
+												query={query}
+												onQueryChange={setQuery}
+												group={group}
+												onGroupChange={setGroup}
+												onPick={assign}
+												onKeyDown={(event) => {
+													if (query) return;
+													if (event.key === "Delete") {
+														event.preventDefault();
+														discard();
+													} else if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+														event.preventDefault();
+														navigateUnknown(event.key === "ArrowRight" ? 1 : -1);
+													} else if (event.key === "Escape") {
+														event.preventDefault();
+														canvas.current?.focus({ preventScroll: true });
 													}
-													onChange={(event) => setQuery(event.target.value)}
-													onKeyDown={(event) => {
-														if (event.nativeEvent.isComposing) return;
-														if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-															event.preventDefault();
-															moveHighlight(event.key === "ArrowDown" ? 1 : -1);
-														} else if (event.key === "Enter" && suggestions[highlighted]) {
-															event.preventDefault();
-															assign(suggestions[highlighted], true);
-														} else if (event.key === "Delete" && !query) {
-															event.preventDefault();
-															discard();
-														} else if ((event.key === "ArrowRight" || event.key === "ArrowLeft") && !query) {
-															event.preventDefault();
-															navigateUnknown(event.key === "ArrowRight" ? 1 : -1);
-														} else if (event.key === "Escape" && !query) {
-															event.preventDefault();
-															canvas.current?.focus({ preventScroll: true });
-														}
-													}}
-													className="w-full rounded-sm bg-surface-raised px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-brand"
-												/>
-											</div>
-											<div
-												id="review-matches"
-												role="listbox"
-												aria-label="Suggested items"
-												className="border-t border-border-color pt-4"
-											>
-												<p className={cn(sectionLabel, "mb-1")}>{query ? "Search matches" : "Best matches"}</p>
-												{suggestions.map((item, rank) => (
-													<button
-														key={item.id}
-														id={`review-match-${item.id}`}
-														role="option"
-														aria-selected={rank === highlighted}
-														onClick={() => {
-															assign(item);
-															search.current?.focus({ preventScroll: true });
-														}}
-														onMouseEnter={() => setHighlight({ key: highlightKey, index: rank })}
-														className={cn(
-															"mb-1 flex w-full items-center gap-2 rounded-sm border px-2 py-2 text-left text-sm text-foreground",
-															rank === highlighted
-																? "border-brand/60 bg-brand/10"
-																: "border-border-color hover:bg-surface-raised",
-														)}
-													>
-														<img src={itemImageUrl(item)} alt="" className="h-8 w-8 object-contain" />
-														<span className="flex-1">{item.name}</span>
-														{rank === highlighted && <KeyHint>↵</KeyHint>}
-													</button>
-												))}
-												{!suggestions.length && (
-													<p className="py-2 text-xs text-muted-foreground">No matches. Try searching by name.</p>
-												)}
-											</div>
+												}}
+												inputRef={search}
+												label="Search item matches"
+												placeholder="Type to search items…"
+												heading={query.trim() ? "Search matches" : group ? "Category items" : "Best matches"}
+												emptyText="No matches. Try searching by name."
+											/>
 											{chosen.length === 1 && supportsQuantity(activeItem) && (
 												<label className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
 													Quantity

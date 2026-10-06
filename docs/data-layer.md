@@ -396,7 +396,9 @@ Next data cache. Cache keys include the PostgreSQL namespace, format version,
 the quest preparation revision (a hash of the reviewed custom, series, faction,
 removed-quest and game-mode data in
 [quest-preparation](../src/lib/quests/quest-preparation.ts)), mode and catalog
-content_version. No database manifest table is used.
+content_version. No database manifest table is used. Items carry their leaf
+category as an index into a shared category ID list; the uploader groups those
+leaves for its category filter.
 
 [/api/search](../src/app/api/search/route.ts) keeps identity=1 and the releaseId
 request/response field. The field now carries the string content version. A

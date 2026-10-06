@@ -14,6 +14,7 @@ const manifest = decodeSearchManifest(
 		],
 		quests: [{ id: "same", n: "Farming - Part 4", nn: "farming-part-4", ti: "mechanic" }],
 		traders: { mechanic: { n: "Mechanic" } },
+		categories: [],
 	},
 	"regular",
 	"r1",

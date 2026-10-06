@@ -14,6 +14,8 @@ export function buildSearchManifest(
 	quests: FullQuest[],
 	traders: Trader[],
 ) {
+	const categories = [...new Set(items.flatMap((item) => (item.category?.id ? [item.category.id] : [])))].sort();
+	const categoryIndex = new Map(categories.map((id, index) => [id, index]));
 	return validateSearchManifest(
 		{
 			v: 1,
@@ -26,7 +28,9 @@ export function buildSearchManifest(
 				// Standard icon URLs are derived from the ID on the client.
 				...(item.iconLink && item.iconLink !== standardItemImageUrl(item.id, "icon") ? { ic: item.iconLink } : {}),
 				...(isBarterCategory(item.category?.id) ? { b: 1 as const } : {}),
+				...(item.category?.id ? { c: categoryIndex.get(item.category.id) } : {}),
 			})),
+			categories,
 			quests: excludeRemovedQuests(prepareQuestDataForMode(quests, mode)).map((quest) => ({
 				id: quest.id,
 				nn: quest.normalizedName,

@@ -44,6 +44,8 @@ export interface ItemSummary extends ItemIdentity {
 	category?: ItemCategory;
 	/** Barter-item (junk box) category; the compact search manifest carries this instead of `category`. */
 	barter?: boolean;
+	/** Leaf category ID; the compact search manifest carries this instead of `category`. */
+	categoryId?: string;
 	/** Resource capacity from the provider's resource properties (fuel tank units). */
 	resourceUnits?: number;
 	buyFromTrader?: TraderPurchaseOffer[];
