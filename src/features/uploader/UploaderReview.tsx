@@ -82,6 +82,8 @@ export function UploaderReview({
 	const [summaryOpen, setSummaryOpen] = useState(false);
 	// FIR mode returns to the step that opened it.
 	const [firMode, setFirMode] = useState<"review" | "summary" | null>(null);
+	// Boxes that were FIR-unknown when FIR mode opened stay highlighted after the user decides.
+	const [firPending, setFirPending] = useState<ReadonlySet<string>>(new Set());
 	const [added, setAdded] = useState<AddedItem[]>([]);
 	const serial = useRef(0);
 	const [summaryEntries, setSummaryEntries] = useState<ReviewEntry[]>([]);
@@ -201,10 +203,14 @@ export function UploaderReview({
 	const toggleFir = () => {
 		if (chosen.length) patch({ foundInRaid: allFir ? "no" : "yes", firConfirmed: true });
 	};
-	const flipFir = (id: string) =>
-		commit((box) =>
-			box.id === id ? { ...box, foundInRaid: box.foundInRaid === "yes" ? "no" : "yes", firConfirmed: true } : box,
-		);
+	// Unknown goes to FIR first, or to Not FIR first when reversed (right-click).
+	const flipFir = (id: string, reverse = false) =>
+		commit((box) => {
+			if (box.id !== id) return box;
+			const first = reverse ? "no" : "yes";
+			const foundInRaid = box.foundInRaid === "unknown" ? first : box.foundInRaid === "yes" ? "no" : "yes";
+			return { ...box, foundInRaid, firConfirmed: true };
+		});
 	const setRemainingFir = (foundInRaid: "yes" | "no") =>
 		commit((box) =>
 			box.itemId && byId.has(box.itemId) && box.foundInRaid === "unknown"
@@ -226,6 +232,13 @@ export function UploaderReview({
 	};
 	const openFirMode = () => {
 		clearSelection();
+		setFirPending(
+			new Set(
+				boxes
+					.filter((box) => box.itemId && byId.has(box.itemId) && box.foundInRaid === "unknown")
+					.map((box) => box.id),
+			),
+		);
 		setFirMode(summaryOpen ? "summary" : "review");
 		setSummaryOpen(false);
 	};
@@ -288,8 +301,14 @@ export function UploaderReview({
 	});
 
 	const boxAppearance = (box: ReviewBox, known: boolean) => {
-		if (firMode)
-			return known ? (box.foundInRaid === "unknown" ? "border-2 border-fir bg-transparent" : dimmed) : dimmed;
+		if (firMode) {
+			if (!known || !firPending.has(box.id)) return dimmed;
+			return box.foundInRaid === "unknown"
+				? "border-2 border-dashed border-fir bg-transparent"
+				: box.foundInRaid === "yes"
+					? "border-2 border-fir bg-transparent"
+					: "border-2 border-transparent bg-transparent";
+		}
 		if (completing) return dimmed;
 		if (summaryOpen) {
 			const decision = decisions.decisionFor(box);
@@ -393,6 +412,11 @@ export function UploaderReview({
 									);
 									if (!event.shiftKey || !anchor.current) anchor.current = box.id;
 									setQuery("");
+								}}
+								onContextMenu={(event) => {
+									if (!firMode || !item) return;
+									event.preventDefault();
+									flipFir(box.id, true);
 								}}
 								className={cn(
 									"absolute text-left transition-colors duration-200 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-foreground",
@@ -531,7 +555,7 @@ export function UploaderReview({
 							/>
 							<p className="text-xs text-muted-foreground">
 								Items that still need a choice stay bright. Click any item to switch it between found in raid and not
-								found in raid.
+								found in raid. Right-click to start with not found in raid.
 							</p>
 							<div className="grid grid-cols-3 gap-2 text-center">
 								{[
@@ -798,7 +822,7 @@ export function UploaderReview({
 						</>
 					) : firMode ? (
 						<>
-							Click an item to switch FIR · <KeyHint>Esc</KeyHint> Done
+							<KeyHint>Left click</KeyHint> FIR · <KeyHint>Right click</KeyHint> Not FIR · <KeyHint>Esc</KeyHint> Done
 						</>
 					) : (
 						"Bright areas on the screenshot weren't detected. Add them in the sidebar."
