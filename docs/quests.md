@@ -160,8 +160,8 @@ than adding them to inventory. Its "Ignore Kappa items" switch drops that demand
 ## Story chapters
 
 The provider has no story-chapter records, so chapters are hand-authored in
-[src/lib/data/story](../src/lib/data/story/) and reviewed against the wiki (only
-The Ticket so far). Decisions are global because a choice in one chapter changes
+[src/lib/data/story](../src/lib/data/story/) and reviewed against the wiki (Tour,
+Falling Skies and The Ticket so far). Decisions are global because a choice in one chapter changes
 later routes, for example the Falling Skies armored case. Step and decision IDs
 are persisted: never rename or reuse them. Items carry catalog IDs where the item
 exists; story-only items are name-only references. Items and decisions may name

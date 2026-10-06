@@ -117,22 +117,24 @@ export function StoryRoutePanel({
 				</div>
 			</section>
 
-			<section className="rounded-md border border-highlight/10 bg-card p-4">
-				<h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Choices</h2>
-				<ul className="mt-3 flex flex-col gap-4">
-					{decisions.map((decision) => (
-						<li key={decision.id}>
-							<StoryDecisionControl
-								decision={decision}
-								chapterId={chapterId}
-								resolved={resolved}
-								targetEnding={targetEnding}
-								onDecision={onDecision}
-							/>
-						</li>
-					))}
-				</ul>
-			</section>
+			{decisions.length > 0 && (
+				<section className="rounded-md border border-highlight/10 bg-card p-4">
+					<h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Choices</h2>
+					<ul className="mt-3 flex flex-col gap-4">
+						{decisions.map((decision) => (
+							<li key={decision.id}>
+								<StoryDecisionControl
+									decision={decision}
+									chapterId={chapterId}
+									resolved={resolved}
+									targetEnding={targetEnding}
+									onDecision={onDecision}
+								/>
+							</li>
+						))}
+					</ul>
+				</section>
+			)}
 		</div>
 	);
 }
