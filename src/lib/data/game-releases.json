@@ -4,6 +4,7 @@
 		{ "patch": "1.0.0.0", "name": "1.0", "releasedAt": "2025-11-15T00:00:00Z" },
 		{ "patch": "1.1.0.0.46608", "name": "Seasons System", "releasedAt": "2026-08-03T00:00:00Z" },
 		{ "patch": "1.1.5.0.47242", "name": "Lighthouse and Lightkeeper Rework", "releasedAt": "2026-09-08T00:00:00Z" },
-		{ "patch": "1.1.5.0.47426", "name": "League System", "releasedAt": "2026-09-15T00:00:00Z" }
+		{ "patch": "1.1.5.0.47426", "name": "League System", "releasedAt": "2026-09-15T00:00:00Z" },
+		{ "patch": "1.2.0.0.0", "name": "PVE Prestige System", "releasedAt": "2026-10-06T11:00:00Z" }
 	]
 }
