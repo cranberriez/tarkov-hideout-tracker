@@ -157,11 +157,37 @@ The uploader takes Collector demand from this checklist instead of quest progres
 copies before any other demand; adding kept items checks those items off rather
 than adding them to inventory. Its "Ignore Kappa items" switch drops that demand.
 
+## Story chapters
+
+The provider has no story-chapter records, so chapters are hand-authored in
+[src/lib/data/story](../src/lib/data/story/) and reviewed against the wiki (only
+The Ticket so far). Decisions are global because a choice in one chapter changes
+later routes, for example the Falling Skies armored case. Step and decision IDs
+are persisted: never rename or reuse them. Items carry catalog IDs where the item
+exists; story-only items are name-only references. Items and decisions may name
+another chapter; [the chapter index](../src/lib/data/story/index.ts) lists every
+chapter so those link to the tracker page when tracked, otherwise to the wiki.
+Steps may also carry rewards, warnings for route-failing actions and quest links.
+
+Choices appear where they matter: a decision made at a step renders inline there,
+and sections that depend on it link back to it. Decisions made in other chapters
+render as a bar above the first section they shape. The sidebar lists them all.
+
+The [story model](../src/features/story/story-model.ts) resolves each decision from
+the player's choice, else the single option compatible with the target ending.
+A decision whose own condition fails cannot apply, so sections depending on it are
+hidden. Sections or steps that depend on unresolved decisions are shown as pending
+and excluded from the remaining count. Recorded choices can rule out endings; the
+target ending never overrides a recorded choice. Lightkeeper access is a stored
+yes/no answer that flags Lightkeeper steps and endings; it is not derived from quests.
+Progress persistence is described in [user state](user-state.md).
+
 ## Validation
 
 ```bash
 node --test --import jiti/register src/lib/quests/quest-availability.test.ts src/lib/quests/quest-item-index.test.ts src/server/queries/getKappaChecklistPageData.test.ts
 node --test --import jiti/register src/features/quests/workspace/quest-workspace-selector.test.ts src/features/quests/workspace/quest-details-model.test.ts src/features/quests/import/quest-log-import-model.test.ts src/features/quests/quest-routes.test.ts
+node --test --import jiti/register src/features/story/story-model.test.ts
 ```
 
 Run the adjacent tests for any correction, graph, marker, or import utility you

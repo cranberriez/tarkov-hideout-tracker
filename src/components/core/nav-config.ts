@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+	BookOpen,
 	Boxes,
 	Columns3,
 	Compass,
@@ -81,6 +82,7 @@ export const navMenus: NavMenu[] = [
 			{ name: "Trader Board", href: questViewHref("board"), icon: Columns3 },
 			{ name: "Visualizer", href: questViewHref("visualizer"), icon: GitBranch },
 			{ name: "Raid Planner", href: questViewHref("planner"), icon: Compass },
+			{ name: "Story Chapters", href: "/story", icon: BookOpen },
 		],
 	},
 ];
