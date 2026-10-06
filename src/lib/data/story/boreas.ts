@@ -14,6 +14,7 @@ const item = (name: string, id?: string, count?: number, extra: Pick<StoryItemRe
 
 const image = (file: string, caption: string): StoryImage => ({
 	src: `/images/story/boreas/steps/${file}.webp`,
+	thumb: `/images/story/boreas/steps/thumbs/${file}.webp`,
 	caption,
 });
 

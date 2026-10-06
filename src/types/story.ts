@@ -39,6 +39,8 @@ export interface StoryItemRef {
 /** A wiki screenshot or map that shows where a step happens. */
 export interface StoryImage {
 	src: string;
+	/** Small pre-sized copy for the step list; `src` loads only when previewed. */
+	thumb: string;
 	caption: string;
 }
 
