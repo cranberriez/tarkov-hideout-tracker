@@ -20,6 +20,7 @@ import { LevelSummary } from "./components/LevelSummary";
 import { PrerequisitesCard } from "./components/PrerequisitesCard";
 import { RemainingItemsList } from "./components/RemainingItemsList";
 import { RequiredByList } from "./components/RequiredByList";
+import { OfflineBonusNotice } from "./components/OfflineBonusNotice";
 import { WikiSection } from "./components/WikiSection";
 import { StationDetailsProvider, type LevelSelection } from "./StationDetailsContext";
 import { buildLevelOverview, remainingStationItems, summarizeRemaining } from "./station-details-model";
@@ -205,6 +206,7 @@ export function StationDetailsPage({
 									<DataNotice tone="empty">This station has no upgrade levels.</DataNotice>
 								</div>
 							)}
+							<OfflineBonusNotice stationId={station.id} />
 							{crafts}
 						</div>
 					</article>
