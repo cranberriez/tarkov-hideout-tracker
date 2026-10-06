@@ -3,7 +3,7 @@ import "server-only";
 import { resolveItemRelease } from "@/lib/utils/game-releases";
 import { compactItemLinks } from "@/lib/utils/item-images";
 
-import { asc, eq, inArray, and } from "drizzle-orm";
+import { asc, eq, inArray, and, getTableColumns, sql } from "drizzle-orm";
 import type { DataResult, TarkovDataMode } from "@/types/common";
 import type { ItemSummary } from "@/types/items";
 import type { Station, StationBonus, StationLevel } from "@/types/hideout";
@@ -339,6 +339,7 @@ export async function getQuests(
 	db: PostgresDatabase,
 	expectedVersion?: string,
 	ids?: readonly string[],
+	view: "full" | "index" = "full",
 ): Promise<DataResult<FullQuest[]>> {
 	const result = await withStableCatalogRead(
 		mode,
@@ -358,7 +359,21 @@ export async function getQuests(
 								normalizedName: quests.normalizedName,
 								wikiLink: quests.wikiLink,
 								taskImageLink: quests.taskImageLink,
-								questMode: questModes,
+								questMode:
+									view === "full"
+										? getTableColumns(questModes)
+										: {
+												...getTableColumns(questModes),
+												// Reduce at the database boundary: no geometry, item lists, or rewards cross the wire.
+												objectives: sql`(select coalesce(jsonb_agg(jsonb_build_object(
+										'id', objective->'id', 'type', objective->'type',
+										'description', objective->'description', 'optional', objective->'optional',
+										'maps', coalesce(objective->'maps', '[]'::jsonb),
+										'requiredKeyIds', coalesce(objective->'requiredKeyIds', '[]'::jsonb)
+									) order by ordinal), '[]'::jsonb)
+									from jsonb_array_elements(${questModes.objectives}) with ordinality as entries(objective, ordinal))`,
+												rewardGroups: sql`'{}'::jsonb`,
+											},
 								trader: traders,
 								traderOverride: traderModes.displayOverride,
 							})

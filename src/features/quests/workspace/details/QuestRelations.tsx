@@ -6,7 +6,7 @@ import { QuestLink } from "@/components/entities/quest-link";
 import { SectionLabel } from "@/components/ui/detail-section";
 import { getQuestFailConditionText } from "@/lib/quests/quest-failures";
 import { cn } from "@/lib/utils";
-import type { FullQuest } from "@/types/quests";
+import type { FullQuest, QuestWorkspaceQuest } from "@/types/quests";
 import { StandingRewards } from "./QuestRewards";
 
 export function QuestMultipleChoiceBanner({
@@ -14,7 +14,7 @@ export function QuestMultipleChoiceBanner({
 	multipleChoiceQuests,
 }: {
 	quest: FullQuest;
-	multipleChoiceQuests: readonly FullQuest[];
+	multipleChoiceQuests: readonly QuestWorkspaceQuest[];
 }) {
 	return (
 		<div className="flex h-11 min-h-11 items-stretch border-b border-warning/25 bg-warning/10 text-warning">
@@ -42,7 +42,7 @@ export function QuestMultipleChoiceBanner({
 	);
 }
 
-export function QuestUnlocks({ leadsTo }: { leadsTo: readonly { quest: FullQuest; timing: string }[] }) {
+export function QuestUnlocks({ leadsTo }: { leadsTo: readonly { quest: QuestWorkspaceQuest; timing: string }[] }) {
 	return (
 		<section className="min-w-[14rem] flex-[1_1_16rem]">
 			<SectionLabel>Unlocks</SectionLabel>
@@ -67,7 +67,7 @@ export function QuestFailureConditions({
 	questsById,
 }: {
 	quest: FullQuest;
-	questsById: ReadonlyMap<string, FullQuest>;
+	questsById: ReadonlyMap<string, QuestWorkspaceQuest>;
 }) {
 	return (
 		<section className="min-w-[16rem] flex-[1_1_18rem]">

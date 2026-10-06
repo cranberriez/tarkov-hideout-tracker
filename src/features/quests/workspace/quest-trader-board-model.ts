@@ -1,4 +1,4 @@
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import { compareQuestTradersByOrder } from "../../../lib/cfg/questTraderOrder";
 import { getQuestTraderTabLoyaltyLevel } from "../../../lib/quests/quest-trader-completion-gates";
 import { isEssentialQuest } from "../../../lib/quests/quest-series";
@@ -24,14 +24,14 @@ export interface TraderBoardSection {
 }
 
 export interface TraderBoardColumn {
-	trader: FullQuest["trader"];
+	trader: QuestWorkspaceQuest["trader"];
 	sections: TraderBoardSection[];
 	doneCount: number;
 	totalCount: number;
 }
 
 export interface BuildQuestTraderBoardOptions {
-	quests: readonly FullQuest[];
+	quests: readonly QuestWorkspaceQuest[];
 	statusByQuestId: ReadonlyMap<string, QuestWorkspaceStatusInfo>;
 	upcomingLockedQuestIds: ReadonlySet<string>;
 	hiddenQuests: Readonly<Record<string, boolean>>;
@@ -60,7 +60,7 @@ export function buildQuestTraderBoard({
 		questIds.sort((left, right) => rank(left) - rank(right) || order(left) - order(right));
 	// Same series as the list's Essential category, so chains read in order instead of by status.
 	const essentialSeries = buildEssentialQuestSeries(quests.filter((quest) => isEssentialQuest(quest.id)));
-	const questsByTraderId = new Map<string, FullQuest[]>();
+	const questsByTraderId = new Map<string, QuestWorkspaceQuest[]>();
 
 	for (const quest of quests) {
 		const status = statusByQuestId.get(quest.id);

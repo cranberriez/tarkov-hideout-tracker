@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import type { TarkovJsonGameMode } from "../game-mode";
 import { PartialDataError, fetchJson, requireComplete } from "./request";
 import { gameDataKey } from "./scope";
+import type { QuestWorkspaceIndexData } from "../../types/quest-workspace";
 import type {
 	HideoutPageData,
 	ItemChecklistPageData,
@@ -20,7 +21,9 @@ export function isCompleteItemChecklistPageData(data: ItemChecklistPageData) {
 	return Boolean(data.stations && data.items && !data.errors.stations && !data.errors.items && !data.errors.quests);
 }
 
-export function isCompleteQuestWorkspacePageData(data: QuestWorkspacePageData) {
+export function isCompleteQuestWorkspacePageData(
+	data: Pick<QuestWorkspacePageData, "items" | "errors"> & { quests: readonly unknown[] | null },
+) {
 	return Boolean(data.quests && data.items && !data.errors.quests && !data.errors.items);
 }
 
@@ -88,15 +91,19 @@ export function itemChecklistPageQueryOptions(mode: TarkovJsonGameMode) {
 }
 
 export function questWorkspacePageQueryOptions(mode: TarkovJsonGameMode, devQuery: string | null = null) {
-	const params = new URLSearchParams({ mode });
+	const params = new URLSearchParams({ mode, format: "index-v1" });
 	if (devQuery) params.set("q", devQuery);
-	return pageQueryOptions<QuestWorkspacePageData>(
+	return pageQueryOptions<QuestWorkspaceIndexData>(
 		mode,
 		"quests-page",
 		`/api/page-data/quests?${params}`,
-		isCompleteQuestWorkspacePageData,
-		[devQuery],
+		isCompleteQuestWorkspaceIndex,
+		[devQuery, "index-v1"],
 	);
+}
+
+export function isCompleteQuestWorkspaceIndex(data: QuestWorkspaceIndexData) {
+	return data.quests !== null && !data.error;
 }
 
 export function kappaChecklistPageQueryOptions(mode: TarkovJsonGameMode) {

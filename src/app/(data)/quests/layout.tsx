@@ -5,9 +5,9 @@ import { RouteLoader } from "@/components/core/RouteLoader";
 import { QuestsQueryPage } from "@/features/quests/QuestsQueryPage";
 import { SHOW_REMOVED_QUESTS } from "@/features/quests/quest-feature-flags";
 import { getActiveTarkovJsonGameMode } from "@/server/active-game-mode";
-import { getQuestWorkspacePageData } from "@/server/queries/getQuestWorkspacePageData";
+import { getQuestWorkspaceIndex } from "@/server/queries/getQuestWorkspaceIndex";
 import {
-	isCompleteQuestWorkspacePageData,
+	isCompleteQuestWorkspaceIndex,
 	PAGE_DATA_STALE_TIME,
 	questWorkspacePageQueryOptions,
 } from "@/lib/query/page-data";
@@ -40,11 +40,10 @@ async function QuestWorkspaceData({ children }: { children: ReactNode }) {
 		options.queryKey,
 		PAGE_DATA_STALE_TIME,
 		async () =>
-			getQuestWorkspacePageData(gameMode, await getCurrentPageRepository(gameMode), {
-				includePrices: false,
+			getQuestWorkspaceIndex(gameMode, await getCurrentPageRepository(gameMode), {
 				showRemovedQuests: SHOW_REMOVED_QUESTS,
 			}),
-		isCompleteQuestWorkspacePageData,
+		isCompleteQuestWorkspaceIndex,
 	);
 
 	return (

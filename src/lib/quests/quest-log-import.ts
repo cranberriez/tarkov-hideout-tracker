@@ -1,4 +1,4 @@
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import { GAME_MODE_CONFIG, GAME_MODES, type GameMode, type RaidMode } from "../game-mode";
 import type { ParsedQuestEventType, QuestLogParseResult, ResolvedAggregatedQuestEvent } from "./quest-log-parser.ts";
 import { collectTransitivePrerequisiteIds } from "./sensitive-quest-backfill";
@@ -8,7 +8,7 @@ export const IMPORT_GAME_MODES = GAME_MODES;
 
 export interface QuestImportRow {
 	questId: string;
-	quest: FullQuest;
+	quest: QuestWorkspaceQuest;
 	raidMode: RaidMode;
 	types: ParsedQuestEventType[];
 	hasStarted: boolean;
@@ -58,7 +58,7 @@ export function applyQuestImportSelection(input: {
 	autoCompleteSelections: QuestImportSelectionState;
 	completedQuests: Record<string, boolean>;
 	questsWithItems: Record<string, boolean>;
-	questsById: ReadonlyMap<string, FullQuest>;
+	questsById: ReadonlyMap<string, QuestWorkspaceQuest>;
 	allowedSensitiveBackfillQuestIds?: string[];
 	deniedSensitiveBackfillQuestIds?: string[];
 }) {

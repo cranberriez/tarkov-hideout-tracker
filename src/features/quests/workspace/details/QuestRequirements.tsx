@@ -11,7 +11,7 @@ import {
 	formatTraderTierCompletionGate,
 } from "@/lib/quests/quest-trader-completion-gates";
 import { formatTaskRequirementStatus } from "@/lib/quests/quest-relations";
-import type { FullQuest } from "@/types/quests";
+import type { FullQuest, QuestWorkspaceQuest } from "@/types/quests";
 import {
 	compareRequirementValue,
 	formatOtherRequirementDetails,
@@ -38,7 +38,7 @@ export function QuestRequirements({
 	questsById,
 }: {
 	quest: FullQuest;
-	quests: readonly FullQuest[];
+	quests: readonly QuestWorkspaceQuest[];
 	playerLevel: number;
 	prestigeLevel: number;
 	faction: string | null;
@@ -48,7 +48,7 @@ export function QuestRequirements({
 	failedQuests: Record<string, boolean>;
 	traderTierCompletionGates: QuestDetailsModel["traderTierCompletionGates"];
 	unknownOtherRequirements: QuestDetailsModel["unknownOtherRequirements"];
-	questsById: ReadonlyMap<string, FullQuest>;
+	questsById: ReadonlyMap<string, QuestWorkspaceQuest>;
 }) {
 	return (
 		<section className="min-w-[16rem] flex-[1_1_18rem]">

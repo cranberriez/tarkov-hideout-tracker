@@ -1,4 +1,4 @@
-import type { FullQuest } from "../../../types";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import type { QuestWorkspaceLockedFilterSettings } from "../../../lib/stores/useUserStore";
 import { questMatchesTraderRequirementProfile } from "../../../lib/quests/quest-trader-gates";
 import { questMatchesSelectedMapGroups } from "../quest-map-groups";
@@ -37,8 +37,8 @@ export interface QuestWorkspaceSelection {
 
 /** Pure workspace selector. It retains quest identity in the shared index and returns IDs for rendering. */
 export function selectWorkspaceQuests(
-	quests: readonly FullQuest[],
-	questsById: Map<string, FullQuest>,
+	quests: readonly QuestWorkspaceQuest[],
+	questsById: Map<string, QuestWorkspaceQuest>,
 	profile: QuestProfileSnapshot,
 	options: QuestWorkspaceSelectionOptions,
 ): QuestWorkspaceSelection {
@@ -85,8 +85,12 @@ export function selectWorkspaceQuests(
 				}
 			}
 			if (normalizedSearch) {
+				const objectiveSearchText =
+					"objectives" in quest
+						? quest.objectives.map((objective) => objective.description).join(" ")
+						: quest.objectiveSearchText;
 				const haystack =
-					`${quest.name} ${quest.trader.name} ${quest.map?.name ?? ""} ${quest.objectives.map((objective) => objective.description).join(" ")}`.toLowerCase();
+					`${quest.name} ${quest.trader.name} ${quest.map?.name ?? ""} ${objectiveSearchText}`.toLowerCase();
 				if (!haystack.includes(normalizedSearch)) return false;
 			}
 			return true;

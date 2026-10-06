@@ -5,7 +5,7 @@ import {
 } from "../../../lib/quests/quest-trader-completion-gates";
 import { isEssentialQuest } from "../../../lib/quests/quest-series";
 import { formatQuestUnlockTiming } from "../../../lib/quests/quest-relations";
-import type { FullQuest, QuestOtherRequirement } from "../../../types";
+import type { FullQuest, QuestOtherRequirement, QuestWorkspaceQuest } from "@/types/quests";
 import { formatQuestMapSummary, type QuestMapGroup } from "../quest-map-groups";
 import type { QuestBranchLine } from "./quest-branch-graph";
 import { buildQuestDetailMarkers, createQuestDetailObjectiveStyles, getQuestDetailMaps } from "./quest-detail-markers";
@@ -20,7 +20,7 @@ export interface QuestDetailMapData {
 
 interface BuildQuestDetailsModelOptions {
 	quest: FullQuest;
-	questsById: ReadonlyMap<string, FullQuest>;
+	questsById: ReadonlyMap<string, QuestWorkspaceQuest>;
 	leadsToQuestIds: readonly string[];
 	maps: readonly QuestMapGroup[];
 	branchLines: readonly QuestBranchLine[];

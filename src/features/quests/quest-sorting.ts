@@ -1,20 +1,20 @@
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import type { QuestSortMode } from "@/lib/stores/useUserStore";
 import { getTraderTierCompletionGate } from "../../lib/quests/quest-trader-completion-gates";
 import { getQuestMapGroupsForQuest } from "./quest-map-groups";
 
-function compareByDefaultOrder(a: FullQuest, b: FullQuest, questOrderById: Map<string, number>) {
+function compareByDefaultOrder(a: QuestWorkspaceQuest, b: QuestWorkspaceQuest, questOrderById: Map<string, number>) {
 	return (questOrderById.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (questOrderById.get(b.id) ?? Number.MAX_SAFE_INTEGER);
 }
 
-function compareQuestsByRootOrder(a: FullQuest, b: FullQuest, questOrderById: Map<string, number>) {
+function compareQuestsByRootOrder(a: QuestWorkspaceQuest, b: QuestWorkspaceQuest, questOrderById: Map<string, number>) {
 	const levelDiff = (a.minPlayerLevel ?? 0) - (b.minPlayerLevel ?? 0);
 	if (levelDiff !== 0) return levelDiff;
 
 	return compareByDefaultOrder(a, b, questOrderById);
 }
 
-function getQuestTaskCountUnlock(quest: FullQuest) {
+function getQuestTaskCountUnlock(quest: QuestWorkspaceQuest) {
 	let requiredCount = 0;
 
 	for (const requirement of quest.otherRequirements) {
@@ -25,7 +25,11 @@ function getQuestTaskCountUnlock(quest: FullQuest) {
 	return requiredCount;
 }
 
-function compareQuestsByUnlockOrder(a: FullQuest, b: FullQuest, questOrderById: Map<string, number>) {
+function compareQuestsByUnlockOrder(
+	a: QuestWorkspaceQuest,
+	b: QuestWorkspaceQuest,
+	questOrderById: Map<string, number>,
+) {
 	const levelDiff = (a.minPlayerLevel ?? 0) - (b.minPlayerLevel ?? 0);
 	if (levelDiff !== 0) return levelDiff;
 
@@ -39,14 +43,15 @@ function compareQuestsByUnlockOrder(a: FullQuest, b: FullQuest, questOrderById: 
 }
 
 function sortQuestsByChains(
-	quests: FullQuest[],
+	quests: QuestWorkspaceQuest[],
 	questOrderById: Map<string, number>,
-	compareQuests: (a: FullQuest, b: FullQuest) => number = (a, b) => compareQuestsByRootOrder(a, b, questOrderById),
+	compareQuests: (a: QuestWorkspaceQuest, b: QuestWorkspaceQuest) => number = (a, b) =>
+		compareQuestsByRootOrder(a, b, questOrderById),
 ) {
 	const questsById = new Map(quests.map((quest) => [quest.id, quest]));
 	const groupQuestIds = new Set(quests.map((quest) => quest.id));
-	const childrenByQuestId = new Map<string, FullQuest[]>();
-	const roots: FullQuest[] = [];
+	const childrenByQuestId = new Map<string, QuestWorkspaceQuest[]>();
+	const roots: QuestWorkspaceQuest[] = [];
 
 	for (const quest of quests) {
 		const sameGroupPrereqs = quest.taskRequirements.filter((requirement) => groupQuestIds.has(requirement.task.id));
@@ -77,10 +82,10 @@ function sortQuestsByChains(
 
 	roots.sort(compareQuests);
 
-	const sorted: FullQuest[] = [];
+	const sorted: QuestWorkspaceQuest[] = [];
 	const visitedQuestIds = new Set<string>();
 
-	const appendQuestAndChildren = (quest: FullQuest) => {
+	const appendQuestAndChildren = (quest: QuestWorkspaceQuest) => {
 		if (visitedQuestIds.has(quest.id)) return;
 
 		visitedQuestIds.add(quest.id);
@@ -102,7 +107,7 @@ function sortQuestsByChains(
 	return sorted;
 }
 
-export function buildQuestUnlockImpactMap(quests: FullQuest[]) {
+export function buildQuestUnlockImpactMap(quests: QuestWorkspaceQuest[]) {
 	const childrenByQuestId = new Map<string, string[]>();
 
 	for (const quest of quests) {
@@ -143,7 +148,7 @@ export function buildQuestUnlockImpactMap(quests: FullQuest[]) {
 }
 
 export function sortQuestsForQuestView(
-	quests: FullQuest[],
+	quests: QuestWorkspaceQuest[],
 	sortMode: QuestSortMode,
 	questOrderById: Map<string, number>,
 	unlockImpactById: Map<string, number>,
@@ -177,7 +182,7 @@ export function sortQuestsForQuestView(
 }
 
 export function sortQuestsForMapView(
-	quests: FullQuest[],
+	quests: QuestWorkspaceQuest[],
 	sortMode: QuestSortMode,
 	questOrderById: Map<string, number>,
 	unlockImpactById: Map<string, number>,

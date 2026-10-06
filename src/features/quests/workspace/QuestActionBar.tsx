@@ -2,13 +2,13 @@
 
 import { Columns3, Compass, GitBranch, History, PanelTopClose, PanelTopOpen, Search, Upload, X } from "lucide-react";
 import { useState } from "react";
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { Button } from "@/components/ui/button";
 import { QuestLogImportDialog } from "../import/QuestLogImportDialog";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
-export function QuestActionBar({ quests }: { quests: FullQuest[] }) {
+export function QuestActionBar({ quests }: { quests: QuestWorkspaceQuest[] }) {
 	const { searchQuery, setSearchQuery, mode, setMode, listMode, setListMode, showQuestVisualizerIndex } =
 		useQuestWorkspace();
 	const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);

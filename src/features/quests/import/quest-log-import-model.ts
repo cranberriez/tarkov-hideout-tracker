@@ -9,7 +9,7 @@ import {
 	type QuestImportRow,
 } from "../../../lib/quests/quest-log-import";
 import { GAME_MODE_CONFIG } from "../../../lib/game-mode";
-import type { FullQuest } from "@/types/quests";
+import type { QuestWorkspaceQuest } from "@/types/quests";
 
 export interface ParsedImportView {
 	result: import("../../../lib/quests/quest-log-parser").QuestLogParseResult;
@@ -253,7 +253,7 @@ export function buildModeImportViewModels(input: {
 export interface ReviewImportViewModel {
 	mode: ImportGameMode;
 	importedRows: QuestImportRow[];
-	prerequisiteQuests: FullQuest[];
+	prerequisiteQuests: QuestWorkspaceQuest[];
 	blockedSensitiveQuestIds: string[];
 	sensitiveDecisionQuestIds: string[];
 	importedCount: number;
@@ -264,7 +264,7 @@ export function buildReviewImportViewModel(input: {
 	mode: ImportGameMode | null;
 	modeModels: ModeImportViewModel[];
 	profiles: Record<ImportGameMode, PlayerProfileState>;
-	questsById: ReadonlyMap<string, FullQuest>;
+	questsById: ReadonlyMap<string, QuestWorkspaceQuest>;
 	selections: AutoCompleteSelectionMap;
 	allowedSensitiveQuestIds: string[];
 	deniedSensitiveQuestIds: string[];
@@ -286,7 +286,7 @@ export function buildReviewImportViewModel(input: {
 	const importedRows = rows.filter((row) => preview.importedQuestIds.includes(row.questId));
 	const prerequisiteQuests = preview.prerequisiteQuestIds
 		.map((questId) => input.questsById.get(questId))
-		.filter((quest): quest is FullQuest => !!quest);
+		.filter((quest): quest is QuestWorkspaceQuest => !!quest);
 	return {
 		mode: input.mode,
 		importedRows,

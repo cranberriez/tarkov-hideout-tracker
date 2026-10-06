@@ -74,7 +74,7 @@ keyed records, and omit missing IDs; query contracts report those omissions in
 | ------------ | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | Hideout      | [getHideoutPageData](../src/server/queries/getHideoutPageData.ts)               | Stations and only their referenced item summaries/prices                      |
 | Items        | [getItemChecklistPageData](../src/server/queries/getItemChecklistPageData.ts)   | Independently settled stations/quests, demand metadata, demand items/prices   |
-| Quests       | [getQuestWorkspacePageData](../src/server/queries/getQuestWorkspacePageData.ts) | Prepared full quests and their referenced standard item summaries (no prices) |
+| Quests       | [getQuestWorkspaceIndex](../src/server/queries/getQuestWorkspaceIndex.ts) | Quest summaries for lists, progression and filters; full details/items are scoped reads |
 | Kappa        | [getKappaChecklistPageData](../src/server/queries/getKappaChecklistPageData.ts) | One mode-specific Collector quest and its hand-in items/prices                |
 | Profit pages | [getProfitPageData](../src/server/queries/getProfitPageData.ts)                 | Both recipe graphs, referenced items/prices, full trader catalog, stations    |
 
@@ -106,6 +106,23 @@ include prices use 300 seconds for both. Partial responses and HTTP errors use
 which still select mode from the cookie and prefetch queries directly. Explicit unresolved
 IDs stay in successful payloads and visible warnings; domain errors produce usable
 partial payloads that remain retryable rather than reusable complete cache entries.
+
+Quest workspace hydration and `/api/page-data/quests?mode=...&format=index-v1`
+deliver only the quest index (unversioned requests also return the index).
+The SQL index projection excludes objective details, geometry and reward groups;
+the query performs no item reads. The format is part of the URL/query key to avoid
+reusing earlier full-workspace caches. [Quest contracts](../src/types/quest-workspace.ts)
+separate summaries from full detail records.
+
+`/api/quests/details?mode=...&ids=...` accepts 1–50 unique quest IDs and returns only
+their full details and referenced item presentations, with missing IDs and partial
+errors. Complete single-ID responses use public page caching; batches and partial
+responses use `no-store`. Batch combinations are transport only: the browser caches
+individual mode/quest entries, and server catalog caching uses mode/content-version/
+quest-ID entries. Concurrent cold server misses coalesce into bounded SQL batches.
+The planner requests active quests for the selected map; sustained hover previews
+and direct quest routes use the same per-quest cache. No player profile data enters
+the endpoint or its cache key.
 
 Station details use `/api/page-data/station?mode=...&stationId=...`, with `view=recipes`
 for the separate recipe payload. Metadata contains only the selected station's item

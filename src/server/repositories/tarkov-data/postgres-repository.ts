@@ -4,7 +4,9 @@ import type { TarkovDataMode } from "@/types/common";
 import type { TarkovDataRepository } from "./types";
 import {
 	getCachedItemsByIds,
+	getCachedQuestIndexSource,
 	getCachedQuests,
+	getCachedQuestsByIds,
 	getCachedRecipes,
 	getCachedStations,
 	getCachedTraders,
@@ -38,13 +40,8 @@ export function createPostgresRepository(scope?: {
 		},
 		quests: {
 			getAll: async (mode) => getCachedQuests(mode, await versionFor(mode)),
-			getByIds: async (mode, ids) => {
-				const result = await getCachedQuests(mode, await versionFor(mode));
-				return {
-					data: Object.fromEntries(pickById(result.data, ids).map((quest) => [quest.id, quest])),
-					updatedAt: result.updatedAt,
-				};
-			},
+			getIndexSource: async (mode) => getCachedQuestIndexSource(mode, await versionFor(mode)),
+			getByIds: async (mode, ids) => getCachedQuestsByIds(mode, await versionFor(mode), ids),
 		},
 		traders: {
 			getAll: async (mode) => getCachedTraders(mode, await versionFor(mode)),

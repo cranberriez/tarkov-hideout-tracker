@@ -18,6 +18,8 @@ export interface TarkovDataRepository {
 		getStations(mode: TarkovDataMode): Promise<DataResult<Station[]>>;
 	};
 	quests: {
+		/** Metadata projection for summary preparation only; objectives contain no detail payloads. */
+		getIndexSource?(mode: TarkovDataMode): Promise<DataResult<FullQuest[]>>;
 		getAll(mode: TarkovDataMode): Promise<DataResult<FullQuest[]>>;
 		getByIds(mode: TarkovDataMode, ids: readonly string[]): Promise<DataResult<Record<string, FullQuest>>>;
 	};
