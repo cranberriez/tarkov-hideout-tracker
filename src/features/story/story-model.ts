@@ -257,3 +257,55 @@ export function endingRouteStats(
 		needsLightkeeper,
 	};
 }
+
+export type EvidenceKind = "major" | "minor";
+
+export interface EvidenceEntry {
+	kind: EvidenceKind;
+	item: StoryItemRef;
+	/** The first step whose items include it, or null when no step matches. */
+	stepId: string | null;
+}
+
+export interface ChapterEvidence {
+	entries: EvidenceEntry[];
+	/** The strongest evidence kind each step yields. */
+	byStep: Map<string, EvidenceKind>;
+}
+
+/** Mr. Kerman's evidence found in this chapter, matched to its steps by item ID or name. */
+export function chapterEvidence(
+	chapter: StoryChapter,
+	major: readonly StoryItemRef[],
+	minor: readonly StoryItemRef[],
+): ChapterEvidence {
+	const stepByItem = new Map<string, string>();
+	const visit = (step: StoryStep) => {
+		for (const item of step.items ?? []) if (!stepByItem.has(itemKey(item))) stepByItem.set(itemKey(item), step.id);
+		step.substeps?.forEach(visit);
+	};
+	for (const section of chapter.sections) section.steps.forEach(visit);
+
+	const entries: EvidenceEntry[] = [];
+	const byStep = new Map<string, EvidenceKind>();
+	for (const [kind, items] of [
+		["major", major],
+		["minor", minor],
+	] as const) {
+		for (const item of items) {
+			if (item.chapterId !== chapter.id) continue;
+			const stepId = stepByItem.get(itemKey(item)) ?? null;
+			entries.push({ kind, item, stepId });
+			if (stepId && !byStep.has(stepId)) byStep.set(stepId, kind);
+		}
+	}
+	return { entries, byStep };
+}
+
+/** How many pieces of each evidence kind the lists place in a chapter, tracked or not. */
+export function evidenceCounts(chapterId: string, major: readonly StoryItemRef[], minor: readonly StoryItemRef[]) {
+	return {
+		major: major.filter((item) => item.chapterId === chapterId).length,
+		minor: minor.filter((item) => item.chapterId === chapterId).length,
+	};
+}

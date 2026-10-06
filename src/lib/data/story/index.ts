@@ -7,6 +7,7 @@ import { THE_UNHEARD } from "./the-unheard";
 import { TOUR } from "./tour";
 
 export { STORY_DECISION_BY_ID, STORY_DECISIONS, STORY_ENDING_BY_ID, STORY_ENDINGS } from "./endings";
+export { MAJOR_EVIDENCE, MAJOR_EVIDENCE_REQUIRED, MINOR_EVIDENCE } from "./evidence";
 
 /** Chapters with tracked data. */
 export const STORY_CHAPTERS: readonly StoryChapter[] = [

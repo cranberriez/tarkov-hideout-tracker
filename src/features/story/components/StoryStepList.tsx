@@ -1,13 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown, CircleCheck, Gift, GitBranch, MapPin, ScrollText, TriangleAlert } from "lucide-react";
+import {
+	Check,
+	ChevronDown,
+	CircleCheck,
+	FileSearch,
+	Gift,
+	GitBranch,
+	MapPin,
+	ScrollText,
+	TriangleAlert,
+} from "lucide-react";
 import { QuestLink } from "@/components/entities/quest-link";
 import { Badge } from "@/components/ui/badge";
 import { STORY_DECISION_BY_ID, STORY_ENDING_BY_ID, storyChapterLink } from "@/lib/data/story";
 import { cn } from "@/lib/utils";
 import type { StoryEndingId, StoryItemRef } from "@/types/story";
-import type { DecisionLocation, ResolvedDecisions, SectionView, StepView } from "../story-model";
+import type { DecisionLocation, EvidenceKind, ResolvedDecisions, SectionView, StepView } from "../story-model";
 import { ChapterBadge, StoryDecisionControl } from "./StoryDecisionControl";
 import { StoryItemChip } from "./StoryItemChip";
 
@@ -17,6 +27,8 @@ interface StoryStepListProps {
 	resolved: ResolvedDecisions;
 	targetEnding: StoryEndingId | null;
 	locations: ReadonlyMap<string, DecisionLocation>;
+	/** Steps that yield Mr. Kerman's evidence. */
+	evidenceByStep: ReadonlyMap<string, EvidenceKind>;
 	onToggleStep: (stepId: string, done: boolean) => void;
 	onDecision: (decisionId: string, optionId: string) => void;
 }
@@ -30,6 +42,7 @@ export function StoryStepList({
 	resolved,
 	targetEnding,
 	locations,
+	evidenceByStep,
 	onToggleStep,
 	onDecision,
 }: StoryStepListProps) {
@@ -144,7 +157,13 @@ export function StoryStepList({
 								)}
 							>
 								{steps.map((view) => (
-									<StepRow key={view.step.id} view={view} decisionProps={decisionProps} onToggleStep={onToggleStep} />
+									<StepRow
+										key={view.step.id}
+										view={view}
+										decisionProps={decisionProps}
+										evidenceByStep={evidenceByStep}
+										onToggleStep={onToggleStep}
+									/>
 								))}
 							</ol>
 						)}
@@ -163,17 +182,20 @@ type DecisionProps = Pick<
 function StepRow({
 	view,
 	decisionProps,
+	evidenceByStep,
 	onToggleStep,
 	nested = false,
 }: {
 	view: StepView;
 	decisionProps: DecisionProps;
+	evidenceByStep: ReadonlyMap<string, EvidenceKind>;
 	onToggleStep: (stepId: string, done: boolean) => void;
 	nested?: boolean;
 }) {
 	const { step, done, state, lightkeeperBlocked, substeps } = view;
 	const decision = step.decision ? STORY_DECISION_BY_ID[step.decision] : undefined;
 	const optional = Boolean(step.optional);
+	const evidence = evidenceByStep.get(step.id);
 	return (
 		<li
 			id={`step-${step.id}`}
@@ -218,6 +240,17 @@ function StepRow({
 						<Badge size="xs">
 							<MapPin aria-hidden="true" />
 							{step.map}
+						</Badge>
+					)}
+					{evidence === "major" && (
+						<Badge tone="special" size="sm" title="Major evidence for Mr. Kerman in The Ticket">
+							<FileSearch aria-hidden="true" />
+							Major evidence
+						</Badge>
+					)}
+					{evidence === "minor" && (
+						<Badge size="xs" title="Optional minor evidence for Mr. Kerman in The Ticket">
+							Minor evidence
 						</Badge>
 					)}
 					{step.requiresLightkeeper && (
@@ -271,6 +304,7 @@ function StepRow({
 								key={substep.step.id}
 								view={substep}
 								decisionProps={decisionProps}
+								evidenceByStep={evidenceByStep}
 								onToggleStep={onToggleStep}
 								nested
 							/>

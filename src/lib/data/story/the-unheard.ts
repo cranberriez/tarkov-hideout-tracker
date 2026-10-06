@@ -103,7 +103,7 @@ export const THE_UNHEARD: StoryChapter = {
 						item("Fuel catalyst test report", "689b5187665c386d9c007a43"),
 						item("TerraGroup storage room keycard", "66acd6702b17692df20144c0"),
 					],
-					note: 'TerraGroup storage room in the tunnels next to the "Camera Bunker Door" Scav extract. Both documents have several spawns. Must be found in raid. The report is major evidence for Mr. Kerman in The Ticket.',
+					note: 'TerraGroup storage room in the tunnels next to the "Camera Bunker Door" Scav extract. Both documents have several spawns. Must be found in raid.',
 				},
 				{
 					id: "unheard-plans",
@@ -248,7 +248,6 @@ export const THE_UNHEARD: StoryChapter = {
 					id: "unheard-tarkov-link",
 					text: "Figure out how The Unheard are connected to Tarkov",
 					items: [item("Document mentioning the Warden", "689b5218533aa51a060f810a")],
-					note: "Major evidence for Mr. Kerman in The Ticket.",
 					rewards: ["128,000 EXP", '"Trail of Breadcrumbs" achievement'],
 				},
 			],

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { STORY_DECISIONS, STORY_ENDINGS } from "../../lib/data/story";
+import { MAJOR_EVIDENCE, MINOR_EVIDENCE, STORY_CHAPTERS, STORY_DECISIONS, STORY_ENDINGS } from "../../lib/data/story";
 import { THE_TICKET } from "../../lib/data/story/the-ticket";
-import { buildChapterView, reachableEndings, resolveDecisions } from "./story-model";
+import { buildChapterView, chapterEvidence, reachableEndings, resolveDecisions } from "./story-model";
 import {
 	emptyStoryProgress,
 	parseStoryProgress,
@@ -90,4 +90,19 @@ test("completing a step completes earlier required steps; clearing one clears la
 
 	const substep = setStoryStepDone(cleared, "ch", order, "sub", true);
 	assert.deepEqual(new Set(substep.completedSteps.ch), new Set(["a", "sub"]));
+});
+
+test("evidence placed in a tracked chapter matches one of its steps", () => {
+	for (const chapter of STORY_CHAPTERS) {
+		const { entries } = chapterEvidence(chapter, MAJOR_EVIDENCE, MINOR_EVIDENCE);
+		const unmatched = entries.filter((entry) => entry.stepId === null).map((entry) => entry.item.name);
+		assert.deepEqual(unmatched, [], chapter.id);
+	}
+	const unheard = chapterEvidence(
+		STORY_CHAPTERS.find((chapter) => chapter.id === "the-unheard")!,
+		MAJOR_EVIDENCE,
+		MINOR_EVIDENCE,
+	);
+	assert.equal(unheard.byStep.get("catalyst-test-report"), "major");
+	assert.equal(unheard.byStep.get("learn-fuel"), "minor");
 });

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { ChevronLeft, ExternalLink } from "lucide-react";
 import {
 	findStoryChapter,
+	MAJOR_EVIDENCE,
+	MINOR_EVIDENCE,
 	STORY_DECISION_BY_ID,
 	STORY_DECISIONS,
 	STORY_ENDING_BY_ID,
@@ -15,11 +17,13 @@ import { useUserStoreHydrated } from "@/lib/query/game-data";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { StoryEndingId } from "@/types/story";
 import { ChapterBadge } from "./components/StoryDecisionControl";
+import { StoryEvidencePanel } from "./components/StoryEvidencePanel";
 import { StoryItemChip } from "./components/StoryItemChip";
 import { StoryRoutePanel, type EndingSummary } from "./components/StoryRoutePanel";
 import { StoryStepList } from "./components/StoryStepList";
 import {
 	buildChapterView,
+	chapterEvidence,
 	decisionLocations,
 	endingRouteStats,
 	evaluateCondition,
@@ -57,6 +61,8 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 	);
 
 	const locations = useMemo(() => decisionLocations(chapter), [chapter]);
+	const evidence = useMemo(() => chapterEvidence(chapter, MAJOR_EVIDENCE, MINOR_EVIDENCE), [chapter]);
+	const completed = useMemo(() => new Set(progress.completedSteps[chapter.id] ?? []), [progress, chapter.id]);
 	const stepOrder = useMemo(
 		() =>
 			view.sections.flatMap((section) =>
@@ -148,6 +154,14 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 							)}
 						</section>
 
+						{evidence.entries.length > 0 && (
+							<StoryEvidencePanel
+								entries={evidence.entries}
+								completed={completed}
+								targetEnding={progress.targetEnding}
+							/>
+						)}
+
 						<StoryRoutePanel
 							chapterId={chapter.id}
 							targetEnding={progress.targetEnding}
@@ -188,6 +202,7 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 					<StoryStepList
 						chapterId={chapter.id}
 						locations={locations}
+						evidenceByStep={evidence.byStep}
 						sections={view.sections}
 						resolved={view.resolved}
 						targetEnding={progress.targetEnding}

@@ -170,6 +170,13 @@ chapter so those always link to `/story/[chapterId]`; untracked chapters render 
 placeholder that links to the wiki and is not indexed.
 Steps may also carry rewards, warnings for route-failing actions and quest links.
 
+Mr. Kerman's major and minor evidence, and how much major evidence each ending
+needs, live in [the evidence list](../src/lib/data/story/evidence.ts). Each piece
+names the chapter where it is found; that chapter's steps are matched to it by item
+ID, or by name for items missing from the catalog, and marked as evidence. The story
+index shows each chapter's evidence count when the target ending needs evidence.
+Only chapters whose sections vary by ending show the target ending on their card.
+
 Choices appear where they matter: a decision made at a step renders inline there,
 and sections that depend on it link back to it. Decisions made in other chapters
 render as a bar above the first section they shape. The sidebar lists them all.

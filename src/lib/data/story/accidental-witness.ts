@@ -16,8 +16,6 @@ const KOZLOV_KEY = item("Dorm room 110 key", "59136e1e86f774432f15d133");
 const ZMEISKY_KEY = item("Zmeisky 3 apartment key", "68e960db934bf7b02d005dab");
 const RESHALA_KEY = item("Reshala's bunkhouse key", "68e95f4fa4a577e907015787");
 
-const MINOR_EVIDENCE_NOTE = "The letter is minor evidence for Mr. Kerman in The Ticket.";
-
 export const ACCIDENTAL_WITNESS: StoryChapter = {
 	id: "accidental-witness",
 	name: "Accidental Witness",
@@ -56,7 +54,7 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 					text: "Find out what Kozlov was involved in",
 					map: "Customs",
 					items: [item("Letter from Kozlov's room", "68d2fd018c12620073059934"), KOZLOV_KEY],
-					note: `Read the letter on the nightstand. Must be found in raid. ${MINOR_EVIDENCE_NOTE}`,
+					note: "Read the letter on the nightstand. Must be found in raid.",
 					substeps: [
 						{ id: "access-kozlov-room", text: "Access Kozlov's room", optional: true, items: [KOZLOV_KEY] },
 						{
@@ -106,7 +104,7 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 						item("The Ninth Circle Issue #19", "68d2f44df63f06b7590ce30e"),
 						item("Tarkov Herald summary", "68eaddac9b384b24740f91de"),
 					],
-					note: "Each has 2–3 spawns around the living room and kitchen. Must be found in raid. The FSB report is minor evidence for Mr. Kerman in The Ticket.",
+					note: "Each has 2–3 spawns around the living room and kitchen. Must be found in raid.",
 				},
 				{
 					id: "extract-streets",
@@ -137,7 +135,7 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 						item("Letter from the mailbox", "68d2fc914aae290cf704e373"),
 						item("Tarkov Herald newspaper with article by A. Mikhailova", "68d2f6352ca1a737d107b84b"),
 					],
-					note: `Both are in the mailbox downstairs. Must be found in raid. ${MINOR_EVIDENCE_NOTE}`,
+					note: "Both are in the mailbox downstairs. Must be found in raid.",
 				},
 				{
 					id: "locate-pasha",
@@ -193,7 +191,6 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 							text: "Obtain courier Pasha's belongings",
 							optional: true,
 							items: [item("Letter from Reshala's bunkhouse", "68d2f4fc17b59ead010894b6")],
-							note: MINOR_EVIDENCE_NOTE,
 						},
 					],
 				},
@@ -214,7 +211,7 @@ export const ACCIDENTAL_WITNESS: StoryChapter = {
 					text: "Locate and obtain Kozlov's evidence",
 					map: "Shoreline",
 					items: [item("Audio tape with incriminating evidence", "688897e094cca0a80b070aed")],
-					note: "In the flower bed next to the entrance. Must be found in raid. The tape is major evidence for Mr. Kerman in The Ticket. The optional Newspaper clipping with a photo of Anastasia is on the floor inside.",
+					note: "In the flower bed next to the entrance. Must be found in raid. The optional Newspaper clipping with a photo of Anastasia is on the floor inside.",
 					rewards: ["64,000 EXP", '"Pay Your Debt" achievement'],
 				},
 			],

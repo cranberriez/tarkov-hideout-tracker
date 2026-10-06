@@ -121,7 +121,7 @@ export const BLUE_FIRE: StoryChapter = {
 					text: "Obtain the blueprint for Item 1156",
 					map: "Streets of Tarkov",
 					items: [item("Item 1156 specification", "689b52d6886e9848a4085917"), RUS_POST_CAR_KEY],
-					note: "In the back of the car. Must be found in raid. Major evidence for Mr. Kerman in The Ticket.",
+					note: "In the back of the car. Must be found in raid.",
 					rewards: ["112,000 EXP", '"Inferno" achievement'],
 				},
 			],
