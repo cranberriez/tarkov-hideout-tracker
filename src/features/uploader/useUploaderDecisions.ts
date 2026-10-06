@@ -12,6 +12,8 @@ export interface EntryDecision {
 	key: string;
 	action: ItemAction;
 	pending: boolean;
+	/** A kept copy reserved for Kappa. */
+	kappa: boolean;
 }
 
 /**
@@ -37,17 +39,26 @@ export function useUploaderDecisions(data: ReturnType<typeof useUploaderSummary>
 			if (row.category === "surplus" && !surplus.has(row.item.id))
 				surplus.set(row.item.id, decideSurplus(prices.prices[row.item.id], prices.states[row.item.id], now));
 		}
-		const queues = new Map<string, { action: ItemAction; pending: boolean; quantity: number }[]>();
+		const queues = new Map<string, { action: ItemAction; pending: boolean; kappa: boolean; quantity: number }[]>();
 		for (const [key, rows] of groups) {
 			groups.set(
 				key,
-				rows.sort((a, b) => Number(a.category === "surplus") - Number(b.category === "surplus")),
+				// Kappa copies first, then other kept copies, then surplus.
+				rows.sort(
+					(a, b) =>
+						Number(a.category === "surplus") - Number(b.category === "surplus") || Number(!a.kappa) - Number(!b.kappa),
+				),
 			);
 			queues.set(
 				key,
 				rows.map((row) => {
 					const decision = row.category === "keep" ? undefined : surplus.get(row.item.id);
-					return { action: decision?.action ?? "KEEP", pending: !!decision?.pending, quantity: row.quantity };
+					return {
+						action: decision?.action ?? "KEEP",
+						pending: !!decision?.pending,
+						kappa: !!row.kappa,
+						quantity: row.quantity,
+					};
 				}),
 			);
 		}
@@ -60,7 +71,7 @@ export function useUploaderDecisions(data: ReturnType<typeof useUploaderSummary>
 			const queue = queues.get(key);
 			const head = queue?.find((unit) => unit.quantity > 0);
 			if (!queue || !head) continue;
-			assigned.set(entry, { key, action: head.action, pending: head.pending });
+			assigned.set(entry, { key, action: head.action, pending: head.pending, kappa: head.kappa });
 			counts.ALL++;
 			counts[head.action]++;
 			let left = entry.quantity;

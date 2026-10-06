@@ -11,8 +11,13 @@ type CompletedItemsByMode = Partial<Record<GameMode, Record<string, boolean>>>;
 interface KappaState {
 	completedItemsByMode: CompletedItemsByMode;
 	viewMode: KappaViewMode;
+	/** The uploader stops keeping copies for Kappa hand-ins. */
+	ignoreInUploader: boolean;
 	setViewMode: (viewMode: KappaViewMode) => void;
+	setIgnoreInUploader: (ignore: boolean) => void;
 	toggleCompletedItem: (gameMode: GameMode, itemId: string) => void;
+	/** Checks items off without unchecking any already done. */
+	completeItems: (gameMode: GameMode, itemIds: readonly string[]) => void;
 	resetCompletedItems: () => void;
 	importCompletedItems: (profiles: CompletedItemsByMode) => void;
 	resetAll: () => void;
@@ -21,6 +26,7 @@ interface KappaState {
 const DEFAULT_KAPPA_STATE = {
 	completedItemsByMode: {},
 	viewMode: "all" as KappaViewMode,
+	ignoreInUploader: false,
 };
 
 export const useKappaStore = create<KappaState>()(
@@ -32,6 +38,17 @@ export const useKappaStore = create<KappaState>()(
 					completedItemsByMode: { ...state.completedItemsByMode, ...profiles },
 				})),
 			setViewMode: (viewMode) => set({ viewMode }),
+			setIgnoreInUploader: (ignoreInUploader) => set({ ignoreInUploader }),
+			completeItems: (gameMode, itemIds) =>
+				set((state) => ({
+					completedItemsByMode: {
+						...state.completedItemsByMode,
+						[gameMode]: {
+							...(state.completedItemsByMode[gameMode] ?? {}),
+							...Object.fromEntries(itemIds.map((itemId) => [itemId, true])),
+						},
+					},
+				})),
 			toggleCompletedItem: (gameMode, itemId) =>
 				set((state) => {
 					const completedForMode = {
@@ -58,9 +75,10 @@ export const useKappaStore = create<KappaState>()(
 			name: KAPPA_STORE_STORAGE_KEY,
 			version: 1,
 			storage: createJSONStorage(() => localStorage),
-			partialize: ({ completedItemsByMode, viewMode }) => ({
+			partialize: ({ completedItemsByMode, viewMode, ignoreInUploader }) => ({
 				completedItemsByMode,
 				viewMode,
+				ignoreInUploader,
 			}),
 		},
 	),

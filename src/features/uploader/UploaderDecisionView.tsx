@@ -10,7 +10,7 @@ import type { SaveReason } from "./summary-model";
 import type { SentCounts } from "./inventory-model";
 import type { useUploaderSummary } from "./useUploaderSummary";
 import type { DecisionFilter, useUploaderDecisions } from "./useUploaderDecisions";
-import { DecisionMarker, decisionAppearance } from "./DecisionMarker";
+import { DecisionMarker, appearanceFor, decisionAppearance, kappaAppearance } from "./DecisionMarker";
 import { UploaderItemPrice } from "./UploaderItemPrice";
 import { UploaderInventoryActions } from "./UploaderInventoryActions";
 import { UploaderSidebarHeader, sectionLabel } from "./UploaderSidebarHeader";
@@ -18,6 +18,7 @@ import { foundInRaidLabel } from "./found-in-raid";
 import { bestSellOffer, type ItemAction } from "./decision-model";
 import type { CurrentPrice } from "@/types/prices";
 import { traderImageUrl, traderInfo } from "@/lib/data/traders";
+import { useKappaStore } from "@/lib/stores/useKappaStore";
 
 const ACTIONS = ["KEEP", "SELL", "HOLD"] as const;
 const tile = "rounded bg-shadow/30 p-2";
@@ -28,6 +29,7 @@ export function UploaderDecisionView({
 	decisions,
 	extras,
 	sent,
+	kappaSent,
 	onSent,
 	onSetFir,
 }: {
@@ -36,12 +38,15 @@ export function UploaderDecisionView({
 	/** Manual additions, which have no box on the screenshot. */
 	extras: readonly ReviewEntry[];
 	sent: SentCounts;
+	kappaSent: readonly string[];
 	onSent: Parameters<typeof UploaderInventoryActions>[0]["onSent"];
 	onSetFir: () => void;
 }) {
 	const { summary, prices, error, retry, loading } = data;
 	const { counts, values, filter, setFilter, activeKey, select, groups } = decisions;
 	const active = activeKey ? groups.get(activeKey) : undefined;
+	const ignoreKappa = useKappaStore((state) => state.ignoreInUploader);
+	const setIgnoreKappa = useKappaStore((state) => state.setIgnoreInUploader);
 	const notices = [
 		!!summary?.unresolved && "Some entries have missing data or invalid quantities. Return to review to fix them.",
 	].filter(Boolean);
@@ -87,6 +92,23 @@ export function UploaderDecisionView({
 						<Stat label="Sell" value={compactRoubles(values.SELL)} detail="best offers" action="SELL" />
 						<Stat label="Hold" value={compactRoubles(values.HOLD)} detail="price low" action="HOLD" />
 					</div>
+					<button
+						role="switch"
+						aria-checked={ignoreKappa}
+						onClick={() => setIgnoreKappa(!ignoreKappa)}
+						title="Stop keeping copies for the Collector's Kappa hand-ins"
+						className="flex w-full items-center justify-between gap-2 rounded-sm border border-border-color px-3 py-2 text-xs text-foreground hover:bg-surface-raised"
+					>
+						Ignore Kappa items
+						<span
+							className={cn(
+								"flex h-4 w-7 shrink-0 rounded-full p-0.5",
+								ignoreKappa ? "justify-end bg-special" : "justify-start bg-surface-raised",
+							)}
+						>
+							<span className="h-3 w-3 rounded-full bg-foreground" />
+						</span>
+					</button>
 				</>
 			)}
 			{(notices.length > 0 || prices.state === "error") && (
@@ -121,14 +143,14 @@ export function UploaderDecisionView({
 									title={item?.name}
 									className={cn(
 										"relative size-10 rounded-sm border border-highlight/10 p-1 transition-opacity",
-										decisionAppearance[decision.action].overlay,
+										appearanceFor(decision.action, decision.kappa).overlay,
 										activeKey === decision.key && "ring-2 ring-foreground",
 										dimmed && "opacity-25",
 									)}
 								>
 									{item && <img src={itemImageUrl(item)} alt={item.name} className="size-full object-contain" />}
 									<span className="absolute -left-1 -top-1">
-										<DecisionMarker action={decision.action} pending={decision.pending} />
+										<DecisionMarker action={decision.action} pending={decision.pending} kappa={decision.kappa} />
 									</span>
 								</button>
 							);
@@ -151,6 +173,7 @@ export function UploaderDecisionView({
 				<UploaderInventoryActions
 					rows={summary?.rows ?? []}
 					sent={sent}
+					kappaSent={kappaSent}
 					onSent={onSent}
 					onSetFir={onSetFir}
 					disabled={!summary || !!error || summary.unresolved > 0}
@@ -192,12 +215,16 @@ function Inspector({
 	const need = data.summary?.needs.get(item.id);
 	const surplus = decisions.surplusFor(item.id);
 	const split = new Map<ItemAction, number>();
+	let forKappa = 0;
 	for (const row of rows) {
-		const action = row.category === "keep" ? "KEEP" : (surplus?.action ?? "SELL");
-		split.set(action, (split.get(action) ?? 0) + row.quantity);
+		if (row.kappa) forKappa += row.quantity;
+		else {
+			const action = row.category === "keep" ? "KEEP" : (surplus?.action ?? "SELL");
+			split.set(action, (split.get(action) ?? 0) + row.quantity);
+		}
 	}
 	const reasons = need?.reasons ?? [];
-	const kept = split.get("KEEP") ?? 0;
+	const kept = (split.get("KEEP") ?? 0) + forKappa;
 	return (
 		<div className="space-y-3">
 			<div className="flex items-center gap-3">
@@ -210,6 +237,17 @@ function Inspector({
 				</div>
 			</div>
 			<div className="space-y-2">
+				{forKappa > 0 && (
+					<span
+						className={cn(
+							"inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide",
+							kappaAppearance.chip,
+						)}
+					>
+						<kappaAppearance.Icon size={12} aria-hidden="true" />
+						{kappaAppearance.label} ×{forKappa}
+					</span>
+				)}
 				{ACTIONS.filter((action) => split.has(action)).map((action) => (
 					<div key={action}>
 						<span
@@ -231,10 +269,16 @@ function Inspector({
 						{need.remaining > 0 ? `${need.remaining} still missing before this scan` : "already covered"}
 					</p>
 				)}
+				{forKappa > 0 && (
+					<p>
+						Reserved for Kappa. Adding kept items checks {forKappa === 1 ? "it" : "them"} off on the Kappa checklist
+						instead of your inventory.
+					</p>
+				)}
 				{kept > 0 && rows.some((row) => row.firUnconfirmed) && (
 					<p className="text-warning">Kept in case it&apos;s FIR. Use Set FIR to confirm.</p>
 				)}
-				{surplus && split.size > (kept ? 1 : 0) && (
+				{surplus && split.size > (split.has("KEEP") ? 1 : 0) && (
 					<p>
 						{!need?.required
 							? "No hideout or quest needs this item."
@@ -306,7 +350,7 @@ function SellAt({ price }: { price: CurrentPrice | undefined }) {
 function Use({ reason }: { reason: SaveReason }) {
 	return (
 		<li className="flex items-baseline justify-between gap-2 text-xs">
-			<span className="min-w-0 text-foreground">
+			<span className={cn("min-w-0", reason.kind === "kappa" ? kappaAppearance.ink : "text-foreground")}>
 				{reason.label}
 				<span className="ml-1.5 text-[11px] text-muted-foreground">
 					{reason.options

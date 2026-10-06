@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { UploaderDecisionView } from "./UploaderDecisionView";
 import { useUploaderSummary } from "./useUploaderSummary";
 import { useUploaderDecisions, type DecisionFilter } from "./useUploaderDecisions";
-import { DecisionMarker, decisionAppearance } from "./DecisionMarker";
+import { DecisionMarker, appearanceFor } from "./DecisionMarker";
 import type { SentCounts } from "./inventory-model";
 import { KeyHint, UploaderSidebarHeader, UploaderStepNav, sectionLabel } from "./UploaderSidebarHeader";
 import type { Screenshot } from "./image-recognition";
@@ -88,7 +88,8 @@ export function UploaderReview({
 	// Sends are tracked per scan so repeats add only the difference and kept copies stay kept.
 	const [sent, setSent] = useState<SentCounts>({});
 	const decisionEntries = summaryOpen ? summaryEntries : boxes;
-	const summaryData = useUploaderSummary(decisionEntries, items, sent);
+	const [kappaSent, setKappaSent] = useState<string[]>([]);
+	const summaryData = useUploaderSummary(decisionEntries, items, sent, kappaSent);
 	const decisions = useUploaderDecisions(summaryData, decisionEntries);
 	const summaryBack = useRef<HTMLButtonElement>(null);
 	useEffect(() => {
@@ -119,7 +120,7 @@ export function UploaderReview({
 	const nextEntries = [...included, ...added];
 	const nextSummary = summarizeReview(nextEntries, items);
 	const firUnknown = boxes.filter((box) => box.itemId && byId.has(box.itemId) && box.foundInRaid === "unknown").length;
-	const dirty = history.length > 1 || added.length > 0 || Object.keys(sent).length > 0;
+	const dirty = history.length > 1 || added.length > 0 || Object.keys(sent).length > 0 || kappaSent.length > 0;
 	const [confirmingNewScan, setConfirmingNewScan] = useState(false);
 	useEffect(() => {
 		dirtyRef.current = dirty;
@@ -294,7 +295,7 @@ export function UploaderReview({
 			const decision = decisions.decisionFor(box);
 			if (!decision) return "bg-shadow/65";
 			const shown = decisions.filter === "ALL" || decisions.filter === decision.action;
-			return shown ? decisionAppearance[decision.action].overlay : dimmed;
+			return shown ? appearanceFor(decision.action, decision.kappa).overlay : dimmed;
 		}
 		return known
 			? "border border-transparent bg-shadow/65 hover:bg-shadow/40"
@@ -355,7 +356,7 @@ export function UploaderReview({
 							: classifying && selected.includes(box.id);
 						const inert = completing || (!!firMode && !item);
 						const status = summaryOpen
-							? ` · ${decision ? (decision.pending ? "Loading decision" : decisionAppearance[decision.action].label) : item && decisions.loading ? "Loading decision" : "Excluded"}`
+							? ` · ${decision ? (decision.pending ? "Loading decision" : appearanceFor(decision.action, decision.kappa).label) : item && decisions.loading ? "Loading decision" : "Excluded"}`
 							: firMode && item
 								? ` · ${box.foundInRaid === "yes" ? "Found in raid" : box.foundInRaid === "no" ? "Not found in raid" : "FIR unknown"}`
 								: "";
@@ -419,7 +420,11 @@ export function UploaderReview({
 								{summaryOpen
 									? (decision ? shown : !!item && decisions.loading) && (
 											<span className="absolute left-0.5 top-0.5">
-												<DecisionMarker action={decision?.action} pending={!decision || decision.pending} />
+												<DecisionMarker
+													action={decision?.action}
+													pending={!decision || decision.pending}
+													kappa={decision?.kappa}
+												/>
 											</span>
 										)
 									: firMode
@@ -503,7 +508,8 @@ export function UploaderReview({
 							decisions={decisions}
 							extras={added}
 							sent={sent}
-							onSent={(deltas) =>
+							kappaSent={kappaSent}
+							onSent={(deltas, kappa) => {
 								setSent((previous) => {
 									const next = { ...previous };
 									for (const delta of deltas) {
@@ -511,8 +517,9 @@ export function UploaderReview({
 										next[delta.itemId] = { have: current.have + delta.have, haveFir: current.haveFir + delta.haveFir };
 									}
 									return next;
-								})
-							}
+								});
+								if (kappa.length) setKappaSent((previous) => [...previous, ...kappa]);
+							}}
 							onSetFir={openFirMode}
 						/>
 					) : firMode ? (

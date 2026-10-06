@@ -1,4 +1,4 @@
-import { Bookmark, Clock3, HandCoins, LoaderCircle } from "lucide-react";
+import { Bookmark, Clock3, HandCoins, LoaderCircle, Trophy } from "lucide-react";
 import type { ItemAction } from "./decision-model";
 import { cn } from "@/lib/utils";
 
@@ -26,15 +26,33 @@ export const decisionAppearance = {
 	},
 };
 
-export function DecisionMarker({ action, pending = false }: { action?: ItemAction; pending?: boolean }) {
-	const Icon = pending || !action ? LoaderCircle : decisionAppearance[action].Icon;
+/** Kept copies reserved for Kappa still count as Keep but read as Kappa. */
+export const kappaAppearance = {
+	Icon: Trophy,
+	label: "Kappa",
+	overlay: "bg-special/20 hover:bg-special/30",
+	ink: "text-special",
+	chip: "bg-special/15 text-special",
+};
+
+export const appearanceFor = (action: ItemAction, kappa = false) =>
+	kappa ? kappaAppearance : decisionAppearance[action];
+
+export function DecisionMarker({
+	action,
+	pending = false,
+	kappa = false,
+}: {
+	action?: ItemAction;
+	pending?: boolean;
+	kappa?: boolean;
+}) {
+	const look = action && appearanceFor(action, kappa);
+	const Icon = pending || !look ? LoaderCircle : look.Icon;
 	return (
 		<span
-			title={pending || !action ? "Loading decision" : decisionAppearance[action].label}
-			className={cn(
-				"inline-flex rounded-sm bg-card/95 p-0.5 shadow-sm",
-				action ? decisionAppearance[action].ink : "text-muted-foreground",
-			)}
+			title={pending || !look ? "Loading decision" : look.label}
+			className={cn("inline-flex rounded-sm bg-card/95 p-0.5 shadow-sm", look ? look.ink : "text-muted-foreground")}
 		>
 			<Icon
 				size={14}

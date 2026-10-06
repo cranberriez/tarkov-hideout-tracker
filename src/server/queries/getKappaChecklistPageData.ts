@@ -2,13 +2,10 @@ import type { TarkovDataRepository } from "@/server/repositories/tarkov-data/typ
 import type { TarkovDataMode } from "@/types/common";
 import type { FullQuest } from "@/types/quests";
 import type { KappaChecklistPageData } from "@/types/contracts";
+import { COLLECTOR_QUEST_ID_BY_MODE } from "../../lib/quests/collector";
 import { getDefaultRepository } from "./query-utils";
 
-export const COLLECTOR_QUEST_ID_BY_MODE: Record<TarkovDataMode, string> = {
-	regular: "5c51aac186f77432ea65c552",
-	pve: "5c51aac186f77432ea65c552",
-	"pvp-season": "5c51aac186f77432ea65c552",
-};
+export { COLLECTOR_QUEST_ID_BY_MODE };
 
 function getCollectorRequiredItemIds(collector: Pick<FullQuest, "objectives">): string[] {
 	const itemIds = new Set<string>();

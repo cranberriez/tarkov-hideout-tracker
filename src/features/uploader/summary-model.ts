@@ -12,7 +12,7 @@ import { summarizeReview, type ReviewEntry } from "./review-model";
 
 export interface SaveReason {
 	id: string;
-	kind: "hideout" | "quest";
+	kind: "hideout" | "quest" | "kappa";
 	label: string;
 	count: number;
 	firCount: number;
@@ -42,6 +42,17 @@ export interface SummaryRow {
 	category: SummaryCategory;
 	/** Kept for FIR demand although the FIR badge was not confirmed. */
 	firUnconfirmed?: boolean;
+	/** Kept copies reserved for a Kappa (Collector) hand-in, which takes them before other demand. */
+	kappa?: boolean;
+}
+
+/** Collector hand-ins come from the Kappa checklist rather than quest progress. */
+export interface KappaDemand {
+	questId: string;
+	/** Kappa checklist items already handed in. */
+	completed: Readonly<Record<string, boolean>>;
+	/** The player is not collecting for Kappa. */
+	ignored: boolean;
 }
 
 type OwnedCounts = Readonly<Record<string, { have: number; haveFir: number } | undefined>>;
@@ -68,6 +79,7 @@ export function buildUploaderSummary(
 	owned: OwnedCounts = {},
 	/** Per-unit value used to spend the cheapest accepted option first. */
 	unitValue: (itemId: string) => number | undefined = () => undefined,
+	kappa?: KappaDemand,
 ) {
 	const summary = summarizeReview(entries, items);
 	const reasons = new Map<string, SaveReason[]>();
@@ -91,10 +103,30 @@ export function buildUploaderSummary(
 			}
 		}
 	}
-	const quests = data.quests.map((quest) => ({
-		...quest,
-		objectives: quest.objectives.filter((objective) => !profile.completedQuestObjectives[quest.id]?.[objective.id]),
-	}));
+	const collector = kappa && data.quests.find((quest) => quest.id === kappa.questId);
+	if (kappa && collector && !kappa.ignored && !profile.completedQuests[collector.id]) {
+		for (const objective of collector.objectives) {
+			if (objective.type !== "giveItem" || profile.completedQuestObjectives[collector.id]?.[objective.id]) continue;
+			for (const itemId of new Set(objective.itemIds)) {
+				if (kappa.completed[itemId]) continue;
+				add(itemId, {
+					id: `${collector.id}:${objective.id}`,
+					kind: "kappa",
+					label: "Kappa · The Collector",
+					count: objective.count,
+					firCount: objective.foundInRaid ? objective.count : 0,
+					now: false,
+					minPlayerLevel: collector.minPlayerLevel,
+				});
+			}
+		}
+	}
+	const quests = data.quests
+		.filter((quest) => quest.id !== kappa?.questId)
+		.map((quest) => ({
+			...quest,
+			objectives: quest.objectives.filter((objective) => !profile.completedQuestObjectives[quest.id]?.[objective.id]),
+		}));
 	const options = {
 		completedQuests: profile.completedQuests,
 		failedQuests: profile.failedQuests,
@@ -127,6 +159,8 @@ export function buildUploaderSummary(
 	const needs = new Map<string, ItemNeed>();
 	const spare = new Map<string, { fir: number; other: number }>();
 	const demand = new Map<string, { fir: number; other: number }>();
+	// FIR copies still owed to Kappa; owned FIR copies cover Kappa before anything else.
+	const kappaLeft = new Map<string, number>();
 	const resolve = (itemId: string) => {
 		const known = demand.get(itemId);
 		if (known) return known;
@@ -145,6 +179,8 @@ export function buildUploaderSummary(
 		const otherFromOther = Math.min(ownedOther, otherNeed);
 		const otherFromFir = Math.min(ownedFir - firUsed, otherNeed - otherFromOther);
 		const remaining = { fir: firNeed - firUsed, other: otherNeed - otherFromOther - otherFromFir };
+		const kappaFir = tags.reduce((sum, reason) => sum + (reason.kind === "kappa" ? reason.firCount : 0), 0);
+		kappaLeft.set(itemId, Math.max(0, kappaFir - ownedFir));
 		demand.set(itemId, remaining);
 		spare.set(itemId, { fir: ownedFir - firUsed - otherFromFir, other: ownedOther - otherFromOther });
 		needs.set(itemId, {
@@ -157,9 +193,15 @@ export function buildUploaderSummary(
 	};
 
 	const rows: SummaryRow[] = [];
-	const keep = (stack: Stack, quantity: number, firUnconfirmed = false) => {
+	const keep = (stack: Stack, quantity: number, firUnconfirmed = false, kappa = false) => {
 		if (quantity <= 0) return;
-		rows.push({ ...stack, quantity, category: "keep", ...(firUnconfirmed && { firUnconfirmed }) });
+		rows.push({
+			...stack,
+			quantity,
+			category: "keep",
+			...(firUnconfirmed && { firUnconfirmed }),
+			...(kappa && { kappa }),
+		});
 		stack.quantity -= quantity;
 	};
 	const pool: Stack[] = summary.totals.map((stack) => ({ ...stack }));
@@ -169,7 +211,10 @@ export function buildUploaderSummary(
 		const fill = (status: Stack["foundInRaid"], fir: boolean) => {
 			for (const stack of stacks.filter((stack) => stack.foundInRaid === status)) {
 				const amount = Math.min(stack.quantity, fir ? need.fir : need.other);
-				keep(stack, amount, fir && status === "unknown");
+				const forKappa = fir ? Math.min(amount, kappaLeft.get(itemId) ?? 0) : 0;
+				kappaLeft.set(itemId, (kappaLeft.get(itemId) ?? 0) - forKappa);
+				keep(stack, forKappa, fir && status === "unknown", true);
+				keep(stack, amount - forKappa, fir && status === "unknown");
 				if (fir) need.fir -= amount;
 				else need.other -= amount;
 			}
@@ -247,7 +292,7 @@ export function buildUploaderSummary(
 
 	const merged = new Map<string, SummaryRow>();
 	for (const row of rows) {
-		const key = `${row.item.id}:${row.foundInRaid}:${row.category}:${!!row.firUnconfirmed}`;
+		const key = `${row.item.id}:${row.foundInRaid}:${row.category}:${!!row.firUnconfirmed}:${!!row.kappa}`;
 		const existing = merged.get(key);
 		if (existing) existing.quantity += row.quantity;
 		else merged.set(key, { ...row });

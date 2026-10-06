@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { buildUploaderSummary } from "./summary-model";
+import { planUploaderInventory } from "./inventory-model";
 import type { UploaderSummaryData, UploaderQuest } from "../../types/uploader";
 
 const item = { id: "bolt", name: "Bolt", normalizedName: "bolt" };
@@ -208,4 +209,52 @@ test("missing catalog records and invalid quantities are explicit unresolved ent
 	);
 	assert.equal(result.unresolved, 2);
 	assert.deepEqual(result.rows, []);
+});
+
+test("Kappa takes kept FIR copies first from the checklist, and kept sends check them off instead of inventory", () => {
+	const collector = {
+		...quest,
+		id: "collector",
+		name: "The Collector",
+		objectives: [{ ...quest.objectives[0], count: 1 }],
+	};
+	const kappaData = { ...data, quests: [...data.quests, collector] };
+	const entries = [
+		{ itemId: item.id, quantity: 2, foundInRaid: "yes" as const },
+		{ itemId: item.id, quantity: 1, foundInRaid: "no" as const },
+	];
+	// Collector is ignored quest demand by default; the Kappa checklist owns it.
+	const run = (completed: Record<string, boolean>, ignored = false) =>
+		buildUploaderSummary(
+			entries,
+			[item],
+			kappaData,
+			{ ...profile, ignoredQuests: { collector: true } },
+			{},
+			undefined,
+			{ questId: "collector", completed, ignored },
+		).rows.map((row) => [row.category, row.foundInRaid, row.quantity, !!row.kappa]);
+	const reserved = run({});
+	assert.deepEqual(reserved, [
+		["keep", "yes", 1, true],
+		["keep", "yes", 1, false],
+		["keep", "no", 1, false],
+	]);
+	assert.equal(
+		run({ [item.id]: true }).some(([, , , kappa]) => kappa),
+		false,
+	);
+	assert.equal(
+		run({}, true).some(([, , , kappa]) => kappa),
+		false,
+	);
+	const rows = buildUploaderSummary(entries, [item], kappaData, profile, {}, undefined, {
+		questId: "collector",
+		completed: {},
+		ignored: false,
+	}).rows;
+	const plan = planUploaderInventory(rows, {}, true);
+	assert.deepEqual(plan.kappa, [item.id]);
+	assert.deepEqual(plan.deltas, [{ itemId: item.id, have: 1, haveFir: 1 }]);
+	assert.deepEqual(planUploaderInventory(rows, {}, true, [item.id]).kappa, []);
 });

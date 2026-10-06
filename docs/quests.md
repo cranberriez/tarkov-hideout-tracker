@@ -118,13 +118,18 @@ quests are not synced by import.
 ## Kappa checklist
 
 [getKappaChecklistPageData](../src/server/queries/getKappaChecklistPageData.ts)
-owns the mode-keyed Collector quest ID and reads only that quest, its give-item
+reads only the mode-keyed [Collector quest](../src/lib/quests/collector.ts), its give-item
 IDs, and their current prices. It must not fetch/prepare every quest. Missing items
 remain in the denominator; price failure must not discard available checklist
 items. The route requests the unpriced variant and loads prices in the background
 through the boundary described in [data layer](data-layer.md). Completion belongs to the independent
 [Kappa store](../src/lib/stores/useKappaStore.ts), not generic inventory or quest
 completion. Its reset scope is documented in [user-state](user-state.md).
+
+The uploader takes Collector demand from this checklist instead of quest progress
+(Collector is ignored quest demand by default). Unchecked items reserve kept FIR
+copies before any other demand; adding kept items checks those items off rather
+than adding them to inventory. Its "Ignore Kappa items" switch drops that demand.
 
 ## Validation
 
