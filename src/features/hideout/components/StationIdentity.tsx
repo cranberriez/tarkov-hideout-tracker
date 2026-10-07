@@ -1,5 +1,6 @@
 export { StationImage } from "@/components/entities/station-image";
 import type { ReactNode } from "react";
+import { Ban, Flag } from "lucide-react";
 import { StationImage } from "@/components/entities/station-image";
 import type { Station } from "@/types/hideout";
 import { cn } from "@/lib/utils";
@@ -43,9 +44,13 @@ export function StationIdentity({
 					LEVEL <span className={currentLevel > 0 ? "text-brand" : "text-subtle-foreground"}>{currentLevel}</span>{" "}
 					<span className="text-subtle-foreground">/</span> {maxLevel}
 					{goalLevel !== undefined && (
-						<span className="text-warning" title="Station goal">
-							{" "}
-							· {goalLevel === 0 ? "IGNORED" : `GOAL ${goalLevel}`}
+						<span
+							className="ml-1.5 inline-flex items-center gap-0.5 align-middle text-brand"
+							title={goalLevel === 0 ? "Ignored" : `Goal: level ${goalLevel}`}
+						>
+							{goalLevel === 0 ? <Ban size={10} aria-hidden="true" /> : <Flag size={10} aria-hidden="true" />}
+							{goalLevel > 0 && goalLevel}
+							<span className="sr-only">{goalLevel === 0 ? "Ignored" : `Goal level ${goalLevel}`}</span>
 						</span>
 					)}
 				</div>

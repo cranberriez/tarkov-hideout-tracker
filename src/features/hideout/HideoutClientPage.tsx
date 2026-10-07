@@ -8,6 +8,7 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { HideoutControls } from "@/features/hideout/components/HideoutControls";
 import { HideoutConversionGate } from "@/features/hideout/components/HideoutConversionGate";
 import { HideoutList } from "@/features/hideout/components/HideoutList";
+import { StationGoalKey } from "@/features/hideout/components/StationGoalPicker";
 import { DataLoadError } from "@/components/core/DataLoadError";
 import { DataNotice } from "@/components/ui/data-notice";
 import type { HideoutPageData } from "@/types/contracts";
@@ -70,19 +71,12 @@ export function HideoutClientPage({ data, dataMode }: HideoutClientPageProps) {
 			)}
 
 			{goalsMode && (
-				<div className="mb-4 flex items-center gap-3 rounded border border-brand/40 bg-brand/10 px-3 py-2 text-xs text-foreground">
-					<div className="flex-1">
-						<span className="font-semibold">Station goals.</span> Pick the level you want each station to reach. Items
-						for levels above a goal are ignored on the Items checklist and Inventory, and Ignore drops the station
-						entirely. Levels another goal depends on are counted automatically. King (the default) tracks every level.
-					</div>
-					<button
-						type="button"
-						onClick={() => setGoalsMode(false)}
-						className="ml-2 rounded px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-brand hover:bg-brand/20"
-					>
-						Done
-					</button>
+				<div className="mb-4 space-y-2 rounded bg-highlight/5 px-3 py-2 text-xs text-foreground">
+					<p>
+						Set the level you&apos;re aiming for on each station. Items for levels above it are left out of your Items
+						checklist and Inventory. Click a goal again to clear it.
+					</p>
+					<StationGoalKey />
 				</div>
 			)}
 

@@ -97,7 +97,7 @@ export function StationCard({
 				currentLevel={currentLevel}
 				maxLevel={maxLevel}
 				isMaxed={isMaxed}
-				hideRequirements={hideRequirements}
+				hideRequirements={hideRequirements && !goalsMode}
 				toggleHiddenStation={toggleHiddenStation}
 				onLevelDown={handleLevelDown}
 				onLevelUp={handleLevelUp}
