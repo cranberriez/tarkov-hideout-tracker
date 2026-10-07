@@ -203,6 +203,8 @@ export function StoryChapterClientPage({ chapterId }: { chapterId: string }) {
 						)}
 
 						<StoryRoutePanel
+							key={`${gameMode}:${chapter.id}`}
+							majorFound={majorEvidenceFound(progress)}
 							chapterId={chapter.id}
 							targetEnding={progress.targetEnding}
 							reachable={reachable}

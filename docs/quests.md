@@ -228,6 +228,13 @@ with its close button, by toggling the tab again, or when the target ending or p
 Completed chapter cards show a blue gradient and DONE label on the right, using
 the same route-aware completion state as the chapter's completion action.
 
+Once an ending is selected, the sidebar replaces the ending grid with its large
+icon, name and remaining steps in the current chapter (a range for pending steps).
+Change reopens the picker without clearing the selection. Supporting rows show
+remaining or conditional Lightkeeper access requirements, with jumps to the
+relevant choices, and major evidence still needed across chapters for that ending.
+Evidence counts represent tracked collection, not delivery to Mr. Kerman.
+
 Choices appear where they matter: a decision made at a step renders inline there,
 and sections that depend on it link back to it. Decisions made in other chapters
 render as a flat row above the heading of the first section they shape. These

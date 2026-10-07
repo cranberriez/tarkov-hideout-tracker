@@ -8,6 +8,7 @@ import {
 	chapterDecisionTargets,
 	chapterEvidence,
 	chapterStepGroups,
+	endingRouteStats,
 	reachableEndings,
 	resolveDecisions,
 } from "./story-model";
@@ -18,6 +19,31 @@ import {
 	setStoryStepDone,
 	toggleStoryDecision,
 } from "./story-progress";
+
+test("ending summaries link remaining Lightkeeper requirements to route choices", () => {
+	const progress = emptyStoryProgress();
+	const pending = endingRouteStats(THE_TICKET, STORY_DECISIONS, progress, "savior");
+	assert.equal(pending.lightkeeperRemaining, 0);
+	assert.ok(pending.lightkeeperPending > 0);
+	assert.deepEqual(pending.lightkeeperDecisionIds, ["falling-skies-armored-case"]);
+
+	progress.decisions["falling-skies-armored-case"] = "kept";
+	const savior = endingRouteStats(THE_TICKET, STORY_DECISIONS, progress, "savior");
+	assert.equal(savior.lightkeeperRemaining, 0);
+	assert.equal(savior.lightkeeperPending, 0);
+	assert.deepEqual(savior.lightkeeperDecisionIds, []);
+	const debtor = endingRouteStats(THE_TICKET, STORY_DECISIONS, progress, "debtor");
+	assert.ok(debtor.lightkeeperRemaining > 0);
+	assert.deepEqual(debtor.lightkeeperDecisionIds, ["ticket-major-evidence"]);
+
+	progress.completedSteps[THE_TICKET.id] = THE_TICKET.sections.flatMap((section) =>
+		section.steps.map((step) => step.id),
+	);
+	const complete = endingRouteStats(THE_TICKET, STORY_DECISIONS, progress, "debtor");
+	assert.equal(complete.lightkeeperRemaining, 0);
+	assert.equal(complete.lightkeeperPending, 0);
+	assert.deepEqual(complete.lightkeeperDecisionIds, []);
+});
 
 test("ending blockers explain faded coins and ignore unknown or inapplicable choices", () => {
 	const endings = STORY_ENDINGS.map((ending) => ending.id);

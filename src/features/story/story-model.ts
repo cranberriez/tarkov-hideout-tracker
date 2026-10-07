@@ -296,10 +296,28 @@ export function endingRouteStats(
 			section.state === "active" &&
 			section.steps.some((view) => view.state === "active" && !view.step.optional && view.step.requiresLightkeeper),
 	);
+	const lightkeeperDecisionIds = new Set<string>();
+	let lightkeeperRemaining = 0;
+	let lightkeeperPending = 0;
+	for (const section of sections) {
+		for (const view of section.steps) {
+			if (view.done || view.step.optional || !view.step.requiresLightkeeper) continue;
+			conditionDecisionIds(section.section.when, lightkeeperDecisionIds);
+			conditionDecisionIds(view.step.when, lightkeeperDecisionIds);
+			if (view.state === "pending") {
+				lightkeeperPending += 1;
+				continue;
+			}
+			lightkeeperRemaining += 1;
+		}
+	}
 	return {
 		remaining: stats.requiredTotal - stats.requiredDone,
 		pending: stats.pendingRequired,
 		needsLightkeeper,
+		lightkeeperRemaining,
+		lightkeeperPending,
+		lightkeeperDecisionIds: [...lightkeeperDecisionIds],
 	};
 }
 
