@@ -33,6 +33,13 @@ not-found states; failed reads report errors instead of 404s. Pages render publi
 identity from server data; player progress hydrates afterwards. Titles use the root
 `%s · Tarkov Hideout Tracker` template.
 
+Unmatched URLs use the root [404 page](../src/app/not-found.tsx), below the shared
+navbar. Its MIA banner and recovery controls need no entity reads; Back to Hideout
+links to `/hideout`, while Go Back uses browser history with a Hideout fallback
+when no previous history entry exists. The fade-in and finite decorative coin
+shower respect reduced motion. Entity-specific not-found views remain local to
+their routes.
+
 Search metadata uses `https://tarkovhideout.com` as the canonical origin.
 The root marks all other hosts (including dev and previews) `noindex`; settings
 are always `noindex`. Robots allows page crawling so engines can read that directive.
