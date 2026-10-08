@@ -4,13 +4,13 @@ import { ShoppingCart } from "lucide-react";
 import type { ItemAmount, ItemTraderOffer } from "@/features/items/item-detail/item-detail-types";
 import type { ItemSummary } from "@/types/items";
 import { QuestLink } from "@/components/entities/quest-link";
-import { AvailabilityBadge, RecommendationBadge, ToolBadge } from "./ItemDetailBadges";
+import { AvailabilityBadge, RecommendationBadge } from "./ItemDetailBadges";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
 import { ItemDetailRecipeFlow } from "./ItemDetailRecipeFlow";
 import { ItemDetailRecipeProfit } from "./ItemDetailRecipeProfit";
 import type { AcquisitionPlan, ManualPriceOverrides, RecipeEvaluation } from "@/lib/price-calculation";
 import { formatCompactRoubles } from "@/lib/utils/market-price";
-import { itemImageUrl } from "@/lib/utils/item-images";
+import { ItemImage } from "@/components/entities/item-image";
 
 interface ItemDetailAcquisitionProps {
 	offers: ItemTraderOffer[];
@@ -58,7 +58,7 @@ export function ItemDetailAcquisition({
 				const questMet = !offer.taskUnlock || completedQuests[offer.taskUnlock.id] === true;
 				const available = loyaltyMet && questMet;
 				return (
-					<div key={offer.id} className="bg-shadow/10 px-3 py-3">
+					<div key={offer.id} className="bg-shadow/10 px-3 py-3 hover:bg-highlight/[0.02]">
 						<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
 							<div className="flex min-w-48 flex-1 items-center gap-2.5">
 								{offer.trader.imageLink ? (
@@ -123,9 +123,13 @@ export function ItemDetailAcquisition({
 									<CostItem
 										key={entry.item.id}
 										entry={entry}
+										hideName={usedIn}
 										highlighted={usedIn && entry.item.id === outputItem.id}
 										manualBuy={overrides[entry.item.id]?.buy}
-										plan={evaluation?.requiredItems.find((candidate) => candidate.itemId === entry.item.id)}
+										plan={evaluation?.requiredItems.find(
+											(candidate) =>
+												candidate.itemId === entry.item.id && (candidate.isTool === true) === (entry.isTool === true),
+										)}
 									/>
 								))}
 							</ItemDetailRecipeFlow>
@@ -150,11 +154,13 @@ function isOfferAvailable(
 
 function CostItem({
 	entry,
+	hideName,
 	highlighted,
 	manualBuy,
 	plan,
 }: {
 	entry: ItemAmount;
+	hideName: boolean;
 	highlighted: boolean;
 	manualBuy?: number;
 	plan?: AcquisitionPlan;
@@ -170,15 +176,15 @@ function CostItem({
 	return (
 		<ItemDetailItemChip
 			item={entry.item}
+			tool={entry.isTool}
 			highlighted={highlighted}
+			hideName={hideName}
 			preferShortName
 			flat
 			quantityLabel={currencySymbol ? `${currencySymbol}${entry.count.toLocaleString()}` : `${entry.count}`}
 			quantityOverlay={!currencySymbol}
 			secondary={
-				entry.isTool ? (
-					<ToolBadge />
-				) : plan ? (
+				!entry.isTool && plan ? (
 					<RecommendationBadge
 						plan={plan}
 						unstable={
@@ -200,7 +206,6 @@ function DirectPurchaseSummary({
 	offer: Extract<ItemTraderOffer, { kind: "buy" }>;
 	outputItem: ItemSummary;
 }) {
-	const outputImageLink = itemImageUrl(outputItem);
 	const currency = offer.currency.toLowerCase();
 	const currencySymbol =
 		currency === "roubles" || currency === "rub"
@@ -219,7 +224,7 @@ function DirectPurchaseSummary({
 			</span>
 			<span className="flex items-center gap-2">
 				<span className="font-mono text-base font-semibold text-foreground">1 ×</span>
-				{outputImageLink && <img src={outputImageLink} alt="" className="h-10 w-10 object-contain" />}
+				<ItemImage item={outputItem} size={40} aria-label="" />
 			</span>
 		</div>
 	);

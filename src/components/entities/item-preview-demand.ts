@@ -38,7 +38,6 @@ export function deriveItemPreviewDemand(
 		],
 		completedRequirements: profile.completedRequirements,
 		questItemState: entry ? deriveQuestItemState(entry, options) : null,
-		anyOfGroups: groups,
 	});
 	const owned = profile.itemCounts[itemId] ?? { have: 0, haveFir: 0 };
 	return {

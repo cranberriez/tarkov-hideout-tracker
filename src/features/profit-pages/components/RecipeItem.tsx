@@ -3,7 +3,7 @@
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { useId, useState } from "react";
 import { useProfitPricingContext } from "./ProfitPricingContext";
-import Image from "next/image";
+import { ItemImage } from "@/components/entities/item-image";
 import { ChevronDown, ChevronRight, ExternalLink, ListTree, LockKeyhole } from "lucide-react";
 import {
 	getItemBuyPrice,
@@ -205,14 +205,7 @@ export function RecipeItem({
 							className="relative ml-0.5 flex size-8 shrink-0 items-center justify-center transition hover:bg-highlight/10"
 						>
 							{item ? (
-								<Image
-									src={itemImageUrl(item)}
-									alt=""
-									width={32}
-									height={32}
-									className="size-8 object-contain"
-									unoptimized
-								/>
+								<ItemImage item={item} size={32} className="size-8 object-contain" />
 							) : (
 								<span className="size-8" />
 							)}
@@ -330,14 +323,7 @@ export function RecipeItem({
 								</span>
 							)}
 							{item ? (
-								<Image
-									src={itemImageUrl(item)}
-									alt=""
-									width={48}
-									height={48}
-									className="size-12 object-contain"
-									unoptimized
-								/>
+								<ItemImage item={item} size={48} className="size-12 object-contain" />
 							) : (
 								<span className="size-12" />
 							)}

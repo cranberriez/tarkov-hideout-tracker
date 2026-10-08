@@ -1,10 +1,9 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- Catalog previews. */
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { ListFilter, X } from "lucide-react";
 import type { ItemSummary } from "@/types/items";
-import { itemImageUrl } from "@/lib/utils/item-images";
+import { ItemImage } from "@/components/entities/item-image";
 import { cn } from "@/lib/utils";
 import { ITEM_GROUPS, itemGroupLabel, type ItemGroupKey } from "@/lib/data/item-groups";
 import { searchUploaderItems } from "./item-search-model";
@@ -217,7 +216,7 @@ export function UploaderItemSearch({
 											: "border-border-color hover:bg-surface-raised",
 									)}
 								>
-									<img src={itemImageUrl(item)} alt="" className="h-8 w-8 object-contain" />
+									<ItemImage item={item} size={32} aria-label="" />
 									<span className="flex-1">{item.name}</span>
 									{rank === highlighted && <KeyHint>↵</KeyHint>}
 								</button>

@@ -147,6 +147,12 @@ export function ItemImageGallery() {
 			</p>
 			<h3 className="font-semibold">Fallbacks and extra overlays</h3>
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+				<Example label="completed: grayscale, centered check, hidden overlays">
+					<ItemImage item={item} size={64} framed completed foundInRaid quantity="3/5" className="p-1">
+						<span className="absolute left-0 top-0">₽12k</span>
+						<span className="absolute bottom-0 left-0">Tool</span>
+					</ItemImage>
+				</Example>
 				<Example label={'item={{ name: "Unknown item" }}'}>
 					<ItemImage item={{ name: "Unknown item" }} />
 				</Example>
@@ -156,13 +162,10 @@ export function ItemImageGallery() {
 				<Example label="broken icon → next available source">
 					<ItemImage item={{ ...item, iconLink: "/__dev_missing_item__.webp", image512pxLink: item.iconLink }} />
 				</Example>
-				<Example label="children: custom price / tool overlays">
-					<ItemImage item={item} size={80} framed foundInRaid quantity={2}>
+				<Example label="tool boolean + custom price overlay">
+					<ItemImage item={item} size={80} framed foundInRaid tool quantity={2}>
 						<span className="absolute -left-px -top-px bg-background/90 px-1 py-0.5 font-mono text-[10px] font-semibold leading-none text-foreground">
 							₽12k
-						</span>
-						<span className="absolute -bottom-px -left-px bg-background/90 px-1 py-0.5 font-mono text-[10px] font-semibold leading-none text-info">
-							Tool
 						</span>
 					</ItemImage>
 				</Example>

@@ -188,7 +188,6 @@ export function useItemDetailsController({
 		stationRequirements,
 		completedRequirements: store.completedRequirements,
 		questItemState,
-		anyOfGroups: questAnyOfGroupState,
 	});
 	const needsBreakdown =
 		demandSummary.totalRequiredCount === 0

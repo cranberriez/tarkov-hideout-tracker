@@ -2,13 +2,12 @@
 
 import type { BaseItemRequirementsProps } from "./ItemRequirements";
 import { ItemLink } from "@/components/entities/item-link";
-import Image from "next/image";
+import { ItemImage } from "@/components/entities/item-image";
 import { CircleCheckBig, Check } from "lucide-react";
 import { formatNumber } from "@/lib/utils/format-number";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
 import { describeFleaPrice, formatFleaPriceState } from "@/lib/utils/market-price";
-import { itemImageUrl } from "@/lib/utils/item-images";
 
 export function ExpandedItemRequirements({
 	nextLevelData,
@@ -73,13 +72,7 @@ export function ExpandedItemRequirements({
 							}`}
 						>
 							<div className={`relative w-10 h-10 shrink-0 ${req.isFir ? "ring-1 ring-fir" : ""}`}>
-								<Image
-									src={itemImageUrl(item)}
-									alt={item.name}
-									fill
-									className={`object-contain ${isCompleted ? "grayscale" : ""}`}
-									unoptimized
-								/>
+								<ItemImage item={item} size={40} className={isCompleted ? "grayscale" : undefined} />
 								{isCompleted && (
 									<div className="absolute inset-0 flex items-center justify-center text-success">
 										<Check size={24} strokeWidth={2} />

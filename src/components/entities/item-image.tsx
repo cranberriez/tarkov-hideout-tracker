@@ -19,21 +19,21 @@ export function ItemImage({
 	"aria-label": ariaLabel,
 	...appearance
 }: ItemImageProps) {
-	const { item, foundInRaid, completed, quantity, selected } = appearance;
+	const { item, foundInRaid, tool, completed, quantity, selected } = appearance;
 	const label =
 		ariaLabel ??
 		[
 			item.name,
-			foundInRaid && "found in raid",
+			!completed && foundInRaid && "found in raid",
+			!completed && tool && "reusable tool",
 			completed && "completed",
-			quantity !== undefined && `quantity ${quantity}`,
+			!completed && quantity !== undefined && `quantity ${quantity}`,
 			selected && "selected",
 		]
 			.filter(Boolean)
 			.join(", ");
 	const image = <ItemThumbnail {...appearance} />;
-	const focusClass =
-		"inline-flex rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand";
+	const focusClass = "inline-flex focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand";
 	if (opensModal) {
 		return (
 			<ItemLink
@@ -55,7 +55,12 @@ export function ItemImage({
 		);
 	}
 	return (
-		<span role="img" aria-label={label}>
+		<span
+			role="img"
+			aria-label={label}
+			aria-hidden={ariaLabel === "" || undefined}
+			className="inline-flex shrink-0 align-middle"
+		>
 			{image}
 		</span>
 	);

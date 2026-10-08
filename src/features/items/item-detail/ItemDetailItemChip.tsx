@@ -7,6 +7,7 @@ interface ItemDetailItemChipProps {
 	item: PreviewItem;
 	quantityLabel?: string;
 	quantityOverlay?: boolean;
+	tool?: boolean;
 	badges?: ReactNode;
 	secondary?: ReactNode;
 	className?: string;
@@ -14,6 +15,8 @@ interface ItemDetailItemChipProps {
 	linked?: boolean;
 	/** Show the short name (full name on hover). */
 	preferShortName?: boolean;
+	/** Recipe inputs can omit the visible name while retaining quantities and badges. */
+	hideName?: boolean;
 	/** No resting background, for chips on an already shaded panel; linked chips still shade on hover. */
 	flat?: boolean;
 	/** Tint the chip, e.g. to mark the item being viewed within a recipe. */

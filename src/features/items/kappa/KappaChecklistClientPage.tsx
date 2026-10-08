@@ -12,7 +12,7 @@ import { useKappaStore, type KappaViewMode } from "@/lib/stores/useKappaStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ItemSummary } from "@/types/items";
 import type { KappaChecklistPageData } from "@/types/contracts";
-import { itemImageUrl } from "@/lib/utils/item-images";
+import { ItemImage } from "@/components/entities/item-image";
 
 interface KappaChecklistClientPageProps extends Pick<
 	KappaChecklistPageData,
@@ -167,10 +167,9 @@ export function KappaChecklistClientPage({
 											aria-label={`Open ${item.name} details`}
 										>
 											<span className="absolute -inset-[3px] flex items-center justify-center overflow-hidden">
-												<img
-													src={itemImageUrl(item)}
-													alt=""
-													className={`h-full w-full object-contain transition-opacity ${
+												<ItemImage
+													item={item}
+													className={`absolute inset-0 size-full! transition-opacity ${
 														isCompleted ? "opacity-45" : "group-hover:opacity-90"
 													}`}
 												/>

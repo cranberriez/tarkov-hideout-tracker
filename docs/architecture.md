@@ -592,14 +592,36 @@ shares loading/failed/unavailable/estimate price states without merging purchase
 cost, gross sale, net sale, and profit.
 
 [ItemImage](../src/components/entities/item-image.tsx) is the shared square item image
-API. Its only required prop is `item` (a name and optional image URLs); the default
-is a display-only, unframed 44px square. Optional `size`, `foundInRaid`, `completed`,
+API. Use it for new item icons and when replacing feature-local raw images. Keep
+existing links, buttons, cards, prices, and other custom UI in their
+owning feature; drop a display-only `ItemImage` into those wrappers rather than
+moving feature behavior into the icon. Its only required prop is `item` (a name and optional image URLs); the default
+is a display-only, unframed 44px square. Optional `size`, `foundInRaid`, `tool`, `completed`,
 `quantity` (number or formatted progress), `selected`, and `framed` cover standard
-variants; noninteractive `children` allow price/tool overlays. Completion replaces
-the top-right FiR marker with the hideout requirement grid's green circular check
-badge, offset 4px outside the corner, without dimming or desaturating the image.
-FiR and quantity overlays extend 1px past their corners to overlap the slot border;
-the gallery's price/tool chips use the same edge alignment and compact typography.
+variants; noninteractive `children` allow caller-owned overlays. Compact Hideout
+requirements overlay price and inventory/required quantity inside the square;
+the feature owns their formatting and calculation and keeps 4px padding around
+the artwork. Trades and Crafting recipe inputs in item details show shortnames for
+recipes that produce the viewed item and omit visible names in recipes that use it,
+while retaining quantities, badges, accessible names, and previews; outputs
+retain their names and barter limits. `ItemReference` composes `ItemImage` for both
+its chip and row layouts. The `tool` boolean shows a solid blue wrench inside the
+icon's bottom-left corner with a "Reusable tool (not consumed)" tooltip. Modal and
+station crafting inputs pass their tool flag directly, without an adjacent tool chip.
+Recipe cost recommendations match both
+the item ID and tool status, keeping consumed and reusable entries distinct.
+Completed icons dim and grayscale the artwork, hide FiR, tool,
+quantity, and caller-owned overlays, and show a green checkmark centered over the
+image. Selection remains visible. Standard frames have square corners; feature
+wrappers retain their own styling.
+Quest workspace objective previews show up to 10 item icons before an expandable
+more button, with quantity and FiR overlays and names available through previews.
+Item-detail trader, barter, and crafting rows share the quest rows' subtle gray hover background.
+Item-detail and hover demand totals use the specific-item quest index: alternative
+groups remain visible as uses but neither add FiR demand to every eligible item nor
+subtract from that item's independent specific requirements.
+FiR, tool, and quantity overlays extend 1px past their corners to overlap the slot border;
+the gallery's custom price overlay uses the same edge alignment and compact typography.
 Selection is a 1px border inset by 1px; quantities use a flat, borderless bottom-right chip.
 `opensModal` requires
 an item ID and reuses ItemLink's dialog and hover preview (`preview={false}` disables
@@ -607,7 +629,8 @@ the latter). `onClick` adds a custom action; when combined with `opensModal`, ca
 `preventDefault()` cancels opening. Use a display-only image inside existing buttons.
 The shared ItemThumbnail renderer tries icon, 512px, grid, then base images, advancing
 on load failure and finally showing a placeholder. Existing thumbnail consumers use
-the same renderer; feature-local images can migrate separately. The development-only
+the same renderer. Retain specialized grid artwork and custom surrounding layouts
+where they serve a different purpose than an item icon. The development-only
 [/dev gallery](../src/app/dev/ItemImageGallery.tsx) shows minimal usage, all 32 visual
 boolean combinations, sizes, interactions, and fallback cases without saving progress.
 

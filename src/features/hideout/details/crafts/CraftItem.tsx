@@ -20,26 +20,18 @@ export function CraftItem({
 	const shortLabel = item?.shortName || label;
 	const quantity = formatCraftQuantity(amount.count);
 	const partial = amount.count > 0 && amount.count < 1;
-	const tool = amount.isTool && (
-		<span className="absolute -bottom-px -left-px bg-background/90 px-1 py-0.5 font-mono text-[10px] font-semibold leading-none text-info">
-			Tool
-		</span>
-	);
 	const image = item ? (
 		<ItemImage
 			item={item}
 			size={40}
 			framed
 			quantity={quantity}
+			tool={amount.isTool}
 			opensModal
 			aria-label={partial ? `${quantity} of ${label} per craft` : undefined}
-		>
-			{tool}
-		</ItemImage>
+		/>
 	) : (
-		<ItemImage item={{ name: label }} size={40} framed quantity={quantity}>
-			{tool}
-		</ItemImage>
+		<ItemImage item={{ name: label }} size={40} framed quantity={quantity} tool={amount.isTool} />
 	);
 	if (!showName) return image;
 	return (

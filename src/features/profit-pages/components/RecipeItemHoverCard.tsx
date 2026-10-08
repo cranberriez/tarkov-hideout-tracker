@@ -1,5 +1,5 @@
 import type { useProfitPricingContext } from "./ProfitPricingContext";
-import Image from "next/image";
+import { ItemImage } from "@/components/entities/item-image";
 import { LockKeyhole, X } from "lucide-react";
 import { QuestLink } from "@/components/entities/quest-link";
 import { getItemSellComparison, type AcquisitionPlan, type ManualPriceOverride } from "@/lib/price-calculation";
@@ -9,7 +9,6 @@ import { formatDuration, formatQuantity, formatRoundedRoubles, formatTraderOffer
 import { describeSelectedLock } from "../utils/lock-summary";
 import { RecipePreviewCard } from "./RecipePreviewCard";
 import { RouteGlyph, routeChipClasses } from "./RouteIcon";
-import { itemImageUrl } from "@/lib/utils/item-images";
 import { traderInfo } from "@/lib/data/traders";
 
 export interface RecipeItemHoverData {
@@ -127,16 +126,7 @@ export function RecipeItemHoverCard({
 			<span className="relative block w-80 max-w-full shrink-0 p-3">
 				<span className={`flex items-center gap-3 ${recipePreview ? "" : "pr-5"}`}>
 					<span className="relative flex size-12 shrink-0 items-center justify-center bg-highlight/[0.035]">
-						{item && (
-							<Image
-								src={itemImageUrl(item)}
-								alt=""
-								width={48}
-								height={48}
-								className="size-12 object-contain"
-								unoptimized
-							/>
-						)}
+						{item && <ItemImage item={item} size={48} className="size-12 object-contain" />}
 					</span>
 					<span className="min-w-0">
 						<span className="block text-sm font-semibold leading-tight text-foreground">

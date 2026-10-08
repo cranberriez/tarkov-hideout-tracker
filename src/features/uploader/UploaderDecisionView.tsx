@@ -1,9 +1,9 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- Catalog previews. */
+/* eslint-disable @next/next/no-img-element -- Trader portraits. */
 import { useEffect } from "react";
 import { FilterRadioGroup } from "@/components/ui/filter-bar";
-import { itemImageUrl } from "@/lib/utils/item-images";
+import { ItemImage } from "@/components/entities/item-image";
 import { formatRoubles } from "@/lib/utils/market-price";
 import { cn } from "@/lib/utils";
 import type { ReviewEntry } from "./review-model";
@@ -155,7 +155,7 @@ export function UploaderDecisionView({
 										dimmed && "opacity-25",
 									)}
 								>
-									{item && <img src={itemImageUrl(item)} alt={item.name} className="size-full object-contain" />}
+									{item && <ItemImage item={item} size={30} />}
 									<span className="absolute -left-1 -top-1">
 										<DecisionMarker action={decision.action} pending={decision.pending} kappa={decision.kappa} />
 									</span>
@@ -236,7 +236,7 @@ function Inspector({
 	return (
 		<div className="space-y-3">
 			<div className="flex items-center gap-3">
-				<img src={itemImageUrl(item)} alt="" className="size-12 shrink-0 rounded-sm bg-shadow/40 object-contain p-1" />
+				<ItemImage item={item} size={48} aria-label="" className="rounded-sm bg-shadow/40 p-1" />
 				<div className="min-w-0 flex-1">
 					<h2 className="text-sm font-bold leading-tight text-foreground">{item.name}</h2>
 					<p className={cn("mt-0.5 text-[11px]", foundInRaid === "yes" ? "text-fir" : "text-muted-foreground")}>

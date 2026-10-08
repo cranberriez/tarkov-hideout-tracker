@@ -1,10 +1,10 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- Local screenshot crops and catalog previews. */
+/* eslint-disable @next/next/no-img-element -- Local screenshot and crops. */
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { ImagePlus, Info, TriangleAlert, Undo2, X } from "lucide-react";
 import type { ItemSummary } from "@/types/items";
-import { itemImageUrl } from "@/lib/utils/item-images";
+import { ItemImage } from "@/components/entities/item-image";
 import { cn } from "@/lib/utils";
 import { UploaderDecisionView } from "./UploaderDecisionView";
 import { useUploaderSummary } from "./useUploaderSummary";
@@ -472,11 +472,16 @@ export function UploaderReview({
 											)}
 								{(completing || classifying) && showIcons && item && (
 									<span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-										<img
-											src={itemImageUrl(item)}
-											alt=""
-											decoding="async"
-											className="max-h-[55%] max-w-[55%] object-contain"
+										<ItemImage
+											item={item}
+											aria-label=""
+											size={
+												(Math.min(box.bounds.width, (box.bounds.height * image.height) / image.width) *
+													fitWidth *
+													zoom *
+													0.55) /
+												100
+											}
 										/>
 									</span>
 								)}

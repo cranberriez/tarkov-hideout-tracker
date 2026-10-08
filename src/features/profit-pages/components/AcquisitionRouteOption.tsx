@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import Image from "next/image";
+import { ItemImage } from "@/components/entities/item-image";
 import { Crown } from "lucide-react";
 import type { LockedAcquisitionAlternative, LockReason } from "@/lib/price-calculation";
 import type { ItemSummary } from "@/types/items";
@@ -9,7 +9,6 @@ import type { RouteContext } from "../types";
 import { formatCompactPrice } from "../utils/formatters";
 import { LockReasons } from "./LockReasons";
 import { RouteIcon } from "./RouteIcon";
-import { itemImageUrl } from "@/lib/utils/item-images";
 
 export const routeLabels = {
 	flea: "Flea",
@@ -103,11 +102,7 @@ export function AcquisitionRouteOption({
 					title={locked ? `${routeLabels[route.method]} locked` : routeLabels[route.method]}
 				/>
 				<span className="text-[9px] font-bold uppercase text-foreground">{routeLabels[route.method]}</span>
-				{item ? (
-					<Image src={itemImageUrl(item)} alt="" width={28} height={28} className="size-7 object-contain" unoptimized />
-				) : (
-					<span className="size-7" />
-				)}
+				{item ? <ItemImage item={item} size={28} className="size-7 object-contain" /> : <span className="size-7" />}
 				<span className="min-w-0">
 					<span className="block truncate text-[10px] text-foreground">
 						{item?.shortName ?? item?.name ?? "Unknown item"}
