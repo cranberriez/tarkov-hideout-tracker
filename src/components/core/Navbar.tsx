@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, Coffee, Menu, MessageSquare, Plus, Search, Settings2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SearchPalette } from "@/features/search/SearchPalette";
 import { questHref, stationHref } from "@/lib/entity-routes";
 import { isDev } from "@/lib/is-dev";
@@ -35,9 +35,26 @@ function NavbarContent() {
 	const searchTrigger = useRef<HTMLElement | null>(null);
 	const router = useRouter();
 	const openItemDetail = useUIStore((state) => state.openItemDetail);
+	const currentPage = usePathname();
+	// Search would reveal item values mid-game.
+	const searchBlocked = currentPage.startsWith("/games/");
+	/** Restarts the denied shake on each blocked attempt; 0 when idle. */
+	const [searchDenied, setSearchDenied] = useState(0);
+	const deniedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+	const denySearch = useCallback(() => {
+		setSearchDenied((count) => count + 1);
+		clearTimeout(deniedTimer.current);
+		deniedTimer.current = setTimeout(() => setSearchDenied(0), 450);
+	}, []);
+	useEffect(() => () => clearTimeout(deniedTimer.current), []);
 	useEffect(() => {
 		const onKeyDown = (event: KeyboardEvent) => {
 			if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k" && !event.repeat) {
+				if (searchBlocked) {
+					event.preventDefault();
+					denySearch();
+					return;
+				}
 				// Do not place the palette on top of another modal workflow.
 				if (document.querySelector('[role="dialog"]') && !searchOpen) return;
 				event.preventDefault();
@@ -47,21 +64,31 @@ function NavbarContent() {
 		};
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [searchOpen]);
+	}, [searchOpen, searchBlocked, denySearch]);
 	const searchButton = (
 		<button
 			type="button"
-			aria-label="Search items, quests and stations"
-			title="Search items, quests and stations (Ctrl/⌘ K)"
+			aria-label={searchBlocked ? "Search is unavailable while playing" : "Search items, quests and stations"}
+			title={searchBlocked ? "Search is unavailable while playing" : "Search items, quests and stations (Ctrl/⌘ K)"}
 			aria-haspopup="dialog"
 			aria-expanded={searchOpen}
+			aria-disabled={searchBlocked || undefined}
 			onClick={(event) => {
+				if (searchBlocked) return denySearch();
 				searchTrigger.current = event.currentTarget;
 				setSearchOpen(true);
 			}}
 			className="flex h-10 w-10 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
 		>
-			<Search size={20} />
+			<span
+				key={searchDenied}
+				className={cn(
+					"flex",
+					searchDenied > 0 && "animate-[search-denied_0.4s_ease-in-out] text-danger motion-reduce:animate-none",
+				)}
+			>
+				<Search size={20} />
+			</span>
 		</button>
 	);
 	const setSetupOpen = useUserStore((state) => state.setSetupOpen);
@@ -69,7 +96,6 @@ function NavbarContent() {
 	const isQuickAddOpen = useUIStore((state) => state.isQuickAddOpen);
 	const setQuickAddOpen = useUIStore((state) => state.setQuickAddOpen);
 	const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
-	const currentPage = usePathname();
 	const isSecondaryRoute =
 		currentPage === "/settings" ||
 		currentPage === "/news" ||

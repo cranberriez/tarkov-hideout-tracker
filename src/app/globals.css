@@ -318,3 +318,23 @@ input[type="number"] {
 	appearance: textfield;
 	-moz-appearance: textfield;
 }
+
+/* Navbar search refused while a game is in progress. */
+@keyframes search-denied {
+	0%,
+	100% {
+		translate: 0;
+	}
+	20% {
+		translate: -4px;
+	}
+	40% {
+		translate: 4px;
+	}
+	60% {
+		translate: -3px;
+	}
+	80% {
+		translate: 2px;
+	}
+}
