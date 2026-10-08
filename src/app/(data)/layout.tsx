@@ -11,7 +11,8 @@ export default function DataLayout({ children }: DataLayoutProps) {
 	return (
 		<>
 			<LegacyProfileConversionBanner />
-			{children}
+			{/* Grows to fill short pages so the footer stays at the viewport bottom. */}
+			<div className="flex min-h-0 flex-1 flex-col">{children}</div>
 			<RouteAwareFooter />
 			<LegacyProfileConversionDialog />
 		</>
