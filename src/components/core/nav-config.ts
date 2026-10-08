@@ -90,10 +90,10 @@ export const navMenus: NavMenu[] = [
 	},
 ];
 
-/** Listed only in the secondary (☰) menu for now. */
+/** The games hub; listed only near the bottom of the secondary (☰) menu. */
 export const gamesNavItem: NavItem = {
-	name: "Higher or Lower",
-	href: "/games/higher-lower",
+	name: "Games",
+	href: "/games",
 	icon: Gamepad2,
 };
 

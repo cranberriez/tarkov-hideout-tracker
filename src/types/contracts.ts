@@ -239,6 +239,26 @@ export interface HigherLowerPageData {
 	error: string | null;
 }
 
+export interface TraderAlibiItemCount {
+	itemId: string;
+	count: number;
+}
+
+/** Clues for Trader Alibi; item names and images come from the search manifest. */
+export interface TraderAlibiPageData {
+	mode: TarkovDataMode;
+	/** Quests each trader gives (removed quests excluded). */
+	quests: Array<{ traderId: string; name: string }>;
+	barters: Array<{
+		traderId: string;
+		level: number;
+		output: TraderAlibiItemCount;
+		inputs: TraderAlibiItemCount[];
+	}>;
+	/** Items a trader sells for cash, at the loyalty level that unlocks them. */
+	offers: Array<{ traderId: string; itemId: string; level: number }>;
+}
+
 export interface HideoutStationsPayload {
 	stations: Station[];
 }

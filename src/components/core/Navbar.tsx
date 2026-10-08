@@ -100,6 +100,7 @@ function NavbarContent() {
 		currentPage === "/settings" ||
 		currentPage === "/news" ||
 		currentPage === "/dev" ||
+		currentPage === "/games" ||
 		currentPage.startsWith("/games/");
 
 	if ((currentPage === "/quests" || currentPage.startsWith("/quests/")) && isMainNavHidden) return null;
@@ -347,7 +348,6 @@ function MobileNavSection({
 function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onSetup: () => void }) {
 	const items: NavItem[] = [
 		{ name: "News", href: "/news" },
-		gamesNavItem,
 		{ name: "Settings", href: "/settings" },
 		...(isDev ? [devNavItem] : []),
 	];
@@ -368,6 +368,15 @@ function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onS
 			))}
 			<DropdownMenuSeparator />
 			<DropdownMenuItem onSelect={onSetup}>Setup</DropdownMenuItem>
+			<DropdownMenuItem
+				asChild
+				className={cn(isNavItemActive(currentPage, gamesNavItem) && "bg-accent text-accent-foreground")}
+			>
+				<Link href={gamesNavItem.href} className="flex w-full items-center gap-2">
+					<NavItemIcon item={gamesNavItem} />
+					{gamesNavItem.name}
+				</Link>
+			</DropdownMenuItem>
 			{(FEEDBACK_FORM_URL || KOFI_URL) && <DropdownMenuSeparator />}
 			{FEEDBACK_FORM_URL && (
 				<DropdownMenuItem asChild>

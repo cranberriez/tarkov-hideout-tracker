@@ -391,6 +391,14 @@ because estimates need part values; the payload is about 85 KB gzipped per mode.
 narrowing difficulty bands and the count-up live in the client
 [model](../src/features/games/higher-lower/higher-lower-model.ts).
 
+Trader Alibi reads [its page data](../src/app/api/page-data/games/trader-alibi/route.ts) through
+[trader-alibi.ts](../src/server/db/trader-alibi.ts): non-removed quests, barters (inputs from
+`barter_inputs`) and cash purchase offers of the core traders in
+[TRADER_ALIBI_TRADER_IDS](../src/lib/games/trader-alibi.ts), as IDs only (about 60 KB gzipped);
+item names and images come from the search manifest. Database errors return 503; complete payloads
+use browser 300s / CDN 3600s. Do I Need It reads no new endpoint: it reuses the uploader requirements
+and the search manifest.
+
 Trader sell offers (`sellFor`) carry only `traderId`; names and images come from the
 bundled [trader list](../src/lib/data/traders.ts), which needs an entry when a new trader
 ships (unknown IDs render as "Unknown trader"). The provider adapter writes this shape,

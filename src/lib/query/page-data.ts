@@ -6,6 +6,7 @@ import type { QuestWorkspaceIndexData } from "../../types/quest-workspace";
 import type {
 	HideoutPageData,
 	HigherLowerPageData,
+	TraderAlibiPageData,
 	ItemChecklistPageData,
 	KappaChecklistPageData,
 	MarketPageData,
@@ -148,6 +149,16 @@ export function higherLowerQueryOptions(mode: TarkovJsonGameMode) {
 		queryKey: gameDataKey(mode, "higher-lower"),
 		queryFn: ({ signal }) =>
 			fetchJson<HigherLowerPageData>(`/api/page-data/games/higher-lower?mode=${mode}`, { signal }),
+		staleTime: PAGE_DATA_STALE_TIME,
+		meta: { retentionGroup: "page-data", inactiveQueryLimit: 12 },
+	});
+}
+
+export function traderAlibiQueryOptions(mode: TarkovJsonGameMode) {
+	return queryOptions({
+		queryKey: gameDataKey(mode, "trader-alibi"),
+		queryFn: ({ signal }) =>
+			fetchJson<TraderAlibiPageData>(`/api/page-data/games/trader-alibi?mode=${mode}`, { signal }),
 		staleTime: PAGE_DATA_STALE_TIME,
 		meta: { retentionGroup: "page-data", inactiveQueryLimit: 12 },
 	});

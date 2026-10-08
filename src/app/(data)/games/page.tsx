@@ -1,6 +1,12 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { GamesHub } from "@/features/games/GamesHub";
 
-/** Higher or Lower is the only game for now. */
+export const metadata: Metadata = {
+	title: "Games",
+	description: "Escape from Tarkov mini-games: Higher or Lower, Do I Need It? and Trader Alibi.",
+	alternates: { canonical: "/games" },
+};
+
 export default function GamesPage() {
-	redirect("/games/higher-lower");
+	return <GamesHub />;
 }
