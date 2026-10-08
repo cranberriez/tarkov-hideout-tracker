@@ -1,13 +1,14 @@
 "use client";
 
-import type { CSSProperties } from "react";
-import { Check, Flame, RotateCcw, Trophy, X } from "lucide-react";
+import { useState, type CSSProperties } from "react";
+import { ArrowLeftRight, Check, Flame, Globe, RotateCcw, Trophy, UserRound, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { itemImageUrl } from "@/lib/utils/item-images";
 import type { ItemSummary } from "@/types/items";
 import type { ItemNeed, SaveReason } from "../../items/demand/item-demand-model";
 import { BackToGames } from "../BackToGames";
-import { useDoINeedItGame } from "./useDoINeedItGame";
+import { DO_I_NEED_IT_ALL_STORAGE_KEY, DO_I_NEED_IT_STORAGE_KEY, useDoINeedItGame } from "./useDoINeedItGame";
+import { NeedSourceDialog, type NeedSource } from "./NeedSourceChoice";
 
 function reasonText(reason: SaveReason) {
 	const count = reason.count > 1 ? ` ×${reason.count}` : "";
@@ -94,19 +95,37 @@ function ItemTile({
 export function DoINeedItGame({
 	catalog,
 	needs,
-	personal,
+	source,
+	onChangeSource,
 }: {
 	catalog: readonly ItemSummary[];
 	needs: ReadonlyMap<string, ItemNeed>;
-	/** Needs come from the player's own progress and inventory rather than the whole game. */
-	personal: boolean;
+	/** Needs come from the player's own progress and inventory, or from the whole game. */
+	source: NeedSource;
+	/** Present once setup is done, when the player can choose; otherwise the whole game is used. */
+	onChangeSource?: (source: NeedSource) => void;
 }) {
-	const { state, neededCount, bestStreak, bestBeforeRun, pick, restart } = useDoINeedItGame(catalog, needs);
+	const { state, neededCount, bestStreak, bestBeforeRun, pick, restart } = useDoINeedItGame(
+		catalog,
+		needs,
+		source === "progress" ? DO_I_NEED_IT_STORAGE_KEY : DO_I_NEED_IT_ALL_STORAGE_KEY,
+	);
+	const [choosing, setChoosing] = useState(false);
 
 	if (!state) {
 		return (
-			<main className="container mx-auto px-6 py-8 text-center text-muted-foreground">
+			<main className="container mx-auto flex flex-col items-center gap-4 px-6 py-8 text-center text-muted-foreground">
 				Nothing on your list needs items right now. Come back when you have quests or hideout upgrades left.
+				{onChangeSource && source === "progress" && (
+					<button
+						type="button"
+						onClick={() => onChangeSource("all")}
+						className="flex items-center gap-2 rounded-full border-2 border-brand px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-brand transition-colors hover:bg-brand hover:text-inverse focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+					>
+						<Globe size={18} />
+						Play without your progress
+					</button>
+				)}
 			</main>
 		);
 	}
@@ -117,7 +136,32 @@ export function DoINeedItGame({
 	return (
 		<main className="flex flex-1 flex-col bg-background">
 			<div className="container mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-4 py-6 md:py-8">
-				<BackToGames className="-mb-2 self-start" />
+				<div className="-mb-2 flex items-center justify-between gap-3">
+					<BackToGames />
+					{onChangeSource && (
+						<>
+							<button
+								type="button"
+								onClick={() => setChoosing(true)}
+								aria-label="Change how you play"
+								className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-brand hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+							>
+								{source === "progress" ? <UserRound size={14} /> : <Globe size={14} />}
+								{source === "progress" ? "Your progress" : "Without progress"}
+								<ArrowLeftRight size={13} className="text-subtle-foreground" />
+							</button>
+							<NeedSourceDialog
+								open={choosing}
+								current={source}
+								onOpenChange={setChoosing}
+								onChoose={(next) => {
+									setChoosing(false);
+									if (next !== source) onChangeSource(next);
+								}}
+							/>
+						</>
+					)}
+				</div>
 				<header className="flex flex-wrap items-end justify-between gap-3">
 					<div>
 						<p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
@@ -125,9 +169,11 @@ export function DoINeedItGame({
 						</p>
 						<h1 className="text-2xl font-bold text-foreground md:text-3xl">Do I Need It?</h1>
 						<p className="mt-1 text-sm text-muted-foreground">
-							{personal
+							{source === "progress"
 								? "Based on your remaining quests, hideout upgrades and inventory."
-								: "Needed by any quest or hideout upgrade. Finish setup to make it about your own progress."}
+								: onChangeSource
+									? "Needed by any quest or hideout upgrade."
+									: "Needed by any quest or hideout upgrade. Finish setup to make it about your own progress."}
 						</p>
 					</div>
 					<div className="flex gap-2 text-sm font-bold text-foreground">

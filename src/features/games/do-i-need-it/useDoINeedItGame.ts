@@ -6,8 +6,10 @@ import type { ItemSummary } from "@/types/items";
 import type { ItemNeed } from "../../items/demand/item-demand-model";
 import { buildNeedRound, type NeedRound } from "./do-i-need-it-model";
 
-/** Global best streak, shared by every profile and mode; outside backups and resets. */
+/** Global best streaks, shared by every profile and mode; outside backups and resets. */
 export const DO_I_NEED_IT_STORAGE_KEY = "tarkov-do-i-need-it-v1";
+/** Best streak when playing against every quest and hideout need instead of the player's own progress. */
+export const DO_I_NEED_IT_ALL_STORAGE_KEY = "tarkov-do-i-need-it-all-v1";
 const NEXT_ROUND_MS = 1800;
 
 export type DoINeedItPhase = "pick" | "correct" | "over" | "complete";
@@ -31,9 +33,13 @@ function startRun(catalog: readonly ItemSummary[], needs: ReadonlyMap<string, It
 }
 
 /** One run: pick a needed item each round; rounds shrink until a wrong pick ends the run. */
-export function useDoINeedItGame(catalog: readonly ItemSummary[], needs: ReadonlyMap<string, ItemNeed>) {
+export function useDoINeedItGame(
+	catalog: readonly ItemSummary[],
+	needs: ReadonlyMap<string, ItemNeed>,
+	storageKey: string,
+) {
 	const [state, setState] = useState<DoINeedItState | null>(() => startRun(catalog, needs));
-	const [bestStreak, recordBest] = useBestScore(DO_I_NEED_IT_STORAGE_KEY);
+	const [bestStreak, recordBest] = useBestScore(storageKey);
 	const [bestBeforeRun, setBestBeforeRun] = useState(bestStreak);
 
 	const pick = useCallback(

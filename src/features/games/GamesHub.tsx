@@ -6,7 +6,7 @@ import { useStoredProfitValue } from "@/features/profit-pages/useStoredProfitVal
 import { parseBestScore } from "./useBestScore";
 import { parseBestStreak } from "./higher-lower/higher-lower-model";
 import { HIGHER_LOWER_STORAGE_KEY } from "./higher-lower/useHigherLowerGame";
-import { DO_I_NEED_IT_STORAGE_KEY } from "./do-i-need-it/useDoINeedItGame";
+import { DO_I_NEED_IT_ALL_STORAGE_KEY, DO_I_NEED_IT_STORAGE_KEY } from "./do-i-need-it/useDoINeedItGame";
 import { TRADER_ALIBI_STORAGE_KEY } from "./trader-alibi/useTraderAlibiGame";
 
 interface GameCard {
@@ -15,6 +15,8 @@ interface GameCard {
 	description: string;
 	Icon: LucideIcon;
 	storageKey: string;
+	/** A second best score (another variant of the game); the card shows the higher one. */
+	altStorageKey?: string;
 	parse: (raw: string | null) => number;
 	bestLabel: string;
 }
@@ -35,6 +37,7 @@ const GAMES: GameCard[] = [
 		description: "Spot the items your quests and hideout still need among look-alike decoys.",
 		Icon: PackageSearch,
 		storageKey: DO_I_NEED_IT_STORAGE_KEY,
+		altStorageKey: DO_I_NEED_IT_ALL_STORAGE_KEY,
 		parse: parseBestScore,
 		bestLabel: "Best streak",
 	},
@@ -51,7 +54,8 @@ const GAMES: GameCard[] = [
 
 function GameLink({ game }: { game: GameCard }) {
 	const [raw] = useStoredProfitValue(game.storageKey);
-	const best = game.parse(raw);
+	const [altRaw] = useStoredProfitValue(game.altStorageKey ?? game.storageKey);
+	const best = Math.max(game.parse(raw), game.parse(altRaw));
 	return (
 		<Link
 			href={game.href}

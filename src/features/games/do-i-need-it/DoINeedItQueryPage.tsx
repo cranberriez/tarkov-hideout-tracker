@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { createDefaultPlayerProfile, useUserStore } from "@/lib/stores/useUserStore";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { useSearchManifest } from "@/lib/search/useSearchManifest";
@@ -9,18 +9,23 @@ import { buildItemDemand, type ItemNeed } from "../../items/demand/item-demand-m
 import { GameDataError, GameDataPage, GameLoader } from "../GameDataPage";
 import { isPlayableItem, requirementItemIds } from "./do-i-need-it-model";
 import { DoINeedItGame } from "./DoINeedItGame";
+import { NeedSourcePage, type NeedSource } from "./NeedSourceChoice";
 
 const TITLE = "Do I Need It?";
 const NO_INVENTORY = {};
 
 /**
  * Remaining needs for the active profile (unfinished quests and hideout levels, minus owned copies), reusing
- * the Loot Scanner's demand model. Before setup, a fresh profile without inventory stands in, so the game
- * asks about everything quests and the hideout use.
+ * the Loot Scanner's demand model. Playing without progress (always, before setup) uses a fresh profile
+ * without inventory, so the game asks about everything quests and the hideout use.
  */
 function DoINeedItData({ mode }: { mode: TarkovJsonGameMode }) {
 	const { profile, kappa, query } = useDemandRequirements();
-	const personal = useUserStore((state) => state.hasCompletedSetup);
+	const setupDone = useUserStore((state) => state.hasCompletedSetup);
+	// Asked on every visit once setup is done; before setup only the whole game makes sense.
+	const [chosen, setChosen] = useState<NeedSource | null>(null);
+	const source: NeedSource | null = setupDone ? chosen : "all";
+	const personal = source === "progress";
 	const owned = useUserStore((state) => state.itemCounts);
 	const catalog = useSearchManifest(mode, true);
 	const result = useMemo(() => {
@@ -50,8 +55,17 @@ function DoINeedItData({ mode }: { mode: TarkovJsonGameMode }) {
 
 	const error = query.error ?? catalog.error;
 	if (error) return <GameDataError title={TITLE} message={error.message} />;
+	if (!source) return <NeedSourcePage onChoose={setChosen} />;
 	if (!result) return <GameLoader title={TITLE} />;
-	return <DoINeedItGame catalog={result.playable} needs={result.remaining} personal={personal} />;
+	return (
+		<DoINeedItGame
+			key={source}
+			catalog={result.playable}
+			needs={result.remaining}
+			source={source}
+			onChangeSource={setupDone ? setChosen : undefined}
+		/>
+	);
 }
 
 export function DoINeedItQueryPage({ mode }: { mode: TarkovJsonGameMode }) {
