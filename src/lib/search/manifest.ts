@@ -26,6 +26,7 @@ export function validateSearchManifest(value: unknown, mode: TarkovJsonGameMode)
 			if (kind === "quests" && !nonempty(row.ti)) return fail();
 			for (const key of ["sn", "ic"]) if (row[key] !== undefined && !nonempty(row[key])) return fail();
 			if (row.b !== undefined && row.b !== 1) return fail();
+			if (row.q !== undefined && row.q !== 1) return fail();
 			if (row.c !== undefined && !(Number.isInteger(row.c) && Number(row.c) >= 0 && Number(row.c) < categories.length))
 				return fail();
 		}
@@ -45,7 +46,7 @@ export function decodeSearchManifest(value: unknown, mode: TarkovJsonGameMode, r
 	if ((value as SearchManifestPayload).releaseId !== releaseId || !nonempty(releaseId)) {
 		throw new ResponseValidationError("Search manifest release changed");
 	}
-	const items: ItemSummary[] = manifest.items.map(({ id, nn, n, sn, ic, b, c }) => ({
+	const items: ItemSummary[] = manifest.items.map(({ id, nn, n, sn, ic, b, c, q }) => ({
 		id,
 		normalizedName: nn,
 		name: n,
@@ -53,6 +54,7 @@ export function decodeSearchManifest(value: unknown, mode: TarkovJsonGameMode, r
 		iconLink: ic,
 		...(b ? { barter: true } : {}),
 		...(c !== undefined ? { categoryId: manifest.categories[c] } : {}),
+		...(q ? { questOnly: true } : {}),
 	}));
 	const quests = manifest.quests.map(({ id, nn, n, ti }) => ({ id, normalizedName: nn, name: n, traderId: ti }));
 	const traders = Object.fromEntries(

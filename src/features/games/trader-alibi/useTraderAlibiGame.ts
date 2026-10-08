@@ -16,21 +16,26 @@ import {
 
 /** Global best score, shared by every profile and mode; outside backups and resets. */
 export const TRADER_ALIBI_STORAGE_KEY = "tarkov-trader-alibi-v1";
-const NEXT_ROUND_MS = 1600;
+const NEXT_ROUND_MS = 2200;
 
 export type TraderAlibiPhase = "ask" | "guess" | "correct" | "over";
+
+/** The round's conversation in order: each asked clue and each trader guessed. */
+export type TraderAlibiEntry = TraderClue | { kind: "guess"; traderId: string };
 
 export interface TraderAlibiRound {
 	run: number;
 	round: number;
 	traderId: string;
-	clues: TraderClue[];
+	log: TraderAlibiEntry[];
 	used: ReadonlySet<string>;
 	eliminated: ReadonlySet<string>;
 	phase: TraderAlibiPhase;
 	score: number;
 	/** Points the last correct guess earned. */
 	earned: number;
+	/** Picks this round's flavour lines. */
+	seed: number;
 }
 
 let runCounter = 0;
@@ -46,12 +51,13 @@ function newRound(
 		run: previous?.run ?? runCounter,
 		round: (previous?.round ?? 0) + 1,
 		traderId,
-		clues: [],
+		log: [],
 		used: new Set(),
 		eliminated: new Set(),
 		phase: "ask",
 		score: previous?.score ?? 0,
 		earned: 0,
+		seed: Math.floor(Math.random() * 2 ** 31),
 	};
 }
 
@@ -75,7 +81,7 @@ export function useTraderAlibiGame(pools: TraderCluePools) {
 			if (!drawn) return;
 			setRound({
 				...round,
-				clues: [...round.clues, drawn.clue],
+				log: [...round.log, drawn.clue],
 				used: new Set([...round.used, drawn.key]),
 				phase: "guess",
 			});
@@ -86,17 +92,19 @@ export function useTraderAlibiGame(pools: TraderCluePools) {
 	const guess = useCallback(
 		(traderId: string) => {
 			if (!round || !canGuess || round.eliminated.has(traderId)) return;
+			const log: TraderAlibiEntry[] = [...round.log, { kind: "guess", traderId }];
 			if (traderId === round.traderId) {
-				const earned = questionPoints(Math.max(1, round.clues.length));
+				const clues = round.log.filter((entry) => entry.kind !== "guess").length;
+				const earned = questionPoints(Math.max(1, clues));
 				const score = round.score + earned;
 				recordBest(score);
-				setRound({ ...round, phase: "correct", score, earned });
+				setRound({ ...round, log, phase: "correct", score, earned });
 				return;
 			}
 			const eliminated = new Set([...round.eliminated, traderId]);
 			// Each wrong guess spends a question, including guesses made after the clues ran out.
 			const outOfQuestions = eliminated.size >= MAX_QUESTIONS;
-			setRound({ ...round, eliminated, phase: outOfQuestions ? "over" : "ask" });
+			setRound({ ...round, log, eliminated, phase: outOfQuestions ? "over" : "ask" });
 		},
 		[round, canGuess, recordBest],
 	);

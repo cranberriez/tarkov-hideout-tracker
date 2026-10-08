@@ -8,6 +8,14 @@ import { validateSearchManifest } from "./manifest";
 import { standardItemImageUrl } from "../utils/item-images";
 import { isBarterCategory } from "../data/barter-categories";
 
+/**
+ * Quest-chain notes, tapes, documents and similar: flea-banned items the provider gives no other type. A
+ * heuristic (it also matches secure and loot containers); tarkov.dev's true quest items are not catalog items.
+ */
+export function isQuestOnlyItem(item: Pick<ItemSummary, "itemTypes">): boolean {
+	return item.itemTypes?.length === 1 && item.itemTypes[0] === "noFlea";
+}
+
 export function buildSearchManifest(
 	mode: TarkovJsonGameMode,
 	items: ItemSummary[],
@@ -29,6 +37,7 @@ export function buildSearchManifest(
 				...(item.iconLink && item.iconLink !== standardItemImageUrl(item.id, "icon") ? { ic: item.iconLink } : {}),
 				...(isBarterCategory(item.category?.id) ? { b: 1 as const } : {}),
 				...(item.category?.id ? { c: categoryIndex.get(item.category.id) } : {}),
+				...(isQuestOnlyItem(item) ? { q: 1 as const } : {}),
 			})),
 			categories,
 			quests: excludeRemovedQuests(prepareQuestDataForMode(quests, mode)).map((quest) => ({

@@ -497,7 +497,8 @@ removed-quest and game-mode data in
 [quest-preparation](../src/lib/quests/quest-preparation.ts)), mode and catalog
 content_version. No database manifest table is used. Items carry their leaf
 category as an index into a shared category ID list; the uploader groups those
-leaves for its category filter.
+leaves for its category filter. A quest-only flag marks flea-banned items with
+no other provider type (quest notes, tapes, documents); Do I Need It? skips them.
 
 [/api/search](../src/app/api/search/route.ts) keeps identity=1 and the releaseId
 request/response field. The field now carries the string content version. A

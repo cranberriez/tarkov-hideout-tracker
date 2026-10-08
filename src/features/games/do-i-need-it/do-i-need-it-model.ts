@@ -27,10 +27,11 @@ export function roundShape(round: number) {
 	return ROUND_SHAPES[Math.min(round, ROUND_SHAPES.length - 1)];
 }
 
-/** Real, recognisable items: no currency, presets or placeholder art. */
+/** Real, recognisable items: no currency, presets, quest-chain items or placeholder art. */
 export function isPlayableItem(item: ItemSummary): boolean {
 	return (
 		!!item.categoryId &&
+		!item.questOnly &&
 		!item.id.startsWith(PRESET_ID_PREFIX) &&
 		!item.name.endsWith(" Default") &&
 		!item.iconLink?.includes(PLACEHOLDER_IMAGE) &&

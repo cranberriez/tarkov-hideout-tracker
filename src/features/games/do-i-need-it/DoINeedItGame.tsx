@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, RotateCcw, Trophy, X } from "lucide-react";
+import type { CSSProperties } from "react";
+import { Check, Flame, RotateCcw, Trophy, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { itemImageUrl } from "@/lib/utils/item-images";
 import type { ItemSummary } from "@/types/items";
@@ -23,6 +24,15 @@ function NeedReasons({ need }: { need: ItemNeed | undefined }) {
 		</p>
 	);
 }
+
+/** Faint inventory-cell lines behind the item art. */
+const SLOT_GRID = {
+	"--slot-line": "color-mix(in oklab, var(--border) 45%, transparent)",
+	backgroundImage:
+		"linear-gradient(var(--slot-line) 1px, transparent 1px), linear-gradient(90deg, var(--slot-line) 1px, transparent 1px)",
+	backgroundSize: "20px 20px",
+	backgroundPosition: "center",
+} as CSSProperties;
 
 function ItemTile({
 	item,
@@ -51,10 +61,11 @@ function ItemTile({
 			aria-label={`Pick ${item.name}`}
 			style={{ animationDelay: `${index * 45}ms` }}
 			className={cn(
-				"relative flex w-36 animate-in flex-col items-center gap-2 rounded-xl border-2 bg-card p-3 text-center transition-all duration-300 fade-in-0 zoom-in-90 fill-mode-both focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:animate-none md:w-44",
-				!revealed && "border-border hover:-translate-y-1 hover:border-brand",
+				"group relative flex w-36 animate-in flex-col items-center gap-2 self-stretch rounded-xl border-2 bg-card p-2 text-center transition-all duration-300 fade-in-0 zoom-in-90 fill-mode-both focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:animate-none md:w-44",
+				!revealed && "border-border hover:-translate-y-1 hover:border-brand hover:shadow-xl",
 				revealed && needed && "border-success bg-success-surface",
-				revealed && !needed && (picked ? "border-danger bg-danger-surface" : "border-border opacity-45"),
+				revealed && !needed && (picked ? "border-danger bg-danger-surface" : "border-border opacity-40 grayscale"),
+				revealed && needed && !picked && "opacity-80",
 				disabled && "cursor-default",
 			)}
 		>
@@ -68,9 +79,18 @@ function ItemTile({
 					{needed ? <Check size={16} strokeWidth={3} /> : <X size={16} strokeWidth={3} />}
 				</span>
 			)}
-			{/* eslint-disable-next-line @next/next/no-img-element -- remote item art is not optimized */}
-			<img src={itemImageUrl(item, "512")} alt="" className="h-20 w-full object-contain drop-shadow-xl md:h-28" />
-			<span className="line-clamp-2 text-sm font-semibold leading-tight text-foreground">{item.name}</span>
+			<span
+				className="flex h-24 w-full items-center justify-center rounded-lg bg-background/60 p-2 md:h-32"
+				style={SLOT_GRID}
+			>
+				{/* eslint-disable-next-line @next/next/no-img-element -- remote item art is not optimized */}
+				<img
+					src={itemImageUrl(item, "512")}
+					alt=""
+					className="h-full w-full object-contain drop-shadow-xl transition-transform duration-300 group-enabled:group-hover:scale-105"
+				/>
+			</span>
+			<span className="line-clamp-2 px-1 text-sm font-semibold leading-tight text-foreground">{item.name}</span>
 			{revealed && needed && <NeedReasons need={need} />}
 		</button>
 	);
@@ -99,10 +119,11 @@ export function DoINeedItGame({
 
 	const revealed = state.phase !== "pick";
 	const ended = state.phase === "over" || state.phase === "complete";
+	const tone = state.phase === "pick" ? "neutral" : state.phase === "over" ? "danger" : "success";
 	return (
 		<main className="flex flex-1 flex-col bg-background">
-			<div className="container mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 md:py-10">
-				<BackToGames className="-mb-3 self-start" />
+			<div className="container mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-4 py-6 md:py-8">
+				<BackToGames className="-mb-2 self-start" />
 				<header className="flex flex-wrap items-end justify-between gap-3">
 					<div>
 						<p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Round {state.round + 1}</p>
@@ -113,70 +134,103 @@ export function DoINeedItGame({
 								: "Needed by any quest or hideout upgrade. Finish setup to make it about your own progress."}
 						</p>
 					</div>
-					<div className="flex gap-6 text-right text-sm font-bold text-foreground md:text-base">
-						<p>
+					<div className="flex gap-2 text-sm font-bold text-foreground">
+						<p className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5">
+							<Flame size={15} className={state.streak > 0 ? "text-brand" : "text-muted-foreground"} />
 							Streak <span className="tabular-nums text-brand">{state.streak}</span>
 						</p>
-						<p>
+						<p className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5">
+							<Trophy size={15} className="text-muted-foreground" />
 							Best <span className="tabular-nums">{bestStreak}</span>
 						</p>
 					</div>
 				</header>
 
-				<p className="text-center text-lg font-semibold text-foreground" aria-live="polite">
-					{state.phase === "pick"
-						? `Pick an item you still need. ${neededCount} ${neededCount === 1 ? "is" : "are"} needed.`
-						: state.phase === "correct"
-							? "Needed!"
-							: state.phase === "complete"
-								? "You found everything you need."
-								: "You don't need that one."}
-				</p>
-
-				<div key={`${state.run}:${state.round}`} className="flex flex-wrap content-center justify-center gap-3 md:gap-4">
-					{state.items.map((item, index) => (
-						<ItemTile
-							key={item.id}
-							item={item}
-							index={index}
-							need={needs.get(item.id)}
-							needed={state.needed.has(item.id)}
-							picked={state.picked === item.id}
-							revealed={revealed}
-							disabled={state.phase !== "pick"}
-							onPick={() => pick(item.id)}
-						/>
-					))}
-				</div>
-
-				{ended && (
-					<section
+				<div className="flex flex-1 flex-col items-center justify-center gap-6 py-2">
+					<p
+						key={state.phase}
+						aria-live="polite"
 						className={cn(
-							"mx-auto flex w-full max-w-sm animate-in flex-col items-center gap-3 rounded-2xl p-6 text-center fade-in-0 zoom-in-95 fill-mode-both delay-500 duration-300 motion-reduce:animate-none",
-							state.phase === "complete" ? "bg-success-surface" : "bg-danger-surface",
+							"flex animate-in items-center gap-2 rounded-full px-4 py-2 text-base font-semibold fade-in-0 zoom-in-95 duration-200 motion-reduce:animate-none",
+							tone === "neutral" && "bg-card text-foreground ring-1 ring-border",
+							tone === "success" && "bg-success-surface text-success",
+							tone === "danger" && "bg-danger-surface text-danger",
 						)}
 					>
-						{state.phase === "complete" && <Trophy size={28} className="text-success" />}
-						<h2 className="text-xl font-bold text-foreground">You scored {state.streak}</h2>
-						<p
+						{state.phase === "pick" ? (
+							<>
+								Pick an item you still need
+								<span className="rounded-full bg-brand/15 px-2 py-0.5 text-xs font-bold tabular-nums text-brand">
+									{neededCount} of {state.items.length}
+								</span>
+							</>
+						) : state.phase === "correct" ? (
+							<>
+								<Check size={18} strokeWidth={3} /> Needed!
+							</>
+						) : state.phase === "complete" ? (
+							<>
+								<Trophy size={18} /> You found everything you need.
+							</>
+						) : (
+							<>
+								<X size={18} strokeWidth={3} /> You don&apos;t need that one.
+							</>
+						)}
+					</p>
+
+					<div key={`${state.run}:${state.round}`} className="flex flex-wrap justify-center gap-3 md:gap-4">
+						{state.items.map((item, index) => (
+							<ItemTile
+								key={item.id}
+								item={item}
+								index={index}
+								need={needs.get(item.id)}
+								needed={state.needed.has(item.id)}
+								picked={state.picked === item.id}
+								revealed={revealed}
+								disabled={state.phase !== "pick"}
+								onPick={() => pick(item.id)}
+							/>
+						))}
+					</div>
+				</div>
+
+				{/* Reserved so the grid stays put when a run ends. */}
+				<div className="flex min-h-20 items-center justify-center">
+					{ended && (
+						<section
 							className={cn(
-								"text-sm",
-								state.streak > bestBeforeRun ? "font-semibold text-success" : "text-muted-foreground",
+								"flex w-full max-w-lg animate-in flex-wrap items-center justify-between gap-4 rounded-2xl px-5 py-4 fade-in-0 slide-in-from-bottom-4 fill-mode-both delay-500 duration-300 motion-reduce:animate-none",
+								state.phase === "complete" ? "bg-success-surface" : "bg-danger-surface",
 							)}
 						>
-							{state.streak > bestBeforeRun ? "New best streak!" : `Best streak: ${bestStreak}`}
-						</p>
-						<button
-							type="button"
-							autoFocus
-							onClick={restart}
-							className="flex items-center gap-2 rounded-full bg-foreground px-6 py-3 font-semibold uppercase tracking-wide text-background transition-colors hover:bg-foreground/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
-						>
-							<RotateCcw size={18} />
-							Play again
-						</button>
-					</section>
-				)}
+							<div className="flex items-center gap-3">
+								{state.phase === "complete" && <Trophy size={28} className="text-success" />}
+								<div>
+									<h2 className="text-lg font-bold text-foreground">You scored {state.streak}</h2>
+									<p
+										className={cn(
+											"text-sm",
+											state.streak > bestBeforeRun ? "font-semibold text-success" : "text-muted-foreground",
+										)}
+									>
+										{state.streak > bestBeforeRun ? "New best streak!" : `Best streak: ${bestStreak}`}
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								autoFocus
+								onClick={restart}
+								className="flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-background transition-colors hover:bg-foreground/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+							>
+								<RotateCcw size={16} />
+								Play again
+							</button>
+						</section>
+					)}
+				</div>
 			</div>
 		</main>
 	);

@@ -51,6 +51,8 @@ export interface ItemSummary extends ItemIdentity {
 	barter?: boolean;
 	/** Leaf category ID; the compact search manifest carries this instead of `category`. */
 	categoryId?: string;
+	/** Quest-chain item rather than regular loot; only the compact search manifest carries this. */
+	questOnly?: boolean;
 	/** Resource capacity from the provider's resource properties (fuel tank units). */
 	resourceUnits?: number;
 	/**
