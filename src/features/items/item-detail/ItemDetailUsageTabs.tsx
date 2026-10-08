@@ -325,7 +325,7 @@ export function ItemDetailUsageTabs({
 
 const NO_EVALUATIONS: Readonly<Record<string, RecipeEvaluation>> = {};
 
-/** Stacked recipe list with a heading, matching the Quests tab sections; a following section gets a divider. */
+/** Green headings identify ways to obtain the item; neutral headings identify where it is consumed. */
 function RecipeSection({
 	title,
 	tone,
@@ -339,10 +339,10 @@ function RecipeSection({
 }) {
 	if (!show) return null;
 	return (
-		<section className="border-border-color [section+&]:border-t">
+		<section>
 			<div
-				className={`border-b border-border-color px-3 py-2 text-[10px] font-semibold uppercase tracking-wider ${
-					tone === "produce" ? "bg-brand/[0.04] text-brand/80" : "bg-shadow/20 text-muted-foreground"
+				className={`px-3 py-2 text-xs font-semibold ${
+					tone === "produce" ? "bg-brand/10 text-brand" : "bg-border-color text-foreground"
 				}`}
 			>
 				{title}
