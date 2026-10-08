@@ -54,7 +54,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
 	}
 	if (!item) notFound();
 	const gameMode = await getActiveTarkovJsonGameMode();
-	const views = await getItemDetailViews(gameMode, item.id);
+	const views = await getItemDetailViews(gameMode, item.id, undefined, ["relations"]);
 	const { state, initialViews } = dehydrateItemDetailViews(gameMode, item.id, views);
 	return (
 		<HydrationBoundary state={state}>

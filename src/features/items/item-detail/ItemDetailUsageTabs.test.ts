@@ -36,7 +36,8 @@ test("usage tab content scrolls independently below a fixed tab bar", () => {
 				relationsLoading: true,
 				relationsError: null,
 				onRetryRelations: () => {},
-				acquisitionLoading: true,
+				acquisitionLoading: false,
+				usageLoaded: false,
 				barterError: null,
 				craftError: null,
 				onRetryAcquisition: () => {},
@@ -58,4 +59,7 @@ test("usage tab content scrolls independently below a fixed tab bar", () => {
 
 	assert.match(markup, /class="[^"]*shrink-0[^"]*" role="tablist"/);
 	assert.match(markup, /role="tabpanel"[^>]*class="[^"]*max-h-\[700px\][^"]*overflow-y-auto/);
+	// Unrequested recipe tabs remain selectable, with no misleading zero count or hidden loading panel.
+	assert.match(markup, /role="tab" aria-selected="false"[^>]*>.*?Traders<\/button>/);
+	assert.doesNotMatch(markup, /Loading acquisition data/);
 });

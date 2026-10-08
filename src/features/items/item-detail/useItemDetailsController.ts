@@ -25,6 +25,7 @@ import { useItemPrices } from "../useItemPrices";
 import { isPriceItemId } from "@/lib/query/price-contract";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import type { ItemDetailModalProps } from "./ItemDetailModal";
+import type { UsageTab } from "./ItemDetailUsageTabs";
 
 /** Profile values the item details read; subscribing to the whole store re-renders on any change. */
 function selectItemDetailState(state: ReturnType<typeof useUserStore.getState>) {
@@ -83,7 +84,18 @@ export function useItemDetailsController({
 	const { overrides } = useManualPriceOverrides(store.gameMode);
 	const { craftingSkillLevel, hideoutManagementSkillLevel, ignorePlayerLevel } = useProfitOptions(store.gameMode);
 	const tarkovMode = mode ?? toTarkovJsonGameMode(store.gameMode);
-	const requests = useItemDetailRequestController({ activeItemId, isOpen, mode: tarkovMode, initial: initialViews });
+	const tabScope = `${tarkovMode}:${activeItemId}`;
+	const [tabSelection, setTabSelection] = useState<{ scope: string; tab: UsageTab } | null>(null);
+	const activeTab = tabSelection?.scope === tabScope ? tabSelection.tab : "hideout";
+	if (tabSelection?.scope !== tabScope) setTabSelection({ scope: tabScope, tab: "hideout" });
+	const loadRecipes = activeTab === "traders" || activeTab === "crafting";
+	const requests = useItemDetailRequestController({
+		activeItemId,
+		isOpen,
+		mode: tarkovMode,
+		initial: initialViews,
+		loadRecipes,
+	});
 	const itemRelations = requests.relations;
 	const itemUsage = requests.usage;
 	const acquisitionTree = requests.tree;
@@ -99,11 +111,21 @@ export function useItemDetailsController({
 			),
 		[acquisitionTree, knownItems, itemRelations, itemUsage],
 	);
-	// Wait for the initial graphs so related prices share one transport batch.
+	// Only requested graphs delay prices; unopened recipe tabs never fetch ingredient prices.
 	const metadataReady = !requests.relationsLoading && !requests.usageLoading && !requests.treeLoading;
 	const priceIds = useMemo(
-		() => (isOpen && metadataReady ? Object.keys(unpricedItemsById).filter(isPriceItemId) : []),
-		[isOpen, metadataReady, unpricedItemsById],
+		() =>
+			isOpen
+				? [
+						...new Set([
+							activeItemId,
+							...(loadRecipes && metadataReady
+								? [...(itemUsage?.items ?? []), ...(acquisitionTree?.items ?? [])].map((item) => item.id)
+								: []),
+						]),
+					].filter(isPriceItemId)
+				: [],
+		[isOpen, metadataReady, activeItemId, loadRecipes, itemUsage, acquisitionTree],
 	);
 	const prices = useItemPrices(tarkovMode, priceIds);
 	const itemDetailsById = useMemo(
@@ -180,7 +202,7 @@ export function useItemDetailsController({
 	const pricingPlayerLevel = ignorePlayerLevel ? undefined : store.playerLevel;
 	const recipeCalculator = useMemo(
 		() =>
-			acquisitionTree && pricesReady
+			loadRecipes && acquisitionTree && pricesReady
 				? createRecipeCalculator({
 						itemsById: itemDetailsById,
 						barters: acquisitionTree.barters,
@@ -195,6 +217,7 @@ export function useItemDetailsController({
 					})
 				: null,
 		[
+			loadRecipes,
 			acquisitionTree,
 			pricesReady,
 			craftingSkillLevel,
@@ -400,8 +423,10 @@ export function useItemDetailsController({
 		relationsLoading: requests.relationsLoading,
 		relationsError: requests.relationsError,
 		retryRelations: requests.retryRelations,
-		initialDetailLoading:
-			(requests.relationsLoading || requests.usageLoading) && !requests.relationsError && !requests.usageError,
+		activeTab,
+		setActiveTab: (tab: UsageTab) => setTabSelection({ scope: tabScope, tab }),
+		usageLoaded: itemUsage !== null,
+		initialDetailLoading: requests.relationsLoading && !requests.relationsError,
 		usageLoading: requests.usageLoading,
 		usageError: requests.usageError,
 		retryUsage: requests.retryUsage,

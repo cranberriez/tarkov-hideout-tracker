@@ -106,7 +106,10 @@ export function ItemDetailModalContent(props: ItemDetailModalProps) {
 											/>
 										)}
 										<ItemDetailUsageTabs
-											key={`usage-${vm.selectedItemId}`}
+											activeTab={vm.activeTab}
+											onTabChange={vm.setActiveTab}
+											usageLoaded={vm.usageLoaded}
+											key={`usage-${vm.tarkovMode}-${vm.selectedItemId}`}
 											className=""
 											selectedItemId={selectedItem.id}
 											selectedItemImageLink={itemImageUrl(selectedItem)}

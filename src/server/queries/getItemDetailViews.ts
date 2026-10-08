@@ -23,7 +23,8 @@ const storedViewReaders: ItemDetailViewReaders = {
 
 /**
  * Unpriced relations (hideout/quests), usage (trades/crafts), and acquisition views for
- * server rendering an item. These are the same stored views the item API routes serve.
+ * server rendering an item. `include` limits reads to the initial visible content.
+ * These are the same stored views the item API routes serve.
  * A failed view is `null`: the client query retries it and reports its own error.
  * Profile-dependent status is never computed here.
  */
@@ -31,11 +32,12 @@ export async function getItemDetailViews(
 	mode: TarkovJsonGameMode,
 	itemId: string,
 	readers: ItemDetailViewReaders = storedViewReaders,
+	include: readonly (keyof ItemDetailViews)[] = ["relations", "usage", "tree"],
 ): Promise<ItemDetailViews> {
 	const [relations, usage, tree] = await Promise.allSettled([
-		readers.relations(mode, itemId),
-		readers.usage(mode, itemId),
-		readers.tree(mode, itemId),
+		include.includes("relations") ? readers.relations(mode, itemId) : Promise.resolve(null),
+		include.includes("usage") ? readers.usage(mode, itemId) : Promise.resolve(null),
+		include.includes("tree") ? readers.tree(mode, itemId) : Promise.resolve(null),
 	]);
 	return {
 		relations: relations.status === "fulfilled" ? relations.value : null,

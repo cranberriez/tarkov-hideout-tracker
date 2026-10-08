@@ -13,6 +13,7 @@ PostgreSQL; production switching follows the separate
 | DATABASE_MIGRATION_URL         | Optional direct migration connection for pooled hosting |
 | PG_POOL_MAX                    | Connection pool limit (default 10)                      |
 | PG_STATEMENT_TIMEOUT_MS        | Statement timeout (default 30000 ms)                    |
+| PG_QUERY_LOG                   | Opt-in SQL logging: 1 for summaries, verbose for SQL (default off) |
 | TEST_DATABASE_URL              | Separate disposable PostgreSQL test database            |
 | CRON_SECRET                    | Bearer secret for the scheduled catalog route     |
 | TARKOV_JSON_REQUEST_TIMEOUT_MS | Existing provider per-attempt timeout override          |
@@ -37,6 +38,44 @@ later updates timestamp genuinely new items. See the [CLI guide](../db-scripts/R
 Run npm run dev and open [localhost:3000](http://localhost:3000). A production
 build uses npm run build followed by npm start. Database routes require initialized
 catalog data and bootstrapped offers/prices for every served mode.
+
+## Measuring database activity locally
+
+Start a fresh server from PowerShell with logging enabled:
+
+```powershell
+$env:PG_QUERY_LOG = '1'
+npm run dev
+```
+
+Browse normally and watch `[postgres]` lines next to Next.js request logs. Each
+completed driver query reports its start timestamp, process ID, cumulative count,
+query fingerprint, operation, table names, duration, status, and `quietMs` since
+the latest observed query completion (null for the first query). Concurrent work
+can produce out-of-order start timestamps; overlapping queries report zero quiet
+time. Counts and gaps are per server process/pool and reset on restart. Timings
+include driver execution/transport, but exclude pool acquisition and connection
+setup. Table extraction is a best-effort SQL summary, not a full SQL parser.
+
+Repeat the same navigation after warming caches, then leave the app untouched
+for more than five minutes. Repeated fingerprints identify recurring SQL;
+requests without SQL lines indicate no observed queries through this app's pool.
+These are query logs, not exact cache-hit metrics or Neon billing measurements:
+other clients, connection activity, background jobs, and separate CLI pools are
+not captured. Standard pool and transaction queries are covered; streaming
+Submittable queries are passed through without logging. The logger issues no SQL.
+
+For caching closer to deployment, stop the dev server and run `npm run build`,
+then `npm start` with the same environment variable. Treat build-time activity
+separately. Development reloads and caching behavior can distort comparisons.
+Keep the same game mode for repeated visits, then test mode switches separately.
+
+Use `PG_QUERY_LOG=verbose` to include SQL text. Bound parameter values, result
+rows, connection strings, and error messages are never printed by this logger;
+verbose SQL can still contain literals embedded directly in a statement. Logs
+stay in the server terminal unless you redirect them. To save a local session,
+use `npm run dev 2>&1 | Tee-Object -FilePath "$env:TEMP\tarkov-postgres.log"`.
+Set the variable to `0` or remove it, then restart the server to disable logging.
 
 ## Validation
 

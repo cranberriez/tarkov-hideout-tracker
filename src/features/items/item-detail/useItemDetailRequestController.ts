@@ -29,17 +29,19 @@ export function useItemDetailRequestController({
 	isOpen,
 	mode,
 	initial,
+	loadRecipes,
 }: {
 	activeItemId: string;
 	isOpen: boolean;
 	mode: TarkovJsonGameMode;
 	initial?: InitialItemDetailViews;
+	loadRecipes: boolean;
 }) {
 	const gameDataEnabled = useGameDataEnabled(mode);
 	const enabled = isOpen && activeItemId.length > 0 && gameDataEnabled;
 	const relationsQuery = useQuery({ ...itemRelationsQueryOptions(mode, activeItemId), enabled });
-	const usageQuery = useQuery({ ...itemUsageQueryOptions(mode, activeItemId), enabled });
-	const treeQuery = useQuery({ ...itemAcquisitionQueryOptions(mode, activeItemId), enabled });
+	const usageQuery = useQuery({ ...itemUsageQueryOptions(mode, activeItemId), enabled: enabled && loadRecipes });
+	const treeQuery = useQuery({ ...itemAcquisitionQueryOptions(mode, activeItemId), enabled: enabled && loadRecipes });
 
 	// Keys are mode-scoped, so hydrated or cached data renders before the saved profile
 	// loads (including on the server); the profile gate only controls fetching.
@@ -64,11 +66,11 @@ export function useItemDetailRequestController({
 		retryRelations: () => relationsQuery.refetch(),
 		usage,
 		usageError: usageRequestError,
-		usageLoading: waiting(usage) || (enabled && usage === null && usageQuery.isPending),
+		usageLoading: loadRecipes && (waiting(usage) || (enabled && usage === null && usageQuery.isPending)),
 		retryUsage: () => usageQuery.refetch(),
 		tree,
 		treeError: treeRequestError ?? treeDomainError,
-		treeLoading: waiting(tree) || (enabled && tree === null && treeQuery.isPending),
+		treeLoading: loadRecipes && (waiting(tree) || (enabled && tree === null && treeQuery.isPending)),
 		retryTree: () => treeQuery.refetch(),
 	};
 }

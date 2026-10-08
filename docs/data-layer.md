@@ -180,6 +180,13 @@ after the initial metadata domains settle. Their query keys distinguish unpriced
 metadata from older priced payloads. Compatibility API callers can still request
 the previous price-hydrated payloads.
 
+Item dialogs and direct item pages initially request relations for requirement
+totals and Hideout/Quests, plus the selected item's price. Usage and acquisition
+graphs are enabled only on Traders/Crafting tabs; their ingredient prices follow
+when those requested graphs settle. Previously opened items do not expand the
+price request. The server item page prefetches relations only. Existing per-view,
+mode/item/version server caching remains unchanged.
+
 Data GET routes read the mode from the `?mode=` query parameter through
 [readModeParam](../src/app/api/_lib/mode-params.ts): a missing mode selects `regular`
 (PVP) and an unknown mode returns 400. Browser clients always send it explicitly so

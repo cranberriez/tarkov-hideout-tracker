@@ -71,8 +71,11 @@ export function ItemDetailsPage({
 						/>
 					)}
 					<ItemDetailUsageTabs
+						key={`${vm.tarkovMode}:${vm.selectedItemId}`}
+						activeTab={vm.activeTab}
+						onTabChange={vm.setActiveTab}
+						usageLoaded={vm.usageLoaded}
 						contained={false}
-						renderInactivePanels
 						className="min-h-80"
 						selectedItemId={selectedItem.id}
 						selectedItemImageLink={itemImageUrl(selectedItem)}

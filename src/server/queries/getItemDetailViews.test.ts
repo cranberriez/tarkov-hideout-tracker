@@ -6,6 +6,28 @@ import { getItemDetailViews } from "./getItemDetailViews";
 const relations = { item: null, errors: {} } as unknown as ItemRelationsPayload;
 const usage = { barters: [], crafts: [] } as unknown as ItemUsageData;
 
+test("initial item rendering reads relations without starting deferred recipe readers", async () => {
+	const views = await getItemDetailViews(
+		"pvp-season",
+		"item-a",
+		{
+			relations: async (mode, itemId) => {
+				assert.equal(mode, "pvp-season");
+				assert.equal(itemId, "item-a");
+				return relations;
+			},
+			usage: async () => {
+				assert.fail("usage must remain deferred");
+			},
+			tree: async () => {
+				assert.fail("acquisition must remain deferred");
+			},
+		},
+		["relations"],
+	);
+	assert.deepEqual(views, { relations, usage: null, tree: null });
+});
+
 test("item detail views read all three views for one item and mode", async () => {
 	const calls: string[] = [];
 	const views = await getItemDetailViews("pve", "item-a", {

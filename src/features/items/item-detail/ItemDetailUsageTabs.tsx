@@ -17,14 +17,15 @@ import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import type { ManualPriceOverrides, RecipeEvaluation } from "@/lib/price-calculation";
 import { useQueryClient } from "@tanstack/react-query";
 
-type UsageTab = "hideout" | "quests" | "traders" | "crafting" | "prices" | "analytics";
+export type UsageTab = "hideout" | "quests" | "traders" | "crafting" | "prices" | "analytics";
 
 interface ItemDetailUsageTabsProps {
+	activeTab?: UsageTab;
+	onTabChange?: (tab: UsageTab) => void;
+	usageLoaded?: boolean;
 	className?: string;
 	/** Desktop dialogs cap and scroll the panel; smaller dialogs and pages let it flow. */
 	contained?: boolean;
-	/** Pages render every data tab (hidden when inactive) so server HTML includes all relations. */
-	renderInactivePanels?: boolean;
 	selectedItemId: string;
 	selectedItemImageLink?: string;
 	stationRequirements: [string, StationRequirementEntry[]][];
@@ -63,9 +64,11 @@ interface ItemDetailUsageTabsProps {
 }
 
 export function ItemDetailUsageTabs({
+	activeTab = "hideout",
+	onTabChange = () => {},
+	usageLoaded = true,
 	className = "",
 	contained = true,
-	renderInactivePanels = false,
 	selectedItemId,
 	selectedItemImageLink,
 	stationRequirements,
@@ -103,23 +106,18 @@ export function ItemDetailUsageTabs({
 	const queryClient = useQueryClient();
 	const hideoutCount = stationRequirements.reduce((count, [, reqs]) => count + reqs.length, 0);
 	const questCount = (questItemState?.relatedQuestCount ?? 0) + anyOfGroups.length + questRewards.length;
-	const [activeTab, setActiveTab] = useState<UsageTab>("hideout");
 	const [hasLoadedPriceHistory, setHasLoadedPriceHistory] = useState<boolean | null>(() =>
 		getCachedPriceHistoryAvailability(queryClient, selectedItemId, gameMode),
 	);
-	const hideoutEnabled = hideoutCount > 0 || relationsLoading || relationsError !== null;
-	const questsEnabled = questCount > 0 || relationsLoading || relationsError !== null;
 	const traderCount = traderOffers.length + usedInBarters.length;
 	const craftCount = crafts.length + usedInCrafts.length;
-	const tradersEnabled = traderCount > 0 || acquisitionLoading || barterError !== null;
-	const craftingEnabled = craftCount > 0 || acquisitionLoading || craftError !== null;
 	const historyEnabled = showPriceHistory && hasLoadedPriceHistory !== false;
 	const analyticsEnabled = showPriceHistory;
 	const enabledTabs: UsageTab[] = [
-		...(hideoutEnabled ? (["hideout"] as const) : []),
-		...(questsEnabled ? (["quests"] as const) : []),
-		...(tradersEnabled ? (["traders"] as const) : []),
-		...(craftingEnabled ? (["crafting"] as const) : []),
+		"hideout",
+		"quests",
+		"traders",
+		"crafting",
 		...(historyEnabled ? (["prices"] as const) : []),
 		...(analyticsEnabled ? (["analytics"] as const) : []),
 	];
@@ -136,47 +134,43 @@ export function ItemDetailUsageTabs({
 			<div className="flex h-10 shrink-0 items-stretch overflow-x-auto border-b border-border-color" role="tablist">
 				<TabButton
 					active={selectedTab === "hideout"}
-					disabled={!hideoutEnabled}
-					onClick={() => setActiveTab("hideout")}
+					onClick={() => onTabChange("hideout")}
 					label="Hideout"
 					count={relationsLoading ? undefined : hideoutCount}
 					icon={<Hammer size={13} />}
 				/>
 				<TabButton
 					active={selectedTab === "quests"}
-					disabled={!questsEnabled}
-					onClick={() => setActiveTab("quests")}
+					onClick={() => onTabChange("quests")}
 					label="Quests"
 					count={relationsLoading ? undefined : questCount}
 					icon={<ClipboardList size={13} />}
 				/>
 				<TabButton
 					active={selectedTab === "traders"}
-					disabled={!tradersEnabled}
-					onClick={() => setActiveTab("traders")}
+					onClick={() => onTabChange("traders")}
 					label="Traders"
-					count={acquisitionLoading ? undefined : traderCount}
+					count={!usageLoaded || acquisitionLoading ? undefined : traderCount}
 					icon={<ShoppingCart size={13} />}
 				/>
 				<TabButton
 					active={selectedTab === "crafting"}
-					disabled={!craftingEnabled}
-					onClick={() => setActiveTab("crafting")}
+					onClick={() => onTabChange("crafting")}
 					label="Crafting"
-					count={acquisitionLoading ? undefined : craftCount}
+					count={!usageLoaded || acquisitionLoading ? undefined : craftCount}
 					icon={<Wrench size={13} />}
 				/>
 				<TabButton
 					active={selectedTab === "prices"}
 					disabled={!historyEnabled}
-					onClick={() => setActiveTab("prices")}
+					onClick={() => onTabChange("prices")}
 					label="History"
 					icon={<ChartNoAxesCombined size={13} />}
 				/>
 				<TabButton
 					active={selectedTab === "analytics"}
 					disabled={!analyticsEnabled}
-					onClick={() => setActiveTab("analytics")}
+					onClick={() => onTabChange("analytics")}
 					label="Analytics"
 					icon={<Activity size={13} />}
 				/>
@@ -188,8 +182,11 @@ export function ItemDetailUsageTabs({
 					contained ? "flex flex-col lg:min-h-0 lg:max-h-[700px] lg:flex-1 lg:overflow-y-auto" : "flex flex-1 flex-col"
 				}
 			>
-				<UsagePanel active={selectedTab === "hideout"} keep={renderInactivePanels && hideoutEnabled}>
+				<UsagePanel active={selectedTab === "hideout"}>
 					<>
+						{!relationsLoading && !relationsError && hideoutCount === 0 && (
+							<p className="px-4 py-6 text-sm text-muted-foreground">No hideout requirements.</p>
+						)}
 						{(relationsLoading || relationsError) && (
 							<RelationState
 								loading={relationsLoading}
@@ -209,8 +206,11 @@ export function ItemDetailUsageTabs({
 						)}
 					</>
 				</UsagePanel>
-				<UsagePanel active={selectedTab === "quests"} keep={renderInactivePanels && questsEnabled}>
+				<UsagePanel active={selectedTab === "quests"}>
 					<>
+						{!relationsLoading && !relationsError && questCount === 0 && (
+							<p className="px-4 py-6 text-sm text-muted-foreground">No matching quest requirements or rewards.</p>
+						)}
 						{(relationsLoading || relationsError) && (
 							<RelationState
 								loading={relationsLoading}
@@ -232,7 +232,7 @@ export function ItemDetailUsageTabs({
 						)}
 					</>
 				</UsagePanel>
-				<UsagePanel active={selectedTab === "traders"} keep={renderInactivePanels && tradersEnabled}>
+				<UsagePanel active={selectedTab === "traders"}>
 					<AcquisitionState
 						loading={acquisitionLoading}
 						error={barterError}
@@ -269,7 +269,7 @@ export function ItemDetailUsageTabs({
 						</RecipeSection>
 					</AcquisitionState>
 				</UsagePanel>
-				<UsagePanel active={selectedTab === "crafting"} keep={renderInactivePanels && craftingEnabled}>
+				<UsagePanel active={selectedTab === "crafting"}>
 					<AcquisitionState
 						loading={acquisitionLoading}
 						error={craftError}
@@ -352,14 +352,8 @@ function RecipeSection({
 	);
 }
 
-/** Inactive panels stay mounted but hidden only when `keep` is set (item page). */
-function UsagePanel({ active, keep, children }: { active: boolean; keep: boolean; children: ReactNode }) {
-	if (!active && !keep) return null;
-	return (
-		<div hidden={!active} className="contents">
-			{children}
-		</div>
-	);
+function UsagePanel({ active, children }: { active: boolean; children: ReactNode }) {
+	return active ? <div className="contents">{children}</div> : null;
 }
 
 function AcquisitionState({

@@ -535,6 +535,12 @@ derives inventory, demand, market, usage, and recipe values for both the dialog 
 the [item page](../src/features/items/item-detail/ItemDetailsPage.tsx); the
 [request controller](../src/features/items/item-detail/useItemDetailRequestController.ts)
 owns mode-aware relations, usage, and acquisition queries with partial-error handling.
+Relations load on open for header totals and the Hideout/Quests tabs. Traders and
+Crafting enable usage and acquisition queries only while selected, reusing the
+existing mode/item caches. Until then only the selected item's price is requested;
+recipe ingredient prices are deferred with those graphs. Tabs start on Hideout for
+each item/mode and do not automatically select an unloaded recipe tab. Unknown
+recipe counts are omitted, and empty tabs show explicit empty states.
 Below `lg`, the item dialog fills the full dynamic viewport even with short or
 loading content. The dialog itself is the vertical scroll surface: Back, the
 header, inventory, market and the active usage tab all scroll together. Back occupies
@@ -546,11 +552,11 @@ The shared item header presents requirement totals as a compact two-column
 text grid below `lg`, retaining the bordered summary on desktop.
 
 `/items/[itemId]` still exists but nothing links to it yet. It server-renders its
-rows: [getItemDetailViews](../src/server/queries/getItemDetailViews.ts) reads the
-same unpriced stored views the item API routes serve; complete views are hydrated
-into the client query keys and partial views are passed as retryable fallbacks. Every
-data tab renders (inactive ones `hidden`), so hideout, quest, trade, and craft rows are
-in the server HTML. Rows are always shown; profile-dependent status (available/locked
+initial Hideout rows: [getItemDetailViews](../src/server/queries/getItemDetailViews.ts)
+selects only the unpriced relations view; complete data is hydrated into the client
+query key and partial data is passed as a retryable fallback. Usage and acquisition
+remain deferred until their tabs are selected, matching the dialog. Only the active
+panel renders. Profile-dependent status (available/locked
 badges, lock reasons, availability ordering, current station level, quest status) is
 rendered client-side only after the saved profile loads. Until then the controller
 derives from the store's initial state so server HTML and the hydration render agree.
