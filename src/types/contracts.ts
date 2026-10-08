@@ -247,8 +247,20 @@ export interface TraderAlibiItemCount {
 /** Clues for Trader Alibi; item names and images come from the search manifest. */
 export interface TraderAlibiPageData {
 	mode: TarkovDataMode;
-	/** Quests each trader gives (removed quests excluded). */
-	quests: Array<{ traderId: string; name: string }>;
+	/**
+	 * Single objectives of each trader's quests (removed quests excluded), without quest names. Trader names
+	 * in the text are replaced. Single-item hand-ins carry the item so the client can show it.
+	 */
+	objectives: Array<{
+		traderId: string;
+		type: string;
+		text: string;
+		count: number;
+		itemId?: string;
+		foundInRaid?: boolean;
+		/** Maps the text does not already name. */
+		maps: string[];
+	}>;
 	barters: Array<{
 		traderId: string;
 		level: number;

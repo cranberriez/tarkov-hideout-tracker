@@ -392,10 +392,11 @@ narrowing difficulty bands and the count-up live in the client
 [model](../src/features/games/higher-lower/higher-lower-model.ts).
 
 Trader Alibi reads [its page data](../src/app/api/page-data/games/trader-alibi/route.ts) through
-[trader-alibi.ts](../src/server/db/trader-alibi.ts): non-removed quests, barters (inputs from
-`barter_inputs`) and cash purchase offers of the core traders in
-[TRADER_ALIBI_TRADER_IDS](../src/lib/games/trader-alibi.ts), as IDs only (about 60 KB gzipped);
-item names and images come from the search manifest. Database errors return 503; complete payloads
+[trader-alibi.ts](../src/server/db/trader-alibi.ts): single objectives of non-removed quests (hand-ins,
+kills, quest items, locations and stashes; no find-item, requirement or status objectives, no quest
+names, trader names in the text replaced), barters (inputs from `barter_inputs`) and cash purchase
+offers of the traders in [TRADER_ALIBI_TRADER_IDS](../src/lib/games/trader-alibi.ts) (Ref excluded),
+in one payload of about 65 KB gzipped; item names and images come from the search manifest. Database errors return 503; complete payloads
 use browser 300s / CDN 3600s. Do I Need It reads no new endpoint: it reuses the uploader requirements
 and the search manifest.
 

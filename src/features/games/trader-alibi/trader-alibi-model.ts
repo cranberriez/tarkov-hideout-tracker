@@ -3,7 +3,7 @@ import type { TraderAlibiPageData } from "@/types/contracts";
 import type { ItemSummary } from "@/types/items";
 
 export const MAX_QUESTIONS = 5;
-export const CLUE_KINDS = ["quest", "barter", "sold"] as const;
+export const CLUE_KINDS = ["objective", "barter", "sold"] as const;
 export type ClueKind = (typeof CLUE_KINDS)[number];
 
 export interface ClueItem {
@@ -12,7 +12,14 @@ export interface ClueItem {
 }
 
 export type TraderClue =
-	| { kind: "quest"; name: string }
+	| {
+			kind: "objective";
+			text: string;
+			count: number;
+			/** A single-item hand-in, shown with its item. */
+			handIn?: { item: ItemSummary; foundInRaid: boolean };
+			maps: string[];
+	  }
 	| { kind: "barter"; level: number; output: ClueItem; inputs: ClueItem[] }
 	| { kind: "sold"; level: number; item: ItemSummary };
 
@@ -26,10 +33,19 @@ export type TraderCluePools = Map<string, Record<ClueKind, TraderClue[]>>;
 export function buildCluePools(data: TraderAlibiPageData, catalog: readonly ItemSummary[]): TraderCluePools {
 	const items = new Map(catalog.map((item) => [item.id, item]));
 	const pools: TraderCluePools = new Map(
-		TRADER_ALIBI_TRADER_IDS.map((id) => [id, { quest: [], barter: [], sold: [] }]),
+		TRADER_ALIBI_TRADER_IDS.map((id) => [id, { objective: [], barter: [], sold: [] }]),
 	);
 	const seenSold = new Set<string>();
-	for (const quest of data.quests) pools.get(quest.traderId)?.quest.push({ kind: "quest", name: quest.name });
+	for (const objective of data.objectives) {
+		const item = objective.itemId ? items.get(objective.itemId) : undefined;
+		pools.get(objective.traderId)?.objective.push({
+			kind: "objective",
+			text: objective.text,
+			count: objective.count,
+			...(item ? { handIn: { item, foundInRaid: objective.foundInRaid === true } } : {}),
+			maps: objective.maps,
+		});
+	}
 	for (const barter of data.barters) {
 		const output = items.get(barter.output.itemId);
 		const inputs = barter.inputs.map((input) => ({ item: items.get(input.itemId), count: input.count }));

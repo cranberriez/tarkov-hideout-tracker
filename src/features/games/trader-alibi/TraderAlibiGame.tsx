@@ -5,17 +5,25 @@ import { ArrowRight, Check, HelpCircle, Repeat, RotateCcw, ScrollText, ShoppingC
 import { ItemThumbnail } from "@/components/entities/item-thumbnail";
 import { traderImageUrl, traderInfo } from "@/lib/data/traders";
 import { cn } from "@/lib/utils";
-import { MAX_QUESTIONS, type ClueItem, type ClueKind, type TraderClue, type TraderCluePools } from "./trader-alibi-model";
+import {
+	MAX_QUESTIONS,
+	type ClueItem,
+	type ClueKind,
+	type TraderClue,
+	type TraderCluePools,
+} from "./trader-alibi-model";
 import { useTraderAlibiGame } from "./useTraderAlibiGame";
 
 const KIND_LABELS: Record<ClueKind, { label: string; Icon: typeof ScrollText }> = {
-	quest: { label: "Quest", Icon: ScrollText },
+	objective: { label: "Quest objective", Icon: ScrollText },
 	barter: { label: "Barter", Icon: Repeat },
 	sold: { label: "Sold item", Icon: ShoppingCart },
 };
 
 function formatCount(count: number) {
-	return Number.isInteger(count) ? count.toLocaleString("en-US") : count.toLocaleString("en-US", { maximumFractionDigits: 1 });
+	return Number.isInteger(count)
+		? count.toLocaleString("en-US")
+		: count.toLocaleString("en-US", { maximumFractionDigits: 1 });
 }
 
 function ClueItemChip({ entry }: { entry: ClueItem }) {
@@ -41,12 +49,26 @@ function ClueCard({ clue, index }: { clue: TraderClue; index: number }) {
 			<div className="min-w-0 flex-1">
 				<p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
 					{label}
-					{clue.kind !== "quest" && <span className="ml-2 text-subtle-foreground">Loyalty {clue.level}</span>}
+					{clue.kind !== "objective" && <span className="ml-2 text-subtle-foreground">Loyalty {clue.level}</span>}
 				</p>
-				{clue.kind === "quest" && (
-					<p className="mt-1 text-base text-foreground">
-						Gives the quest <span className="font-semibold">“{clue.name}”</span>
-					</p>
+				{clue.kind === "objective" &&
+					(clue.handIn ? (
+						<p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+							Hand over <ClueItemChip entry={{ item: clue.handIn.item, count: clue.count }} />
+							{clue.handIn.foundInRaid && <span className="font-semibold text-fir">Found in raid</span>}
+						</p>
+					) : (
+						<p className="mt-1 text-base text-foreground">
+							{clue.text}
+							{clue.count > 1 && (
+								<span className="ml-2 font-semibold tabular-nums text-muted-foreground">
+									×{formatCount(clue.count)}
+								</span>
+							)}
+						</p>
+					))}
+				{clue.kind === "objective" && clue.maps.length > 0 && (
+					<p className="mt-1 text-xs text-muted-foreground">Map: {clue.maps.join(", ")}</p>
 				)}
 				{clue.kind === "sold" && (
 					<p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
@@ -91,7 +113,9 @@ export function TraderAlibiGame({ pools }: { pools: TraderCluePools }) {
 			<div className="container mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6 md:py-10">
 				<header className="flex flex-wrap items-end justify-between gap-3">
 					<div>
-						<p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Round {round.round}</p>
+						<p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+							Round {round.round}
+						</p>
 						<h1 className="text-2xl font-bold text-foreground md:text-3xl">Trader Alibi</h1>
 					</div>
 					<div className="flex gap-6 text-right text-sm font-bold text-foreground md:text-base">

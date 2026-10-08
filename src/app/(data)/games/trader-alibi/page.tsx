@@ -4,7 +4,7 @@ import { TraderAlibiQueryPage } from "@/features/games/trader-alibi/TraderAlibiQ
 
 export const metadata: Metadata = {
 	title: "Trader Alibi",
-	description: "Ask for quest, barter and trade clues, then guess which Escape from Tarkov trader they belong to.",
+	description: "Ask for quest objective, barter and trade clues, then guess which Escape from Tarkov trader they belong to.",
 	alternates: { canonical: "/games/trader-alibi" },
 };
 

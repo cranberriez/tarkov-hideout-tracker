@@ -41,7 +41,7 @@ const GAMES: GameCard[] = [
 	{
 		href: "/games/trader-alibi",
 		title: "Trader Alibi",
-		description: "Ask for quest, barter and trade clues, then name the trader in five questions or fewer.",
+		description: "Ask for quest objective, barter and trade clues, then name the trader in five questions or fewer.",
 		Icon: Fingerprint,
 		storageKey: TRADER_ALIBI_STORAGE_KEY,
 		parse: parseBestScore,

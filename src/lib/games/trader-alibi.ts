@@ -1,6 +1,7 @@
 /**
- * Traders Trader Alibi asks about: the core traders with quests, barters or cash offers. Fence,
- * Lightkeeper, the BTR Driver and the placeholder traders in the provider data are left out.
+ * Traders Trader Alibi asks about: the core traders with quests, barters and cash offers. Fence,
+ * Lightkeeper, the BTR Driver, Ref (GP-coin barters and no cash offers give him away) and the placeholder
+ * traders in the provider data are left out.
  */
 export const TRADER_ALIBI_TRADER_IDS = [
 	"54cb50c76803fa8b248b4571", // Prapor
@@ -10,5 +11,4 @@ export const TRADER_ALIBI_TRADER_IDS = [
 	"5a7c2eca46aef81a7ca2145d", // Mechanic
 	"5ac3b934156ae10c4430e83c", // Ragman
 	"5c0647fdd443bc2504c2d371", // Jaeger
-	"6617beeaa9cfa777ca915b7c", // Ref
 ] as const;

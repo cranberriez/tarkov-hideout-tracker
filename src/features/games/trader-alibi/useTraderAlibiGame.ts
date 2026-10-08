@@ -73,7 +73,12 @@ export function useTraderAlibiGame(pools: TraderCluePools) {
 			if (!round || round.phase !== "ask") return;
 			const drawn = drawClue(pools, round.traderId, kind, round.used);
 			if (!drawn) return;
-			setRound({ ...round, clues: [...round.clues, drawn.clue], used: new Set([...round.used, drawn.key]), phase: "guess" });
+			setRound({
+				...round,
+				clues: [...round.clues, drawn.clue],
+				used: new Set([...round.used, drawn.key]),
+				phase: "guess",
+			});
 		},
 		[pools, round],
 	);
