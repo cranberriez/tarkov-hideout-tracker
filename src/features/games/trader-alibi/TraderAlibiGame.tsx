@@ -217,7 +217,7 @@ export function TraderAlibiGame({ pools }: { pools: TraderCluePools }) {
 					</ol>
 				)}
 
-				<section aria-label="Traders" className="mt-auto grid grid-cols-4 gap-3 md:grid-cols-8">
+				<section aria-label="Traders" className="mt-auto flex flex-wrap justify-center gap-3">
 					{traderIds.map((id) => {
 						const trader = traderInfo(id);
 						const eliminated = round.eliminated.has(id);
@@ -230,7 +230,7 @@ export function TraderAlibiGame({ pools }: { pools: TraderCluePools }) {
 								onClick={() => guess(id)}
 								aria-label={`Guess ${trader.name}`}
 								className={cn(
-									"group relative flex flex-col items-center gap-1 rounded-xl border-2 p-1.5 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
+									"group relative flex w-20 flex-col items-center gap-1 rounded-xl border-2 p-1.5 transition-all md:w-24 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
 									answer
 										? round.phase === "correct"
 											? "border-success bg-success-surface"
