@@ -16,15 +16,21 @@ import {
 /** Global best streak, shared by every profile and mode; outside backups and resets. */
 export const HIGHER_LOWER_STORAGE_KEY = "tarkov-higher-lower-v1";
 
+/** The first item holds the full board this long before the challenger slides in. */
+const INTRO_MS = 1100;
+/** Play again fades the finished board out over this long before the next run starts. */
+export const CLOSE_MS = 300;
 export const REVEAL_MS = 1200;
 const RESULT_MS = 700;
 /** A wrong answer stays on screen a little longer before the badge expands into Play again. */
 const FAIL_HOLD_MS = 1000;
 export const SLIDE_MS = 600;
 
-export type HigherLowerPhase = "guess" | "reveal" | "result" | "slide" | "over";
+export type HigherLowerPhase = "intro" | "guess" | "reveal" | "result" | "slide" | "over" | "closing";
 
 export interface HigherLowerRound {
+	/** Changes for each run so the board remounts fresh. */
+	run: number;
 	baseline: HigherLowerItem;
 	challenger: HigherLowerItem;
 	/** Preselected (and preloaded) so the slide shows it immediately; null when the pool is exhausted. */
@@ -39,6 +45,8 @@ function prefersReducedMotion() {
 	return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+let runCounter = 0;
+
 function newRound(pool: HigherLowerPool): HigherLowerRound | null {
 	const baseline = pickStartItem(pool);
 	if (!baseline) return null;
@@ -47,7 +55,8 @@ function newRound(pool: HigherLowerPool): HigherLowerRound | null {
 	const used = new Set([baseline.id, challenger.id]);
 	const upcoming = pickChallenger(pool, challenger, 1, used);
 	if (upcoming) used.add(upcoming.id);
-	return { baseline, challenger, upcoming, streak: 0, phase: "guess", correct: null, used };
+	runCounter += 1;
+	return { run: runCounter, baseline, challenger, upcoming, streak: 0, phase: "intro", correct: null, used };
 }
 
 /** Owns one run: guesses, reveal timing, slides between cards and the saved best streak. */
@@ -60,9 +69,8 @@ export function useHigherLowerGame(items: readonly HigherLowerItem[]) {
 	const [bestBeforeRun, setBestBeforeRun] = useState(bestStreak);
 
 	const restart = useCallback(() => {
-		setBestBeforeRun(bestStreak);
-		setRound(newRound(pool));
-	}, [pool, bestStreak]);
+		setRound((current) => (current?.phase === "over" ? { ...current, phase: "closing" } : current));
+	}, []);
 
 	const guess = useCallback((choice: HigherLowerGuess) => {
 		setRound((current) =>
@@ -76,7 +84,17 @@ export function useHigherLowerGame(items: readonly HigherLowerItem[]) {
 		if (!round) return;
 		const reduced = prefersReducedMotion();
 		let timer: ReturnType<typeof setTimeout> | undefined;
-		if (round.phase === "reveal") {
+		if (round.phase === "intro") {
+			timer = setTimeout(() => setRound({ ...round, phase: "guess" }), reduced ? 0 : INTRO_MS);
+		} else if (round.phase === "closing") {
+			timer = setTimeout(
+				() => {
+					setBestBeforeRun(bestStreak);
+					setRound(newRound(pool));
+				},
+				reduced ? 0 : CLOSE_MS,
+			);
+		} else if (round.phase === "reveal") {
 			timer = setTimeout(() => setRound({ ...round, phase: "result" }), reduced ? 0 : REVEAL_MS);
 		} else if (round.phase === "result") {
 			timer = setTimeout(
@@ -110,7 +128,7 @@ export function useHigherLowerGame(items: readonly HigherLowerItem[]) {
 			);
 		}
 		return () => clearTimeout(timer);
-	}, [round, pool, updateBest]);
+	}, [round, pool, updateBest, bestStreak]);
 
 	return { round, bestStreak: Math.max(bestStreak, round?.streak ?? 0), bestBeforeRun, guess, restart };
 }

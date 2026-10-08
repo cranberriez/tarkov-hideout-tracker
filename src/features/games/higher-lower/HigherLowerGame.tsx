@@ -6,7 +6,10 @@ import { cn } from "@/lib/utils";
 import { itemImageUrl } from "@/lib/utils/item-images";
 import type { HigherLowerItem } from "@/types/contracts";
 import { countUpValue, type HigherLowerGuess } from "./higher-lower-model";
-import { REVEAL_MS, SLIDE_MS, useHigherLowerGame, type HigherLowerRound } from "./useHigherLowerGame";
+import { CLOSE_MS, REVEAL_MS, SLIDE_MS, useHigherLowerGame, type HigherLowerRound } from "./useHigherLowerGame";
+
+const INTRO_SPLIT_MS = 700;
+const REVEALED_PHASES = new Set<HigherLowerRound["phase"]>(["reveal", "result", "slide", "over", "closing"]);
 
 const rouble = new Intl.NumberFormat("en-US");
 
@@ -22,9 +25,7 @@ const SOURCE_LABELS: Record<HigherLowerItem["source"], { label: string; classNam
 
 /** Counts from zero to the value over the reveal, in few-percent steps that slow near the end. */
 function CountUp({ value }: { value: number }) {
-	const [shown, setShown] = useState(() =>
-		window.matchMedia("(prefers-reduced-motion: reduce)").matches ? value : 0,
-	);
+	const [shown, setShown] = useState(() => (window.matchMedia("(prefers-reduced-motion: reduce)").matches ? value : 0));
 	useEffect(() => {
 		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 		const duration = REVEAL_MS - 150;
@@ -72,30 +73,48 @@ function ItemPanel({
 	view,
 	revealed = false,
 	correct = null,
+	intro = false,
 	onGuess,
 }: {
 	item: HigherLowerItem | null;
 	view: PanelView;
+	/** Start of a run: the known item fills the board, then shrinks to its half as the challenger slides in. */
+	intro?: boolean;
 	revealed?: boolean;
 	/** Set once the count-up finishes, coloring the challenger's value. */
 	correct?: boolean | null;
 	onGuess?: (guess: HigherLowerGuess) => void;
 }) {
-	if (!item) return <div className="relative basis-1/3 bg-background" aria-hidden />;
+	const basis = cn(
+		"shrink-0 transition-[flex-basis] ease-in-out motion-reduce:transition-none",
+		intro ? "basis-2/3" : "basis-1/3",
+	);
+	if (!item) return <div className={cn("relative bg-background", basis)} aria-hidden />;
 	const image = itemImageUrl(item, "512");
 	const source = SOURCE_LABELS[item.source];
 	const interactive = view === "challenger" && !revealed;
-	const valueTone =
-		view === "known" || correct === null ? "text-foreground" : correct ? "text-success" : "text-danger";
+	const valueTone = view === "known" || correct === null ? "text-foreground" : correct ? "text-success" : "text-danger";
 	return (
 		<section
 			aria-hidden={view === "upcoming" || undefined}
 			inert={view === "upcoming"}
-			aria-label={view === "known" ? `${item.name}, known value` : view === "challenger" ? `${item.name}, guess` : undefined}
-			className="relative flex basis-1/3 items-center justify-center overflow-hidden"
+			aria-label={
+				view === "known" ? `${item.name}, known value` : view === "challenger" ? `${item.name}, guess` : undefined
+			}
+			className={cn(
+				"relative flex items-center justify-center overflow-hidden",
+				basis,
+				intro && "animate-in fade-in-0 duration-500 motion-reduce:animate-none",
+			)}
+			style={{ transitionDuration: `${INTRO_SPLIT_MS}ms` }}
 		>
 			{/* eslint-disable-next-line @next/next/no-img-element -- blurred backdrop of the remote item art */}
-			<img src={image} alt="" aria-hidden className="absolute inset-0 h-full w-full scale-150 object-cover opacity-60 blur-3xl" />
+			<img
+				src={image}
+				alt=""
+				aria-hidden
+				className="absolute inset-0 h-full w-full scale-150 object-cover opacity-60 blur-3xl"
+			/>
 			<div className="absolute inset-0 bg-linear-to-b from-background/50 via-background/70 to-background/95" />
 			<div className="relative flex w-full max-w-xl flex-col items-center gap-3 px-6 text-center md:gap-4">
 				{/* eslint-disable-next-line @next/next/no-img-element -- remote item art is not optimized */}
@@ -110,6 +129,7 @@ function ItemPanel({
 						className={cn(
 							"text-4xl font-extrabold tabular-nums tracking-tight transition-colors duration-500 md:text-6xl",
 							valueTone,
+							intro && "animate-in fade-in-0 zoom-in-75 fill-mode-both delay-300 motion-reduce:animate-none",
 						)}
 					>
 						{view === "known" ? formatValue(item.value) : <CountUp value={item.value} />}
@@ -138,7 +158,8 @@ function CenterBadge({
 	bestBeforeRun: number;
 	onRestart: () => void;
 }) {
-	const over = round.phase === "over";
+	// The card stays while Play again fades the board out.
+	const over = round.phase === "over" || round.phase === "closing";
 	const result = round.phase === "result" || round.phase === "slide" || over ? round.correct : null;
 	const newBest = round.streak > bestBeforeRun;
 	return (
@@ -147,7 +168,9 @@ function CenterBadge({
 			aria-labelledby={over ? "higher-lower-over" : undefined}
 			aria-hidden={over ? undefined : true}
 			className={cn(
-				"absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 overflow-hidden border-4 border-background shadow-2xl transition-[width,height,border-radius,background-color] duration-500 ease-out motion-reduce:transition-none",
+				"absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 overflow-hidden border-4 border-background shadow-2xl transition-[width,height,border-radius,background-color,scale] duration-500 ease-out motion-reduce:transition-none",
+				round.phase === "intro" && "scale-0",
+				round.phase === "guess" && round.streak === 0 && "delay-300",
 				over
 					? cn("h-80 w-72 rounded-3xl", round.correct ? "bg-success-surface" : "bg-danger-surface")
 					: cn(
@@ -164,7 +187,13 @@ function CenterBadge({
 					over && "opacity-0",
 				)}
 			>
-				{result === true ? <Check size={36} strokeWidth={3} /> : result === false ? <X size={36} strokeWidth={3} /> : "VS"}
+				{result === true ? (
+					<Check size={36} strokeWidth={3} />
+				) : result === false ? (
+					<X size={36} strokeWidth={3} />
+				) : (
+					"VS"
+				)}
 			</div>
 			{over && (
 				<div className="relative flex h-full flex-col items-center justify-center gap-3 p-6 text-center animate-in fade-in-0 zoom-in-95 fill-mode-both delay-300 duration-300 motion-reduce:animate-none">
@@ -186,6 +215,7 @@ function CenterBadge({
 					<button
 						type="button"
 						autoFocus
+						disabled={round.phase === "closing"}
 						onClick={onRestart}
 						className="mt-1 flex items-center gap-2 rounded-full bg-foreground px-6 py-3 font-semibold uppercase tracking-wide text-background transition-colors hover:bg-foreground/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
 					>
@@ -232,33 +262,46 @@ export function HigherLowerGame({ items }: { items: HigherLowerItem[] }) {
 	}
 
 	const sliding = round.phase === "slide";
-	const revealed = round.phase !== "guess";
+	const revealed = REVEALED_PHASES.has(round.phase);
 	return (
 		<main className="relative isolate flex min-h-[560px] flex-1 overflow-hidden bg-background">
 			<h1 className="sr-only">Higher or Lower</h1>
 			<div
+				key={round.run}
 				className={cn(
-					"absolute inset-x-0 top-0 flex h-[150%] w-full flex-col md:h-full md:w-[150%] md:flex-row",
-					sliding && "-translate-y-1/3 md:translate-y-0 md:-translate-x-1/3",
+					"absolute inset-0 transition-opacity ease-out motion-reduce:transition-none",
+					round.phase === "closing" && "opacity-0",
 				)}
-				style={
-					sliding
-						? { transitionProperty: "translate", transitionDuration: `${SLIDE_MS}ms`, transitionTimingFunction: "ease-in-out" }
-						: undefined
-				}
+				style={{ transitionDuration: `${CLOSE_MS}ms` }}
 			>
-				<ItemPanel key={round.baseline.id} item={round.baseline} view="known" />
-				<ItemPanel
-					key={round.challenger.id}
-					item={round.challenger}
-					view="challenger"
-					revealed={revealed}
-					correct={round.phase === "reveal" ? null : round.correct}
-					onGuess={guess}
-				/>
-				<ItemPanel key={round.upcoming?.id ?? "empty"} item={round.upcoming} view="upcoming" />
+				<div
+					className={cn(
+						"absolute inset-x-0 top-0 flex h-[150%] w-full flex-col md:h-full md:w-[150%] md:flex-row",
+						sliding && "-translate-y-1/3 md:translate-y-0 md:-translate-x-1/3",
+					)}
+					style={
+						sliding
+							? {
+									transitionProperty: "translate",
+									transitionDuration: `${SLIDE_MS}ms`,
+									transitionTimingFunction: "ease-in-out",
+								}
+							: undefined
+					}
+				>
+					<ItemPanel key={round.baseline.id} item={round.baseline} view="known" intro={round.phase === "intro"} />
+					<ItemPanel
+						key={round.challenger.id}
+						item={round.challenger}
+						view="challenger"
+						revealed={revealed}
+						correct={round.phase === "reveal" ? null : round.correct}
+						onGuess={guess}
+					/>
+					<ItemPanel key={round.upcoming?.id ?? "empty"} item={round.upcoming} view="upcoming" />
+				</div>
+				<CenterBadge round={round} bestStreak={bestStreak} bestBeforeRun={bestBeforeRun} onRestart={restart} />
 			</div>
-			<CenterBadge round={round} bestStreak={bestStreak} bestBeforeRun={bestBeforeRun} onRestart={restart} />
 			<p className="sr-only" aria-live="polite">
 				{round.phase === "result" || round.phase === "over"
 					? `${round.correct ? "Correct" : "Wrong"}: ${round.challenger.name} is worth ${formatValue(round.challenger.value)}.`
