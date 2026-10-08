@@ -15,10 +15,10 @@ import {
 import { BackToGames } from "../BackToGames";
 import { useTraderAlibiGame, type TraderAlibiEntry, type TraderAlibiRound } from "./useTraderAlibiGame";
 
-const KIND_LABELS: Record<ClueKind, { label: string; Icon: typeof ScrollText }> = {
-	objective: { label: "Quest objective", Icon: ScrollText },
-	barter: { label: "Barter", Icon: Repeat },
-	sold: { label: "Sold item", Icon: ShoppingCart },
+const KIND_LABELS: Record<ClueKind, { label: string; short: string; Icon: typeof ScrollText }> = {
+	objective: { label: "Quest objective", short: "Quest", Icon: ScrollText },
+	barter: { label: "Barter", short: "Barter", Icon: Repeat },
+	sold: { label: "Sold item", short: "Sold", Icon: ShoppingCart },
 };
 
 /** Flavour lines, varied per round; guesses and the clues themselves stay fixed. */
@@ -254,29 +254,16 @@ export function TraderAlibiGame({ pools }: { pools: TraderCluePools }) {
 	const hidden = traderInfo(round.traderId);
 	return (
 		<main ref={page} className="flex h-[calc(100dvh-var(--game-top,4rem))] min-h-[36rem] flex-col bg-background">
-			<div className="container mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6 md:py-8">
-				<BackToGames className="-mb-3 self-start" />
-				<header className="flex flex-wrap items-end justify-between gap-3">
-					<div>
-						<p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-							Round {round.round}
-						</p>
-						<h1 className="text-2xl font-bold text-foreground md:text-3xl">Trader Alibi</h1>
-					</div>
-					<div className="flex gap-6 text-right text-sm font-bold text-foreground md:text-base">
-						<p>
-							Score <span className="tabular-nums text-brand">{round.score}</span>
-						</p>
-						<p>
-							Best <span className="tabular-nums">{bestScore}</span>
-						</p>
-					</div>
+			<div className="container mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-3 px-4 py-3 md:gap-6 md:py-8">
+				<header className="flex flex-col gap-1 md:gap-2">
+					<BackToGames className="self-start" />
+					<h1 className="sr-only text-3xl font-bold text-foreground md:not-sr-only">Trader Alibi</h1>
 				</header>
 
-				<section className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 md:p-6">
+				<section className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 md:gap-4 md:p-6">
 					<div
 						className={cn(
-							"relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 bg-shadow/40 transition-colors duration-300 md:h-24 md:w-24",
+							"relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 bg-shadow/40 transition-colors duration-300 md:h-24 md:w-24",
 							round.phase === "correct" ? "border-success" : round.phase === "over" ? "border-danger" : "border-border",
 						)}
 					>
@@ -288,24 +275,24 @@ export function TraderAlibiGame({ pools }: { pools: TraderCluePools }) {
 								className="h-full w-full animate-in object-cover fade-in-0 zoom-in-90 duration-300 motion-reduce:animate-none"
 							/>
 						) : (
-							<HelpCircle size={40} className="text-muted-foreground" aria-label="Unknown trader" />
+							<HelpCircle className="size-7 text-muted-foreground md:size-10" aria-label="Unknown trader" />
 						)}
 					</div>
 					<div className="min-w-0 flex-1" aria-live="polite">
 						{round.phase === "correct" ? (
 							<>
-								<p className="text-xl font-bold text-success">It was {hidden.name}!</p>
-								<p className="text-sm text-muted-foreground">+{round.earned} points</p>
+								<p className="text-base font-bold text-success md:text-xl">It was {hidden.name}!</p>
+								<p className="text-xs text-muted-foreground md:text-sm">+{round.earned} points</p>
 							</>
 						) : round.phase === "over" ? (
 							<>
-								<p className="text-xl font-bold text-danger">It was {hidden.name}.</p>
-								<p className="text-sm text-muted-foreground">Out of questions.</p>
+								<p className="text-base font-bold text-danger md:text-xl">It was {hidden.name}.</p>
+								<p className="text-xs text-muted-foreground md:text-sm">Out of questions.</p>
 							</>
 						) : (
 							<>
-								<p className="text-xl font-bold text-foreground">Who am I?</p>
-								<p className="text-sm text-muted-foreground">
+								<p className="text-base font-bold text-foreground md:text-xl">Who am I?</p>
+								<p className="text-xs text-muted-foreground md:text-sm">
 									{round.phase === "ask"
 										? availableKinds.length
 											? "Ask a question to get a clue."
@@ -315,19 +302,26 @@ export function TraderAlibiGame({ pools }: { pools: TraderCluePools }) {
 							</>
 						)}
 					</div>
-					<div className="flex shrink-0 flex-col items-end gap-1">
-						<span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Questions</span>
-						<div className="flex gap-1" aria-label={`${questionsLeft} of ${MAX_QUESTIONS} questions left`}>
+					<div className="flex shrink-0 flex-col items-end gap-2 text-right md:gap-2.5">
+						<span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground md:text-sm">
+							Round <span className="tabular-nums text-foreground">{round.round}</span>
+						</span>
+						<div className="flex gap-1.5" aria-label={`${questionsLeft} of ${MAX_QUESTIONS} questions left`}>
 							{Array.from({ length: MAX_QUESTIONS }, (_, index) => (
 								<span
 									key={index}
 									className={cn(
-										"h-2.5 w-2.5 rounded-full transition-colors",
+										"h-3 w-3 rounded-full transition-colors md:h-3.5 md:w-3.5",
 										index < MAX_QUESTIONS - questionsLeft ? "bg-danger" : "bg-highlight/20",
 									)}
 								/>
 							))}
 						</div>
+						<p className="text-xs font-bold text-foreground md:text-sm">
+							Score <span className="tabular-nums text-brand">{round.score}</span>
+							<span className="mx-1.5 text-subtle-foreground">·</span>
+							Best <span className="tabular-nums">{bestScore}</span>
+						</p>
 					</div>
 				</section>
 
@@ -351,26 +345,32 @@ export function TraderAlibiGame({ pools }: { pools: TraderCluePools }) {
 				</div>
 
 				{round.phase === "ask" && availableKinds.length > 0 && (
-					<section aria-label="Ask a question" className="flex flex-wrap justify-center gap-3">
+					<section aria-label="Ask a question" className="flex flex-wrap justify-center gap-2 md:gap-3">
 						{(Object.keys(KIND_LABELS) as ClueKind[]).map((kind) => {
-							const { label, Icon } = KIND_LABELS[kind];
+							const { label, short, Icon } = KIND_LABELS[kind];
 							return (
 								<button
 									key={kind}
 									type="button"
 									disabled={!availableKinds.includes(kind)}
 									onClick={() => ask(kind)}
-									className="flex items-center gap-2 rounded-full border-2 border-brand px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-brand transition-colors hover:bg-brand hover:text-inverse focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:pointer-events-none disabled:opacity-30"
+									aria-label={`Ask for a ${label.toLowerCase()} clue`}
+									className="flex items-center gap-1.5 rounded-full border-2 border-brand px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-brand transition-colors hover:bg-brand hover:text-inverse focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:pointer-events-none disabled:opacity-30 md:gap-2 md:px-5 md:py-2.5 md:text-sm"
 								>
-									<Icon size={18} />
-									{label}
+									<Icon className="size-3.5 md:size-[18px]" />
+									<span className="md:hidden">{short}</span>
+									<span className="hidden md:inline">{label}</span>
 								</button>
 							);
 						})}
 					</section>
 				)}
 
-				<section aria-label="Traders" className="flex shrink-0 flex-wrap items-end justify-center gap-3">
+				{/* One row of seven on phones: grid cells size the buttons and scale stands in for the width change. */}
+				<section
+					aria-label="Traders"
+					className="grid shrink-0 grid-cols-7 items-end gap-1 md:flex md:flex-wrap md:justify-center md:gap-3"
+				>
 					{traderIds.map((id) => {
 						const trader = traderInfo(id);
 						const eliminated = round.eliminated.has(id);
@@ -384,8 +384,8 @@ export function TraderAlibiGame({ pools }: { pools: TraderCluePools }) {
 								onClick={() => guess(id)}
 								aria-label={`Guess ${trader.name}`}
 								className={cn(
-									"group relative flex flex-col items-center gap-1 rounded-xl border-2 p-1.5 transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none",
-									active || answer ? "w-20 md:w-24" : "w-14 md:w-16",
+									"group relative flex w-full origin-bottom flex-col items-center gap-0.5 rounded-lg border-2 p-1 transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none md:gap-1 md:rounded-xl md:p-1.5 md:scale-100",
+									active || answer ? "md:w-24" : "scale-[0.82] md:w-16",
 									answer
 										? round.phase === "correct"
 											? "border-success bg-success-surface"
@@ -395,7 +395,7 @@ export function TraderAlibiGame({ pools }: { pools: TraderCluePools }) {
 									!active && !answer && "opacity-50",
 								)}
 							>
-								<span className="relative block aspect-square w-full overflow-hidden rounded-lg">
+								<span className="relative block aspect-square w-full overflow-hidden rounded-md md:rounded-lg">
 									{/* eslint-disable-next-line @next/next/no-img-element -- remote trader art is not optimized */}
 									<img
 										src={traderImageUrl(id)}
@@ -404,16 +404,18 @@ export function TraderAlibiGame({ pools }: { pools: TraderCluePools }) {
 									/>
 									{eliminated && (
 										<span className="absolute inset-0 flex items-center justify-center bg-background/50">
-											<X size={28} strokeWidth={3} className="text-danger" />
+											<X strokeWidth={3} className="size-5 text-danger md:size-7" />
 										</span>
 									)}
 									{answer && round.phase === "correct" && (
 										<span className="absolute inset-0 flex items-center justify-center bg-background/40">
-											<Check size={32} strokeWidth={3} className="text-success" />
+											<Check strokeWidth={3} className="size-6 text-success md:size-8" />
 										</span>
 									)}
 								</span>
-								<span className="w-full truncate text-center text-xs font-semibold text-foreground">{trader.name}</span>
+								<span className="w-full truncate text-center text-[10px] font-semibold text-foreground md:text-xs">
+									{trader.name}
+								</span>
 							</button>
 						);
 					})}

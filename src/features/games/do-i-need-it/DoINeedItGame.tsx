@@ -25,14 +25,11 @@ function NeedReasons({ need }: { need: ItemNeed | undefined }) {
 	);
 }
 
-/** Faint inventory-cell lines behind the item art. */
-const SLOT_GRID = {
-	"--slot-line": "color-mix(in oklab, var(--border) 45%, transparent)",
+/** A dark slot with a faint glow at its centre behind the item art. */
+const SLOT_BACKGROUND: CSSProperties = {
 	backgroundImage:
-		"linear-gradient(var(--slot-line) 1px, transparent 1px), linear-gradient(90deg, var(--slot-line) 1px, transparent 1px)",
-	backgroundSize: "20px 20px",
-	backgroundPosition: "center",
-} as CSSProperties;
+		"radial-gradient(circle at center, color-mix(in oklab, var(--surface-raised) 65%, var(--shadow)), var(--shadow) 72%)",
+};
 
 function ItemTile({
 	item,
@@ -79,10 +76,7 @@ function ItemTile({
 					{needed ? <Check size={16} strokeWidth={3} /> : <X size={16} strokeWidth={3} />}
 				</span>
 			)}
-			<span
-				className="flex h-24 w-full items-center justify-center rounded-lg bg-background/60 p-2 md:h-32"
-				style={SLOT_GRID}
-			>
+			<span className="flex h-24 w-full items-center justify-center rounded-lg p-2 md:h-32" style={SLOT_BACKGROUND}>
 				{/* eslint-disable-next-line @next/next/no-img-element -- remote item art is not optimized */}
 				<img
 					src={itemImageUrl(item, "512")}
@@ -126,7 +120,9 @@ export function DoINeedItGame({
 				<BackToGames className="-mb-2 self-start" />
 				<header className="flex flex-wrap items-end justify-between gap-3">
 					<div>
-						<p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Round {state.round + 1}</p>
+						<p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+							Round {state.round + 1}
+						</p>
 						<h1 className="text-2xl font-bold text-foreground md:text-3xl">Do I Need It?</h1>
 						<p className="mt-1 text-sm text-muted-foreground">
 							{personal
