@@ -12,6 +12,7 @@ import {
 	text,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import type { ItemPresetPart } from "@/types/items";
 
 const modeCheck = (table: string, column = "mode") =>
 	check(`${table}_${column}_check`, sql`${sql.raw(`\"${column}\"`)} in ('regular', 'pve', 'pvp-season')`);
@@ -41,6 +42,9 @@ export const itemModes = pgTable(
 		onFleaMarket: boolean("on_flea_market"),
 		minLevelForFlea: integer("min_level_for_flea"),
 		resourceUnits: numeric("resource_units"),
+		itemTypes: text("item_types").array(),
+		defaultPresetId: text("default_preset_id"),
+		presetContents: json<ItemPresetPart[]>("preset_contents"),
 		category: json("category"),
 		displayOverride: json("display_override"),
 		sourceUpdatedAt: bigint("source_updated_at", { mode: "number" }),

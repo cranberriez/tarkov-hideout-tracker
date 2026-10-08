@@ -5,6 +5,7 @@ import { gameDataKey } from "./scope";
 import type { QuestWorkspaceIndexData } from "../../types/quest-workspace";
 import type {
 	HideoutPageData,
+	HigherLowerPageData,
 	ItemChecklistPageData,
 	KappaChecklistPageData,
 	MarketPageData,
@@ -136,6 +137,17 @@ export function marketPageQueryOptions(mode: TarkovJsonGameMode) {
 	return queryOptions({
 		queryKey: gameDataKey(mode, "market-page"),
 		queryFn: ({ signal }) => fetchJson<MarketPageData>(`/api/page-data/market?mode=${mode}`, { signal }),
+		staleTime: PAGE_DATA_STALE_TIME,
+		meta: { retentionGroup: "page-data", inactiveQueryLimit: 12 },
+	});
+}
+
+/** Like the market page, the game renders a missing analytics schema itself. */
+export function higherLowerQueryOptions(mode: TarkovJsonGameMode) {
+	return queryOptions({
+		queryKey: gameDataKey(mode, "higher-lower"),
+		queryFn: ({ signal }) =>
+			fetchJson<HigherLowerPageData>(`/api/page-data/games/higher-lower?mode=${mode}`, { signal }),
 		staleTime: PAGE_DATA_STALE_TIME,
 		meta: { retentionGroup: "page-data", inactiveQueryLimit: 12 },
 	});

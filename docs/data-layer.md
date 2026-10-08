@@ -28,6 +28,12 @@ empty/malformed input aborts before writes. Reviewed
 requirements remain separate. Adapter recipe exclusions and translation fallback
 rules are unchanged.
 
+The item adapter also maps provider `types`, each gun's `defaultPreset` and preset `containsItems`
+(item ID and count; one malformed entry omits the list) to nullable `item_modes` columns
+(migration 0006). They are catalog-only: `stripCatalogDto` keeps them out of item-detail projections
+and runtime item reads do not select them; currently only the Higher or Lower query reads them.
+Apply migration 0006 before deploying the updated catalog writer, which writes these columns.
+
 The hideout adapter keeps only validated `AdditionalSlots` (with slot item IDs) and
 `FuelConsumption` level bonuses in `StationLevel.bonuses`; other bonus types and
 malformed entries are dropped with a warning and never block a release. The item
@@ -369,6 +375,21 @@ out-of-range rows are left out and counted; a missing analytics schema returns a
 payload with an error. Both are `no-store`; complete payloads use browser 300s / CDN 3600s.
 The page is not server-prefetched: the client suspends on this one query behind the route
 loader. Pinned rows are per profile; see [user state](user-state.md).
+
+The `/games/higher-lower` game reads one value per playable item through
+[its page data](../src/app/api/page-data/games/higher-lower/route.ts) and
+[higher-lower.ts](../src/server/db/higher-lower.ts), with the same lateral observation lookup,
+error handling and cache policy as the market page. Items take the latest observation's 7-day
+median at medium or high confidence, else their cheapest rouble trader purchase price. A gun's flea
+price is its default build's, so guns are valued only through the flea and show their default
+preset's image; that default preset is then left out. Presets without their own price are estimated
+from parts: a gun build starts from the default build price, adds the parts it adds and subtracts the
+default parts it removes; other presets sum their parts. A part without a value leaves the preset out.
+Values under 1,000 ₽ and placeholder images are excluded; the rest are rounded to the nearest 1,000 ₽
+(100 or 10 below that), and the game compares the rounded values. The query reads every item in the mode
+because estimates need part values; the payload is about 85 KB gzipped per mode. Pair selection, the
+narrowing difficulty bands and the count-up live in the client
+[model](../src/features/games/higher-lower/higher-lower-model.ts).
 
 Trader sell offers (`sellFor`) carry only `traderId`; names and images come from the
 bundled [trader list](../src/lib/data/traders.ts), which needs an entry when a new trader

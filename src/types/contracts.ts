@@ -219,6 +219,26 @@ export interface MarketPageData {
 	error: string | null;
 }
 
+/**
+ * One Higher or Lower card: a confident flea 7-day median, else the cheapest rouble trader price; presets without
+ * either are estimated from their parts.
+ */
+export interface HigherLowerItem {
+	id: string;
+	name: string;
+	value: number;
+	source: "flea" | "trader" | "parts";
+	/** Only when the 512px image does not follow the standard pattern; read through itemImageUrl. */
+	image512pxLink?: string;
+}
+
+export interface HigherLowerPageData {
+	mode: TarkovDataMode;
+	items: HigherLowerItem[];
+	/** Set when the analytics tables or catalog preset columns are missing; items is then empty. */
+	error: string | null;
+}
+
 export interface HideoutStationsPayload {
 	stations: Station[];
 }

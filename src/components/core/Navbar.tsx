@@ -21,7 +21,7 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
 import { HideoutStationsNav } from "./HideoutStationsNav";
-import { devNavItem, navMenus, type NavItem, type NavMenu } from "./nav-config";
+import { devNavItem, gamesNavItem, navMenus, type NavItem, type NavMenu } from "./nav-config";
 import { PlayerProfileMenu } from "./PlayerProfileMenu";
 
 export function Navbar() {
@@ -70,7 +70,11 @@ function NavbarContent() {
 	const setQuickAddOpen = useUIStore((state) => state.setQuickAddOpen);
 	const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
 	const currentPage = usePathname();
-	const isSecondaryRoute = currentPage === "/settings" || currentPage === "/news" || currentPage === "/dev";
+	const isSecondaryRoute =
+		currentPage === "/settings" ||
+		currentPage === "/news" ||
+		currentPage === "/dev" ||
+		currentPage.startsWith("/games/");
 
 	if ((currentPage === "/quests" || currentPage.startsWith("/quests/")) && isMainNavHidden) return null;
 
@@ -317,6 +321,7 @@ function MobileNavSection({
 function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onSetup: () => void }) {
 	const items: NavItem[] = [
 		{ name: "News", href: "/news" },
+		gamesNavItem,
 		{ name: "Settings", href: "/settings" },
 		...(isDev ? [devNavItem] : []),
 	];

@@ -6,6 +6,7 @@ import {
 	Columns3,
 	Compass,
 	Factory,
+	Gamepad2,
 	GitBranch,
 	Goal,
 	HandCoins,
@@ -88,6 +89,13 @@ export const navMenus: NavMenu[] = [
 		],
 	},
 ];
+
+/** Listed only in the secondary (☰) menu for now. */
+export const gamesNavItem: NavItem = {
+	name: "Higher or Lower",
+	href: "/games/higher-lower",
+	icon: Gamepad2,
+};
 
 export const devNavItem: NavItem = {
 	name: "Dev",
