@@ -577,7 +577,9 @@ retryable. Recipe calculations reuse the
 Small primitives in [components/ui](../src/components/ui/) own presentation and
 accessibility; features own state and meaning. [Button](../src/components/ui/button.tsx)
 (`buttonClassName` for links) provides size, tone, soft/solid/ghost, selected, and
-focus variants; [Badge](../src/components/ui/badge.tsx) keeps FiR, locked, completed,
+focus variants. Buttons disable Firefox's restoration of dynamic disabled state
+across reloads so React can hydrate the server-rendered attributes consistently.
+[Badge](../src/components/ui/badge.tsx) keeps FiR, locked, completed,
 active, and milestone meanings on their palette roles;
 [RequirementRow/RequirementChip](../src/components/ui/requirement.tsx) render a
 satisfied/unmet/untracked state that domain code decides;
