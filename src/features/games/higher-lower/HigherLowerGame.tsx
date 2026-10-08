@@ -60,7 +60,12 @@ function GameButton({
 			onClick={() => onGuess?.(guess)}
 			disabled={disabled}
 			aria-keyshortcuts={guess === "higher" ? "ArrowUp" : "ArrowDown"}
-			className="flex w-36 items-center justify-center gap-2 rounded-full border-2 border-foreground/80 bg-background/30 px-4 py-2.5 text-sm font-semibold uppercase tracking-wide text-foreground backdrop-blur-sm md:w-44 md:px-6 md:py-3 md:text-base transition-colors hover:border-brand hover:bg-brand hover:text-inverse focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:pointer-events-none"
+			className={cn(
+				"flex w-36 items-center justify-center gap-2 rounded-full border-2 bg-background/30 px-4 py-2.5 text-sm font-semibold uppercase tracking-wide backdrop-blur-sm transition-colors hover:text-inverse focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none md:w-44 md:px-6 md:py-3 md:text-base",
+				guess === "higher"
+					? "border-success text-success hover:bg-success focus-visible:outline-success"
+					: "border-danger text-danger hover:bg-danger focus-visible:outline-danger",
+			)}
 		>
 			{guess === "higher" ? "Higher" : "Lower"}
 			<Icon size={20} strokeWidth={2.5} />
