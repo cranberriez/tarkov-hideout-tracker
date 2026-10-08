@@ -13,7 +13,7 @@ const TRENDS = ["rising", "falling", "stable", "unknown"] as const;
 const SHOCK_PHASES = ["holding", "retracing", "settled", "reverted"] as const;
 
 /** undefined_table / undefined_column: the analytics migrations have not been applied. */
-function isMissingAnalyticsSchema(error: unknown): boolean {
+export function isMissingAnalyticsSchema(error: unknown): boolean {
 	for (let current = error; current instanceof Error; current = current.cause) {
 		const code = (current as { code?: unknown }).code;
 		if (code === "42P01" || code === "42703") return true;
@@ -74,7 +74,7 @@ export async function readMarketReferences(
 	}
 }
 
-function toItemMarketAnalytics(row: Record<string, unknown>): ItemMarketAnalytics {
+export function toItemMarketAnalytics(row: Record<string, unknown>): ItemMarketAnalytics {
 	const calculatedAt = positiveOrNull(row.calculated_at);
 	const sourceUpdatedAt = positiveOrNull(row.source_updated_at);
 	const confidence = oneOf(row.confidence, CONFIDENCES);

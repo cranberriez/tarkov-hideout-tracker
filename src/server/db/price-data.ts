@@ -10,7 +10,8 @@ import { and, eq, inArray } from "drizzle-orm";
 import { boundedReadCache, canonicalIds, mapBatches } from "./read-cache";
 import { readMarketReferences } from "./market-analytics";
 
-function readPoints(value: unknown): PriceHistoryPoint[] {
+/** Stored recent flea points, or none when any point is malformed or out of order. */
+export function readPoints(value: unknown): PriceHistoryPoint[] {
 	if (!Array.isArray(value) || value.length > 10) return [];
 	const points: PriceHistoryPoint[] = [];
 	for (const candidate of value) {

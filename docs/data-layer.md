@@ -275,7 +275,7 @@ parameter parsing, database error responses, and the named
 | [search](../src/app/api/items/search/route.ts)                                                                                                                   | Mode and `q` up to 80 characters, normalized for matching; 10 results by default or 50 with `limit=50`; `private, no-store`                                                       |
 | [status](../src/app/api/data/status/route.ts)                                                                                                                    | Mode/release identity, hideout/item/quest/craft/barter release freshness, and independent mutable-price change/check timestamps; browser 30s, CDN 60s                             |
 | [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); complete: browser 300s, CDN 3600s; errors: no-store                                    |
-| [page data](../src/app/api/page-data/)                                                                                                                           | Mode-specific Hideout, Items, Quests, Kappa, and shared Profit payloads; unpriced profit: `no-store`; other complete unpriced: browser 300s, CDN 3600s; partial/error: `no-store` |
+| [page data](../src/app/api/page-data/)                                                                                                                           | Mode-specific Hideout, Items, Quests, Kappa, Market, and shared Profit payloads; unpriced profit: `no-store`; other complete unpriced: browser 300s, CDN 3600s; partial/error: `no-store` |
 | [map APIs](../src/app/api/maps/)                                                                                                                                 | Committed map metadata, navigation overlays, and allow-listed SVG service; see [maps](maps.md)                                                                                    |
 | [catalog cron API](../src/app/api/cron/catalog/route.ts)                                                                                                         | Protected all-mode catalog update; see [operations](operations.md)                                                                                                                |
 
@@ -347,7 +347,7 @@ full upstream histories only in its own disk cache, pushes changed items hourly,
 and does not write not-modified checks. Its derived analytics are append-only rows in
 market_analysis_runs and item_market_observations (migration 0002), read by the
 development dashboard and by [market-analytics.ts](../src/server/db/market-analytics.ts)
-for the two uses below.
+for the three uses below.
 
 Each current price batch also reads the latest observation per item and attaches an
 optional `marketReference` (7-day median and p10–p90 range, with the analysis time)
@@ -359,6 +359,16 @@ bottom and 13% below is unusually low. Levels more than 36 hours from the price
 observation, stale or unavailable prices, and missing references produce no flag.
 Item hover cards and the item dialog's Market section show the flag. The item dialog's
 Analytics tab loads one item's full latest observation through its own route on demand.
+
+The `/items/market` page reads the latest observation for every item with
+`on_flea_market` true through [market page data](../src/app/api/page-data/market/route.ts)
+and [market-page.ts](../src/server/db/market-page.ts), a per-item lateral index lookup
+rather than a scan of the append-only history. Each item also carries its stored recent
+minimum-listing points (about a day, points older than 36 hours dropped) for a sparkline. Malformed or
+out-of-range rows are left out and counted; a missing analytics schema returns an empty
+payload with an error. Both are `no-store`; complete payloads use browser 300s / CDN 3600s.
+The page is not server-prefetched: the client suspends on this one query behind the route
+loader. Pinned rows are per profile; see [user state](user-state.md).
 
 Trader sell offers (`sellFor`) carry only `traderId`; names and images come from the
 bundled [trader list](../src/lib/data/traders.ts), which needs an entry when a new trader

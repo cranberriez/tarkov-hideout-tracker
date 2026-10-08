@@ -169,6 +169,56 @@ export interface ItemMarketAnalyticsPayload {
 	data: ItemMarketAnalytics;
 }
 
+/** One flea-sellable item's latest observation, trimmed to the fields the market page shows. */
+export type MarketOverviewItem = Pick<
+	ItemMarketAnalytics,
+	| "calculatedAt"
+	| "confidence"
+	| "trend"
+	| "marketValue"
+	| "currentLevel"
+	| "liveOfferCount"
+	| "median7d"
+	| "median30d"
+	| "rangeLow7d"
+	| "rangeHigh7d"
+	| "change24h"
+	| "change7d"
+	| "change24hRub"
+	| "change7dRub"
+	| "move12h"
+	| "percentile30d"
+	| "volatility7d"
+	| "depthMedian24h"
+	| "traderValue"
+	| "traderId"
+	| "fleaFee"
+	| "fleaNet"
+> & {
+	id: string;
+	name: string;
+	shortName: string | null;
+	category: string | null;
+	shock: {
+		phase: "holding" | "retracing" | "settled" | "reverted";
+		baseline: number | null;
+		extreme: number | null;
+		retracement: number | null;
+	} | null; /** Recent minimum-listing flea prices (about a day, roughly evenly spaced), oldest first; null with fewer than two. */
+	sparkline: { from: number; to: number; prices: number[] } | null;
+};
+
+export interface MarketPageData {
+	mode: TarkovDataMode;
+	latestRun: { startedAt: number; completedAt: number; status: string } | null;
+	/** Flea-sellable items with at least one analyzer observation in this mode. */
+	items: MarketOverviewItem[];
+	/** Malformed or out-of-range observation rows left out of `items`. */
+	invalidCount: number;
+	/** Set when the analytics tables are missing; items is then empty. */
+	error: string | null;
+}
+
 export interface HideoutStationsPayload {
 	stations: Station[];
 }

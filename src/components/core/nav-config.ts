@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
 	BookOpen,
 	Boxes,
+	ChartCandlestick,
 	Columns3,
 	Compass,
 	Factory,
@@ -46,6 +47,7 @@ export const navMenus: NavMenu[] = [
 				href: "/items/kappa-checklist",
 				icon: ListChecks,
 			},
+			{ name: "Market", href: "/items/market", icon: ChartCandlestick },
 			{ name: "Keys", href: "/items/keys", icon: KeyRound, disabled: true },
 			{
 				name: "Barter Profits",
