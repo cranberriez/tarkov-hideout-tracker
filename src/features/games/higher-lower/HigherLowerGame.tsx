@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Check, RotateCcw, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { itemImageUrl } from "@/lib/utils/item-images";
 import type { HigherLowerItem } from "@/types/contracts";
+import { BackToGames } from "../BackToGames";
 import { countUpValue, type HigherLowerGuess } from "./higher-lower-model";
 import { CLOSE_MS, REVEAL_MS, SLIDE_MS, useHigherLowerGame, type HigherLowerRound } from "./useHigherLowerGame";
 
@@ -271,6 +272,7 @@ export function HigherLowerGame({ items }: { items: HigherLowerItem[] }) {
 	return (
 		<main className="relative isolate flex min-h-[560px] flex-1 overflow-hidden bg-background">
 			<h1 className="sr-only">Higher or Lower</h1>
+			<BackToGames className="absolute left-4 top-4 z-30 rounded-full bg-background/40 px-3 py-1.5 backdrop-blur-sm md:left-6 md:top-5" />
 			<div
 				key={round.run}
 				className={cn(

@@ -12,6 +12,7 @@ import {
 	type TraderClue,
 	type TraderCluePools,
 } from "./trader-alibi-model";
+import { BackToGames } from "../BackToGames";
 import { useTraderAlibiGame } from "./useTraderAlibiGame";
 
 const KIND_LABELS: Record<ClueKind, { label: string; Icon: typeof ScrollText }> = {
@@ -111,6 +112,7 @@ export function TraderAlibiGame({ pools }: { pools: TraderCluePools }) {
 	return (
 		<main className="flex flex-1 flex-col bg-background">
 			<div className="container mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6 md:py-10">
+				<BackToGames className="-mb-3 self-start" />
 				<header className="flex flex-wrap items-end justify-between gap-3">
 					<div>
 						<p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">

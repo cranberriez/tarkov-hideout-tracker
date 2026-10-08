@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { itemImageUrl } from "@/lib/utils/item-images";
 import type { ItemSummary } from "@/types/items";
 import type { ItemNeed, SaveReason } from "../../items/demand/item-demand-model";
+import { BackToGames } from "../BackToGames";
 import { useDoINeedItGame } from "./useDoINeedItGame";
 
 function reasonText(reason: SaveReason) {
@@ -101,6 +102,7 @@ export function DoINeedItGame({
 	return (
 		<main className="flex flex-1 flex-col bg-background">
 			<div className="container mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 md:py-10">
+				<BackToGames className="-mb-3 self-start" />
 				<header className="flex flex-wrap items-end justify-between gap-3">
 					<div>
 						<p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Round {state.round + 1}</p>
