@@ -26,6 +26,7 @@
 		"db:migrate": "node db-scripts/migrate.mjs",
 		"db:discovery:export": "node db-scripts/discovery-export.mjs",
 		"db:discovery:import": "node db-scripts/discovery-import.mjs",
+		"test:recipe-reads": "node --test --import jiti/register src/server/db/item-recipe-usage.test.ts",
 		"test:postgres": "node --test --experimental-test-isolation=none --import jiti/register db-scripts/lib/turso-discovery.test.mjs db-scripts/lib/discovery.test.mjs db-scripts/lib/discovery-diagnostics.test.mjs db-scripts/lib/discovery-input.test.mjs db-scripts/discovery.integration.test.mjs db-scripts/lib/postgres-catalog.test.mjs src/server/db/search-manifest.test.ts src/server/prices/price-store.test.ts src/server/db/price-data.test.ts"
 	},
 	"dependencies": {

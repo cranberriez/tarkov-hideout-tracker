@@ -9,6 +9,8 @@ import { DatabaseDataIntegrityError } from "./errors";
 import { withStableCatalogRead } from "./postgres-read";
 import { boundedReadCache, canonicalIds, mapBatches } from "./read-cache";
 
+import { craftSelection, barterSelection } from "./recipe-selection";
+
 const STATION_RECIPE_REVALIDATE_SECONDS = 7 * 24 * 60 * 60;
 
 function num(value: unknown, label: string): number {
@@ -73,7 +75,7 @@ export function getStationRecipeGraph(
 ): Promise<{ crafts: DataResult<CraftRecord[]>; barters: DataResult<BarterRecord[]> }> {
 	const extraIds = canonicalIds(extraItemIds);
 	return boundedReadCache(
-		["station-recipe-graph", mode, version, stationId, JSON.stringify(extraIds)],
+		["station-recipe-graph-inputs-v1", mode, version, stationId, JSON.stringify(extraIds)],
 		async () => {
 			const result = await withStableCatalogRead(
 				mode,
@@ -84,7 +86,7 @@ export function getStationRecipeGraph(
 						.where(eq(catalogStatus.mode, mode))
 						.limit(1);
 					const rootRows = await db
-						.select()
+						.select(craftSelection)
 						.from(crafts)
 						.where(and(eq(crafts.mode, mode), eq(crafts.stationId, stationId)))
 						.orderBy(asc(crafts.id));
@@ -103,12 +105,12 @@ export function getStationRecipeGraph(
 						const batches = await mapBatches(itemIds, async (batch) => {
 							const [craftRows, barterRows] = await Promise.all([
 								db
-									.select()
+									.select(craftSelection)
 									.from(crafts)
 									.where(and(eq(crafts.mode, mode), inArray(crafts.productItemId, batch)))
 									.orderBy(asc(crafts.id)),
 								db
-									.select()
+									.select(barterSelection)
 									.from(barters)
 									.where(and(eq(barters.mode, mode), inArray(barters.offeredItemId, batch)))
 									.orderBy(asc(barters.id)),

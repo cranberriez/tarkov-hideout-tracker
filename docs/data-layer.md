@@ -58,14 +58,19 @@ synthetic, quest and unresolved references must survive ingestion.
 The migration backfills existing JSON arrays. The catalog writer validates inputs,
 upserts both representations and prunes stale input positions in the same transaction.
 Apply `npm run db:migrate` before deploying the updated catalog writer.
-Runtime readers still use the existing JSON arrays and item-detail projections;
-switching readers to the new tables is a separate change.
+Full recipe and station-graph readers reconstruct input arrays from the normalized
+rows. Item usage reads select only recipes producing the requested item or using
+it through the reverse indexes, including tools and quest inputs. They hydrate
+referenced items and source labels, reporting unresolved IDs and label failures.
+Usage no longer depends on the stored item-detail usage projection. Relations and
+acquisition-tree projections remain stored; JSON recipe columns remain dual-written
+for compatibility with older deployments. Deploy migration 0005 and the updated
+writer before deploying these readers; an old writer does not maintain input rows.
 
-Current item_details rows store relations, usage and acquisition JSONB without
-prices or embedded monetary offers. Usage lists recipes that produce the item and,
-separately, recipes that consume it (`usedInBarters`/`usedInCrafts`, including
-tools and craft quest items); rows written before those lists existed read as empty
-until the next catalog update. Runtime detail reads stay bounded and
+Current item_details rows retain relations, legacy usage and acquisition JSONB without
+prices or embedded monetary offers. The legacy usage projection lists output and input recipes for older deployments.
+Current usage reads derive `usedInBarters`/`usedInCrafts` from indexed input rows,
+including tools and craft quest items, without waiting for projection regeneration. Runtime detail reads stay bounded and
 hydrate current discovery and trader offers from their owning relations; acquisition
 reads also attach trader, station and unlock-quest labels for the graph's recipes by
 known ID (a label failure is a nonblocking `presentationError`). Flea
@@ -263,7 +268,7 @@ parameter parsing, database error responses, and the named
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [prices](../src/app/api/items/prices/route.ts)                                                                                                                   | GET with at most one mode and 1–200 IDs or named checklist/recipes scope; browser 300s, CDN 3600s                                                                                 |
 | [relations](../src/app/api/items/[itemId]/relations/route.ts)                                                                                                    | Hideout requirements, quest demand/rewards and availability closure; complete: browser 300s, CDN 3600s; partial: no-store                                                         |
-| [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and recipes producing one item, referenced items and source labels; complete: browser 300s, CDN 3600s; partial: no-store                                  |
+| [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and recipes producing or using one item, referenced items and source labels; complete: browser 300s, CDN 3600s; partial: no-store                                  |
 | [acquisition-tree](../src/app/api/items/[itemId]/acquisition-tree/route.ts)                                                                                      | Cycle-safe graph bounded by depth/item count with `truncated`; complete: browser 300s, CDN 3600s; partial: no-store                                                               |
 | [price-history](../src/app/api/items/[itemId]/price-history/route.ts)                                                                                            | On-demand provider history for catalog items only; histories and provider 404s cached 7200s (server and CDN); unknown IDs 404 locally, CDN 1 day                                  |
 | [market-analytics](../src/app/api/items/[itemId]/market-analytics/route.ts)                                                                                      | Latest market-analyzer observation for one item; found and not-analyzed (404) answers: browser 300s, CDN 3600s; database errors: no-store                                         |

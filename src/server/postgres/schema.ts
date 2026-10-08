@@ -418,6 +418,8 @@ export const postgresSchema = {
 	questModes,
 	crafts,
 	barters,
+	craftInputs,
+	barterInputs,
 	itemPrices,
 	itemPriceSync,
 	itemDiscovery,

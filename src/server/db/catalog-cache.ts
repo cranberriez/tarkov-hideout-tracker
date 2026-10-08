@@ -144,7 +144,7 @@ export function getCachedTraders(mode: TarkovDataMode, version: string): Promise
 	return versioned(mode, version, "traders", () => getTraders(mode, getPostgresDb(), version));
 }
 export function getCachedRecipes(mode: TarkovDataMode, version: string) {
-	return versioned(mode, version, "recipes", () => getRecipes(mode, getPostgresDb(), version));
+	return versioned(mode, version, "recipes-inputs-v1", () => getRecipes(mode, getPostgresDb(), version));
 }
 
 export function getCachedTraderOffers(mode: TarkovDataMode): Promise<Record<string, TraderPurchaseOffer[]>> {
