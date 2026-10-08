@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { Pool } from "pg";
 
 /** Never uses DATABASE_URL: every fixture owns a unique disposable schema. */
@@ -11,7 +11,10 @@ export async function postgresFixture() {
 	await admin.query(`CREATE SCHEMA "${schema}"`);
 	const pool = new Pool({ connectionString, options: `-c search_path=${schema}`, max: 5 });
 	try {
-		await pool.query(await readFile(new URL("../migrations/0001_postgres_domain.sql", import.meta.url), "utf8"));
+		const directory = new URL("../migrations/", import.meta.url);
+		for (const name of (await readdir(directory)).filter((name) => /^\d+_[a-z0-9_-]+\.sql$/.test(name)).sort()) {
+			await pool.query(await readFile(new URL(name, directory), "utf8"));
+		}
 	} catch (error) {
 		await pool.end();
 		await admin.query(`DROP SCHEMA "${schema}" CASCADE`);

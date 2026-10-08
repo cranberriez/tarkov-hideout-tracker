@@ -162,6 +162,33 @@ function rowsFor(table, mode, data) {
 		buy_limit: x.buyLimit ?? null,
 		required_items: json(x.requiredItems),
 	}));
+	const craftInputRows = data.crafts.flatMap((recipe) =>
+		[
+			["item", recipe.requiredItems],
+			["quest", recipe.requiredQuestItems],
+		].flatMap(([kind, inputs]) =>
+			inputs.map((input, position) => ({
+				craft_id: recipe.id,
+				mode,
+				input_kind: kind,
+				position,
+				item_id: input.itemId,
+				count: input.count,
+				is_tool: input.isTool ?? null,
+			})),
+		),
+	);
+	const barterInputRows = data.barters.flatMap((recipe) =>
+		recipe.requiredItems.map((input, position) => ({
+			barter_id: recipe.id,
+			mode,
+			position,
+			item_id: input.itemId,
+			count: input.count,
+			is_tool: input.isTool ?? null,
+		})),
+	);
+
 	const detailRows = (data.itemDetails ?? []).map((x) => ({
 		item_id: x.itemId,
 		mode,
@@ -183,7 +210,9 @@ function rowsFor(table, mode, data) {
 		quests: questRows,
 		quest_modes: questModeRows,
 		crafts: craftRows,
+		craft_inputs: craftInputRows,
 		barters: barterRows,
+		barter_inputs: barterInputRows,
 		item_details: detailRows,
 	};
 }
@@ -229,7 +258,23 @@ function validateModeData(mode, data) {
 		throw new Error(`${mode} item detail projections are incomplete`);
 	}
 	for (const recipe of [...data.crafts, ...data.barters]) {
-		if (!Array.isArray(recipe.requiredItems)) throw new Error(`${mode} recipe ${recipe.id} has malformed requirements`);
+		const groups = [recipe.requiredItems, ...(data.crafts.includes(recipe) ? [recipe.requiredQuestItems] : [])];
+		for (const inputs of groups) {
+			if (
+				!Array.isArray(inputs) ||
+				inputs.some(
+					(input) =>
+						!input ||
+						typeof input.itemId !== "string" ||
+						!input.itemId.trim() ||
+						typeof input.count !== "number" ||
+						!Number.isFinite(input.count) ||
+						input.count <= 0 ||
+						(input.isTool !== undefined && typeof input.isTool !== "boolean"),
+				)
+			)
+				throw new Error(`${mode} recipe ${recipe.id} has malformed requirements`);
+		}
 	}
 }
 
@@ -249,9 +294,7 @@ async function pruneKeys(client, table, keyFields, mode, keepRows) {
 		return result.rowCount ?? 0;
 	}
 	const values = rowKey(keepRows, keyFields);
-	const predicate = keyFields
-		.map((field, i) => `${field === "level" ? "t.level::text" : `t.${field}`}=v.k${i}`)
-		.join(" AND ");
+	const predicate = keyFields.map((field, i) => `t.${field}::text=v.k${i}`).join(" AND ");
 	const params = [mode, ...keyFields.map((_, col) => values.map((row) => String(row[col])))];
 	const aliases = keyFields.map((_, i) => `k${i}`).join(",");
 	const from = `UNNEST(${keyFields.map((_, i) => `$${i + 2}::text[]`).join(",")}) AS v(${aliases})`;
@@ -518,6 +561,8 @@ export async function applyCatalogUpdate(
 				["quest_modes", ["quest_id", "mode"]],
 				["crafts", ["id", "mode"]],
 				["barters", ["id", "mode"]],
+				["craft_inputs", ["craft_id", "mode", "input_kind", "position"]],
+				["barter_inputs", ["barter_id", "mode", "position"]],
 				["item_details", ["item_id", "mode"]],
 			];
 			for (const [table, keys] of updates)
@@ -525,6 +570,15 @@ export async function applyCatalogUpdate(
 					changed = true;
 					changedByMode[mode] = true;
 				}
+			for (const [table, keys] of [
+				["craft_inputs", ["craft_id", "input_kind", "position"]],
+				["barter_inputs", ["barter_id", "position"]],
+			]) {
+				if (await pruneKeys(client, table, keys, mode, rows[table])) {
+					changed = true;
+					changedByMode[mode] = true;
+				}
+			}
 			const keep = [
 				["item_modes", "item_id", "item_modes"],
 				["quest_modes", "quest_id", "quest_modes"],

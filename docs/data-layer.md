@@ -48,6 +48,19 @@ labels from the [editable timeline](operations.md#release-timeline), preserving 
 historical provenance and unknown baselines. Catalog ingestion strips monetary offers
 and market data and never overwrites existing price rows.
 
+Recipe inputs also have normalized `craft_inputs` and `barter_inputs` rows
+(migration 0005), indexed by mode, item ID and recipe ID for reverse lookups.
+Composite recipe foreign keys preserve mode isolation and cascade only when their
+owning catalog recipe is removed. Positions preserve duplicate input references;
+craft input kinds separate ordinary and quest requirements, and nullable `is_tool`
+preserves the source flag. Item IDs intentionally have no item-table FK because
+synthetic, quest and unresolved references must survive ingestion.
+The migration backfills existing JSON arrays. The catalog writer validates inputs,
+upserts both representations and prunes stale input positions in the same transaction.
+Apply `npm run db:migrate` before deploying the updated catalog writer.
+Runtime readers still use the existing JSON arrays and item-detail projections;
+switching readers to the new tables is a separate change.
+
 Current item_details rows store relations, usage and acquisition JSONB without
 prices or embedded monetary offers. Usage lists recipes that produce the item and,
 separately, recipes that consume it (`usedInBarters`/`usedInCrafts`, including
