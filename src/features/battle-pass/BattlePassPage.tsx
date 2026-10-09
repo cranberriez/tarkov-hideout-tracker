@@ -283,6 +283,134 @@ function MapGrid() {
 	);
 }
 
+function DocumentInventory({
+	progress,
+	update,
+	coverage,
+	compact = false,
+}: {
+	progress: ReturnType<typeof useBattlePass>[0];
+	update: ReturnType<typeof useBattlePass>[1];
+	coverage: ReturnType<typeof coverCosts>;
+	compact?: boolean;
+}) {
+	return (
+		<div
+			className={
+				compact
+					? "mt-4 grid grid-cols-[40px_1fr_64px_36px] items-center gap-x-2 gap-y-1"
+					: "grid grid-cols-1 gap-2 min-[400px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-5"
+			}
+		>
+			{compact && (
+				<>
+					<span className="invisible" aria-hidden>
+						Doc
+					</span>
+					<span className="text-right text-[11px] text-muted-foreground">Need</span>
+					<span className="text-center text-[11px] text-muted-foreground">Owned</span>
+					<span className="invisible" aria-hidden>
+						Collect
+					</span>
+				</>
+			)}
+			{documents.map((doc) => {
+				const row = coverage.rows.find((row) => row.key === doc.key)!;
+				const avoided = progress.avoidedDocuments.includes(doc.key);
+				return (
+					<div
+						key={doc.key}
+						className={
+							compact
+								? "contents"
+								: "grid min-w-0 grid-cols-[40px_minmax(24px,1fr)_minmax(40px,1fr)_36px] items-end gap-1 rounded-md bg-card p-1.5"
+						}
+					>
+						<DocumentChip doc={doc} end />
+						<span
+							aria-label={doc.name + " still needed"}
+							className={cn(
+								"text-right text-sm tabular-nums",
+								!compact && "text-center",
+								row.missing > 0 ? "text-brand" : "text-muted-foreground",
+							)}
+						>
+							{!compact && <span className="block text-[10px] text-muted-foreground">Need</span>}
+							<span className={compact ? undefined : "flex h-9 items-center justify-center"}>{row.missing}</span>
+						</span>
+						<label className={compact ? "contents" : "min-w-0"}>
+							{!compact && <span className="block text-center text-[10px] text-muted-foreground">Owned</span>}
+							<input
+								type="number"
+								min={0}
+								max={99999}
+								step={1}
+								inputMode="numeric"
+								aria-label={doc.name + " owned"}
+								className="h-9 w-full min-w-0 rounded bg-surface-raised text-center text-sm tabular-nums outline-brand"
+								value={progress.inventory[doc.key] ?? 0}
+								onChange={(event) =>
+									update((current) => ({
+										...current,
+										inventory: { ...current.inventory, [doc.key]: normalizeCount(Number(event.target.value)) },
+									}))
+								}
+							/>
+						</label>
+						<ActionChip
+							active={!avoided}
+							tone={avoided ? "avoid" : "done"}
+							label={avoided ? "Use classified" : "Collect"}
+							accessibleLabel={(avoided ? "Enable" : "Disable") + " collecting " + doc.name}
+							icon={avoided ? <Ban size={17} /> : <Check size={17} />}
+							onClick={() =>
+								update((current) => ({
+									...current,
+									avoidedDocuments: toggleId(current.avoidedDocuments, doc.key),
+								}))
+							}
+						/>
+					</div>
+				);
+			})}
+			<div
+				className={
+					compact
+						? "contents"
+						: "grid min-w-0 grid-cols-[40px_minmax(24px,1fr)_minmax(40px,1fr)_36px] items-end gap-1 rounded-md bg-card p-1.5"
+				}
+			>
+				<DocumentChip doc={{ name: "Classified · wildcard 1:1" }} end />
+				<span
+					aria-label="Classified documents still needed"
+					className={cn("text-right text-sm tabular-nums text-special", !compact && "text-center")}
+				>
+					{!compact && <span className="block text-[10px] text-muted-foreground">Need</span>}
+					<span className={compact ? undefined : "flex h-9 items-center justify-center"}>
+						{coverage.classifiedMissing}
+					</span>
+				</span>
+				<label className={compact ? "contents" : "min-w-0"}>
+					{!compact && <span className="block text-center text-[10px] text-muted-foreground">Owned</span>}
+					<input
+						type="number"
+						min={0}
+						max={99999}
+						step={1}
+						inputMode="numeric"
+						aria-label="Classified documents owned"
+						className="h-9 w-full min-w-0 rounded bg-special/10 text-center text-sm tabular-nums outline-brand"
+						value={progress.classified}
+						onChange={(event) =>
+							update((current) => ({ ...current, classified: normalizeCount(Number(event.target.value)) }))
+						}
+					/>
+				</label>
+			</div>
+		</div>
+	);
+}
+
 export function BattlePassPage() {
 	const [progress, update] = useBattlePass();
 	const [scope, setScope] = useState<"goals" | "all">("goals");
@@ -357,83 +485,7 @@ export function BattlePassPage() {
 						<p className="mt-1 text-xs text-muted-foreground">
 							{scope === "all" ? "Everything" : "Selected goals"} · {coverage.missing} to collect
 						</p>
-						<div className="mt-4 grid grid-cols-[40px_1fr_64px_36px] items-center gap-x-2 gap-y-1">
-							<span className="invisible" aria-hidden>
-								Doc
-							</span>
-							<span className="text-right text-[11px] text-muted-foreground">Need</span>
-							<span className="text-center text-[11px] text-muted-foreground">Owned</span>
-							<span className="invisible" aria-hidden>
-								Collect
-							</span>
-							{documents.map((doc) => {
-								const row = coverage.rows.find((row) => row.key === doc.key)!;
-								const avoided = progress.avoidedDocuments.includes(doc.key);
-								return (
-									<div key={doc.key} className="contents">
-										<DocumentChip doc={doc} end />
-										<span
-											aria-label={doc.name + " still needed"}
-											className={cn(
-												"text-right text-sm tabular-nums",
-												row.missing > 0 ? "text-brand" : "text-muted-foreground",
-											)}
-										>
-											{row.missing}
-										</span>
-										<input
-											type="number"
-											min={0}
-											max={99999}
-											step={1}
-											inputMode="numeric"
-											aria-label={doc.name + " owned"}
-											className="h-9 w-full rounded bg-surface-raised text-center text-sm tabular-nums outline-brand"
-											value={progress.inventory[doc.key] ?? 0}
-											onChange={(event) =>
-												update((current) => ({
-													...current,
-													inventory: { ...current.inventory, [doc.key]: normalizeCount(Number(event.target.value)) },
-												}))
-											}
-										/>
-										<ActionChip
-											active={!avoided}
-											tone={avoided ? "avoid" : "done"}
-											label={avoided ? "Use classified" : "Collect"}
-											accessibleLabel={(avoided ? "Enable" : "Disable") + " collecting " + doc.name}
-											icon={avoided ? <Ban size={17} /> : <Check size={17} />}
-											onClick={() =>
-												update((current) => ({
-													...current,
-													avoidedDocuments: toggleId(current.avoidedDocuments, doc.key),
-												}))
-											}
-										/>
-									</div>
-								);
-							})}
-							<DocumentChip doc={{ name: "Classified · wildcard 1:1" }} end />
-							<span
-								aria-label="Classified documents still needed"
-								className="text-right text-sm tabular-nums text-special"
-							>
-								{coverage.classifiedMissing}
-							</span>
-							<input
-								type="number"
-								min={0}
-								max={99999}
-								step={1}
-								inputMode="numeric"
-								aria-label="Classified documents owned"
-								className="h-9 w-full rounded bg-special/10 text-center text-sm tabular-nums outline-brand"
-								value={progress.classified}
-								onChange={(event) =>
-									update((current) => ({ ...current, classified: normalizeCount(Number(event.target.value)) }))
-								}
-							/>
-						</div>
+						<DocumentInventory progress={progress} update={update} coverage={coverage} compact />
 						<div className="mt-4 space-y-3 border-t border-border pt-3 text-xs">
 							<label className="flex cursor-pointer items-center gap-2">
 								<input
@@ -483,6 +535,18 @@ export function BattlePassPage() {
 			>
 				<div className="h-full bg-success" style={{ width: `${(completedCount / 53) * 100}%` }} />
 			</div>
+
+			<section aria-labelledby="documents-heading" className="space-y-2">
+				<div className="flex flex-wrap items-baseline justify-between gap-2">
+					<h2 id="documents-heading" className="text-lg font-medium">
+						Documents
+					</h2>
+					<p className="text-xs text-muted-foreground">
+						{scope === "all" ? "Everything" : "Selected goals"} · {coverage.missing} to collect
+					</p>
+				</div>
+				<DocumentInventory progress={progress} update={update} coverage={coverage} />
+			</section>
 
 			<section aria-labelledby="inventory-heading" className="space-y-3">
 				<div className="flex items-center justify-between">

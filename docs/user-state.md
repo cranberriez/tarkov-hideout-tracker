@@ -56,8 +56,9 @@ preferences persist in the same save and are shared across modes. They only brea
 equal-total-cost suggestion ties; explicit goals and minimum total cost remain
 authoritative. After ordinary inventory, avoided shortages become classified
 demand. When enabled, owned classified stock covers avoided types first, then
-other shortages, once across the plan. The floating document panel shows remaining
-ordinary and classified needs and edits the same balances.
+other shortages, once across the plan. The top document section and floating document panel show the same live remaining
+ordinary and classified needs, owned-balance inputs, and collection toggles. Edits
+in either view immediately update both.
 It reuses the external-store storage helper, never writes on mount, and synchronizes
 between tabs. No existing profile key, migration, backup or reset scope changes;
 this save is not included in progression backups or Settings resets.
