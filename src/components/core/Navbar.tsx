@@ -21,7 +21,7 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
 import { HideoutStationsNav } from "./HideoutStationsNav";
-import { devNavItem, gamesNavItem, navMenus, type NavItem, type NavMenu } from "./nav-config";
+import { battlePassNavItem, devNavItem, gamesNavItem, navMenus, type NavItem, type NavMenu } from "./nav-config";
 import { PlayerProfileMenu } from "./PlayerProfileMenu";
 
 export function Navbar() {
@@ -101,6 +101,7 @@ function NavbarContent() {
 		currentPage === "/news" ||
 		currentPage === "/dev" ||
 		currentPage === "/games" ||
+		currentPage === "/battle-pass" ||
 		currentPage.startsWith("/games/");
 
 	if ((currentPage === "/quests" || currentPage.startsWith("/quests/")) && isMainNavHidden) return null;
@@ -368,15 +369,18 @@ function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onS
 			))}
 			<DropdownMenuSeparator />
 			<DropdownMenuItem onSelect={onSetup}>Setup</DropdownMenuItem>
-			<DropdownMenuItem
-				asChild
-				className={cn(isNavItemActive(currentPage, gamesNavItem) && "bg-accent text-accent-foreground")}
-			>
-				<Link href={gamesNavItem.href} className="flex w-full items-center gap-2">
-					<NavItemIcon item={gamesNavItem} />
-					{gamesNavItem.name}
-				</Link>
-			</DropdownMenuItem>
+			{[gamesNavItem, battlePassNavItem].map((item) => (
+				<DropdownMenuItem
+					key={item.href}
+					asChild
+					className={cn(isNavItemActive(currentPage, item) && "bg-accent text-accent-foreground")}
+				>
+					<Link href={item.href} className="flex w-full items-center gap-2">
+						<NavItemIcon item={item} />
+						{item.name}
+					</Link>
+				</DropdownMenuItem>
+			))}
 			{(FEEDBACK_FORM_URL || KOFI_URL) && <DropdownMenuSeparator />}
 			{FEEDBACK_FORM_URL && (
 				<DropdownMenuItem asChild>

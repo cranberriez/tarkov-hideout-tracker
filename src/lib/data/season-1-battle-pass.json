@@ -1,0 +1,1753 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "url": "https://tarkov-market.com/season-1/battle-pass",
+    "payloadUrl": "https://tarkov-market.com/season-1/battle-pass/_payload.json",
+    "capturedAt": "2026-10-09T13:24:39.8319010-07:00",
+    "siteUpdatedAtDisplayed": "09.10.26 11:48",
+    "method": "Decoded public Nuxt payload, cross-checked against rendered reward tiles and page requirements.",
+    "notes": [
+      "Original provider fields and game item IDs are preserved under battlePass.",
+      "Tile id, slot, displayName, totalDocumentCost and page unlockRequirement are locally derived fields, not upstream IDs.",
+      "Tile IDs identify this snapshot by season/page/slot; reconcile future source reordering before reusing saved selections.",
+      "Images are remote source URLs, not downloaded assets. Nested rewards share the tile image; individual bundle images are not supplied.",
+      "An absent reward quantity is unspecified by the source, not an assumed quantity of one.",
+      "A tile is purchased once and counts once toward page progress, including the six-offer bundle on page 12."
+    ]
+  },
+  "rules": {
+    "free": true,
+    "sharedProgressModes": [
+      "PVP",
+      "PVE",
+      "KORD"
+    ],
+    "pageUnlockSemantics": "Claim the required number of tiles on the immediately previous page; pages open sequentially.",
+    "traderRewards": "Unlock offers for purchase; the listed items are not directly granted.",
+    "itemRewards": "Delivered by mail.",
+    "dailyLimitNote": "The limit is shared: 10 documents collected in PvE leave 15 in the seasonal mode on the same day.",
+    "costSemantics": "Each tile cost maps document keys to required quantities. All entries are required together. totalDocumentCost sums quantities without exchange conversions."
+  },
+  "summary": {
+    "pageCount": 12,
+    "tileCount": 53,
+    "nestedRewardCount": 58,
+    "totalDocuments": 501
+  },
+  "battlePass": {
+    "season": 1,
+    "battlePassId": "6a27da69f3610ccfe5e71ab5",
+    "source": "дамп трафика 20260804_124631-my-seasons, /client/battle-pass/active",
+    "exchange": {
+      "documentsToDocument": 5,
+      "documentsToItem": 10,
+      "uid": "aff8531a-4e12-4442-8e4b-ef5a42399a79",
+      "url": "black_division_gear_crate",
+      "bsgId": "6a4fa628b4831242f306e8cd",
+      "name": "Black Division gear crate",
+      "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png"
+    },
+    "dailyLimits": {
+      "regular": 15,
+      "pve": 10,
+      "pvp-season": 25
+    },
+    "resetHours": 24,
+    "totalDocuments": 501,
+    "documents": [
+      {
+        "key": "financial",
+        "bsgId": "6a31807f17005505b70d5827",
+        "uid": "168a008d-91ad-4ad5-a0d0-ad10ce87368d",
+        "url": "financial_documents",
+        "name": "Financial documents",
+        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f074187fd0cf20c3d80.png",
+        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f02e8ab40ef3d0ba7fa.png",
+        "total": 98
+      },
+      {
+        "key": "personnel",
+        "bsgId": "6a317b9692cfdcddcb02a58e",
+        "uid": "f03e43dd-13a6-4f27-839b-665bdd310815",
+        "url": "pmc_personnel_files",
+        "name": "PMC personnel files",
+        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f40e748ef9ba90e6b80.png",
+        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f338acc148b2208bb50.png",
+        "total": 47
+      },
+      {
+        "key": "project",
+        "bsgId": "6a3181f178450ec91c0ea1aa",
+        "uid": "c0f8638f-a48a-4c43-8384-5b5fa96c5fd6",
+        "url": "project_documentation",
+        "name": "Project documentation",
+        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f561846e4697506c266.png",
+        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f468acc148b2208bb51.png",
+        "total": 49
+      },
+      {
+        "key": "blueprints",
+        "bsgId": "6a31824878450ec91c0ea1ae",
+        "uid": "4d0f1c51-318a-4232-884e-d78f858b5ca1",
+        "url": "blueprints_and_technical_documentation",
+        "name": "Blueprints and technical documentation",
+        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f751846e4697506c267.png",
+        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f6c6a6a362af303acae.png",
+        "total": 54
+      },
+      {
+        "key": "test",
+        "bsgId": "6a31828557705071410ca00e",
+        "uid": "704a2e14-515e-4672-9e80-3c99cbcc97e8",
+        "url": "test_documentation",
+        "name": "Test documentation",
+        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f7fe748ef9ba90e6b82.png",
+        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f7b1aa62b661c025709.png",
+        "total": 78
+      },
+      {
+        "key": "user",
+        "bsgId": "6a3182b72fd891345e047eef",
+        "uid": "dc066858-a55a-46be-934d-e7eb2f44804f",
+        "url": "user_documentation",
+        "name": "User documentation",
+        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f8883a7b9f6210b257c.png",
+        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f836a6a362af303acaf.png",
+        "total": 59
+      },
+      {
+        "key": "medical",
+        "bsgId": "6a3182dc6cd8de21cf0a3a7d",
+        "uid": "f9416434-9f02-4f02-837d-5249e0e68543",
+        "url": "medical_documents",
+        "name": "Medical documents",
+        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f1e1aa62b661c025707.png",
+        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f0fe8ab40ef3d0ba7fb.png",
+        "total": 60
+      },
+      {
+        "key": "technical",
+        "bsgId": "6a31830dde69ceafd805afa0",
+        "uid": "353ffd53-91a6-4d6e-a4d8-a17b1beed351",
+        "url": "technical_documentation",
+        "name": "Technical documentation",
+        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f2e6a6a362af303acac.png",
+        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f294e7788903c0b013e.png",
+        "total": 56
+      }
+    ],
+    "pages": [
+      {
+        "num": 1,
+        "req": 0,
+        "cells": [
+          {
+            "x": 0,
+            "y": 0,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e665f5a56a948810bb5bb.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6763cd043de3220f19a1.png",
+            "cost": {
+              "financial": 1
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "dogtags",
+                "side": [
+                  "Bear",
+                  "Usec"
+                ],
+                "name": "Dogtag"
+              }
+            ],
+            "id": "season-1-page-1-slot-1",
+            "slot": 1,
+            "displayName": "Dogtag",
+            "totalDocumentCost": 1
+          },
+          {
+            "x": 1,
+            "y": 0,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "cost": {
+              "project": 2,
+              "blueprints": 1
+            },
+            "rewards": [
+              {
+                "type": "tarcoin",
+                "value": 50
+              }
+            ],
+            "id": "season-1-page-1-slot-2",
+            "slot": 2,
+            "displayName": "TarCoin",
+            "totalDocumentCost": 3
+          },
+          {
+            "x": 0,
+            "y": 1,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66a03d0e6b95910b85fe.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6798438217c0b20b65ba.png",
+            "cost": {
+              "test": 2,
+              "user": 1
+            },
+            "rewards": [
+              {
+                "type": "item",
+                "bsgId": "6a4264160a2dca942e08292d",
+                "uid": "265879fb-3dc7-4227-8d43-8559bbe0da1d",
+                "url": "burn_poster",
+                "name": "BURN poster",
+                "count": 1
+              }
+            ],
+            "id": "season-1-page-1-slot-3",
+            "slot": 3,
+            "displayName": "BURN poster",
+            "totalDocumentCost": 3
+          },
+          {
+            "x": 1,
+            "y": 1,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "cost": {
+              "blueprints": 2,
+              "financial": 1
+            },
+            "rewards": [
+              {
+                "type": "item",
+                "bsgId": "6a3567f687d90a0deb066c1b",
+                "uid": "aff8531a-4e12-4442-8e4b-ef5a42399a79",
+                "url": "black_division_gear_crate",
+                "name": "Black Division gear crate",
+                "count": 1
+              }
+            ],
+            "id": "season-1-page-1-slot-4",
+            "slot": 4,
+            "displayName": "Black Division gear crate",
+            "totalDocumentCost": 3
+          },
+          {
+            "x": 0,
+            "y": 2,
+            "w": 2,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66bc5a56a948810bb5bd.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a635e9519f0ae49350a23e8.png",
+            "cost": {
+              "user": 2,
+              "project": 2,
+              "medical": 1
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "hideout",
+                "side": [
+                  "Usec",
+                  "Bear"
+                ],
+                "name": "Black wood ceiling"
+              }
+            ],
+            "id": "season-1-page-1-slot-5",
+            "slot": 5,
+            "displayName": "Black wood ceiling",
+            "totalDocumentCost": 5
+          }
+        ],
+        "unlockRequirement": null
+      },
+      {
+        "num": 2,
+        "req": 4,
+        "cells": [
+          {
+            "x": 0,
+            "y": 0,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66863f7a5533040ca2e0.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e677c3f7a5533040ca2e5.png",
+            "cost": {
+              "medical": 2,
+              "blueprints": 2
+            },
+            "rewards": [
+              {
+                "type": "trader",
+                "bsgId": "689b404db49f27df1c0873f6",
+                "uid": "33c62157-20c6-4cb2-bfe1-5d357ca792b7",
+                "url": "gentex_ops-core_sotr_respirator",
+                "name": "Gentex Ops-Core SOTR respirator",
+                "trader": "Ragman",
+                "traderUid": "80569523-9da1-479a-ae25-01200d6092c3",
+                "level": 2
+              }
+            ],
+            "id": "season-1-page-2-slot-1",
+            "slot": 1,
+            "displayName": "Gentex Ops-Core SOTR respirator",
+            "totalDocumentCost": 4
+          },
+          {
+            "x": 1,
+            "y": 0,
+            "w": 1,
+            "h": 2,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6725c6956153430432c1.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6854ac605a08520e2a57.png",
+            "cost": {
+              "project": 3,
+              "financial": 3,
+              "medical": 1
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "upper",
+                "side": [
+                  "Bear",
+                  "Usec"
+                ],
+                "name": "Red Hawaii"
+              }
+            ],
+            "id": "season-1-page-2-slot-2",
+            "slot": 2,
+            "displayName": "Red Hawaii",
+            "totalDocumentCost": 7
+          },
+          {
+            "x": 0,
+            "y": 1,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "cost": {
+              "test": 3
+            },
+            "rewards": [
+              {
+                "type": "item",
+                "bsgId": "6a3567f687d90a0deb066c1b",
+                "uid": "aff8531a-4e12-4442-8e4b-ef5a42399a79",
+                "url": "black_division_gear_crate",
+                "name": "Black Division gear crate",
+                "count": 1
+              }
+            ],
+            "id": "season-1-page-2-slot-3",
+            "slot": 3,
+            "displayName": "Black Division gear crate",
+            "totalDocumentCost": 3
+          },
+          {
+            "x": 0,
+            "y": 2,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6704438217c0b20b65b7.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f9bf561127450b27c8.png",
+            "cost": {
+              "user": 1,
+              "personnel": 1,
+              "blueprints": 1
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "hideout",
+                "side": [
+                  "Bear",
+                  "Usec"
+                ],
+                "name": "Scorpion target"
+              }
+            ],
+            "id": "season-1-page-2-slot-4",
+            "slot": 4,
+            "displayName": "Scorpion target",
+            "totalDocumentCost": 3
+          },
+          {
+            "x": 1,
+            "y": 2,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "cost": {
+              "financial": 2,
+              "project": 1
+            },
+            "rewards": [
+              {
+                "type": "tarcoin",
+                "value": 50
+              }
+            ],
+            "id": "season-1-page-2-slot-5",
+            "slot": 5,
+            "displayName": "TarCoin",
+            "totalDocumentCost": 3
+          }
+        ],
+        "unlockRequirement": {
+          "page": 1,
+          "claimedTiles": 4
+        }
+      },
+      {
+        "num": 3,
+        "req": 4,
+        "cells": [
+          {
+            "x": 0,
+            "y": 0,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e668acd043de3220f199d.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6783cd043de3220f19a2.png",
+            "cost": {
+              "user": 2,
+              "personnel": 1,
+              "financial": 1
+            },
+            "rewards": [
+              {
+                "type": "trader",
+                "bsgId": "68947ad3e4bf255d1b0ca75c",
+                "uid": "83ea0010-d655-442e-aaf5-b85dbd70fa38",
+                "url": "mystery_ranch_nice_frame_load_sling",
+                "name": "Mystery Ranch NICE Frame Load Sling",
+                "trader": "Peacekeeper",
+                "traderUid": "287e46ec-5cf9-4e90-9a65-572506f0de48",
+                "level": 3
+              }
+            ],
+            "id": "season-1-page-3-slot-1",
+            "slot": 1,
+            "displayName": "Mystery Ranch NICE Frame Load Sling",
+            "totalDocumentCost": 4
+          },
+          {
+            "x": 1,
+            "y": 0,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "cost": {
+              "personnel": 2,
+              "test": 2,
+              "user": 1
+            },
+            "rewards": [
+              {
+                "type": "item",
+                "bsgId": "6a3567f687d90a0deb066c1b",
+                "uid": "aff8531a-4e12-4442-8e4b-ef5a42399a79",
+                "url": "black_division_gear_crate",
+                "name": "Black Division gear crate",
+                "count": 1
+              }
+            ],
+            "id": "season-1-page-3-slot-2",
+            "slot": 2,
+            "displayName": "Black Division gear crate",
+            "totalDocumentCost": 5
+          },
+          {
+            "x": 0,
+            "y": 1,
+            "w": 2,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66c2ac605a08520e2a50.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a635e9ecf0acff88d03331e.png",
+            "cost": {
+              "user": 2,
+              "blueprints": 2,
+              "test": 2,
+              "technical": 1
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "hideout",
+                "side": [
+                  "Bear",
+                  "Usec"
+                ],
+                "name": "Black Herringbone"
+              }
+            ],
+            "id": "season-1-page-3-slot-3",
+            "slot": 3,
+            "displayName": "Black Herringbone",
+            "totalDocumentCost": 7
+          },
+          {
+            "x": 0,
+            "y": 2,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "cost": {
+              "project": 2,
+              "financial": 2,
+              "technical": 1
+            },
+            "rewards": [
+              {
+                "type": "tarcoin",
+                "value": 50
+              }
+            ],
+            "id": "season-1-page-3-slot-4",
+            "slot": 4,
+            "displayName": "TarCoin",
+            "totalDocumentCost": 5
+          },
+          {
+            "x": 1,
+            "y": 2,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66cadffe83817c03096c.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67c4dffe83817c030971.png",
+            "cost": {
+              "medical": 2,
+              "personnel": 1,
+              "financial": 1
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "mannequin",
+                "side": [
+                  "Usec",
+                  "Bear"
+                ],
+                "name": "Heart"
+              }
+            ],
+            "id": "season-1-page-3-slot-5",
+            "slot": 5,
+            "displayName": "Heart",
+            "totalDocumentCost": 4
+          }
+        ],
+        "unlockRequirement": {
+          "page": 2,
+          "claimedTiles": 4
+        }
+      },
+      {
+        "num": 4,
+        "req": 4,
+        "cells": [
+          {
+            "x": 0,
+            "y": 0,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e666dac605a08520e2a4e.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6767ac605a08520e2a53.png",
+            "cost": {
+              "project": 2,
+              "blueprints": 2,
+              "financial": 1
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "dogtags",
+                "side": [
+                  "Bear",
+                  "Usec"
+                ],
+                "name": "Dogtag"
+              }
+            ],
+            "id": "season-1-page-4-slot-1",
+            "slot": 1,
+            "displayName": "Dogtag",
+            "totalDocumentCost": 5
+          },
+          {
+            "x": 1,
+            "y": 0,
+            "w": 1,
+            "h": 2,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6652ae0ff1630b08d1be.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6876c6956153430432c7.png",
+            "cost": {
+              "user": 4,
+              "technical": 3,
+              "financial": 2,
+              "personnel": 1
+            },
+            "rewards": [
+              {
+                "type": "item",
+                "bsgId": "6a39358c658f5889ba050ef3",
+                "uid": "13d73b6d-bc16-4e9a-ac9f-6aa5c85c0ac0",
+                "url": "microtech_jagdkommando_knife",
+                "name": "Microtech Jagdkommando knife",
+                "count": 1
+              }
+            ],
+            "id": "season-1-page-4-slot-2",
+            "slot": 2,
+            "displayName": "Microtech Jagdkommando knife",
+            "totalDocumentCost": 10
+          },
+          {
+            "x": 0,
+            "y": 1,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "cost": {
+              "technical": 3,
+              "user": 2
+            },
+            "rewards": [
+              {
+                "type": "tarcoin",
+                "value": 50
+              }
+            ],
+            "id": "season-1-page-4-slot-3",
+            "slot": 3,
+            "displayName": "TarCoin",
+            "totalDocumentCost": 5
+          },
+          {
+            "x": 0,
+            "y": 2,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6696c0e52002fd09d8ab.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6793b793ab50a2074172.png",
+            "cost": {
+              "test": 2,
+              "user": 2,
+              "personnel": 1
+            },
+            "rewards": [
+              {
+                "type": "item",
+                "bsgId": "6a4263c3bf5f5f7f9a0ee828",
+                "uid": "c8271535-8909-4cdb-a329-ee43657e3c92",
+                "url": "beware_the_bear_poster",
+                "name": "Beware the Bear poster",
+                "count": 1
+              }
+            ],
+            "id": "season-1-page-4-slot-4",
+            "slot": 4,
+            "displayName": "Beware the Bear poster",
+            "totalDocumentCost": 5
+          },
+          {
+            "x": 1,
+            "y": 2,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "cost": {
+              "blueprints": 2,
+              "medical": 2,
+              "personnel": 1
+            },
+            "rewards": [
+              {
+                "type": "item",
+                "bsgId": "6a3567f687d90a0deb066c1b",
+                "uid": "aff8531a-4e12-4442-8e4b-ef5a42399a79",
+                "url": "black_division_gear_crate",
+                "name": "Black Division gear crate",
+                "count": 1
+              }
+            ],
+            "id": "season-1-page-4-slot-5",
+            "slot": 5,
+            "displayName": "Black Division gear crate",
+            "totalDocumentCost": 5
+          }
+        ],
+        "unlockRequirement": {
+          "page": 3,
+          "claimedTiles": 4
+        }
+      },
+      {
+        "num": 5,
+        "req": 4,
+        "cells": [
+          {
+            "x": 0,
+            "y": 0,
+            "w": 1,
+            "h": 2,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67295a56a948810bb5bf.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e685ab793ab50a2074175.png",
+            "cost": {
+              "financial": 3,
+              "technical": 2,
+              "medical": 2,
+              "project": 2,
+              "blueprints": 1
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "upper",
+                "side": [
+                  "Usec",
+                  "Bear"
+                ],
+                "name": "Orange Hawaii"
+              }
+            ],
+            "id": "season-1-page-5-slot-1",
+            "slot": 1,
+            "displayName": "Orange Hawaii",
+            "totalDocumentCost": 10
+          },
+          {
+            "x": 1,
+            "y": 0,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "cost": {
+              "blueprints": 4,
+              "financial": 1,
+              "user": 1,
+              "technical": 1
+            },
+            "rewards": [
+              {
+                "type": "tarcoin",
+                "value": 50
+              }
+            ],
+            "id": "season-1-page-5-slot-2",
+            "slot": 2,
+            "displayName": "TarCoin",
+            "totalDocumentCost": 7
+          },
+          {
+            "x": 1,
+            "y": 1,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66ff3d0e6b95910b8600.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f4438217c0b20b65bc.png",
+            "cost": {
+              "personnel": 2,
+              "medical": 2,
+              "user": 1
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "hideout",
+                "side": [
+                  "Bear",
+                  "Usec"
+                ],
+                "name": "Black Division target"
+              }
+            ],
+            "id": "season-1-page-5-slot-3",
+            "slot": 3,
+            "displayName": "Black Division target",
+            "totalDocumentCost": 5
+          },
+          {
+            "x": 0,
+            "y": 2,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "cost": {
+              "test": 3,
+              "technical": 2,
+              "medical": 1
+            },
+            "rewards": [
+              {
+                "type": "item",
+                "bsgId": "6a3567f687d90a0deb066c1b",
+                "uid": "aff8531a-4e12-4442-8e4b-ef5a42399a79",
+                "url": "black_division_gear_crate",
+                "name": "Black Division gear crate",
+                "count": 1
+              }
+            ],
+            "id": "season-1-page-5-slot-4",
+            "slot": 4,
+            "displayName": "Black Division gear crate",
+            "totalDocumentCost": 6
+          },
+          {
+            "x": 1,
+            "y": 2,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e667d86013ce1c70df990.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e677486013ce1c70df995.png",
+            "cost": {
+              "project": 3,
+              "technical": 2,
+              "user": 2
+            },
+            "rewards": [
+              {
+                "type": "trader",
+                "bsgId": "689479cb47e5acd1e10be986",
+                "uid": "0936a5ad-7d3e-4333-ac5b-f5ff15a92b67",
+                "url": "ferro_concepts_fcpc_v5_plate_carrier__black_division_",
+                "name": "Ferro Concepts FCPC V5 Plate Carrier (Black Division)",
+                "trader": "Ragman",
+                "traderUid": "80569523-9da1-479a-ae25-01200d6092c3",
+                "level": 3
+              }
+            ],
+            "id": "season-1-page-5-slot-5",
+            "slot": 5,
+            "displayName": "Ferro Concepts FCPC V5 Plate Carrier (Black Division)",
+            "totalDocumentCost": 7
+          }
+        ],
+        "unlockRequirement": {
+          "page": 4,
+          "claimedTiles": 4
+        }
+      },
+      {
+        "num": 6,
+        "req": 4,
+        "cells": [
+          {
+            "x": 0,
+            "y": 0,
+            "w": 1,
+            "h": 2,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66b1905106a6860e004b.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67a63f7a5533040ca2e6.png",
+            "cost": {
+              "personnel": 4,
+              "technical": 4,
+              "medical": 3,
+              "test": 2
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "face",
+                "side": [
+                  "Bear"
+                ],
+                "name": "Knyazev"
+              }
+            ],
+            "id": "season-1-page-6-slot-1",
+            "slot": 1,
+            "displayName": "Knyazev",
+            "totalDocumentCost": 13
+          },
+          {
+            "x": 1,
+            "y": 0,
+            "w": 1,
+            "h": 2,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66a6438217c0b20b65b5.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e679dbf561127450b27c6.png",
+            "cost": {
+              "financial": 4,
+              "blueprints": 3,
+              "personnel": 3,
+              "technical": 2
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "face",
+                "side": [
+                  "Usec"
+                ],
+                "name": "O’Connor"
+              }
+            ],
+            "id": "season-1-page-6-slot-2",
+            "slot": 2,
+            "displayName": "O’Connor",
+            "totalDocumentCost": 12
+          },
+          {
+            "x": 0,
+            "y": 2,
+            "w": 2,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6739dffe83817c03096e.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6867ae0ff1630b08d1c9.png",
+            "cost": {
+              "financial": 6,
+              "project": 2,
+              "personnel": 2,
+              "user": 1
+            },
+            "rewards": [
+              {
+                "type": "trader",
+                "bsgId": "6a3bffbebc377285900b85cf",
+                "uid": "590eff5c-9380-43b4-a77e-4f4b54aa1e96",
+                "url": "howa_type_20_5.56x45_assault_rifle",
+                "name": "Howa Type 20 5.56x45 assault rifle",
+                "trader": "Peacekeeper",
+                "traderUid": "287e46ec-5cf9-4e90-9a65-572506f0de48",
+                "level": 3
+              }
+            ],
+            "id": "season-1-page-6-slot-3",
+            "slot": 3,
+            "displayName": "Howa Type 20 5.56x45 assault rifle",
+            "totalDocumentCost": 11
+          }
+        ],
+        "unlockRequirement": {
+          "page": 5,
+          "claimedTiles": 4
+        }
+      },
+      {
+        "num": 7,
+        "req": 2,
+        "cells": [
+          {
+            "x": 0,
+            "y": 0,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6678dffe83817c03096a.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e676fdffe83817c03096f.png",
+            "cost": {
+              "user": 5,
+              "medical": 3,
+              "project": 2
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "dogtags",
+                "side": [
+                  "Bear",
+                  "Usec"
+                ],
+                "name": "Dogtag"
+              }
+            ],
+            "id": "season-1-page-7-slot-1",
+            "slot": 1,
+            "displayName": "Dogtag",
+            "totalDocumentCost": 10
+          },
+          {
+            "x": 1,
+            "y": 0,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "cost": {
+              "financial": 4,
+              "test": 3,
+              "medical": 2
+            },
+            "rewards": [
+              {
+                "type": "tarcoin",
+                "value": 50
+              }
+            ],
+            "id": "season-1-page-7-slot-2",
+            "slot": 2,
+            "displayName": "TarCoin",
+            "totalDocumentCost": 9
+          },
+          {
+            "x": 0,
+            "y": 1,
+            "w": 1,
+            "h": 2,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6709bf561127450b27c3.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a6b4834168e3ef7740acefd.png",
+            "cost": {
+              "test": 5,
+              "financial": 3,
+              "blueprints": 3,
+              "technical": 2
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "upper",
+                "side": [
+                  "Bear",
+                  "Usec"
+                ],
+                "name": "Scorpion upper"
+              }
+            ],
+            "id": "season-1-page-7-slot-3",
+            "slot": 3,
+            "displayName": "Scorpion upper",
+            "totalDocumentCost": 13
+          },
+          {
+            "x": 1,
+            "y": 1,
+            "w": 1,
+            "h": 2,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66eecd043de3220f199f.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67e7e2d6c908db0d5d58.png",
+            "cost": {
+              "test": 5,
+              "personnel": 3,
+              "user": 3,
+              "project": 2
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "lower",
+                "side": [
+                  "Bear",
+                  "Usec"
+                ],
+                "name": "Scorpion lower"
+              }
+            ],
+            "id": "season-1-page-7-slot-4",
+            "slot": 4,
+            "displayName": "Scorpion lower",
+            "totalDocumentCost": 13
+          }
+        ],
+        "unlockRequirement": {
+          "page": 6,
+          "claimedTiles": 2
+        }
+      },
+      {
+        "num": 8,
+        "req": 3,
+        "cells": [
+          {
+            "x": 0,
+            "y": 0,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "cost": {
+              "financial": 2,
+              "test": 2,
+              "user": 2
+            },
+            "rewards": [
+              {
+                "type": "item",
+                "bsgId": "6a3567f687d90a0deb066c1b",
+                "uid": "aff8531a-4e12-4442-8e4b-ef5a42399a79",
+                "url": "black_division_gear_crate",
+                "name": "Black Division gear crate",
+                "count": 1
+              }
+            ],
+            "id": "season-1-page-8-slot-1",
+            "slot": 1,
+            "displayName": "Black Division gear crate",
+            "totalDocumentCost": 6
+          },
+          {
+            "x": 1,
+            "y": 0,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "cost": {
+              "test": 5,
+              "financial": 4,
+              "blueprints": 4,
+              "medical": 1
+            },
+            "rewards": [
+              {
+                "type": "tarcoin",
+                "value": 50
+              }
+            ],
+            "id": "season-1-page-8-slot-2",
+            "slot": 2,
+            "displayName": "TarCoin",
+            "totalDocumentCost": 14
+          },
+          {
+            "x": 0,
+            "y": 1,
+            "w": 2,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66c6b793ab50a207416e.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a635ea3ac917886310de21f.png",
+            "cost": {
+              "test": 6,
+              "personnel": 3,
+              "technical": 2,
+              "user": 2
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "hideout",
+                "side": [
+                  "Usec",
+                  "Bear"
+                ],
+                "name": "White accent walls"
+              }
+            ],
+            "id": "season-1-page-8-slot-3",
+            "slot": 3,
+            "displayName": "White accent walls",
+            "totalDocumentCost": 13
+          },
+          {
+            "x": 0,
+            "y": 2,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66d9ae0ff1630b08d1c1.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67dec6956153430432c5.png",
+            "cost": {
+              "test": 3,
+              "medical": 2,
+              "user": 1
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "mannequin",
+                "side": [
+                  "Usec",
+                  "Bear"
+                ],
+                "name": "Arch"
+              }
+            ],
+            "id": "season-1-page-8-slot-4",
+            "slot": 4,
+            "displayName": "Arch",
+            "totalDocumentCost": 6
+          },
+          {
+            "x": 1,
+            "y": 2,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66d086013ce1c70df992.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67cd86013ce1c70df997.png",
+            "cost": {
+              "medical": 1,
+              "blueprints": 2,
+              "project": 1
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "mannequin",
+                "side": [
+                  "Usec",
+                  "Bear"
+                ],
+                "name": "Dome"
+              }
+            ],
+            "id": "season-1-page-8-slot-5",
+            "slot": 5,
+            "displayName": "Dome",
+            "totalDocumentCost": 4
+          }
+        ],
+        "unlockRequirement": {
+          "page": 7,
+          "claimedTiles": 3
+        }
+      },
+      {
+        "num": 9,
+        "req": 4,
+        "cells": [
+          {
+            "x": 0,
+            "y": 0,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6681ae0ff1630b08d1bf.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6778905106a6860e004f.png",
+            "cost": {
+              "medical": 4,
+              "financial": 4,
+              "blueprints": 2,
+              "test": 2
+            },
+            "rewards": [
+              {
+                "type": "trader",
+                "bsgId": "689479eb30cc5ba7be00f5ff",
+                "uid": "17bcd229-2be0-43a2-9982-ac1f45a683dd",
+                "url": "spiritus_systems_lv-119_plate_carrier__black_division_v2_",
+                "name": "Spiritus Systems LV-119 Plate Carrier (Black Division V2)",
+                "trader": "Peacekeeper",
+                "traderUid": "287e46ec-5cf9-4e90-9a65-572506f0de48",
+                "level": 3
+              }
+            ],
+            "id": "season-1-page-9-slot-1",
+            "slot": 1,
+            "displayName": "Spiritus Systems LV-119 Plate Carrier (Black Division V2)",
+            "totalDocumentCost": 12
+          },
+          {
+            "x": 1,
+            "y": 0,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "cost": {
+              "user": 3,
+              "technical": 2,
+              "project": 1
+            },
+            "rewards": [
+              {
+                "type": "tarcoin",
+                "value": 50
+              }
+            ],
+            "id": "season-1-page-9-slot-2",
+            "slot": 2,
+            "displayName": "TarCoin",
+            "totalDocumentCost": 6
+          },
+          {
+            "x": 0,
+            "y": 1,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e668fe2d6c908db0d5d51.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e678aac605a08520e2a54.png",
+            "cost": {
+              "technical": 5,
+              "financial": 2,
+              "project": 2
+            },
+            "rewards": [
+              {
+                "type": "trader",
+                "bsgId": "68947a8ce4bf255d1b0ca759",
+                "uid": "e20cdcdd-5029-4d4f-9f6d-29cb819f6fb4",
+                "url": "tasmanian_tiger_modular_pack_45_plus__multicam_black_",
+                "name": "Tasmanian Tiger Modular Pack 45 Plus (MultiCam Black)",
+                "trader": "Ragman",
+                "traderUid": "80569523-9da1-479a-ae25-01200d6092c3",
+                "level": 3
+              }
+            ],
+            "id": "season-1-page-9-slot-3",
+            "slot": 3,
+            "displayName": "Tasmanian Tiger Modular Pack 45 Plus (MultiCam Black)",
+            "totalDocumentCost": 9
+          },
+          {
+            "x": 1,
+            "y": 1,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "cost": {
+              "project": 2,
+              "medical": 2,
+              "user": 1
+            },
+            "rewards": [
+              {
+                "type": "item",
+                "bsgId": "6a3567f687d90a0deb066c1b",
+                "uid": "aff8531a-4e12-4442-8e4b-ef5a42399a79",
+                "url": "black_division_gear_crate",
+                "name": "Black Division gear crate",
+                "count": 1
+              }
+            ],
+            "id": "season-1-page-9-slot-4",
+            "slot": 4,
+            "displayName": "Black Division gear crate",
+            "totalDocumentCost": 5
+          },
+          {
+            "x": 0,
+            "y": 2,
+            "w": 2,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67e35a56a948810bb5c3.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66e63f7a5533040ca2e2.png",
+            "cost": {
+              "technical": 6,
+              "personnel": 4,
+              "test": 4,
+              "user": 2,
+              "blueprints": 2
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "menu-background",
+                "side": [
+                  "Savage",
+                  "Bear",
+                  "Usec"
+                ],
+                "name": "Server Room"
+              }
+            ],
+            "id": "season-1-page-9-slot-5",
+            "slot": 5,
+            "displayName": "Server Room",
+            "totalDocumentCost": 18
+          }
+        ],
+        "unlockRequirement": {
+          "page": 8,
+          "claimedTiles": 4
+        }
+      },
+      {
+        "num": 10,
+        "req": 4,
+        "cells": [
+          {
+            "x": 0,
+            "y": 0,
+            "w": 2,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e672fac605a08520e2a52.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e685edffe83817c030973.png",
+            "cost": {
+              "personnel": 6,
+              "test": 5,
+              "blueprints": 5,
+              "medical": 2,
+              "financial": 2
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "voice",
+                "side": [
+                  "Bear"
+                ],
+                "name": "Anton"
+              }
+            ],
+            "id": "season-1-page-10-slot-1",
+            "slot": 1,
+            "displayName": "Anton",
+            "totalDocumentCost": 20
+          },
+          {
+            "x": 0,
+            "y": 1,
+            "w": 2,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6734b793ab50a2074170.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e686386013ce1c70df999.png",
+            "cost": {
+              "test": 6,
+              "medical": 5,
+              "technical": 5,
+              "user": 2,
+              "project": 2
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "voice",
+                "side": [
+                  "Usec"
+                ],
+                "name": "Garrett"
+              }
+            ],
+            "id": "season-1-page-10-slot-2",
+            "slot": 2,
+            "displayName": "Garrett",
+            "totalDocumentCost": 20
+          },
+          {
+            "x": 0,
+            "y": 2,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "cost": {
+              "blueprints": 3,
+              "test": 3,
+              "technical": 1
+            },
+            "rewards": [
+              {
+                "type": "item",
+                "bsgId": "6a3567f687d90a0deb066c1b",
+                "uid": "aff8531a-4e12-4442-8e4b-ef5a42399a79",
+                "url": "black_division_gear_crate",
+                "name": "Black Division gear crate",
+                "count": 1
+              }
+            ],
+            "id": "season-1-page-10-slot-3",
+            "slot": 3,
+            "displayName": "Black Division gear crate",
+            "totalDocumentCost": 7
+          },
+          {
+            "x": 1,
+            "y": 2,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "cost": {
+              "project": 5,
+              "medical": 4,
+              "user": 2,
+              "technical": 2
+            },
+            "rewards": [
+              {
+                "type": "tarcoin",
+                "value": 100
+              }
+            ],
+            "id": "season-1-page-10-slot-4",
+            "slot": 4,
+            "displayName": "TarCoin",
+            "totalDocumentCost": 13
+          }
+        ],
+        "unlockRequirement": {
+          "page": 9,
+          "claimedTiles": 4
+        }
+      },
+      {
+        "num": 11,
+        "req": 3,
+        "cells": [
+          {
+            "x": 0,
+            "y": 0,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6673b793ab50a207416c.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e676cb793ab50a2074171.png",
+            "cost": {
+              "technical": 4,
+              "blueprints": 3,
+              "financial": 2,
+              "test": 2
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "dogtags",
+                "side": [
+                  "Bear",
+                  "Usec"
+                ],
+                "name": "Dogtag"
+              }
+            ],
+            "id": "season-1-page-11-slot-1",
+            "slot": 1,
+            "displayName": "Dogtag",
+            "totalDocumentCost": 11
+          },
+          {
+            "x": 1,
+            "y": 0,
+            "w": 1,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "cost": {
+              "user": 5,
+              "financial": 5,
+              "project": 3,
+              "medical": 3
+            },
+            "rewards": [
+              {
+                "type": "tarcoin",
+                "value": 150
+              }
+            ],
+            "id": "season-1-page-11-slot-2",
+            "slot": 2,
+            "displayName": "TarCoin",
+            "totalDocumentCost": 16
+          },
+          {
+            "x": 0,
+            "y": 1,
+            "w": 1,
+            "h": 2,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66b6c6956153430432bf.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67aacd043de3220f19a3.png",
+            "cost": {
+              "blueprints": 5,
+              "personnel": 5,
+              "test": 3,
+              "medical": 3,
+              "financial": 3
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "face",
+                "side": [
+                  "Bear"
+                ],
+                "name": "Knyazev (After Battle)"
+              }
+            ],
+            "id": "season-1-page-11-slot-3",
+            "slot": 3,
+            "displayName": "Knyazev (After Battle)",
+            "totalDocumentCost": 19
+          },
+          {
+            "x": 1,
+            "y": 1,
+            "w": 1,
+            "h": 2,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66abbf561127450b27c1.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67a2905106a6860e0050.png",
+            "cost": {
+              "test": 5,
+              "financial": 5,
+              "medical": 3,
+              "personnel": 3,
+              "user": 3
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "face",
+                "side": [
+                  "Usec"
+                ],
+                "name": "O’Connor (After Battle)"
+              }
+            ],
+            "id": "season-1-page-11-slot-4",
+            "slot": 4,
+            "displayName": "O’Connor (After Battle)",
+            "totalDocumentCost": 19
+          }
+        ],
+        "unlockRequirement": {
+          "page": 10,
+          "claimedTiles": 3
+        }
+      },
+      {
+        "num": 12,
+        "req": 3,
+        "cells": [
+          {
+            "x": 0,
+            "y": 0,
+            "w": 2,
+            "h": 1,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e674586013ce1c70df994.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e687f5a56a948810bb5c5.png",
+            "cost": {
+              "financial": 29
+            },
+            "rewards": [
+              {
+                "type": "trader",
+                "bsgId": "69f9ebbcaae020b0db02f65d",
+                "uid": "b034faf5-45e2-4338-b8a5-1e6d07a24a1b",
+                "url": "norinco_qbz-191_5.8x42_assault_rifle",
+                "name": "Norinco QBZ-191 5.8x42 assault rifle",
+                "trader": "Skier",
+                "traderUid": "443a1cb6-15e5-4dac-87d4-f9cfae2e473b",
+                "level": 4
+              },
+              {
+                "type": "trader",
+                "bsgId": "69f9f0d3df2c2358a9041867",
+                "uid": "36977698-6708-497e-adc1-051bbc32ccef",
+                "url": "norinco_vqx-191_5.8x42_sound_suppressor",
+                "name": "Norinco VQX-191 5.8x42 sound suppressor",
+                "trader": "Skier",
+                "traderUid": "443a1cb6-15e5-4dac-87d4-f9cfae2e473b",
+                "level": 4
+              },
+              {
+                "type": "trader",
+                "bsgId": "69f9f1356b45e1d5210c6961",
+                "uid": "0d095d58-8417-4eab-9ff5-35e633f1eaad",
+                "url": "qbz-191_jia_zhou_trs_m-lok_13.5_inch_handguard",
+                "name": "QBZ-191 Jia Zhou TRS M-LOK 13.5 inch handguard",
+                "trader": "Skier",
+                "traderUid": "443a1cb6-15e5-4dac-87d4-f9cfae2e473b",
+                "level": 4
+              },
+              {
+                "type": "trader",
+                "bsgId": "69f9f0e4df2c2358a904186b",
+                "uid": "08243d2c-99e8-4bfc-bb53-7268fbca640a",
+                "url": "norinco_qmk-171a_3x_scope",
+                "name": "Norinco QMK-171A 3x scope",
+                "trader": "Skier",
+                "traderUid": "443a1cb6-15e5-4dac-87d4-f9cfae2e473b",
+                "level": 4
+              },
+              {
+                "type": "trader",
+                "bsgId": "69f9ec80aae020b0db02f670",
+                "uid": "ec796a24-6e4c-4096-bdca-dc57bf578eb1",
+                "url": "norinco_qmk-171a_sight_mount",
+                "name": "Norinco QMK-171A sight mount",
+                "trader": "Skier",
+                "traderUid": "443a1cb6-15e5-4dac-87d4-f9cfae2e473b",
+                "level": 3
+              },
+              {
+                "type": "trader",
+                "bsgId": "69fb18608a19a890b70a6ba4",
+                "uid": "6614fbf9-78df-424f-962c-d5f1eae99412",
+                "url": "qbz-191_5.8x42_368mm_barrel",
+                "name": "QBZ-191 5.8x42 368mm barrel",
+                "trader": "Skier",
+                "traderUid": "443a1cb6-15e5-4dac-87d4-f9cfae2e473b",
+                "level": 4
+              }
+            ],
+            "id": "season-1-page-12-slot-1",
+            "slot": 1,
+            "displayName": "Norinco QBZ-191 5.8x42 assault rifle",
+            "totalDocumentCost": 29
+          },
+          {
+            "x": 0,
+            "y": 1,
+            "w": 1,
+            "h": 2,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e671a905106a6860e004d.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a6b4839b2f3ecde0c0658d8.png",
+            "cost": {
+              "user": 6,
+              "medical": 5,
+              "project": 5,
+              "personnel": 4,
+              "test": 3,
+              "financial": 2
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "upper",
+                "side": [
+                  "Bear",
+                  "Usec"
+                ],
+                "name": "Nocturnal upper"
+              }
+            ],
+            "id": "season-1-page-12-slot-2",
+            "slot": 2,
+            "displayName": "Nocturnal upper",
+            "totalDocumentCost": 25
+          },
+          {
+            "x": 1,
+            "y": 1,
+            "w": 1,
+            "h": 2,
+            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66f4e2d6c908db0d5d53.png",
+            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67ecc0e52002fd09d8b2.png",
+            "cost": {
+              "technical": 6,
+              "project": 5,
+              "blueprints": 5,
+              "medical": 4,
+              "financial": 3
+            },
+            "rewards": [
+              {
+                "type": "customization",
+                "kind": "lower",
+                "side": [
+                  "Bear",
+                  "Usec"
+                ],
+                "name": "Nocturnal lower"
+              }
+            ],
+            "id": "season-1-page-12-slot-3",
+            "slot": 3,
+            "displayName": "Nocturnal lower",
+            "totalDocumentCost": 23
+          }
+        ],
+        "unlockRequirement": {
+          "page": 11,
+          "claimedTiles": 3
+        }
+      }
+    ]
+  }
+}

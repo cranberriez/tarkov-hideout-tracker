@@ -45,6 +45,25 @@ maintain a copied interface in documentation.
 
 ## Profiles, hydration, and setup
 
+### Battle pass progress
+
+[useBattlePass](../src/features/battle-pass/useBattlePass.ts) owns
+`tarkov-battle-pass-season-1-v1`, an independent account-wide save for the
+Season 1 pass, which is shared across PVP/PVE/KORD. It stores completed tile IDs,
+goal tile IDs, current unspent document balances and a classified-document balance.
+It reuses the external-store storage helper, never writes on mount, and synchronizes
+between tabs. No existing profile key, migration, backup or reset scope changes;
+this save is not included in progression backups or Settings resets.
+
+Completion toggles only the selected tile. They do not deduct inventory, infer
+prior completions, clear goals or alter another tile. This permits recording
+existing progress on a later page. Unknown saved IDs and inventory keys survive
+updates; unknown goals are reported and cannot satisfy prerequisites. Numeric
+balances normalize to integers from 0 to 99,999. Cumulative display, plan scope
+and classified allocation are ephemeral previews; they never spend stored balances.
+
+### Character profiles
+
 `PlayerProfileState` and `createDefaultPlayerProfile` in
 [useUserStore](../src/lib/stores/useUserStore.ts) define character-scoped progress:
 station levels/hidden stations/station goals/completed requirements, inventory, quest state

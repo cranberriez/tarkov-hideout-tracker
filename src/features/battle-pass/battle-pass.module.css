@@ -1,0 +1,89 @@
+.chip {
+	position: relative;
+	display: inline-block;
+	flex-shrink: 0;
+	height: 40px;
+	width: 58px;
+	outline: none;
+}
+.action {
+	width: 36px;
+	height: 36px;
+	cursor: pointer;
+}
+.documentOnly {
+	width: 40px;
+}
+.chipInner {
+	/* Only the fixed-size chip owns pointer interaction, not its expanded label. */
+	pointer-events: none;
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: flex;
+	align-items: center;
+	height: 100%;
+	width: max-content;
+	min-width: 100%;
+	border-radius: 6px;
+	background: var(--surface-raised);
+	padding: 0 5px;
+}
+.end .chipInner {
+	left: auto;
+	right: 0;
+	flex-direction: row-reverse;
+}
+.label {
+	max-width: 0;
+	overflow: hidden;
+	white-space: nowrap;
+	opacity: 0;
+	font-size: 12px;
+	font-weight: 500;
+	transition:
+		max-width 160ms ease,
+		opacity 120ms ease,
+		margin 160ms ease;
+}
+.chip:hover,
+.chip:focus-visible {
+	z-index: 40;
+}
+.chip:hover .chipInner,
+.chip:focus-visible .chipInner {
+	box-shadow: 0 6px 20px color-mix(in srgb, var(--shadow) 35%, transparent);
+}
+.chip:hover .label,
+.chip:focus-visible .label {
+	max-width: var(--label-width, 280px);
+	opacity: 1;
+	margin-inline: 7px;
+}
+.documentLabel {
+	white-space: normal;
+	line-height: 14px;
+}
+.chip:focus-visible .chipInner {
+	outline: 2px solid var(--brand);
+	outline-offset: 2px;
+}
+.card {
+	position: relative;
+}
+.card:hover,
+.card:focus-within {
+	z-index: 10;
+}
+.image {
+	transition: transform 200ms ease;
+}
+.card:hover .image {
+	transform: scale(1.04);
+}
+@media (prefers-reduced-motion: reduce) {
+	.label,
+	.image {
+		transition: none;
+	}
+}

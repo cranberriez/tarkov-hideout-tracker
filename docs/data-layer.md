@@ -83,6 +83,53 @@ known ID (a label failure is a nonblocking `presentationError`). Flea
 hydration remains optional. Source freshness is assembled from catalog_status.
 See [operations](operations.md) and the [CLI guide](../db-scripts/README.md).
 
+## Season 1 battle pass snapshot
+
+[season-1-battle-pass.json](../src/lib/data/season-1-battle-pass.json) is a static,
+source-attributed Tarkov Market snapshot for the battle pass tracker. It
+contains 12 pages, 53 purchasable tiles, and 501 documents across eight types.
+The original payload fields retain game item IDs, document keys, tile layout,
+image URLs, faction restrictions, and nested rewards. The standalone Battle Pass
+route imports it locally without provider services or runtime database queries.
+
+Each page's `req` counts claimed tiles on the immediately previous page, not
+cumulative rewards. `unlockRequirement` makes that relationship explicit. Each
+tile's `cost` maps document keys to quantities; `totalDocumentCost` is their sum.
+The final page's six trader offers share one tile and one cost. Trader rewards
+unlock offers rather than directly granting items.
+
+Tile `id`, `slot`, `displayName`, and `totalDocumentCost` are locally derived.
+There are no upstream tile IDs: local keys use season/page/slot, so future source
+reordering must be reconciled before retaining saved selections. Nested game item
+IDs are preserved independently. Images remain remote URLs, and unspecified item
+quantities remain absent. Source provenance and additional rules are in the JSON.
+
+[Document locations](../src/lib/data/season-1-document-locations.json) maps the eight
+source document keys to map names, verified against Tarkov Market's season guide
+and EFT Docs Map. Classified documents come from the Expansion Hub and replace
+one required document each; the separate five-for-one ordinary-document exchange
+is not applied by the planner.
+
+The collapsible map-overlap matrix uses `spawnsPerRelevantType`: seven possible
+spawns of each relevant type, with Factory at five. These are spawn counts, not
+guaranteed pickups. Reward cards use large source artwork, truncated overlaid
+names, and anchored document/action chips whose labels expand on hover or keyboard
+focus without moving the layout. Detailed plan costs remain in the Breakdown
+disclosure. The redesign does not change planning or saved-state semantics.
+
+[battle-pass-model](../src/features/battle-pass/battle-pass-model.ts) calculates
+minimum total document count by retaining wanted rewards and filling each earlier
+page with its cheapest remaining tiles, with source slot order breaking ties.
+Completed tiles satisfy page counts and incur no further cost. Inventory does not
+change which route is cheapest: after selection, owned stock is deducted once
+across the aggregate plan, then optional classified documents fill shortages in
+document display order. The UI reports required, inventory-covered, classified
+and remaining counts per type. Cumulative card previews independently plan the
+path to that one reward from saved completion, excluding other goals and inventory.
+The Everything plan includes every uncompleted tile. The model is covered by
+[focused tests](../src/features/battle-pass/battle-pass-model.test.ts), including
+comparison against exhaustive route enumeration.
+
 ## Repository and page read contracts
 
 [TarkovDataRepository](../src/server/repositories/tarkov-data/types.ts) is the

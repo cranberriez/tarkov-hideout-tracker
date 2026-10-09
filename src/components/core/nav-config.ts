@@ -97,6 +97,12 @@ export const gamesNavItem: NavItem = {
 	icon: Gamepad2,
 };
 
+export const battlePassNavItem: NavItem = {
+	name: "Battle Pass",
+	href: "/battle-pass",
+	icon: Goal,
+};
+
 export const devNavItem: NavItem = {
 	name: "Dev",
 	href: "/dev",

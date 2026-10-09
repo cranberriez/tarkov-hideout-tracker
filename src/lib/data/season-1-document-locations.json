@@ -1,0 +1,22 @@
+{
+	"checkedAt": "2026-10-09",
+	"sourceUrl": "https://tarkov-market.com/season-1/main",
+	"corroboratingSourceUrl": "https://tarkovdoc.com/",
+	"spawnsPerRelevantType": { "default": 7, "factory": 5 },
+	"mapsByDocumentKey": {
+		"financial": ["Customs", "Interchange", "Streets of Tarkov"],
+		"personnel": ["Reserve", "Lighthouse", "Icebreaker"],
+		"project": ["Factory", "Customs", "Reserve"],
+		"blueprints": ["Factory", "Interchange", "The Labyrinth"],
+		"test": ["Shoreline", "Woods", "Icebreaker"],
+		"user": ["Ground Zero", "Streets of Tarkov", "The Lab"],
+		"medical": ["Ground Zero", "The Lab", "The Labyrinth"],
+		"technical": ["Lighthouse", "Shoreline", "Woods"]
+	},
+	"classified": {
+		"source": "Expansion Hub (TarCoin)",
+		"maps": [],
+		"replacementRatio": 1,
+		"note": "Classified documents substitute for any required document type. They do not spawn in raids."
+	}
+}
