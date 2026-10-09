@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- Source CDN artwork, no image proxy required. */
 import { useMemo, useState, type CSSProperties, type ReactNode, type SyntheticEvent } from "react";
-import { Check, FileText, Flag, LockKeyhole, Map as MapIcon, Layers, ChevronDown } from "lucide-react";
+import { Check, FileText, Flag, LockKeyhole, Map as MapIcon, Layers, ChevronDown, Ban, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import locations from "@/lib/data/season-1-document-locations.json";
@@ -97,7 +97,7 @@ function ActionChip({
 	accessibleLabel: string;
 	icon: ReactNode;
 	onClick: () => void;
-	tone: "goal" | "done";
+	tone: "goal" | "done" | "avoid";
 }) {
 	return (
 		<button
@@ -109,7 +109,13 @@ function ActionChip({
 				styles.chip,
 				styles.action,
 				styles.end,
-				active ? (tone === "goal" ? "text-brand" : "text-success") : "text-muted-foreground",
+				tone === "avoid"
+					? "text-danger"
+					: active
+						? tone === "goal"
+							? "text-brand"
+							: "text-success"
+						: "text-muted-foreground",
 			)}
 		>
 			<span className={styles.chipInner}>
@@ -284,20 +290,32 @@ export function BattlePassPage() {
 	const [cumulative, setCumulative] = useState(false);
 	const [useClassified, setUseClassified] = useState(false);
 	const [showMaps, setShowMaps] = useState(false);
+	const [documentsOpen, setDocumentsOpen] = useState(true);
 	const plan = useMemo(
-		() => planGoals(scope === "all" ? tiles.map((tile) => tile.id) : progress.goals, progress.completed),
-		[progress.goals, progress.completed, scope],
+		() =>
+			planGoals(
+				scope === "all" ? tiles.map((tile) => tile.id) : progress.goals,
+				progress.completed,
+				pages,
+				progress.avoidedDocuments,
+			),
+		[progress.goals, progress.completed, progress.avoidedDocuments, scope],
 	);
 	const coverage = useMemo(
-		() => coverCosts(plan.costs, progress.inventory, progress.classified, useClassified),
-		[plan.costs, progress.inventory, progress.classified, useClassified],
+		() => coverCosts(plan.costs, progress.inventory, progress.classified, useClassified, progress.avoidedDocuments),
+		[plan.costs, progress.inventory, progress.classified, useClassified, progress.avoidedDocuments],
 	);
 	const cumulativeCosts = useMemo(
 		() =>
 			cumulative
-				? new Map(tiles.map((tile) => [tile.id, planGoals([tile.id], progress.completed).costs]))
+				? new Map(
+						tiles.map((tile) => [
+							tile.id,
+							planGoals([tile.id], progress.completed, pages, progress.avoidedDocuments).costs,
+						]),
+					)
 				: new Map<string, Costs>(),
-		[cumulative, progress.completed],
+		[cumulative, progress.completed, progress.avoidedDocuments],
 	);
 	const complete = new Set(progress.completed);
 	const goals = new Set(progress.goals);
@@ -310,7 +328,140 @@ export function BattlePassPage() {
 		.reduce((n, tile) => n + tile.totalDocumentCost, 0);
 	const knownGoals = tiles.filter((tile) => goals.has(tile.id));
 	return (
-		<main className="container mx-auto space-y-6 px-4 py-8 sm:px-6">
+		<main
+			className={cn("container mx-auto space-y-6 px-4 py-8 sm:px-6", styles.main, documentsOpen && styles.panelOpen)}
+		>
+			<div
+				className={styles.documentDock}
+				onKeyDown={(event) => {
+					if (event.key === "Escape") {
+						setDocumentsOpen(false);
+						event.currentTarget.querySelector("button")?.focus();
+					}
+				}}
+			>
+				<button
+					type="button"
+					className={styles.dockToggle}
+					aria-label={documentsOpen ? "Close document panel" : "Open document panel"}
+					aria-expanded={documentsOpen}
+					aria-controls="floating-documents"
+					onClick={() => setDocumentsOpen(!documentsOpen)}
+				>
+					{documentsOpen ? <X size={20} /> : <FileText size={20} />}
+				</button>
+				{documentsOpen && (
+					<aside id="floating-documents" aria-labelledby="floating-documents-heading" className={styles.documentPanel}>
+						<h2 id="floating-documents-heading" className="pr-10 text-sm font-semibold">
+							Documents
+						</h2>
+						<p className="mt-1 text-xs text-muted-foreground">
+							{scope === "all" ? "Everything" : "Selected goals"} · {coverage.missing} to collect
+						</p>
+						<div className="mt-4 grid grid-cols-[40px_1fr_64px_36px] items-center gap-x-2 gap-y-1">
+							<span className="invisible" aria-hidden>
+								Doc
+							</span>
+							<span className="text-right text-[11px] text-muted-foreground">Need</span>
+							<span className="text-center text-[11px] text-muted-foreground">Owned</span>
+							<span className="invisible" aria-hidden>
+								Collect
+							</span>
+							{documents.map((doc) => {
+								const row = coverage.rows.find((row) => row.key === doc.key)!;
+								const avoided = progress.avoidedDocuments.includes(doc.key);
+								return (
+									<div key={doc.key} className="contents">
+										<DocumentChip doc={doc} end />
+										<span
+											aria-label={doc.name + " still needed"}
+											className={cn(
+												"text-right text-sm tabular-nums",
+												row.missing > 0 ? "text-brand" : "text-muted-foreground",
+											)}
+										>
+											{row.missing}
+										</span>
+										<input
+											type="number"
+											min={0}
+											max={99999}
+											step={1}
+											inputMode="numeric"
+											aria-label={doc.name + " owned"}
+											className="h-9 w-full rounded bg-surface-raised text-center text-sm tabular-nums outline-brand"
+											value={progress.inventory[doc.key] ?? 0}
+											onChange={(event) =>
+												update((current) => ({
+													...current,
+													inventory: { ...current.inventory, [doc.key]: normalizeCount(Number(event.target.value)) },
+												}))
+											}
+										/>
+										<ActionChip
+											active={!avoided}
+											tone={avoided ? "avoid" : "done"}
+											label={avoided ? "Use classified" : "Collect"}
+											accessibleLabel={(avoided ? "Enable" : "Disable") + " collecting " + doc.name}
+											icon={avoided ? <Ban size={17} /> : <Check size={17} />}
+											onClick={() =>
+												update((current) => ({
+													...current,
+													avoidedDocuments: toggleId(current.avoidedDocuments, doc.key),
+												}))
+											}
+										/>
+									</div>
+								);
+							})}
+							<DocumentChip doc={{ name: "Classified · wildcard 1:1" }} end />
+							<span
+								aria-label="Classified documents still needed"
+								className="text-right text-sm tabular-nums text-special"
+							>
+								{coverage.classifiedMissing}
+							</span>
+							<input
+								type="number"
+								min={0}
+								max={99999}
+								step={1}
+								inputMode="numeric"
+								aria-label="Classified documents owned"
+								className="h-9 w-full rounded bg-special/10 text-center text-sm tabular-nums outline-brand"
+								value={progress.classified}
+								onChange={(event) =>
+									update((current) => ({ ...current, classified: normalizeCount(Number(event.target.value)) }))
+								}
+							/>
+						</div>
+						<div className="mt-4 space-y-3 border-t border-border pt-3 text-xs">
+							<label className="flex cursor-pointer items-center gap-2">
+								<input
+									type="checkbox"
+									className="accent-brand"
+									checked={useClassified}
+									onChange={(event) => setUseClassified(event.target.checked)}
+								/>
+								Use classified
+							</label>
+							<label className="flex cursor-pointer items-center gap-2">
+								<input
+									type="checkbox"
+									className="accent-brand"
+									checked={cumulative}
+									onChange={(event) => setCumulative(event.target.checked)}
+								/>
+								Cumulative costs
+							</label>
+							<p className="text-[11px] leading-relaxed text-muted-foreground">
+								Disabled types use classified for shortages. Preferences only break equal-cost ties. Use classified
+								applies your owned wildcard balance.
+							</p>
+						</div>
+					</aside>
+				)}
+			</div>
 			<header className="flex flex-wrap items-end justify-between gap-3">
 				<div>
 					<p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-brand">Season 1 · KORD Breach</p>
@@ -336,12 +487,8 @@ export function BattlePassPage() {
 
 			<section aria-labelledby="inventory-heading" className="space-y-3">
 				<div className="flex items-center justify-between">
-					<h2
-						id="inventory-heading"
-						className="text-sm font-medium"
-						title="Current unspent balances. Marking rewards completed does not spend these balances."
-					>
-						Your documents
+					<h2 id="inventory-heading" className="text-sm font-medium">
+						Document locations
 					</h2>
 					<Button
 						variant="ghost"
@@ -353,45 +500,6 @@ export function BattlePassPage() {
 						Map overlaps
 						<ChevronDown size={13} className={cn("transition-transform", showMaps && "rotate-180")} />
 					</Button>
-				</div>
-				<div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
-					{documents.map((doc, i) => (
-						<div key={doc.key} className="flex min-w-0 items-center gap-1 rounded-md bg-card p-1.5">
-							<DocumentChip doc={doc} end={i >= 4} />
-							<input
-								type="number"
-								min={0}
-								max={99999}
-								step={1}
-								inputMode="numeric"
-								aria-label={`${doc.name} owned`}
-								className="h-9 w-full min-w-0 rounded bg-transparent pr-1 text-center text-sm tabular-nums outline-brand"
-								value={progress.inventory[doc.key] ?? 0}
-								onChange={(event) =>
-									update((current) => ({
-										...current,
-										inventory: { ...current.inventory, [doc.key]: normalizeCount(Number(event.target.value)) },
-									}))
-								}
-							/>
-						</div>
-					))}
-					<div className="flex min-w-0 items-center gap-1 rounded-md bg-special/10 p-1.5">
-						<DocumentChip doc={{ name: "Classified · wildcard 1:1" }} end />
-						<input
-							type="number"
-							min={0}
-							max={99999}
-							step={1}
-							inputMode="numeric"
-							aria-label="Classified documents owned"
-							className="h-9 w-full min-w-0 rounded bg-transparent pr-1 text-center text-sm tabular-nums outline-brand"
-							value={progress.classified}
-							onChange={(event) =>
-								update((current) => ({ ...current, classified: normalizeCount(Number(event.target.value)) }))
-							}
-						/>
-					</div>
 				</div>
 				{showMaps && (
 					<div id="document-map-grid">
@@ -492,7 +600,10 @@ export function BattlePassPage() {
 													</th>
 													<td>{row.required}</td>
 													<td>{row.used}</td>
-													<td className="text-special">{row.classified || "—"}</td>
+													<td className="text-special">
+														{row.classified || "—"}
+														{row.classifiedMissing > 0 && " (+" + row.classifiedMissing + " needed)"}
+													</td>
 													<td className={row.missing ? "text-warning" : "text-success"}>{row.missing}</td>
 												</tr>
 											))}

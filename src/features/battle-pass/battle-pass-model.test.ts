@@ -101,7 +101,13 @@ test("saved progress survives roundtrip and unknown IDs, malformed fields normal
 	assert.deepEqual(progress.completed, ["a", "future"]);
 	assert.deepEqual(progress.inventory, { financial: 3, future: 7, medical: 0 });
 	assert.deepEqual(parseProgress(JSON.stringify(progress)), progress);
-	assert.deepEqual(parseProgress("invalid"), { completed: [], goals: [], inventory: {}, classified: 0 });
+	assert.deepEqual(parseProgress("invalid"), {
+		completed: [],
+		goals: [],
+		inventory: {},
+		classified: 0,
+		avoidedDocuments: [],
+	});
 	assert.deepEqual(toggleId(toggleId(progress.completed, "b"), "b"), progress.completed);
 });
 
@@ -128,4 +134,63 @@ test("real dataset preserves bundle costs, source totals and sequential unlocks"
 	const pageOneDone = pages[0].cells.slice(0, 4).map((t) => t.id);
 	assert.equal(unlockedPages(pageOneDone)[1], true);
 	assert.equal(unlockedPages(pages[1].cells.map((t) => t.id))[2], false);
+});
+
+test("collection preferences break ties without buying more expensive rewards", () => {
+	const preferred = { ...tile("preferred", 2, 2), cost: { medical: 2 } };
+	const expensive = { ...tile("expensive", 3, 3), cost: { medical: 3 } };
+	const pass = [
+		{ num: 1, req: 0, cells: [tile("cheap", 1, 0), tile("avoided", 2, 1), preferred, expensive] },
+		{ num: 2, req: 2, cells: [tile("goal", 5, 0)] },
+	];
+	assert.deepEqual(planGoals(["goal"], [], pass).fillerIds, ["cheap", "avoided"]);
+	const plan = planGoals(["goal"], [], pass, ["financial"]);
+	assert.deepEqual(plan.fillerIds, ["cheap", "preferred"]);
+	assert.equal(plan.total, planGoals(["goal"], [], pass).total);
+	assert.ok(planGoals(["goal", "avoided"], [], pass, ["financial"]).selected.some((t) => t.id === "avoided"));
+	for (const goal of tiles) {
+		assert.equal(
+			planGoals(
+				[goal.id],
+				[],
+				pages,
+				documents.map((d) => d.key),
+			).total,
+			planGoals([goal.id], []).total,
+		);
+	}
+});
+
+test("avoided shortages become classified demand, with owned stock and wildcards counted once", () => {
+	const costs = { financial: 5, project: 4 };
+	const inventory = { project: 1 };
+	const off = coverCosts(costs, inventory, 2, false, ["project"]);
+	assert.equal(off.classifiedMissing, 3);
+	assert.equal(off.missing, 8);
+	assert.equal(off.rows.find((r) => r.key === "project")?.missing, 0);
+	const on = coverCosts(costs, inventory, 4, true, ["project"]);
+	assert.equal(on.classifiedMissing, 0);
+	assert.equal(on.classifiedUsed, 4);
+	assert.equal(on.rows.find((r) => r.key === "project")?.classified, 3);
+	assert.equal(on.missing, 4);
+	assert.equal(coverCosts(costs, {}, 0, true, ["financial", "project"]).classifiedMissing, 9);
+	assert.equal(coverCosts({}, {}, 10, true, ["financial"]).missing, 0);
+});
+
+test("old saves default to collecting everything and preferences survive reload", () => {
+	assert.deepEqual(
+		parseProgress(JSON.stringify({ completed: ["old"], inventory: { financial: 7 } })).avoidedDocuments,
+		[],
+	);
+	const saved = parseProgress(
+		JSON.stringify({
+			completed: ["old"],
+			inventory: { financial: 7 },
+			avoidedDocuments: ["financial", "future", "financial", 4],
+		}),
+	);
+	assert.deepEqual(saved.avoidedDocuments, ["financial", "future"]);
+	assert.deepEqual(parseProgress(JSON.stringify(saved)), saved);
+	assert.deepEqual(saved.completed, ["old"]);
+	assert.equal(saved.inventory.financial, 7);
 });

@@ -44,8 +44,15 @@ export interface Progress {
 	goals: string[];
 	inventory: Costs;
 	classified: number;
+	avoidedDocuments: string[];
 }
-export const emptyProgress = (): Progress => ({ completed: [], goals: [], inventory: {}, classified: 0 });
+export const emptyProgress = (): Progress => ({
+	completed: [],
+	goals: [],
+	inventory: {},
+	classified: 0,
+	avoidedDocuments: [],
+});
 export function normalizeCount(value: unknown): number {
 	return typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(99999, Math.floor(value))) : 0;
 }
@@ -54,7 +61,7 @@ export function parseProgress(raw: string | null): Progress {
 	try {
 		const value = JSON.parse(raw ?? "null");
 		if (!value || typeof value !== "object" || Array.isArray(value)) return result;
-		for (const field of ["completed", "goals"] as const) {
+		for (const field of ["completed", "goals", "avoidedDocuments"] as const) {
 			if (Array.isArray(value[field]))
 				result[field] = [...new Set<string>(value[field].filter((id: unknown) => typeof id === "string"))];
 		}
@@ -83,7 +90,15 @@ export function sumCosts(selected: Tile[]): Costs {
  * Each page is independent: keep explicit goals, then buy its cheapest remaining tiles
  * until the next page's count is met. A bundled reward still counts as one tile.
  */
-export function planGoals(goalIds: string[], completedIds: string[], passPages = pages) {
+export function planGoals(
+	goalIds: string[],
+	completedIds: string[],
+	passPages = pages,
+	avoidedDocuments: string[] = [],
+) {
+	const avoided = new Set(avoidedDocuments);
+	const avoidedCost = (tile: Tile) =>
+		Object.entries(tile.cost).reduce((sum, [key, amount]) => sum + (avoided.has(key) ? amount : 0), 0);
 	const known = new Set(passPages.flatMap((page) => page.cells.map((tile) => tile.id)));
 	const completed = new Set(completedIds.filter((id) => known.has(id)));
 	const goals = new Set(goalIds.filter((id) => known.has(id) && !completed.has(id)));
@@ -97,7 +112,7 @@ export function planGoals(goalIds: string[], completedIds: string[], passPages =
 		const required = i < lastPage ? passPages[i + 1].req : 0;
 		const candidates = page.cells
 			.filter((tile) => !completed.has(tile.id) && !goals.has(tile.id))
-			.sort((a, b) => totalCost(a.cost) - totalCost(b.cost) || a.slot - b.slot);
+			.sort((a, b) => totalCost(a.cost) - totalCost(b.cost) || avoidedCost(a) - avoidedCost(b) || a.slot - b.slot);
 		const fillers = candidates.slice(0, Math.max(0, required - done - chosen.length));
 		selected.push(...chosen, ...fillers);
 		fillerIds.push(...fillers.map((tile) => tile.id));
@@ -107,19 +122,41 @@ export function planGoals(goalIds: string[], completedIds: string[], passPages =
 }
 
 /** Allocate owned stock once to the entire plan, then a shared 1:1 wildcard pool. */
-export function coverCosts(costs: Costs, inventory: Costs, classified: number, useClassified: boolean) {
+export function coverCosts(
+	costs: Costs,
+	inventory: Costs,
+	classified: number,
+	useClassified: boolean,
+	avoidedDocuments: string[] = [],
+) {
 	let pool = useClassified ? normalizeCount(classified) : 0;
-	const rows = documentKeys.map((key) => {
-		const required = costs[key] ?? 0;
-		const owned = normalizeCount(inventory[key]);
-		const used = Math.min(required, owned);
-		const wildcard = Math.min(pool, required - used);
-		pool -= wildcard;
-		return { key, required, owned, used, classified: wildcard, missing: required - used - wildcard };
-	});
+	const avoided = new Set(avoidedDocuments);
+	// Reserve owned wildcards for avoided types first; every wildcard is used only once.
+	const allocations = [...documentKeys]
+		.sort((a, b) => Number(avoided.has(b)) - Number(avoided.has(a)))
+		.map((key) => {
+			const required = costs[key] ?? 0;
+			const owned = normalizeCount(inventory[key]);
+			const used = Math.min(required, owned);
+			const wildcard = Math.min(pool, required - used);
+			pool -= wildcard;
+			const deficit = required - used - wildcard;
+			return {
+				key,
+				required,
+				owned,
+				used,
+				classified: wildcard,
+				missing: avoided.has(key) ? 0 : deficit,
+				classifiedMissing: avoided.has(key) ? deficit : 0,
+			};
+		});
+	const rows = documentKeys.map((key) => allocations.find((row) => row.key === key)!);
+	const classifiedMissing = rows.reduce((n, row) => n + row.classifiedMissing, 0);
 	return {
 		rows,
-		missing: rows.reduce((n, row) => n + row.missing, 0),
+		classifiedMissing,
+		missing: rows.reduce((n, row) => n + row.missing, classifiedMissing),
 		classifiedUsed: rows.reduce((n, row) => n + row.classified, 0),
 		ownedUsed: rows.reduce((n, row) => n + row.used, 0),
 	};

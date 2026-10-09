@@ -1,3 +1,66 @@
+.main {
+	max-width: 1440px;
+}
+.documentDock {
+	position: fixed;
+	top: 100px;
+	right: 16px;
+	z-index: 45;
+	margin: 0;
+}
+.dockToggle {
+	position: absolute;
+	top: 0;
+	right: 0;
+	z-index: 2;
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: var(--surface-raised);
+	cursor: pointer;
+	box-shadow: 0 4px 16px color-mix(in srgb, var(--shadow) 25%, transparent);
+}
+.dockToggle:focus-visible {
+	outline: 2px solid var(--brand);
+	outline-offset: 2px;
+}
+.documentPanel {
+	width: min(280px, calc(100vw - 32px));
+	max-height: calc(100dvh - 116px);
+	overflow-y: auto;
+	padding: 12px;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: var(--card);
+	box-shadow: 0 8px 32px color-mix(in srgb, var(--shadow) 35%, transparent);
+}
+.documentPanel .documentOnly .chipInner {
+	left: 0;
+	right: auto;
+	flex-direction: row;
+}
+.documentPanel .label {
+	white-space: normal;
+	line-height: 14px;
+}
+.documentPanel .chip:hover .label,
+.documentPanel .chip:focus-visible .label {
+	max-width: 185px;
+}
+@media (min-width: 1280px) {
+	.panelOpen {
+		width: calc(100% - 312px);
+		margin-right: 312px;
+	}
+}
+@media (min-width: 2064px) {
+	.panelOpen {
+		margin-inline: auto;
+	}
+}
 .chip {
 	position: relative;
 	display: inline-block;
