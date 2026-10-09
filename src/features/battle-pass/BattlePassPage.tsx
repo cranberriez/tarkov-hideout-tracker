@@ -167,17 +167,11 @@ function RewardCard({
 	return (
 		<article className={cn(styles.card, "min-w-0 rounded-lg bg-card", done && "bg-success/5")}>
 			<div className="relative">
-				<div className="relative flex h-56 items-center justify-center overflow-hidden rounded-t-lg bg-surface-raised/30 sm:h-64">
+				<div className="relative flex h-[188px] items-center justify-center overflow-hidden rounded-t-lg bg-surface-raised/30 sm:h-[220px]">
 					<Artwork
 						src={tile.bigImg || tile.img}
-						className={cn(styles.image, "h-full w-full p-5 pb-9", done && "opacity-50")}
+						className={cn(styles.image, "h-full w-full p-5", done && "opacity-50")}
 					/>
-					<h3
-						title={name}
-						className="absolute inset-x-0 bottom-0 truncate bg-background/85 px-3 py-2 text-sm font-medium backdrop-blur-sm"
-					>
-						{name}
-					</h3>
 				</div>
 				{filler && !done && !goal && (
 					<span className="absolute left-2 top-2 rounded bg-info-surface px-2 py-1 text-[10px] font-medium text-info">
@@ -203,11 +197,16 @@ function RewardCard({
 					/>
 				</div>
 			</div>
-			<div className="flex items-start justify-between gap-2 p-2.5">
+			<div className="space-y-2 px-3 pb-2.5 pt-2">
+				<div className="flex items-center justify-between gap-2">
+					<h3 title={name} className="min-w-0 truncate text-sm font-medium">
+						{name}
+					</h3>
+					<span title="Total documents" className="shrink-0 text-[11px] tabular-nums text-subtle-foreground">
+						{totalCost(costs)}
+					</span>
+				</div>
 				<CostList costs={costs} />
-				<span title="Total documents" className="pt-3 text-[11px] tabular-nums text-subtle-foreground">
-					{totalCost(costs)}
-				</span>
 			</div>
 			{tile.rewards.length > 1 && (
 				<details className="group relative px-3 pb-2 text-xs text-muted-foreground">
@@ -657,6 +656,14 @@ export function BattlePassPage() {
 			<div className="grid items-start gap-x-8 gap-y-10 lg:grid-cols-2">
 				{pages.map((page, index) => {
 					const doneCount = page.cells.filter((tile) => complete.has(tile.id)).length;
+					const suggestedIds = page.cells
+						.filter((tile) => filler.has(tile.id) && !complete.has(tile.id))
+						.map((tile) => tile.id);
+					const completeTiles = (ids: string[]) =>
+						update((current) => ({
+							...current,
+							completed: [...new Set([...current.completed, ...ids])],
+						}));
 					const previousDone = index > 0 ? pages[index - 1].cells.filter((tile) => complete.has(tile.id)).length : 0;
 					return (
 						<section
@@ -664,7 +671,7 @@ export function BattlePassPage() {
 							aria-labelledby={`pass-page-${page.num}`}
 							className="min-w-0 rounded-xl border border-border/60 bg-card/50 p-3 sm:p-4"
 						>
-							<header className="mb-3 flex items-center justify-between gap-2">
+							<header className="mb-3 flex flex-wrap items-center justify-between gap-2">
 								<div className="flex min-w-0 items-center gap-3">
 									<h2 id={`pass-page-${page.num}`} className="shrink-0 text-sm font-semibold">
 										Page {String(page.num).padStart(2, "0")}
@@ -679,9 +686,29 @@ export function BattlePassPage() {
 										</span>
 									)}
 								</div>
-								<span className="text-xs tabular-nums text-subtle-foreground">
-									{doneCount}/{page.cells.length}
-								</span>
+								<div className="ml-auto flex items-center gap-1">
+									<span className="mr-1 text-xs tabular-nums text-subtle-foreground">
+										{doneCount}/{page.cells.length}
+									</span>
+									<Button
+										size="xs"
+										variant="ghost"
+										disabled={suggestedIds.length === 0}
+										aria-label={`Complete suggested: Page ${page.num}`}
+										onClick={() => completeTiles(suggestedIds)}
+									>
+										Complete suggested
+									</Button>
+									<Button
+										size="xs"
+										variant="ghost"
+										disabled={doneCount === page.cells.length}
+										aria-label={`Complete all: Page ${page.num}`}
+										onClick={() => completeTiles(page.cells.map((tile) => tile.id))}
+									>
+										Complete all
+									</Button>
+								</div>
 							</header>
 							<div className="grid gap-3 sm:grid-cols-2">
 								{page.cells.map((tile) => (

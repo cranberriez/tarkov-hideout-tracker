@@ -62,8 +62,11 @@ It reuses the external-store storage helper, never writes on mount, and synchron
 between tabs. No existing profile key, migration, backup or reset scope changes;
 this save is not included in progression backups or Settings resets.
 
-Completion toggles only the selected tile. They do not deduct inventory, infer
-prior completions, clear goals or alter another tile. This permits recording
+Individual completion toggles only the selected tile. Page headers also offer
+Complete suggested (the currently suggested prerequisite tiles on that page)
+and Complete all (every tile on that page). Both add completion IDs without
+uncompleting existing rewards. Completion actions do not deduct inventory, infer
+prior completions or clear goals. This permits recording
 existing progress on a later page. Unknown saved IDs and inventory keys survive
 updates; unknown goals are reported and cannot satisfy prerequisites. Numeric
 balances normalize to integers from 0 to 99,999. Cumulative display, plan scope
