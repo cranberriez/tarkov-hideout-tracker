@@ -76,6 +76,29 @@ const documentMarks: Record<string, { color: string; shape: string }> = {
 	classified: { color: "#fb923c", shape: "star" },
 };
 
+/** Tiles that take an extra grid slot so every page fills a 2x3 grid. */
+const tileSpans: Record<string, "wide" | "tall"> = {
+	"season-1-page-1-slot-5": "wide",
+	"season-1-page-2-slot-2": "tall",
+	"season-1-page-3-slot-3": "wide",
+	"season-1-page-4-slot-2": "tall",
+	"season-1-page-5-slot-1": "tall",
+	"season-1-page-6-slot-1": "tall",
+	"season-1-page-6-slot-2": "tall",
+	"season-1-page-6-slot-3": "wide",
+	"season-1-page-7-slot-3": "tall",
+	"season-1-page-7-slot-4": "tall",
+	"season-1-page-8-slot-3": "wide",
+	"season-1-page-9-slot-5": "wide",
+	"season-1-page-10-slot-1": "wide",
+	"season-1-page-10-slot-2": "wide",
+	"season-1-page-11-slot-3": "tall",
+	"season-1-page-11-slot-4": "tall",
+	"season-1-page-12-slot-1": "wide",
+	"season-1-page-12-slot-2": "tall",
+	"season-1-page-12-slot-3": "tall",
+};
+
 function Artwork({ src, className = "" }: { src: string; className?: string }) {
 	const [failed, setFailed] = useState(false);
 	return failed ? (
@@ -174,10 +197,16 @@ function ActionChip({
 	);
 }
 
-function CostList({ costs }: { costs: Costs }) {
+function CostList({ costs, wide = false }: { costs: Costs; wide?: boolean }) {
 	const shown = documents.filter((doc) => (costs[doc.key] ?? 0) > 0);
 	return (
-		<div className="flex min-h-10 flex-wrap gap-1">
+		<div
+			className={cn(
+				styles.costGrid,
+				"content-start",
+				wide ? "grid-cols-6" : shown.length > 4 ? "grid-cols-3" : "grid-cols-4",
+			)}
+		>
 			{shown.map((doc, i) => (
 				<DocumentChip key={doc.key} doc={doc} amount={costs[doc.key]} end={i >= Math.ceil(shown.length / 2)} />
 			))}
@@ -193,6 +222,7 @@ function CostList({ costs }: { costs: Costs }) {
 
 function RewardCard({
 	tile,
+	span,
 	pageNumber,
 	done,
 	goal,
@@ -202,6 +232,7 @@ function RewardCard({
 	toggleDone,
 }: {
 	tile: Tile;
+	span?: "wide" | "tall";
 	pageNumber: number;
 	done: boolean;
 	goal: boolean;
@@ -213,20 +244,28 @@ function RewardCard({
 	const label = `Page ${pageNumber}, ${tile.displayName}`;
 	const name = tile.displayName + (tile.rewards[0].type === "tarcoin" ? ` ×${tile.rewards[0].value}` : "");
 	return (
-		<article className={cn(styles.card, "min-w-0 rounded-lg bg-card", done && "bg-success/5")}>
-			<div className="relative">
-				<div className="relative flex h-[140px] items-center justify-center overflow-hidden rounded-t-lg bg-surface-raised/30 sm:h-[160px]">
-					<Artwork
-						src={tile.bigImg || tile.img}
-						className={cn(styles.image, "h-full w-full p-5", done && "opacity-50")}
-					/>
-				</div>
+		<article
+			className={cn(
+				styles.card,
+				"h-full min-w-0 rounded-lg bg-card",
+				span === "wide" && "col-span-2",
+				span === "tall" && "row-span-2",
+				done && "bg-success/5",
+			)}
+		>
+			<div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg bg-surface-raised/30">
+				<Artwork
+					src={tile.bigImg || tile.img}
+					className={cn(styles.image, "h-full w-full p-2", done && "opacity-50")}
+				/>
+			</div>
+			<div className="contents">
 				{filler && !done && !goal && (
 					<span className="absolute left-2 top-2 rounded bg-info-surface px-2 py-1 text-[10px] font-medium text-info">
 						Suggested
 					</span>
 				)}
-				<div className="absolute right-2 top-2 flex gap-1">
+				<div className="absolute right-2 top-2 z-10 flex gap-1">
 					<ActionChip
 						active={goal}
 						tone="goal"
@@ -245,27 +284,17 @@ function RewardCard({
 					/>
 				</div>
 			</div>
-			<div className="space-y-2 px-3 pb-2.5 pt-2">
+			<div className="absolute inset-x-0 bottom-0 space-y-2 rounded-b-lg bg-gradient-to-t from-card/90 via-card/60 to-transparent px-3 pb-2.5 pt-8">
 				<div className="flex items-center justify-between gap-2">
-					<h3 title={name} className="min-w-0 truncate text-sm font-medium">
+					<h3 title={name} className="min-w-0 truncate text-base font-semibold">
 						{name}
 					</h3>
 					<span title="Total documents" className="shrink-0 text-[11px] tabular-nums text-subtle-foreground">
 						{totalCost(costs)}
 					</span>
 				</div>
-				<CostList costs={costs} />
+				<CostList costs={costs} wide={span === "wide"} />
 			</div>
-			{tile.rewards.length > 1 && (
-				<details className="group relative px-3 pb-2 text-xs text-muted-foreground">
-					<summary className="w-fit cursor-pointer list-none">+{tile.rewards.length - 1} bundled offers</summary>
-					<ul className="absolute inset-x-0 top-full z-30 space-y-2 rounded bg-surface-raised p-3 shadow-xl">
-						{tile.rewards.map((reward, i) => (
-							<li key={reward.bsgId ?? i}>{reward.name}</li>
-						))}
-					</ul>
-				</details>
-			)}
 		</article>
 	);
 }
@@ -841,11 +870,12 @@ export function BattlePassPage() {
 										</Button>
 									</div>
 								</header>
-								<div className="grid grid-cols-2 gap-3">
+								<div className="grid auto-rows-[300px] grid-cols-2 gap-3">
 									{page.cells.map((tile) => (
 										<RewardCard
 											key={tile.id}
 											tile={tile}
+											span={tileSpans[tile.id]}
 											pageNumber={page.num}
 											done={complete.has(tile.id)}
 											goal={goals.has(tile.id)}

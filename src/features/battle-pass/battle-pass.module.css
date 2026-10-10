@@ -314,3 +314,19 @@
 		animation: none !important;
 	}
 }
+
+.costGrid {
+	display: grid;
+	gap: 4px;
+}
+.costGrid .chip {
+	width: 100%;
+	container-type: inline-size;
+}
+.costGrid .face {
+	width: 100cqw;
+	justify-content: flex-start;
+	gap: 2px;
+	padding-right: 0;
+	background: color-mix(in srgb, var(--background) 75%, var(--card));
+}
