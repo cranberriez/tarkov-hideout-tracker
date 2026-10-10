@@ -1,8 +1,34 @@
 "use client";
 
+/// <reference types="react/canary" />
+
 /* eslint-disable @next/next/no-img-element -- Source CDN artwork, no image proxy required. */
-import { useMemo, useState, type CSSProperties, type ReactNode, type SyntheticEvent } from "react";
-import { Check, FileText, Flag, LockKeyhole, Map as MapIcon, Layers, ChevronDown, Ban, X } from "lucide-react";
+import {
+	addTransitionType,
+	startTransition,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+	ViewTransition,
+	type CSSProperties,
+	type ReactNode,
+	type SyntheticEvent,
+} from "react";
+import {
+	Check,
+	FileText,
+	Flag,
+	LockKeyhole,
+	Map as MapIcon,
+	Layers,
+	ChevronDown,
+	ChevronLeft,
+	ChevronRight,
+	Rows3,
+	Ban,
+	X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import locations from "@/lib/data/season-1-document-locations.json";
@@ -167,7 +193,7 @@ function RewardCard({
 	return (
 		<article className={cn(styles.card, "min-w-0 rounded-lg bg-card", done && "bg-success/5")}>
 			<div className="relative">
-				<div className="relative flex h-[188px] items-center justify-center overflow-hidden rounded-t-lg bg-surface-raised/30 sm:h-[220px]">
+				<div className="relative flex h-[140px] items-center justify-center overflow-hidden rounded-t-lg bg-surface-raised/30 sm:h-[160px]">
 					<Artwork
 						src={tile.bigImg || tile.img}
 						className={cn(styles.image, "h-full w-full p-5", done && "opacity-50")}
@@ -287,76 +313,48 @@ function DocumentInventory({
 	progress,
 	update,
 	coverage,
-	compact = false,
 }: {
 	progress: ReturnType<typeof useBattlePass>[0];
 	update: ReturnType<typeof useBattlePass>[1];
 	coverage: ReturnType<typeof coverCosts>;
-	compact?: boolean;
 }) {
 	return (
-		<div
-			className={
-				compact
-					? "mt-4 grid grid-cols-[40px_1fr_64px_36px] items-center gap-x-2 gap-y-1"
-					: "grid grid-cols-1 gap-2 min-[400px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-5"
-			}
-		>
-			{compact && (
-				<>
-					<span className="invisible" aria-hidden>
-						Doc
-					</span>
-					<span className="text-right text-[11px] text-muted-foreground">Need</span>
-					<span className="text-center text-[11px] text-muted-foreground">Owned</span>
-					<span className="invisible" aria-hidden>
-						Collect
-					</span>
-				</>
-			)}
+		<div className="mt-3 grid grid-cols-[40px_1fr_64px_36px] items-center gap-x-2 gap-y-1">
+			<span aria-hidden />
+			<span className="text-right text-[11px] text-muted-foreground">Need</span>
+			<span className="text-center text-[11px] text-muted-foreground">Owned</span>
+			<span aria-hidden />
 			{documents.map((doc) => {
 				const row = coverage.rows.find((row) => row.key === doc.key)!;
 				const avoided = progress.avoidedDocuments.includes(doc.key);
 				return (
-					<div
-						key={doc.key}
-						className={
-							compact
-								? "contents"
-								: "grid min-w-0 grid-cols-[40px_minmax(24px,1fr)_minmax(40px,1fr)_36px] items-end gap-1 rounded-md bg-card p-1.5"
-						}
-					>
+					<div key={doc.key} className="contents">
 						<DocumentChip doc={doc} end />
 						<span
 							aria-label={doc.name + " still needed"}
 							className={cn(
 								"text-right text-sm tabular-nums",
-								!compact && "text-center",
 								row.missing > 0 ? "text-brand" : "text-muted-foreground",
 							)}
 						>
-							{!compact && <span className="block text-[10px] text-muted-foreground">Need</span>}
-							<span className={compact ? undefined : "flex h-9 items-center justify-center"}>{row.missing}</span>
+							{row.missing}
 						</span>
-						<label className={compact ? "contents" : "min-w-0"}>
-							{!compact && <span className="block text-center text-[10px] text-muted-foreground">Owned</span>}
-							<input
-								type="number"
-								min={0}
-								max={99999}
-								step={1}
-								inputMode="numeric"
-								aria-label={doc.name + " owned"}
-								className="h-9 w-full min-w-0 rounded bg-surface-raised text-center text-sm tabular-nums outline-brand"
-								value={progress.inventory[doc.key] ?? 0}
-								onChange={(event) =>
-									update((current) => ({
-										...current,
-										inventory: { ...current.inventory, [doc.key]: normalizeCount(Number(event.target.value)) },
-									}))
-								}
-							/>
-						</label>
+						<input
+							type="number"
+							min={0}
+							max={99999}
+							step={1}
+							inputMode="numeric"
+							aria-label={doc.name + " owned"}
+							className="h-9 w-full min-w-0 rounded bg-surface-raised text-center text-sm tabular-nums outline-brand"
+							value={progress.inventory[doc.key] ?? 0}
+							onChange={(event) =>
+								update((current) => ({
+									...current,
+									inventory: { ...current.inventory, [doc.key]: normalizeCount(Number(event.target.value)) },
+								}))
+							}
+						/>
 						<ActionChip
 							active={!avoided}
 							tone={avoided ? "avoid" : "done"}
@@ -373,42 +371,82 @@ function DocumentInventory({
 					</div>
 				);
 			})}
-			<div
-				className={
-					compact
-						? "contents"
-						: "grid min-w-0 grid-cols-[40px_minmax(24px,1fr)_minmax(40px,1fr)_36px] items-end gap-1 rounded-md bg-card p-1.5"
-				}
-			>
+			<div className="contents">
 				<DocumentChip doc={{ name: "Classified · wildcard 1:1" }} end />
-				<span
-					aria-label="Classified documents still needed"
-					className={cn("text-right text-sm tabular-nums text-special", !compact && "text-center")}
-				>
-					{!compact && <span className="block text-[10px] text-muted-foreground">Need</span>}
-					<span className={compact ? undefined : "flex h-9 items-center justify-center"}>
-						{coverage.classifiedMissing}
-					</span>
+				<span aria-label="Classified documents still needed" className="text-right text-sm tabular-nums text-special">
+					{coverage.classifiedMissing}
 				</span>
-				<label className={compact ? "contents" : "min-w-0"}>
-					{!compact && <span className="block text-center text-[10px] text-muted-foreground">Owned</span>}
-					<input
-						type="number"
-						min={0}
-						max={99999}
-						step={1}
-						inputMode="numeric"
-						aria-label="Classified documents owned"
-						className="h-9 w-full min-w-0 rounded bg-special/10 text-center text-sm tabular-nums outline-brand"
-						value={progress.classified}
-						onChange={(event) =>
-							update((current) => ({ ...current, classified: normalizeCount(Number(event.target.value)) }))
-						}
-					/>
-				</label>
+				<input
+					type="number"
+					min={0}
+					max={99999}
+					step={1}
+					inputMode="numeric"
+					aria-label="Classified documents owned"
+					className="h-9 w-full min-w-0 rounded bg-special/10 text-center text-sm tabular-nums outline-brand"
+					value={progress.classified}
+					onChange={(event) =>
+						update((current) => ({ ...current, classified: normalizeCount(Number(event.target.value)) }))
+					}
+				/>
+				<span aria-hidden />
 			</div>
 		</div>
 	);
+}
+
+function Toggle({
+	checked,
+	onChange,
+	icon,
+	children,
+	title,
+}: {
+	checked: boolean;
+	onChange: (checked: boolean) => void;
+	icon?: ReactNode;
+	children: ReactNode;
+	title?: string;
+}) {
+	return (
+		<label
+			title={title}
+			className={cn(
+				"flex h-8 cursor-pointer items-center gap-2 rounded-md px-2.5 text-xs transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-brand",
+				checked ? "bg-brand/15 text-brand" : "bg-surface-raised/50 text-muted-foreground hover:text-foreground",
+			)}
+		>
+			<input
+				type="checkbox"
+				className="sr-only"
+				checked={checked}
+				onChange={(event) => onChange(event.target.checked)}
+			/>
+			{icon}
+			{children}
+		</label>
+	);
+}
+
+function Stat({ label, value, accent = false }: { label: string; value: number; accent?: boolean }) {
+	return (
+		<div className="min-w-0 rounded-md bg-surface-raised/40 px-3 py-2">
+			<div className={cn("text-xl font-semibold tabular-nums leading-tight", accent && "text-brand")}>{value}</div>
+			<div className="text-[11px] text-muted-foreground">{label}</div>
+		</div>
+	);
+}
+
+function useSpread() {
+	const [spread, setSpread] = useState(2);
+	useEffect(() => {
+		const query = window.matchMedia("(min-width: 1100px)");
+		const sync = () => setSpread(query.matches ? 2 : 1);
+		sync();
+		query.addEventListener("change", sync);
+		return () => query.removeEventListener("change", sync);
+	}, []);
+	return spread;
 }
 
 export function BattlePassPage() {
@@ -417,7 +455,38 @@ export function BattlePassPage() {
 	const [cumulative, setCumulative] = useState(false);
 	const [useClassified, setUseClassified] = useState(false);
 	const [showMaps, setShowMaps] = useState(false);
-	const [documentsOpen, setDocumentsOpen] = useState(true);
+	const [documentsOpen, setDocumentsOpen] = useState(false);
+	const [start, setStart] = useState(0);
+	const [listMode, setListMode] = useState(false);
+	const spread = useSpread();
+	const lastStart = Math.max(0, pages.length - spread);
+	const first = Math.min(start, lastStart);
+	const go = useCallback(
+		(to: number) => {
+			const next = Math.max(0, Math.min(to, lastStart));
+			if (next === first) return;
+			startTransition(() => {
+				addTransitionType(next > first ? "page-next" : "page-prev");
+				setStart(next);
+			});
+		},
+		[first, lastStart],
+	);
+	useEffect(() => {
+		if (listMode) return;
+		const onKey = (event: KeyboardEvent) => {
+			const target = event.target as HTMLElement | null;
+			if (event.ctrlKey || event.metaKey || event.altKey) return;
+			if (target?.closest("input, textarea, select, [contenteditable]")) return;
+			const key = event.key.toLowerCase();
+			if (key === "q" || key === "arrowleft") go(first - 1);
+			else if (key === "e" || key === "arrowright") go(first + 1);
+			else return;
+			event.preventDefault();
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [first, go, listMode]);
 	const plan = useMemo(
 		() =>
 			planGoals(
@@ -454,10 +523,9 @@ export function BattlePassPage() {
 		.filter((tile) => !complete.has(tile.id))
 		.reduce((n, tile) => n + tile.totalDocumentCost, 0);
 	const knownGoals = tiles.filter((tile) => goals.has(tile.id));
+	const visible = listMode ? pages : pages.slice(first, first + spread);
 	return (
-		<main
-			className={cn("container mx-auto space-y-6 px-4 py-8 sm:px-6", styles.main, documentsOpen && styles.panelOpen)}
-		>
+		<main className={cn("container mx-auto space-y-4 px-4 pt-6 sm:px-6", listMode ? "pb-8" : "pb-28", styles.main)}>
 			<div
 				className={styles.documentDock}
 				onKeyDown={(event) => {
@@ -476,114 +544,38 @@ export function BattlePassPage() {
 					onClick={() => setDocumentsOpen(!documentsOpen)}
 				>
 					{documentsOpen ? <X size={20} /> : <FileText size={20} />}
+					{!documentsOpen && coverage.missing > 0 && <span className={styles.badge}>{coverage.missing}</span>}
 				</button>
 				{documentsOpen && (
 					<aside id="floating-documents" aria-labelledby="floating-documents-heading" className={styles.documentPanel}>
 						<h2 id="floating-documents-heading" className="pr-10 text-sm font-semibold">
 							Documents
 						</h2>
-						<p className="mt-1 text-xs text-muted-foreground">
+						<p className="mt-0.5 text-xs text-muted-foreground">
 							{scope === "all" ? "Everything" : "Selected goals"} · {coverage.missing} to collect
 						</p>
-						<DocumentInventory progress={progress} update={update} coverage={coverage} compact />
-						<div className="mt-4 space-y-3 border-t border-border pt-3 text-xs">
-							<label className="flex cursor-pointer items-center gap-2">
-								<input
-									type="checkbox"
-									className="accent-brand"
-									checked={useClassified}
-									onChange={(event) => setUseClassified(event.target.checked)}
-								/>
-								Use classified
-							</label>
-							<label className="flex cursor-pointer items-center gap-2">
-								<input
-									type="checkbox"
-									className="accent-brand"
-									checked={cumulative}
-									onChange={(event) => setCumulative(event.target.checked)}
-								/>
-								Cumulative costs
-							</label>
-							<p className="text-[11px] leading-relaxed text-muted-foreground">
-								Disabled types use classified for shortages. Preferences only break equal-cost ties. Use classified
-								applies your owned wildcard balance.
-							</p>
-						</div>
+						<DocumentInventory progress={progress} update={update} coverage={coverage} />
 					</aside>
 				)}
 			</div>
-			<header className="flex flex-wrap items-end justify-between gap-3">
-				<div>
-					<p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-brand">Season 1 · KORD Breach</p>
-					<h1 className="text-3xl font-semibold tracking-tight">Battle Pass</h1>
-				</div>
-				<div className="text-right text-xs text-muted-foreground">
-					<p>
-						<span className="text-lg font-semibold text-foreground">{completedCount}</span> / 53 claimed
-					</p>
-					<p>{remainingTotal} docs remaining</p>
-				</div>
-			</header>
-			<div
-				className="h-1 overflow-hidden rounded bg-surface-raised"
-				role="progressbar"
-				aria-label="Battle pass completion"
-				aria-valuenow={completedCount}
-				aria-valuemin={0}
-				aria-valuemax={53}
-			>
-				<div className="h-full bg-success" style={{ width: `${(completedCount / 53) * 100}%` }} />
-			</div>
 
-			<section aria-labelledby="documents-heading" className="space-y-2">
-				<div className="flex flex-wrap items-baseline justify-between gap-2">
-					<h2 id="documents-heading" className="text-lg font-medium">
-						Documents
-					</h2>
-					<p className="text-xs text-muted-foreground">
-						{scope === "all" ? "Everything" : "Selected goals"} · {coverage.missing} to collect
-					</p>
-				</div>
-				<DocumentInventory progress={progress} update={update} coverage={coverage} />
-			</section>
-
-			<section aria-labelledby="inventory-heading" className="space-y-3">
-				<div className="flex items-center justify-between">
-					<h2 id="inventory-heading" className="text-sm font-medium">
-						Document locations
-					</h2>
-					<Button
-						variant="ghost"
-						aria-expanded={showMaps}
-						aria-controls="document-map-grid"
-						onClick={() => setShowMaps(!showMaps)}
-					>
-						<MapIcon size={15} />
-						Map overlaps
-						<ChevronDown size={13} className={cn("transition-transform", showMaps && "rotate-180")} />
-					</Button>
-				</div>
-				{showMaps && (
-					<div id="document-map-grid">
-						<MapGrid />
+			<section aria-label="Battle pass overview" className="space-y-3 rounded-xl bg-card p-4">
+				<div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 pr-12">
+					<div>
+						<p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-brand">
+							Season 1 · KORD Breach
+						</p>
+						<h1 className="text-2xl font-semibold tracking-tight">Battle Pass</h1>
 					</div>
-				)}
-			</section>
-
-			<section aria-labelledby="plan-heading" className="space-y-4 rounded-lg bg-card p-4">
-				<div className="flex flex-wrap items-center justify-between gap-3">
-					<div className="flex items-center gap-3">
-						<h2 id="plan-heading" className="sr-only">
-							Document plan
-						</h2>
-						<div className="flex gap-1">
+					<div className="flex flex-wrap items-center gap-2">
+						<div className="flex gap-1" role="group" aria-label="Plan scope">
 							<Button
 								variant="ghost"
 								selected={scope === "goals"}
 								aria-pressed={scope === "goals"}
 								onClick={() => setScope("goals")}
 							>
+								<Flag size={14} />
 								Goals {knownGoals.length > 0 && `· ${knownGoals.length}`}
 							</Button>
 							<Button
@@ -595,20 +587,66 @@ export function BattlePassPage() {
 								Everything
 							</Button>
 						</div>
-					</div>
-					<label
-						className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground"
-						title="Allocate owned classified documents once across this plan after ordinary inventory."
-					>
-						<input
-							type="checkbox"
-							className="accent-brand"
+						<span className="hidden h-5 w-px bg-border sm:block" aria-hidden />
+						<Toggle
 							checked={useClassified}
-							onChange={(event) => setUseClassified(event.target.checked)}
-						/>
-						Use classified
-					</label>
+							onChange={setUseClassified}
+							title="Allocate owned classified documents once across this plan after ordinary inventory."
+						>
+							Use classified
+						</Toggle>
+						<Toggle
+							checked={cumulative}
+							onChange={setCumulative}
+							icon={<Layers size={14} />}
+							title="Cheapest path to each reward from completed progress, before inventory. Each card is an independent preview."
+						>
+							Cumulative costs
+						</Toggle>
+						<Toggle
+							checked={listMode}
+							onChange={setListMode}
+							icon={<Rows3 size={14} />}
+							title="Show every page in one long list instead of the paged gallery."
+						>
+							List view
+						</Toggle>
+						<Button
+							variant="ghost"
+							aria-expanded={showMaps}
+							aria-controls="document-map-grid"
+							onClick={() => setShowMaps(!showMaps)}
+						>
+							<MapIcon size={15} />
+							Locations
+							<ChevronDown size={13} className={cn("transition-transform", showMaps && "rotate-180")} />
+						</Button>
+					</div>
 				</div>
+				<div className="flex items-center gap-3">
+					<div
+						className="h-1.5 flex-1 overflow-hidden rounded bg-surface-raised"
+						role="progressbar"
+						aria-label="Battle pass completion"
+						aria-valuenow={completedCount}
+						aria-valuemin={0}
+						aria-valuemax={tiles.length}
+					>
+						<div
+							className="h-full bg-success transition-[width]"
+							style={{ width: `${(completedCount / tiles.length) * 100}%` }}
+						/>
+					</div>
+					<p className="shrink-0 text-xs text-muted-foreground">
+						<span className="font-semibold text-foreground">{completedCount}</span> / {tiles.length} claimed ·{" "}
+						{remainingTotal} docs left
+					</p>
+				</div>
+				{showMaps && (
+					<div id="document-map-grid">
+						<MapGrid />
+					</div>
+				)}
 				{plan.unresolvedIds.length > 0 && (
 					<p role="alert" className="text-xs text-warning">
 						{plan.unresolvedIds.length} saved goals unavailable; excluded from totals.
@@ -620,22 +658,11 @@ export function BattlePassPage() {
 					</p>
 				) : (
 					<>
-						<div className="flex flex-wrap items-baseline gap-x-8 gap-y-2" aria-live="polite">
-							{[
-								{ label: "Plan", value: plan.total },
-								{ label: "Owned", value: coverage.ownedUsed },
-								{ label: "Classified", value: coverage.classifiedUsed },
-								{ label: "To collect", value: coverage.missing },
-							].map(({ label, value }) => (
-								<div key={label}>
-									<span
-										className={cn("mr-2 text-2xl font-semibold tabular-nums", label === "To collect" && "text-brand")}
-									>
-										{value}
-									</span>
-									<span className="text-xs text-muted-foreground">{label}</span>
-								</div>
-							))}
+						<div className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-live="polite">
+							<Stat label="Plan" value={plan.total} />
+							<Stat label="Owned" value={coverage.ownedUsed} />
+							<Stat label="Classified" value={coverage.classifiedUsed} />
+							<Stat label="To collect" value={coverage.missing} accent />
 						</div>
 						<details>
 							<summary className="w-fit cursor-pointer text-xs text-muted-foreground">
@@ -701,24 +728,40 @@ export function BattlePassPage() {
 				)}
 			</section>
 
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<h2 className="text-lg font-medium">Rewards</h2>
-				<label
-					className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground"
-					title="Cheapest path to each reward from completed progress, before inventory. Each card is an independent preview."
-				>
-					<Layers size={14} />
-					<input
-						type="checkbox"
-						className="accent-brand"
-						checked={cumulative}
-						onChange={(event) => setCumulative(event.target.checked)}
-					/>
-					Cumulative costs
-				</label>
-			</div>
-			<div className="grid items-start gap-x-8 gap-y-10 lg:grid-cols-2">
-				{pages.map((page, index) => {
+			{!listMode && (
+				<div className="flex items-center justify-center gap-2">
+					<Button
+						size="xs"
+						variant="ghost"
+						disabled={first === 0}
+						aria-label="Previous page (Q)"
+						onClick={() => go(first - 1)}
+					>
+						<ChevronLeft size={16} />
+						Prev
+						<kbd className={styles.kbd}>Q</kbd>
+					</Button>
+					<Button
+						size="xs"
+						variant="ghost"
+						disabled={first >= lastStart}
+						aria-label="Next page (E)"
+						onClick={() => go(first + 1)}
+					>
+						<kbd className={styles.kbd}>E</kbd>
+						Next
+						<ChevronRight size={16} />
+					</Button>
+				</div>
+			)}
+			<div
+				className={cn(
+					"grid items-start",
+					listMode ? "gap-x-8 gap-y-10 lg:grid-cols-2" : cn("gap-4", spread === 2 && "grid-cols-2"),
+				)}
+			>
+				{visible.map((page) => {
+					const index = pages.indexOf(page);
 					const doneCount = page.cells.filter((tile) => complete.has(tile.id)).length;
 					const suggestedIds = page.cells
 						.filter((tile) => filler.has(tile.id) && !complete.has(tile.id))
@@ -730,73 +773,107 @@ export function BattlePassPage() {
 						}));
 					const previousDone = index > 0 ? pages[index - 1].cells.filter((tile) => complete.has(tile.id)).length : 0;
 					return (
-						<section
+						<ViewTransition
 							key={page.num}
-							aria-labelledby={`pass-page-${page.num}`}
-							className="min-w-0 rounded-xl border border-border/60 bg-card/50 p-3 sm:p-4"
+							enter={{ "page-next": styles.slideInRight, "page-prev": styles.slideInLeft, default: "none" }}
+							exit={{ "page-next": styles.slideOutLeft, "page-prev": styles.slideOutRight, default: "none" }}
 						>
-							<header className="mb-3 flex flex-wrap items-center justify-between gap-2">
-								<div className="flex min-w-0 items-center gap-3">
-									<h2 id={`pass-page-${page.num}`} className="shrink-0 text-sm font-semibold">
-										Page {String(page.num).padStart(2, "0")}
-									</h2>
-									{!openPages[index] && (
-										<span
-											title={`Claim ${page.req} rewards on page ${page.num - 1} and unlock earlier pages.`}
-											className="flex items-center gap-1 text-[11px] text-subtle-foreground"
+							<section aria-labelledby={`pass-page-${page.num}`} className="min-w-0 rounded-xl bg-card/50 p-3 sm:p-4">
+								<header className="mb-3 flex flex-wrap items-center justify-between gap-2">
+									<div className="flex min-w-0 items-center gap-3">
+										<h2 id={`pass-page-${page.num}`} className="shrink-0 text-sm font-semibold">
+											Page {String(page.num).padStart(2, "0")}
+										</h2>
+										{!openPages[index] && (
+											<span
+												title={`Claim ${page.req} rewards on page ${page.num - 1} and unlock earlier pages.`}
+												className="flex items-center gap-1 text-[11px] text-subtle-foreground"
+											>
+												<LockKeyhole size={12} />
+												{previousDone}/{page.req} on page {page.num - 1}
+											</span>
+										)}
+									</div>
+									<div className="ml-auto flex items-center gap-1">
+										<Button
+											size="xs"
+											variant="ghost"
+											disabled={suggestedIds.length === 0}
+											aria-label={`Complete suggested: Page ${page.num}`}
+											onClick={() => completeTiles(suggestedIds)}
 										>
-											<LockKeyhole size={12} />
-											{previousDone}/{page.req} on page {page.num - 1}
-										</span>
-									)}
+											Complete suggested
+										</Button>
+										<Button
+											size="xs"
+											variant="ghost"
+											disabled={doneCount === page.cells.length}
+											aria-label={`Complete all: Page ${page.num}`}
+											onClick={() => completeTiles(page.cells.map((tile) => tile.id))}
+										>
+											Complete all
+										</Button>
+									</div>
+								</header>
+								<div className="grid grid-cols-2 gap-3">
+									{page.cells.map((tile) => (
+										<RewardCard
+											key={tile.id}
+											tile={tile}
+											pageNumber={page.num}
+											done={complete.has(tile.id)}
+											goal={goals.has(tile.id)}
+											filler={filler.has(tile.id)}
+											costs={cumulative ? (cumulativeCosts.get(tile.id) ?? {}) : tile.cost}
+											toggleGoal={() => update((current) => ({ ...current, goals: toggleId(current.goals, tile.id) }))}
+											toggleDone={() =>
+												update((current) => ({ ...current, completed: toggleId(current.completed, tile.id) }))
+											}
+										/>
+									))}
 								</div>
-								<div className="ml-auto flex items-center gap-1">
-									<span className="mr-1 text-xs tabular-nums text-subtle-foreground">
-										{doneCount}/{page.cells.length}
-									</span>
-									<Button
-										size="xs"
-										variant="ghost"
-										disabled={suggestedIds.length === 0}
-										aria-label={`Complete suggested: Page ${page.num}`}
-										onClick={() => completeTiles(suggestedIds)}
-									>
-										Complete suggested
-									</Button>
-									<Button
-										size="xs"
-										variant="ghost"
-										disabled={doneCount === page.cells.length}
-										aria-label={`Complete all: Page ${page.num}`}
-										onClick={() => completeTiles(page.cells.map((tile) => tile.id))}
-									>
-										Complete all
-									</Button>
-								</div>
-							</header>
-							<div className="grid gap-3 sm:grid-cols-2">
-								{page.cells.map((tile) => (
-									<RewardCard
-										key={tile.id}
-										tile={tile}
-										pageNumber={page.num}
-										done={complete.has(tile.id)}
-										goal={goals.has(tile.id)}
-										filler={filler.has(tile.id)}
-										costs={cumulative ? (cumulativeCosts.get(tile.id) ?? {}) : tile.cost}
-										toggleGoal={() => update((current) => ({ ...current, goals: toggleId(current.goals, tile.id) }))}
-										toggleDone={() =>
-											update((current) => ({ ...current, completed: toggleId(current.completed, tile.id) }))
-										}
-									/>
-								))}
-							</div>
-						</section>
+							</section>
+						</ViewTransition>
 					);
 				})}
 			</div>
-			<footer className="flex justify-between py-4 text-[11px] text-subtle-foreground">
-				<span>Saved locally · Shared across modes</span>
+
+			{!listMode && (
+				<nav aria-label="Battle pass pages" className={styles.minimap}>
+					<div className="container mx-auto flex max-w-[1440px] items-stretch gap-1 px-4 sm:px-6">
+						{pages.map((page, index) => {
+							const total = page.cells.length;
+							const done = page.cells.filter((tile) => complete.has(tile.id)).length;
+							const goalCount = page.cells.filter((tile) => goals.has(tile.id) && !complete.has(tile.id)).length;
+							const current = index >= first && index < first + spread;
+							return (
+								<button
+									key={page.num}
+									type="button"
+									onClick={() => go(index)}
+									aria-label={`Page ${page.num}: ${done} of ${total} claimed${goalCount ? `, ${goalCount} goals` : ""}${openPages[index] ? "" : ", locked"}`}
+									aria-current={current ? "true" : undefined}
+									className={cn(styles.mini, current && styles.miniCurrent)}
+								>
+									<span className="flex items-center justify-between text-[10px] tabular-nums">
+										<span>{String(page.num).padStart(2, "0")}</span>
+										{!openPages[index] ? (
+											<LockKeyhole size={10} />
+										) : goalCount > 0 ? (
+											<Flag size={10} className="text-brand" fill="currentColor" />
+										) : null}
+									</span>
+									<span className="mt-1 block h-1 overflow-hidden rounded bg-surface-raised">
+										<span className="block h-full bg-success" style={{ width: `${(done / total) * 100}%` }} />
+									</span>
+								</button>
+							);
+						})}
+					</div>
+				</nav>
+			)}
+
+			<footer className="flex justify-end py-4 text-[11px] text-subtle-foreground">
 				<a
 					href="https://tarkov-market.com/season-1/battle-pass"
 					target="_blank"

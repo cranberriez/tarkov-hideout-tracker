@@ -3,7 +3,7 @@
 }
 .documentDock {
 	position: fixed;
-	top: 100px;
+	top: 72px;
 	right: 16px;
 	z-index: 45;
 	margin: 0;
@@ -28,7 +28,7 @@
 	outline-offset: 2px;
 }
 .documentPanel {
-	width: min(280px, calc(100vw - 32px));
+	width: min(272px, calc(100vw - 32px));
 	max-height: calc(100dvh - 116px);
 	overflow-y: auto;
 	padding: 12px;
@@ -49,17 +49,6 @@
 .documentPanel .chip:hover .label,
 .documentPanel .chip:focus-visible .label {
 	max-width: 185px;
-}
-@media (min-width: 1280px) {
-	.panelOpen {
-		width: calc(100% - 312px);
-		margin-right: 312px;
-	}
-}
-@media (min-width: 2064px) {
-	.panelOpen {
-		margin-inline: auto;
-	}
 }
 .chip {
 	position: relative;
@@ -148,5 +137,98 @@
 	.label,
 	.image {
 		transition: none;
+	}
+}
+.badge {
+	position: absolute;
+	top: -6px;
+	left: -6px;
+	min-width: 18px;
+	padding: 0 4px;
+	border-radius: 9px;
+	background: var(--brand);
+	color: var(--background);
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 18px;
+	text-align: center;
+}
+.kbd {
+	padding: 1px 5px;
+	border-radius: 4px;
+	background: var(--surface-raised);
+	font-size: 10px;
+}
+@keyframes slideFromRight {
+	from {
+		opacity: 0;
+		transform: translateX(48px);
+	}
+}
+@keyframes slideFromLeft {
+	from {
+		opacity: 0;
+		transform: translateX(-48px);
+	}
+}
+@keyframes slideToLeft {
+	to {
+		opacity: 0;
+		transform: translateX(-48px);
+	}
+}
+@keyframes slideToRight {
+	to {
+		opacity: 0;
+		transform: translateX(48px);
+	}
+}
+.minimap {
+	position: fixed;
+	inset: auto 0 0 0;
+	z-index: 30;
+	padding: 10px 0;
+	border-top: 1px solid var(--border);
+	background: color-mix(in srgb, var(--background) 92%, transparent);
+	backdrop-filter: blur(8px);
+}
+.mini {
+	flex: 1;
+	min-width: 0;
+	padding: 6px 8px;
+	border-radius: 6px;
+	color: var(--muted-foreground);
+	cursor: pointer;
+	transition: background 120ms ease;
+}
+.mini:hover {
+	background: var(--surface-raised);
+}
+.miniCurrent {
+	background: var(--surface-raised);
+	color: var(--foreground);
+	box-shadow: inset 0 0 0 1px var(--brand);
+}
+.mini:focus-visible {
+	outline: 2px solid var(--brand);
+	outline-offset: 2px;
+}
+::view-transition-new(.slideInRight) {
+	animation: slideFromRight 260ms ease-out both;
+}
+::view-transition-new(.slideInLeft) {
+	animation: slideFromLeft 260ms ease-out both;
+}
+::view-transition-old(.slideOutLeft) {
+	animation: slideToLeft 220ms ease-in both;
+}
+::view-transition-old(.slideOutRight) {
+	animation: slideToRight 220ms ease-in both;
+}
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
 	}
 }
