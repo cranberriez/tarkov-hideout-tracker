@@ -606,10 +606,11 @@ export function BattlePassPage() {
 						<h2 id="floating-documents-heading" className="pr-10 text-sm font-semibold">
 							Documents
 						</h2>
-						<p className="mt-0.5 text-xs text-muted-foreground">
-							{scope === "all" ? "Everything" : "Selected goals"} · {coverage.missing} to collect
-						</p>
 						<DocumentInventory progress={progress} update={update} coverage={coverage} />
+						<div className="mt-3 flex items-center justify-between border-t border-border pt-2 text-xs text-muted-foreground">
+							<span>Total for {scope === "all" ? "all" : "goals"}</span>
+							<span className="text-sm font-semibold tabular-nums text-foreground">{plan.total}</span>
+						</div>
 					</aside>
 				)}
 			</div>
