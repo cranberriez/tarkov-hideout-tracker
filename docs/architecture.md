@@ -31,6 +31,11 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 | `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): static Season 1 rewards, account-wide completion/goals and document inventory; listed immediately after Games in the same secondary-menu group. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
 | `/dev`                                             | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md)                                                                                                      |
 
+The [Battle Pass feature](../src/features/battle-pass/BattlePassPage.tsx) composes
+its panels and reward views from `components/`, reusable presentation elements
+from `components/ui/`, and pure planning logic and display data from `lib/`.
+Its page and bottom minimap use the navbar's responsive container widths.
+
 Detail routes use bounded reads: [getItemDetailPageData](../src/server/queries/getItemDetailPageData.ts)
 reads one item, [getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts)
 one quest, and station pages use mode/station-keyed metadata and recipe queries. Each sets

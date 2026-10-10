@@ -1,4 +1,4 @@
-import snapshot from "../../lib/data/season-1-battle-pass.json";
+import snapshot from "../../../lib/data/season-1-battle-pass.json";
 
 export interface Reward {
 	type: string;

@@ -117,7 +117,7 @@ names, and anchored document/action chips whose labels expand on hover or keyboa
 focus without moving the layout. Detailed plan costs remain in the Breakdown
 disclosure. The redesign does not change planning or saved-state semantics.
 
-[battle-pass-model](../src/features/battle-pass/battle-pass-model.ts) calculates
+[battle-pass-model](../src/features/battle-pass/lib/battle-pass-model.ts) calculates
 minimum total document count by retaining wanted rewards and filling each earlier
 page with its cheapest remaining tiles, with source slot order breaking ties.
 Completed tiles satisfy page counts and incur no further cost. Inventory does not
@@ -127,7 +127,7 @@ document display order. The UI reports required, inventory-covered, classified
 and remaining counts per type. Cumulative card previews independently plan the
 path to that one reward from saved completion, excluding other goals and inventory.
 The Everything plan includes every uncompleted tile. The model is covered by
-[focused tests](../src/features/battle-pass/battle-pass-model.test.ts), including
+[focused tests](../src/features/battle-pass/lib/battle-pass-model.test.ts), including
 comparison against exhaustive route enumeration.
 
 ## Repository and page read contracts
