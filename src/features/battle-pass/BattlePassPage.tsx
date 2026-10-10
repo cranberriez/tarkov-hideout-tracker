@@ -64,6 +64,18 @@ const mapOrder = [
 	"Icebreaker",
 ];
 
+const documentMarks: Record<string, { color: string; shape: string }> = {
+	financial: { color: "#4ade80", shape: "circle" },
+	personnel: { color: "#a78bfa", shape: "triangle" },
+	project: { color: "#22d3ee", shape: "square" },
+	blueprints: { color: "#60a5fa", shape: "diamond" },
+	test: { color: "#f87171", shape: "octagon" },
+	user: { color: "#facc15", shape: "pentagon" },
+	medical: { color: "#fb7185", shape: "cross" },
+	technical: { color: "#2dd4bf", shape: "hexagon" },
+	classified: { color: "#fb923c", shape: "star" },
+};
+
 function Artwork({ src, className = "" }: { src: string; className?: string }) {
 	const [failed, setFailed] = useState(false);
 	return failed ? (
@@ -78,7 +90,7 @@ function DocumentChip({
 	amount,
 	end = false,
 }: {
-	doc: { name: string; img?: string };
+	doc: { key?: string; name: string; img?: string };
 	amount?: number;
 	end?: boolean;
 }) {
@@ -90,19 +102,29 @@ function DocumentChip({
 		const alignEnd = right < 280 && left > right;
 		setPlacement({ end: alignEnd, width: Math.min(280, Math.max(80, alignEnd ? left : right)) });
 	};
+	const mark = documentMarks[doc.key ?? ""];
 	return (
 		<span
 			tabIndex={0}
 			onMouseEnter={placeLabel}
 			onFocus={placeLabel}
-			style={{ "--label-width": `${placement.width}px` } as CSSProperties}
+			style={{ "--label-width": `${placement.width}px`, "--doc-color": mark?.color } as CSSProperties}
 			aria-label={`${doc.name}${amount !== undefined ? `: ${amount}` : ""}`}
 			className={cn(styles.chip, placement.end && styles.end, amount === undefined && styles.documentOnly)}
 		>
 			<span className={styles.chipInner}>
-				<span className="flex shrink-0 items-center gap-0.5">
-					{doc.img ? <Artwork src={doc.img} className="h-9 w-8" /> : <FileText className="h-8 w-8 text-special" />}
-					{amount !== undefined && <span className="text-xs font-semibold tabular-nums">{amount}</span>}
+				<span className={cn(styles.face, "items-center")}>
+					<span className="relative h-11 w-11 shrink-0">
+						{doc.img ? (
+							<Artwork src={doc.img} className="h-11 w-11 !object-cover" />
+						) : (
+							<span className="grid h-11 w-11 place-items-center" style={{ color: mark?.color }}>
+								<FileText className="h-8 w-8" />
+							</span>
+						)}
+						{mark && <span aria-hidden className={styles.mark} data-shape={mark.shape} />}
+					</span>
+					{amount !== undefined && <span className="px-1.5 text-xs font-semibold tabular-nums">{amount}</span>}
 				</span>
 				<span className={cn(styles.label, styles.documentLabel)}>{doc.name}</span>
 			</span>
@@ -145,7 +167,7 @@ function ActionChip({
 			)}
 		>
 			<span className={styles.chipInner}>
-				<span className="flex w-6 shrink-0 justify-center">{icon}</span>
+				<span className={cn(styles.face, "w-9 justify-center")}>{icon}</span>
 				<span className={styles.label}>{label}</span>
 			</span>
 		</button>
@@ -372,8 +394,12 @@ function DocumentInventory({
 				);
 			})}
 			<div className="contents">
-				<DocumentChip doc={{ name: "Classified · wildcard 1:1" }} end />
-				<span aria-label="Classified documents still needed" className="text-right text-sm tabular-nums text-special">
+				<DocumentChip doc={{ key: "classified", name: "Classified · wildcard 1:1" }} end />
+				<span
+					aria-label="Classified documents still needed"
+					className="text-right text-sm tabular-nums"
+					style={{ color: documentMarks.classified.color }}
+				>
 					{coverage.classifiedMissing}
 				</span>
 				<input

@@ -54,8 +54,8 @@
 	position: relative;
 	display: inline-block;
 	flex-shrink: 0;
-	height: 40px;
-	width: 58px;
+	height: 44px;
+	width: 72px;
 	outline: none;
 }
 .action {
@@ -64,7 +64,52 @@
 	cursor: pointer;
 }
 .documentOnly {
-	width: 40px;
+	width: 44px;
+}
+.mark {
+	position: absolute;
+	right: 3px;
+	bottom: 3px;
+	width: 9px;
+	height: 9px;
+	background: var(--doc-color, var(--special));
+}
+.mark[data-shape="circle"] {
+	border-radius: 50%;
+}
+.mark[data-shape="triangle"] {
+	clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.mark[data-shape="diamond"] {
+	clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+.mark[data-shape="octagon"] {
+	clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+}
+.mark[data-shape="hexagon"] {
+	clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+}
+.mark[data-shape="pentagon"] {
+	clip-path: polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%);
+}
+.mark[data-shape="cross"] {
+	clip-path: polygon(
+		35% 0,
+		65% 0,
+		65% 35%,
+		100% 35%,
+		100% 65%,
+		65% 65%,
+		65% 100%,
+		35% 100%,
+		35% 65%,
+		0 65%,
+		0 35%,
+		35% 35%
+	);
+}
+.mark[data-shape="star"] {
+	clip-path: polygon(50% 0, 62% 36%, 100% 38%, 70% 60%, 80% 100%, 50% 76%, 20% 100%, 30% 60%, 0 38%, 38% 36%);
 }
 .chipInner {
 	/* Only the fixed-size chip owns pointer interaction, not its expanded label. */
@@ -77,26 +122,58 @@
 	height: 100%;
 	width: max-content;
 	min-width: 100%;
-	border-radius: 6px;
-	background: var(--surface-raised);
-	padding: 0 5px;
+	border-radius: 8px;
+	transition: box-shadow 160ms ease;
 }
 .end .chipInner {
 	left: auto;
 	right: 0;
 	flex-direction: row-reverse;
 }
+.face {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	height: 100%;
+	padding-right: 6px;
+	overflow: hidden;
+	border-radius: 8px;
+	background: var(--surface-raised);
+	box-shadow: 0 2px 4px color-mix(in srgb, var(--shadow) 40%, transparent);
+}
+.action .face,
+.documentOnly .face {
+	padding: 0;
+}
 .label {
+	display: flex;
+	align-items: center;
+	height: 100%;
 	max-width: 0;
+	margin-left: 0;
+	padding-inline: 0;
 	overflow: hidden;
 	white-space: nowrap;
 	opacity: 0;
+	border-radius: 0 8px 8px 0;
+	background: color-mix(in srgb, var(--surface-raised) 55%, var(--background));
+	color: var(--foreground);
 	font-size: 12px;
 	font-weight: 500;
 	transition:
 		max-width 160ms ease,
 		opacity 120ms ease,
-		margin 160ms ease;
+		margin 160ms ease,
+		padding 160ms ease;
+}
+.end .label {
+	border-radius: 8px 0 0 8px;
+}
+.documentLabel {
+	white-space: normal;
+	line-height: 14px;
 }
 .chip:hover,
 .chip:focus-visible {
@@ -104,19 +181,24 @@
 }
 .chip:hover .chipInner,
 .chip:focus-visible .chipInner {
-	box-shadow: 0 6px 20px color-mix(in srgb, var(--shadow) 35%, transparent);
+	box-shadow:
+		0 0 0 1px color-mix(in srgb, var(--doc-color, transparent) 45%, transparent),
+		0 0 12px color-mix(in srgb, var(--doc-color, transparent) 30%, transparent);
 }
 .chip:hover .label,
 .chip:focus-visible .label {
 	max-width: var(--label-width, 280px);
+	margin-left: -10px;
+	padding: 0 10px 0 18px;
 	opacity: 1;
-	margin-inline: 7px;
 }
-.documentLabel {
-	white-space: normal;
-	line-height: 14px;
+.end:hover .label,
+.end:focus-visible .label {
+	margin-left: 0;
+	margin-right: -10px;
+	padding: 0 18px 0 10px;
 }
-.chip:focus-visible .chipInner {
+.chip:focus-visible .face {
 	outline: 2px solid var(--brand);
 	outline-offset: 2px;
 }
