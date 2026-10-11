@@ -1002,6 +1002,677 @@
 					}
 				]
 			}
+		},
+		{
+			"mapId": "customs",
+			"imageUrl": "https://tarkov.dev/maps/customs-2d.jpg",
+			"width": 7680,
+			"height": 4025,
+			"sourceWidth": 4097,
+			"sourceHeight": 2142,
+			"sourceImageUrl": "https://tarkovdoc.com/assets/maps/customs.webp",
+			"sourceUrl": "https://tarkov.dev/map/customs-2d",
+			"author": "monkimonkimonk (modified by GBchaosmaster)",
+			"authorUrl": "https://www.reddit.com/user/monkimonkimonk/",
+			"license": "Map artwork remains subject to its original author terms. Game imagery and trademarks © Battlestate Games.",
+			"manualPositions": [
+				{
+					"id": "financial-1-4-1-1",
+					"source": {
+						"x": 844,
+						"y": 861,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 1591,
+						"y": 1637
+					},
+					"note": "Warehouse east wall, paired barrels and interior furniture matched in full color; source-relative anchor retained."
+				},
+				{
+					"id": "financial-1-7-1-1",
+					"source": {
+						"x": 1439,
+						"y": 361,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 2704,
+						"y": 707
+					},
+					"note": "Old Gas Station tan roof corners and adjacent rectangular structures matched in full color; original northern roof position retained."
+				},
+				{
+					"id": "financial-2-1-1-1",
+					"source": {
+						"x": 2359,
+						"y": 200,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4059,
+						"y": 411
+					},
+					"note": "Fortress 1F inset: source right plan moved to target left 1F plan. Northwest pillar, paired eastern and southwestern stairs, lower central pillars and southeast bounding corner matched in full color; original source-relative anchors retained."
+				},
+				{
+					"id": "financial-2-3-3-1",
+					"source": {
+						"x": 1608,
+						"y": 1052,
+						"floor": "3F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 3020,
+						"y": 1992
+					},
+					"note": "Warehouse 4 southeast wall, adjacent twin circular tanks and road edge matched in full color; source anchor remains on the same overview region despite its top-floor title."
+				},
+				{
+					"id": "financial-2-2-2-1",
+					"source": {
+						"x": 2671,
+						"y": 172,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 5321,
+						"y": 355
+					},
+					"note": "Crackhouse library inset: source left 2F plan moved to target right 2F plan. Northwest stairs, central corridor and east library partitions matched in full color; each original relative anchor retained."
+				},
+				{
+					"id": "financial-2-2-2-2",
+					"source": {
+						"x": 2670,
+						"y": 195,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 5319,
+						"y": 397
+					},
+					"note": "Crackhouse library inset: source left 2F plan moved to target right 2F plan. Northwest stairs, central corridor and east library partitions matched in full color; each original relative anchor retained."
+				},
+				{
+					"id": "financial-2-0-1-1",
+					"source": {
+						"x": 2444,
+						"y": 650,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4583,
+						"y": 1245
+					},
+					"note": "Small angled tan structure and surrounding loop-road edges matched in full color; original anchor retained."
+				},
+				{
+					"id": "financial-2-5-2-1",
+					"source": {
+						"x": 2320,
+						"y": 846,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4351,
+						"y": 1610
+					},
+					"note": "Repair workshop overview roof southeast corner and east diagonal wall matched in full color; shared local roof registration preserves the nearby shelf/safe pair."
+				},
+				{
+					"id": "financial-2-6-3-1",
+					"source": {
+						"x": 2423,
+						"y": 818,
+						"floor": "3F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4544,
+						"y": 1554
+					},
+					"note": "Warehouse 17 northwest roof corner, northern stepped wall and southern notch matched in full color; shared local roof registration preserves the nearby rafters pair without moving it to a titled room."
+				},
+				{
+					"id": "financial-3-1-2-1",
+					"source": {
+						"x": 3710,
+						"y": 1304,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 6952,
+						"y": 2462
+					},
+					"note": "Big Red office inset: northwest corner, central room divider, corridor wall and southeast corner matched in full color. Original source-relative points retained at distinct positions in the upper office room."
+				},
+				{
+					"id": "financial-3-0-1-1",
+					"source": {
+						"x": 3483,
+						"y": 966,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 6527,
+						"y": 1832
+					},
+					"note": "Eastern customs-yard angled shed, boundary wall bend and nearby short containers matched in full color; source-relative anchor retained."
+				},
+				{
+					"id": "financial-5-1-2-1",
+					"source": {
+						"x": 3665,
+						"y": 2048,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 6911,
+						"y": 3845
+					},
+					"note": "Three-story dorm 2F middle inset: room 212 east wall and its north/south partitions matched in full color. Two closely spaced source-relative anchors remain near the east edge of room 212."
+				},
+				{
+					"id": "financial-5-1-3-1",
+					"source": {
+						"x": 3313,
+						"y": 1735,
+						"floor": "3F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 7509,
+						"y": 3265
+					},
+					"note": "Three-story dorm 3F inset: source left panel moved to target right panel. Room 304 boundaries, east stairwell and west room sequence matched in full color; original room 304 fractional position retained."
+				},
+				{
+					"id": "financial-5-2-1-1",
+					"source": {
+						"x": 2864,
+						"y": 1796,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 5396,
+						"y": 3377
+					},
+					"note": "Two-story dorm 1F inset: northeast guard-room corner below room 105 and adjoining stairwell matched in full color. Source room 106 is labeled 116 on target artwork; source anchor, title and floor are preserved."
+				},
+				{
+					"id": "financial-5-2-2-1",
+					"source": {
+						"x": 2640,
+						"y": 2034,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4949,
+						"y": 3820
+					},
+					"note": "Two-story dorm 2F inset: room 207, room 212 and room 216 wall corners and west stairwell matched in full color; each point retains its original fractional position inside its corresponding room."
+				},
+				{
+					"id": "project-1-3-2-1",
+					"source": {
+						"x": 891,
+						"y": 472,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 2094,
+						"y": 886
+					},
+					"note": "Industrial plant inset: source left 2F plan moved to target right 2F plan. Upper dividing wall, both stair runs and lower office walls matched in full color; anchor remains in the southwest lower office."
+				},
+				{
+					"id": "project-1-7-1-1",
+					"source": {
+						"x": 1442,
+						"y": 386,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 2710,
+						"y": 754
+					},
+					"note": "Old Gas Station tan roof corners and adjacent rectangular structures matched in full color; original southern roof position retained."
+				},
+				{
+					"id": "project-2-1-1-1",
+					"source": {
+						"x": 2369,
+						"y": 302,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4078,
+						"y": 600
+					},
+					"note": "Fortress 1F inset: source right plan moved to target left 1F plan. Northwest pillar, paired eastern and southwestern stairs, lower central pillars and southeast bounding corner matched in full color; original source-relative anchors retained."
+				},
+				{
+					"id": "project-2-2-2-1",
+					"source": {
+						"x": 2671,
+						"y": 141,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 5321,
+						"y": 297
+					},
+					"note": "Crackhouse library inset: source left 2F plan moved to target right 2F plan. Northwest stairs, central corridor and east library partitions matched in full color; each original relative anchor retained."
+				},
+				{
+					"id": "project-2-2-2-2",
+					"source": {
+						"x": 2663,
+						"y": 179,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 5306,
+						"y": 368
+					},
+					"note": "Crackhouse library inset: source left 2F plan moved to target right 2F plan. Northwest stairs, central corridor and east library partitions matched in full color; each original relative anchor retained."
+				},
+				{
+					"id": "project-2-5-1-1",
+					"source": {
+						"x": 2262,
+						"y": 751,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4243,
+						"y": 1433
+					},
+					"note": "Repair workshop tan upper roof corners, small stair run and southern roof edge matched in full color; source-relative anchor retained."
+				},
+				{
+					"id": "project-2-5-2-1",
+					"source": {
+						"x": 2318,
+						"y": 835,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4347,
+						"y": 1590
+					},
+					"note": "Repair workshop overview roof southeast corner and east diagonal wall matched in full color; shared local roof registration preserves the nearby shelf/safe pair."
+				},
+				{
+					"id": "project-2-6-2-1",
+					"source": {
+						"x": 2564,
+						"y": 855,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4808,
+						"y": 1626
+					},
+					"note": "Warehouse 17 southeast roof corner, diagonal wall and neighboring paired circles matched in full color; source-relative anchor retained."
+				},
+				{
+					"id": "project-2-6-3-1",
+					"source": {
+						"x": 2418,
+						"y": 820,
+						"floor": "3F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4534,
+						"y": 1558
+					},
+					"note": "Warehouse 17 northwest roof corner, northern stepped wall and southern notch matched in full color; shared local roof registration preserves the nearby rafters pair without moving it to a titled room."
+				},
+				{
+					"id": "project-2-0-1-1",
+					"source": {
+						"x": 2426,
+						"y": 395,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4550,
+						"y": 771
+					},
+					"note": "Thin vertical tan structure below the Fortress inset and adjoining road/boundary corner matched in full color; source ground-artwork anchor retained despite the bunk-container title."
+				},
+				{
+					"id": "project-3-1-2-1",
+					"source": {
+						"x": 3676,
+						"y": 1370,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 6888,
+						"y": 2584
+					},
+					"note": "Big Red office inset: northwest corner, central room divider, corridor wall and southeast corner matched in full color. Original source-relative points retained at distinct positions in the upper office room."
+				},
+				{
+					"id": "project-3-0-1-1",
+					"source": {
+						"x": 3407,
+						"y": 373,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 6386,
+						"y": 729
+					},
+					"note": "Eastern customs-yard small square shed and adjoining north/south road edges matched in full color; source-relative anchor retained."
+				},
+				{
+					"id": "project-5-1-2-1",
+					"source": {
+						"x": 3662,
+						"y": 2050,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 6906,
+						"y": 3849
+					},
+					"note": "Three-story dorm 2F middle inset: room 212 east wall and its north/south partitions matched in full color. Two closely spaced source-relative anchors remain near the east edge of room 212."
+				},
+				{
+					"id": "project-5-2-2-1",
+					"source": {
+						"x": 2531,
+						"y": 2028,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4746,
+						"y": 3809
+					},
+					"note": "Two-story dorm 2F inset: room 207, room 212 and room 216 wall corners and west stairwell matched in full color; each point retains its original fractional position inside its corresponding room."
+				},
+				{
+					"id": "project-5-2-2-2",
+					"source": {
+						"x": 2639,
+						"y": 1789,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4948,
+						"y": 3364
+					},
+					"note": "Two-story dorm 2F inset: room 207, room 212 and room 216 wall corners and west stairwell matched in full color; each point retains its original fractional position inside its corresponding room."
+				}
+			],
+			"verification": {
+				"note": "Manually checked all 30 source-relative anchors against full-color native source (4097×2142) and target (7680×4025) artwork. The target redraws labels and rearranges industrial-plant, Fortress, Crackhouse and three-story-dorm floor panels. Individual registrations use matched local building/road geometry or room walls, stairs and corridor partitions; no whole-image scale is applied. Shared local roof correspondences preserve the Company Director and rafters close pairs where upstream labels obscure target interiors. Hand-picked wall/corner precision is estimated at 2–6 target pixels; this is visual registration uncertainty, not a measured global affine residual or independent in-game spawn verification. All source floors, titles, photo links and verification statuses remain unchanged, including inconsistent titles and the two-story-dorm guard-room label changing from 106 to 116.",
+				"landmarks": [
+					{
+						"label": "Fortress 1F inset northwest bounding wall",
+						"source": {
+							"x": 2295,
+							"y": 25
+						},
+						"target": {
+							"x": 3940,
+							"y": 87
+						}
+					},
+					{
+						"label": "Fortress 1F inset southeast bounding wall",
+						"source": {
+							"x": 2435,
+							"y": 318
+						},
+						"target": {
+							"x": 4201,
+							"y": 630
+						}
+					},
+					{
+						"label": "Industrial plant inset northwest bounding wall",
+						"source": {
+							"x": 885,
+							"y": 148
+						},
+						"target": {
+							"x": 2083,
+							"y": 284
+						}
+					},
+					{
+						"label": "Industrial plant inset southeast bounding wall",
+						"source": {
+							"x": 1029,
+							"y": 482
+						},
+						"target": {
+							"x": 2352,
+							"y": 905
+						}
+					},
+					{
+						"label": "Crackhouse library inset northwest bounding wall",
+						"source": {
+							"x": 2567,
+							"y": 121
+						},
+						"target": {
+							"x": 5127,
+							"y": 260
+						}
+					},
+					{
+						"label": "Crackhouse library inset southeast bounding wall",
+						"source": {
+							"x": 2676,
+							"y": 283
+						},
+						"target": {
+							"x": 5330,
+							"y": 561
+						}
+					},
+					{
+						"label": "Big Red office inset northwest bounding wall",
+						"source": {
+							"x": 3657,
+							"y": 1297
+						},
+						"target": {
+							"x": 6853,
+							"y": 2449
+						}
+					},
+					{
+						"label": "Big Red office inset southeast bounding wall",
+						"source": {
+							"x": 3737,
+							"y": 1463
+						},
+						"target": {
+							"x": 7002,
+							"y": 2757
+						}
+					},
+					{
+						"label": "Two-story dorm 2F inset northwest bounding wall",
+						"source": {
+							"x": 2502,
+							"y": 1670
+						},
+						"target": {
+							"x": 4692,
+							"y": 3143
+						}
+					},
+					{
+						"label": "Two-story dorm 2F inset southeast bounding wall",
+						"source": {
+							"x": 2673,
+							"y": 2116
+						},
+						"target": {
+							"x": 5011,
+							"y": 3973
+						}
+					},
+					{
+						"label": "Two-story dorm 1F inset northwest bounding wall",
+						"source": {
+							"x": 2716,
+							"y": 1670
+						},
+						"target": {
+							"x": 5120,
+							"y": 3143
+						}
+					},
+					{
+						"label": "Two-story dorm 1F inset southeast bounding wall",
+						"source": {
+							"x": 2887,
+							"y": 2116
+						},
+						"target": {
+							"x": 5439,
+							"y": 3973
+						}
+					},
+					{
+						"label": "Three-story dorm 2F middle inset northwest bounding wall",
+						"source": {
+							"x": 3503,
+							"y": 1645
+						},
+						"target": {
+							"x": 6609,
+							"y": 3096
+						}
+					},
+					{
+						"label": "Three-story dorm 2F middle inset southeast bounding wall",
+						"source": {
+							"x": 3674,
+							"y": 2092
+						},
+						"target": {
+							"x": 6928,
+							"y": 3927
+						}
+					},
+					{
+						"label": "Three-story dorm 3F inset northwest bounding wall",
+						"source": {
+							"x": 3178,
+							"y": 1645
+						},
+						"target": {
+							"x": 7257,
+							"y": 3098
+						}
+					},
+					{
+						"label": "Three-story dorm 3F inset southeast bounding wall",
+						"source": {
+							"x": 3349,
+							"y": 2092
+						},
+						"target": {
+							"x": 7576,
+							"y": 3929
+						}
+					},
+					{
+						"label": "Repair workshop southeast roof corner",
+						"source": {
+							"x": 2349,
+							"y": 926
+						},
+						"target": {
+							"x": 4405,
+							"y": 1759
+						}
+					},
+					{
+						"label": "Warehouse 17 northwest roof corner",
+						"source": {
+							"x": 2385,
+							"y": 792
+						},
+						"target": {
+							"x": 4473,
+							"y": 1506
+						}
+					},
+					{
+						"label": "Southwest stepped building road edge",
+						"source": {
+							"x": 1000,
+							"y": 1200
+						},
+						"target": {
+							"x": 1883,
+							"y": 2268
+						}
+					},
+					{
+						"label": "Eastern river shoreline rock cluster",
+						"source": {
+							"x": 2950,
+							"y": 950
+						},
+						"target": {
+							"x": 5531,
+							"y": 1803
+						}
+					},
+					{
+						"label": "Eastern road and boundary-wall corner",
+						"source": {
+							"x": 3850,
+							"y": 950
+						},
+						"target": {
+							"x": 7214,
+							"y": 1803
+						}
+					}
+				]
+			}
 		}
 	]
 }

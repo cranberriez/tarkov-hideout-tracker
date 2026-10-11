@@ -31,11 +31,96 @@ test("every committed replacement has verified landmarks and matches its source 
 });
 
 test("unregistered artwork keeps document coordinates and image intact", () => {
-	const map = documentMaps.find((entry) => entry.id === "customs")!;
+	const map = documentMaps.find((entry) => entry.id === "interchange")!;
 	const background = resolveDocumentBasemap(map);
 	assert.equal(background.usesReplacement, false);
 	assert.equal(background.imageUrl, map.imageUrl);
 	assert.deepEqual(background.project({ x: 77, y: 322 }), { x: 77, y: 322 });
+});
+
+test("Customs manual calibration rejects any missing or changed source anchor and restores the original", () => {
+	const map = documentMaps.find((entry) => entry.id === "customs")!;
+	const registration = registrations.maps.find((entry) => entry.mapId === map.id) as DocumentBasemapRegistration;
+	assert.ok(registration?.manualPositions);
+	const locations = documentLocations.filter((entry) => entry.mapId === map.id);
+	assert.equal(isDocumentBasemapRegistrationValid(map, registration), true);
+	for (const location of locations) {
+		const incomplete = registration.manualPositions.filter((position) => position.id !== location.id);
+		assert.equal(
+			isDocumentBasemapRegistrationValid(map, { ...registration, manualPositions: incomplete }),
+			false,
+			location.id,
+		);
+		for (const change of [
+			{ x: location.x + 1 },
+			{ y: location.y + 1 },
+			{ floor: "changed-floor" },
+			{ layer: "changed-layer" },
+		]) {
+			const changedLocations = locations.map((entry) => (entry.id === location.id ? { ...entry, ...change } : entry));
+			assert.equal(isDocumentBasemapRegistrationValid(map, registration, changedLocations), false, location.id);
+		}
+	}
+	for (const changedMap of [
+		{ ...map, imageUrl: "https://example.com/changed-source.webp" },
+		{ ...map, width: map.width + 1 },
+		{ ...map, height: map.height + 1 },
+	]) {
+		assert.equal(isDocumentBasemapRegistrationValid(changedMap, registration), false);
+		const background = resolveDocumentBasemap(changedMap);
+		assert.equal(background.usesReplacement, false);
+		assert.equal(background.imageUrl, changedMap.imageUrl);
+		for (const location of locations) assert.deepEqual(background.project(location), { x: location.x, y: location.y });
+	}
+});
+
+test("Customs preserves source records and places relocated floor insets on matching room plans", () => {
+	const map = documentMaps.find((entry) => entry.id === "customs")!;
+	const sourceSnapshot = JSON.stringify({ map, locations: documentLocations });
+	const locations = documentLocations.filter((entry) => entry.mapId === map.id);
+	const background = resolveDocumentBasemap(map);
+	const original = resolveDocumentBasemap(map, true);
+	assert.equal(background.usesReplacement, true);
+	assert.deepEqual([background.width, background.height], [7680, 4025]);
+	assert.equal(background.matchesDimensions(7680, 4025), true);
+	assert.equal(background.matchesDimensions(4097, 2142), false);
+	assert.equal(locations.length, 30);
+	const roomRegions = [
+		{ ids: ["financial-2-1-1-1", "project-2-1-1-1"], bounds: [3940, 87, 4203, 633] },
+		{ ids: ["project-1-3-2-1"], bounds: [2083, 831, 2170, 905] },
+		{
+			ids: ["financial-2-2-2-1", "financial-2-2-2-2", "project-2-2-2-1", "project-2-2-2-2"],
+			bounds: [5255, 260, 5332, 490],
+		},
+		{ ids: ["financial-3-1-2-1"], bounds: [6852, 2447, 6965, 2604] },
+		{ ids: ["project-3-1-2-1"], bounds: [6852, 2447, 6965, 2604] },
+		{ ids: ["financial-5-2-2-1"], bounds: [4920, 3780, 5012, 3847] },
+		{ ids: ["project-5-2-2-1"], bounds: [4690, 3780, 4822, 3847] },
+		{ ids: ["project-5-2-2-2"], bounds: [4920, 3330, 5012, 3398] },
+		{ ids: ["financial-5-2-1-1"], bounds: [5310, 3330, 5440, 3400] },
+		{ ids: ["financial-5-1-2-1", "project-5-1-2-1"], bounds: [6800, 3796, 6930, 3863] },
+		{ ids: ["financial-5-1-3-1"], bounds: [7445, 3220, 7579, 3294] },
+	];
+	for (const {
+		ids,
+		bounds: [left, top, right, bottom],
+	} of roomRegions) {
+		for (const id of ids) {
+			const location = locations.find((entry) => entry.id === id)!;
+			const point = background.project(location);
+			assert.ok(point.x >= left && point.x <= right && point.y >= top && point.y <= bottom, id);
+		}
+	}
+	for (const location of locations) assert.deepEqual(original.project(location), { x: location.x, y: location.y });
+	const shelf = background.project(locations.find((entry) => entry.id === "financial-5-1-2-1")!);
+	const desk = background.project(locations.find((entry) => entry.id === "project-5-1-2-1")!);
+	assert.ok(shelf.x > desk.x && shelf.y < desk.y);
+	assert.ok(Math.hypot(shelf.x - desk.x, shelf.y - desk.y) > 0);
+	assert.equal(original.imageUrl, map.imageUrl);
+	assert.equal(original.usesReplacement, false);
+	assert.equal(locations.filter((location) => !location.verified).length, 0);
+	assert.throws(() => background.project({ id: "missing-id", x: 1, y: 2 }), /Missing calibrated document position/);
+	assert.equal(JSON.stringify({ map, locations: documentLocations }), sourceSnapshot);
 });
 
 test("manual calibration rejects incomplete, duplicate, stale, and out-of-bounds positions", () => {

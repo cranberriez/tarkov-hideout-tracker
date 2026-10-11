@@ -147,7 +147,17 @@ recorded artwork correspondences; this does not independently verify in-game
 spawns or resolve source room/title inconsistencies. The five source-unconfirmed
 Factory locations remain unconfirmed. The basement body anchor outside the
 source's drawn basement inset retains its position relative to the shared ground
-geometry, as recorded in its calibration note. Customs,
+geometry, as recorded in its calibration note. Customs uses monkimonkimonk's
+7680 × 4025 full-color sheet, modified by GBchaosmaster, in place of its
+4097 × 2142 source overview. All 30 source anchors have individual registrations:
+local building and road geometry locates overview anchors, and matched room walls,
+stairs, and corridor partitions locate inset anchors. The industrial plant, Fortress, and
+Crackhouse floor plans exchange sides; the three-story dorm's third-floor plan
+moves from the left to the right. These local registrations preserve the source
+room-relative positions without applying a whole-image scale. Changed room labels,
+source title inconsistencies, and source verification statuses remain source data;
+artwork matching does not independently verify in-game spawns. Calibration notes
+record local visual uncertainty rather than claiming zero registration error.
 Interchange, The Lab, and The Labyrinth retain their source images because their
 alternate artwork or floor layouts do not have verified registrations. The
 [background resolver](../src/features/battle-pass/lib/battle-pass-map-background.ts)
