@@ -49,7 +49,7 @@ maintain a copied interface in documentation.
 
 Document-map navigation is independent of player progress. The `map` URL query
 selects the shared map; a namespaced browser-history snapshot stores the view's
-zoom, pan, hidden floors, hidden document types, and map color preference per entry. It merges with
+zoom, pan, hidden document types, and map color preference per entry. It merges with
 existing Next.js history metadata and is validated on restore. This transient
 state adds no local-storage key, profile field, migration, backup, or reset behavior.
 

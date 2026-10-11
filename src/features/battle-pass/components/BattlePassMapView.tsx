@@ -19,7 +19,7 @@ import { constrainMapView, zoomViewAroundPoint } from "@/features/maps/map-view-
 import { documents } from "../lib/battle-pass-model";
 import { documentDisplayName, documentMarks } from "../lib/battle-pass-display";
 import { documentMaps, documentLocations, type BattlePassDocumentLocation } from "@/lib/battle-pass-map-data";
-import { documentFloorOptions, filterDocumentLocations, documentMapCounts } from "../lib/battle-pass-map-controls";
+import { filterDocumentLocations, documentMapCounts } from "../lib/battle-pass-map-controls";
 import { resolveDocumentBasemap } from "../lib/battle-pass-map-background";
 import { arrangeDocumentMarkers } from "../lib/battle-pass-map-layout";
 import { CompactDocumentGlyph } from "./ui/CompactDocumentGlyph";
@@ -133,18 +133,8 @@ function LocationPreview({
 }
 
 export function BattlePassMapView({ onClose }: { onClose: () => void }) {
-	const {
-		mapId,
-		view,
-		hiddenFloors,
-		hiddenTypes,
-		mapColors,
-		setMapColors,
-		setView,
-		setHiddenFloors,
-		setHiddenTypes,
-		changeMap,
-	} = useDocumentMapNavigation();
+	const { mapId, view, hiddenTypes, mapColors, setMapColors, setView, setHiddenTypes, changeMap } =
+		useDocumentMapNavigation();
 	const [hovered, setHovered] = useState<string | null>(null);
 	const [pinned, setPinned] = useState<string | null>(null);
 	const [size, setSize] = useState({ width: 0, height: 0 });
@@ -169,11 +159,10 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 	const map = documentMaps.find((entry) => entry.id === mapId);
 	const background = map ? resolveDocumentBasemap(map, useOriginal) : undefined;
 	const mapLocations = useMemo(() => documentLocations.filter((location) => location.mapId === mapId), [mapId]);
-	const floors = documentFloorOptions(map, mapLocations);
 	const mapDocuments = documents.filter(
 		(doc) => map && (doc.key in map.spawns || mapLocations.some((location) => location.documentKey === doc.key)),
 	);
-	const visible = filterDocumentLocations(mapLocations, hiddenFloors, hiddenTypes);
+	const visible = filterDocumentLocations(mapLocations, hiddenTypes);
 	const active = visible.find((location) => location.id === (pinned ?? hovered));
 	const fit =
 		background && size.width ? Math.min(size.width / background.width, size.height / background.height) * 0.94 : 1;
@@ -473,7 +462,6 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 								size="xs"
 								onClick={() => {
 									setHiddenTypes([]);
-									setHiddenFloors([]);
 								}}
 							>
 								Reset filters
@@ -526,39 +514,6 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 								);
 							})}
 					</div>
-					<fieldset className={styles.floorControls}>
-						<legend>Floors</legend>
-						<div className={styles.floorOptions}>
-							{floors.map((floor) => (
-								<label key={floor.id} className={styles.floorOption}>
-									<input
-										type="checkbox"
-										checked={!hiddenFloors.includes(floor.id)}
-										onChange={() => {
-											setHiddenFloors((current) =>
-												current.includes(floor.id) ? current.filter((id) => id !== floor.id) : [...current, floor.id],
-											);
-											setHovered(null);
-											setPinned(null);
-										}}
-									/>
-									<span>{floor.name}</span>
-								</label>
-							))}
-						</div>
-						<button
-							type="button"
-							className={styles.allFloors}
-							onClick={() => {
-								setHiddenFloors([]);
-								setHovered(null);
-								setPinned(null);
-							}}
-							disabled={hiddenFloors.length === 0}
-						>
-							Show all floors
-						</button>
-					</fieldset>
 				</div>
 				{active && (
 					<LocationPreview

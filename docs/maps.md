@@ -100,7 +100,7 @@ The battle-pass overview opens a separate, lazily loaded
 at `/battle-pass/map`, without site navigation. Browser back and forward navigate
 between the overview and the map. The `map` query parameter selects a map by slug
 (for example, `/battle-pass/map?map=reserve`). Each history entry retains zoom,
-pan, floor filters, document filters, and the grayscale/color setting; changing maps creates an entry, while
+pan, document filters, and the grayscale/color setting; changing maps creates an entry, while
 changing the view or filters updates the current entry. Shared links select the
 map with default view and filters, and unknown slugs fall back to Factory.
 This view uses the document palette and artwork,
@@ -110,8 +110,9 @@ Hide collapses the selector; icon-only Close and Show maps controls then float
 over the map's top-right corner. Selector document artwork is enlarged with a
 dark shadow for contrast against the scenic backgrounds.
 Document-type filters and source-reported per-raid counts float over the map at the bottom
-center; the floating bottom-right floor checklist starts with every floor selected and
-supports multiple floors. Possible location counts are separate from per-raid
+center. Locations on all floors remain visible, including unspecified floors; separate
+floor panels remain part of the map artwork. Legacy floor filters in browser history
+are ignored. Possible location counts are separate from per-raid
 document counts. Lock badges identify source records with a required key.
 Hover or keyboard focus opens a large location-photo preview; clicking pins it.
 The preview header groups the document icon with its type and location name.

@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type SetStateAction } from "react";
-import { documentLocations, documentMaps } from "@/lib/battle-pass-map-data";
+import { documentMaps } from "@/lib/battle-pass-map-data";
 import { documents } from "./lib/battle-pass-model";
-import { documentFloorOptions } from "./lib/battle-pass-map-controls";
 import {
 	defaultDocumentMapSnapshot,
 	documentMapHistoryState,
@@ -15,10 +14,6 @@ import {
 const routeMaps = documentMaps.map((map) => ({
 	id: map.id,
 	slug: map.slug,
-	floorIds: documentFloorOptions(
-		map,
-		documentLocations.filter((location) => location.mapId === map.id),
-	).map((floor) => floor.id),
 }));
 const documentKeys = documents.map((document) => document.key);
 const isMapRoute = () => window.location.pathname === "/battle-pass/map";
@@ -54,10 +49,7 @@ export function useDocumentMapNavigation() {
 	}, []);
 
 	const update = useCallback(
-		<K extends "view" | "hiddenFloors" | "hiddenTypes" | "mapColors">(
-			key: K,
-			value: SetStateAction<DocumentMapSnapshot[K]>,
-		) => {
+		<K extends "view" | "hiddenTypes" | "mapColors">(key: K, value: SetStateAction<DocumentMapSnapshot[K]>) => {
 			const previous = current.current;
 			const nextValue = typeof value === "function" ? value(previous[key]) : value;
 			const next = { ...previous, [key]: nextValue };
@@ -68,7 +60,6 @@ export function useDocumentMapNavigation() {
 		[],
 	);
 	const setView = useCallback((value: SetStateAction<DocumentMapSnapshot["view"]>) => update("view", value), [update]);
-	const setHiddenFloors = useCallback((value: SetStateAction<string[]>) => update("hiddenFloors", value), [update]);
 	const setHiddenTypes = useCallback((value: SetStateAction<string[]>) => update("hiddenTypes", value), [update]);
 	const setMapColors = useCallback((value: SetStateAction<boolean>) => update("mapColors", value), [update]);
 	const changeMap = useCallback((mapId: string) => {
@@ -82,5 +73,5 @@ export function useDocumentMapNavigation() {
 		writeEntry(next, true);
 		setSnapshot(next);
 	}, []);
-	return { ...snapshot, setView, setHiddenFloors, setHiddenTypes, setMapColors, changeMap };
+	return { ...snapshot, setView, setHiddenTypes, setMapColors, changeMap };
 }
