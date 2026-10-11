@@ -135,14 +135,27 @@ through the quest map projection or plotted on a replacement basemap without a
 verified transform. The shared pan/zoom utilities can still be reused.
 
 The [background registry](../src/lib/data/battle-pass-map-backgrounds.json) records
-verified Tarkov.dev raster replacements, dimensions, transforms, and landmark
+verified Tarkov.dev raster replacements, dimensions, registrations, and landmark
 evidence. Ground Zero, Icebreaker, Lighthouse, Reserve, Shoreline, Streets, and
 Woods currently use same-canvas originals with their full colors and labels;
-these have the same resolution as the source backgrounds. Factory, Customs,
+these have the same resolution as the source backgrounds. Factory uses re3mr's
+6720 × 3328 full-color sheet with separate top, middle, ground, and tunnels panels.
+Its source overview combines these floors, so every document has a manually
+registered target position keyed by ID and its original coordinates, floor, and
+layer. Wall corners, stairs, corridor bends, and reactor centers provide the
+recorded artwork correspondences; this does not independently verify in-game
+spawns or resolve source room/title inconsistencies. The five source-unconfirmed
+Factory locations remain unconfirmed. The basement body anchor outside the
+source's drawn basement inset retains its position relative to the shared ground
+geometry, as recorded in its calibration note. Customs,
 Interchange, The Lab, and The Labyrinth retain their source images because their
 alternate artwork or floor layouts do not have verified registrations. The
 [background resolver](../src/features/battle-pass/lib/battle-pass-map-background.ts)
-validates registrations before projecting markers. Image failures or unexpected
+validates registrations before projecting markers. Manual registrations require
+complete unique source coverage, matching source image and dimensions, unchanged
+coordinates/floors/layers, and target positions within the replacement canvas.
+Incomplete or stale calibrations restore the complete original view; manual
+projection requires a calibrated document ID. Image failures or unexpected
 replacement dimensions restore the original image and coordinates together.
 Document IDs, lock metadata, and location photos are unchanged by projection.
 

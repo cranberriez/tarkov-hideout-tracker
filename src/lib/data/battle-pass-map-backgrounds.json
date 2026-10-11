@@ -441,6 +441,567 @@
 					}
 				]
 			}
+		},
+		{
+			"mapId": "factory",
+			"imageUrl": "https://tarkov.dev/maps/factory-2d.jpg",
+			"width": 6720,
+			"height": 3328,
+			"sourceWidth": 850,
+			"sourceHeight": 850,
+			"sourceImageUrl": "https://tarkovdoc.com/assets/maps/factory.webp",
+			"sourceUrl": "https://tarkov.dev/map/factory-2d",
+			"author": "re3mr",
+			"authorUrl": "https://reemr.se",
+			"license": "Map artwork remains subject to its original author terms. Game imagery and trademarks © Battlestate Games.",
+			"manualPositions": [
+				{
+					"id": "blueprint-3-1",
+					"source": {
+						"x": 64,
+						"y": 270,
+						"floor": "3F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 366,
+						"y": 993
+					},
+					"note": "Office inset room walls and stairwells matched to top-floor panel; source-relative position retained."
+				},
+				{
+					"id": "blueprint-3-2",
+					"source": {
+						"x": 97,
+						"y": 278,
+						"floor": "3F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 436,
+						"y": 1010
+					},
+					"note": "Office inset room walls and stairwells matched to top-floor panel; source-relative position retained."
+				},
+				{
+					"id": "blueprint-3-3",
+					"source": {
+						"x": 66,
+						"y": 313,
+						"floor": "3F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 371,
+						"y": 1083
+					},
+					"note": "Office inset room walls and stairwells matched to top-floor panel; source-relative position retained."
+				},
+				{
+					"id": "blueprint-3-4",
+					"source": {
+						"x": 77,
+						"y": 366,
+						"floor": "3F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 394,
+						"y": 1195
+					},
+					"note": "Office inset room walls and stairwells matched to top-floor panel; source-relative position retained."
+				},
+				{
+					"id": "blueprint-2-1",
+					"source": {
+						"x": 771,
+						"y": 276,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 2921,
+						"y": 1005
+					},
+					"note": "Medical-building inset outer walls, central stairs and window openings matched to middle-floor panel. Source marks this spawn unconfirmed; artwork matching does not confirm the in-game spot."
+				},
+				{
+					"id": "blueprint-0-1",
+					"source": {
+						"x": 113,
+						"y": 559,
+						"floor": "B1",
+						"layer": "main"
+					},
+					"target": {
+						"x": 5157,
+						"y": 1601
+					},
+					"note": "Western tunnel corridor bends and keycard-room outline matched to tunnels panel. Source marks this spawn unconfirmed; artwork matching does not confirm the in-game spot."
+				},
+				{
+					"id": "blueprint-0-2",
+					"source": {
+						"x": 526,
+						"y": 333,
+						"floor": "B1",
+						"layer": "main"
+					},
+					"target": {
+						"x": 6025,
+						"y": 1126
+					},
+					"note": "Source point outside drawn basement inset: retained relative to the shared ghosted ground geometry on tunnels panel; exact body location not independently confirmed."
+				},
+				{
+					"id": "project-3-1",
+					"source": {
+						"x": 78,
+						"y": 269,
+						"floor": "3F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 396,
+						"y": 991
+					},
+					"note": "Office inset room walls and stairwells matched to top-floor panel; source-relative position retained."
+				},
+				{
+					"id": "project-3-2",
+					"source": {
+						"x": 76,
+						"y": 300,
+						"floor": "3F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 392,
+						"y": 1056
+					},
+					"note": "Office inset room walls and stairwells matched to top-floor panel; source-relative position retained."
+				},
+				{
+					"id": "project-3-3",
+					"source": {
+						"x": 80,
+						"y": 314,
+						"floor": "3F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 400,
+						"y": 1085
+					},
+					"note": "Office inset room walls and stairwells matched to top-floor panel; source-relative position retained."
+				},
+				{
+					"id": "project-3-4",
+					"source": {
+						"x": 66,
+						"y": 365,
+						"floor": "3F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 371,
+						"y": 1193
+					},
+					"note": "Office inset room walls and stairwells matched to top-floor panel; source-relative position retained."
+				},
+				{
+					"id": "project-2-1",
+					"source": {
+						"x": 222,
+						"y": 565,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 2125,
+						"y": 1618
+					},
+					"note": "Southern platform inset edges and central row of crates matched to middle-floor panel. Source marks this spawn unconfirmed; artwork matching does not confirm the in-game spot."
+				},
+				{
+					"id": "project-2-2",
+					"source": {
+						"x": 681,
+						"y": 284,
+						"floor": "2F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 2736,
+						"y": 1021
+					},
+					"note": "Medical-building inset outer walls, central stairs and window openings matched to middle-floor panel. Source marks this spawn unconfirmed; artwork matching does not confirm the in-game spot."
+				},
+				{
+					"id": "project-0-1",
+					"source": {
+						"x": 122,
+						"y": 445,
+						"floor": "B1",
+						"layer": "main"
+					},
+					"target": {
+						"x": 5176,
+						"y": 1362
+					},
+					"note": "Western tunnel corridor bends and keycard-room outline matched to tunnels panel. Source marks this spawn unconfirmed; artwork matching does not confirm the in-game spot."
+				},
+				{
+					"id": "project-0-2",
+					"source": {
+						"x": 123,
+						"y": 548,
+						"floor": "B1",
+						"layer": "main"
+					},
+					"target": {
+						"x": 5178,
+						"y": 1578
+					},
+					"note": "Western tunnel corridor bends and keycard-room outline matched to tunnels panel."
+				},
+				{
+					"id": "blueprint-1-1",
+					"source": {
+						"x": 147,
+						"y": 280,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 3593,
+						"y": 1015
+					},
+					"note": "Source-relative ground-floor position retained after manually matching north-wall corners, three reactor centers and medical-building walls in original artwork colors."
+				},
+				{
+					"id": "blueprint-1-2",
+					"source": {
+						"x": 171,
+						"y": 357,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 3644,
+						"y": 1177
+					},
+					"note": "Source-relative ground-floor position retained after manually matching north-wall corners, three reactor centers and medical-building walls in original artwork colors."
+				},
+				{
+					"id": "blueprint-1-3",
+					"source": {
+						"x": 271,
+						"y": 118,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 3855,
+						"y": 675
+					},
+					"note": "Source-relative ground-floor position retained after manually matching north-wall corners, three reactor centers and medical-building walls in original artwork colors."
+				},
+				{
+					"id": "blueprint-1-4",
+					"source": {
+						"x": 296,
+						"y": 249,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 3908,
+						"y": 950
+					},
+					"note": "Source-relative ground-floor position retained after manually matching north-wall corners, three reactor centers and medical-building walls in original artwork colors."
+				},
+				{
+					"id": "blueprint-1-5",
+					"source": {
+						"x": 607,
+						"y": 240,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4566,
+						"y": 931
+					},
+					"note": "Source-relative ground-floor position retained after manually matching north-wall corners, three reactor centers and medical-building walls in original artwork colors."
+				},
+				{
+					"id": "blueprint-1-6",
+					"source": {
+						"x": 599,
+						"y": 281,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4549,
+						"y": 1017
+					},
+					"note": "Source-relative ground-floor position retained after manually matching north-wall corners, three reactor centers and medical-building walls in original artwork colors."
+				},
+				{
+					"id": "blueprint-1-7",
+					"source": {
+						"x": 551,
+						"y": 527,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4447,
+						"y": 1534
+					},
+					"note": "Source-relative ground-floor position retained after manually matching north-wall corners, three reactor centers and medical-building walls in original artwork colors."
+				},
+				{
+					"id": "blueprint-1-8",
+					"source": {
+						"x": 665,
+						"y": 159,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4688,
+						"y": 761
+					},
+					"note": "Source-relative ground-floor position retained after manually matching north-wall corners, three reactor centers and medical-building walls in original artwork colors."
+				},
+				{
+					"id": "project-1-1",
+					"source": {
+						"x": 154,
+						"y": 280,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 3608,
+						"y": 1015
+					},
+					"note": "Source-relative ground-floor position retained after manually matching north-wall corners, three reactor centers and medical-building walls in original artwork colors."
+				},
+				{
+					"id": "project-1-2",
+					"source": {
+						"x": 150,
+						"y": 362,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 3599,
+						"y": 1187
+					},
+					"note": "Source-relative ground-floor position retained after manually matching north-wall corners, three reactor centers and medical-building walls in original artwork colors."
+				},
+				{
+					"id": "project-1-3",
+					"source": {
+						"x": 255,
+						"y": 110,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 3821,
+						"y": 658
+					},
+					"note": "Source-relative ground-floor position retained after manually matching north-wall corners, three reactor centers and medical-building walls in original artwork colors."
+				},
+				{
+					"id": "project-1-4",
+					"source": {
+						"x": 486,
+						"y": 196,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4310,
+						"y": 839
+					},
+					"note": "Source-relative ground-floor position retained after manually matching north-wall corners, three reactor centers and medical-building walls in original artwork colors."
+				},
+				{
+					"id": "project-1-5",
+					"source": {
+						"x": 599,
+						"y": 260,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4549,
+						"y": 973
+					},
+					"note": "Source-relative ground-floor position retained after manually matching north-wall corners, three reactor centers and medical-building walls in original artwork colors."
+				},
+				{
+					"id": "project-1-6",
+					"source": {
+						"x": 612,
+						"y": 6,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4576,
+						"y": 440
+					},
+					"note": "Source-relative ground-floor position retained after manually matching north-wall corners, three reactor centers and medical-building walls in original artwork colors."
+				},
+				{
+					"id": "project-1-7",
+					"source": {
+						"x": 603,
+						"y": 222,
+						"floor": "1F",
+						"layer": "main"
+					},
+					"target": {
+						"x": 4557,
+						"y": 893
+					},
+					"note": "Source-relative ground-floor position retained after manually matching north-wall corners, three reactor centers and medical-building walls in original artwork colors."
+				}
+			],
+			"verification": {
+				"note": "Manually compared the source overview and full-color 6720×3328 re3mr sheet. The sheet separates top, middle, ground and tunnels panels, so no global affine is applied. Positions retain source-relative anchors using locally matched room walls, stairs, corridor bends and reactor centers. Hand-picked landmark precision is approximately 2–5 target pixels on ground, 5–10 on inset boundaries; this is artwork registration, not independent in-game spawn verification. Five source-unconfirmed spawns remain unconfirmed. The basement body source point lies outside its drawn inset and retains its relative position on shared ghosted ground geometry; source room/title inconsistencies are not repaired.",
+				"landmarks": [
+					{
+						"label": "Ground north-wall left corner",
+						"source": {
+							"x": 150,
+							"y": 40
+						},
+						"target": {
+							"x": 3599,
+							"y": 511
+						}
+					},
+					{
+						"label": "Ground north-wall right endpoint",
+						"source": {
+							"x": 568,
+							"y": 40
+						},
+						"target": {
+							"x": 4483,
+							"y": 511
+						}
+					},
+					{
+						"label": "Ground north reactor center",
+						"source": {
+							"x": 300,
+							"y": 333
+						},
+						"target": {
+							"x": 3916,
+							"y": 1127
+						}
+					},
+					{
+						"label": "Ground south reactor center",
+						"source": {
+							"x": 300,
+							"y": 464
+						},
+						"target": {
+							"x": 3916,
+							"y": 1401
+						}
+					},
+					{
+						"label": "Top-floor office northwest room wall",
+						"source": {
+							"x": 57,
+							"y": 240
+						},
+						"target": {
+							"x": 352,
+							"y": 930
+						}
+					},
+					{
+						"label": "Top-floor office south room wall",
+						"source": {
+							"x": 87,
+							"y": 373
+						},
+						"target": {
+							"x": 415,
+							"y": 1210
+						}
+					},
+					{
+						"label": "Middle medical inset northwest corner",
+						"source": {
+							"x": 665,
+							"y": 218
+						},
+						"target": {
+							"x": 2703,
+							"y": 885
+						}
+					},
+					{
+						"label": "Middle medical inset southeast corner",
+						"source": {
+							"x": 780,
+							"y": 289
+						},
+						"target": {
+							"x": 2940,
+							"y": 1032
+						}
+					},
+					{
+						"label": "Middle southern platform northwest edge",
+						"source": {
+							"x": 197,
+							"y": 542
+						},
+						"target": {
+							"x": 2074,
+							"y": 1570
+						}
+					},
+					{
+						"label": "Tunnels keycard room northwest corner",
+						"source": {
+							"x": 104,
+							"y": 540
+						},
+						"target": {
+							"x": 5138,
+							"y": 1561
+						}
+					},
+					{
+						"label": "Tunnels keycard room southeast corner",
+						"source": {
+							"x": 143,
+							"y": 585
+						},
+						"target": {
+							"x": 5220,
+							"y": 1656
+						}
+					}
+				]
+			}
 		}
 	]
 }
