@@ -199,13 +199,24 @@ The committed source snapshot is refreshed explicitly from the structured public
 map-page data at [TarkovDoc](https://tarkovdoc.com/maps/), with typed exports in
 [battle-pass-map-data](../src/lib/battle-pass-map-data.ts). Source links and asset
 attribution remain visible in the map view. Source verification status is retained;
-unconfirmed locations and missing photos must remain explicit. Images are loaded
-from their source URLs as needed, with loading and failure states.
+unconfirmed locations and missing photos must remain explicit. Backgrounds and
+location photos are bundled under `public/images/battle-pass/map-assets`, with a
+[local image manifest](../src/lib/data/battle-pass-map-images.json) mapping source
+URLs to files. Source records remain intact for registration validation and attribution.
+The viewer uses lazy-loaded Next.js `Image` for backgrounds, photos, and local map
+thumbnails, retaining loading, failure, and original-background fallback states.
+Basemaps use `unoptimized` to preserve full-resolution zoom and native-dimension
+checks; photos and thumbnails use responsive optimization.
 
 Refresh with `node scripts/extract-battle-pass-map-data.mjs --download`.
 The extractor validates the complete map set, document keys, unique location IDs,
 layer dimensions, and coordinate bounds before replacing the generated snapshot.
 Failed or incomplete pulls leave the previous snapshot intact.
+After refreshing source data or background registrations, run
+`node scripts/pull-battle-pass-map-images.mjs` to bundle the referenced images.
+It reuses existing files, validates image headers and replacement canvas sizes,
+and publishes the manifest only after all assets succeed. To refresh an existing
+image, remove only its bundled file before running the command again.
 
 ## Validation
 

@@ -1,5 +1,5 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- Source CDN artwork, no image proxy required. */
+import Image from "next/image";
 import { useState, type CSSProperties } from "react";
 import { FileText } from "lucide-react";
 import { documentLocationArtwork } from "../../lib/battle-pass-document-artwork";
@@ -22,8 +22,10 @@ export function LocationsDocumentArtwork({
 	return (
 		<span className={cn("relative inline-block", className)}>
 			{src ? (
-				<img
+				<Image
 					src={src}
+					fill
+					sizes="64px"
 					alt=""
 					loading="lazy"
 					onError={() => setSourceIndex((index) => index + 1)}

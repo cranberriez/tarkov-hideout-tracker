@@ -18,11 +18,11 @@ function MapHeading({ map }: { map: string }) {
 				</div>
 			) : (
 				<Image
-					src={`/images/maps/${map.toLowerCase().replaceAll(" ", "-")}.webp`}
+					src={`/images/battle-pass/maps/${map.toLowerCase().replaceAll(" ", "-")}.webp`}
 					alt=""
 					width={480}
 					height={288}
-					unoptimized
+					sizes="(min-width: 1024px) 8vw, (min-width: 640px) 16vw, 50vw"
 					onError={() => setFailed(true)}
 					className="h-14 w-full rounded-sm object-cover"
 				/>

@@ -1,5 +1,5 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- Source map and location photos retain their native URLs. */
+import Image from "next/image";
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
@@ -22,6 +22,7 @@ import { documentDisplayName, documentMarks } from "../lib/battle-pass-display";
 import { documentMaps, documentLocations, type BattlePassDocumentLocation } from "@/lib/battle-pass-map-data";
 import { filterDocumentLocations, documentMapCounts } from "../lib/battle-pass-map-controls";
 import { resolveDocumentBasemap } from "../lib/battle-pass-map-background";
+import { localDocumentMapImage } from "../lib/battle-pass-map-images";
 import {
 	arrangeDocumentMarkers,
 	documentMarkerScale,
@@ -50,8 +51,11 @@ function LocationPhoto({ src, title }: { src?: string; title: string }) {
 							Loading location photo…
 						</div>
 					)}
-					<img
-						src={src}
+					<Image
+						src={localDocumentMapImage(src)}
+						fill
+						sizes="(max-width: 640px) 100vw, 640px"
+						loading="lazy"
 						alt={title}
 						onLoad={() => setState("ready")}
 						onError={() => setState("error")}
@@ -302,7 +306,14 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 								aria-pressed={mapId === entry.id}
 								onClick={() => changeMap(entry.id)}
 							>
-								<img src={`/images/maps/${entry.slug}.webp`} alt="" className={styles.mapTabImage} />
+								<Image
+									src={`/images/battle-pass/maps/${entry.slug}.webp`}
+									alt=""
+									fill
+									sizes="96px"
+									loading="lazy"
+									className={styles.mapTabImage}
+								/>
 								<span className={styles.mapTabName}>{entry.name}</span>
 								<span className={styles.mapTabDocuments} aria-hidden="true">
 									{documents
@@ -408,12 +419,17 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 								transform: `translate(-50%, -50%) translate(${view.x}px, ${view.y}px) scale(${view.scale})`,
 							}}
 						>
-							<img
+							<Image
 								key={`${map.id}:${background.imageUrl}:${imageAttempt}`}
 								className={styles.mapImage}
 								data-colors={mapColors}
 								style={{ "--map-grayscale": `${grayscaleAmount}%` } as CSSProperties}
-								src={background.imageUrl}
+								src={localDocumentMapImage(background.imageUrl)}
+								width={background.width}
+								height={background.height}
+								loading="lazy"
+								// Preserve native pixels for zoom and the registration dimension check below.
+								unoptimized
 								alt={`${map.name} map`}
 								draggable={false}
 								onLoad={(event) => {

@@ -1,6 +1,5 @@
 {
 	"checkedAt": "2026-10-09",
-	"sourceUrl": "https://tarkov-market.com/season-1/main",
 	"corroboratingSourceUrl": "https://tarkovdoc.com/",
 	"spawnsPerRelevantType": { "default": 7, "factory": 5 },
 	"mapsByDocumentKey": {

@@ -1,8 +1,6 @@
 {
   "schemaVersion": 1,
   "source": {
-    "url": "https://tarkov-market.com/season-1/battle-pass",
-    "payloadUrl": "https://tarkov-market.com/season-1/battle-pass/_payload.json",
     "capturedAt": "2026-10-09T13:24:39.8319010-07:00",
     "siteUpdatedAtDisplayed": "09.10.26 11:48",
     "method": "Decoded public Nuxt payload, cross-checked against rendered reward tiles and page requirements.",
@@ -10,7 +8,7 @@
       "Original provider fields and game item IDs are preserved under battlePass.",
       "Tile id, slot, displayName, totalDocumentCost and page unlockRequirement are locally derived fields, not upstream IDs.",
       "Tile IDs identify this snapshot by season/page/slot; reconcile future source reordering before reusing saved selections.",
-      "Images are remote source URLs, not downloaded assets. Nested rewards share the tile image; individual bundle images are not supplied.",
+      "Images are bundled under public/images/battle-pass. Nested rewards share the tile image; individual bundle images are not supplied.",
       "An absent reward quantity is unspecified by the source, not an assumed quantity of one.",
       "A tile is purchased once and counts once toward page progress, including the six-offer bundle on page 12."
     ]
@@ -45,7 +43,7 @@
       "url": "black_division_gear_crate",
       "bsgId": "6a4fa628b4831242f306e8cd",
       "name": "Black Division gear crate",
-      "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png"
+      "img": "/images/battle-pass/6a5e66573f7a5533040ca2df.png"
     },
     "dailyLimits": {
       "regular": 15,
@@ -61,8 +59,8 @@
         "uid": "168a008d-91ad-4ad5-a0d0-ad10ce87368d",
         "url": "financial_documents",
         "name": "Financial documents",
-        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f074187fd0cf20c3d80.png",
-        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f02e8ab40ef3d0ba7fa.png",
+        "img": "/images/battle-pass/6a5f4f074187fd0cf20c3d80.png",
+        "imgOff": "/images/battle-pass/6a5f4f02e8ab40ef3d0ba7fa.png",
         "total": 98
       },
       {
@@ -71,8 +69,8 @@
         "uid": "f03e43dd-13a6-4f27-839b-665bdd310815",
         "url": "pmc_personnel_files",
         "name": "PMC personnel files",
-        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f40e748ef9ba90e6b80.png",
-        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f338acc148b2208bb50.png",
+        "img": "/images/battle-pass/6a5f4f40e748ef9ba90e6b80.png",
+        "imgOff": "/images/battle-pass/6a5f4f338acc148b2208bb50.png",
         "total": 47
       },
       {
@@ -81,8 +79,8 @@
         "uid": "c0f8638f-a48a-4c43-8384-5b5fa96c5fd6",
         "url": "project_documentation",
         "name": "Project documentation",
-        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f561846e4697506c266.png",
-        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f468acc148b2208bb51.png",
+        "img": "/images/battle-pass/6a5f4f561846e4697506c266.png",
+        "imgOff": "/images/battle-pass/6a5f4f468acc148b2208bb51.png",
         "total": 49
       },
       {
@@ -91,8 +89,8 @@
         "uid": "4d0f1c51-318a-4232-884e-d78f858b5ca1",
         "url": "blueprints_and_technical_documentation",
         "name": "Blueprints and technical documentation",
-        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f751846e4697506c267.png",
-        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f6c6a6a362af303acae.png",
+        "img": "/images/battle-pass/6a5f4f751846e4697506c267.png",
+        "imgOff": "/images/battle-pass/6a5f4f6c6a6a362af303acae.png",
         "total": 54
       },
       {
@@ -101,8 +99,8 @@
         "uid": "704a2e14-515e-4672-9e80-3c99cbcc97e8",
         "url": "test_documentation",
         "name": "Test documentation",
-        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f7fe748ef9ba90e6b82.png",
-        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f7b1aa62b661c025709.png",
+        "img": "/images/battle-pass/6a5f4f7fe748ef9ba90e6b82.png",
+        "imgOff": "/images/battle-pass/6a5f4f7b1aa62b661c025709.png",
         "total": 78
       },
       {
@@ -111,8 +109,8 @@
         "uid": "dc066858-a55a-46be-934d-e7eb2f44804f",
         "url": "user_documentation",
         "name": "User documentation",
-        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f8883a7b9f6210b257c.png",
-        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f836a6a362af303acaf.png",
+        "img": "/images/battle-pass/6a5f4f8883a7b9f6210b257c.png",
+        "imgOff": "/images/battle-pass/6a5f4f836a6a362af303acaf.png",
         "total": 59
       },
       {
@@ -121,8 +119,8 @@
         "uid": "f9416434-9f02-4f02-837d-5249e0e68543",
         "url": "medical_documents",
         "name": "Medical documents",
-        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f1e1aa62b661c025707.png",
-        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f0fe8ab40ef3d0ba7fb.png",
+        "img": "/images/battle-pass/6a5f4f1e1aa62b661c025707.png",
+        "imgOff": "/images/battle-pass/6a5f4f0fe8ab40ef3d0ba7fb.png",
         "total": 60
       },
       {
@@ -131,8 +129,8 @@
         "uid": "353ffd53-91a6-4d6e-a4d8-a17b1beed351",
         "url": "technical_documentation",
         "name": "Technical documentation",
-        "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f2e6a6a362af303acac.png",
-        "imgOff": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5f4f294e7788903c0b013e.png",
+        "img": "/images/battle-pass/6a5f4f2e6a6a362af303acac.png",
+        "imgOff": "/images/battle-pass/6a5f4f294e7788903c0b013e.png",
         "total": 56
       }
     ],
@@ -146,8 +144,8 @@
             "y": 0,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e665f5a56a948810bb5bb.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6763cd043de3220f19a1.png",
+            "img": "/images/battle-pass/6a5e665f5a56a948810bb5bb.png",
+            "bigImg": "/images/battle-pass/6a5e6763cd043de3220f19a1.png",
             "cost": {
               "financial": 1
             },
@@ -172,8 +170,8 @@
             "y": 0,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "img": "/images/battle-pass/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "/images/battle-pass/6a5e67f03d0e6b95910b8605.png",
             "cost": {
               "project": 2,
               "blueprints": 1
@@ -194,8 +192,8 @@
             "y": 1,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66a03d0e6b95910b85fe.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6798438217c0b20b65ba.png",
+            "img": "/images/battle-pass/6a5e66a03d0e6b95910b85fe.png",
+            "bigImg": "/images/battle-pass/6a5e6798438217c0b20b65ba.png",
             "cost": {
               "test": 2,
               "user": 1
@@ -220,8 +218,8 @@
             "y": 1,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "img": "/images/battle-pass/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "/images/battle-pass/6a5e675d3f7a5533040ca2e4.png",
             "cost": {
               "blueprints": 2,
               "financial": 1
@@ -246,8 +244,8 @@
             "y": 2,
             "w": 2,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66bc5a56a948810bb5bd.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a635e9519f0ae49350a23e8.png",
+            "img": "/images/battle-pass/6a5e66bc5a56a948810bb5bd.png",
+            "bigImg": "/images/battle-pass/6a635e9519f0ae49350a23e8.png",
             "cost": {
               "user": 2,
               "project": 2,
@@ -281,8 +279,8 @@
             "y": 0,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66863f7a5533040ca2e0.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e677c3f7a5533040ca2e5.png",
+            "img": "/images/battle-pass/6a5e66863f7a5533040ca2e0.png",
+            "bigImg": "/images/battle-pass/6a5e677c3f7a5533040ca2e5.png",
             "cost": {
               "medical": 2,
               "blueprints": 2
@@ -309,8 +307,8 @@
             "y": 0,
             "w": 1,
             "h": 2,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6725c6956153430432c1.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6854ac605a08520e2a57.png",
+            "img": "/images/battle-pass/6a5e6725c6956153430432c1.png",
+            "bigImg": "/images/battle-pass/6a5e6854ac605a08520e2a57.png",
             "cost": {
               "project": 3,
               "financial": 3,
@@ -337,8 +335,8 @@
             "y": 1,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "img": "/images/battle-pass/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "/images/battle-pass/6a5e675d3f7a5533040ca2e4.png",
             "cost": {
               "test": 3
             },
@@ -362,8 +360,8 @@
             "y": 2,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6704438217c0b20b65b7.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f9bf561127450b27c8.png",
+            "img": "/images/battle-pass/6a5e6704438217c0b20b65b7.png",
+            "bigImg": "/images/battle-pass/6a5e67f9bf561127450b27c8.png",
             "cost": {
               "user": 1,
               "personnel": 1,
@@ -390,8 +388,8 @@
             "y": 2,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "img": "/images/battle-pass/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "/images/battle-pass/6a5e67f03d0e6b95910b8605.png",
             "cost": {
               "financial": 2,
               "project": 1
@@ -422,8 +420,8 @@
             "y": 0,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e668acd043de3220f199d.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6783cd043de3220f19a2.png",
+            "img": "/images/battle-pass/6a5e668acd043de3220f199d.png",
+            "bigImg": "/images/battle-pass/6a5e6783cd043de3220f19a2.png",
             "cost": {
               "user": 2,
               "personnel": 1,
@@ -451,8 +449,8 @@
             "y": 0,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "img": "/images/battle-pass/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "/images/battle-pass/6a5e675d3f7a5533040ca2e4.png",
             "cost": {
               "personnel": 2,
               "test": 2,
@@ -478,8 +476,8 @@
             "y": 1,
             "w": 2,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66c2ac605a08520e2a50.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a635e9ecf0acff88d03331e.png",
+            "img": "/images/battle-pass/6a5e66c2ac605a08520e2a50.png",
+            "bigImg": "/images/battle-pass/6a635e9ecf0acff88d03331e.png",
             "cost": {
               "user": 2,
               "blueprints": 2,
@@ -507,8 +505,8 @@
             "y": 2,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "img": "/images/battle-pass/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "/images/battle-pass/6a5e67f03d0e6b95910b8605.png",
             "cost": {
               "project": 2,
               "financial": 2,
@@ -530,8 +528,8 @@
             "y": 2,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66cadffe83817c03096c.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67c4dffe83817c030971.png",
+            "img": "/images/battle-pass/6a5e66cadffe83817c03096c.png",
+            "bigImg": "/images/battle-pass/6a5e67c4dffe83817c030971.png",
             "cost": {
               "medical": 2,
               "personnel": 1,
@@ -568,8 +566,8 @@
             "y": 0,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e666dac605a08520e2a4e.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6767ac605a08520e2a53.png",
+            "img": "/images/battle-pass/6a5e666dac605a08520e2a4e.png",
+            "bigImg": "/images/battle-pass/6a5e6767ac605a08520e2a53.png",
             "cost": {
               "project": 2,
               "blueprints": 2,
@@ -596,8 +594,8 @@
             "y": 0,
             "w": 1,
             "h": 2,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6652ae0ff1630b08d1be.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6876c6956153430432c7.png",
+            "img": "/images/battle-pass/6a5e6652ae0ff1630b08d1be.png",
+            "bigImg": "/images/battle-pass/6a5e6876c6956153430432c7.png",
             "cost": {
               "user": 4,
               "technical": 3,
@@ -624,8 +622,8 @@
             "y": 1,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "img": "/images/battle-pass/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "/images/battle-pass/6a5e67f03d0e6b95910b8605.png",
             "cost": {
               "technical": 3,
               "user": 2
@@ -646,8 +644,8 @@
             "y": 2,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6696c0e52002fd09d8ab.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6793b793ab50a2074172.png",
+            "img": "/images/battle-pass/6a5e6696c0e52002fd09d8ab.png",
+            "bigImg": "/images/battle-pass/6a5e6793b793ab50a2074172.png",
             "cost": {
               "test": 2,
               "user": 2,
@@ -673,8 +671,8 @@
             "y": 2,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "img": "/images/battle-pass/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "/images/battle-pass/6a5e675d3f7a5533040ca2e4.png",
             "cost": {
               "blueprints": 2,
               "medical": 2,
@@ -710,8 +708,8 @@
             "y": 0,
             "w": 1,
             "h": 2,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67295a56a948810bb5bf.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e685ab793ab50a2074175.png",
+            "img": "/images/battle-pass/6a5e67295a56a948810bb5bf.png",
+            "bigImg": "/images/battle-pass/6a5e685ab793ab50a2074175.png",
             "cost": {
               "financial": 3,
               "technical": 2,
@@ -740,8 +738,8 @@
             "y": 0,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "img": "/images/battle-pass/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "/images/battle-pass/6a5e67f03d0e6b95910b8605.png",
             "cost": {
               "blueprints": 4,
               "financial": 1,
@@ -764,8 +762,8 @@
             "y": 1,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66ff3d0e6b95910b8600.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f4438217c0b20b65bc.png",
+            "img": "/images/battle-pass/6a5e66ff3d0e6b95910b8600.png",
+            "bigImg": "/images/battle-pass/6a5e67f4438217c0b20b65bc.png",
             "cost": {
               "personnel": 2,
               "medical": 2,
@@ -792,8 +790,8 @@
             "y": 2,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "img": "/images/battle-pass/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "/images/battle-pass/6a5e675d3f7a5533040ca2e4.png",
             "cost": {
               "test": 3,
               "technical": 2,
@@ -819,8 +817,8 @@
             "y": 2,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e667d86013ce1c70df990.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e677486013ce1c70df995.png",
+            "img": "/images/battle-pass/6a5e667d86013ce1c70df990.png",
+            "bigImg": "/images/battle-pass/6a5e677486013ce1c70df995.png",
             "cost": {
               "project": 3,
               "technical": 2,
@@ -858,8 +856,8 @@
             "y": 0,
             "w": 1,
             "h": 2,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66b1905106a6860e004b.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67a63f7a5533040ca2e6.png",
+            "img": "/images/battle-pass/6a5e66b1905106a6860e004b.png",
+            "bigImg": "/images/battle-pass/6a5e67a63f7a5533040ca2e6.png",
             "cost": {
               "personnel": 4,
               "technical": 4,
@@ -886,8 +884,8 @@
             "y": 0,
             "w": 1,
             "h": 2,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66a6438217c0b20b65b5.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e679dbf561127450b27c6.png",
+            "img": "/images/battle-pass/6a5e66a6438217c0b20b65b5.png",
+            "bigImg": "/images/battle-pass/6a5e679dbf561127450b27c6.png",
             "cost": {
               "financial": 4,
               "blueprints": 3,
@@ -914,8 +912,8 @@
             "y": 2,
             "w": 2,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6739dffe83817c03096e.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6867ae0ff1630b08d1c9.png",
+            "img": "/images/battle-pass/6a5e6739dffe83817c03096e.png",
+            "bigImg": "/images/battle-pass/6a5e6867ae0ff1630b08d1c9.png",
             "cost": {
               "financial": 6,
               "project": 2,
@@ -954,8 +952,8 @@
             "y": 0,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6678dffe83817c03096a.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e676fdffe83817c03096f.png",
+            "img": "/images/battle-pass/6a5e6678dffe83817c03096a.png",
+            "bigImg": "/images/battle-pass/6a5e676fdffe83817c03096f.png",
             "cost": {
               "user": 5,
               "medical": 3,
@@ -982,8 +980,8 @@
             "y": 0,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "img": "/images/battle-pass/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "/images/battle-pass/6a5e67f03d0e6b95910b8605.png",
             "cost": {
               "financial": 4,
               "test": 3,
@@ -1005,8 +1003,8 @@
             "y": 1,
             "w": 1,
             "h": 2,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6709bf561127450b27c3.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a6b4834168e3ef7740acefd.png",
+            "img": "/images/battle-pass/6a5e6709bf561127450b27c3.png",
+            "bigImg": "/images/battle-pass/6a6b4834168e3ef7740acefd.png",
             "cost": {
               "test": 5,
               "financial": 3,
@@ -1034,8 +1032,8 @@
             "y": 1,
             "w": 1,
             "h": 2,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66eecd043de3220f199f.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67e7e2d6c908db0d5d58.png",
+            "img": "/images/battle-pass/6a5e66eecd043de3220f199f.png",
+            "bigImg": "/images/battle-pass/6a5e67e7e2d6c908db0d5d58.png",
             "cost": {
               "test": 5,
               "personnel": 3,
@@ -1073,8 +1071,8 @@
             "y": 0,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "img": "/images/battle-pass/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "/images/battle-pass/6a5e675d3f7a5533040ca2e4.png",
             "cost": {
               "financial": 2,
               "test": 2,
@@ -1100,8 +1098,8 @@
             "y": 0,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "img": "/images/battle-pass/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "/images/battle-pass/6a5e67f03d0e6b95910b8605.png",
             "cost": {
               "test": 5,
               "financial": 4,
@@ -1124,8 +1122,8 @@
             "y": 1,
             "w": 2,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66c6b793ab50a207416e.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a635ea3ac917886310de21f.png",
+            "img": "/images/battle-pass/6a5e66c6b793ab50a207416e.png",
+            "bigImg": "/images/battle-pass/6a635ea3ac917886310de21f.png",
             "cost": {
               "test": 6,
               "personnel": 3,
@@ -1153,8 +1151,8 @@
             "y": 2,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66d9ae0ff1630b08d1c1.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67dec6956153430432c5.png",
+            "img": "/images/battle-pass/6a5e66d9ae0ff1630b08d1c1.png",
+            "bigImg": "/images/battle-pass/6a5e67dec6956153430432c5.png",
             "cost": {
               "test": 3,
               "medical": 2,
@@ -1181,8 +1179,8 @@
             "y": 2,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66d086013ce1c70df992.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67cd86013ce1c70df997.png",
+            "img": "/images/battle-pass/6a5e66d086013ce1c70df992.png",
+            "bigImg": "/images/battle-pass/6a5e67cd86013ce1c70df997.png",
             "cost": {
               "medical": 1,
               "blueprints": 2,
@@ -1219,8 +1217,8 @@
             "y": 0,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6681ae0ff1630b08d1bf.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6778905106a6860e004f.png",
+            "img": "/images/battle-pass/6a5e6681ae0ff1630b08d1bf.png",
+            "bigImg": "/images/battle-pass/6a5e6778905106a6860e004f.png",
             "cost": {
               "medical": 4,
               "financial": 4,
@@ -1249,8 +1247,8 @@
             "y": 0,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "img": "/images/battle-pass/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "/images/battle-pass/6a5e67f03d0e6b95910b8605.png",
             "cost": {
               "user": 3,
               "technical": 2,
@@ -1272,8 +1270,8 @@
             "y": 1,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e668fe2d6c908db0d5d51.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e678aac605a08520e2a54.png",
+            "img": "/images/battle-pass/6a5e668fe2d6c908db0d5d51.png",
+            "bigImg": "/images/battle-pass/6a5e678aac605a08520e2a54.png",
             "cost": {
               "technical": 5,
               "financial": 2,
@@ -1301,8 +1299,8 @@
             "y": 1,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "img": "/images/battle-pass/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "/images/battle-pass/6a5e675d3f7a5533040ca2e4.png",
             "cost": {
               "project": 2,
               "medical": 2,
@@ -1328,8 +1326,8 @@
             "y": 2,
             "w": 2,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67e35a56a948810bb5c3.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66e63f7a5533040ca2e2.png",
+            "img": "/images/battle-pass/6a5e67e35a56a948810bb5c3.png",
+            "bigImg": "/images/battle-pass/6a5e66e63f7a5533040ca2e2.png",
             "cost": {
               "technical": 6,
               "personnel": 4,
@@ -1369,8 +1367,8 @@
             "y": 0,
             "w": 2,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e672fac605a08520e2a52.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e685edffe83817c030973.png",
+            "img": "/images/battle-pass/6a5e672fac605a08520e2a52.png",
+            "bigImg": "/images/battle-pass/6a5e685edffe83817c030973.png",
             "cost": {
               "personnel": 6,
               "test": 5,
@@ -1398,8 +1396,8 @@
             "y": 1,
             "w": 2,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6734b793ab50a2074170.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e686386013ce1c70df999.png",
+            "img": "/images/battle-pass/6a5e6734b793ab50a2074170.png",
+            "bigImg": "/images/battle-pass/6a5e686386013ce1c70df999.png",
             "cost": {
               "test": 6,
               "medical": 5,
@@ -1427,8 +1425,8 @@
             "y": 2,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66573f7a5533040ca2df.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e675d3f7a5533040ca2e4.png",
+            "img": "/images/battle-pass/6a5e66573f7a5533040ca2df.png",
+            "bigImg": "/images/battle-pass/6a5e675d3f7a5533040ca2e4.png",
             "cost": {
               "blueprints": 3,
               "test": 3,
@@ -1454,8 +1452,8 @@
             "y": 2,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "img": "/images/battle-pass/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "/images/battle-pass/6a5e67f03d0e6b95910b8605.png",
             "cost": {
               "project": 5,
               "medical": 4,
@@ -1488,8 +1486,8 @@
             "y": 0,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e6673b793ab50a207416c.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e676cb793ab50a2074171.png",
+            "img": "/images/battle-pass/6a5e6673b793ab50a207416c.png",
+            "bigImg": "/images/battle-pass/6a5e676cb793ab50a2074171.png",
             "cost": {
               "technical": 4,
               "blueprints": 3,
@@ -1517,8 +1515,8 @@
             "y": 0,
             "w": 1,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66fbc0e52002fd09d8ad.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67f03d0e6b95910b8605.png",
+            "img": "/images/battle-pass/6a5e66fbc0e52002fd09d8ad.png",
+            "bigImg": "/images/battle-pass/6a5e67f03d0e6b95910b8605.png",
             "cost": {
               "user": 5,
               "financial": 5,
@@ -1541,8 +1539,8 @@
             "y": 1,
             "w": 1,
             "h": 2,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66b6c6956153430432bf.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67aacd043de3220f19a3.png",
+            "img": "/images/battle-pass/6a5e66b6c6956153430432bf.png",
+            "bigImg": "/images/battle-pass/6a5e67aacd043de3220f19a3.png",
             "cost": {
               "blueprints": 5,
               "personnel": 5,
@@ -1570,8 +1568,8 @@
             "y": 1,
             "w": 1,
             "h": 2,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66abbf561127450b27c1.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67a2905106a6860e0050.png",
+            "img": "/images/battle-pass/6a5e66abbf561127450b27c1.png",
+            "bigImg": "/images/battle-pass/6a5e67a2905106a6860e0050.png",
             "cost": {
               "test": 5,
               "financial": 5,
@@ -1609,8 +1607,8 @@
             "y": 0,
             "w": 2,
             "h": 1,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e674586013ce1c70df994.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e687f5a56a948810bb5c5.png",
+            "img": "/images/battle-pass/6a5e674586013ce1c70df994.png",
+            "bigImg": "/images/battle-pass/6a5e687f5a56a948810bb5c5.png",
             "cost": {
               "financial": 29
             },
@@ -1686,8 +1684,8 @@
             "y": 1,
             "w": 1,
             "h": 2,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e671a905106a6860e004d.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a6b4839b2f3ecde0c0658d8.png",
+            "img": "/images/battle-pass/6a5e671a905106a6860e004d.png",
+            "bigImg": "/images/battle-pass/6a6b4839b2f3ecde0c0658d8.png",
             "cost": {
               "user": 6,
               "medical": 5,
@@ -1717,8 +1715,8 @@
             "y": 1,
             "w": 1,
             "h": 2,
-            "img": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e66f4e2d6c908db0d5d53.png",
-            "bigImg": "https://cdn.tarkov-market.app/cdn-images/battlepass/season-1/6a5e67ecc0e52002fd09d8b2.png",
+            "img": "/images/battle-pass/6a5e66f4e2d6c908db0d5d53.png",
+            "bigImg": "/images/battle-pass/6a5e67ecc0e52002fd09d8b2.png",
             "cost": {
               "technical": 6,
               "project": 5,

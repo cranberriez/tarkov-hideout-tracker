@@ -179,17 +179,6 @@ export function BattlePassPage() {
 			</div>
 
 			{!listMode && <PageMinimap {...{ first, spread, complete, goals, openPages, go }} />}
-
-			<footer className="flex justify-end py-4 text-[11px] text-subtle-foreground">
-				<a
-					href="https://tarkov-market.com/season-1/battle-pass"
-					target="_blank"
-					rel="noreferrer"
-					className="hover:text-brand"
-				>
-					Source ↗
-				</a>
-			</footer>
 		</main>
 	);
 }

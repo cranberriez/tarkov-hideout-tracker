@@ -44,6 +44,7 @@ export function RewardCard({
 			<div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg bg-surface-raised/30">
 				<Artwork
 					src={tile.bigImg || tile.img}
+					sizes={span === "wide" ? "(min-width: 1100px) 50vw, 100vw" : "(min-width: 1100px) 25vw, 50vw"}
 					className={cn(styles.image, "h-full w-full p-2", done && "opacity-50")}
 				/>
 			</div>

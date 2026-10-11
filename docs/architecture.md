@@ -36,6 +36,8 @@ The [Battle Pass feature](../src/features/battle-pass/BattlePassPage.tsx) compos
 its panels and reward views from `components/`, reusable presentation elements
 from `components/ui/`, and pure planning logic and display data from `lib/`.
 Its page and bottom minimap use the navbar's responsive container widths.
+Reward and document artwork is bundled in `public/images/battle-pass` and rendered
+with lazy-loaded Next.js `Image` components, including the existing unavailable-image fallbacks.
 Reward rows adapt to viewport height with a readable minimum; short screens and
 expanded planning panels can still scroll.
 The top overview groups completion, planning/display controls, plan totals, and
