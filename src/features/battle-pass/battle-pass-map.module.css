@@ -233,14 +233,13 @@
 	height: 34px;
 	border: 1px solid var(--document-color);
 	border-radius: 50%;
-	background: color-mix(in srgb, var(--card) 94%, transparent);
+	background: color-mix(in srgb, var(--map-marker-outline) 18%, var(--map-marker-ink));
 	box-shadow: 0 2px 7px color-mix(in srgb, var(--shadow) 70%, transparent);
 	cursor: pointer;
 }
 .marker:hover,
 .marker[data-active="true"] {
 	z-index: 20;
-	background: var(--surface-raised);
 	box-shadow:
 		0 0 0 3px color-mix(in srgb, var(--document-color) 30%, transparent),
 		0 2px 8px color-mix(in srgb, var(--shadow) 70%, transparent);
@@ -249,6 +248,12 @@
 	display: grid;
 	place-items: center;
 	gap: 2px;
+}
+.markerArtwork img {
+	/* Enlarge the artwork only: grid cells, marker bounds and anchors stay fixed. */
+	transform: scale(1.1);
+	filter: brightness(1.4);
+	pointer-events: none;
 }
 .markerLock {
 	position: absolute;
