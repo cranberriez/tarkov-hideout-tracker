@@ -13,6 +13,7 @@ import {
 	House,
 	KeyRound,
 	ListChecks,
+	Map,
 	PackageOpen,
 	ScanSearch,
 	ScrollText,
@@ -88,6 +89,16 @@ export const navMenus: NavMenu[] = [
 			{ name: "Story Chapters", href: "/story", icon: BookOpen },
 		],
 	},
+	{
+		name: "Season 1",
+		href: "/season-1",
+		icon: Goal,
+		children: [
+			{ name: "Overview", href: "/season-1", icon: House },
+			{ name: "Battle Pass", href: "/battle-pass", icon: Goal },
+			{ name: "Docs Maps", href: "/battle-pass/map", icon: Map },
+		],
+	},
 ];
 
 /** The games hub; listed only near the bottom of the secondary (☰) menu. */
@@ -95,12 +106,6 @@ export const gamesNavItem: NavItem = {
 	name: "Games",
 	href: "/games",
 	icon: Gamepad2,
-};
-
-export const battlePassNavItem: NavItem = {
-	name: "Battle Pass",
-	href: "/battle-pass",
-	icon: Goal,
 };
 
 export const devNavItem: NavItem = {

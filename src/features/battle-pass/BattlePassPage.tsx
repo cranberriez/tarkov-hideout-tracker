@@ -1,6 +1,6 @@
 "use client";
 /// <reference types="react/canary" />
-import { addTransitionType, startTransition, useCallback, useEffect, useMemo, useState } from "react";
+import { addTransitionType, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Map as MapIcon } from "lucide-react";
 import Link from "next/link";
 import {
@@ -24,6 +24,7 @@ import { RewardPage } from "./components/RewardPage";
 import { ConsumeDocumentsToggle } from "./components/ConsumeDocumentsToggle";
 import { cn } from "@/lib/utils";
 import { buttonClassName } from "@/components/ui/button";
+import { battlePassSpreadStart } from "./lib/battle-pass-page-link";
 
 function useSpread() {
 	const [spread, setSpread] = useState(2);
@@ -37,7 +38,7 @@ function useSpread() {
 	return spread;
 }
 
-export function BattlePassPage() {
+export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 	const [progress, update, { completeTiles, toggleTile, consumeDocs, setConsumeDocs }] = useBattlePass();
 	const [
 		{ requestedScope, cumulative, useClassified, showPossibleProgress, showMaps, documentsOpen, listMode },
@@ -51,10 +52,23 @@ export function BattlePassPage() {
 	const setDocumentsOpen = (checked: boolean) => setPreference("documentsOpen", checked);
 	const setListMode = (checked: boolean) => setPreference("listMode", checked);
 	const scope = progress.goals.length === 0 ? "all" : requestedScope;
-	const [start, setStart] = useState(0);
+	const [start, setStart] = useState((initialPage ?? 1) - 1);
+	const pendingPage = useRef(initialPage);
 	const spread = useSpread();
 	const lastStart = Math.max(0, pages.length - spread);
 	const first = Math.min(start, lastStart);
+	useEffect(() => {
+		const target = pendingPage.current;
+		if (target === undefined || (!listMode && first !== battlePassSpreadStart(target, pages.length, spread))) return;
+		const frame = requestAnimationFrame(() => {
+			const heading = document.getElementById(`pass-page-${target}`);
+			if (heading) {
+				heading.scrollIntoView({ block: "start" });
+				pendingPage.current = undefined;
+			}
+		});
+		return () => cancelAnimationFrame(frame);
+	}, [initialPage, first, listMode, spread]);
 	const go = useCallback(
 		(to: number) => {
 			const next = Math.max(0, Math.min(to, lastStart));

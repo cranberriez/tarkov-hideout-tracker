@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { BattlePassPage } from "@/features/battle-pass/BattlePassPage";
+import { pages } from "@/features/battle-pass/lib/battle-pass-model";
+import { parseBattlePassPage } from "@/features/battle-pass/lib/battle-pass-page-link";
 
 export const metadata: Metadata = {
 	title: "Battle Pass",
@@ -7,6 +9,8 @@ export const metadata: Metadata = {
 	alternates: { canonical: "/battle-pass" },
 };
 
-export default function Page() {
-	return <BattlePassPage />;
+export default async function Page({ searchParams }: { searchParams: Promise<{ page?: string | string[] }> }) {
+	const { page } = await searchParams;
+	const initialPage = parseBattlePassPage(page, pages.length);
+	return <BattlePassPage key={initialPage ?? "default"} initialPage={initialPage} />;
 }

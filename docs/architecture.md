@@ -28,9 +28,30 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 | `/hideout/craft-planner`                           | Station craft recommendations using the shared profit query; see [profits](profits.md)                                                                                                                                                                |
 | `/settings`                                        | [Player progression backups, import review, legacy tools and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md)                                                                                                  |
 | `/news`                                            | [News page](../src/app/news/page.tsx)                                                                                                                                                                                                                 |
-| `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): static Season 1 rewards, account-wide completion/goals and document inventory; listed immediately after Games in the same secondary-menu group. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
+| `/season-1`                                        | [Season 1 overview](../src/app/season-1/page.tsx): estimated season countdown, saved battle pass completion/goals and document coverage; static data and existing client progress only, no server reads |
+| `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): static Season 1 rewards, account-wide completion/goals and document inventory; under the Season 1 main navigation menu. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
 | `/battle-pass/map`                                 | [Document map](../src/app/battle-pass/map/page.tsx): full-viewport interactive document spawn maps without site navigation; lazy client rendering and native browser history |
 | `/dev`                                             | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md)                                                                                                      |
+
+Season 1 follows Quests in the main navigation, with Overview, Battle Pass and
+Docs Maps links. It is available in every mode before and after setup, including
+a compact direct overview link on mobile. Battle Pass routes activate this menu;
+the full-viewport document map still hides site navigation.
+The [overview](../src/features/season-1/SeasonOverviewPage.tsx) reads the existing
+battle pass progress and classified preference without writes. Its selected goal
+estimates share one sequential preview across the combined prerequisite plan,
+so document stock is allocated once and locked pages remain blocked until enough
+prerequisite rewards are fully covered. Ordinary document coverage uses the active
+profile's inventory; completion, goals and classified stock remain account-wide.
+Unknown saved goal IDs are reported. The countdown reuses the seasonal config's
+final date as an explicitly estimated UTC calendar-day count; the end date is not
+presented as an officially confirmed announcement.
+The flat overview prioritizes reward artwork and remaining document types; its
+calculation notes and season sources are collapsed under About this season.
+Each reward goal links to `/battle-pass?page=N#pass-page-N`. The pass validates
+the one-based query page, selects a responsive spread containing it, and scrolls
+to that page's existing heading in gallery or saved list view. This navigation is
+transient and does not change preferences, completion, inventory, or goals.
 
 The [Battle Pass feature](../src/features/battle-pass/BattlePassPage.tsx) composes
 its panels and reward views from `components/`, reusable presentation elements

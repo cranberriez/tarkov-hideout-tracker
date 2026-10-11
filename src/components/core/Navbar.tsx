@@ -21,7 +21,7 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
 import { HideoutStationsNav } from "./HideoutStationsNav";
-import { battlePassNavItem, devNavItem, gamesNavItem, navMenus, type NavItem, type NavMenu } from "./nav-config";
+import { devNavItem, gamesNavItem, navMenus, type NavItem, type NavMenu } from "./nav-config";
 import { PlayerProfileMenu } from "./PlayerProfileMenu";
 
 export function Navbar() {
@@ -103,7 +103,6 @@ function NavbarContent() {
 		currentPage === "/news" ||
 		currentPage === "/dev" ||
 		currentPage === "/games" ||
-		currentPage === "/battle-pass" ||
 		currentPage.startsWith("/games/");
 
 	if ((currentPage === "/quests" || currentPage.startsWith("/quests/")) && isMainNavHidden) return null;
@@ -136,6 +135,17 @@ function NavbarContent() {
 							</Link>
 
 							<div className="flex items-center gap-1 sm:gap-2 lg:hidden">
+								<Link
+									href="/season-1"
+									className={cn(
+										"shrink-0 whitespace-nowrap rounded px-2 py-2 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-brand",
+										currentPage === "/season-1" || currentPage.startsWith("/battle-pass")
+											? "bg-brand text-inverse"
+											: "text-muted-foreground hover:text-foreground",
+									)}
+								>
+									Season 1
+								</Link>
 								<button
 									onClick={() => setQuickAddOpen(true)}
 									className={cn(
@@ -236,6 +246,13 @@ function isNavItemActive(currentPage: string, item: NavItem) {
 	return currentPage === item.href || currentPage.startsWith(`${item.href}/`);
 }
 
+function isNavMenuActive(currentPage: string, menu: NavMenu) {
+	return (
+		isNavItemActive(currentPage, menu) ||
+		(menu.href === "/season-1" && !!menu.children?.some((item) => isNavItemActive(currentPage, item)))
+	);
+}
+
 function NavItemIcon({ item, size = 16 }: { item: NavItem; size?: number }) {
 	const Icon = item.icon;
 	return Icon ? <Icon size={size} /> : null;
@@ -253,7 +270,7 @@ function NavItemBadge({ item }: { item: NavItem }) {
 function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: string }) {
 	const visibleChildren = menu.children?.filter((item) => !item.disabled) ?? [];
 	const hasChildren = visibleChildren.length > 0 || !!menu.panel;
-	const isActive = isNavItemActive(currentPage, menu);
+	const isActive = isNavMenuActive(currentPage, menu);
 
 	return (
 		<div className="group/nav-menu relative">
@@ -324,7 +341,7 @@ function MobileNavSection({
 			{separated && <DropdownMenuSeparator />}
 			<DropdownMenuItem
 				asChild
-				className={cn("font-semibold", isNavItemActive(currentPage, menu) && "bg-accent text-accent-foreground")}
+				className={cn("font-semibold", isNavMenuActive(currentPage, menu) && "bg-accent text-accent-foreground")}
 			>
 				<Link href={menu.href} className="flex w-full items-center gap-2">
 					<NavItemIcon item={menu} />
@@ -371,7 +388,7 @@ function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onS
 			))}
 			<DropdownMenuSeparator />
 			<DropdownMenuItem onSelect={onSetup}>Setup</DropdownMenuItem>
-			{[gamesNavItem, battlePassNavItem].map((item) => (
+			{[gamesNavItem].map((item) => (
 				<DropdownMenuItem
 					key={item.href}
 					asChild
