@@ -1,6 +1,6 @@
 import { documents } from "../lib/battle-pass-model";
 import { mapNames, mapOrder, locations } from "../lib/battle-pass-display";
-import { DocumentChip } from "./ui/DocumentChip";
+import { LocationsDocumentArtwork } from "./ui/LocationsDocumentArtwork";
 import { cn } from "@/lib/utils";
 
 export function MapGrid() {
@@ -15,9 +15,12 @@ export function MapGrid() {
 						<th scope="col" className="w-36 text-left font-normal text-subtle-foreground">
 							Spawns / type
 						</th>
-						{documents.map((doc, i) => (
+						{documents.map((doc) => (
 							<th scope="col" key={doc.key} className="h-14 pb-1 font-normal">
-								<DocumentChip doc={doc} end={i > 3} />
+								<span className="flex flex-col items-center gap-1" title={doc.name}>
+									<LocationsDocumentArtwork doc={doc} className="size-11" />
+									<span className="text-[10px] leading-3 text-muted-foreground">{doc.name}</span>
+								</span>
 							</th>
 						))}
 					</tr>

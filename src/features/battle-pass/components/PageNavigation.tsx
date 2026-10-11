@@ -12,7 +12,7 @@ export function PageNavigation({
 	go: (to: number) => void;
 }) {
 	return (
-		<div className="flex items-center justify-center gap-2">
+		<nav aria-label="Reward page navigation" className="ml-auto flex shrink-0 items-center gap-2">
 			<Button
 				size="xs"
 				variant="ghost"
@@ -35,6 +35,6 @@ export function PageNavigation({
 				Next
 				<ChevronRight size={16} />
 			</Button>
-		</div>
+		</nav>
 	);
 }

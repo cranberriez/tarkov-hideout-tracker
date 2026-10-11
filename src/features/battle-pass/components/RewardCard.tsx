@@ -70,9 +70,14 @@ export function RewardCard({
 					/>
 				</div>
 			</div>
-			<div className="absolute inset-x-0 bottom-0 space-y-2 rounded-b-lg bg-gradient-to-t from-card/90 via-card/60 to-transparent px-3 pb-2.5 pt-8">
+			<div
+				className={cn(
+					styles.cardDetails,
+					"absolute inset-x-0 bottom-0 space-y-2 rounded-b-lg bg-gradient-to-t from-card/90 via-card/60 to-transparent px-3 pb-2.5 pt-8",
+				)}
+			>
 				<div className="flex items-center justify-between gap-2">
-					<h3 title={name} className="min-w-0 truncate text-base font-semibold">
+					<h3 title={name} className={cn(styles.cardTitle, "min-w-0 truncate text-base font-semibold")}>
 						{name}
 					</h3>
 					<span title="Total documents" className="shrink-0 text-[11px] tabular-nums text-subtle-foreground">

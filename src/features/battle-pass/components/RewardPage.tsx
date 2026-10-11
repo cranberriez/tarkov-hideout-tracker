@@ -81,7 +81,7 @@ export function RewardPage({
 						</Button>
 					</div>
 				</header>
-				<div className="grid auto-rows-[300px] grid-cols-2 gap-3">
+				<div className={styles.rewardGrid}>
 					{page.cells.map((tile) => (
 						<RewardCard
 							key={tile.id}

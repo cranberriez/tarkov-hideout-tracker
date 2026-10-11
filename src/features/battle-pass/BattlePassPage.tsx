@@ -5,7 +5,8 @@ import { coverCosts, pages, planGoals, tiles, unlockedPages, type Costs } from "
 import { useBattlePass } from "./useBattlePass";
 import { DocumentDock } from "./components/DocumentDock";
 import { BattlePassOverview } from "./components/BattlePassOverview";
-import { PageNavigation } from "./components/PageNavigation";
+import { BattlePassToolbar } from "./components/BattlePassToolbar";
+import { LocationsPanel } from "./components/LocationsPanel";
 import { PageMinimap } from "./components/PageMinimap";
 import { RewardPage } from "./components/RewardPage";
 import { cn } from "@/lib/utils";
@@ -101,11 +102,11 @@ export function BattlePassPage() {
 		<main className={cn("container mx-auto space-y-4 px-4 pt-6 sm:px-6", listMode ? "pb-8" : "pb-28")}>
 			<DocumentDock {...{ documentsOpen, setDocumentsOpen, progress, update, coverage, scope, plan }} />
 
-			<BattlePassOverview
+			<BattlePassToolbar
+				goalCount={knownGoals.length}
 				{...{
 					scope,
 					setScope,
-					knownGoals,
 					useClassified,
 					setUseClassified,
 					cumulative,
@@ -114,16 +115,17 @@ export function BattlePassPage() {
 					setListMode,
 					showMaps,
 					setShowMaps,
-					completedCount,
-					remainingTotal,
-					plan,
-					coverage,
-					selected,
-					filler,
+					first,
+					lastStart,
+					go,
 				}}
 			/>
+			{showMaps && (
+				<div id="document-locations-panel">
+					<LocationsPanel />
+				</div>
+			)}
 
-			{!listMode && <PageNavigation {...{ first, lastStart, go }} />}
 			<div
 				className={cn(
 					"grid items-start",
@@ -137,6 +139,10 @@ export function BattlePassPage() {
 					/>
 				))}
 			</div>
+
+			<BattlePassOverview
+				{...{ scope, knownGoals, completedCount, remainingTotal, plan, coverage, selected, filler }}
+			/>
 
 			{!listMode && <PageMinimap {...{ first, spread, complete, goals, openPages, go }} />}
 

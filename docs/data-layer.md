@@ -110,9 +110,16 @@ and EFT Docs Map. Classified documents come from the Expansion Hub and replace
 one required document each; the separate five-for-one ordinary-document exchange
 is not applied by the planner.
 
-The collapsible map-overlap matrix uses `spawnsPerRelevantType`: seven possible
-spawns of each relevant type, with Factory at five. These are spawn counts, not
-guaranteed pickups. Reward cards use large source artwork, truncated overlaid
+The Locations dropdown defaults to one column per map, with the existing map
+preview artwork and square document tiles. Its Table toggle shows the map-overlap
+matrix. Both views use `spawnsPerRelevantType`: seven possible spawns of each
+relevant type, with Factory at five. These are spawn counts, not guaranteed pickups.
+Locations alone uses a static [document artwork mapping](../src/features/battle-pass/lib/battle-pass-document-artwork.ts)
+verified against tarkov.dev's seasonal item data and English names. All eight
+document IDs have transparent `image512pxLink` artwork (512px on the longest side).
+Image failures fall back to the snapshot artwork, then a placeholder. No runtime
+provider query is added; reward cards and inventory chips retain their existing images.
+Reward cards use large source artwork, truncated overlaid
 names, and anchored document/action chips whose labels expand on hover or keyboard
 focus without moving the layout. Detailed plan costs remain in the Breakdown
 disclosure. The redesign does not change planning or saved-state semantics.

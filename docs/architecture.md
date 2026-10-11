@@ -35,6 +35,11 @@ The [Battle Pass feature](../src/features/battle-pass/BattlePassPage.tsx) compos
 its panels and reward views from `components/`, reusable presentation elements
 from `components/ui/`, and pure planning logic and display data from `lib/`.
 Its page and bottom minimap use the navbar's responsive container widths.
+Reward rows adapt to viewport height with a readable minimum; short screens and
+expanded planning panels can still scroll.
+The top toolbar keeps planning/display controls on the left and page navigation
+on the right. Completion, plan totals, and Breakdown follow the reward cards.
+Locations expands below the toolbar with map columns and an optional comparison table.
 
 Detail routes use bounded reads: [getItemDetailPageData](../src/server/queries/getItemDetailPageData.ts)
 reads one item, [getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts)
