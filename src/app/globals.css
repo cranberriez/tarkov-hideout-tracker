@@ -25,6 +25,8 @@
 	/* Neutral primitives: white overlays/borders, black scrims/shadows, dark text on bright fills. */
 	--highlight: #ffffff;
 	--shadow: #000000;
+	/* Map glyph outlines retain black ink against third-party map artwork in every theme. */
+	--map-marker-ink: #000000;
 	--inverse: var(--background);
 
 	/* Brand: navigation, selection, links and primary actions. Change this to var(--accent-alternate) to trial tan; hover derives automatically. */

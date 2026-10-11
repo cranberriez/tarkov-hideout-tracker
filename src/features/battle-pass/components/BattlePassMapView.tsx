@@ -2,14 +2,18 @@
 /* eslint-disable @next/next/no-img-element -- Source map and location photos retain their native URLs. */
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { ExternalLink, ImageOff, LockKeyhole, Map, Minus, Plus, RotateCcw, X } from "lucide-react";
+import { ExternalLink, ImageOff, LockKeyhole, Minus, Plus, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { constrainMapView, zoomViewAroundPoint } from "@/features/maps/map-view-transform";
 import { documents } from "../lib/battle-pass-model";
 import { documentDisplayName, documentMarks } from "../lib/battle-pass-display";
 import { documentMaps, documentLocations, type BattlePassDocumentLocation } from "@/lib/battle-pass-map-data";
+import { documentFloorOptions, filterDocumentLocations, documentMapCounts } from "../lib/battle-pass-map-controls";
+import { resolveDocumentBasemap } from "../lib/battle-pass-map-background";
 import { arrangeDocumentMarkers } from "../lib/battle-pass-map-layout";
+import { CompactDocumentGlyph } from "./ui/CompactDocumentGlyph";
 import { LocationsDocumentArtwork } from "./ui/LocationsDocumentArtwork";
+import { useDocumentMapNavigation } from "../useDocumentMapNavigation";
 import styles from "../battle-pass-map.module.css";
 
 function LocationPhoto({ src, title }: { src?: string; title: string }) {
@@ -65,7 +69,8 @@ function LocationPreview({
 			onPointerDown={(event) => event.stopPropagation()}
 		>
 			<div className={styles.previewHeading}>
-				<div>
+				<LocationsDocumentArtwork doc={doc ?? { key: location.documentKey }} className={styles.previewDocument} />
+				<div className={styles.previewTitle}>
 					<span style={{ color: documentMarks[location.documentKey]?.color }} className={styles.eyebrow}>
 						{doc ? documentDisplayName(doc.name) : location.documentKey}
 					</span>
@@ -110,11 +115,6 @@ function LocationPreview({
 				</p>
 				{location.description && <p>{location.description}</p>}
 				{!location.verified && <p className="text-warning">Unconfirmed spawn — source verification pending.</p>}
-				{location.sourceUrl && (
-					<a href={location.sourceUrl} target="_blank" rel="noreferrer">
-						Location guide <ExternalLink size={12} />
-					</a>
-				)}
 				<span className={styles.hint}>{pinned ? "Pinned location" : "Click a marker to pin this location."}</span>
 			</div>
 		</aside>
@@ -122,40 +122,47 @@ function LocationPreview({
 }
 
 export function BattlePassMapView({ onClose }: { onClose: () => void }) {
-	const [mapId, setMapId] = useState(documentMaps[0]?.id ?? "");
-	const [floor, setFloor] = useState("all");
-	const [hiddenTypes, setHiddenTypes] = useState<string[]>([]);
+	const { mapId, view, hiddenFloors, hiddenTypes, setView, setHiddenFloors, setHiddenTypes, changeMap } =
+		useDocumentMapNavigation();
 	const [hovered, setHovered] = useState<string | null>(null);
 	const [pinned, setPinned] = useState<string | null>(null);
-	const [view, setView] = useState({ scale: 1, x: 0, y: 0 });
 	const [size, setSize] = useState({ width: 0, height: 0 });
 	const [imageState, setImageState] = useState<"loading" | "ready" | "error">("loading");
 	const [imageAttempt, setImageAttempt] = useState(0);
+	const [useOriginal, setUseOriginal] = useState(false);
+	const [renderedMapId, setRenderedMapId] = useState(mapId);
+	if (renderedMapId !== mapId) {
+		setRenderedMapId(mapId);
+		setUseOriginal(false);
+		setHovered(null);
+		setPinned(null);
+		setImageState("loading");
+	}
 	const viewport = useRef<HTMLDivElement>(null);
+	const bottomControls = useRef<HTMLDivElement>(null);
+	const [controlsHeight, setControlsHeight] = useState(0);
 	const drag = useRef<{ pointer: number; x: number; y: number; viewX: number; viewY: number } | null>(null);
 	const map = documentMaps.find((entry) => entry.id === mapId);
+	const background = map ? resolveDocumentBasemap(map, useOriginal) : undefined;
 	const mapLocations = useMemo(() => documentLocations.filter((location) => location.mapId === mapId), [mapId]);
-	const presentFloors = new Set(
-		mapLocations.map((location) => location.floor).filter((value): value is string => Boolean(value)),
+	const floors = documentFloorOptions(map, mapLocations);
+	const mapDocuments = documents.filter(
+		(doc) => map && (doc.key in map.spawns || mapLocations.some((location) => location.documentKey === doc.key)),
 	);
-	const floors = [
-		...(map?.floors.map((entry) => entry.id).filter((id) => presentFloors.has(id)) ?? []),
-		...[...presentFloors].filter((id) => !map?.floors.some((entry) => entry.id === id)),
-	];
-	const visible = mapLocations.filter(
-		(location) =>
-			!hiddenTypes.includes(location.documentKey) &&
-			(floor === "all" || (floor === "unknown" ? !location.floor : location.floor === floor)),
-	);
+	const visible = filterDocumentLocations(mapLocations, hiddenFloors, hiddenTypes);
 	const active = visible.find((location) => location.id === (pinned ?? hovered));
-	const fit = map && size.width ? Math.min(size.width / map.width, size.height / map.height) * 0.94 : 1;
-	const stage = { width: (map?.width ?? 1) * fit, height: (map?.height ?? 1) * fit };
+	const fit =
+		background && size.width ? Math.min(size.width / background.width, size.height / background.height) * 0.94 : 1;
+	const stage = { width: (background?.width ?? 1) * fit, height: (background?.height ?? 1) * fit };
 	const offsets = arrangeDocumentMarkers(
-		visible.map((location) => ({
-			id: location.id,
-			x: location.x * fit * view.scale + (size.width - stage.width * view.scale) / 2 + view.x,
-			y: location.y * fit * view.scale + (size.height - stage.height * view.scale) / 2 + view.y,
-		})),
+		visible.map((location) => {
+			const point = background?.project(location) ?? location;
+			return {
+				id: location.id,
+				x: point.x * fit * view.scale + (size.width - stage.width * view.scale) / 2 + view.x,
+				y: point.y * fit * view.scale + (size.height - stage.height * view.scale) / 2 + view.y,
+			};
+		}),
 		38,
 		size.width > 0 && size.height > 0 ? { ...size, padding: 24 } : undefined,
 	);
@@ -170,20 +177,19 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 		return () => observer.disconnect();
 	}, []);
 	useEffect(() => {
+		const element = bottomControls.current;
+		if (!element) return;
+		const observer = new ResizeObserver(([entry]) => setControlsHeight(entry.contentRect.height));
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, []);
+	useEffect(() => {
 		function closeOnEscape(event: KeyboardEvent) {
 			if (event.key === "Escape") onClose();
 		}
 		document.addEventListener("keydown", closeOnEscape);
 		return () => document.removeEventListener("keydown", closeOnEscape);
 	}, [onClose]);
-	function changeMap(id: string) {
-		setMapId(id);
-		setFloor("all");
-		setHovered(null);
-		setPinned(null);
-		setView({ scale: 1, x: 0, y: 0 });
-		setImageState("loading");
-	}
 	function zoom(factor: number, point = { x: 0, y: 0 }) {
 		setView((current) => constrainMapView(zoomViewAroundPoint(current, factor, point, 1, 8), stage, size));
 	}
@@ -198,77 +204,34 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 	return (
 		<section className={styles.root} aria-label="Battle pass document map">
 			<header className={styles.header}>
-				<div className={styles.title}>
-					<Map size={20} />
-					<div>
-						<h1>Document locations</h1>
-						<p>Possible spawns · hover to preview, click to pin</p>
+				<nav className={styles.mapTabs} aria-label="Choose document map">
+					<div className={styles.mapTabsInner}>
+						{documentMaps.map((entry) => (
+							<button
+								key={entry.id}
+								type="button"
+								className={styles.mapTab}
+								aria-pressed={mapId === entry.id}
+								onClick={() => changeMap(entry.id)}
+							>
+								<img src={`/images/maps/${entry.slug}.webp`} alt="" className={styles.mapTabImage} />
+								<span className={styles.mapTabName}>{entry.name}</span>
+								<span className={styles.mapTabDocuments} aria-hidden="true">
+									{documents
+										.filter((doc) => doc.key in entry.spawns)
+										.map((doc) => (
+											<LocationsDocumentArtwork key={doc.key} doc={doc} className="size-7" />
+										))}
+								</span>
+							</button>
+						))}
 					</div>
-				</div>
-				<div className={styles.selectors}>
-					<label>
-						Map
-						<select value={mapId} onChange={(event) => changeMap(event.target.value)}>
-							{documentMaps.map((entry) => (
-								<option key={entry.id} value={entry.id}>
-									{entry.name}
-								</option>
-							))}
-						</select>
-					</label>
-					<label>
-						Floor
-						<select
-							value={floor}
-							onChange={(event) => {
-								setFloor(event.target.value);
-								setPinned(null);
-								setHovered(null);
-							}}
-						>
-							<option value="all">All floors</option>
-							{floors.map((entry) => (
-								<option key={entry} value={entry}>
-									{map?.floors.find((candidate) => candidate.id === entry)?.name ?? entry}
-								</option>
-							))}
-							{mapLocations.some((location) => !location.floor) && <option value="unknown">Unspecified floor</option>}
-						</select>
-					</label>
-				</div>
-				<Button onClick={onClose}>
-					<X size={16} /> Close map
+				</nav>
+				<Button className={styles.closeButton} onClick={onClose}>
+					<X size={16} /> Close
 				</Button>
 			</header>
-			<div className={styles.filters} role="group" aria-label="Document types">
-				{documents
-					.filter((doc) => mapLocations.some((location) => location.documentKey === doc.key))
-					.map((doc) => (
-						<button
-							key={doc.key}
-							type="button"
-							aria-pressed={!hiddenTypes.includes(doc.key)}
-							className={styles.filter}
-							style={{ "--document-color": documentMarks[doc.key]?.color } as CSSProperties}
-							onClick={() => toggleType(doc.key)}
-						>
-							<LocationsDocumentArtwork doc={doc} className="size-7" />
-							<span>{documentDisplayName(doc.name)}</span>
-							<span className={styles.count}>
-								{mapLocations.filter((location) => location.documentKey === doc.key).length}
-							</span>
-						</button>
-					))}
-				<span className={styles.visibleCount}>
-					{visible.length} / {mapLocations.length} locations
-				</span>
-				{hiddenTypes.length > 0 && (
-					<Button size="xs" onClick={() => setHiddenTypes([])}>
-						Show all types
-					</Button>
-				)}
-			</div>
-			<div className={styles.mapArea}>
+			<div className={styles.mapArea} style={{ "--controls-clearance": `${controlsHeight + 28}px` } as CSSProperties}>
 				<div
 					ref={viewport}
 					className={styles.viewport}
@@ -312,7 +275,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 						drag.current = null;
 					}}
 				>
-					{map ? (
+					{map && background ? (
 						<div
 							className={styles.stage}
 							style={{
@@ -322,18 +285,32 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 							}}
 						>
 							<img
-								key={`${map.id}:${imageAttempt}`}
+								key={`${map.id}:${background.imageUrl}:${imageAttempt}`}
 								className={styles.mapImage}
-								src={map.imageUrl}
+								src={background.imageUrl}
 								alt={`${map.name} map`}
 								draggable={false}
-								onLoad={() => setImageState("ready")}
-								onError={() => setImageState("error")}
+								onLoad={(event) => {
+									if (
+										background.usesReplacement &&
+										!background.matchesDimensions(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight)
+									) {
+										setUseOriginal(true);
+										setImageState("loading");
+									} else setImageState("ready");
+								}}
+								onError={() => {
+									if (background.usesReplacement) {
+										setUseOriginal(true);
+										setImageState("loading");
+									} else setImageState("error");
+								}}
 							/>
 							{imageState === "ready" &&
 								visible.map((location, index) => {
 									const doc = documents.find((entry) => entry.key === location.documentKey);
 									const offset = offsets[index];
+									const point = background.project(location);
 									const color = documentMarks[location.documentKey]?.color;
 									return (
 										<div
@@ -341,8 +318,8 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 											className={styles.anchor}
 											style={
 												{
-													left: `${(location.x / map.width) * 100}%`,
-													top: `${(location.y / map.height) * 100}%`,
+													left: `${(point.x / background.width) * 100}%`,
+													top: `${(point.y / background.height) * 100}%`,
 													transform: `scale(${1 / view.scale})`,
 													"--document-color": color,
 												} as CSSProperties
@@ -364,6 +341,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 												type="button"
 												className={styles.marker}
 												data-active={active?.id === location.id}
+												data-compact={offset.compact}
 												style={{ transform: `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px)` }}
 												aria-label={`${doc ? documentDisplayName(doc.name) : location.documentKey}: ${location.title}${location.key ? ", key required" : ""}`}
 												aria-pressed={pinned === location.id}
@@ -379,7 +357,11 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 													setHovered(location.id);
 												}}
 											>
-												<LocationsDocumentArtwork doc={doc ?? { key: location.documentKey }} className="size-7" />
+												{offset.compact ? (
+													<CompactDocumentGlyph documentKey={location.documentKey} />
+												) : (
+													<LocationsDocumentArtwork doc={doc ?? { key: location.documentKey }} className="size-7" />
+												)}
 												{location.key && (
 													<span className={styles.markerLock}>
 														<LockKeyhole size={10} />
@@ -410,7 +392,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 							>
 								Retry image
 							</Button>
-							<a href={map.sourceUrl} target="_blank" rel="noreferrer">
+							<a href={background?.sourceUrl ?? map.sourceUrl} target="_blank" rel="noreferrer">
 								Open source map ↗
 							</a>
 						</div>
@@ -422,7 +404,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 								size="xs"
 								onClick={() => {
 									setHiddenTypes([]);
-									setFloor("all");
+									setHiddenFloors([]);
 								}}
 							>
 								Reset filters
@@ -440,6 +422,65 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 							<RotateCcw size={16} />
 						</Button>
 					</div>
+				</div>
+				<div ref={bottomControls} className={styles.bottomControls}>
+					<div className={styles.filters} role="group" aria-label="Document types">
+						{map &&
+							mapDocuments.map((doc) => {
+								const counts = documentMapCounts(map, mapLocations, doc.key);
+								return (
+									<button
+										key={doc.key}
+										type="button"
+										aria-pressed={!hiddenTypes.includes(doc.key)}
+										className={styles.filter}
+										style={{ "--document-color": documentMarks[doc.key]?.color } as CSSProperties}
+										onClick={() => toggleType(doc.key)}
+									>
+										<LocationsDocumentArtwork doc={doc} className="size-9" />
+										<span className={styles.filterText}>
+											<strong>{documentDisplayName(doc.name)}</strong>
+											<span className={styles.count}>
+												{counts.possibleSpots} possible spots · {counts.raidSpawns ?? "Unknown"} spawns per raid
+											</span>
+										</span>
+									</button>
+								);
+							})}
+					</div>
+					<fieldset className={styles.floorControls}>
+						<legend>Floors</legend>
+						<div className={styles.floorOptions}>
+							{floors.map((floor) => (
+								<label key={floor.id} className={styles.floorOption}>
+									<input
+										type="checkbox"
+										checked={!hiddenFloors.includes(floor.id)}
+										onChange={() => {
+											setHiddenFloors((current) =>
+												current.includes(floor.id) ? current.filter((id) => id !== floor.id) : [...current, floor.id],
+											);
+											setHovered(null);
+											setPinned(null);
+										}}
+									/>
+									<span>{floor.name}</span>
+								</label>
+							))}
+						</div>
+						<button
+							type="button"
+							className={styles.allFloors}
+							onClick={() => {
+								setHiddenFloors([]);
+								setHovered(null);
+								setPinned(null);
+							}}
+							disabled={hiddenFloors.length === 0}
+						>
+							Show all floors
+						</button>
+					</fieldset>
 				</div>
 				{active && (
 					<LocationPreview
@@ -460,9 +501,20 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 					Drag to pan · scroll to zoom · <LockKeyhole size={11} /> key required
 				</span>
 				{map && (
-					<a href={map.sourceUrl} target="_blank" rel="noreferrer" title={`${map.attribution} ${map.license}`}>
-						Locations & maps: TarkovDoc · Game assets © BSG <ExternalLink size={11} />
-					</a>
+					<span>
+						<a href={map.sourceUrl} target="_blank" rel="noreferrer">
+							Locations: TarkovDoc
+						</a>
+						·
+						<a
+							href={background?.sourceUrl ?? map.sourceUrl}
+							target="_blank"
+							rel="noreferrer"
+							title={background?.license ?? map.license}
+						>
+							Map: {(background?.attribution ?? map.attribution).replace(/^Map:\s*/i, "")} <ExternalLink size={11} />
+						</a>
+					</span>
 				)}
 			</footer>
 		</section>

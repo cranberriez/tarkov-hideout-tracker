@@ -1,0 +1,446 @@
+{
+	"verifiedAt": "2026-10-11",
+	"maps": [
+		{
+			"mapId": "ground_zero",
+			"imageUrl": "https://tarkov.dev/maps/ground-zero-2d.jpg",
+			"width": 6920,
+			"height": 6920,
+			"sourceWidth": 6920,
+			"sourceHeight": 6920,
+			"transform": [1, 0, 0, 1, 0, 0],
+			"sourceUrl": "https://tarkov.dev/map/ground-zero-2d",
+			"author": "xTycho",
+			"authorUrl": "https://www.reddit.com/user/Tychodelouw/",
+			"license": "Map artwork remains subject to its original author terms. Game imagery and trademarks © Battlestate Games.",
+			"verification": {
+				"note": "Same raster canvas and building/terrain geometry; visually compared full canvases and checked spatially separated grayscale edge patches at 800px width. Added upstream labels and original colors do not move spawn anchors.",
+				"maxError": 0,
+				"landmarks": [
+					{
+						"source": {
+							"x": 2336,
+							"y": 519
+						},
+						"target": {
+							"x": 2336,
+							"y": 519
+						},
+						"correlation": 0.995498
+					},
+					{
+						"source": {
+							"x": 4758,
+							"y": 1730
+						},
+						"target": {
+							"x": 4758,
+							"y": 1730
+						},
+						"correlation": 0.998534
+					},
+					{
+						"source": {
+							"x": 1730,
+							"y": 4758
+						},
+						"target": {
+							"x": 1730,
+							"y": 4758
+						},
+						"correlation": 0.997533
+					},
+					{
+						"source": {
+							"x": 5363,
+							"y": 4152
+						},
+						"target": {
+							"x": 5363,
+							"y": 4152
+						},
+						"correlation": 0.997913
+					}
+				]
+			}
+		},
+		{
+			"mapId": "icebreaker",
+			"imageUrl": "https://tarkov.dev/maps/icebreaker-2d.jpg",
+			"width": 7680,
+			"height": 4320,
+			"sourceWidth": 7680,
+			"sourceHeight": 4320,
+			"transform": [1, 0, 0, 1, 0, 0],
+			"sourceUrl": "https://tarkov.dev/map/icebreaker-2d",
+			"author": "re3mr",
+			"authorUrl": "https://reemr.se",
+			"license": "Map artwork remains subject to its original author terms. Game imagery and trademarks © Battlestate Games.",
+			"verification": {
+				"note": "Same raster canvas and building/terrain geometry; visually compared full canvases and checked spatially separated grayscale edge patches at 800px width. Added upstream labels and original colors do not move spawn anchors.",
+				"maxError": 0,
+				"landmarks": [
+					{
+						"source": {
+							"x": 1248,
+							"y": 1920
+						},
+						"target": {
+							"x": 1248,
+							"y": 1920
+						},
+						"correlation": 0.991841
+					},
+					{
+						"source": {
+							"x": 4608,
+							"y": 1248
+						},
+						"target": {
+							"x": 4608,
+							"y": 1248
+						},
+						"correlation": 0.99654
+					},
+					{
+						"source": {
+							"x": 2592,
+							"y": 2592
+						},
+						"target": {
+							"x": 2592,
+							"y": 2592
+						},
+						"correlation": 0.988746
+					},
+					{
+						"source": {
+							"x": 4608,
+							"y": 2592
+						},
+						"target": {
+							"x": 4608,
+							"y": 2592
+						},
+						"correlation": 0.990535
+					}
+				]
+			}
+		},
+		{
+			"mapId": "lighthouse",
+			"imageUrl": "https://tarkov.dev/maps/lighthouse-2d.jpg",
+			"width": 2242,
+			"height": 3892,
+			"sourceWidth": 2242,
+			"sourceHeight": 3892,
+			"transform": [1, 0, 0, 1, 0, 0],
+			"sourceUrl": "https://tarkov.dev/map/lighthouse-2d",
+			"author": "Shebuka & Jindouz",
+			"authorUrl": null,
+			"license": "Map artwork remains subject to its original author terms. Game imagery and trademarks © Battlestate Games.",
+			"verification": {
+				"note": "Same raster canvas and building/terrain geometry; visually compared full canvases and checked spatially separated grayscale edge patches at 800px width. Added upstream labels and original colors do not move spawn anchors.",
+				"maxError": 0,
+				"landmarks": [
+					{
+						"source": {
+							"x": 561,
+							"y": 1933
+						},
+						"target": {
+							"x": 561,
+							"y": 1933
+						},
+						"correlation": 0.997679
+					},
+					{
+						"source": {
+							"x": 1934,
+							"y": 1737
+						},
+						"target": {
+							"x": 1934,
+							"y": 1737
+						},
+						"correlation": 0.997565
+					},
+					{
+						"source": {
+							"x": 953,
+							"y": 2522
+						},
+						"target": {
+							"x": 953,
+							"y": 2522
+						},
+						"correlation": 0.997791
+					},
+					{
+						"source": {
+							"x": 1345,
+							"y": 3306
+						},
+						"target": {
+							"x": 1345,
+							"y": 3306
+						},
+						"correlation": 0.99766
+					}
+				]
+			}
+		},
+		{
+			"mapId": "reserve",
+			"imageUrl": "https://tarkov.dev/maps/reserve-2d.jpg",
+			"width": 4701,
+			"height": 2785,
+			"sourceWidth": 4701,
+			"sourceHeight": 2785,
+			"transform": [1, 0, 0, 1, 0, 0],
+			"sourceUrl": "https://tarkov.dev/map/reserve-2d",
+			"author": "Jindouz",
+			"authorUrl": "https://www.reddit.com/user/Jindouz",
+			"license": "Map artwork remains subject to its original author terms. Game imagery and trademarks © Battlestate Games.",
+			"verification": {
+				"note": "Same raster canvas and building/terrain geometry; visually compared full canvases and checked spatially separated grayscale edge patches at 800px width. Added upstream labels and original colors do not move spawn anchors.",
+				"maxError": 0,
+				"landmarks": [
+					{
+						"source": {
+							"x": 353,
+							"y": 353
+						},
+						"target": {
+							"x": 353,
+							"y": 353
+						},
+						"correlation": 0.991453
+					},
+					{
+						"source": {
+							"x": 2821,
+							"y": 764
+						},
+						"target": {
+							"x": 2821,
+							"y": 764
+						},
+						"correlation": 0.987832
+					},
+					{
+						"source": {
+							"x": 764,
+							"y": 1586
+						},
+						"target": {
+							"x": 764,
+							"y": 1586
+						},
+						"correlation": 0.989514
+					},
+					{
+						"source": {
+							"x": 2409,
+							"y": 1586
+						},
+						"target": {
+							"x": 2409,
+							"y": 1586
+						},
+						"correlation": 0.986607
+					}
+				]
+			}
+		},
+		{
+			"mapId": "shoreline",
+			"imageUrl": "https://tarkov.dev/maps/shoreline-2d.jpg",
+			"width": 6668,
+			"height": 4567,
+			"sourceWidth": 6668,
+			"sourceHeight": 4567,
+			"transform": [1, 0, 0, 1, 0, 0],
+			"sourceUrl": "https://tarkov.dev/map/shoreline-2d",
+			"author": "monkimonkimonk",
+			"authorUrl": "https://www.reddit.com/user/monkimonkimonk/",
+			"license": "Map artwork remains subject to its original author terms. Game imagery and trademarks © Battlestate Games.",
+			"verification": {
+				"note": "Same raster canvas and building/terrain geometry; visually compared full canvases and checked spatially separated grayscale edge patches at 800px width. Added upstream labels and original colors do not move spawn anchors.",
+				"maxError": 0,
+				"landmarks": [
+					{
+						"source": {
+							"x": 500,
+							"y": 500
+						},
+						"target": {
+							"x": 500,
+							"y": 500
+						},
+						"correlation": 0.992674
+					},
+					{
+						"source": {
+							"x": 3417,
+							"y": 1667
+						},
+						"target": {
+							"x": 3417,
+							"y": 1667
+						},
+						"correlation": 0.98503
+					},
+					{
+						"source": {
+							"x": 2834,
+							"y": 3417
+						},
+						"target": {
+							"x": 2834,
+							"y": 3417
+						},
+						"correlation": 0.971875
+					},
+					{
+						"source": {
+							"x": 4584,
+							"y": 2834
+						},
+						"target": {
+							"x": 4584,
+							"y": 2834
+						},
+						"correlation": 0.987612
+					}
+				]
+			}
+		},
+		{
+			"mapId": "streets_of_tarkov",
+			"imageUrl": "https://tarkov.dev/maps/streets-2d.jpg",
+			"width": 7620,
+			"height": 5877,
+			"sourceWidth": 7620,
+			"sourceHeight": 5877,
+			"transform": [1, 0, 0, 1, 0, 0],
+			"sourceUrl": "https://tarkov.dev/map/streets-2d",
+			"author": "Jindouz",
+			"authorUrl": "https://www.reddit.com/user/Jindouz",
+			"license": "Map artwork remains subject to its original author terms. Game imagery and trademarks © Battlestate Games.",
+			"verification": {
+				"note": "Same raster canvas and building/terrain geometry; visually compared full canvases and checked spatially separated grayscale edge patches at 800px width. Added upstream labels and original colors do not move spawn anchors.",
+				"maxError": 0,
+				"landmarks": [
+					{
+						"source": {
+							"x": 572,
+							"y": 572
+						},
+						"target": {
+							"x": 572,
+							"y": 572
+						},
+						"correlation": 0.987122
+					},
+					{
+						"source": {
+							"x": 3905,
+							"y": 572
+						},
+						"target": {
+							"x": 3905,
+							"y": 572
+						},
+						"correlation": 0.985671
+					},
+					{
+						"source": {
+							"x": 1905,
+							"y": 3905
+						},
+						"target": {
+							"x": 1905,
+							"y": 3905
+						},
+						"correlation": 0.981875
+					},
+					{
+						"source": {
+							"x": 3905,
+							"y": 3239
+						},
+						"target": {
+							"x": 3905,
+							"y": 3239
+						},
+						"correlation": 0.948672
+					}
+				]
+			}
+		},
+		{
+			"mapId": "woods",
+			"imageUrl": "https://tarkov.dev/maps/woods-2d.jpg",
+			"width": 6994,
+			"height": 6843,
+			"sourceWidth": 6994,
+			"sourceHeight": 6843,
+			"transform": [1, 0, 0, 1, 0, 0],
+			"sourceUrl": "https://tarkov.dev/map/woods-2d",
+			"author": "Jindouz",
+			"authorUrl": "https://www.reddit.com/user/Jindouz",
+			"license": "Map artwork remains subject to its original author terms. Game imagery and trademarks © Battlestate Games.",
+			"verification": {
+				"note": "Same raster canvas and building/terrain geometry; visually compared full canvases and checked spatially separated grayscale edge patches at 800px width. Added upstream labels and original colors do not move spawn anchors.",
+				"maxError": 0,
+				"landmarks": [
+					{
+						"source": {
+							"x": 525,
+							"y": 524
+						},
+						"target": {
+							"x": 525,
+							"y": 524
+						},
+						"correlation": 0.997653
+					},
+					{
+						"source": {
+							"x": 5420,
+							"y": 1748
+						},
+						"target": {
+							"x": 5420,
+							"y": 1748
+						},
+						"correlation": 0.993196
+					},
+					{
+						"source": {
+							"x": 1749,
+							"y": 3583
+						},
+						"target": {
+							"x": 1749,
+							"y": 3583
+						},
+						"correlation": 0.990652
+					},
+					{
+						"source": {
+							"x": 6032,
+							"y": 4807
+						},
+						"target": {
+							"x": 6032,
+							"y": 4807
+						},
+						"correlation": 0.987338
+					}
+				]
+			}
+		}
+	]
+}

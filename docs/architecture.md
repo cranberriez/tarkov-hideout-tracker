@@ -29,6 +29,7 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 | `/settings`                                        | [Player progression backups, import review, legacy tools and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md)                                                                                                  |
 | `/news`                                            | [News page](../src/app/news/page.tsx)                                                                                                                                                                                                                 |
 | `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): static Season 1 rewards, account-wide completion/goals and document inventory; listed immediately after Games in the same secondary-menu group. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
+| `/battle-pass/map`                                 | [Document map](../src/app/battle-pass/map/page.tsx): full-viewport interactive document spawn maps without site navigation; lazy client rendering and native browser history |
 | `/dev`                                             | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md)                                                                                                      |
 
 The [Battle Pass feature](../src/features/battle-pass/BattlePassPage.tsx) composes
@@ -53,11 +54,13 @@ consumption toggle aligned right and retained in list view. The same toggle also
 appears below Total in the document panel. Reward document costs turn green with
 a checkmark when the effective owned balance covers that displayed cost.
 Locations expands below the overview with map columns and an optional comparison table.
-The overview's Document map button opens a lazily loaded, full-viewport dialog
-without site navigation. Closing it restores focus to the entry button and keeps
-the underlying battle-pass view and progress intact. Reward paging shortcuts are
-disabled while the map is open. Document-map rendering and source data are
-described in [maps](maps.md).
+The overview's Document map link opens the lazily loaded
+[/battle-pass/map route](../src/app/battle-pass/map/page.tsx), filling the viewport
+without site navigation. Native browser Back and Forward leave and return to the
+map. Close and Escape navigate to `/battle-pass`, retaining the map history entry, including
+when the map URL was opened directly. Saved progress is shared with the Battle
+Pass page; page-local display controls initialize when that page mounts.
+Document-map rendering and source data are described in [maps](maps.md).
 
 Detail routes use bounded reads: [getItemDetailPageData](../src/server/queries/getItemDetailPageData.ts)
 reads one item, [getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts)

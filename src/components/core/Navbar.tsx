@@ -26,6 +26,8 @@ import { PlayerProfileMenu } from "./PlayerProfileMenu";
 
 export function Navbar() {
 	const gameMode = useUserStore((state) => state.gameMode);
+	const currentPage = usePathname();
+	if (currentPage === "/battle-pass/map") return null;
 	return <NavbarContent key={gameMode} />;
 }
 

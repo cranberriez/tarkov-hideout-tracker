@@ -97,17 +97,45 @@ visible when changing the viewer.
 
 The battle-pass overview opens a separate, lazily loaded
 [document map view](../src/features/battle-pass/components/BattlePassMapView.tsx)
-in a full-viewport dialog. This view uses the document palette and artwork,
-with document-type filters, all floors selected initially, and lock badges for
-source records with a required key. Hover or keyboard focus opens a large
-location-photo preview; clicking pins it. Closing the map preserves battle-pass
-progress and the underlying page state. Map filters and viewport state are local
-to the open view and do not write player data.
+at `/battle-pass/map`, without site navigation. Browser back and forward navigate
+between the overview and the map. The `map` query parameter selects a map by slug
+(for example, `/battle-pass/map?map=reserve`). Each history entry retains zoom,
+pan, floor filters, and document filters; changing maps creates an entry, while
+changing the view or filters updates the current entry. Shared links select the
+map with default view and filters, and unknown slugs fall back to Factory.
+This view uses the document palette and artwork,
+with a scenic map switcher in the top bar and each map's two document icons.
+The switcher fits the viewport, wrapping on narrow screens without horizontal scrolling.
+Document-type filters and source-reported per-raid counts float over the map at the bottom
+center; the floating bottom-right floor checklist starts with every floor selected and
+supports multiple floors. Possible location counts are separate from per-raid
+document counts. Lock badges identify source records with a required key.
+Hover or keyboard focus opens a large location-photo preview; clicking pins it.
+The preview header groups the document icon with its type and location name.
+Closing the map returns to the battle-pass overview without changing saved
+progress. View state is stored in a namespaced browser-history field, preserving
+Next.js history metadata; it does not write player saves or local storage.
+Crowded markers use small document-colored shapes with fixed black outlines.
+Separated markers retain the full document artwork. Residual displacement for
+overlapping anchors uses contrasting anchor dots and leader lines, preserving
+the true source positions and access to lock indicators and photo previews.
 
 Document locations use native image-pixel coordinates and their matching source
 map layers. They are not world-space quest coordinates and must not be passed
 through the quest map projection or plotted on a replacement basemap without a
 verified transform. The shared pan/zoom utilities can still be reused.
+
+The [background registry](../src/lib/data/battle-pass-map-backgrounds.json) records
+verified Tarkov.dev raster replacements, dimensions, transforms, and landmark
+evidence. Ground Zero, Icebreaker, Lighthouse, Reserve, Shoreline, Streets, and
+Woods currently use same-canvas originals with their full colors and labels;
+these have the same resolution as the source backgrounds. Factory, Customs,
+Interchange, The Lab, and The Labyrinth retain their source images because their
+alternate artwork or floor layouts do not have verified registrations. The
+[background resolver](../src/features/battle-pass/lib/battle-pass-map-background.ts)
+validates registrations before projecting markers. Image failures or unexpected
+replacement dimensions restore the original image and coordinates together.
+Document IDs, lock metadata, and location photos are unchanged by projection.
 
 The committed source snapshot is refreshed explicitly from the structured public
 map-page data at [TarkovDoc](https://tarkovdoc.com/maps/), with typed exports in
@@ -126,6 +154,8 @@ Failed or incomplete pulls leave the previous snapshot intact.
 ```bash
 node --test scripts/extract-battle-pass-map-data.test.mjs
 node --test --import jiti/register src/features/battle-pass/lib/battle-pass-map-layout.test.ts
+node --test --import jiti/register src/features/battle-pass/lib/battle-pass-map-background.test.ts src/features/battle-pass/lib/battle-pass-map-controls.test.ts
+node --test --import jiti/register src/features/battle-pass/lib/battle-pass-map-navigation.test.ts
 node --test --import jiti/register src/features/maps/map-projection.test.ts src/features/maps/map-floor-resolution.test.ts src/features/maps/map-view-transform.test.ts src/server/services/map-render-definitions.test.ts src/server/services/map-svg-layers.test.ts src/server/services/map-navigation-overlays.test.ts
 node --test --import jiti/register src/features/quests/workspace/quest-detail-markers.test.ts src/features/quests/workspace/raid-planner-markers.test.ts
 node --test scripts/pull-map-overlays.test.mjs
