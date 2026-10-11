@@ -10,6 +10,7 @@ import {
 	pgTable,
 	primaryKey,
 	text,
+	timestamp,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import type { ItemPresetPart } from "@/types/items";
@@ -407,7 +408,28 @@ export const priceRefreshState = pgTable(
 	() => [modeCheck("price_refresh_state")],
 );
 
+export const feedback = pgTable(
+	"feedback",
+	{
+		id: integer("id").primaryKey().default(1),
+		good: bigint("good", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
+		bad: bigint("bad", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+	},
+	(table) => [
+		check("feedback_singleton_check", sql`${table.id} = 1`),
+		check("feedback_good_nonnegative_check", sql`${table.good} >= 0`),
+		check("feedback_bad_nonnegative_check", sql`${table.bad} >= 0`),
+	],
+);
+
 export const postgresSchema = {
+	feedback,
 	items,
 	itemModes,
 	traders,

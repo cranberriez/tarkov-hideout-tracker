@@ -13,6 +13,7 @@ import { QueryProvider } from "@/lib/query/QueryProvider";
 import { HoverPreviewProvider } from "@/components/ui/hover-preview-provider";
 import { AppThemeSync } from "@/components/core/AppThemeSync";
 import { APP_THEME_BOOT_SCRIPT } from "@/lib/cfg/app-preferences";
+import { SiteRating } from "@/features/site-rating/SiteRating";
 
 export const viewport: Viewport = {
 	width: "device-width",
@@ -47,8 +48,13 @@ export default function RootLayout({
 						<AppThemeSync />
 						<Navbar />
 						<SeasonCharacterBanner />
-						<div className="flex min-h-0 flex-1 flex-col">{children}</div>
+						<div className="page-content flex min-h-0 flex-1 flex-col">
+							<div className="page-content-side" aria-hidden="true" />
+							{children}
+							<div className="page-content-side" aria-hidden="true" />
+						</div>
 						<SetupModal />
+						<SiteRating />
 						<QuickAddModal />
 						<GlobalItemDetailModal />
 						<Analytics />

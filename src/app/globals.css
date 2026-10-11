@@ -51,6 +51,9 @@
 	--danger: oklch(0.704 0.191 22.216);
 	/* Fixed black ink for solid danger banners in every theme. */
 	--danger-foreground: #000000;
+	/* Fixed dark surface and light ink for the unobtrusive site-rating chip. */
+	--rating-surface: #111111;
+	--rating-foreground: #eeeeee;
 
 	/* Information: active/in-progress states, pinned quests, informational links and notices. */
 	--info: oklch(0.746 0.16 232.661);
@@ -262,6 +265,27 @@
 
 body {
 	font-family: var(--font-sans), sans-serif;
+}
+
+/* Only the wrapper directly containing a page main supplies its side space. */
+.page-content:has(> main) {
+	flex-direction: row;
+}
+
+.page-content:has(> main) > main {
+	flex: 0 0 auto;
+	min-width: 0;
+	width: 100%;
+	margin-inline: 0;
+}
+
+.page-content-side {
+	display: none;
+	flex: 1 1 0;
+}
+
+.page-content:has(> main) > .page-content-side {
+	display: block;
 }
 
 body.quest-workspace-active,

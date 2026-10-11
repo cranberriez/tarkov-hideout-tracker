@@ -29,6 +29,15 @@ verified TLS configuration; migration/build operations do not disable certificat
 validation. Apply schema explicitly with npm run db:migrate. Runtime and builds
 never run migrations.
 
+Before deploying database-backed site ratings, run `npm run db:migrate` to apply
+[0007_feedback.sql](../db-scripts/migrations/0007_feedback.sql). It adds and seeds
+the singleton `feedback` aggregate without changing catalog or player data. The
+runtime database role needs SELECT/INSERT/UPDATE access to this table. Existing
+successful rating cookies are preserved; votes accepted by the former logging stub
+cannot be reconstructed from the new counters. Verify recorder behavior with
+`node --test --import jiti/register src/server/site-rating/record-site-rating.test.ts`;
+database cases require `TEST_DATABASE_URL` and use disposable isolated schemas.
+
 Run `npm run db:update` to bootstrap the catalog and discovery directly in PostgreSQL,
 then `npm run db:prices:refresh`. No SQLite backup or discovery import is required.
 If a verified `discovery.json` exists in the project root, the update imports it

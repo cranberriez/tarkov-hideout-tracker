@@ -316,6 +316,21 @@ Ignoring player level only changes pricing inputs; it never rewrites profile lev
 
 ## Ephemeral and server state
 
+Site ratings use independent, site-wide cookies `tarkov-feedback-submitted` and
+`tarkov-feedback-reshow-at`, with Path=/ and SameSite=Lax (Secure on HTTPS).
+They are shared across profiles/modes, outside backups and every progress reset.
+The rating action validates `good`/`bad` and ignores repeats while success or a
+retry deadline is saved. Success saves `true` and clears the retry date; failure
+saves `false` with a timestamp 48 hours ahead. A lost action response writes the
+failure cookies in the browser. Cookies last 400 days (subject to browser limits);
+return visits renew successful suppression. Closing the result is ephemeral and
+does not change these cookies. The widget checks them on focus and schedules the
+retry deadline while a page stays open. It never changes player data.
+Accepted submissions increment the site-wide PostgreSQL `feedback` singleton's
+`good` or `bad` counter before success is saved. No voter identity or per-vote record
+is stored. These aggregate totals remain outside player backups and resets; cookies
+only suppress browser repeats and cannot guarantee exactly-once voting.
+
 Uploader decisions remain ephemeral. The uploader reads saved item counts to
 decide which scanned copies are still needed. Its explicit Kept only/Everything
 actions add the scan's FIR/non-FIR quantities through `addItemCounts`. Sends are

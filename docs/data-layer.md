@@ -9,6 +9,17 @@ The runtime and routine writers use PostgreSQL domain tables through
 cover migration and deployment. There are no active release pointers, generic
 payload tables, historical catalogs, or stored search manifests in PostgreSQL.
 
+Site ratings use the site-wide `feedback` table from
+[migration 0007](../db-scripts/migrations/0007_feedback.sql). Its fixed primary key
+`id = 1` permits at most one row, seeded with nonnegative bigint `good` and `bad`
+counters and aggregate `created_at`/`updated_at` timestamps. The server-only
+[recorder](../src/server/site-rating/record-site-rating.ts) atomically upserts the
+chosen counter using the shared pool; concurrent submissions cannot lose increments.
+Success is returned only after the write completes; database failures use the existing
+48-hour cookie retry. No identities, modes, profiles or individual votes are stored.
+Cookies provide browser-level suppression, not exactly-once delivery: clearing cookies,
+simultaneous requests or a lost response after a committed write can produce repeats.
+
 `GAME_MODE_CONFIG` in [game-mode.ts](../src/lib/game-mode.ts) is the single
 source for per-mode mappings (PVP to regular, PVE to pve, KORD to pvp-season),
 quest-log raid tags, labels and mode rules such as `seasonal` and `hasLightkeeper`;

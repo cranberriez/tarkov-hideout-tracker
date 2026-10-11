@@ -130,6 +130,17 @@ with bundled portraits and the saved level (a crown when maxed), so the shared
 layout still fetches no station data. The
 [(data) layout](<../src/app/(data)/layout.tsx>) supplies the footer and profile
 conversion UI without loading metadata or entity arrays for descendants.
+Both layouts supply empty side divs around their page content. The wrapper directly
+containing a `main` uses equal flexible sides to center its existing responsive
+width. Full-width mains leave no side space. The global
+[SiteRating](../src/features/site-rating/SiteRating.tsx) floats at the bottom right
+and measures the right safezone: horizontal at 128px, vertical at 72px, and a
+caret below that. The caret opens a sliding pill. Votes use a validated anonymous
+[server action](../src/features/site-rating/actions.ts); its
+[recorder](../src/server/site-rating/record-site-rating.ts) currently logs only
+`good`/`bad` and reserves a place for future storage. Only a completed recorder
+counts as success. Positive votes show a pulsing heart then disappear; negative
+votes offer the shared Google feedback form and close after 30 seconds or X.
 
 The root layout also supplies one browser [QueryProvider](../src/lib/query/QueryProvider.tsx)
 across route navigation. TanStack Query owns reusable server-data requests,
