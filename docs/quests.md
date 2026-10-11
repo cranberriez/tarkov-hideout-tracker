@@ -221,7 +221,21 @@ untracked. The chapter sidebar shows the total major evidence collected across
 the active profile's chapters, out of nine (or two for Debtor), beside its heading.
 Only chapters whose sections vary by ending show the target ending on their card.
 The index shows the target ending's evidence requirement beside the evidence
-heading. When recorded choices rule out endings, yellow Unavailable tabs beneath
+heading. Below evidence, Failure Conditions lists the selected ending's cumulative
+choice failures, explicitly annotated quest blockers, and objective risks across
+chapters. The pure [failure model](../src/features/story/story-failure-conditions.ts)
+uses ending-compatible conditions without filtering by saved choices or completed
+steps, so future and past risks remain visible. Red ending failures appear first,
+then objective warnings. Completed objectives (including children of completed
+parents), recorded compatible choices, satisfied quest alternatives, and bypassed
+branches move to a muted final group, grouped by chapter. Actual recorded failure
+choices or forbidden quest completions stay highlighted even if the objective is
+checked off. Ending implications alone never count as safely passed choices.
+This presentation reads only the active profile's existing story and quest progress.
+Compact cards link to objectives; expandable Details retain branch explanations
+and quest links. Step `failureCondition` metadata supplements warnings with
+risks otherwise buried in notes; it does not alter progress or ending availability.
+When recorded choices rule out endings, yellow Unavailable tabs beneath
 the ending buttons toggle a full-width explanation above the chapters for that
 ending, with links to review the choices. The explanation starts hidden and closes
 with its close button, by toggling the tab again, or when the target ending or profile changes.

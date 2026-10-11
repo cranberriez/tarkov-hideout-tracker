@@ -88,6 +88,12 @@ export interface StoryStep {
 	note?: string;
 	/** Something that fails this route. */
 	warning?: string;
+	/** Ending guide: explicit objective failure or setback, including details otherwise in notes. */
+	failureCondition?: {
+		text: string;
+		kind: "route" | "setback";
+		endings?: StoryEndingId[];
+	};
 	/** Quest named in the warning, rendered as an inline hover-preview link. */
 	warningQuest?: StoryQuestRef;
 	rewards?: string[];

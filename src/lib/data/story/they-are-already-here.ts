@@ -432,6 +432,11 @@ export const THEY_ARE_ALREADY_HERE: StoryChapter = {
 					note: "On the server next to the cooling lever. Must be found in raid.",
 					warning:
 						"Collecting it before restoring the backup settings loses the ARRS system specifications major evidence.",
+					failureCondition: {
+						kind: "setback",
+						endings: ["savior", "debtor"],
+						text: "Taking the ARRS flash drive before restoring backup settings loses its major evidence. Kerman offers a second chance; this alone does not rule out the ending.",
+					},
 					decision: "they-are-already-here-evidence",
 					images: [image("arrs-flash-drive-spawn", "The flash drive")],
 				},

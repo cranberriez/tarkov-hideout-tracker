@@ -21,6 +21,7 @@ import type { StoryChapter, StoryEndingId } from "@/types/story";
 import { buildChapterView, endingBlockers, evidenceCounts, reachableEndings } from "./story-model";
 import type { StoryProgress } from "./story-progress";
 import { StoryEvidenceRow } from "./components/StoryEvidenceRow";
+import { StoryFailureConditions } from "./components/StoryFailureConditions";
 import { chapterCompletionState } from "./chapter-completion";
 import { useStoryProgress } from "./useStoryProgress";
 
@@ -34,6 +35,7 @@ const TRACKED_FIRST = [
 export function StoryIndexClientPage() {
 	const hydrated = useUserStoreHydrated();
 	const gameMode = useUserStore((state) => state.gameMode);
+	const completedQuests = useUserStore((state) => state.completedQuests);
 	const [progress, update] = useStoryProgress(gameMode);
 	const targetEnding = hydrated ? progress.targetEnding : null;
 	const [reason, setReason] = useState<{ ending: StoryEndingId; mode: string; target: StoryEndingId | null } | null>(
@@ -169,6 +171,7 @@ export function StoryIndexClientPage() {
 				})}
 			</ul>
 			<StoryEvidenceRow progress={hydrated ? progress : null} />
+			<StoryFailureConditions progress={hydrated ? progress : null} completedQuests={hydrated ? completedQuests : {}} />
 		</main>
 	);
 }

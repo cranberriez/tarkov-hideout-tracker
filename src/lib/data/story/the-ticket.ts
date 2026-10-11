@@ -334,6 +334,10 @@ export const THE_TICKET: StoryChapter = {
 				{
 					simplified: "Stay on good terms with Lightkeeper until he returns the case.",
 					id: "lightkeeper-good-terms",
+					failureCondition: {
+						kind: "setback",
+						text: "Losing good terms with Lightkeeper before he returns the armored case blocks case recovery.",
+					},
 					text: "Stay on good terms with Lightkeeper",
 					requiresLightkeeper: true,
 					note: "Until he returns the armored case.",
@@ -742,6 +746,10 @@ export const THE_TICKET: StoryChapter = {
 					simplified: "Kill 4 PMCs in one raid.",
 					simplifiedRequirements: ["Any map • Transits allowed"],
 					id: "prapor-pmc-kills",
+					failureCondition: {
+						kind: "setback",
+						text: "Missing the 72-hour deadline for Prapor's three tasks adds a Secure container Kappa handover. Survivor is still reachable.",
+					},
 					text: "Eliminate 4 PMC operatives in one raid",
 					when: caseKept,
 					note: "Any map; transits are allowed.",
@@ -861,6 +869,10 @@ export const THE_TICKET: StoryChapter = {
 				{
 					simplified: "Keep Fence reputation above 4.0 throughout the assignments.",
 					id: "keep-fence-rep",
+					failureCondition: {
+						kind: "setback",
+						text: "Letting Fence standing fall to 4.0 or below violates the requirement to stay above 4.0 throughout his assignments.",
+					},
 					text: "Keep the standing with Fence above 4.0",
 					note: "For the entire duration of the assignments.",
 				},
@@ -870,6 +882,10 @@ export const THE_TICKET: StoryChapter = {
 						"Do not kill Scavs or Goons • PvE: kill 5 PMCs on Interchange in one raid without killing Scavs",
 					],
 					id: "woods-coop-extract",
+					failureCondition: {
+						kind: "setback",
+						text: "Killing Scavs or the Goons violates this assignment. PvP: use Friendship Bridge on Woods. PvE: kill 5 PMCs on Interchange in one raid without killing Scavs.",
+					},
 					images: [
 						image("friendship-bridge-map", "Friendship Bridge extraction on Woods"),
 						image("scav-bridge", "Friendship Bridge co-op extraction"),
@@ -884,6 +900,10 @@ export const THE_TICKET: StoryChapter = {
 						"Do not kill Scavs or Goons • PvE: kill 5 PMCs on Shoreline in one raid without killing Scavs",
 					],
 					id: "reserve-coop-extract",
+					failureCondition: {
+						kind: "setback",
+						text: "Killing Scavs or the Goons violates this assignment. PvP: use Scav Lands on Reserve. PvE: kill 5 PMCs on Shoreline in one raid without killing Scavs.",
+					},
 					images: [
 						image("scav-lands-map", "Scav Lands extraction on Reserve"),
 						image("scav-lands", "Scav Lands co-op extraction"),
@@ -1181,6 +1201,10 @@ export const THE_TICKET: StoryChapter = {
 							simplified: "Bring Alpha-1 in your task inventory.",
 							simplifiedRequirements: ["Required for Savior transit • Replacement mailed if lost"],
 							id: "bring-alpha-1",
+							failureCondition: {
+								kind: "setback",
+								text: "Without Alpha-1 in your task inventory, you cannot transit for Savior. A replacement is mailed if you die with it.",
+							},
 							text: "Bring the Secure container Alpha-1 with TerraGroup evidence",
 							optional: true,
 							when: deliveredAll,
@@ -1199,6 +1223,10 @@ export const THE_TICKET: StoryChapter = {
 					simplified: "Escape from Tarkov.",
 					simplifiedRequirements: ["Death or extraction restores pre-Terminal state, except the access item"],
 					id: "escape-tarkov",
+					failureCondition: {
+						kind: "setback",
+						text: "Dying or extracting in Terminal restores the pre-Terminal state but consumes the access item; another attempt needs a replacement.",
+					},
 					text: "Escape from Tarkov",
 					map: "Terminal",
 					note: "Dying or extracting restores your pre-Terminal state, minus the access item.",
@@ -1357,6 +1385,10 @@ export const THE_TICKET: StoryChapter = {
 						{
 							simplified: "Open the pier door and reach the Zubr boat within 3 minutes.",
 							id: "terminal-evacuation",
+							failureCondition: {
+								kind: "setback",
+								text: "Opening the pier door starts the evacuation deadline: reach the Zubr boat within 3 minutes.",
+							},
 							images: [image("zubr-boat", "Zubr boat evacuation area")],
 							text: "Reach the evacuation area at the pier",
 							optional: true,
