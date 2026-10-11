@@ -104,10 +104,20 @@ pan, document filters, and the grayscale/color setting; changing maps creates an
 changing the view or filters updates the current entry. Shared links select the
 map with default view and filters, and unknown slugs fall back to Factory.
 This view uses the document palette and artwork,
-with a scenic map switcher in the top bar and each map's two document icons.
+with a scenic map switcher floating across the top and each map's two document icons.
 The switcher fits the viewport, wrapping on narrow screens without horizontal scrolling.
-Hide collapses the selector; icon-only Close and Show maps controls then float
-over the map's top-right corner. Selector document artwork is enlarged with a
+The selector has no background panel, and the map extends behind it. A permanent
+vertical icon stack below the selector at the right offers a prominent red Close,
+Hide/Show maps, and Documents, matching the map controls at the left. Hide collapses
+only the selector and keeps focus on its toggle; both control stacks move upward.
+Documents opens an interactive floating panel beside the controls using the
+overview's remaining-cost and inventory model:
+saved reward goals when present, otherwise all remaining rewards. Owned balances
+and collection preferences use the existing battle-pass actions and active-profile
+inventory; opening the panel does not write saves. Its toggle or a click outside
+dismisses it. Escape dismisses the panel and restores focus to Documents before
+Escape can close the map. Location previews stay hidden while the panel is open.
+Selector document artwork is enlarged with a
 dark shadow for contrast against the scenic backgrounds.
 Document-type filters and source-reported per-raid counts float over the map at the bottom
 center. Locations on all floors remain visible, including unspecified floors; separate

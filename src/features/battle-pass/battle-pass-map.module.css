@@ -1,49 +1,57 @@
 .root {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	height: 100dvh;
 	width: 100%;
-	background: var(--background);
 	color: var(--foreground);
 	overflow: hidden;
 }
 .header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
+	position: absolute;
+	z-index: 35;
+	top: 0;
+	left: 0;
+	right: 0;
 	padding: 10px 12px;
-	flex-shrink: 0;
-	border-bottom: 1px solid var(--border);
-	background: var(--card);
+	pointer-events: none;
 }
 .header[hidden] {
 	display: none;
 }
 .mapTabs {
-	flex: 1;
 	min-width: 0;
 }
 .headerActions {
+	position: absolute;
+	z-index: 40;
+	top: calc(var(--selector-clearance, 0px) + 14px);
+	right: 14px;
 	display: flex;
 	flex-direction: column;
 	gap: 5px;
-	flex-shrink: 0;
 }
-.collapsedHeaderActions {
-	position: absolute;
-	z-index: 35;
-	top: 14px;
-	right: 14px;
-	display: flex;
-	gap: 6px;
-}
-.collapsedHeaderActions button {
+.headerActions button {
 	background: var(--card);
+	box-shadow: 0 2px 8px color-mix(in srgb, var(--shadow) 50%, transparent);
 }
-.mapArea[data-header-hidden="true"] .preview {
-	top: 60px;
-	max-height: calc(100% - var(--controls-clearance, 130px) - 74px);
+.headerActions button:first-child {
+	background: var(--danger);
+}
+.documentPanel {
+	position: absolute;
+	z-index: 40;
+	top: calc(var(--selector-clearance, 0px) + 14px);
+	right: 56px;
+	width: min(320px, calc(100% - 82px));
+	max-height: calc(100% - var(--selector-clearance, 0px) - 64px);
+	overflow-y: auto;
+	padding: 16px;
+	background: var(--card);
+	border: 1px solid var(--border);
+	border-radius: 7px;
+	box-shadow: 0 8px 32px color-mix(in srgb, var(--shadow) 60%, transparent);
+	outline: none;
 }
 .mapTabsInner {
 	display: grid;
@@ -51,6 +59,7 @@
 	gap: 6px;
 }
 .mapTab {
+	pointer-events: auto;
 	position: relative;
 	overflow: hidden;
 	width: 100%;
@@ -179,7 +188,6 @@
 	height: 100%;
 	position: relative;
 	overflow: hidden;
-	background: var(--background);
 	touch-action: none;
 	cursor: grab;
 }
@@ -312,7 +320,7 @@
 }
 .controls {
 	position: absolute;
-	top: 14px;
+	top: calc(var(--selector-clearance, 0px) + 14px);
 	left: 14px;
 	display: flex;
 	flex-direction: column;
@@ -339,7 +347,7 @@
 }
 .empty {
 	position: absolute;
-	top: 16px;
+	top: calc(var(--selector-clearance, 0px) + 16px);
 	left: 50%;
 	transform: translateX(-50%);
 	display: flex;
@@ -354,10 +362,10 @@
 .preview {
 	position: absolute;
 	z-index: 30;
-	top: 14px;
-	right: 14px;
+	top: max(140px, calc(var(--selector-clearance, 0px) + 14px));
+	right: 56px;
 	width: min(560px, 44vw);
-	max-height: calc(100% - var(--controls-clearance, 130px) - 28px);
+	max-height: calc(100% - var(--controls-clearance, 130px) - max(140px, var(--selector-clearance, 0px)) - 14px);
 	overflow-y: auto;
 	background: var(--card);
 	border: 1px solid var(--border);
@@ -474,21 +482,6 @@
 	}
 }
 @media (max-width: 760px) {
-	.header {
-		gap: 10px;
-		padding: 10px 12px;
-		display: grid;
-		grid-template-columns: 1fr auto;
-	}
-	.headerActions {
-		grid-column: 2;
-		grid-row: 1;
-	}
-	.mapTabs {
-		grid-column: 1 / -1;
-		grid-row: 2;
-		width: 100%;
-	}
 	.mapTabsInner {
 		grid-template-columns: repeat(4, minmax(0, 1fr));
 	}
@@ -538,11 +531,11 @@
 
 	.preview {
 		bottom: auto;
-		top: 10px;
+		top: max(140px, calc(var(--selector-clearance, 0px) + 10px));
 		left: 10px;
-		right: 10px;
+		right: 56px;
 		width: auto;
-		max-height: min(62%, calc(100% - var(--controls-clearance, 160px) - 20px));
+		max-height: calc(100% - var(--controls-clearance, 160px) - max(140px, var(--selector-clearance, 0px)) - 10px);
 	}
 	.previewHeading {
 		padding: 8px 10px;

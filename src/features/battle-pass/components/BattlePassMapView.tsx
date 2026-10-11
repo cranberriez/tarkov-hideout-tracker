@@ -6,6 +6,7 @@ import {
 	ChevronDown,
 	ChevronUp,
 	ExternalLink,
+	FileText,
 	ImageOff,
 	Palette,
 	LockKeyhole,
@@ -22,6 +23,7 @@ import { documentMaps, documentLocations, type BattlePassDocumentLocation } from
 import { filterDocumentLocations, documentMapCounts } from "../lib/battle-pass-map-controls";
 import { resolveDocumentBasemap } from "../lib/battle-pass-map-background";
 import { arrangeDocumentMarkers } from "../lib/battle-pass-map-layout";
+import { MapDocumentPanel } from "./MapDocumentPanel";
 import { CompactDocumentGlyph } from "./ui/CompactDocumentGlyph";
 import { LocationsDocumentArtwork } from "./ui/LocationsDocumentArtwork";
 import { useDocumentMapNavigation } from "../useDocumentMapNavigation";
@@ -142,8 +144,11 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 	const [imageAttempt, setImageAttempt] = useState(0);
 	const [useOriginal, setUseOriginal] = useState(false);
 	const [headerHidden, setHeaderHidden] = useState(false);
-	const hideHeaderButton = useRef<HTMLButtonElement>(null);
-	const showHeaderButton = useRef<HTMLButtonElement>(null);
+	const [documentsOpen, setDocumentsOpen] = useState(false);
+	const documentsButton = useRef<HTMLButtonElement>(null);
+	const documentsPanel = useRef<HTMLElement>(null);
+	const header = useRef<HTMLElement>(null);
+	const [headerHeight, setHeaderHeight] = useState(0);
 	const [renderedMapId, setRenderedMapId] = useState(mapId);
 	if (renderedMapId !== mapId) {
 		setRenderedMapId(mapId);
@@ -197,12 +202,38 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 		return () => observer.disconnect();
 	}, []);
 	useEffect(() => {
+		const element = header.current;
+		if (!element) return;
+		const observer = new ResizeObserver(([entry]) =>
+			setHeaderHeight(entry.borderBoxSize[0]?.blockSize ?? entry.contentRect.height),
+		);
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, []);
+	useEffect(() => {
 		function closeOnEscape(event: KeyboardEvent) {
-			if (event.key === "Escape") onClose();
+			if (event.key !== "Escape" || event.defaultPrevented) return;
+			if (documentsOpen) {
+				event.preventDefault();
+				setDocumentsOpen(false);
+				documentsButton.current?.focus();
+			} else onClose();
 		}
 		document.addEventListener("keydown", closeOnEscape);
 		return () => document.removeEventListener("keydown", closeOnEscape);
-	}, [onClose]);
+	}, [onClose, documentsOpen]);
+	useEffect(() => {
+		if (!documentsOpen) return;
+		documentsPanel.current?.focus();
+		function dismissOutside(event: PointerEvent) {
+			const target = event.target as Node;
+			if (!documentsPanel.current?.contains(target) && !documentsButton.current?.contains(target)) {
+				setDocumentsOpen(false);
+			}
+		}
+		document.addEventListener("pointerdown", dismissOutside);
+		return () => document.removeEventListener("pointerdown", dismissOutside);
+	}, [documentsOpen]);
 	function zoom(factor: number, point = { x: 0, y: 0 }) {
 		setView((current) => constrainMapView(zoomViewAroundPoint(current, factor, point, 1, 8), stage, size, 0.5));
 	}
@@ -215,8 +246,12 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 	}
 
 	return (
-		<section className={styles.root} aria-label="Battle pass document map">
-			<header className={styles.header} id="document-map-selector" hidden={headerHidden}>
+		<section
+			className={styles.root}
+			aria-label="Battle pass document map"
+			style={{ "--selector-clearance": `${headerHidden ? 0 : headerHeight}px` } as CSSProperties}
+		>
+			<header ref={header} className={styles.header} id="document-map-selector" hidden={headerHidden}>
 				<nav className={styles.mapTabs} aria-label="Choose document map">
 					<div className={styles.mapTabsInner}>
 						{documentMaps.map((entry) => (
@@ -240,51 +275,46 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 						))}
 					</div>
 				</nav>
-				<div className={styles.headerActions}>
-					<Button onClick={onClose}>
-						<X size={16} /> Close
-					</Button>
-					<Button
-						ref={hideHeaderButton}
-						aria-label="Hide map selector"
-						title="Hide map selector"
-						aria-controls="document-map-selector"
-						aria-expanded="true"
-						onClick={() => {
-							setHeaderHidden(true);
-							requestAnimationFrame(() => showHeaderButton.current?.focus());
-						}}
-					>
-						<ChevronUp size={16} /> Hide
-					</Button>
-				</div>
 			</header>
+			<div className={styles.headerActions}>
+				<Button
+					iconOnly
+					tone="danger"
+					variant="solid"
+					aria-label="Close document map"
+					title="Close document map"
+					onClick={onClose}
+				>
+					<X size={18} />
+				</Button>
+				<Button
+					iconOnly
+					aria-label={headerHidden ? "Show map selector" : "Hide map selector"}
+					title={headerHidden ? "Show map selector" : "Hide map selector"}
+					aria-controls="document-map-selector"
+					aria-expanded={!headerHidden}
+					onClick={() => setHeaderHidden((current) => !current)}
+				>
+					{headerHidden ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+				</Button>
+				<Button
+					ref={documentsButton}
+					iconOnly
+					aria-label={documentsOpen ? "Close document panel" : "Open document panel"}
+					title="Documents"
+					aria-controls="map-documents"
+					aria-expanded={documentsOpen}
+					onClick={() => setDocumentsOpen((current) => !current)}
+				>
+					{documentsOpen ? <X size={18} /> : <FileText size={18} />}
+				</Button>
+			</div>
+			{documentsOpen && <MapDocumentPanel ref={documentsPanel} />}
 			<div
 				className={styles.mapArea}
 				data-header-hidden={headerHidden}
 				style={{ "--controls-clearance": `${controlsHeight + 28}px` } as CSSProperties}
 			>
-				{headerHidden && (
-					<div className={styles.collapsedHeaderActions}>
-						<Button iconOnly aria-label="Close document map" title="Close document map" onClick={onClose}>
-							<X size={18} />
-						</Button>
-						<Button
-							ref={showHeaderButton}
-							iconOnly
-							aria-label="Show map selector"
-							title="Show map selector"
-							aria-controls="document-map-selector"
-							aria-expanded="false"
-							onClick={() => {
-								setHeaderHidden(false);
-								requestAnimationFrame(() => hideHeaderButton.current?.focus());
-							}}
-						>
-							<ChevronDown size={18} />
-						</Button>
-					</div>
-				)}
 				<div
 					ref={viewport}
 					className={styles.viewport}
@@ -515,7 +545,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 							})}
 					</div>
 				</div>
-				{active && (
+				{active && !documentsOpen && (
 					<LocationPreview
 						key={active.id}
 						location={active}
