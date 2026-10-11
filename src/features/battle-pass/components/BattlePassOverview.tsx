@@ -12,6 +12,7 @@ export function BattlePassOverview({
 	coverage,
 	selected,
 	filler,
+	headerAction,
 	children,
 }: {
 	scope: "all" | "goals";
@@ -22,13 +23,17 @@ export function BattlePassOverview({
 	coverage: ReturnType<typeof coverCosts>;
 	selected: Set<string>;
 	filler: Set<string>;
+	headerAction: ReactNode;
 	children: ReactNode;
 }) {
 	return (
 		<section aria-label="Battle pass overview" className="space-y-3 rounded-xl bg-card p-4">
-			<div>
-				<p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-brand">Season 1 · KORD Breach</p>
-				<h1 className="text-2xl font-semibold tracking-tight">Battle Pass</h1>
+			<div className="flex items-start justify-between gap-3">
+				<div>
+					<p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-brand">Season 1 · KORD Breach</p>
+					<h1 className="text-2xl font-semibold tracking-tight">Battle Pass</h1>
+				</div>
+				{headerAction}
 			</div>
 			<div className="flex items-center gap-3">
 				<div

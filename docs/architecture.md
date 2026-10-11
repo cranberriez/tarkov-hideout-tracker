@@ -53,6 +53,11 @@ consumption toggle aligned right and retained in list view. The same toggle also
 appears below Total in the document panel. Reward document costs turn green with
 a checkmark when the effective owned balance covers that displayed cost.
 Locations expands below the overview with map columns and an optional comparison table.
+The overview's Document map button opens a lazily loaded, full-viewport dialog
+without site navigation. Closing it restores focus to the entry button and keeps
+the underlying battle-pass view and progress intact. Reward paging shortcuts are
+disabled while the map is open. Document-map rendering and source data are
+described in [maps](maps.md).
 
 Detail routes use bounded reads: [getItemDetailPageData](../src/server/queries/getItemDetailPageData.ts)
 reads one item, [getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts)

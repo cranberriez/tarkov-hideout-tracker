@@ -93,9 +93,39 @@ state. Icebreaker, The Lab, and The Labyrinth currently lack validated interacti
 SVG paths. Keep author attribution and the configured CC BY-NC-SA 4.0 license
 visible when changing the viewer.
 
+## Battle-pass document maps
+
+The battle-pass overview opens a separate, lazily loaded
+[document map view](../src/features/battle-pass/components/BattlePassMapView.tsx)
+in a full-viewport dialog. This view uses the document palette and artwork,
+with document-type filters, all floors selected initially, and lock badges for
+source records with a required key. Hover or keyboard focus opens a large
+location-photo preview; clicking pins it. Closing the map preserves battle-pass
+progress and the underlying page state. Map filters and viewport state are local
+to the open view and do not write player data.
+
+Document locations use native image-pixel coordinates and their matching source
+map layers. They are not world-space quest coordinates and must not be passed
+through the quest map projection or plotted on a replacement basemap without a
+verified transform. The shared pan/zoom utilities can still be reused.
+
+The committed source snapshot is refreshed explicitly from the structured public
+map-page data at [TarkovDoc](https://tarkovdoc.com/maps/), with typed exports in
+[battle-pass-map-data](../src/lib/battle-pass-map-data.ts). Source links and asset
+attribution remain visible in the map view. Source verification status is retained;
+unconfirmed locations and missing photos must remain explicit. Images are loaded
+from their source URLs as needed, with loading and failure states.
+
+Refresh with `node scripts/extract-battle-pass-map-data.mjs --download`.
+The extractor validates the complete map set, document keys, unique location IDs,
+layer dimensions, and coordinate bounds before replacing the generated snapshot.
+Failed or incomplete pulls leave the previous snapshot intact.
+
 ## Validation
 
 ```bash
+node --test scripts/extract-battle-pass-map-data.test.mjs
+node --test --import jiti/register src/features/battle-pass/lib/battle-pass-map-layout.test.ts
 node --test --import jiti/register src/features/maps/map-projection.test.ts src/features/maps/map-floor-resolution.test.ts src/features/maps/map-view-transform.test.ts src/server/services/map-render-definitions.test.ts src/server/services/map-svg-layers.test.ts src/server/services/map-navigation-overlays.test.ts
 node --test --import jiti/register src/features/quests/workspace/quest-detail-markers.test.ts src/features/quests/workspace/raid-planner-markers.test.ts
 node --test scripts/pull-map-overlays.test.mjs
