@@ -103,6 +103,10 @@ between the overview and the map. The `map` query parameter selects a map by slu
 pan, document filters, and the grayscale/color setting; changing maps creates an entry, while
 changing the view or filters updates the current entry. Shared links select the
 map with default view and filters, and unknown slugs fall back to Factory.
+Grayscale fades smoothly when toggled or adjusted (unless reduced motion is enabled).
+While active, a vertical slider below the color button sets its intensity from 100% at
+the top to 0% at the bottom. Intensity starts at 10% and stays local to the open
+map view, including map switches; it is not saved in browser history or player data.
 This view uses the document palette and artwork,
 with a scenic map switcher floating across the top and each map's two document icons.
 The switcher fits the viewport, wrapping on narrow screens without horizontal scrolling.

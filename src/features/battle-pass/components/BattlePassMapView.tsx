@@ -176,6 +176,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 	const [useOriginal, setUseOriginal] = useState(false);
 	const [headerHidden, setHeaderHidden] = useState(false);
 	const [documentsOpen, setDocumentsOpen] = useState(false);
+	const [grayscaleAmount, setGrayscaleAmount] = useState(10);
 	const documentsButton = useRef<HTMLButtonElement>(null);
 	const documentsPanel = useRef<HTMLElement>(null);
 	const header = useRef<HTMLElement>(null);
@@ -365,7 +366,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 						});
 					}}
 					onPointerDown={(event) => {
-						if (event.button !== 0 || (event.target as HTMLElement).closest("button, a, aside")) return;
+						if (event.button !== 0 || (event.target as HTMLElement).closest("button, a, aside, input")) return;
 						event.currentTarget.setPointerCapture(event.pointerId);
 						drag.current = {
 							pointer: event.pointerId,
@@ -411,6 +412,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 								key={`${map.id}:${background.imageUrl}:${imageAttempt}`}
 								className={styles.mapImage}
 								data-colors={mapColors}
+								style={{ "--map-grayscale": `${grayscaleAmount}%` } as CSSProperties}
 								src={background.imageUrl}
 								alt={`${map.name} map`}
 								draggable={false}
@@ -570,6 +572,22 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 						>
 							<Palette size={18} />
 						</Button>
+						{!mapColors && (
+							<div className={styles.grayscaleControl} onWheel={(event) => event.stopPropagation()}>
+								<input
+									type="range"
+									min={0}
+									max={100}
+									step={1}
+									value={grayscaleAmount}
+									aria-label="Map grayscale intensity"
+									aria-orientation="vertical"
+									aria-valuetext={`${grayscaleAmount}% grayscale`}
+									onChange={(event) => setGrayscaleAmount(Number(event.target.value))}
+								/>
+								<output aria-hidden="true">{grayscaleAmount}%</output>
+							</div>
+						)}
 					</div>
 				</div>
 				<div ref={bottomControls} className={styles.bottomControls}>

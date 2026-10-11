@@ -201,7 +201,8 @@
 	transform-origin: center;
 }
 .mapImage {
-	filter: grayscale(1);
+	filter: grayscale(var(--map-grayscale, 10%));
+	transition: filter 200ms ease;
 	display: block;
 	width: 100%;
 	height: 100%;
@@ -210,7 +211,12 @@
 	pointer-events: none;
 }
 .mapImage[data-colors="true"] {
-	filter: none;
+	filter: grayscale(0);
+}
+@media (prefers-reduced-motion: reduce) {
+	.mapImage {
+		transition: none;
+	}
 }
 .root [data-shape] {
 	width: 6.75px;
@@ -275,6 +281,35 @@
 }
 .controls button {
 	background: var(--card);
+}
+.grayscaleControl {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 2px;
+	border: 1px solid var(--border);
+	border-radius: 5px;
+	background: var(--card);
+	color: var(--muted-foreground);
+	font-size: 9px;
+	font-variant-numeric: tabular-nums;
+	cursor: default;
+}
+.grayscaleControl input {
+	writing-mode: vertical-lr;
+	direction: rtl;
+	width: 24px;
+	height: 90px;
+	accent-color: var(--brand);
+	cursor: pointer;
+}
+.grayscaleControl input:focus-visible {
+	outline: 2px solid var(--brand);
+	outline-offset: 2px;
+}
+.grayscaleControl output {
+	color: var(--foreground);
 }
 .status {
 	position: absolute;
