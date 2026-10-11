@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useImperativeHandle, useState, type Ref } from "react";
-import { Check, ChevronDown, CircleCheck, FileSearch, Gift, GitBranch, MapPin, TriangleAlert } from "lucide-react";
+import { ArrowUpRight, Check, ChevronDown, CircleCheck, FileSearch, Gift, GitBranch, MapPin, TriangleAlert } from "lucide-react";
 import { QuestLink } from "@/components/entities/quest-link";
 import { Badge } from "@/components/ui/badge";
 import { STORY_DECISION_BY_ID, STORY_ENDING_BY_ID, storyChapterLink } from "@/lib/data/story";
@@ -333,9 +333,10 @@ function StepRow({
 								key={quest.id}
 								questId={quest.id}
 								name={quest.name}
-								className="inline-flex items-center rounded-sm bg-highlight/10 px-3 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-highlight/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+								className="inline-flex items-center gap-1.5 rounded-sm bg-highlight/10 px-3 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-highlight/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
 							>
 								{quest.name}
+								<ArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
 							</QuestLink>
 						))}
 					</div>
