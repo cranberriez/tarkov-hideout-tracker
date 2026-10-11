@@ -67,6 +67,30 @@ export function BattlePassOverview({
 						<Stat label="Classified" value={coverage.classifiedUsed} />
 						<Stat label="To collect" value={coverage.missing} accent />
 					</div>
+					{coverage.missing > 0 ? (
+						<div className="space-y-2">
+							<h2 className="text-xs text-muted-foreground">Documents to collect</h2>
+							<ul aria-label="Documents to collect" className="flex flex-wrap items-center gap-x-4 gap-y-2">
+								{coverage.rows
+									.filter((row) => row.missing > 0)
+									.map((row) => (
+										<li key={row.key}>
+											<DocumentChip doc={documents.find((doc) => doc.key === row.key)!} amount={row.missing} />
+										</li>
+									))}
+								{coverage.classifiedMissing > 0 && (
+									<li>
+										<DocumentChip
+											doc={{ key: "classified", name: "Classified Docs · wildcard 1:1" }}
+											amount={coverage.classifiedMissing}
+										/>
+									</li>
+								)}
+							</ul>
+						</div>
+					) : (
+						<p className="text-xs text-success">All plan documents covered.</p>
+					)}
 					<details>
 						<summary className="w-fit cursor-pointer text-xs text-muted-foreground">
 							Breakdown · {plan.selected.length} rewards

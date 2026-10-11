@@ -27,7 +27,8 @@ function useSpread() {
 
 export function BattlePassPage() {
 	const [progress, update, { completeTiles, toggleTile, consumeDocs, setConsumeDocs }] = useBattlePass();
-	const [scope, setScope] = useState<"goals" | "all">("goals");
+	const [requestedScope, setScope] = useState<"goals" | "all">("goals");
+	const scope = progress.goals.length === 0 ? "all" : requestedScope;
 	const [cumulative, setCumulative] = useState(false);
 	const [useClassified, setUseClassified] = useState(false);
 	const [showMaps, setShowMaps] = useState(false);

@@ -38,7 +38,17 @@ Its page and bottom minimap use the navbar's responsive container widths.
 Reward rows adapt to viewport height with a readable minimum; short screens and
 expanded planning panels can still scroll.
 The top overview groups completion, planning/display controls, plan totals, and
-Breakdown. Page navigation is centered above the reward cards, with the document
+an icon-and-quantity row of documents still to collect, and Breakdown. The row
+uses the same inventory and classified allocation as the totals, including
+classified documents needed for avoided types. With no saved goals, the plan
+defaults to Everything; completed rewards remain excluded.
+The collect row, reward costs, planner breakdown, and document inventory all use
+the same DocumentChip: its hover label and glow identify the document, and
+clicking opens map names from the shared location data. Classified documents
+show their Expansion Hub source instead.
+Location dropdowns are non-modal: clicking another chip switches directly to it,
+and clicking elsewhere dismisses the dropdown without blocking that click.
+Page navigation is centered above the reward cards, with the document
 consumption toggle aligned right and retained in list view. The same toggle also
 appears below Total in the document panel. Reward document costs turn green with
 a checkmark when the effective owned balance covers that displayed cost.
