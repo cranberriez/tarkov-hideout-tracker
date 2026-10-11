@@ -106,6 +106,7 @@ export function ItemsClientPage({ data, dataMode }: ItemsClientPageProps) {
 								questAvailabilityQuests={questAvailabilityQuestList}
 							/> */}
 							<ItemsList
+								onSearchQueryChange={setSearchQuery}
 								sort={sort}
 								searchQuery={searchQuery}
 								stations={stations}

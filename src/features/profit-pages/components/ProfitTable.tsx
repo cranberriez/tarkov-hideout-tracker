@@ -13,9 +13,11 @@ import { estimateProfitRowHeight } from "../utils/recipes";
 import { PROFIT_KINDS } from "../profit-kinds";
 import styles from "./ProfitTable.module.css";
 import { ProfitRow } from "./ProfitRow";
+import { ClearSearchAndFilters } from "@/components/ui/active-filters";
 import { useCompactCards } from "./useCompactCards";
 
 export function ProfitTable({
+	onClearSearchAndFilters,
 	kind,
 	evaluations,
 	baselineEvaluationsById,
@@ -38,6 +40,7 @@ export function ProfitTable({
 	onSortChange,
 	onIngredientRouteChange,
 }: {
+	onClearSearchAndFilters?: () => void;
 	kind: ProfitPageKind;
 	evaluations: RecipeEvaluation[];
 	baselineEvaluationsById: Readonly<Record<string, RecipeEvaluation>>;
@@ -183,6 +186,11 @@ export function ProfitTable({
 								? "No pinned crafts yet. Pin a craft from the actions column to add it here."
 								: "No pinned crafts match these filters."
 							: "No recipes match these filters."}
+						{onClearSearchAndFilters && (
+							<div>
+								<ClearSearchAndFilters onClick={onClearSearchAndFilters} />
+							</div>
+						)}
 					</div>
 				)}
 			</div>

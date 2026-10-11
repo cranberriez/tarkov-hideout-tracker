@@ -6,6 +6,7 @@ import { Settings2 } from "lucide-react";
 import type { ProfitPageKind, ProfitLockOptionsProps } from "../types";
 
 export function CalculationSettings({
+	activeFilterCount,
 	kind,
 	showTopOnly,
 	onShowTopOnlyChange,
@@ -28,6 +29,7 @@ export function CalculationSettings({
 	allowBarters,
 	onAllowBartersChange,
 }: {
+	activeFilterCount: number;
 	kind: ProfitPageKind;
 	showTopOnly: boolean;
 	onShowTopOnlyChange: (value: boolean) => void;
@@ -52,7 +54,7 @@ export function CalculationSettings({
 	return (
 		<>
 			<FilterPanelButton ref={trigger} open={open} panelId={panelId} onClick={() => setOpen(!open)}>
-				<Settings2 className="size-3.5" /> Options
+				<Settings2 className="size-3.5" /> Options ({activeFilterCount})
 			</FilterPanelButton>
 			<FilterPanel
 				id={panelId}

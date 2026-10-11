@@ -43,12 +43,10 @@ function useProfitPageData(mode: TarkovJsonGameMode, fallbackData: ProfitPageDat
 export function ProfitQueryPage({
 	mode,
 	kind,
-	initialTargetRecipeId,
 	fallbackData,
 }: {
 	mode: TarkovJsonGameMode;
 	kind: ProfitPageKind;
-	initialTargetRecipeId?: string;
 	fallbackData: ProfitPageData | null;
 }) {
 	const { hydrated, enabled, query, data, prices } = useProfitPageData(mode, fallbackData);
@@ -71,7 +69,7 @@ export function ProfitQueryPage({
 			{query.error && !(query.error instanceof PartialDataError) && (
 				<DataRefreshError message="Updated profit data could not be loaded." />
 			)}
-			<ProfitPageClient kind={kind} data={data} initialTargetRecipeId={initialTargetRecipeId} />
+			<ProfitPageClient kind={kind} data={data} />
 		</DataQueryRetryProvider>
 	);
 }

@@ -3,10 +3,12 @@
 import { craftingDuration } from "@/lib/price-calculation/crafting-skill";
 import { isTrackedCraft } from "@/lib/price-calculation/craft-rules";
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useShallow } from "zustand/react/shallow";
 import { DataLoadError } from "@/components/core/DataLoadError";
 import { FilterDrawer } from "@/components/ui/filter-bar";
+import { ActiveFilters, type ActiveFilter } from "@/components/ui/active-filters";
+import { Search, Wrench, Users, Pin, TrendingUp, ListFilter, Focus } from "lucide-react";
 import { createRecipeCalculator } from "@/lib/price-calculation";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ProfitPageData } from "@/types/contracts";
@@ -36,15 +38,16 @@ import { usePinnedCrafts } from "./usePinnedCrafts";
 import { useProfitOptions } from "./useProfitOptions";
 import { useStoredProfitValue } from "./useStoredProfitValue";
 import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
+import { recipeFocusHref } from "./recipe-focus";
 
 interface ProfitPageClientProps {
 	kind: ProfitPageKind;
 	data: ProfitPageData;
-	initialTargetRecipeId?: string;
 }
 
-export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPageClientProps) {
+export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const items = data.items;
 	const crafts = useMemo(() => data.crafts.filter(isTrackedCraft), [data.crafts]);
 	const itemsError = data.errors.items ?? data.errors.prices;
@@ -99,7 +102,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 	const [ingredientRouteSelections, setIngredientRouteSelections] = useState<Record<string, Record<number, string>>>(
 		{},
 	);
-	const [targetRecipeId, setTargetRecipeId] = useState<string | null>(initialTargetRecipeId ?? null);
+	const targetRecipeId = searchParams.get("recipe");
 	const [scrollRequestId, setScrollRequestId] = useState(0);
 	const [sortKey, setSortKey] = useState<SortKey>(kindConfig.defaultSortKey);
 	const [sortDirection, setSortDirection] = useState<SortDirection>("descending");
@@ -266,6 +269,79 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 	const recipeErrors = [data.errors.barters, data.errors.crafts].filter((message): message is string =>
 		Boolean(message),
 	);
+	function clearRecipeFocus() {
+		router.replace(recipeFocusHref(window.location.href, null), { scroll: false });
+	}
+	const activeFilters: ActiveFilter[] = [];
+	if (search.trim())
+		activeFilters.push({
+			id: "search",
+			label: `Search: ${search.trim()}`,
+			icon: Search,
+			onRemove: () => setSearch(""),
+		});
+	const selectedSources = kind === "craft" ? stationSourceIds : traderSourceIds;
+	const setSelectedSources = kind === "craft" ? setStationSourceIds : setTraderSourceIds;
+	for (const id of selectedSources)
+		activeFilters.push({
+			id: `source:${id}`,
+			label: sources.find((source) => source.id === id)?.name ?? id,
+			icon: kind === "craft" ? Wrench : Users,
+			onRemove: () => setSelectedSources(selectedSources.filter((sourceId) => sourceId !== id)),
+		});
+	if (showPinnedOnly && kindConfig.supportsPinning)
+		activeFilters.push({ id: "pinned", label: "Pinned only", icon: Pin, onRemove: () => setShowPinnedOnly(false) });
+	if (availableOnly)
+		activeFilters.push({ id: "available", label: "Hide locked recipes", onRemove: () => setAvailableOnly(false) });
+	if (!availableOnly)
+		for (const key of ["flea", "quest", "vendor", "station"] as const) {
+			if (lockFilters[key])
+				activeFilters.push({
+					id: `lock:${key}`,
+					label: {
+						flea: "Hide no flea sale",
+						quest: "Hide quest locked",
+						vendor: "Hide vendor locked",
+						station: "Hide station locked",
+					}[key],
+					onRemove: () => setLockFilters({ ...lockFilters, [key]: false }),
+				});
+		}
+	if (profitableOnly)
+		activeFilters.push({
+			id: "profitable",
+			label: "Profitable only",
+			icon: TrendingUp,
+			onRemove: () => setProfitableOnly(false),
+		});
+	if (showTopOnly)
+		activeFilters.push({
+			id: "top",
+			label: `Top ${topCount} per ${kind === "craft" ? "station" : "trader"}`,
+			icon: ListFilter,
+			onRemove: () => setShowTopOnly(false),
+		});
+	if (targetRecipeId)
+		activeFilters.push({
+			id: "focus",
+			label: "Recipe Focussed",
+			icon: Focus,
+			removeLabel: "Clear recipe focus",
+			description:
+				"Viewing a linked recipe bypasses search, source, availability, profit and top filters; pinned-only still applies. Remove focus to restore filtering.",
+			onRemove: clearRecipeFocus,
+		});
+	function clearSearchAndFilters() {
+		setSearch("");
+		setTraderSourceIds([]);
+		setStationSourceIds([]);
+		setShowPinnedOnly(false);
+		setAvailableOnly(false);
+		setLockFilters({ flea: false, quest: false, vendor: false, station: false });
+		setProfitableOnly(false);
+		setShowTopOnly(false);
+		if (targetRecipeId) clearRecipeFocus();
+	}
 	if (!items || itemsError || recipeErrors.length > 0)
 		return (
 			<main className="container mx-auto px-6 py-8">
@@ -283,8 +359,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 			router.push(href);
 			return;
 		}
-		window.history.replaceState(null, "", href);
-		setTargetRecipeId(recipeId);
+		router.replace(recipeFocusHref(window.location.href, recipeId), { scroll: false });
 		setScrollRequestId((value) => value + 1);
 	}
 	return (
@@ -310,6 +385,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 				)}
 				<div className="mb-4">
 					<ProfitPageControls
+						activeFilterCount={activeFilters.length}
 						key={profileScope}
 						craftingSkillForced={craftingSkillForced}
 						craftingSkillNote={craftingSkillNote}
@@ -348,23 +424,30 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 						showPinnedOnly={showPinnedOnly}
 						onShowPinnedOnlyChange={setShowPinnedOnly}
 					/>
-					{!availableOnly && profileLockGaps.length > 0 && (
-						<FilterDrawer
-							label="profile details"
-							open={drawerState !== "hidden"}
-							onOpenChange={(open) => setDrawerState(() => (open ? "shown" : "hidden"))}
-						>
+					<FilterDrawer
+						label="active filters and profile details"
+						open={drawerState !== "hidden"}
+						onOpenChange={(open) => setDrawerState(() => (open ? "shown" : "hidden"))}
+					>
+						<ActiveFilters filters={activeFilters} />
+						{targetRecipeId && (
+							<p className="mt-1 pr-2 text-xs text-muted-foreground">
+								Viewing a linked recipe; most filters are bypassed until you clear focus.
+							</p>
+						)}
+						{!availableOnly && profileLockGaps.length > 0 && (
 							<ProfitProfileBanner
 								gaps={profileLockGaps}
 								onHideLocked={() => setAvailableOnly(true)}
 								onSetTraders={() => setTraderLevelsOpen(true)}
 							/>
-						</FilterDrawer>
-					)}
+						)}
+					</FilterDrawer>
 				</div>
 				<TraderLevelsModal open={traderLevelsOpen} onOpenChange={setTraderLevelsOpen} traders={data.traders} />
 				<BackToTopChip />
 				<ProfitTable
+					onClearSearchAndFilters={activeFilters.length > 0 ? clearSearchAndFilters : undefined}
 					kind={kind}
 					evaluations={visibleEvaluations}
 					baselineEvaluationsById={baselineEvaluationsById}

@@ -18,11 +18,7 @@ export function FilterBar({ className, ...props }: ComponentProps<"div">) {
 	);
 }
 
-/**
- * Collapsible strip tucked under the preceding `FilterBar`, which must stack above it
- * (e.g. `relative z-40`). Open, the eye toggle is a full-height column on the right;
- * hidden leaves only a small tab in the same spot that is clickable as a whole.
- */
+/** Collapsible strip tucked under the preceding `FilterBar`, which must stack above it (e.g. `relative z-40`). */
 export function FilterDrawer({
 	open,
 	onOpenChange,
@@ -42,8 +38,9 @@ export function FilterDrawer({
 	return (
 		<div
 			className={cn(
-				"-mt-[10px] flex rounded-b-md border border-t-0 border-highlight/10 bg-shadow/40 pt-[10px]",
-				open ? "w-full" : "ml-auto w-fit",
+				open
+					? "-mt-[10px] flex w-full rounded-b-md border border-t-0 border-highlight/10 bg-shadow/40 pt-[10px]"
+					: "relative z-50 h-0",
 				className,
 			)}
 		>
@@ -60,11 +57,13 @@ export function FilterDrawer({
 				title={open ? `Hide ${label}` : `Show ${label}`}
 				onClick={() => onOpenChange(!open)}
 				className={cn(
-					"flex shrink-0 items-center justify-center text-muted-foreground transition-colors hover:bg-highlight/5 hover:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand",
-					open ? "w-8 rounded-br-md" : "size-5 rounded-b-md",
+					"flex shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand",
+					open
+						? "w-8 rounded-br-md hover:bg-highlight/5"
+						: "absolute -top-3 -right-3 size-7 rounded-full border border-highlight/15 bg-muted shadow-sm hover:bg-accent",
 				)}
 			>
-				{open ? <EyeOff size={14} /> : <Eye size={10} />}
+				{open ? <EyeOff size={14} /> : <Eye size={14} />}
 			</button>
 		</div>
 	);

@@ -155,7 +155,17 @@ route selections still take precedence; disabling the option restores accessible
 automatic recommendations. This page preference does not change recursive optimizer
 eligibility.
 An explicitly linked recipe remains visible with its lock reasons so its profit
-breakdown can still be inspected.
+breakdown can still be inspected; pinned-only filtering still applies. The bottom
+filter drawer shows one **Recipe Focussed** chip and explains the bypass of search,
+source, availability, profit and top filters. Clearing it restores normal filtering
+and removes only the `recipe` URL parameter, preserving other parameters and the fragment.
+
+The drawer also shows the active result-filter count and removable icon chips for
+search, individual sources, pins, lock visibility, profitable-only and top-per-source.
+Lock category chips are inactive while the master hide-locked filter is enabled.
+Filtered empty results offer **Clear search and filters**, which broadens visibility
+without changing skills, pricing inputs, acquisition preferences, overrides or saved
+pins. Sort and calculation preferences are excluded from the active-filter count.
 
 ### Lock presentation
 

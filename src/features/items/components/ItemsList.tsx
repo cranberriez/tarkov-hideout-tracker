@@ -1,6 +1,8 @@
 "use client";
 
 import { ItemLink } from "@/components/entities/item-link";
+import { ClearSearchAndFilters } from "@/components/ui/active-filters";
+import { useActiveItemFilters } from "../useActiveItemFilters";
 import { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -42,6 +44,7 @@ function categorySection(item: ItemSummary): string {
 interface ItemsListProps {
 	sort: ChecklistSort;
 	searchQuery: string;
+	onSearchQueryChange: (value: string) => void;
 	stations: Station[];
 	itemById: Readonly<Record<string, ItemSummary>>;
 	questItemIndex: QuestItemIndexEntry[];
@@ -70,6 +73,7 @@ type DisplayEntry =
 	{ type: "item"; key: string; item: DisplayItem } | { type: "group"; key: string; group: DerivedQuestAnyOfGroup };
 
 export function ItemsList({
+	onSearchQueryChange,
 	sort,
 	searchQuery,
 	stations,
@@ -78,6 +82,7 @@ export function ItemsList({
 	questAnyOfGroups,
 	questAvailabilityQuests,
 }: ItemsListProps) {
+	const { filters, clearSearchAndFilters } = useActiveItemFilters(searchQuery, onSearchQueryChange);
 	const [expandedGroupIds, setExpandedGroupIds] = useState<Record<string, boolean>>({});
 
 	const {
@@ -527,6 +532,7 @@ export function ItemsList({
 				<div className="text-sm">
 					You might have maxed out your hideout, completed your visible quests, or filtered everything out.
 				</div>
+				{filters.length > 0 && <ClearSearchAndFilters onClick={clearSearchAndFilters} />}
 			</div>
 		);
 	}
@@ -542,7 +548,10 @@ export function ItemsList({
 			{matchingItems.length + matchingGroups.length > 0 ? (
 				renderItems(matchingItems, matchingGroups)
 			) : (
-				<p className="py-8 text-center text-muted-foreground">No matching items in the current filtered list.</p>
+				<div className="py-8 text-center text-muted-foreground">
+					<p>No matching items in the current filtered list.</p>
+					<ClearSearchAndFilters onClick={clearSearchAndFilters} />
+				</div>
 			)}
 			{outsideMatches.items.length > 0 && (
 				<section aria-labelledby="outside-filter-results">

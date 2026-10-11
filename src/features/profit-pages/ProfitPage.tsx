@@ -14,7 +14,7 @@ export async function ProfitPage({
 	kind: ProfitPageKind;
 	searchParams: Promise<{ recipe?: string }>;
 }) {
-	const [{ recipe }, mode] = await Promise.all([searchParams, getActiveTarkovJsonGameMode()]);
+	const [, mode] = await Promise.all([searchParams, getActiveTarkovJsonGameMode()]);
 	const options = profitPageQueryOptions(mode);
 	const { state, fallbackData } = await prefetchPageData(
 		options.queryKey,
@@ -24,7 +24,7 @@ export async function ProfitPage({
 	);
 	return (
 		<HydrationBoundary state={state}>
-			<ProfitQueryPage mode={mode} kind={kind} fallbackData={fallbackData} initialTargetRecipeId={recipe} />
+			<ProfitQueryPage mode={mode} kind={kind} fallbackData={fallbackData} />
 		</HydrationBoundary>
 	);
 }

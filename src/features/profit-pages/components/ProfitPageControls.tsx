@@ -17,6 +17,7 @@ interface SourceOption {
 import type { ProfitLockOptionsProps } from "../types";
 
 export function ProfitPageControls({
+	activeFilterCount,
 	kind,
 	craftingSkillLevel,
 	craftingSkillForced,
@@ -54,6 +55,7 @@ export function ProfitPageControls({
 	showPinnedOnly,
 	onShowPinnedOnlyChange,
 }: {
+	activeFilterCount: number;
 	kind: ProfitPageKind;
 	craftingSkillLevel: number;
 	craftingSkillForced: boolean;
@@ -120,6 +122,7 @@ export function ProfitPageControls({
 				/>
 			)}
 			<CalculationSettings
+				activeFilterCount={activeFilterCount}
 				kind={kind}
 				showTopOnly={showTopOnly}
 				onShowTopOnlyChange={onShowTopOnlyChange}

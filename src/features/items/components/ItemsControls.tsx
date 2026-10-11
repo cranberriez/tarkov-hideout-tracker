@@ -1,8 +1,10 @@
 "use client";
 
 import { type ChecklistSort, type ChecklistSortKey } from "../checklist-sort";
-import { useId } from "react";
-import { FilterPanel } from "@/components/ui/filter-bar";
+import { useId, useState } from "react";
+import { FilterDrawer, FilterPanel } from "@/components/ui/filter-bar";
+import { ActiveFilters } from "@/components/ui/active-filters";
+import { useActiveItemFilters } from "../useActiveItemFilters";
 import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemsFiltersPanel } from "./controls/ItemsFiltersPanel";
@@ -18,6 +20,8 @@ interface ItemsControlsProps {
 
 export function ItemsControls({ searchQuery, onSearchQueryChange, sort, onSortSelect, children }: ItemsControlsProps) {
 	const panelId = useId();
+	const [drawerOpen, setDrawerOpen] = useState(true);
+	const { filters } = useActiveItemFilters(searchQuery, onSearchQueryChange);
 	const {
 		itemFiltersOpen,
 		setItemFiltersOpen,
@@ -90,23 +94,29 @@ export function ItemsControls({ searchQuery, onSearchQueryChange, sort, onSortSe
 
 	return (
 		<div className="space-y-3">
-			<ItemsToolbar
-				filtersOpen={itemFiltersOpen}
-				onToggleFilters={() => setItemFiltersOpen(!itemFiltersOpen)}
-				sort={sort}
-				onSortSelect={onSortSelect}
-				searchQuery={searchQuery}
-				onSearchQueryChange={onSearchQueryChange}
-				panelId={panelId}
-				itemSourceFilter={itemSourceFilter}
-				onItemSourceFilterChange={setItemSourceFilter}
-				itemsSize={itemsSize}
-				onItemsSizeChange={setItemsSize}
-				showFirOnly={showFirOnly}
-				onShowFirOnlyChange={setShowFirOnly}
-				useCategorization={useCategorization}
-				onUseCategorizationChange={setUseCategorization}
-			/>
+			<div>
+				<ItemsToolbar
+					filtersOpen={itemFiltersOpen}
+					activeFilterCount={filters.length}
+					onToggleFilters={() => setItemFiltersOpen(!itemFiltersOpen)}
+					sort={sort}
+					onSortSelect={onSortSelect}
+					searchQuery={searchQuery}
+					onSearchQueryChange={onSearchQueryChange}
+					panelId={panelId}
+					itemSourceFilter={itemSourceFilter}
+					onItemSourceFilterChange={setItemSourceFilter}
+					itemsSize={itemsSize}
+					onItemsSizeChange={setItemsSize}
+					showFirOnly={showFirOnly}
+					onShowFirOnlyChange={setShowFirOnly}
+					useCategorization={useCategorization}
+					onUseCategorizationChange={setUseCategorization}
+				/>
+				<FilterDrawer label="active item filters" open={drawerOpen} onOpenChange={setDrawerOpen}>
+					<ActiveFilters filters={filters} />
+				</FilterDrawer>
+			</div>
 
 			<div className="relative min-h-0">
 				<FilterPanel

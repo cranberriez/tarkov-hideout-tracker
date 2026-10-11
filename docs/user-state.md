@@ -274,6 +274,17 @@ preference preservation and write-failure recovery.
 
 ## Reset behavior
 
+The Item Checklist's bottom filter drawer lists active result restrictions with
+removable icon chips. **Clear search and filters** in a filtered empty state uses
+the existing visibility actions to show all future hideout and quest requirements,
+including hidden stations, ignored quests and future FiR needs, without station-goal
+caps, source, cheap-price, FiR-only or pinned-only restrictions. Saved hidden/ignored
+IDs, station goals, pins, inventory, completion and profile progress remain intact;
+threshold/lookahead numbers and display preferences are retained. The existing
+`showHidden` and `checklistViewMode` preferences are shared with Hideout, so broadening
+them here also changes Hideout visibility. Sort, item size and categorization do not
+count as active filters. This adds no persistent field, migration or reset scope.
+
 [StorageResetCard](../src/features/settings/StorageResetCard.tsx) composes store
 actions with resets of other owners. Its current behavior is:
 
