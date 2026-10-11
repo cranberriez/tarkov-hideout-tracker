@@ -9,6 +9,8 @@ export function BattlePassToolbar({
 	goalCount,
 	useClassified,
 	setUseClassified,
+	showPossibleProgress,
+	setShowPossibleProgress,
 	cumulative,
 	setCumulative,
 	listMode,
@@ -21,6 +23,8 @@ export function BattlePassToolbar({
 	goalCount: number;
 	useClassified: boolean;
 	setUseClassified: (checked: boolean) => void;
+	showPossibleProgress: boolean;
+	setShowPossibleProgress: (checked: boolean) => void;
 	cumulative: boolean;
 	setCumulative: (checked: boolean) => void;
 	listMode: boolean;
@@ -65,6 +69,13 @@ export function BattlePassToolbar({
 					title="Cheapest path to each reward from completed progress, before inventory. Each card is an independent preview."
 				>
 					Cumulative costs
+				</Toggle>
+				<Toggle
+					checked={showPossibleProgress}
+					onChange={setShowPossibleProgress}
+					title="Preview owned documents across the plan in page order. Green checks show fully covered rewards; yellow marks and bars show possible progress. No documents are spent."
+				>
+					Possible progress
 				</Toggle>
 				<Toggle
 					checked={listMode}

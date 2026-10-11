@@ -27,6 +27,7 @@ account for existing users' data.
 | `tarkov-story-progress-v1:{mode}`               | [useStoryProgress](../src/features/story/useStoryProgress.ts) with [story-progress](../src/features/story/story-progress.ts); target ending, Lightkeeper access answer, decisions by ID and completed steps per chapter; tolerant parsing keeps unknown IDs; not in backups or resets yet               |
 | `tarkov-filter-drawer-v1:{page}`                | [ProfitPageClient](../src/features/profit-pages/ProfitPageClient.tsx); `shown`/`hidden` filter-drawer visibility per profit page (`barter-profits`, `crafting-profits`), not mode-scoped                                                                                                                |
 | `tarkov-app-preferences-v1`                     | [useAppPreferencesStore](../src/lib/stores/useAppPreferencesStore.ts), Zustand persist **v1**; global `theme`, `hoverCards` and `uploaderIntroSeen`, shared by all profiles; not in backups or any reset; also read by the theme boot script in [app-preferences.ts](../src/lib/cfg/app-preferences.ts) |
+| `tarkov-battle-pass-ui-preferences-v1`          | [useBattlePassPreferences](../src/features/battle-pass/useBattlePassPreferences.ts); reward-page UI preferences shared across all profiles and modes; not in backups or resets |
 | `tarkov-hideout:quest-log-import:seen-files:v1` | [quest-log-import.ts](../src/lib/quests/quest-log-import.ts) and [import controller](../src/features/quests/import/useQuestLogImportController.ts); processed-file metadata, not per-profile storage                                                                                                    |
 | `tarkov-active-game-mode` cookie                | [game-mode.ts](../src/lib/game-mode.ts); active profile selection for server reads                                                                                                                                                                                                                      |
 
@@ -56,7 +57,7 @@ state adds no local-storage key, profile field, migration, backup, or reset beha
 [useBattlePass](../src/features/battle-pass/useBattlePass.ts) owns
 `tarkov-battle-pass-season-1-v1`, an independent account-wide save for the
 Season 1 pass, which is shared across PVP/PVE/KORD. It stores completed tile IDs,
-goal tile IDs, current unspent document balances, a classified-document balance,
+goal tile IDs, retained legacy ordinary-document balances, a classified-document balance,
 and avoided document types (defaulting to none for older saves). Collection
 preferences persist in the same save and are shared across modes. They only break
 equal-total-cost suggestion ties; explicit goals and minimum total cost remain
@@ -65,11 +66,13 @@ demand. When enabled, owned classified stock covers avoided types first, then
 other shortages, once across the plan. The top document section and floating document panel show the same live remaining
 ordinary and classified needs, owned-balance inputs, and collection toggles. Edits
 in either view immediately update both. Known document item IDs read the active
-profile's tracked inventory, combining non-FiR and FiR stock. A tracked zero
-overrides an older manual balance; when no item record exists, the existing
-manual balance remains available. Reads never copy balances between profiles or
-rewrite the account-wide save. Editing a tracked balance uses the existing item
-count action, retaining FiR stock where possible.
+profile's tracked inventory, combining non-FiR and FiR stock. Missing records and
+tracked zeros both mean zero owned ordinary documents. Legacy account-wide
+ordinary balances remain saved but are inactive; they are never automatically
+assigned to a profile. Reads never copy balances between profiles or rewrite the
+account-wide save. Editing an ordinary balance uses the existing item count action,
+creating an absent profile record as needed and retaining FiR stock where possible.
+Classified balances remain account-wide and independent of profile inventory.
 It reuses the external-store storage helper, never writes on mount, and synchronizes
 between tabs. No existing profile key, migration, backup or reset scope changes;
 this save is not included in progression backups or Settings resets.
@@ -77,19 +80,42 @@ this save is not included in progression backups or Settings resets.
 Individual completion toggles only the selected tile. Page headers also offer
 Complete suggested (the currently suggested prerequisite tiles on that page)
 and Complete all (every tile on that page). Both add completion IDs without
-uncompleting existing rewards. The **Consume Docs from Inventory** toggle is off
-by default for each page visit and appears beside page navigation and below the
+uncompleting existing rewards. The **Consume Docs from Inventory** toggle defaults
+off until changed and appears beside page navigation and below the
 document panel's total. When enabled, individual and bulk completion spend only
 newly completed rewards' actual document costs, using available non-FiR stock
-before FiR stock and never deducting more than is available. Untracked document
-types use their manual balances. Repeating a bulk completion spends nothing for
+before FiR stock and never deducting more than is available. Missing ordinary
+inventory records spend nothing. Repeating a bulk completion spends nothing for
 already completed rewards; marking a reward incomplete does not refund documents.
 Classified allocation remains a preview and does not spend classified stock.
 Completion never infers prior completions or clears goals. This permits recording
 existing progress on a later page. Unknown saved IDs and inventory keys survive
 updates; unknown goals are reported and cannot satisfy prerequisites. Numeric
 balances normalize to integers from 0 to 99,999. Cumulative display, plan scope
-and classified allocation are ephemeral previews; they never spend stored balances.
+and classified allocation never spend stored balances.
+[useBattlePassPreferences](../src/features/battle-pass/useBattlePassPreferences.ts)
+stores the requested plan scope, Use classified, Cumulative costs, Possible
+progress, List view, Consume Docs from Inventory, Locations visibility, and
+document-panel visibility in `tarkov-battle-pass-ui-preferences-v1`. These UI
+preferences survive navigation and reload and are shared across profiles and
+PVP/PVE/KORD. All boolean preferences default off; plan scope defaults to Goals
+(displaying Everything when no goals exist). Reads normalize invalid fields
+without writing, edits preserve unknown preferences, and the external-store
+helper synchronizes open consumers and browser tabs. Page navigation position
+and the separate document-map history state remain transient. No profile
+migration, backup, or reset scope changes.
+The **Possible progress** toggle previews
+the current plan in page and slot order with one shared owned-document pool,
+including classified stock only when **Use classified** is enabled. Classified
+allocation covers avoided shortages first within each reward. Only fully covered
+rewards count toward unlocking the next page; partial coverage never satisfies a
+prerequisite.
+Incomplete plan rewards show a green check for full coverage and a yellow `~`
+beside each partially covered document count. Yellow portions of the overview
+and page-minimap bars count full rewards plus the covered document fraction of
+partial rewards. Completed
+rewards contribute only to actual progress. This local preview does not change
+completion, goals, saved balances, or **Consume Docs from Inventory** behavior.
 
 ### Character profiles
 

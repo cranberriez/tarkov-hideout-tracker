@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useStoredProfitValue } from "@/features/profit-pages/useStoredProfitValue";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import {
@@ -11,13 +11,15 @@ import {
 	type InventoryUpdate,
 } from "./lib/battle-pass-inventory";
 import { parseProgress, type Progress } from "./lib/battle-pass-model";
+import { useBattlePassPreferences } from "./useBattlePassPreferences";
 
 // The pass is account-wide across PVP/PVE/KORD, independent of character progress.
 export const BATTLE_PASS_STORAGE_KEY = "tarkov-battle-pass-season-1-v1";
 export function useBattlePass() {
 	const [raw, write] = useStoredProfitValue(BATTLE_PASS_STORAGE_KEY);
 	const itemCounts = useUserStore((state) => state.itemCounts);
-	const [consumeDocs, setConsumeDocs] = useState(false);
+	const [{ consumeDocs }, setPreference] = useBattlePassPreferences();
+	const setConsumeDocs = useCallback((checked: boolean) => setPreference("consumeDocs", checked), [setPreference]);
 	const progress = useMemo(() => inventoryProgress(parseProgress(raw), itemCounts), [raw, itemCounts]);
 	// Storage transforms remain pure; profile effects run once after the completed save.
 	const commit = useCallback(

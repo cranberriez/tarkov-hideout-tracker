@@ -7,6 +7,7 @@ export function BattlePassOverview({
 	scope,
 	knownGoals,
 	completedCount,
+	possibleCount,
 	remainingTotal,
 	plan,
 	coverage,
@@ -18,6 +19,7 @@ export function BattlePassOverview({
 	scope: "all" | "goals";
 	knownGoals: Tile[];
 	completedCount: number;
+	possibleCount: number;
 	remainingTotal: number;
 	plan: ReturnType<typeof planGoals>;
 	coverage: ReturnType<typeof coverCosts>;
@@ -37,16 +39,21 @@ export function BattlePassOverview({
 			</div>
 			<div className="flex items-center gap-3">
 				<div
-					className="h-1.5 flex-1 overflow-hidden rounded bg-surface-raised"
+					className="flex h-1.5 flex-1 overflow-hidden rounded bg-surface-raised"
 					role="progressbar"
 					aria-label="Battle pass completion"
 					aria-valuenow={completedCount}
 					aria-valuemin={0}
 					aria-valuemax={tiles.length}
+					aria-valuetext={`${completedCount} claimed${possibleCount > 0 ? `, ${possibleCount.toFixed(1)} additional reward equivalents possible with owned documents` : ""}`}
 				>
 					<div
 						className="h-full bg-success transition-[width]"
 						style={{ width: `${(completedCount / tiles.length) * 100}%` }}
+					/>
+					<div
+						className="h-full bg-warning transition-[width]"
+						style={{ width: `${(possibleCount / tiles.length) * 100}%` }}
 					/>
 				</div>
 				<p className="shrink-0 text-xs text-muted-foreground">

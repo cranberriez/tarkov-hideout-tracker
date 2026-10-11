@@ -3,8 +3,17 @@
 import { addTransitionType, startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import { Map as MapIcon } from "lucide-react";
 import Link from "next/link";
-import { coverCosts, pages, planGoals, tiles, unlockedPages, type Costs } from "./lib/battle-pass-model";
+import {
+	coverCosts,
+	pages,
+	planGoals,
+	previewProgress,
+	tiles,
+	unlockedPages,
+	type Costs,
+} from "./lib/battle-pass-model";
 import { useBattlePass } from "./useBattlePass";
+import { useBattlePassPreferences } from "./useBattlePassPreferences";
 import { DocumentDock } from "./components/DocumentDock";
 import { BattlePassOverview } from "./components/BattlePassOverview";
 import { PageNavigation } from "./components/PageNavigation";
@@ -30,14 +39,19 @@ function useSpread() {
 
 export function BattlePassPage() {
 	const [progress, update, { completeTiles, toggleTile, consumeDocs, setConsumeDocs }] = useBattlePass();
-	const [requestedScope, setScope] = useState<"goals" | "all">("goals");
+	const [
+		{ requestedScope, cumulative, useClassified, showPossibleProgress, showMaps, documentsOpen, listMode },
+		setPreference,
+	] = useBattlePassPreferences();
+	const setScope = (scope: "goals" | "all") => setPreference("requestedScope", scope);
+	const setCumulative = (checked: boolean) => setPreference("cumulative", checked);
+	const setUseClassified = (checked: boolean) => setPreference("useClassified", checked);
+	const setShowPossibleProgress = (checked: boolean) => setPreference("showPossibleProgress", checked);
+	const setShowMaps = (checked: boolean) => setPreference("showMaps", checked);
+	const setDocumentsOpen = (checked: boolean) => setPreference("documentsOpen", checked);
+	const setListMode = (checked: boolean) => setPreference("listMode", checked);
 	const scope = progress.goals.length === 0 ? "all" : requestedScope;
-	const [cumulative, setCumulative] = useState(false);
-	const [useClassified, setUseClassified] = useState(false);
-	const [showMaps, setShowMaps] = useState(false);
-	const [documentsOpen, setDocumentsOpen] = useState(false);
 	const [start, setStart] = useState(0);
-	const [listMode, setListMode] = useState(false);
 	const spread = useSpread();
 	const lastStart = Math.max(0, pages.length - spread);
 	const first = Math.min(start, lastStart);
@@ -93,6 +107,26 @@ export function BattlePassPage() {
 				: new Map<string, Costs>(),
 		[cumulative, progress.completed, progress.avoidedDocuments],
 	);
+	const possibleProgress = useMemo(
+		() =>
+			previewProgress(
+				plan.selected,
+				progress.completed,
+				progress.inventory,
+				progress.classified,
+				useClassified,
+				progress.avoidedDocuments,
+			),
+		[
+			plan.selected,
+			progress.completed,
+			progress.inventory,
+			progress.classified,
+			useClassified,
+			progress.avoidedDocuments,
+		],
+	);
+	const possibleFractions = showPossibleProgress ? possibleProgress.fractions : new Map<string, number>();
 	const complete = new Set(progress.completed);
 	const goals = new Set(progress.goals);
 	const filler = new Set(plan.fillerIds);
@@ -112,6 +146,7 @@ export function BattlePassPage() {
 
 			<BattlePassOverview
 				{...{ scope, knownGoals, completedCount, remainingTotal, plan, coverage, selected, filler }}
+				possibleCount={showPossibleProgress ? possibleProgress.total : 0}
 				headerAction={
 					<Link href="/battle-pass/map" className={buttonClassName({ tone: "brand" })}>
 						<MapIcon size={15} aria-hidden />
@@ -126,6 +161,8 @@ export function BattlePassPage() {
 						setScope,
 						useClassified,
 						setUseClassified,
+						showPossibleProgress,
+						setShowPossibleProgress,
 						cumulative,
 						setCumulative,
 						listMode,
@@ -174,11 +211,18 @@ export function BattlePassPage() {
 							toggleTile,
 						}}
 						inventory={progress.inventory}
+						possibleFractions={possibleFractions}
+						possibleAllocations={showPossibleProgress ? possibleProgress.allocations : undefined}
 					/>
 				))}
 			</div>
 
-			{!listMode && <PageMinimap {...{ first, spread, complete, goals, openPages, go }} />}
+			{!listMode && (
+				<PageMinimap
+					{...{ first, spread, complete, goals, openPages, go }}
+					possibleProgress={showPossibleProgress ? possibleProgress.pageProgress : []}
+				/>
+			)}
 		</main>
 	);
 }

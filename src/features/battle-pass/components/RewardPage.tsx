@@ -20,6 +20,8 @@ export function RewardPage({
 	inventory,
 	completeTiles,
 	toggleTile,
+	possibleFractions,
+	possibleAllocations,
 }: {
 	page: PassPage;
 	complete: Set<string>;
@@ -32,6 +34,8 @@ export function RewardPage({
 	inventory: Costs;
 	completeTiles: (ids: string[]) => void;
 	toggleTile: (id: string) => void;
+	possibleFractions: Map<string, number>;
+	possibleAllocations?: Map<string, Costs>;
 }) {
 	const index = pages.indexOf(page);
 	const doneCount = page.cells.filter((tile) => complete.has(tile.id)).length;
@@ -93,7 +97,9 @@ export function RewardPage({
 							goal={goals.has(tile.id)}
 							filler={filler.has(tile.id)}
 							costs={cumulative ? (cumulativeCosts.get(tile.id) ?? {}) : tile.cost}
-							inventory={inventory}
+							inventory={possibleAllocations ? (possibleAllocations.get(tile.id) ?? {}) : inventory}
+							possibleFraction={possibleFractions.get(tile.id) ?? 0}
+							previewEnabled={possibleAllocations !== undefined}
 							toggleGoal={() => update((current) => ({ ...current, goals: toggleId(current.goals, tile.id) }))}
 							toggleDone={() => toggleTile(tile.id)}
 						/>

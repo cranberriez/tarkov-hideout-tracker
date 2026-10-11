@@ -4,7 +4,17 @@ import { DocumentChip } from "./ui/DocumentChip";
 import { cn } from "@/lib/utils";
 import styles from "../battle-pass.module.css";
 
-export function CostList({ costs, inventory, wide = false }: { costs: Costs; inventory: Costs; wide?: boolean }) {
+export function CostList({
+	costs,
+	inventory,
+	wide = false,
+	previewEnabled = false,
+}: {
+	costs: Costs;
+	inventory: Costs;
+	wide?: boolean;
+	previewEnabled?: boolean;
+}) {
 	const shown = documents.filter((doc) => (costs[doc.key] ?? 0) > 0);
 	return (
 		<div
@@ -20,6 +30,7 @@ export function CostList({ costs, inventory, wide = false }: { costs: Costs; inv
 					doc={doc}
 					amount={costs[doc.key]}
 					fulfilled={(inventory[doc.key] ?? 0) >= costs[doc.key]}
+					partial={previewEnabled && (inventory[doc.key] ?? 0) > 0 && (inventory[doc.key] ?? 0) < costs[doc.key]}
 					end={i >= Math.ceil(shown.length / 2)}
 				/>
 			))}

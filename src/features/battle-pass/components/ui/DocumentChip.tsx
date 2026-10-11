@@ -17,11 +17,13 @@ export function DocumentChip({
 	amount,
 	end = false,
 	fulfilled = false,
+	partial = false,
 }: {
 	doc: { key: string; name: string; img?: string };
 	amount?: number;
 	end?: boolean;
 	fulfilled?: boolean;
+	partial?: boolean;
 }) {
 	const [placement, setPlacement] = useState({ end, width: 280 });
 	const placeLabel = (event: SyntheticEvent<HTMLElement>) => {
@@ -42,7 +44,7 @@ export function DocumentChip({
 					onMouseEnter={placeLabel}
 					onFocus={placeLabel}
 					style={{ "--label-width": `${placement.width}px`, "--doc-color": mark?.color } as CSSProperties}
-					aria-label={`${displayName}${amount !== undefined ? `: ${amount}` : ""}${fulfilled ? ", available in inventory" : ""}. Show locations`}
+					aria-label={`${displayName}${amount !== undefined ? `: ${amount}` : ""}${fulfilled ? ", available in inventory" : partial ? ", partially covered by owned documents" : ""}. Show locations`}
 					className={cn(
 						styles.chip,
 						"cursor-pointer border-0 bg-transparent p-0 text-left align-top",
@@ -71,6 +73,11 @@ export function DocumentChip({
 								>
 									{amount}
 									{fulfilled && <Check size={11} strokeWidth={2.5} aria-hidden className="shrink-0" />}
+									{partial && !fulfilled && (
+										<span aria-hidden className="text-warning">
+											~
+										</span>
+									)}
 								</span>
 							)}
 						</span>

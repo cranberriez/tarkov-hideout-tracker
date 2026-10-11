@@ -17,6 +17,8 @@ export function RewardCard({
 	inventory,
 	toggleGoal,
 	toggleDone,
+	possibleFraction,
+	previewEnabled,
 }: {
 	tile: Tile;
 	span?: "wide" | "tall";
@@ -28,6 +30,8 @@ export function RewardCard({
 	inventory: Costs;
 	toggleGoal: () => void;
 	toggleDone: () => void;
+	possibleFraction: number;
+	previewEnabled: boolean;
 }) {
 	const label = `Page ${pageNumber}, ${tile.displayName}`;
 	const name = tile.displayName + (tile.rewards[0].type === "tarcoin" ? ` ×${tile.rewards[0].value}` : "");
@@ -49,6 +53,16 @@ export function RewardCard({
 				/>
 			</div>
 			<div className="contents">
+				{!done && possibleFraction === 1 && (
+					<span
+						role="img"
+						aria-label="Fully covered by owned documents"
+						title="Owned documents cover this reward in the preview"
+						className="absolute left-2 top-10 z-10 rounded bg-card/90 p-1 text-success"
+					>
+						<Check size={19} strokeWidth={3} aria-hidden />
+					</span>
+				)}
 				{filler && !done && !goal && (
 					<span className="absolute left-2 top-2 rounded bg-info-surface px-2 py-1 text-[10px] font-medium text-info">
 						Suggested
@@ -87,7 +101,12 @@ export function RewardCard({
 						{totalCost(costs)}
 					</span>
 				</div>
-				<CostList costs={costs} inventory={inventory} wide={span === "wide"} />
+				<CostList
+					costs={costs}
+					inventory={done ? {} : inventory}
+					wide={span === "wide"}
+					previewEnabled={previewEnabled && !done}
+				/>
 			</div>
 		</article>
 	);

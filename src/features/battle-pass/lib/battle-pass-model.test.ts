@@ -6,6 +6,7 @@ import {
 	pages,
 	parseProgress,
 	planGoals,
+	previewProgress,
 	tiles,
 	toggleId,
 	totalCost,
@@ -193,4 +194,96 @@ test("old saves default to collecting everything and preferences survive reload"
 	assert.deepEqual(parseProgress(JSON.stringify(saved)), saved);
 	assert.deepEqual(saved.completed, ["old"]);
 	assert.equal(saved.inventory.financial, 7);
+});
+
+test("possible progress allocates stock once in page/slot order without changing inputs", () => {
+	const plan = planGoals(["g"], [], sample);
+	const inventory = { financial: 7 };
+	const completed: string[] = [];
+	const result = previewProgress([...plan.selected].reverse(), completed, inventory, 0, false, [], sample);
+	assert.deepEqual(
+		[...result.fractions],
+		[
+			["a", 1],
+			["b", 1],
+			["d", 1],
+			["e", 0.25],
+		],
+	);
+	assert.deepEqual(result.pageProgress, [2, 1.25, 0]);
+	assert.equal(result.total, 3.25);
+	assert.equal(result.allocations.get("e")?.financial, 1);
+	assert.equal(result.fractions.has("g"), false);
+	assert.deepEqual(inventory, { financial: 7 });
+	assert.deepEqual(completed, []);
+	assert.equal(previewProgress(plan.selected, [], {}, 0, false, [], sample).total, 0);
+});
+
+test("preview counts only fully covered rewards toward sequential prerequisites", () => {
+	const plan = planGoals(["g"], ["b", "f"], sample);
+	const result = previewProgress(plan.selected, ["b", "f", "unknown"], { financial: 9 }, 0, false, [], sample);
+	assert.deepEqual(
+		[...result.fractions],
+		[
+			["a", 1],
+			["d", 1],
+			["g", 1],
+		],
+	);
+	assert.equal(result.fractions.has("b"), false);
+	assert.deepEqual(result.pageProgress, [1, 1, 1]);
+	const blocked = previewProgress(plan.selected, ["b", "f"], { financial: 0 }, 9, false, [], sample);
+	assert.equal(blocked.total, 0);
+	const laterOwned = { ...tile("later", 2, 1), cost: { medical: 2 } };
+	const pass = [sample[0], { num: 2, req: 2, cells: [laterOwned] }];
+	const gated = previewProgress(
+		[sample[0].cells[0], sample[0].cells[1], laterOwned],
+		[],
+		{ financial: 2, medical: 2 },
+		0,
+		false,
+		[],
+		pass,
+	);
+	assert.equal(gated.fractions.get("b"), 0.5);
+	assert.equal(gated.fractions.has("later"), false);
+});
+
+test("preview shares classified stock sequentially, without reserving it for later rewards", () => {
+	const a = { ...tile("a", 2, 1), cost: { financial: 2 } };
+	const b = { ...tile("b", 3, 2), cost: { project: 3 } };
+	const pass = [{ num: 1, req: 0, cells: [a, b] }];
+	const result = previewProgress([a, b], [], { financial: 1 }, 3, true, ["project"], pass);
+	assert.deepEqual(
+		[...result.fractions],
+		[
+			["a", 1],
+			["b", 2 / 3],
+		],
+	);
+	assert.equal(result.total, 1 + 2 / 3);
+	assert.equal(previewProgress([a, b], [], { financial: 1 }, 3, false, ["project"], pass).total, 0.5);
+	assert.equal(previewProgress([a, b], ["b"], { financial: 1 }, 3, true, ["project"], pass).total, 1);
+	const first = { ...a, cost: { project: 2 } };
+	const later = { ...b, cost: { financial: 3 } };
+	const sequential = previewProgress(
+		[first, later],
+		[],
+		{},
+		2,
+		true,
+		["financial"],
+		[
+			{ num: 1, req: 0, cells: [first] },
+			{ num: 2, req: 1, cells: [later] },
+		],
+	);
+	assert.equal(sequential.fractions.get("a"), 1);
+	assert.equal(sequential.fractions.has("b"), false);
+});
+
+test("preview applies wildcards to avoided shortages first within each reward", () => {
+	const reward = { ...tile("a", 4, 1), cost: { financial: 2, project: 2 } };
+	const result = previewProgress([reward], [], {}, 2, true, ["project"], [{ num: 1, req: 0, cells: [reward] }]);
+	assert.deepEqual(result.allocations.get("a"), { project: 2, financial: 0 });
 });

@@ -170,3 +170,55 @@ export function unlockedPages(completed: string[]) {
 		return open;
 	});
 }
+
+/** A read-only, sequential purchase preview. Partial rewards never unlock pages. */
+export function previewProgress(
+	selected: Tile[],
+	completedIds: string[],
+	inventory: Costs,
+	classified: number,
+	useClassified: boolean,
+	avoidedDocuments: string[] = [],
+	passPages = pages,
+) {
+	const completed = new Set(completedIds);
+	const selectedIds = new Set(selected.map((tile) => tile.id));
+	const ordinary = Object.fromEntries(Object.entries(inventory).map(([key, amount]) => [key, normalizeCount(amount)]));
+	let wildcardPool = useClassified ? normalizeCount(classified) : 0;
+	const avoided = new Set(avoidedDocuments);
+	const fractions = new Map<string, number>();
+	const allocations = new Map<string, Costs>();
+	const pageProgress: number[] = [];
+	let open = true;
+	let previousClaimed = 0;
+	for (const [index, page] of passPages.entries()) {
+		if (index > 0) open = open && previousClaimed >= page.req;
+		let claimed = page.cells.filter((tile) => completed.has(tile.id)).length;
+		let possible = 0;
+		if (open) {
+			for (const tile of [...page.cells].sort((a, b) => a.slot - b.slot)) {
+				if (!selectedIds.has(tile.id) || completed.has(tile.id)) continue;
+				let covered = 0;
+				const allocated: Costs = {};
+				const costs = Object.entries(tile.cost).sort(([a], [b]) => Number(avoided.has(b)) - Number(avoided.has(a)));
+				for (const [key, amount] of costs) {
+					const owned = Math.min(amount, ordinary[key] ?? 0);
+					ordinary[key] = (ordinary[key] ?? 0) - owned;
+					const wildcard = Math.min(amount - owned, wildcardPool);
+					wildcardPool -= wildcard;
+					covered += owned + wildcard;
+					allocated[key] = owned + wildcard;
+				}
+				const cost = totalCost(tile.cost);
+				const fraction = cost > 0 ? covered / cost : 1;
+				if (fraction > 0) fractions.set(tile.id, fraction);
+				allocations.set(tile.id, allocated);
+				possible += fraction;
+				if (fraction === 1) claimed++;
+			}
+		}
+		pageProgress.push(possible);
+		previousClaimed = claimed;
+	}
+	return { fractions, allocations, pageProgress, total: pageProgress.reduce((sum, amount) => sum + amount, 0) };
+}

@@ -39,12 +39,12 @@ export function commitInventoryUpdate(
 }
 const positiveCount = (value: number) => (Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0);
 
-/** The two inventory buckets are independent; legacy balances apply only to absent records. */
+/** Ordinary stock belongs exclusively to the active profile; absent records mean zero. */
 export function inventoryProgress(progress: Progress, itemCounts: PlayerItemCounts): Progress {
 	const inventory = { ...progress.inventory };
 	for (const [key, itemId] of Object.entries(documentItemIds)) {
-		const counts = itemCounts[itemId];
-		if (counts) inventory[key] = positiveCount(counts.have) + positiveCount(counts.haveFir);
+		const counts = itemCounts[itemId] ?? { have: 0, haveFir: 0 };
+		inventory[key] = positiveCount(counts.have) + positiveCount(counts.haveFir);
 	}
 	return { ...progress, inventory };
 }
@@ -63,9 +63,8 @@ export function prepareInventoryUpdate(stored: Progress, next: Progress, itemCou
 	const changes: ItemCountChange[] = [];
 	const current = inventoryProgress(stored, itemCounts);
 	for (const [key, itemId] of Object.entries(documentItemIds)) {
-		const counts = itemCounts[itemId];
-		if (!counts) continue;
-		if (next.inventory[key] !== current.inventory[key])
+		const counts = itemCounts[itemId] ?? { have: 0, haveFir: 0 };
+		if (Object.hasOwn(next.inventory, key) && next.inventory[key] !== current.inventory[key])
 			changes.push(itemCountChange(itemId, counts, next.inventory[key]));
 		if (Object.hasOwn(stored.inventory, key)) inventory[key] = stored.inventory[key];
 		else delete inventory[key];
@@ -98,8 +97,6 @@ export function completeInventoryTiles(
 			const haveDelta = -Math.min(positiveCount(counts.have), amount) || 0;
 			const haveFirDelta = -Math.min(positiveCount(counts.haveFir), Math.max(0, amount + haveDelta)) || 0;
 			if (haveDelta || haveFirDelta) changes.push({ itemId, haveDelta, haveFirDelta });
-		} else {
-			progress.inventory[key] = Math.max(0, normalizeCount(stored.inventory[key]) - amount);
 		}
 	}
 	return { progress, changes };
