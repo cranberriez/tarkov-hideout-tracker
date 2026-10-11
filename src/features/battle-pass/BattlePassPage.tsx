@@ -5,10 +5,12 @@ import { coverCosts, pages, planGoals, tiles, unlockedPages, type Costs } from "
 import { useBattlePass } from "./useBattlePass";
 import { DocumentDock } from "./components/DocumentDock";
 import { BattlePassOverview } from "./components/BattlePassOverview";
+import { PageNavigation } from "./components/PageNavigation";
 import { BattlePassToolbar } from "./components/BattlePassToolbar";
 import { LocationsPanel } from "./components/LocationsPanel";
 import { PageMinimap } from "./components/PageMinimap";
 import { RewardPage } from "./components/RewardPage";
+import { ConsumeDocumentsToggle } from "./components/ConsumeDocumentsToggle";
 import { cn } from "@/lib/utils";
 
 function useSpread() {
@@ -24,7 +26,7 @@ function useSpread() {
 }
 
 export function BattlePassPage() {
-	const [progress, update] = useBattlePass();
+	const [progress, update, { completeTiles, toggleTile, consumeDocs, setConsumeDocs }] = useBattlePass();
 	const [scope, setScope] = useState<"goals" | "all">("goals");
 	const [cumulative, setCumulative] = useState(false);
 	const [useClassified, setUseClassified] = useState(false);
@@ -100,31 +102,43 @@ export function BattlePassPage() {
 	const visible = listMode ? pages : pages.slice(first, first + spread);
 	return (
 		<main className={cn("container mx-auto space-y-4 px-4 pt-6 sm:px-6", listMode ? "pb-8" : "pb-28")}>
-			<DocumentDock {...{ documentsOpen, setDocumentsOpen, progress, update, coverage, scope, plan }} />
-
-			<BattlePassToolbar
-				goalCount={knownGoals.length}
-				{...{
-					scope,
-					setScope,
-					useClassified,
-					setUseClassified,
-					cumulative,
-					setCumulative,
-					listMode,
-					setListMode,
-					showMaps,
-					setShowMaps,
-					first,
-					lastStart,
-					go,
-				}}
+			<DocumentDock
+				{...{ documentsOpen, setDocumentsOpen, progress, update, coverage, scope, plan, consumeDocs, setConsumeDocs }}
 			/>
+
+			<BattlePassOverview {...{ scope, knownGoals, completedCount, remainingTotal, plan, coverage, selected, filler }}>
+				<BattlePassToolbar
+					goalCount={knownGoals.length}
+					{...{
+						scope,
+						setScope,
+						useClassified,
+						setUseClassified,
+						cumulative,
+						setCumulative,
+						listMode,
+						setListMode,
+						showMaps,
+						setShowMaps,
+					}}
+				/>
+			</BattlePassOverview>
 			{showMaps && (
 				<div id="document-locations-panel">
 					<LocationsPanel />
 				</div>
 			)}
+
+			<div className="grid items-center gap-2 md:grid-cols-[1fr_auto_1fr]">
+				{!listMode && (
+					<div className="md:col-start-2">
+						<PageNavigation {...{ first, lastStart, go }} />
+					</div>
+				)}
+				<div className="justify-self-end md:col-start-3">
+					<ConsumeDocumentsToggle checked={consumeDocs} onChange={setConsumeDocs} />
+				</div>
+			</div>
 
 			<div
 				className={cn(
@@ -135,14 +149,22 @@ export function BattlePassPage() {
 				{visible.map((page) => (
 					<RewardPage
 						key={page.num}
-						{...{ page, complete, goals, filler, openPages, cumulative, cumulativeCosts, update }}
+						{...{
+							page,
+							complete,
+							goals,
+							filler,
+							openPages,
+							cumulative,
+							cumulativeCosts,
+							update,
+							completeTiles,
+							toggleTile,
+						}}
+						inventory={progress.inventory}
 					/>
 				))}
 			</div>
-
-			<BattlePassOverview
-				{...{ scope, knownGoals, completedCount, remainingTotal, plan, coverage, selected, filler }}
-			/>
 
 			{!listMode && <PageMinimap {...{ first, spread, complete, goals, openPages, go }} />}
 

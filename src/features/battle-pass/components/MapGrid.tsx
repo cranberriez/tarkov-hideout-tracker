@@ -1,5 +1,5 @@
 import { documents } from "../lib/battle-pass-model";
-import { mapNames, mapOrder, locations } from "../lib/battle-pass-display";
+import { documentDisplayName, mapNames, mapOrder, locations } from "../lib/battle-pass-display";
 import { LocationsDocumentArtwork } from "./ui/LocationsDocumentArtwork";
 import { cn } from "@/lib/utils";
 
@@ -17,9 +17,9 @@ export function MapGrid() {
 						</th>
 						{documents.map((doc) => (
 							<th scope="col" key={doc.key} className="h-14 pb-1 font-normal">
-								<span className="flex flex-col items-center gap-1" title={doc.name}>
+								<span className="flex flex-col items-center gap-1" title={documentDisplayName(doc.name)}>
 									<LocationsDocumentArtwork doc={doc} className="size-11" />
-									<span className="text-[10px] leading-3 text-muted-foreground">{doc.name}</span>
+									<span className="text-[10px] leading-3 text-muted-foreground">{documentDisplayName(doc.name)}</span>
 								</span>
 							</th>
 						))}
@@ -41,7 +41,7 @@ export function MapGrid() {
 								return (
 									<td
 										key={doc.key}
-										aria-label={`${map}, ${doc.name}: ${relevant ? count : 0}`}
+										aria-label={`${map}, ${documentDisplayName(doc.name)}: ${relevant ? count : 0}`}
 										className={cn(
 											"rounded text-center tabular-nums",
 											relevant

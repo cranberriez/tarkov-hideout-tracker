@@ -14,6 +14,7 @@ export function RewardCard({
 	goal,
 	filler,
 	costs,
+	inventory,
 	toggleGoal,
 	toggleDone,
 }: {
@@ -24,6 +25,7 @@ export function RewardCard({
 	goal: boolean;
 	filler: boolean;
 	costs: Costs;
+	inventory: Costs;
 	toggleGoal: () => void;
 	toggleDone: () => void;
 }) {
@@ -84,7 +86,7 @@ export function RewardCard({
 						{totalCost(costs)}
 					</span>
 				</div>
-				<CostList costs={costs} wide={span === "wide"} />
+				<CostList costs={costs} inventory={inventory} wide={span === "wide"} />
 			</div>
 		</article>
 	);

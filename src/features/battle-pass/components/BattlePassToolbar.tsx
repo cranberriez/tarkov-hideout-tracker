@@ -2,7 +2,6 @@ import { Flag, Layers, Rows3, Map as MapIcon, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Toggle } from "./ui/Toggle";
-import { PageNavigation } from "./PageNavigation";
 
 export function BattlePassToolbar({
 	scope,
@@ -16,9 +15,6 @@ export function BattlePassToolbar({
 	setListMode,
 	showMaps,
 	setShowMaps,
-	first,
-	lastStart,
-	go,
 }: {
 	scope: "all" | "goals";
 	setScope: (scope: "all" | "goals") => void;
@@ -31,9 +27,6 @@ export function BattlePassToolbar({
 	setListMode: (checked: boolean) => void;
 	showMaps: boolean;
 	setShowMaps: (show: boolean) => void;
-	first: number;
-	lastStart: number;
-	go: (to: number) => void;
 }) {
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -92,7 +85,6 @@ export function BattlePassToolbar({
 					<ChevronDown size={13} className={cn("transition-transform", showMaps && "rotate-180")} />
 				</Button>
 			</div>
-			{!listMode && <PageNavigation {...{ first, lastStart, go }} />}
 		</div>
 	);
 }

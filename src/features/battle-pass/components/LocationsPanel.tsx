@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Columns3, Map as MapIcon, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { documents } from "../lib/battle-pass-model";
-import { locations, mapNames, mapOrder } from "../lib/battle-pass-display";
+import { documentDisplayName, locations, mapNames, mapOrder } from "../lib/battle-pass-display";
 import { LocationsDocumentArtwork } from "./ui/LocationsDocumentArtwork";
 import { MapGrid } from "./MapGrid";
 
@@ -70,20 +70,20 @@ export function LocationsPanel() {
 				) : (
 					<>
 						<div className="overflow-x-auto pb-2">
-							<div className="grid min-w-[1056px] grid-cols-12 items-start gap-2">
+							<div className="grid min-w-[1056px] grid-cols-12 items-stretch gap-2">
 								{mapOrder.map((map) => (
-									<section key={map} aria-label={map} className="min-w-0">
+									<section key={map} aria-label={map} className="min-w-0 rounded bg-surface-raised/40 px-1 py-2">
 										<MapHeading map={map} />
 										<div className="flex flex-col gap-3">
 											{documents
 												.filter((doc) => mapNames[doc.key]?.includes(map))
 												.map((doc) => (
-													<figure key={doc.key} title={doc.name}>
-														<div className="aspect-square w-full border border-highlight/10 bg-surface-raised/40 p-1">
+													<figure key={doc.key} title={documentDisplayName(doc.name)}>
+														<div className="aspect-square w-full">
 															<LocationsDocumentArtwork doc={doc} className="h-full w-full" />
 														</div>
 														<figcaption className="mt-1.5 text-center text-[11px] leading-3.5 text-muted-foreground">
-															{doc.name}
+															{documentDisplayName(doc.name)}
 														</figcaption>
 													</figure>
 												))}

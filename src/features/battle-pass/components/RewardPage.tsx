@@ -17,6 +17,9 @@ export function RewardPage({
 	cumulative,
 	cumulativeCosts,
 	update,
+	inventory,
+	completeTiles,
+	toggleTile,
 }: {
 	page: PassPage;
 	complete: Set<string>;
@@ -26,17 +29,15 @@ export function RewardPage({
 	cumulative: boolean;
 	cumulativeCosts: Map<string, Costs>;
 	update: ReturnType<typeof useBattlePass>[1];
+	inventory: Costs;
+	completeTiles: (ids: string[]) => void;
+	toggleTile: (id: string) => void;
 }) {
 	const index = pages.indexOf(page);
 	const doneCount = page.cells.filter((tile) => complete.has(tile.id)).length;
 	const suggestedIds = page.cells
 		.filter((tile) => filler.has(tile.id) && !complete.has(tile.id))
 		.map((tile) => tile.id);
-	const completeTiles = (ids: string[]) =>
-		update((current) => ({
-			...current,
-			completed: [...new Set([...current.completed, ...ids])],
-		}));
 	const previousDone = index > 0 ? pages[index - 1].cells.filter((tile) => complete.has(tile.id)).length : 0;
 	return (
 		<ViewTransition
@@ -92,8 +93,9 @@ export function RewardPage({
 							goal={goals.has(tile.id)}
 							filler={filler.has(tile.id)}
 							costs={cumulative ? (cumulativeCosts.get(tile.id) ?? {}) : tile.cost}
+							inventory={inventory}
 							toggleGoal={() => update((current) => ({ ...current, goals: toggleId(current.goals, tile.id) }))}
-							toggleDone={() => update((current) => ({ ...current, completed: toggleId(current.completed, tile.id) }))}
+							toggleDone={() => toggleTile(tile.id)}
 						/>
 					))}
 				</div>

@@ -58,7 +58,12 @@ authoritative. After ordinary inventory, avoided shortages become classified
 demand. When enabled, owned classified stock covers avoided types first, then
 other shortages, once across the plan. The top document section and floating document panel show the same live remaining
 ordinary and classified needs, owned-balance inputs, and collection toggles. Edits
-in either view immediately update both.
+in either view immediately update both. Known document item IDs read the active
+profile's tracked inventory, combining non-FiR and FiR stock. A tracked zero
+overrides an older manual balance; when no item record exists, the existing
+manual balance remains available. Reads never copy balances between profiles or
+rewrite the account-wide save. Editing a tracked balance uses the existing item
+count action, retaining FiR stock where possible.
 It reuses the external-store storage helper, never writes on mount, and synchronizes
 between tabs. No existing profile key, migration, backup or reset scope changes;
 this save is not included in progression backups or Settings resets.
@@ -66,8 +71,15 @@ this save is not included in progression backups or Settings resets.
 Individual completion toggles only the selected tile. Page headers also offer
 Complete suggested (the currently suggested prerequisite tiles on that page)
 and Complete all (every tile on that page). Both add completion IDs without
-uncompleting existing rewards. Completion actions do not deduct inventory, infer
-prior completions or clear goals. This permits recording
+uncompleting existing rewards. The **Consume Docs from Inventory** toggle is off
+by default for each page visit and appears beside page navigation and below the
+document panel's total. When enabled, individual and bulk completion spend only
+newly completed rewards' actual document costs, using available non-FiR stock
+before FiR stock and never deducting more than is available. Untracked document
+types use their manual balances. Repeating a bulk completion spends nothing for
+already completed rewards; marking a reward incomplete does not refund documents.
+Classified allocation remains a preview and does not spend classified stock.
+Completion never infers prior completions or clears goals. This permits recording
 existing progress on a later page. Unknown saved IDs and inventory keys survive
 updates; unknown goals are reported and cannot satisfy prerequisites. Numeric
 balances normalize to integers from 0 to 99,999. Cumulative display, plan scope

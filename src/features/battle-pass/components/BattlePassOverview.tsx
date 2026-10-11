@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { pages, tiles, documents, type Tile, type planGoals, type coverCosts } from "../lib/battle-pass-model";
 import { Stat } from "./ui/Stat";
 import { DocumentChip } from "./ui/DocumentChip";
@@ -11,6 +12,7 @@ export function BattlePassOverview({
 	coverage,
 	selected,
 	filler,
+	children,
 }: {
 	scope: "all" | "goals";
 	knownGoals: Tile[];
@@ -20,6 +22,7 @@ export function BattlePassOverview({
 	coverage: ReturnType<typeof coverCosts>;
 	selected: Set<string>;
 	filler: Set<string>;
+	children: ReactNode;
 }) {
 	return (
 		<section aria-label="Battle pass overview" className="space-y-3 rounded-xl bg-card p-4">
@@ -46,6 +49,7 @@ export function BattlePassOverview({
 					{remainingTotal} docs left
 				</p>
 			</div>
+			{children}
 			{plan.unresolvedIds.length > 0 && (
 				<p role="alert" className="text-xs text-warning">
 					{plan.unresolvedIds.length} saved goals unavailable; excluded from totals.

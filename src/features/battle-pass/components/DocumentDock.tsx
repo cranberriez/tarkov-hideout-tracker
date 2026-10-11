@@ -2,6 +2,7 @@ import { FileText, X } from "lucide-react";
 import type { coverCosts, planGoals } from "../lib/battle-pass-model";
 import type { useBattlePass } from "../useBattlePass";
 import { DocumentInventory } from "./DocumentInventory";
+import { ConsumeDocumentsToggle } from "./ConsumeDocumentsToggle";
 import styles from "../battle-pass.module.css";
 
 export function DocumentDock({
@@ -12,6 +13,8 @@ export function DocumentDock({
 	coverage,
 	scope,
 	plan,
+	consumeDocs,
+	setConsumeDocs,
 }: {
 	documentsOpen: boolean;
 	setDocumentsOpen: (open: boolean) => void;
@@ -20,6 +23,8 @@ export function DocumentDock({
 	coverage: ReturnType<typeof coverCosts>;
 	scope: "all" | "goals";
 	plan: ReturnType<typeof planGoals>;
+	consumeDocs: boolean;
+	setConsumeDocs: (checked: boolean) => void;
 }) {
 	return (
 		<div
@@ -51,6 +56,9 @@ export function DocumentDock({
 					<div className="mt-3 flex items-center justify-between border-t border-border pt-2 text-xs text-muted-foreground">
 						<span>Total for {scope === "all" ? "all" : "goals"}</span>
 						<span className="text-sm font-semibold tabular-nums text-foreground">{plan.total}</span>
+					</div>
+					<div className="mt-2">
+						<ConsumeDocumentsToggle checked={consumeDocs} onChange={setConsumeDocs} />
 					</div>
 				</aside>
 			)}

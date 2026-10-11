@@ -1,6 +1,14 @@
 import locations from "@/lib/data/season-1-document-locations.json";
 export { default as locations } from "@/lib/data/season-1-document-locations.json";
 export const mapNames: Record<string, string[]> = locations.mapsByDocumentKey;
+
+/** Compact type labels for presentation; source names and document keys stay canonical. */
+export function documentDisplayName(name: string): string {
+	if (name === "Blueprints and technical documentation") return "BP and Tech Docs";
+	if (name === "PMC personnel files") return "PMC personnel";
+	return name.replace(/\b(?:documents|documentation)\b/gi, "Docs");
+}
+
 export const mapOrder = [
 	"Factory",
 	"Customs",

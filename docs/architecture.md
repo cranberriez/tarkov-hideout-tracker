@@ -37,9 +37,12 @@ from `components/ui/`, and pure planning logic and display data from `lib/`.
 Its page and bottom minimap use the navbar's responsive container widths.
 Reward rows adapt to viewport height with a readable minimum; short screens and
 expanded planning panels can still scroll.
-The top toolbar keeps planning/display controls on the left and page navigation
-on the right. Completion, plan totals, and Breakdown follow the reward cards.
-Locations expands below the toolbar with map columns and an optional comparison table.
+The top overview groups completion, planning/display controls, plan totals, and
+Breakdown. Page navigation is centered above the reward cards, with the document
+consumption toggle aligned right and retained in list view. The same toggle also
+appears below Total in the document panel. Reward document costs turn green with
+a checkmark when the effective owned balance covers that displayed cost.
+Locations expands below the overview with map columns and an optional comparison table.
 
 Detail routes use bounded reads: [getItemDetailPageData](../src/server/queries/getItemDetailPageData.ts)
 reads one item, [getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts)

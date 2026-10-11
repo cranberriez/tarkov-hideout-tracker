@@ -1,6 +1,6 @@
 import { Ban, Check } from "lucide-react";
 import { documents, normalizeCount, toggleId, type coverCosts } from "../lib/battle-pass-model";
-import { documentMarks } from "../lib/battle-pass-display";
+import { documentDisplayName, documentMarks } from "../lib/battle-pass-display";
 import type { useBattlePass } from "../useBattlePass";
 import { DocumentChip } from "./ui/DocumentChip";
 import { ActionChip } from "./ui/ActionChip";
@@ -22,13 +22,14 @@ export function DocumentInventory({
 			<span className="text-center text-[11px] text-muted-foreground">Owned</span>
 			<span aria-hidden />
 			{documents.map((doc) => {
+				const displayName = documentDisplayName(doc.name);
 				const row = coverage.rows.find((row) => row.key === doc.key)!;
 				const avoided = progress.avoidedDocuments.includes(doc.key);
 				return (
 					<div key={doc.key} className="contents">
 						<DocumentChip doc={doc} end />
 						<span
-							aria-label={doc.name + " still needed"}
+							aria-label={displayName + " still needed"}
 							className={cn(
 								"text-right text-sm tabular-nums",
 								row.missing > 0 ? "text-brand" : "text-muted-foreground",
@@ -42,7 +43,7 @@ export function DocumentInventory({
 							max={99999}
 							step={1}
 							inputMode="numeric"
-							aria-label={doc.name + " owned"}
+							aria-label={displayName + " owned"}
 							className="h-9 w-full min-w-0 rounded bg-surface-raised text-center text-sm tabular-nums outline-brand"
 							value={progress.inventory[doc.key] ?? 0}
 							onChange={(event) =>
@@ -56,7 +57,7 @@ export function DocumentInventory({
 							active={!avoided}
 							tone={avoided ? "avoid" : "done"}
 							label={avoided ? "Use classified" : "Collect"}
-							accessibleLabel={(avoided ? "Enable" : "Disable") + " collecting " + doc.name}
+							accessibleLabel={(avoided ? "Enable" : "Disable") + " collecting " + displayName}
 							icon={avoided ? <Ban size={17} /> : <Check size={17} />}
 							onClick={() =>
 								update((current) => ({
@@ -69,9 +70,9 @@ export function DocumentInventory({
 				);
 			})}
 			<div className="contents">
-				<DocumentChip doc={{ key: "classified", name: "Classified · wildcard 1:1" }} end />
+				<DocumentChip doc={{ key: "classified", name: "Classified Docs · wildcard 1:1" }} end />
 				<span
-					aria-label="Classified documents still needed"
+					aria-label="Classified Docs still needed"
 					className="text-right text-sm tabular-nums"
 					style={{ color: documentMarks.classified.color }}
 				>
@@ -83,7 +84,7 @@ export function DocumentInventory({
 					max={99999}
 					step={1}
 					inputMode="numeric"
-					aria-label="Classified documents owned"
+					aria-label="Classified Docs owned"
 					className="h-9 w-full min-w-0 rounded bg-special/10 text-center text-sm tabular-nums outline-brand"
 					value={progress.classified}
 					onChange={(event) =>

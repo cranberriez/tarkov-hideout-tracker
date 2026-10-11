@@ -1,8 +1,8 @@
 "use client";
 import { useState, type CSSProperties, type SyntheticEvent } from "react";
-import { FileText } from "lucide-react";
+import { Check, FileText } from "lucide-react";
 import { Artwork } from "./Artwork";
-import { documentMarks } from "../../lib/battle-pass-display";
+import { documentDisplayName, documentMarks } from "../../lib/battle-pass-display";
 import { cn } from "@/lib/utils";
 import styles from "../../battle-pass.module.css";
 
@@ -10,10 +10,12 @@ export function DocumentChip({
 	doc,
 	amount,
 	end = false,
+	fulfilled = false,
 }: {
 	doc: { key?: string; name: string; img?: string };
 	amount?: number;
 	end?: boolean;
+	fulfilled?: boolean;
 }) {
 	const [placement, setPlacement] = useState({ end, width: 280 });
 	const placeLabel = (event: SyntheticEvent<HTMLElement>) => {
@@ -24,13 +26,14 @@ export function DocumentChip({
 		setPlacement({ end: alignEnd, width: Math.min(280, Math.max(80, alignEnd ? left : right)) });
 	};
 	const mark = documentMarks[doc.key ?? ""];
+	const displayName = documentDisplayName(doc.name);
 	return (
 		<span
 			tabIndex={0}
 			onMouseEnter={placeLabel}
 			onFocus={placeLabel}
 			style={{ "--label-width": `${placement.width}px`, "--doc-color": mark?.color } as CSSProperties}
-			aria-label={`${doc.name}${amount !== undefined ? `: ${amount}` : ""}`}
+			aria-label={`${displayName}${amount !== undefined ? `: ${amount}` : ""}${fulfilled ? ", available in inventory" : ""}`}
 			className={cn(styles.chip, placement.end && styles.end, amount === undefined && styles.documentOnly)}
 		>
 			<span className={styles.chipInner}>
@@ -45,9 +48,19 @@ export function DocumentChip({
 						)}
 						{mark && <span aria-hidden className={styles.mark} data-shape={mark.shape} />}
 					</span>
-					{amount !== undefined && <span className="px-1.5 text-xs font-semibold tabular-nums">{amount}</span>}
+					{amount !== undefined && (
+						<span
+							className={cn(
+								"inline-flex items-center gap-0.5 px-1.5 text-xs font-semibold tabular-nums",
+								fulfilled && "text-success",
+							)}
+						>
+							{amount}
+							{fulfilled && <Check size={11} strokeWidth={2.5} aria-hidden className="shrink-0" />}
+						</span>
+					)}
 				</span>
-				<span className={cn(styles.label, styles.documentLabel)}>{doc.name}</span>
+				<span className={cn(styles.label, styles.documentLabel)}>{displayName}</span>
 			</span>
 		</span>
 	);
