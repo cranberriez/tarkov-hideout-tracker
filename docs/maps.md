@@ -129,12 +129,23 @@ The preview header groups the document icon with its type and location name.
 Closing the map returns to the battle-pass overview without changing saved
 progress. View state is stored in a namespaced browser-history field, preserving
 Next.js history metadata; it does not write player saves or local storage.
-Crowded markers use small document-colored shapes with fixed black outlines.
-Separated markers retain the full document artwork. Residual displacement for
-overlapping anchors uses contrasting anchor dots and leader lines, preserving
-the true source positions and access to lock indicators and photo previews.
-Hovering or focusing a compact marker reveals its full document artwork without
-moving its anchor. The document map allows panning up to half the scaled artwork's
+Document markers use rounded silhouettes and shrink smoothly to 75% size at fit zoom.
+Grouping uses the larger displayed footprints so crowded bubbles combine sooner.
+Markers may overlap, but never shift away from their source anchors or clamp to
+viewport edges. Tightly packed locations at lower zoom share a white-outlined artwork grid at
+one member's source position. Each contained location contributes its document
+artwork, in up to two columns for two to four locations and three columns for five
+or more. Selecting the group opens a list of all member locations,
+including their document types, key requirements, and individual photo previews.
+Groups whose displayed artwork grids overlap by more than 25% of the smaller
+bubble merge, including overlaps introduced by a newly enlarged group. Each merge
+keeps a member source anchor. Grouping is rebuilt from source positions on zoom,
+so zooming in separates the groups. At 6.6× zoom (the last 20% of the 1×–8×
+range), all groups split into individual anchored markers, including coincident
+locations. Zooming back out enables grouping again.
+Ungrouped markers always show their document artwork, even when overlapping;
+compact symbol substitutes are never used.
+The document map allows panning up to half the scaled artwork's
 width or height beyond the usual edge limits; other map viewers retain their
 existing pan bounds. Basemaps start in grayscale, with a color toggle beside the
 zoom and reset controls. The color choice carries across map switches and is

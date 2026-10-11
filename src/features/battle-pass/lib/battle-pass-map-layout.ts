@@ -1,65 +1,76 @@
 type MarkerPoint = { id: string; x: number; y: number };
-type MarkerBounds = { width: number; height: number; padding?: number };
+type MarkerBounds = { width: number; height: number };
 
-/** Choose artwork only when its screen-space footprint fits; crowded spawns retain tiny glyphs near their anchors. */
-export function arrangeDocumentMarkers(
-	points: readonly MarkerPoint[],
-	spacing = 38,
-	bounds?: MarkerBounds,
-	compactSpacing = 16,
-) {
-	const onscreen = (point: MarkerPoint) =>
-		!bounds || (point.x >= 0 && point.y >= 0 && point.x <= bounds.width && point.y <= bounds.height);
-	const compact = points.map(
-		(point, index) =>
-			onscreen(point) &&
-			points.some(
-				(other, otherIndex) =>
-					otherIndex !== index && onscreen(other) && Math.hypot(other.x - point.x, other.y - point.y) < spacing,
-			),
-	);
-	const occupied: { x: number; y: number; radius: number }[] = [];
-	return points.map((point, index) => {
-		// Panned-out anchors stay out of view instead of accumulating along its edges.
-		if (!onscreen(point)) return { id: point.id, x: 0, y: 0, compact: false };
-		const radius = (compact[index] ? compactSpacing : spacing) / 2;
-		const padding = compact[index] ? radius : (bounds?.padding ?? 24);
-		const padX = bounds ? Math.min(padding, bounds.width / 2) : padding;
-		const padY = bounds ? Math.min(padding, bounds.height / 2) : padding;
-		const origin = bounds
-			? {
-					x: Math.max(padX, Math.min(bounds.width - padX, point.x)),
-					y: Math.max(padY, Math.min(bounds.height - padY, point.y)),
-				}
-			: point;
-		let offset = { x: origin.x - point.x, y: origin.y - point.y };
-		search: for (let ring = 0; ring <= points.length * 2; ring++) {
-			const steps = ring === 0 ? 1 : ring * 8;
-			for (let step = 0; step < steps; step++) {
-				const angle = (step / steps) * Math.PI * 2;
-				const position = {
-					x: origin.x + Math.cos(angle) * ring * radius,
-					y: origin.y + Math.sin(angle) * ring * radius,
-				};
-				if (
-					bounds &&
-					(position.x < padX ||
-						position.y < padY ||
-						position.x > bounds.width - padX ||
-						position.y > bounds.height - padY)
-				)
-					continue;
-				if (
-					occupied.every(
-						(other) => Math.hypot(other.x - position.x, other.y - position.y) >= radius + other.radius - 0.001,
-					)
-				) {
-					offset = { x: position.x - point.x, y: position.y - point.y };
-					occupied.push({ ...position, radius });
-					break search;
-				}
+export const DOCUMENT_MAP_MIN_ZOOM = 1;
+export const DOCUMENT_MAP_MAX_ZOOM = 8;
+export const DOCUMENT_MAP_UNGROUP_ZOOM = DOCUMENT_MAP_MIN_ZOOM + (DOCUMENT_MAP_MAX_ZOOM - DOCUMENT_MAP_MIN_ZOOM) * 0.8;
+
+function baseMarkerScale(zoom: number) {
+	return Math.min(1, Math.max(0.6, 0.6 * Math.sqrt(zoom)));
+}
+
+/** Larger at fit zoom, tapering to the same full size when zoomed in. */
+export function documentMarkerScale(zoom: number) {
+	return 0.75 + (baseMarkerScale(zoom) - 0.6) * 0.625;
+}
+
+/** Shared with rendering so overlap checks include artwork, gaps, padding and border. */
+export function documentMarkerDimensions(count: number) {
+	const columns = count >= 5 ? 3 : Math.min(2, count);
+	const rows = Math.ceil(count / columns);
+	return {
+		columns,
+		width: count === 1 ? 34 : columns * 28 + (columns - 1) * 2 + 12,
+		height: count === 1 ? 34 : rows * 28 + (rows - 1) * 2 + 12,
+	};
+}
+
+/** Rebuild from source anchors on every zoom; merged bubbles retain the first member's anchor. */
+export function arrangeDocumentMarkers(points: readonly MarkerPoint[], zoom = 1, bounds?: MarkerBounds) {
+	const scale = documentMarkerScale(zoom);
+	const ungroup = zoom >= DOCUMENT_MAP_UNGROUP_ZOOM;
+	const radius = zoom < 3 ? 18 * scale : 1;
+	const groups: { id: string; x: number; y: number; ids: string[] }[] = [];
+	for (const point of points) {
+		if (bounds && (point.x < 0 || point.y < 0 || point.x > bounds.width || point.y > bounds.height)) continue;
+		const group = !ungroup && groups.find((entry) => Math.hypot(entry.x - point.x, entry.y - point.y) <= radius);
+		if (group) group.ids.push(point.id);
+		else groups.push({ ...point, ids: [point.id] });
+	}
+	if (ungroup) return groups;
+	// Restart after each merge: a larger grid can now overlap a previously checked bubble.
+	let merged = true;
+	while (merged) {
+		merged = false;
+		search: for (let i = 0; i < groups.length; i++) {
+			const a = groups[i];
+			const aSize = documentMarkerDimensions(a.ids.length);
+			for (let j = i + 1; j < groups.length; j++) {
+				const b = groups[j];
+				const bSize = documentMarkerDimensions(b.ids.length);
+				const overlapX = Math.max(
+					0,
+					Math.min(
+						((aSize.width + bSize.width) * scale) / 2 - Math.abs(a.x - b.x),
+						Math.min(aSize.width, bSize.width) * scale,
+					),
+				);
+				const overlapY = Math.max(
+					0,
+					Math.min(
+						((aSize.height + bSize.height) * scale) / 2 - Math.abs(a.y - b.y),
+						Math.min(aSize.height, bSize.height) * scale,
+					),
+				);
+				const smallerArea = Math.min(aSize.width * aSize.height, bSize.width * bSize.height) * scale * scale;
+				// Allow light overlap, but merge when more than a quarter of either bubble is obscured.
+				if (overlapX * overlapY <= smallerArea * 0.25) continue;
+				a.ids.push(...b.ids);
+				groups.splice(j, 1);
+				merged = true;
+				break search;
 			}
 		}
-		return { id: point.id, ...offset, compact: compact[index] };
-	});
+	}
+	return groups;
 }

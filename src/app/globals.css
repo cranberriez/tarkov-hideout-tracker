@@ -27,6 +27,8 @@
 	--shadow: #000000;
 	/* Map glyph outlines retain black ink against third-party map artwork in every theme. */
 	--map-marker-ink: #000000;
+	/* Neutral group outlines remain white against map artwork in every theme. */
+	--map-marker-outline: #ffffff;
 	--inverse: var(--background);
 
 	/* Brand: navigation, selection, links and primary actions. Change this to var(--accent-alternate) to trial tan; hover derives automatically. */

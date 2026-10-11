@@ -1,94 +1,133 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { arrangeDocumentMarkers } from "./battle-pass-map-layout";
+import {
+	arrangeDocumentMarkers,
+	documentMarkerScale,
+	documentMarkerDimensions,
+	DOCUMENT_MAP_UNGROUP_ZOOM,
+} from "./battle-pass-map-layout";
 
-test("crowded spawns switch to tiny glyphs without displacing already separated anchors", () => {
+test("overlapping markers retain source anchors, including at the viewport edge", () => {
+	const points = [
+		{ id: "a", x: 1, y: 1 },
+		{ id: "b", x: 22, y: 1 },
+	];
+	const groups = arrangeDocumentMarkers(points, 1, { width: 100, height: 100 });
+	assert.equal(groups.length, 2);
+	groups.forEach((group, index) => {
+		assert.equal(group.x, points[index].x);
+		assert.equal(group.y, points[index].y);
+	});
+});
+
+test("tight groups keep every ID and split as zoom separates source positions", () => {
 	const points = [
 		{ id: "a", x: 100, y: 100 },
-		{ id: "b", x: 124, y: 100 },
-		{ id: "c", x: 300, y: 100 },
+		{ id: "b", x: 108, y: 100 },
 	];
-	assert.deepEqual(arrangeDocumentMarkers(points), [
-		{ id: "a", x: 0, y: 0, compact: true },
-		{ id: "b", x: 0, y: 0, compact: true },
-		{ id: "c", x: 0, y: 0, compact: false },
-	]);
-});
-
-test("true coincidences use compact spacing and small deterministic offsets without changing source anchors", () => {
-	const points = Array.from({ length: 12 }, (_, i) => ({ id: String(i), x: 100, y: 100 }));
-	const offsets = arrangeDocumentMarkers(points);
-	assert.deepEqual(offsets[0], { id: "0", x: 0, y: 0, compact: true });
-	for (let i = 0; i < offsets.length; i++) {
-		assert.equal(offsets[i].compact, true);
-		assert.ok(Math.hypot(offsets[i].x, offsets[i].y) <= 48);
-		for (let j = i + 1; j < offsets.length; j++)
-			assert.ok(Math.hypot(offsets[i].x - offsets[j].x, offsets[i].y - offsets[j].y) >= 15.999);
-	}
-	assert.deepEqual(arrangeDocumentMarkers(points), offsets);
-	assert.equal(points[1].x, 100);
-});
-
-test("zoomed screen geometry restores artwork as nearby spawns separate", () => {
-	const points = [
-		{ id: "a", x: 100, y: 100 },
-		{ id: "b", x: 120, y: 100 },
-	];
-	assert.ok(arrangeDocumentMarkers(points).every((point) => point.compact));
-	const zoomed = points.map((point) => ({ ...point, x: point.x * 3, y: point.y * 3 }));
-	assert.deepEqual(arrangeDocumentMarkers(zoomed), [
-		{ id: "a", x: 0, y: 0, compact: false },
-		{ id: "b", x: 0, y: 0, compact: false },
-	]);
-});
-
-test("separated spawns keep full artwork at their original positions", () => {
-	assert.deepEqual(
-		arrangeDocumentMarkers([
-			{ id: "a", x: 0, y: 0 },
-			{ id: "b", x: 100, y: 100 },
-		]),
-		[
-			{ id: "a", x: 0, y: 0, compact: false },
-			{ id: "b", x: 0, y: 0, compact: false },
-		],
-	);
-});
-
-test("dense mobile edge glyphs stay inside small bounds while offscreen anchors remain untouched", () => {
-	const bounds = { width: 390, height: 450, padding: 24 };
-	const points = [
-		{ id: "offscreen", x: 410, y: 100 },
-		...Array.from({ length: 20 }, (_, i) => ({ id: String(i), x: 382, y: 100 })),
-	];
-	const offsets = arrangeDocumentMarkers(points, 38, bounds);
-	assert.deepEqual(offsets[0], { id: "offscreen", x: 0, y: 0, compact: false });
-	const positions = offsets
-		.slice(1)
-		.map((offset, index) => ({ x: points[index + 1].x + offset.x, y: points[index + 1].y + offset.y }));
-	for (const point of positions) {
-		assert.ok(point.x >= 8 && point.x <= 382);
-		assert.ok(point.y >= 8 && point.y <= 442);
-	}
-	for (let i = 0; i < positions.length; i++)
-		for (let j = i + 1; j < positions.length; j++)
-			assert.ok(Math.hypot(positions[i].x - positions[j].x, positions[i].y - positions[j].y) >= 15.999);
-	assert.equal(points[1].x, 382);
-});
-
-test("offscreen neighbors do not shrink visible artwork", () => {
-	assert.deepEqual(
+	const groups = arrangeDocumentMarkers(points);
+	assert.equal(groups.length, 1);
+	assert.deepEqual(groups[0].ids, ["a", "b"]);
+	assert.equal(groups[0].x, 100);
+	assert.equal(groups[0].y, 100);
+	assert.equal(
 		arrangeDocumentMarkers(
-			[
-				{ id: "offscreen", x: -10, y: 50 },
-				{ id: "visible", x: 10, y: 50 },
-			],
-			38,
-			{ width: 300, height: 200, padding: 24 },
-		),
+			points.map((p) => ({ ...p, x: p.x * 4, y: p.y * 4 })),
+			4,
+		).length,
+		2,
+	);
+});
+
+test("all groups split in the last 20% of zoom, including coincident anchors, and regroup on zoom out", () => {
+	const points = Array.from({ length: 12 }, (_, i) => ({ id: String(i), x: 100, y: 100 }));
+	assert.equal(arrangeDocumentMarkers(points, DOCUMENT_MAP_UNGROUP_ZOOM - 0.01).length, 1);
+	for (const zoom of [DOCUMENT_MAP_UNGROUP_ZOOM, 8]) {
+		assert.deepEqual(
+			arrangeDocumentMarkers(points, zoom),
+			points.map((point) => ({ ...point, ids: [point.id] })),
+		);
+	}
+	assert.equal(arrangeDocumentMarkers(points, 1).length, 1);
+});
+
+test("larger bubbles merge sooner using their displayed footprint", () => {
+	const points = [
+		{ id: "a", x: 100, y: 100 },
+		{ id: "b", x: 100, y: 100 },
+		{ id: "c", x: 135, y: 100 },
+		{ id: "d", x: 135, y: 100 },
+	];
+	assert.equal(arrangeDocumentMarkers(points, 1).length, 1);
+	const separated = arrangeDocumentMarkers(
+		points.map((point) => ({ ...point, x: point.x * 4 })),
+		4,
+	);
+	assert.equal(separated.length, 2);
+});
+
+test("groups do not chain across distant anchors or collect offscreen locations", () => {
+	const points = [
+		{ id: "off", x: -1, y: 10 },
+		{ id: "a", x: 1, y: 10 },
+		{ id: "b", x: 10, y: 10 },
+		{ id: "c", x: 60, y: 10 },
+	];
+	assert.deepEqual(
+		arrangeDocumentMarkers(points, 1, { width: 100, height: 100 }).map((g) => g.ids),
+		[["a", "b"], ["c"]],
+	);
+	assert.deepEqual(arrangeDocumentMarkers([]), []);
+});
+
+test("zoomed-out icons shrink smoothly and zoomed-in icons stop growing", () => {
+	assert.equal(documentMarkerScale(1), 0.75);
+	assert.ok(documentMarkerScale(2) > documentMarkerScale(1));
+	assert.ok(documentMarkerScale(2) < documentMarkerScale(3));
+	assert.equal(documentMarkerScale(8), 1);
+});
+
+test("overlapping artwork groups merge, retain a source anchor and split again with zoom", () => {
+	const points = [
+		{ id: "a", x: 100, y: 100 },
+		{ id: "b", x: 100, y: 100 },
+		{ id: "c", x: 120, y: 100 },
+		{ id: "d", x: 120, y: 100 },
+	];
+	const merged = arrangeDocumentMarkers(points);
+	assert.equal(merged.length, 1);
+	assert.deepEqual(merged[0], { id: "a", x: 100, y: 100, ids: ["a", "b", "c", "d"] });
+	const zoomed = points.map((point) => ({ ...point, x: point.x * 4, y: point.y * 4 }));
+	assert.deepEqual(
+		arrangeDocumentMarkers(zoomed, 4).map((g) => g.ids),
 		[
-			{ id: "offscreen", x: 0, y: 0, compact: false },
-			{ id: "visible", x: 14, y: 0, compact: false },
+			["a", "b"],
+			["c", "d"],
 		],
 	);
+	assert.deepEqual(arrangeDocumentMarkers(points), merged);
+});
+
+test("merging rechecks enlarged grids against earlier groups without losing member IDs", () => {
+	const points = [
+		{ id: "a", x: 100, y: 122 },
+		{ id: "b", x: 100, y: 122 },
+		{ id: "c", x: 100, y: 100 },
+		{ id: "d", x: 100, y: 100 },
+		{ id: "e", x: 120, y: 100 },
+		{ id: "f", x: 120, y: 100 },
+	];
+	const groups = arrangeDocumentMarkers(points);
+	assert.equal(groups.length, 1);
+	assert.deepEqual(
+		groups[0].ids,
+		points.map((p) => p.id),
+	);
+	assert.equal(groups[0].y, 122);
+});
+
+test("bubble footprints match two- and three-column artwork grids", () => {
+	assert.deepEqual(documentMarkerDimensions(1), { columns: 1, width: 34, height: 34 });
+	assert.deepEqual(documentMarkerDimensions(4), { columns: 2, width: 70, height: 70 });
+	assert.deepEqual(documentMarkerDimensions(5), { columns: 3, width: 100, height: 70 });
 });

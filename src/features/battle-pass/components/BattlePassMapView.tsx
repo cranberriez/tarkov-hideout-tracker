@@ -22,9 +22,14 @@ import { documentDisplayName, documentMarks } from "../lib/battle-pass-display";
 import { documentMaps, documentLocations, type BattlePassDocumentLocation } from "@/lib/battle-pass-map-data";
 import { filterDocumentLocations, documentMapCounts } from "../lib/battle-pass-map-controls";
 import { resolveDocumentBasemap } from "../lib/battle-pass-map-background";
-import { arrangeDocumentMarkers } from "../lib/battle-pass-map-layout";
+import {
+	arrangeDocumentMarkers,
+	documentMarkerScale,
+	documentMarkerDimensions,
+	DOCUMENT_MAP_MIN_ZOOM,
+	DOCUMENT_MAP_MAX_ZOOM,
+} from "../lib/battle-pass-map-layout";
 import { MapDocumentPanel } from "./MapDocumentPanel";
-import { CompactDocumentGlyph } from "./ui/CompactDocumentGlyph";
 import { LocationsDocumentArtwork } from "./ui/LocationsDocumentArtwork";
 import { useDocumentMapNavigation } from "../useDocumentMapNavigation";
 import styles from "../battle-pass-map.module.css";
@@ -64,15 +69,24 @@ function LocationPreview({
 	floorName,
 	onClose,
 	onPin,
+	nearby,
+	onSelect,
 }: {
 	location: BattlePassDocumentLocation;
 	pinned: boolean;
 	floorName?: string;
 	onClose: () => void;
 	onPin: () => void;
+	nearby: BattlePassDocumentLocation[];
+	onSelect: (id: string) => void;
 }) {
 	const doc = documents.find((entry) => entry.key === location.documentKey);
 	const [photo, setPhoto] = useState(0);
+	const [photoLocation, setPhotoLocation] = useState(location.id);
+	if (photoLocation !== location.id) {
+		setPhotoLocation(location.id);
+		setPhoto(0);
+	}
 	return (
 		<aside
 			className={styles.preview}
@@ -101,6 +115,23 @@ function LocationPreview({
 				title={`${location.title} — document spawn location`}
 			/>
 			<div className={styles.previewBody}>
+				{nearby.length > 1 && (
+					<div className={styles.groupLocations} role="group" aria-label="Grouped locations">
+						{nearby.map((entry, index) => (
+							<button
+								key={entry.id}
+								type="button"
+								aria-pressed={entry.id === location.id}
+								onClick={() => onSelect(entry.id)}
+							>
+								{index + 1}.{" "}
+								{documentDisplayName(documents.find((doc) => doc.key === entry.documentKey)?.name ?? entry.documentKey)}
+								: {entry.title}
+								{entry.key ? " (key required)" : ""}
+							</button>
+						))}
+					</div>
+				)}
 				{location.screenshotUrls.length > 1 && (
 					<div className="mb-2 flex items-center gap-2">
 						<Button size="xs" disabled={photo === 0} onClick={() => setPhoto((current) => current - 1)}>
@@ -172,7 +203,8 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 	const fit =
 		background && size.width ? Math.min(size.width / background.width, size.height / background.height) * 0.94 : 1;
 	const stage = { width: (background?.width ?? 1) * fit, height: (background?.height ?? 1) * fit };
-	const offsets = arrangeDocumentMarkers(
+	const markerScale = documentMarkerScale(view.scale);
+	const markerGroups = arrangeDocumentMarkers(
 		visible.map((location) => {
 			const point = background?.project(location) ?? location;
 			return {
@@ -181,8 +213,8 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 				y: point.y * fit * view.scale + (size.height - stage.height * view.scale) / 2 + view.y,
 			};
 		}),
-		38,
-		size.width > 0 && size.height > 0 ? { ...size, padding: 24 } : undefined,
+		view.scale,
+		size.width > 0 && size.height > 0 ? size : undefined,
 	);
 
 	useEffect(() => {
@@ -235,7 +267,14 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 		return () => document.removeEventListener("pointerdown", dismissOutside);
 	}, [documentsOpen]);
 	function zoom(factor: number, point = { x: 0, y: 0 }) {
-		setView((current) => constrainMapView(zoomViewAroundPoint(current, factor, point, 1, 8), stage, size, 0.5));
+		setView((current) =>
+			constrainMapView(
+				zoomViewAroundPoint(current, factor, point, DOCUMENT_MAP_MIN_ZOOM, DOCUMENT_MAP_MAX_ZOOM),
+				stage,
+				size,
+				0.5,
+			),
+		);
 	}
 	function toggleType(key: string) {
 		if (!hiddenTypes.includes(key)) {
@@ -392,11 +431,13 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 								}}
 							/>
 							{imageState === "ready" &&
-								visible.map((location, index) => {
+								markerGroups.map((group) => {
+									const location = visible.find((entry) => entry.id === group.id)!;
+									const dimensions = documentMarkerDimensions(group.ids.length);
 									const doc = documents.find((entry) => entry.key === location.documentKey);
-									const offset = offsets[index];
 									const point = background.project(location);
 									const color = documentMarks[location.documentKey]?.color;
+									const requiresKey = group.ids.some((id) => visible.find((entry) => entry.id === id)?.key);
 									return (
 										<div
 											key={location.id}
@@ -405,31 +446,23 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 												{
 													left: `${(point.x / background.width) * 100}%`,
 													top: `${(point.y / background.height) * 100}%`,
-													transform: `scale(${1 / view.scale})`,
+													transform: `scale(${markerScale / view.scale})`,
 													"--document-color": color,
 												} as CSSProperties
 											}
 										>
-											{Math.hypot(offset.x, offset.y) > 0 && (
-												<>
-													<span className={styles.anchorDot} />
-													<span
-														className={styles.leader}
-														style={{
-															width: Math.hypot(offset.x, offset.y),
-															transform: `rotate(${Math.atan2(offset.y, offset.x)}rad)`,
-														}}
-													/>
-												</>
-											)}
 											<button
 												type="button"
 												className={styles.marker}
-												data-active={active?.id === location.id}
-												data-compact={offset.compact}
-												style={{ transform: `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px)` }}
-												aria-label={`${doc ? documentDisplayName(doc.name) : location.documentKey}: ${location.title}${location.key ? ", key required" : ""}`}
-												aria-pressed={pinned === location.id}
+												data-active={Boolean(active && group.ids.includes(active.id))}
+												data-cluster={group.ids.length > 1}
+												style={{
+													transform: "translate(-50%, -50%)",
+													width: dimensions.width,
+													height: dimensions.height,
+												}}
+												aria-label={`${group.ids.length > 1 ? `${group.ids.length} grouped locations. ` : ""}${doc ? documentDisplayName(doc.name) : location.documentKey}: ${location.title}${requiresKey ? ", key required" : ""}`}
+												aria-pressed={Boolean(pinned && group.ids.includes(pinned))}
 												onPointerEnter={(event) => {
 													if (event.pointerType === "mouse") setHovered(location.id);
 												}}
@@ -442,15 +475,25 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 													setHovered(location.id);
 												}}
 											>
-												{offset.compact && (
-													<span className={styles.compactGlyph}>
-														<CompactDocumentGlyph documentKey={location.documentKey} />
-													</span>
-												)}
-												<span className={styles.markerArtwork}>
-													<LocationsDocumentArtwork doc={doc ?? { key: location.documentKey }} className="size-7" />
+												<span
+													className={styles.markerArtwork}
+													style={{
+														gridTemplateColumns: `repeat(${dimensions.columns}, 28px)`,
+													}}
+												>
+													{group.ids.map((id) => {
+														const member = visible.find((entry) => entry.id === id)!;
+														const memberDoc = documents.find((entry) => entry.key === member.documentKey);
+														return (
+															<LocationsDocumentArtwork
+																key={id}
+																doc={memberDoc ?? { key: member.documentKey }}
+																className="size-7"
+															/>
+														);
+													})}
 												</span>
-												{location.key && (
+												{requiresKey && (
 													<span className={styles.markerLock}>
 														<LockKeyhole size={10} />
 													</span>
@@ -499,10 +542,20 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 						</div>
 					)}
 					<div className={styles.controls}>
-						<Button iconOnly aria-label="Zoom in" disabled={view.scale >= 8} onClick={() => zoom(1.4)}>
+						<Button
+							iconOnly
+							aria-label="Zoom in"
+							disabled={view.scale >= DOCUMENT_MAP_MAX_ZOOM}
+							onClick={() => zoom(1.4)}
+						>
 							<Plus size={18} />
 						</Button>
-						<Button iconOnly aria-label="Zoom out" disabled={view.scale <= 1} onClick={() => zoom(1 / 1.4)}>
+						<Button
+							iconOnly
+							aria-label="Zoom out"
+							disabled={view.scale <= DOCUMENT_MAP_MIN_ZOOM}
+							onClick={() => zoom(1 / 1.4)}
+						>
 							<Minus size={18} />
 						</Button>
 						<Button iconOnly aria-label="Fit map" onClick={() => setView({ scale: 1, x: 0, y: 0 })}>
@@ -547,7 +600,13 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 				</div>
 				{active && !documentsOpen && (
 					<LocationPreview
-						key={active.id}
+						nearby={visible.filter((entry) =>
+							markerGroups.find((group) => group.ids.includes(active.id))?.ids.includes(entry.id),
+						)}
+						onSelect={(id) => {
+							setPinned(id);
+							setHovered(id);
+						}}
 						location={active}
 						pinned={Boolean(pinned)}
 						floorName={map?.floors.find((candidate) => candidate.id === active.floor)?.name}
