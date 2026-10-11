@@ -25,14 +25,14 @@ export const mapOrder = [
 ];
 
 export const documentMarks: Record<string, { color: string; shape: string }> = {
-	financial: { color: "#4ade80", shape: "circle" },
-	personnel: { color: "#a78bfa", shape: "triangle" },
-	project: { color: "#22d3ee", shape: "square" },
+	financial: { color: "#2dd4bf", shape: "circle" },
+	personnel: { color: "#a3e635", shape: "triangle" },
+	project: { color: "#a78bfa", shape: "square" },
 	blueprints: { color: "#60a5fa", shape: "diamond" },
 	test: { color: "#f87171", shape: "octagon" },
-	user: { color: "#facc15", shape: "pentagon" },
-	medical: { color: "#fb7185", shape: "cross" },
-	technical: { color: "#2dd4bf", shape: "hexagon" },
+	user: { color: "#f97316", shape: "pentagon" },
+	medical: { color: "#4ade80", shape: "cross" },
+	technical: { color: "#facc15", shape: "hexagon" },
 	classified: { color: "#fb923c", shape: "star" },
 };
 
