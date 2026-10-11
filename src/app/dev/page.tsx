@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { GAME_MODE_CONFIG, GAME_MODES, type TarkovJsonGameMode } from "@/lib/game-mode";
 import { isDev } from "@/lib/is-dev";
 import { getCatalogDashboard, getMarketWorkerDashboard } from "@/server/db/postgres-dashboard";
+import { getSiteFeedback } from "@/server/site-rating/get-site-feedback";
 import { MarketWorkerPanel } from "./MarketWorkerPanel";
 import { ItemImageGallery } from "./ItemImageGallery";
 import { HoverOverlayGallery } from "./HoverOverlayGallery";
@@ -42,6 +43,13 @@ export default async function DevPage({
 	} catch (cause) {
 		marketError = cause instanceof Error ? cause.message : String(cause);
 	}
+	let feedback;
+	let feedbackError: string | null = null;
+	try {
+		feedback = await getSiteFeedback();
+	} catch (cause) {
+		feedbackError = cause instanceof Error ? cause.message : String(cause);
+	}
 	return (
 		<main className="container mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 py-8 sm:px-6">
 			<header className="space-y-2">
@@ -51,6 +59,25 @@ export default async function DevPage({
 					Current PostgreSQL catalog status for the selected game mode.
 				</p>
 			</header>
+			<div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-border bg-card px-5 py-3 text-sm">
+				<span className="font-semibold">Site feedback</span>
+				{feedbackError ? (
+					<span role="alert" className="text-danger">
+						Unable to load votes: {feedbackError}
+					</span>
+				) : feedback ? (
+					<>
+						<span className="text-muted-foreground">
+							· Good <span className="font-mono text-foreground">{feedback.good}</span>
+						</span>
+						<span className="text-muted-foreground">
+							· Bad <span className="font-mono text-foreground">{feedback.bad}</span>
+						</span>
+					</>
+				) : (
+					<span className="text-muted-foreground">Feedback row is missing.</span>
+				)}
+			</div>
 			<HoverOverlayGallery />
 			<ItemImageGallery />
 			<nav aria-label="Dataset game mode" className="flex gap-2">

@@ -249,6 +249,11 @@ analysis runs and biggest movers. The API keeps releaseId only as a
 compatibility field containing the string content version. It is not a release
 lifecycle. Search's stale-token protocol remains unchanged.
 
+The compact site feedback row reads current `good` and `bad` totals directly from
+the singleton through [get-site-feedback.ts](../src/server/site-rating/get-site-feedback.ts).
+These counts are site-wide across modes and retain bigint precision. A missing row
+or read failure is shown explicitly while the rest of the page remains available.
+
 ## Mutable price refresh
 
 ```bash
