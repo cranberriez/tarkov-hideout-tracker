@@ -7,6 +7,7 @@ import {
 	ChevronUp,
 	ExternalLink,
 	FileText,
+	Group,
 	ImageOff,
 	Palette,
 	LockKeyhole,
@@ -193,6 +194,8 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 	const [headerHidden, setHeaderHidden] = useState(false);
 	const [documentsOpen, setDocumentsOpen] = useState(false);
 	const [grayscaleAmount, setGrayscaleAmount] = useState(10);
+	const [hideLocked, setHideLocked] = useState(false);
+	const [disableGrouping, setDisableGrouping] = useState(false);
 	const documentsButton = useRef<HTMLButtonElement>(null);
 	const documentsPanel = useRef<HTMLElement>(null);
 	const header = useRef<HTMLElement>(null);
@@ -218,7 +221,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 	const mapDocuments = documents.filter(
 		(doc) => map && (doc.key in map.spawns || mapLocations.some((location) => location.documentKey === doc.key)),
 	);
-	const visible = filterDocumentLocations(mapLocations, hiddenTypes);
+	const visible = filterDocumentLocations(mapLocations, hiddenTypes, hideLocked);
 	const active = visible.find((location) => location.id === (pinned ?? hovered));
 	const fit =
 		background && size.width ? Math.min(size.width / background.width, size.height / background.height) * 0.94 : 1;
@@ -235,6 +238,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 		}),
 		view.scale,
 		size.width > 0 && size.height > 0 ? size : undefined,
+		disableGrouping,
 	);
 
 	useEffect(() => {
@@ -568,6 +572,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 								size="xs"
 								onClick={() => {
 									setHiddenTypes([]);
+									setHideLocked(false);
 								}}
 							>
 								Reset filters
@@ -593,6 +598,30 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 						</Button>
 						<Button iconOnly aria-label="Fit map" onClick={() => setView({ scale: 1, x: 0, y: 0 })}>
 							<RotateCcw size={16} />
+						</Button>
+						<Button
+							iconOnly
+							aria-label="Hide locked documents"
+							title={hideLocked ? "Show locked documents" : "Hide locked documents"}
+							aria-pressed={hideLocked}
+							selected={hideLocked}
+							onClick={() => {
+								setHideLocked((current) => !current);
+								setPinned(null);
+								setHovered(null);
+							}}
+						>
+							<LockKeyhole size={18} />
+						</Button>
+						<Button
+							iconOnly
+							aria-label="Disable marker grouping"
+							title={disableGrouping ? "Enable marker grouping" : "Disable marker grouping"}
+							aria-pressed={disableGrouping}
+							selected={disableGrouping}
+							onClick={() => setDisableGrouping((current) => !current)}
+						>
+							<Group size={18} />
 						</Button>
 						<Button
 							iconOnly

@@ -128,6 +128,11 @@ center. Locations on all floors remain visible, including unspecified floors; se
 floor panels remain part of the map artwork. Legacy floor filters in browser history
 are ignored. Possible location counts are separate from per-raid
 document counts. Lock badges identify source records with a required key.
+Above the grayscale button, the lock toggle hides locations requiring a key and
+the group toggle disables clustering at every zoom, leaving each icon at its source
+position. Both toggles start off and stay local to the open map view across map
+switches. Reset filters also turns off the lock filter. Document marker and type-filter
+borders are 2px; grouped markers have a 3px outline.
 Hover or keyboard focus opens a large location-photo preview; clicking pins it.
 The preview header groups the document icon with its type and location name.
 Closing the map returns to the battle-pass overview without changing saved

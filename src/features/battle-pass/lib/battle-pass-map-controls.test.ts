@@ -16,6 +16,21 @@ test("document filters include every floor, including unspecified floors", () =>
 	}
 });
 
+test("lock filter removes key-required locations and composes with document-type filters", () => {
+	assert.ok(documentLocations.some((location) => location.key));
+	const unlocked = filterDocumentLocations(documentLocations, [], true);
+	assert.deepEqual(
+		unlocked,
+		documentLocations.filter((location) => !location.key),
+	);
+	const hiddenKey = unlocked[0].documentKey;
+	assert.deepEqual(
+		filterDocumentLocations(documentLocations, [hiddenKey], true),
+		unlocked.filter((location) => location.documentKey !== hiddenKey),
+	);
+	assert.deepEqual(filterDocumentLocations(documentLocations, [], false), documentLocations);
+});
+
 test("possible spots count all locations while per-raid spawns come from source map counts", () => {
 	for (const map of documentMaps) {
 		const locations = documentLocations.filter((location) => location.mapId === map.id);

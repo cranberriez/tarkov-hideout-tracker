@@ -20,15 +20,20 @@ export function documentMarkerDimensions(count: number) {
 	const rows = Math.ceil(count / columns);
 	return {
 		columns,
-		width: count === 1 ? 34 : columns * 28 + (columns - 1) * 2 + 12,
-		height: count === 1 ? 34 : rows * 28 + (rows - 1) * 2 + 12,
+		width: count === 1 ? 34 : columns * 28 + (columns - 1) * 2 + 14,
+		height: count === 1 ? 34 : rows * 28 + (rows - 1) * 2 + 14,
 	};
 }
 
 /** Rebuild from source anchors on every zoom; merged bubbles retain the first member's anchor. */
-export function arrangeDocumentMarkers(points: readonly MarkerPoint[], zoom = 1, bounds?: MarkerBounds) {
+export function arrangeDocumentMarkers(
+	points: readonly MarkerPoint[],
+	zoom = 1,
+	bounds?: MarkerBounds,
+	disableGrouping = false,
+) {
 	const scale = documentMarkerScale(zoom);
-	const ungroup = zoom >= DOCUMENT_MAP_UNGROUP_ZOOM;
+	const ungroup = disableGrouping || zoom >= DOCUMENT_MAP_UNGROUP_ZOOM;
 	const radius = zoom < 3 ? 18 * scale : 1;
 	const groups: { id: string; x: number; y: number; ids: string[] }[] = [];
 	for (const point of points) {

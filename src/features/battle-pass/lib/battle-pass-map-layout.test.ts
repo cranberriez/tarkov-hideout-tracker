@@ -51,6 +51,23 @@ test("all groups split in the last 20% of zoom, including coincident anchors, an
 	assert.equal(arrangeDocumentMarkers(points, 1).length, 1);
 });
 
+test("disabling grouping keeps overlapping and coincident markers at source anchors at every zoom", () => {
+	const points = [
+		{ id: "a", x: 10, y: 10 },
+		{ id: "b", x: 10, y: 10 },
+		{ id: "c", x: 12, y: 10 },
+		{ id: "offscreen", x: -1, y: 10 },
+	];
+	const bounds = { width: 100, height: 100 };
+	for (const zoom of [1, 4, 8]) {
+		assert.deepEqual(
+			arrangeDocumentMarkers(points, zoom, bounds, true),
+			points.slice(0, 3).map((point) => ({ ...point, ids: [point.id] })),
+		);
+	}
+	assert.equal(arrangeDocumentMarkers(points, 1, bounds, false).length, 1);
+});
+
 test("larger bubbles merge sooner using their displayed footprint", () => {
 	const points = [
 		{ id: "a", x: 100, y: 100 },
@@ -128,6 +145,6 @@ test("merging rechecks enlarged grids against earlier groups without losing memb
 
 test("bubble footprints match two- and three-column artwork grids", () => {
 	assert.deepEqual(documentMarkerDimensions(1), { columns: 1, width: 34, height: 34 });
-	assert.deepEqual(documentMarkerDimensions(4), { columns: 2, width: 70, height: 70 });
-	assert.deepEqual(documentMarkerDimensions(5), { columns: 3, width: 100, height: 70 });
+	assert.deepEqual(documentMarkerDimensions(4), { columns: 2, width: 72, height: 72 });
+	assert.deepEqual(documentMarkerDimensions(5), { columns: 3, width: 102, height: 72 });
 });

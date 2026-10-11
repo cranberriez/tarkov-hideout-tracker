@@ -4,8 +4,12 @@ import type {
 	BattlePassDocumentKey,
 } from "@/lib/battle-pass-map-data";
 
-export function filterDocumentLocations(locations: BattlePassDocumentLocation[], hiddenTypes: string[]) {
-	return locations.filter((location) => !hiddenTypes.includes(location.documentKey));
+export function filterDocumentLocations(
+	locations: BattlePassDocumentLocation[],
+	hiddenTypes: string[],
+	hideLocked = false,
+) {
+	return locations.filter((location) => !hiddenTypes.includes(location.documentKey) && !(hideLocked && location.key));
 }
 
 export function documentMapCounts(map: BattlePassDocumentMap, locations: BattlePassDocumentLocation[], key: string) {

@@ -20,7 +20,7 @@ export default async function Page({
 	const seasonId = season === "season-1" || season === "season-2" ? season : undefined;
 	const initialPage = parseBattlePassPage(page, seasonId ? getBattlePassData(seasonId).pages.length : pages.length);
 	return (
-		<BattlePassSeason seasonId={seasonId}>
+		<BattlePassSeason seasonId={seasonId} showHeader={false} showNotice>
 			<BattlePassPage key={initialPage ?? "default"} initialPage={initialPage} />
 		</BattlePassSeason>
 	);
